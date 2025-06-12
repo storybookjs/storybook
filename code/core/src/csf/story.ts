@@ -503,7 +503,7 @@ export interface ComponentAnnotations<TRenderer extends Renderer = Renderer, TAr
    *
    * By defining them each component will have its tab in the args table.
    */
-  subcomponents?: Record<string, TRenderer['component']>;
+  subcomponents?: Record<string, (TRenderer & { T: any })['component']>;
 
   /** Function that is executed after the story is rendered. */
   play?: PlayFunction<TRenderer, TArgs>;

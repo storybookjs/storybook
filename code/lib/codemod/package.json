@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codemod",
-  "version": "9.1.0-alpha.5",
+  "version": "9.1.0-alpha.6",
   "description": "A collection of codemod scripts written with JSCodeshift",
   "keywords": [
     "storybook"
@@ -47,9 +47,6 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.24.4",
-    "@babel/preset-env": "^7.24.4",
-    "@babel/types": "^7.24.0",
     "@types/cross-spawn": "^6.0.6",
     "cross-spawn": "^7.0.6",
     "es-toolkit": "^1.36.0",

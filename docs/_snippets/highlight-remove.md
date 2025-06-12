@@ -55,12 +55,129 @@ export const RemoveHighlight = {
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { useChannel } from 'storybook/preview-api';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 
 import { MyComponent } from './MyComponent';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const RemoveHighlight: Story = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        id: 'my-unique-id',
+        selectors: ['header', 'section', 'footer'],
+      });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
+      return storyFn();
+    },
+  ],
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { useChannel } from 'storybook/preview-api';
+  import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="RemoveHighlight"
+  decorators={[
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        id: 'my-unique-id',
+        selectors: ['header', 'section', 'footer'],
+      });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
+      return storyFn();
+    },
+  ]}
+/>
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+import MyComponent from './MyComponent.svelte';
+
+export default {
+  component: MyComponent,
+};
+
+export const RemoveHighlight = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        id: 'my-unique-id',
+        selectors: ['header', 'section', 'footer'],
+      });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
+      return storyFn();
+    },
+  ],
+};
+```
+
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import { useChannel } from 'storybook/preview-api';
+  import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+  import MyComponent from './MyComponent.svelte';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+  });
+</script>
+
+<Story
+  name="RemoveHighlight"
+  decorators={[
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        id: 'my-unique-id',
+        selectors: ['header', 'section', 'footer'],
+      });
+      emit(REMOVE_HIGHLIGHT, 'my-unique-id');
+      return storyFn();
+    },
+  ]}
+/>
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
+
+import MyComponent from './MyComponent.svelte';
 
 const meta = {
   component: MyComponent,

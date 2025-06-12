@@ -1,7 +1,12 @@
-import path, { dirname, isAbsolute, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { DocsOptions, Options, PresetProperty } from 'storybook/internal/types';
+import type {
+  CLIOptions,
+  Options,
+  PresetProperty,
+  StorybookConfigRaw,
+} from 'storybook/internal/types';
 
 import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
@@ -129,12 +134,21 @@ async function webpack(
   return result;
 }
 
-const docs = (docsOptions: DocsOptions) => {
-  return {
-    ...docsOptions,
+const docs: PresetProperty<'docs'> = (input = {}, options) => {
+  if (options?.build?.test?.disableAutoDocs) {
+    return undefined;
+  }
+
+  const result: StorybookConfigRaw['docs'] = {
+    ...input,
     defaultName: 'Docs',
-    autodocs: 'tag',
   };
+
+  const docsMode = options.docs;
+  if (docsMode) {
+    result.docsMode = docsMode;
+  }
+  return result;
 };
 
 export const addons: PresetProperty<'addons'> = [
@@ -143,6 +157,7 @@ export const addons: PresetProperty<'addons'> = [
 
 export const viteFinal = async (config: any, options: Options) => {
   const { plugins = [] } = config;
+
   const { mdxPlugin } = await import('./plugins/mdx-plugin');
 
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
@@ -172,7 +187,10 @@ export const viteFinal = async (config: any, options: Options) => {
   // mdx plugin needs to be before any react plugins
   plugins.unshift(mdxPlugin(options));
 
-  return config;
+  return {
+    ...config,
+    plugins,
+  };
 };
 
 /*

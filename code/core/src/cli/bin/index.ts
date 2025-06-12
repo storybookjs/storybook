@@ -1,5 +1,5 @@
-import { getEnvConfig, parseList, versions } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { getEnvConfig, parseList } from 'storybook/internal/common';
+import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
@@ -14,9 +14,7 @@ import { buildIndex as index } from '../buildIndex';
 import { dev } from '../dev';
 import { globalSettings } from '../globalSettings';
 
-addToGlobalContext('cliVersion', versions.storybook);
-
-const consoleLogger = console;
+addToGlobalContext('cliVersion', version);
 
 const command = (name: string) =>
   program
@@ -29,11 +27,28 @@ const command = (name: string) =>
     )
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
-    .hook('preAction', async () => {
+    .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
+    .option('--write-logs', 'Write all debug logs to a file at the end of the run')
+    .hook('preAction', async (self) => {
       try {
+        const options = self.opts();
+        if (options.loglevel) {
+          logger.setLogLevel(options.loglevel);
+        }
+
+        if (options.writeLogs) {
+          logTracker.enableLogWriting();
+        }
+
         await globalSettings();
       } catch (e) {
-        consoleLogger.error('Error loading global settings', e);
+        logger.error('Error loading global settings:\n' + String(e));
+      }
+    })
+    .hook('postAction', async () => {
+      if (logTracker.shouldWriteLogsToFile) {
+        const logFile = await logTracker.writeToFile();
+        logger.outro(`Storybook debug logs can be found at: ${logFile}`);
       }
     });
 
@@ -55,7 +70,6 @@ command('dev')
   .option('--smoke-test', 'Exit after successful start')
   .option('--ci', "CI mode (skip interactive prompts, don't open browser)")
   .option('--no-open', 'Do not open Storybook automatically in the browser')
-  .option('--loglevel <level>', 'Control level of logging during build')
   .option('--quiet', 'Suppress verbose build output')
   .option('--no-version-updates', 'Suppress update check', true)
   .option('--debug-webpack', 'Display final webpack configurations for debugging purposes')
@@ -77,11 +91,10 @@ command('dev')
   )
   .option('--preview-only', 'Use the preview without the manager UI')
   .action(async (options) => {
-    logger.setLevel(options.loglevel);
     const pkg = await findPackage(__dirname);
     invariant(pkg, 'Failed to find the closest package.json file.');
 
-    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}`) + picocolors.reset('\n'));
+    logger.log(picocolors.bold(`${pkg.name} v${pkg.version}`) + picocolors.reset('\n'));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -104,7 +117,6 @@ command('build')
   .option('-o, --output-dir <dir-name>', 'Directory where to store built files')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('--quiet', 'Suppress verbose build output')
-  .option('--loglevel <level>', 'Control level of logging during build')
   .option('--debug-webpack', 'Display final webpack configurations for debugging purposes')
   .option(
     '--webpack-stats-json [directory]',
@@ -126,8 +138,7 @@ command('build')
     const pkg = await findPackage(__dirname);
     invariant(pkg, 'Failed to find the closest package.json file.');
 
-    logger.setLevel(options.loglevel);
-    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
+    logger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -148,7 +159,6 @@ command('index')
   .option('-o, --output-file <file-name>', 'JSON file to output index')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option('--quiet', 'Suppress verbose build output')
-  .option('--loglevel <level>', 'Control level of logging during build')
   .action(async (options) => {
     const { env } = process;
     env.NODE_ENV = env.NODE_ENV || 'production';
@@ -156,8 +166,7 @@ command('index')
     const pkg = await findPackage(__dirname);
     invariant(pkg, 'Failed to find the closest package.json file.');
 
-    logger.setLevel(options.loglevel);
-    consoleLogger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
+    logger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -173,15 +182,13 @@ command('index')
   });
 
 program.on('command:*', ([invalidCmd]) => {
-  consoleLogger.error(
-    ' Invalid command: %s.\n See --help for a list of available commands.',
-    invalidCmd
-  );
+  let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;
   const availableCommands = program.commands.map((cmd) => cmd.name());
   const suggestion = availableCommands.find((cmd) => leven(cmd, invalidCmd) < 3);
   if (suggestion) {
-    consoleLogger.info(`\n Did you mean ${suggestion}?`);
+    errorMessage += `\n Did you mean ${picocolors.yellow(suggestion)}?`;
   }
+  logger.error(errorMessage);
   process.exit(1);
 });
 

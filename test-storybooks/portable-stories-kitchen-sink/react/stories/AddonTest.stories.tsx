@@ -1,6 +1,6 @@
 import { expect, within } from 'storybook/test';
-import { Meta, type StoryObj } from '@storybook/react'
-import { instrument } from 'storybook/internal/instrumenter'
+import { Meta, type StoryObj } from '@storybook/react-vite';
+import { instrument } from 'storybook/internal/instrumenter';
 import { Component } from './AddonTest';
 
 declare global {

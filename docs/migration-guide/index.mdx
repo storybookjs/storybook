@@ -32,14 +32,14 @@ The rest of this guide will help you upgrade successfully, either automatically 
 * [Packages have been consolidated/removed](#package-structure-changes)
 * [Essential addons moved to core](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addons-viewport-controls-interactions-and-actions-moved-to-core)
 * [Test addon renamed from `experimental-addon-test` to `addon-vitest`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimental-test-addon-stabilized-and-renamed)
-* [`nextjs-vite` framework stabilized](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs--vite-builder-stabilized)
+* [`nextjs-vite` framework stabilized](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-vite-builder-stabilized)
 * [Removed Webpack builder support for Preact, Vue, and Web Components in favor of Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite)
 * [Manager builder removed alias for `util`, `assert` and `process`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#manager-builder-removed-alias-for-util-assert-and-process)
 * Ecosystem updates
   * [Node 20+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs--20)
-  * [Angular 18+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular--require-v18-and-up)
+  * [Angular 18+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-require-v18-and-up)
   * [Lit v3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#lit--require-v3-and-up)
-  * [Next.js 14+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs--require-v14-and-up)
+  * [Next.js 14+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v14-and-up)
   * [Svelte 5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-require-v5-and-up)
   * [Vite 5+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-4)
   * [Vitest 3+ is now required](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
@@ -73,6 +73,17 @@ This will:
    * Check for common upgrade tasks
    * Explain the necessary changes with links to more information
    * Ask for approval, then perform the task automatically on your behalf
+
+<Callout variant="info">
+
+Migrating a monorepo project? Be sure to run the command in the current working directory (`cwd`) that contains the `storybook` package.
+
+Some helpful commands for monorepos:
+
+- For NX projects, you can use the `nx migrate` command
+- The [`--config-dir` CLI flag](../api/cli-options.mdx#upgrade) can be used to specify a different config directory than the default `./.storybook` directory
+
+</Callout>
 
 ## New projects
 
@@ -152,7 +163,7 @@ In addition to the automigrations and manual migrations above, there are also op
 
 ### `test-runner` to `addon-vitest`
 
-`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/vitest-addon.mdx#automatic-setup).
+`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/integrations/vitest-addon.mdx#automatic-setup).
 
 ### CSF 2 to CSF 3
 

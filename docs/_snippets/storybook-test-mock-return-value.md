@@ -21,6 +21,43 @@ export const Default: Story = {
 };
 ```
 
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+  import { getUserFromSession } from '#api/session.mock';
+
+  import Page from './Page.svelte';
+
+  const meta = defineMeta({
+    component: Page,
+  });
+</script>
+
+<Story name="Default" beforeEach={() => {
+  // 👇 Set the return value for the getUserFromSession function
+  getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+}} />
+```
+
+```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import { getUserFromSession } from '#api/session.mock';
+
+import Page from './Page.svelte';
+
+export default {
+  component: Page,
+};
+
+export const Default = {
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+  },
+};
+```
+
 ```js filename="Page.stories.js" renderer="common" language="js"
 import { getUserFromSession } from '#api/session.mock';
 
@@ -38,8 +75,53 @@ export const Default = {
 };
 ```
 
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+  import { getUserFromSession } from '#api/session.mock';
+
+  import Page from './Page.svelte';
+
+  const meta = defineMeta({
+    component: Page,
+  });
+</script>
+
+<Story name="Default" beforeEach={() => {
+  // 👇 Set the return value for the getUserFromSession function
+  getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+}} />
+```
+
+```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
+// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
+import { getUserFromSession } from '#api/session.mock';
+
+import Page from './Page.svelte';
+
+const meta = {
+  component: Page,
+} satisfies Meta<typeof Page>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+  },
+};
+```
+
 ```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly

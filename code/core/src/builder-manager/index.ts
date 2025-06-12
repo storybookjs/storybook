@@ -9,7 +9,7 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
 import sirv from 'sirv';
 
-import { BROWSER_TARGETS } from '../shared/constants/environments-support';
+import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
 import type {
   BuilderBuildResult,
   BuilderFunction,
@@ -24,6 +24,8 @@ import { buildFrameworkGlobalsFromOptions } from './utils/framework';
 import { wrapManagerEntries } from './utils/managerEntries';
 import { safeResolve } from './utils/safeResolve';
 import { getTemplatePath, renderHTML } from './utils/template';
+
+export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support';
 
 const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
@@ -68,13 +70,14 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
       '.ttf': 'dataurl',
     },
     target: BROWSER_TARGETS,
+    supported: SUPPORTED_FEATURES,
     platform: 'browser',
     bundle: true,
     minify: false,
     minifyWhitespace: false,
     minifyIdentifiers: false,
-    minifySyntax: false,
-    metafile: true,
+    minifySyntax: true,
+    metafile: false, // turn this on to assist with debugging the bundling of managerEntries
 
     // treeShaking: true,
 

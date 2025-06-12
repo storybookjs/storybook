@@ -1,5 +1,5 @@
 ```js filename="MyForm.stories.js" renderer="react" language="js"
-import { expect, fireEvent, userEvent, within } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 /*
  * Replace your-framework with nextjs or nextjs-vite
@@ -27,8 +27,7 @@ export const Unauthenticated = {
 };
 
 export const GoBack = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
+  async play({ canvas, userEvent }) {
     const backBtn = await canvas.findByText('Go back');
 
     await userEvent.click(backBtn);
@@ -42,7 +41,7 @@ export const GoBack = {
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { expect, fireEvent, userEvent, within } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { redirect, getRouter } from '@storybook/your-framework/navigation.mock';
@@ -70,8 +69,7 @@ export const Unauthenticated: Story = {
 };
 
 export const GoBack: Story = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
+  async play({ canvas, userEvent }) {
     const backBtn = await canvas.findByText('Go back');
 
     await userEvent.click(backBtn);

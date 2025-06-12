@@ -123,7 +123,8 @@ export const Default = {
 ```
 
 ```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Histogram } from './Histogram';
 
@@ -245,7 +246,8 @@ export const Default = {
 ```
 
 ```ts filename="Histogram.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Histogram from './Histogram.svelte';
 

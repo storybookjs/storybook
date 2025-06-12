@@ -60,7 +60,8 @@ export default {
 ```
 
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
 
 import Page from './Page.svelte';
 
@@ -73,7 +74,7 @@ export default meta;
 ```
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
 import { Page } from './Page';

@@ -126,6 +126,17 @@ const useLayoutSyncingState = ({
     isDragging: internalDraggingSizeState.isDragging,
   };
 };
+const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
+      {({ match }) => <ContentContainer shown={!!match}>{children}</ContentContainer>}
+    </Match>
+  );
+};
+
+const OrderedMobileNavigation = styled(MobileNavigation)({
+  order: 1,
+});
 
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
@@ -154,15 +165,15 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       showPanel={showPanel}
     >
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
-      <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-        {({ match }) => <ContentContainer shown={!!match}>{slots.slotMain}</ContentContainer>}
-      </Match>
       {isDesktop && (
         <>
           <SidebarContainer>
             <Drag ref={sidebarResizerRef} />
             {slots.slotSidebar}
           </SidebarContainer>
+
+          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+
           {showPanel && (
             <PanelContainer position={panelPosition}>
               <Drag
@@ -175,14 +186,16 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           )}
         </>
       )}
+
       {isMobile && (
         <>
-          <Notifications />
-          <MobileNavigation
+          <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
             showPanel={showPanel}
           />
+          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+          <Notifications />
         </>
       )}
     </LayoutContainer>

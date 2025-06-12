@@ -46,7 +46,7 @@ export const Secondary: Story = {
 <Story name="Secondary" args={{...primaryArgs, primary: false}} />
 ```
 
-```js filename="Button.stories.js|jsx" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 
 export default {
@@ -112,7 +112,8 @@ export const Secondary = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 

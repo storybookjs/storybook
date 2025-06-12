@@ -1,6 +1,8 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import boxen from 'boxen';
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
@@ -23,7 +25,7 @@ import type { JsPackageManager } from '../../../core/src/common/js-package-manag
 import { JsPackageManagerFactory } from '../../../core/src/common/js-package-manager/JsPackageManagerFactory';
 import { HandledError } from '../../../core/src/common/utils/HandledError';
 import { commandLog, paddedLog } from '../../../core/src/common/utils/log';
-import { getProjectRoot } from '../../../core/src/common/utils/paths';
+import { getProjectRoot, invalidateProjectRootCache } from '../../../core/src/common/utils/paths';
 import versions from '../../../core/src/common/versions';
 import { withTelemetry } from '../../../core/src/core-server/withTelemetry';
 import { NxProjectDetectedError } from '../../../core/src/server-errors';
@@ -51,7 +53,16 @@ import { packageVersions } from './ink/steps/checks/packageVersions';
 import { vitestConfigFiles } from './ink/steps/checks/vitestConfigFiles';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from './scaffold-new-project';
 
-const logger = console;
+const ONBOARDING_PROJECT_TYPES = [
+  ProjectType.REACT,
+  ProjectType.REACT_SCRIPTS,
+  ProjectType.REACT_NATIVE_WEB,
+  ProjectType.REACT_PROJECT,
+  ProjectType.WEBPACK_REACT,
+  ProjectType.NEXTJS,
+  ProjectType.VUE3,
+  ProjectType.ANGULAR,
+];
 
 const installStorybook = async <Project extends ProjectType>(
   projectType: Project,
@@ -59,7 +70,7 @@ const installStorybook = async <Project extends ProjectType>(
   options: CommandOptions
 ): Promise<any> => {
   const npmOptions: NpmOptions = {
-    installAsDevDependencies: true,
+    type: 'devDependencies',
     skipInstall: options.skipInstall,
   };
 
@@ -185,7 +196,7 @@ const installStorybook = async <Project extends ProjectType>(
         );
 
         // Add a new line for the clear visibility.
-        logger.log();
+        logger.log('');
 
         return Promise.resolve();
 
@@ -196,7 +207,7 @@ const installStorybook = async <Project extends ProjectType>(
         );
 
         // Add a new line for the clear visibility.
-        logger.log();
+        logger.log('');
 
         return projectTypeInquirer(options, packageManager);
     }
@@ -245,7 +256,7 @@ const projectTypeInquirer = async (
     }
   }
 
-  logger.log();
+  logger.log('');
   logger.log('For more information about installing Storybook: https://storybook.js.org/docs');
   process.exit(0);
 };
@@ -342,7 +353,7 @@ export const promptInstallType = async ({
           value: 'recommended',
         },
         {
-          title: `${picocolors.bold('Minimal:')} Dev only`,
+          title: `${picocolors.bold('Minimal:')} Component dev only`,
           value: 'light',
         },
       ],
@@ -370,11 +381,33 @@ export async function doInitiate(options: CommandOptions): Promise<
 > {
   const { packageManager: pkgMgr } = options;
 
-  let packageManager = JsPackageManagerFactory.getPackageManager({
+  const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
+  let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
+
+  // Check if the current directory is empty.
+  if (isEmptyDirProject) {
+    // Initializing Storybook in an empty directory with yarn1
+    // will very likely fail due to different kinds of hoisting issues
+    // which doesn't get fixed anymore in yarn1.
+    // We will fallback to npm in this case.
+    if (packageManagerType === 'yarn1') {
+      packageManagerType = 'npm';
+    }
+
+    // Prompt the user to create a new project from our list.
+    await scaffoldNewProject(packageManagerType, options);
+    invalidateProjectRootCache();
+  }
+
+  const packageManager = JsPackageManagerFactory.getPackageManager({
     force: pkgMgr,
   });
 
-  const latestVersion = await packageManager.latestVersion('storybook');
+  if (!options.skipInstall) {
+    await packageManager.installDependencies();
+  }
+
+  const latestVersion = (await packageManager.latestVersion('storybook'))!;
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, latestVersion);
@@ -420,7 +453,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   if (typeof newUser === 'undefined') {
-    logger.info('canceling');
+    logger.log('canceling');
     process.exit(0);
   }
 
@@ -428,7 +461,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   if (!newUser) {
     const install = await promptInstallType(promptOptions);
     if (typeof install === 'undefined') {
-      logger.info('canceling');
+      logger.log('canceling');
       process.exit(0);
     }
     installType = install;
@@ -440,26 +473,17 @@ export async function doInitiate(options: CommandOptions): Promise<
     if (isInteractive) {
       selectedFeatures.add('test');
     }
+    if (newUser) {
+      selectedFeatures.add('onboarding');
+    }
   }
 
   const telemetryFeatures = {
     dev: true,
     docs: selectedFeatures.has('docs'),
     test: selectedFeatures.has('test'),
+    onboarding: selectedFeatures.has('onboarding'),
   };
-
-  // Check if the current directory is empty.
-  if (options.force !== true && currentDirectoryIsEmpty(packageManager.type)) {
-    // Initializing Storybook in an empty directory with yarn1
-    // will very likely fail due to different kind of hoisting issues
-    // which doesn't get fixed anymore in yarn1.
-    // We will fallback to npm in this case.
-    if (packageManager.type === 'yarn1') {
-      packageManager = JsPackageManagerFactory.getPackageManager({ force: 'npm' });
-    }
-    // Prompt the user to create a new project from our list.
-    await scaffoldNewProject(packageManager.type, options);
-  }
 
   let projectType: ProjectType;
   const projectTypeProvided = options.type;
@@ -475,7 +499,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       done(`The provided project type was not recognized by Storybook: ${projectTypeProvided}`);
       logger.log(`\nThe project types currently supported by Storybook are:\n`);
       installableProjectTypes.sort().forEach((framework) => paddedLog(`- ${framework}`));
-      logger.log();
+      logger.log('');
       throw new HandledError(`Unknown project type supplied: ${projectTypeProvided}`);
     }
   } else {
@@ -501,6 +525,7 @@ export async function doInitiate(options: CommandOptions): Promise<
         projectType = manualType;
       }
     } catch (err) {
+      console.log(err);
       done(String(err));
       throw new HandledError(err);
     }
@@ -510,7 +535,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const storybookInstantiated = isStorybookInstantiated();
 
   if (options.force === false && storybookInstantiated && projectType !== ProjectType.ANGULAR) {
-    logger.log();
+    logger.log('');
     const { force } = await prompts([
       {
         type: 'confirm',
@@ -519,7 +544,7 @@ export async function doInitiate(options: CommandOptions): Promise<
           'We found a .storybook config directory in your project. Therefore we assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?',
       },
     ]);
-    logger.log();
+    logger.log('');
 
     if (force) {
       options.force = true;
@@ -549,9 +574,7 @@ export async function doInitiate(options: CommandOptions): Promise<
         process.exit(0);
       }
     }
-  }
 
-  if (selectedFeatures.has('test')) {
     const vitestConfigFilesData = await vitestConfigFiles.condition(
       { babel, findUp, fs } as any,
       { directory: process.cwd() } as any
@@ -577,8 +600,8 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
   }
 
-  if (!options.skipInstall) {
-    await packageManager.installDependencies();
+  if (selectedFeatures.has('onboarding') && !ONBOARDING_PROJECT_TYPES.includes(projectType)) {
+    selectedFeatures.delete('onboarding');
   }
 
   // Update the options object with the selected features before passing it down to the generator
@@ -645,21 +668,22 @@ export async function doInitiate(options: CommandOptions): Promise<
   const storybookCommand =
     projectType === ProjectType.ANGULAR
       ? `ng run ${installResult.projectName}:storybook`
-      : packageManager.getRunStorybookCommand();
+      : packageManager.getRunCommand('storybook');
 
   if (selectedFeatures.has('test')) {
+    const flags = ['--yes', options.skipInstall && '--skip-install'].filter(Boolean).join(' ');
     logger.log(
-      `> npx storybook@${versions.storybook} add --yes @storybook/addon-a11y@${versions['@storybook/addon-a11y']}`
+      `> npx storybook@${versions.storybook} add ${flags} @storybook/addon-a11y@${versions['@storybook/addon-a11y']}`
     );
     execSync(
-      `npx storybook@${versions.storybook} add --yes @storybook/addon-a11y@${versions['@storybook/addon-a11y']}`,
+      `npx storybook@${versions.storybook} add ${flags} @storybook/addon-a11y@${versions['@storybook/addon-a11y']}`,
       { cwd: process.cwd(), stdio: 'inherit' }
     );
     logger.log(
-      `> npx storybook@${versions.storybook} add --yes @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`
+      `> npx storybook@${versions.storybook} add ${flags} @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`
     );
     execSync(
-      `npx storybook@${versions.storybook} add --yes @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`,
+      `npx storybook@${versions.storybook} add ${flags} @storybook/addon-vitest@${versions['@storybook/addon-vitest']}`,
       { cwd: process.cwd(), stdio: 'inherit' }
     );
   }

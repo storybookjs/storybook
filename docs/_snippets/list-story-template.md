@@ -109,7 +109,8 @@ export const OneItem = {
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -252,6 +253,92 @@ export const OneItem = {
     items: [{ ...Unchecked.args }],
   },
 };
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 Imports a specific story from ListItem stories
+  import { Unchecked } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+    */
+    title: 'List',
+    component: List,
+  });
+</script>
+
+<!--
+  The template construct will be spread to the existing stories.
+  It's based on Svelte's snippet syntax allowing you share the same UI with small variations.
+-->
+{#snippet template(args)}
+  <List {...args}>
+    {#each args.items as item}
+      <ListItem {...item} />
+    {/each}
+  </List>
+{/snippet}
+
+<Story name="Empty" args={{ items: [] }} {template} />
+
+<Story
+  name="One Item"
+  args={{
+    items: [{ ...Unchecked.args }],
+  }}
+  {template}
+/>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 Imports a specific story from ListItem stories
+  import { Unchecked } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    /* 👇 The title prop is optional.
+     * See https://storybook.js.org/docs/configure/#configure-story-loading
+     * to learn how to generate automatic titles
+    */
+    title: 'List',
+    component: List,
+  });
+</script>
+
+<!--
+  The template construct will be spread to the existing stories.
+  It's based on Svelte's snippet syntax allowing you share the same UI with small variations.
+-->
+{#snippet template(args)}
+  <List {...args}>
+    {#each args.items as item}
+      <ListItem {...item} />
+    {/each}
+  </List>
+{/snippet}
+
+<Story name="Empty" args={{ items: [] }} {template} />
+
+<Story
+  name="One Item"
+  args={{
+    items: [{ ...Unchecked.args }],
+  }}
+  {template}
+/>
 ```
 
 ```js filename="List.stories.js" renderer="vue" language="js"

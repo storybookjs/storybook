@@ -58,7 +58,7 @@ describe('composeStory', () => {
     const finalAnnotations = setProjectAnnotations([firstAnnotations, secondAnnotations]);
     expect(finalAnnotations).toEqual(
       expect.objectContaining({
-        parameters: { foo: 'bar' },
+        parameters: expect.objectContaining({ foo: 'bar' }),
         args: { foo: 'bar' },
         tags: ['autodocs'],
       })

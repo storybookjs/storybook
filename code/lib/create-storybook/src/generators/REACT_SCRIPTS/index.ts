@@ -26,7 +26,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
       }
     : {};
 
-  const craVersion = await packageManager.getPackageVersion('react-scripts');
+  const craVersion = packageManager.getModulePackageJSON('react-scripts')?.version ?? null;
 
   if (craVersion === null) {
     throw new Error(dedent`
@@ -48,7 +48,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
   // Miscellaneous dependency to add to be sure Storybook + CRA is working fine with Yarn PnP mode
   extraPackages.push('prop-types');
 
-  const extraAddons = [`@storybook/preset-create-react-app`, `@storybook/addon-onboarding`];
+  const extraAddons = [`@storybook/preset-create-react-app`];
 
   await baseGenerator(
     packageManager,

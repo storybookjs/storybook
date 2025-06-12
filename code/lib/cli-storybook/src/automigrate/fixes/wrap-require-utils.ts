@@ -13,7 +13,7 @@ const defaultRequireWrapperName = 'getAbsolutePath';
  * function <name>() {}
  * ```
  */
-function doesVariableOrFunctionDeclarationExist(node: t.Node, name: string) {
+export function doesVariableOrFunctionDeclarationExist(node: t.Node, name: string) {
   return (
     (t.isVariableDeclaration(node) &&
       node.declarations.length === 1 &&

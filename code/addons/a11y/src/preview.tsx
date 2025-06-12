@@ -8,7 +8,7 @@ import { getIsVitestStandaloneRun } from './utils';
 
 let vitestMatchersExtended = false;
 
-export const experimental_afterEach: AfterEach<any> = async ({
+export const afterEach: AfterEach<any> = async ({
   id: storyId,
   reporting,
   parameters,

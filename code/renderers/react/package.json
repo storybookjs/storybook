@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "9.0.0-beta.7",
+  "version": "9.1.0-alpha.6",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -37,6 +37,7 @@
     },
     "./preset": "./preset.js",
     "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
+    "./dist/entry-preview-argtypes.mjs": "./dist/entry-preview-argtypes.mjs",
     "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
     "./dist/entry-preview-rsc.mjs": "./dist/entry-preview-rsc.mjs",
     "./package.json": "./package.json"
@@ -89,7 +90,7 @@
     "expect-type": "^1.1.0",
     "html-tags": "^3.1.0",
     "prop-types": "^15.7.2",
-    "react-element-to-jsx-string": "^15.0.0",
+    "react-element-to-jsx-string": "npm:@7rulnik/react-element-to-jsx-string@15.0.1",
     "require-from-string": "^2.0.2",
     "semver": "^7.3.7",
     "ts-dedent": "^2.0.0",
@@ -118,6 +119,7 @@
       "./src/preset.ts",
       "./src/preview.tsx",
       "./src/entry-preview.tsx",
+      "./src/entry-preview-argtypes.ts",
       "./src/entry-preview-docs.ts",
       "./src/entry-preview-rsc.tsx",
       "./src/playwright.ts"

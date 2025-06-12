@@ -833,6 +833,11 @@ describe('PreviewWeb', () => {
   });
 
   describe('onUpdateGlobals', () => {
+    beforeEach(() => {
+      mockChannel.emit.mockClear();
+      projectAnnotations.renderToCanvas.mockClear();
+    });
+
     it('emits GLOBALS_UPDATED', async () => {
       document.location.search = '?id=component-one--a';
       await createAndRenderPreview();
@@ -964,6 +969,11 @@ describe('PreviewWeb', () => {
   });
 
   describe('onUpdateArgs', () => {
+    beforeEach(() => {
+      mockChannel.emit.mockClear();
+      projectAnnotations.renderToCanvas.mockClear();
+    });
+
     it('emits STORY_ARGS_UPDATED', async () => {
       document.location.search = '?id=component-one--a';
       await createAndRenderPreview();

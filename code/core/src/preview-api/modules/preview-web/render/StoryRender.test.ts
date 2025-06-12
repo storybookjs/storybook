@@ -45,7 +45,7 @@ const buildStory = (overrides: Partial<PreparedStory> = {}): PreparedStory =>
     name: 'name',
     tags: [],
     applyLoaders: vi.fn(),
-    applyBeforeEach: vi.fn(),
+    applyBeforeEach: vi.fn(() => []),
     applyAfterEach: vi.fn(),
     unboundStoryFn: vi.fn(),
     playFunction: vi.fn(),

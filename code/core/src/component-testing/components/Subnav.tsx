@@ -125,7 +125,7 @@ export const Subnav: React.FC<SubnavProps> = ({
   return (
     <SubnavWrapper>
       <Bar>
-        <StyledSubnav>
+        <StyledSubnav aria-label="Component tests toolbar">
           <Group>
             <StatusBadge status={status} />
 

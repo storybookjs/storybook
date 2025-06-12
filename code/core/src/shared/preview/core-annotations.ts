@@ -1,12 +1,11 @@
-import componentTestingAnnotations from 'storybook/internal/component-testing/preview';
-
-import actionAnnotations from 'storybook/actions/preview';
-import backgroundsAnnotations from 'storybook/backgrounds/preview';
-import highlightAnnotations from 'storybook/highlight/preview';
-import measureAnnotations from 'storybook/measure/preview';
-import outlineAnnotations from 'storybook/outline/preview';
-import testAnnotations from 'storybook/test/preview';
-import viewportAnnotations from 'storybook/viewport/preview';
+import actionAnnotations from '../../actions/preview';
+import backgroundsAnnotations from '../../backgrounds/preview';
+import componentTestingAnnotations from '../../component-testing/preview';
+import highlightAnnotations from '../../highlight/preview';
+import measureAnnotations from '../../measure/preview';
+import outlineAnnotations from '../../outline/preview';
+import testAnnotations from '../../test/preview';
+import viewportAnnotations from '../../viewport/preview';
 
 export function getCoreAnnotations() {
   return [

@@ -88,7 +88,8 @@
     "image-size": "^2.0.0",
     "magic-string": "^0.30.11",
     "module-alias": "^2.2.3",
-    "ts-dedent": "^2.2.0"
+    "ts-dedent": "^2.2.0",
+    "vite-tsconfig-paths": "^5.1.4"
   },
   "publishConfig": {
     "access": "public"

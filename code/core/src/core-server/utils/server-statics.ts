@@ -1,8 +1,8 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFile, statSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
 
 import { getDirectoryFromWorkingDir, resolvePathInStorybookCache } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, once } from 'storybook/internal/node-logger';
 import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -12,13 +12,26 @@ import { dedent } from 'ts-dedent';
 
 const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-sub')[0];
 
-const faviconWrapper = String(
-  readFileSync(
-    join(
-      dirname(require.resolve('storybook/internal/package.json')),
-      '/assets/browser/favicon-wrapper.svg'
-    )
-  )
+const fileData = new Map<string, string>();
+const readFileOnce = (path: string) =>
+  new Promise<string>((resolve, reject) => {
+    if (fileData.has(path)) {
+      resolve(fileData.get(path)!);
+    } else {
+      readFile(path, 'utf-8', (err, data) => {
+        if (err) {
+          reject(err);
+        } else {
+          fileData.set(path, data);
+          resolve(data);
+        }
+      });
+    }
+  });
+
+const faviconWrapperPath = join(
+  dirname(require.resolve('storybook/internal/package.json')),
+  '/assets/browser/favicon-wrapper.svg'
 );
 
 export async function useStatics(app: Polka, options: Options): Promise<void> {
@@ -71,24 +84,33 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
   // rather than trying to serve the file directly
   const faviconDir = resolve(faviconPath, '..');
   const faviconFile = basename(faviconPath);
-  const faviconData = String(readFileSync(join(faviconDir, faviconFile)));
-  app.use('/', (req, res, next) => {
+  app.use('/', async (req, res, next) => {
     if (req.path === `/${faviconFile}`) {
       const status = req.query.status;
       if (
         status &&
-        faviconData &&
-        faviconWrapper &&
         faviconFile.endsWith('.svg') &&
         ['active', 'critical', 'negative', 'positive', 'warning'].includes(status)
       ) {
-        const svg = faviconWrapper
-          .replace('<g id="mask"', `<g mask="url(#${status}-mask)"`)
-          .replace('<use id="status"', `<use href="#${status}"`)
-          .replace('<use id="icon" />', faviconData);
-        res.setHeader('Content-Type', 'image/svg+xml');
-        res.end(svg);
-        return;
+        const [faviconData, faviconWrapperData] = await Promise.all([
+          readFileOnce(join(faviconDir, faviconFile)),
+          readFileOnce(faviconWrapperPath),
+        ]).catch((e) => {
+          if (e instanceof Error) {
+            once.warn(`Failed to read favicon: ${e.message}`);
+          }
+          return [null, null];
+        });
+        if (faviconData && faviconWrapperData) {
+          const svg = faviconWrapperData
+            .replace('<g id="mask"', `<g mask="url(#${status}-mask)"`)
+            .replace('<use id="status"', `<use href="#${status}"`)
+            .replace('<use id="icon" />', faviconData);
+          res.setHeader('Content-Type', 'image/svg+xml');
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          res.end(svg);
+          return;
+        }
       }
       return sirvWorkaround(faviconDir, {
         dev: true,

@@ -1,5 +1,5 @@
-import { existsSync, statSync } from 'node:fs';
-import { basename, isAbsolute, posix, resolve, sep, win32 } from 'node:path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
 
 import { getDirectoryFromWorkingDir, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -11,6 +11,15 @@ import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
 const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-sub')[0];
+
+const faviconWrapper = String(
+  readFileSync(
+    join(
+      dirname(require.resolve('storybook/internal/package.json')),
+      '/assets/browser/favicon-wrapper.svg'
+    )
+  )
+);
 
 export async function useStatics(app: Polka, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
@@ -34,7 +43,7 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
         app.use(targetEndpoint, (req, res, next) => {
           // Rewrite the URL to match the file's name, ensuring that we only ever serve the file
           // even when sirv is passed the full directory
-          req.url = `/${staticPathFile}`;
+          req.path = `/${staticPathFile}`;
           sirvWorkaround(staticPathDir, {
             dev: true,
             etag: true,
@@ -62,8 +71,25 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
   // rather than trying to serve the file directly
   const faviconDir = resolve(faviconPath, '..');
   const faviconFile = basename(faviconPath);
+  const faviconData = String(readFileSync(join(faviconDir, faviconFile)));
   app.use('/', (req, res, next) => {
-    if (req.url === `/${faviconFile}`) {
+    if (req.path === `/${faviconFile}`) {
+      const status = req.query.status;
+      if (
+        status &&
+        faviconData &&
+        faviconWrapper &&
+        faviconFile.endsWith('.svg') &&
+        ['active', 'critical', 'negative', 'positive', 'warning'].includes(status)
+      ) {
+        const svg = faviconWrapper
+          .replace('<g id="mask"', `<g mask="url(#${status}-mask)"`)
+          .replace('<use id="status"', `<use href="#${status}"`)
+          .replace('<use id="icon" />', faviconData);
+        res.setHeader('Content-Type', 'image/svg+xml');
+        res.end(svg);
+        return;
+      }
       return sirvWorkaround(faviconDir, {
         dev: true,
         etag: true,

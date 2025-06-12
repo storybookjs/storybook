@@ -56,7 +56,7 @@ function resolvePathToESM(filePath: string): string {
       and in that situation we want to prefer the .js version.
     */
     const jsPath = join(dir, `${name}.js`);
-    if (safeResolve(jsPath)) {
+    if (resolve.cwd(jsPath, true)) {
       return jsPath;
     }
   }

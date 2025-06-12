@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react",
-  "version": "9.1.0-alpha.3",
+  "version": "9.1.0-alpha.6",
   "description": "Storybook React renderer",
   "keywords": [
     "storybook"
@@ -67,8 +67,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "typecheck": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/bundle.ts",
+    "typecheck": "jiti ../../../scripts/prepare/check.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",

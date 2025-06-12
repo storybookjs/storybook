@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.1.0-alpha.3",
+  "version": "9.1.0-alpha.6",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -191,6 +191,16 @@
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
     },
+    "./internal/controls/preview": {
+      "types": "./dist/controls/preview.d.ts",
+      "import": "./dist/controls/preview.js",
+      "require": "./dist/controls/preview.cjs"
+    },
+    "./controls/preview": {
+      "types": "./dist/controls/preview.d.ts",
+      "import": "./dist/controls/preview.js",
+      "require": "./dist/controls/preview.cjs"
+    },
     "./internal/component-testing": {
       "types": "./dist/component-testing/index.d.ts",
       "import": "./dist/component-testing/index.js",
@@ -225,11 +235,6 @@
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js",
       "require": "./dist/controls/index.cjs"
-    },
-    "./internal/controls/preview": {
-      "types": "./dist/controls/preview.d.ts",
-      "import": "./dist/controls/preview.js",
-      "require": "./dist/controls/preview.cjs"
     },
     "./internal/controls/decorator": {
       "types": "./dist/controls/decorator.d.ts",
@@ -487,6 +492,12 @@
       "actions/decorator": [
         "./dist/actions/decorator.d.ts"
       ],
+      "internal/controls/preview": [
+        "./dist/controls/preview.d.ts"
+      ],
+      "controls/preview": [
+        "./dist/controls/preview.d.ts"
+      ],
       "internal/component-testing": [
         "./dist/component-testing/index.d.ts"
       ],
@@ -507,9 +518,6 @@
       ],
       "internal/controls": [
         "./dist/controls/index.d.ts"
-      ],
-      "internal/controls/preview": [
-        "./dist/controls/preview.d.ts"
       ],
       "internal/controls/decorator": [
         "./dist/controls/decorator.d.ts"
@@ -637,6 +645,7 @@
     "@babel/parser": "^7.26.9",
     "@babel/traverse": "^7.26.9",
     "@babel/types": "^7.26.8",
+    "@clack/prompts": "^1.0.0-alpha.0",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",

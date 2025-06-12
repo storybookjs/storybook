@@ -22,7 +22,6 @@ vi.mock('storybook/internal/csf', async (importOriginal) => {
 
 vi.mock('storybook/internal/node-logger');
 
-const toIdMock = vi.mocked(toId);
 vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   const csfTools = await importOriginal<typeof import('storybook/internal/csf-tools')>();
   return {
@@ -32,6 +31,7 @@ vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   };
 });
 
+const toIdMock = vi.mocked(toId);
 const readCsfMock = vi.mocked(readCsf);
 const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
@@ -46,6 +46,10 @@ describe('StoryIndexGenerator', () => {
   beforeEach(() => {
     vi.mocked(logger.warn).mockClear();
     vi.mocked(once.warn).mockClear();
+    toIdMock.mockClear();
+    readCsfMock.mockClear();
+    getStorySortParameterMock.mockClear();
+    StoryIndexGenerator.clearFindMatchingFilesCache();
   });
   describe('extraction', () => {
     const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(

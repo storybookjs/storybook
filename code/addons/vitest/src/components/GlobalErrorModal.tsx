@@ -161,7 +161,7 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
               Troubleshoot
             </a>
           </Button>
-          <IconButton onClick={handleClose}>
+          <IconButton onClick={handleClose} aria-label="Close modal">
             <CloseIcon />
           </IconButton>
         </ModalActionBar>

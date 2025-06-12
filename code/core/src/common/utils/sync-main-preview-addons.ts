@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { types as t } from 'storybook/internal/babel';
 import {
   type ConfigFile,
@@ -6,6 +5,7 @@ import {
   readConfig,
   writeConfig,
 } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -13,18 +13,21 @@ import picocolors from 'picocolors';
 import { getAddonAnnotations } from './get-addon-annotations';
 import { getAddonNames } from './get-addon-names';
 
-const logger = console;
-
-export async function syncStorybookAddons(mainConfig: StorybookConfig, previewConfigPath: string) {
+export async function syncStorybookAddons(
+  mainConfig: StorybookConfig,
+  previewConfigPath: string,
+  configDir: string
+) {
   const previewConfig = await readConfig(previewConfigPath!);
-  const modifiedConfig = await getSyncedStorybookAddons(mainConfig, previewConfig);
+  const modifiedConfig = await getSyncedStorybookAddons(mainConfig, previewConfig, configDir);
 
   await writeConfig(modifiedConfig);
 }
 
 export async function getSyncedStorybookAddons(
   mainConfig: StorybookConfig,
-  previewConfig: ConfigFile
+  previewConfig: ConfigFile,
+  configDir: string
 ): Promise<ConfigFile> {
   const isCsfFactory = isCsfFactoryPreview(previewConfig);
 
@@ -44,13 +47,13 @@ export async function getSyncedStorybookAddons(
    * exports map called preview, if so add to the array
    */
   for (const addon of addons) {
-    const annotations = await getAddonAnnotations(addon);
+    const annotations = await getAddonAnnotations(addon, configDir);
     if (annotations) {
       const hasAlreadyImportedAddonAnnotations = previewConfig._ast.program.body.find(
         (node) => t.isImportDeclaration(node) && node.source.value === annotations.importPath
       );
 
-      if (!!hasAlreadyImportedAddonAnnotations) {
+      if (hasAlreadyImportedAddonAnnotations) {
         continue;
       }
 
@@ -80,7 +83,7 @@ export async function getSyncedStorybookAddons(
   }
 
   if (syncedAddons.length > 0) {
-    logger.info(
+    logger.log(
       `Synchronizing addons from main config in ${picocolors.cyan(previewConfig.fileName)}:\n${syncedAddons.map(picocolors.magenta).join(', ')}`
     );
   }

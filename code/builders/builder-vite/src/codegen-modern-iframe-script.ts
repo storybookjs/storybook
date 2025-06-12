@@ -1,4 +1,5 @@
 import { getFrameworkName, loadPreviewOrConfigFile } from 'storybook/internal/common';
+import { STORY_HOT_UPDATED } from 'storybook/internal/core-events';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
@@ -14,8 +15,8 @@ export async function generateModernIframeScriptCode(options: Options, projectRo
   const frameworkName = await getFrameworkName(options);
 
   const previewOrConfigFile = loadPreviewOrConfigFile({ configDir });
-  const previewConfig = await readConfig(previewOrConfigFile!);
-  const isCsf4 = isCsfFactoryPreview(previewConfig);
+  const previewConfig = previewOrConfigFile ? await readConfig(previewOrConfigFile) : undefined;
+  const isCsf4 = previewConfig ? isCsfFactoryPreview(previewConfig) : false;
 
   const previewAnnotations = await presets.apply<PreviewAnnotation[]>(
     'previewAnnotations',
@@ -90,6 +91,10 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
 
     return dedent`
     if (import.meta.hot) {
+      import.meta.hot.on('vite:afterUpdate', () => {
+        window.__STORYBOOK_PREVIEW__.channel.emit('${STORY_HOT_UPDATED}');
+      });
+
       import.meta.hot.accept('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}', (newModule) => {
         // importFn has changed so we need to patch the new one in
         window.__STORYBOOK_PREVIEW__.onStoriesChanged({ importFn: newModule.importFn });
@@ -116,18 +121,18 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
   import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
 
   setup();
- 
+
   import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
   import { isPreview } from 'storybook/internal/csf';
   import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
-  
+
   ${options.isCsf4 ? previewFileImport : imports.join('\n')}
   ${getPreviewAnnotationsFunction}
 
   window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
-  
+
   window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
-  
+
   ${generateHMRHandler()};
   `.trim();
   return code;

@@ -1,7 +1,7 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type { ReactElement } from 'react';
 
 import type { Channel } from '../../channels';
+import type { State } from '../../manager-api';
 import type { RenderData } from '../../router/types';
 import type { ThemeVars } from '../../theming/types';
 import type { Addon_RenderOptions } from './addons';
@@ -86,6 +86,11 @@ export interface API_Layout {
   panelPosition: API_PanelPositions;
   showTabs: boolean;
   showToolbar: boolean;
+}
+
+export interface API_LayoutCustomisations {
+  showSidebar?: (state: State, defaultValue: boolean) => boolean | undefined;
+  showToolbar?: (state: State, defaultValue: boolean) => boolean | undefined;
 }
 
 export interface API_UI {

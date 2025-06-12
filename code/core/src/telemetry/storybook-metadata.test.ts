@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { getStorybookInfo } from 'storybook/internal/common';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import { detect } from 'package-manager-detector';
@@ -33,13 +33,19 @@ const mainJsMock: StorybookConfig = {
 };
 
 beforeEach(() => {
+  vi.mocked(getStorybookInfo).mockImplementation(() => ({
+    version: '9.0.0',
+    framework: 'react',
+    frameworkPackage: '@storybook/react',
+    renderer: 'react',
+    rendererPackage: '@storybook/react',
+  }));
+
   vi.mocked(detect).mockImplementation(async () => ({
     name: 'yarn',
     version: '3.1.1',
     agent: 'yarn@berry',
   }));
-
-  vi.mocked(getProjectRoot).mockImplementation(() => process.cwd());
 
   vi.mocked(getMonorepoType).mockImplementation(() => 'Nx');
 
@@ -129,6 +135,7 @@ describe('storybook-metadata', () => {
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -148,6 +155,7 @@ describe('storybook-metadata', () => {
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -169,6 +177,7 @@ describe('storybook-metadata', () => {
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -184,6 +193,7 @@ describe('storybook-metadata', () => {
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -205,6 +215,7 @@ describe('storybook-metadata', () => {
         const unixResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -223,6 +234,7 @@ describe('storybook-metadata', () => {
         const windowsResult = await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: {
@@ -241,6 +253,7 @@ describe('storybook-metadata', () => {
       const reactResult = await computeStorybookMetadata({
         packageJson: packageJsonMock,
         packageJsonPath,
+        configDir: '.storybook',
         mainConfig: {
           ...mainJsMock,
           framework: {
@@ -260,6 +273,7 @@ describe('storybook-metadata', () => {
       const angularResult = await computeStorybookMetadata({
         packageJson: packageJsonMock,
         packageJsonPath,
+        configDir: '.storybook',
         mainConfig: {
           ...mainJsMock,
           framework: {
@@ -289,6 +303,7 @@ describe('storybook-metadata', () => {
             'storybook-addon-deprecated': 'x.x.z',
           },
         } as PackageJson,
+        configDir: '.storybook',
         packageJsonPath,
         mainConfig: {
           ...mainJsMock,
@@ -331,6 +346,7 @@ describe('storybook-metadata', () => {
       const result = await computeStorybookMetadata({
         packageJson: packageJsonMock,
         packageJsonPath,
+        configDir: '.storybook',
         mainConfig: {
           ...mainJsMock,
           features,
@@ -345,6 +361,7 @@ describe('storybook-metadata', () => {
         await computeStorybookMetadata({
           packageJson: packageJsonMock,
           packageJsonPath,
+          configDir: '.storybook',
           mainConfig: {
             ...mainJsMock,
             framework: '@storybook/react-vite',
@@ -361,6 +378,7 @@ describe('storybook-metadata', () => {
       const res = await computeStorybookMetadata({
         packageJson: packageJsonMock,
         packageJsonPath,
+        configDir: '.storybook',
         mainConfig: {
           ...mainJsMock,
           refs: {
@@ -376,6 +394,7 @@ describe('storybook-metadata', () => {
       const res = await computeStorybookMetadata({
         packageJson: packageJsonMock,
         packageJsonPath,
+        configDir: '.storybook',
         mainConfig: {
           ...mainJsMock,
           addons: [
@@ -404,6 +423,7 @@ describe('storybook-metadata', () => {
       'should detect the supported metaframework: %s',
       async (metaFramework, name) => {
         const res = await computeStorybookMetadata({
+          configDir: '.storybook',
           packageJson: {
             ...packageJsonMock,
             dependencies: {
@@ -420,5 +440,16 @@ describe('storybook-metadata', () => {
         });
       }
     );
+
+    it('should detect userSince info', async () => {
+      const res = await computeStorybookMetadata({
+        configDir: '.storybook',
+        packageJson: packageJsonMock,
+        packageJsonPath,
+        mainConfig: mainJsMock,
+      });
+
+      expect(res.userSince).toBeDefined();
+    });
   });
 });

@@ -48,10 +48,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   };
 };
 
-export const previewAnnotations: PresetProperty<'previewAnnotations'> = (
-  entry = [],
-  { features }
-) => {
+export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
   const nextDir = dirname(require.resolve('@storybook/nextjs/package.json'));
   const result = [...entry, join(nextDir, 'dist/preview.mjs')];
   return result;
@@ -190,7 +187,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
     await configureSWCLoader(baseConfig, options, nextConfig);
   } else {
     logger.info('=> Using Babel as compiler');
-    await configureBabelLoader(baseConfig, options);
+    await configureBabelLoader(baseConfig, options, nextConfig);
   }
 
   return baseConfig;

@@ -44,7 +44,6 @@ describe('LinkTo', () => {
       mockAddons.getChannel.mockReturnValue(channel);
 
       const { container } = render(
-        // eslint-disable-next-line jsx-a11y/anchor-is-valid
         <LinkTo title="foo" name="bar">
           link
         </LinkTo>
@@ -76,7 +75,6 @@ describe('LinkTo', () => {
 
       await act(async () => {
         await render(
-          // eslint-disable-next-line jsx-a11y/anchor-is-valid
           <LinkTo title="foo" name="bar">
             link
           </LinkTo>

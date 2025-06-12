@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import type { Args, StoryContext } from '@storybook/csf';
+import type { Args, StoryContext } from 'storybook/internal/csf';
 
 type ReducedStoryContext = Omit<
   StoryContext<any, Args>,

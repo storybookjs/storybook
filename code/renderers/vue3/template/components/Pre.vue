@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import { reactive, computed } from 'vue';
+import { computed, reactive } from 'vue';
 
 export default {
   name: 'my-pre',

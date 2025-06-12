@@ -9,8 +9,6 @@ tab:
   title: CSF 3
 ---
 
-<YouTubeCallout id="uH9_dfc-6Kc" title="Test components the EASY way | Component Story Format 3" />
-
 Component Story Format (CSF) is the recommended way to [write stories](../writing-stories/index.mdx). It's an [open standard](https://github.com/ComponentDriven/csf) based on ES6 modules that is portable beyond Storybook.
 
 <Callout variant="info" icon="💡">
@@ -174,6 +172,14 @@ For this particular example, you could achieve the same result in different ways
 The first option is the recommended solution if you follow the best practice of starting story exports with an uppercase letter (i.e., use UpperCamelCase).
 
 ## Upgrading from CSF 2 to CSF 3
+
+<Callout variant="info">
+
+Storybook provides a codemod to help you upgrade from CSF 2 to CSF 3. You can run it with the following command:
+
+<CodeSnippets path="migrate-csf-2-to-3.md" />
+
+</Callout>
 
 In CSF 2, the named exports are always functions that instantiate a component, and those functions can be annotated with configuration options. For example:
 

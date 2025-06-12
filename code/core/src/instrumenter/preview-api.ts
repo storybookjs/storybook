@@ -3,5 +3,4 @@
  * than it is to mock a globalThis property.
  */
 
-// eslint-disable-next-line no-underscore-dangle
 export const addons = globalThis.__STORYBOOK_ADDONS_PREVIEW;

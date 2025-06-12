@@ -1,10 +1,10 @@
 import path from 'node:path';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
 // eslint-disable-next-line depend/ban-dependencies
 import { pathExists, remove } from 'fs-extra';
-import { join } from 'path';
-import { promisify } from 'util';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';

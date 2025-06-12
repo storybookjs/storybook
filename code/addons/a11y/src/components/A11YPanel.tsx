@@ -55,6 +55,7 @@ const Centered = styled.span(({ theme }) => ({
 
 export const A11YPanel: React.FC = () => {
   const {
+    parameters,
     tab,
     results,
     status,
@@ -141,6 +142,21 @@ export const A11YPanel: React.FC = () => {
       },
     ];
   }, [tab, results, handleSelectionChange, selectedItems, toggleOpen]);
+
+  if (parameters.disable || parameters.test === 'off') {
+    return (
+      <Centered>
+        <div>
+          <strong>Accessibility tests are disabled for this story</strong>
+          <p>
+            Update{' '}
+            <code>{parameters.disable ? 'parameters.a11y.disable' : 'parameters.a11y.test'}</code>{' '}
+            to enable accessibility tests.
+          </p>
+        </div>
+      </Centered>
+    );
+  }
 
   return (
     <>

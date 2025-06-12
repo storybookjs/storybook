@@ -49,7 +49,6 @@ export class WebView implements View<HTMLElement> {
   constructor() {
     // Special code for testing situations
     if (typeof document !== 'undefined') {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       const { __SPECIAL_TEST_PARAMETER__ } = parse(document.location.search.slice(1));
       switch (__SPECIAL_TEST_PARAMETER__) {
         case 'preparing-story': {

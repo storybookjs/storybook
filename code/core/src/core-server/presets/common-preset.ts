@@ -4,6 +4,8 @@ import { dirname, isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
+  JsPackageManagerFactory,
+  type RemoveAddonOptions,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -14,7 +16,6 @@ import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
-  CLIOptions,
   CoreConfig,
   Indexer,
   Options,
@@ -24,7 +25,6 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import { cleanPaths, sanitizeError } from '../../telemetry/sanitize';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { defaultStaticDirs } from '../utils/constants';
@@ -36,7 +36,7 @@ const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
 
 const defaultFavicon = join(
-  dirname(require.resolve('storybook/package.json')),
+  dirname(require.resolve('storybook/internal/package.json')),
   '/assets/browser/favicon.svg'
 );
 
@@ -187,13 +187,16 @@ const optionalEnvToBoolean = (input: string | undefined): boolean | undefined =>
   return undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
+/** This API is used by third-parties to access certain APIs in a Node environment */
 export const experimental_serverAPI = (extension: Record<string, Function>, options: Options) => {
   let removeAddon = removeAddonBase;
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
   if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: any) => {
+    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
       await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, opts);
+      return removeAddonBase(id, { ...opts, packageManager });
     };
   }
   return { ...extension, removeAddon };
@@ -207,7 +210,7 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
-  disableTelemetry: options.disableTelemetry === true || options.test === true,
+  disableTelemetry: options.disableTelemetry === true,
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });
@@ -217,6 +220,14 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   argTypeTargetsV7: true,
   legacyDecoratorFileOrder: false,
   disallowImplicitActionsInRenderV8: true,
+  viewport: true,
+  highlight: true,
+  controls: true,
+  interactions: true,
+  actions: true,
+  backgrounds: true,
+  outline: true,
+  measure: true,
 });
 
 export const csfIndexer: Indexer = {
@@ -224,7 +235,6 @@ export const csfIndexer: Indexer = {
   createIndex: async (fileName, options) => (await readCsf(fileName, options)).parse().indexInputs,
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_indexers: PresetProperty<'experimental_indexers'> = (existingIndexers) =>
   [csfIndexer].concat(existingIndexers || []);
 
@@ -245,14 +255,6 @@ export const frameworkOptions = async (
   return config.options;
 };
 
-export const docs: PresetProperty<'docs'> = (docsOptions, { docs: docsMode }: CLIOptions) =>
-  docsOptions && docsMode !== undefined
-    ? {
-        ...docsOptions,
-        docsMode,
-      }
-    : docsOptions;
-
 export const managerHead = async (_: any, options: Options) => {
   const location = join(options.configDir, 'manager-head.html');
   if (existsSync(location)) {
@@ -265,7 +267,6 @@ export const managerHead = async (_: any, options: Options) => {
   return '';
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
@@ -309,10 +310,10 @@ export const tags = async (existing: any) => {
   };
 };
 
-export const managerEntries = async (existing: any, options: Options) => {
+export const managerEntries = async (existing: any) => {
   return [
     join(
-      dirname(require.resolve('storybook/package.json')),
+      dirname(require.resolve('storybook/internal/package.json')),
       'dist/core-server/presets/common-manager.js'
     ),
     ...(existing || []),

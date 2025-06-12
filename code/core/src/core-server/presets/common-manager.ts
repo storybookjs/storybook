@@ -4,6 +4,7 @@ import { global } from '@storybook/global';
 import { addons } from 'storybook/manager-api';
 
 /* eslint-disable prettier/prettier */
+// THE ORDER OF THESE IMPORTS MATTERS! IT DEFINES THE ORDER OF PANELS AND TOOLS!
 import controlsManager from '../../controls/manager';
 import actionsManager from '../../actions/manager';
 import componentTestingManager from '../../component-testing/manager';

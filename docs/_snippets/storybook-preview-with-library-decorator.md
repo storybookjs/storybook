@@ -28,7 +28,7 @@ import '@angular/localize/init';
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="library"
-import { setup } from '@storybook/vue3';
+import { setup } from '@storybook/vue3-vite';
 
 import { createPinia } from 'pinia';
 
@@ -48,7 +48,7 @@ export default {
 ```
 
 ```js filename=".storybook/preview.js" renderer="vue" language="js" tabTitle="component"
-import { setup } from '@storybook/vue3';
+import { setup } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';
@@ -72,7 +72,7 @@ export default {
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="library"
-import { setup, Preview } from '@storybook/vue3';
+import { setup, Preview } from '@storybook/vue3-vite';
 
 import { createPinia } from 'pinia';
 
@@ -94,7 +94,7 @@ export default preview;
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="vue" language="ts" tabTitle="component"
-import { setup, Preview } from '@storybook/vue3';
+import { setup, Preview } from '@storybook/vue3-vite';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faPlusSquare as fasPlusSquare } from '@fortawesome/free-solid-svg-icons';

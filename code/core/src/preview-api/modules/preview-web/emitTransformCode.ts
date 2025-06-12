@@ -1,7 +1,7 @@
-import type { Args, StoryContext } from '@storybook/csf';
+import type { Args, StoryContext } from 'storybook/internal/csf';
 
 import { SNIPPET_RENDERED } from '../../../docs-tools';
-import { addons, useEffect, useRef, useState } from '../addons';
+import { addons } from '../addons';
 
 type ReducedStoryContext = Omit<
   StoryContext<any, Args>,

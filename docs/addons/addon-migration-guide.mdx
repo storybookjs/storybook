@@ -71,24 +71,32 @@ Here are the essential changes in version 9.0 that impact addon development.
 
 Several packages have been consolidated into the main `storybook` package. Update your imports to use the new paths:
 
-| Old Package              | New Path              |
-| ------------------------ | --------------------- |
-| @storybook/manager-api   | storybook/manager-api |
-| @storybook/preview-api   | storybook/preview-api |
-| @storybook/theming       | storybook/theming     |
-| @storybook/test          | storybook/test        |
-| @storybook/addon-actions | storybook/actions     |
+| Old Package                     | New Path                |
+| ------------------------------- | ----------------------- |
+| `@storybook/manager-api`        | `storybook/manager-api` |
+| `@storybook/preview-api`        | `storybook/preview-api` |
+| `@storybook/theming`            | `storybook/theming`     |
+| `@storybook/test`               | `storybook/test`        |
+| `@storybook/addon-actions`      | `storybook/actions`     |
+| `@storybook/addon-backgrounds`  | N/A                     |
+| `@storybook/addon-controls`     | N/A                     |
+| `@storybook/addon-highlight`    | `storybook/highlight`   |
+| `@storybook/addon-interactions` | N/A                     |
+| `@storybook/addon-measure`      | N/A                     |
+| `@storybook/addon-outline`      | N/A                     |
+| `@storybook/addon-toolbars`     | N/A                     |
+| `@storybook/addon-viewport`     | `storybook/viewport`    |
 
 Additionally, several internal packages have been moved under the `/internal` sub-path. 
 These paths are not part of our public API, so they may change without following semver. While you can use them for a quick upgrade, we strongly encourage finding replacements as they could break in future minor versions:
 
-| Old Package                | New Path                           |
-| -------------------------- | ---------------------------------- |
-| @storybook/channels        | storybook/internal/channels        |
-| @storybook/client-logger   | storybook/internal/client-logger   |
-| @storybook/core-events     | storybook/internal/core-events     |
-| @storybook/types           | storybook/internal/types           |
-| @storybook/components      | storybook/internal/components      |
+| Old Package                  | New Path                             |
+| ---------------------------- | ------------------------------------ |
+| `@storybook/channels`        | `storybook/internal/channels`        |
+| `@storybook/client-logger`   | `storybook/internal/client-logger`   |
+| `@storybook/core-events`     | `storybook/internal/core-events`     |
+| `@storybook/types`           | `storybook/internal/types`           |
+| `@storybook/components`      | `storybook/internal/components`      |
 
 Please visit the [full list of consolidated packages](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages) in our `Migration.md` file.
 

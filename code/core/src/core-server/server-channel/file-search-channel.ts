@@ -45,22 +45,20 @@ export async function initFileSearchChannel(
           frameworkName
         )) as SupportedRenderers;
 
-        const projectRoot = getProjectRoot();
-
         const files = await searchFiles({
           searchQuery,
-          cwd: projectRoot,
+          cwd: getProjectRoot(),
         });
 
         const entries = files.map(async (file) => {
           const parser = getParser(rendererName);
 
           try {
-            const content = await readFile(join(projectRoot, file), 'utf-8');
-            const { storyFileName } = getStoryMetadata(join(projectRoot, file));
+            const content = await readFile(join(getProjectRoot(), file), 'utf-8');
+            const { storyFileName } = getStoryMetadata(join(getProjectRoot(), file));
             const dir = dirname(file);
 
-            const storyFileExists = doesStoryFileExist(join(projectRoot, dir), storyFileName);
+            const storyFileExists = doesStoryFileExist(join(getProjectRoot(), dir), storyFileName);
 
             const info = await parser.parse(content);
 

@@ -10,7 +10,9 @@ export type EventType =
   | 'build'
   | 'index'
   | 'upgrade'
+  | 'multi-upgrade'
   | 'init'
+  | 'init-step'
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'
@@ -25,7 +27,8 @@ export type EventType =
   | 'testing-module-watch-mode'
   | 'testing-module-completed-report'
   | 'testing-module-crash-report'
-  | 'addon-test';
+  | 'addon-test'
+  | 'test-run';
 
 export interface Dependency {
   version: string | undefined;
@@ -40,6 +43,7 @@ export type StorybookMetadata = {
   storybookVersion?: string;
   storybookVersionSpecifier: string;
   generatedAt?: number;
+  userSince?: number;
   language: 'typescript' | 'javascript';
   framework?: {
     name: string;

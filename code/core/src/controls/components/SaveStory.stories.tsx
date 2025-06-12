@@ -2,7 +2,6 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from 'storybook/actions';
 import { expect, fireEvent, fn, within } from 'storybook/test';
 
 import { SaveStory } from './SaveStory';
@@ -10,9 +9,10 @@ import { SaveStory } from './SaveStory';
 const meta = {
   component: SaveStory,
   args: {
-    saveStory: fn((...args) => Promise.resolve(action('saveStory')(...args))),
-    createStory: fn((...args) => Promise.resolve(action('createStory')(...args))),
-    resetArgs: fn(action('resetArgs')),
+    saveStory: fn(),
+    createStory: fn(),
+    resetArgs: fn(),
+    portalSelector: '#portal-container',
   },
   parameters: {
     layout: 'fullscreen',
@@ -21,9 +21,11 @@ const meta = {
     (Story) => (
       <div style={{ minHeight: '100vh' }}>
         <Story />
+        <div id="portal-container" />
       </div>
     ),
   ],
+  tags: ['!vitest'],
 } satisfies Meta<typeof SaveStory>;
 
 export default meta;
@@ -32,23 +34,23 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 
 export const Creating = {
-  play: async ({ canvasElement }) => {
-    const createButton = await within(canvasElement).findByRole('button', { name: /Create/i });
+  play: async ({ canvas }) => {
+    const createButton = await canvas.findByRole('button', { name: /Create/i });
     await fireEvent.click(createButton);
     await new Promise((resolve) => setTimeout(resolve, 300));
   },
 } satisfies Story;
 
 export const Created: Story = {
-  play: async ({ context, userEvent }) => {
-    // eslint-disable-next-line storybook/context-in-play-function
+  play: async ({ canvas, context, userEvent }) => {
     await Creating.play(context);
+    const event = userEvent.setup({ delay: null });
 
-    const dialog = await within(document.body).findByRole('dialog');
+    const dialog = await canvas.findByRole('dialog');
     const input = await within(dialog).findByRole('textbox');
-    await userEvent.type(input, 'MyNewStory');
+    await event.type(input, 'MyNewStory');
 
-    fireEvent.submit(dialog.getElementsByTagName('form')[0]);
+    await fireEvent.submit(dialog.getElementsByTagName('form')[0]);
     await expect(context.args.createStory).toHaveBeenCalledWith('MyNewStory');
   },
 };

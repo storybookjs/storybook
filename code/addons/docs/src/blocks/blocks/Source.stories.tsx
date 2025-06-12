@@ -66,7 +66,6 @@ export const Of: Story = {
 export const OfUndefined: Story = {
   args: {
     // @ts-expect-error this is supposed to be undefined
-    // eslint-disable-next-line import/namespace
     of: ParametersStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },

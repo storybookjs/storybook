@@ -11,7 +11,22 @@ const $ = execa({
 });
 
 export default async function postinstall(options: PostinstallOptions) {
-  await $({
-    stdio: 'inherit',
-  })`storybook automigrate addonA11yAddonTest ${options.yes ? '--yes' : ''}`;
+  const command = ['storybook', 'automigrate', 'addon-a11y-addon-test'];
+
+  command.push('--loglevel', 'silent');
+  command.push('--skip-doctor');
+
+  if (options.yes) {
+    command.push('--yes');
+  }
+
+  if (options.packageManager) {
+    command.push('--package-manager', options.packageManager);
+  }
+
+  if (options.configDir) {
+    command.push('--config-dir', options.configDir);
+  }
+
+  await $`${command.join(' ')}`;
 }

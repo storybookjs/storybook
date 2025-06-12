@@ -1,5 +1,6 @@
-/* eslint-disable no-underscore-dangle */
 import { describe, expect, it, vi } from 'vitest';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
@@ -1307,7 +1308,7 @@ describe('CsfFile', () => {
     });
 
     it('Object export with storyName', () => {
-      const consoleWarnMock = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnMock = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       parse(
         dedent`
@@ -1412,6 +1413,48 @@ describe('CsfFile', () => {
             name: A
             __stats:
               factory: false
+              play: false
+              render: true
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: true
+              storyFn: false
+              mount: false
+              moduleMock: false
+            tags:
+              - 'Y'
+      `);
+    });
+
+    it('csf3 as renamed export', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar', tags: ['X'] };
+
+          const localName = {
+            render: () => {},
+            tags: ['Y']
+          };
+          export {
+            localName as exportedName,
+          };
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+          tags:
+            - X
+        stories:
+          - id: foo-bar--exported-name
+            name: exportedName
+            localName: localName
+            parameters:
+              __id: foo-bar--exported-name
+            __stats:
               play: false
               render: true
               loaders: false
@@ -2274,6 +2317,51 @@ describe('CsfFile', () => {
               export default meta;
               export const A = meta.story({})
               export const B = meta.story({})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+            - id: default-title--b
+              name: B
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('extend story', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.meta({ component: 'foo' });
+              export default meta;
+              export const A = meta.story({})
+              export const B = A.extend({})
             `
           )
         ).toMatchInlineSnapshot(`

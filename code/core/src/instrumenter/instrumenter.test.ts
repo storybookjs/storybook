@@ -1,6 +1,4 @@
 // @vitest-environment happy-dom
-
-/* eslint-disable no-underscore-dangle */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SET_CURRENT_STORY, STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
@@ -82,10 +80,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 beforeEach(async () => {
   vi.useRealTimers();
-  global.window.parent = {
-    // @ts-expect-error (global scope)
-    __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__: {},
-  };
+  global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = {};
   mocks.callSpy.mockClear();
   mocks.syncSpy.mockClear();
   mocks.forceRemountSpy.mockClear();
@@ -466,6 +461,7 @@ describe('Instrumenter', () => {
   it('sends a folded log with the "sync" event', () => {
     const { fn } = instrument({ fn: (...args: any) => ({ fn2: () => {} }) }, { intercept: true });
     vi.useFakeTimers();
+    mocks.syncSpy.mockClear();
     fn('foo', fn('bar')).fn2();
     fn('baz');
     vi.runAllTimers();
@@ -475,6 +471,26 @@ describe('Instrumenter', () => {
           { callId: 'kind--story [2] fn2', status: 'done', ancestors: [] },
           { callId: 'kind--story [3] fn', status: 'done', ancestors: [] },
         ],
+      })
+    );
+  });
+
+  it('sends control states with the "sync" event', () => {
+    const { fn } = instrument({ fn: (...args: any) => {} }, { intercept: true });
+    vi.useFakeTimers();
+    mocks.syncSpy.mockClear();
+    fn('foo');
+    vi.runAllTimers();
+    expect(mocks.syncSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        controlStates: {
+          detached: false,
+          start: true,
+          back: true,
+          goto: true,
+          next: false,
+          end: false,
+        },
       })
     );
   });
@@ -527,7 +543,6 @@ describe('Instrumenter', () => {
   it("re-throws anything that isn't an error", () => {
     const { fn } = instrument({
       fn: () => {
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw 'Boom!';
       },
     });
@@ -712,6 +727,40 @@ describe('Instrumenter', () => {
       expect(fn).toHaveBeenCalledTimes(3);
 
       await p;
+    });
+  });
+
+  describe('while detached from parent window', () => {
+    beforeEach(() => {
+      global.window.parent = {
+        ...global.window.parent,
+        get __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__() {
+          throw new Error('Blocked');
+        },
+        set __STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__(_: unknown) {},
+      };
+      instrumenter = new Instrumenter();
+    });
+
+    it('disables control states', async () => {
+      const { fn } = instrument({ fn: (...args: any) => {} }, { intercept: true });
+      vi.useFakeTimers();
+      mocks.syncSpy.mockClear();
+      fn('foo');
+      vi.runAllTimers();
+
+      expect(mocks.syncSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          controlStates: {
+            detached: true,
+            start: false,
+            back: false,
+            goto: false,
+            next: false,
+            end: false,
+          },
+        })
+      );
     });
   });
 

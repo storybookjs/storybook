@@ -5,8 +5,6 @@ sidebar:
   title: Source
 ---
 
-<YouTubeCallout id="uAA1JvLcl-w" title="Avoid Documentation Nightmares with Storybook's Source Doc Block" params="start=136" />
-
 The `Source` block is used to render a snippet of source code directly.
 
 ![Screenshot of Source block](../../_assets/api/doc-block-source.png)
@@ -135,8 +133,7 @@ If both [`code`](#code) and `transform` are specified, `transform` will be ignor
 
 {/* prettier-ignore-start */}
 
-```js
-// .storybook/preview.js|ts|jsx|tsx
+```js title=".storybook/preview.js|ts|jsx|tsx"
 export default {
   parameters: {
     docs: {

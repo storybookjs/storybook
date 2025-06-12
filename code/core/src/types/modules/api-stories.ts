@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type { StatusByTypeId } from '../../../dist/types';
 import type { DocsOptions } from './core-common';
 import type { ArgTypes, Args, ComponentTitle, Parameters, Path, StoryId, Tag } from './csf';

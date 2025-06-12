@@ -296,7 +296,7 @@ export const SearchResults: FC<{
   };
 
   return (
-    <ResultsList {...getMenuProps()}>
+    <ResultsList {...getMenuProps()} key="results-list">
       {results.length > 0 && !query && (
         <RecentlyOpenedTitle className="search-result-recentlyOpened">
           Recently opened
@@ -319,14 +319,12 @@ export const SearchResults: FC<{
       )}
       {results.map((result: DownshiftItem, index) => {
         if (isExpandType(result)) {
+          const props = { ...results, ...getItemProps({ key: index, index, item: result }) };
+          const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
               {/* @ts-expect-error (non strict) */}
-              <Button
-                {...result}
-                {...getItemProps({ key: index, index, item: result })}
-                size="small"
-              >
+              <Button key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>
             </MoreWrapper>
@@ -337,11 +335,10 @@ export const SearchResults: FC<{
         const key = `${item.refId}::${item.id}`;
         return (
           <Result
-            // @ts-expect-error (non strict)
-            key={item.id}
             {...result}
             {...getItemProps({ key, index, item: result })}
             isHighlighted={highlightedIndex === index}
+            key={key}
             data-id={result.item.id}
             data-refid={result.item.refId}
             onMouseOver={mouseOverHandler}

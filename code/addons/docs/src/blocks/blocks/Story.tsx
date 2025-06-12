@@ -97,9 +97,7 @@ export const getStoryProps = <TFramework extends Renderer>(
       inline: true,
       height,
       autoplay,
-      // eslint-disable-next-line no-underscore-dangle
       forceInitialArgs: !!props.__forceInitialArgs,
-      // eslint-disable-next-line no-underscore-dangle
       primary: !!props.__primary,
       renderStoryToElement: context.renderStoryToElement as any,
     };
@@ -110,7 +108,7 @@ export const getStoryProps = <TFramework extends Renderer>(
     story: story as any,
     inline: false,
     height,
-    // eslint-disable-next-line no-underscore-dangle
+
     primary: !!props.__primary,
   };
 };

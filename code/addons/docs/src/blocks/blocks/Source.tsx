@@ -120,7 +120,6 @@ export const useSourceProps = (
 
   const storyContext = story ? docsContext.getStoryContext(story) : {};
 
-  // eslint-disable-next-line no-underscore-dangle
   const argsForSource = props.__forceInitialArgs
     ? storyContext.initialArgs
     : storyContext.unmappedArgs;

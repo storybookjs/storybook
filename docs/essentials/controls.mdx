@@ -5,9 +5,7 @@ sidebar:
   title: Controls
 ---
 
-<YouTubeCallout id="vAh0KdRcXpI" title="How to connect props with Storybook controls" />
-
-Storybook Controls gives you a graphical UI to interact with a component's arguments dynamically without needing to code. It creates an addon panel next to your component examples ("stories"), so you can edit them live.
+Storybook Controls gives you a graphical UI to interact with a component's arguments dynamically without needing to code. Use the Controls panel to edit the inputs to your stories and see the results in real-time. It's a great way to explore your components and test different states.
 
 <Video src="../_assets/essentials/addon-controls-demo-optimized.mp4" />
 
@@ -17,7 +15,7 @@ Controls do not require any modification to your components. Stories for control
 * Portable. Reuse your interactive stories in documentation, tests, and even in designs.
 * Rich. Customize the controls and interactive data to suit your exact needs.
 
-To use the Controls addon, you need to write your stories using [args](../writing-stories/args.mdx). Storybook will automatically generate UI controls based on your args and what it can infer about your component. Still, you can configure the controls further using [argTypes](../api/arg-types.mdx), see below.
+To use Controls, you need to write your stories using [args](../writing-stories/args.mdx). Storybook will automatically generate UI controls based on your args and what it can infer about your component. Still, you can configure the controls further using [argTypes](../api/arg-types.mdx), see below.
 
 <Callout variant="info" icon="💡">
   If you have stories in the older pre-Storybook 6 style, check the [args & controls migration guide](https://medium.com/storybookjs/storybook-6-migration-guide-200346241bb5) to learn how to convert your existing stories for args.
@@ -155,7 +153,7 @@ For instance, suppose you have a `variant` arg on your story that should be `pri
 
 By default, Storybook will render a free text input for the `variant` arg:
 
-![Essential addon Controls using a string](../_assets/essentials/addon-controls-args-variant-string.png)
+![Control using a string](../_assets/essentials/addon-controls-args-variant-string.png)
 
 It works as long as you type a valid string into the auto-generated text control. Still, it's not the best UI for our scenario, given that the component only accepts `primary` or `secondary` as variants. Let’s replace it with Storybook’s radio component.
 
@@ -185,7 +183,7 @@ We can specify which controls get used by declaring a custom [argType](../api/ar
 
 This replaces the input with a radio group for a more intuitive experience.
 
-![Essential Control addon with a radio group](../_assets/essentials/addon-controls-args-variant-optimized.png)
+![Control with a radio group](../_assets/essentials/addon-controls-args-variant-optimized.png)
 
 ## Custom control type matchers
 
@@ -225,7 +223,7 @@ Using `argTypes`, you can change the display and behavior of each control.
 
 ### Dealing with complex values
 
-When dealing with non-primitive values, you'll notice that you'll run into some limitations. The most obvious issue is that not every value can be represented as part of the `args` param in the URL, losing the ability to share and deep link to such a state. Beyond that, complex values such as JSX cannot be synchronized between the manager (e.g., Controls addon) and the preview (your story).
+When dealing with non-primitive values, you'll notice that you'll run into some limitations. The most obvious issue is that not every value can be represented as part of the `args` param in the URL, losing the ability to share and deep link to such a state. Beyond that, complex values such as JSX cannot be synchronized between the manager (e.g., the Controls panel) and the preview (your story).
 
 One way to deal with this is to use primitive values (e.g., strings) as arg values and add a custom `render` function to convert them to their complex counterpart before rendering. It isn't the nicest way to do it (see below), but certainly the most flexible.
 
@@ -257,7 +255,7 @@ Note that both `mapping` and `control.labels` don't have to be exhaustive. If th
   
 </If>
 
-The Controls addon allows you to create or edit stories, directly from the Controls panel.
+You can create or edit stories, directly from the Controls panel.
 
 ### Create a new story
 
@@ -283,10 +281,10 @@ If you don't want to allow the creation or editing of stories from the Controls 
 
 ## Configuration
 
-The Controls addon can be configured in two ways:
+Controls can be configured in two ways:
 
 * Individual controls can be configured via control annotations.
-* The addon's appearance can be configured via parameters.
+* The panel's appearance can be configured via parameters.
 
 ### Annotation
 
@@ -342,7 +340,7 @@ To enable expanded mode globally, add the following to [`.storybook/preview.js|t
 
 Here's what the resulting UI looks like:
 
-![Controls addon expanded](../_assets/essentials/addon-controls-expanded.png)
+![Controls table expanded](../_assets/essentials/addon-controls-expanded.png)
 
 #### Specify initial preset color swatches
 
@@ -464,13 +462,13 @@ If you turned off inline rendering for your stories via the [`inline`](../api/do
 
 ### Parameters
 
-This addon contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `controls` namespace:
+This feature contributes the following [parameters](../writing-stories/parameters.mdx) to Storybook, under the `controls` namespace:
 
 #### `disable`
 
 Type: `boolean`
 
-Disable this addon's behavior. If you wish to disable this addon for the entire Storybook, you should do so when registering `addon-essentials`. See the [essential addon's docs](../essentials/index.mdx#disabling-addons) for more information.
+Disable this feature's behavior. If you wish to disable this feature for the entire Storybook, you should [do so in your main configuration file](./index.mdx#disabling-features).
 
 This parameter is most useful to allow overriding at more specific levels. For example, if this parameter is set to `true` at the project level, it could then be re-enabled by setting it to `false` at the meta (component) or story level.
 
@@ -478,19 +476,19 @@ This parameter is most useful to allow overriding at more specific levels. For e
 
 Type: `string[] | RegExp`
 
-Specifies which properties to exclude from the Controls addon panel. Any properties whose names match the regex or are part of the array will be left out. See [usage example](#filtering-controls), above.
+Specifies which properties to exclude from the Controls panel. Any properties whose names match the regex or are part of the array will be left out. See [usage example](#filtering-controls), above.
 
 #### `expanded`
 
 Type: `boolean`
 
-Show the full documentation for each property in the Controls addon panel, including the description and default value. See [usage example](#show-full-documentation-for-each-property), above.
+Show the full documentation for each property in the Controls panel, including the description and default value. See [usage example](#show-full-documentation-for-each-property), above.
 
 #### `include`
 
 Type: `string[] | RegExp`
 
-Specifies which properties to include in the Controls addon panel. Any properties whose names don't match the regex or are not part of the array will be left out. See [usage example](#filtering-controls), above.
+Specifies which properties to include in the Controls panel. Any properties whose names don't match the regex or are not part of the array will be left out. See [usage example](#filtering-controls), above.
 
 #### `presetColors`
 

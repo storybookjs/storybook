@@ -143,7 +143,6 @@ const loaders = [
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
-    // eslint-disable-next-line no-underscore-dangle
     const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
     const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
     // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
@@ -153,7 +152,7 @@ const loaders = [
     }
     const csfFiles = await Promise.all(
       (relativeCsfPaths as string[]).map(async (blocksRelativePath) => {
-        const projectRelativePath = `./lib/blocks/src/${blocksRelativePath.replace(
+        const projectRelativePath = `./addons/docs/src/blocks/${blocksRelativePath.replace(
           /^..\//,
           ''
         )}.tsx`;

@@ -212,12 +212,10 @@ channel.on(DOCS_RENDERED, () => rewriteStyleSheets());
 if (Element.prototype.attachShadow) {
   // Monkeypatch the attachShadow method so we can handle pseudo styles inside shadow DOM
   // @ts-expect-error (Monkeypatch)
-  // eslint-disable-next-line no-underscore-dangle
   Element.prototype._attachShadow = Element.prototype.attachShadow;
   Element.prototype.attachShadow = function attachShadow(init) {
     // Force "open" mode, so we can access the shadowRoot
     // @ts-expect-error (Monkeypatch)
-    // eslint-disable-next-line no-underscore-dangle
     const shadowRoot = this._attachShadow({ ...init, mode: 'open' });
     // Wait for it to render and apply its styles before rewriting them
     requestAnimationFrame(() => {

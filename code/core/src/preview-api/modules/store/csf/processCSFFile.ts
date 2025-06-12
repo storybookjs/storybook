@@ -46,7 +46,6 @@ export function processCSFFile<TRenderer extends Renderer>(
   importPath: Path,
   title: ComponentTitle
 ): CSFFile<TRenderer> {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { default: defaultExport, __namedExportsOrder, ...namedExports } = moduleExports;
 
   const firstStory = Object.values(namedExports)[0];

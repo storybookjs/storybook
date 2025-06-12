@@ -73,7 +73,7 @@ const Pure = memo(function PureTool(props: PureProps) {
   } = props;
 
   const update = useCallback(
-    (input: GlobalStateUpdate) => {
+    (input: GlobalStateUpdate | undefined) => {
       updateGlobals({
         [KEY]: input,
       });
@@ -102,14 +102,14 @@ const Pure = memo(function PureTool(props: PureProps) {
             return (
               <TooltipLinkList
                 links={[
-                  ...(!!item
+                  ...(item
                     ? [
                         {
                           id: 'reset',
                           title: 'Reset background',
                           icon: <RefreshIcon />,
                           onClick: () => {
-                            update({ value: undefined, grid: isGrid });
+                            update(undefined);
                             onHide();
                           },
                         },

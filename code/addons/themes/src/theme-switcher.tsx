@@ -1,4 +1,3 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import React from 'react';
 
 import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
@@ -18,7 +17,7 @@ import {
 } from './constants';
 import type { ThemesParameters as Parameters, ThemeAddonState } from './types';
 
-type ThemesParameters = Parameters['themes'];
+type ThemesParameters = NonNullable<Parameters['themes']>;
 
 const IconButtonLabel = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2 - 1,

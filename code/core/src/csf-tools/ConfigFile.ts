@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
@@ -9,12 +8,11 @@ import {
   types as t,
   traverse,
 } from 'storybook/internal/babel';
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType';
-
-const logger = console;
 
 const getCsfParsingErrorMessage = ({
   expectedType,
@@ -48,7 +46,6 @@ const unwrap = (node: t.Node | undefined | null): any => {
   return node;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   if (path.length === 0) {
     return node;
@@ -63,7 +60,6 @@ const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   return undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | undefined => {
   if (path.length === 0) {
     if (t.isObjectExpression(node)) {
@@ -85,7 +81,7 @@ const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | 
   }
   return undefined;
 };
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 const _findVarDeclarator = (
   identifier: string,
   program: t.Program
@@ -118,13 +114,11 @@ const _findVarDeclarator = (
   return declarator;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _findVarInitialization = (identifier: string, program: t.Program) => {
   const declarator = _findVarDeclarator(identifier, program);
   return declarator?.init;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
   if (path.length === 0) {
     return value;
@@ -134,7 +128,6 @@ const _makeObjectExpression = (path: string[], value: t.Expression): t.Expressio
   return t.objectExpression([t.objectProperty(t.identifier(first), innerExpression)]);
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _updateExportNode = (path: string[], expr: t.Expression, existing: t.ObjectExpression) => {
   const [first, ...rest] = path;
   const existingField = (existing.properties as t.ObjectProperty[]).find(
@@ -742,8 +735,8 @@ export class ConfigFile {
    * @param fromImport - The module to import from
    */
   setRequireImport(importSpecifier: string[] | string, fromImport: string) {
-    const requireDeclaration = this._ast.program.body.find(
-      (node) =>
+    const requireDeclaration = this._ast.program.body.find((node) => {
+      const hasDeclaration =
         t.isVariableDeclaration(node) &&
         node.declarations.length === 1 &&
         t.isVariableDeclarator(node.declarations[0]) &&
@@ -751,8 +744,15 @@ export class ConfigFile {
         t.isIdentifier(node.declarations[0].init.callee) &&
         node.declarations[0].init.callee.name === 'require' &&
         t.isStringLiteral(node.declarations[0].init.arguments[0]) &&
-        node.declarations[0].init.arguments[0].value === fromImport
-    ) as t.VariableDeclaration | undefined;
+        (node.declarations[0].init.arguments[0].value === fromImport ||
+          node.declarations[0].init.arguments[0].value === fromImport.split('node:')[1]);
+      if (hasDeclaration) {
+        // @ts-expect-error the node declaration was found above already
+        fromImport = node.declarations[0].init.arguments[0].value;
+      }
+
+      return hasDeclaration;
+    }) as t.VariableDeclaration | undefined;
 
     /**
      * Returns true, when the given import declaration has the given import specifier
@@ -864,6 +864,18 @@ export class ConfigFile {
    * @param fromImport - The module to import from
    */
   setImport(importSpecifier: string[] | string | { namespace: string } | null, fromImport: string) {
+    const importDeclaration = this._ast.program.body.find((node) => {
+      const hasDeclaration =
+        t.isImportDeclaration(node) &&
+        (node.source.value === fromImport || node.source.value === fromImport.split('node:')[1]);
+
+      if (hasDeclaration) {
+        fromImport = node.source.value;
+      }
+
+      return hasDeclaration;
+    }) as t.ImportDeclaration | undefined;
+
     const getNewImportSpecifier = (specifier: string) =>
       t.importSpecifier(t.identifier(specifier), t.identifier(specifier));
     /**
@@ -891,7 +903,7 @@ export class ConfigFile {
      *
      * ```ts
      * // import foo from 'bar';
-     * hasImportSpecifier(declaration, 'foo');
+     * hasNamespaceImportSpecifier(declaration, 'foo');
      * ```
      */
     const hasNamespaceImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
@@ -910,10 +922,6 @@ export class ConfigFile {
           t.isIdentifier(specifier.local) &&
           specifier.local.name === name
       );
-
-    const importDeclaration = this._ast.program.body.find(
-      (node) => t.isImportDeclaration(node) && node.source.value === fromImport
-    ) as t.ImportDeclaration | undefined;
 
     // Handle side-effect imports (e.g., import 'foo')
     if (importSpecifier === null) {

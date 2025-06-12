@@ -5,7 +5,6 @@ import semver from 'semver';
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
 import type { Decorator } from './public-types';
 
-export const parameters = { renderer: 'react' };
 export { render } from './render';
 export { renderToCanvas } from './renderToCanvas';
 export { mount } from './mount';
@@ -26,6 +25,10 @@ export const decorators: Decorator[] = [
     return <React.Suspense>{story()}</React.Suspense>;
   },
 ];
+
+export const parameters = {
+  renderer: 'react',
+};
 
 export const beforeAll = async () => {
   try {
@@ -87,7 +90,6 @@ function jestFakeTimersAreEnabled() {
     return (
       // legacy timers
 
-      // eslint-disable-next-line no-underscore-dangle
       (setTimeout as any)._isMockFunction === true || // modern timers
       Object.prototype.hasOwnProperty.call(setTimeout, 'clock')
     );

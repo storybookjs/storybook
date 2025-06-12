@@ -1,6 +1,6 @@
 import type { StoreOptions } from 'storybook/internal/types';
 
-import type { StoreState } from './types';
+import type { RunTrigger, StoreState } from './types';
 
 export { PANEL_ID as COMPONENT_TESTING_PANEL_ID } from '../../../core/src/component-testing/constants';
 export {
@@ -13,7 +13,7 @@ export const TEST_PROVIDER_ID = `${ADDON_ID}/test-provider`;
 export const STORYBOOK_ADDON_TEST_CHANNEL = 'STORYBOOK_ADDON_TEST_CHANNEL';
 
 export const TUTORIAL_VIDEO_LINK = 'https://youtu.be/Waht9qq7AoA';
-export const DOCUMENTATION_LINK = 'writing-tests/test-addon';
+export const DOCUMENTATION_LINK = 'writing-tests/integrations/vitest-addon';
 export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happens-if-vitest-itself-has-an-error`;
 
 export const COVERAGE_DIRECTORY = 'coverage';
@@ -27,6 +27,7 @@ export const SUPPORTED_FRAMEWORKS = [
   '@storybook/html-vite',
   '@storybook/web-components-vite',
   '@storybook/sveltekit',
+  '@storybook/react-native-web-vite',
 ];
 
 export const storeOptions = {
@@ -40,6 +41,7 @@ export const storeOptions = {
     cancelling: false,
     fatalError: undefined,
     indexUrl: undefined,
+    previewAnnotations: [],
     currentRun: {
       triggeredBy: undefined,
       config: {
@@ -64,6 +66,8 @@ export const storeOptions = {
     },
   },
 } satisfies StoreOptions<StoreState>;
+
+export const FULL_RUN_TRIGGERS: RunTrigger[] = ['global', 'run-all'] as const;
 
 export const STORE_CHANNEL_EVENT_NAME = `UNIVERSAL_STORE:${storeOptions.id}`;
 export const STATUS_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook/status';

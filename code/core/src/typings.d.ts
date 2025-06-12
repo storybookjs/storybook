@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle, @typescript-eslint/naming-convention */
 /// <reference path="../typings.d.ts" />
 
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';

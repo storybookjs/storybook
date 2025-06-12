@@ -13,7 +13,7 @@ const defaultRequireWrapperName = 'getAbsolutePath';
  * function <name>() {}
  * ```
  */
-function doesVariableOrFunctionDeclarationExist(node: t.Node, name: string) {
+export function doesVariableOrFunctionDeclarationExist(node: t.Node, name: string) {
   return (
     (t.isVariableDeclaration(node) &&
       node.declarations.length === 1 &&
@@ -193,9 +193,9 @@ export function wrapValueWithRequireWrapper(config: ConfigFile, node: t.Node) {
     }
 
     if (t.isArrayExpression(n)) {
-      n.elements.forEach((element, index, elements) => {
-        if (t.isStringLiteral(element)) {
-          elements[index] = getReferenceToRequireWrapper(config, element.value);
+      n.elements.forEach((element) => {
+        if (element && isRequireWrapperNecessary(element)) {
+          wrapValueWithRequireWrapper(config, element);
         }
       });
     }

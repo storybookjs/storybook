@@ -826,7 +826,6 @@ describe('prepareMeta', () => {
     );
 
     // prepareMeta doesn't explicitly set this parameter to false
-    // eslint-disable-next-line no-underscore-dangle
     preparedMeta.parameters.__isArgsStory = false;
 
     expect(preparedMeta).toEqual(preparedStory);

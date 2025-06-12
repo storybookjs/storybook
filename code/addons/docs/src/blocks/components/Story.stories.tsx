@@ -19,7 +19,6 @@ import * as ButtonStories from '../examples/Button.stories';
 import type { StoryProps } from './Story';
 import { Story as StoryComponent, StorySkeleton } from './Story';
 
-// eslint-disable-next-line no-underscore-dangle
 const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer>;
 const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel;
 const renderStoryToElement = preview.renderStoryToElement.bind(preview);

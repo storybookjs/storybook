@@ -1,9 +1,17 @@
 /* eslint-env browser */
-import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
+import { MIN_TOUCH_AREA_SIZE } from './constants';
+import { type IconName, iconPaths } from './icons';
+import type {
+  Box,
+  ClickEventDetails,
+  Highlight,
+  HighlightOptions,
+  RawHighlightOptions,
+} from './types';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
 
-export const createElement = (type: string, props: Record<string, any>, children?: any[]) => {
+export const createElement = (type: string, props: Record<string, any> = {}, children?: any[]) => {
   const element = svgElements.includes(type)
     ? document.createElementNS('http://www.w3.org/2000/svg', type)
     : document.createElement(type);
@@ -44,19 +52,48 @@ export const createElement = (type: string, props: Record<string, any>, children
   return element;
 };
 
-export const convertLegacy = (highlight: RawHighlightOptions): HighlightOptions => {
-  if ('elements' in highlight) {
-    const { elements, color, style } = highlight;
+export const createIcon = (name: IconName) =>
+  iconPaths[name] &&
+  createElement(
+    'svg',
+    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
+    iconPaths[name].map((d) =>
+      createElement('path', {
+        fill: 'currentColor',
+        'fill-rule': 'evenodd',
+        'clip-rule': 'evenodd',
+        d,
+      })
+    )
+  );
+
+export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
+  if ('elements' in options) {
+    // Legacy format
+    const { elements, color, style } = options;
     return {
+      id: undefined,
+      priority: 0,
       selectors: elements,
       styles: {
         outline: `2px ${style} ${color}`,
         outlineOffset: '2px',
         boxShadow: '0 0 0 6px rgba(255,255,255,0.6)',
       },
+      menu: undefined,
     };
   }
-  return highlight;
+
+  const { menu, ...rest } = options;
+  return {
+    id: undefined,
+    priority: 0,
+    styles: {
+      outline: '2px dashed #029cfd',
+    },
+    ...rest,
+    menu: Array.isArray(menu) ? (menu.every(Array.isArray) ? menu : [menu]) : undefined,
+  };
 };
 
 export const isFunction = (obj: unknown): obj is (...args: any[]) => any => obj instanceof Function;
@@ -112,16 +149,24 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
   const root = document.getElementById('storybook-root');
   const map = new Map();
   for (const highlight of highlights) {
-    const { priority = 0, selectable = !!highlight.menu } = highlight;
+    const { priority = 0 } = highlight;
     for (const selector of highlight.selectors) {
-      for (const element of root?.querySelectorAll(selector) || []) {
+      const elements = [
+        ...document.querySelectorAll(
+          // Elements matching the selector, excluding storybook elements and their descendants.
+          // Necessary to find portaled elements (e.g. children of `body`).
+          `:is(${selector}):not([id^="storybook-"], [id^="storybook-"] *, [class^="sb-"], [class^="sb-"] *)`
+        ),
+        // Elements matching the selector inside the storybook root, as these were excluded above.
+        ...(root?.querySelectorAll(selector) || []),
+      ];
+      for (const element of elements) {
         const existing = map.get(element);
-        if (!existing || existing.priority < priority) {
+        if (!existing || existing.priority <= priority) {
           map.set(element, {
             ...highlight,
             priority,
-            selectors: (existing?.selectors || []).concat(selector),
-            selectable,
+            selectors: Array.from(new Set((existing?.selectors || []).concat(selector))),
           });
         }
       }
@@ -132,13 +177,12 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
 
 export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
   Array.from(elements.entries())
-    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, selectable, menu }]) => {
+    .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, menu }]) => {
       const { top, left, width, height } = element.getBoundingClientRect();
       const { position } = getComputedStyle(element);
       return {
         element,
         selectors,
-        selectable,
         styles,
         hoverStyles,
         focusStyles,
@@ -169,16 +213,24 @@ export const isTargeted = (
   boxElement: HTMLElement,
   coordinates: { x: number; y: number }
 ) => {
-  if (!coordinates) {
+  if (!boxElement || !coordinates) {
     return false;
   }
-  let { left, top } = box;
+  let { left, top, width, height } = box;
+  if (height < MIN_TOUCH_AREA_SIZE) {
+    top = top - Math.round((MIN_TOUCH_AREA_SIZE - height) / 2);
+    height = MIN_TOUCH_AREA_SIZE;
+  }
+  if (width < MIN_TOUCH_AREA_SIZE) {
+    left = left - Math.round((MIN_TOUCH_AREA_SIZE - width) / 2);
+    width = MIN_TOUCH_AREA_SIZE;
+  }
   if (boxElement.style.position === 'fixed') {
     left += window.scrollX;
     top += window.scrollY;
   }
   const { x, y } = coordinates;
-  return x >= left && x <= left + box.width && y >= top && y <= top + box.height;
+  return x >= left && x <= left + width && y >= top && y <= top + height;
 };
 
 export const keepInViewport = (
@@ -221,3 +273,19 @@ export const hidePopover = (element: HTMLElement) => {
     element.hidePopover();
   }
 };
+
+export const getEventDetails = (target: Box): ClickEventDetails => ({
+  top: target.top,
+  left: target.left,
+  width: target.width,
+  height: target.height,
+  selectors: target.selectors,
+  element: {
+    attributes: Object.fromEntries(
+      Array.from(target.element.attributes).map((attr) => [attr.name, attr.value])
+    ),
+    localName: target.element.localName,
+    tagName: target.element.tagName,
+    outerHTML: target.element.outerHTML,
+  },
+});

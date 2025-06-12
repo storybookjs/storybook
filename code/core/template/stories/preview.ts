@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
 import type { ReactRenderer } from '@storybook/react';

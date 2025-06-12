@@ -70,6 +70,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
 
   // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
   pkgJson.exports['./package.json'] = './package.json';
+  pkgJson.exports['./internal/package.json'] = './package.json';
 
   /**
    * Add the `typesVersion` field to `code/core/package.json`, to make typescript respect and find

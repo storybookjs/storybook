@@ -84,7 +84,6 @@ export const DefaultAttached: Story = {
 export const OfUndefinedAttached: Story = {
   args: {
     // @ts-expect-error this is supposed to be undefined
-    // eslint-disable-next-line import/namespace
     of: DefaultButtonStories.NotDefined,
   },
   parameters: {

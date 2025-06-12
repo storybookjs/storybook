@@ -23,10 +23,8 @@ export type GeneratorOptions = {
 };
 
 export interface FrameworkOptions {
-  extraPackages?:
-    | string[]
-    | ((details: { framework: string; builder: string }) => Promise<string[]>);
-  extraAddons?: string[] | ((details: { framework: string; builder: string }) => Promise<string[]>);
+  extraPackages?: string[] | ((details: { builder: Builder }) => Promise<string[]>);
+  extraAddons?: string[];
   staticDir?: string;
   addScripts?: boolean;
   addMainFile?: boolean;
@@ -48,7 +46,7 @@ export type Generator<T = void> = (
   commandOptions?: CommandOptions
 ) => Promise<T>;
 
-export type GeneratorFeature = 'docs' | 'test';
+export type GeneratorFeature = 'docs' | 'test' | 'onboarding';
 
 export type CommandOptions = {
   packageManager: PackageManagerName;

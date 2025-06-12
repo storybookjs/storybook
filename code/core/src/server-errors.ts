@@ -56,10 +56,10 @@ export class NxProjectDetectedError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 1,
-      documentation: 'https://nx.dev/packages/storybook',
+      documentation: 'https://nx.dev/nx-api/storybook#generating-storybook-configuration',
       message: dedent`
         We have detected Nx in your project. Nx has its own Storybook initializer, so please use it instead.
-        Run "nx g @nx/storybook:configuration" to add Storybook to your project.`,
+        Run "nx g @nx/storybook:configuration <your-project-name>" to add Storybook to a given Nx app or lib.`,
     });
   }
 }
@@ -496,29 +496,6 @@ export class UpgradeStorybookToLowerVersionError extends StorybookError {
   }
 }
 
-export class UpgradeStorybookToSameVersionError extends StorybookError {
-  constructor(public data: { beforeVersion: string }) {
-    super({
-      category: Category.CLI_UPGRADE,
-      code: 4,
-      message: dedent`
-        You are upgrading Storybook to the same version that is currently installed in the project, version ${data.beforeVersion}.
-        
-        This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
-        This will cause npm to run the globally cached storybook binary, which might be the same version that you already have.
-        This also happens if you're running the Storybook CLI that is locally installed in your project.
-        
-        If you intended to upgrade to the latest version, you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
-        
-        "npx storybook@latest upgrade"
-        
-        If you intended to re-run automigrations, you should run the "automigrate" command directly instead:
-        
-        "npx storybook automigrate"`,
-    });
-  }
-}
-
 export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
   constructor() {
     super({
@@ -529,19 +506,6 @@ export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
         
         Are you running the Storybook CLI in a project without Storybook?
         It might help if you specify your Storybook config directory with the --config-dir flag.`,
-    });
-  }
-}
-
-export class UpgradeStorybookInWrongWorkingDirectory extends StorybookError {
-  constructor() {
-    super({
-      category: Category.CLI_UPGRADE,
-      code: 6,
-      message: dedent`
-        You are running the upgrade command in a CWD that does not contain Storybook dependencies.
-        
-        Did you mean to run it in a different directory? Make sure the directory you run this command in contains a package.json with your Storybook dependencies.`,
     });
   }
 }
@@ -568,6 +532,48 @@ export class FindPackageVersionsError extends StorybookError {
       code: 1,
       message: dedent`
         Unable to find versions of "${data.packageName}" using ${data.packageManager}
+        ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class IncompatiblePostCssConfigError extends StorybookError {
+  constructor(public data: { error: Error }) {
+    super({
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 3,
+      message: dedent`
+        Incompatible PostCSS configuration format detected.
+
+        Next.js uses an array-based format for plugins which is not compatible with Vite:
+        
+        // ❌ Incompatible format (used by Next.js)
+        const config = {
+          plugins: ["@tailwindcss/postcss"],
+        };
+        
+        Please transform your PostCSS config to use the object-based format, which is compatible with Next.js and Vite:
+        
+        // ✅ Compatible format (works with Next.js and Vite)
+        const config = {
+          plugins: {
+            "@tailwindcss/postcss": {},
+          },
+        };
+        
+        Original error: ${data.error.message}
+      `,
+    });
+  }
+}
+
+export class SavingGlobalSettingsFileError extends StorybookError {
+  constructor(public data: { filePath: string; error: Error | unknown }) {
+    super({
+      category: Category.CORE_SERVER,
+      code: 1,
+      message: dedent`
+        Unable to save global settings file to ${data.filePath}
         ${data.error && `Reason: ${data.error}`}`,
     });
   }

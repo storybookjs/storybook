@@ -61,7 +61,6 @@ export const DefaultAttached: Story = {};
 export const OfUndefined: Story = {
   args: {
     // @ts-expect-error this is supposed to be undefined
-    // eslint-disable-next-line import/namespace
     of: ButtonStories.NotDefined,
   },
   parameters: { chromatic: { disableSnapshot: true } },
@@ -159,8 +158,8 @@ export const PropSource: Story = {
   },
 };
 
-export const PropInlineStory: Story = {
-  name: 'Prop story = { ..., inline: true }',
+export const PropIframeStory: Story = {
+  name: 'Prop story = { ..., inline: false }',
   args: {
     of: ButtonStories.Primary,
     story: { inline: false, height: '200px' },

@@ -1,6 +1,4 @@
 /** @vitest-environment happy-dom */
-
-/* eslint-disable no-underscore-dangle */
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { SourceType } from 'storybook/internal/docs-tools';
 import type { ArgsStoryFn, PartialStoryFn, StoryContext } from 'storybook/internal/types';
 

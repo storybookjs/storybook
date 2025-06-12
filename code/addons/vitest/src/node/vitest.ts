@@ -37,7 +37,6 @@ const channel: Channel = new Channel({
   },
 });
 
-// eslint-disable-next-line no-underscore-dangle
 (UniversalStore as any).__prepare(channel, UniversalStore.Environment.SERVER);
 
 const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);
@@ -50,6 +49,9 @@ new TestManager({
   onReady: () => {
     process.send?.({ type: 'ready' });
   },
+  storybookOptions: {
+    configDir: process.env.STORYBOOK_CONFIG_DIR || '',
+  } as any,
 });
 
 const exit = (code = 0) => {

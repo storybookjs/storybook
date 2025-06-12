@@ -1,3 +1,14 @@
+## 9.0.9
+
+- Angular: Update MiniCssExtractPlugin configuration for cache busting - [#31752](https://github.com/storybookjs/storybook/pull/31752), thanks @valentinpalkovic!
+- CSF: Story ComponentAnnotations['subcomponents'] to correctly use its own type for subcomponents rather than attempt to inherit from the component - [#31723](https://github.com/storybookjs/storybook/pull/31723), thanks @mihkeleidast!
+- Core: Delete shim addon packages - [#31728](https://github.com/storybookjs/storybook/pull/31728), thanks @ndelangen!
+- Core: Disable interactions debugger on composed stories to avoid cross-origin error - [#31685](https://github.com/storybookjs/storybook/pull/31685), thanks @ghengeveld!
+- Core: Fix cyclical dependency in core addons - [#31750](https://github.com/storybookjs/storybook/pull/31750), thanks @JReinhold!
+- Core: Restore original clipboard after invoking `userEvent.setup()` - [#31730](https://github.com/storybookjs/storybook/pull/31730), thanks @ghengeveld!
+- Next.js: Add webpack alias to resolve Next.js package conflicts - [#31755](https://github.com/storybookjs/storybook/pull/31755), thanks @valentinpalkovic!
+- Next.js: Enhance Vite configuration with styled-jsx aliasing - [#31757](https://github.com/storybookjs/storybook/pull/31757), thanks @valentinpalkovic!
+
 ## 9.0.8
 
 - Addon Docs: Fix SyntaxHighlighter "Copy" button by avoiding potentially mocked clipboard - [#31682](https://github.com/storybookjs/storybook/pull/31682), thanks @ghengeveld!

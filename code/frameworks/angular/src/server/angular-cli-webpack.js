@@ -88,7 +88,7 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
        * Angular's automatic Tailwind detection, we need to manually add the correct Tailwind 4
        * plugin to all PostCSS loader configurations.
        */
-      let tailwindPackagePath = require.resolve('@tailwindcss/postcss', { paths: [root] });
+      const tailwindPackagePath = require.resolve('@tailwindcss/postcss', { paths: [root] });
       const extraPostcssPlugins = [require(tailwindPackagePath)()];
 
       /**

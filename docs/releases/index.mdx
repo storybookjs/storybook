@@ -5,7 +5,7 @@ sidebar:
   title: Releases
 ---
 
-Storybook follows [Semantic Versioning](https://semver.org/). 
+Storybook packages ([`storybook`](https://www.npmjs.com/package/storybook) and everything under the [`@storybook` organization](https://www.npmjs.com/org/storybook)) follow [Semantic Versioning](https://semver.org/) (semver). We have a structured release process to ensure stability, compatibility, and a smooth upgrade path for users. This page outlines our release channels, supported versions, and the cadence of major, minor, patch, and pre releases.
 
 ## Release Channels
 
@@ -17,7 +17,7 @@ We publish releases on two channels. You can install a specific channel via npm 
 npm create storybook@latest
 ```
 
-- **Prerelease channel** (`next`): Installs the latest prerelease.
+- **Pre-release channel** (`next`): Installs the latest [pre-release](#pre-release).
 
 ```bash
 npm create storybook@next
@@ -35,31 +35,38 @@ For compatibility with other libraries and tools in the JavaScript ecosystem, pl
 
 #### Major Release
 
-**Cadence: Roughly once per year**
+**Cadence**: Roughly once per year
+
+**Channel**: Stable (`latest`)
 
 Major releases introduce breaking changes and significant new features. We use major releases to keep up with ecosystem changes, evolve Storybook’s architecture and APIs, and make the tool faster, leaner, and easier to use. 
 
-Once we start working on a major release, we pause minor releases but continue to ship patch releases as needed. Major releases go through a sequence of prereleases —— `alpha`, `beta`, and `rc` (release candidate) —— before landing in the stable channel. We aim to include automated migrations and provide [a comprehensive migration guide](../releases/migration-guide.mdx) when manual changes are necessary.
+Once we start working on a major release, we pause minor releases but continue to ship patch releases as needed. Major releases go through a sequence of [pre-releases](#pre-release)—`alpha`, `beta`, and `rc` (release candidate)—before landing in the stable channel. We aim to include automated migrations and provide [a comprehensive migration guide](../releases/migration-guide.mdx) when manual changes are necessary.
 
 <Callout variant="info">
-  Storybook versions prior to 7 had a very different architecture, and as a result, upgrading from v6 to newer versions can be more challenging. Starting in v7, we’ve focused heavily on smoother migrations. Upgrades from v7 to v8, and v8 to v9 (and beyond), should feel significantly easier thanks to automigrations and better tooling.
+  Storybook versions prior to 7 had a very different architecture. As a result, upgrading from v6 to newer versions can be more challenging. Starting in v7, we’ve focused heavily on smoother migrations. Upgrades from v7 to v8, and v8 to v9 (and beyond), should feel significantly easier thanks to automigrations and better tooling.
 </Callout>
-
 
 #### Minor Release
 
-**Cadence: Roughly every 8 weeks**
+**Cadence**: Roughly every 8 weeks
 
-Minor releases deliver new features, enhancements, and non-breaking improvements. Each minor release may be preceded by an alpha prerelease (e.g. x.y.0-alpha) published to the `next` channel.
+**Channel**: Stable (`latest`)
+
+Minor releases deliver new features, enhancements, and non-breaking improvements. Each minor release may be preceded by an alpha [pre-release](#pre-release) (e.g. `x.y.0-alpha`).
 
 #### Patch Release
 
-**Cadence: as needed (only for the current minor)**
+**Cadence**: as needed (only for the current minor)
 
-Patch releases include critical bug fixes and security updates. These are issued only for the current minor version and are not prereleased.
+**Channel**: Stable (`latest`)
+
+Patch releases include critical bug fixes and security updates. These are issued only for the current minor version and are not pre-released.
 
 #### Pre-release
 
-**Cadence: regularly from the `next` branch**
+**Cadence**: Regularly
 
-Prereleases are created to gather early feedback and ensure stability before an official release. Minor version prereleases use the `alpha` tag only (e.g. `x.y.0-alpha`), with no patch prereleases. Major version prereleases go through a fuller cycle of `alpha`, `beta`, and `rc` stages before the final release.
+**Channel**: Pre-release (`next`)
+
+Pre-releases are created to gather early feedback and ensure stability before an official release. Minor version stable releases are preceded by pre-releases with an `alpha` tag (e.g. `x.y.0-alpha`), with no patch pre-releases. Major version stable releases are preceded by a fuller cycle of `alpha`, `beta`, and `rc` pre-releases before the final release.

@@ -12,7 +12,7 @@ const nolinkCommand = `npx nx run-many -t check -c production ${parallel}`;
 
 export const check: Task = {
   description: 'Typecheck the source code of the monorepo',
-  dependsOn: ['compile'],
+  dependsOn: ['install'],
   async ready() {
     return false;
   },

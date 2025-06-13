@@ -80,9 +80,10 @@ addons.register(ADDON_ID, (api) => {
         try {
           code = transform(code, currentStory);
         } catch (error) {
-          throw new Error(
+          console.error(
             `Error transforming code snippet: ${error instanceof Error ? error.message : String(error)}`
           );
+          // Continue with untransformed code
         }
       }
 

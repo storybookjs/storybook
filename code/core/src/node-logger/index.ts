@@ -3,6 +3,7 @@ import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
 import * as newLogger from './logger/logger';
+import { isClackEnabled } from './prompts/prompt-config';
 
 export { prompt } from './prompts';
 export { logTracker } from './logger/log-tracker';
@@ -48,7 +49,8 @@ export const colors = {
 export const logger = {
   ...newLogger,
   verbose: (message: string): void => newLogger.debug(message),
-  info: (message: string): void => npmLog.info('', message),
+  info: (message: string): void =>
+    isClackEnabled() ? newLogger.info(message) : npmLog.info('', message),
   plain: (message: string): void => newLogger.log(message),
   line: (count = 1): void => newLogger.log(`${Array(count - 1).fill('\n')}`),
   warn: (message: string): void => newLogger.warn(message),

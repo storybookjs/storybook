@@ -1,3 +1,15 @@
+# v2.0.2 (Fri Jun 13 2025)
+
+#### 🐛 Bug Fix
+
+- Use tsconfig paths plugin [#41](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/41) ([@kasperpeulen](https://github.com/kasperpeulen))
+
+#### Authors: 1
+
+- Kasper Peulen ([@kasperpeulen](https://github.com/kasperpeulen))
+
+---
+
 # v2.0.1 (Wed May 28 2025)
 
 #### 🐛 Bug Fix

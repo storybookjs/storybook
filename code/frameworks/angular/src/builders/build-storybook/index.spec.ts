@@ -1,13 +1,8 @@
-/*
- * @vitest-environment node
- */
-
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { vi, describe, beforeEach, expect, it, afterEach } from 'vitest';
 import { Architect, createBuilder } from '@angular-devkit/architect';
 import { TestingArchitectHost } from '@angular-devkit/architect/testing';
 import { schema } from '@angular-devkit/core';
-import * as path from 'path';
+import * as path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const buildDevStandaloneMock = vi.fn();
 const buildStaticStandaloneMock = vi.fn();
@@ -18,8 +13,8 @@ const buildMock = {
   withTelemetry: (name: string, options: any, fn: any) => fn(),
 };
 
-vi.doMock('@storybook/core-server', () => buildMock);
-vi.doMock('@storybook/core-common', () => ({
+vi.doMock('storybook/internal/core-server', () => buildMock);
+vi.doMock('storybook/internal/common', () => ({
   JsPackageManagerFactory: {
     getPackageManager: () => ({
       runPackageCommand: mockRunScript,
@@ -104,7 +99,7 @@ describe.skip('Build Storybook Builder', () => {
         packageJson: expect.any(Object),
         mode: 'static',
         tsConfig: './storybook/tsconfig.ts',
-        webpackStatsJson: false,
+        statsJson: false,
       })
     );
   });
@@ -133,7 +128,7 @@ describe.skip('Build Storybook Builder', () => {
         packageJson: expect.any(Object),
         mode: 'static',
         tsConfig: 'path/to/tsConfig.json',
-        webpackStatsJson: false,
+        statsJson: false,
       })
     );
   });
@@ -142,7 +137,7 @@ describe.skip('Build Storybook Builder', () => {
     const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
       tsConfig: 'path/to/tsConfig.json',
       compodoc: false,
-      webpackStatsJson: true,
+      statsJson: true,
     });
 
     const output = await run.result;
@@ -162,7 +157,7 @@ describe.skip('Build Storybook Builder', () => {
         packageJson: expect.any(Object),
         mode: 'static',
         tsConfig: 'path/to/tsConfig.json',
-        webpackStatsJson: true,
+        statsJson: true,
       })
     );
   });
@@ -212,7 +207,7 @@ describe.skip('Build Storybook Builder', () => {
         packageJson: expect.any(Object),
         mode: 'static',
         tsConfig: './storybook/tsconfig.ts',
-        webpackStatsJson: false,
+        statsJson: false,
       })
     );
   });
@@ -242,7 +237,7 @@ describe.skip('Build Storybook Builder', () => {
         packageJson: expect.any(Object),
         mode: 'static',
         tsConfig: 'path/to/tsConfig.json',
-        webpackStatsJson: false,
+        statsJson: false,
       })
     );
   });

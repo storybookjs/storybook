@@ -7,8 +7,8 @@ function checkName(plugin: PluginOption, names: string[]) {
 }
 
 /**
- * Returns true if ANY of the plugins in the array have a name that matches one of the names in the names array.
- * Will resolve any promises in the array.
+ * Returns true if ANY of the plugins in the array have a name that matches one of the names in the
+ * names array. Will resolve any promises in the array.
  */
 export async function hasVitePlugins(plugins: PluginOption[], names: string[]) {
   const resolvedPlugins = await Promise.all(plugins);

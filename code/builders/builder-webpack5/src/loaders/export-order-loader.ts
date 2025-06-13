@@ -1,5 +1,6 @@
 import assert from 'node:assert';
-import { parse as parseCjs, init as initCjsParser } from 'cjs-module-lexer';
+
+import { init as initCjsParser, parse as parseCjs } from 'cjs-module-lexer';
 import { parse as parseEs } from 'es-module-lexer';
 import MagicString from 'magic-string';
 import type { LoaderContext } from 'webpack';
@@ -49,9 +50,7 @@ export default async function loader(
       );
     }
 
-    const generatedMap = magicString.generateMap({ hires: true });
-
-    return callback(null, magicString.toString(), generatedMap, meta);
+    return callback(null, magicString.toString(), map, meta);
   } catch (err) {
     return callback(null, source, map, meta);
   }

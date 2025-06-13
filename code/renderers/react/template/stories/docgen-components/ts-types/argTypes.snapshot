@@ -365,7 +365,7 @@
     "description": undefined,
     "name": "nullableComplexTypeUndefinedDefaultValue",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

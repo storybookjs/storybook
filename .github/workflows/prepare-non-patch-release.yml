@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       release-type:
-        description: 'Which release type to use for bumping the version'
+        description: "Which release type to use for bumping the version"
         required: true
-        default: 'prerelease'
+        default: "prerelease"
         type: choice
         options:
           - prerelease
@@ -43,7 +43,7 @@ jobs:
         working-directory: scripts
     steps:
       - name: Checkout next
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: next
           # this needs to be set to a high enough number that it will contain the last version tag
@@ -52,12 +52,12 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.yarn/berry/cache
@@ -113,17 +113,13 @@ jobs:
         run: |
           yarn release:version --deferred --release-type ${{ inputs.release-type || 'prerelease' }} ${{ inputs.pre-id && format('{0} {1}', '--pre-id', inputs.pre-id) || '' }} --verbose
 
-      - name: Check release vs prerelease
-        id: is-prerelease
-        run: yarn release:is-prerelease ${{ steps.bump-version.outputs.next-version }} --verbose
-
       - name: Write changelog
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           yarn release:write-changelog ${{ steps.bump-version.outputs.next-version }} --verbose
 
-      - name: 'Commit changes to branch: version-non-patch-from-${{ steps.bump-version.outputs.current-version }}'
+      - name: "Commit changes to branch: version-non-patch-from-${{ steps.bump-version.outputs.current-version }}"
         working-directory: .
         run: |
           git config --global user.name 'storybook-bot'
@@ -132,19 +128,6 @@ jobs:
           git add .
           git commit -m "Write changelog for ${{ steps.bump-version.outputs.next-version }} [skip ci]" || true
           git push --force origin version-non-patch-from-${{ steps.bump-version.outputs.current-version }}
-
-      - name: Resolve merge-conflicts with base branch
-        if: steps.is-prerelease.outputs.prerelease == 'false'
-        working-directory: .
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config pull.rebase false
-          git pull --no-commit --no-ff origin latest-release || true
-          git checkout --ours .
-          git add .
-          git commit --no-verify -m "Merge latest-release into version-non-patch-from-${{ steps.bump-version.outputs.current-version }} with conflicts resolved to ours [skip ci]"
-          git push origin version-non-patch-from-${{ steps.bump-version.outputs.current-version }}
 
       - name: Generate PR description
         id: description
@@ -162,14 +145,13 @@ jobs:
             gh pr edit \
               --repo "${{github.repository }}" \
               --title "Release: $CAPITALIZED_RELEASE_TYPE ${{ inputs.pre-id && format('{0} ', inputs.pre-id) }}${{ steps.bump-version.outputs.next-version }}" \
-              --base ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next-release' || 'latest-release' }} \
               --body "${{ steps.description.outputs.description }}"
           else
             gh pr create \
               --repo "${{github.repository }}"\
               --title "Release: $CAPITALIZED_RELEASE_TYPE ${{ inputs.pre-id && format('{0} ', inputs.pre-id) }}${{ steps.bump-version.outputs.next-version }}" \
               --label "release" \
-              --base ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next-release' || 'latest-release' }} \
+              --base next-release \
               --head version-non-patch-from-${{ steps.bump-version.outputs.current-version }} \
               --body "${{ steps.description.outputs.description }}"
           fi
@@ -180,4 +162,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@master
         with:
-          args: 'The GitHub Action for preparing the release pull request bumping from v${{ steps.bump-version.outputs.current-version }} to v${{ steps.bump-version.outputs.next-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          args: "The GitHub Action for preparing the release pull request bumping from v${{ steps.bump-version.outputs.current-version }} to v${{ steps.bump-version.outputs.next-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

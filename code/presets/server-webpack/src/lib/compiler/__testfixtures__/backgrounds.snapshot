@@ -1,18 +1,15 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`json-to-csf-compiler backgrounds.json 1`] = `
-"
 export default {
-  title: \\"Addons/Backgrounds\\",
+  title: "Addons/Backgrounds",
   parameters: {
     backgrounds: [
       {
-        name: \\"light\\",
-        value: \\"#eeeeee\\"
+        name: "light",
+        value: "#eeeeee"
       },
       {
-        name: \\"dark\\",
-        value: \\"#222222\\",
+        name: "dark",
+        value: "#222222",
         default: true
       }
     ]
@@ -20,12 +17,10 @@ export default {
 };
 
 export const Story_1 = {
-  name: \\"Story 1\\",
+  name: "Story 1",
   parameters: {
     server: {
-      id: \\"addons/backgrounds/story1\\"
+      id: "addons/backgrounds/story1"
     }
   }
 };
-"
-`;

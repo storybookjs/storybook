@@ -1,0 +1,28 @@
+---
+title: 'staticDirs'
+sidebar:
+  order: 19
+  title: staticDirs
+---
+
+Parent: [main.js|ts configuration](./main-config.mdx)
+
+Type: `(string | { from: string; to: string })[]`
+
+Sets a list of directories of [static files](../../configure/integration/images-and-assets.mdx#serving-static-files-via-storybook-configuration) to be loaded by Storybook.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-static-dirs.md" />
+
+{/* prettier-ignore-end */}
+
+## With configuration objects
+
+You can also use a configuration object to define the directories:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-static-dirs-with-object.md" />
+
+{/* prettier-ignore-end */}

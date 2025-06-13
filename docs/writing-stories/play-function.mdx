@@ -1,0 +1,42 @@
+---
+title: 'Play function'
+sidebar:
+  order: 4
+  title: Play function
+---
+
+`Play` functions are small snippets of code executed after the story renders. They enable you to interact with your components and test scenarios that otherwise require user intervention.
+
+## Writing stories with the play function
+
+Storybook's `play` functions are small code snippets that run once the story finishes rendering. Aided by the [interactions panel](../writing-tests/interaction-testing.mdx#debugging-interaction-tests), it allows you to build component interactions and test scenarios that were impossible without user intervention. For example, if you were working on a registration form and wanted to validate it, you could write the following story with the `play` function:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="play-function.md" />
+
+{/* prettier-ignore-end */}
+
+<Callout variant="info" icon="💡">
+  See the [interaction testing documentation](../writing-tests/interaction-testing.mdx#writing-interaction-tests) for an overview of the available API events.
+</Callout>
+
+When Storybook finishes rendering the story, it executes the steps defined within the `play` function, interacting with the component and filling the form's information. All of this without the need for user intervention. If you check your `Interactions` panel, you'll see the step-by-step flow.
+
+## Working with the canvas
+
+Part of the context passed to the `play` function is a `canvas` object. This object allows you to query the DOM of the rendered story. It provides a scoped version of the Testing Library queries, so you can use them as you would in a regular test.
+
+<CodeSnippets path="play-function-with-canvas.md" />
+
+If you need to query outside of the canvas (for example, to test a dialog that appears outside of the story root), you can use the `screen` object available from `storybook/test`.
+
+<CodeSnippets path="play-function-with-screen.md" />
+
+## Composing stories
+
+Thanks to the [Component Story Format](../api/csf.mdx), an ES6 module based file format, you can also combine your `play` functions, similar to other existing Storybook features (e.g., [args](./args.mdx)). For example, if you wanted to verify a specific workflow for your component, you could write the following stories:
+
+<CodeSnippets path="play-function-composition.md" />
+
+By combining the stories, you're recreating the entire component workflow and can spot potential issues while reducing the boilerplate code you need to write.

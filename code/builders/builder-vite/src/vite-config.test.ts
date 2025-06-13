@@ -1,12 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
-import type { Options, Presets } from '@storybook/types';
+import { describe, expect, it, vi } from 'vitest';
+
+import type { Options, Presets } from 'storybook/internal/types';
+
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import { loadConfigFromFile } from 'vite';
+
 import { commonConfig } from './vite-config';
 
 vi.mock('vite', async (importOriginal) => ({
   ...(await importOriginal<typeof import('vite')>()),
   loadConfigFromFile: vi.fn(async () => ({})),
+  defaultClientConditions: undefined,
 }));
 const loadConfigFromFileMock = vi.mocked(loadConfigFromFile);
 

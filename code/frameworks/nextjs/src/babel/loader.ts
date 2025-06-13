@@ -1,8 +1,17 @@
-import { getProjectRoot, resolvePathInStorybookCache } from '@storybook/core-common';
-import { getVirtualModules } from '@storybook/builder-webpack5';
-import type { Options } from '@storybook/types';
+import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
+import type { Options } from 'storybook/internal/types';
 
-export const configureBabelLoader = async (baseConfig: any, options: Options) => {
+import { getVirtualModules } from '@storybook/builder-webpack5';
+
+import type { NextConfig } from 'next';
+
+import { getNodeModulesExcludeRegex } from '../utils';
+
+export const configureBabelLoader = async (
+  baseConfig: any,
+  options: Options,
+  nextConfig: NextConfig
+) => {
   const { virtualModules } = await getVirtualModules(options);
 
   const babelOptions = await options.presets.apply('babel', {}, options);
@@ -22,7 +31,10 @@ export const configureBabelLoader = async (baseConfig: any, options: Options) =>
         },
       ],
       include: [getProjectRoot()],
-      exclude: [/node_modules/, ...Object.keys(virtualModules)],
+      exclude: [
+        getNodeModulesExcludeRegex(nextConfig.transpilePackages ?? []),
+        ...Object.keys(virtualModules),
+      ],
     },
   ];
 };

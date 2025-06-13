@@ -9,16 +9,12 @@ interface IBProps {
   bProperty: any;
 }
 
-/**
- * A component
- */
+/** A component */
 const A = (props: IAProps): JSX.Element => {
   return <>Hi {props.aProperty}</>;
 };
 
-/**
- * B component
- */
+/** B component */
 const B = (props: IBProps): JSX.Element => {
   return <>Hi {props.bProperty}</>;
 };

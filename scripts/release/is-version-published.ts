@@ -1,8 +1,7 @@
-/* eslint-disable no-console */
-import chalk from 'chalk';
-import program from 'commander';
 import { setOutput } from '@actions/core';
-import fetch from 'node-fetch';
+import { program } from 'commander';
+import picocolors from 'picocolors';
+
 import { esMain } from '../utils/esmain';
 import { getCurrentVersion } from './get-current-version';
 
@@ -20,12 +19,14 @@ const isVersionPublished = async ({
   version: string;
   verbose?: boolean;
 }) => {
-  const prettyPackage = `${chalk.blue(packageName)}@${chalk.green(version)}`;
+  const prettyPackage = `${picocolors.blue(packageName)}@${picocolors.green(version)}`;
   console.log(`⛅ Checking if ${prettyPackage} is published...`);
 
   if (verbose) {
     console.log(`Fetching from npm:`);
-    console.log(`https://registry.npmjs.org/${chalk.blue(packageName)}/${chalk.green(version)}`);
+    console.log(
+      `https://registry.npmjs.org/${picocolors.blue(packageName)}/${picocolors.green(version)}`
+    );
   }
   const response = await fetch(`https://registry.npmjs.org/${packageName}/${version}`);
   if (response.status === 404) {
@@ -41,7 +42,7 @@ const isVersionPublished = async ({
       `Unexpected status code when checking the current version on npm: ${response.status}`
     );
   }
-  const data = await response.json();
+  const data: any = await response.json();
   if (verbose) {
     console.log(`Response from npm:`);
     console.log(data);
@@ -68,7 +69,7 @@ export const run = async (args: unknown[], options: unknown) => {
 
   const isAlreadyPublished = await isVersionPublished({
     version,
-    packageName: '@storybook/manager-api',
+    packageName: 'storybook',
     verbose,
   });
 

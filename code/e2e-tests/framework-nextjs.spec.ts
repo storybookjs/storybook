@@ -1,6 +1,7 @@
 import type { Locator } from '@playwright/test';
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import process from 'process';
+
 import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
@@ -10,23 +11,23 @@ test.describe('Next.js', () => {
   // TODO: improve these E2E tests given that we have more version of Next.js to test
   // and this only tests nextjs/default-js
   test.skip(
-    !templateName?.includes('nextjs/default-js'),
+    !templateName?.includes('nextjs/default-ts'),
     'Only run this test for the Frameworks that support next/navigation'
   );
 
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test.describe('next/image', () => {
     let sbPage: SbPage;
 
     test.beforeEach(async ({ page }) => {
-      sbPage = new SbPage(page);
+      sbPage = new SbPage(page, expect);
     });
 
-    // TODO: Test is flaky, investigate why
+    // eslint-disable-next-line playwright/no-skipped-test -- test is flaky, investigate why
     test.skip('should lazy load images by default', async () => {
       await sbPage.navigateToStory('stories/frameworks/nextjs/Image', 'lazy');
 
@@ -35,7 +36,7 @@ test.describe('Next.js', () => {
       expect(await img.evaluate<boolean, HTMLImageElement>((image) => image.complete)).toBeFalsy();
     });
 
-    // TODO: Test is flaky, investigate why
+    // eslint-disable-next-line playwright/no-skipped-test -- test is flaky, investigate why
     test.skip('should eager load images when loading parameter is set to eager', async () => {
       await sbPage.navigateToStory('stories/frameworks/nextjs/Image', 'eager');
 
@@ -49,28 +50,25 @@ test.describe('Next.js', () => {
     let root: Locator;
     let sbPage: SbPage;
 
+    test.beforeEach(async ({ page }) => {
+      sbPage = new SbPage(page, expect);
+
+      await sbPage.navigateToStory('stories/frameworks/nextjs/Navigation', 'default');
+      root = sbPage.previewRoot();
+    });
+
     function testRoutingBehaviour(buttonText: string, action: string) {
       test(`should trigger ${action} action`, async ({ page }) => {
         const button = root.locator('button', { hasText: buttonText });
         await button.click();
 
         await sbPage.viewAddonPanel('Actions');
-        const logItem = await page.locator('#storybook-panel-root #panel-tab-content', {
-          hasText: `nextNavigation.${action}`,
+        const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
+          hasText: `useRouter().${action}`,
         });
         await expect(logItem).toBeVisible();
       });
     }
-
-    test.beforeEach(async ({ page }) => {
-      sbPage = new SbPage(page);
-
-      await sbPage.navigateToStory(
-        'stories/frameworks/nextjs-nextjs-default-js/Navigation',
-        'default'
-      );
-      root = sbPage.previewRoot();
-    });
 
     testRoutingBehaviour('Go back', 'back');
     testRoutingBehaviour('Go forward', 'forward');
@@ -84,25 +82,25 @@ test.describe('Next.js', () => {
     let root: Locator;
     let sbPage: SbPage;
 
+    test.beforeEach(async ({ page }) => {
+      sbPage = new SbPage(page, expect);
+
+      await sbPage.navigateToStory('stories/frameworks/nextjs/Router', 'default');
+      root = sbPage.previewRoot();
+    });
+
     function testRoutingBehaviour(buttonText: string, action: string) {
       test(`should trigger ${action} action`, async ({ page }) => {
         const button = root.locator('button', { hasText: buttonText });
         await button.click();
 
         await sbPage.viewAddonPanel('Actions');
-        const logItem = await page.locator('#storybook-panel-root #panel-tab-content', {
-          hasText: `nextRouter.${action}`,
+        const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
+          hasText: `useRouter().${action}`,
         });
         await expect(logItem).toBeVisible();
       });
     }
-
-    test.beforeEach(async ({ page }) => {
-      sbPage = new SbPage(page);
-
-      await sbPage.navigateToStory('stories/frameworks/nextjs-nextjs-default-js/Router', 'default');
-      root = sbPage.previewRoot();
-    });
 
     testRoutingBehaviour('Go back', 'back');
     testRoutingBehaviour('Go forward', 'forward');

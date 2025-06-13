@@ -1,8 +1,11 @@
+import { SELECT_STORY, STORY_CHANGED } from 'storybook/internal/core-events';
+import { toId } from 'storybook/internal/csf';
+import type { ComponentTitle, StoryId, StoryKind, StoryName } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
-import { addons, makeDecorator } from '@storybook/preview-api';
-import { STORY_CHANGED, SELECT_STORY } from '@storybook/core-events';
-import type { StoryId, StoryName, ComponentTitle, StoryKind } from '@storybook/types';
-import { toId } from '@storybook/csf';
+
+import { addons, makeDecorator } from 'storybook/preview-api';
+
 import { PARAM_KEY } from './constants';
 
 const { document, HTMLElement } = global;
@@ -37,9 +40,7 @@ export const hrefTo = (title: ComponentTitle, name: StoryName): Promise<string> 
   return new Promise((resolve) => {
     const { location } = document;
     const query = parseQuery(location.search);
-    // @ts-expect-error (Converted from ts-ignore)
-    const existingId = [].concat(query.id)[0];
-    // @ts-expect-error (Converted from ts-ignore)
+    const existingId = query.id;
     const titleToLink = title || existingId.split('--', 2)[0];
     const id = toId(titleToLink, name);
     const path = `/story/${id}`;

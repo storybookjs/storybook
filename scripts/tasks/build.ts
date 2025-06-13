@@ -1,10 +1,13 @@
-import { pathExists } from 'fs-extra';
+import { join } from 'node:path';
+import { promisify } from 'node:util';
+
 import dirSize from 'fast-folder-size';
-import { promisify } from 'util';
-import { join } from 'path';
+// eslint-disable-next-line depend/ban-dependencies
+import { pathExists } from 'fs-extra';
+
+import { now, saveBench } from '../bench/utils';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
-import { now, saveBench } from '../bench/utils';
 
 export const build: Task = {
   description: 'Build the static version of the sandbox',

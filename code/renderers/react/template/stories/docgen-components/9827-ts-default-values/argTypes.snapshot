@@ -6,7 +6,7 @@
     "description": "",
     "name": "bar",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -31,7 +31,7 @@
     "description": "",
     "name": "foo",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

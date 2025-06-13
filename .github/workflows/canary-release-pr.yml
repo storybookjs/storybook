@@ -49,18 +49,19 @@ jobs:
           echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
           ref: ${{ steps.info.outputs.sha }}
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: ".nvmrc"
+
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.yarn/berry/cache
@@ -100,7 +101,7 @@ jobs:
 
             | | |
             | --- | --- |
-            | **Published version** | [`${{ steps.version.outputs.next-version }}`](https://npmjs.com/package/@storybook/cli/v/${{ steps.version.outputs.next-version }}) |
+            | **Published version** | [`${{ steps.version.outputs.next-version }}`](https://npmjs.com/package/storybook/v/${{ steps.version.outputs.next-version }}) |
             | **Triggered by** | @${{ github.triggering_actor }} |
             | **Repository** | [${{ steps.info.outputs.repository }}](https://github.com/${{ steps.info.outputs.repository }}) |
             | **Branch** | [`${{ steps.info.outputs.branch }}`](https://github.com/${{ steps.info.outputs.repository }}/tree/${{ steps.info.outputs.branch }}) |

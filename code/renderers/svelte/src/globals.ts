@@ -1,5 +1,1 @@
-import { global } from '@storybook/global';
-
-const { window: globalWindow } = global;
-
-globalWindow.STORYBOOK_ENV = 'svelte';
+globalThis.STORYBOOK_ENV = 'svelte';

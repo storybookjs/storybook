@@ -1,18 +1,18 @@
-name: 'Close stale issues that need reproduction or more info from OP'
+name: "Close stale issues that need reproduction or more info from OP"
 on:
   schedule:
-    - cron: '30 1 * * *'
+    - cron: "30 1 * * *"
 
 jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v8
+      - uses: actions/stale@v9
         with:
           stale-issue-message: "Hi there! Thank you for opening this issue, but it has been marked as `stale` because we need more information to move forward. Could you please provide us with the requested reproduction or additional information that could help us better understand the problem? We'd love to resolve this issue, but we can't do it without your help!"
           close-issue-message: "I'm afraid we need to close this issue for now, since we can't take any action without the requested reproduction or additional information. But please don't hesitate to open a new issue if the problem persists – we're always happy to help. Thanks so much for your understanding."
-          any-of-labels: 'needs reproduction,needs more info'
-          exempt-issue-labels: 'needs triage'
-          labels-to-add-when-unstale: 'needs triage'
+          any-of-labels: "needs reproduction,needs more info"
+          exempt-issue-labels: "needs triage"
+          labels-to-add-when-unstale: "needs triage"
           days-before-stale: 21
           days-before-pr-stale: -1

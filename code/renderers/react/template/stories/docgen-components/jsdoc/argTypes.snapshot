@@ -3,10 +3,10 @@
     "control": {
       "type": "text",
     },
-    "description": "simple description.",
+    "description": "Simple description.",
     "name": "case1",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -19,10 +19,10 @@
     },
   },
   "case10": {
-    "description": "param with name",
+    "description": "Param with name",
     "name": "case10",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -45,10 +45,10 @@
     },
   },
   "case11": {
-    "description": "param with name & type",
+    "description": "Param with name & type",
     "name": "case11",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -71,10 +71,10 @@
     },
   },
   "case12": {
-    "description": "param with name, type & description",
+    "description": "Param with name, type & description",
     "name": "case12",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -97,24 +97,14 @@
     },
   },
   "case13": {
-    "description": "param with type",
+    "description": "Param with type",
     "name": "case13",
     "table": {
-      "defaultValue": null,
-      "jsDocTags": {
-        "deprecated": null,
-        "ignore": false,
-        "params": [
-          {
-            "description": null,
-            "name": "SyntheticEvent",
-          },
-        ],
-        "returns": null,
-      },
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
       "type": {
         "detail": undefined,
-        "summary": "(SyntheticEvent)",
+        "summary": "func",
       },
     },
     "type": {
@@ -123,10 +113,10 @@
     },
   },
   "case14": {
-    "description": "param with type & description",
+    "description": "Param with type & description",
     "name": "case14",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -139,10 +129,10 @@
     },
   },
   "case15": {
-    "description": "param with name & description",
+    "description": "Param with name & description",
     "name": "case15",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -165,10 +155,10 @@
     },
   },
   "case16": {
-    "description": "autofix event-",
+    "description": "Autofix event-",
     "name": "case16",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -191,10 +181,10 @@
     },
   },
   "case17": {
-    "description": "autofix event.",
+    "description": "Autofix event.",
     "name": "case17",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -208,8 +198,8 @@
           "description": null,
           "getTypeName": [Function],
           "type": {
-            "name": "string",
-            "type": "NameExpression",
+            "type": "JsdocTypeName",
+            "value": "string",
           },
         },
       },
@@ -224,10 +214,10 @@
     },
   },
   "case18": {
-    "description": "with an empty param.",
+    "description": "With an empty param.",
     "name": "case18",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -240,10 +230,10 @@
     },
   },
   "case19": {
-    "description": "with multiple empty params.",
+    "description": "With multiple empty params.",
     "name": "case19",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -259,12 +249,10 @@
     "control": {
       "type": "text",
     },
-    "description": "multi
-lines
-description",
+    "description": "Multi lines description",
     "name": "case2",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -277,10 +265,10 @@ description",
     },
   },
   "case20": {
-    "description": "with arg alias.",
+    "description": "With arg alias.",
     "name": "case20",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -303,10 +291,10 @@ description",
     },
   },
   "case21": {
-    "description": "with argument alias.",
+    "description": "With argument alias.",
     "name": "case21",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -329,10 +317,10 @@ description",
     },
   },
   "case22": {
-    "description": "with multiple params.",
+    "description": "With multiple params.",
     "name": "case22",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -363,10 +351,10 @@ description",
     },
   },
   "case23": {
-    "description": "with an empty returns",
+    "description": "With an empty returns",
     "name": "case23",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -379,10 +367,10 @@ description",
     },
   },
   "case24": {
-    "description": "with a returns with a type",
+    "description": "With a returns with a type",
     "name": "case24",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -391,8 +379,8 @@ description",
           "description": null,
           "getTypeName": [Function],
           "type": {
-            "name": "SyntheticEvent",
-            "type": "NameExpression",
+            "type": "JsdocTypeName",
+            "value": "SyntheticEvent",
           },
         },
       },
@@ -407,10 +395,10 @@ description",
     },
   },
   "case25": {
-    "description": "with a returns with a type & description",
+    "description": "With a returns with a type & description",
     "name": "case25",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -419,8 +407,8 @@ description",
           "description": "React's original event",
           "getTypeName": [Function],
           "type": {
-            "name": "SyntheticEvent",
-            "type": "NameExpression",
+            "type": "JsdocTypeName",
+            "value": "SyntheticEvent",
           },
         },
       },
@@ -435,10 +423,10 @@ description",
     },
   },
   "case26": {
-    "description": "single param and a returns",
+    "description": "Single param and a returns",
     "name": "case26",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -452,8 +440,8 @@ description",
           "description": "React's original event",
           "getTypeName": [Function],
           "type": {
-            "name": "SyntheticEvent",
-            "type": "NameExpression",
+            "type": "JsdocTypeName",
+            "value": "SyntheticEvent",
           },
         },
       },
@@ -468,10 +456,10 @@ description",
     },
   },
   "case27": {
-    "description": "multiple params and a returns",
+    "description": "Multiple params and a returns",
     "name": "case27",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -489,8 +477,8 @@ description",
           "description": "React's original event",
           "getTypeName": [Function],
           "type": {
-            "name": "SyntheticEvent",
-            "type": "NameExpression",
+            "type": "JsdocTypeName",
+            "value": "SyntheticEvent",
           },
         },
       },
@@ -505,10 +493,10 @@ description",
     },
   },
   "case28": {
-    "description": "multiple returns",
+    "description": "Multiple returns",
     "name": "case28",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -517,8 +505,8 @@ description",
           "description": "Second returns",
           "getTypeName": [Function],
           "type": {
-            "name": "string",
-            "type": "NameExpression",
+            "type": "JsdocTypeName",
+            "value": "string",
           },
         },
       },
@@ -533,10 +521,10 @@ description",
     },
   },
   "case29": {
-    "description": "param with unsupported JSDoc tags",
+    "description": "Param with unsupported JSDoc tags",
     "name": "case29",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -562,10 +550,10 @@ description",
     "control": {
       "type": "text",
     },
-    "description": "*description* **with** `formatting`",
+    "description": "_description_ **with** `formatting`",
     "name": "case3",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -578,10 +566,10 @@ description",
     },
   },
   "case30": {
-    "description": "param record type",
+    "description": "Param record type",
     "name": "case30",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -595,7 +583,7 @@ description",
       },
       "type": {
         "detail": undefined,
-        "summary": "(myType: ({a: number, b: string}))",
+        "summary": "(myType: ({a: number; b: string}))",
       },
     },
     "type": {
@@ -604,10 +592,10 @@ description",
     },
   },
   "case31": {
-    "description": "param array type",
+    "description": "Param array type",
     "name": "case31",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -630,10 +618,10 @@ description",
     },
   },
   "case32": {
-    "description": "param union type",
+    "description": "Param union type",
     "name": "case32",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -647,7 +635,7 @@ description",
       },
       "type": {
         "detail": undefined,
-        "summary": "(myType: (number|boolean))",
+        "summary": "(myType: number|boolean)",
       },
     },
     "type": {
@@ -656,10 +644,10 @@ description",
     },
   },
   "case33": {
-    "description": "param any type",
+    "description": "Param any type",
     "name": "case33",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -682,10 +670,10 @@ description",
     },
   },
   "case34": {
-    "description": "param repeatable type",
+    "description": "Param repeatable type",
     "name": "case34",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -699,7 +687,7 @@ description",
       },
       "type": {
         "detail": undefined,
-        "summary": "(myType)",
+        "summary": "(myType: ...number)",
       },
     },
     "type": {
@@ -708,10 +696,10 @@ description",
     },
   },
   "case35": {
-    "description": "optional param",
+    "description": "Optional param",
     "name": "case35",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -734,10 +722,10 @@ description",
     },
   },
   "case36": {
-    "description": "optional param",
+    "description": "Optional param",
     "name": "case36",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -760,10 +748,10 @@ description",
     },
   },
   "case37": {
-    "description": "dot in param name",
+    "description": "Dot in param name",
     "name": "case37",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -786,10 +774,10 @@ description",
     },
   },
   "case38": {
-    "description": "returns record type",
+    "description": "Returns record type",
     "name": "case38",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -798,31 +786,44 @@ description",
           "description": null,
           "getTypeName": [Function],
           "type": {
-            "fields": [
+            "elements": [
               {
                 "key": "a",
-                "type": "FieldType",
-                "value": {
-                  "name": "number",
-                  "type": "NameExpression",
+                "meta": {
+                  "quote": undefined,
                 },
+                "optional": false,
+                "readonly": false,
+                "right": {
+                  "type": "JsdocTypeName",
+                  "value": "number",
+                },
+                "type": "JsdocTypeObjectField",
               },
               {
                 "key": "b",
-                "type": "FieldType",
-                "value": {
-                  "name": "string",
-                  "type": "NameExpression",
+                "meta": {
+                  "quote": undefined,
                 },
+                "optional": false,
+                "readonly": false,
+                "right": {
+                  "type": "JsdocTypeName",
+                  "value": "string",
+                },
+                "type": "JsdocTypeObjectField",
               },
             ],
-            "type": "RecordType",
+            "meta": {
+              "separator": "semicolon",
+            },
+            "type": "JsdocTypeObject",
           },
         },
       },
       "type": {
         "detail": undefined,
-        "summary": "() => ({a: number, b: string})",
+        "summary": "() => ({a: number; b: string})",
       },
     },
     "type": {
@@ -831,10 +832,10 @@ description",
     },
   },
   "case39": {
-    "description": "returns array type",
+    "description": "Returns array type",
     "name": "case39",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -843,17 +844,21 @@ description",
           "description": null,
           "getTypeName": [Function],
           "type": {
-            "applications": [
+            "elements": [
               {
-                "name": "string",
-                "type": "NameExpression",
+                "type": "JsdocTypeName",
+                "value": "string",
               },
             ],
-            "expression": {
-              "name": "Array",
-              "type": "NameExpression",
+            "left": {
+              "type": "JsdocTypeName",
+              "value": "Array",
             },
-            "type": "TypeApplication",
+            "meta": {
+              "brackets": "square",
+              "dot": false,
+            },
+            "type": "JsdocTypeGeneric",
           },
         },
       },
@@ -871,10 +876,10 @@ description",
     "control": {
       "type": "text",
     },
-    "description": "simple description and dummy JSDoc tag.",
+    "description": "Simple description and dummy JSDoc tag.",
     "name": "case4",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -897,10 +902,10 @@ description",
     },
   },
   "case40": {
-    "description": "returns union type",
+    "description": "Returns union type",
     "name": "case40",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -911,21 +916,21 @@ description",
           "type": {
             "elements": [
               {
-                "name": "number",
-                "type": "NameExpression",
+                "type": "JsdocTypeName",
+                "value": "number",
               },
               {
-                "name": "boolean",
-                "type": "NameExpression",
+                "type": "JsdocTypeName",
+                "value": "boolean",
               },
             ],
-            "type": "UnionType",
+            "type": "JsdocTypeUnion",
           },
         },
       },
       "type": {
         "detail": undefined,
-        "summary": "() => (number|boolean)",
+        "summary": "() => number|boolean",
       },
     },
     "type": {
@@ -934,10 +939,10 @@ description",
     },
   },
   "case41": {
-    "description": "returns any type",
+    "description": "Returns any type",
     "name": "case41",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -946,7 +951,8 @@ description",
           "description": null,
           "getTypeName": [Function],
           "type": {
-            "type": "AllLiteral",
+            "type": "JsdocTypeName",
+            "value": "any",
           },
         },
       },
@@ -961,10 +967,10 @@ description",
     },
   },
   "case42": {
-    "description": "returns primitive",
+    "description": "Returns primitive",
     "name": "case42",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -973,8 +979,8 @@ description",
           "description": null,
           "getTypeName": [Function],
           "type": {
-            "name": "string",
-            "type": "NameExpression",
+            "type": "JsdocTypeName",
+            "value": "string",
           },
         },
       },
@@ -989,10 +995,10 @@ description",
     },
   },
   "case43": {
-    "description": "returns void",
+    "description": "Returns void",
     "name": "case43",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -1001,8 +1007,8 @@ description",
           "description": null,
           "getTypeName": [Function],
           "type": {
-            "name": "void",
-            "type": "NameExpression",
+            "type": "JsdocTypeName",
+            "value": "void",
           },
         },
       },
@@ -1023,7 +1029,7 @@ description",
     "description": "",
     "name": "case5",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,
@@ -1049,10 +1055,10 @@ description",
     "control": {
       "type": "text",
     },
-    "description": "simple description with a @.",
+    "description": "Simple description with a @.",
     "name": "case6",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -1068,7 +1074,7 @@ description",
     "description": "",
     "name": "case7",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -1081,10 +1087,10 @@ description",
     },
   },
   "case8": {
-    "description": "func with a simple description.",
+    "description": "Func with a simple description.",
     "name": "case8",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -1100,7 +1106,7 @@ description",
     "description": "",
     "name": "case9",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": {
         "deprecated": null,
         "ignore": false,

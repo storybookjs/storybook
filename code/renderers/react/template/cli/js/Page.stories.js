@@ -1,4 +1,4 @@
-import { within, userEvent, expect } from '@storybook/test';
+import { expect, userEvent, within } from 'storybook/test';
 
 import { Page } from './Page';
 
@@ -13,7 +13,7 @@ export default {
 
 export const LoggedOut = {};
 
-// More on interaction testing: https://storybook.js.org/docs/writing-tests/interaction-testing
+// More on component testing: https://storybook.js.org/docs/writing-tests/interaction-testing
 export const LoggedIn = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

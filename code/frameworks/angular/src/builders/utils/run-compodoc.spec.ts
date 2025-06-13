@@ -1,14 +1,14 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { vi, describe, afterEach, it, expect } from 'vitest';
-import { LoggerApi } from '@angular-devkit/core/src/logger';
+import type { BuilderContext } from '@angular-devkit/architect';
+// @ts-expect-error (TODO)
+import type { LoggerApi } from '@angular-devkit/core/src/logger';
 import { take } from 'rxjs/operators';
-import { BuilderContext } from '@angular-devkit/architect';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { runCompodoc } from './run-compodoc';
 
 const mockRunScript = vi.fn();
 
-vi.mock('@storybook/core-common', () => ({
+vi.mock('storybook/internal/common', () => ({
   JsPackageManagerFactory: {
     getPackageManager: () => ({
       runPackageCommandSync: mockRunScript,

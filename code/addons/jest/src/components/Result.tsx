@@ -1,7 +1,9 @@
 import React, { Fragment, useState } from 'react';
-import { styled, themes, convert } from '@storybook/theming';
-import { Icons } from '@storybook/components';
-// eslint-disable-next-line import/no-named-as-default
+
+import { ChevronSmallDownIcon } from '@storybook/icons';
+
+import { convert, styled, themes } from 'storybook/theming';
+
 import Message from './Message';
 
 const Wrapper = styled.div<{ status: string }>(({ theme, status }) => ({
@@ -30,10 +32,7 @@ const HeaderBar = styled.div<{ status: string }>(({ theme, status }) => ({
   },
 }));
 
-const Icon = styled(Icons)(({ theme }) => ({
-  height: 10,
-  width: 10,
-  minWidth: 10,
+const Icon = styled(ChevronSmallDownIcon)(({ theme }) => ({
   color: theme.textMutedColor,
   marginRight: 10,
   transition: 'transform 0.1s ease-in-out',
@@ -66,7 +65,6 @@ export function Result(props: ResultProps) {
         <HeaderBar onClick={onToggle} role="button" status={status}>
           {status === `failed` ? (
             <Icon
-              icon="arrowdown"
               color={convert(themes.light).textMutedColor}
               style={{
                 transform: `rotate(${isOpen ? 0 : -90}deg)`,

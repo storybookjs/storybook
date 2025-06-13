@@ -1,5 +1,5 @@
-import type { NormalizedStoriesSpecifier } from '@storybook/types';
-import { globToRegexp } from '@storybook/core-common';
+import { globToRegexp } from 'storybook/internal/common';
+import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
 export const toRequireContext = (specifier: NormalizedStoriesSpecifier) => {
   const { directory, files } = specifier;

@@ -1,8 +1,18 @@
 import type { PropsWithChildren } from 'react';
 import React, { Component } from 'react';
+
+import type {
+  DocsContextProps,
+  DocsRenderFunction,
+  Parameters,
+  Renderer,
+} from 'storybook/internal/types';
+
 import { renderElement, unmountElement } from '@storybook/react-dom-shim';
-import type { Renderer, Parameters, DocsContextProps, DocsRenderFunction } from '@storybook/types';
-import { Docs, CodeOrSourceMdx, AnchorMdx, HeadersMdx } from '@storybook/blocks';
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore (these types only work once the package is compiled)
+import { AnchorMdx, CodeOrSourceMdx, Docs, HeadersMdx } from '@storybook/addon-docs/blocks';
 
 // TS doesn't like that we export a component with types that it doesn't know about (TS4203)
 export const defaultComponents: Record<string, any> = {

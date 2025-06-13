@@ -1,10 +1,16 @@
-import { resolve } from 'path';
-import { readJSON } from 'fs-extra';
-import prompts from 'prompts';
-import program from 'commander';
-import chalk from 'chalk';
-import windowSize from 'window-size';
+// This script makes sure that we can support type checking,
+// without having to build dts files for all packages in the monorepo.
+// It is not implemented yet for angular, svelte and vue.
+import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { readJSON } from 'fs-extra';
+import { resolve } from 'path';
+import picocolors from 'picocolors';
+import prompts from 'prompts';
+import windowSize from 'window-size';
+
 import { getWorkspaces } from './utils/workspace';
 
 async function run() {
@@ -18,10 +24,16 @@ async function run() {
         helpText: `check only the ${pkg.name} package`,
       };
     })
-    .reduce((acc, next) => {
-      acc[next.name] = next;
-      return acc;
-    }, {} as Record<string, { name: string; defaultValue: boolean; suffix: string; helpText: string }>);
+    .reduce(
+      (acc, next) => {
+        acc[next.name] = next;
+        return acc;
+      },
+      {} as Record<
+        string,
+        { name: string; defaultValue: boolean; suffix: string; helpText: string }
+      >
+    );
 
   const tasks: Record<
     string,
@@ -43,16 +55,19 @@ async function run() {
     ...packageTasks,
   };
 
-  const main = program.version('5.0.0').option('--all', `check everything ${chalk.gray('(all)')}`);
+  const main = program
+    .version('5.0.0')
+    .option('--all', `check everything ${picocolors.gray('(all)')}`);
 
   Object.keys(tasks)
     .reduce((acc, key) => acc.option(tasks[key].suffix, tasks[key].helpText), main)
     .parse(process.argv);
 
   Object.keys(tasks).forEach((key) => {
+    const opts = program.opts();
     // checks if a flag is passed e.g. yarn check --@storybook/addon-docs --watch
-    const containsFlag = program.rawArgs.includes(tasks[key].suffix);
-    tasks[key].value = containsFlag || program.all;
+    const containsFlag = program.args.includes(tasks[key].suffix);
+    tasks[key].value = containsFlag || opts.all;
   });
 
   let selection;
@@ -98,9 +113,9 @@ async function run() {
   }
 
   selection?.filter(Boolean).forEach(async (v) => {
-    const commmand = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts.check;
+    const command = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts.check;
     const cwd = resolve(__dirname, '..', 'code', v.location);
-    const sub = execaCommand(`${commmand}${watchMode ? ' --watch' : ''}`, {
+    const sub = execaCommand(`${command}${watchMode ? ' --watch' : ''}`, {
       cwd,
       buffer: false,
       shell: true,
@@ -111,10 +126,10 @@ async function run() {
     });
 
     sub.stdout.on('data', (data) => {
-      process.stdout.write(`${chalk.cyan(v.name)}:\n${data}`);
+      process.stdout.write(`${picocolors.cyan(v.name)}:\n${data}`);
     });
     sub.stderr.on('data', (data) => {
-      process.stderr.write(`${chalk.red(v.name)}:\n${data}`);
+      process.stderr.write(`${picocolors.red(v.name)}:\n${data}`);
     });
   });
 }

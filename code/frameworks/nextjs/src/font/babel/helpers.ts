@@ -1,5 +1,5 @@
-import type * as BabelTypesNamespace from '@babel/types';
 import type * as BabelCoreNamespace from '@babel/core';
+import type * as BabelTypesNamespace from '@babel/types';
 
 type BabelTypes = typeof BabelTypesNamespace;
 type PrimaryTypes = Record<string, any> | string | number | boolean | undefined | null;
@@ -9,35 +9,47 @@ export type JSReturnValue = PrimaryTypes | Array<PrimaryTypes>;
 export type VariableMeta = {
   /**
    * Variable Declaration name of the assigned function call
+   *
    * @example
-   * import { Roboto } from 'next/font/google'
+   *
+   * ```ts
+   * import { Roboto } from 'next/font/google';
    * const robotoName = Roboto({
-   *   weight: '400'
-   * })
+   *   weight: '400',
+   * });
    *
    * // identifierName = 'robotName'
+   * ```
    */
   identifierName: string;
   /**
    * Properties of the assigned function call
+   *
    * @example
-   * import { Roboto } from 'next/font/google'
+   *
+   * ```ts
+   * import { Roboto } from 'next/font/google';
    * const robotoName = Roboto({
-   *   weight: '400'
-   * })
+   *   weight: '400',
+   * });
    *
    * // properties = { weight: '400' }
+   * ```
    */
   properties: JSReturnValue;
   /**
    * Function name of the imported next/font/google function
+   *
    * @example
-   * import { Roboto } from 'next/font/google'
+   *
+   * ```ts
+   * import { Roboto } from 'next/font/google';
    * const robotoName = Roboto({
-   *   weight: '400'
-   * })
+   *   weight: '400',
+   * });
    *
    * // functionName = Roboto
+   * ```
    */
   functionName: string;
 };
@@ -108,20 +120,24 @@ export function isDefined<T>(value: T): value is Exclude<T, undefined> {
 
 /**
  * Removes transformed variable declarations, which were already replaced with parameterized imports
+ *
  * @example
+ *
+ * ```ts
  * // AST
- * import { Roboto, Inter } from 'next/font/google'
+ * import { Roboto, Inter } from 'next/font/google';
  * const interName = Inter({
- *  subsets: ['latin'],
- * })
+ *   subsets: ['latin'],
+ * });
  * const robotoName = Roboto({
- *   weight: '400'
- * })
+ *   weight: '400',
+ * });
  *
  * // Result
- * import { Roboto, Inter } from 'next/font/google'
+ * import { Roboto, Inter } from 'next/font/google';
  *
  * // Variable declarations are removed
+ * ```
  */
 export function removeTransformedVariableDeclarations(
   path: BabelCoreNamespace.NodePath<BabelCoreNamespace.types.ImportDeclaration>,
@@ -173,28 +189,32 @@ export function removeTransformedVariableDeclarations(
 
 /**
  * Replaces `next/font` import with a parameterized import
+ *
  * @example
+ *
+ * ```ts
  * // AST of src/example.js
- * import { Roboto, Inter } from 'next/font/google'
+ * import { Roboto, Inter } from 'next/font/google';
  * const interName = Inter({
- *  subsets: ['latin'],
- * })
+ *   subsets: ['latin'],
+ * });
  * const robotoName = Roboto({
- *   weight: '400'
- * })
+ *   weight: '400',
+ * });
  *
  * // Result
- * import interName from 'storybook-nextjs-font-loader?{filename: "src/example.js", source: "next/font/google", fontFamily: "Inter", props: {"subsets":["latin"]}}!next/font/google'
- * import robotoName from 'storybook-nextjs-font-loader?{filename: "src/example.js", source: "next/font/google", fontFamily: "Roboto", props: {"weight": "400"}}!next/font/google'
+ * import interName from 'storybook-nextjs-font-loader?{filename: "src/example.js", source: "next/font/google", fontFamily: "Inter", props: {"subsets":["latin"]}}!next/font/google';
+ * import robotoName from 'storybook-nextjs-font-loader?{filename: "src/example.js", source: "next/font/google", fontFamily: "Roboto", props: {"weight": "400"}}!next/font/google';
  *
  * // Following code will be removed from removeUnusedVariableDeclarations function
  * const interName = Inter({
- *  subsets: ['latin'],
- * })
+ *   subsets: ['latin'],
+ * });
  *
  * const robotoName = Roboto({
- *   weight: '400'
- * })
+ *   weight: '400',
+ * });
+ * ```
  */
 export function replaceImportWithParamterImport(
   path: BabelCoreNamespace.NodePath<BabelCoreNamespace.types.ImportDeclaration>,
@@ -223,26 +243,33 @@ export function replaceImportWithParamterImport(
 
 /**
  * Get meta information for the provided import specifier
+ *
  * @example
+ *
+ * ```ts
  * // AST
- * import { Roboto, Inter } from 'next/font/google'
+ * import { Roboto, Inter } from 'next/font/google';
  * const interName = Inter({
- *  subsets: ['latin'],
- * })
+ *   subsets: ['latin'],
+ * });
  * const robotoName = Roboto({
- *   weight: '400'
- * })
+ *   weight: '400',
+ * });
  *
  * // Return value
- * const variableMetas = [{
- *   identifierName: 'interName',
- *   properties: { subsets: ['latin'] },
- *   functionName: 'Inter'
- * }, {
- *   identifierName: 'robotoName',
- *   properties: { weight: '400' },
- *   functionName: 'Roboto'
- * }]
+ * const variableMetas = [
+ *   {
+ *     identifierName: 'interName',
+ *     properties: { subsets: ['latin'] },
+ *     functionName: 'Inter',
+ *   },
+ *   {
+ *     identifierName: 'robotoName',
+ *     properties: { weight: '400' },
+ *     functionName: 'Roboto',
+ *   },
+ * ];
+ * ```
  */
 export function getVariableMetasBySpecifier(
   program: BabelCoreNamespace.NodePath<BabelCoreNamespace.types.Program>,

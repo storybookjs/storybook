@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-themes",
-  "version": "8.0.0-beta.0",
+  "version": "9.1.0-alpha.6",
   "description": "Switch between multiple themes for you components in Storybook",
   "keywords": [
     "css",
@@ -29,18 +29,31 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "import": "./dist/preview.mjs",
+      "require": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
-    "./preview": "./dist/preview.js",
     "./package.json": "./package.json",
     "./postinstall": "./postinstall.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "preview": [
+        "dist/preview.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist/**/*",
     "README.md",
@@ -49,22 +62,20 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/check.ts",
-    "prep": "node --loader ../../../scripts/node_modules/esbuild-register/loader.js -r ../../../scripts/node_modules/esbuild-register/register.js ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@storybook/client-logger": "workspace:*",
-    "@storybook/components": "workspace:*",
-    "@storybook/core-events": "workspace:*",
-    "@storybook/icons": "^1.2.3",
-    "@storybook/manager-api": "workspace:*",
-    "@storybook/preview-api": "workspace:*",
-    "@storybook/theming": "workspace:*",
-    "@storybook/types": "workspace:*",
-    "typescript": "^5.3.2"
+    "@storybook/icons": "^1.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
@@ -80,7 +91,7 @@
       "./src/preview.tsx"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17",
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
   "storybook": {
     "displayName": "Themes",
     "unsupportedFrameworks": [

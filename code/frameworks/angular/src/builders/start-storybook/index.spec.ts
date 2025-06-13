@@ -1,13 +1,8 @@
-/*
- * @vitest-environment node
- */
-
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { vi, describe, expect, it, beforeEach, afterEach } from 'vitest';
 import { Architect, createBuilder } from '@angular-devkit/architect';
 import { TestingArchitectHost } from '@angular-devkit/architect/testing';
 import { schema } from '@angular-devkit/core';
-import * as path from 'path';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const buildDevStandaloneMock = vi.fn();
 const buildStaticStandaloneMock = vi.fn();
@@ -16,12 +11,12 @@ const buildMock = {
   buildStaticStandalone: buildStaticStandaloneMock,
   withTelemetry: (_: string, __: any, fn: any) => fn(),
 };
-vi.doMock('@storybook/core-server', () => buildMock);
+vi.doMock('storybook/internal/core-server', () => buildMock);
 vi.doMock('find-up', () => ({ sync: () => './storybook/tsconfig.ts' }));
 
 const mockRunScript = vi.fn();
 
-vi.mock('@storybook/core-common', () => ({
+vi.mock('storybook/internal/common', () => ({
   getEnvConfig: (options: any) => options,
   versions: {
     storybook: 'x.x.x',
@@ -67,7 +62,7 @@ describe.skip('Start Storybook Builder', () => {
     );
     // This will either take a Node package name, or a path to the directory
     // for the package.json file.
-    await architectHost.addBuilderFromPackage(path.join(__dirname, '../../..'));
+    await architectHost.addBuilderFromPackage(join(__dirname, '../../..'));
   });
 
   beforeEach(() => {

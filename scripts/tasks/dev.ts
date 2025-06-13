@@ -1,9 +1,9 @@
 import detectFreePort from 'detect-port';
 import waitOn from 'wait-on';
 
+import { now, saveBench } from '../bench/utils';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
-import { now, saveBench } from '../bench/utils';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT
   ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)

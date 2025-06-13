@@ -1,8 +1,11 @@
 import React from 'react';
-import { useMemo } from '@storybook/preview-api';
-import type { DecoratorFunction, Renderer } from '@storybook/types';
 
-import { initializeThemeState, pluckThemeFromContext, useThemeParameters } from './helpers';
+import type { DecoratorFunction, Renderer } from 'storybook/internal/types';
+
+import { useMemo } from 'storybook/preview-api';
+
+import { PARAM_KEY } from '../constants';
+import { initializeThemeState, pluckThemeFromContext } from './helpers';
 
 type Theme = Record<string, any>;
 type ThemeMap = Record<string, Theme>;
@@ -16,7 +19,8 @@ export interface ProviderStrategyConfiguration {
 
 const pluckThemeFromKeyPairTuple = ([_, themeConfig]: [string, Theme]): Theme => themeConfig;
 
-export const withThemeFromJSXProvider = <TRenderer extends Renderer = Renderer>({
+// TODO check with @kasperpeulen: change the types so they can be correctly inferred from context e.g. <Story extends (...args: any[]) => any>
+export const withThemeFromJSXProvider = <TRenderer extends Renderer = any>({
   Provider,
   GlobalStyles,
   defaultTheme,
@@ -29,7 +33,8 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = Renderer>(
 
   // eslint-disable-next-line react/display-name
   return (storyFn, context) => {
-    const { themeOverride } = useThemeParameters();
+    // eslint-disable-next-line react/destructuring-assignment
+    const { themeOverride } = context.parameters[PARAM_KEY] ?? {};
     const selected = pluckThemeFromContext(context);
 
     const theme = useMemo(() => {
@@ -37,7 +42,7 @@ export const withThemeFromJSXProvider = <TRenderer extends Renderer = Renderer>(
       const pairs = Object.entries(themes);
 
       return pairs.length === 1 ? pluckThemeFromKeyPairTuple(pairs[0]) : themes[selectedThemeName];
-    }, [themes, selected, themeOverride]);
+    }, [selected, themeOverride]);
 
     if (!Provider) {
       return (

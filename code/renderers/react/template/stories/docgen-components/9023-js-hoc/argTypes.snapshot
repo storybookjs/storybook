@@ -6,7 +6,7 @@
     "description": "",
     "name": "classes",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,
@@ -47,7 +47,7 @@
     "description": "",
     "name": "icon",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

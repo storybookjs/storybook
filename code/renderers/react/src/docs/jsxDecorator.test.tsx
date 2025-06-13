@@ -1,19 +1,44 @@
-import type { FC, PropsWithChildren } from 'react';
-import React, { StrictMode, createElement, Profiler } from 'react';
+/** @vitest-environment happy-dom */
 import type { Mock } from 'vitest';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import PropTypes from 'prop-types';
-import { addons, useEffect } from '@storybook/preview-api';
-import { SNIPPET_RENDERED } from '@storybook/docs-tools';
-import { renderJsx, jsxDecorator } from './jsxDecorator';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@storybook/preview-api');
-const mockedAddons = vi.mocked(addons);
-const mockedUseEffect = vi.mocked(useEffect);
+import type { FC, PropsWithChildren } from 'react';
+import React, { Profiler, StrictMode, createElement } from 'react';
+
+import PropTypes from 'prop-types';
+import { addons, emitTransformCode, useState } from 'storybook/preview-api';
+
+import type { ReactRenderer, StoryContext } from '../types';
+import { getReactSymbolName, jsxDecorator, renderJsx } from './jsxDecorator';
+
+vi.mock('storybook/preview-api', () => ({
+  addons: {
+    getChannel: vi.fn(),
+  },
+  useEffect: vi.fn((fn) => fn()),
+  useRef: vi.fn(() => ({ current: undefined })),
+  useState: vi.fn(),
+  emitTransformCode: vi.fn(),
+}));
+
+const mockedGetChannel = vi.mocked(addons.getChannel);
+const mockedEmitTransformCode = vi.mocked(emitTransformCode);
 
 expect.addSnapshotSerializer({
   print: (val: any) => val,
   test: (val) => typeof val === 'string',
+});
+
+describe('converts React Symbol to displayName string', () => {
+  const symbolCases = [
+    ['react.suspense', 'React.Suspense'],
+    ['react.strict_mode', 'React.StrictMode'],
+    ['react.server_context.defaultValue', 'React.ServerContext.DefaultValue'],
+  ];
+
+  it.each(symbolCases)('"%s" to "%s"', (symbol, expectedValue) => {
+    expect(getReactSymbolName(Symbol(symbol))).toEqual(expectedValue);
+  });
 });
 
 describe('renderJsx', () => {
@@ -110,19 +135,55 @@ describe('renderJsx', () => {
     `);
   });
 
-  it('forwardRef component', () => {
-    const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
-      function MyExoticComponent(props, _ref) {
-        return <div>{props.children}</div>;
-      }
-    );
+  describe('forwardRef component', () => {
+    it('with no displayName', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        function MyExoticComponent(props, _ref) {
+          return <div>{props.children}</div>;
+        }
+      );
 
-    expect(renderJsx(createElement(MyExoticComponentRef, {}, 'I am forwardRef!'), {}))
-      .toMatchInlineSnapshot(`
-        <MyExoticComponent>
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+          <React.ForwardRef>
+            I am forwardRef!
+          </React.ForwardRef>
+        `);
+    });
+
+    it('with displayName coming from docgen', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        function MyExoticComponent(props, _ref) {
+          return <div>{props.children}</div>;
+        }
+      );
+      (MyExoticComponentRef as any).__docgenInfo = {
+        displayName: 'ExoticComponent',
+      };
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+          <ExoticComponent>
+            I am forwardRef!
+          </ExoticComponent>
+        `);
+    });
+
+    it('with displayName coming from forwarded render function', () => {
+      const MyExoticComponentRef = React.forwardRef<FC, PropsWithChildren>(
+        Object.assign(
+          function MyExoticComponent(props: any, _ref: any) {
+            return <div>{props.children}</div>;
+          },
+          { displayName: 'ExoticComponent' }
+        )
+      );
+      expect(renderJsx(<MyExoticComponentRef>I am forwardRef!</MyExoticComponentRef>))
+        .toMatchInlineSnapshot(`
+        <ExoticComponent>
           I am forwardRef!
-        </MyExoticComponent>
+        </ExoticComponent>
       `);
+    });
   });
 
   it('memo component', () => {
@@ -130,62 +191,89 @@ describe('renderJsx', () => {
       return <div>{props.children}</div>;
     });
 
-    expect(renderJsx(createElement(MyMemoComponentRef, {}, 'I am memo!'), {}))
-      .toMatchInlineSnapshot(`
-      <MyMemoComponent>
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+      <React.Memo>
         I am memo!
-      </MyMemoComponent>
+      </React.Memo>
+    `);
+
+    // if docgenInfo is present, it should use the displayName from there
+    (MyMemoComponentRef as any).__docgenInfo = {
+      displayName: 'MyMemoComponentRef',
+    };
+    expect(renderJsx(<MyMemoComponentRef>I am memo!</MyMemoComponentRef>)).toMatchInlineSnapshot(`
+      <MyMemoComponentRef>
+        I am memo!
+      </MyMemoComponentRef>
     `);
   });
 
   it('Profiler', () => {
-    function ProfilerComponent({ children }: any) {
-      return (
+    expect(
+      renderJsx(
         <Profiler id="profiler-test" onRender={() => {}}>
-          <div>{children}</div>
-        </Profiler>
-      );
-    }
-
-    expect(renderJsx(createElement(ProfilerComponent, {}, 'I am Profiler'), {}))
-      .toMatchInlineSnapshot(`
-        <ProfilerComponent>
-          I am Profiler
-        </ProfilerComponent>
+          <div>I am in a Profiler</div>
+        </Profiler>,
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      <React.Profiler
+        id="profiler-test"
+        onRender={() => {}}
+      >
+        <div>
+          I am in a Profiler
+        </div>
+      </React.Profiler>
     `);
   });
 
   it('StrictMode', () => {
-    function StrictModeComponent({ children }: any) {
-      return (
-        <StrictMode>
-          <div>{children}</div>
-        </StrictMode>
-      );
-    }
+    expect(renderJsx(<StrictMode>I am StrictMode</StrictMode>, {})).toMatchInlineSnapshot(`
+      <React.StrictMode>
+        I am StrictMode
+      </React.StrictMode>
+    `);
+  });
 
-    expect(renderJsx(createElement(StrictModeComponent, {}, 'I am StrictMode'), {}))
-      .toMatchInlineSnapshot(`
-        <StrictModeComponent>
-          I am StrictMode
-        </StrictModeComponent>
-      `);
+  it('displayName coming from docgenInfo', () => {
+    function BasicComponent({ label }: any) {
+      return <button>{label}</button>;
+    }
+    BasicComponent.__docgenInfo = {
+      description: 'Some description',
+      methods: [],
+      displayName: 'Button',
+      props: {},
+    };
+
+    expect(
+      renderJsx(
+        createElement(
+          BasicComponent,
+          {
+            label: <p>Abcd</p>,
+          },
+          undefined
+        )
+      )
+    ).toMatchInlineSnapshot(`<Button label={<p>Abcd</p>} />`);
   });
 
   it('Suspense', () => {
-    function SuspenseComponent({ children }: any) {
-      return (
+    expect(
+      renderJsx(
         <React.Suspense fallback={null}>
-          <div>{children}</div>
-        </React.Suspense>
-      );
-    }
-
-    expect(renderJsx(createElement(SuspenseComponent, {}, 'I am Suspense'), {}))
-      .toMatchInlineSnapshot(`
-      <SuspenseComponent>
-        I am Suspense
-      </SuspenseComponent>
+          <div>I am in Suspense</div>
+        </React.Suspense>,
+        {}
+      )
+    ).toMatchInlineSnapshot(`
+      <React.Suspense fallback={null}>
+        <div>
+          I am in Suspense
+        </div>
+      </React.Suspense>
     `);
   });
 
@@ -223,116 +311,73 @@ const makeContext = (name: string, parameters: any, args: any, extra?: object): 
 });
 
 describe('jsxDecorator', () => {
-  let mockChannel: { on: Mock; emit?: Mock };
+  const channel = { emit: vi.fn() };
+  let mockContext: StoryContext<ReactRenderer>;
+  let mockStoryFn: Mock;
+
+  const mockSetSource = vi.fn();
+
   beforeEach(() => {
-    mockedAddons.getChannel.mockReset();
-    mockedUseEffect.mockImplementation((cb) => setTimeout(() => cb(), 0));
+    vi.clearAllMocks();
+    mockedGetChannel.mockReturnValue(channel as any);
+    vi.mocked(useState).mockReturnValue([undefined, mockSetSource]);
 
-    mockChannel = { on: vi.fn(), emit: vi.fn() };
-    mockedAddons.getChannel.mockReturnValue(mockChannel as any);
+    mockContext = makeContext('test', {}, { foo: 'bar' });
+    mockStoryFn = vi.fn().mockReturnValue(<div>Test Story</div>);
   });
 
-  it('should render dynamically for args stories', async () => {
-    const storyFn = (args: any) => <div>args story</div>;
-    const context = makeContext('args', { __isArgsStory: true }, {});
-    jsxDecorator(storyFn, context);
-    await new Promise((r) => setTimeout(r, 0));
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'jsx-test--args',
-      args: {},
-      source: '<div>\n  args story\n</div>',
-    });
-  });
-
-  it('should not render decorators when provided excludeDecorators parameter', async () => {
-    const storyFn = (args: any) => <div>args story</div>;
-    const decoratedStoryFn = (args: any) => (
-      <div style={{ padding: 25, border: '3px solid red' }}>{storyFn(args)}</div>
-    );
-    const context = makeContext(
-      'args',
-      {
-        __isArgsStory: true,
-        docs: {
-          source: {
-            excludeDecorators: true,
-          },
-        },
+  it('should skip JSX rendering when source type is CODE', () => {
+    const context = {
+      ...mockContext,
+      parameters: {
+        docs: { source: { type: 'code' } },
       },
-      {},
-      { originalStoryFn: storyFn }
-    );
-    jsxDecorator(decoratedStoryFn, context);
-    await new Promise((r) => setTimeout(r, 0));
+      originalStoryFn: () => <div>Test Story</div>,
+    };
 
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'jsx-test--args',
-      args: {},
-      source: '<div>\n  args story\n</div>',
-    });
+    const result = jsxDecorator(mockStoryFn, context);
+    expect(channel.emit).not.toHaveBeenCalled();
+    expect(result).toEqual(<div>Test Story</div>);
   });
 
-  it('should skip dynamic rendering for no-args stories', async () => {
-    const storyFn = () => <div>classic story</div>;
-    const context = makeContext('classic', {}, {});
-    jsxDecorator(storyFn, context);
-    await new Promise((r) => setTimeout(r, 0));
+  it('should skip JSX rendering when source code is provided', () => {
+    const context = {
+      ...mockContext,
+      parameters: {
+        docs: { source: { code: 'const x = 1;' } },
+      },
+      originalStoryFn: () => <div>Test Story</div>,
+    };
 
-    expect(mockChannel.emit).not.toHaveBeenCalled();
+    const result = jsxDecorator(mockStoryFn, context);
+    expect(channel.emit).not.toHaveBeenCalled();
+    expect(result).toEqual(<div>Test Story</div>);
   });
 
-  it('renders MDX properly', async () => {
-    // FIXME: generate this from actual MDX
-    const mdxElement: ReturnType<typeof createElement> = {
-      // @ts-expect-error (Converted from ts-ignore)
+  it('should handle MDX elements correctly', () => {
+    const mdxElement = {
       type: { displayName: 'MDXCreateElement' },
       props: {
         mdxType: 'div',
         originalType: 'div',
-        className: 'foo',
+        children: 'Hello MDX',
       },
     };
 
-    jsxDecorator(() => mdxElement, makeContext('mdx-args', { __isArgsStory: true }, {}));
-    await new Promise((r) => setTimeout(r, 0));
+    const context = {
+      ...mockContext,
+      parameters: {
+        __isArgsStory: true,
+      },
+      originalStoryFn: () => mdxElement,
+    };
 
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'jsx-test--mdx-args',
-      args: {},
-      source: '<div className="foo" />',
-    });
-  });
+    jsxDecorator(mockStoryFn, context as any);
 
-  it('handles stories that trigger Suspense', async () => {
-    // if a story function uses a hook or other library that triggers suspense, it will throw a Promise until it is resolved
-    // and then it will return the story content after the promise is resolved
-    const storyFn = vi.fn();
-    storyFn
-      .mockImplementationOnce(() => {
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
-        throw Promise.resolve();
-      })
-      .mockImplementation(() => {
-        return <div>resolved args story</div>;
-      });
-    const jsx = '';
-    const context = makeContext('args', { __isArgsStory: true, jsx }, {});
-    expect(() => {
-      jsxDecorator(storyFn, context);
-    }).toThrow(Promise);
-    jsxDecorator(storyFn, context);
-    await new Promise((r) => setTimeout(r, 0));
-
-    expect(mockChannel.emit).toHaveBeenCalledTimes(2);
-    expect(mockChannel.emit).nthCalledWith(1, SNIPPET_RENDERED, {
-      id: 'jsx-test--args',
-      args: {},
-      source: '',
-    });
-    expect(mockChannel.emit).nthCalledWith(2, SNIPPET_RENDERED, {
-      id: 'jsx-test--args',
-      args: {},
-      source: '<div>\n  resolved args story\n</div>',
-    });
+    // First verify that useState was called with the correct JSX string
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+      expect.stringContaining('Hello MDX'),
+      context
+    );
   });
 });

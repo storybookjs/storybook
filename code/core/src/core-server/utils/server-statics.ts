@@ -38,6 +38,40 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
   const faviconPath = await options.presets.apply<string>('favicon');
 
+  // Fix for serving favicon in dev mode - use the directory containing the favicon
+  // rather than trying to serve the file directly
+  const faviconDir = resolve(faviconPath, '..');
+  const faviconFile = basename(faviconPath);
+  app.use(`/${faviconFile}`, async (req, res, next) => {
+    const status = req.query.status;
+    if (
+      status &&
+      faviconFile.endsWith('.svg') &&
+      ['active', 'critical', 'negative', 'positive', 'warning'].includes(status)
+    ) {
+      const [faviconData, faviconWrapperData] = await Promise.all([
+        readFileOnce(join(faviconDir, faviconFile)),
+        readFileOnce(faviconWrapperPath),
+      ]).catch((e) => {
+        if (e instanceof Error) {
+          once.warn(`Failed to read favicon: ${e.message}`);
+        }
+        return [null, null];
+      });
+      if (faviconData && faviconWrapperData) {
+        const svg = faviconWrapperData
+          .replace('<g id="mask"', `<g mask="url(#${status}-mask)"`)
+          .replace('<use id="status"', `<use href="#${status}"`)
+          .replace('<use id="icon" />', faviconData);
+        res.setHeader('Content-Type', 'image/svg+xml');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.end(svg);
+        return;
+      }
+    }
+    return sirvWorkaround(faviconDir)(req, res, next);
+  });
+
   staticDirs.map((dir) => {
     try {
       const { staticDir, staticPath, targetEndpoint } = mapStaticDir(dir, options.configDir);
@@ -56,69 +90,17 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
         app.use(targetEndpoint, (req, res, next) => {
           // Rewrite the URL to match the file's name, ensuring that we only ever serve the file
           // even when sirv is passed the full directory
-          req.path = `/${staticPathFile}`;
-          sirvWorkaround(staticPathDir, {
-            dev: true,
-            etag: true,
-            extensions: [],
-          })(req, res, next);
+          req.url = `/${staticPathFile}`;
+          sirvWorkaround(staticPathDir)(req, res, next);
         });
-        return;
+      } else {
+        app.use(targetEndpoint, sirvWorkaround(staticPath));
       }
-      app.use(
-        targetEndpoint,
-        sirvWorkaround(staticPath, {
-          dev: true,
-          etag: true,
-          extensions: [],
-        })
-      );
     } catch (e) {
       if (e instanceof Error) {
         logger.warn(e.message);
       }
     }
-  });
-
-  // Fix for serving favicon in dev mode - use the directory containing the favicon
-  // rather than trying to serve the file directly
-  const faviconDir = resolve(faviconPath, '..');
-  const faviconFile = basename(faviconPath);
-  app.use('/', async (req, res, next) => {
-    if (req.path === `/${faviconFile}`) {
-      const status = req.query.status;
-      if (
-        status &&
-        faviconFile.endsWith('.svg') &&
-        ['active', 'critical', 'negative', 'positive', 'warning'].includes(status)
-      ) {
-        const [faviconData, faviconWrapperData] = await Promise.all([
-          readFileOnce(join(faviconDir, faviconFile)),
-          readFileOnce(faviconWrapperPath),
-        ]).catch((e) => {
-          if (e instanceof Error) {
-            once.warn(`Failed to read favicon: ${e.message}`);
-          }
-          return [null, null];
-        });
-        if (faviconData && faviconWrapperData) {
-          const svg = faviconWrapperData
-            .replace('<g id="mask"', `<g mask="url(#${status}-mask)"`)
-            .replace('<use id="status"', `<use href="#${status}"`)
-            .replace('<use id="icon" />', faviconData);
-          res.setHeader('Content-Type', 'image/svg+xml');
-          res.setHeader('Cache-Control', 'public, max-age=86400');
-          res.end(svg);
-          return;
-        }
-      }
-      return sirvWorkaround(faviconDir, {
-        dev: true,
-        etag: true,
-        extensions: [],
-      })(req, res, next);
-    }
-    next();
   });
 }
 
@@ -128,7 +110,7 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
  * @see https://github.com/lukeed/polka/issues/218
  */
 const sirvWorkaround: typeof sirv =
-  (...sirvArgs) =>
+  (dir, opts = {}) =>
   (req, res, next) => {
     // polka+sirv will modify the request URL, so we need to restore it after sirv is done
     // req._parsedUrl is an internal construct used by both polka and sirv
@@ -141,7 +123,7 @@ const sirvWorkaround: typeof sirv =
         }
       : undefined;
 
-    sirv(...sirvArgs)(req, res, maybeNext);
+    sirv(dir, { dev: true, etag: true, extensions: [], ...opts })(req, res, maybeNext);
   };
 
 export const parseStaticDir = (arg: string) => {

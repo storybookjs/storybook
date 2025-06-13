@@ -27,7 +27,7 @@ jobs:
     environment: release
     steps:
       - name: Fail if triggering actor is not administrator
-        uses: prince-chrismc/check-actor-permissions-action@v2.0.4
+        uses: prince-chrismc/check-actor-permissions-action@76c9ebe1cc5f00207d4ac0948be353226e27bf93 # v2.0.4
         with:
           permission: admin
 
@@ -49,19 +49,19 @@ jobs:
           echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
           ref: ${{ steps.info.outputs.sha }}
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version-file: ".nvmrc"
 
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
         with:
           path: |
             ~/.yarn/berry/cache
@@ -88,7 +88,7 @@ jobs:
 
       - name: Replace Pull Request Body
         # TODO: replace with ivangabriele/find-and-replace-pull-request-body@vX when https://github.com/ivangabriele/find-and-replace-pull-request-body/pull/11 has been released
-        uses: mcky/find-and-replace-pull-request-body@v1.1.6-mcky
+        uses: mcky/find-and-replace-pull-request-body@ffeec965b89c9284c290f2a85077a8c2c60f5040 # v1.1.6-mcky
         with:
           githubToken: ${{ secrets.GH_TOKEN }}
           prNumber: ${{ inputs.pr }}

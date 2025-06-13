@@ -310,11 +310,13 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   return (
     <Wrapper aria-readonly={readonly}>
       {isObjectOrArray && (
+        // TODO: migrate to Button, this is not an IconButton
         <RawButton
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((v) => !v);
           }}
+          label={showRaw ? 'Switch to object editor' : 'Switch to raw JSON editor'}
         >
           {showRaw ? <EyeCloseIcon /> : <EyeIcon />}
           <span>RAW</span>

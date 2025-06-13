@@ -1,9 +1,12 @@
 import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
-import React, { forwardRef, useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
 import { isPropValid, styled } from 'storybook/theming';
+
+import { shortcutToAriaKeyshortcuts } from '../../../manager-api';
+import type { API_KeyCollection } from '../../../manager-api/modules/shortcuts';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
@@ -14,6 +17,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   disabled?: boolean;
   active?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
+  shortcut?: API_KeyCollection;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -27,6 +31,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled = false,
       active = false,
       onClick,
+      shortcut = null,
       ...props
     },
     ref
@@ -36,6 +41,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) {
       Comp = Slot;
     }
+
+    const shortcutAttribute = useMemo(() => {
+      return shortcut ? shortcutToAriaKeyshortcuts(shortcut) : undefined;
+    }, [shortcut]);
 
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -71,6 +80,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         animating={isAnimating}
         animation={animation}
         onClick={handleClick}
+        aria-keyshortcuts={shortcutAttribute}
         {...props}
       />
     );

@@ -290,10 +290,10 @@ const AddonTools = () => (
       gap: 6,
     }}
   >
-    <IconButton title="Tool 1">
+    <IconButton label="Tool 1">
       <BottomBarIcon />
     </IconButton>
-    <IconButton title="Tool 2">
+    <IconButton label="Tool 2">
       <CloseIcon />
     </IconButton>
   </div>

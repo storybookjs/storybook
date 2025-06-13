@@ -127,11 +127,18 @@ export abstract class AbstractRenderer {
     ];
 
     if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
-      const { provideExperimentalZonelessChangeDetection } = await import('@angular/core');
-      if (!provideExperimentalZonelessChangeDetection) {
-        throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
+      const angularCore: any = await import('@angular/core');
+      const provideZonelessChangeDetectionFn =
+        'provideExperimentalZonelessChangeDetection' in angularCore
+          ? angularCore.provideExperimentalZonelessChangeDetection
+          : 'provideZonelessChangeDetection' in angularCore
+            ? angularCore.provideZonelessChangeDetection
+            : null;
+
+      if (!provideZonelessChangeDetectionFn) {
+        throw new Error('Zoneless change detection requires Angular 18 or higher');
       } else {
-        providers.unshift(provideExperimentalZonelessChangeDetection());
+        providers.unshift(provideZonelessChangeDetectionFn());
       }
     }
 

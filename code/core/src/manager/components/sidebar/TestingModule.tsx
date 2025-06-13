@@ -14,6 +14,8 @@ import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/ico
 import { internal_fullTestProviderStore } from '#manager-stores';
 import { keyframes, styled } from 'storybook/theming';
 
+import { useDynamicFavicon } from './useDynamicFavicon';
+
 const DEFAULT_HEIGHT = 500;
 
 const spin = keyframes({
@@ -175,6 +177,7 @@ interface TestingModuleProps {
   warningCount: number;
   warningsActive: boolean;
   setWarningsActive: (active: boolean) => void;
+  successCount: number;
 }
 
 export const TestingModule = ({
@@ -189,6 +192,7 @@ export const TestingModule = ({
   warningCount,
   warningsActive,
   setWarningsActive,
+  successCount,
 }: TestingModuleProps) => {
   const timeoutRef = useRef<null | ReturnType<typeof setTimeout>>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -255,6 +259,20 @@ export const TestingModule = ({
       toggleCollapsed(undefined, false);
     }
   }, [isCrashed, isCollapsed, toggleCollapsed]);
+
+  useDynamicFavicon(
+    isCrashed
+      ? 'critical'
+      : errorCount > 0
+        ? 'negative'
+        : warningCount > 0
+          ? 'warning'
+          : isRunning
+            ? 'active'
+            : successCount > 0
+              ? 'positive'
+              : undefined
+  );
 
   if (!hasTestProviders && (!errorCount || !warningCount)) {
     return null;

@@ -69,14 +69,29 @@ addons.register(ADDON_ID, (api) => {
       const theme = useTheme();
       const isDark = theme.base !== 'light';
 
+      // Apply docs.source.transform if it exists
+      const transform = parameter?.source?.transform;
+      let code =
+        parameter?.source?.code ||
+        codeSnippet.source ||
+        parameter?.source?.originalSource;
+
+      if (typeof transform === 'function' && code) {
+        try {
+          code = transform(code, currentStory);
+        } catch (error) {
+          throw new Error(
+            `Error transforming code snippet: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
+      }
+
       return (
         <AddonPanel active={!!active}>
           <SourceStyles>
             <Source
               {...parameter.source}
-              code={
-                parameter.source?.code || codeSnippet.source || parameter.source?.originalSource
-              }
+              code={code}
               format={codeSnippet.format}
               dark={isDark}
             />

@@ -132,15 +132,10 @@ export const parseStaticDir = (arg: string) => {
   const isWindowsAbsolute = win32.isAbsolute(arg);
   const isWindowsRawDirOnly = isWindowsAbsolute && lastColonIndex === 1; // e.g. 'C:\some\dir'
   const splitIndex = lastColonIndex !== -1 && !isWindowsRawDirOnly ? lastColonIndex : arg.length;
+  const [from, to] = [arg.slice(0, splitIndex), arg.slice(splitIndex + 1)];
 
-  const targetRaw = arg.substring(splitIndex + 1) || '/';
-  const target = targetRaw.split(sep).join(posix.sep); // Ensure target has forward-slash path
-
-  const rawDir = arg.substring(0, splitIndex);
-  const staticDir = isAbsolute(rawDir) ? rawDir : `./${rawDir}`;
+  const staticDir = isAbsolute(from) ? from : `./${from}`;
   const staticPath = resolve(staticDir);
-  const targetDir = target.replace(/^\/?/, './');
-  const targetEndpoint = targetDir.substring(1);
 
   if (!existsSync(staticPath)) {
     throw new Error(
@@ -150,6 +145,11 @@ export const parseStaticDir = (arg: string) => {
       `
     );
   }
+
+  const targetRaw = to || (statSync(staticPath).isFile() ? basename(staticPath) : '/');
+  const target = targetRaw.split(sep).join(posix.sep); // Ensure target has forward-slash path
+  const targetDir = target.replace(/^\/?/, './');
+  const targetEndpoint = targetDir.substring(1);
 
   return { staticDir, staticPath, targetDir, targetEndpoint };
 };

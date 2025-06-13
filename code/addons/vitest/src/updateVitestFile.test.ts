@@ -158,6 +158,135 @@ describe('updateConfigFile', () => {
     expect(updated).toBe(false);
   });
 
+  it('adds projects property to test config', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.3.2.template.ts', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      /// <reference types="vitest/config" />
+      import { defineConfig } from 'vite'
+      import react from '@vitejs/plugin-react'
+
+      // https://vite.dev/config/
+      export default defineConfig({
+        plugins: [react()],
+        test: {
+          globals: true,
+        },
+      })
+    `);
+
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const { code } = babel.generate(target);
+    expect(code).toMatchInlineSnapshot(`
+      "/// <reference types="vitest/config" />
+      import { defineConfig } from 'vite';
+      import react from '@vitejs/plugin-react';
+
+      // https://vite.dev/config/
+      import path from 'node:path';
+      import { fileURLToPath } from 'node:url';
+      import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+
+      // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      export default defineConfig({
+        plugins: [react()],
+        test: {
+          globals: true,
+          projects: [{
+            extends: true,
+            plugins: [
+            // The plugin will run tests for the stories defined in your Storybook config
+            // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+            storybookTest({
+              configDir: path.join(dirname, '.storybook')
+            })],
+            test: {
+              name: 'storybook',
+              browser: {
+                provider: 'playwright'
+              },
+              setupFiles: ['../.storybook/vitest.setup.ts']
+            }
+          }]
+        }
+      });"
+    `);
+  });
+
+  it('edits projects property of test config', async () => {
+    const source = babel.babelParse(
+      await loadTemplate('vitest.config.3.2.template.ts', {
+        CONFIG_DIR: '.storybook',
+        BROWSER_CONFIG: "{ provider: 'playwright' }",
+        SETUP_FILE: '../.storybook/vitest.setup.ts',
+      })
+    );
+    const target = babel.babelParse(`
+      /// <reference types="vitest/config" />
+      import { defineConfig } from 'vite'
+      import react from '@vitejs/plugin-react'
+
+      // https://vite.dev/config/
+      export default defineConfig({
+        plugins: [react()],
+        test: {
+          globals: true,
+          projects: ['packages/*', {some: 'config'}]
+        }
+      })
+    `);
+
+    const updated = updateConfigFile(source, target);
+    expect(updated).toBe(true);
+
+    const { code } = babel.generate(target);
+    expect(code).toMatchInlineSnapshot(`
+      "/// <reference types="vitest/config" />
+      import { defineConfig } from 'vite';
+      import react from '@vitejs/plugin-react';
+
+      // https://vite.dev/config/
+      import path from 'node:path';
+      import { fileURLToPath } from 'node:url';
+      import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+      const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+
+      // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
+      export default defineConfig({
+        plugins: [react()],
+        test: {
+          globals: true,
+          projects: ['packages/*', {
+            some: 'config'
+          }, {
+            extends: true,
+            plugins: [
+            // The plugin will run tests for the stories defined in your Storybook config
+            // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
+            storybookTest({
+              configDir: path.join(dirname, '.storybook')
+            })],
+            test: {
+              name: 'storybook',
+              browser: {
+                provider: 'playwright'
+              },
+              setupFiles: ['../.storybook/vitest.setup.ts']
+            }
+          }]
+        }
+      });"
+    `);
+  });
+
   it('adds workspace property to test config', async () => {
     const source = babel.babelParse(
       await loadTemplate('vitest.config.template.ts', {

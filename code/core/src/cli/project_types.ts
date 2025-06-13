@@ -27,6 +27,11 @@ export const externalFrameworks: ExternalFramework[] = [
     frameworks: ['@storybook-vue/nuxt'],
     renderer: '@storybook/vue3',
   },
+  {
+    name: 'stencil',
+    packageName: '@stencil/storybook-plugin',
+    frameworks: ['@stencil/storybook-plugin'],
+  },
 ];
 
 export const SUPPORTED_RENDERERS: SupportedRenderers[] = [
@@ -39,6 +44,7 @@ export const SUPPORTED_RENDERERS: SupportedRenderers[] = [
   'svelte',
   'qwik',
   'solid',
+  'stencil',
 ];
 
 export enum ProjectType {
@@ -64,6 +70,7 @@ export enum ProjectType {
   SERVER = 'SERVER',
   NX = 'NX',
   SOLID = 'SOLID',
+  STENCIL = 'STENCIL',
 }
 
 export enum CoreBuilder {

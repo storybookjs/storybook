@@ -8,8 +8,14 @@ import { esMain } from './utils/esmain';
 
 const PORT = process.env.PORT || 6007;
 
-const eventTypeExpectations = {
+type EventType = 'build' | 'test-run';
+type EventDefinition = {
+  noBoot?: boolean;
+};
+
+const eventTypeDefinitions: Record<EventType, EventDefinition> = {
   build: {},
+  'test-run': { noBoot: true },
 };
 
 async function run() {
@@ -29,9 +35,9 @@ async function run() {
       );
     }
 
-    const expectation = eventTypeExpectations[eventType as keyof typeof eventTypeExpectations];
+    const definition = eventTypeDefinitions[eventType as EventType];
 
-    if (!expectation) {
+    if (!definition) {
       throw new Error(`Unexpected eventType '${eventType}'`);
     }
 
@@ -43,33 +49,64 @@ async function run() {
 
     const events: any = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
 
-    test('Should log 2 events', () => {
-      assert.equal(
-        events.length,
-        2,
-        `Expected 2 events but received ${
-          events.length
-        } instead. The following events were logged: ${JSON.stringify(events)}`
-      );
+    if (definition.noBoot) {
+      test('Should log 1 event', () => {
+        assert.equal(
+          events.length,
+          1,
+          `Expected 1 event but received ${
+            events.length
+          } instead. The following events were logged: ${JSON.stringify(events)}`
+        );
+      });
+    } else {
+      test('Should log 2 events', () => {
+        assert.equal(
+          events.length,
+          2,
+          `Expected 2 events but received ${
+            events.length
+          } instead. The following events were logged: ${JSON.stringify(events)}`
+        );
+      });
+    }
+
+    if (events.length === 0) {
+      throw new Error('No events were logged');
+    }
+    const [bootEvent, mainEvent] = definition.noBoot ? [null, events[0]] : events;
+
+    const storybookVersion = versions.storybook;
+    if (bootEvent) {
+      test('boot event should have cliVersion and storybookVersion in context', () => {
+        assert.equal(bootEvent.context.cliVersion, storybookVersion);
+        assert.equal(bootEvent.context.storybookVersion, storybookVersion);
+      });
+    }
+
+    test(`main event should have storybookVersion in context`, () => {
+      assert.equal(mainEvent.context.storybookVersion, storybookVersion);
     });
 
-    const [bootEvent, mainEvent] = events;
-
-    test(`both events should have cliVersion in context`, () => {
-      const cliVersion = versions.storybook;
-      assert.equal(bootEvent.context.cliVersion, cliVersion);
-      assert.equal(mainEvent.context.cliVersion, cliVersion);
+    test(`main event should have storybookVersion in metadata`, () => {
+      assert.equal(mainEvent.metadata.storybookVersion, storybookVersion);
     });
 
-    test(`Should log a boot event with a payload of type ${eventType}`, () => {
-      assert.equal(bootEvent.eventType, 'boot');
-      assert.equal(bootEvent.payload?.eventType, eventType);
-    });
+    if (bootEvent) {
+      test(`Should log a boot event with a payload of type ${eventType}`, () => {
+        assert.equal(bootEvent.eventType, 'boot');
+        assert.equal(bootEvent.payload?.eventType, eventType);
+      });
+    }
 
     test(`main event should be ${eventType} and contain correct id and session id`, () => {
       assert.equal(mainEvent.eventType, eventType);
-      assert.notEqual(mainEvent.eventId, bootEvent.eventId);
-      assert.equal(mainEvent.sessionId, bootEvent.sessionId);
+      assert.ok(typeof mainEvent.eventId === 'string');
+      assert.ok(typeof mainEvent.sessionId === 'string');
+      if (bootEvent) {
+        assert.notEqual(mainEvent.eventId, bootEvent.eventId);
+        assert.equal(mainEvent.sessionId, bootEvent.sessionId);
+      }
     });
 
     test(`main event should contain anonymousId properly hashed`, () => {

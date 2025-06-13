@@ -6,6 +6,7 @@ import { styled } from 'storybook/theming';
 import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types';
 import { INTERNAL_RENDER_CALL_ID } from '../constants';
 import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
+import { DetachedDebuggerMessage } from './DetachedDebuggerMessage';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';
 import type { PlayStatus } from './StatusBadge';
@@ -22,6 +23,7 @@ export interface Controls {
 }
 
 interface InteractionsPanelProps {
+  storyUrl: string;
   status: PlayStatus;
   controls: Controls;
   controlStates: ControlStates;
@@ -88,6 +90,7 @@ const CaughtExceptionStack = styled.pre(({ theme }) => ({
 
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({
+    storyUrl,
     status,
     calls,
     controls,
@@ -105,10 +108,14 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     browserTestStatus,
   }) {
     const filter = useAnsiToHtmlFilter();
+    const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
 
     return (
       <Container>
         {hasResultMismatch && <TestDiscrepancyMessage browserTestStatus={browserTestStatus} />}
+        {controlStates.detached && (hasRealInteractions || hasException) && (
+          <DetachedDebuggerMessage storyUrl={storyUrl} />
+        )}
         {(interactions.length > 0 || hasException) && (
           <Subnav
             controls={controls}
@@ -166,9 +173,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           </CaughtException>
         )}
         <div ref={endRef} />
-        {!isPlaying &&
-          !caughtException &&
-          !interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID) && <Empty />}
+        {!isPlaying && !caughtException && !hasRealInteractions && <Empty />}
       </Container>
     );
   }

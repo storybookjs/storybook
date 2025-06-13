@@ -49,6 +49,7 @@ export interface ElementRef {
 }
 
 export interface ControlStates {
+  detached: boolean;
   start: boolean;
   back: boolean;
   goto: boolean;

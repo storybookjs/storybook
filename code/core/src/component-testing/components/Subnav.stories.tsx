@@ -18,6 +18,7 @@ export default {
       rerun: action('rerun'),
     },
     controlStates: {
+      detached: false,
       start: true,
       back: true,
       goto: true,
@@ -30,18 +31,17 @@ export default {
   },
 };
 
-const controlsDisabled = {
-  start: false,
-  back: false,
-  goto: false,
-  next: false,
-  end: false,
-};
-
 export const Wait = {
   args: {
     status: 'rendering',
-    controlStates: controlsDisabled,
+    controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };
 
@@ -66,7 +66,14 @@ export const Fail = {
 export const Bail = {
   args: {
     status: 'aborted',
-    controlStates: controlsDisabled,
+    controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };
 
@@ -74,6 +81,7 @@ export const AtStart = {
   args: {
     status: 'playing',
     controlStates: {
+      detached: false,
       start: false,
       back: false,
       goto: true,
@@ -87,6 +95,7 @@ export const Midway = {
   args: {
     status: 'playing',
     controlStates: {
+      detached: false,
       start: true,
       back: true,
       goto: true,
@@ -99,6 +108,27 @@ export const Midway = {
 export const Locked = {
   args: {
     status: 'playing',
-    controlStates: controlsDisabled,
+    controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
+  },
+};
+
+export const Detached = {
+  args: {
+    status: 'completed',
+    controlStates: {
+      detached: true,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };

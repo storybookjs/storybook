@@ -4,8 +4,12 @@ export interface OutlineParameters {
    *
    * @see https://storybook.js.org/docs/essentials/measure-and-outline#parameters
    */
-  outline: {
+  outline?: {
     /** Remove the addon panel and disable the addon's behavior */
     disable?: boolean;
   };
+}
+
+export interface OutlineTypes {
+  parameters: OutlineParameters;
 }

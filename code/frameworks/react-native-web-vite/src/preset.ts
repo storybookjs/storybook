@@ -97,7 +97,9 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
       // However we keep the react plugin to get the fast refresh and the other stuff its doing
       babel({
         ...pluginBabelOptions,
-        include: pluginBabelOptions.include || [/node_modules\/(react-native|@react-native)/],
+        include: pluginBabelOptions.include || [
+          /node_modules\/(react-native|@react-native|expo|@expo)/,
+        ],
         exclude: pluginBabelOptions.exclude,
         babelConfig: {
           ...pluginBabelOptions.babelConfig,

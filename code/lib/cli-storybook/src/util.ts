@@ -318,14 +318,11 @@ const processProject = async ({
       packageManager,
       previewConfigPath,
       storiesPaths,
+      storybookVersion: beforeVersion,
     } = await getStorybookData({ configDir, cache: true });
 
-    logger.debug(`${name} - Getting installed Storybook version...`);
-    const beforeVersion =
-      (await getInstalledStorybookVersion(packageManager)) ?? DEFAULT_FALLBACK_VERSION;
-
     // Validate version and upgrade compatibility
-    logger.debug(`${name} - Validating before version...`);
+    logger.debug(`${name} - Validating before version... ${beforeVersion}`);
     validateVersion(beforeVersion);
     const isCanary = isCanaryVersion(currentCLIVersion) || isCanaryVersion(beforeVersion);
     logger.debug(`${name} - Validating upgrade compatibility...`);

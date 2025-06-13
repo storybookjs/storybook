@@ -26,7 +26,7 @@ describe('prepareNestedSvg', () => {
 <svg width="64px" height="64px" viewBox="0 0 64 64" fill="none"><g /></svg>
     `);
     expect(fixedSvg).toMatchInlineSnapshot(
-      `"<svg width="160px" height="160px" viewBox="0 0 64 64" fill="none" preserveAspectRatio="xMidYMid meet"><g /></svg>"`
+      `"<svg width="32px" height="32px" viewBox="0 0 64 64" fill="none" preserveAspectRatio="xMidYMid meet"><g /></svg>"`
     );
   });
 
@@ -35,7 +35,7 @@ describe('prepareNestedSvg', () => {
 <svg width="64px" height="64px" fill="none"><g /></svg>
     `);
     expect(fixedSvg).toMatchInlineSnapshot(
-      `"<svg width="160px" height="160px" fill="none" viewBox="0 0 64 64" preserveAspectRatio="xMidYMid meet"><g /></svg>"`
+      `"<svg width="32px" height="32px" fill="none" viewBox="0 0 64 64" preserveAspectRatio="xMidYMid meet"><g /></svg>"`
     );
   });
 
@@ -52,7 +52,7 @@ describe('prepareNestedSvg', () => {
 </svg>
     `);
     expect(fixedSvg).toMatchInlineSnapshot(`
-      "<svg xmlns="http://www.w3.org/2000/svg" width="160px" height="160px" fill="none" viewBox="0 0 64 64" preserveAspectRatio="xMidYMid meet">
+      "<svg xmlns="http://www.w3.org/2000/svg" width="32px" height="32px" fill="none" viewBox="0 0 64 64" preserveAspectRatio="xMidYMid meet">
         <circle cx="23" cy="35" r="8" fill="#fff" />
         <circle cx="41" cy="35" r="8" fill="#fff" />
         <path fill="#9FA628"

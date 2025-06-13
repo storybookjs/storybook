@@ -42,11 +42,11 @@ export const prepareNestedSvg = (svg: string) => {
   let modifiedTag = openingTag
     .replace(/width=["']([^"']*)["']/g, (_, value) => {
       width = parseFloat(value);
-      return 'width="160px"';
+      return 'width="32px"';
     })
     .replace(/height=["']([^"']*)["']/g, (_, value) => {
       height = parseFloat(value);
-      return 'height="160px"';
+      return 'height="32px"';
     });
 
   // Set a viewBox to the original dimensions
@@ -101,6 +101,7 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
       }
     }
 
+    req.url = `/${faviconFile}`;
     return sirvWorkaround(faviconDir)(req, res, next);
   });
 

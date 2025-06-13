@@ -180,12 +180,12 @@ test.describe('Manager UI', () => {
       await sbPage.page.locator('[aria-label="Shortcuts"]').click();
       await sbPage.page.locator('#list-item-about').click();
 
-      await expect(sbPage.page.url()).toContain('/settings/about');
+      expect(sbPage.page.url()).toContain('/settings/about');
 
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
       await sbPage.page.locator('[title="Close settings page"]').click();
-      await expect(sbPage.page.url()).not.toContain('/settings/about');
+      expect(sbPage.page.url()).not.toContain('/settings/about');
     });
   });
 
@@ -217,7 +217,7 @@ test.describe('Manager UI', () => {
       // navigation menu is still open
       await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeVisible();
       // story has not changed
-      await expect(sbPage.page.url()).toContain('configure-your-project');
+      expect(sbPage.page.url()).toContain('configure-your-project');
 
       await sbPage.navigateToStory('Example/Button', 'Secondary');
 
@@ -225,7 +225,7 @@ test.describe('Manager UI', () => {
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
       await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeHidden();
       // story has changed
-      await expect(sbPage.page.url()).toContain('example-button--secondary');
+      expect(sbPage.page.url()).toContain('example-button--secondary');
     });
 
     test('Open and close addon panel', async ({ page }) => {

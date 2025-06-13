@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 import { createRequire } from "node:module";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import type { Plugin } from "vite";
+import tsconfigPaths from "vite-tsconfig-paths";
+
 import { vitePluginNextEnv } from "./plugins/next-env/plugin";
 import { vitePluginNextFont } from "./plugins/next-font/plugin";
 import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
@@ -37,6 +39,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
   return [
+    tsconfigPaths({ root: resolvedDir }),
     {
       name: "vite-plugin-storybook-nextjs",
       enforce: "pre" as const,

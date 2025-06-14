@@ -9,6 +9,7 @@ import { getApplication } from './StorybookModule';
 import { storyPropsProvider } from './StorybookProvider';
 import { queueBootstrapping } from './utils/BootstrapQueue';
 import { PropertyExtractor } from './utils/PropertyExtractor';
+import { getProvideZonelessChangeDetectionFn } from './utils/Zoneless';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -127,13 +128,7 @@ export abstract class AbstractRenderer {
     ];
 
     if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
-      const angularCore: any = await import('@angular/core');
-      const provideZonelessChangeDetectionFn =
-        'provideExperimentalZonelessChangeDetection' in angularCore
-          ? angularCore.provideExperimentalZonelessChangeDetection
-          : 'provideZonelessChangeDetection' in angularCore
-            ? angularCore.provideZonelessChangeDetection
-            : null;
+      const provideZonelessChangeDetectionFn = await getProvideZonelessChangeDetectionFn();
 
       if (!provideZonelessChangeDetectionFn) {
         throw new Error('Zoneless change detection requires Angular 18 or higher');

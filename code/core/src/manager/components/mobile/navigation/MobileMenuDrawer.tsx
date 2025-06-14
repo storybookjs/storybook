@@ -88,12 +88,15 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({ children, id }) =>
 
 const Container = styled.dialog<{ state: TransitionStatus }>(({ theme, state }) => ({
   position: 'fixed',
-  boxSizing: 'border-box',
-  width: '100%',
-  background: theme.background.content,
-  height: '80%',
   bottom: 0,
   left: 0,
+  right: 0,
+  top: 'auto',
+  boxSizing: 'border-box',
+  width: '100%',
+  maxWidth: '100vw',
+  background: theme.background.content,
+  height: '80%',
   zIndex: 11,
   borderRadius: '10px 10px 0 0',
   transition: `all ${MOBILE_TRANSITION_DURATION}ms ease-in-out`,
@@ -118,6 +121,17 @@ const Container = styled.dialog<{ state: TransitionStatus }>(({ theme, state }) 
   })()}`,
   border: 'none',
   padding: 0,
+  margin: 0,
+  '&[open]': {
+    position: 'fixed',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    top: 'auto',
+    width: '100%',
+    maxWidth: '100vw',
+    margin: 0,
+  },
 }));
 
 const SidebarContainer = styled.div<{ state: TransitionStatus }>(({ theme, state }) => ({

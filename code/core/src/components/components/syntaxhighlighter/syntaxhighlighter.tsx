@@ -59,8 +59,9 @@ const themedSyntax = memoize(2)((theme) =>
 const copyToClipboard: (text: string) => Promise<void> = createCopyToClipboardFunction();
 
 export function createCopyToClipboardFunction() {
-  if (navigator?.clipboard) {
-    return (text: string) => navigator.clipboard.writeText(text);
+  if (globalWindow.top?.navigator?.clipboard) {
+    const clipboard = globalWindow.top.navigator.clipboard;
+    return async (text: string) => clipboard.writeText(text);
   }
   return async (text: string) => {
     const tmp = document.createElement('TEXTAREA') as HTMLTextAreaElement;

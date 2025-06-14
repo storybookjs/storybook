@@ -1,2 +1,0 @@
-// EMPTY FILE
-export default {};

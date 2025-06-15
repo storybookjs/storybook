@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { prompt } from 'storybook/internal/node-logger';
@@ -6,7 +6,7 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
@@ -149,9 +149,9 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   getModulePackageJSON(packageName: string): PackageJson | null {
-    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
+    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
       cwd: this.cwd,
-      stopAt: getProjectRoot(),
+      stop: getProjectRoot(),
     });
 
     if (pnpapiPath) {
@@ -187,13 +187,11 @@ export class Yarn2Proxy extends JsPackageManager {
       }
     }
 
-    const packageJsonPath = findUpSync(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: this.primaryPackageJson.operationDir, stopAt: getProjectRoot() }
-    );
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, {
+      cwd: this.primaryPackageJson.operationDir,
+      stop: getProjectRoot(),
+    });
 
     if (!packageJsonPath) {
       return null;

@@ -1,6 +1,6 @@
 import { join, relative, resolve, sep } from 'node:path';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 
 import { LOCK_FILES } from '../js-package-manager/constants';
 
@@ -18,7 +18,7 @@ export const getProjectRoot = () => {
   }
 
   try {
-    const found = findUpSync('.git', { type: 'directory' });
+    const found = find.up('.git');
     if (found) {
       result = join(found, '..');
     }
@@ -27,7 +27,7 @@ export const getProjectRoot = () => {
   }
 
   try {
-    const found = findUpSync('.svn', { type: 'directory' });
+    const found = find.up('.svn');
     if (found) {
       result = result || join(found, '..');
     }
@@ -36,7 +36,7 @@ export const getProjectRoot = () => {
   }
 
   try {
-    const found = findUpSync('.hg', { type: 'directory' });
+    const found = find.up('.hg');
     if (found) {
       result = result || join(found, '..');
     }
@@ -59,9 +59,7 @@ export const getProjectRoot = () => {
   }
 
   try {
-    const found = findUpSync(LOCK_FILES, {
-      type: 'file',
-    });
+    const found = find.any(LOCK_FILES); // TODO: is the 'file' check required?
     if (found) {
       result = result || join(found, '..');
     }

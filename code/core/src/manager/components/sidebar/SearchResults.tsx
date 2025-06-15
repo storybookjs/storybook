@@ -303,6 +303,7 @@ export const SearchResults: FC<{
           <IconButton
             className="search-result-recentlyOpened-clear"
             onClick={handleClearLastViewed}
+            label="Clear recently opened"
           >
             <TrashIcon />
           </IconButton>

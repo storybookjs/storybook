@@ -149,8 +149,8 @@ type InputProps = Omit<
 };
 export const Input = Object.assign(
   styled(
-    forwardRef<any, InputProps>(function Input({ size, valid, align, ...props }, ref) {
-      return <input {...props} ref={ref} />;
+    forwardRef<any, InputProps>(function Input({ size, valid, align, name, ...props }, ref) {
+      return <input {...props} aria-label={name} ref={ref} />;
     })
   )<InputProps>(styles, sizes, alignment, validation, {
     minHeight: 32,
@@ -176,8 +176,8 @@ type SelectProps = Omit<
 };
 export const Select = Object.assign(
   styled(
-    forwardRef<any, SelectProps>(function Select({ size, valid, align, ...props }, ref) {
-      return <select {...props} ref={ref} />;
+    forwardRef<any, SelectProps>(function Select({ size, valid, align, name, ...props }, ref) {
+      return <select {...props} aria-label={name} ref={ref} />;
     })
   )<SelectProps>(styles, sizes, validation, {
     height: 32,
@@ -206,8 +206,8 @@ type TextareaProps = Omit<
 } & React.RefAttributes<HTMLTextAreaElement>;
 export const Textarea = Object.assign(
   styled(
-    forwardRef<any, TextareaProps>(function Textarea({ size, valid, align, ...props }, ref) {
-      return <TextareaAutoResize {...props} ref={ref} />;
+    forwardRef<any, TextareaProps>(function Textarea({ size, valid, align, name, ...props }, ref) {
+      return <TextareaAutoResize {...props} aria-label={name} ref={ref} />;
     })
   )<TextareaProps>(styles, sizes, alignment, validation, ({ height = 400 }) => ({
     overflow: 'visible',

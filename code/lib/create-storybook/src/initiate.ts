@@ -111,6 +111,12 @@ const installStorybook = async <Project extends ProjectType>(
         );
       }
 
+      case ProjectType.REACT_NATIVE_AND_RNW: {
+        commandLog('Adding Storybook support to your "React Native" app');
+        await reactNativeGenerator(packageManager, npmOptions, generatorOptions);
+        return reactNativeWebGenerator(packageManager, npmOptions, generatorOptions);
+      }
+
       case ProjectType.QWIK: {
         return qwikGenerator(packageManager, npmOptions, generatorOptions).then(
           commandLog('Adding Storybook support to your "Qwik" app')
@@ -511,6 +517,10 @@ export async function doInitiate(options: CommandOptions): Promise<
               title: `${picocolors.bold('React Native Web')}: Storybook on web for docs, test, and sharing`,
               value: ProjectType.REACT_NATIVE_WEB,
             },
+            {
+              title: `${picocolors.bold('Both')}: Add both native and web Storybooks`,
+              value: ProjectType.REACT_NATIVE_AND_RNW,
+            },
           ],
         });
         projectType = manualType;
@@ -616,11 +626,11 @@ export async function doInitiate(options: CommandOptions): Promise<
     await telemetry('init', { projectType, features: telemetryFeatures, newUser });
   }
 
-  if (projectType === ProjectType.REACT_NATIVE) {
+  if ([ProjectType.REACT_NATIVE, ProjectType.REACT_NATIVE_AND_RNW].includes(projectType)) {
     logger.log(dedent`
-      ${picocolors.yellow('NOTE: installation is not 100% automated.')}
+      ${picocolors.yellow('React Native (RN) Storybook installation is not 100% automated.')}
 
-      To run Storybook, you will need to:
+      To run RN Storybook, you will need to:
 
       1. Replace the contents of your app entry with the following
 
@@ -634,12 +644,21 @@ export async function doInitiate(options: CommandOptions): Promise<
       For more details go to:
       ${picocolors.cyan('https://github.com/storybookjs/react-native#getting-started')}
 
-      Then to run your Storybook, type:
+      Then to start RN Storybook, run:
 
       ${picocolors.inverse(' ' + packageManager.getRunCommand('start') + ' ')}
-
     `);
 
+    if (projectType === ProjectType.REACT_NATIVE_AND_RNW) {
+      logger.log(dedent`
+
+        ${picocolors.yellow('React Native Web (RNW) Storybook is fully installed.')}
+
+        To start RNW Storybook, run:
+
+        ${picocolors.inverse(' ' + packageManager.getRunCommand('storybook') + ' ')}
+      `);
+    }
     return { shouldRunDev: false };
   }
 

@@ -1,3 +1,8 @@
+## 9.0.10
+
+- CLI: Add RN/RNW "both" init option - [#31778](https://github.com/storybookjs/storybook/pull/31778), thanks @shilman!
+- Nextjs-Vite: Use tsconfig paths plugin - [#31764](https://github.com/storybookjs/storybook/pull/31764), thanks @kasperpeulen!
+
 ## 9.0.9
 
 - Angular: Update MiniCssExtractPlugin configuration for cache busting - [#31752](https://github.com/storybookjs/storybook/pull/31752), thanks @valentinpalkovic!

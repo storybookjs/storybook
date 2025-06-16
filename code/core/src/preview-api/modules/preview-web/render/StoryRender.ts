@@ -316,8 +316,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
       // The phase should be 'rendering' but it might be set to 'aborted' by another render cycle
       if (this.renderOptions.autoplay && forceRemount && playFunction && this.phase !== 'errored') {
-        window.addEventListener('error', onError);
-        window.addEventListener('unhandledrejection', onUnhandledRejection);
+        window?.addEventListener?.('error', onError);
+        window?.addEventListener?.('unhandledrejection', onUnhandledRejection);
         this.disableKeyListeners = true;
         try {
           if (!isMountDestructured) {
@@ -360,8 +360,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           );
         }
         this.disableKeyListeners = false;
-        window.removeEventListener('unhandledrejection', onUnhandledRejection);
-        window.removeEventListener('error', onError);
+        window?.removeEventListener?.('unhandledrejection', onUnhandledRejection);
+        window?.removeEventListener?.('error', onError);
 
         if (abortSignal.aborted) {
           return;
@@ -480,7 +480,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // If we still haven't completed, reload the page (iframe) to ensure we have a clean slate
     // for the next render. Since the reload can take a brief moment to happen, we want to stop
     // further rendering by awaiting a never-resolving promise (which is destroyed on reload).
-    window.location.reload();
+    window?.location?.reload?.();
     await new Promise(() => {});
   }
 }

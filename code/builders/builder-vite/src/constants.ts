@@ -146,27 +146,3 @@ export const INCLUDE_CANDIDATES = [
   'vue',
   'warning',
 ];
-
-/**
- * Returns only those candidates that can be resolved
- *
- * @param config Vite config to use for resolution
- */
-export function filterResolvableIncludeCandidates(candidates: string[]): string[] {
-  return candidates.filter((id) => {
-    const split = id.split('>');
-    const primaryId = split[0].trim();
-
-    try {
-      require.resolve(primaryId);
-      return true;
-    } catch {
-      try {
-        import.meta.resolve(primaryId);
-        return true;
-      } catch {
-        return false;
-      }
-    }
-  });
-}

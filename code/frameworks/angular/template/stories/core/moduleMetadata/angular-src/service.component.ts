@@ -1,5 +1,6 @@
-import { OnInit, Component, Input } from '@angular/core';
-import { DummyService } from './dummy.service';
+import type { OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
+import type { DummyService } from './dummy.service';
 
 @Component({
   standalone: false,

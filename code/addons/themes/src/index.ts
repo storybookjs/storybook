@@ -1,9 +1,10 @@
-import { definePreview } from 'storybook/preview-api';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
 import * as addonAnnotations from './preview';
+import type { ThemesTypes } from './types';
 
-export type { ThemesGlobals, ThemesParameters } from './types';
+export type { ThemesTypes } from './types';
 
-export default () => definePreview(addonAnnotations);
+export default () => definePreviewAddon<ThemesTypes>(addonAnnotations);
 
 export * from './decorators';

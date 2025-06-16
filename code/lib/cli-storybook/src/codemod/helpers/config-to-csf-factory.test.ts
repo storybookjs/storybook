@@ -221,4 +221,27 @@ describe('preview specific functionality', () => {
       });
     `);
   });
+
+  it('should not change non story exports', async () => {
+    await expect(
+      transform(dedent`
+        import type { Preview } from '@storybook/react-vite'
+        
+        export const withStore: Decorator = () => {}
+
+        const preview: Preview = {
+          tags: []
+        };
+        export default preview;
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { definePreview } from '@storybook/react-vite';
+
+      export const withStore: Decorator = () => {};
+
+      export default definePreview({
+        tags: [],
+      });
+    `);
+  });
 });

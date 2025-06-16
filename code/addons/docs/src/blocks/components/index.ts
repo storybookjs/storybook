@@ -10,3 +10,4 @@ export * from './IFrame';
 export * from './Typeset';
 export * from './ColorPalette';
 export * from './IconGallery';
+export * from './TableOfContents';

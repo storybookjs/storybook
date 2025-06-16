@@ -31,7 +31,7 @@ export const All: Story = {
       <small>(native)</small>
     </div>
   ),
-  experimental_afterEach: async ({ canvasElement }) => {
+  afterEach: async ({ canvasElement }) => {
     canvasElement.querySelectorAll<HTMLInputElement>('[data-indeterminate]').forEach((checkbox) => {
       checkbox.indeterminate = true;
     });
@@ -52,7 +52,7 @@ export const Checked: Story = {
 };
 
 export const Indeterminate: Story = {
-  experimental_afterEach: async ({ canvasElement }) => {
+  afterEach: async ({ canvasElement }) => {
     canvasElement.getElementsByTagName('input')[0].indeterminate = true;
   },
 };
@@ -74,7 +74,7 @@ export const DisabledIndeterminate: Story = {
   args: {
     disabled: true,
   },
-  experimental_afterEach: async ({ canvasElement }) => {
+  afterEach: async ({ canvasElement }) => {
     canvasElement.getElementsByTagName('input')[0].indeterminate = true;
   },
 };

@@ -99,7 +99,9 @@ describe('wrapRequire', () => {
       const call = writeFile.mock.calls[0];
 
       expect(call[1]).toMatchInlineSnapshot(`
-  "import { dirname, join } from "path";
+  "import { createRequire } from "node:module";
+  import { dirname, join } from "node:path";
+  const require = createRequire(import.meta.url);
   const config = {
     stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
     addons: [

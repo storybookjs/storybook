@@ -3,7 +3,7 @@ import { global as globalThis } from '@storybook/global';
 import { expect } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   args: { label: 'Button' },
 };
 

@@ -7,14 +7,15 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+env:
+  NODE_OPTIONS: "--max_old_space_size=4096"
+
 jobs:
   build:
-    name: Core Unit Tests, ${{ matrix.os }}
+    name: Core Unit Tests, windows-latest
     strategy:
       fail-fast: false
-      matrix:
-        os: [windows-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,11 +26,11 @@ jobs:
           node-version-file: ".nvmrc"
 
       - name: install scripts
-        run: | 
+        run: |
           cd scripts && yarn install
 
       - name: install code
-        run: | 
+        run: |
           cd code && yarn install
 
       - name: compile

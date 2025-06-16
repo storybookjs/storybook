@@ -97,7 +97,9 @@ export async function renderToCanvas(
     unmountElement(canvasElement);
   }
 
-  const act = await getAct();
+  // Disable act in docs, see:
+  // https://github.com/storybookjs/storybook/issues/30356
+  const act = await getAct({ disableAct: storyContext.viewMode === 'docs' });
   await new Promise<void>(async (resolve, reject) => {
     actQueue.push(async () => {
       try {

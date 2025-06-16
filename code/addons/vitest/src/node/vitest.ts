@@ -49,6 +49,9 @@ new TestManager({
   onReady: () => {
     process.send?.({ type: 'ready' });
   },
+  storybookOptions: {
+    configDir: process.env.STORYBOOK_CONFIG_DIR || '',
+  } as any,
 });
 
 const exit = (code = 0) => {

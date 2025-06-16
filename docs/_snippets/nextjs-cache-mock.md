@@ -1,5 +1,5 @@
 ```js filename="MyForm.stories.js" renderer="react" language="js"
-import { expect, userEvent, within } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 /*
  * Replace your-framework with nextjs or nextjs-vite
@@ -14,9 +14,7 @@ export default {
 };
 
 export const Submitted = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
-
+  async play({ canvas, userEvent }) {
     const submitButton = canvas.getByRole('button', { name: /submit/i });
     await userEvent.click(saveButton);
     // 👇 Use any mock assertions on the function
@@ -29,7 +27,7 @@ export const Submitted = {
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-import { expect, userEvent, within } from 'storybook/test';
+import { expect } from 'storybook/test';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
 import { revalidatePath } from '@storybook/your-framework/cache.mock';
@@ -44,9 +42,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Submitted: Story = {
-  async play({ canvasElement }) {
-    const canvas = within(canvasElement);
-
+  async play({ canvas, userEvent }) {
     const submitButton = canvas.getByRole('button', { name: /submit/i });
     await userEvent.click(saveButton);
     // 👇 Use any mock assertions on the function

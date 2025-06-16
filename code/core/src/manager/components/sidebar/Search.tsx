@@ -62,13 +62,13 @@ const ScreenReaderLabel = styled.label({
   overflow: 'hidden',
 });
 
-const SearchField = styled.div(({ theme }) => ({
+const SearchField = styled.div<{ isMobile: boolean }>(({ theme, isMobile }) => ({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'center',
-  padding: 2,
+  padding: isMobile ? 4 : 2,
   flexGrow: 1,
-  height: 32,
+  height: isMobile ? 36 : 32,
   width: '100%',
   boxShadow: `${theme.button.border} 0 0 0 1px inset`,
   borderRadius: theme.appBorderRadius + 2,
@@ -90,14 +90,14 @@ const IconWrapper = styled.div(({ theme, onClick }) => ({
   justifyContent: 'center',
 }));
 
-const Input = styled.input(({ theme }) => ({
+const Input = styled.input<{ isMobile: boolean }>(({ theme, isMobile }) => ({
   appearance: 'none',
   height: 28,
   width: '100%',
   padding: 0,
   border: 0,
   background: 'transparent',
-  fontSize: `${theme.typography.size.s1 + 1}px`,
+  fontSize: isMobile ? '16px' : `${theme.typography.size.s1 + 1}px`,
   fontFamily: 'inherit',
   transition: 'all 150ms',
   color: theme.color.defaultText,
@@ -389,12 +389,13 @@ export const Search = React.memo<SearchProps>(function Search({
             <SearchBar>
               <SearchField
                 {...getRootProps({ refKey: '' }, { suppressRefError: true })}
+                isMobile={isMobile}
                 className="search-field"
               >
                 <IconWrapper>
                   <SearchIcon />
                 </IconWrapper>
-                <Input {...inputProps} />
+                <Input {...inputProps} isMobile={isMobile} />
                 {!isMobile && enableShortcuts && !isOpen && (
                   <FocusKey>
                     {searchShortcut === '⌘ K' ? (

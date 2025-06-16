@@ -2,7 +2,6 @@ import { writeFile } from 'node:fs/promises';
 import { builtinModules } from 'node:module';
 
 import type { Metafile } from 'esbuild';
-import aliasPlugin from 'esbuild-plugin-alias';
 // eslint-disable-next-line depend/ban-dependencies
 import * as fs from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies
@@ -115,13 +114,6 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const browserOptions: Options = {
     target: BROWSER_TARGETS as Options['target'],
     platform: 'browser',
-    esbuildPlugins: [
-      aliasPlugin({
-        process: require.resolve('../node_modules/process/browser.js'),
-        util: require.resolve('../node_modules/util/util.js'),
-        assert: require.resolve('browser-assert'),
-      }),
-    ],
     format: ['esm'],
     esbuildOptions: (options) => {
       options.conditions = ['module'];

@@ -58,9 +58,9 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(story?.beforeEach),
   ];
 
-  const experimental_afterEach = [
-    ...normalizeArrays(storyObject.experimental_afterEach),
-    ...normalizeArrays(story?.experimental_afterEach),
+  const afterEach = [
+    ...normalizeArrays(storyObject.afterEach),
+    ...normalizeArrays(story?.afterEach),
   ];
   const { render, play, tags = [], globals = {} } = storyObject;
 
@@ -76,7 +76,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     argTypes: normalizeInputTypes(argTypes),
     loaders,
     beforeEach,
-    experimental_afterEach,
+    afterEach,
     globals,
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),

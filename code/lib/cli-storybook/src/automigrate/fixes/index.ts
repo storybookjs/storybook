@@ -20,7 +20,6 @@ export * from '../types';
 
 export const allFixes: Fix[] = [
   eslintPlugin,
-  wrapRequire,
   addonMdxGfmRemove,
   addonStorysourceCodePanel,
   upgradeStorybookRelatedDependencies,
@@ -34,6 +33,7 @@ export const allFixes: Fix[] = [
   removeEssentials,
   addonA11yParameters,
   removeDocsAutodocs,
+  wrapRequire,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

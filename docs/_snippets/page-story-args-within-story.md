@@ -30,7 +30,8 @@ export const Example = {
 ```
 
 ```ts filename="my-component/component.stories.ts|tsx" renderer="react" language="ts"
-import { StoryObj, Meta } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 import { useArgs } from 'storybook/preview-api';
 
 import { Checkbox } from './checkbox';

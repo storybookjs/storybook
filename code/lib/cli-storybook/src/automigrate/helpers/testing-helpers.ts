@@ -1,6 +1,10 @@
 import { vi } from 'vitest';
 
-import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import type {
+  JsPackageManager,
+  PackageJson,
+  PackageJsonWithDepsAndDevDeps,
+} from 'storybook/internal/common';
 
 vi.mock('./mainConfigFile', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./mainConfigFile')>()),
@@ -15,8 +19,16 @@ vi.mock('storybook/internal/common', async (importOriginal) => ({
 export const makePackageManager = (packageJson: PackageJson) => {
   const { dependencies = {}, devDependencies = {}, peerDependencies = {} } = packageJson;
   return {
-    retrievePackageJson: async () => ({ dependencies: {}, devDependencies: {}, ...packageJson }),
-    getAllDependencies: async () => ({
+    primaryPackageJson: {
+      packageJson: {
+        dependencies: {},
+        devDependencies: {},
+        ...packageJson,
+      } as PackageJsonWithDepsAndDevDeps,
+      packageJsonPath: '/some/path',
+      operationDir: '/some/path',
+    },
+    getAllDependencies: () => ({
       ...dependencies,
       ...devDependencies,
       ...peerDependencies,

@@ -9,13 +9,8 @@ import type {
   WorkspaceProject,
 } from 'vitest/node';
 
-import { resolvePathInStorybookCache } from 'storybook/internal/common';
-import type {
-  DocsIndexEntry,
-  StoryId,
-  StoryIndex,
-  StoryIndexEntry,
-} from 'storybook/internal/types';
+import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
+import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
 import path, { dirname, join, normalize } from 'pathe';
@@ -30,12 +25,6 @@ import type { TestManager } from './test-manager';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
 const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
-
-type TagsFilter = {
-  include: string[];
-  exclude: string[];
-  skip: string[];
-};
 
 const packageDir = dirname(require.resolve('@storybook/addon-vitest/package.json'));
 
@@ -67,8 +56,8 @@ export class VitestManager {
       coverage
         ? {
             enabled: true,
-            clean: false,
-            cleanOnRerun: false,
+            clean: true,
+            cleanOnRerun: true,
             reportOnFailure: true,
             reporter: [['html', {}], storybookCoverageReporter],
             reportsDirectory: resolvePathInStorybookCache(COVERAGE_DIRECTORY),
@@ -76,23 +65,45 @@ export class VitestManager {
         : { enabled: false }
     ) as CoverageOptions;
 
-    const vitestWorkspaceConfig = await findUp([
-      ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
-      ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
-    ]);
+    const vitestWorkspaceConfig = await findUp(
+      [
+        ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
+        ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
+      ],
+      { stopAt: getProjectRoot() }
+    );
 
-    this.vitest = await createVitest('test', {
-      root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
-      watch: true,
-      passWithNoTests: false,
-      // TODO:
-      // Do we want to enable Vite's default reporter?
-      // The output in the terminal might be too spamy and it might be better to
-      // find a way to just show errors and warnings for example
-      // Otherwise it might be hard for the user to discover Storybook related logs
-      reporters: ['default', new StorybookReporter(this.testManager)],
-      coverage: coverageOptions,
-    });
+    const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;
+
+    try {
+      this.vitest = await createVitest('test', {
+        root: vitestWorkspaceConfig ? dirname(vitestWorkspaceConfig) : process.cwd(),
+        watch: true,
+        passWithNoTests: false,
+        project: [projectName],
+        // TODO:
+        // Do we want to enable Vite's default reporter?
+        // The output in the terminal might be too spamy and it might be better to
+        // find a way to just show errors and warnings for example
+        // Otherwise it might be hard for the user to discover Storybook related logs
+        reporters: ['default', new StorybookReporter(this.testManager)],
+        coverage: coverageOptions,
+      });
+    } catch (err: any) {
+      const originalMessage = String(err.message);
+      if (originalMessage.includes('Found multiple projects')) {
+        const custom = [
+          'Storybook was unable to start the test run because you have multiple Vitest projects (or browsers) in headed mode.',
+          'Please set `headless: true` in your Storybook vitest config.\n\n',
+        ].join('\n');
+
+        if (!originalMessage.startsWith(custom)) {
+          err.message = `${custom}${originalMessage}`;
+        }
+      }
+
+      throw err;
+    }
 
     if (this.vitest) {
       this.vitest.onCancel(() => {
@@ -294,10 +305,17 @@ export class VitestManager {
     );
   }
 
-  async runAffectedTestsAfterChange(changedFilePath: string) {
+  async runAffectedTestsAfterChange(changedFilePath: string, event: 'change' | 'add') {
     const id = slash(changedFilePath);
     this.vitest?.logger.clearHighlightCache(id);
     this.updateLastChanged(id);
+
+    if (event === 'add') {
+      const project = this.vitest?.projects.find(this.isStorybookProject.bind(this));
+      // This function not only tests whether a file matches the test globs, but it also
+      // adds the file to the project's internal testFilesList
+      project?.matchesTestGlob(id);
+    }
 
     // when watch mode is disabled, don't trigger any tests (below)
     // but still invalidate the cache for the changed file, which is handled above
@@ -439,8 +457,12 @@ export class VitestManager {
     this.resetGlobalTestNamePattern();
     this.vitest!.vite.watcher.removeAllListeners('change');
     this.vitest!.vite.watcher.removeAllListeners('add');
-    this.vitest!.vite.watcher.on('change', this.runAffectedTestsAfterChange.bind(this));
-    this.vitest!.vite.watcher.on('add', this.runAffectedTestsAfterChange.bind(this));
+    this.vitest!.vite.watcher.on('change', (file) =>
+      this.runAffectedTestsAfterChange(file, 'change')
+    );
+    this.vitest!.vite.watcher.on('add', (file) => {
+      this.runAffectedTestsAfterChange(file, 'add');
+    });
     this.registerVitestConfigListener();
   }
 

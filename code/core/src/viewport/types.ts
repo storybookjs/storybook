@@ -1,7 +1,7 @@
 export interface Viewport {
   name: string;
   styles: ViewportStyles;
-  type: 'desktop' | 'mobile' | 'tablet' | 'other';
+  type?: 'desktop' | 'mobile' | 'tablet' | 'other';
 }
 
 export interface ViewportStyles {
@@ -22,7 +22,7 @@ export type GlobalState = {
    * When true the viewport applied will be rotated 90°, e.g. it will rotate from portrait to
    * landscape orientation.
    */
-  isRotated: boolean;
+  isRotated?: boolean;
 };
 
 export type GlobalStateUpdate = Partial<GlobalState>;
@@ -33,7 +33,7 @@ export interface ViewportParameters {
    *
    * @see https://storybook.js.org/docs/essentials/viewport#parameters
    */
-  viewport: {
+  viewport?: {
     /**
      * Remove the addon panel and disable the addon's behavior . If you wish to turn off this addon
      * for the entire Storybook, you should do so when registering addon-essentials
@@ -56,5 +56,10 @@ export interface ViewportGlobals {
    *
    * @see https://storybook.js.org/docs/essentials/viewport#globals
    */
-  viewport: GlobalState | GlobalState['value'];
+  viewport?: GlobalState | GlobalState['value'];
+}
+
+export interface ViewportTypes {
+  parameters: ViewportParameters;
+  globals: ViewportGlobals;
 }

@@ -107,6 +107,7 @@ export const DocsContent = styled.div(({ theme }) => {
   return {
     maxWidth: 1000,
     width: '100%',
+    minWidth: 0,
     [toGlobalSelector('a')]: {
       ...reset,
       fontSize: 'inherit',
@@ -428,6 +429,7 @@ export const DocsContent = styled.div(({ theme }) => {
 export const DocsWrapper = styled.div(({ theme }) => ({
   background: theme.background.content,
   display: 'flex',
+  flexDirection: 'row-reverse',
   justifyContent: 'center',
   padding: '4rem 20px',
   minHeight: '100vh',
@@ -444,7 +446,7 @@ interface DocsPageWrapperProps {
 
 export const DocsPageWrapper: FC<DocsPageWrapperProps> = ({ children, toc }) => (
   <DocsWrapper className="sbdocs sbdocs-wrapper">
-    <DocsContent className="sbdocs sbdocs-content">{children}</DocsContent>
     {toc}
+    <DocsContent className="sbdocs sbdocs-content">{children}</DocsContent>
   </DocsWrapper>
 );

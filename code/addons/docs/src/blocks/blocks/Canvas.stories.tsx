@@ -158,8 +158,8 @@ export const PropSource: Story = {
   },
 };
 
-export const PropInlineStory: Story = {
-  name: 'Prop story = { ..., inline: true }',
+export const PropIframeStory: Story = {
+  name: 'Prop story = { ..., inline: false }',
   args: {
     of: ButtonStories.Primary,
     story: { inline: false, height: '200px' },

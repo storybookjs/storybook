@@ -11,13 +11,9 @@ vi.mock('../versions', () => ({
 describe('JsPackageManager', () => {
   let jsPackageManager: JsPackageManager;
   let mockLatestVersion: ReturnType<typeof vi.fn>;
-  let mockStorybookPackagesVersions: Record<string, string>;
 
   beforeEach(() => {
     mockLatestVersion = vi.fn();
-    mockStorybookPackagesVersions = {
-      '@storybook/react': '8.3.0',
-    };
 
     // @ts-expect-error Ignore abstract class error
     jsPackageManager = new JsPackageManager();

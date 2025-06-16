@@ -1,5 +1,5 @@
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs', '!test', '!vitest'],
   args: { label: 'Click Me!' },
   parameters: { chromatic: { disable: true } },

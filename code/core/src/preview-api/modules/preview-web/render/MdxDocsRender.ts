@@ -104,7 +104,7 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
 
     const docsContext = this.docsContext(renderStoryToElement);
 
-    const { docs } = this.store.projectAnnotations.parameters || {};
+    const { docs } = this.store.projectAnnotations.parameters ?? ({} as { docs: any });
 
     if (!docs) {
       throw new Error(

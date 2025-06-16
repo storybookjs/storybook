@@ -3,7 +3,7 @@ import { global as globalThis } from '@storybook/global';
 import { action } from 'storybook/actions';
 
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   args: {
     label: 'Click Me!',
   },

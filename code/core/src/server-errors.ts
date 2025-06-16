@@ -496,29 +496,6 @@ export class UpgradeStorybookToLowerVersionError extends StorybookError {
   }
 }
 
-export class UpgradeStorybookToSameVersionError extends StorybookError {
-  constructor(public data: { beforeVersion: string }) {
-    super({
-      category: Category.CLI_UPGRADE,
-      code: 4,
-      message: dedent`
-        You are upgrading Storybook to the same version that is currently installed in the project, version ${data.beforeVersion}.
-        
-        This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
-        This will cause npm to run the globally cached storybook binary, which might be the same version that you already have.
-        This also happens if you're running the Storybook CLI that is locally installed in your project.
-        
-        If you intended to upgrade to the latest version, you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
-        
-        "npx storybook@latest upgrade"
-        
-        If you intended to re-run automigrations, you should run the "automigrate" command directly instead:
-        
-        "npx storybook automigrate"`,
-    });
-  }
-}
-
 export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
   constructor() {
     super({
@@ -529,19 +506,6 @@ export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
         
         Are you running the Storybook CLI in a project without Storybook?
         It might help if you specify your Storybook config directory with the --config-dir flag.`,
-    });
-  }
-}
-
-export class UpgradeStorybookInWrongWorkingDirectory extends StorybookError {
-  constructor() {
-    super({
-      category: Category.CLI_UPGRADE,
-      code: 6,
-      message: dedent`
-        You are running the upgrade command in a CWD that does not contain Storybook dependencies.
-        
-        Did you mean to run it in a different directory? Make sure the directory you run this command in contains a package.json with your Storybook dependencies.`,
     });
   }
 }

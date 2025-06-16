@@ -140,3 +140,13 @@ export const ErrorStory: Story = {
   },
   tags: ['!test', '!vitest'],
 };
+
+export const Centered: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+  parameters: {
+    layout: 'centered',
+  },
+};

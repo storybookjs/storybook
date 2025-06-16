@@ -1,8 +1,12 @@
-import { EXCLUDED_PSEUDO_ELEMENT_PATTERNS, PSEUDO_STATES } from '../constants';
+import {
+  EXCLUDED_PSEUDO_ELEMENT_PATTERNS,
+  EXCLUDED_PSEUDO_ESCAPE_SEQUENCE,
+  PSEUDO_STATES,
+} from '../constants';
 import { splitSelectors } from './splitSelectors';
 
 const pseudoStates = Object.values(PSEUDO_STATES);
-const pseudoStatesPattern = `:(${pseudoStates.join('|')})`;
+const pseudoStatesPattern = `${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:(${pseudoStates.join('|')})`;
 const matchOne = new RegExp(pseudoStatesPattern);
 const matchAll = new RegExp(pseudoStatesPattern, 'g');
 
@@ -21,7 +25,7 @@ const replacePseudoStates = (selector: string, allClass?: boolean) => {
   return pseudoStates.reduce(
     (acc, state) =>
       acc.replace(
-        new RegExp(`${negativeLookbehind}:${state}`, 'g'),
+        new RegExp(`${negativeLookbehind}${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:${state}`, 'g'),
         `.pseudo-${state}${allClass ? '-all' : ''}`
       ),
     selector

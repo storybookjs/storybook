@@ -1,7 +1,7 @@
 ```tsx filename="Button.test.tsx" renderer="react" language="ts"
 import { test } from '@jest/globals';
-// 👉 Using Next.js? Import from @storybook/nextjs instead
-import { composeStories } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from './Button.stories';
 

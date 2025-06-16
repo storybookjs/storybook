@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
+import type { Options } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
@@ -75,6 +76,9 @@ const mockChannel = new Channel({ transport });
 
 describe('bootTestRunner', () => {
   let mockStore: any;
+  const mockOptions = {
+    configDir: '.storybook',
+  } as Options;
 
   beforeEach(async () => {
     const { experimental_MockUniversalStore: MockUniversalStore } = await import(
@@ -84,20 +88,21 @@ describe('bootTestRunner', () => {
   });
 
   it('should execute vitest.js', async () => {
-    runTestRunner(mockChannel, mockStore);
+    runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
     expect(execaNode).toHaveBeenCalledWith(expect.stringMatching(/vitest\.mjs$/), {
       env: {
         NODE_ENV: 'test',
         TEST: 'true',
         VITEST: 'true',
         VITEST_CHILD_PROCESS: 'true',
+        STORYBOOK_CONFIG_DIR: '.storybook',
       },
       extendEnv: true,
     });
   });
 
   it('should log stdout and stderr', async () => {
-    runTestRunner(mockChannel, mockStore);
+    runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
     stdout('foo');
     stderr('bar');
     expect(log).toHaveBeenCalledWith('foo');
@@ -106,7 +111,11 @@ describe('bootTestRunner', () => {
 
   it('should wait for vitest to be ready', async () => {
     let ready;
-    const promise = runTestRunner(mockChannel, mockStore).then(() => {
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      options: mockOptions,
+    }).then(() => {
       ready = true;
     });
     expect(ready).toBeUndefined();
@@ -116,13 +125,17 @@ describe('bootTestRunner', () => {
   });
 
   it('should abort if vitest doesn’t become ready in time', async () => {
-    const promise = runTestRunner(mockChannel, mockStore);
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      options: mockOptions,
+    });
     vi.advanceTimersByTime(30001);
     await expect(promise).rejects.toThrow();
   });
 
   it('should forward universal store events', async () => {
-    runTestRunner(mockChannel, mockStore);
+    runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
     message({ type: 'ready' });
 
     mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['foo'] } });
@@ -151,7 +164,13 @@ describe('bootTestRunner', () => {
   });
 
   it('should resend init event', async () => {
-    runTestRunner(mockChannel, mockStore, 'init', ['foo']);
+    runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      options: mockOptions,
+      initEvent: 'init',
+      initArgs: ['foo'],
+    });
     message({ type: 'ready' });
     expect(child.send).toHaveBeenCalledWith({
       args: ['foo'],

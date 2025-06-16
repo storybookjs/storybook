@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 
@@ -36,14 +36,15 @@ addons.register(ADDON_ID, (api) => {
     match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => {
       const channel = api.getChannel();
+      const currentStory = api.getCurrentStoryData();
 
       const lastEvent = channel?.last(SNIPPET_RENDERED)?.[0];
 
       const [codeSnippet, setSourceCode] = useState<{
-        source: string;
-        format: SyntaxHighlighterFormatTypes;
+        source: string | undefined;
+        format: SyntaxHighlighterFormatTypes | undefined;
       }>({
-        source: lastEvent?.source ?? '',
+        source: lastEvent?.source,
         format: lastEvent?.format ?? undefined,
       });
 
@@ -51,6 +52,13 @@ addons.register(ADDON_ID, (api) => {
         source: { code: '' } as SourceParameters,
         theme: 'dark',
       });
+
+      useEffect(() => {
+        setSourceCode({
+          source: undefined,
+          format: undefined,
+        });
+      }, [currentStory?.id]);
 
       useChannel({
         [SNIPPET_RENDERED]: ({ source, format }) => {
@@ -66,7 +74,9 @@ addons.register(ADDON_ID, (api) => {
           <SourceStyles>
             <Source
               {...parameter.source}
-              code={parameter.source?.code || codeSnippet.source}
+              code={
+                parameter.source?.code || codeSnippet.source || parameter.source?.originalSource
+              }
               format={codeSnippet.format}
               dark={isDark}
             />

@@ -2,21 +2,6 @@ import type { experimental_UniversalStore } from 'storybook/internal/core-server
 import type { PreviewAnnotation, StoryId } from 'storybook/internal/types';
 import type { API_HashEntry } from 'storybook/internal/types';
 
-export interface TestParameters {
-  /**
-   * Test addon configuration
-   *
-   * @see https://storybook.js.org/docs/writing-tests/test-addon
-   */
-  test: {
-    /** Ignore unhandled errors during test execution */
-    dangerouslyIgnoreUnhandledErrors?: boolean;
-
-    /** Whether to throw exceptions coming from the play function */
-    throwPlayFunctionExceptions?: boolean;
-  };
-}
-
 export interface VitestError extends Error {
   VITEST_TEST_PATH?: string;
   VITEST_TEST_NAME?: string;

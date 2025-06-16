@@ -15,7 +15,7 @@
     "vitest": "echo 'Vitest tests are implemented in the renderer directory instead!'"
   },
   "resolutions": {
-    "@playwright/test": "1.48.1",
+    "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "file:../../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../../code/addons/docs",
     "@storybook/addon-jest": "file:../../../code/addons/jest",
@@ -43,7 +43,6 @@
     "@storybook/react-webpack5": "file:../../../code/frameworks/react-webpack5",
     "@storybook/server": "file:../../../code/renderers/server",
     "@storybook/server-webpack5": "file:../../../code/frameworks/server-webpack5",
-    "@storybook/source-loader": "file:../../../code/lib/source-loader",
     "@storybook/svelte": "file:../../../code/renderers/svelte",
     "@storybook/svelte-vite": "file:../../../code/frameworks/svelte-vite",
     "@storybook/sveltekit": "file:../../../code/frameworks/sveltekit",
@@ -51,13 +50,13 @@
     "@storybook/vue3-vite": "file:../../../code/frameworks/vue3-vite",
     "@storybook/web-components": "file:../../../code/renderers/web-components",
     "@storybook/web-components-vite": "file:../../../code/frameworks/web-components-vite",
-    "playwright": "1.48.1"
+    "playwright": "1.52.0"
   },
   "dependencies": {
     "vue": "^3.4.19"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-vue": "1.48.1",
+    "@playwright/experimental-ct-vue": "1.52.0",
     "@storybook/vue3": "^8.0.0",
     "@storybook/vue3-vite": "^8.0.0",
     "@testing-library/jest-dom": "^6.6.3",

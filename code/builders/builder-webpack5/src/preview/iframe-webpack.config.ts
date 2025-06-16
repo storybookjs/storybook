@@ -18,7 +18,7 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
+import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin } from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
@@ -199,7 +199,6 @@ export default async (
           features?.developmentModeForBuild && isProd ? 'development' : process.env.NODE_ENV
         ),
       }),
-      new ProvidePlugin({ process: require.resolve('process/browser.js') }),
       isProd ? null : new HotModuleReplacementPlugin(),
       new CaseSensitivePathsPlugin(),
       quiet ? null : new ProgressPlugin({ modulesCount }),
@@ -240,15 +239,6 @@ export default async (
       modules: ['node_modules'].concat(envs.NODE_PATH || []),
       mainFields: ['browser', 'module', 'main'].filter(Boolean),
       alias: storybookPaths,
-      fallback: {
-        stream: false,
-        path: require.resolve('path-browserify'),
-        assert: require.resolve('browser-assert'),
-        util: require.resolve('util'),
-        url: require.resolve('url'),
-        fs: false,
-        constants: require.resolve('constants-browserify'),
-      },
       // Set webpack to resolve symlinks based on whether the user has asked node to.
       // This feels like it should be default out-of-the-box in webpack :shrug:
       symlinks: !isPreservingSymlinks(),

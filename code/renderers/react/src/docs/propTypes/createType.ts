@@ -8,12 +8,11 @@ import {
   ELEMENT_CAPTION,
   FUNCTION_CAPTION,
   OBJECT_CAPTION,
-  generateCode,
-  generateObjectCode,
-  isHtmlTag,
-} from '../lib';
+} from '../lib/captions';
+import { generateCode, generateObjectCode } from '../lib/generateCode';
 import type { InspectionArray, InspectionElement, InspectionObject } from '../lib/inspection';
 import { InspectionType, inspectValue } from '../lib/inspection';
+import { isHtmlTag } from '../lib/isHtmlTag';
 import {
   generateFuncSignature,
   generateShortFuncSignature,

@@ -1,5 +1,6 @@
 ```js filename="test/Button.test.js|ts" renderer="react" language="js" tabTitle="jest"
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from '../stories/Button.stories';
 
@@ -15,7 +16,8 @@ test('Button snapshot', async () => {
 
 import { expect, test } from 'vitest';
 
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from '../stories/Button.stories';
 
@@ -31,7 +33,7 @@ test('Button snapshot', async () => {
 
 import { expect, test } from 'vitest';
 
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 import * as stories from '../stories/Button.stories';
 
@@ -47,7 +49,8 @@ test('Button snapshot', async () => {
 
 import { expect, test } from 'vitest';
 
-import { composeStories } from '@storybook/svelte';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from '../stories/Button.stories';
 

@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
@@ -12,10 +12,13 @@ vi.mock('node:fs/promises');
 vi.mock('globby', () => ({
   globby: vi.fn(),
 }));
+vi.mock('p-limit', () => ({
+  default: vi.fn(() => vi.fn((fn) => fn())),
+}));
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal()),
   commonGlobOptions: () => ({}),
-  getProjectRoot: vi.fn().mockResolvedValue('/project/root'),
+  getProjectRoot: () => '/project/root',
 }));
 
 const mockPackageJson = {
@@ -32,6 +35,12 @@ const mockPackageJson = {
 };
 
 describe('transformSourceFiles', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(readFile).mockImplementation(() => Promise.resolve(''));
+    vi.mocked(writeFile).mockImplementation(() => Promise.resolve());
+  });
+
   it('should transform multiple files', async () => {
     const sourceContents = dedent`
       import { something } from '@storybook/react';
@@ -102,6 +111,12 @@ describe('transformSourceFiles', () => {
 });
 
 describe('removeRendererInPackageJson', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(readFile).mockImplementation(() => Promise.resolve('{}'));
+    vi.mocked(writeFile).mockImplementation(() => Promise.resolve());
+  });
+
   it('should remove renderer packages from dependencies', async () => {
     const contents = JSON.stringify(mockPackageJson);
     const filePath = 'test/package.json';
@@ -177,16 +192,21 @@ describe('removeRendererInPackageJson', () => {
 });
 
 describe('check', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(readFile).mockImplementation(() => Promise.resolve('{}'));
+  });
+
   it('should detect frameworks and renderers in package.json', async () => {
     const packageJsonFiles = ['package.json'];
     const contents = JSON.stringify(mockPackageJson);
+    const mockPackageManager = {
+      packageJsonPaths: packageJsonFiles,
+    };
 
     vi.mocked(readFile).mockResolvedValue(contents);
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    vi.mocked(globby).mockResolvedValue(packageJsonFiles);
 
-    const result = await rendererToFramework.check({} as any);
+    const result = await rendererToFramework.check({ packageManager: mockPackageManager } as any);
 
     expect(result).toEqual({
       frameworks: ['@storybook/react-vite'],
@@ -204,13 +224,13 @@ describe('check', () => {
         '@storybook/vue3-vite': '^9.0.0',
       },
     });
+    const mockPackageManager = {
+      packageJsonPaths: packageJsonFiles,
+    };
 
     vi.mocked(readFile).mockResolvedValueOnce(contents1).mockResolvedValueOnce(contents2);
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    vi.mocked(globby).mockResolvedValue(packageJsonFiles);
 
-    const result = await rendererToFramework.check({} as any);
+    const result = await rendererToFramework.check({ packageManager: mockPackageManager } as any);
 
     expect(result).toEqual({
       frameworks: ['@storybook/react-vite', '@storybook/vue3-vite'],
@@ -227,13 +247,13 @@ describe('check', () => {
         react: '^18.0.0',
       },
     });
+    const mockPackageManager = {
+      packageJsonPaths: packageJsonFiles,
+    };
 
     vi.mocked(readFile).mockResolvedValue(contents);
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    vi.mocked(globby).mockResolvedValue(packageJsonFiles);
 
-    const result = await rendererToFramework.check({} as any);
+    const result = await rendererToFramework.check({ packageManager: mockPackageManager } as any);
 
     expect(result).toBeNull();
   });
@@ -246,13 +266,13 @@ describe('check', () => {
         react: '^18.0.0',
       },
     });
+    const mockPackageManager = {
+      packageJsonPaths: packageJsonFiles,
+    };
 
     vi.mocked(readFile).mockResolvedValue(contents);
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    vi.mocked(globby).mockResolvedValue(packageJsonFiles);
 
-    const result = await rendererToFramework.check({} as any);
+    const result = await rendererToFramework.check({ packageManager: mockPackageManager } as any);
 
     expect(result).toBeNull();
   });
@@ -265,25 +285,26 @@ describe('check', () => {
         angular: '^18.0.0',
       },
     });
+    const mockPackageManager = {
+      packageJsonPaths: packageJsonFiles,
+    };
 
     vi.mocked(readFile).mockResolvedValue(contents);
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    vi.mocked(globby).mockResolvedValue(packageJsonFiles);
 
-    const result = await rendererToFramework.check({} as any);
+    const result = await rendererToFramework.check({ packageManager: mockPackageManager } as any);
 
     expect(result).toBeNull();
   });
 
   it('should handle file read errors gracefully', async () => {
     const packageJsonFiles = ['package.json'];
-    vi.mocked(readFile).mockRejectedValue(new Error('Failed to read file'));
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    vi.mocked(globby).mockResolvedValue(packageJsonFiles);
+    const mockPackageManager = {
+      packageJsonPaths: packageJsonFiles,
+    };
 
-    const result = await rendererToFramework.check({} as any);
+    vi.mocked(readFile).mockRejectedValue(new Error('Failed to read file'));
+
+    const result = await rendererToFramework.check({ packageManager: mockPackageManager } as any);
 
     expect(result).toBeNull();
   });

@@ -25,6 +25,8 @@ import { wrapManagerEntries } from './utils/managerEntries';
 import { safeResolve } from './utils/safeResolve';
 import { getTemplatePath, renderHTML } from './utils/template';
 
+export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support';
+
 const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
@@ -75,7 +77,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     minifyWhitespace: false,
     minifyIdentifiers: false,
     minifySyntax: true,
-    metafile: true,
+    metafile: false, // turn this on to assist with debugging the bundling of managerEntries
 
     // treeShaking: true,
 
@@ -185,7 +187,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
 
   if (compilation.metafile && options.outputDir) {
-    console.log('writing metafile:', join(options.outputDir, 'metafile.json'));
     await writeFile(
       join(options.outputDir, 'metafile.json'),
       JSON.stringify(compilation.metafile, null, 2)

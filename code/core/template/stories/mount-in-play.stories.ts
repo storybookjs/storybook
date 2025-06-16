@@ -1,6 +1,6 @@
 import { expect, fn } from 'storybook/test';
 
-const meta = { component: globalThis.Components.Button };
+const meta = { component: globalThis.__TEMPLATE_COMPONENTS__.Button };
 
 export default meta;
 

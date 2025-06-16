@@ -1,6 +1,5 @@
+import { types as t } from 'storybook/internal/babel';
 import { type ConfigFile, type CsfFile, loadConfig, loadCsf } from 'storybook/internal/csf-tools';
-
-import * as t from '@babel/types';
 
 // TODO: this is copied from the codemod, we should move both utilities to the csf-tools package at some point
 const isStoryAnnotation = (stmt: t.Statement, objectExports: Record<string, any>) =>
@@ -38,7 +37,7 @@ function migrateA11yParameters(obj: t.ObjectExpression): boolean {
 }
 
 export function transformStoryA11yParameters(code: string): CsfFile | null {
-  const parsed = loadCsf(code, { makeTitle: (title) => title }).parse();
+  const parsed = loadCsf(code, { makeTitle: (title?: string) => title || 'default' }).parse();
 
   let hasChanges = false;
 

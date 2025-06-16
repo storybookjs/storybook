@@ -17,6 +17,7 @@
     - [Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped](#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
+    - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
     - [Icon System Updates](#icon-system-updates)
@@ -24,6 +25,7 @@
     - [Story Store API Changes](#story-store-api-changes)
     - [Global State Management](#global-state-management)
     - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+    - [`experimental_afterEach` has been stabilized](#experimental_aftereach-has-been-stabilized)
     - [Testing Module Changes](#testing-module-changes)
     - [Consolidate `@storybook/blocks` into addon docs](#consolidate-storybookblocks-into-addon-docs)
   - [Configuration and Type Changes](#configuration-and-type-changes)
@@ -479,8 +481,6 @@
 
 ### Core Changes and Removals
 
-Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
-
 #### Dropped support for legacy packages
 
 The following packages are no longer published as part of `9.0.0`:
@@ -553,6 +553,8 @@ export default {
 ```
 
 The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+Additionally, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 #### Dropped support
 
@@ -691,7 +693,22 @@ export const MyStory = {
 
 #### Experimental Test Addon: Stabilized and renamed
 
-In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports.
+
+The vitest addon automatically loads Storybook's `beforeAll` hook, so that you can remove the following line in your vitest.setup.ts file:
+
+```diff
+// .storybook/vitest.setup.ts
+import { setProjectAnnotations } from '@storybook/react-vite';
+import * as addonAnnotations from 'my-addon/preview';
+import * as previewAnnotations from './.storybook/preview';
+
+- const project = setProjectAnnotations([previewAnnotations, addonAnnotations]);
++ setProjectAnnotations([previewAnnotations, addonAnnotations]);
+
+// the vitest addon automatically loads beforeAll
+- beforeAll(project.beforeAll);
+```
 
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 
@@ -708,7 +725,11 @@ See here for the ways you have to configure addon viewports & backgrounds:
 
 #### Storysource Addon removed
 
-The `@storybook/addon-storysource` addon is being removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+The `@storybook/addon-storysource` addon and the `@storybook/source-loader` package are removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+
+#### Mdx-gfm Addon removed
+
+The `@storybook/addon-mdx-gfm` addon is removed in Storybook 9.0 since it is no longer needed.
 
 **Migration Steps:**
 
@@ -743,7 +764,6 @@ export const MyStory = {
   },
 };
 ```
-
 
 ### API and Component Changes
 
@@ -862,6 +882,21 @@ addons.register(MY_ADDON_ID, (api) => {
 +  }]);
 ```
 
+#### `experimental_afterEach` has been stabilized
+
+The experimental_afterEach hook has been promoted to a stable API and renamed to afterEach.
+
+To migrate, simply replace all instances of experimental_afterEach with afterEach in your stories, preview files, and configuration.
+
+```diff
+ export const MyStory = {
+-   experimental_afterEach: async ({ canvasElement }) => {
++   afterEach: async ({ canvasElement }) => {
+     // cleanup logic
+   },
+ };
+```
+
 #### Testing Module Changes
 
 The `TESTING_MODULE_RUN_ALL_REQUEST` event has been removed:
@@ -877,6 +912,15 @@ The package `@storybook/blocks` is no longer published as of Storybook 9.
 
 All exports can now be found in the export `@storybook/addon-docs/blocks`.
 
+Previously, you were able to import all blocks from `@storybook/addon-docs`, this is no longer the case.
+
+This is the only correct import path:
+
+```diff
+- import { Meta } from "@storybook/addon-docs";
++ import { Meta } from "@storybook/addon-docs/blocks";
+```
+
 ### Configuration and Type Changes
 
 #### Manager builder removed alias for `util`, `assert` and `process`
@@ -888,7 +932,6 @@ Starting with Storybook `9.0`, we no longer alias these anymore.
 Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
 
 If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
-
 
 #### Type System Updates
 
@@ -911,7 +954,6 @@ Deprecated getters have been removed from the CsfFile class:
 
 - `_fileName`
 - `_makeTitle`
-
 
 #### React-Native config dir renamed
 
@@ -1074,7 +1116,7 @@ To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 ```tsx
 export default {
   features: {
-    angularFilterNonInputControls: true
+    angularFilterNonInputControls: true,
   },
   // ... other configurations
 };

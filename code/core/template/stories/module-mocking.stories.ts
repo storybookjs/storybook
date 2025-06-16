@@ -6,7 +6,7 @@ import { foo } from '#utils';
 import { expect, fn, isMockFunction, mocked } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   args: {
     onClick: fn(),
     label: 'Mock story',

@@ -1,4 +1,4 @@
-import { beforeAll, vi, expect as vitestExpect } from 'vitest';
+import { vi, expect as vitestExpect } from 'vitest';
 
 import { setProjectAnnotations } from '@storybook/react';
 
@@ -8,7 +8,7 @@ import preview from './preview';
 
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));
 
-const annotations = setProjectAnnotations([
+setProjectAnnotations([
   preview.composed,
   {
     // experiment with injecting Vitest's interactivity API over our userEvent while tests run in browser mode
@@ -26,5 +26,3 @@ const annotations = setProjectAnnotations([
     },
   },
 ]);
-
-beforeAll(annotations.beforeAll);

@@ -38,9 +38,7 @@ export const getAnonymousProjectId = () => {
   }
 
   try {
-    const projectRoot = getProjectRoot();
-
-    const projectRootPath = relative(projectRoot, process.cwd());
+    const projectRootPath = relative(getProjectRoot(), process.cwd());
 
     const originBuffer = execSync(`git config --local --get remote.origin.url`, {
       timeout: 1000,

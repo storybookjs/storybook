@@ -1,4 +1,4 @@
-import type { Preview } from '@storybook/react';
+import type { Preview } from '@storybook/react-vite';
 import { getDecoratorString } from './get-decorator-string';
 
 console.log('preview file is called!');

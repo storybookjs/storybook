@@ -14,46 +14,50 @@ import { useLayout } from '../layout/LayoutProvider';
 
 export type MenuList = ReturnType<typeof useMenu>;
 
-export const SidebarIconButton: FC<ComponentProps<typeof Button> & { highlighted: boolean }> =
-  styled(IconButton)<
-    ComponentProps<typeof Button> & {
-      highlighted: boolean;
-    }
-  >(({ highlighted, theme }) => ({
-    position: 'relative',
-    overflow: 'visible',
-    marginTop: 0,
-    zIndex: 1,
+export const SidebarIconButton = styled(IconButton)<
+  ComponentProps<typeof Button> & {
+    highlighted: boolean;
+    isMobile: boolean;
+  }
+>(({ highlighted, theme, isMobile }) => ({
+  position: 'relative',
+  overflow: 'visible',
+  marginTop: 0,
+  zIndex: 1,
+  ...(isMobile && {
+    width: 36,
+    height: 36,
+  }),
 
-    ...(highlighted && {
-      '&:before, &:after': {
-        content: '""',
-        position: 'absolute',
-        top: 6,
-        right: 6,
-        width: 5,
-        height: 5,
-        zIndex: 2,
-        borderRadius: '50%',
-        background: theme.background.app,
-        border: `1px solid ${theme.background.app}`,
-        boxShadow: `0 0 0 2px ${theme.background.app}`,
-      },
-      '&:after': {
-        background: theme.color.positive,
-        border: `1px solid rgba(0, 0, 0, 0.1)`,
-        boxShadow: `0 0 0 2px ${theme.background.app}`,
-      },
+  ...(highlighted && {
+    '&:before, &:after': {
+      content: '""',
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      width: 5,
+      height: 5,
+      zIndex: 2,
+      borderRadius: '50%',
+      background: theme.background.app,
+      border: `1px solid ${theme.background.app}`,
+      boxShadow: `0 0 0 2px ${theme.background.app}`,
+    },
+    '&:after': {
+      background: theme.color.positive,
+      border: `1px solid rgba(0, 0, 0, 0.1)`,
+      boxShadow: `0 0 0 2px ${theme.background.app}`,
+    },
 
-      '&:hover:after, &:focus-visible:after': {
-        boxShadow: `0 0 0 2px ${transparentize(0.88, theme.color.secondary)}`,
-      },
-    }),
-  }));
+    '&:hover:after, &:focus-visible:after': {
+      boxShadow: `0 0 0 2px ${transparentize(0.88, theme.color.secondary)}`,
+    },
+  }),
+}));
 
 const MenuButtonGroup = styled.div({
   display: 'flex',
-  gap: 4,
+  gap: 6,
 });
 
 const SidebarMenuList: FC<{
@@ -79,21 +83,24 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
         <SidebarIconButton
           title="About Storybook"
           aria-label="About Storybook"
-          // @ts-expect-error (non strict)
-          highlighted={isHighlighted}
+          highlighted={!!isHighlighted}
           active={false}
           // @ts-expect-error (non strict)
           onClick={onClick}
+          isMobile={true}
         >
           <CogIcon />
         </SidebarIconButton>
-        <IconButton
+        <SidebarIconButton
           title="Close menu"
           aria-label="Close menu"
+          highlighted={false}
+          active={false}
           onClick={() => setMobileMenuOpen(false)}
+          isMobile={true}
         >
           <CloseIcon />
-        </IconButton>
+        </SidebarIconButton>
       </MenuButtonGroup>
     );
   }
@@ -108,9 +115,10 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
       <SidebarIconButton
         title="Shortcuts"
         aria-label="Shortcuts"
-        // @ts-expect-error (non strict)
-        highlighted={isHighlighted}
+        highlighted={!!isHighlighted}
         active={isTooltipVisible}
+        size="medium"
+        isMobile={false}
       >
         <CogIcon />
       </SidebarIconButton>

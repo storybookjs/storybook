@@ -1,4 +1,5 @@
 import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
+import { getCoreAnnotations } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -22,7 +23,6 @@ import type {
 import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
-import { getCoreAnnotations } from '../../../../shared/preview/core-annotations';
 import { HooksContext } from '../../../addons';
 import {
   isTestEnvironment,
@@ -82,13 +82,6 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     composeConfigs(annotations.map(extractAnnotation)),
   ]);
 
-  /*
-    We must return the composition of default and global annotations here
-    To ensure that the user has the full project annotations, eg. when running
-
-    const projectAnnotations = setProjectAnnotations(...);
-    beforeAll(projectAnnotations.beforeAll)
-  */
   return globalThis.globalProjectAnnotations ?? {};
 }
 

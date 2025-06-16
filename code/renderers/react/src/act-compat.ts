@@ -62,7 +62,11 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
   };
 }
 
-export const getAct = async () => {
+export const getAct = async ({ disableAct = false }: { disableAct?: boolean } = {}) => {
+  if (process.env.NODE_ENV === 'production' || disableAct) {
+    return (cb: (...args: any[]) => any) => cb();
+  }
+
   let reactAct: typeof React.act;
   if (typeof clonedReact.act === 'function') {
     reactAct = clonedReact.act;
@@ -73,7 +77,5 @@ export const getAct = async () => {
     reactAct = deprecatedTestUtils?.default?.act ?? deprecatedTestUtils.act;
   }
 
-  return process.env.NODE_ENV === 'production'
-    ? (cb: (...args: any[]) => any) => cb()
-    : withGlobalActEnvironment(reactAct);
+  return withGlobalActEnvironment(reactAct);
 };

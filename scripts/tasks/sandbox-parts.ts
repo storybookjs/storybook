@@ -445,6 +445,12 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   }
 
   let fileContent = await readFile(join(sandboxDir, configFile), 'utf-8');
+  // Insert resolve: { preserveSymlinks: true } as a sibling to plugins in the top-level config object
+  // Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }])
+  fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
+    // Insert resolve after plugins
+    return `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
+  });
   // search for storybookTest({...}) and place `tags: 'vitest'` into it but tags option doesn't exist yet in the config. Also consider multi line
   const storybookTestRegex = /storybookTest\((\{[\s\S]*?\})\)/g;
   fileContent = fileContent.replace(storybookTestRegex, (match, args) => {

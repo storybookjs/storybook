@@ -124,7 +124,7 @@ describe('toUpgradedDependencies', () => {
         return '8.0.0';
       }
       if (packageName === '@chromatic-com/storybook@next') {
-        return '4.0.0-0';
+        return '4.0.0';
       }
       if (packageName === '@chromatic-com/storybook') {
         return '3.0.0';

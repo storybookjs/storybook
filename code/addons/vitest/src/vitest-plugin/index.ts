@@ -18,11 +18,12 @@ import type {
 } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
 import { match } from 'micromatch';
-import { dirname, join, relative, resolve, sep } from 'pathe';
+import { dirname, join, normalize, relative, resolve, sep } from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
@@ -66,17 +67,22 @@ const getStoryGlobsAndFiles = async (
   directories: { configDir: string; workingDir: string }
 ) => {
   const stories = await presets.apply('stories', []);
-  const docs = await presets.apply('docs', {});
-  const indexers = await presets.apply('experimental_indexers', []);
-  const generator = new StoryIndexGenerator(normalizeStories(stories, directories), {
-    ...directories,
-    indexers,
-    docs,
+
+  const normalizedStories = normalizeStories(stories, {
+    configDir: directories.configDir,
+    workingDir: directories.workingDir,
   });
-  await generator.initialize();
+
+  const matchingStoryFiles = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
+    normalizedStories,
+    directories.workingDir
+  );
+
   return {
     storiesGlobs: stories,
-    storiesFiles: generator.storyFileNames(),
+    storiesFiles: StoryIndexGenerator.storyFileNames(
+      new Map(matchingStoryFiles.map(([specifier, cache]) => [specifier, cache]))
+    ),
   };
 };
 
@@ -144,6 +150,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     viteConfigFromStorybook,
     staticDirs,
     previewLevelTags,
+    core,
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
@@ -151,6 +158,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply<{ plugins?: Plugin[] }>('viteFinal', {}),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
+    presets.apply('core'),
   ]);
 
   const pluginsToIgnore = [
@@ -361,6 +369,23 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      const disableTelemetryVar =
+        process.env.STORYBOOK_DISABLE_TELEMETRY &&
+        process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false';
+      if (!core?.disableTelemetry && !disableTelemetryVar) {
+        // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
+        // before the tests do. If not we may miss the event, we are OK with that.
+        telemetry(
+          'test-run',
+          {
+            runner: 'vitest',
+            watch: context.vitest.config.watch,
+            coverage: !!context.vitest.config.coverage?.enabled,
+          },
+          { configDir: finalOptions.configDir }
+        );
+      }
     },
     async configureServer(server) {
       if (staticDirs) {
@@ -407,15 +432,17 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   // to find the right project to run, thus we override
   // with a unique identifier using the path to the config dir
   if (process.env.VITEST_STORYBOOK) {
-    const projectName = join('storybook:', finalOptions.configDir);
+    const projectName = `storybook:${normalize(finalOptions.configDir)}`;
     plugins.push({
       name: 'storybook:workspace-name-override',
       config: {
         order: 'pre',
-        handler: (config) => {
-          config.test ??= {};
-          config.test.name = projectName;
-          return config;
+        handler: () => {
+          return {
+            test: {
+              name: projectName,
+            },
+          };
         },
       },
     });

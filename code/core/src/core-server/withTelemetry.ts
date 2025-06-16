@@ -1,4 +1,4 @@
-import { cache, loadAllPresets } from 'storybook/internal/common';
+import { HandledError, cache, loadAllPresets } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { EventType } from 'storybook/internal/telemetry';
@@ -168,8 +168,10 @@ export async function withTelemetry<T>(
       return undefined;
     }
 
-    const { printError = logger.error } = options;
-    printError(error);
+    if (!(error instanceof HandledError)) {
+      const { printError = logger.error } = options;
+      printError(error);
+    }
 
     if (enableTelemetry) {
       await sendTelemetryError(error, eventType, options);

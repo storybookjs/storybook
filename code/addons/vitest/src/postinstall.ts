@@ -7,6 +7,7 @@ import {
   JsPackageManagerFactory,
   extractProperFrameworkName,
   formatFileContent,
+  getProjectRoot,
   loadAllPresets,
   loadMainConfig,
   scanAndTransformFiles,
@@ -39,7 +40,10 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 const addonA11yName = '@storybook/addon-a11y';
 
 const findFile = async (basename: string, extensions = EXTENSIONS) =>
-  findUp(extensions.map((ext) => basename + ext));
+  findUp(
+    extensions.map((ext) => basename + ext),
+    { stopAt: getProjectRoot() }
+  );
 
 export default async function postInstall(options: PostinstallOptions) {
   printSuccess(
@@ -56,13 +60,11 @@ export default async function postInstall(options: PostinstallOptions) {
   });
 
   const info = await getStorybookInfo(options);
-  const allDeps = await packageManager.getAllDependencies();
+  const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
   const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
-  // if Vitest is installed, we use the same version to keep consistency across Vitest packages
-  const vitestVersionToInstall = vitestVersionSpecifier ?? 'latest';
 
   const mainJsPath = serverResolve(resolve(options.configDir, 'main')) as string;
   const config = await readConfig(mainJsPath);
@@ -88,11 +90,11 @@ export default async function postInstall(options: PostinstallOptions) {
           });
 
     if (out.migrateToNextjsVite) {
-      await packageManager.addDependencies({ installAsDevDependencies: true }, [
-        `@storybook/nextjs-vite@${versions['@storybook/nextjs-vite']}`,
+      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
+        '@storybook/nextjs-vite',
       ]);
 
-      await packageManager.removeDependencies({}, ['@storybook/nextjs']);
+      await packageManager.removeDependencies(['@storybook/nextjs']);
 
       traverse(config._ast, {
         StringLiteral(path) {
@@ -255,28 +257,37 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const versionedDependencies = dependencies.map((p) => {
     if (p.includes('vitest')) {
-      return `${p}@${vitestVersionToInstall ?? 'latest'}`;
+      return vitestVersionSpecifier ? `${p}@${vitestVersionSpecifier}` : p;
     }
 
     return p;
   });
 
   if (versionedDependencies.length > 0) {
+    await packageManager.addDependencies(
+      { type: 'devDependencies', skipInstall: true },
+      versionedDependencies
+    );
     logger.line(1);
     logger.plain(`${step} Installing dependencies:`);
     logger.plain(colors.gray('  ' + versionedDependencies.join(', ')));
-
-    await packageManager.addDependencies({ installAsDevDependencies: true }, versionedDependencies);
   }
 
-  logger.line(1);
-  logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
-  logger.plain(colors.gray('  npx playwright install chromium --with-deps'));
+  await packageManager.installDependencies();
 
-  await packageManager.executeCommand({
-    command: 'npx',
-    args: ['playwright', 'install', 'chromium', '--with-deps'],
-  });
+  logger.line(1);
+
+  if (options.skipInstall) {
+    logger.plain('Skipping Playwright installation, please run this command manually:');
+    logger.plain(colors.gray('  npx playwright install chromium --with-deps'));
+  } else {
+    logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
+    logger.plain(colors.gray('  npx playwright install chromium --with-deps'));
+    await packageManager.executeCommand({
+      command: 'npx',
+      args: ['playwright', 'install', 'chromium', '--with-deps'],
+    });
+  }
 
   const fileExtension =
     allDeps.typescript || (await findFile('tsconfig', [...EXTENSIONS, '.json'])) ? 'ts' : 'js';
@@ -325,7 +336,9 @@ export default async function postInstall(options: PostinstallOptions) {
     `
   );
 
-  const vitestWorkspaceFile = await findFile('vitest.workspace', ['.ts', '.js', '.json']);
+  const vitestWorkspaceFile =
+    (await findFile('vitest.workspace', ['.ts', '.js', '.json'])) ||
+    (await findFile('vitest.projects', ['.ts', '.js', '.json']));
   const viteConfigFile = await findFile('vite.config');
   const vitestConfigFile = await findFile('vitest.config');
   const vitestShimFile = await findFile('vitest.shims.d');
@@ -470,14 +483,17 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
-      const command = ['automigrate', 'addonA11yAddonTest'];
+      const command = ['automigrate', 'addon-a11y-addon-test'];
 
-      if (options.yes) {
-        command.push('--yes');
-      }
+      command.push('--loglevel', 'silent');
+      command.push('--yes', '--skip-doctor');
 
       if (options.packageManager) {
         command.push('--package-manager', options.packageManager);
+      }
+
+      if (options.skipInstall) {
+        command.push('--skip-install');
       }
 
       if (options.configDir !== '.storybook') {
@@ -521,8 +537,8 @@ export default async function postInstall(options: PostinstallOptions) {
 }
 
 async function getStorybookInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
-  const packageJson = await packageManager.retrievePackageJson();
+  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr, configDir });
+  const { packageJson } = packageManager.primaryPackageJson;
 
   const config = await loadMainConfig({ configDir, noCache: true });
   const { framework } = config;
@@ -536,8 +552,8 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     overridePresets: [
       require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    configDir,
     packageJson,
+    configDir,
     isCritical: true,
   });
 

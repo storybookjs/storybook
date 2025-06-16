@@ -1,6 +1,6 @@
 {
   "name": "@storybook/ember",
-  "version": "9.0.0-rc.4",
+  "version": "9.1.0-alpha.6",
   "description": "Storybook for Ember: Develop Ember Component in isolation with Hot Reloading.",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember",
   "bugs": {
@@ -52,7 +52,7 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
     "babel-loader": "9.1.3",
-    "find-up": "^5.0.0"
+    "find-up": "^7.0.0"
   },
   "devDependencies": {
     "ember-source": "~3.28.1",

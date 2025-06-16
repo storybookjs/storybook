@@ -1,5 +1,6 @@
 <script context="module">
   import { Meta, Story, Template } from '@storybook/addon-svelte-csf';
+  import { expect, within } from 'storybook/test';
 
   import LegacyMeta from './LegacyMeta.svelte';
 
@@ -10,7 +11,17 @@
   }
 </script>
 
-<Meta title="Atoms/Button" component={LegacyMeta} />
+<Meta
+  title="Legacy Meta"
+  component={LegacyMeta}
+  play={async (context) => {
+    const { canvasElement, step } = context;
+    const canvas = within(canvasElement);
+    await step("The container renders it's contents", async () => {
+      expect(await canvas.findByRole('button')).toBeInTheDocument();
+    });
+  }}
+/>
 
 <Template let:args>
   <LegacyMeta {...args} on:click={handleClick} on:click>

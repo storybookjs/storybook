@@ -4,7 +4,7 @@ import type { Options } from 'storybook/internal/types';
 
 import type { UserConfig, InlineConfig as ViteInlineConfig } from 'vite';
 
-import { filterResolvableIncludeCandidates } from './constants';
+import { INCLUDE_CANDIDATES, filterResolvableIncludeCandidates } from './constants';
 import { listStories } from './list-stories';
 
 /**
@@ -28,7 +28,9 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
   // See https://github.com/vitejs/vite/blob/67d164392e8e9081dc3f0338c4b4b8eea6c5f7da/packages/vite/src/node/optimizer/index.ts#L182-L199
   const resolve = resolvedConfig.createResolver({ asSrc: false });
   const include = await asyncFilter(
-    Array.from(new Set([...filterResolvableIncludeCandidates(), ...extraOptimizeDeps])),
+    Array.from(
+      new Set([...filterResolvableIncludeCandidates([...INCLUDE_CANDIDATES, ...extraOptimizeDeps])])
+    ),
     async (id) => Boolean(await resolve(id))
   );
 

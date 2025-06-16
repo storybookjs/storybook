@@ -1,6 +1,6 @@
 // It ensures that vite converts cjs deps into esm without vite having to find them during startup and then having to log a message about them and restart
 // TODO: Many of the deps might be prebundled now though, so probably worth trying to remove and see what happens
-const INCLUDE_CANDIDATES = [
+export const INCLUDE_CANDIDATES = [
   '@ampproject/remapping',
   '@base2/pretty-print-object',
   '@emotion/core',
@@ -152,13 +152,21 @@ const INCLUDE_CANDIDATES = [
  *
  * @param config Vite config to use for resolution
  */
-export function filterResolvableIncludeCandidates(): string[] {
-  return INCLUDE_CANDIDATES.filter((id) => {
+export function filterResolvableIncludeCandidates(candidates: string[]): string[] {
+  return candidates.filter((id) => {
+    const split = id.split('>');
+    const primaryId = split[0].trim();
+
     try {
-      require.resolve(id);
+      require.resolve(primaryId);
       return true;
     } catch {
-      return false;
+      try {
+        import.meta.resolve(primaryId);
+        return true;
+      } catch {
+        return false;
+      }
     }
   });
 }

@@ -29,7 +29,10 @@ import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
 // ! Relative import to prebundle it without needing to depend on the Vite builder
-import { filterResolvableIncludeCandidates } from '../../../../builders/builder-vite/src/constants';
+import {
+  INCLUDE_CANDIDATES,
+  filterResolvableIncludeCandidates,
+} from '../../../../builders/builder-vite/src/constants';
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
 
@@ -329,14 +332,16 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
         optimizeDeps: {
           include: [
-            '@storybook/addon-vitest/internal/setup-file',
-            '@storybook/addon-vitest/internal/global-setup',
-            '@storybook/addon-vitest/internal/test-utils',
-            ...extraOptimizeDeps,
-            ...filterResolvableIncludeCandidates(),
-            ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
-              ? ['react-dom/test-utils']
-              : []),
+            ...filterResolvableIncludeCandidates([
+              ...extraOptimizeDeps,
+              ...INCLUDE_CANDIDATES,
+              '@storybook/addon-vitest/internal/setup-file',
+              '@storybook/addon-vitest/internal/global-setup',
+              '@storybook/addon-vitest/internal/test-utils',
+              ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
+                ? ['react-dom/test-utils']
+                : []),
+            ]),
           ],
         },
 

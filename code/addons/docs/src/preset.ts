@@ -212,11 +212,6 @@ export const resolvedReact = async (existing: any) => ({
   mdx: existing?.mdx ?? dirname(require.resolve('@mdx-js/react')),
 });
 
-const optimizeViteDeps = [
-  '@mdx-js/react',
-  '@storybook/addon-docs > acorn-jsx',
-  '@storybook/addon-docs',
-  'markdown-to-jsx',
-];
+const optimizeViteDeps = ['@mdx-js/react', '@storybook/addon-docs', 'markdown-to-jsx'];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };

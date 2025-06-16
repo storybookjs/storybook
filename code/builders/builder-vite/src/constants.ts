@@ -148,7 +148,7 @@ export const INCLUDE_CANDIDATES = [
 ];
 
 /**
- * Returns only those INCLUDE_CANDIDATES that can be resolved by Vite's resolver.
+ * Returns only those candidates that can be resolved
  *
  * @param config Vite config to use for resolution
  */

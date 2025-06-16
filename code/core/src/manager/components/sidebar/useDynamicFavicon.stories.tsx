@@ -21,25 +21,27 @@ export default {
     const [favicon, setFavicon] = useState<string | null>(null);
 
     useEffect(() => {
-      const link = document.createElement('link');
-      link.rel = 'icon';
-      link.type = 'image/svg+xml';
-      document.head.appendChild(link);
-      getFaviconUrl(link, status).then((href) => setFavicon(href));
+      getFaviconUrl(undefined, status).then((href) => setFavicon(href));
     }, [status]);
 
-    return (
-      <>
-        {favicon && (
-          <svg width={size} height={size} viewBox="0 0 160 160">
-            <use href={favicon} />
-          </svg>
-        )}
-      </>
-    );
+    return favicon ? <img width={size} height={size} src={favicon} /> : <></>;
   },
 };
 
+export const All = {
+  render: ({ size }: { size: number }) => {
+    return (
+      <div style={{ display: 'flex', gap: size / 2 }}>
+        <img width={size} height={size} src={'./favicon.svg'} />
+        <img width={size} height={size} src={'./favicon.svg?status=active'} />
+        <img width={size} height={size} src={'./favicon.svg?status=positive'} />
+        <img width={size} height={size} src={'./favicon.svg?status=warning'} />
+        <img width={size} height={size} src={'./favicon.svg?status=negative'} />
+        <img width={size} height={size} src={'./favicon.svg?status=critical'} />
+      </div>
+    );
+  },
+};
 export const Default = {};
 export const Active = { args: { status: 'active' } };
 export const Positive = { args: { status: 'positive' } };

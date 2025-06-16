@@ -5,8 +5,11 @@ const STATUSES = ['active', 'critical', 'negative', 'positive', 'warning'] as co
 
 let initialIcon: string | undefined;
 
-export const getFaviconUrl = (link: HTMLLinkElement, status?: (typeof STATUSES)[number]) => {
-  initialIcon ??= link.href || `./favicon.svg`;
+export const getFaviconUrl = (
+  initialHref: string = './favicon.svg',
+  status?: (typeof STATUSES)[number]
+) => {
+  initialIcon ??= initialHref;
   const href = initialIcon + (status && STATUSES.includes(status) ? `?status=${status}` : '');
 
   return new Promise<string>((resolve) => {
@@ -22,7 +25,7 @@ export const useDynamicFavicon = (status?: (typeof STATUSES)[number]) => {
   useEffect(() => {
     const element = link.current;
     if (element) {
-      getFaviconUrl(element, status).then(
+      getFaviconUrl(element.href, status).then(
         (href) => {
           element.href = href;
         },

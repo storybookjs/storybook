@@ -52,6 +52,7 @@ export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
 // Forms
 export { Button } from './components/Button/Button';
 export { IconButton } from './components/IconButton/IconButton';
+export { ToggleButton } from './components/ToggleButton/ToggleButton';
 export { Form } from './components/Form/Form';
 
 // Tooltips

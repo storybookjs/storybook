@@ -1,6 +1,6 @@
 // It ensures that vite converts cjs deps into esm without vite having to find them during startup and then having to log a message about them and restart
 // TODO: Many of the deps might be prebundled now though, so probably worth trying to remove and see what happens
-export const INCLUDE_CANDIDATES = [
+const INCLUDE_CANDIDATES = [
   '@ampproject/remapping',
   '@base2/pretty-print-object',
   '@emotion/core',
@@ -133,8 +133,10 @@ export const INCLUDE_CANDIDATES = [
   'storybook/actions/decorator',
   'storybook/internal/core-events',
   'storybook/internal/csf',
+  'storybook/internal/preview-api',
   'storybook/internal/preview/runtime',
   'storybook/preview-api',
+  'storybook/theming',
   'storybook/viewport',
   'synchronous-promise',
   'telejson',
@@ -144,3 +146,19 @@ export const INCLUDE_CANDIDATES = [
   'vue',
   'warning',
 ];
+
+/**
+ * Returns only those INCLUDE_CANDIDATES that can be resolved by Vite's resolver.
+ *
+ * @param config Vite config to use for resolution
+ */
+export function filterResolvableIncludeCandidates(): string[] {
+  return INCLUDE_CANDIDATES.filter((id) => {
+    try {
+      require.resolve(id);
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}

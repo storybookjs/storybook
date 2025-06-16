@@ -17,6 +17,7 @@
     - [Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped](#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
+    - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
     - [Icon System Updates](#icon-system-updates)
@@ -726,6 +727,10 @@ See here for the ways you have to configure addon viewports & backgrounds:
 
 The `@storybook/addon-storysource` addon and the `@storybook/source-loader` package are removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
 
+#### Mdx-gfm Addon removed
+
+The `@storybook/addon-mdx-gfm` addon is removed in Storybook 9.0 since it is no longer needed.
+
 **Migration Steps:**
 
 1. Remove the old addon
@@ -759,7 +764,6 @@ export const MyStory = {
   },
 };
 ```
-
 
 ### API and Component Changes
 
@@ -908,6 +912,15 @@ The package `@storybook/blocks` is no longer published as of Storybook 9.
 
 All exports can now be found in the export `@storybook/addon-docs/blocks`.
 
+Previously, you were able to import all blocks from `@storybook/addon-docs`, this is no longer the case.
+
+This is the only correct import path:
+
+```diff
+- import { Meta } from "@storybook/addon-docs";
++ import { Meta } from "@storybook/addon-docs/blocks";
+```
+
 ### Configuration and Type Changes
 
 #### Manager builder removed alias for `util`, `assert` and `process`
@@ -919,7 +932,6 @@ Starting with Storybook `9.0`, we no longer alias these anymore.
 Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
 
 If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
-
 
 #### Type System Updates
 
@@ -942,7 +954,6 @@ Deprecated getters have been removed from the CsfFile class:
 
 - `_fileName`
 - `_makeTitle`
-
 
 #### React-Native config dir renamed
 
@@ -1105,7 +1116,7 @@ To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 ```tsx
 export default {
   features: {
-    angularFilterNonInputControls: true
+    angularFilterNonInputControls: true,
   },
   // ... other configurations
 };

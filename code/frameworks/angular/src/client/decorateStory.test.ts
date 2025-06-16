@@ -1,10 +1,10 @@
 import { Component, Input, Output } from '@angular/core';
-import { DecoratorFunction, StoryContext } from 'storybook/internal/types';
+import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
 import { describe, expect, it } from 'vitest';
 import { componentWrapperDecorator } from './decorators';
 
 import decorateStory from './decorateStory';
-import { AngularRenderer } from './types';
+import type { AngularRenderer } from './types';
 
 // TODO: Fix. Test is infinitely running.
 describe.skip('decorateStory', () => {

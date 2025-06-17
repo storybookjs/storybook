@@ -7,8 +7,19 @@ import { logger } from 'storybook/internal/node-logger';
 
 import * as m from './common-preset';
 
+// mock src/core-server/utils/constants.ts:8:27
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: join(
+      dirname(require.resolve('storybook/internal/package.json')),
+      '/assets/browser/favicon.svg'
+    ),
+  };
+});
+
 const defaultFavicon = join(
-  dirname(import.meta.resolve('storybook/internal/package.json')),
+  dirname(require.resolve('storybook/internal/package.json')),
   '/assets/browser/favicon.svg'
 );
 

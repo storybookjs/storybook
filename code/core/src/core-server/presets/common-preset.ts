@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -287,8 +288,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(import.meta.resolve('react/package.json')),
-      reactDom: dirname(import.meta.resolve('react-dom/package.json')),
+      react: dirname(fileURLToPath(import.meta.resolve('react/package.json'))),
+      reactDom: dirname(fileURLToPath(import.meta.resolve('react-dom/package.json'))),
     };
   } catch (e) {
     return existing;
@@ -308,7 +309,7 @@ export const tags = async (existing: any) => {
 export const managerEntries = async (existing: any) => {
   return [
     join(
-      dirname(import.meta.resolve('storybook/internal/package.json')),
+      dirname(fileURLToPath(import.meta.resolve('storybook/internal/package.json'))),
       'dist/core-server/presets/common-manager.js'
     ),
     ...(existing || []),

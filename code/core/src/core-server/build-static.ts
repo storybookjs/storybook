@@ -1,6 +1,7 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   loadAllPresets,
@@ -136,7 +137,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(
-    dirname(import.meta.resolve('storybook/internal/package.json')),
+    dirname(fileURLToPath(import.meta.resolve('storybook/internal/package.json'))),
     'assets/browser'
   );
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));

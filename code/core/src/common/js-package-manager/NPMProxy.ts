@@ -189,7 +189,7 @@ export class NPMProxy extends JsPackageManager {
   protected runInstall(options?: { force?: boolean }) {
     return this.executeCommand({
       command: 'npm',
-      args: ['install', ...this.getInstallArgs(), options?.force ? '--force' : ''],
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       cwd: this.cwd,
       stdio: prompt.getPreferredStdio(),
     });

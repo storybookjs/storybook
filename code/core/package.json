@@ -421,6 +421,7 @@
   },
   "bin": "./bin/index.cjs",
   "files": [
+    "bin/**/*",
     "dist/**/*",
     "assets/**/*",
     "README.md",

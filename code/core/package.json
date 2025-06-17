@@ -172,7 +172,7 @@
     "./internal/common": {
       "types": "./dist/common/index.d.ts",
       "import": "./dist/common/index.js",
-      "require": "./dist/common/index.cjs"
+      "default": "./dist/common/index.js"
     },
     "./internal/builder-manager": {
       "types": "./dist/builder-manager/index.d.ts",

@@ -23,4 +23,6 @@ process.once('uncaughtException', (error) => {
   throw error;
 });
 
-require('../dist/bin/index.cjs');
+import('./hooks.mjs').then(() => {
+  require('../dist/bin/index.cjs');
+});

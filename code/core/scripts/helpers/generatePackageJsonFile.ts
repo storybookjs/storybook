@@ -31,7 +31,12 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
       content.import = main.replace(/\.tsx?/, '.js');
     }
     if (entry.node) {
-      content.require = main.replace(/\.tsx?/, '.cjs');
+      // TODO: temporary hack to get this to be ESM-only
+      if (entry.file.includes('/common/')) {
+        content.default = main.replace(/\.tsx?/, '.js');
+      } else {
+        content.require = main.replace(/\.tsx?/, '.cjs');
+      }
     }
     if (main === './dist/index.ts' || main === './dist/index.tsx') {
       main = '.';

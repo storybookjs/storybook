@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import path from 'node:path';
+import { relative } from 'node:path';
 
 import {
   MainFileESMOnlyImportError,
@@ -7,41 +8,34 @@ import {
 } from 'storybook/internal/server-errors';
 import type { StorybookConfig } from 'storybook/internal/types';
 
-import { serverRequire, serverResolve } from './interpret-require';
+import { importPreset, resolveModule } from './preset-module-loader';
 import { validateConfigurationFiles } from './validate-configuration-files';
 
 export async function loadMainConfig({
   configDir = '.storybook',
-  noCache = false,
   cwd,
 }: {
   configDir: string;
-  noCache?: boolean;
   cwd?: string;
 }): Promise<StorybookConfig> {
   await validateConfigurationFiles(configDir, cwd);
 
-  const mainJsPath = serverResolve(resolve(configDir, 'main')) as string;
-
-  if (noCache && mainJsPath && require.cache[mainJsPath]) {
-    delete require.cache[mainJsPath];
-  }
+  const mainConfigPath = await resolveModule(path.resolve(configDir, 'main'));
 
   try {
-    const out = await serverRequire(mainJsPath);
-    return out;
+    return (await importPreset(mainConfigPath)) as StorybookConfig;
   } catch (e) {
     if (!(e instanceof Error)) {
       throw e;
     }
     if (e.message.match(/Cannot use import statement outside a module/)) {
-      const location = relative(process.cwd(), mainJsPath);
+      const location = relative(process.cwd(), mainConfigPath);
       const numFromStack = e.stack?.match(new RegExp(`${location}:(\\d+):(\\d+)`))?.[1];
       let num;
       let line;
 
       if (numFromStack) {
-        const contents = await readFile(mainJsPath, 'utf-8');
+        const contents = await readFile(mainConfigPath, 'utf-8');
         const lines = contents.split('\n');
         num = parseInt(numFromStack, 10) - 1;
         line = lines[num];
@@ -59,7 +53,7 @@ export async function loadMainConfig({
     }
 
     throw new MainFileEvaluationError({
-      location: relative(process.cwd(), mainJsPath),
+      location: relative(process.cwd(), mainConfigPath),
       error: e,
     });
   }

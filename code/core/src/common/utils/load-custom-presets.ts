@@ -1,22 +1,25 @@
-import { resolve } from 'node:path';
+import path from 'node:path';
 
 import type { PresetConfig } from 'storybook/internal/types';
 
-import { serverRequire, serverResolve } from './interpret-require';
+import { importPreset, resolvePreset } from './preset-module-loader';
 import { validateConfigurationFiles } from './validate-configuration-files';
 
-export function loadCustomPresets({ configDir }: { configDir: string }): PresetConfig[] {
+export async function loadCustomPresets({
+  configDir,
+}: {
+  configDir: string;
+}): Promise<PresetConfig[]> {
   validateConfigurationFiles(configDir);
 
-  const presets = serverRequire(resolve(configDir, 'presets'));
-  const main = serverRequire(resolve(configDir, 'main'));
+  const mainPath = await resolvePreset(path.resolve(configDir, 'main'));
+  const main = (await importPreset(mainPath)) as PresetConfig;
 
   if (main) {
-    const resolved = serverResolve(resolve(configDir, 'main'));
+    const resolved = await resolvePreset(path.resolve(configDir, 'main'));
     if (resolved) {
       return [resolved];
     }
   }
-
-  return presets || [];
+  return [];
 }

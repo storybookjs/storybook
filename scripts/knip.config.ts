@@ -43,7 +43,6 @@ const baseConfig = {
       entry: [
         'src/manager-api/index.mock.ts',
         // candidates for removal:
-        'src/controls/preset/checkDocsLoaded.ts',
         'src/shared/preview/csf4.ts',
         // with srcDir → outDir in tsconfig.json we could omit all of these:
         'src/index.ts',

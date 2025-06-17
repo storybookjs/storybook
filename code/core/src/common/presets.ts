@@ -16,8 +16,8 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import { interopRequireDefault } from './utils/interpret-require';
 import { loadCustomPresets } from './utils/load-custom-presets';
+import { importPreset } from './utils/preset-module-loader';
 import { safeResolve, safeResolveFrom } from './utils/safeResolve';
 import { stripAbsNodeModulesPath } from './utils/strip-abs-node-modules-path';
 
@@ -228,16 +228,6 @@ const map =
     };
   };
 
-async function getContent(input: any) {
-  if (input.type === 'virtual') {
-    const { type, name, ...rest } = input;
-    return rest;
-  }
-  const name = input.name ? input.name : input;
-
-  return interopRequireDefault(name);
-}
-
 export async function loadPreset(
   input: PresetConfig,
   level: number,
@@ -250,20 +240,28 @@ export async function loadPreset(
     // @ts-expect-error (Converted from ts-ignore)
     const presetOptions = input.options ? input.options : {};
 
-    let contents = await getContent(input);
+    let loadedPreset: any;
 
-    if (typeof contents === 'function') {
-      // allow the export of a preset to be a function, that gets storybookOptions
-      contents = contents(storybookOptions, presetOptions);
+    if (typeof input === 'object' && input.type === 'virtual') {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { type, name, ...purePreset } = input;
+      loadedPreset = purePreset;
+    } else {
+      loadedPreset = await importPreset(presetName);
     }
 
-    if (Array.isArray(contents)) {
-      const subPresets = contents;
+    if (typeof loadedPreset === 'function') {
+      // allow the export of a preset to be a function, that gets storybookOptions
+      loadedPreset = loadedPreset(storybookOptions, presetOptions);
+    }
+
+    if (Array.isArray(loadedPreset)) {
+      const subPresets = loadedPreset;
       return await loadPresets(subPresets, level + 1, storybookOptions);
     }
 
-    if (isObject(contents)) {
-      const { addons: addonsInput = [], presets: presetsInput = [], ...rest } = contents;
+    if (isObject(loadedPreset)) {
+      const { addons: addonsInput = [], presets: presetsInput = [], ...rest } = loadedPreset;
 
       let filter = (i: PresetConfig) => {
         return true;
@@ -427,7 +425,7 @@ export async function loadAllPresets(
 
   const presetsConfig: PresetConfig[] = [
     ...corePresets,
-    ...loadCustomPresets(options),
+    ...(await loadCustomPresets(options)),
     ...overridePresets,
   ];
 

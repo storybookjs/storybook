@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
 import {
@@ -9,11 +8,10 @@ import {
   loadMainConfig,
   resolveAddonName,
   resolvePathInStorybookCache,
-  serverResolve,
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
-import { deprecate, logger } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
@@ -22,7 +20,6 @@ import { global } from '@storybook/global';
 
 import prompts from 'prompts';
 import invariant from 'tiny-invariant';
-import { dedent } from 'ts-dedent';
 
 import { storybookDevServer } from './dev-server';
 import { buildOrThrow } from './utils/build-or-throw';
@@ -157,24 +154,6 @@ export async function buildDevStandalone(
     getPreviewBuilder(builderName, options.configDir),
     getManagerBuilder(),
   ]);
-
-  if (builderName.includes('builder-vite')) {
-    const deprecationMessage =
-      dedent(`Using CommonJS in your main configuration file is deprecated with Vite.
-              - Refer to the migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#commonjs-with-vite-is-deprecated`);
-
-    const mainJsPath = serverResolve(resolve(options.configDir || '.storybook', 'main')) as string;
-    if (/\.c[jt]s$/.test(mainJsPath)) {
-      deprecate(deprecationMessage);
-    }
-    const mainJsContent = await readFile(mainJsPath, { encoding: 'utf8' });
-    // Regex that matches any CommonJS-specific syntax, stolen from Vite: https://github.com/vitejs/vite/blob/91a18c2f7da796ff8217417a4bf189ddda719895/packages/vite/src/node/ssr/ssrExternal.ts#L87
-    const CJS_CONTENT_REGEX =
-      /\bmodule\.exports\b|\bexports[.[]|\brequire\s*\(|\bObject\.(?:defineProperty|defineProperties|assign)\s*\(\s*exports\b/;
-    if (CJS_CONTENT_REGEX.test(mainJsContent)) {
-      deprecate(deprecationMessage);
-    }
-  }
 
   const resolvedRenderer = renderer && resolveAddonName(options.configDir, renderer, options);
 

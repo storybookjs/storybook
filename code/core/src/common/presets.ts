@@ -427,7 +427,7 @@ export async function loadAllPresets(
 
   const presetsConfig: PresetConfig[] = [
     ...corePresets,
-    ...loadCustomPresets(options),
+    ...(await loadCustomPresets(options)),
     ...overridePresets,
   ];
 

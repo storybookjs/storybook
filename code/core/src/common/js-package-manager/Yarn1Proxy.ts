@@ -141,10 +141,10 @@ export class Yarn1Proxy extends JsPackageManager {
     };
   }
 
-  protected runInstall() {
+  protected runInstall(options?: { force?: boolean }) {
     return this.executeCommand({
       command: 'yarn',
-      args: ['install', ...this.getInstallArgs()],
+      args: ['install', ...this.getInstallArgs(), options?.force ? '--force' : ''],
       stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });

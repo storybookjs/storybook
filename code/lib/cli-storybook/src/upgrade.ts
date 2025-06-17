@@ -427,7 +427,12 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
             : storybookProjects[0].packageManager;
 
-        await rootPackageManager.installDependencies();
+        if (rootPackageManager.type === 'npm') {
+          // see https://github.com/npm/cli/issues/8059 for more details
+          await rootPackageManager.installDependencies({ force: true });
+        } else {
+          await rootPackageManager.installDependencies();
+        }
 
         if (rootPackageManager.type !== 'yarn1' && rootPackageManager.isStorybookInMonorepo()) {
           logger.warn(

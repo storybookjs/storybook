@@ -33,7 +33,11 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
       }
       if (entry.node) {
         // TODO: temporary hack to get this to be ESM-only
-        if (entry.file.includes('/common/') || entry.file.includes('/core-server/index')) {
+        if (
+          entry.file.includes('/common/') ||
+          entry.file.includes('/telemetry/') ||
+          entry.file.includes('/core-server/index')
+        ) {
           content.default = main.replace(/\.tsx?/, '.js');
         } else {
           content.require = main.replace(/\.tsx?/, '.cjs');

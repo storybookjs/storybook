@@ -185,7 +185,7 @@
     "./internal/telemetry": {
       "types": "./dist/telemetry/index.d.ts",
       "import": "./dist/telemetry/index.js",
-      "require": "./dist/telemetry/index.cjs"
+      "default": "./dist/telemetry/index.js"
     },
     "./internal/preview-api": {
       "types": "./dist/preview-api/index.d.ts",

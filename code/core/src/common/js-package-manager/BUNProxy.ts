@@ -193,7 +193,7 @@ export class BUNProxy extends JsPackageManager {
   protected runInstall(options?: { force?: boolean }) {
     return this.executeCommand({
       command: 'bun',
-      args: ['install', ...this.getInstallArgs(), options?.force ? '--force' : ''],
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       stdio: 'inherit',
       cwd: this.cwd,
     });

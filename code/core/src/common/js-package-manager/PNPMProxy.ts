@@ -198,7 +198,7 @@ export class PNPMProxy extends JsPackageManager {
   protected runInstall(options?: { force?: boolean }) {
     return this.executeCommand({
       command: 'pnpm',
-      args: ['install', ...this.getInstallArgs(), options?.force ? '--force' : ''],
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });

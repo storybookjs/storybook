@@ -146,13 +146,16 @@ export abstract class JsPackageManager {
     this.clearInstalledVersionCache();
   }
 
-  async dedupeDependencies() {
-    await prompt.executeTask(() => this.runInternalCommand('dedupe', [], this.cwd), {
-      id: 'dedupe-dependencies',
-      intro: 'Deduplicating dependencies...',
-      error: 'An error occurred while deduplicating dependencies.',
-      success: 'Dependencies deduplicated',
-    });
+  async dedupeDependencies(options?: { force?: boolean }) {
+    await prompt.executeTask(
+      () => this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
+      {
+        id: 'dedupe-dependencies',
+        intro: 'Deduplicating dependencies...',
+        error: 'An error occurred while deduplicating dependencies.',
+        success: 'Dependencies deduplicated',
+      }
+    );
 
     // Clear installed version cache after installation
     this.clearInstalledVersionCache();

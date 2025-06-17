@@ -447,7 +447,12 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             }));
 
           if (dedupe) {
-            await rootPackageManager.dedupeDependencies();
+            if (rootPackageManager.type === 'npm') {
+              // see https://github.com/npm/cli/issues/8059 for more details
+              await rootPackageManager.dedupeDependencies({ force: true });
+            } else {
+              await rootPackageManager.dedupeDependencies();
+            }
           } else {
             logger.log(
               `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`

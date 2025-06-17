@@ -1,4 +1,8 @@
+import { register } from 'node:module';
+
 import { getInterpretedFileWithExt } from './interpret-files';
+
+register('storybook/bin/loader.mjs', import.meta.url);
 
 export async function interopRequireDefault(filePath: string) {
   try {
@@ -10,7 +14,7 @@ export async function interopRequireDefault(filePath: string) {
 
     return isES6DefaultExported ? result.default : result;
   } catch (e) {
-    // console.log('fallback!');
+    // console.log('fallback!', { e });
     const result = require(filePath);
 
     const isES6DefaultExported =

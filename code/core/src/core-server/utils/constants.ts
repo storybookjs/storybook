@@ -4,7 +4,11 @@ export const DEBOUNCE = 100;
 
 export const defaultStaticDirs = [
   {
-    from: join(dirname(require.resolve('storybook/internal/package.json')), 'assets', 'browser'),
+    from: join(
+      dirname(import.meta.resolve('storybook/internal/package.json')),
+      'assets',
+      'browser'
+    ),
     to: '/sb-common-assets',
   },
 ];

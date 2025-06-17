@@ -32,6 +32,9 @@
     }
   },
   "exports": {
+    "./bin/loader.mjs": {
+      "default": "./bin/loader.mjs"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
@@ -70,7 +73,7 @@
     "./internal/core-server": {
       "types": "./dist/core-server/index.d.ts",
       "import": "./dist/core-server/index.js",
-      "require": "./dist/core-server/index.cjs"
+      "default": "./dist/core-server/index.js"
     },
     "./internal/core-server/presets/common-preset": {
       "import": "./dist/core-server/presets/common-preset.js",

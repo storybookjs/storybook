@@ -8,7 +8,7 @@ import { logger } from 'storybook/internal/node-logger';
 import * as m from './common-preset';
 
 const defaultFavicon = join(
-  dirname(require.resolve('storybook/internal/package.json')),
+  dirname(import.meta.resolve('storybook/internal/package.json')),
   '/assets/browser/favicon.svg'
 );
 

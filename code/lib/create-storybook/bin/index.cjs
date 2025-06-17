@@ -23,9 +23,7 @@ process.once('uncaughtException', (error) => {
   throw error;
 });
 
-import('./hooks.mjs').then(() => {
-  import('../dist/bin/index.js').catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+import('../dist/bin/index.js').catch((error) => {
+  console.error(error);
+  process.exit(1);
 });

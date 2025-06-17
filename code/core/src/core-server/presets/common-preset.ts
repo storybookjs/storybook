@@ -36,7 +36,7 @@ const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
 
 const defaultFavicon = join(
-  dirname(require.resolve('storybook/internal/package.json')),
+  dirname(import.meta.resolve('storybook/internal/package.json')),
   '/assets/browser/favicon.svg'
 );
 
@@ -292,8 +292,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(require.resolve('react/package.json')),
-      reactDom: dirname(require.resolve('react-dom/package.json')),
+      react: dirname(import.meta.resolve('react/package.json')),
+      reactDom: dirname(import.meta.resolve('react-dom/package.json')),
     };
   } catch (e) {
     return existing;
@@ -313,7 +313,7 @@ export const tags = async (existing: any) => {
 export const managerEntries = async (existing: any) => {
   return [
     join(
-      dirname(require.resolve('storybook/internal/package.json')),
+      dirname(import.meta.resolve('storybook/internal/package.json')),
       'dist/core-server/presets/common-manager.js'
     ),
     ...(existing || []),

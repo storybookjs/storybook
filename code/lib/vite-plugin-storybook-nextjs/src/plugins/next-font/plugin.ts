@@ -28,7 +28,7 @@ type FontOptions = {
   source: string;
 };
 
-const includePattern = /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css.*$/;
+const includePattern = /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css\?.*$/;
 
 const virtualModuleId = "virtual:next-font";
 

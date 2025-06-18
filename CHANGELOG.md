@@ -1,3 +1,11 @@
+## 9.0.12
+
+- Addon Vitest: Support init in Vitest >= 3.2 - [#31715](https://github.com/storybookjs/storybook/pull/31715), thanks @valentinpalkovic!
+- CLI: Fix package manager instantiation in empty directories - [#31743](https://github.com/storybookjs/storybook/pull/31743), thanks @yannbf!
+- CLI: Improve support for upgrading Storybook in monorepos - [#31557](https://github.com/storybookjs/storybook/pull/31557), thanks @yannbf!
+- CLI: Show Storybook version in the upgrade command - [#31774](https://github.com/storybookjs/storybook/pull/31774), thanks @yannbf!
+- Core: Enhance package manager install methods to support optional force flag - [#31796](https://github.com/storybookjs/storybook/pull/31796), thanks @valentinpalkovic!
+
 ## 9.0.11
 
 - Addons: Use chromatic-com/storybook without version specifier - [#31627](https://github.com/storybookjs/storybook/pull/31627), thanks @valentinpalkovic!

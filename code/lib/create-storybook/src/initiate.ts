@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 
+import { isCI } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import boxen from 'boxen';
@@ -441,7 +442,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     )
   );
 
-  const isInteractive = process.stdout.isTTY && !process.env.CI;
+  const isInteractive = process.stdout.isTTY && !isCI;
 
   const settings = await globalSettings();
   const promptOptions = {

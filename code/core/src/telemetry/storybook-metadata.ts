@@ -4,6 +4,7 @@ import {
   getProjectRoot,
   getStorybookConfiguration,
   getStorybookInfo,
+  isCI,
   loadMainConfig,
   versions,
 } from 'storybook/internal/common';
@@ -57,7 +58,7 @@ export const computeStorybookMetadata = async ({
   mainConfig?: StorybookConfig & Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
-  const settings = process.env.CI === 'true' ? undefined : await globalSettings();
+  const settings = isCI ? undefined : await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
     userSince: settings?.value.userSince,

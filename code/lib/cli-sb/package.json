@@ -5,7 +5,7 @@
   "keywords": [
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-storybook",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-sb",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

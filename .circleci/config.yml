@@ -469,6 +469,14 @@ jobs:
       - attach_workspace:
           at: .
       - run:
+          name: "Install Node 22.15.0"
+          command: |
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+            . ~/.nvm/nvm.sh
+            nvm install 22.15.0
+            nvm use 22.15.0
+            node --version
+      - run:
           name: Install sandbox dependencies
           command: |
             TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)

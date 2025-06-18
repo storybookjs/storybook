@@ -3,6 +3,7 @@ import * as fs from 'node:fs/promises';
 import { findUp } from 'find-up';
 
 import * as babel from '../../../../../../core/src/babel';
+import { getProjectRoot } from '../../../../../../core/src/common/utils/paths';
 import type { Check } from './Check';
 import { CompatibilityType } from './CompatibilityType';
 
@@ -85,16 +86,17 @@ export const isValidWorkspaceConfigFile: (fileContents: string, babel: any) => b
  * - Yes -> ignore test intent
  * - No -> exit
  */
-const name = 'Vitest configuration';
 export const vitestConfigFiles: Check = {
   condition: async (context, state) => {
     const deps = ['babel', 'findUp', 'fs'];
     if (babel && findUp && fs) {
       const reasons = [];
 
+      const projectRoot = getProjectRoot();
+
       const vitestWorkspaceFile = await findUp(
         ['ts', 'js', 'json'].flatMap((ex) => [`vitest.workspace.${ex}`, `vitest.projects.${ex}`]),
-        { cwd: state.directory }
+        { cwd: state.directory, stopAt: projectRoot }
       );
       if (vitestWorkspaceFile?.endsWith('.json')) {
         reasons.push(`Cannot auto-update JSON workspace file: ${vitestWorkspaceFile}`);
@@ -107,7 +109,7 @@ export const vitestConfigFiles: Check = {
 
       const vitestConfigFile = await findUp(
         ['ts', 'js', 'tsx', 'jsx', 'cts', 'cjs', 'mts', 'mjs'].map((ex) => `vitest.config.${ex}`),
-        { cwd: state.directory }
+        { cwd: state.directory, stopAt: projectRoot }
       );
       if (vitestConfigFile?.endsWith('.cts') || vitestConfigFile?.endsWith('.cjs')) {
         reasons.push(`Cannot auto-update CommonJS config file: ${vitestConfigFile}`);

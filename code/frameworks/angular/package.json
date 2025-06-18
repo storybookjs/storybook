@@ -57,7 +57,7 @@
     "@storybook/global": "^5.0.0",
     "@types/webpack-env": "^1.18.0",
     "fd-package-json": "^1.2.0",
-    "find-up": "^5.0.0",
+    "find-up": "^7.0.0",
     "telejson": "8.0.0",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",

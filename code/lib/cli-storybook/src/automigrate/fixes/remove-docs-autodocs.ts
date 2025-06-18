@@ -1,7 +1,6 @@
 import { readConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
@@ -24,7 +23,7 @@ interface RemoveDocsAutodocsOptions {
  */
 export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
   id: 'remove-docs-autodocs',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mainjs-docsautodocs-is-deprecated',
 
   async check({ mainConfigPath }) {
     if (!mainConfigPath) {
@@ -48,14 +47,7 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
   },
 
   prompt: () => {
-    return dedent`
-      The \`docs.autodocs\` field in Storybook's main configuration has been removed in Storybook 9.
-      This field was deprecated in Storybook 7-8 and is no longer supported.
-      
-      We can make the necessary changes in your configuration automatically.
-      
-      More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#mainjs-docsautodocs-is-deprecated
-    `;
+    return `${picocolors.cyan('docs.autodocs')} has been removed in Storybook 9 and will be removed from your configuration.`;
   },
 
   async run({ result, dryRun, mainConfigPath, previewConfigPath }) {

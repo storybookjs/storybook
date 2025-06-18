@@ -152,6 +152,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     staticDirs,
     previewLevelTags,
     core,
+    optimizeViteDeps,
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
@@ -160,6 +161,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
     presets.apply('core'),
+    presets.apply('optimizeViteDeps', []),
   ]);
 
   const pluginsToIgnore = [
@@ -327,6 +329,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
         optimizeDeps: {
           include: [
+            ...optimizeViteDeps,
             '@storybook/addon-vitest/internal/setup-file',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',

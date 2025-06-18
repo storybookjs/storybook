@@ -489,8 +489,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  // FIXME: revert back to `next` once https://github.com/storybookjs/test-runner/pull/560 is merged
-  const extraDevDeps = ['@storybook/test-runner@0.22.1--canary.d4862d0.0'];
+  const extraDevDeps = ['storybook/test-runner@0.23.1--canary.fd3c654.0'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);

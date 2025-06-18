@@ -45,7 +45,6 @@
     "@types/semver": "^7.3.4",
     "commander": "^12.1.0",
     "create-storybook": "workspace:*",
-    "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
     "giget": "^1.0.0",
     "jscodeshift": "^0.15.1",
     "storybook": "workspace:*",

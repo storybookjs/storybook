@@ -5,7 +5,15 @@ import { transformSync } from 'esbuild';
 
 export function load(url, context, nextLoad) {
   /** Convert TS to ESM using esbuild */
-  if (url.match(/\..?tsx?$/)) {
+  if (
+    url.endsWith('.ts') ||
+    url.endsWith('.tsx') ||
+    url.endsWith('.mts') ||
+    url.endsWith('.cts') ||
+    url.endsWith('.tsx') ||
+    url.endsWith('.mtsx') ||
+    url.endsWith('.ctsx')
+  ) {
     const rawSource = readFileSync(fileURLToPath(url), 'utf-8');
     const transformedSource = transformSync(rawSource.toString(), {
       loader: 'ts',

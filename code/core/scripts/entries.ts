@@ -39,9 +39,6 @@ export const getEntries = (cwd: string) => {
     // empty, right now, TDB what to do with this
     define('src/index.ts', ['node', 'browser'], true),
 
-    // define('src/node-logger/index.ts', ['node'], true),
-    // define('src/client-logger/index.ts', ['browser', 'node'], true),
-
     define('src/theming/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/theming/create.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
@@ -114,17 +111,6 @@ export const getEntries = (cwd: string) => {
       ],
       true
     ),
-  ];
-};
-
-// entries for injecting globals into the preview and manager
-export const getBundles = (cwd: string) => {
-  const define = defineEntry(cwd);
-
-  return [
-    //
-    define('src/preview/runtime.ts', ['browser'], false),
-    define('src/manager/globals-runtime.ts', ['browser'], false),
   ];
 };
 

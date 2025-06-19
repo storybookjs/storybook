@@ -23,7 +23,7 @@ import {
   NODE_TARGET,
   SUPPORTED_FEATURES,
 } from '../src/shared/constants/environments-support';
-import { esmOnlyEntries, getBundles, getEntries, getFinals } from './entries';
+import { esmOnlyEntries, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
 import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
@@ -57,7 +57,6 @@ async function run() {
   }
 
   const entries = getEntries(cwd);
-  const bundles = getBundles(cwd);
   const finals = getFinals(cwd);
 
   type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
@@ -65,9 +64,7 @@ async function run() {
   console.log(isWatch ? 'Watching...' : 'Bundling...');
 
   const files = measure(generateSourceFiles);
-  const packageJson = measure(() =>
-    generatePackageJsonFile(entries.concat(bundles), esmOnlyEntries)
-  );
+  const packageJson = measure(() => generatePackageJsonFile(entries, esmOnlyEntries));
   const dist = files.then(() => measure(generateDistFiles));
   const types = files.then(() =>
     measure(async () => {
@@ -267,44 +264,6 @@ async function run() {
           },
         })
       ),
-      ...bundles.flatMap((entry) => {
-        const results = [];
-        results.push(
-          esbuild.context(
-            merge<EsbuildContextOptions>(browserEsbuildOptions, {
-              outdir: dirname(entry.file).replace('src', 'dist'),
-              entryPoints: [entry.file],
-              outExtension: { '.js': '.js' },
-              alias: {
-                'storybook/preview-api': join(cwd, 'src', 'preview-api'),
-                'storybook/manager-api': join(cwd, 'src', 'manager-api'),
-                'storybook/theming': join(cwd, 'src', 'theming'),
-                'storybook/test': join(cwd, 'src', 'test'),
-                'storybook/internal': join(cwd, 'src'),
-                'storybook/outline': join(cwd, 'src', 'outline'),
-                'storybook/backgrounds': join(cwd, 'src', 'backgrounds'),
-                'storybook/highlight': join(cwd, 'src', 'highlight'),
-                'storybook/measure': join(cwd, 'src', 'measure'),
-                'storybook/actions': join(cwd, 'src', 'actions'),
-                'storybook/viewport': join(cwd, 'src', 'viewport'),
-                react: dirname(require.resolve('react/package.json')),
-                'react-dom': dirname(require.resolve('react-dom/package.json')),
-                'react-dom/client': join(
-                  dirname(require.resolve('react-dom/package.json')),
-                  'client'
-                ),
-              },
-              define: {
-                // This should set react in prod mode for the manager
-                'process.env.NODE_ENV': JSON.stringify('production'),
-              },
-              external: [],
-            })
-          )
-        );
-
-        return results;
-      }),
       ...finals.flatMap((entry) => {
         const results = [];
         results.push(

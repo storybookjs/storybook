@@ -22,7 +22,7 @@ export async function generateTypesFiles(
     // we limit the number of concurrent processes to 3, because we don't want to overload the host machine
     // by trial and error, 3 seems to be the sweet spot between perf and consistency
     const limited = limit(10);
-    const processes: ReturnType<typeof spawn>[] = [];
+    let processes: ReturnType<typeof spawn>[] = [];
 
     await Promise.all(
       dtsEntries.map(async (fileName, index) => {
@@ -74,10 +74,10 @@ export async function generateTypesFiles(
             );
             console.log(dtsProcess.exitCode);
             // If any fail, kill all the other processes and exit (bail)
-            // processes.forEach((p) => p.kill());
-            // processes = [];
-            // console.log(index, fileName);
-            // process.exit(dtsProcess.exitCode || 1);
+            processes.forEach((p) => p.kill());
+            processes = [];
+            console.log(index, fileName);
+            process.exit(dtsProcess.exitCode || 1);
           } else {
             console.log('Generated types for', picocolors.cyan(relative(cwd, dtsEntries[index])));
 

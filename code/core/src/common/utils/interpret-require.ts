@@ -1,4 +1,5 @@
 import { register } from 'node:module';
+import os from 'node:os';
 import { pathToFileURL } from 'node:url';
 
 import { getInterpretedFileWithExt } from './interpret-files';
@@ -14,7 +15,7 @@ export async function interopRequireDefault(filePath: string) {
   let resolvedPath = filePath;
 
   try {
-    if (!filePath.startsWith('file:')) {
+    if (os.platform() === 'win32' && !filePath.startsWith('file:')) {
       resolvedPath = pathToFileURL(filePath).href;
     }
 

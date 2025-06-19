@@ -85,11 +85,6 @@
       "import": "./dist/telemetry/index.js",
       "require": "./dist/telemetry/index.cjs"
     },
-    "./internal/router": {
-      "types": "./dist/router/index.d.ts",
-      "import": "./dist/router/index.js",
-      "require": "./dist/router/index.cjs"
-    },
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
       "import": "./dist/docs-tools/index.js",
@@ -230,7 +225,11 @@
       "default": "./dist/manager-api/index.js"
     },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
-    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
+    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
+    "./internal/router": {
+      "types": "./dist/router/index.d.ts",
+      "default": "./dist/router/index.js"
+    }
   },
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -263,9 +262,6 @@
       ],
       "internal/telemetry": [
         "./dist/telemetry/index.d.ts"
-      ],
-      "internal/router": [
-        "./dist/router/index.d.ts"
       ],
       "internal/docs-tools": [
         "./dist/docs-tools/index.d.ts"
@@ -362,6 +358,9 @@
       ],
       "./internal/manager-api": [
         "./dist/manager-api/index.d.ts"
+      ],
+      "./internal/router": [
+        "./dist/router/index.d.ts"
       ]
     }
   },

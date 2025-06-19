@@ -66,9 +66,6 @@
       "import": "./dist/core-server/presets/common-preset.js",
       "require": "./dist/core-server/presets/common-preset.cjs"
     },
-    "./internal/core-server/presets/common-manager": {
-      "import": "./dist/core-server/presets/common-manager.js"
-    },
     "./internal/core-server/presets/common-override-preset": {
       "import": "./dist/core-server/presets/common-override-preset.js",
       "require": "./dist/core-server/presets/common-override-preset.cjs"
@@ -238,6 +235,10 @@
       "types": "./dist/manager/globals.d.ts",
       "default": "./dist/manager/globals.js"
     },
+    "./internal/core-server/presets/common-manager": {
+      "types": "./dist/core-server/presets/common-manager.d.ts",
+      "default": "./dist/core-server/presets/common-manager.js"
+    },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
@@ -371,6 +372,9 @@
       ],
       "./internal/manager/globals": [
         "./dist/manager/globals.d.ts"
+      ],
+      "./internal/core-server/presets/common-manager": [
+        "./dist/core-server/presets/common-manager.d.ts"
       ]
     }
   },

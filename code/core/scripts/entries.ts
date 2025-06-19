@@ -72,6 +72,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/manager/globals'],
       entryPoint: './src/manager/globals.ts',
     },
+    {
+      exportEntries: ['./internal/core-server/presets/common-manager'],
+      entryPoint: './src/core-server/presets/common-manager.ts',
+    },
   ],
   runtime: [
     {
@@ -102,10 +106,6 @@ export const getEntries = (cwd: string) => {
 
     define('src/core-server/index.ts', ['node'], true, ['react']),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
-    define('src/core-server/presets/common-manager.ts', ['browser'], false, [
-      'react',
-      '@storybook/icons',
-    ]),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
     define('src/core-events/index.ts', ['browser', 'node'], true),

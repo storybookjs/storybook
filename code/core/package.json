@@ -224,12 +224,12 @@
       "types": "./dist/manager-api/index.d.ts",
       "default": "./dist/manager-api/index.js"
     },
-    "./internal/preview/runtime": "./dist/preview/runtime.js",
-    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
     "./internal/router": {
       "types": "./dist/router/index.d.ts",
       "default": "./dist/router/index.js"
-    }
+    },
+    "./internal/preview/runtime": "./dist/preview/runtime.js",
+    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
   "main": "dist/index.cjs",
   "module": "dist/index.js",

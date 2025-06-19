@@ -93,6 +93,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./manager-api', './internal/manager-api'],
       entryPoint: './src/manager-api/index.ts',
     },
+    {
+      exportEntries: ['./internal/router'],
+      entryPoint: './src/router/index.ts',
+    },
   ],
   runtime: [
     {
@@ -104,10 +108,6 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/manager/globals-runtime'],
       entryPoint: './src/manager/globals-runtime.ts',
       dts: false,
-    },
-    {
-      exportEntries: ['./internal/router'],
-      entryPoint: './src/router/index.ts',
     },
   ],
 };

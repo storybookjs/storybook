@@ -1,14 +1,16 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
 
-import slash from 'slash';
+import { join, relative } from 'pathe';
 
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
-import type { getEntries } from '../entries';
+import type { ESMOnlyEntry, getEntries } from '../entries';
 
 const cwd = process.cwd();
 
-export async function generatePackageJsonFile(entries: ReturnType<typeof getEntries>) {
+export async function generatePackageJsonFile(
+  entries: ReturnType<typeof getEntries>,
+  esmOnlyEntries: ESMOnlyEntry[]
+) {
   const location = join(cwd, 'package.json');
   const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
 
@@ -18,7 +20,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
    * correct path.
    */
   pkgJson.exports = entries.reduce<Record<string, Record<string, string>>>((acc, entry) => {
-    let main = './' + slash(relative(cwd, entry.file).replace('src', 'dist'));
+    let main = './' + relative(cwd, entry.file).replace('src', 'dist');
 
     const content: Record<string, string> = {};
     if (entry.dts) {
@@ -86,7 +88,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
           return acc;
         }
 
-        let main = slash(relative(cwd, entry.file).replace('src', 'dist'));
+        let main = relative(cwd, entry.file).replace('src', 'dist');
         if (main === './dist/index.ts' || main === './dist/index.tsx') {
           main = '.';
         }
@@ -120,6 +122,22 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
       }, {}),
     },
   };
+
+  for (const entry of esmOnlyEntries) {
+    for (const exportEntry of entry.exportEntries) {
+      pkgJson.exports[exportEntry] = {};
+
+      if (entry.dts !== false) {
+        const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+        pkgJson.exports[exportEntry].types = dtsPath;
+        pkgJson.typesVersions['*'][exportEntry] = [dtsPath];
+      }
+
+      pkgJson.exports[exportEntry].default = entry.entryPoint
+        .replace('src', 'dist')
+        .replace(/\.tsx?/, '.js');
+    }
+  }
 
   await writeFile(location, `${sortPackageJson(JSON.stringify(pkgJson, null, 2))}\n`, {});
 }

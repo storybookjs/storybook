@@ -1,4 +1,24 @@
+import type { BuildOptions } from 'esbuild';
+
 import { defineEntry } from '../../../scripts/prepare/tools';
+
+export type ESMOnlyEntry = {
+  exportEntries: `./${string}`[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
+  entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
+  dts?: false; // default to generating d.ts files for all entries, except if set to false
+  platform?: BuildOptions['platform']; // unused for now
+};
+
+export const esmOnlyEntries: ESMOnlyEntry[] = [
+  {
+    exportEntries: ['./internal/node-logger'],
+    entryPoint: './src/node-logger/index.ts',
+  },
+  {
+    exportEntries: ['./internal/client-logger'],
+    entryPoint: './src/client-logger/index.ts',
+  },
+];
 
 export const getEntries = (cwd: string) => {
   const define = defineEntry(cwd);
@@ -6,8 +26,8 @@ export const getEntries = (cwd: string) => {
     // empty, right now, TDB what to do with this
     define('src/index.ts', ['node', 'browser'], true),
 
-    define('src/node-logger/index.ts', ['node'], true),
-    define('src/client-logger/index.ts', ['browser', 'node'], true),
+    // define('src/node-logger/index.ts', ['node'], true),
+    // define('src/client-logger/index.ts', ['browser', 'node'], true),
 
     define('src/theming/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define('src/theming/create.ts', ['browser', 'node'], true, ['react'], [], [], true),

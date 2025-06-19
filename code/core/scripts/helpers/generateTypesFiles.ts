@@ -1,16 +1,20 @@
-import { join, relative } from 'node:path';
+import { join, relative } from 'pathe';
 
 import { spawn } from '../../../../scripts/prepare/tools';
-import { limit, picocolors, process } from '../../../../scripts/prepare/tools';
-import type { getEntries } from '../entries';
+import { limit, picocolors } from '../../../../scripts/prepare/tools';
+import type { ESMOnlyEntry, getEntries } from '../entries';
 import { modifyThemeTypes } from './modifyThemeTypes';
 
 export async function generateTypesFiles(
   entries: ReturnType<typeof getEntries>,
+  esmOnlyEntries: ESMOnlyEntry[],
   isOptimized: boolean,
   cwd: string
 ) {
-  const dtsEntries = entries.filter((e) => e.dts).map((e) => e.file);
+  const dtsEntries = entries
+    .filter((e) => e.dts)
+    .map((e) => e.file)
+    .concat(esmOnlyEntries.filter((e) => e.dts !== false).map((e) => e.entryPoint));
 
   if (isOptimized) {
     // Spawn each entry in it's own separate process, because they are slow & synchronous
@@ -18,7 +22,7 @@ export async function generateTypesFiles(
     // we limit the number of concurrent processes to 3, because we don't want to overload the host machine
     // by trial and error, 3 seems to be the sweet spot between perf and consistency
     const limited = limit(10);
-    let processes: ReturnType<typeof spawn>[] = [];
+    const processes: ReturnType<typeof spawn>[] = [];
 
     await Promise.all(
       dtsEntries.map(async (fileName, index) => {
@@ -29,7 +33,7 @@ export async function generateTypesFiles(
               ['./scripts/dts.ts', index.toString()],
               {
                 cwd,
-                stdio: ['ignore', 'pipe', 'inherit'],
+                stdio: ['ignore', 'inherit', 'inherit'],
               }
             );
           let timer: ReturnType<typeof setTimeout> | undefined;
@@ -70,10 +74,10 @@ export async function generateTypesFiles(
             );
             console.log(dtsProcess.exitCode);
             // If any fail, kill all the other processes and exit (bail)
-            processes.forEach((p) => p.kill());
-            processes = [];
-            console.log(index, fileName);
-            process.exit(dtsProcess.exitCode || 1);
+            // processes.forEach((p) => p.kill());
+            // processes = [];
+            // console.log(index, fileName);
+            // process.exit(dtsProcess.exitCode || 1);
           } else {
             console.log('Generated types for', picocolors.cyan(relative(cwd, dtsEntries[index])));
 

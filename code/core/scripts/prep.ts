@@ -1,9 +1,9 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
 
 import type { Metafile } from 'esbuild';
+import { dirname, join } from 'pathe';
 
 import {
   dedent,
@@ -23,7 +23,7 @@ import {
   NODE_TARGET,
   SUPPORTED_FEATURES,
 } from '../src/shared/constants/environments-support';
-import { getBundles, getEntries, getFinals } from './entries';
+import { esmOnlyEntries, getBundles, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
 import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
@@ -65,13 +65,15 @@ async function run() {
   console.log(isWatch ? 'Watching...' : 'Bundling...');
 
   const files = measure(generateSourceFiles);
-  const packageJson = measure(() => generatePackageJsonFile(entries.concat(bundles)));
+  const packageJson = measure(() =>
+    generatePackageJsonFile(entries.concat(bundles), esmOnlyEntries)
+  );
   const dist = files.then(() => measure(generateDistFiles));
   const types = files.then(() =>
     measure(async () => {
-      await generateTypesMapperFiles(entries);
+      await generateTypesMapperFiles(entries, esmOnlyEntries);
       await modifyThemeTypes();
-      await generateTypesFiles(entries, isOptimized, cwd);
+      await generateTypesFiles(entries, esmOnlyEntries, isOptimized, cwd);
     })
   );
 
@@ -143,6 +145,46 @@ async function run() {
       mainFields: ['main', 'module', 'node'],
       conditions: ['node', 'module', 'import', 'require'],
     } satisfies EsbuildContextOptions;
+
+    const esmOnlyDefaultOptions = {
+      format: 'esm',
+      platform: 'neutral',
+      // platform: 'node',
+      bundle: true,
+      metafile: true,
+      minifyIdentifiers: isOptimized,
+      minifySyntax: isOptimized,
+      minifyWhitespace: false,
+      outdir: 'dist',
+      treeShaking: true,
+      target: [...(BROWSER_TARGETS as any), NODE_TARGET],
+      external: ['storybook', ...nodeInternals, ...external],
+      mainFields: ['module', 'main'],
+      conditions: ['browser', 'module', 'import', 'require', 'node', 'default'],
+      color: true,
+      banner: {
+        js: dedent`
+          import CJS_COMPAT_NODE_URL from 'node:url';
+          import CJS_COMPAT_NODE_PATH from 'node:path';
+          import CJS_COMPAT_NODE_MODULE from "node:module";
+
+          const __filename = CJS_COMPAT_NODE_URL.fileURLToPath(import.meta.url);
+          const __dirname = CJS_COMPAT_NODE_PATH.dirname(__filename);
+          const require = CJS_COMPAT_NODE_MODULE.createRequire(import.meta.url);
+          // ------------------------------------------------------------
+          // end of CJS compatibility banner, injected by Storybook's esbuild configuration
+          // ------------------------------------------------------------
+        `,
+      },
+    } as const satisfies EsbuildContextOptions;
+
+    // TODO: this will be the only compile to do once we've migrated all entry points over
+    const esmOnlyCompile = await Promise.all([
+      esbuild.context({
+        ...esmOnlyDefaultOptions,
+        entryPoints: esmOnlyEntries.map(({ entryPoint }) => entryPoint),
+      }),
+    ]);
 
     const compile = await Promise.all([
       esbuild.context(
@@ -354,7 +396,7 @@ async function run() {
 
     if (isWatch) {
       await Promise.all(
-        compile.map(async (context) => {
+        compile.concat(esmOnlyCompile).map(async (context) => {
           await context.watch();
         })
       );
@@ -371,7 +413,7 @@ async function run() {
       }
       await mkdir(metafilesDir, { recursive: true });
       const outputs = await Promise.all(
-        compile.map(async (context) => {
+        compile.concat(esmOnlyCompile).map(async (context) => {
           const output = await context.rebuild();
           await context.dispose();
           return output;
@@ -404,7 +446,6 @@ async function run() {
       }
       await Promise.all(
         Object.entries(metafileByModule).map(async ([moduleName, metafile]) => {
-          console.log('saving metafiles', moduleName);
           const sanitizedModuleName = moduleName.replaceAll('/', '-');
           await writeFile(
             join(metafilesDir, `${sanitizedModuleName}.json`),

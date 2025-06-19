@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, sep } from 'node:path';
 
 import { dedent } from '../../../../scripts/prepare/tools';
-import type { getEntries } from '../entries';
+import type { ESMOnlyEntry, getEntries } from '../entries';
 
 const cwd = process.cwd();
 
@@ -18,7 +18,10 @@ async function generateTypesMapperContent(filePath: string) {
   `;
 }
 
-export async function generateTypesMapperFiles(entries: ReturnType<typeof getEntries>) {
+export async function generateTypesMapperFiles(
+  entries: ReturnType<typeof getEntries>,
+  esmOnlyEntries: ESMOnlyEntry[]
+) {
   /**
    * Generate the type mapper files, which are used to map the types to the SOURCE location. This
    * would be for development builds ONLY, **HOWEVER**: During a production build we ALSO run this,
@@ -28,7 +31,10 @@ export async function generateTypesMapperFiles(entries: ReturnType<typeof getEnt
    * interdependencies are MEGA complex, and this simplified approach immensely is the only way to
    * ensure we can compile them in parallel.
    */
-  const all = entries.filter((e) => e.dts).map((e) => e.file);
+  const all = entries
+    .filter((e) => e.dts)
+    .map((e) => e.file)
+    .concat(esmOnlyEntries.filter((e) => e.dts !== false).map((e) => e.entryPoint));
 
   await Promise.all(
     all.map(async (filePath) => {

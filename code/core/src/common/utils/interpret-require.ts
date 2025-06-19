@@ -15,7 +15,7 @@ export async function interopRequireDefault(filePath: string) {
   let resolvedPath = filePath;
 
   try {
-    if (os.platform() === 'win32' && !filePath.startsWith('file:')) {
+    if (!filePath.startsWith('file:')) {
       resolvedPath = pathToFileURL(filePath).href;
     }
 

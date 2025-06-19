@@ -480,17 +480,7 @@ describe('loadPreset', () => {
         {
           "name": "@storybook/addon-docs/preset",
           "options": {},
-          "preset": {
-            "docs": [Function],
-            "optimizeViteDeps": [
-              "@mdx-js/react",
-              "@storybook/addon-docs",
-              "markdown-to-jsx",
-            ],
-            "resolvedReact": [Function],
-            "viteFinal": [Function],
-            "webpack": [Function],
-          },
+          "preset": {},
         },
         {
           "name": {
@@ -618,17 +608,7 @@ describe('loadPreset', () => {
         {
           "name": "@storybook/addon-docs/preset",
           "options": {},
-          "preset": {
-            "docs": [Function],
-            "optimizeViteDeps": [
-              "@mdx-js/react",
-              "@storybook/addon-docs",
-              "markdown-to-jsx",
-            ],
-            "resolvedReact": [Function],
-            "viteFinal": [Function],
-            "webpack": [Function],
-          },
+          "preset": {},
         },
         {
           "name": {

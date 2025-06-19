@@ -258,12 +258,8 @@
       "import": "./dist/test/index.js",
       "require": "./dist/test/index.cjs"
     },
-    "./internal/preview/runtime": {
-      "import": "./dist/preview/runtime.js"
-    },
-    "./internal/manager/globals-runtime": {
-      "import": "./dist/manager/globals-runtime.js"
-    },
+    "./internal/preview/runtime": "./dist/preview/runtime.js",
+    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
     "./package.json": "./package.json",
     "./internal/package.json": "./package.json",
     "./internal/node-logger": {

@@ -125,17 +125,18 @@ export async function generatePackageJsonFile(
 
   for (const entry of esmOnlyEntries) {
     for (const exportEntry of entry.exportEntries) {
-      pkgJson.exports[exportEntry] = {};
+      const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+      const jsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.js');
 
-      if (entry.dts !== false) {
-        const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
-        pkgJson.exports[exportEntry].types = dtsPath;
+      if (entry.dts === undefined) {
+        pkgJson.exports[exportEntry] = {
+          types: dtsPath,
+          default: jsPath,
+        };
         pkgJson.typesVersions['*'][exportEntry] = [dtsPath];
+      } else {
+        pkgJson.exports[exportEntry] = jsPath;
       }
-
-      pkgJson.exports[exportEntry].default = entry.entryPoint
-        .replace('src', 'dist')
-        .replace(/\.tsx?/, '.js');
     }
   }
 

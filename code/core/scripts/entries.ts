@@ -7,6 +7,7 @@ export type ESMOnlyEntry = {
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
   dts?: false; // default to generating d.ts files for all entries, except if set to false
   platform?: BuildOptions['platform']; // unused for now
+  isRuntime?: boolean; // used for manager and preview runtimes which needs special esbuild configuration
 };
 
 export const esmOnlyEntries: ESMOnlyEntry[] = [
@@ -17,6 +18,18 @@ export const esmOnlyEntries: ESMOnlyEntry[] = [
   {
     exportEntries: ['./internal/client-logger'],
     entryPoint: './src/client-logger/index.ts',
+  },
+  {
+    exportEntries: ['./internal/preview/runtime'],
+    entryPoint: './src/preview/runtime.ts',
+    dts: false,
+    isRuntime: true,
+  },
+  {
+    exportEntries: ['./internal/manager/globals-runtime'],
+    entryPoint: './src/manager/globals-runtime.ts',
+    dts: false,
+    isRuntime: true,
   },
 ];
 

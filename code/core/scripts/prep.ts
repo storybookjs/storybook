@@ -146,10 +146,8 @@ async function run() {
       conditions: ['node', 'module', 'import', 'require'],
     } satisfies EsbuildContextOptions;
 
-    const esmOnlyDefaultOptions = {
+    const esmOnlySharedOptions = {
       format: 'esm',
-      platform: 'neutral',
-      // platform: 'node',
       bundle: true,
       metafile: true,
       minifyIdentifiers: isOptimized,
@@ -158,31 +156,65 @@ async function run() {
       outdir: 'dist',
       treeShaking: true,
       target: [...(BROWSER_TARGETS as any), NODE_TARGET],
-      external: ['storybook', ...nodeInternals, ...external],
-      mainFields: ['module', 'main'],
-      conditions: ['browser', 'module', 'import', 'require', 'node', 'default'],
       color: true,
-      banner: {
-        js: dedent`
-          import CJS_COMPAT_NODE_URL from 'node:url';
-          import CJS_COMPAT_NODE_PATH from 'node:path';
-          import CJS_COMPAT_NODE_MODULE from "node:module";
-
-          const __filename = CJS_COMPAT_NODE_URL.fileURLToPath(import.meta.url);
-          const __dirname = CJS_COMPAT_NODE_PATH.dirname(__filename);
-          const require = CJS_COMPAT_NODE_MODULE.createRequire(import.meta.url);
-          // ------------------------------------------------------------
-          // end of CJS compatibility banner, injected by Storybook's esbuild configuration
-          // ------------------------------------------------------------
-        `,
-      },
     } as const satisfies EsbuildContextOptions;
+
+    const groupedEsmOnlyEntries = Object.groupBy(esmOnlyEntries, ({ isRuntime }) =>
+      isRuntime ? 'runtime' : 'default'
+    );
 
     // TODO: this will be the only compile to do once we've migrated all entry points over
     const esmOnlyCompile = await Promise.all([
       esbuild.context({
-        ...esmOnlyDefaultOptions,
-        entryPoints: esmOnlyEntries.map(({ entryPoint }) => entryPoint),
+        ...esmOnlySharedOptions,
+        entryPoints: groupedEsmOnlyEntries.default!.map(({ entryPoint }) => entryPoint),
+        platform: 'neutral',
+        mainFields: ['module', 'main'],
+        conditions: ['browser', 'module', 'import', 'require', 'node', 'default'],
+        external: ['storybook', ...nodeInternals, ...external],
+        banner: {
+          js: dedent`
+            import CJS_COMPAT_NODE_URL from 'node:url';
+            import CJS_COMPAT_NODE_PATH from 'node:path';
+            import CJS_COMPAT_NODE_MODULE from "node:module";
+  
+            const __filename = CJS_COMPAT_NODE_URL.fileURLToPath(import.meta.url);
+            const __dirname = CJS_COMPAT_NODE_PATH.dirname(__filename);
+            const require = CJS_COMPAT_NODE_MODULE.createRequire(import.meta.url);
+            // ------------------------------------------------------------
+            // end of CJS compatibility banner, injected by Storybook's esbuild configuration
+            // ------------------------------------------------------------
+          `,
+        },
+      }),
+      esbuild.context({
+        ...esmOnlySharedOptions,
+        entryPoints: groupedEsmOnlyEntries.runtime!.map(({ entryPoint }) => entryPoint),
+        platform: 'browser',
+        alias: {
+          // The following aliases ensures that the runtimes bundles in the actual sources of these modules
+          // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
+          'storybook/preview-api': './src/preview-api',
+          'storybook/manager-api': './src/manager-api',
+          'storybook/theming': './src/theming',
+          'storybook/test': './src/test',
+          'storybook/internal': './src',
+          'storybook/outline': './src/outline',
+          'storybook/backgrounds': './src/backgrounds',
+          'storybook/highlight': './src/highlight',
+          'storybook/measure': './src/measure',
+          'storybook/actions': './src/actions',
+          'storybook/viewport': './src/viewport',
+          // The following aliases ensures that the manager has a single version of React,
+          // even if transitive dependencies would depend on other versions.
+          react: dirname(require.resolve('react/package.json')),
+          'react-dom': dirname(require.resolve('react-dom/package.json')),
+          'react-dom/client': join(dirname(require.resolve('react-dom/package.json')), 'client'),
+        },
+        define: {
+          // This should set react in prod mode for the manager
+          'process.env.NODE_ENV': JSON.stringify('production'),
+        },
       }),
     ]);
 

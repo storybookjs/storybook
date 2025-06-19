@@ -48,6 +48,14 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./viewport', './internal/viewport'],
       entryPoint: './src/viewport/index.ts',
     },
+    {
+      exportEntries: ['./internal/preview/globals'],
+      entryPoint: './src/preview/globals.ts',
+    },
+    {
+      exportEntries: ['./internal/csf'],
+      entryPoint: './src/csf/index.ts',
+    },
   ],
   runtime: [
     {
@@ -92,7 +100,6 @@ export const getEntries = (cwd: string) => {
     define('src/channels/index.ts', ['browser', 'node'], true),
     define('src/types/index.ts', ['browser', 'node'], true, ['react']),
     define('src/csf-tools/index.ts', ['node'], true),
-    define('src/csf/index.ts', ['browser', 'node'], true),
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
@@ -111,7 +118,6 @@ export const getEntries = (cwd: string) => {
 
     define('src/manager/globals-module-info.ts', ['node'], true),
     define('src/manager/globals.ts', ['node'], true),
-    define('src/preview/globals.ts', ['node'], true),
     define('src/cli/index.ts', ['node'], true),
     define('src/babel/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),

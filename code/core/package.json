@@ -107,11 +107,6 @@
       "import": "./dist/csf-tools/index.js",
       "require": "./dist/csf-tools/index.cjs"
     },
-    "./internal/csf": {
-      "types": "./dist/csf/index.d.ts",
-      "import": "./dist/csf/index.js",
-      "require": "./dist/csf/index.cjs"
-    },
     "./internal/common": {
       "types": "./dist/common/index.d.ts",
       "import": "./dist/common/index.js",
@@ -161,11 +156,6 @@
       "types": "./dist/manager/globals.d.ts",
       "import": "./dist/manager/globals.js",
       "require": "./dist/manager/globals.cjs"
-    },
-    "./internal/preview/globals": {
-      "types": "./dist/preview/globals.d.ts",
-      "import": "./dist/preview/globals.js",
-      "require": "./dist/preview/globals.cjs"
     },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
@@ -248,6 +238,14 @@
       "types": "./dist/viewport/index.d.ts",
       "default": "./dist/viewport/index.js"
     },
+    "./internal/preview/globals": {
+      "types": "./dist/preview/globals.d.ts",
+      "default": "./dist/preview/globals.js"
+    },
+    "./internal/csf": {
+      "types": "./dist/csf/index.d.ts",
+      "default": "./dist/csf/index.js"
+    },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
@@ -295,9 +293,6 @@
       "internal/csf-tools": [
         "./dist/csf-tools/index.d.ts"
       ],
-      "internal/csf": [
-        "./dist/csf/index.d.ts"
-      ],
       "internal/common": [
         "./dist/common/index.d.ts"
       ],
@@ -327,9 +322,6 @@
       ],
       "internal/manager/globals": [
         "./dist/manager/globals.d.ts"
-      ],
-      "internal/preview/globals": [
-        "./dist/preview/globals.d.ts"
       ],
       "internal/cli": [
         "./dist/cli/index.d.ts"
@@ -384,6 +376,12 @@
       ],
       "./internal/viewport": [
         "./dist/viewport/index.d.ts"
+      ],
+      "./internal/preview/globals": [
+        "./dist/preview/globals.d.ts"
+      ],
+      "./internal/csf": [
+        "./dist/csf/index.d.ts"
       ]
     }
   },

@@ -13,6 +13,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/node-logger'],
       entryPoint: './src/node-logger/index.ts',
     },
+    {
+      exportEntries: ['./internal/server-errors'],
+      entryPoint: './src/server-errors.ts',
+    },
   ],
   browser: [
     {
@@ -56,6 +60,14 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/csf'],
       entryPoint: './src/csf/index.ts',
     },
+    {
+      exportEntries: ['./internal/manager-errors'],
+      entryPoint: './src/manager-errors.ts',
+    },
+    {
+      exportEntries: ['./internal/preview-errors'],
+      entryPoint: './src/preview-errors.ts',
+    },
   ],
   runtime: [
     {
@@ -93,9 +105,6 @@ export const getEntries = (cwd: string) => {
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
     define('src/core-events/index.ts', ['browser', 'node'], true),
-    define('src/manager-errors.ts', ['browser'], true),
-    define('src/preview-errors.ts', ['browser', 'node'], true),
-    define('src/server-errors.ts', ['node'], true),
 
     define('src/channels/index.ts', ['browser', 'node'], true),
     define('src/types/index.ts', ['browser', 'node'], true, ['react']),

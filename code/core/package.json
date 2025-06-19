@@ -78,20 +78,6 @@
       "import": "./dist/core-events/index.js",
       "require": "./dist/core-events/index.cjs"
     },
-    "./internal/manager-errors": {
-      "types": "./dist/manager-errors.d.ts",
-      "import": "./dist/manager-errors.js"
-    },
-    "./internal/preview-errors": {
-      "types": "./dist/preview-errors.d.ts",
-      "import": "./dist/preview-errors.js",
-      "require": "./dist/preview-errors.cjs"
-    },
-    "./internal/server-errors": {
-      "types": "./dist/server-errors.d.ts",
-      "import": "./dist/server-errors.js",
-      "require": "./dist/server-errors.cjs"
-    },
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
       "import": "./dist/channels/index.js",
@@ -182,6 +168,10 @@
       "types": "./dist/node-logger/index.d.ts",
       "default": "./dist/node-logger/index.js"
     },
+    "./internal/server-errors": {
+      "types": "./dist/server-errors.d.ts",
+      "default": "./dist/server-errors.js"
+    },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
       "default": "./dist/client-logger/index.js"
@@ -246,6 +236,14 @@
       "types": "./dist/csf/index.d.ts",
       "default": "./dist/csf/index.js"
     },
+    "./internal/manager-errors": {
+      "types": "./dist/manager-errors.d.ts",
+      "default": "./dist/manager-errors.js"
+    },
+    "./internal/preview-errors": {
+      "types": "./dist/preview-errors.d.ts",
+      "default": "./dist/preview-errors.js"
+    },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
@@ -274,15 +272,6 @@
       ],
       "internal/core-events": [
         "./dist/core-events/index.d.ts"
-      ],
-      "internal/manager-errors": [
-        "./dist/manager-errors.d.ts"
-      ],
-      "internal/preview-errors": [
-        "./dist/preview-errors.d.ts"
-      ],
-      "internal/server-errors": [
-        "./dist/server-errors.d.ts"
       ],
       "internal/channels": [
         "./dist/channels/index.d.ts"
@@ -335,6 +324,9 @@
       "./internal/node-logger": [
         "./dist/node-logger/index.d.ts"
       ],
+      "./internal/server-errors": [
+        "./dist/server-errors.d.ts"
+      ],
       "./internal/client-logger": [
         "./dist/client-logger/index.d.ts"
       ],
@@ -382,6 +374,12 @@
       ],
       "./internal/csf": [
         "./dist/csf/index.d.ts"
+      ],
+      "./internal/manager-errors": [
+        "./dist/manager-errors.d.ts"
+      ],
+      "./internal/preview-errors": [
+        "./dist/preview-errors.d.ts"
       ]
     }
   },

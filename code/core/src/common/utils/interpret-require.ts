@@ -1,4 +1,5 @@
 import { register } from 'node:module';
+import { pathToFileURL } from 'node:url';
 
 import { getInterpretedFileWithExt } from './interpret-files';
 
@@ -10,9 +11,14 @@ export async function interopRequireDefault(filePath: string) {
     registered = true;
   }
 
+  let resolvedPath = filePath;
+
   try {
+    if (!filePath.startsWith('file:')) {
+      resolvedPath = pathToFileURL(filePath).href;
+    }
+
     const result = await import(filePath);
-    // console.log('imported');
 
     const isES6DefaultExported =
       typeof result === 'object' && result !== null && typeof result.default !== 'undefined';

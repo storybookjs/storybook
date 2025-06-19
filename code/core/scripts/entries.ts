@@ -1,11 +1,14 @@
 import { defineEntry } from '../../../scripts/prepare/tools';
 
 export type ESMOnlyEntry = {
-  exportEntries: `./${string}`[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
+  exportEntries?: `./${string}`[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
   dts?: false; // default to generating d.ts files for all entries, except if set to false
 };
-export type ESMOnlyEntriesByPlatform = Record<'node' | 'browser' | 'runtime', ESMOnlyEntry[]>;
+export type ESMOnlyEntriesByPlatform = Record<
+  'node' | 'browser' | 'runtime' | 'globalizedRuntime',
+  ESMOnlyEntry[]
+>;
 
 export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
   node: [
@@ -73,7 +76,6 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       entryPoint: './src/manager/globals.ts',
     },
     {
-      exportEntries: ['./internal/core-server/presets/common-manager'],
       entryPoint: './src/core-server/presets/common-manager.ts',
       dts: false,
     },
@@ -107,6 +109,12 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
     {
       exportEntries: ['./internal/manager/globals-runtime'],
       entryPoint: './src/manager/globals-runtime.ts',
+      dts: false,
+    },
+  ],
+  globalizedRuntime: [
+    {
+      entryPoint: './src/manager/runtime.tsx',
       dts: false,
     },
   ],

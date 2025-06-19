@@ -124,7 +124,7 @@ export async function generatePackageJsonFile(
   };
 
   for (const entry of Object.values(esmOnlyEntries).flat()) {
-    for (const exportEntry of entry.exportEntries) {
+    for (const exportEntry of entry.exportEntries ?? []) {
       const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
       const jsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.js');
 

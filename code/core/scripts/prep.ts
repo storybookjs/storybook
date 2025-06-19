@@ -174,6 +174,36 @@ async function run() {
       external: esmOnlyExternal.filter((external) => !esmOnlyNoExternal.includes(external)),
     } as const satisfies EsbuildContextOptions;
 
+    const esmOnlyRuntimeOptions = {
+      ...esmOnlySharedOptions,
+      platform: 'browser',
+      external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
+      alias: {
+        // The following aliases ensures that the runtimes bundles in the actual sources of these modules
+        // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
+        'storybook/preview-api': './src/preview-api',
+        'storybook/manager-api': './src/manager-api',
+        'storybook/theming': './src/theming',
+        'storybook/test': './src/test',
+        'storybook/internal': './src',
+        'storybook/outline': './src/outline',
+        'storybook/backgrounds': './src/backgrounds',
+        'storybook/highlight': './src/highlight',
+        'storybook/measure': './src/measure',
+        'storybook/actions': './src/actions',
+        'storybook/viewport': './src/viewport',
+        // The following aliases ensures that the manager has a single version of React,
+        // even if transitive dependencies would depend on other versions.
+        react: dirname(require.resolve('react/package.json')),
+        'react-dom': dirname(require.resolve('react-dom/package.json')),
+        'react-dom/client': join(dirname(require.resolve('react-dom/package.json')), 'client'),
+      },
+      define: {
+        // This should set react in prod mode for the manager
+        'process.env.NODE_ENV': JSON.stringify('production'),
+      },
+    } as const satisfies EsbuildContextOptions;
+
     // TODO: this will be the only compile to do once we've migrated all entry points over
     const esmOnlyCompile = await Promise.all([
       esbuild.context({
@@ -201,34 +231,13 @@ async function run() {
         platform: 'browser',
       }),
       esbuild.context({
-        ...esmOnlySharedOptions,
+        ...esmOnlyRuntimeOptions,
         entryPoints: esmOnlyEntries.runtime.map(({ entryPoint }) => entryPoint),
-        platform: 'browser',
-        external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
-        alias: {
-          // The following aliases ensures that the runtimes bundles in the actual sources of these modules
-          // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
-          'storybook/preview-api': './src/preview-api',
-          'storybook/manager-api': './src/manager-api',
-          'storybook/theming': './src/theming',
-          'storybook/test': './src/test',
-          'storybook/internal': './src',
-          'storybook/outline': './src/outline',
-          'storybook/backgrounds': './src/backgrounds',
-          'storybook/highlight': './src/highlight',
-          'storybook/measure': './src/measure',
-          'storybook/actions': './src/actions',
-          'storybook/viewport': './src/viewport',
-          // The following aliases ensures that the manager has a single version of React,
-          // even if transitive dependencies would depend on other versions.
-          react: dirname(require.resolve('react/package.json')),
-          'react-dom': dirname(require.resolve('react-dom/package.json')),
-          'react-dom/client': join(dirname(require.resolve('react-dom/package.json')), 'client'),
-        },
-        define: {
-          // This should set react in prod mode for the manager
-          'process.env.NODE_ENV': JSON.stringify('production'),
-        },
+      }),
+      esbuild.context({
+        ...esmOnlyRuntimeOptions,
+        entryPoints: esmOnlyEntries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
+        plugins: [globalExternals(globalsModuleInfoMap)],
       }),
     ]);
 
@@ -281,48 +290,6 @@ async function run() {
           },
         })
       ),
-      ...finals.flatMap((entry) => {
-        const results = [];
-        results.push(
-          esbuild.context(
-            merge<EsbuildContextOptions>(browserEsbuildOptions, {
-              alias: {
-                'storybook/preview-api': join(cwd, 'src', 'preview-api'),
-                'storybook/manager-api': join(cwd, 'src', 'manager-api'),
-                'storybook/theming': join(cwd, 'src', 'theming'),
-                'storybook/test': join(cwd, 'src', 'test'),
-                'storybook/actions': join(cwd, 'src', 'actions'),
-                'storybook/outline': join(cwd, 'src', 'outline'),
-                'storybook/backgrounds': join(cwd, 'src', 'backgrounds'),
-                'storybook/measure': join(cwd, 'src', 'measure'),
-                'storybook/viewport': join(cwd, 'src', 'viewport'),
-                'storybook/highlight': join(cwd, 'src', 'highlight'),
-
-                'storybook/internal': join(cwd, 'src'),
-                react: dirname(require.resolve('react/package.json')),
-                'react-dom': dirname(require.resolve('react-dom/package.json')),
-                'react-dom/client': join(
-                  dirname(require.resolve('react-dom/package.json')),
-                  'client'
-                ),
-              },
-              define: {
-                // This should set react in prod mode for the manager
-                'process.env.NODE_ENV': JSON.stringify('production'),
-              },
-              entryPoints: [entry.file],
-              external: [],
-              outdir: dirname(entry.file).replace('src', 'dist'),
-              outExtension: {
-                '.js': '.js',
-              },
-              plugins: [globalExternals(globalsModuleInfoMap)],
-            })
-          )
-        );
-
-        return results;
-      }),
       ...entries
         .filter((entry) => !noExternals(entry))
         .flatMap((entry) => {

@@ -195,7 +195,6 @@
       "types": "./dist/manager/globals.d.ts",
       "default": "./dist/manager/globals.js"
     },
-    "./internal/core-server/presets/common-manager": "./dist/core-server/presets/common-manager.js",
     "./theming": {
       "types": "./dist/theming/index.d.ts",
       "default": "./dist/theming/index.js"

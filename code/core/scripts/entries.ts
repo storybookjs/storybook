@@ -45,29 +45,12 @@ export const esmOnlyEntries: ESMOnlyEntry[] = [
     entryPoint: './src/test/index.ts',
     platform: 'browser',
   },
+  {
+    exportEntries: ['./preview-api', './internal/preview-api'],
+    entryPoint: './src/preview-api/index.ts',
+    platform: 'browser',
+  },
 ];
-
-/**
- * ```
- * define('src/instrumenter/index.ts', ['browser', 'node'], true),
- * define(
- *   'src/test/index.ts',
- *   ['browser', 'node'],
- *   true,
- *   ['util', 'react'],
- *   [],
- *   [
- *     '@testing-library/jest-dom',
- *     '@testing-library/user-event',
- *     'chai',
- *     '@vitest/expect',
- *     '@vitest/spy',
- *     '@vitest/utils',
- *   ],
- *   true
- * ),
- * ```
- */
 
 export const getEntries = (cwd: string) => {
   const define = defineEntry(cwd);
@@ -108,7 +91,6 @@ export const getEntries = (cwd: string) => {
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
-    define('src/preview-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define(
       'src/manager-api/index.ts',
       ['browser', 'node'],

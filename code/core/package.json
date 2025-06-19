@@ -174,16 +174,6 @@
       "import": "./dist/telemetry/index.js",
       "require": "./dist/telemetry/index.cjs"
     },
-    "./internal/preview-api": {
-      "types": "./dist/preview-api/index.d.ts",
-      "import": "./dist/preview-api/index.js",
-      "require": "./dist/preview-api/index.cjs"
-    },
-    "./preview-api": {
-      "types": "./dist/preview-api/index.d.ts",
-      "import": "./dist/preview-api/index.js",
-      "require": "./dist/preview-api/index.cjs"
-    },
     "./internal/manager-api": {
       "types": "./dist/manager-api/index.d.ts",
       "import": "./dist/manager-api/index.js",
@@ -266,6 +256,14 @@
     "./internal/test": {
       "types": "./dist/test/index.d.ts",
       "default": "./dist/test/index.js"
+    },
+    "./preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "default": "./dist/preview-api/index.js"
+    },
+    "./internal/preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "default": "./dist/preview-api/index.js"
     }
   },
   "main": "dist/index.cjs",
@@ -354,12 +352,6 @@
       "internal/telemetry": [
         "./dist/telemetry/index.d.ts"
       ],
-      "internal/preview-api": [
-        "./dist/preview-api/index.d.ts"
-      ],
-      "preview-api": [
-        "./dist/preview-api/index.d.ts"
-      ],
       "internal/manager-api": [
         "./dist/manager-api/index.d.ts"
       ],
@@ -407,6 +399,12 @@
       ],
       "./internal/test": [
         "./dist/test/index.d.ts"
+      ],
+      "./preview-api": [
+        "./dist/preview-api/index.d.ts"
+      ],
+      "./internal/preview-api": [
+        "./dist/preview-api/index.d.ts"
       ]
     }
   },

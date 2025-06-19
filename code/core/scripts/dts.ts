@@ -51,10 +51,13 @@ async function run() {
     .concat(
       esmOnlyEntries
         .filter((e) => e.dts !== false)
-        .map((esmOnlyEntry) => ({
-          file: esmOnlyEntry.entryPoint,
-          externals: [],
-        }))
+        .map(
+          (esmOnlyEntry) =>
+            ({
+              file: esmOnlyEntry.entryPoint,
+              externals: [],
+            }) as any
+        )
     );
   const list = selection === 'all' ? all : [all[Number(selection)]];
 

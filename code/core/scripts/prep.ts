@@ -150,44 +150,53 @@ async function run() {
       minifyIdentifiers: isOptimized,
       minifySyntax: isOptimized,
       minifyWhitespace: false,
+      outbase: 'src',
       outdir: 'dist',
       treeShaking: true,
       target: [...(BROWSER_TARGETS as any), NODE_TARGET],
       color: true,
+      external: [
+        'storybook',
+        ...Object.keys(pkg.dependencies ?? {}),
+        ...Object.keys(pkg.peerDependencies ?? {}),
+      ],
     } as const satisfies EsbuildContextOptions;
 
-    const groupedEsmOnlyEntries = Object.groupBy(esmOnlyEntries, ({ isRuntime }) =>
-      isRuntime ? 'runtime' : 'default'
+    const groupedEsmOnlyEntries = Object.groupBy(esmOnlyEntries, ({ isRuntime, platform }) =>
+      isRuntime ? 'runtime' : platform
     );
 
     // TODO: this will be the only compile to do once we've migrated all entry points over
     const esmOnlyCompile = await Promise.all([
       esbuild.context({
         ...esmOnlySharedOptions,
-        entryPoints: groupedEsmOnlyEntries.default!.map(({ entryPoint }) => entryPoint),
-        platform: 'neutral',
-        mainFields: ['module', 'main'],
-        conditions: ['browser', 'module', 'import', 'require', 'node', 'default'],
-        external: ['storybook', ...nodeInternals, ...external],
+        entryPoints: groupedEsmOnlyEntries.node!.map(({ entryPoint }) => entryPoint),
+        platform: 'node',
         banner: {
           js: dedent`
             import CJS_COMPAT_NODE_URL from 'node:url';
             import CJS_COMPAT_NODE_PATH from 'node:path';
             import CJS_COMPAT_NODE_MODULE from "node:module";
-  
+
             const __filename = CJS_COMPAT_NODE_URL.fileURLToPath(import.meta.url);
             const __dirname = CJS_COMPAT_NODE_PATH.dirname(__filename);
             const require = CJS_COMPAT_NODE_MODULE.createRequire(import.meta.url);
             // ------------------------------------------------------------
             // end of CJS compatibility banner, injected by Storybook's esbuild configuration
             // ------------------------------------------------------------
-          `,
+            `,
         },
+      }),
+      esbuild.context({
+        ...esmOnlySharedOptions,
+        entryPoints: groupedEsmOnlyEntries.browser!.map(({ entryPoint }) => entryPoint),
+        platform: 'browser',
       }),
       esbuild.context({
         ...esmOnlySharedOptions,
         entryPoints: groupedEsmOnlyEntries.runtime!.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
+        external: [],
         alias: {
           // The following aliases ensures that the runtimes bundles in the actual sources of these modules
           // instead of attempting to resolve them to the dist files, because the dist files are not available yet.

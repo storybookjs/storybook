@@ -6,7 +6,7 @@ export type ESMOnlyEntry = {
   exportEntries: `./${string}`[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
   dts?: false; // default to generating d.ts files for all entries, except if set to false
-  platform?: BuildOptions['platform']; // unused for now
+  platform: NonNullable<BuildOptions['platform']>; // unused for now
   isRuntime?: boolean; // used for manager and preview runtimes which needs special esbuild configuration
 };
 
@@ -14,24 +14,59 @@ export const esmOnlyEntries: ESMOnlyEntry[] = [
   {
     exportEntries: ['./internal/node-logger'],
     entryPoint: './src/node-logger/index.ts',
+    platform: 'node',
   },
   {
     exportEntries: ['./internal/client-logger'],
     entryPoint: './src/client-logger/index.ts',
+    platform: 'browser',
   },
   {
     exportEntries: ['./internal/preview/runtime'],
     entryPoint: './src/preview/runtime.ts',
     dts: false,
     isRuntime: true,
+    platform: 'browser',
   },
   {
     exportEntries: ['./internal/manager/globals-runtime'],
     entryPoint: './src/manager/globals-runtime.ts',
     dts: false,
     isRuntime: true,
+    platform: 'browser',
   },
+  {
+    exportEntries: ['./internal/instrumenter'],
+    entryPoint: './src/instrumenter/index.ts',
+    platform: 'browser',
+  },
+  // {
+  //   exportEntries: ['./test', './internal/test'],
+  //   entryPoint: './src/test/index.ts',
+  // },
 ];
+
+/**
+ * ```
+ * define('src/instrumenter/index.ts', ['browser', 'node'], true),
+ * define(
+ *   'src/test/index.ts',
+ *   ['browser', 'node'],
+ *   true,
+ *   ['util', 'react'],
+ *   [],
+ *   [
+ *     '@testing-library/jest-dom',
+ *     '@testing-library/user-event',
+ *     'chai',
+ *     '@vitest/expect',
+ *     '@vitest/spy',
+ *     '@vitest/utils',
+ *   ],
+ *   true
+ * ),
+ * ```
+ */
 
 export const getEntries = (cwd: string) => {
   const define = defineEntry(cwd);
@@ -94,7 +129,7 @@ export const getEntries = (cwd: string) => {
     define('src/cli/bin/index.ts', ['node'], true),
     define('src/bin/index.ts', ['node'], false),
 
-    define('src/instrumenter/index.ts', ['browser', 'node'], true),
+    // define('src/instrumenter/index.ts', ['browser', 'node'], true),
     define(
       'src/test/index.ts',
       ['browser', 'node'],

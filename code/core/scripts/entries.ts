@@ -40,10 +40,11 @@ export const esmOnlyEntries: ESMOnlyEntry[] = [
     entryPoint: './src/instrumenter/index.ts',
     platform: 'browser',
   },
-  // {
-  //   exportEntries: ['./test', './internal/test'],
-  //   entryPoint: './src/test/index.ts',
-  // },
+  {
+    exportEntries: ['./test', './internal/test'],
+    entryPoint: './src/test/index.ts',
+    platform: 'browser',
+  },
 ];
 
 /**
@@ -128,24 +129,6 @@ export const getEntries = (cwd: string) => {
     define('src/babel/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),
     define('src/bin/index.ts', ['node'], false),
-
-    // define('src/instrumenter/index.ts', ['browser', 'node'], true),
-    define(
-      'src/test/index.ts',
-      ['browser', 'node'],
-      true,
-      ['util', 'react'],
-      [],
-      [
-        '@testing-library/jest-dom',
-        '@testing-library/user-event',
-        'chai',
-        '@vitest/expect',
-        '@vitest/spy',
-        '@vitest/utils',
-      ],
-      true
-    ),
   ];
 };
 

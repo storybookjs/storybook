@@ -243,16 +243,6 @@
       "import": "./dist/bin/index.js",
       "require": "./dist/bin/index.cjs"
     },
-    "./internal/test": {
-      "types": "./dist/test/index.d.ts",
-      "import": "./dist/test/index.js",
-      "require": "./dist/test/index.cjs"
-    },
-    "./test": {
-      "types": "./dist/test/index.d.ts",
-      "import": "./dist/test/index.js",
-      "require": "./dist/test/index.cjs"
-    },
     "./package.json": "./package.json",
     "./internal/package.json": "./package.json",
     "./internal/node-logger": {
@@ -268,6 +258,14 @@
     "./internal/instrumenter": {
       "types": "./dist/instrumenter/index.d.ts",
       "default": "./dist/instrumenter/index.js"
+    },
+    "./test": {
+      "types": "./dist/test/index.d.ts",
+      "default": "./dist/test/index.js"
+    },
+    "./internal/test": {
+      "types": "./dist/test/index.d.ts",
+      "default": "./dist/test/index.js"
     }
   },
   "main": "dist/index.cjs",
@@ -395,12 +393,6 @@
       "internal/cli/bin": [
         "./dist/cli/bin/index.d.ts"
       ],
-      "internal/test": [
-        "./dist/test/index.d.ts"
-      ],
-      "test": [
-        "./dist/test/index.d.ts"
-      ],
       "./internal/node-logger": [
         "./dist/node-logger/index.d.ts"
       ],
@@ -409,6 +401,12 @@
       ],
       "./internal/instrumenter": [
         "./dist/instrumenter/index.d.ts"
+      ],
+      "./test": [
+        "./dist/test/index.d.ts"
+      ],
+      "./internal/test": [
+        "./dist/test/index.d.ts"
       ]
     }
   },

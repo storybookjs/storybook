@@ -143,6 +143,22 @@ async function run() {
       conditions: ['node', 'module', 'import', 'require'],
     } satisfies EsbuildContextOptions;
 
+    const esmOnlyExternal = [
+      'storybook',
+      'react',
+      'react-dom',
+      'react-dom/client',
+      ...Object.keys({ ...(pkg.dependencies ?? {}), ...(pkg.peerDependencies ?? {}) }),
+    ];
+    const esmOnlyNoExternal = [
+      '@testing-library/jest-dom',
+      '@testing-library/user-event',
+      'chai',
+      '@vitest/expect',
+      '@vitest/spy',
+      '@vitest/utils',
+    ];
+
     const esmOnlySharedOptions = {
       format: 'esm',
       bundle: true,
@@ -155,11 +171,7 @@ async function run() {
       treeShaking: true,
       target: [...(BROWSER_TARGETS as any), NODE_TARGET],
       color: true,
-      external: [
-        'storybook',
-        ...Object.keys(pkg.dependencies ?? {}),
-        ...Object.keys(pkg.peerDependencies ?? {}),
-      ],
+      external: esmOnlyExternal.filter((external) => !esmOnlyNoExternal.includes(external)),
     } as const satisfies EsbuildContextOptions;
 
     const groupedEsmOnlyEntries = Object.groupBy(esmOnlyEntries, ({ isRuntime, platform }) =>
@@ -196,7 +208,7 @@ async function run() {
         ...esmOnlySharedOptions,
         entryPoints: groupedEsmOnlyEntries.runtime!.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
-        external: [],
+        external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
         alias: {
           // The following aliases ensures that the runtimes bundles in the actual sources of these modules
           // instead of attempting to resolve them to the dist files, because the dist files are not available yet.

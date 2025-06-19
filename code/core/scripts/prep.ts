@@ -23,7 +23,7 @@ import {
   NODE_TARGET,
   SUPPORTED_FEATURES,
 } from '../src/shared/constants/environments-support';
-import { esmOnlyDtsEntries, esmOnlyEntries, getEntries, getFinals } from './entries';
+import { esmOnlyDtsEntries, esmOnlyEntries, getEntries } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
 import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
@@ -57,7 +57,6 @@ async function run() {
   }
 
   const entries = getEntries(cwd);
-  const finals = getFinals(cwd);
 
   type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
 

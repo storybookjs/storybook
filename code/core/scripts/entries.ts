@@ -151,13 +151,3 @@ export const getEntries = (cwd: string) => {
     define('src/bin/index.ts', ['node'], false),
   ];
 };
-
-// the runtime for the manager
-export const getFinals = (cwd: string) => {
-  const define = defineEntry(cwd);
-
-  return [
-    //
-    define('src/manager/runtime.tsx', ['browser'], false),
-  ];
-};

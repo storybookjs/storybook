@@ -273,7 +273,7 @@ function getESBuildOptions(optimized: boolean) {
   return {
     logLevel: 'error',
     legalComments: 'none',
-    minifyWhitespace: optimized,
+    minifyWhitespace: false,
     minifyIdentifiers: false,
     minifySyntax: optimized,
   };

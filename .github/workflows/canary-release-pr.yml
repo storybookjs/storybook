@@ -1,5 +1,5 @@
 name: Publish canary release of PR
-run-name: "Canary release: PR #${{ inputs.pr }}, triggered by ${{ github.triggering_actor }}"
+run-name: "Canary release: PR #${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}, triggered by ${{ github.triggering_actor }}"
 
 on:
   workflow_dispatch:
@@ -8,13 +8,15 @@ on:
         description: "Pull request number to create a canary release for"
         required: true
         type: number
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.inputs.pr }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
@@ -25,6 +27,7 @@ jobs:
     name: Release canary version
     runs-on: ubuntu-latest
     environment: release
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'sb10/esm-only'
     steps:
       - name: Fail if triggering actor is not administrator
         uses: prince-chrismc/check-actor-permissions-action@v2.0.4
@@ -36,7 +39,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          PR_INFO=$(gh pr view ${{ inputs.pr }} --repo ${{ github.repository }} --json isCrossRepository,headRefOid,headRefName,headRepository,headRepositoryOwner --jq '{isFork: .isCrossRepository, owner: .headRepositoryOwner.login, repoName: .headRepository.name, branch: .headRefName, sha: .headRefOid}')
+          PR_NUMBER=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          PR_INFO=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json isCrossRepository,headRefOid,headRefName,headRepository,headRepositoryOwner --jq '{isFork: .isCrossRepository, owner: .headRepositoryOwner.login, repoName: .headRepository.name, branch: .headRefName, sha: .headRefOid}')
           echo $PR_INFO
           # Loop through each key-value pair in PR_INFO and set as step output
           for key in $(echo "$PR_INFO" | jq -r 'keys[]'); do
@@ -78,7 +82,8 @@ jobs:
         id: version
         working-directory: scripts
         run: |
-          yarn release:version --exact 0.0.0-pr-${{ inputs.pr }}-sha-${{ steps.info.outputs.shortSha }} --verbose
+          PR_NUMBER=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          yarn release:version --exact 0.0.0-pr-$PR_NUMBER-sha-${{ steps.info.outputs.shortSha }} --verbose
 
       - name: Publish v${{ steps.version.outputs.next-version }}
         env:
@@ -91,7 +96,7 @@ jobs:
         uses: mcky/find-and-replace-pull-request-body@v1.1.6-mcky
         with:
           githubToken: ${{ secrets.GH_TOKEN }}
-          prNumber: ${{ inputs.pr }}
+          prNumber: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
           find: "CANARY_RELEASE_SECTION"
           isHtmlCommentTag: true
           replace: |
@@ -111,7 +116,7 @@ jobs:
 
             To request a new release of this pull request, mention the `@storybookjs/core` team.
 
-            _core team members can create a new canary release [here](https://github.com/storybookjs/storybook/actions/workflows/canary-release-pr.yml) or locally with `gh workflow run --repo storybookjs/storybook canary-release-pr.yml --field pr=${{ inputs.pr }}`_
+            _core team members can create a new canary release [here](https://github.com/storybookjs/storybook/actions/workflows/canary-release-pr.yml) or locally with `gh workflow run --repo storybookjs/storybook canary-release-pr.yml --field pr=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}`_
             </details>
 
       - name: Create failing comment on PR
@@ -119,6 +124,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
-          gh pr comment ${{ inputs.pr }}\
+          PR_NUMBER=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          gh pr comment $PR_NUMBER\
             --repo "${{github.repository }}"\
             --body "Failed to publish canary version of this pull request, triggered by @${{ github.triggering_actor }}. See the failed workflow run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

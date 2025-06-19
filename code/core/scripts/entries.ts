@@ -1,56 +1,71 @@
-import type { BuildOptions } from 'esbuild';
-
 import { defineEntry } from '../../../scripts/prepare/tools';
 
 export type ESMOnlyEntry = {
   exportEntries: `./${string}`[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
   dts?: false; // default to generating d.ts files for all entries, except if set to false
-  platform: NonNullable<BuildOptions['platform']>; // unused for now
-  isRuntime?: boolean; // used for manager and preview runtimes which needs special esbuild configuration
+};
+export type ESMOnlyEntriesByPlatform = Record<'node' | 'browser' | 'runtime', ESMOnlyEntry[]>;
+
+export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
+  node: [
+    {
+      exportEntries: ['./internal/node-logger'],
+      entryPoint: './src/node-logger/index.ts',
+    },
+  ],
+  browser: [
+    {
+      exportEntries: ['./internal/client-logger'],
+      entryPoint: './src/client-logger/index.ts',
+    },
+
+    {
+      exportEntries: ['./internal/instrumenter'],
+      entryPoint: './src/instrumenter/index.ts',
+    },
+    {
+      exportEntries: ['./test', './internal/test'],
+      entryPoint: './src/test/index.ts',
+    },
+    {
+      exportEntries: ['./preview-api', './internal/preview-api'],
+      entryPoint: './src/preview-api/index.ts',
+    },
+    {
+      exportEntries: ['./highlight', './internal/highlight'],
+      entryPoint: './src/highlight/index.ts',
+    },
+    {
+      exportEntries: ['./actions', './internal/actions'],
+      entryPoint: './src/actions/index.ts',
+    },
+    {
+      exportEntries: ['./actions/decorator', './internal/actions/decorator'],
+      entryPoint: './src/actions/decorator.ts',
+    },
+    {
+      exportEntries: ['./viewport', './internal/viewport'],
+      entryPoint: './src/viewport/index.ts',
+    },
+  ],
+  runtime: [
+    {
+      exportEntries: ['./internal/preview/runtime'],
+      entryPoint: './src/preview/runtime.ts',
+      dts: false,
+    },
+    {
+      exportEntries: ['./internal/manager/globals-runtime'],
+      entryPoint: './src/manager/globals-runtime.ts',
+      dts: false,
+    },
+  ],
 };
 
-export const esmOnlyEntries: ESMOnlyEntry[] = [
-  {
-    exportEntries: ['./internal/node-logger'],
-    entryPoint: './src/node-logger/index.ts',
-    platform: 'node',
-  },
-  {
-    exportEntries: ['./internal/client-logger'],
-    entryPoint: './src/client-logger/index.ts',
-    platform: 'browser',
-  },
-  {
-    exportEntries: ['./internal/preview/runtime'],
-    entryPoint: './src/preview/runtime.ts',
-    dts: false,
-    isRuntime: true,
-    platform: 'browser',
-  },
-  {
-    exportEntries: ['./internal/manager/globals-runtime'],
-    entryPoint: './src/manager/globals-runtime.ts',
-    dts: false,
-    isRuntime: true,
-    platform: 'browser',
-  },
-  {
-    exportEntries: ['./internal/instrumenter'],
-    entryPoint: './src/instrumenter/index.ts',
-    platform: 'browser',
-  },
-  {
-    exportEntries: ['./test', './internal/test'],
-    entryPoint: './src/test/index.ts',
-    platform: 'browser',
-  },
-  {
-    exportEntries: ['./preview-api', './internal/preview-api'],
-    entryPoint: './src/preview-api/index.ts',
-    platform: 'browser',
-  },
-];
+export const esmOnlyDtsEntries: ESMOnlyEntry[] = Object.values(esmOnlyEntries)
+  .flat()
+  .filter((entry) => entry.dts !== false);
 
 export const getEntries = (cwd: string) => {
   const define = defineEntry(cwd);
@@ -68,16 +83,6 @@ export const getEntries = (cwd: string) => {
       '@storybook/icons',
     ]),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
-
-    define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
-
-    define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
-    define('src/actions/decorator.ts', ['browser'], true, ['react'], [], [], true),
-
-    define('src/viewport/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
-
-    define('src/controls/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/controls/decorator.ts', ['browser'], true, ['react']),
 
     define('src/core-events/index.ts', ['browser', 'node'], true),
     define('src/manager-errors.ts', ['browser'], true),

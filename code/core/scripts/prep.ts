@@ -23,7 +23,7 @@ import {
   NODE_TARGET,
   SUPPORTED_FEATURES,
 } from '../src/shared/constants/environments-support';
-import { esmOnlyEntries, getEntries, getFinals } from './entries';
+import { esmOnlyDtsEntries, esmOnlyEntries, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
 import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
@@ -68,9 +68,9 @@ async function run() {
   const dist = files.then(() => measure(generateDistFiles));
   const types = files.then(() =>
     measure(async () => {
-      await generateTypesMapperFiles(entries, esmOnlyEntries);
+      await generateTypesMapperFiles(entries, esmOnlyDtsEntries);
       await modifyThemeTypes();
-      await generateTypesFiles(entries, esmOnlyEntries, isOptimized, cwd);
+      await generateTypesFiles(entries, esmOnlyDtsEntries, isOptimized, cwd);
     })
   );
 
@@ -174,15 +174,11 @@ async function run() {
       external: esmOnlyExternal.filter((external) => !esmOnlyNoExternal.includes(external)),
     } as const satisfies EsbuildContextOptions;
 
-    const groupedEsmOnlyEntries = Object.groupBy(esmOnlyEntries, ({ isRuntime, platform }) =>
-      isRuntime ? 'runtime' : platform
-    );
-
     // TODO: this will be the only compile to do once we've migrated all entry points over
     const esmOnlyCompile = await Promise.all([
       esbuild.context({
         ...esmOnlySharedOptions,
-        entryPoints: groupedEsmOnlyEntries.node!.map(({ entryPoint }) => entryPoint),
+        entryPoints: esmOnlyEntries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
         banner: {
           js: dedent`
@@ -201,12 +197,12 @@ async function run() {
       }),
       esbuild.context({
         ...esmOnlySharedOptions,
-        entryPoints: groupedEsmOnlyEntries.browser!.map(({ entryPoint }) => entryPoint),
+        entryPoints: esmOnlyEntries.browser.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
       }),
       esbuild.context({
         ...esmOnlySharedOptions,
-        entryPoints: groupedEsmOnlyEntries.runtime!.map(({ entryPoint }) => entryPoint),
+        entryPoints: esmOnlyEntries.runtime.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
         external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
         alias: {

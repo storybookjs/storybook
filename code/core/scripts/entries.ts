@@ -68,6 +68,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/preview-errors'],
       entryPoint: './src/preview-errors.ts',
     },
+    {
+      exportEntries: ['./internal/manager/globals'],
+      entryPoint: './src/manager/globals.ts',
+    },
   ],
   runtime: [
     {
@@ -125,8 +129,6 @@ export const getEntries = (cwd: string) => {
     define('src/components/index.ts', ['browser', 'node'], true, ['react', 'react-dom'], []),
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 
-    define('src/manager/globals-module-info.ts', ['node'], true),
-    define('src/manager/globals.ts', ['node'], true),
     define('src/cli/index.ts', ['node'], true),
     define('src/babel/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),

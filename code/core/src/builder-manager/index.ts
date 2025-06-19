@@ -2,13 +2,13 @@ import { cp, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, parse } from 'node:path';
 
 import { stringifyProcessEnvs } from 'storybook/internal/common';
-import { globalsModuleInfoMap } from 'storybook/internal/manager/globals-module-info';
 import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
 import sirv from 'sirv';
 
+import { globalsModuleInfoMap } from '../manager/globals/globals-module-info';
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
 import type {
   BuilderBuildResult,

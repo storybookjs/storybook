@@ -17,7 +17,7 @@ import {
   process,
 } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
-import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
+import { globalsModuleInfoMap } from '../src/manager/globals/globals-module-info';
 import {
   BROWSER_TARGETS,
   NODE_TARGET,

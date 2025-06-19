@@ -89,6 +89,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/components'],
       entryPoint: './src/components/index.ts',
     },
+    {
+      exportEntries: ['./manager-api', './internal/manager-api'],
+      entryPoint: './src/manager-api/index.ts',
+    },
   ],
   runtime: [
     {
@@ -126,15 +130,7 @@ export const getEntries = (cwd: string) => {
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
-    define(
-      'src/manager-api/index.ts',
-      ['browser', 'node'],
-      true,
-      ['react', 'react-dom'],
-      [],
-      [],
-      true
-    ),
+
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 

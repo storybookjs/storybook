@@ -2,9 +2,14 @@ import { register } from 'node:module';
 
 import { getInterpretedFileWithExt } from './interpret-files';
 
-register('storybook/bin/loader.mjs', import.meta.url);
+let registered = false;
 
 export async function interopRequireDefault(filePath: string) {
+  if (!registered) {
+    register('storybook/bin/loader.mjs', import.meta.url);
+    registered = true;
+  }
+
   try {
     const result = await import(filePath);
     // console.log('imported');

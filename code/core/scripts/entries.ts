@@ -75,6 +75,15 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
     {
       exportEntries: ['./internal/core-server/presets/common-manager'],
       entryPoint: './src/core-server/presets/common-manager.ts',
+      dts: false,
+    },
+    {
+      exportEntries: ['./theming', './internal/theming'],
+      entryPoint: './src/theming/index.ts',
+    },
+    {
+      exportEntries: ['./theming/create', './internal/theming/create'],
+      entryPoint: './src/theming/create.ts',
     },
   ],
   runtime: [
@@ -100,9 +109,6 @@ export const getEntries = (cwd: string) => {
   return [
     // empty, right now, TDB what to do with this
     define('src/index.ts', ['node', 'browser'], true),
-
-    define('src/theming/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
-    define('src/theming/create.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
     define('src/core-server/index.ts', ['node'], true, ['react']),
     define('src/core-server/presets/common-preset.ts', ['node'], false),

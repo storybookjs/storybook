@@ -37,26 +37,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./internal/theming": {
-      "types": "./dist/theming/index.d.ts",
-      "import": "./dist/theming/index.js",
-      "require": "./dist/theming/index.cjs"
-    },
-    "./theming": {
-      "types": "./dist/theming/index.d.ts",
-      "import": "./dist/theming/index.js",
-      "require": "./dist/theming/index.cjs"
-    },
-    "./internal/theming/create": {
-      "types": "./dist/theming/create.d.ts",
-      "import": "./dist/theming/create.js",
-      "require": "./dist/theming/create.cjs"
-    },
-    "./theming/create": {
-      "types": "./dist/theming/create.d.ts",
-      "import": "./dist/theming/create.js",
-      "require": "./dist/theming/create.cjs"
-    },
     "./internal/core-server": {
       "types": "./dist/core-server/index.d.ts",
       "import": "./dist/core-server/index.js",
@@ -235,9 +215,22 @@
       "types": "./dist/manager/globals.d.ts",
       "default": "./dist/manager/globals.js"
     },
-    "./internal/core-server/presets/common-manager": {
-      "types": "./dist/core-server/presets/common-manager.d.ts",
-      "default": "./dist/core-server/presets/common-manager.js"
+    "./internal/core-server/presets/common-manager": "./dist/core-server/presets/common-manager.js",
+    "./theming": {
+      "types": "./dist/theming/index.d.ts",
+      "default": "./dist/theming/index.js"
+    },
+    "./internal/theming": {
+      "types": "./dist/theming/index.d.ts",
+      "default": "./dist/theming/index.js"
+    },
+    "./theming/create": {
+      "types": "./dist/theming/create.d.ts",
+      "default": "./dist/theming/create.js"
+    },
+    "./internal/theming/create": {
+      "types": "./dist/theming/create.d.ts",
+      "default": "./dist/theming/create.js"
     },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
@@ -249,18 +242,6 @@
     "*": {
       "*": [
         "./dist/index.d.ts"
-      ],
-      "internal/theming": [
-        "./dist/theming/index.d.ts"
-      ],
-      "theming": [
-        "./dist/theming/index.d.ts"
-      ],
-      "internal/theming/create": [
-        "./dist/theming/create.d.ts"
-      ],
-      "theming/create": [
-        "./dist/theming/create.d.ts"
       ],
       "internal/core-server": [
         "./dist/core-server/index.d.ts"
@@ -373,8 +354,17 @@
       "./internal/manager/globals": [
         "./dist/manager/globals.d.ts"
       ],
-      "./internal/core-server/presets/common-manager": [
-        "./dist/core-server/presets/common-manager.d.ts"
+      "./theming": [
+        "./dist/theming/index.d.ts"
+      ],
+      "./internal/theming": [
+        "./dist/theming/index.d.ts"
+      ],
+      "./theming/create": [
+        "./dist/theming/create.d.ts"
+      ],
+      "./internal/theming/create": [
+        "./dist/theming/create.d.ts"
       ]
     }
   },

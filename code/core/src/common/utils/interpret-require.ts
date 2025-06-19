@@ -19,7 +19,7 @@ export async function interopRequireDefault(filePath: string) {
 
     return isES6DefaultExported ? result.default : result;
   } catch (e) {
-    console.log('fallback!', { e });
+    console.log('fallback!', { e, filePath });
     const result = require(filePath);
 
     const isES6DefaultExported =

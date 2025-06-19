@@ -18,7 +18,7 @@ export async function interopRequireDefault(filePath: string) {
       resolvedPath = pathToFileURL(filePath).href;
     }
 
-    const result = await import(filePath);
+    const result = await import(resolvedPath);
 
     const isES6DefaultExported =
       typeof result === 'object' && result !== null && typeof result.default !== 'undefined';

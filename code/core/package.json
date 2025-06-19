@@ -100,11 +100,6 @@
       "import": "./dist/router/index.js",
       "require": "./dist/router/index.cjs"
     },
-    "./internal/components": {
-      "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.js",
-      "require": "./dist/components/index.cjs"
-    },
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
       "import": "./dist/docs-tools/index.js",
@@ -232,6 +227,10 @@
       "types": "./dist/theming/create.d.ts",
       "default": "./dist/theming/create.js"
     },
+    "./internal/components": {
+      "types": "./dist/components/index.d.ts",
+      "default": "./dist/components/index.js"
+    },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
@@ -275,9 +274,6 @@
       ],
       "internal/router": [
         "./dist/router/index.d.ts"
-      ],
-      "internal/components": [
-        "./dist/components/index.d.ts"
       ],
       "internal/docs-tools": [
         "./dist/docs-tools/index.d.ts"
@@ -365,6 +361,9 @@
       ],
       "./internal/theming/create": [
         "./dist/theming/create.d.ts"
+      ],
+      "./internal/components": [
+        "./dist/components/index.d.ts"
       ]
     }
   },

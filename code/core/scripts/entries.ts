@@ -85,6 +85,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./theming/create', './internal/theming/create'],
       entryPoint: './src/theming/create.ts',
     },
+    {
+      exportEntries: ['./internal/components'],
+      entryPoint: './src/components/index.ts',
+    },
   ],
   runtime: [
     {
@@ -132,7 +136,6 @@ export const getEntries = (cwd: string) => {
       true
     ),
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/components/index.ts', ['browser', 'node'], true, ['react', 'react-dom'], []),
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 
     define('src/cli/index.ts', ['node'], true),

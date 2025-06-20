@@ -1,14 +1,15 @@
 import { register } from 'node:module';
-import os from 'node:os';
 import { pathToFileURL } from 'node:url';
 
+import { resolveModule } from '../../shared/utils/resolve';
 import { getInterpretedFileWithExt } from './interpret-files';
 
 let registered = false;
 
 export async function interopRequireDefault(filePath: string) {
   if (!registered) {
-    register('storybook/bin/loader.mjs', import.meta.url);
+    const loaderPath = resolveModule({ pkg: 'storybook', exportPath: 'internal/loader' });
+    register(loaderPath, import.meta.url);
     registered = true;
   }
 

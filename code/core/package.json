@@ -37,11 +37,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./internal/channels": {
-      "types": "./dist/channels/index.d.ts",
-      "import": "./dist/channels/index.js",
-      "require": "./dist/channels/index.cjs"
-    },
     "./internal/types": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/types/index.js",
@@ -213,6 +208,10 @@
       "types": "./dist/core-events/index.d.ts",
       "default": "./dist/core-events/index.js"
     },
+    "./internal/channels": {
+      "types": "./dist/channels/index.d.ts",
+      "default": "./dist/channels/index.js"
+    },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
@@ -223,9 +222,6 @@
     "*": {
       "*": [
         "./dist/index.d.ts"
-      ],
-      "internal/channels": [
-        "./dist/channels/index.d.ts"
       ],
       "internal/types": [
         "./dist/types/index.d.ts"
@@ -346,6 +342,9 @@
       ],
       "./internal/core-events": [
         "./dist/core-events/index.d.ts"
+      ],
+      "./internal/channels": [
+        "./dist/channels/index.d.ts"
       ]
     }
   },

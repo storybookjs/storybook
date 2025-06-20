@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { dts, nodeInternals, process } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
-import { esmOnlyEntries, getEntries } from './entries';
+import { esmOnlyDtsEntries, getEntries } from './entries';
 
 async function run() {
   const cwd = process.cwd();
@@ -49,15 +49,13 @@ async function run() {
   const all = entries
     .filter((e) => e.dts)
     .concat(
-      esmOnlyEntries
-        .filter((e) => e.dts !== false)
-        .map(
-          (esmOnlyEntry) =>
-            ({
-              file: esmOnlyEntry.entryPoint,
-              externals: [],
-            }) as any
-        )
+      esmOnlyDtsEntries.map(
+        (esmOnlyEntry) =>
+          ({
+            file: esmOnlyEntry.entryPoint,
+            externals: [],
+          }) as any
+      )
     );
   const list = selection === 'all' ? all : [all[Number(selection)]];
 

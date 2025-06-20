@@ -1,37 +1,91 @@
-import type { BuildOptions } from 'esbuild';
-
 import { defineEntry } from '../../../scripts/prepare/tools';
 
 export type ESMOnlyEntry = {
   exportEntries: `./${string}`[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
   dts?: false; // default to generating d.ts files for all entries, except if set to false
-  platform?: BuildOptions['platform']; // unused for now
-  isRuntime?: boolean; // used for manager and preview runtimes which needs special esbuild configuration
+};
+export type ESMOnlyEntriesByPlatform = Record<'node' | 'browser' | 'runtime', ESMOnlyEntry[]>;
+
+export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
+  node: [
+    {
+      exportEntries: ['./internal/node-logger'],
+      entryPoint: './src/node-logger/index.ts',
+    },
+    {
+      exportEntries: ['./internal/server-errors'],
+      entryPoint: './src/server-errors.ts',
+    },
+  ],
+  browser: [
+    {
+      exportEntries: ['./internal/client-logger'],
+      entryPoint: './src/client-logger/index.ts',
+    },
+
+    {
+      exportEntries: ['./internal/instrumenter'],
+      entryPoint: './src/instrumenter/index.ts',
+    },
+    {
+      exportEntries: ['./test', './internal/test'],
+      entryPoint: './src/test/index.ts',
+    },
+    {
+      exportEntries: ['./preview-api', './internal/preview-api'],
+      entryPoint: './src/preview-api/index.ts',
+    },
+    {
+      exportEntries: ['./highlight', './internal/highlight'],
+      entryPoint: './src/highlight/index.ts',
+    },
+    {
+      exportEntries: ['./actions', './internal/actions'],
+      entryPoint: './src/actions/index.ts',
+    },
+    {
+      exportEntries: ['./actions/decorator', './internal/actions/decorator'],
+      entryPoint: './src/actions/decorator.ts',
+    },
+    {
+      exportEntries: ['./viewport', './internal/viewport'],
+      entryPoint: './src/viewport/index.ts',
+    },
+    {
+      exportEntries: ['./internal/preview/globals'],
+      entryPoint: './src/preview/globals.ts',
+    },
+    {
+      exportEntries: ['./internal/csf'],
+      entryPoint: './src/csf/index.ts',
+    },
+    {
+      exportEntries: ['./internal/manager-errors'],
+      entryPoint: './src/manager-errors.ts',
+    },
+    {
+      exportEntries: ['./internal/preview-errors'],
+      entryPoint: './src/preview-errors.ts',
+    },
+  ],
+  runtime: [
+    {
+      exportEntries: ['./internal/preview/runtime'],
+      entryPoint: './src/preview/runtime.ts',
+      dts: false,
+    },
+    {
+      exportEntries: ['./internal/manager/globals-runtime'],
+      entryPoint: './src/manager/globals-runtime.ts',
+      dts: false,
+    },
+  ],
 };
 
-export const esmOnlyEntries: ESMOnlyEntry[] = [
-  {
-    exportEntries: ['./internal/node-logger'],
-    entryPoint: './src/node-logger/index.ts',
-  },
-  {
-    exportEntries: ['./internal/client-logger'],
-    entryPoint: './src/client-logger/index.ts',
-  },
-  {
-    exportEntries: ['./internal/preview/runtime'],
-    entryPoint: './src/preview/runtime.ts',
-    dts: false,
-    isRuntime: true,
-  },
-  {
-    exportEntries: ['./internal/manager/globals-runtime'],
-    entryPoint: './src/manager/globals-runtime.ts',
-    dts: false,
-    isRuntime: true,
-  },
-];
+export const esmOnlyDtsEntries: ESMOnlyEntry[] = Object.values(esmOnlyEntries)
+  .flat()
+  .filter((entry) => entry.dts !== false);
 
 export const getEntries = (cwd: string) => {
   const define = defineEntry(cwd);
@@ -50,29 +104,14 @@ export const getEntries = (cwd: string) => {
     ]),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
-    define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
-
-    define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
-    define('src/actions/decorator.ts', ['browser'], true, ['react'], [], [], true),
-
-    define('src/viewport/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
-
-    define('src/controls/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/controls/decorator.ts', ['browser'], true, ['react']),
-
     define('src/core-events/index.ts', ['browser', 'node'], true),
-    define('src/manager-errors.ts', ['browser'], true),
-    define('src/preview-errors.ts', ['browser', 'node'], true),
-    define('src/server-errors.ts', ['node'], true),
 
     define('src/channels/index.ts', ['browser', 'node'], true),
     define('src/types/index.ts', ['browser', 'node'], true, ['react']),
     define('src/csf-tools/index.ts', ['node'], true),
-    define('src/csf/index.ts', ['browser', 'node'], true),
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
-    define('src/preview-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
     define(
       'src/manager-api/index.ts',
       ['browser', 'node'],
@@ -88,29 +127,10 @@ export const getEntries = (cwd: string) => {
 
     define('src/manager/globals-module-info.ts', ['node'], true),
     define('src/manager/globals.ts', ['node'], true),
-    define('src/preview/globals.ts', ['node'], true),
     define('src/cli/index.ts', ['node'], true),
     define('src/babel/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),
     define('src/bin/index.ts', ['node'], false),
-
-    define('src/instrumenter/index.ts', ['browser', 'node'], true),
-    define(
-      'src/test/index.ts',
-      ['browser', 'node'],
-      true,
-      ['util', 'react'],
-      [],
-      [
-        '@testing-library/jest-dom',
-        '@testing-library/user-event',
-        'chai',
-        '@vitest/expect',
-        '@vitest/spy',
-        '@vitest/utils',
-      ],
-      true
-    ),
   ];
 };
 

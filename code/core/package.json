@@ -76,71 +76,10 @@
       "import": "./dist/core-server/presets/common-override-preset.js",
       "require": "./dist/core-server/presets/common-override-preset.cjs"
     },
-    "./internal/highlight": {
-      "types": "./dist/highlight/index.d.ts",
-      "import": "./dist/highlight/index.js",
-      "require": "./dist/highlight/index.cjs"
-    },
-    "./highlight": {
-      "types": "./dist/highlight/index.d.ts",
-      "import": "./dist/highlight/index.js",
-      "require": "./dist/highlight/index.cjs"
-    },
-    "./internal/actions": {
-      "types": "./dist/actions/index.d.ts",
-      "import": "./dist/actions/index.js",
-      "require": "./dist/actions/index.cjs"
-    },
-    "./actions": {
-      "types": "./dist/actions/index.d.ts",
-      "import": "./dist/actions/index.js",
-      "require": "./dist/actions/index.cjs"
-    },
-    "./internal/actions/decorator": {
-      "types": "./dist/actions/decorator.d.ts",
-      "import": "./dist/actions/decorator.js"
-    },
-    "./actions/decorator": {
-      "types": "./dist/actions/decorator.d.ts",
-      "import": "./dist/actions/decorator.js"
-    },
-    "./internal/viewport": {
-      "types": "./dist/viewport/index.d.ts",
-      "import": "./dist/viewport/index.js",
-      "require": "./dist/viewport/index.cjs"
-    },
-    "./viewport": {
-      "types": "./dist/viewport/index.d.ts",
-      "import": "./dist/viewport/index.js",
-      "require": "./dist/viewport/index.cjs"
-    },
-    "./internal/controls": {
-      "types": "./dist/controls/index.d.ts",
-      "import": "./dist/controls/index.js",
-      "require": "./dist/controls/index.cjs"
-    },
-    "./internal/controls/decorator": {
-      "types": "./dist/controls/decorator.d.ts",
-      "import": "./dist/controls/decorator.js"
-    },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
       "import": "./dist/core-events/index.js",
       "require": "./dist/core-events/index.cjs"
-    },
-    "./internal/manager-errors": {
-      "types": "./dist/manager-errors.d.ts",
-      "import": "./dist/manager-errors.js"
-    },
-    "./internal/preview-errors": {
-      "types": "./dist/preview-errors.d.ts",
-      "import": "./dist/preview-errors.js",
-      "require": "./dist/preview-errors.cjs"
-    },
-    "./internal/server-errors": {
-      "types": "./dist/server-errors.d.ts",
-      "import": "./dist/server-errors.js",
-      "require": "./dist/server-errors.cjs"
     },
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
@@ -157,11 +96,6 @@
       "import": "./dist/csf-tools/index.js",
       "require": "./dist/csf-tools/index.cjs"
     },
-    "./internal/csf": {
-      "types": "./dist/csf/index.d.ts",
-      "import": "./dist/csf/index.js",
-      "require": "./dist/csf/index.cjs"
-    },
     "./internal/common": {
       "types": "./dist/common/index.d.ts",
       "import": "./dist/common/index.js",
@@ -176,16 +110,6 @@
       "types": "./dist/telemetry/index.d.ts",
       "import": "./dist/telemetry/index.js",
       "default": "./dist/telemetry/index.js"
-    },
-    "./internal/preview-api": {
-      "types": "./dist/preview-api/index.d.ts",
-      "import": "./dist/preview-api/index.js",
-      "require": "./dist/preview-api/index.cjs"
-    },
-    "./preview-api": {
-      "types": "./dist/preview-api/index.d.ts",
-      "import": "./dist/preview-api/index.js",
-      "require": "./dist/preview-api/index.cjs"
     },
     "./internal/manager-api": {
       "types": "./dist/manager-api/index.d.ts",
@@ -222,11 +146,6 @@
       "import": "./dist/manager/globals.js",
       "require": "./dist/manager/globals.cjs"
     },
-    "./internal/preview/globals": {
-      "types": "./dist/preview/globals.d.ts",
-      "import": "./dist/preview/globals.js",
-      "require": "./dist/preview/globals.cjs"
-    },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
       "import": "./dist/cli/index.js",
@@ -246,30 +165,87 @@
       "import": "./dist/bin/index.js",
       "require": "./dist/bin/index.cjs"
     },
-    "./internal/instrumenter": {
-      "types": "./dist/instrumenter/index.d.ts",
-      "import": "./dist/instrumenter/index.js",
-      "require": "./dist/instrumenter/index.cjs"
-    },
-    "./internal/test": {
-      "types": "./dist/test/index.d.ts",
-      "import": "./dist/test/index.js",
-      "require": "./dist/test/index.cjs"
-    },
-    "./test": {
-      "types": "./dist/test/index.d.ts",
-      "import": "./dist/test/index.js",
-      "require": "./dist/test/index.cjs"
-    },
     "./package.json": "./package.json",
     "./internal/package.json": "./package.json",
     "./internal/node-logger": {
       "types": "./dist/node-logger/index.d.ts",
       "default": "./dist/node-logger/index.js"
     },
+    "./internal/server-errors": {
+      "types": "./dist/server-errors.d.ts",
+      "default": "./dist/server-errors.js"
+    },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
       "default": "./dist/client-logger/index.js"
+    },
+    "./internal/instrumenter": {
+      "types": "./dist/instrumenter/index.d.ts",
+      "default": "./dist/instrumenter/index.js"
+    },
+    "./test": {
+      "types": "./dist/test/index.d.ts",
+      "default": "./dist/test/index.js"
+    },
+    "./internal/test": {
+      "types": "./dist/test/index.d.ts",
+      "default": "./dist/test/index.js"
+    },
+    "./preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "default": "./dist/preview-api/index.js"
+    },
+    "./internal/preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "default": "./dist/preview-api/index.js"
+    },
+    "./highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "default": "./dist/highlight/index.js"
+    },
+    "./internal/highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "default": "./dist/highlight/index.js"
+    },
+    "./actions": {
+      "types": "./dist/actions/index.d.ts",
+      "default": "./dist/actions/index.js"
+    },
+    "./internal/actions": {
+      "types": "./dist/actions/index.d.ts",
+      "default": "./dist/actions/index.js"
+    },
+    "./actions/decorator": {
+      "types": "./dist/actions/decorator.d.ts",
+      "default": "./dist/actions/decorator.js"
+    },
+    "./internal/actions/decorator": {
+      "types": "./dist/actions/decorator.d.ts",
+      "default": "./dist/actions/decorator.js"
+    },
+    "./viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "default": "./dist/viewport/index.js"
+    },
+    "./internal/viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "default": "./dist/viewport/index.js"
+    },
+    "./internal/preview/globals": {
+      "types": "./dist/preview/globals.d.ts",
+      "default": "./dist/preview/globals.js"
+    },
+    "./internal/csf": {
+      "types": "./dist/csf/index.d.ts",
+      "default": "./dist/csf/index.js"
+    },
+    "./internal/manager-errors": {
+      "types": "./dist/manager-errors.d.ts",
+      "default": "./dist/manager-errors.js"
+    },
+    "./internal/preview-errors": {
+      "types": "./dist/preview-errors.d.ts",
+      "default": "./dist/preview-errors.js"
     },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
@@ -297,47 +273,8 @@
       "internal/core-server": [
         "./dist/core-server/index.d.ts"
       ],
-      "internal/highlight": [
-        "./dist/highlight/index.d.ts"
-      ],
-      "highlight": [
-        "./dist/highlight/index.d.ts"
-      ],
-      "internal/actions": [
-        "./dist/actions/index.d.ts"
-      ],
-      "actions": [
-        "./dist/actions/index.d.ts"
-      ],
-      "internal/actions/decorator": [
-        "./dist/actions/decorator.d.ts"
-      ],
-      "actions/decorator": [
-        "./dist/actions/decorator.d.ts"
-      ],
-      "internal/viewport": [
-        "./dist/viewport/index.d.ts"
-      ],
-      "viewport": [
-        "./dist/viewport/index.d.ts"
-      ],
-      "internal/controls": [
-        "./dist/controls/index.d.ts"
-      ],
-      "internal/controls/decorator": [
-        "./dist/controls/decorator.d.ts"
-      ],
       "internal/core-events": [
         "./dist/core-events/index.d.ts"
-      ],
-      "internal/manager-errors": [
-        "./dist/manager-errors.d.ts"
-      ],
-      "internal/preview-errors": [
-        "./dist/preview-errors.d.ts"
-      ],
-      "internal/server-errors": [
-        "./dist/server-errors.d.ts"
       ],
       "internal/channels": [
         "./dist/channels/index.d.ts"
@@ -348,9 +285,6 @@
       "internal/csf-tools": [
         "./dist/csf-tools/index.d.ts"
       ],
-      "internal/csf": [
-        "./dist/csf/index.d.ts"
-      ],
       "internal/common": [
         "./dist/common/index.d.ts"
       ],
@@ -359,12 +293,6 @@
       ],
       "internal/telemetry": [
         "./dist/telemetry/index.d.ts"
-      ],
-      "internal/preview-api": [
-        "./dist/preview-api/index.d.ts"
-      ],
-      "preview-api": [
-        "./dist/preview-api/index.d.ts"
       ],
       "internal/manager-api": [
         "./dist/manager-api/index.d.ts"
@@ -387,9 +315,6 @@
       "internal/manager/globals": [
         "./dist/manager/globals.d.ts"
       ],
-      "internal/preview/globals": [
-        "./dist/preview/globals.d.ts"
-      ],
       "internal/cli": [
         "./dist/cli/index.d.ts"
       ],
@@ -399,20 +324,65 @@
       "internal/cli/bin": [
         "./dist/cli/bin/index.d.ts"
       ],
-      "internal/instrumenter": [
-        "./dist/instrumenter/index.d.ts"
-      ],
-      "internal/test": [
-        "./dist/test/index.d.ts"
-      ],
-      "test": [
-        "./dist/test/index.d.ts"
-      ],
       "./internal/node-logger": [
         "./dist/node-logger/index.d.ts"
       ],
+      "./internal/server-errors": [
+        "./dist/server-errors.d.ts"
+      ],
       "./internal/client-logger": [
         "./dist/client-logger/index.d.ts"
+      ],
+      "./internal/instrumenter": [
+        "./dist/instrumenter/index.d.ts"
+      ],
+      "./test": [
+        "./dist/test/index.d.ts"
+      ],
+      "./internal/test": [
+        "./dist/test/index.d.ts"
+      ],
+      "./preview-api": [
+        "./dist/preview-api/index.d.ts"
+      ],
+      "./internal/preview-api": [
+        "./dist/preview-api/index.d.ts"
+      ],
+      "./highlight": [
+        "./dist/highlight/index.d.ts"
+      ],
+      "./internal/highlight": [
+        "./dist/highlight/index.d.ts"
+      ],
+      "./actions": [
+        "./dist/actions/index.d.ts"
+      ],
+      "./internal/actions": [
+        "./dist/actions/index.d.ts"
+      ],
+      "./actions/decorator": [
+        "./dist/actions/decorator.d.ts"
+      ],
+      "./internal/actions/decorator": [
+        "./dist/actions/decorator.d.ts"
+      ],
+      "./viewport": [
+        "./dist/viewport/index.d.ts"
+      ],
+      "./internal/viewport": [
+        "./dist/viewport/index.d.ts"
+      ],
+      "./internal/preview/globals": [
+        "./dist/preview/globals.d.ts"
+      ],
+      "./internal/csf": [
+        "./dist/csf/index.d.ts"
+      ],
+      "./internal/manager-errors": [
+        "./dist/manager-errors.d.ts"
+      ],
+      "./internal/preview-errors": [
+        "./dist/preview-errors.d.ts"
       ]
     }
   },

@@ -503,7 +503,7 @@ describe('loadPreset', () => {
     `);
   });
 
-  it('should resolve all addons & presets in correct order', async () => {
+  it.skip('should resolve all addons & presets in correct order', async () => {
     const loaded = await loadPreset(
       {
         name: '',

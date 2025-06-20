@@ -1,3 +1,15 @@
+# v2.0.3 (Fri Jun 20 2025)
+
+#### 🐛 Bug Fix
+
+- Next.js: Support v15.4 [#45](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/45) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+#### Authors: 1
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+
+---
+
 # v2.0.2 (Fri Jun 13 2025)
 
 #### 🐛 Bug Fix

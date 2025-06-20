@@ -13,6 +13,7 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
+      extends: true,
       // Use `workspace` field in Vitest < 3.2
       projects: [{
         plugins: [
@@ -25,6 +26,7 @@ export default mergeConfig(
           })
         ],
         test: {
+          name: 'storybook',
           // Enable browser mode
           browser: {
             enabled: true,
@@ -56,6 +58,7 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
+      extends: true,
       // Use `workspace` field in Vitest < 3.2
       projects: [{
         plugins: [
@@ -68,6 +71,7 @@ export default mergeConfig(
           })
         ],
         test: {
+          name: 'storybook',
           // Enable browser mode
           browser: {
             enabled: true,
@@ -99,6 +103,7 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
+      extends: true,
       // Use `workspace` field in Vitest < 3.2
       projects: [{
         plugins: [
@@ -111,6 +116,7 @@ export default mergeConfig(
           })
         ],
         test: {
+          name: 'storybook',
           // Enable browser mode
           browser: {
             enabled: true,

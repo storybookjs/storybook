@@ -32,11 +32,6 @@
     }
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
     "./internal/types": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/types/index.js",
@@ -210,9 +205,6 @@
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
       "*": [

@@ -166,9 +166,6 @@ export const esmOnlyDtsEntries: ESMOnlyEntry[] = Object.values(esmOnlyEntries)
 export const getEntries = (cwd: string) => {
   const define = defineEntry(cwd);
   return [
-    // empty, right now, TDB what to do with this
-    define('src/index.ts', ['node', 'browser'], true),
-
     define('src/types/index.ts', ['browser', 'node'], true, ['react']),
     define('src/common/index.ts', ['node'], true),
 

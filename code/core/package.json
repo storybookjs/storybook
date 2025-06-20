@@ -32,11 +32,6 @@
     }
   },
   "exports": {
-    "./internal/types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
-      "require": "./dist/types/index.cjs"
-    },
     "./internal/common": {
       "types": "./dist/common/index.d.ts",
       "import": "./dist/common/index.js",
@@ -202,6 +197,10 @@
       "types": "./dist/channels/index.d.ts",
       "default": "./dist/channels/index.js"
     },
+    "./internal/types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
+    },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
@@ -209,9 +208,6 @@
     "*": {
       "*": [
         "./dist/index.d.ts"
-      ],
-      "internal/types": [
-        "./dist/types/index.d.ts"
       ],
       "internal/common": [
         "./dist/common/index.d.ts"
@@ -329,6 +325,9 @@
       ],
       "./internal/channels": [
         "./dist/channels/index.d.ts"
+      ],
+      "./internal/types": [
+        "./dist/types/index.d.ts"
       ]
     }
   },

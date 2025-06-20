@@ -47,6 +47,11 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
     {
       entryPoint: './src/builder-manager/index.ts',
     },
+    {
+      exportEntries: ['./internal/loader'],
+      entryPoint: './src/bin/loader.ts',
+      dts: false,
+    },
   ],
   browser: [
     {

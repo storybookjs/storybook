@@ -47,7 +47,7 @@ const logErrors = (...args: Parameters<typeof printError>) => {
 const findFile = (basename: string, extensions = EXTENSIONS) =>
   find.any(
     extensions.map((ext) => basename + ext),
-    { stop: getProjectRoot() }
+    { last: getProjectRoot() }
   );
 
 export default async function postInstall(options: PostinstallOptions) {

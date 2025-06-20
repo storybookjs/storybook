@@ -151,7 +151,7 @@ export class Yarn2Proxy extends JsPackageManager {
   getModulePackageJSON(packageName: string): PackageJson | null {
     const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
       cwd: this.cwd,
-      stop: getProjectRoot(),
+      last: getProjectRoot(),
     });
 
     if (pnpapiPath) {
@@ -190,7 +190,7 @@ export class Yarn2Proxy extends JsPackageManager {
     const wantedPath = join('node_modules', packageName, 'package.json');
     const packageJsonPath = find.up(wantedPath, {
       cwd: this.primaryPackageJson.operationDir,
-      stop: getProjectRoot(),
+      last: getProjectRoot(),
     });
 
     if (!packageJsonPath) {

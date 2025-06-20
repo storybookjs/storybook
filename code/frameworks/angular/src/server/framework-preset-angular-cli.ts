@@ -101,7 +101,7 @@ async function getBuilderOptions(options: PresetOptions, builderContext: Builder
     ...options.angularBuilderOptions,
     tsConfig:
       options.tsConfig ??
-      find.up('tsconfig.json', { cwd: options.configDir, stop: getProjectRoot() }) ??
+      find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
       browserTargetOptions.tsConfig,
   };
   logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);

@@ -62,11 +62,6 @@
       "import": "./dist/builder-manager/index.js",
       "require": "./dist/builder-manager/index.cjs"
     },
-    "./internal/docs-tools": {
-      "types": "./dist/docs-tools/index.d.ts",
-      "import": "./dist/docs-tools/index.js",
-      "require": "./dist/docs-tools/index.cjs"
-    },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
       "import": "./dist/cli/index.js",
@@ -215,6 +210,10 @@
       "types": "./dist/router/index.d.ts",
       "default": "./dist/router/index.js"
     },
+    "./internal/docs-tools": {
+      "types": "./dist/docs-tools/index.d.ts",
+      "default": "./dist/docs-tools/index.js"
+    },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
@@ -240,9 +239,6 @@
       ],
       "internal/builder-manager": [
         "./dist/builder-manager/index.d.ts"
-      ],
-      "internal/docs-tools": [
-        "./dist/docs-tools/index.d.ts"
       ],
       "internal/cli": [
         "./dist/cli/index.d.ts"
@@ -348,6 +344,9 @@
       ],
       "./internal/router": [
         "./dist/router/index.d.ts"
+      ],
+      "./internal/docs-tools": [
+        "./dist/docs-tools/index.d.ts"
       ]
     }
   },

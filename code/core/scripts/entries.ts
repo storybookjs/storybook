@@ -123,6 +123,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/router'],
       entryPoint: './src/router/index.ts',
     },
+    {
+      exportEntries: ['./internal/docs-tools'],
+      entryPoint: './src/docs-tools/index.ts',
+    },
   ],
   runtime: [
     {
@@ -160,8 +164,6 @@ export const getEntries = (cwd: string) => {
     define('src/types/index.ts', ['browser', 'node'], true, ['react']),
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
-
-    define('src/docs-tools/index.ts', ['browser', 'node'], true),
 
     define('src/cli/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),

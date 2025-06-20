@@ -7,7 +7,11 @@ import { isAbsolute } from 'pathe';
 import { resolveModule } from '../../shared/utils/resolve';
 
 export async function getManagerBuilder(): Promise<Builder<unknown>> {
-  return import('storybook/internal/builder-manager');
+  const builderManagerPath = resolveModule({
+    pkg: 'storybook',
+    customSuffix: 'dist/builder-manager/index.js',
+  });
+  return import(builderManagerPath);
 }
 
 export async function getPreviewBuilder(

@@ -47,11 +47,6 @@
       "import": "./dist/common/index.js",
       "require": "./dist/common/index.cjs"
     },
-    "./internal/builder-manager": {
-      "types": "./dist/builder-manager/index.d.ts",
-      "import": "./dist/builder-manager/index.js",
-      "require": "./dist/builder-manager/index.cjs"
-    },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
       "import": "./dist/cli/index.js",
@@ -228,9 +223,6 @@
       ],
       "internal/common": [
         "./dist/common/index.d.ts"
-      ],
-      "internal/builder-manager": [
-        "./dist/builder-manager/index.d.ts"
       ],
       "internal/cli": [
         "./dist/cli/index.d.ts"

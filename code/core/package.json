@@ -32,6 +32,9 @@
     }
   },
   "exports": {
+    "./bin/loader.mjs": {
+      "default": "./bin/loader.mjs"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
@@ -60,7 +63,7 @@
     "./internal/core-server": {
       "types": "./dist/core-server/index.d.ts",
       "import": "./dist/core-server/index.js",
-      "require": "./dist/core-server/index.cjs"
+      "default": "./dist/core-server/index.js"
     },
     "./internal/core-server/presets/common-preset": {
       "import": "./dist/core-server/presets/common-preset.js",
@@ -96,7 +99,7 @@
     "./internal/common": {
       "types": "./dist/common/index.d.ts",
       "import": "./dist/common/index.js",
-      "require": "./dist/common/index.cjs"
+      "default": "./dist/common/index.js"
     },
     "./internal/builder-manager": {
       "types": "./dist/builder-manager/index.d.ts",
@@ -106,7 +109,7 @@
     "./internal/telemetry": {
       "types": "./dist/telemetry/index.d.ts",
       "import": "./dist/telemetry/index.js",
-      "require": "./dist/telemetry/index.cjs"
+      "default": "./dist/telemetry/index.js"
     },
     "./internal/manager-api": {
       "types": "./dist/manager-api/index.d.ts",
@@ -385,6 +388,7 @@
   },
   "bin": "./bin/index.cjs",
   "files": [
+    "bin/**/*",
     "dist/**/*",
     "assets/**/*",
     "README.md",
@@ -405,7 +409,6 @@
     "@vitest/spy": "3.0.9",
     "better-opn": "^3.0.2",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
-    "esbuild-register": "^3.5.0",
     "recast": "^0.23.5",
     "semver": "^7.6.2",
     "ws": "^8.18.0"
@@ -547,5 +550,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

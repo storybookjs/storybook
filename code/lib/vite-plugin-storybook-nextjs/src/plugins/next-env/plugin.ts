@@ -1,4 +1,4 @@
-import path, { resolve } from "node:path";
+import { resolve } from "node:path";
 import type { Env } from "@next/env";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import type { Plugin } from "vite";

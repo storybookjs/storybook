@@ -40,16 +40,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./internal/node-logger": {
-      "types": "./dist/node-logger/index.d.ts",
-      "import": "./dist/node-logger/index.js",
-      "require": "./dist/node-logger/index.cjs"
-    },
-    "./internal/client-logger": {
-      "types": "./dist/client-logger/index.d.ts",
-      "import": "./dist/client-logger/index.js",
-      "require": "./dist/client-logger/index.cjs"
-    },
     "./internal/theming": {
       "types": "./dist/theming/index.d.ts",
       "import": "./dist/theming/index.js",
@@ -271,14 +261,18 @@
       "import": "./dist/test/index.js",
       "require": "./dist/test/index.cjs"
     },
-    "./internal/preview/runtime": {
-      "import": "./dist/preview/runtime.js"
-    },
-    "./internal/manager/globals-runtime": {
-      "import": "./dist/manager/globals-runtime.js"
-    },
     "./package.json": "./package.json",
-    "./internal/package.json": "./package.json"
+    "./internal/package.json": "./package.json",
+    "./internal/node-logger": {
+      "types": "./dist/node-logger/index.d.ts",
+      "default": "./dist/node-logger/index.js"
+    },
+    "./internal/client-logger": {
+      "types": "./dist/client-logger/index.d.ts",
+      "default": "./dist/client-logger/index.js"
+    },
+    "./internal/preview/runtime": "./dist/preview/runtime.js",
+    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
   },
   "main": "dist/index.cjs",
   "module": "dist/index.js",
@@ -287,12 +281,6 @@
     "*": {
       "*": [
         "./dist/index.d.ts"
-      ],
-      "internal/node-logger": [
-        "./dist/node-logger/index.d.ts"
-      ],
-      "internal/client-logger": [
-        "./dist/client-logger/index.d.ts"
       ],
       "internal/theming": [
         "./dist/theming/index.d.ts"
@@ -419,6 +407,12 @@
       ],
       "test": [
         "./dist/test/index.d.ts"
+      ],
+      "./internal/node-logger": [
+        "./dist/node-logger/index.d.ts"
+      ],
+      "./internal/client-logger": [
+        "./dist/client-logger/index.d.ts"
       ]
     }
   },

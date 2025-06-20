@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { findUp } from 'find-up';
 import type { PackageJson } from 'type-fest';
 
+import { resolveModule } from '../shared/utils/resolve';
 import type { Dependency } from './types';
 
 export const getActualPackageVersions = async (packages: Record<string, Partial<Dependency>>) => {
@@ -30,12 +31,14 @@ export const getActualPackageJson = async (
   packageName: string
 ): Promise<PackageJson | undefined> => {
   try {
-    let resolvedPackageJson = await findUp('package.json', { cwd: require.resolve(packageName) });
+    let resolvedPackageJson = await findUp('package.json', {
+      cwd: resolveModule({ pkg: packageName, exportPath: '' }),
+    });
 
     if (!resolvedPackageJson) {
-      // fallback to require.resolve
-      resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
-        paths: [process.cwd()],
+      resolvedPackageJson = resolveModule({
+        pkg: packageName,
+        parent: process.cwd(),
       });
     }
 

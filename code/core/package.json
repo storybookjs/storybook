@@ -67,11 +67,6 @@
       "import": "./dist/builder-manager/index.js",
       "require": "./dist/builder-manager/index.cjs"
     },
-    "./internal/telemetry": {
-      "types": "./dist/telemetry/index.d.ts",
-      "import": "./dist/telemetry/index.js",
-      "require": "./dist/telemetry/index.cjs"
-    },
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
       "import": "./dist/docs-tools/index.js",
@@ -109,6 +104,10 @@
     "./internal/core-server": {
       "types": "./dist/core-server/index.d.ts",
       "default": "./dist/core-server/index.js"
+    },
+    "./internal/telemetry": {
+      "types": "./dist/telemetry/index.d.ts",
+      "default": "./dist/telemetry/index.js"
     },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
@@ -247,9 +246,6 @@
       "internal/builder-manager": [
         "./dist/builder-manager/index.d.ts"
       ],
-      "internal/telemetry": [
-        "./dist/telemetry/index.d.ts"
-      ],
       "internal/docs-tools": [
         "./dist/docs-tools/index.d.ts"
       ],
@@ -270,6 +266,9 @@
       ],
       "./internal/core-server": [
         "./dist/core-server/index.d.ts"
+      ],
+      "./internal/telemetry": [
+        "./dist/telemetry/index.d.ts"
       ],
       "./internal/client-logger": [
         "./dist/client-logger/index.d.ts"

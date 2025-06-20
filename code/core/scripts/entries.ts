@@ -32,6 +32,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       entryPoint: './src/core-server/presets/common-override-preset.ts',
       dts: false,
     },
+    {
+      exportEntries: ['./internal/telemetry'],
+      entryPoint: './src/telemetry/index.ts',
+    },
   ],
   browser: [
     {
@@ -149,7 +153,6 @@ export const getEntries = (cwd: string) => {
     define('src/csf-tools/index.ts', ['node'], true),
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
-    define('src/telemetry/index.ts', ['node'], true),
 
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 

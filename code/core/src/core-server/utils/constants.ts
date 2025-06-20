@@ -11,3 +11,8 @@ export const defaultStaticDirs = [
     to: '/sb-common-assets',
   },
 ];
+
+export const defaultFavicon = resolveModule({
+  pkg: 'storybook',
+  customSuffix: 'assets/browser/favicon.svg',
+});

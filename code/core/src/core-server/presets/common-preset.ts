@@ -28,18 +28,13 @@ import { dedent } from 'ts-dedent';
 import { resolveModule } from '../../shared/utils/resolve';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
-import { defaultStaticDirs } from '../utils/constants';
+import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
-
-const defaultFavicon = resolveModule({
-  pkg: 'storybook',
-  customSuffix: 'assets/browser/favicon.svg',
-});
 
 export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = []) => [
   ...defaultStaticDirs,

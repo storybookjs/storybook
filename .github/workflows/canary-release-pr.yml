@@ -96,7 +96,7 @@ jobs:
         uses: mcky/find-and-replace-pull-request-body@v1.1.6-mcky
         with:
           githubToken: ${{ secrets.GH_TOKEN }}
-          prNumber: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          prNumber: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || '' }}
           find: "CANARY_RELEASE_SECTION"
           isHtmlCommentTag: true
           replace: |

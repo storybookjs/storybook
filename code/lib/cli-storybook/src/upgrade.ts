@@ -1,4 +1,5 @@
 import type { PackageManagerName } from 'storybook/internal/common';
+import { versions } from 'storybook/internal/common';
 import { HandledError, JsPackageManagerFactory, isCorePackage } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import {
@@ -319,7 +320,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     'upgrade',
     { cliOptions: { ...options, configDir: options.configDir?.[0] } },
     async () => {
-      logger.intro('Storybook Upgrade');
+      logger.intro(`Storybook Upgrade - ${picocolors.bold(`v${versions.storybook}`)}`);
       const projectsResult = await getProjects(options);
 
       if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
@@ -328,6 +329,15 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
 
       const { allProjects, selectedProjects: storybookProjects } = projectsResult;
+
+      if (storybookProjects.length > 1) {
+        logger.info(`Upgrading the following projects:
+          ${storybookProjects.map((p) => `${picocolors.cyan(shortenPath(p.configDir))}: ${picocolors.bold(p.beforeVersion)} -> ${picocolors.bold(p.currentCLIVersion)}`).join('\n')}`);
+      } else {
+        logger.info(
+          `Upgrading from ${picocolors.bold(storybookProjects[0].beforeVersion)} to ${picocolors.bold(storybookProjects[0].currentCLIVersion)}`
+        );
+      }
 
       const automigrationResults: Record<string, Record<FixId, FixStatus>> = {};
       let doctorResults: Record<string, ProjectDoctorResults> = {};
@@ -417,7 +427,12 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             ? JsPackageManagerFactory.getPackageManager({ force: options.packageManager })
             : storybookProjects[0].packageManager;
 
-        await rootPackageManager.installDependencies();
+        if (rootPackageManager.type === 'npm') {
+          // see https://github.com/npm/cli/issues/8059 for more details
+          await rootPackageManager.installDependencies({ force: true });
+        } else {
+          await rootPackageManager.installDependencies();
+        }
 
         if (rootPackageManager.type !== 'yarn1' && rootPackageManager.isStorybookInMonorepo()) {
           logger.warn(
@@ -432,7 +447,12 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             }));
 
           if (dedupe) {
-            await rootPackageManager.dedupeDependencies();
+            if (rootPackageManager.type === 'npm') {
+              // see https://github.com/npm/cli/issues/8059 for more details
+              await rootPackageManager.dedupeDependencies({ force: true });
+            } else {
+              await rootPackageManager.dedupeDependencies();
+            }
           } else {
             logger.log(
               `If you find any issues running Storybook, you can run ${rootPackageManager.getRunCommand('dedupe')} manually to deduplicate your dependencies and try again.`

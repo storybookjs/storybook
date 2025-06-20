@@ -1,15 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import {
-  Bar,
-  Button,
-  IconButton,
-  P,
-  Separator,
-  TooltipNote,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { Bar, Button, IconButton, P, Separator } from 'storybook/internal/components';
 
 import {
   FastForwardIcon,
@@ -33,13 +25,13 @@ const SubnavWrapper = styled.div(({ theme }) => ({
   zIndex: 1,
 }));
 
-const StyledSubnav = styled.nav(({ theme }) => ({
+const StyledSubnav = styled.nav({
   height: 40,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   paddingLeft: 15,
-}));
+});
 
 interface SubnavProps {
   controls: Controls;
@@ -58,10 +50,6 @@ const StyledButton = styled(Button)(({ theme }) => ({
       color: theme.color.secondary,
     },
   },
-}));
-
-const Note = styled(TooltipNote)(({ theme }) => ({
-  fontFamily: theme.typography.fonts.base,
 }));
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
@@ -135,51 +123,41 @@ export const Subnav: React.FC<SubnavProps> = ({
 
             <StyledSeparator />
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to start" />}>
-              <RewindButton
-                aria-label="Go to start"
-                onClick={controls.start}
-                disabled={!controlStates.start}
-              >
-                <RewindIcon />
-              </RewindButton>
-            </WithTooltip>
+            <RewindButton
+              label="Go to start"
+              onClick={controls.start}
+              disabled={!controlStates.start}
+            >
+              <RewindIcon />
+            </RewindButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go back" />}>
-              <StyledIconButton
-                aria-label="Go back"
-                onClick={controls.back}
-                disabled={!controlStates.back}
-              >
-                <PlayBackIcon />
-              </StyledIconButton>
-            </WithTooltip>
+            <StyledIconButton
+              label="Go back"
+              onClick={controls.back}
+              disabled={!controlStates.back}
+            >
+              <PlayBackIcon />
+            </StyledIconButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go forward" />}>
-              <StyledIconButton
-                aria-label="Go forward"
-                onClick={controls.next}
-                disabled={!controlStates.next}
-              >
-                <PlayNextIcon />
-              </StyledIconButton>
-            </WithTooltip>
+            <StyledIconButton
+              label="Go forward"
+              onClick={controls.next}
+              disabled={!controlStates.next}
+            >
+              <PlayNextIcon />
+            </StyledIconButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to end" />}>
-              <StyledIconButton
-                aria-label="Go to end"
-                onClick={controls.end}
-                disabled={!controlStates.end}
-              >
-                <FastForwardIcon />
-              </StyledIconButton>
-            </WithTooltip>
+            <StyledIconButton
+              label="Go to end"
+              onClick={controls.end}
+              disabled={!controlStates.end}
+            >
+              <FastForwardIcon />
+            </StyledIconButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Rerun" />}>
-              <RerunButton aria-label="Rerun" onClick={controls.rerun}>
-                <SyncIcon />
-              </RerunButton>
-            </WithTooltip>
+            <RerunButton label="Rerun" onClick={controls.rerun}>
+              <SyncIcon />
+            </RerunButton>
           </Group>
           {storyFileName && (
             <Group>

@@ -1,12 +1,11 @@
+import { isCI, optionalEnvToBoolean } from 'storybook/internal/common';
+
 import { program } from 'commander';
 
 import { addToGlobalContext } from '../../../../core/src/telemetry';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
 import { initiate } from '../initiate';
-
-const IS_NON_CI = process.env.CI !== 'true';
-const IS_NON_STORYBOOK_SANDBOX = process.env.IN_STORYBOOK_SANDBOX !== 'true';
 
 addToGlobalContext('cliVersion', version);
 
@@ -22,8 +21,7 @@ const createStorybookProgram = program
   .option(
     '--disable-telemetry',
     'Disable sending telemetry data',
-    // default value is false, but if the user sets STORYBOOK_DISABLE_TELEMETRY, it can be true
-    process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
+    optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
   )
   .option('--features <list...>', 'What features of storybook are you interested in?')
   .option('--debug', 'Get more logs in debug mode')
@@ -54,7 +52,7 @@ const createStorybookProgram = program
 createStorybookProgram
   .action(async (options) => {
     options.debug = options.debug ?? false;
-    options.dev = options.dev ?? (IS_NON_CI && IS_NON_STORYBOOK_SANDBOX);
+    options.dev = options.dev ?? (isCI && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX));
 
     await initiate(options as CommandOptions).catch(() => process.exit(1));
   })

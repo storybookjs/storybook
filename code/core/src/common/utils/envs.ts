@@ -67,3 +67,24 @@ export const stringifyProcessEnvs = (raw: Record<string, string>): Record<string
   // envs['process.env'] = JSON.stringify(raw);
   return envs;
 };
+
+export const optionalEnvToBoolean = (input: string | undefined): boolean | undefined => {
+  if (input === undefined) {
+    return undefined;
+  }
+  if (input.toUpperCase() === 'FALSE' || input === '0') {
+    return false;
+  }
+  if (input.toUpperCase() === 'TRUE' || input === '1') {
+    return true;
+  }
+  return Boolean(input);
+};
+
+/**
+ * Consistently determine if we are in a CI environment
+ *
+ * Doing Boolean(process.env.CI) or !process.env.CI is not enough, because users might set CI=false
+ * or CI=0, which would be truthy, and thus return true in those cases.
+ */
+export const isCI = optionalEnvToBoolean(process.env.CI);

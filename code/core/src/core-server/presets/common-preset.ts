@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
+import { optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -170,22 +171,6 @@ export const typescript = () => ({
     savePropValueAsString: true,
   },
 });
-
-const optionalEnvToBoolean = (input: string | undefined): boolean | undefined => {
-  if (input === undefined) {
-    return undefined;
-  }
-  if (input.toUpperCase() === 'FALSE') {
-    return false;
-  }
-  if (input.toUpperCase() === 'TRUE') {
-    return true;
-  }
-  if (typeof input === 'string') {
-    return true;
-  }
-  return undefined;
-};
 
 /** This API is used by third-parties to access certain APIs in a Node environment */
 export const experimental_serverAPI = (extension: Record<string, Function>, options: Options) => {

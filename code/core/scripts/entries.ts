@@ -20,6 +20,18 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/server-errors'],
       entryPoint: './src/server-errors.ts',
     },
+    {
+      exportEntries: ['./internal/core-server'],
+      entryPoint: './src/core-server/index.ts',
+    },
+    {
+      entryPoint: './src/core-server/presets/common-preset.ts',
+      dts: false,
+    },
+    {
+      entryPoint: './src/core-server/presets/common-override-preset.ts',
+      dts: false,
+    },
   ],
   browser: [
     {
@@ -129,10 +141,6 @@ export const getEntries = (cwd: string) => {
   return [
     // empty, right now, TDB what to do with this
     define('src/index.ts', ['node', 'browser'], true),
-
-    define('src/core-server/index.ts', ['node'], true, ['react']),
-    define('src/core-server/presets/common-preset.ts', ['node'], false),
-    define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
     define('src/core-events/index.ts', ['browser', 'node'], true),
 

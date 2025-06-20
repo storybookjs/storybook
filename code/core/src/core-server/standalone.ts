@@ -1,13 +1,19 @@
-import { dirname } from 'node:path';
+import { readFileSync } from 'node:fs';
 
+import { resolveModule } from '../shared/utils/resolve';
 import { buildDevStandalone } from './build-dev';
 import { buildIndexStandalone } from './build-index';
 import { buildStaticStandalone } from './build-static';
 
 async function build(options: any = {}, frameworkOptions: any = {}) {
   const { mode = 'dev' } = options;
-  const packageJsonDir = dirname(require.resolve('storybook/internal/package.json'));
-  const packageJson = JSON.parse(require('fs').readFileSync(`${packageJsonDir}/package.json`));
+
+  const packageJsonPath = resolveModule({ pkg: 'storybook', exportPath: 'package.json' });
+  const packageJson = JSON.parse(
+    readFileSync(packageJsonPath, {
+      encoding: 'utf-8',
+    })
+  );
 
   const commonOptions = {
     ...options,

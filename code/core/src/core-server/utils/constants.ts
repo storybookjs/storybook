@@ -1,10 +1,13 @@
-import { dirname, join } from 'node:path';
+import { resolveModule } from '../../shared/utils/resolve';
 
 export const DEBOUNCE = 100;
 
 export const defaultStaticDirs = [
   {
-    from: join(dirname(require.resolve('storybook/internal/package.json')), 'assets', 'browser'),
+    from: resolveModule({
+      pkg: 'storybook',
+      customSuffix: 'assets/browser',
+    }),
     to: '/sb-common-assets',
   },
 ];

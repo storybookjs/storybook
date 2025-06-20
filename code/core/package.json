@@ -37,19 +37,6 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./internal/core-server": {
-      "types": "./dist/core-server/index.d.ts",
-      "import": "./dist/core-server/index.js",
-      "require": "./dist/core-server/index.cjs"
-    },
-    "./internal/core-server/presets/common-preset": {
-      "import": "./dist/core-server/presets/common-preset.js",
-      "require": "./dist/core-server/presets/common-preset.cjs"
-    },
-    "./internal/core-server/presets/common-override-preset": {
-      "import": "./dist/core-server/presets/common-override-preset.js",
-      "require": "./dist/core-server/presets/common-override-preset.cjs"
-    },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
       "import": "./dist/core-events/index.js",
@@ -118,6 +105,10 @@
     "./internal/server-errors": {
       "types": "./dist/server-errors.d.ts",
       "default": "./dist/server-errors.js"
+    },
+    "./internal/core-server": {
+      "types": "./dist/core-server/index.d.ts",
+      "default": "./dist/core-server/index.js"
     },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
@@ -238,9 +229,6 @@
       "*": [
         "./dist/index.d.ts"
       ],
-      "internal/core-server": [
-        "./dist/core-server/index.d.ts"
-      ],
       "internal/core-events": [
         "./dist/core-events/index.d.ts"
       ],
@@ -279,6 +267,9 @@
       ],
       "./internal/server-errors": [
         "./dist/server-errors.d.ts"
+      ],
+      "./internal/core-server": [
+        "./dist/core-server/index.d.ts"
       ],
       "./internal/client-logger": [
         "./dist/client-logger/index.d.ts"
@@ -473,6 +464,7 @@
     "leven": "^4.0.0",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
+    "mlly": "^1.7.4",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^8.4.0",

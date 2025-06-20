@@ -24562,6 +24562,7 @@ __metadata:
     leven: "npm:^4.0.0"
     memfs: "npm:^4.11.1"
     memoizerific: "npm:^1.11.3"
+    mlly: "npm:^1.7.4"
     nanoid: "npm:^4.0.2"
     npmlog: "npm:^7.0.0"
     open: "npm:^8.4.0"

@@ -17,6 +17,7 @@ import { global } from '@storybook/global';
 
 import picocolors from 'picocolors';
 
+import { resolveModule } from '../shared/utils/resolve';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
@@ -60,15 +61,19 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     logger.warn(`you have not specified a framework in your ${options.configDir}/main.js`);
   }
 
+  const commonPreset = resolveModule({
+    pkg: 'storybook',
+    customSuffix: 'dist/core-server/presets/common-preset.js',
+  });
+  const commonOverridePreset = resolveModule({
+    pkg: 'storybook',
+    customSuffix: 'dist/core-server/presets/common-override-preset.js',
+  });
+
   logger.info('=> Loading presets');
   let presets = await loadAllPresets({
-    corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
-      ...corePresets,
-    ],
-    overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
-    ],
+    corePresets: [commonPreset, ...corePresets],
+    overridePresets: [commonOverridePreset],
     isCritical: true,
     ...options,
   });
@@ -82,16 +87,13 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     : undefined;
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
+      commonPreset,
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
-    overridePresets: [
-      ...(previewBuilder.overridePresets || []),
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
-    ],
+    overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
     ...options,
     build,
   });
@@ -135,10 +137,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     );
   }
 
-  const coreServerPublicDir = join(
-    dirname(require.resolve('storybook/internal/package.json')),
-    'assets/browser'
-  );
+  const coreServerPublicDir = resolveModule({
+    pkg: 'storybook',
+    customSuffix: 'assets/browser',
+  });
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
 
   let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =

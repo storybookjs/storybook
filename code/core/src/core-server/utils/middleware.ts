@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+
+import { resolve } from 'pathe';
 
 const fileExists = (basename: string) =>
   ['.js', '.cjs'].reduce((found: string, ext: string) => {
@@ -7,14 +8,11 @@ const fileExists = (basename: string) =>
     return !found && existsSync(filename) ? filename : found;
   }, '');
 
-export function getMiddleware(configDir: string) {
+export async function getMiddleware(configDir: string) {
   const middlewarePath = fileExists(resolve(configDir, 'middleware'));
   if (middlewarePath) {
-    let middlewareModule = require(middlewarePath);
-    if (middlewareModule.__esModule) {
-      middlewareModule = middlewareModule.default;
-    }
-    return middlewareModule;
+    const middlewareModule = await import(middlewarePath);
+    return middlewareModule.default ?? middlewareModule;
   }
   return () => {};
 }

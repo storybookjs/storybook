@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -23,8 +22,10 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
+import { isAbsolute, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { resolveModule } from '../../shared/utils/resolve';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { defaultStaticDirs } from '../utils/constants';
@@ -35,10 +36,10 @@ import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/what
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
 
-const defaultFavicon = join(
-  dirname(require.resolve('storybook/internal/package.json')),
-  '/assets/browser/favicon.svg'
-);
+const defaultFavicon = resolveModule({
+  pkg: 'storybook',
+  customSuffix: 'assets/browser/favicon.svg',
+});
 
 export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = []) => [
   ...defaultStaticDirs,
@@ -292,8 +293,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(require.resolve('react/package.json')),
-      reactDom: dirname(require.resolve('react-dom/package.json')),
+      react: resolveModule({ pkg: 'react' }),
+      reactDom: resolveModule({ pkg: 'react-dom' }),
     };
   } catch (e) {
     return existing;
@@ -312,10 +313,10 @@ export const tags = async (existing: any) => {
 
 export const managerEntries = async (existing: any) => {
   return [
-    join(
-      dirname(require.resolve('storybook/internal/package.json')),
-      'dist/core-server/presets/common-manager.js'
-    ),
+    resolveModule({
+      pkg: 'storybook',
+      customSuffix: 'dist/core-server/presets/common-manager.js',
+    }),
     ...(existing || []),
   ];
 };

@@ -130,7 +130,7 @@ export const getEntries = (cwd: string) => {
     // empty, right now, TDB what to do with this
     define('src/index.ts', ['node', 'browser'], true),
 
-    define('src/core-server/index.ts', ['node'], true, ['react']),
+    define('src/core-server/index.ts', ['node'], true),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 

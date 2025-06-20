@@ -35,6 +35,8 @@ async function getLatestVersions(
   );
 }
 
+const RELATED_PACKAGES_TO_UPGRADE = ['@chromatic-com/playwright', '@chromatic-com/cypress'];
+
 /** Filter out dependencies that are not valid e.g. yarn patches, git urls and other protocols */
 function isValidVersionType(packageName: string, specifier: string) {
   if (
@@ -80,7 +82,7 @@ export const upgradeStorybookRelatedDependencies = {
     const allDependencies = packageManager.getAllDependencies();
 
     const storybookDependencies = Object.keys(allDependencies)
-      .filter((dep) => dep.includes('storybook'))
+      .filter((dep) => dep.includes('storybook') || RELATED_PACKAGES_TO_UPGRADE.includes(dep))
       .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));
 
     const incompatibleDependencies = analyzedPackages

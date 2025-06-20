@@ -18,11 +18,11 @@ import {
   SupportedLanguage,
   externalFrameworks,
 } from '../../../../core/src/cli/project_types';
-import { frameworkPackages } from '../../../../core/src/common';
 import {
   type JsPackageManager,
   getPackageDetails,
 } from '../../../../core/src/common/js-package-manager/JsPackageManager';
+import { frameworkPackages } from '../../../../core/src/common/utils/get-storybook-info';
 import versions from '../../../../core/src/common/versions';
 import type { SupportedFrameworks } from '../../../../core/src/types/modules/frameworks';
 import type { SupportedRenderers } from '../../../../core/src/types/modules/renderers';

@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { buildDevStandalone } from './build-dev';
 import { buildIndexStandalone } from './build-index';
@@ -6,8 +8,10 @@ import { buildStaticStandalone } from './build-static';
 
 async function build(options: any = {}, frameworkOptions: any = {}) {
   const { mode = 'dev' } = options;
-  const packageJsonDir = dirname(require.resolve('storybook/internal/package.json'));
-  const packageJson = JSON.parse(require('fs').readFileSync(`${packageJsonDir}/package.json`));
+  const packageJsonDir = dirname(
+    fileURLToPath(import.meta.resolve('storybook/internal/package.json'))
+  );
+  const packageJson = JSON.parse(readFileSync(`${packageJsonDir}/package.json`, 'utf8').toString());
 
   const commonOptions = {
     ...options,

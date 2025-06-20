@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 
 import { MissingBuilderError } from 'storybook/internal/server-errors';
@@ -6,6 +7,8 @@ import type { Builder, Options } from 'storybook/internal/types';
 export async function getManagerBuilder(): Promise<Builder<unknown>> {
   return import('storybook/internal/builder-manager');
 }
+
+const require = createRequire(import.meta.url);
 
 export async function getPreviewBuilder(
   builderName: string,

@@ -4,16 +4,16 @@ parameters:
   workflow:
     description: Which workflow to run
     type: enum
-    enum: ['normal', 'merged', 'daily', 'skipped', 'docs']
-    default: 'skipped'
+    enum: ["normal", "merged", "daily", "skipped", "docs"]
+    default: "skipped"
   ghPrNumber:
     description: The PR number
     type: string
-    default: ''
+    default: ""
   ghBaseBranch:
     description: The name of the base branch (the target of the PR)
     type: string
-    default: 'next'
+    default: "next"
 
 executors:
   sb_node_22_classic:
@@ -21,8 +21,8 @@ executors:
       class:
         description: The Resource class
         type: enum
-        enum: ['small', 'medium', 'medium+', 'large', 'xlarge']
-        default: 'small'
+        enum: ["small", "medium", "medium+", "large", "xlarge"]
+        default: "small"
     working_directory: /tmp/storybook
     docker:
       - image: cimg/node:22.15.0
@@ -34,8 +34,8 @@ executors:
       class:
         description: The Resource class
         type: enum
-        enum: ['small', 'medium', 'medium+', 'large', 'xlarge']
-        default: 'small'
+        enum: ["small", "medium", "medium+", "large", "xlarge"]
+        default: "small"
     working_directory: /tmp/storybook
     docker:
       - image: cimg/node:18.20.3-browsers
@@ -47,8 +47,8 @@ executors:
       class:
         description: The Resource class
         type: enum
-        enum: ['small', 'medium', 'medium+', 'large', 'xlarge']
-        default: 'small'
+        enum: ["small", "medium", "medium+", "large", "xlarge"]
+        default: "small"
     working_directory: /tmp/storybook
     docker:
       - image: cimg/node:22.15.0-browsers
@@ -60,8 +60,8 @@ executors:
       class:
         description: The Resource class
         type: enum
-        enum: ['small', 'medium', 'medium+', 'large', 'xlarge']
-        default: 'small'
+        enum: ["small", "medium", "medium+", "large", "xlarge"]
+        default: "small"
     working_directory: /tmp/storybook
     docker:
       - image: mcr.microsoft.com/playwright:v1.52.0-noble
@@ -79,7 +79,7 @@ orbs:
 
 commands:
   cancel-workflow-on-failure:
-    description: 'Cancels the entire workflow in case the previous step has failed'
+    description: "Cancels the entire workflow in case the previous step has failed"
     steps:
       - run:
           name: Cancel current workflow
@@ -89,13 +89,13 @@ commands:
             echo "To execute all checks locally, please run yarn ci-tests"
             curl -X POST --header "Content-Type: application/json" "https://circleci.com/api/v2/workflow/${CIRCLE_WORKFLOW_ID}/cancel?circle-token=${WORKFLOW_CANCELER}"
   report-workflow-on-failure:
-    description: 'Reports failures to discord'
+    description: "Reports failures to discord"
     parameters:
       template:
         description: |
           Which template to report in discord. Applicable for parallel sandbox jobs
         type: string
-        default: 'none'
+        default: "none"
     steps:
       - run:
           when: on_fail
@@ -105,7 +105,7 @@ commands:
           fail_only: true
           failure_message: $(yarn get-report-message << pipeline.parameters.workflow >> << parameters.template >>)
   start-event-collector:
-    description: 'Starts the event collector'
+    description: "Starts the event collector"
     steps:
       - run:
           name: Start Event Collector
@@ -119,7 +119,7 @@ jobs:
       name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - restore_cache:
           name: Restore Yarn cache
           keys:
@@ -145,7 +145,7 @@ jobs:
       name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - restore_cache:
           name: Restore Yarn cache
           keys:
@@ -190,7 +190,7 @@ jobs:
       name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -206,7 +206,7 @@ jobs:
       name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -222,7 +222,7 @@ jobs:
       name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       # if there is a base branch AND a PR number in parameters, benchmark packages against those
@@ -271,9 +271,9 @@ jobs:
       name: sb_node_22_classic
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - nx/set-shas:
-          main-branch-name: 'next'
+          main-branch-name: "next"
           workflow-name: << pipeline.parameters.workflow >>
       - restore_cache:
           name: Restore Yarn cache
@@ -297,7 +297,7 @@ jobs:
     executor: sb_node_22_browsers
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -326,7 +326,7 @@ jobs:
     parallelism: 2
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -354,7 +354,7 @@ jobs:
       name: sb_node_22_browsers
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -368,7 +368,7 @@ jobs:
       name: sb_node_22_browsers
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - codecov/upload
@@ -402,7 +402,7 @@ jobs:
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -426,7 +426,7 @@ jobs:
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
           environment:
             STORYBOOK_TELEMETRY_DEBUG: 1
-            STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
+            STORYBOOK_TELEMETRY_URL: "http://localhost:6007/event-log"
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
       - persist_to_workspace:
@@ -445,7 +445,7 @@ jobs:
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -465,9 +465,22 @@ jobs:
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      - run:
+          name: Use Node 22.16.0
+          command: |
+            set +e
+            wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.1/install.sh | bash
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+            [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+            nvm install 22.16.0
+            nvm alias default 22.16.0
+
+            echo 'export NVM_DIR="$HOME/.nvm"' >> $BASH_ENV
+            echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> $BASH_ENV
       - run:
           name: Install sandbox dependencies
           command: |
@@ -479,9 +492,9 @@ jobs:
           command: yarn task --task test-runner --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner) --no-link --start-from=never --junit
           environment:
             STORYBOOK_TELEMETRY_DEBUG: 1
-            STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
+            STORYBOOK_TELEMETRY_URL: "http://localhost:6007/event-log"
       - run:
-          name: 'Check Telemetry'
+          name: "Check Telemetry"
           command: yarn --cwd scripts jiti ./event-log-checker.ts test-run $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner)
@@ -497,7 +510,7 @@ jobs:
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -511,9 +524,9 @@ jobs:
           command: yarn task --task vitest-integration --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration) --no-link --start-from=never --junit
           environment:
             STORYBOOK_TELEMETRY_DEBUG: 1
-            STORYBOOK_TELEMETRY_URL: 'http://localhost:6007/event-log'
+            STORYBOOK_TELEMETRY_URL: "http://localhost:6007/event-log"
       - run:
-          name: 'Check Telemetry'
+          name: "Check Telemetry"
           command: yarn --cwd scripts jiti ./event-log-checker.ts test-run $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task vitest-integration)
@@ -529,7 +542,7 @@ jobs:
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -573,7 +586,7 @@ jobs:
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -601,7 +614,7 @@ jobs:
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -629,7 +642,7 @@ jobs:
     parallelism: << parameters.parallelism >>
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -651,20 +664,36 @@ jobs:
       name: sb_node_22_browsers
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
-          name: Storybook init for features
+          name: Verdaccio
+          background: true
           command: |
             cd code
-            yarn local-registry --open &
+            yarn local-registry --open
+      - run:
+          name: Wait on verdaccio
+          command: |
+            cd code
             yarn wait-on tcp:127.0.0.1:6001
-            cd ../../
+      - run:
+          name: Storybook init for features
+          command: |
+            cd ../
             mkdir features-1
             cd features-1
             npm set registry http://localhost:6001
             npx create-storybook --yes --package-manager npm --features dev docs test
+          environment:
+            IN_STORYBOOK_SANDBOX: true
+            STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
+            STORYBOOK_DISABLE_TELEMETRY: true
+      - run:
+          name: Vitest
+          command: |
+            cd ../features-1
             npx vitest
           environment:
             IN_STORYBOOK_SANDBOX: true
@@ -682,12 +711,12 @@ jobs:
         type: string
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - when:
           condition:
-            equal: ['npm', << parameters.packageManager >>]
+            equal: ["npm", << parameters.packageManager >>]
           steps:
             - run:
                 name: Storybook init from empty directory (NPM)
@@ -706,7 +735,7 @@ jobs:
                   STORYBOOK_DISABLE_TELEMETRY: true
       - when:
           condition:
-            equal: ['yarn1', << parameters.packageManager >>]
+            equal: ["yarn1", << parameters.packageManager >>]
           steps:
             - run:
                 name: Storybook init from empty directory (Yarn 1)
@@ -724,7 +753,7 @@ jobs:
                   STORYBOOK_DISABLE_TELEMETRY: true
       - when:
           condition:
-            equal: ['yarn2', << parameters.packageManager >>]
+            equal: ["yarn2", << parameters.packageManager >>]
           steps:
             - run:
                 name: Storybook init from empty directory (Yarn 2)
@@ -744,7 +773,7 @@ jobs:
                   STORYBOOK_DISABLE_TELEMETRY: true
       - when:
           condition:
-            equal: ['pnpm', << parameters.packageManager >>]
+            equal: ["pnpm", << parameters.packageManager >>]
           steps:
             - run:
                 name: Storybook init from empty directory (PNPM)
@@ -764,7 +793,7 @@ jobs:
                   STORYBOOK_DISABLE_TELEMETRY: true
       - when:
           condition:
-            equal: ['react-vite-ts', << parameters.template >>]
+            equal: ["react-vite-ts", << parameters.template >>]
           steps:
             - run:
                 name: Storybook init from empty directory (--skip-install)
@@ -788,7 +817,7 @@ jobs:
       class: medium
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -816,7 +845,7 @@ jobs:
       class: medium
     steps:
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
+          clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
       - run:
@@ -919,7 +948,7 @@ workflows:
             - build
           matrix:
             parameters:
-              directory: ['react', 'vue3', 'nextjs', 'svelte']
+              directory: ["react", "vue3", "nextjs", "svelte"]
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:
       #     requires:
@@ -984,7 +1013,7 @@ workflows:
             - build
           matrix:
             parameters:
-              directory: ['react', 'vue3', 'nextjs', 'svelte']
+              directory: ["react", "vue3", "nextjs", "svelte"]
       - e2e-ui:
           requires:
             - build
@@ -1061,7 +1090,7 @@ workflows:
             - build
           matrix:
             parameters:
-              directory: ['react', 'vue3', 'nextjs', 'svelte']
+              directory: ["react", "vue3", "nextjs", "svelte"]
       - e2e-ui:
           requires:
             - build
@@ -1074,18 +1103,18 @@ workflows:
           matrix:
             parameters:
               packageManager:
-                - 'npm'
+                - "npm"
                 # TODO: reenable once we find out the source of failure
                 # - "yarn1"
                 # - "yarn2"
                 # - "pnpm"
               template:
-                - 'react-vite-ts'
-                - 'nextjs-ts'
-                - 'vue-vite-ts'
+                - "react-vite-ts"
+                - "nextjs-ts"
+                - "vue-vite-ts"
                 # --smoke-test is not supported for the angular builder right now
                 # - "angular-cli"
-                - 'lit-vite-ts'
+                - "lit-vite-ts"
 # TODO: don't forget to reenable this
 #      - bench-sandboxes:
 #          parallelism: 5

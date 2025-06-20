@@ -1,6 +1,5 @@
-import { resolve } from "node:path";
+import path, { resolve } from "node:path";
 import type { Env } from "@next/env";
-import { getDefineEnv } from "next/dist/build/webpack/plugins/define-env-plugin.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import type { Plugin } from "vite";
 
@@ -14,6 +13,19 @@ export function vitePluginNextEnv(
   let isDev: boolean;
 
   const resolvedDir = resolve(rootDir);
+
+  let getDefineEnv: typeof import("next/dist/build/define-env.js").getDefineEnv;
+  let isNext1540 = false;
+
+  try {
+    // Next.js >= 15.4.0
+    getDefineEnv = require("next/dist/build/define-env.js").getDefineEnv;
+    isNext1540 = true;
+  } catch (error) {
+    // Next.js < 15.4.0
+    getDefineEnv =
+      require("next/dist/build/webpack/plugins/define-env-plugin.js").getDefineEnv;
+  }
 
   return {
     name: "vite-plugin-storybook-nextjs-env",
@@ -36,12 +48,12 @@ export function vitePluginNextEnv(
       const finalConfig = {
         ...config.define,
         ...publicNextEnvMap,
+        // @ts-expect-error
         ...getDefineEnv({
           isTurbopack: false,
           config: nextConfig,
           isClient: true,
           isEdgeServer: false,
-          isNodeOrEdgeCompilation: false,
           isNodeServer: false,
           clientRouterFilters: undefined,
           dev: isDev,
@@ -49,6 +61,13 @@ export function vitePluginNextEnv(
           hasRewrites: false,
           distDir: nextConfig.distDir,
           fetchCacheKeyPrefix: nextConfig?.experimental?.fetchCacheKeyPrefix,
+          ...(isNext1540
+            ? {
+                projectPath: rootDir,
+              }
+            : {
+                isNodeOrEdgeCompilation: false,
+              }),
         }),
       };
 

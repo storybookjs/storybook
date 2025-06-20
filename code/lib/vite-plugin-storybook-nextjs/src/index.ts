@@ -34,7 +34,9 @@ type VitePluginOptions = {
   dir?: string;
 };
 
-function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
+function VitePlugin({
+  dir = process.cwd(),
+}: VitePluginOptions = {}): (Plugin | Promise<Plugin>)[] {
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 

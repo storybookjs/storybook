@@ -63,7 +63,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
   public phase?: RenderPhase;
 
-  private abortController?: AbortController;
+  private abortController: AbortController;
 
   private canvasElement?: TRenderer['canvasElement'];
 
@@ -118,11 +118,11 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   async prepare() {
-    await this.runPhase((this.abortController as AbortController).signal, 'preparing', async () => {
+    await this.runPhase(this.abortController.signal, 'preparing', async () => {
       this.story = await this.store.loadStory({ storyId: this.id });
     });
 
-    if ((this.abortController as AbortController).signal.aborted) {
+    if (this.abortController.signal.aborted) {
       await this.store.cleanupStory(this.story as PreparedStory<TRenderer>);
       throw PREPARE_ABORTED;
     }
@@ -208,7 +208,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
     // We need a stable reference to the signal -- if a re-mount happens the
     // abort controller may be torn down (above) before we actually check the signal.
-    const abortSignal = (this.abortController as AbortController).signal;
+    const abortSignal = this.abortController.signal;
 
     let mounted = false;
 
@@ -446,7 +446,14 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   // as a method to abort them, ASAP, but this is not foolproof as we cannot control what
   // happens inside the user's code.
   cancelRender() {
-    this.abortController?.abort();
+    this.abortController.abort();
+  }
+
+  cancelPlayFunction() {
+    if (this.phase === 'playing') {
+      this.abortController.abort();
+      this.runPhase(this.abortController.signal, 'aborted');
+    }
   }
 
   async teardown() {

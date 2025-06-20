@@ -72,11 +72,6 @@
       "import": "./dist/cli/index.js",
       "require": "./dist/cli/index.cjs"
     },
-    "./internal/babel": {
-      "types": "./dist/babel/index.d.ts",
-      "import": "./dist/babel/index.js",
-      "require": "./dist/babel/index.cjs"
-    },
     "./internal/cli/bin": {
       "types": "./dist/cli/bin/index.d.ts",
       "import": "./dist/cli/bin/index.js",
@@ -107,6 +102,10 @@
     "./internal/csf-tools": {
       "types": "./dist/csf-tools/index.d.ts",
       "default": "./dist/csf-tools/index.js"
+    },
+    "./internal/babel": {
+      "types": "./dist/babel/index.d.ts",
+      "default": "./dist/babel/index.js"
     },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
@@ -248,9 +247,6 @@
       "internal/cli": [
         "./dist/cli/index.d.ts"
       ],
-      "internal/babel": [
-        "./dist/babel/index.d.ts"
-      ],
       "internal/cli/bin": [
         "./dist/cli/bin/index.d.ts"
       ],
@@ -268,6 +264,9 @@
       ],
       "./internal/csf-tools": [
         "./dist/csf-tools/index.d.ts"
+      ],
+      "./internal/babel": [
+        "./dist/babel/index.d.ts"
       ],
       "./internal/client-logger": [
         "./dist/client-logger/index.d.ts"

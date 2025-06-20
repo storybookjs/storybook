@@ -40,6 +40,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/csf-tools'],
       entryPoint: './src/csf-tools/index.ts',
     },
+    {
+      exportEntries: ['./internal/babel'],
+      entryPoint: './src/babel/index.ts',
+    },
   ],
   browser: [
     {
@@ -160,7 +164,6 @@ export const getEntries = (cwd: string) => {
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 
     define('src/cli/index.ts', ['node'], true),
-    define('src/babel/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),
     define('src/bin/index.ts', ['node'], false),
   ];

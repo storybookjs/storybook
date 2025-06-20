@@ -1,6 +1,7 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   loadAllPresets,
@@ -63,11 +64,11 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   logger.info('=> Loading presets');
   let presets = await loadAllPresets({
     corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-preset'),
       ...corePresets,
     ],
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     isCritical: true,
     ...options,
@@ -82,7 +83,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     : undefined;
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-preset'),
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
@@ -90,7 +91,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     ],
     overridePresets: [
       ...(previewBuilder.overridePresets || []),
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     build,
@@ -136,7 +137,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   const coreServerPublicDir = join(
-    dirname(require.resolve('storybook/internal/package.json')),
+    dirname(fileURLToPath(import.meta.resolve('storybook/internal/package.json'))),
     'assets/browser'
   );
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));

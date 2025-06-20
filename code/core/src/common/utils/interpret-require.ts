@@ -1,35 +1,39 @@
+import { register } from 'node:module';
+import os from 'node:os';
+import { pathToFileURL } from 'node:url';
+
 import { getInterpretedFileWithExt } from './interpret-files';
 
 let registered = false;
 
-export function interopRequireDefault(filePath: string) {
-  const hasEsbuildBeenRegistered = !!require('module')._extensions['.ts'];
-
-  if (registered === false && !hasEsbuildBeenRegistered) {
-    const { register } = require('esbuild-register/dist/node');
+export async function interopRequireDefault(filePath: string) {
+  if (!registered) {
+    register('storybook/bin/loader.mjs', import.meta.url);
     registered = true;
-    register({
-      target: `node${process.version.slice(1)}`,
-      format: 'cjs',
-      hookIgnoreNodeModules: true,
-      // Some frameworks, like Stylus, rely on the 'name' property of classes or functions
-      // https://github.com/storybookjs/storybook/issues/19049
-      keepNames: true,
-      tsconfigRaw: `{
-      "compilerOptions": {
-        "strict": false,
-        "skipLibCheck": true,
-      },
-    }`,
-    });
   }
 
-  const result = require(filePath);
+  let resolvedPath = filePath;
 
-  const isES6DefaultExported =
-    typeof result === 'object' && result !== null && typeof result.default !== 'undefined';
+  try {
+    if (!filePath.startsWith('file:')) {
+      resolvedPath = pathToFileURL(filePath).href;
+    }
 
-  return isES6DefaultExported ? result.default : result;
+    const result = await import(resolvedPath);
+
+    const isES6DefaultExported =
+      typeof result === 'object' && result !== null && typeof result.default !== 'undefined';
+
+    return isES6DefaultExported ? result.default : result;
+  } catch (e) {
+    // console.log('fallback!', { e, filePath });
+    const result = require(filePath);
+
+    const isES6DefaultExported =
+      typeof result === 'object' && result !== null && typeof result.default !== 'undefined';
+
+    return isES6DefaultExported ? result.default : result;
+  }
 }
 
 function getCandidate(paths: string[]) {

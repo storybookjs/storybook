@@ -141,7 +141,7 @@ export const getStorybookData = async ({
     version: storybookVersionSpecifier,
     configDir: configDirFromScript,
     previewConfigPath,
-  } = getStorybookInfo(userDefinedConfigDir);
+  } = await getStorybookInfo(userDefinedConfigDir);
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 

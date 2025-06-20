@@ -10,7 +10,7 @@ import * as resolve from 'empathic/resolve';
 import { getProjectRoot } from './paths';
 
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
-  const location = pkg.up({ cwd: options.configDir, stop: getProjectRoot() });
+  const location = pkg.up({ cwd: options.configDir, last: getProjectRoot() });
   if (!location) {
     return {};
   }

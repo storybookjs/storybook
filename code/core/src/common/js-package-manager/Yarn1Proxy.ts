@@ -83,7 +83,7 @@ export class Yarn1Proxy extends JsPackageManager {
 
   public getModulePackageJSON(packageName: string): PackageJson | null {
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, stop: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
 
     if (!packageJsonPath) {
       return null;

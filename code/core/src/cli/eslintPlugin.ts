@@ -21,7 +21,7 @@ export const findEslintFile = (instanceDir: string) => {
   // Check for unsupported files
   for (const prefix of filePrefixes) {
     for (const ext of UNSUPPORTED_ESLINT_EXTENSIONS) {
-      const file = find.up(`${prefix}.${ext}`, { cwd: instanceDir, stop: getProjectRoot() });
+      const file = find.up(`${prefix}.${ext}`, { cwd: instanceDir, last: getProjectRoot() });
       if (file) {
         throw new Error(`Unsupported ESLint config extension: .${ext}`);
       }
@@ -31,7 +31,7 @@ export const findEslintFile = (instanceDir: string) => {
   // Find supported ESLint config files
   for (const prefix of filePrefixes) {
     for (const ext of SUPPORTED_ESLINT_EXTENSIONS) {
-      const file = find.up(`${prefix}.${ext}`, { cwd: instanceDir, stop: getProjectRoot() });
+      const file = find.up(`${prefix}.${ext}`, { cwd: instanceDir, last: getProjectRoot() });
       if (file) {
         return file;
       }

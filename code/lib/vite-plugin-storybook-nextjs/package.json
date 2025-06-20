@@ -72,7 +72,7 @@
     "@types/semver": "^7.5.8",
     "auto": "^11.2.0",
     "lefthook": "^1.6.16",
-    "next": "^15.3.0",
+    "next": "^15.4.0-canary.87",
     "react": "19.1.0",
     "rollup": "^4.18.0",
     "semver": "^7.6.3",

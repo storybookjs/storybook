@@ -34,7 +34,9 @@ type VitePluginOptions = {
   dir?: string;
 };
 
-function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
+function VitePlugin({
+  dir = process.cwd(),
+}: VitePluginOptions = {}): (Plugin | Promise<Plugin>)[] {
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
@@ -118,6 +120,7 @@ function VitePlugin({ dir = process.cwd() }: VitePluginOptions = {}): Plugin[] {
               "next/config",
               "next/dist/shared/lib/segment",
               "styled-jsx",
+              "styled-jsx/style",
               "sb-original/image-context",
               "sb-original/default-loader",
               "@mdx-js/react",

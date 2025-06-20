@@ -3,6 +3,7 @@ import type { Env } from "@next/env";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import type { Plugin } from "vite";
 
+import type { DefineEnvOptions } from "next/dist/build/define-env";
 import * as NextUtils from "../../utils/nextjs";
 
 export function vitePluginNextEnv(
@@ -48,7 +49,6 @@ export function vitePluginNextEnv(
       const finalConfig = {
         ...config.define,
         ...publicNextEnvMap,
-        // @ts-expect-error
         ...getDefineEnv({
           isTurbopack: false,
           config: nextConfig,
@@ -68,7 +68,7 @@ export function vitePluginNextEnv(
             : {
                 isNodeOrEdgeCompilation: false,
               }),
-        }),
+        } as DefineEnvOptions),
       };
 
       // NEXT_IMAGE_OPTS is used by next/image to pass options to the loader

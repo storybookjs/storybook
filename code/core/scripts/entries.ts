@@ -127,6 +127,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/docs-tools'],
       entryPoint: './src/docs-tools/index.ts',
     },
+    {
+      exportEntries: ['./internal/core-events'],
+      entryPoint: './src/core-events/index.ts',
+    },
   ],
   runtime: [
     {
@@ -157,8 +161,6 @@ export const getEntries = (cwd: string) => {
   return [
     // empty, right now, TDB what to do with this
     define('src/index.ts', ['node', 'browser'], true),
-
-    define('src/core-events/index.ts', ['browser', 'node'], true),
 
     define('src/channels/index.ts', ['browser', 'node'], true),
     define('src/types/index.ts', ['browser', 'node'], true, ['react']),

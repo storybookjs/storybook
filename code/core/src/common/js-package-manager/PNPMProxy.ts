@@ -145,7 +145,7 @@ export class PNPMProxy extends JsPackageManager {
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
       cwd: this.primaryPackageJson.operationDir,
-      stop: getProjectRoot(),
+      last: getProjectRoot(),
     });
 
     if (pnpapiPath) {
@@ -173,7 +173,7 @@ export class PNPMProxy extends JsPackageManager {
     }
 
     const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, stop: getProjectRoot() });
+    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
 
     if (!packageJsonPath) {
       return null;

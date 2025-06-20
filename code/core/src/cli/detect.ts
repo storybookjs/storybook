@@ -112,8 +112,8 @@ export function detectFrameworkPreset(
  * @returns CoreBuilder
  */
 export async function detectBuilder(packageManager: JsPackageManager, projectType: ProjectType) {
-  const viteConfig = find.any(viteConfigFiles, { stop: getProjectRoot() });
-  const webpackConfig = find.any(webpackConfigFiles, { stop: getProjectRoot() });
+  const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
+  const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {

@@ -44,7 +44,7 @@ export async function reactDocgen({
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
 
-  const tsconfigPath = find.up('tsconfig.json', { cwd, stop: getProjectRoot() });
+  const tsconfigPath = find.up('tsconfig.json', { cwd, last: getProjectRoot() });
   const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
   let matchPath: TsconfigPaths.MatchPath | undefined;

@@ -97,7 +97,7 @@ export const vitestConfigFiles: Check = {
 
       const vitestWorkspaceFile = find.any(
         ['ts', 'js', 'json'].flatMap((ex) => [`vitest.workspace.${ex}`, `vitest.projects.${ex}`]),
-        { cwd: state.directory, stop: projectRoot }
+        { cwd: state.directory, last: projectRoot }
       );
       if (vitestWorkspaceFile?.endsWith('.json')) {
         reasons.push(`Cannot auto-update JSON workspace file: ${vitestWorkspaceFile}`);
@@ -110,7 +110,7 @@ export const vitestConfigFiles: Check = {
 
       const vitestConfigFile = find.any(
         ['ts', 'js', 'tsx', 'jsx', 'cts', 'cjs', 'mts', 'mjs'].map((ex) => `vitest.config.${ex}`),
-        { cwd: state.directory, stop: projectRoot }
+        { cwd: state.directory, last: projectRoot }
       );
       if (vitestConfigFile?.endsWith('.cts') || vitestConfigFile?.endsWith('.cjs')) {
         reasons.push(`Cannot auto-update CommonJS config file: ${vitestConfigFile}`);

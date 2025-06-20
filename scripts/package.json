@@ -105,7 +105,7 @@
     "diff-match-patch-es": "^0.1.0",
     "ejs": "^3.1.10",
     "ejs-lint": "^2.0.1",
-    "empathic": "^1.1.0",
+    "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
     "esbuild": "^0.25.3",
     "eslint": "^8.57.0",

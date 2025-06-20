@@ -81,7 +81,7 @@ export default async function reactDocgenLoader(
   const { debug = false } = options;
 
   if (!tsconfigPathsInitialized) {
-    const tsconfigPath = find.up('tsconfig.json', { cwd: process.cwd(), stop: getProjectRoot() });
+    const tsconfigPath = find.up('tsconfig.json', { cwd: process.cwd(), last: getProjectRoot() });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
     if (tsconfig.resultType === 'success') {

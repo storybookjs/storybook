@@ -56,7 +56,7 @@
     "boxen": "^7.1.1",
     "comment-json": "^4.2.5",
     "cross-spawn": "^7.0.6",
-    "empathic": "^1.1.0",
+    "empathic": "^2.0.0",
     "envinfo": "^7.14.0",
     "execa": "^9.6.0",
     "globby": "^14.0.1",

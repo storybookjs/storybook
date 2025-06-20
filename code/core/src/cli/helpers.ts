@@ -259,7 +259,7 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
 }
 
 export async function isNxProject() {
-  return find.up('nx.json', { stop: getProjectRoot() });
+  return find.up('nx.json', { last: getProjectRoot() });
 }
 
 export function coerceSemver(version: string) {

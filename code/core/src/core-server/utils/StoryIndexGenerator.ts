@@ -416,7 +416,7 @@ export class StoryIndexGenerator {
     const indexInputs = await indexer.createIndex(absolutePath, { makeTitle: defaultMakeTitle });
     const tsconfigPath = find.up('tsconfig.json', {
       cwd: this.options.workingDir,
-      stop: getProjectRoot(),
+      last: getProjectRoot(),
     });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
     let matchPath: TsconfigPaths.MatchPath | undefined;

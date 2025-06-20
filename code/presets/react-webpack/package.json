@@ -54,7 +54,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "empathic": "^1.1.0",
+    "empathic": "^2.0.0",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {

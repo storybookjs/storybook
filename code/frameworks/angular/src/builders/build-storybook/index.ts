@@ -74,7 +74,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
     switchMap(({ tsConfig }) => {
       const docTSConfig = find.up('tsconfig.doc.json', {
         cwd: options.configDir,
-        stop: getProjectRoot(),
+        last: getProjectRoot(),
       });
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
@@ -169,7 +169,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   return {
     tsConfig:
       options.tsConfig ??
-      find.up('tsconfig.json', { cwd: options.configDir, stop: getProjectRoot() }) ??
+      find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
       browserOptions.tsConfig,
   };
 }

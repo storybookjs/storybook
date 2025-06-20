@@ -52,11 +52,6 @@
       "import": "./dist/types/index.js",
       "require": "./dist/types/index.cjs"
     },
-    "./internal/csf-tools": {
-      "types": "./dist/csf-tools/index.d.ts",
-      "import": "./dist/csf-tools/index.js",
-      "require": "./dist/csf-tools/index.cjs"
-    },
     "./internal/common": {
       "types": "./dist/common/index.d.ts",
       "import": "./dist/common/index.js",
@@ -108,6 +103,10 @@
     "./internal/telemetry": {
       "types": "./dist/telemetry/index.d.ts",
       "default": "./dist/telemetry/index.js"
+    },
+    "./internal/csf-tools": {
+      "types": "./dist/csf-tools/index.d.ts",
+      "default": "./dist/csf-tools/index.js"
     },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
@@ -237,9 +236,6 @@
       "internal/types": [
         "./dist/types/index.d.ts"
       ],
-      "internal/csf-tools": [
-        "./dist/csf-tools/index.d.ts"
-      ],
       "internal/common": [
         "./dist/common/index.d.ts"
       ],
@@ -269,6 +265,9 @@
       ],
       "./internal/telemetry": [
         "./dist/telemetry/index.d.ts"
+      ],
+      "./internal/csf-tools": [
+        "./dist/csf-tools/index.d.ts"
       ],
       "./internal/client-logger": [
         "./dist/client-logger/index.d.ts"

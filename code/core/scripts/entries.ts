@@ -36,6 +36,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/telemetry'],
       entryPoint: './src/telemetry/index.ts',
     },
+    {
+      exportEntries: ['./internal/csf-tools'],
+      entryPoint: './src/csf-tools/index.ts',
+    },
   ],
   browser: [
     {
@@ -150,7 +154,6 @@ export const getEntries = (cwd: string) => {
 
     define('src/channels/index.ts', ['browser', 'node'], true),
     define('src/types/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/csf-tools/index.ts', ['node'], true),
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
 

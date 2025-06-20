@@ -69,7 +69,7 @@ export class VitestManager {
         ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
         ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
       ],
-      { stop: getProjectRoot() }
+      { last: getProjectRoot() }
     );
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;

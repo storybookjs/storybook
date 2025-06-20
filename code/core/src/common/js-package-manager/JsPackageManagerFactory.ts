@@ -56,11 +56,11 @@ export class JsPackageManagerFactory {
     const root = getProjectRoot();
 
     const lockFiles = [
-      find.up(YARN_LOCKFILE, { cwd, stop: root }),
-      find.up(PNPM_LOCKFILE, { cwd, stop: root }),
-      find.up(NPM_LOCKFILE, { cwd, stop: root }),
-      find.up(BUN_LOCKFILE, { cwd, stop: root }),
-      find.up(BUN_LOCKFILE_BINARY, { cwd, stop: root }),
+      find.up(YARN_LOCKFILE, { cwd, last: root }),
+      find.up(PNPM_LOCKFILE, { cwd, last: root }),
+      find.up(NPM_LOCKFILE, { cwd, last: root }),
+      find.up(BUN_LOCKFILE, { cwd, last: root }),
+      find.up(BUN_LOCKFILE_BINARY, { cwd, last: root }),
     ]
       .filter(Boolean)
       .sort((a, b) => {

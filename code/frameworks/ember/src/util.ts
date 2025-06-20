@@ -5,7 +5,7 @@ import { getProjectRoot } from 'storybook/internal/common';
 import * as pkg from 'empathic/package';
 
 export const findDistFile = (cwd: string, relativePath: string) => {
-  const nearestPackageJson = pkg.up({ cwd, stop: getProjectRoot() });
+  const nearestPackageJson = pkg.up({ cwd, last: getProjectRoot() });
   if (!nearestPackageJson) {
     throw new Error(`Could not find package.json in: ${cwd}`);
   }

@@ -1,9 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+import type { types } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
-import type { Expression } from '@babel/types';
 import picocolors from 'picocolors';
 
 import type { Fix } from '../types';
@@ -11,7 +11,7 @@ import type { Fix } from '../types';
 interface Options {
   previewConfig: ConfigFile;
   previewConfigPath: string;
-  globals: Expression;
+  globals: types.Expression;
 }
 
 /** Rename preview.js globals to initialGlobals */
@@ -25,7 +25,7 @@ export const initialGlobals: Fix<Options> = {
     }
 
     const previewConfig = loadConfig((await readFile(previewConfigPath)).toString()).parse();
-    const globals = previewConfig.getFieldNode(['globals']) as Expression;
+    const globals = previewConfig.getFieldNode(['globals']) as types.Expression;
 
     if (!globals) {
       return null;

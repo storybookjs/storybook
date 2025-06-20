@@ -1,6 +1,5 @@
+import { types as t } from 'storybook/internal/babel';
 import { type ConfigFile, type CsfFile, loadConfig, loadCsf } from 'storybook/internal/csf-tools';
-
-import * as t from '@babel/types';
 
 // TODO: this is copied from the codemod, we should move both utilities to the csf-tools package at some point
 const isStoryAnnotation = (stmt: t.Statement, objectExports: Record<string, any>) =>

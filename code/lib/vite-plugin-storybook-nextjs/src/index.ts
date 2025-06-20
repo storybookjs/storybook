@@ -120,6 +120,7 @@ function VitePlugin({
               "next/config",
               "next/dist/shared/lib/segment",
               "styled-jsx",
+              "styled-jsx/style",
               "sb-original/image-context",
               "sb-original/default-loader",
               "@mdx-js/react",

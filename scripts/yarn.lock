@@ -1692,7 +1692,7 @@ __metadata:
     diff-match-patch-es: "npm:^0.1.0"
     ejs: "npm:^3.1.10"
     ejs-lint: "npm:^2.0.1"
-    empathic: "npm:^2.0.0-next.0"
+    empathic: "npm:^2.0.0"
     es-toolkit: "npm:^1.36.0"
     esbuild: "npm:^0.25.3"
     eslint: "npm:^8.57.0"
@@ -4973,10 +4973,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"empathic@npm:^2.0.0-next.0":
-  version: 2.0.0-next.0
-  resolution: "empathic@npm:2.0.0-next.0"
-  checksum: 10c0/0b661fae43ec5e274a49793dbf185fa6340b70cf3bb71fa433a260ee09820ffc7f1387c00b6c784915fb31e8c0d40005e21fe28b134c05a1f3783dd656463fa8
+"empathic@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "empathic@npm:2.0.0"
+  checksum: 10c0/7d3b14b04a93b35c47bcc950467ec914fd241cd9acc0269b0ea160f13026ec110f520c90fae64720fde72cc1757b57f3f292fb606617b7fccac1f4d008a76506
   languageName: node
   linkType: hard
 

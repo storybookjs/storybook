@@ -49,7 +49,12 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
       return;
     }
-    if (event.code === 'Enter' || event.key === 'Enter') {
+    const { inputRefKey, inputRefValue } = this.state;
+    const { addButtonElement } = this.props;
+    const isFormFocused = [inputRefKey, inputRefValue, addButtonElement].some(
+      (elm) => elm === event.target
+    );
+    if ((event.code === 'Enter' || event.key === 'Enter') && isFormFocused) {
       event.preventDefault();
       this.onSubmit();
     }
@@ -554,7 +559,8 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
       return;
     }
-    if (event.code === 'Enter' || event.key === 'Enter') {
+    const { inputRef } = this.state;
+    if ((event.code === 'Enter' || event.key === 'Enter') && inputRef === event.target) {
       event.preventDefault();
       this.handleEdit();
     }
@@ -1466,7 +1472,8 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
       return;
     }
-    if (event.code === 'Enter' || event.key === 'Enter') {
+    const { inputRef } = this.state;
+    if ((event.code === 'Enter' || event.key === 'Enter') && inputRef === event.target) {
       event.preventDefault();
       this.handleEdit();
     }

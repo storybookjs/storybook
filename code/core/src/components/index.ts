@@ -53,7 +53,8 @@ export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
 export { Button } from './components/Button/Button';
 export { Checkbox } from './components/Checkbox/Checkbox';
 export { IconButton } from './components/IconButton/IconButton';
-export { SwitchButton } from './components/ToggleButton/ToggleButton';
+export { ToggleButton } from './components/ToggleButton/ToggleButton';
+export { ToggleIconButton } from './components/ToggleIconButton/ToggleIconButton';
 export { Form } from './components/form/index';
 
 // Tooltips

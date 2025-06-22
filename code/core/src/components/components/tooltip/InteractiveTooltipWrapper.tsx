@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 
-
 import { styled } from 'storybook/theming';
 
 import { shortcutToHumanString } from '../../../manager-api';
@@ -24,7 +23,7 @@ export const InteractiveTooltipWrapper: React.FC<{
       return undefined;
     }
 
-    return [tooltip, shortcut && `[${shortcutToHumanString(shortcut)}`].filter(Boolean).join(' ');
+    return [tooltip, shortcut && `[${shortcutToHumanString(shortcut)}]`].filter(Boolean).join(' ');
   }, [shortcut, tooltip]);
 
   return tooltipLabel ? (

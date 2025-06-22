@@ -14,7 +14,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   ({ padding = 'small', variant = 'ghost', ariaLabel, tooltip, ...props }, ref) => {
     if (!ariaLabel) {
       logger.warn(
-        `IconButton requires an aria-label to be accessible (title: ${props.title || ' ø'}; tooltip: ${tooltip || ' ø'}).`
+        `IconButton requires an aria-label to be accessible (title: ${props.title || 'ø'}; tooltip: ${tooltip || 'ø'}).`
       );
     }
 

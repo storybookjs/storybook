@@ -46,13 +46,13 @@ export const Variants = meta.story({
         </Button>
       </Row>
       <Row>
-        <Button variant="solid" padding="small" {...args}>
+        <Button variant="solid" padding="small" ariaLabel="Button" {...args}>
           <FaceHappyIcon />
         </Button>
-        <Button variant="outline" padding="small" {...args}>
+        <Button variant="outline" padding="small" ariaLabel="Button" {...args}>
           <FaceHappyIcon />
         </Button>
-        <Button variant="ghost" padding="small" {...args}>
+        <Button variant="ghost" padding="small" ariaLabel="Button" {...args}>
           <FaceHappyIcon />
         </Button>
       </Row>
@@ -78,10 +78,10 @@ export const PseudoStates = meta.story({
         <Button variant="outline">Focus</Button>
         <Button variant="ghost">Focus</Button>
       </Row>
-      <Row id="active">
-        <Button variant="solid">Active</Button>
-        <Button variant="outline">Active</Button>
-        <Button variant="ghost">Active</Button>
+      <Row id="focus-visible">
+        <Button variant="solid">Focus Visible</Button>
+        <Button variant="outline">Focus Visible</Button>
+        <Button variant="ghost">Focus Visible</Button>
       </Row>
     </Stack>
   ),
@@ -89,28 +89,9 @@ export const PseudoStates = meta.story({
     pseudo: {
       hover: '#hover button',
       focus: '#focus button',
-      active: '#active button',
+      focusVisible: '#focus-visible button',
     },
   },
-});
-
-export const Active = meta.story({
-  args: {
-    active: true,
-    children: (
-      <>
-        <FaceHappyIcon />
-        Button
-      </>
-    ),
-  },
-  render: (args) => (
-    <Row>
-      <Button variant="solid" {...args} />
-      <Button variant="outline" {...args} />
-      <Button variant="ghost" {...args} />
-    </Row>
-  ),
 });
 
 export const WithIcon = meta.story({
@@ -133,6 +114,7 @@ export const WithIcon = meta.story({
 
 export const IconOnly = meta.story({
   args: {
+    ariaLabel: 'Button',
     children: <FaceHappyIcon />,
     padding: 'small',
   },
@@ -151,6 +133,29 @@ export const Sizes = meta.story({
       <Button size="small">Small Button</Button>
       <Button size="medium">Medium Button</Button>
     </Row>
+  ),
+});
+
+export const Paddings = meta.story({
+  render: () => (
+    <Stack>
+      <Row>
+        <Button size="small" padding="small">
+          Small Padding
+        </Button>
+        <Button size="small" padding="medium">
+          Medium Padding
+        </Button>
+      </Row>
+      <Row>
+        <Button size="medium" padding="small">
+          Small Padding
+        </Button>
+        <Button size="medium" padding="medium">
+          Medium Padding
+        </Button>
+      </Row>
+    </Stack>
   ),
 });
 
@@ -213,4 +218,41 @@ export const Animated = meta.story({
       </Row>
     </Stack>
   ),
+});
+
+export const AriaLabel = meta.story({
+  args: {
+    ariaLabel: 'Button',
+    children: <FaceHappyIcon />,
+  },
+});
+
+export const Tooltip = meta.story({
+  args: {
+    children: 'Button',
+    tooltip: 'A button can be pressed to perform an action',
+  },
+});
+
+export const Description = meta.story({
+  args: {
+    ariaLabel: 'Button',
+    description: 'Clicking this button allegedly makes you happy.',
+    children: <FaceHappyIcon />,
+  },
+});
+
+export const Shortcut = meta.story({
+  args: {
+    children: 'Button',
+    shortcut: ['Control', 'Shift', 'H'],
+  },
+});
+
+export const ShortcutAndTooltip = meta.story({
+  args: {
+    children: 'Button',
+    tooltip: 'A button can be pressed to perform an action',
+    shortcut: ['Control', 'Shift', 'H'],
+  },
 });

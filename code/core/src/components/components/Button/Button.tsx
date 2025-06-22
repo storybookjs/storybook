@@ -8,7 +8,7 @@ import { isPropValid, styled } from 'storybook/theming';
 import { shortcutToAriaKeyshortcuts } from '../../../manager-api';
 import type { API_KeyCollection } from '../../../manager-api/modules/shortcuts';
 import { useAriaDescription } from '../../../manager/hooks/useAriaDescription';
-import { InteractiveTooltipWrapper } from '../tooltip/InteractiveTooltipWrapper';
+import InteractiveTooltipWrapper from '../tooltip/InteractiveTooltipWrapper';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;

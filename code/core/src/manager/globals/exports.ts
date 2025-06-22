@@ -516,7 +516,6 @@ export default {
     'Span',
     'StorybookIcon',
     'StorybookLogo',
-    'SwitchButton',
     'SyntaxHighlighter',
     'TT',
     'TabBar',

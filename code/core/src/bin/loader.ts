@@ -20,8 +20,8 @@ export const load: LoadHook = async (url, context, nextLoad) => {
     url.endsWith('.mtsx') ||
     url.endsWith('.ctsx')
   ) {
-    const rawSource = readFile(fileURLToPath(url), 'utf-8');
-    const transformedSource = await transform(rawSource.toString(), {
+    const rawSource = await readFile(fileURLToPath(url), 'utf-8');
+    const transformedSource = await transform(rawSource, {
       loader: 'ts',
       target: 'node20',
       format: 'esm',

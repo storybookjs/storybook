@@ -102,9 +102,9 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
         ],
         exclude: pluginBabelOptions.exclude,
         babelConfig: {
-          ...pluginBabelOptions.babelConfig,
           babelrc: false,
           configFile: false,
+          ...pluginBabelOptions.babelConfig,
           presets: [
             [
               '@babel/preset-react',

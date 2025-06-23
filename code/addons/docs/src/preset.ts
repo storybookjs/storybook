@@ -157,6 +157,7 @@ export const addons: PresetProperty<'addons'> = [
 
 export const viteFinal = async (config: any, options: Options) => {
   const { plugins = [] } = config;
+
   const { mdxPlugin } = await import('./plugins/mdx-plugin');
 
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
@@ -186,7 +187,10 @@ export const viteFinal = async (config: any, options: Options) => {
   // mdx plugin needs to be before any react plugins
   plugins.unshift(mdxPlugin(options));
 
-  return config;
+  return {
+    ...config,
+    plugins,
+  };
 };
 
 /*
@@ -208,11 +212,6 @@ export const resolvedReact = async (existing: any) => ({
   mdx: existing?.mdx ?? dirname(require.resolve('@mdx-js/react')),
 });
 
-const optimizeViteDeps = [
-  '@mdx-js/react',
-  '@storybook/addon-docs > acorn-jsx',
-  '@storybook/addon-docs',
-  'markdown-to-jsx',
-];
+const optimizeViteDeps = ['@mdx-js/react', '@storybook/addon-docs', 'markdown-to-jsx'];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };

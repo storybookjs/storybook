@@ -1,4 +1,6 @@
 /* eslint-env browser */
+import { MIN_TOUCH_AREA_SIZE } from './constants';
+import { type IconName, iconPaths } from './icons';
 import type {
   Box,
   ClickEventDetails,
@@ -9,7 +11,7 @@ import type {
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
 
-export const createElement = (type: string, props: Record<string, any>, children?: any[]) => {
+export const createElement = (type: string, props: Record<string, any> = {}, children?: any[]) => {
   const element = svgElements.includes(type)
     ? document.createElementNS('http://www.w3.org/2000/svg', type)
     : document.createElement(type);
@@ -50,23 +52,47 @@ export const createElement = (type: string, props: Record<string, any>, children
   return element;
 };
 
-export const convertLegacy = (highlight: RawHighlightOptions): HighlightOptions => {
-  if ('elements' in highlight) {
-    const { elements, color, style } = highlight;
+export const createIcon = (name: IconName) =>
+  iconPaths[name] &&
+  createElement(
+    'svg',
+    { width: '14', height: '14', viewBox: '0 0 14 14', xmlns: 'http://www.w3.org/2000/svg' },
+    iconPaths[name].map((d) =>
+      createElement('path', {
+        fill: 'currentColor',
+        'fill-rule': 'evenodd',
+        'clip-rule': 'evenodd',
+        d,
+      })
+    )
+  );
+
+export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
+  if ('elements' in options) {
+    // Legacy format
+    const { elements, color, style } = options;
     return {
+      id: undefined,
+      priority: 0,
       selectors: elements,
       styles: {
         outline: `2px ${style} ${color}`,
         outlineOffset: '2px',
         boxShadow: '0 0 0 6px rgba(255,255,255,0.6)',
       },
+      menu: undefined,
     };
   }
+
+  const { menu, ...rest } = options;
   return {
+    id: undefined,
+    priority: 0,
     styles: {
       outline: '2px dashed #029cfd',
     },
-    ...highlight,
+    ...rest,
+    menu: Array.isArray(menu) ? (menu.every(Array.isArray) ? menu : [menu]) : undefined,
   };
 };
 
@@ -191,11 +217,13 @@ export const isTargeted = (
     return false;
   }
   let { left, top, width, height } = box;
-  if (height === 0 || width === 0) {
-    left -= 10;
-    top -= 10;
-    width += 20;
-    height += 20;
+  if (height < MIN_TOUCH_AREA_SIZE) {
+    top = top - Math.round((MIN_TOUCH_AREA_SIZE - height) / 2);
+    height = MIN_TOUCH_AREA_SIZE;
+  }
+  if (width < MIN_TOUCH_AREA_SIZE) {
+    left = left - Math.round((MIN_TOUCH_AREA_SIZE - width) / 2);
+    width = MIN_TOUCH_AREA_SIZE;
   }
   if (boxElement.style.position === 'fixed') {
     left += window.scrollX;

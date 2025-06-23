@@ -1259,6 +1259,25 @@ describe('ConfigFile', () => {
       `);
     });
 
+    it(`uses the existing node import when using node:xyz paths but the package xyz is already imported`, () => {
+      const source = dedent`
+        import { join } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setImport(['dirname'], 'node:path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        import { join, dirname } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
     it(`supports setting a default import for a field that does exist`, () => {
       const source = dedent`
         const config: StorybookConfig = { };
@@ -1404,6 +1423,30 @@ describe('ConfigFile', () => {
 
       const config = loadConfig(source).parse();
       config.setRequireImport(['dirname', 'basename'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const {
+          dirname,
+          basename,
+        } = require('path');
+
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`supports setting a named import for a field where the source already exists without "node:" prefix`, () => {
+      const source = dedent`
+        const { dirname } = require('path');
+
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setRequireImport(['dirname', 'basename'], 'node:path');
 
       const parsed = babelPrint(config._ast);
 

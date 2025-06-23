@@ -4,6 +4,8 @@ import { dirname, isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
+  JsPackageManagerFactory,
+  type RemoveAddonOptions,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -14,7 +16,6 @@ import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
-  CLIOptions,
   CoreConfig,
   Indexer,
   Options,
@@ -186,12 +187,16 @@ const optionalEnvToBoolean = (input: string | undefined): boolean | undefined =>
   return undefined;
 };
 
+/** This API is used by third-parties to access certain APIs in a Node environment */
 export const experimental_serverAPI = (extension: Record<string, Function>, options: Options) => {
   let removeAddon = removeAddonBase;
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
   if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: any) => {
+    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
       await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, opts);
+      return removeAddonBase(id, { ...opts, packageManager });
     };
   }
   return { ...extension, removeAddon };
@@ -205,7 +210,7 @@ export const experimental_serverAPI = (extension: Record<string, Function>, opti
  */
 export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => ({
   ...existing,
-  disableTelemetry: options.disableTelemetry === true || options.test === true,
+  disableTelemetry: options.disableTelemetry === true,
   enableCrashReports:
     options.enableCrashReports || optionalEnvToBoolean(process.env.STORYBOOK_ENABLE_CRASH_REPORTS),
 });

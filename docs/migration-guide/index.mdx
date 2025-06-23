@@ -56,7 +56,7 @@ You may wish to read the [full migration notes][full-migration-notes] before mig
 
 ## Automatic upgrade
 
-To upgrade your Storybook:
+To upgrade your Storybook, run the [upgrade](../configure/upgrading.mdx) command in the root of your repository:
 
 {/* prettier-ignore-start */}
 
@@ -66,13 +66,15 @@ To upgrade your Storybook:
 
 This will:
 
-1. Determine that none of the [breaking changes](#major-breaking-changes) apply to your project
-   * If they do, you will receive instructions on how to resolve them before continuing
-2. Upgrade your Storybook dependencies to the latest version
-3. Run a collection of *automigrations*, which will:
-   * Check for common upgrade tasks
-   * Explain the necessary changes with links to more information
-   * Ask for approval, then perform the task automatically on your behalf
+1. Find all of the Storybook projects in your repository
+2. For each project
+   1. Determine that none of the [breaking changes](#major-breaking-changes) apply to your project
+      * If they do, you will receive instructions on how to resolve them before continuing
+   2. Upgrade your Storybook dependencies to the latest version
+   3. Run a collection of *automigrations*, which will:
+      * Check for common upgrade tasks
+      * Explain the necessary changes with links to more information
+      * Ask for approval, then perform the task automatically on your behalf
 
 ## New projects
 
@@ -152,7 +154,7 @@ In addition to the automigrations and manual migrations above, there are also op
 
 ### `test-runner` to `addon-vitest`
 
-`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/vitest-addon.mdx#automatic-setup).
+`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project uses React, Vue, or Svelte and is built with Vite, you should consider migrating to `addon-vitest`, by following the [installation instructions](../writing-tests/integrations/vitest-addon.mdx#automatic-setup).
 
 ### CSF 2 to CSF 3
 

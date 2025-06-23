@@ -1,13 +1,36 @@
+import type { IconName } from './icons';
+
+export interface HighlightTypes {
+  parameters: HighlightParameters;
+}
+
 export interface HighlightParameters {
   /**
    * Highlight configuration
    *
    * @see https://storybook.js.org/docs/essentials/highlight#parameters
    */
-  highlight: {
+  highlight?: {
     /** Remove the addon panel and disable the addon's behavior */
     disable?: boolean;
   };
+}
+
+export interface HighlightMenuItem {
+  /** Unique identifier for the menu item */
+  id: string;
+  /** Title of the menu item */
+  title: string;
+  /** Description of the menu item */
+  description?: string;
+  /** Icon for the menu item, left side */
+  iconLeft?: IconName;
+  /** Icon for the menu item, right side */
+  iconRight?: IconName;
+  /** Name for a channel event to trigger when the menu item is clicked */
+  clickEvent?: string;
+  /** HTML selectors for which this menu item should show (subset of `selectors`) */
+  selectors?: HighlightOptions['selectors'];
 }
 
 export interface HighlightOptions {
@@ -25,19 +48,8 @@ export interface HighlightOptions {
   focusStyles?: Record<string, string>;
   /** Keyframes required for animations */
   keyframes?: string;
-  /** Menu items to show when the highlight is selected */
-  menu?: {
-    /** Unique identifier for the menu item */
-    id: string;
-    /** Title of the menu item */
-    title: string;
-    /** Description of the menu item */
-    description?: string;
-    /** Name for a channel event to trigger when the menu item is clicked */
-    clickEvent?: string;
-    /** HTML selectors for which this menu item should show (subset of `selectors`) */
-    selectors?: string[];
-  }[];
+  /** Groups of menu items to show when the highlight is selected */
+  menu?: HighlightMenuItem[][];
 }
 
 export interface ClickEventDetails {
@@ -67,13 +79,13 @@ export interface LegacyHighlightOptions {
 export type RawHighlightOptions = HighlightOptions | LegacyHighlightOptions;
 
 export type Highlight = {
-  id: string;
+  id?: string;
   priority: number;
   selectors: string[];
   styles: Record<string, string>;
   hoverStyles?: Record<string, string>;
   focusStyles?: Record<string, string>;
-  menu?: HighlightOptions['menu'];
+  menu?: HighlightMenuItem[][];
 };
 
 export type Box = {

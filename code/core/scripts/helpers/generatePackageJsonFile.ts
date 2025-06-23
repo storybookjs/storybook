@@ -23,69 +23,67 @@ export async function generatePackageJsonFile(
    * `./scripts/entries.ts` file to ensure all things we create actually exist and are mapped to the
    * correct path.
    */
-  pkgJson.exports = sortObject(
-    entries.reduce<Record<string, Record<string, string>>>(
-      (acc, entry) => {
-        let main = './' + relative(cwd, entry.file).replace('src', 'dist');
+  pkgJson.exports = entries.reduce<Record<string, Record<string, string>>>(
+    (acc, entry) => {
+      let main = './' + relative(cwd, entry.file).replace('src', 'dist');
 
-        const content: Record<string, string> = {};
-        if (entry.dts) {
-          content.types = main.replace(/\.tsx?/, '.d.ts');
+      const content: Record<string, string> = {};
+      if (entry.dts) {
+        content.types = main.replace(/\.tsx?/, '.d.ts');
+      }
+      if (entry.browser) {
+        content.import = main.replace(/\.tsx?/, '.js');
+      }
+      if (entry.node && !entry.browser) {
+        content.import = main.replace(/\.tsx?/, '.js');
+      }
+      if (entry.node) {
+        // TODO: temporary hack to get this to be ESM-only
+        if (
+          entry.file.includes('/common/') ||
+          entry.file.includes('/telemetry/') ||
+          entry.file.includes('/core-server/index')
+        ) {
+          content.default = main.replace(/\.tsx?/, '.js');
+        } else {
+          content.require = main.replace(/\.tsx?/, '.cjs');
         }
-        if (entry.browser) {
-          content.import = main.replace(/\.tsx?/, '.js');
-        }
-        if (entry.node && !entry.browser) {
-          content.import = main.replace(/\.tsx?/, '.js');
-        }
-        if (entry.node) {
-          // TODO: temporary hack to get this to be ESM-only
-          if (
-            entry.file.includes('/common/') ||
-            entry.file.includes('/telemetry/') ||
-            entry.file.includes('/core-server/index')
-          ) {
-            content.default = main.replace(/\.tsx?/, '.js');
-          } else {
-            content.require = main.replace(/\.tsx?/, '.cjs');
-          }
-        }
-        if (main === './dist/index.ts' || main === './dist/index.tsx') {
-          main = '.';
-        }
-        /**
-         * We always write an entry for /internal/X, even when it's isPublic is true, this is for
-         * compatibility reasons. We should remove this once everything stops referencing public
-         * APIs as internal.
-         *
-         * Known references:
-         *
-         * - VTA
-         * - Design addon
-         * - Addon kit
-         *
-         * I expect that we should be able to drop it in the process of of the release of 9.0, or
-         * keep it for now, and drop it in the release of 9.1.
-         */
+      }
+      if (main === './dist/index.ts' || main === './dist/index.tsx') {
+        main = '.';
+      }
+      /**
+       * We always write an entry for /internal/X, even when it's isPublic is true, this is for
+       * compatibility reasons. We should remove this once everything stops referencing public APIs
+       * as internal.
+       *
+       * Known references:
+       *
+       * - VTA
+       * - Design addon
+       * - Addon kit
+       *
+       * I expect that we should be able to drop it in the process of of the release of 9.0, or keep
+       * it for now, and drop it in the release of 9.1.
+       */
+      acc[
+        main
+          .replace(/\/index\.tsx?/, '')
+          .replace(/\.tsx?/, '')
+          .replace('dist/', 'internal/')
+      ] = content;
+
+      if (entry.isPublic) {
         acc[
           main
             .replace(/\/index\.tsx?/, '')
             .replace(/\.tsx?/, '')
-            .replace('dist/', 'internal/')
+            .replace('dist/', '')
         ] = content;
-
-        if (entry.isPublic) {
-          acc[
-            main
-              .replace(/\/index\.tsx?/, '')
-              .replace(/\.tsx?/, '')
-              .replace('dist/', '')
-          ] = content;
-        }
-        return acc;
-      },
-      { './bin/loader.mjs': { default: './bin/loader.mjs' } }
-    )
+      }
+      return acc;
+    },
+    { './bin/loader.mjs': { default: './bin/loader.mjs' } }
   );
 
   // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
@@ -98,7 +96,7 @@ export async function generatePackageJsonFile(
    * "Bundler"` If we even decide to only support `"moduleResolution": "Bundler"`, we should be able
    * to remove this part, but that would be a breaking change.
    */
-  pkgJson.typesVersions = sortObject({
+  pkgJson.typesVersions = {
     '*': {
       '*': ['./dist/index.d.ts'],
       ...entries.reduce<Record<string, string[]>>((acc, entry) => {
@@ -139,7 +137,7 @@ export async function generatePackageJsonFile(
         return acc;
       }, {}),
     },
-  });
+  };
 
   for (const entry of esmOnlyEntries) {
     for (const exportEntry of entry.exportEntries) {
@@ -157,6 +155,9 @@ export async function generatePackageJsonFile(
       }
     }
   }
+
+  pkgJson.exports = sortObject(pkgJson.exports);
+  pkgJson.typesVersions = sortObject(pkgJson.typesVersions);
 
   await writeFile(location, `${sortPackageJson(JSON.stringify(pkgJson, null, 2))}\n`, {});
 }

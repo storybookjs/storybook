@@ -92,6 +92,10 @@
       "import": "./dist/cli/bin/index.js",
       "require": "./dist/cli/bin/index.cjs"
     },
+    "./internal/client-logger": {
+      "types": "./dist/client-logger/index.d.ts",
+      "default": "./dist/client-logger/index.js"
+    },
     "./internal/common": {
       "types": "./dist/common/index.d.ts",
       "import": "./dist/common/index.js",
@@ -176,6 +180,12 @@
       "import": "./dist/manager/globals-module-info.js",
       "require": "./dist/manager/globals-module-info.cjs"
     },
+    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
+    "./internal/node-logger": {
+      "types": "./dist/node-logger/index.d.ts",
+      "default": "./dist/node-logger/index.js"
+    },
+    "./internal/package.json": "./package.json",
     "./internal/preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "import": "./dist/preview-api/index.js",
@@ -191,6 +201,7 @@
       "import": "./dist/preview/globals.js",
       "require": "./dist/preview/globals.cjs"
     },
+    "./internal/preview/runtime": "./dist/preview/runtime.js",
     "./internal/router": {
       "types": "./dist/router/index.d.ts",
       "import": "./dist/router/index.js",
@@ -236,6 +247,7 @@
       "import": "./dist/manager-api/index.js",
       "require": "./dist/manager-api/index.cjs"
     },
+    "./package.json": "./package.json",
     "./preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "import": "./dist/preview-api/index.js",
@@ -260,19 +272,7 @@
       "types": "./dist/viewport/index.d.ts",
       "import": "./dist/viewport/index.js",
       "require": "./dist/viewport/index.cjs"
-    },
-    "./package.json": "./package.json",
-    "./internal/package.json": "./package.json",
-    "./internal/node-logger": {
-      "types": "./dist/node-logger/index.d.ts",
-      "default": "./dist/node-logger/index.js"
-    },
-    "./internal/client-logger": {
-      "types": "./dist/client-logger/index.d.ts",
-      "default": "./dist/client-logger/index.js"
-    },
-    "./internal/preview/runtime": "./dist/preview/runtime.js",
-    "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js"
+    }
   },
   "main": "dist/index.cjs",
   "module": "dist/index.js",

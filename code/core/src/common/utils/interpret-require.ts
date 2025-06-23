@@ -1,4 +1,4 @@
-import { register } from 'node:module';
+import { createRequire, register } from 'node:module';
 import { pathToFileURL } from 'node:url';
 
 import { resolveModule } from '../../shared/utils/resolve';
@@ -27,8 +27,7 @@ export async function interopRequireDefault(filePath: string) {
 
     return isES6DefaultExported ? result.default : result;
   } catch (e) {
-    // console.log('fallback!', { e, filePath });
-    const result = require(filePath);
+    const result = createRequire(import.meta.url)(filePath);
 
     const isES6DefaultExported =
       typeof result === 'object' && result !== null && typeof result.default !== 'undefined';

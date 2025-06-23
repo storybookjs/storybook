@@ -19,6 +19,7 @@ export default {
       rerun: action('rerun'),
     },
     controlStates: {
+      detached: false,
       start: true,
       back: true,
       goto: true,
@@ -53,6 +54,7 @@ export const AtStart = {
   args: {
     status: CallStates.WAITING,
     controlStates: {
+      detached: false,
       start: false,
       back: false,
       goto: true,
@@ -66,6 +68,7 @@ export const Midway = {
   args: {
     status: CallStates.WAITING,
     controlStates: {
+      detached: false,
       start: true,
       back: true,
       goto: true,
@@ -79,6 +82,21 @@ export const Locked = {
   args: {
     status: CallStates.ACTIVE,
     controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
+  },
+};
+
+export const Detached = {
+  args: {
+    status: CallStates.DONE,
+    controlStates: {
+      detached: true,
       start: false,
       back: false,
       goto: false,

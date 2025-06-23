@@ -133,7 +133,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
               ...Object.entries(viewportMap).map<Link>(([k, value]) => ({
                 id: k,
                 title: value.name,
-                icon: iconsMap[value.type],
+                icon: iconsMap[value.type!],
                 active: k === viewportName,
                 onClick: () => {
                   update({ value: k, isRotated: false });

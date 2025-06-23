@@ -1,4 +1,4 @@
-import { Args, Meta, StoryObj } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
 
 import { DiComponent } from './di.component';
 

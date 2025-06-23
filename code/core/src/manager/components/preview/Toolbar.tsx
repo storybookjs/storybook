@@ -226,7 +226,6 @@ const Toolbar = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
   position: 'relative',
   color: theme.barTextColor,
   width: '100%',
-  height: 40,
   flexShrink: 0,
   overflowX: 'auto',
   overflowY: 'hidden',
@@ -237,7 +236,6 @@ const Toolbar = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
 }));
 
 const ToolbarInner = styled.div({
-  position: 'absolute',
   width: 'calc(100% - 20px)',
   display: 'flex',
   justifyContent: 'space-between',

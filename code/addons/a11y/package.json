@@ -36,7 +36,6 @@
       "import": "./dist/preview.js"
     },
     "./manager": "./dist/manager.js",
-    "./register": "./dist/manager.js",
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js"
   },

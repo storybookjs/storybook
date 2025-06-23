@@ -7,6 +7,10 @@ import type { ESMOnlyEntriesByPlatform, getEntries } from '../entries';
 
 const cwd = process.cwd();
 
+function sortObject(obj: Record<string, any>) {
+  return Object.fromEntries(Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)));
+}
+
 export async function generatePackageJsonFile(
   entries: ReturnType<typeof getEntries>,
   esmOnlyEntries: ESMOnlyEntriesByPlatform
@@ -148,6 +152,9 @@ export async function generatePackageJsonFile(
       }
     }
   }
+
+  pkgJson.exports = sortObject(pkgJson.exports);
+  pkgJson.typesVersions = sortObject(pkgJson.typesVersions);
 
   await writeFile(location, `${sortPackageJson(JSON.stringify(pkgJson, null, 2))}\n`, {});
 }

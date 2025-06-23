@@ -32,7 +32,7 @@ import type {
   SyntaxHighlighterRendererProps,
 } from './syntaxhighlighter-types';
 
-const { navigator, document, window: globalWindow } = global;
+const { document, window: globalWindow } = global;
 
 export const supportedLanguages = {
   jsextra: jsExtras,
@@ -59,9 +59,14 @@ const themedSyntax = memoize(2)((theme) =>
 const copyToClipboard: (text: string) => Promise<void> = createCopyToClipboardFunction();
 
 export function createCopyToClipboardFunction() {
-  if (globalWindow.top?.navigator?.clipboard) {
-    const clipboard = globalWindow.top.navigator.clipboard;
-    return async (text: string) => clipboard.writeText(text);
+  if (globalWindow.navigator?.clipboard) {
+    return async (text: string) => {
+      try {
+        await globalWindow.top?.navigator.clipboard.writeText(text);
+      } catch {
+        await globalWindow.navigator.clipboard.writeText(text);
+      }
+    };
   }
   return async (text: string) => {
     const tmp = document.createElement('TEXTAREA') as HTMLTextAreaElement;

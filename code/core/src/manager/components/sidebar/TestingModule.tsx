@@ -274,7 +274,7 @@ export const TestingModule = ({
               : undefined
   );
 
-  if (!hasTestProviders && (!errorCount || !warningCount)) {
+  if (!hasTestProviders && !errorCount && !warningCount) {
     return null;
   }
 

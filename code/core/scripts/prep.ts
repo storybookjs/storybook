@@ -166,6 +166,7 @@ async function run() {
       minifyIdentifiers: isOptimized,
       minifySyntax: isOptimized,
       minifyWhitespace: false,
+      keepNames: true, // required to show correct error messages based on class names
       outbase: 'src',
       outdir: 'dist',
       treeShaking: true,

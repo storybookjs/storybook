@@ -232,7 +232,7 @@ export const Interaction = ({
             >
               <StyledIconButton
                 onClick={toggleCollapsed}
-                aria-label={isCollapsed ? 'Expand interaction' : 'Colapse interaction'}
+                aria-label={isCollapsed ? 'Expand interaction' : 'Collapse interaction'}
               >
                 {isCollapsed ? <ArrowSolidDownIcon /> : <ArrowSolidUpIcon />}
               </StyledIconButton>

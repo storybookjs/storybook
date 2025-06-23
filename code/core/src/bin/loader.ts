@@ -9,6 +9,8 @@ import { fileURLToPath } from 'node:url';
 
 import { transform } from 'esbuild';
 
+import { NODE_TARGET } from '../shared/constants/environments-support';
+
 export const load: LoadHook = async (url, context, nextLoad) => {
   /** Convert TS to ESM using esbuild */
   if (
@@ -23,7 +25,7 @@ export const load: LoadHook = async (url, context, nextLoad) => {
     const rawSource = await readFile(fileURLToPath(url), 'utf-8');
     const transformedSource = await transform(rawSource, {
       loader: 'ts',
-      target: 'node20',
+      target: NODE_TARGET,
       format: 'esm',
       platform: 'neutral',
     });

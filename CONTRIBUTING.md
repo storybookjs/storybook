@@ -159,6 +159,19 @@ yarn task --task dev --template <your template> --start-from=publish
 
 4. If you have made any changes inside `/code` or other packages, remember to run `yarn test` from inside the package to ensure that your changes do not break any tests. 
 
+### Angular-specific code
+
+If you are working on Angular-specific code, you will need to append `--prod` to the above mentioned commands to ensure that the Angular compiler is able to pick up the changes appropriately and doesn't fail. This will build all the packages in production mode.
+
+```sh
+yarn task --prod
+```
+
+```bash
+cd code
+yarn build --prod --watch angular core addon-docs
+```
+
 ### Running against different sandbox templates 
 
 You can pick a specific template to use as your sandbox by running `yarn task`, which will prompt you to make further choices about which template you want and which task you want to run.

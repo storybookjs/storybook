@@ -32,64 +32,22 @@
     }
   },
   "exports": {
-    "./bin/loader.mjs": {
-      "default": "./bin/loader.mjs"
-    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./internal/node-logger": {
-      "types": "./dist/node-logger/index.d.ts",
-      "import": "./dist/node-logger/index.js",
-      "require": "./dist/node-logger/index.cjs"
+    "./actions": {
+      "types": "./dist/actions/index.d.ts",
+      "import": "./dist/actions/index.js",
+      "require": "./dist/actions/index.cjs"
     },
-    "./internal/client-logger": {
-      "types": "./dist/client-logger/index.d.ts",
-      "import": "./dist/client-logger/index.js",
-      "require": "./dist/client-logger/index.cjs"
+    "./actions/decorator": {
+      "types": "./dist/actions/decorator.d.ts",
+      "import": "./dist/actions/decorator.js"
     },
-    "./internal/theming": {
-      "types": "./dist/theming/index.d.ts",
-      "import": "./dist/theming/index.js",
-      "require": "./dist/theming/index.cjs"
-    },
-    "./theming": {
-      "types": "./dist/theming/index.d.ts",
-      "import": "./dist/theming/index.js",
-      "require": "./dist/theming/index.cjs"
-    },
-    "./internal/theming/create": {
-      "types": "./dist/theming/create.d.ts",
-      "import": "./dist/theming/create.js",
-      "require": "./dist/theming/create.cjs"
-    },
-    "./theming/create": {
-      "types": "./dist/theming/create.d.ts",
-      "import": "./dist/theming/create.js",
-      "require": "./dist/theming/create.cjs"
-    },
-    "./internal/core-server": {
-      "types": "./dist/core-server/index.d.ts",
-      "import": "./dist/core-server/index.js",
-      "default": "./dist/core-server/index.js"
-    },
-    "./internal/core-server/presets/common-preset": {
-      "import": "./dist/core-server/presets/common-preset.js",
-      "require": "./dist/core-server/presets/common-preset.cjs"
-    },
-    "./internal/core-server/presets/common-manager": {
-      "import": "./dist/core-server/presets/common-manager.js"
-    },
-    "./internal/core-server/presets/common-override-preset": {
-      "import": "./dist/core-server/presets/common-override-preset.js",
-      "require": "./dist/core-server/presets/common-override-preset.cjs"
-    },
-    "./internal/highlight": {
-      "types": "./dist/highlight/index.d.ts",
-      "import": "./dist/highlight/index.js",
-      "require": "./dist/highlight/index.cjs"
+    "./bin/loader.mjs": {
+      "default": "./bin/loader.mjs"
     },
     "./highlight": {
       "types": "./dist/highlight/index.d.ts",
@@ -101,28 +59,53 @@
       "import": "./dist/actions/index.js",
       "require": "./dist/actions/index.cjs"
     },
-    "./actions": {
-      "types": "./dist/actions/index.d.ts",
-      "import": "./dist/actions/index.js",
-      "require": "./dist/actions/index.cjs"
-    },
     "./internal/actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
     },
-    "./actions/decorator": {
-      "types": "./dist/actions/decorator.d.ts",
-      "import": "./dist/actions/decorator.js"
+    "./internal/babel": {
+      "types": "./dist/babel/index.d.ts",
+      "import": "./dist/babel/index.js",
+      "require": "./dist/babel/index.cjs"
     },
-    "./internal/viewport": {
-      "types": "./dist/viewport/index.d.ts",
-      "import": "./dist/viewport/index.js",
-      "require": "./dist/viewport/index.cjs"
+    "./internal/bin": {
+      "import": "./dist/bin/index.js",
+      "require": "./dist/bin/index.cjs"
     },
-    "./viewport": {
-      "types": "./dist/viewport/index.d.ts",
-      "import": "./dist/viewport/index.js",
-      "require": "./dist/viewport/index.cjs"
+    "./internal/builder-manager": {
+      "types": "./dist/builder-manager/index.d.ts",
+      "import": "./dist/builder-manager/index.js",
+      "require": "./dist/builder-manager/index.cjs"
+    },
+    "./internal/channels": {
+      "types": "./dist/channels/index.d.ts",
+      "import": "./dist/channels/index.js",
+      "require": "./dist/channels/index.cjs"
+    },
+    "./internal/cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js",
+      "require": "./dist/cli/index.cjs"
+    },
+    "./internal/cli/bin": {
+      "types": "./dist/cli/bin/index.d.ts",
+      "import": "./dist/cli/bin/index.js",
+      "require": "./dist/cli/bin/index.cjs"
+    },
+    "./internal/client-logger": {
+      "types": "./dist/client-logger/index.d.ts",
+      "import": "./dist/client-logger/index.js",
+      "require": "./dist/client-logger/index.cjs"
+    },
+    "./internal/common": {
+      "types": "./dist/common/index.d.ts",
+      "import": "./dist/common/index.js",
+      "default": "./dist/common/index.js"
+    },
+    "./internal/components": {
+      "types": "./dist/components/index.d.ts",
+      "import": "./dist/components/index.js",
+      "require": "./dist/components/index.cjs"
     },
     "./internal/controls": {
       "types": "./dist/controls/index.d.ts",
@@ -138,144 +121,161 @@
       "import": "./dist/core-events/index.js",
       "require": "./dist/core-events/index.cjs"
     },
-    "./internal/manager-errors": {
-      "types": "./dist/manager-errors.d.ts",
-      "import": "./dist/manager-errors.js"
+    "./internal/core-server": {
+      "types": "./dist/core-server/index.d.ts",
+      "import": "./dist/core-server/index.js",
+      "default": "./dist/core-server/index.js"
     },
-    "./internal/preview-errors": {
-      "types": "./dist/preview-errors.d.ts",
-      "import": "./dist/preview-errors.js",
-      "require": "./dist/preview-errors.cjs"
+    "./internal/core-server/presets/common-manager": {
+      "import": "./dist/core-server/presets/common-manager.js"
     },
-    "./internal/server-errors": {
-      "types": "./dist/server-errors.d.ts",
-      "import": "./dist/server-errors.js",
-      "require": "./dist/server-errors.cjs"
+    "./internal/core-server/presets/common-override-preset": {
+      "import": "./dist/core-server/presets/common-override-preset.js",
+      "require": "./dist/core-server/presets/common-override-preset.cjs"
     },
-    "./internal/channels": {
-      "types": "./dist/channels/index.d.ts",
-      "import": "./dist/channels/index.js",
-      "require": "./dist/channels/index.cjs"
-    },
-    "./internal/types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
-      "require": "./dist/types/index.cjs"
-    },
-    "./internal/csf-tools": {
-      "types": "./dist/csf-tools/index.d.ts",
-      "import": "./dist/csf-tools/index.js",
-      "require": "./dist/csf-tools/index.cjs"
+    "./internal/core-server/presets/common-preset": {
+      "import": "./dist/core-server/presets/common-preset.js",
+      "require": "./dist/core-server/presets/common-preset.cjs"
     },
     "./internal/csf": {
       "types": "./dist/csf/index.d.ts",
       "import": "./dist/csf/index.js",
       "require": "./dist/csf/index.cjs"
     },
-    "./internal/common": {
-      "types": "./dist/common/index.d.ts",
-      "import": "./dist/common/index.js",
-      "default": "./dist/common/index.js"
-    },
-    "./internal/builder-manager": {
-      "types": "./dist/builder-manager/index.d.ts",
-      "import": "./dist/builder-manager/index.js",
-      "require": "./dist/builder-manager/index.cjs"
-    },
-    "./internal/telemetry": {
-      "types": "./dist/telemetry/index.d.ts",
-      "import": "./dist/telemetry/index.js",
-      "default": "./dist/telemetry/index.js"
-    },
-    "./internal/preview-api": {
-      "types": "./dist/preview-api/index.d.ts",
-      "import": "./dist/preview-api/index.js",
-      "require": "./dist/preview-api/index.cjs"
-    },
-    "./preview-api": {
-      "types": "./dist/preview-api/index.d.ts",
-      "import": "./dist/preview-api/index.js",
-      "require": "./dist/preview-api/index.cjs"
-    },
-    "./internal/manager-api": {
-      "types": "./dist/manager-api/index.d.ts",
-      "import": "./dist/manager-api/index.js",
-      "require": "./dist/manager-api/index.cjs"
-    },
-    "./manager-api": {
-      "types": "./dist/manager-api/index.d.ts",
-      "import": "./dist/manager-api/index.js",
-      "require": "./dist/manager-api/index.cjs"
-    },
-    "./internal/router": {
-      "types": "./dist/router/index.d.ts",
-      "import": "./dist/router/index.js",
-      "require": "./dist/router/index.cjs"
-    },
-    "./internal/components": {
-      "types": "./dist/components/index.d.ts",
-      "import": "./dist/components/index.js",
-      "require": "./dist/components/index.cjs"
+    "./internal/csf-tools": {
+      "types": "./dist/csf-tools/index.d.ts",
+      "import": "./dist/csf-tools/index.js",
+      "require": "./dist/csf-tools/index.cjs"
     },
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
       "import": "./dist/docs-tools/index.js",
       "require": "./dist/docs-tools/index.cjs"
     },
-    "./internal/manager/globals-module-info": {
-      "types": "./dist/manager/globals-module-info.d.ts",
-      "import": "./dist/manager/globals-module-info.js",
-      "require": "./dist/manager/globals-module-info.cjs"
-    },
-    "./internal/manager/globals": {
-      "types": "./dist/manager/globals.d.ts",
-      "import": "./dist/manager/globals.js",
-      "require": "./dist/manager/globals.cjs"
-    },
-    "./internal/preview/globals": {
-      "types": "./dist/preview/globals.d.ts",
-      "import": "./dist/preview/globals.js",
-      "require": "./dist/preview/globals.cjs"
-    },
-    "./internal/cli": {
-      "types": "./dist/cli/index.d.ts",
-      "import": "./dist/cli/index.js",
-      "require": "./dist/cli/index.cjs"
-    },
-    "./internal/babel": {
-      "types": "./dist/babel/index.d.ts",
-      "import": "./dist/babel/index.js",
-      "require": "./dist/babel/index.cjs"
-    },
-    "./internal/cli/bin": {
-      "types": "./dist/cli/bin/index.d.ts",
-      "import": "./dist/cli/bin/index.js",
-      "require": "./dist/cli/bin/index.cjs"
-    },
-    "./internal/bin": {
-      "import": "./dist/bin/index.js",
-      "require": "./dist/bin/index.cjs"
+    "./internal/highlight": {
+      "types": "./dist/highlight/index.d.ts",
+      "import": "./dist/highlight/index.js",
+      "require": "./dist/highlight/index.cjs"
     },
     "./internal/instrumenter": {
       "types": "./dist/instrumenter/index.d.ts",
       "import": "./dist/instrumenter/index.js",
       "require": "./dist/instrumenter/index.cjs"
     },
+    "./internal/manager-api": {
+      "types": "./dist/manager-api/index.d.ts",
+      "import": "./dist/manager-api/index.js",
+      "require": "./dist/manager-api/index.cjs"
+    },
+    "./internal/manager-errors": {
+      "types": "./dist/manager-errors.d.ts",
+      "import": "./dist/manager-errors.js"
+    },
+    "./internal/manager/globals": {
+      "types": "./dist/manager/globals.d.ts",
+      "import": "./dist/manager/globals.js",
+      "require": "./dist/manager/globals.cjs"
+    },
+    "./internal/manager/globals-module-info": {
+      "types": "./dist/manager/globals-module-info.d.ts",
+      "import": "./dist/manager/globals-module-info.js",
+      "require": "./dist/manager/globals-module-info.cjs"
+    },
+    "./internal/manager/globals-runtime": {
+      "import": "./dist/manager/globals-runtime.js"
+    },
+    "./internal/node-logger": {
+      "types": "./dist/node-logger/index.d.ts",
+      "import": "./dist/node-logger/index.js",
+      "require": "./dist/node-logger/index.cjs"
+    },
+    "./internal/preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "import": "./dist/preview-api/index.js",
+      "require": "./dist/preview-api/index.cjs"
+    },
+    "./internal/preview-errors": {
+      "types": "./dist/preview-errors.d.ts",
+      "import": "./dist/preview-errors.js",
+      "require": "./dist/preview-errors.cjs"
+    },
+    "./internal/preview/globals": {
+      "types": "./dist/preview/globals.d.ts",
+      "import": "./dist/preview/globals.js",
+      "require": "./dist/preview/globals.cjs"
+    },
+    "./internal/preview/runtime": {
+      "import": "./dist/preview/runtime.js"
+    },
+    "./internal/router": {
+      "types": "./dist/router/index.d.ts",
+      "import": "./dist/router/index.js",
+      "require": "./dist/router/index.cjs"
+    },
+    "./internal/server-errors": {
+      "types": "./dist/server-errors.d.ts",
+      "import": "./dist/server-errors.js",
+      "require": "./dist/server-errors.cjs"
+    },
+    "./internal/telemetry": {
+      "types": "./dist/telemetry/index.d.ts",
+      "import": "./dist/telemetry/index.js",
+      "default": "./dist/telemetry/index.js"
+    },
     "./internal/test": {
       "types": "./dist/test/index.d.ts",
       "import": "./dist/test/index.js",
       "require": "./dist/test/index.cjs"
+    },
+    "./internal/theming": {
+      "types": "./dist/theming/index.d.ts",
+      "import": "./dist/theming/index.js",
+      "require": "./dist/theming/index.cjs"
+    },
+    "./internal/theming/create": {
+      "types": "./dist/theming/create.d.ts",
+      "import": "./dist/theming/create.js",
+      "require": "./dist/theming/create.cjs"
+    },
+    "./internal/types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js",
+      "require": "./dist/types/index.cjs"
+    },
+    "./internal/viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "import": "./dist/viewport/index.js",
+      "require": "./dist/viewport/index.cjs"
+    },
+    "./manager-api": {
+      "types": "./dist/manager-api/index.d.ts",
+      "import": "./dist/manager-api/index.js",
+      "require": "./dist/manager-api/index.cjs"
+    },
+    "./preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "import": "./dist/preview-api/index.js",
+      "require": "./dist/preview-api/index.cjs"
     },
     "./test": {
       "types": "./dist/test/index.d.ts",
       "import": "./dist/test/index.js",
       "require": "./dist/test/index.cjs"
     },
-    "./internal/preview/runtime": {
-      "import": "./dist/preview/runtime.js"
+    "./theming": {
+      "types": "./dist/theming/index.d.ts",
+      "import": "./dist/theming/index.js",
+      "require": "./dist/theming/index.cjs"
     },
-    "./internal/manager/globals-runtime": {
-      "import": "./dist/manager/globals-runtime.js"
+    "./theming/create": {
+      "types": "./dist/theming/create.d.ts",
+      "import": "./dist/theming/create.js",
+      "require": "./dist/theming/create.cjs"
+    },
+    "./viewport": {
+      "types": "./dist/viewport/index.d.ts",
+      "import": "./dist/viewport/index.js",
+      "require": "./dist/viewport/index.cjs"
     },
     "./package.json": "./package.json",
     "./internal/package.json": "./package.json"

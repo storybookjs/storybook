@@ -12,10 +12,10 @@ export const getFaviconUrl = (
   initialIcon ??= initialHref;
   const href = initialIcon + (status && STATUSES.includes(status) ? `?status=${status}` : '');
 
-  return new Promise<string>((resolve) => {
+  return new Promise<{ href: string; status?: (typeof STATUSES)[number] }>((resolve) => {
     const img = new Image();
-    img.onload = () => resolve(href);
-    img.onerror = () => resolve(initialIcon!);
+    img.onload = () => resolve({ href, status });
+    img.onerror = () => resolve({ href: initialIcon!, status });
     img.src = href;
   });
 };
@@ -26,8 +26,11 @@ export const useDynamicFavicon = (status?: (typeof STATUSES)[number]) => {
     const element = link.current;
     if (element) {
       getFaviconUrl(element.href, status).then(
-        (href) => {
-          element.href = href;
+        (result) => {
+          if (result.status === status) {
+            element.href = result.href;
+            element.dataset.status = result.status;
+          }
         },
         () => {
           element.href = initialIcon!;

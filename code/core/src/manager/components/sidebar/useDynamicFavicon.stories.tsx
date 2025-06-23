@@ -21,7 +21,7 @@ export default {
     const [favicon, setFavicon] = useState<string | null>(null);
 
     useEffect(() => {
-      getFaviconUrl(undefined, status).then((href) => setFavicon(href));
+      getFaviconUrl(undefined, status).then(({ href }) => setFavicon(href));
     }, [status]);
 
     return favicon ? <img width={size} height={size} src={favicon} /> : <></>;

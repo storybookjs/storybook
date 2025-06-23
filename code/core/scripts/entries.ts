@@ -30,6 +30,7 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
     },
     {
       entryPoint: './src/core-server/presets/common-override-preset.ts',
+      exportEntries: ['./internal/core-server/presets/common-override-preset'],
       dts: false,
     },
     {

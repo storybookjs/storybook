@@ -53,7 +53,7 @@ export async function loadStorybook(
     overridePresets: [
       resolveModule({
         pkg: 'storybook',
-        customSuffix: 'dist/core-server/presets/common-override-preset.js',
+        exportPath: 'internal/core-server/presets/common-override-preset',
       }),
     ],
     ...options,
@@ -77,7 +77,7 @@ export async function loadStorybook(
     overridePresets: [
       resolveModule({
         pkg: 'storybook',
-        customSuffix: 'dist/core-server/presets/common-override-preset.js',
+        exportPath: 'internal/core-server/presets/common-override-preset',
       }),
     ],
     ...options,

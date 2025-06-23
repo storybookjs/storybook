@@ -137,7 +137,7 @@ export async function buildDevStandalone(
     overridePresets: [
       resolveModule({
         pkg: 'storybook',
-        customSuffix: 'dist/core-server/presets/common-override-preset.js',
+        exportPath: 'internal/core-server/presets/common-override-preset',
       }),
     ],
     ...options,
@@ -198,7 +198,7 @@ export async function buildDevStandalone(
       ...(previewBuilder.overridePresets || []),
       resolveModule({
         pkg: 'storybook',
-        customSuffix: 'dist/core-server/presets/common-override-preset.js',
+        exportPath: 'internal/core-server/presets/common-override-preset',
       }),
     ],
     ...options,

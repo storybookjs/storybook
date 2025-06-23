@@ -60,6 +60,7 @@
       "types": "./dist/core-server/index.d.ts",
       "default": "./dist/core-server/index.js"
     },
+    "./internal/core-server/presets/common-override-preset": "./dist/core-server/presets/common-override-preset.js",
     "./internal/telemetry": {
       "types": "./dist/telemetry/index.d.ts",
       "default": "./dist/telemetry/index.js"

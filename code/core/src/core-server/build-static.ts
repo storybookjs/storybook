@@ -68,7 +68,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   });
   const commonOverridePreset = resolveModule({
     pkg: 'storybook',
-    customSuffix: 'dist/core-server/presets/common-override-preset.js',
+    exportPath: 'internal/core-server/presets/common-override-preset',
   });
 
   logger.info('=> Loading presets');

@@ -32,11 +32,6 @@
     }
   },
   "exports": {
-    "./internal/common": {
-      "types": "./dist/common/index.d.ts",
-      "import": "./dist/common/index.js",
-      "default": "./dist/common/index.js"
-    },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
       "import": "./dist/cli/index.js",
@@ -78,6 +73,10 @@
       "default": "./dist/babel/index.js"
     },
     "./internal/loader": "./dist/bin/loader.js",
+    "./internal/common": {
+      "types": "./dist/common/index.d.ts",
+      "default": "./dist/common/index.js"
+    },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
       "default": "./dist/client-logger/index.js"
@@ -210,9 +209,6 @@
       "*": [
         "./dist/index.d.ts"
       ],
-      "internal/common": [
-        "./dist/common/index.d.ts"
-      ],
       "internal/cli": [
         "./dist/cli/index.d.ts"
       ],
@@ -236,6 +232,9 @@
       ],
       "./internal/babel": [
         "./dist/babel/index.d.ts"
+      ],
+      "./internal/common": [
+        "./dist/common/index.d.ts"
       ],
       "./internal/client-logger": [
         "./dist/client-logger/index.d.ts"

@@ -26,11 +26,11 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
+import { isAbsolute, relative } from 'node:path';
 
 import type { NextConfig } from 'next';
 import { isWasm, transform } from 'next/dist/build/swc';
 import { getLoaderSWCOptions } from 'next/dist/build/swc/options';
-import path, { isAbsolute } from 'path';
 
 export interface SWCLoaderOptions {
   rootDir: string;
@@ -72,7 +72,7 @@ async function loaderTransform(this: any, parentTrace: any, source?: string, inp
     isReactServerLayer,
   } = loaderOptions;
   const isPageFile = filename.startsWith(pagesDir);
-  const relativeFilePathFromRoot = path.relative(rootDir, filename);
+  const relativeFilePathFromRoot = relative(rootDir, filename);
 
   const swcOptions = getLoaderSWCOptions({
     pagesDir,
@@ -100,7 +100,10 @@ async function loaderTransform(this: any, parentTrace: any, source?: string, inp
   const programmaticOptions = {
     ...swcOptions,
     filename,
-    inputSourceMap: inputSourceMap ? JSON.stringify(inputSourceMap) : undefined,
+    inputSourceMap:
+      inputSourceMap && typeof inputSourceMap === 'object'
+        ? JSON.stringify(inputSourceMap)
+        : undefined,
 
     // Set the default sourcemap behavior based on Webpack's mapping flag,
     sourceMaps: this.sourceMap,
@@ -111,6 +114,10 @@ async function loaderTransform(this: any, parentTrace: any, source?: string, inp
     // modules.
     sourceFileName: filename,
   };
+  // Transpiles the broken syntax to the closest non-broken modern syntax.
+  // E.g. it won't transpile parameter destructuring in Safari
+  // which would break how we detect if the mount context property is used in the play function.
+  programmaticOptions.env.bugfixes = true;
 
   if (!programmaticOptions.inputSourceMap) {
     delete programmaticOptions.inputSourceMap;
@@ -160,26 +167,19 @@ export function pitch(this: any) {
 
     return null;
   })().then((r) => {
-    if (r) return callback(null, ...r);
+    if (r) {
+      return callback(null, ...r);
+    }
     callback();
     return null;
   }, callback);
-}
-
-function sanitizeSourceMap(rawSourceMap: any): any {
-  const { sourcesContent, ...sourceMap } = rawSourceMap ?? {};
-
-  // JSON parse/stringify trick required for swc to accept the SourceMap
-  return JSON.parse(JSON.stringify(sourceMap));
 }
 
 export default function swcLoader(this: any, inputSource: string, inputSourceMap: any) {
   const loaderSpan = mockCurrentTraceSpan.traceChild('next-swc-loader');
   const callback = this.async();
   loaderSpan
-    .traceAsyncFn(() =>
-      loaderTransform.call(this, loaderSpan, inputSource, sanitizeSourceMap(inputSourceMap))
-    )
+    .traceAsyncFn(() => loaderTransform.call(this, loaderSpan, inputSource, inputSourceMap))
     .then(
       ([transformedSource, outputSourceMap]: any) => {
         callback(null, transformedSource, outputSourceMap || inputSourceMap);

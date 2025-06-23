@@ -1,7 +1,7 @@
 <script>
-  export let storyId;
+  const { storyId, children } = $props();
 </script>
 
 <div data-story="true" id={storyId}>
-  <slot />
+  {@render children()}
 </div>

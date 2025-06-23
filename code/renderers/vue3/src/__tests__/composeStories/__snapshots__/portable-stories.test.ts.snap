@@ -2,7 +2,9 @@
 
 exports[`Renders CSF2Secondary story 1`] = `
 <body>
-  <div>
+  <div
+    data-v-app=""
+  >
     <button
       class="storybook-button storybook-button--secondary storybook-button--medium"
       type="button"
@@ -15,7 +17,9 @@ exports[`Renders CSF2Secondary story 1`] = `
 
 exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
 <body>
-  <div>
+  <div
+    data-v-app=""
+  >
     <div
       style="margin: 3em;"
     >
@@ -32,7 +36,9 @@ exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
 
 exports[`Renders CSF3Button story 1`] = `
 <body>
-  <div>
+  <div
+    data-v-app=""
+  >
     <button
       class="storybook-button storybook-button--secondary storybook-button--medium"
       type="button"
@@ -45,7 +51,9 @@ exports[`Renders CSF3Button story 1`] = `
 
 exports[`Renders CSF3ButtonWithRender story 1`] = `
 <body>
-  <div>
+  <div
+    data-v-app=""
+  >
     <div>
       <p
         data-testid="custom-render"
@@ -65,7 +73,9 @@ exports[`Renders CSF3ButtonWithRender story 1`] = `
 
 exports[`Renders CSF3InputFieldFilled story 1`] = `
 <body>
-  <div>
+  <div
+    data-v-app=""
+  >
     <input
       data-testid="input"
     />
@@ -75,7 +85,9 @@ exports[`Renders CSF3InputFieldFilled story 1`] = `
 
 exports[`Renders CSF3Primary story 1`] = `
 <body>
-  <div>
+  <div
+    data-v-app=""
+  >
     <button
       class="storybook-button storybook-button--primary storybook-button--large"
       type="button"
@@ -88,7 +100,9 @@ exports[`Renders CSF3Primary story 1`] = `
 
 exports[`Renders LoaderStory story 1`] = `
 <body>
-  <div>
+  <div
+    data-v-app=""
+  >
     <div>
       <div
         data-testid="loaded-data"

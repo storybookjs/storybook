@@ -1,24 +1,29 @@
-import path from 'path';
+import { existsSync } from 'node:fs';
+import { relative, sep } from 'node:path';
+
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+
 import { createFilter } from '@rollup/pluginutils';
+import { findUp } from 'find-up';
+import MagicString from 'magic-string';
 import type { Documentation } from 'react-docgen';
 import {
   ERROR_CODES,
-  parse,
   builtinHandlers as docgenHandlers,
   builtinResolvers as docgenResolver,
   makeFsImporter,
+  parse,
 } from 'react-docgen';
-import MagicString from 'magic-string';
-import type { PluginOption } from 'vite';
 import * as TsconfigPaths from 'tsconfig-paths';
-import findUp from 'find-up';
+import type { PluginOption } from 'vite';
+
 import actualNameHandler from './docgen-handlers/actualNameHandler';
 import {
   RESOLVE_EXTENSIONS,
   ReactDocgenResolveError,
   defaultLookupModule,
 } from './docgen-resolver';
-import { logger } from '@storybook/node-logger';
 
 type DocObj = Documentation & { actualName: string; definedInFile: string };
 
@@ -39,7 +44,7 @@ export async function reactDocgen({
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
 
-  const tsconfigPath = await findUp('tsconfig.json', { cwd });
+  const tsconfigPath = await findUp('tsconfig.json', { cwd, stopAt: getProjectRoot() });
   const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
   let matchPath: TsconfigPaths.MatchPath | undefined;
@@ -57,7 +62,7 @@ export async function reactDocgen({
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
     async transform(src: string, id: string) {
-      if (!filter(path.relative(cwd, id))) {
+      if (!filter(relative(cwd, id))) {
         return;
       }
 
@@ -80,7 +85,7 @@ export async function reactDocgen({
 
         return {
           code: s.toString(),
-          map: s.generateMap(),
+          map: s.generateMap({ hires: true, source: id }),
         };
       } catch (e: any) {
         // Ignore the error when react-docgen cannot find a react component
@@ -106,6 +111,17 @@ export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | unde
 
     const result = defaultLookupModule(mappedFilenameByPaths, basedir);
 
+    if (result.includes(`${sep}react-native${sep}index.js`)) {
+      const replaced = result.replace(
+        `${sep}react-native${sep}index.js`,
+        `${sep}react-native-web${sep}dist${sep}index.js`
+      );
+      if (existsSync(replaced)) {
+        if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
+          return replaced;
+        }
+      }
+    }
     if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
       return result;
     }

@@ -1,8 +1,8 @@
 import MagicString from 'magic-string';
-import type { PluginOption } from 'vite';
+import type { Plugin } from 'vite';
 import { parse } from 'vue-docgen-api';
 
-export async function vueDocgen(): Promise<PluginOption> {
+export async function vueDocgen(): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
   const include = /\.(vue)$/;
@@ -11,7 +11,9 @@ export async function vueDocgen(): Promise<PluginOption> {
   return {
     name: 'storybook:vue-docgen-plugin',
     async transform(src, id) {
-      if (!filter(id)) return undefined;
+      if (!filter(id)) {
+        return undefined;
+      }
 
       const metaData = await parse(id);
 

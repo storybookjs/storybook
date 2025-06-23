@@ -1,9 +1,12 @@
+import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom';
-import React, { lazy, Suspense } from 'react';
-import { addons } from '@storybook/manager-api';
-import { STORY_SPECIFIED } from '@storybook/core-events';
 
-const App = lazy(() => import('./App'));
+import { ADDON_ID as CONTROLS_ADDON_ID } from 'storybook/internal/controls';
+import { STORY_SPECIFIED } from 'storybook/internal/core-events';
+
+import { addons } from 'storybook/manager-api';
+
+const Onboarding = lazy(() => import('./Onboarding'));
 
 // The addon is enabled only when:
 // 1. The onboarding query parameter is present
@@ -31,7 +34,7 @@ addons.register('@storybook/addon-onboarding', async (api) => {
 
     api.togglePanel(true);
     api.togglePanelPosition('bottom');
-    api.setSelectedPanel('addon-controls');
+    api.setSelectedPanel(CONTROLS_ADDON_ID);
 
     // Add a new DOM element to document.body, where we will bootstrap our React app
     const domNode = document.createElement('div');
@@ -43,8 +46,8 @@ addons.register('@storybook/addon-onboarding', async (api) => {
     // Render the React app
     // eslint-disable-next-line react/no-deprecated
     ReactDOM.render(
-      <Suspense fallback={<div>Loading...</div>}>
-        <App api={api} />
+      <Suspense fallback={<div />}>
+        <Onboarding api={api} />
       </Suspense>,
       domNode
     );

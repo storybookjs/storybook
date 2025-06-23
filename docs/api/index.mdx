@@ -1,0 +1,128 @@
+---
+title: 'API references'
+hideRendererSelector: true
+sidebar:
+  order: 10
+  title: API
+---
+
+{/*
+  We intentionally do not use markdown tables here because the required formatting (one row per line)
+  makes it very difficult to read, particularly when comparing changes.
+  Also, using HTML directly allows us to apply a consistent width to the first column.
+  However, this means the links won't work when viewing in GitHub. :(
+*/}
+
+An overview of all available API references for Storybook.
+
+## Configuration
+
+<Table>
+  <thead>
+    <Tr>
+      <Th scope="col" width="33%">Name</Th>
+      <Th scope="col">Description</Th>
+    </Tr>
+  </thead>
+
+  <tbody>
+    <Tr>
+      <Td><A href="./api/main-config/main-config"><code>main.js|ts</code></A></Td>
+
+      <Td>
+        Storybook's primary configuration file, which specifies your Storybook project's behavior,
+        including the location of your stories, the addons you use, feature flags and other
+        project-specific settings.
+      </Td>
+    </Tr>
+
+    <Tr>
+      <Td><A href="./configure/#configure-story-rendering"><code>preview.js|jsx|ts|tsx</code></A></Td>
+
+      <Td>
+        This configuration file controls the way stories are rendered. You can also use it to run
+        code that applies to all stories.
+      </Td>
+    </Tr>
+
+    <Tr>
+      <Td><A href="./configure/#configure-storybooks-ui"><code>manager.js|ts</code></A></Td>
+
+      <Td>
+        This configuration file controls the behavior of Storybook's UI, the manager.
+      </Td>
+    </Tr>
+
+    <Tr>
+      <Td><A href="./api/cli-options">CLI</A></Td>
+
+      <Td>
+        Storybook is a CLI tool. You can start Storybook in development mode or build a static
+        version of your Storybook.
+      </Td>
+    </Tr>
+  </tbody>
+</Table>
+
+## Stories
+
+<Table>
+  <thead>
+    <Tr>
+      <Th scope="col" width="33%">Name</Th>
+      <Th scope="col">Description</Th>
+    </Tr>
+  </thead>
+
+  <tbody>
+    <Tr>
+      <Td><A href="./api/csf">CSF</A></Td>
+
+      <Td>
+        Component Story Format (CSF) is the API for writing stories. It's an
+        <a href="https://github.com/ComponentDriven/csf">open standard</a> based on ES6 modules that
+        is portable beyond Storybook.
+      </Td>
+    </Tr>
+
+    <Tr>
+      <Td><A href="./api/arg-types">ArgTypes</A></Td>
+
+      <Td>
+        ArgTypes specify the behavior of <a href="./writing-stories/args">args</a>. By specifying
+        the type of an arg, you constrain the values that it can accept and provide information
+        about args that are not explicitly set.
+      </Td>
+    </Tr>
+
+    <Tr>
+      <Td><A href="./api/parameters">Parameters</A></Td>
+
+      <Td>
+        Parameters are static metadata used to configure your <a href="./get-started/whats-a-story">stories</a> <a href="./addons">addons</a> in Storybook. They are specified at the story, meta (component), project (global) levels.
+      </Td>
+    </Tr>
+  </tbody>
+</Table>
+
+## Docs
+
+<Table>
+  <thead>
+    <Tr>
+      <Th scope="col" width="33%">Name</Th>
+      <Th scope="col">Description</Th>
+    </Tr>
+  </thead>
+
+  <tbody>
+    <Tr>
+      <Td><A href="./writing-docs/doc-blocks/#available-blocks">Doc blocks</A></Td>
+
+      <Td>
+        Storybook offers several doc blocks to help document your components and other aspects of
+        your project.
+      </Td>
+    </Tr>
+  </tbody>
+</Table>

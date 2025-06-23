@@ -17,7 +17,7 @@ export const testRunnerBuild: Task & { port: number } = {
       '--junit',
       '--maxWorkers=2',
       '--failOnConsole',
-      '--skipTags="test-skip"',
+      '--index-json',
     ];
 
     await exec(

@@ -1,10 +1,11 @@
-import type { Options } from '@storybook/types';
-import { join, dirname, isAbsolute } from 'path';
-import { readFile } from 'fs/promises';
+import { readFile } from 'node:fs/promises';
+import { dirname, isAbsolute, join } from 'node:path';
+
+import type { Options } from 'storybook/internal/types';
 
 /**
- * Get react-dom version from the resolvedReact preset, which points to either
- * a root react-dom dependency or the react-dom dependency shipped with addon-docs
+ * Get react-dom version from the resolvedReact preset, which points to either a root react-dom
+ * dependency or the react-dom dependency shipped with addon-docs
  */
 const getIsReactVersion18or19 = async (options: Options) => {
   const { legacyRootApi } =

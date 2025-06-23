@@ -1,0 +1,14 @@
+{
+  "builders": {
+    "build-storybook": {
+      "implementation": "./dist/builders/build-storybook",
+      "schema": "./build-schema.json",
+      "description": "Build storybook"
+    },
+    "start-storybook": {
+      "implementation": "./dist/builders/start-storybook",
+      "schema": "./start-schema.json",
+      "description": "Start storybook"
+    }
+  }
+}

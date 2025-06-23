@@ -1,9 +1,7 @@
-import { global as globalThis } from '@storybook/global';
-
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   subcomponents: {
-    Pre: globalThis.Components.Pre,
+    Pre: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   },
   tags: ['autodocs'],
   args: { label: 'Click Me!' },

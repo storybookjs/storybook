@@ -1,17 +1,8 @@
-// auto-generated from scripts/create-nx-sandbox-projects.ts
 {
   "name": "vue3-vite/default-ts",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": [
-    "cli",
-    "test",
-    "essentials",
-    "interactions",
-    "links",
-    "onboarding",
-    "blocks",
-    "vue3-vite"
-  ],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "vue3-vite"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

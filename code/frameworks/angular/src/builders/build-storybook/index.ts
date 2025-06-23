@@ -1,24 +1,35 @@
-import { BuilderContext, BuilderOutput, createBuilder } from '@angular-devkit/architect';
-import { JsonObject } from '@angular-devkit/core';
-import { sync as findUpSync } from 'find-up';
-import { sync as readUpSync } from 'read-pkg-up';
-import { StylePreprocessorOptions } from '@angular-devkit/build-angular';
+import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
+import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
+import { addToGlobalContext } from 'storybook/internal/telemetry';
+import type { CLIOptions } from 'storybook/internal/types';
 
-import { CLIOptions } from '@storybook/types';
-import { getEnvConfig, versions } from '@storybook/core-common';
-import { addToGlobalContext } from '@storybook/telemetry';
-
-import { buildStaticStandalone, withTelemetry } from '@storybook/core-server';
-import {
+import type {
+  BuilderContext,
+  BuilderHandlerFn,
+  BuilderOutput,
+  BuilderOutputLike,
+  Target,
+  Builder as DevkitBuilder,
+} from '@angular-devkit/architect';
+import { createBuilder, targetFromTargetString } from '@angular-devkit/architect';
+import type {
+  BrowserBuilderOptions,
+  StylePreprocessorOptions,
+} from '@angular-devkit/build-angular';
+import type {
   AssetPattern,
   SourceMapUnion,
-  StyleClass,
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
-import { StandaloneOptions } from '../utils/standalone-options';
-import { runCompodoc } from '../utils/run-compodoc';
+import type { JsonObject } from '@angular-devkit/core';
+import { findPackageSync } from 'fd-package-json';
+import { findUpSync } from 'find-up';
+import { from, of, throwError } from 'rxjs';
+import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
+
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
-import { setup } from '../utils/setup';
+import { runCompodoc } from '../utils/run-compodoc';
+import type { StandaloneOptions } from '../utils/standalone-options';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -32,8 +43,10 @@ export type StorybookBuilderOptions = JsonObject & {
   enableProdMode?: boolean;
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;
+  preserveSymlinks?: boolean;
   assets?: AssetPattern[];
   sourceMap?: SourceMapUnion;
+  experimentalZoneless?: boolean;
 } & Pick<
     // makes sure the option exists
     CLIOptions,
@@ -51,77 +64,119 @@ export type StorybookBuilderOptions = JsonObject & {
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & { [key: string]: any };
 
-type StandaloneBuildOptions = StandaloneOptions & { outputDir: string; excludeChunks: string[] };
+type StandaloneBuildOptions = StandaloneOptions & { outputDir: string };
 
-const commandBuilder = async (
-  options: StorybookBuilderOptions,
-  context: BuilderContext
-): Promise<BuilderOutput> => {
-  const { tsConfig, angularBuilderContext, angularBuilderOptions } = await setup(options, context);
+const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
+  options,
+  context
+): BuilderOutputLike => {
+  const builder = from(setup(options, context)).pipe(
+    switchMap(({ tsConfig }) => {
+      const docTSConfig = findUpSync('tsconfig.doc.json', {
+        cwd: options.configDir,
+        stopAt: getProjectRoot(),
+      });
+      const runCompodoc$ = options.compodoc
+        ? runCompodoc(
+            { compodocArgs: options.compodocArgs, tsconfig: docTSConfig ?? tsConfig },
+            context
+          ).pipe(mapTo({ tsConfig }))
+        : of({});
 
-  const docTSConfig = findUpSync('tsconfig.doc.json', { cwd: options.configDir });
+      return runCompodoc$.pipe(mapTo({ tsConfig }));
+    }),
+    map(({ tsConfig }) => {
+      getEnvConfig(options, {
+        staticDir: 'SBCONFIG_STATIC_DIR',
+        outputDir: 'SBCONFIG_OUTPUT_DIR',
+        configDir: 'SBCONFIG_CONFIG_DIR',
+      });
 
-  if (options.compodoc) {
-    await runCompodoc(
-      { compodocArgs: options.compodocArgs, tsconfig: docTSConfig ?? tsConfig },
-      context
+      const {
+        browserTarget,
+        stylePreprocessorOptions,
+        styles,
+        configDir,
+        docs,
+        loglevel,
+        test,
+        outputDir,
+        quiet,
+        enableProdMode = true,
+        webpackStatsJson,
+        statsJson,
+        debugWebpack,
+        disableTelemetry,
+        assets,
+        previewUrl,
+        sourceMap = false,
+        preserveSymlinks = false,
+        experimentalZoneless = false,
+      } = options;
+
+      const standaloneOptions: StandaloneBuildOptions = {
+        packageJson: findPackageSync(__dirname),
+        configDir,
+        ...(docs ? { docs } : {}),
+        loglevel,
+        outputDir,
+        test,
+        quiet,
+        enableProdMode,
+        disableTelemetry,
+        angularBrowserTarget: browserTarget,
+        angularBuilderContext: context,
+        angularBuilderOptions: {
+          ...(stylePreprocessorOptions ? { stylePreprocessorOptions } : {}),
+          ...(styles ? { styles } : {}),
+          ...(assets ? { assets } : {}),
+          sourceMap,
+          preserveSymlinks,
+          experimentalZoneless,
+        },
+        tsConfig,
+        webpackStatsJson,
+        statsJson,
+        debugWebpack,
+        previewUrl,
+      };
+
+      return standaloneOptions;
+    }),
+    switchMap((standaloneOptions) => runInstance({ ...standaloneOptions, mode: 'static' })),
+    map(() => {
+      return { success: true };
+    })
+  );
+
+  return builder as any as BuilderOutput;
+};
+
+export default createBuilder(commandBuilder) as DevkitBuilder<StorybookBuilderOptions & JsonObject>;
+
+async function setup(options: StorybookBuilderOptions, context: BuilderContext) {
+  let browserOptions: (JsonObject & BrowserBuilderOptions) | undefined;
+  let browserTarget: Target | undefined;
+
+  if (options.browserTarget) {
+    browserTarget = targetFromTargetString(options.browserTarget);
+    browserOptions = await context.validateOptions<JsonObject & BrowserBuilderOptions>(
+      await context.getTargetOptions(browserTarget),
+      await context.getBuilderNameForTarget(browserTarget)
     );
   }
 
-  getEnvConfig(options, {
-    staticDir: 'SBCONFIG_STATIC_DIR',
-    outputDir: 'SBCONFIG_OUTPUT_DIR',
-    configDir: 'SBCONFIG_CONFIG_DIR',
-  });
-
-  const {
-    configDir,
-    docs,
-    loglevel,
-    test,
-    outputDir,
-    quiet,
-    enableProdMode = true,
-    webpackStatsJson,
-    statsJson,
-    debugWebpack,
-    disableTelemetry,
-    previewUrl,
-  } = options;
-
-  const standaloneOptions: StandaloneBuildOptions = {
-    packageJson: readUpSync({ cwd: __dirname }).packageJson,
-    configDir,
-    ...(docs ? { docs } : {}),
-    excludeChunks: angularBuilderOptions.styles
-      ?.filter((style) => typeof style !== 'string' && style.inject === false)
-      .map((s: StyleClass) => s.bundleName),
-    loglevel,
-    outputDir,
-    test,
-    quiet,
-    enableProdMode,
-    disableTelemetry,
-    angularBrowserTarget: options.browserTarget,
-    angularBuilderContext,
-    angularBuilderOptions,
-    tsConfig,
-    webpackStatsJson,
-    statsJson,
-    debugWebpack,
-    previewUrl,
+  return {
+    tsConfig:
+      options.tsConfig ??
+      findUpSync('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() }) ??
+      browserOptions.tsConfig,
   };
+}
 
-  await runInstance({ ...standaloneOptions, mode: 'static' });
-
-  return { success: true };
-};
-
-export default createBuilder(commandBuilder);
-
-async function runInstance(options: StandaloneBuildOptions) {
-  try {
-    await withTelemetry(
+function runInstance(options: StandaloneBuildOptions) {
+  return from(
+    withTelemetry(
       'build',
       {
         cliOptions: options,
@@ -129,8 +184,6 @@ async function runInstance(options: StandaloneBuildOptions) {
         printError: printErrorDetails,
       },
       () => buildStaticStandalone(options)
-    );
-  } catch (error) {
-    throw new Error(errorSummary(error));
-  }
+    )
+  ).pipe(catchError((error: any) => throwError(errorSummary(error))));
 }

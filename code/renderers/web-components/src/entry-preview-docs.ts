@@ -1,6 +1,6 @@
-import type { ArgTypesEnhancer, DecoratorFunction } from '@storybook/types';
-import { SourceType, enhanceArgTypes } from '@storybook/docs-tools';
-import { extractArgTypes, extractComponentDescription } from './docs/custom-elements';
+import { SourceType } from 'storybook/internal/docs-tools';
+import type { DecoratorFunction } from 'storybook/internal/types';
+
 import { sourceDecorator } from './docs/sourceDecorator';
 import type { WebComponentsRenderer } from './types';
 
@@ -8,14 +8,10 @@ export const decorators: DecoratorFunction<WebComponentsRenderer>[] = [sourceDec
 
 export const parameters = {
   docs: {
-    extractArgTypes,
-    extractComponentDescription,
-    story: { inline: true },
     source: {
       type: SourceType.DYNAMIC,
       language: 'html',
     },
+    story: { inline: true },
   },
 };
-
-export const argTypesEnhancers: ArgTypesEnhancer<WebComponentsRenderer>[] = [enhanceArgTypes];

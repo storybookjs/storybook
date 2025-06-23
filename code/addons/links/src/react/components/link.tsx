@@ -1,8 +1,9 @@
-import type { ComponentTitle, StoryKind, StoryName } from '@storybook/types';
 import type { MouseEvent, ReactNode } from 'react';
 import React, { PureComponent } from 'react';
 
-import { navigate, hrefTo } from '../../utils';
+import type { ComponentTitle, StoryKind, StoryName } from 'storybook/internal/types';
+
+import { hrefTo, navigate } from '../../utils';
 
 // FIXME: copied from Typography.Link. Code is duplicated to
 // avoid emotion dependency which breaks React 15.x back-compat

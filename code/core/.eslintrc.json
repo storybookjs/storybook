@@ -1,0 +1,6 @@
+{
+  "rules": {
+    "@typescript-eslint/triple-slash-reference": "off",
+    "storybook/use-storybook-expect": "off"
+  }
+}

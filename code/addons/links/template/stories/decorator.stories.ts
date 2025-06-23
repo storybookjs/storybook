@@ -1,8 +1,9 @@
 import { global as globalThis } from '@storybook/global';
+
 import { withLinks } from '@storybook/addon-links';
 
 export default {
-  component: globalThis.Components.Html,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Html,
   parameters: {
     chromatic: { disable: true },
   },

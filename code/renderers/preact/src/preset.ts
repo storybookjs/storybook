@@ -1,5 +1,6 @@
-import type { PresetProperty } from '@storybook/types';
-import { join } from 'path';
+import { join } from 'node:path';
+
+import type { PresetProperty } from 'storybook/internal/types';
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],

@@ -1,4 +1,4 @@
-import { ReactFunctionalComponent, ReactClassComponent } from './React.jsx';
+import { ReactClassComponent, ReactFunctionalComponent } from './React.jsx';
 
 export default {
   component: ReactFunctionalComponent,

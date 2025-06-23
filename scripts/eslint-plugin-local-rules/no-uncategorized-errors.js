@@ -5,7 +5,7 @@ module.exports = {
       description: 'Disallow usage of the Error JavaScript class.',
       category: 'Best Practices',
       recommended: true,
-      url: 'https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/README.md',
+      url: 'https://github.com/storybookjs/storybook/blob/next/code/core/src/ERRORS.md',
     },
   },
   create(context) {

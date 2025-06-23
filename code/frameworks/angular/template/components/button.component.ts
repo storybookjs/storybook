@@ -1,34 +1,29 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 
 @Component({
+  standalone: false,
   // Needs to be a different name to the CLI template button
   selector: 'storybook-framework-button',
   template: ` <button
-    type="button"
-    (click)="onClick.emit($event)"
-    [ngClass]="classes"
-    [ngStyle]="{ 'background-color': backgroundColor }"
-  >
-    {{ label }}
-  </button>`,
+  type="button"
+  (click)="onClick.emit($event)"
+  [ngClass]="classes"
+  [ngStyle]="{ 'background-color': backgroundColor }"
+>
+  {{ label }}
+</button>`,
   styleUrls: ['./button.css'],
 })
 export default class FrameworkButtonComponent {
-  /**
-   * Is this the principal call to action on the page?
-   */
+  /** Is this the principal call to action on the page? */
   @Input()
   primary = false;
 
-  /**
-   * What background color to use
-   */
+  /** What background color to use */
   @Input()
   backgroundColor?: string;
 
-  /**
-   * How large should the button be?
-   */
+  /** How large should the button be? */
   @Input()
   size: 'small' | 'medium' | 'large' = 'medium';
 
@@ -40,9 +35,7 @@ export default class FrameworkButtonComponent {
   @Input()
   label = 'Button';
 
-  /**
-   * Optional click handler
-   */
+  /** Optional click handler */
   @Output()
   onClick = new EventEmitter<Event>();
 

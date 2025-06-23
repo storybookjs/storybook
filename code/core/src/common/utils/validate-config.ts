@@ -6,6 +6,9 @@ import {
   MissingFrameworkFieldError,
 } from 'storybook/internal/server-errors';
 
+import { resolvePathSync } from 'mlly';
+
+import { resolveModule } from '../../shared/utils/resolve';
 import { frameworkPackages } from './get-storybook-info';
 
 const renderers = ['html', 'preact', 'react', 'server', 'svelte', 'vue', 'vue3', 'web-components'];
@@ -33,7 +36,9 @@ export function validateFrameworkName(
 
   // If it's not a known framework, we need to validate that it's a valid package at least
   try {
-    require.resolve(join(frameworkName, 'preset'));
+    resolvePathSync(join(frameworkName, 'preset'), {
+      extensions: ['.mjs', '.js', '.cjs'],
+    });
   } catch (err) {
     throw new CouldNotEvaluateFrameworkError({ frameworkName });
   }

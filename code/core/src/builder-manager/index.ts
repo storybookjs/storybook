@@ -45,7 +45,8 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
   const tsconfigPath = getTemplatePath('addon.tsconfig.json');
   let configDirManagerEntry;
   try {
-    configDirManagerEntry = resolvePathSync(join(options.configDir, 'manager'), {
+    configDirManagerEntry = resolvePathSync('./manager', {
+      url: options.configDir,
       extensions: ['.js', '.mjs', '.jsx', '.ts', '.mts', '.tsx'],
     });
   } catch (e) {

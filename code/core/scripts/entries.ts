@@ -52,6 +52,10 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       entryPoint: './src/bin/loader.ts',
       dts: false,
     },
+    {
+      exportEntries: ['./internal/common'],
+      entryPoint: './src/common/index.ts',
+    },
   ],
   browser: [
     {
@@ -175,8 +179,6 @@ export const esmOnlyDtsEntries: ESMOnlyEntry[] = Object.values(esmOnlyEntries)
 export const getEntries = (cwd: string) => {
   const define = defineEntry(cwd);
   return [
-    define('src/common/index.ts', ['node'], true),
-
     define('src/cli/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),
     define('src/bin/index.ts', ['node'], false),

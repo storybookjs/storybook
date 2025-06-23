@@ -230,7 +230,10 @@ export const Interaction = ({
               hasChrome={false}
               tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}
             >
-              <StyledIconButton onClick={toggleCollapsed}>
+              <StyledIconButton
+                onClick={toggleCollapsed}
+                aria-label={isCollapsed ? 'Expand interaction' : 'Colapse interaction'}
+              >
                 {isCollapsed ? <ArrowSolidDownIcon /> : <ArrowSolidUpIcon />}
               </StyledIconButton>
             </WithTooltip>

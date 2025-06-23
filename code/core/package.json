@@ -189,6 +189,7 @@
       "import": "./dist/node-logger/index.js",
       "require": "./dist/node-logger/index.cjs"
     },
+    "./internal/package.json": "./package.json",
     "./internal/preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "import": "./dist/preview-api/index.js",
@@ -252,6 +253,7 @@
       "import": "./dist/manager-api/index.js",
       "require": "./dist/manager-api/index.cjs"
     },
+    "./package.json": "./package.json",
     "./preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "import": "./dist/preview-api/index.js",
@@ -276,9 +278,7 @@
       "types": "./dist/viewport/index.d.ts",
       "import": "./dist/viewport/index.js",
       "require": "./dist/viewport/index.cjs"
-    },
-    "./package.json": "./package.json",
-    "./internal/package.json": "./package.json"
+    }
   },
   "main": "dist/index.cjs",
   "module": "dist/index.js",

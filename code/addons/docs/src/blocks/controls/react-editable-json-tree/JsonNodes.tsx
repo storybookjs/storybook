@@ -2,11 +2,11 @@
 import type { ReactElement } from 'react';
 import React, { Component, cloneElement } from 'react';
 
+import { JsonNodeAccordion } from './JsonNodeAccordion';
 import * as dataTypes from './types/dataTypes';
 import * as deltaTypes from './types/deltaTypes';
 import * as inputUsageTypes from './types/inputUsageTypes';
 import { getObjectType, isComponentWillChange } from './utils/objectTypes';
-import { JsonNodeAccordion } from './JsonNodeAccordion';
 
 interface JsonAddValueState {
   inputRefKey: any;
@@ -157,8 +157,8 @@ JsonAddValue.defaultProps = {
 interface JsonArrayState {
   data: JsonArrayProps['data'];
   name: JsonArrayProps['name'];
-  keyPath: string[];
-  deep: JsonArrayProps['deep'];
+  keyPath: Exclude<JsonArrayProps['keyPath'], undefined>;
+  deep: Exclude<JsonArrayProps['deep'], undefined>;
   nextDeep: JsonArrayProps['deep'];
   collapsed: any;
   addFormVisible: boolean;
@@ -170,7 +170,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     this.state = {
       data: props.data,
       name: props.name,
-      keyPath,
+      keyPath: keyPath ?? [],
       deep: props.deep ?? 0,
       nextDeep: (props.deep ?? 0) + 1,
       collapsed: props.isCollapsed(keyPath, props.deep ?? 0, props.data),
@@ -326,12 +326,14 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const removeItemButton = minusMenuElement && cloneElement(minusMenuElement, {
-      onClick: handleRemove,
-      className: 'rejt-minus-menu',
-      style: minus,
-      'aria-label': `remove the array '${name}'`,
-    });
+    const removeItemButton =
+      minusMenuElement &&
+      cloneElement(minusMenuElement, {
+        onClick: handleRemove,
+        className: 'rejt-minus-menu',
+        style: minus,
+        'aria-label': `remove the array '${name}'`,
+      });
 
     return (
       <>
@@ -368,7 +370,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const addItemButton = 
+    const addItemButton =
       plusMenuElement &&
       cloneElement(plusMenuElement, {
         onClick: this.handleAddMode,
@@ -376,7 +378,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         style: plus,
         'aria-label': `add a new item to the '${name}' array`,
       });
-    const removeItemButton = 
+    const removeItemButton =
       minusMenuElement &&
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
@@ -500,8 +502,8 @@ JsonArray.defaultProps = {
 interface JsonFunctionValueState {
   value: JsonFunctionValueProps['value'];
   name: JsonFunctionValueProps['name'];
-  keyPath: string[];
-  deep: JsonFunctionValueProps['deep'];
+  keyPath: Exclude<JsonFunctionValueProps['keyPath'], undefined>;
+  deep: Exclude<JsonFunctionValueProps['deep'], undefined>;
   editEnabled: boolean;
   inputRef: any;
 }
@@ -513,8 +515,8 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     this.state = {
       value: props.value,
       name: props.name,
-      keyPath,
-      deep: props.deep,
+      keyPath: keyPath ?? [],
+      deep: props.deep ?? 0,
       editEnabled: false,
       inputRef: null,
     };
@@ -613,7 +615,7 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
       getStyle,
       textareaElementGenerator,
       minusMenuElement,
-      keyPath: comeFromKeyPath,
+      keyPath: comeFromKeyPath = [],
     } = this.props;
 
     const style = getStyle(name, originalValue, keyPath, deep, dataType);
@@ -656,7 +658,7 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
 
       const parentPropertyName = comeFromKeyPath.at(-1);
 
-      const minusMenuLayout = 
+      const minusMenuLayout =
         minusMenuElement &&
         cloneElement(minusMenuElement, {
           onClick: handleRemove,
@@ -711,8 +713,8 @@ JsonFunctionValue.defaultProps = {
 interface JsonNodeState {
   data: JsonNodeProps['data'];
   name: JsonNodeProps['name'];
-  keyPath: JsonNodeProps['keyPath'];
-  deep: JsonNodeProps['deep'];
+  keyPath: Exclude<JsonNodeProps['keyPath'], undefined>;
+  deep: Exclude<JsonNodeProps['deep'], undefined>;
 }
 
 export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
@@ -721,8 +723,8 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
     this.state = {
       data: props.data,
       name: props.name,
-      keyPath: props.keyPath,
-      deep: props.deep,
+      keyPath: props.keyPath ?? [],
+      deep: props.deep ?? 0,
     };
   }
 
@@ -1038,8 +1040,8 @@ interface JsonObjectState {
   name: string;
   collapsed: ReturnType<JsonObjectProps['isCollapsed']>;
   data: JsonObjectProps['data'];
-  keyPath: JsonObjectProps['keyPath'];
-  deep: JsonObjectProps['deep'];
+  keyPath: Exclude<JsonObjectProps['keyPath'], undefined>;
+  deep: Exclude<JsonObjectProps['deep'], undefined>;
   nextDeep: number;
   addFormVisible: boolean;
 }
@@ -1051,7 +1053,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     this.state = {
       name: props.name,
       data: props.data,
-      keyPath,
+      keyPath: keyPath ?? [],
       deep: props.deep ?? 0,
       nextDeep: (props.deep ?? 0) + 1,
       collapsed: props.isCollapsed(keyPath, props.deep ?? 0, props.data),
@@ -1208,7 +1210,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const removeItemButton = 
+    const removeItemButton =
       minusMenuElement &&
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
@@ -1254,7 +1256,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
 
     const isReadOnly = readOnly(name, data, keyPath, deep, dataType);
 
-    const addItemButton = 
+    const addItemButton =
       plusMenuElement &&
       cloneElement(plusMenuElement, {
         onClick: this.handleAddMode,
@@ -1334,7 +1336,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
   }
 
   render() {
-    const { name, collapsed, keyPath, deep } = this.state;
+    const { name, collapsed, keyPath, deep = 0 } = this.state;
     const value = collapsed ? this.renderCollapsed() : this.renderNotCollapsed();
 
     return (
@@ -1387,8 +1389,8 @@ JsonObject.defaultProps = {
 interface JsonValueState {
   value: JsonValueProps['value'];
   name: JsonValueProps['name'];
-  keyPath: string[];
-  deep: JsonValueProps['deep'];
+  keyPath: Exclude<JsonValueProps['keyPath'], undefined>;
+  deep: Exclude<JsonValueProps['deep'], undefined>;
   editEnabled: boolean;
   inputRef: any;
 }
@@ -1400,8 +1402,8 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     this.state = {
       value: props.value,
       name: props.name,
-      keyPath,
-      deep: props.deep,
+      keyPath: keyPath ?? [],
+      deep: props.deep ?? 0,
       editEnabled: false,
       inputRef: null,
     };
@@ -1521,8 +1523,9 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
 
     const parentPropertyName = keyPath.at(-2);
 
-    const minusMenuLayout = 
-      minusMenuElement && cloneElement(minusMenuElement, {
+    const minusMenuLayout =
+      minusMenuElement &&
+      cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: style.minus,

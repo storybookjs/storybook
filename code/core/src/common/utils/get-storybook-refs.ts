@@ -118,7 +118,7 @@ export async function getRefs(options: Options) {
     };
   });
 
-  // verify the refs are publicly reachable, if they are not we'll require stories.json at runtime, otherwise the ref won't work
+  // verify the refs are publicly reachable, if they are not we'll fetch stories.json at runtime, otherwise the ref won't work
   await Promise.all(
     Object.entries(refs).map(async ([k, value]) => {
       const ok = await checkRef(value.url);

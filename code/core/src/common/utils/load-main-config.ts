@@ -12,20 +12,14 @@ import { validateConfigurationFiles } from './validate-configuration-files';
 
 export async function loadMainConfig({
   configDir = '.storybook',
-  noCache = false,
   cwd,
 }: {
   configDir: string;
-  noCache?: boolean;
   cwd?: string;
 }): Promise<StorybookConfig> {
   await validateConfigurationFiles(configDir, cwd);
 
   const mainJsPath = serverResolve(resolve(configDir, 'main')) as string;
-
-  if (noCache && mainJsPath && require.cache[mainJsPath]) {
-    delete require.cache[mainJsPath];
-  }
 
   try {
     const out = await serverRequire(mainJsPath);

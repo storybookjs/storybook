@@ -32,11 +32,6 @@
     }
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
     "./actions": {
       "types": "./dist/actions/index.d.ts",
       "default": "./dist/actions/index.js"
@@ -44,9 +39,6 @@
     "./actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
       "default": "./dist/actions/decorator.js"
-    },
-    "./bin/loader.mjs": {
-      "default": "./bin/loader.mjs"
     },
     "./highlight": {
       "types": "./dist/highlight/index.d.ts",
@@ -62,22 +54,15 @@
     },
     "./internal/babel": {
       "types": "./dist/babel/index.d.ts",
-      "import": "./dist/babel/index.js",
-      "require": "./dist/babel/index.cjs"
+      "default": "./dist/babel/index.js"
     },
     "./internal/bin": {
       "import": "./dist/bin/index.js",
       "require": "./dist/bin/index.cjs"
     },
-    "./internal/builder-manager": {
-      "types": "./dist/builder-manager/index.d.ts",
-      "import": "./dist/builder-manager/index.js",
-      "require": "./dist/builder-manager/index.cjs"
-    },
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
-      "import": "./dist/channels/index.js",
-      "require": "./dist/channels/index.cjs"
+      "default": "./dist/channels/index.js"
     },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
@@ -95,7 +80,6 @@
     },
     "./internal/common": {
       "types": "./dist/common/index.d.ts",
-      "import": "./dist/common/index.js",
       "default": "./dist/common/index.js"
     },
     "./internal/components": {
@@ -104,35 +88,24 @@
     },
     "./internal/core-events": {
       "types": "./dist/core-events/index.d.ts",
-      "import": "./dist/core-events/index.js",
-      "require": "./dist/core-events/index.cjs"
+      "default": "./dist/core-events/index.js"
     },
     "./internal/core-server": {
       "types": "./dist/core-server/index.d.ts",
-      "import": "./dist/core-server/index.js",
       "default": "./dist/core-server/index.js"
     },
-    "./internal/core-server/presets/common-override-preset": {
-      "import": "./dist/core-server/presets/common-override-preset.js",
-      "require": "./dist/core-server/presets/common-override-preset.cjs"
-    },
-    "./internal/core-server/presets/common-preset": {
-      "import": "./dist/core-server/presets/common-preset.js",
-      "require": "./dist/core-server/presets/common-preset.cjs"
-    },
+    "./internal/core-server/presets/common-override-preset": "./dist/core-server/presets/common-override-preset.js",
     "./internal/csf": {
       "types": "./dist/csf/index.d.ts",
       "default": "./dist/csf/index.js"
     },
     "./internal/csf-tools": {
       "types": "./dist/csf-tools/index.d.ts",
-      "import": "./dist/csf-tools/index.js",
-      "require": "./dist/csf-tools/index.cjs"
+      "default": "./dist/csf-tools/index.js"
     },
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
-      "import": "./dist/docs-tools/index.js",
-      "require": "./dist/docs-tools/index.cjs"
+      "default": "./dist/docs-tools/index.js"
     },
     "./internal/highlight": {
       "types": "./dist/highlight/index.d.ts",
@@ -142,6 +115,7 @@
       "types": "./dist/instrumenter/index.d.ts",
       "default": "./dist/instrumenter/index.js"
     },
+    "./internal/loader": "./dist/bin/loader.js",
     "./internal/manager-api": {
       "types": "./dist/manager-api/index.d.ts",
       "default": "./dist/manager-api/index.js"
@@ -183,7 +157,6 @@
     },
     "./internal/telemetry": {
       "types": "./dist/telemetry/index.d.ts",
-      "import": "./dist/telemetry/index.js",
       "default": "./dist/telemetry/index.js"
     },
     "./internal/test": {
@@ -200,8 +173,7 @@
     },
     "./internal/types": {
       "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
-      "require": "./dist/types/index.cjs"
+      "default": "./dist/types/index.js"
     },
     "./internal/viewport": {
       "types": "./dist/viewport/index.d.ts",
@@ -233,46 +205,13 @@
       "default": "./dist/viewport/index.js"
     }
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
   "typesVersions": {
     "*": {
       "*": [
         "./dist/index.d.ts"
       ],
-      "internal/core-server": [
-        "./dist/core-server/index.d.ts"
-      ],
-      "internal/core-events": [
-        "./dist/core-events/index.d.ts"
-      ],
-      "internal/channels": [
-        "./dist/channels/index.d.ts"
-      ],
-      "internal/types": [
-        "./dist/types/index.d.ts"
-      ],
-      "internal/csf-tools": [
-        "./dist/csf-tools/index.d.ts"
-      ],
-      "internal/common": [
-        "./dist/common/index.d.ts"
-      ],
-      "internal/builder-manager": [
-        "./dist/builder-manager/index.d.ts"
-      ],
-      "internal/telemetry": [
-        "./dist/telemetry/index.d.ts"
-      ],
-      "internal/docs-tools": [
-        "./dist/docs-tools/index.d.ts"
-      ],
       "internal/cli": [
         "./dist/cli/index.d.ts"
-      ],
-      "internal/babel": [
-        "./dist/babel/index.d.ts"
       ],
       "internal/cli/bin": [
         "./dist/cli/bin/index.d.ts"
@@ -282,6 +221,21 @@
       ],
       "./internal/server-errors": [
         "./dist/server-errors.d.ts"
+      ],
+      "./internal/core-server": [
+        "./dist/core-server/index.d.ts"
+      ],
+      "./internal/telemetry": [
+        "./dist/telemetry/index.d.ts"
+      ],
+      "./internal/csf-tools": [
+        "./dist/csf-tools/index.d.ts"
+      ],
+      "./internal/babel": [
+        "./dist/babel/index.d.ts"
+      ],
+      "./internal/common": [
+        "./dist/common/index.d.ts"
       ],
       "./internal/client-logger": [
         "./dist/client-logger/index.d.ts"
@@ -363,6 +317,18 @@
       ],
       "./internal/router": [
         "./dist/router/index.d.ts"
+      ],
+      "./internal/docs-tools": [
+        "./dist/docs-tools/index.d.ts"
+      ],
+      "./internal/core-events": [
+        "./dist/core-events/index.d.ts"
+      ],
+      "./internal/channels": [
+        "./dist/channels/index.d.ts"
+      ],
+      "./internal/types": [
+        "./dist/types/index.d.ts"
       ]
     }
   },
@@ -476,6 +442,7 @@
     "leven": "^4.0.0",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
+    "mlly": "^1.7.4",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^8.4.0",

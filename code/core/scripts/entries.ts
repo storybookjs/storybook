@@ -20,6 +20,43 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/server-errors'],
       entryPoint: './src/server-errors.ts',
     },
+    {
+      exportEntries: ['./internal/core-server'],
+      entryPoint: './src/core-server/index.ts',
+    },
+    {
+      entryPoint: './src/core-server/presets/common-preset.ts',
+      dts: false,
+    },
+    {
+      entryPoint: './src/core-server/presets/common-override-preset.ts',
+      exportEntries: ['./internal/core-server/presets/common-override-preset'],
+      dts: false,
+    },
+    {
+      exportEntries: ['./internal/telemetry'],
+      entryPoint: './src/telemetry/index.ts',
+    },
+    {
+      exportEntries: ['./internal/csf-tools'],
+      entryPoint: './src/csf-tools/index.ts',
+    },
+    {
+      exportEntries: ['./internal/babel'],
+      entryPoint: './src/babel/index.ts',
+    },
+    {
+      entryPoint: './src/builder-manager/index.ts',
+    },
+    {
+      exportEntries: ['./internal/loader'],
+      entryPoint: './src/bin/loader.ts',
+      dts: false,
+    },
+    {
+      exportEntries: ['./internal/common'],
+      entryPoint: './src/common/index.ts',
+    },
   ],
   browser: [
     {
@@ -99,6 +136,22 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
       exportEntries: ['./internal/router'],
       entryPoint: './src/router/index.ts',
     },
+    {
+      exportEntries: ['./internal/docs-tools'],
+      entryPoint: './src/docs-tools/index.ts',
+    },
+    {
+      exportEntries: ['./internal/core-events'],
+      entryPoint: './src/core-events/index.ts',
+    },
+    {
+      exportEntries: ['./internal/channels'],
+      entryPoint: './src/channels/index.ts',
+    },
+    {
+      exportEntries: ['./internal/types'],
+      entryPoint: './src/types/index.ts',
+    },
   ],
   runtime: [
     {
@@ -127,26 +180,7 @@ export const esmOnlyDtsEntries: ESMOnlyEntry[] = Object.values(esmOnlyEntries)
 export const getEntries = (cwd: string) => {
   const define = defineEntry(cwd);
   return [
-    // empty, right now, TDB what to do with this
-    define('src/index.ts', ['node', 'browser'], true),
-
-    define('src/core-server/index.ts', ['node'], true),
-    define('src/core-server/presets/common-preset.ts', ['node'], false),
-    define('src/core-server/presets/common-override-preset.ts', ['node'], false),
-
-    define('src/core-events/index.ts', ['browser', 'node'], true),
-
-    define('src/channels/index.ts', ['browser', 'node'], true),
-    define('src/types/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/csf-tools/index.ts', ['node'], true),
-    define('src/common/index.ts', ['node'], true),
-    define('src/builder-manager/index.ts', ['node'], true),
-    define('src/telemetry/index.ts', ['node'], true),
-
-    define('src/docs-tools/index.ts', ['browser', 'node'], true),
-
     define('src/cli/index.ts', ['node'], true),
-    define('src/babel/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),
     define('src/bin/index.ts', ['node'], false),
   ];

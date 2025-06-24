@@ -37,7 +37,6 @@ export * from './utils/template';
 export * from './utils/validate-config';
 export * from './utils/validate-configuration-files';
 export * from './utils/satisfies';
-export * from './utils/strip-abs-node-modules-path';
 export * from './utils/formatter';
 export * from './utils/get-story-id';
 export * from './utils/posix';

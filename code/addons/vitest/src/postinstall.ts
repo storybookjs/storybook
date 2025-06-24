@@ -552,7 +552,7 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr, configDir });
   const { packageJson } = packageManager.primaryPackageJson;
 
-  const config = await loadMainConfig({ configDir, noCache: true });
+  const config = await loadMainConfig({ configDir });
   const { framework } = config;
 
   const frameworkName = typeof framework === 'string' ? framework : framework?.name;

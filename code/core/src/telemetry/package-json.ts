@@ -1,10 +1,9 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 
 import { findUp } from 'find-up';
 import type { PackageJson } from 'type-fest';
 
-import { resolveModule } from '../shared/utils/resolve';
+import { resolveModule } from '../shared/utils/module';
 import type { Dependency } from './types';
 
 export const getActualPackageVersions = async (packages: Record<string, Partial<Dependency>>) => {

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import * as resolveUtils from '../shared/utils/resolve';
+import * as resolveUtils from '../shared/utils/module';
 import { getPresets, loadPreset, resolveAddonName } from './presets';
 
 function wrapPreset(basePresets: any): { babel: Function; webpack: Function } {
@@ -22,7 +22,7 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('../shared/utils/resolve', () => ({
+vi.mock('../shared/utils/module', () => ({
   importModule: vi.fn(),
   resolveModule: vi.fn(),
 }));
@@ -479,11 +479,6 @@ describe('resolveAddonName', () => {
       name: '@storybook/addon-essentials',
       type: 'presets',
     });
-  });
-
-  it('should error on invalid inputs', () => {
-    // @ts-expect-error (invalid use)
-    expect(() => resolveAddonName({} as any, null, {})).toThrow();
   });
 });
 

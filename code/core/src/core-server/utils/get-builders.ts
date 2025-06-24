@@ -4,7 +4,7 @@ import type { Builder, Options } from 'storybook/internal/types';
 import { parseNodeModulePath } from 'mlly';
 import { isAbsolute } from 'pathe';
 
-import { resolveModule } from '../../shared/utils/resolve';
+import { resolveModule } from '../../shared/utils/module';
 
 export async function getManagerBuilder(): Promise<Builder<unknown>> {
   const builderManagerPath = resolveModule({

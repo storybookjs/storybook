@@ -84,34 +84,43 @@ export const resolveModule = ({
   return join(dirname(resolvedPath), customSuffix);
 };
 
-let registered = false;
+let isTypescriptLoaderRegistered = false;
 
-export async function importModule(filePath: string) {
-  if (!registered) {
-    const loaderPath = resolveModule({ pkg: 'storybook', exportPath: 'internal/loader' });
-    register(loaderPath, import.meta.url);
-    registered = true;
+/**
+ * Dynamically imports a module with TypeScript support, falling back to require if necessary.
+ *
+ * @example Import a TypeScript preset
+ *
+ * ```ts
+ * const preset = await importModule('./my-preset.ts');
+ * // Returns the default export or the entire module
+ * ```
+ *
+ * @example Import a JavaScript addon
+ *
+ * ```ts
+ * const addon = await importModule('@storybook/addon-essentials');
+ * // Returns the default export or the entire module
+ * ```
+ */
+export async function importModule(path: string) {
+  if (!isTypescriptLoaderRegistered) {
+    const typescriptLoaderPath = resolveModule({
+      pkg: 'storybook',
+      exportPath: 'internal/loader',
+    });
+    register(typescriptLoaderPath, import.meta.url);
+    isTypescriptLoaderRegistered = true;
   }
 
-  let resolvedPath = filePath;
+  let mod;
 
   try {
-    if (!filePath.startsWith('file:')) {
-      resolvedPath = pathToFileURL(filePath).href;
-    }
-
-    const result = await import(resolvedPath);
-
-    const isES6DefaultExported =
-      typeof result === 'object' && result !== null && typeof result.default !== 'undefined';
-
-    return isES6DefaultExported ? result.default : result;
+    const resolvedPath = path.startsWith('file:') ? path : pathToFileURL(path).href;
+    mod = await import(resolvedPath);
   } catch (e) {
-    const result = createRequire(import.meta.url)(filePath);
-
-    const isES6DefaultExported =
-      typeof result === 'object' && result !== null && typeof result.default !== 'undefined';
-
-    return isES6DefaultExported ? result.default : result;
+    mod = createRequire(import.meta.url)(path);
   }
+
+  return mod.default ?? mod;
 }

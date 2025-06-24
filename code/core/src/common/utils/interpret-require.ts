@@ -1,40 +1,5 @@
-import { createRequire, register } from 'node:module';
-import { pathToFileURL } from 'node:url';
-
-import { resolveModule } from '../../shared/utils/resolve';
+import { importModule } from '../../shared/utils/module';
 import { getInterpretedFileWithExt } from './interpret-files';
-
-let registered = false;
-
-export async function interopRequireDefault(filePath: string) {
-  if (!registered) {
-    const loaderPath = resolveModule({ pkg: 'storybook', exportPath: 'internal/loader' });
-    register(loaderPath, import.meta.url);
-    registered = true;
-  }
-
-  let resolvedPath = filePath;
-
-  try {
-    if (!filePath.startsWith('file:')) {
-      resolvedPath = pathToFileURL(filePath).href;
-    }
-
-    const result = await import(resolvedPath);
-
-    const isES6DefaultExported =
-      typeof result === 'object' && result !== null && typeof result.default !== 'undefined';
-
-    return isES6DefaultExported ? result.default : result;
-  } catch (e) {
-    const result = createRequire(import.meta.url)(filePath);
-
-    const isES6DefaultExported =
-      typeof result === 'object' && result !== null && typeof result.default !== 'undefined';
-
-    return isES6DefaultExported ? result.default : result;
-  }
-}
 
 function getCandidate(paths: string[]) {
   for (let i = 0; i < paths.length; i += 1) {
@@ -55,7 +20,7 @@ export function serverRequire(filePath: string | string[]) {
     return null;
   }
 
-  return interopRequireDefault(candidatePath);
+  return importModule(candidatePath);
 }
 
 export function serverResolve(filePath: string | string[]): string | null {

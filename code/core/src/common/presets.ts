@@ -16,7 +16,7 @@ import { parseNodeModulePath, resolvePathSync } from 'mlly';
 import { join, parse } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { importModule } from '../shared/utils/resolve';
+import { importModule } from '../shared/utils/module';
 import { loadCustomPresets } from './utils/load-custom-presets';
 
 type InterPresetOptions = Omit<

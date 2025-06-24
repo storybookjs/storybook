@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { resolveModule } from '../shared/utils/resolve';
+import { resolveModule } from '../shared/utils/module';
 import { buildDevStandalone } from './build-dev';
 import { buildIndexStandalone } from './build-index';
 import { buildStaticStandalone } from './build-static';

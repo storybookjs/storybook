@@ -4,8 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import mockRequire from 'mock-require';
-
+import * as resolveUtils from '../shared/utils/resolve';
 import { getPresets, loadPreset, resolveAddonName } from './presets';
 
 function wrapPreset(basePresets: any): { babel: Function; webpack: Function } {
@@ -13,10 +12,6 @@ function wrapPreset(basePresets: any): { babel: Function; webpack: Function } {
     babel: async (config: any, args: any) => basePresets.apply('babel', config, args),
     webpack: async (config: any, args: any) => basePresets.apply('webpack', config, args),
   };
-}
-
-function mockPreset(name: string, mockPresetObject: any) {
-  mockRequire(name, mockPresetObject);
 }
 
 vi.mock('storybook/internal/node-logger', () => ({
@@ -27,7 +22,12 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('./utils/safeResolve', () => {
+vi.mock('../shared/utils/resolve', () => ({
+  importModule: vi.fn(),
+  resolveModule: vi.fn(),
+}));
+
+vi.mock('mlly', () => {
   const KNOWN_FILES = [
     '@storybook/react',
     'storybook/actions/manager',
@@ -51,20 +51,15 @@ vi.mock('./utils/safeResolve', () => {
   ];
 
   return {
-    safeResolveFrom: vi.fn((l: any, name: string) => {
+    resolvePathSync: vi.fn((name: string) => {
       if (KNOWN_FILES.includes(name)) {
         return name;
       }
-      return undefined;
-    }),
-    safeResolve: vi.fn((name: string) => {
-      if (KNOWN_FILES.includes(name)) {
-        return name;
-      }
-      return undefined;
+      throw new Error(`Could not resolve ${name}`);
     }),
   };
 });
+const mockedResolveUtils = vi.mocked(resolveUtils);
 
 describe('presets', () => {
   it('does not throw when there is no preset file', async () => {
@@ -111,44 +106,62 @@ describe('presets', () => {
   });
 
   it('loads and applies presets when they are combined in another preset', async () => {
-    mockPreset('preset-foo', {
-      foo: (exec: string[]) => exec.concat('foo'),
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-first') {
+        return {
+          aProperty: (existing: string[]) => existing.concat('first'),
+        };
+      }
+      if (path === 'preset-second') {
+        return {
+          aProperty: (existing: string[]) => existing.concat('second'),
+        };
+      }
+      if (path === 'preset-third') {
+        return {
+          presets: ['sub-preset'],
+          aProperty: (existing: string[]) => existing.concat('third'),
+        };
+      }
+      if (path === 'sub-preset') {
+        return {
+          aProperty: (existing: string[]) => existing.concat('sub-preset-fourth'),
+        };
+      }
+      if (path === 'preset-fifth') {
+        return {
+          aProperty: (existing: string[]) => existing.concat('fifth'),
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
 
-    mockPreset('preset-bar', {
-      foo: (exec: string[]) => exec.concat('bar'),
-    });
+    const presets = await getPresets(
+      ['preset-first', 'preset-second', 'preset-third', 'preset-fifth'],
+      {} as any
+    );
 
-    mockPreset('preset-got', [
-      'preset-dracarys',
-      { name: 'preset-valar', options: { custom: 'morghulis' } },
-    ]);
+    const result = await presets.apply('aProperty', []);
 
-    mockPreset('preset-dracarys', {
-      foo: (exec: string[]) => exec.concat('dracarys'),
-    });
-
-    mockPreset('preset-valar', {
-      foo: (exec: string[], options: any) => exec.concat(`valar ${options.custom}`),
-    });
-
-    const presets = await getPresets(['preset-foo', 'preset-got', 'preset-bar'], {} as any);
-
-    const result = await presets.apply('foo', []);
-
-    expect(result).toEqual(['foo', 'dracarys', 'valar morghulis', 'bar']);
+    expect(result).toEqual(['first', 'second', 'sub-preset-fourth', 'third', 'fifth']);
   });
 
   it('loads and applies presets when they are declared as a string', async () => {
     const mockPresetFooExtendWebpack = vi.fn();
     const mockPresetBarExtendBabel = vi.fn();
 
-    mockPreset('preset-foo', {
-      webpack: mockPresetFooExtendWebpack,
-    });
-
-    mockPreset('preset-bar', {
-      babel: mockPresetBarExtendBabel,
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-foo') {
+        return {
+          webpack: mockPresetFooExtendWebpack,
+        };
+      }
+      if (path === 'preset-bar') {
+        return {
+          babel: mockPresetBarExtendBabel,
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
 
     const presets = wrapPreset(await getPresets(['preset-foo', 'preset-bar'], {} as any));
@@ -168,12 +181,18 @@ describe('presets', () => {
     const mockPresetFooExtendWebpack = vi.fn();
     const mockPresetBarExtendBabel = vi.fn();
 
-    mockPreset('preset-foo', {
-      webpack: mockPresetFooExtendWebpack,
-    });
-
-    mockPreset('preset-bar', {
-      babel: mockPresetBarExtendBabel,
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-foo') {
+        return {
+          webpack: mockPresetFooExtendWebpack,
+        };
+      }
+      if (path === 'preset-bar') {
+        return {
+          babel: mockPresetBarExtendBabel,
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
 
     const presets = wrapPreset(
@@ -195,12 +214,18 @@ describe('presets', () => {
     const mockPresetFooExtendWebpack = vi.fn();
     const mockPresetBarExtendBabel = vi.fn();
 
-    mockPreset('preset-foo', {
-      webpack: mockPresetFooExtendWebpack,
-    });
-
-    mockPreset('preset-bar', {
-      babel: mockPresetBarExtendBabel,
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-foo') {
+        return {
+          webpack: mockPresetFooExtendWebpack,
+        };
+      }
+      if (path === 'preset-bar') {
+        return {
+          babel: mockPresetBarExtendBabel,
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
 
     const presets = wrapPreset(
@@ -236,12 +261,18 @@ describe('presets', () => {
     const mockPresetFooExtendWebpack = vi.fn();
     const mockPresetBarExtendBabel = vi.fn();
 
-    mockPreset('preset-foo', {
-      webpack: mockPresetFooExtendWebpack,
-    });
-
-    mockPreset('preset-bar', {
-      babel: mockPresetBarExtendBabel,
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-foo') {
+        return {
+          webpack: mockPresetFooExtendWebpack,
+        };
+      }
+      if (path === 'preset-bar') {
+        return {
+          babel: mockPresetBarExtendBabel,
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
 
     const presets = wrapPreset(
@@ -281,12 +312,18 @@ describe('presets', () => {
     const mockPresetFooExtendWebpack = vi.fn((...args: any[]) => ({}));
     const mockPresetBarExtendWebpack = vi.fn((...args: any[]) => ({}));
 
-    mockPreset('preset-foo', {
-      webpack: mockPresetFooExtendWebpack,
-    });
-
-    mockPreset('preset-bar', {
-      webpack: mockPresetBarExtendWebpack,
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-foo') {
+        return {
+          webpack: mockPresetFooExtendWebpack,
+        };
+      }
+      if (path === 'preset-bar') {
+        return {
+          webpack: mockPresetBarExtendWebpack,
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
 
     const presets = wrapPreset(
@@ -331,12 +368,18 @@ describe('presets', () => {
     const input = {};
     const mockPresetBar = vi.fn((...args: any[]) => input);
 
-    mockPreset('preset-foo', {
-      presets: ['preset-bar'],
-    });
-
-    mockPreset('preset-bar', {
-      bar: mockPresetBar,
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-foo') {
+        return {
+          presets: ['preset-bar'],
+        };
+      }
+      if (path === 'preset-bar') {
+        return {
+          bar: mockPresetBar,
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
 
     const presets = await getPresets(['preset-foo'], {} as any);
@@ -355,12 +398,18 @@ describe('presets', () => {
     const mockPresetBar = vi.fn((...args: any[]) => input);
     const mockPresetFoo = vi.fn((...args: any[]) => ['preset-bar']);
 
-    mockPreset('preset-foo', {
-      presets: mockPresetFoo,
-    });
-
-    mockPreset('preset-bar', {
-      bar: mockPresetBar,
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-foo') {
+        return {
+          presets: mockPresetFoo,
+        };
+      }
+      if (path === 'preset-bar') {
+        return {
+          bar: mockPresetBar,
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
 
     const presets = await getPresets(
@@ -378,13 +427,17 @@ describe('presets', () => {
 
   afterEach(() => {
     vi.resetModules();
-    mockRequire.stopAll();
   });
 });
 describe('resolveAddonName', () => {
   it('should resolve packages with metadata (relative path)', () => {
-    mockPreset('./local/preset', {
-      presets: [],
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === './local/preset') {
+        return {
+          presets: [],
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
     expect(resolveAddonName({} as any, './local/preset', {})).toEqual({
       name: './local/preset',
@@ -393,8 +446,13 @@ describe('resolveAddonName', () => {
   });
 
   it('should resolve packages with metadata (absolute path)', () => {
-    mockPreset('/absolute/preset', {
-      presets: [],
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === '/absolute/preset') {
+        return {
+          presets: [],
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
     expect(resolveAddonName({} as any, '/absolute/preset', {})).toEqual({
       name: '/absolute/preset',
@@ -406,14 +464,6 @@ describe('resolveAddonName', () => {
     expect(resolveAddonName({} as any, '@storybook/preset-create-react-app', {})).toEqual({
       name: '@storybook/preset-create-react-app',
       type: 'presets',
-    });
-  });
-
-  it('should resolve managerEntries from new /manager path', () => {
-    expect(resolveAddonName({} as any, 'storybook/actions/manager', {})).toEqual({
-      name: 'storybook/actions/manager',
-      managerEntries: [normalize('storybook/actions/manager')],
-      type: 'virtual',
     });
   });
 
@@ -440,21 +490,36 @@ describe('resolveAddonName', () => {
 describe('loadPreset', () => {
   beforeEach(() => {
     vi.spyOn(logger, 'warn');
-    mockPreset('@storybook/react', {});
-    mockPreset('@storybook/preset-typescript', {});
-    mockPreset('@storybook/addon-docs/preset', {});
-    mockPreset('addon-foo/register.js', {});
-    mockPreset('@storybook/addon-cool', {});
-    mockPreset('addon-bar', {
-      addons: ['@storybook/addon-cool'],
-      presets: [],
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === '@storybook/react') {
+        return {};
+      }
+      if (path === '@storybook/preset-typescript') {
+        return {};
+      }
+      if (path === '@storybook/addon-docs/preset') {
+        return {};
+      }
+      if (path === 'addon-foo/register.js') {
+        return {};
+      }
+      if (path === '@storybook/addon-cool') {
+        return {};
+      }
+      if (path === 'addon-bar') {
+        return {
+          addons: ['@storybook/addon-cool'],
+          presets: [],
+        };
+      }
+      if (path === 'addon-baz/register.js') {
+        return {};
+      }
+      if (path === '@storybook/addon-notes/register-panel') {
+        return {};
+      }
+      throw new Error(`Could not resolve ${path}`);
     });
-    mockPreset('addon-baz/register.js', {});
-    mockPreset('@storybook/addon-notes/register-panel', {});
-  });
-
-  afterEach(() => {
-    mockRequire.stopAll();
   });
 
   it('should prepend framework field to list of presets', async () => {

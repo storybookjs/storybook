@@ -16,7 +16,7 @@ import { parseNodeModulePath, resolvePathSync } from 'mlly';
 import { join, parse } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { interopRequireDefault } from './utils/interpret-require';
+import { importModule } from '../shared/utils/resolve';
 import { loadCustomPresets } from './utils/load-custom-presets';
 
 type InterPresetOptions = Omit<
@@ -159,7 +159,7 @@ async function getContent(input: any) {
   }
   const name = input.name ? input.name : input;
 
-  return interopRequireDefault(name);
+  return importModule(name);
 }
 
 export async function loadPreset(

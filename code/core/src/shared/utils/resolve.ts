@@ -1,5 +1,6 @@
+import { createRequire, register } from 'node:module';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /**
  * Resolves a module path using import.meta.resolve and optionally appends a custom suffix.
@@ -82,3 +83,35 @@ export const resolveModule = ({
   }
   return join(dirname(resolvedPath), customSuffix);
 };
+
+let registered = false;
+
+export async function importModule(filePath: string) {
+  if (!registered) {
+    const loaderPath = resolveModule({ pkg: 'storybook', exportPath: 'internal/loader' });
+    register(loaderPath, import.meta.url);
+    registered = true;
+  }
+
+  let resolvedPath = filePath;
+
+  try {
+    if (!filePath.startsWith('file:')) {
+      resolvedPath = pathToFileURL(filePath).href;
+    }
+
+    const result = await import(resolvedPath);
+
+    const isES6DefaultExported =
+      typeof result === 'object' && result !== null && typeof result.default !== 'undefined';
+
+    return isES6DefaultExported ? result.default : result;
+  } catch (e) {
+    const result = createRequire(import.meta.url)(filePath);
+
+    const isES6DefaultExported =
+      typeof result === 'object' && result !== null && typeof result.default !== 'undefined';
+
+    return isES6DefaultExported ? result.default : result;
+  }
+}

@@ -1,3 +1,5 @@
+import { defineEntry } from '../../../scripts/prepare/tools';
+
 export type ESMOnlyEntry = {
   exportEntries?: `./${string}`[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
@@ -188,5 +190,6 @@ export const esmOnlyDtsEntries: ESMOnlyEntry[] = Object.values(esmOnlyEntries)
   .filter((entry) => entry.dts !== false);
 
 export const getEntries = (cwd: string) => {
-  return [];
+  const define = defineEntry(cwd);
+  return [] as ReturnType<typeof define>[];
 };

@@ -1,5 +1,3 @@
-import { defineEntry } from '../../../scripts/prepare/tools';
-
 export type ESMOnlyEntry = {
   exportEntries?: `./${string}`[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
@@ -56,6 +54,18 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
     {
       exportEntries: ['./internal/common'],
       entryPoint: './src/common/index.ts',
+    },
+    {
+      entryPoint: './src/cli/index.ts',
+      exportEntries: ['./internal/cli'],
+    },
+    {
+      entryPoint: './src/cli/bin/index.ts',
+      dts: false,
+    },
+    {
+      entryPoint: './src/bin/index.ts',
+      dts: false,
     },
   ],
   browser: [
@@ -178,10 +188,5 @@ export const esmOnlyDtsEntries: ESMOnlyEntry[] = Object.values(esmOnlyEntries)
   .filter((entry) => entry.dts !== false);
 
 export const getEntries = (cwd: string) => {
-  const define = defineEntry(cwd);
-  return [
-    define('src/cli/index.ts', ['node'], true),
-    define('src/cli/bin/index.ts', ['node'], true),
-    define('src/bin/index.ts', ['node'], false),
-  ];
+  return [];
 };

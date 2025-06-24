@@ -23,4 +23,4 @@ process.once('uncaughtException', (error) => {
   throw error;
 });
 
-require('../dist/bin/index.cjs');
+import('../dist/bin/index.js');

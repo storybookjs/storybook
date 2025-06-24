@@ -56,23 +56,13 @@
       "types": "./dist/babel/index.d.ts",
       "default": "./dist/babel/index.js"
     },
-    "./internal/bin": {
-      "import": "./dist/bin/index.js",
-      "require": "./dist/bin/index.cjs"
-    },
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
       "default": "./dist/channels/index.js"
     },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
-      "import": "./dist/cli/index.js",
-      "require": "./dist/cli/index.cjs"
-    },
-    "./internal/cli/bin": {
-      "types": "./dist/cli/bin/index.d.ts",
-      "import": "./dist/cli/bin/index.js",
-      "require": "./dist/cli/bin/index.cjs"
+      "default": "./dist/cli/index.js"
     },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
@@ -210,12 +200,6 @@
       "*": [
         "./dist/index.d.ts"
       ],
-      "internal/cli": [
-        "./dist/cli/index.d.ts"
-      ],
-      "internal/cli/bin": [
-        "./dist/cli/bin/index.d.ts"
-      ],
       "./internal/node-logger": [
         "./dist/node-logger/index.d.ts"
       ],
@@ -236,6 +220,9 @@
       ],
       "./internal/common": [
         "./dist/common/index.d.ts"
+      ],
+      "./internal/cli": [
+        "./dist/cli/index.d.ts"
       ],
       "./internal/client-logger": [
         "./dist/client-logger/index.d.ts"
@@ -332,7 +319,7 @@
       ]
     }
   },
-  "bin": "./bin/index.cjs",
+  "bin": "./bin/index.js",
   "files": [
     "bin/**/*",
     "dist/**/*",

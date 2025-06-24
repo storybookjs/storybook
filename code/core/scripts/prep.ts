@@ -23,7 +23,7 @@ import {
   NODE_TARGET,
   SUPPORTED_FEATURES,
 } from '../src/shared/constants/environments-support';
-import { esmOnlyEntries, getEntries, getFinals } from './entries';
+import { esmOnlyDtsEntries, esmOnlyEntries, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
 import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
@@ -68,9 +68,9 @@ async function run() {
   const dist = files.then(() => measure(generateDistFiles));
   const types = files.then(() =>
     measure(async () => {
-      await generateTypesMapperFiles(entries, esmOnlyEntries);
+      await generateTypesMapperFiles(entries, esmOnlyDtsEntries);
       await modifyThemeTypes();
-      await generateTypesFiles(entries, esmOnlyEntries, isOptimized, cwd);
+      await generateTypesFiles(entries, esmOnlyDtsEntries, isOptimized, cwd);
     })
   );
 
@@ -143,6 +143,22 @@ async function run() {
       conditions: ['node', 'module', 'import', 'require'],
     } satisfies EsbuildContextOptions;
 
+    const esmOnlyExternal = [
+      'storybook',
+      'react',
+      'react-dom',
+      'react-dom/client',
+      ...Object.keys({ ...(pkg.dependencies ?? {}), ...(pkg.peerDependencies ?? {}) }),
+    ];
+    const esmOnlyNoExternal = [
+      '@testing-library/jest-dom',
+      '@testing-library/user-event',
+      'chai',
+      '@vitest/expect',
+      '@vitest/spy',
+      '@vitest/utils',
+    ];
+
     const esmOnlySharedOptions = {
       format: 'esm',
       bundle: true,
@@ -150,44 +166,46 @@ async function run() {
       minifyIdentifiers: isOptimized,
       minifySyntax: isOptimized,
       minifyWhitespace: false,
+      keepNames: true, // required to show correct error messages based on class names
+      outbase: 'src',
       outdir: 'dist',
       treeShaking: true,
       target: [...(BROWSER_TARGETS as any), NODE_TARGET],
       color: true,
+      external: esmOnlyExternal.filter((external) => !esmOnlyNoExternal.includes(external)),
     } as const satisfies EsbuildContextOptions;
-
-    const groupedEsmOnlyEntries = Object.groupBy(esmOnlyEntries, ({ isRuntime }) =>
-      isRuntime ? 'runtime' : 'default'
-    );
 
     // TODO: this will be the only compile to do once we've migrated all entry points over
     const esmOnlyCompile = await Promise.all([
       esbuild.context({
         ...esmOnlySharedOptions,
-        entryPoints: groupedEsmOnlyEntries.default!.map(({ entryPoint }) => entryPoint),
-        platform: 'neutral',
-        mainFields: ['module', 'main'],
-        conditions: ['browser', 'module', 'import', 'require', 'node', 'default'],
-        external: ['storybook', ...nodeInternals, ...external],
+        entryPoints: esmOnlyEntries.node.map(({ entryPoint }) => entryPoint),
+        platform: 'node',
         banner: {
           js: dedent`
             import CJS_COMPAT_NODE_URL from 'node:url';
             import CJS_COMPAT_NODE_PATH from 'node:path';
             import CJS_COMPAT_NODE_MODULE from "node:module";
-  
+
             const __filename = CJS_COMPAT_NODE_URL.fileURLToPath(import.meta.url);
             const __dirname = CJS_COMPAT_NODE_PATH.dirname(__filename);
             const require = CJS_COMPAT_NODE_MODULE.createRequire(import.meta.url);
             // ------------------------------------------------------------
             // end of CJS compatibility banner, injected by Storybook's esbuild configuration
             // ------------------------------------------------------------
-          `,
+            `,
         },
       }),
       esbuild.context({
         ...esmOnlySharedOptions,
-        entryPoints: groupedEsmOnlyEntries.runtime!.map(({ entryPoint }) => entryPoint),
+        entryPoints: esmOnlyEntries.browser.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
+      }),
+      esbuild.context({
+        ...esmOnlySharedOptions,
+        entryPoints: esmOnlyEntries.runtime.map(({ entryPoint }) => entryPoint),
+        platform: 'browser',
+        external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
         alias: {
           // The following aliases ensures that the runtimes bundles in the actual sources of these modules
           // instead of attempting to resolve them to the dist files, because the dist files are not available yet.

@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join, relative } from 'pathe';
 
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
-import type { ESMOnlyEntry, getEntries } from '../entries';
+import type { ESMOnlyEntriesByPlatform, getEntries } from '../entries';
 
 const cwd = process.cwd();
 
@@ -13,7 +13,7 @@ function sortObject(obj: Record<string, any>) {
 
 export async function generatePackageJsonFile(
   entries: ReturnType<typeof getEntries>,
-  esmOnlyEntries: ESMOnlyEntry[]
+  esmOnlyEntries: ESMOnlyEntriesByPlatform
 ) {
   const location = join(cwd, 'package.json');
   const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
@@ -139,7 +139,7 @@ export async function generatePackageJsonFile(
     },
   };
 
-  for (const entry of esmOnlyEntries) {
+  for (const entry of Object.values(esmOnlyEntries).flat()) {
     for (const exportEntry of entry.exportEntries) {
       const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
       const jsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.js');

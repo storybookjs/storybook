@@ -1,10 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
 
-import slash from 'slash';
+import { join, relative } from 'pathe';
 
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
-import type { getEntries } from '../entries';
+import type { ESMOnlyEntriesByPlatform, getEntries } from '../entries';
 
 const cwd = process.cwd();
 
@@ -12,7 +11,10 @@ function sortObject(obj: Record<string, any>) {
   return Object.fromEntries(Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)));
 }
 
-export async function generatePackageJsonFile(entries: ReturnType<typeof getEntries>) {
+export async function generatePackageJsonFile(
+  entries: ReturnType<typeof getEntries>,
+  esmOnlyEntries: ESMOnlyEntriesByPlatform
+) {
   const location = join(cwd, 'package.json');
   const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
 
@@ -23,7 +25,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
    */
   pkgJson.exports = entries.reduce<Record<string, Record<string, string>>>(
     (acc, entry) => {
-      let main = './' + slash(relative(cwd, entry.file).replace('src', 'dist'));
+      let main = './' + relative(cwd, entry.file).replace('src', 'dist');
 
       const content: Record<string, string> = {};
       if (entry.dts) {
@@ -102,7 +104,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
           return acc;
         }
 
-        let main = slash(relative(cwd, entry.file).replace('src', 'dist'));
+        let main = relative(cwd, entry.file).replace('src', 'dist');
         if (main === './dist/index.ts' || main === './dist/index.tsx') {
           main = '.';
         }
@@ -136,6 +138,23 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
       }, {}),
     },
   };
+
+  for (const entry of Object.values(esmOnlyEntries).flat()) {
+    for (const exportEntry of entry.exportEntries) {
+      const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+      const jsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.js');
+
+      if (entry.dts === undefined) {
+        pkgJson.exports[exportEntry] = {
+          types: dtsPath,
+          default: jsPath,
+        };
+        pkgJson.typesVersions['*'][exportEntry] = [dtsPath];
+      } else {
+        pkgJson.exports[exportEntry] = jsPath;
+      }
+    }
+  }
 
   pkgJson.exports = sortObject(pkgJson.exports);
   pkgJson.typesVersions = sortObject(pkgJson.typesVersions);

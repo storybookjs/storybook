@@ -1,18 +1,19 @@
-import type { WebpackPluginInstance } from 'webpack';
 import ReactRefreshWebpackPlugin from '@pmmmwh/react-refresh-webpack-plugin';
+import type { Configuration, WebpackPluginInstance } from 'webpack';
 
-export const mergePlugins = (...args: WebpackPluginInstance[]): WebpackPluginInstance[] =>
-  args.reduce((plugins, plugin) => {
+export const mergePlugins = (...args: WebpackPluginInstance[]): Configuration['plugins'] =>
+  args?.reduce((plugins, plugin) => {
     if (
-      plugins.some(
-        (includedPlugin) => includedPlugin.constructor.name === plugin.constructor.name
+      plugins?.some(
+        (includedPlugin: WebpackPluginInstance) =>
+          includedPlugin?.constructor.name === plugin?.constructor.name
       ) ||
-      plugin.constructor.name === 'WebpackManifestPlugin'
+      plugin?.constructor.name === 'WebpackManifestPlugin'
     ) {
       return plugins;
     }
     let updatedPlugin = plugin;
-    if (plugin.constructor.name === 'ReactRefreshPlugin') {
+    if (plugin?.constructor.name === 'ReactRefreshPlugin') {
       // Storybook uses webpack-hot-middleware
       // https://github.com/storybookjs/presets/issues/177
 
@@ -22,5 +23,5 @@ export const mergePlugins = (...args: WebpackPluginInstance[]): WebpackPluginIns
         },
       });
     }
-    return [...plugins, updatedPlugin];
+    return [...(plugins ?? []), updatedPlugin];
   }, [] as WebpackPluginInstance[]);

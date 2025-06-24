@@ -1,14 +1,20 @@
+import type { Meta, StoryObj } from '@storybook/angular';
+
 import { DocDirective } from './doc-directive.directive';
 
-export default {
+const meta: Meta<DocDirective> = {
   component: DocDirective,
 };
 
-const modules = {
-  declarations: [DocDirective],
-};
+export default meta;
 
-export const Basic = () => ({
-  moduleMetadata: modules,
-  template: '<div docDirective [hasGrayBackground]="true"><h1>DocDirective</h1></div>',
-});
+type Story = StoryObj<DocDirective>;
+
+export const Basic: Story = {
+  render: () => ({
+    moduleMetadata: {
+      declarations: [DocDirective],
+    },
+    template: '<div docDirective [hasGrayBackground]="true"><h1>DocDirective</h1></div>',
+  }),
+};

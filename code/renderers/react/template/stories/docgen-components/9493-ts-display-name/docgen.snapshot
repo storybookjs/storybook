@@ -1,50 +1,44 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9493-ts-display-name 1`] = `
-"import React from 'react';
-/**
- * This message should show up in the Docs panel if everything works fine.
- */
+import React from 'react';
+/** This message should show up in the Docs panel if everything works fine. */
 export const EmpireAlert = ({
   title = 'Code Yellow',
   message
-}) => /*#__PURE__*/React.createElement(\\"div\\", null, /*#__PURE__*/React.createElement(\\"h1\\", null, title), /*#__PURE__*/React.createElement(\\"p\\", null, message));
+}) => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, title), /*#__PURE__*/React.createElement("p", null, message));
 EmpireAlert.displayName = 'SomeOtherDisplayName';
 export const component = EmpireAlert;
 EmpireAlert.__docgenInfo = {
-  \\"description\\": \\"This message should show up in the Docs panel if everything works fine.\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"SomeOtherDisplayName\\",
-  \\"props\\": {
-    \\"title\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'Code Yellow'\\",
-        \\"computed\\": false
+  "description": "This message should show up in the Docs panel if everything works fine.",
+  "methods": [],
+  "displayName": "SomeOtherDisplayName",
+  "props": {
+    "title": {
+      "defaultValue": {
+        "value": "'Code Yellow'",
+        "computed": false
       },
-      \\"required\\": false,
-      \\"tsType\\": {
-        \\"name\\": \\"union\\",
-        \\"raw\\": \\"'Code Red' | 'Code Yellow' | 'Code Green'\\",
-        \\"elements\\": [{
-          \\"name\\": \\"literal\\",
-          \\"value\\": \\"'Code Red'\\"
+      "required": false,
+      "tsType": {
+        "name": "union",
+        "raw": "'Code Red' | 'Code Yellow' | 'Code Green'",
+        "elements": [{
+          "name": "literal",
+          "value": "'Code Red'"
         }, {
-          \\"name\\": \\"literal\\",
-          \\"value\\": \\"'Code Yellow'\\"
+          "name": "literal",
+          "value": "'Code Yellow'"
         }, {
-          \\"name\\": \\"literal\\",
-          \\"value\\": \\"'Code Green'\\"
+          "name": "literal",
+          "value": "'Code Green'"
         }]
       },
-      \\"description\\": \\"A title that brings attention to the alert.\\"
+      "description": "A title that brings attention to the alert."
     },
-    \\"message\\": {
-      \\"required\\": true,
-      \\"tsType\\": {
-        \\"name\\": \\"string\\"
+    "message": {
+      "required": true,
+      "tsType": {
+        "name": "string"
       },
-      \\"description\\": \\"A message alerting about Empire activities.\\"
+      "description": "A message alerting about Empire activities."
     }
   }
-};"
-`;
+};

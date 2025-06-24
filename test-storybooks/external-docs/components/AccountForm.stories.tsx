@@ -1,6 +1,6 @@
 /* eslint-disable storybook/use-storybook-testing-library */
 // @TODO: use addon-interactions and remove the rule disable above
-import type { ComponentStoryObj, ComponentMeta } from '@storybook/react';
+import type { StoryObj, Meta } from '@storybook/react';
 import { screen } from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
 import { AccountForm } from './AccountForm';
@@ -12,9 +12,9 @@ export default {
   parameters: {
     layout: 'centered',
   },
-} as ComponentMeta<typeof AccountForm>;
+} as Meta<typeof AccountForm>;
 
-type Story = ComponentStoryObj<typeof AccountForm>;
+type Story = StoryObj<typeof AccountForm>;
 
 export const Standard: Story = {
   args: { passwordVerification: false },
@@ -54,7 +54,7 @@ export const StandardFailHover: Story = {
   },
 };
 
-export const Verification: ComponentStoryObj<typeof AccountForm> = {
+export const Verification: StoryObj<typeof AccountForm> = {
   args: { passwordVerification: true },
 };
 

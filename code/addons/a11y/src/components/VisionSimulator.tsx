@@ -1,7 +1,11 @@
 import type { ReactNode } from 'react';
 import React, { useState } from 'react';
-import { Global, styled } from '@storybook/theming';
-import { Icons, IconButton, WithTooltip, TooltipLinkList } from '@storybook/components';
+
+import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+
+import { AccessibilityIcon } from '@storybook/icons';
+
+import { Global, styled } from 'storybook/theming';
 
 import { Filters } from './ColorFilters';
 
@@ -39,13 +43,13 @@ const getFilter = (filterName: string) => {
   return `url('#${filterName}')`;
 };
 
-const Hidden = styled.div(() => ({
+const Hidden = styled.div({
   '&, & svg': {
     position: 'absolute',
     width: 0,
     height: 0,
   },
-}));
+});
 
 const ColorIcon = styled.span<{ filter: string }>(
   {
@@ -144,7 +148,7 @@ export const VisionSimulator = () => {
         onDoubleClick={() => setFilter(null)}
       >
         <IconButton key="filter" active={!!filter} title="Vision simulator">
-          <Icons icon="accessibility" />
+          <AccessibilityIcon />
         </IconButton>
       </WithTooltip>
       <Hidden>

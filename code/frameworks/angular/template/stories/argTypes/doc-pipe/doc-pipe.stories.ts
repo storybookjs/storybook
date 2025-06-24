@@ -1,17 +1,20 @@
+import type { Meta, StoryObj } from '@storybook/angular';
+
 import { DocPipe } from './doc-pipe.pipe';
 
-export default {
+const meta: Meta<DocPipe> = {
   component: DocPipe,
-  parameters: {
-    controls: { hideNoControlsWarning: true },
-  },
 };
 
-const modules = {
-  declarations: [DocPipe],
-};
+export default meta;
 
-export const Basic = () => ({
-  moduleMetadata: modules,
-  template: `<div><h1>{{ 'DocPipe' | docPipe }}</h1></div>`,
-});
+type Story = StoryObj<DocPipe>;
+
+export const Basic: Story = {
+  render: () => ({
+    moduleMetadata: {
+      declarations: [DocPipe],
+    },
+    template: `<div><h1>{{ 'DocPipe' | docPipe }}</h1></div>`,
+  }),
+};

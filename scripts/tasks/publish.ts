@@ -1,8 +1,9 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists } from 'fs-extra';
 import { resolve } from 'path';
 
-import { exec } from '../utils/exec';
 import type { Task } from '../task';
+import { exec } from '../utils/exec';
 
 const verdaccioCacheDir = resolve(__dirname, '../../.verdaccio-cache');
 

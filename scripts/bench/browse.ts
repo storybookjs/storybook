@@ -1,5 +1,6 @@
 import { chromium } from 'playwright';
-import { now } from './utils';
+
+import { getPreviewPage, now } from './utils';
 
 interface Result {
   managerHeaderVisible?: number;
@@ -10,7 +11,7 @@ interface Result {
   mdxVisible?: number;
 }
 
-export const browse = async (url: string) => {
+export const browse = async (url: string, { disableDocs }: { disableDocs?: boolean }) => {
   const result: Result = {};
 
   /* Heat up time for playwright and the builder
@@ -21,13 +22,21 @@ export const browse = async (url: string) => {
    * We instantiate a new browser for each run to avoid any caching happening in the browser itself
    */
   const x = await benchStory(url);
-  await benchAutodocs(url);
+
+  if (!disableDocs) {
+    await benchAutodocs(url);
+  }
 
   result.storyVisibleUncached = x.storyVisible;
 
-  Object.assign(result, await benchMDX(url));
+  if (!disableDocs) {
+    Object.assign(result, await benchMDX(url));
+  }
   Object.assign(result, await benchStory(url));
-  Object.assign(result, await benchAutodocs(url));
+
+  if (!disableDocs) {
+    Object.assign(result, await benchAutodocs(url));
+  }
 
   return result;
 };
@@ -37,15 +46,15 @@ async function benchAutodocs(url: string) {
   const browser = await chromium.launch(/* { headless: false } */);
   await browser.newContext();
   const page = await browser.newPage();
-  await page.setDefaultTimeout(40000);
+  page.setDefaultTimeout(40000);
 
   const start = now();
   await page.goto(`${url}?path=/docs/example-button--docs`);
 
   const tasks = [
     async () => {
-      const previewPage = await page.frame({ url: /iframe.html/ }).page();
-      await previewPage.setDefaultTimeout(40000);
+      const previewPage = await getPreviewPage(page);
+      previewPage.setDefaultTimeout(40000);
 
       await previewPage.waitForLoadState('load');
       await previewPage.getByText('Primary UI component for user interaction');
@@ -71,8 +80,8 @@ async function benchMDX(url: string) {
 
   const tasks = [
     async () => {
-      const previewPage = await page.frame({ url: /iframe.html/ }).page();
-      await previewPage.setDefaultTimeout(40000);
+      const previewPage = await getPreviewPage(page);
+      previewPage.setDefaultTimeout(40000);
 
       await previewPage.waitForLoadState('load');
       await previewPage.getByText('Configure your project');
@@ -89,7 +98,8 @@ async function benchMDX(url: string) {
 
 async function benchStory(url: string) {
   const result: Result = {};
-  const browser = await chromium.launch(/* { headless: false } */);
+  // change this to true, to see the browser in action
+  const browser = await chromium.launch({ headless: true });
   await browser.newContext();
   const page = await browser.newPage();
 
@@ -97,7 +107,6 @@ async function benchStory(url: string) {
   await page.goto(`${url}?path=/story/example-button--primary`);
 
   const tasks = [
-    //
     async () => {
       await page.waitForSelector('.sidebar-header', { state: 'attached' });
       result.managerHeaderVisible = now() - start;
@@ -107,8 +116,8 @@ async function benchStory(url: string) {
       result.managerIndexVisible = now() - start;
     },
     async () => {
-      const previewPage = await page.frame({ url: /iframe.html/ }).page();
-      await previewPage.setDefaultTimeout(40000);
+      const previewPage = await getPreviewPage(page);
+      previewPage.setDefaultTimeout(40000);
 
       await previewPage.waitForLoadState('load');
       await previewPage.getByText('Button');

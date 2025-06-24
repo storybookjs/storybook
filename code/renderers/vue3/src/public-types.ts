@@ -5,24 +5,26 @@ import type {
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
+  StoryContext as GenericStoryContext,
   LoaderFunction,
   ProjectAnnotations,
   StoryAnnotations,
-  StoryContext as GenericStoryContext,
   StrictArgs,
-} from '@storybook/types';
+} from 'storybook/internal/types';
+
 import type { Constructor, RemoveIndexSignature, SetOptional, Simplify } from 'type-fest';
 import type { FunctionalComponent, VNodeChild } from 'vue';
 import type { ComponentProps, ComponentSlots } from 'vue-component-type-helpers';
+
 import type { VueRenderer } from './types';
 
-export type { Args, ArgTypes, Parameters, StrictArgs } from '@storybook/types';
+export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { VueRenderer };
 
 /**
  * Metadata to configure the stories for a component.
  *
- * @see [Default export](https://storybook.js.org/docs/formats/component-story-format/#default-export)
+ * @see [Default export](https://storybook.js.org/docs/api/csf#default-export)
  */
 export type Meta<TCmpOrArgs = Args> = ComponentAnnotations<
   VueRenderer,
@@ -32,7 +34,7 @@ export type Meta<TCmpOrArgs = Args> = ComponentAnnotations<
 /**
  * Story function that represents a CSFv2 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
+ * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
 export type StoryFn<TCmpOrArgs = Args> = AnnotatedStoryFn<
   VueRenderer,
@@ -40,9 +42,9 @@ export type StoryFn<TCmpOrArgs = Args> = AnnotatedStoryFn<
 >;
 
 /**
- * Story function that represents a CSFv3 component example.
+ * Story object that represents a CSFv3 component example.
  *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
+ * @see [Named Story exports](https://storybook.js.org/docs/api/csf#named-story-exports)
  */
 export type StoryObj<TMetaOrCmpOrArgs = Args> = TMetaOrCmpOrArgs extends {
   render?: ArgsStoryFn<VueRenderer, any>;
@@ -68,22 +70,12 @@ type AllowNonFunctionSlots<Slots> = {
 
 export type ComponentPropsAndSlots<C> = ComponentProps<C> & ExtractSlots<C>;
 
-type ComponentPropsOrProps<TCmpOrArgs> = TCmpOrArgs extends Constructor<any>
-  ? ComponentPropsAndSlots<TCmpOrArgs>
-  : TCmpOrArgs extends FunctionalComponent<any>
-  ? ComponentPropsAndSlots<TCmpOrArgs>
-  : TCmpOrArgs;
-
-/**
- * @deprecated Use `StoryFn` instead.
- * Use `StoryObj` if you want to migrate to CSF3, which uses objects instead of functions to represent stories.
- * You can read more about the CSF3 format here: https://storybook.js.org/blog/component-story-format-3-0/
- *
- * Story function that represents a CSFv2 component example.
- *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
- */
-export type Story<TArgs = Args> = StoryFn<TArgs>;
+type ComponentPropsOrProps<TCmpOrArgs> =
+  TCmpOrArgs extends Constructor<any>
+    ? ComponentPropsAndSlots<TCmpOrArgs>
+    : TCmpOrArgs extends FunctionalComponent<any>
+      ? ComponentPropsAndSlots<TCmpOrArgs>
+      : TCmpOrArgs;
 
 export type Decorator<TArgs = StrictArgs> = DecoratorFunction<VueRenderer, TArgs>;
 export type Loader<TArgs = StrictArgs> = LoaderFunction<VueRenderer, TArgs>;

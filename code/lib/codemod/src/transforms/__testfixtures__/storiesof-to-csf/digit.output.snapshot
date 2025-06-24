@@ -1,9 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`storiesof-to-csf transforms correctly using "digit.input.js" data 1`] = `
-"export default {
-  title: 'bar',
-};
-
-export const _1 = () => <button />;"
-`;

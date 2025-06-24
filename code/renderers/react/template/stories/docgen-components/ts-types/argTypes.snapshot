@@ -1,656 +1,652 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties ts-types 1`] = `
-Object {
-  "aliasesUnion": Object {
-    "control": Object {
+{
+  "aliasesUnion": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "aliasesUnion",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'foo'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "any": Object {
-    "control": Object {
+  "any": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "any",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'Any value'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "arrayOfComplexObject": Object {
-    "control": Object {
+  "arrayOfComplexObject": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "arrayOfComplexObject",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "[{ text: 'foo', value: 'bar' }]",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "arrayOfPrimitive": Object {
-    "control": Object {
+  "arrayOfPrimitive": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "arrayOfPrimitive",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "['foo', 'bar']",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "bool": Object {
-    "control": Object {
+  "bool": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "bool",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "true",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "defaultEnum": Object {
-    "control": Object {
+  "defaultEnum": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "defaultEnum",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "DefaultEnum.TopRight",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "enumUnion": Object {
-    "control": Object {
+  "enumUnion": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "enumUnion",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "DefaultEnum.TopLeft",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "funcWithArgsAndReturns": Object {
-    "control": Object {
+  "funcWithArgsAndReturns": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "funcWithArgsAndReturns",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "function concat(a: string, b: string): string {
   return a + b;
 }",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "genericAlias": Object {
-    "control": Object {
+  "genericAlias": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "genericAlias",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "{ value: 'foo' }",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "genericInterface": Object {
-    "control": Object {
+  "genericInterface": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "genericInterface",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "{ value: 'A string value' }",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "inlinedNumericLiteralUnion": Object {
-    "control": Object {
+  "inlinedNumericLiteralUnion": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "inlinedNumericLiteralUnion",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "1",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "inlinedStringLiteralUnion": Object {
-    "control": Object {
+  "inlinedStringLiteralUnion": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "inlinedStringLiteralUnion",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'bottom-right'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "interface": Object {
-    "control": Object {
+  "interface": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "interface",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "{ text: 'foo', value: 'bar' }",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "intersectionType": Object {
-    "control": Object {
+  "intersectionType": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "intersectionType",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "{ text: 'foo', value: 'bar', name: 'foo-bar' }",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "intersectionWithInlineType": Object {
-    "control": Object {
+  "intersectionWithInlineType": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "intersectionWithInlineType",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "{ text: 'foo', value: 'bar', inlineValue: 'this is inlined' }",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "namedNumericLiteralUnion": Object {
-    "control": Object {
+  "namedNumericLiteralUnion": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "namedNumericLiteralUnion",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "0",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "namedStringLiteralUnion": Object {
-    "control": Object {
+  "namedStringLiteralUnion": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "namedStringLiteralUnion",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'top-right'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "nullableComplexTypeUndefinedDefaultValue": Object {
-    "control": Object {
+  "nullableComplexTypeUndefinedDefaultValue": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "nullableComplexTypeUndefinedDefaultValue",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "number": Object {
-    "control": Object {
+  "number": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "number",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "5",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "numericEnum": Object {
-    "control": Object {
+  "numericEnum": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "numericEnum",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "NumericEnum.TopRight",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "recordOfComplexObject": Object {
-    "control": Object {
+  "recordOfComplexObject": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "recordOfComplexObject",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "{ foo: { text: 'bar', value: 'bar2' } }",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "recordOfPrimitive": Object {
-    "control": Object {
+  "recordOfPrimitive": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "recordOfPrimitive",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "{ foo: 1, bar: 2 }",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "string": Object {
-    "control": Object {
+  "string": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "string",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'A string value'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "stringEnum": Object {
-    "control": Object {
+  "stringEnum": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "stringEnum",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "StringEnum.TopRight",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "symbol": Object {
-    "control": Object {
+  "symbol": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "symbol",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "Symbol('Default symbol')",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "tupleOfPrimitive": Object {
-    "control": Object {
+  "tupleOfPrimitive": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "tupleOfPrimitive",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "['string value', 5]",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "tupleWithComplexType": Object {
-    "control": Object {
+  "tupleWithComplexType": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "tupleWithComplexType",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "['string value', { text: 'foo', value: 'bar' }]",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "typeAlias": Object {
-    "control": Object {
+  "typeAlias": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "typeAlias",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'foo'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "unionOfComplexType": Object {
-    "control": Object {
+  "unionOfComplexType": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "unionOfComplexType",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "{ text: 'foo', value: 'bar' }",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "unionOfPrimitive": Object {
-    "control": Object {
+  "unionOfPrimitive": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "unionOfPrimitive",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'A string value'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "voidFunc": Object {
-    "control": Object {
+  "voidFunc": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "voidFunc",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "() => {}",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
 }
-`;

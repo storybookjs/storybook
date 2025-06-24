@@ -1,4 +1,4 @@
-const { v5 } = jest.requireActual('uuid');
+import { v5 } from 'uuid';
 
 let seed = 0;
 

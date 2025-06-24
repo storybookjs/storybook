@@ -1,5 +1,6 @@
+import { dirname } from 'node:path';
+
 import type { PluginItem } from '@babel/core';
-import { dirname } from 'path';
 
 const isLoadIntentTest = process.env.NODE_ENV === 'test';
 const isLoadIntentDevelopment = process.env.NODE_ENV === 'development';
@@ -82,6 +83,12 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
     // In production/development this option is set to `false` so that webpack can handle import/export with tree-shaking
     modules: 'auto',
     exclude: ['transform-typeof-symbol'],
+    bugfixes: true,
+    targets: {
+      chrome: 100,
+      safari: 15,
+      firefox: 91,
+    },
     ...options['preset-env'],
   };
 
@@ -120,6 +127,7 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
       ],
     ],
     plugins: [
+      isDevelopment && require.resolve('react-refresh/babel'),
       !useJsxRuntime && [
         require('./plugins/jsx-pragma'),
         {
@@ -142,9 +150,9 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
       require('@babel/plugin-syntax-dynamic-import'),
       require('@babel/plugin-syntax-import-assertions'),
       require('./plugins/react-loadable-plugin'),
-      [require('@babel/plugin-proposal-class-properties'), options['class-properties'] || {}],
+      [require('@babel/plugin-transform-class-properties'), options['class-properties'] || {}],
       [
-        require('@babel/plugin-proposal-object-rest-spread'),
+        require('@babel/plugin-transform-object-rest-spread'),
         {
           useBuiltIns: true,
         },
@@ -172,8 +180,8 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
       isServer && require('@babel/plugin-syntax-bigint'),
       // Always compile numeric separator because the resulting number is
       // smaller.
-      require('@babel/plugin-proposal-numeric-separator'),
-      require('@babel/plugin-proposal-export-namespace-from'),
+      require('@babel/plugin-transform-numeric-separator'),
+      require('@babel/plugin-transform-export-namespace-from'),
     ].filter(Boolean),
   };
 };

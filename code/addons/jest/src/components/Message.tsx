@@ -1,6 +1,7 @@
-import type { FC } from 'react';
+import type { FC, ReactElement } from 'react';
 import React, { Fragment } from 'react';
-import { styled } from '@storybook/theming';
+
+import { styled } from 'storybook/theming';
 
 const positiveConsoleRegex = /\[32m(.*?)\[39m/;
 const negativeConsoleRegex = /\[31m(.*?)\[39m/;
@@ -12,7 +13,7 @@ const passStartToken = '[32m';
 const stackTraceStartToken = 'at';
 const titleEndToken = ':';
 
-type MsgElement = string | JSX.Element;
+type MsgElement = string | ReactElement;
 
 class TestDetail {
   description!: MsgElement[];
@@ -72,7 +73,9 @@ const colorizeText: (msg: string, type: string) => MsgElement[] = (msg: string, 
 const getConvertedText: (msg: string) => MsgElement[] = (msg: string) => {
   let elementArray: MsgElement[] = [];
 
-  if (!msg) return elementArray;
+  if (!msg) {
+    return elementArray;
+  }
 
   const splitText = msg.split(/\[2m/).join('').split(/\[22m/);
 

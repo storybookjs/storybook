@@ -1,20 +1,20 @@
-import fetch from 'node-fetch';
-import { execaCommand } from '../../utils/exec';
-// eslint-disable-next-line import/no-cycle
-import { logger } from '../publish';
+// eslint-disable-next-line depend/ban-dependencies
+import { execaCommand } from 'execa';
+import invariant from 'tiny-invariant';
 
-const { version: storybookVersion } = require('../../../code/package.json');
+import { version as storybookVersion } from '../../../code/package.json';
+import { logger } from '../publish';
 
 const getTheLastCommitHashThatUpdatedTheSandboxRepo = async (branch: string) => {
   const owner = 'storybookjs';
   const repo = 'sandboxes';
 
   try {
-    const branchData = await (
+    const branchData: any = await (
       await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${branch}`)
     ).json();
     const latestCommitSha = branchData.commit.sha;
-    const commitData = await (
+    const commitData: any = await (
       await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${latestCommitSha}`)
     ).json();
     const latestCommitMessage = commitData.commit.message;
@@ -27,9 +27,9 @@ const getTheLastCommitHashThatUpdatedTheSandboxRepo = async (branch: string) => 
         `Could not find the last commit hash in the following commit message: "${latestCommitMessage}".\nDid someone manually push to the sandboxes repo?`
       );
     }
-
     return lastCommitHash;
   } catch (error) {
+    invariant(error instanceof Error);
     if (!error.message.includes('Did someone manually push to the sandboxes repo')) {
       logger.error(
         `⚠️  Error getting latest commit message of ${owner}/${repo} on branch ${branch}: ${error.message}`
@@ -41,16 +41,17 @@ const getTheLastCommitHashThatUpdatedTheSandboxRepo = async (branch: string) => 
 };
 
 /**
- * When commiting the changes to the sandboxes repo, we want to include the PRs that were merged since the last commit that updated the sandboxes.
- * This might help us debug issues or changes that affected the sandboxes at some point in time.
+ * When committing the changes to the sandboxes repo, we want to include the PRs that were merged
+ * since the last commit that updated the sandboxes. This might help us debug issues or changes that
+ * affected the sandboxes at some point in time.
  */
 export async function commitAllToGit({ cwd, branch }: { cwd: string; branch: string }) {
   try {
     logger.log(`💪 Committing everything to the repository`);
 
-    await execaCommand('git add .', { cwd });
+    await execaCommand('git add .', { cwd, cleanup: true });
 
-    const currentCommitHash = (await execaCommand('git rev-parse HEAD')).stdout
+    const currentCommitHash = (await execaCommand('git rev-parse HEAD', { cleanup: true })).stdout
       .toString()
       .slice(0, 12);
 
@@ -61,7 +62,8 @@ export async function commitAllToGit({ cwd, branch }: { cwd: string; branch: str
       const previousCommitHash = await getTheLastCommitHashThatUpdatedTheSandboxRepo(branch);
       const mergeCommits = (
         await execaCommand(
-          `git log ${previousCommitHash}..${currentCommitHash} --merges --pretty=%s`
+          `git log ${previousCommitHash}..${currentCommitHash} --merges --pretty=%s`,
+          { cleanup: true }
         )
       ).stdout
         .toString()
@@ -84,6 +86,7 @@ export async function commitAllToGit({ cwd, branch }: { cwd: string; branch: str
       ].join('\n');
       gitCommitCommand = `git commit -m "${commitTitle}" -m "${commitBody}"`;
     } catch (err) {
+      invariant(err instanceof Error);
       logger.log(
         `⚠️  Falling back to a simpler commit message because of an error while trying to get the previous commit hash: ${err.message}`
       );
@@ -92,9 +95,11 @@ export async function commitAllToGit({ cwd, branch }: { cwd: string; branch: str
 
     await execaCommand(gitCommitCommand, {
       shell: true,
+      cleanup: true,
       cwd,
     });
   } catch (e) {
+    invariant(e instanceof Error);
     if (e.message.includes('nothing to commit')) {
       logger.log(
         `🤷 Git found no changes between previous versions so there is nothing to commit. Skipping publish!`

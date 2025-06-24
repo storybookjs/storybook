@@ -1,32 +1,28 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 10017-ts-union 1`] = `
-Object {
-  "rows": Array [
-    Object {
+{
+  "rows": [
+    {
       "defaultValue": null,
-      "description": "specify icon=\\"search\\" or icon={IconComponent}",
+      "description": "Specify icon="search" or icon={IconComponent}",
       "name": "icon",
       "required": true,
-      "sbType": Object {
+      "sbType": {
         "name": "union",
         "raw": "React.ReactNode | string",
-        "value": Array [
-          Object {
+        "value": [
+          {
             "name": "other",
             "raw": "React.ReactNode",
             "value": "ReactReactNode",
           },
-          Object {
+          {
             "name": "string",
           },
         ],
       },
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "union",
       },
     },
   ],
 }
-`;

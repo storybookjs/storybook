@@ -1,8 +1,12 @@
-import type { StorybookConfig as StorybookConfigBase } from '@storybook/types';
-import type { StorybookConfigVite, BuilderOptions } from '@storybook/builder-vite';
+import type {
+  CompatibleString,
+  StorybookConfig as StorybookConfigBase,
+} from 'storybook/internal/types';
 
-type FrameworkName = '@storybook/svelte-vite';
-type BuilderName = '@storybook/builder-vite';
+import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
+
+type FrameworkName = CompatibleString<'@storybook/svelte-vite'>;
+type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
   builder?: BuilderOptions;
@@ -25,9 +29,7 @@ type StorybookConfigFramework = {
   };
 };
 
-/**
- * The interface for Storybook configuration in `main.ts` files.
- */
+/** The interface for Storybook configuration in `main.ts` files. */
 export type StorybookConfig = Omit<
   StorybookConfigBase,
   keyof StorybookConfigVite | keyof StorybookConfigFramework

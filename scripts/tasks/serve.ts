@@ -1,4 +1,5 @@
 import detectFreePort from 'detect-port';
+import waitOn from 'wait-on';
 
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
@@ -26,8 +27,7 @@ export const serve: Task = {
         throw err;
       }
     });
-    const { default: waitOn } = await import('wait-on');
-    await waitOn({ resources: [`http://localhost:${PORT}`], interval: 16 });
+    await waitOn({ resources: [`tcp:127.0.0.1:${PORT}`], interval: 16 });
 
     return controller;
   },

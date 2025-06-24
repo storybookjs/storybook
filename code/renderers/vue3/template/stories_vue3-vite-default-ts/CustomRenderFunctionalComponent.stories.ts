@@ -1,7 +1,9 @@
 import type { Meta } from '@storybook/vue3';
+
 import { h } from 'vue';
-import Reactivity from './Reactivity.vue';
+
 import * as ReactiveDecorators from './ReactiveDecorators.stories';
+import Reactivity from './Reactivity.vue';
 
 const meta = {
   ...ReactiveDecorators.default,
@@ -19,6 +21,7 @@ const meta = {
         h(Reactivity, args, { header, default: defaultSlot, footer }),
       ]);
   },
+  tags: ['!vitest'],
 } satisfies Meta<typeof Reactivity>;
 
 export default meta;

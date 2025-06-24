@@ -1,5 +1,9 @@
+/// <reference lib="dom" />
+// eslint-disable-next-line depend/ban-dependencies
+import { ensureDir, readJSON, readdir, writeJSON } from 'fs-extra';
 import { join } from 'path';
-import { ensureDir, writeJSON, readJSON, readdir } from 'fs-extra';
+import type { Page } from 'playwright-core';
+
 import type { BenchResults } from './types';
 
 export const now = () => new Date().getTime();
@@ -30,3 +34,25 @@ export const loadBench = async (options: SaveBenchOptions): Promise<Partial<Benc
   }, Promise.resolve({}));
   // return readJSON(join(dirname, `bench.json`));
 };
+
+export async function getPreviewPage(page: Page) {
+  /**
+   * Fix flakiness in preview iframe retrieval Sometimes the iframe is not yet available when we try
+   * to access it, even after waiting for the readyState to be complete.
+   *
+   * This loop will keep trying to access the iframe until it's available.
+   */
+  for (let i = 0; i < 10; i++) {
+    // eslint-disable-next-line @typescript-eslint/no-loop-func
+    await page.waitForFunction(() => {
+      return document.querySelector('iframe')?.contentDocument.readyState === 'complete';
+    });
+
+    const previewPage = page.frame({ url: /iframe.html/ })?.page();
+    if (previewPage) {
+      return previewPage;
+    }
+  }
+
+  throw new Error('The preview iframe was never found');
+}

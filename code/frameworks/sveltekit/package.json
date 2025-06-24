@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "7.1.0-alpha.41",
+  "version": "9.1.0-alpha.6",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",
@@ -25,13 +25,27 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "require": "./dist/index.js"
+    },
+    "./dist/preview.mjs": {
+      "import": "./dist/preview.mjs"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
+    },
+    "./vite-plugin": {
+      "types": "./dist/vite-plugin.d.ts",
+      "require": "./dist/vite-plugin.js",
+      "import": "./dist/vite-plugin.mjs"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -43,28 +57,30 @@
     "template/**/*",
     "README.md",
     "*.js",
-    "*.d.ts"
+    "*.d.ts",
+    "src/mocks/**/*"
   ],
   "scripts": {
-    "check": "tsc --noEmit",
-    "prep": "../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/builder-vite": "7.1.0-alpha.41",
-    "@storybook/svelte": "7.1.0-alpha.41",
-    "@storybook/svelte-vite": "7.1.0-alpha.41"
+    "@storybook/builder-vite": "workspace:*",
+    "@storybook/svelte": "workspace:*",
+    "@storybook/svelte-vite": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^16.0.0",
-    "typescript": "^4.9.3",
-    "vite": "^4.0.0"
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.3",
+    "vite": "^6.2.5"
   },
   "peerDependencies": {
-    "svelte": "^3.0.0 || ^4.0.0",
-    "vite": "^4.0.0"
+    "storybook": "workspace:^",
+    "svelte": "^5.0.0",
+    "vite": "^5.0.0 || ^6.0.0"
   },
   "engines": {
-    "node": "^14.18 || >=16"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"
@@ -72,9 +88,12 @@
   "bundler": {
     "entries": [
       "./src/index.ts",
-      "./src/preset.ts"
+      "./src/preview.ts",
+      "./src/preset.ts",
+      "./src/vite-plugin.ts",
+      "./src/node/index.ts"
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

@@ -15,7 +15,6 @@ export default {
   component: LoggingComponent,
   tags: ['autodocs'],
   parameters: {
-    storyshots: { disable: true },
     chromatic: { disable: true },
   },
 };

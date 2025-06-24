@@ -1,62 +1,57 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`json-to-csf-compiler kitchen_sink.json 1`] = `
-"
 export default {
-  title: \\"Kitchen Sink\\",
+  title: "Kitchen Sink",
   parameters: {
     backgrounds: [
       {
-        name: \\"light\\",
-        value: \\"#eeeeee\\"
+        name: "light",
+        value: "#eeeeee"
       },
       {
-        name: \\"dark\\",
-        value: \\"#222222\\",
+        name: "dark",
+        value: "#222222",
         default: true
       }
     ],
     options: {
-      selectedPanel: \\"storybook/a11y/panel\\"
+      selectedPanel: "storybook/a11y/panel"
     },
     server: {
       params: {
-        color: \\"red\\"
+        color: "red"
       }
     }
   }
 };
 
 export const Heading = {
-  name: \\"Heading\\",
+  name: "Heading",
   parameters: {
     actions: [
-      \\"click\\",
-      \\"contextmenu\\",
+      "click",
+      "contextmenu",
       {
         clearOnStoryChange: false
       }
     ],
     server: {
-      id: \\"demo/heading\\",
+      id: "demo/heading",
       params: {
-        color: \\"orange\\"
+        color: "orange"
       }
     }
   },
   args: {
-    name: \\"John Doe\\",
+    name: "John Doe",
     age: 44
   }
 };
 
 export const Button = {
-  name: \\"Button\\",
+  name: "Button",
   parameters: {
     server: {
-      id: \\"demo/button\\"
+      id: "demo/button"
     }
   }
 };
-"
-`;

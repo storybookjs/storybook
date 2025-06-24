@@ -1,35 +1,31 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9399-js-proptypes-shape 1`] = `
-Object {
-  "rows": Array [
-    Object {
+{
+  "rows": [
+    {
       "defaultValue": null,
       "description": "",
       "name": "areas",
       "required": true,
-      "sbType": Object {
+      "sbType": {
         "name": "array",
-        "value": Object {
+        "value": {
           "name": "object",
-          "value": Object {
-            "names": Object {
+          "value": {
+            "names": {
               "name": "array",
-              "value": Object {
+              "value": {
                 "name": "string",
               },
             },
-            "position": Object {
+            "position": {
               "name": "string",
             },
           },
         },
       },
-      "type": Object {
+      "type": {
         "detail": "[object]",
         "summary": "object[]",
       },
     },
   ],
 }
-`;

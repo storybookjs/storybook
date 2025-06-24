@@ -2,24 +2,26 @@ import type { Task } from '../task';
 import { exec } from '../utils/exec';
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
 
-const parallel = process.env.CI ? 8 : maxConcurrentTasks;
+// The amount of VCPUs for the check task on CI is 8 (xlarge resource)
+const amountOfVCPUs = 8;
 
-const command = `nx run-many --target="check" --all --parallel=${parallel} --exclude=@storybook/addon-storyshots,@storybook/addon-storyshots-puppeteer`;
+const parallel = `--parallel=${process.env.CI ? amountOfVCPUs - 1 : maxConcurrentTasks}`;
+
+const linkCommand = `npx nx run-many -t check ${parallel}`;
+const nolinkCommand = `npx nx run-many -t check -c production ${parallel}`;
 
 export const check: Task = {
   description: 'Typecheck the source code of the monorepo',
-  dependsOn: ['compile'],
   async ready() {
     return false;
   },
   async run({ codeDir }, { dryRun, debug, link }) {
-    if (link) throw new Error('Cannot check when linked, please run with `--no-link`');
     return exec(
-      command,
+      link ? linkCommand : nolinkCommand,
       { cwd: codeDir },
       {
-        startMessage: '🥾 Checking types validity',
-        errorMessage: '❌ Unsound types detected',
+        startMessage: '🥾 Checking for TS errors',
+        errorMessage: '❌ TS errors detected',
         dryRun,
         debug,
       }

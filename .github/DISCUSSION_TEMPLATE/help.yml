@@ -1,0 +1,40 @@
+body:
+- type: markdown
+  id: intro
+  attributes:
+    value: |
+      Thanks for taking the time to start a new discussion!
+      
+      ### Before you post
+      Check if someone has already asked/answered your question in a previous discussion.
+      
+      ### When you're ready to post
+      Add labels to your discussion (e.g. React, Vue, Vite) to make it clearer for other users.
+
+- type: textarea
+  id: summary
+  attributes:
+    label: Summary
+    description: How can we help?
+  validations:
+    required: true
+      
+- type: textarea
+  id: additional-info
+  attributes:
+    label: Additional information
+    description: |
+      Share Your Storybook configuration (`main.js` or `main.ts`), your Storybook version number, any error messages, and any relevant dependencies. These help us get a clearer understanding of what might be going wrong.
+
+      P.S. Please [share code as text](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-and-highlighting-code-blocks) rather than as a screenshot! It makes debugging much easier and faster.
+  validations:
+    required: false
+      
+- type: input
+  id: reproduction
+  attributes:
+    label: Create a reproduction
+    description: |
+      Help us debug by creating a minimal reproduction with [https://storybook.new](https://storybook.new). Learn more about creating a reproduction [here](https://storybook.js.org/docs/react/contribute/how-to-reproduce).
+  validations:
+    required: false

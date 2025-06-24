@@ -1,11 +1,12 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src",
-    "types": ["node"],
-    "resolveJsonModule": true,
-    "strict": true
+    "baseUrl": ".",
+    "paths": {
+      "storybook/internal/*": ["../../lib/cli/core/*"]
+    },
+    "rootDir": "./src"
   },
-  "include": ["src/**/*"],
-  "exclude": ["src/**/*.test.*", "src/**/__testfixtures__/**"]
+  "exclude": ["src/**/*.test.*", "src/**/__testfixtures__/**"],
+  "extends": "../../tsconfig.json",
+  "include": ["src/**/*"]
 }

@@ -1950,7 +1950,7 @@ Fix bad publish of `6.4.0-alpha.27` to the `latest` tag
 ### Bug Fixes
 
 - Controls: Don't set arg in validateOptions if it would be `undefined` ([#15654](https://github.com/storybookjs/storybook/pull/15654))
-- Trailing comma handling for "-s" command line paramenter ([#15615](https://github.com/storybookjs/storybook/pull/15615))
+- Trailing comma handling for "-s" command line parameter ([#15615](https://github.com/storybookjs/storybook/pull/15615))
 - Controls: Fix color matching behavior for non-string types ([#15549](https://github.com/storybookjs/storybook/pull/15549))
 - Composition: Fix refs ordering ([#15527](https://github.com/storybookjs/storybook/pull/15527))
 
@@ -1963,7 +1963,7 @@ Fix bad publish of `6.4.0-alpha.27` to the `latest` tag
 
 ### Bug Fixes
 
-- CLI: Fix trailing comma handling for "-s" command line paramenter ([#15615](https://github.com/storybookjs/storybook/pull/15615))
+- CLI: Fix trailing comma handling for "-s" command line parameter ([#15615](https://github.com/storybookjs/storybook/pull/15615))
 - Components: Lazy-load syntax highlighter ([#15607](https://github.com/storybookjs/storybook/pull/15607))
 
 ### Maintenance
@@ -4942,7 +4942,7 @@ Storybook 6.0 is here!
 - 🧬 [Args: Next-generation, dynamic story format](https://medium.com/storybookjs/introducing-storybook-args-2dadcdb777cc)
 - 🎛 [Controls: Live edit component examples](https://medium.com/storybookjs/storybook-controls-ce82af93e430)
 - 🌐 [Composition: Combine multiple Storybooks](https://medium.com/storybookjs/storybook-composition-af0da9084fba)
-- 📚 [Documentation: Complete project overhaul](https://storybook.js.org/docs/react/get-started/introduction)
+- 📚 [Documentation: Complete project overhaul](https://storybook.js.org/docs/react/get-started)
 
   6.0 contains hundreds more fixes, features, and tweaks. Browse the changelogs matching `6.0.0-alpha.*`, `6.0.0-beta.*`, and `6.0.0-rc.*` for the full list of changes. See [MIGRATION.md](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md) to upgrade from `5.3` or earlier.
 

@@ -1,27 +1,23 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9626-js-default-values 1`] = `
-Object {
-  "title": Object {
-    "control": Object {
+{
+  "title": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "title",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'Beta'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
 }
-`;

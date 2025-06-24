@@ -1,14 +1,15 @@
 import * as React from 'react';
-import { addons } from '@storybook/manager-api';
-import { ADDON_ID, PANEL_ID, PARAM_KEY } from './shared';
+
+import { addons, types } from 'storybook/manager-api';
 
 import Panel from './components/Panel';
+import { ADDON_ID, PANEL_ID, PARAM_KEY } from './shared';
 
 addons.register(ADDON_ID, (api) => {
-  addons.addPanel(PANEL_ID, {
+  addons.add(PANEL_ID, {
     title: 'Tests',
-    id: 'tests',
-    render: ({ active, key }) => <Panel key={key} api={api} active={active} />,
+    type: types.PANEL,
+    render: ({ active }) => <Panel api={api} active={active} />,
     paramKey: PARAM_KEY,
   });
 });

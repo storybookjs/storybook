@@ -1,62 +1,54 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9493-ts-display-name 1`] = `
-Object {
-  "message": Object {
-    "control": Object {
+{
+  "message": {
+    "control": {
       "type": "text",
     },
     "description": "A message alerting about Empire activities.",
     "name": "message",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "string",
       },
     },
-    "type": Object {
+    "type": {
       "name": "string",
       "required": true,
     },
   },
-  "title": Object {
-    "control": Object {
-      "type": "object",
+  "title": {
+    "control": {
+      "type": "radio",
     },
     "description": "A title that brings attention to the alert.",
     "name": "title",
-    "table": Object {
-      "defaultValue": Object {
+    "options": [
+      "Code Red",
+      "Code Yellow",
+      "Code Green",
+    ],
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'Code Yellow'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "union",
       },
     },
-    "type": Object {
-      "name": "union",
+    "type": {
+      "name": "enum",
       "raw": "'Code Red' | 'Code Yellow' | 'Code Green'",
       "required": false,
-      "value": Array [
-        Object {
-          "name": "other",
-          "value": "literal",
-        },
-        Object {
-          "name": "other",
-          "value": "literal",
-        },
-        Object {
-          "name": "other",
-          "value": "literal",
-        },
+      "value": [
+        "Code Red",
+        "Code Yellow",
+        "Code Green",
       ],
     },
   },
 }
-`;

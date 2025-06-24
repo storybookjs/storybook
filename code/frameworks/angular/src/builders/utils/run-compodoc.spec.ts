@@ -1,11 +1,14 @@
-import { LoggerApi } from '@angular-devkit/core/src/logger';
+import type { BuilderContext } from '@angular-devkit/architect';
+// @ts-expect-error (TODO)
+import type { LoggerApi } from '@angular-devkit/core/src/logger';
 import { take } from 'rxjs/operators';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { runCompodoc } = require('./run-compodoc');
+import { runCompodoc } from './run-compodoc';
 
-const mockRunScript = jest.fn();
+const mockRunScript = vi.fn();
 
-jest.mock('@storybook/cli', () => ({
+vi.mock('storybook/internal/common', () => ({
   JsPackageManagerFactory: {
     getPackageManager: () => ({
       runPackageCommandSync: mockRunScript,
@@ -14,13 +17,13 @@ jest.mock('@storybook/cli', () => ({
 }));
 
 const builderContextLoggerMock: LoggerApi = {
-  createChild: jest.fn(),
-  log: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  fatal: jest.fn(),
+  createChild: vi.fn(),
+  log: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  fatal: vi.fn(),
 };
 
 describe('runCompodoc', () => {
@@ -28,16 +31,18 @@ describe('runCompodoc', () => {
     mockRunScript.mockClear();
   });
 
+  const builderContextMock = {
+    workspaceRoot: 'path/to/project',
+    logger: builderContextLoggerMock,
+  } as BuilderContext;
+
   it('should run compodoc with tsconfig from context', async () => {
     runCompodoc(
       {
         compodocArgs: [],
         tsconfig: 'path/to/tsconfig.json',
       },
-      {
-        workspaceRoot: 'path/to/project',
-        logger: builderContextLoggerMock,
-      }
+      builderContextMock
     )
       .pipe(take(1))
       .subscribe();
@@ -56,10 +61,7 @@ describe('runCompodoc', () => {
         compodocArgs: ['-p', 'path/to/tsconfig.stories.json'],
         tsconfig: 'path/to/tsconfig.json',
       },
-      {
-        workspaceRoot: 'path/to/project',
-        logger: builderContextLoggerMock,
-      }
+      builderContextMock
     )
       .pipe(take(1))
       .subscribe();
@@ -78,10 +80,7 @@ describe('runCompodoc', () => {
         compodocArgs: [],
         tsconfig: 'path/to/tsconfig.json',
       },
-      {
-        workspaceRoot: 'path/to/project',
-        logger: builderContextLoggerMock,
-      }
+      builderContextMock
     )
       .pipe(take(1))
       .subscribe();
@@ -100,10 +99,7 @@ describe('runCompodoc', () => {
         compodocArgs: ['--output', 'path/to/customFolder'],
         tsconfig: 'path/to/tsconfig.json',
       },
-      {
-        workspaceRoot: 'path/to/project',
-        logger: builderContextLoggerMock,
-      }
+      builderContextMock
     )
       .pipe(take(1))
       .subscribe();
@@ -122,10 +118,7 @@ describe('runCompodoc', () => {
         compodocArgs: ['-d', 'path/to/customFolder'],
         tsconfig: 'path/to/tsconfig.json',
       },
-      {
-        workspaceRoot: 'path/to/project',
-        logger: builderContextLoggerMock,
-      }
+      builderContextMock
     )
       .pipe(take(1))
       .subscribe();

@@ -1,24 +1,19 @@
-/* eslint-disable global-require */
-import type { PresetProperty } from '@storybook/types';
-import { hasVitePlugins } from '@storybook/builder-vite';
-import { dirname, join } from 'path';
+import { dirname, join } from 'node:path';
+
+import type { PresetProperty } from 'storybook/internal/types';
+
 import type { StorybookConfig } from './types';
 
-const wrapForPnP = (input: string) => dirname(require.resolve(join(input, 'package.json')));
+const getAbsolutePath = <I extends string>(input: I): I =>
+  dirname(require.resolve(join(input, 'package.json'))) as any;
 
-export const core: PresetProperty<'core', StorybookConfig> = {
-  builder: wrapForPnP('@storybook/builder-vite') as '@storybook/builder-vite',
-  renderer: wrapForPnP('@storybook/react'),
+export const core: PresetProperty<'core'> = {
+  builder: getAbsolutePath('@storybook/builder-vite'),
+  renderer: getAbsolutePath('@storybook/react'),
 };
 
-export const viteFinal: StorybookConfig['viteFinal'] = async (config, { presets }) => {
-  const { plugins = [] } = config;
-
-  // Add react plugin if not present
-  if (!(await hasVitePlugins(plugins, ['vite:react-babel', 'vite:react-swc']))) {
-    const { default: react } = await import('@vitejs/plugin-react');
-    plugins.push(react());
-  }
+export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, { presets }) => {
+  const plugins = [...(config?.plugins ?? [])];
 
   // Add docgen plugin
   const { reactDocgen: reactDocgenOption, reactDocgenTypescriptOptions } = await presets.apply<any>(
@@ -50,11 +45,11 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, { presets 
     // Needs to run before the react plugin, so add to the front
     plugins.unshift(
       // If react-docgen is specified, use it for everything, otherwise only use it for non-typescript files
-      reactDocgen({
+      await reactDocgen({
         include: reactDocgenOption === 'react-docgen' ? /\.(mjs|tsx?|jsx?)$/ : /\.(mjs|jsx?)$/,
       })
     );
   }
 
-  return config;
+  return { ...config, plugins };
 };

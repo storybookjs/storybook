@@ -1,6 +1,8 @@
-import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
-import { TokenComponent, ITEMS, DEFAULT_NAME } from './angular-src/token.component';
+import type { Meta, StoryFn } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
+
 import { CustomPipePipe } from './angular-src/custom.pipe';
+import { DEFAULT_NAME, ITEMS, TokenComponent } from './angular-src/token.component';
 
 export const MergeWithDefaultModuleMetadata: StoryFn = () => ({
   template: `<storybook-simple-token-component [name]="name | customPipe"></storybook-simple-token-component>`,

@@ -1,10 +1,12 @@
-import { expectTypeOf } from 'expect-type';
+import { describe, expect, it } from 'vitest';
 
+import { expectTypeOf } from 'expect-type';
 import { reactive } from 'vue';
+
 import { updateArgs } from './render';
 
 describe('Render Story', () => {
-  test('update reactive Args updateArgs()', () => {
+  it('update reactive Args updateArgs()', () => {
     const reactiveArgs = reactive({ argFoo: 'foo', argBar: 'bar' }); // get reference to reactiveArgs or create a new one;
     expectTypeOf(reactiveArgs).toMatchTypeOf<Record<string, any>>();
     expectTypeOf(reactiveArgs).toEqualTypeOf<{ argFoo: string; argBar: string }>();
@@ -15,7 +17,7 @@ describe('Render Story', () => {
     expect(reactiveArgs).toEqual({ argFoo: 'foo2', argBar: 'bar2' });
   });
 
-  test('update reactive Args component inherit objectArg updateArgs()', () => {
+  it('update reactive Args component inherit objectArg updateArgs()', () => {
     const reactiveArgs = reactive({ objectArg: { argFoo: 'foo', argBar: 'bar' } }); // get reference to reactiveArgs or create a new one;
     expectTypeOf(reactiveArgs).toMatchTypeOf<Record<string, any>>();
     expectTypeOf(reactiveArgs).toEqualTypeOf<{ objectArg: { argFoo: string; argBar: string } }>();
@@ -29,7 +31,7 @@ describe('Render Story', () => {
     });
   });
 
-  test('update reactive Args component inherit objectArg', () => {
+  it('update reactive Args component inherit objectArg', () => {
     const reactiveArgs = reactive({ objectArg: { argFoo: 'foo' } }); // get reference to reactiveArgs or create a new one;
     expectTypeOf(reactiveArgs).toMatchTypeOf<Record<string, any>>();
     expectTypeOf(reactiveArgs).toEqualTypeOf<{ objectArg: { argFoo: string } }>();
@@ -39,7 +41,7 @@ describe('Render Story', () => {
     expect(reactiveArgs).toEqual({ argFoo: 'foo2', argBar: 'bar2' });
   });
 
-  test('update reactive Args component 2 object args  ->  updateArgs()', () => {
+  it('update reactive Args component 2 object args  ->  updateArgs()', () => {
     const reactiveArgs = reactive({
       objectArg: { argFoo: 'foo' },
       objectArg2: { argBar: 'bar' },
@@ -59,7 +61,7 @@ describe('Render Story', () => {
     });
   });
 
-  test('update reactive Args component object with object  ->  updateArgs()', () => {
+  it('update reactive Args component object with object  ->  updateArgs()', () => {
     const reactiveArgs = reactive({
       objectArg: { argFoo: 'foo' },
     }); // get reference to reactiveArgs or create a new one;
@@ -74,7 +76,7 @@ describe('Render Story', () => {
     expect(reactiveArgs).toEqual({ objectArg: { argFoo: 'bar' } });
   });
 
-  test('update reactive Args component no arg with all args -> updateArgs()', () => {
+  it('update reactive Args component no arg with all args -> updateArgs()', () => {
     const reactiveArgs = reactive({ objectArg: { argFoo: 'foo' } }); // get reference to reactiveArgs or create a new one;
     expectTypeOf(reactiveArgs).toMatchTypeOf<Record<string, any>>();
     expectTypeOf(reactiveArgs).toEqualTypeOf<{

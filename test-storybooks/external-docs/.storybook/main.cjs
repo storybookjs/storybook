@@ -8,7 +8,6 @@ const config = {
     },
   ],
   logLevel: 'debug',
-  addons: ['@storybook/addon-essentials'],
   typescript: {
     check: true,
     checkOptions: {},
@@ -17,11 +16,9 @@ const config = {
     },
   },
   core: {
-    channelOptions: { allowFunction: false, maxDepth: 10 },
+    channelOptions: { maxDepth: 10 },
   },
   features: {
-    storyStoreV7: !global.navigator?.userAgent?.match?.('jsdom'),
-    buildStoriesJson: true,
     warnOnLegacyHierarchySeparator: false,
     previewMdx2: true,
   },

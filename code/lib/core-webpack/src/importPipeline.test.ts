@@ -1,3 +1,5 @@
+import { expect, it, vi } from 'vitest';
+
 import { importPipeline } from './importPipeline';
 
 const createGate = (): [Promise<any | undefined>, (_?: any) => void] => {
@@ -10,7 +12,7 @@ const createGate = (): [Promise<any | undefined>, (_?: any) => void] => {
 
 it('passes through to passed importFn on serial calls', async () => {
   const pipeline = importPipeline();
-  const importFn = jest.fn();
+  const importFn = vi.fn();
 
   importFn.mockResolvedValueOnce('r1');
   expect(await pipeline(() => importFn('i1'))).toEqual('r1');
@@ -26,7 +28,7 @@ it('passes through to passed importFn on serial calls', async () => {
 it('blocks on parallel calls', async () => {
   const pipeline = importPipeline();
   const [firstGate, openFirstGate] = createGate();
-  const importFn = jest
+  const importFn = vi
     .fn()
     .mockImplementationOnce(() => firstGate)
     .mockResolvedValueOnce('r2');
@@ -54,7 +56,7 @@ it('blocks on parallel calls', async () => {
 it('dispatches all queued calls on opening', async () => {
   const pipeline = importPipeline();
   const [firstGate, openFirstGate] = createGate();
-  const importFn = jest
+  const importFn = vi
     .fn()
     .mockImplementationOnce(() => firstGate)
     .mockResolvedValueOnce('r2')
@@ -89,7 +91,7 @@ it('blocks sequentially on parallel calls', async () => {
   const pipeline = importPipeline();
   const [firstGate, openFirstGate] = createGate();
   const [secondGate, openSecondGate] = createGate();
-  const importFn = jest
+  const importFn = vi
     .fn()
     .mockImplementationOnce(() => firstGate)
     .mockImplementationOnce(() => secondGate)

@@ -1,34 +1,30 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9586-js-react-memo 1`] = `
-Object {
-  "rows": Array [
-    Object {
+{
+  "rows": [
+    {
       "defaultValue": null,
       "description": "",
       "name": "label",
       "required": true,
-      "sbType": Object {
+      "sbType": {
         "name": "string",
       },
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "string",
       },
     },
-    Object {
+    {
       "defaultValue": null,
       "description": "",
       "name": "onClick",
       "required": true,
-      "sbType": Object {
+      "sbType": {
         "name": "function",
       },
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "func",
       },
     },
   ],
 }
-`;

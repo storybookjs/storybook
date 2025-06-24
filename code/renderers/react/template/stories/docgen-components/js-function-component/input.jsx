@@ -1,15 +1,12 @@
-/* eslint-disable react/forbid-prop-types */
-/* eslint-disable react/no-unused-prop-types */
 import React from 'react';
+
 import PropTypes from 'prop-types';
 
 import { imported } from '../imported';
 
 const local = 'local-value';
 
-/**
- * A component that renders its props
- */
+/** A component that renders its props */
 export const PropsWriter = (props) => <pre>{JSON.stringify(props)}</pre>;
 
 PropsWriter.propTypes = {

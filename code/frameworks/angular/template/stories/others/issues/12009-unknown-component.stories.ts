@@ -1,14 +1,16 @@
-import { Meta, StoryFn } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+
 import Button from '../../button.component';
 
-export default {
+const meta: Meta<Button> = {
   // title: 'Others / Issues / 12009 unknown component',
   component: Button,
-} as Meta;
+};
 
-const Template: StoryFn = (args) => ({
-  props: args,
-});
+export default meta;
 
-export const Basic = Template.bind({});
-Basic.args = { text: 'Unknown component' };
+type Story = StoryObj<Button>;
+
+export const Basic: Story = {
+  args: { text: 'Unknown component' },
+};

@@ -1,7 +1,8 @@
-import { Meta, StoryFn } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+
 import { OnPushBoxComponent } from './on-push-box.component';
 
-export default {
+const meta: Meta<OnPushBoxComponent> = {
   // title: 'Basics / Component / With OnPush strategy',
   component: OnPushBoxComponent,
   argTypes: {
@@ -12,10 +13,12 @@ export default {
     word: 'The text',
     bgColor: '#FFF000',
   },
-} as Meta;
+};
 
-export const ClassSpecifiedComponentWithOnPushAndArgs: StoryFn = (args) => ({
-  props: args,
-});
-ClassSpecifiedComponentWithOnPushAndArgs.storyName =
-  'Class-specified component with OnPush and Args';
+export default meta;
+
+type Story = StoryObj<OnPushBoxComponent>;
+
+export const ClassSpecifiedComponentWithOnPushAndArgs: Story = {
+  name: 'Class-specified component with OnPush and Args',
+};

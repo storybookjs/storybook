@@ -1,6 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`is not Nx project angular builders Angular < 14.0.0 should throw an Error 1`] = `
-"❌ Your project uses Angular < 14.0.0. Storybook 7.0 for Angular requires Angular 14.0.0 or higher. 
-Please upgrade your Angular version to at least version 14.0.0 to use Storybook 7.0 in your project."
-`;

@@ -1,56 +1,52 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9827-ts-default-values 1`] = `
-Object {
-  "rows": Array [
-    Object {
-      "defaultValue": Object {
+{
+  "rows": [
+    {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'this is the default :)'",
       },
       "description": "",
       "name": "title",
       "required": false,
-      "sbType": Object {
+      "sbType": {
         "name": "string",
       },
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "string",
       },
     },
-    Object {
+    {
       "defaultValue": null,
       "description": "",
       "name": "foo",
       "required": true,
-      "sbType": Object {
+      "sbType": {
         "name": "boolean",
       },
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "boolean",
       },
     },
-    Object {
+    {
       "defaultValue": null,
       "description": "",
       "name": "bar",
       "required": false,
-      "sbType": Object {
+      "sbType": {
         "name": "array",
         "raw": "string[]",
-        "value": Array [
-          Object {
+        "value": [
+          {
             "name": "string",
           },
         ],
       },
-      "type": Object {
+      "type": {
         "detail": undefined,
-        "summary": "Array",
+        "summary": "string[]",
       },
     },
   ],
 }
-`;

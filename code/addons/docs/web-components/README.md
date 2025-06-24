@@ -14,7 +14,7 @@
   ```js
   import { setCustomElementsManifest } from '@storybook/web-components';
   import customElements from '../custom-elements.json';
-
+  
   setCustomElementsManifest(customElements);
   ```
 
@@ -31,7 +31,7 @@
 
 In order to get [Props tables](..docs/../../docs/props-tables.md) documentation for web-components you will need to have a [custom-elements.json](https://github.com/webcomponents/custom-elements-json) file.
 
-You can hand write it or better generate it. Depending on the web components sugar you are choosing your milage may vary.
+You can hand write it or better generate it. Depending on the web components sugar you are choosing your mileage may vary.
 
 Known analyzers that output `custom-elements.json` v1.0.0:
 

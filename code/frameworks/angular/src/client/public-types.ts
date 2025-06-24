@@ -1,4 +1,5 @@
-import {
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import type {
   AnnotatedStoryFn,
   Args,
   ComponentAnnotations,
@@ -8,10 +9,11 @@ import {
   StoryContext as GenericStoryContext,
   StrictArgs,
   ProjectAnnotations,
-} from '@storybook/types';
-import { AngularRenderer } from './types';
+} from 'storybook/internal/types';
+import type * as AngularCore from '@angular/core';
+import type { AngularRenderer } from './types';
 
-export type { Args, ArgTypes, Parameters, StrictArgs } from '@storybook/types';
+export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { Parameters as AngularParameters } from './types';
 export type { AngularRenderer };
 
@@ -20,34 +22,69 @@ export type { AngularRenderer };
  *
  * @see [Default export](https://storybook.js.org/docs/formats/component-story-format/#default-export)
  */
-export type Meta<TArgs = Args> = ComponentAnnotations<AngularRenderer, TArgs>;
+export type Meta<TArgs = Args> = ComponentAnnotations<
+  AngularRenderer,
+  TransformComponentType<TArgs>
+>;
 
 /**
  * Story function that represents a CSFv2 component example.
  *
  * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
  */
-export type StoryFn<TArgs = Args> = AnnotatedStoryFn<AngularRenderer, TArgs>;
+export type StoryFn<TArgs = Args> = AnnotatedStoryFn<
+  AngularRenderer,
+  TransformComponentType<TArgs>
+>;
 
 /**
- * Story function that represents a CSFv3 component example.
+ * Story object that represents a CSFv3 component example.
  *
  * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
  */
-export type StoryObj<TArgs = Args> = StoryAnnotations<AngularRenderer, TArgs>;
-
-/**
- * @deprecated Use `StoryFn` instead.
- * Use `StoryObj` if you want to migrate to CSF3, which uses objects instead of functions to represent stories.
- * You can read more about the CSF3 format here: https://storybook.js.org/blog/component-story-format-3-0/
- *
- * Story function that represents a CSFv2 component example.
- *
- * @see [Named Story exports](https://storybook.js.org/docs/formats/component-story-format/#named-story-exports)
- */
-export type Story<TArgs = Args> = StoryFn<TArgs>;
+export type StoryObj<TArgs = Args> = StoryAnnotations<
+  AngularRenderer,
+  TransformComponentType<TArgs>
+>;
 
 export type Decorator<TArgs = StrictArgs> = DecoratorFunction<AngularRenderer, TArgs>;
 export type Loader<TArgs = StrictArgs> = LoaderFunction<AngularRenderer, TArgs>;
 export type StoryContext<TArgs = StrictArgs> = GenericStoryContext<AngularRenderer, TArgs>;
 export type Preview = ProjectAnnotations<AngularRenderer>;
+
+/** Utility type that transforms InputSignal and EventEmitter types */
+type TransformComponentType<T> = TransformInputSignalType<
+  TransformOutputSignalType<TransformEventType<T>>
+>;
+
+// @ts-ignore Angular < 17.2 doesn't export InputSignal
+type AngularInputSignal<T> = AngularCore.InputSignal<T>;
+// @ts-ignore Angular < 17.2 doesn't export InputSignalWithTransform
+type AngularInputSignalWithTransform<T, U> = AngularCore.InputSignalWithTransform<T, U>;
+// @ts-ignore Angular < 17.3 doesn't export AngularOutputEmitterRef
+type AngularOutputEmitterRef<T> = AngularCore.OutputEmitterRef<T>;
+
+type AngularHasInputSignal = typeof AngularCore extends { input: infer U } ? true : false;
+type AngularHasOutputSignal = typeof AngularCore extends { output: infer U } ? true : false;
+
+type InputSignal<T> = AngularHasInputSignal extends true ? AngularInputSignal<T> : never;
+type InputSignalWithTransform<T, U> = AngularHasInputSignal extends true
+  ? AngularInputSignalWithTransform<T, U>
+  : never;
+type OutputEmitterRef<T> = AngularHasOutputSignal extends true ? AngularOutputEmitterRef<T> : never;
+
+type TransformInputSignalType<T> = {
+  [K in keyof T]: T[K] extends InputSignal<infer E>
+    ? E
+    : T[K] extends InputSignalWithTransform<any, infer U>
+      ? U
+      : T[K];
+};
+
+type TransformOutputSignalType<T> = {
+  [K in keyof T]: T[K] extends OutputEmitterRef<infer E> ? (e: E) => void : T[K];
+};
+
+type TransformEventType<T> = {
+  [K in keyof T]: T[K] extends AngularCore.EventEmitter<infer E> ? (e: E) => void : T[K];
+};

@@ -1,8 +1,8 @@
-import { DecoratorFunction, LegacyStoryFn, StoryContext } from '@storybook/types';
-import { sanitizeStoryContextUpdate } from '@storybook/preview-api';
-import { computesTemplateFromComponent } from './angular-beta/ComputesTemplateFromComponent';
+import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
+import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
 
-import { AngularRenderer } from './types';
+import { computesTemplateFromComponent } from './angular-beta/ComputesTemplateFromComponent';
+import type { AngularRenderer } from './types';
 
 export default function decorateStory(
   mainStoryFn: LegacyStoryFn<AngularRenderer>,

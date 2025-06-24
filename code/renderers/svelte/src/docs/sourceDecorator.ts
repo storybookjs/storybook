@@ -1,18 +1,31 @@
-/* eslint-disable no-underscore-dangle */
-import { addons, useEffect } from '@storybook/preview-api';
-import { deprecate } from '@storybook/client-logger';
-import type { ArgTypes, Args, StoryContext, Renderer } from '@storybook/types';
+import { deprecate } from 'storybook/internal/client-logger';
+import { SourceType } from 'storybook/internal/docs-tools';
+import type {
+  ArgTypes,
+  Args,
+  ArgsStoryFn,
+  DecoratorFunction,
+  StoryContext,
+} from 'storybook/internal/types';
 
-import { SourceType, SNIPPET_RENDERED } from '@storybook/docs-tools';
+import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
+import type { SvelteComponentDoc } from 'sveltedoc-parser';
+
+import type { SvelteRenderer, SvelteStoryResult } from '../types';
 
 /**
- * Check if the sourcecode should be generated.
+ * Check if the source-code should be generated.
  *
  * @param context StoryContext
  */
-const skipSourceRender = (context: StoryContext<Renderer>) => {
+const skipSourceRender = (context: StoryContext<SvelteRenderer>) => {
   const sourceParams = context?.parameters.docs?.source;
   const isArgsStory = context?.parameters.__isArgsStory;
+
+  if ((context?.tags ?? []).some((tag) => tag.startsWith('svelte-csf'))) {
+    // skip if Svelte CSF, as the addon does its own source code generation
+    return true;
+  }
 
   // always render if the user forces it
   if (sourceParams?.type === SourceType.DYNAMIC) {
@@ -38,8 +51,15 @@ function toSvelteProperty(key: string, value: any, argTypes: ArgTypes): string |
     return null;
   }
 
+  const argType = argTypes[key];
+
   // default value ?
-  if (argTypes[key] && argTypes[key].defaultValue === value) {
+  if (argType && argType.defaultValue === value) {
+    return null;
+  }
+
+  // event should be skipped
+  if (argType && argType.action) {
     return null;
   }
 
@@ -49,6 +69,11 @@ function toSvelteProperty(key: string, value: any, argTypes: ArgTypes): string |
 
   if (typeof value === 'string') {
     return `${key}=${JSON.stringify(value)}`;
+  }
+
+  // handle function
+  if (typeof value === 'function') {
+    return `${key}={<handler>}`;
   }
 
   return `${key}={${JSON.stringify(value)}}`;
@@ -64,7 +89,6 @@ function getComponentName(component: any): string | null {
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { __docgen = {} } = component;
   let { name } = __docgen;
 
@@ -98,46 +122,51 @@ export function generateSvelteSource(
     return null;
   }
 
-  const props = Object.entries(args)
+  const propsArray = Object.entries(args)
     .filter(([k]) => k !== slotProperty)
     .map(([k, v]) => toSvelteProperty(k, v, argTypes))
-    .filter((p) => p)
-    .join(' ');
+    .filter((p) => p);
 
+  const props = propsArray.join(' ');
+
+  const multiline = props.length > 50;
   const slotValue = slotProperty ? args[slotProperty] : null;
 
+  const srcStart = multiline ? `<${name}\n  ${propsArray.join('\n  ')}` : `<${name} ${props}`;
   if (slotValue) {
-    return `<${name} ${props}>\n    ${slotValue}\n</${name}>`;
+    return `${srcStart}>\n    ${slotValue}\n</${name}>`;
   }
-
-  return `<${name} ${props}/>`;
+  return `${srcStart}/>`;
 }
 
 /**
  * Check if the story component is a wrapper to the real component.
  *
- * A component can be annotated with @wrapper to indicate that
- * it's just a wrapper for the real tested component. If it's the case
- * then the code generated references the real component, not the wrapper.
+ * A component can be annotated with `@wrapper` to indicate that it's just a wrapper for the real
+ * tested component. If it's the case then the code generated references the real component, not the
+ * wrapper.
  *
- * moreover, a wrapper can annotate a property with @slot : this property
- * is then assumed to be an alias to the default slot.
+ * Moreover, a wrapper can annotate a property with `@slot` : this property is then assumed to be an
+ * alias to the default slot.
  *
  * @param component Component
  */
-function getWrapperProperties(component: any) {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const { __docgen } = component;
+function getWrapperProperties(
+  component?: SvelteStoryResult['Component'] & {
+    __docgen?: SvelteComponentDoc & { keywords?: string[] };
+  }
+) {
+  const { __docgen } = component || {};
   if (!__docgen) {
     return { wrapper: false };
   }
 
   // the component should be declared as a wrapper
-  if (!__docgen.keywords.find((kw: any) => kw.name === 'wrapper')) {
+  if (!__docgen.keywords?.find((kw: any) => kw.name === 'wrapper')) {
     return { wrapper: false };
   }
 
-  const slotProp = __docgen.data.find((prop: any) =>
+  const slotProp = __docgen.data?.find((prop: any) =>
     prop.keywords.find((kw: any) => kw.name === 'slot')
   );
   return { wrapper: true, slotProperty: slotProp?.name as string };
@@ -145,43 +174,44 @@ function getWrapperProperties(component: any) {
 
 /**
  * Svelte source decorator.
+ *
  * @param storyFn Fn
- * @param context  StoryContext
+ * @param context StoryContext
  */
-export const sourceDecorator = (storyFn: any, context: StoryContext<Renderer>) => {
-  const channel = addons.getChannel();
+export const sourceDecorator: DecoratorFunction<SvelteRenderer> = (storyFn, context) => {
   const skip = skipSourceRender(context);
   const story = storyFn();
-
-  let source: string;
+  const source = useRef<undefined | string>(undefined);
 
   useEffect(() => {
-    if (!skip && source) {
-      const { id, unmappedArgs } = context;
-      channel.emit(SNIPPET_RENDERED, { id, args: unmappedArgs, source });
+    if (skip) {
+      return;
+    }
+
+    const { parameters = {}, args = {}, component: ctxComponent } = context || {};
+
+    // excludeDecorators from source generation as they'll generate the wrong code
+    // instead get the component directly from the original story function instead
+    let { Component: component } = (context.originalStoryFn as ArgsStoryFn<SvelteRenderer>)(
+      args,
+      context
+    );
+    const { wrapper, slotProperty } = getWrapperProperties(component);
+    if (wrapper) {
+      if (parameters.component) {
+        deprecate('parameters.component is deprecated. Using context.component instead.');
+      }
+
+      component = ctxComponent;
+    }
+
+    const generated = generateSvelteSource(component, args, context?.argTypes, slotProperty);
+
+    if (generated && source.current !== generated) {
+      emitTransformCode(generated, context);
+      source.current = generated;
     }
   });
-
-  if (skip) {
-    return story;
-  }
-
-  const { parameters = {}, args = {}, component: ctxtComponent } = context || {};
-  let { Component: component = {} } = story;
-
-  const { wrapper, slotProperty } = getWrapperProperties(component);
-  if (wrapper) {
-    if (parameters.component) {
-      deprecate('parameters.component is deprecated. Using context.component instead.');
-    }
-
-    component = ctxtComponent;
-  }
-
-  const generated = generateSvelteSource(component, args, context?.argTypes, slotProperty);
-  if (generated) {
-    source = generated;
-  }
 
   return story;
 };

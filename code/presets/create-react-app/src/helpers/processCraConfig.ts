@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-import { resolve } from 'path';
-import type { Configuration, RuleSetCondition, RuleSetRule } from 'webpack';
-import semver from 'semver';
+import { resolve } from 'node:path';
+
 import type { PluginItem, TransformOptions } from '@babel/core';
+import semver from 'semver';
+import type { Configuration, RuleSetCondition, RuleSetRule } from 'webpack';
+
 import type { PluginOptions } from '../types';
 
 type RuleSetConditions = RuleSetCondition[];
@@ -13,16 +14,18 @@ const isString = (value: string | unknown): value is string => typeof value === 
 
 // This handles arrays in Webpack rule tests.
 const testMatch = (rule: RuleSetRule, string: string): boolean => {
-  if (!rule.test) return false;
+  if (!rule.test) {
+    return false;
+  }
   return Array.isArray(rule.test)
     ? rule.test.some((test) => isRegExp(test) && test.test(string))
     : isRegExp(rule.test) && rule.test.test(string);
 };
 
-export const processCraConfig = (
+export const processCraConfig = async (
   craWebpackConfig: Configuration,
   options: PluginOptions
-): RuleSetRule[] => {
+): Promise<RuleSetRule[]> => {
   const configDir = resolve(options.configDir);
 
   /*
@@ -35,11 +38,15 @@ export const processCraConfig = (
    *
    * See: https://github.com/storybookjs/storybook/pull/9157
    */
-  const storybookVersion = semver.coerce(options.packageJson.version) || '';
+  const storybookVersion = semver.coerce(options.packageJson?.version) || '';
   const isStorybook530 = semver.gte(storybookVersion, '5.3.0');
+  const babelOptions = await options.presets.apply('babel');
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return craWebpackConfig.module!.rules.reduce((rules, rule): RuleSetRule[] => {
+  if (!craWebpackConfig?.module?.rules) {
+    return [];
+  }
+
+  return craWebpackConfig.module.rules.reduce((rules, rule): RuleSetRule[] => {
     const { oneOf, include } = rule as RuleSetRule;
 
     // Add our `configDir` to support JSX and TypeScript in that folder.
@@ -61,6 +68,7 @@ export const processCraConfig = (
       return [
         ...rules,
         {
+          // @ts-expect-error (broken typings from webpack)
           oneOf: oneOf.map((oneOfRule: RuleSetRule): RuleSetRule => {
             if (oneOfRule.type === 'asset/resource') {
               if (isStorybook530) {
@@ -108,12 +116,7 @@ export const processCraConfig = (
                 overrides: TransformOptions[] | null;
               };
 
-              const {
-                extends: _extends,
-                plugins,
-                presets,
-                overrides,
-              } = (options as any).babelOptions;
+              const { extends: _extends, plugins, presets, overrides } = babelOptions;
 
               return {
                 ...oneOfRule,

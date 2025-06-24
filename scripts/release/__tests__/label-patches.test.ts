@@ -1,18 +1,21 @@
-import type { LogResult } from 'simple-git';
+import { beforeEach, expect, it, vi } from 'vitest';
+
 import ansiRegex from 'ansi-regex';
+import type { LogResult } from 'simple-git';
+
 import { run } from '../label-patches';
-import * as gitClient_ from '../utils/git-client';
 import * as githubInfo_ from '../utils/get-github-info';
+import * as gitClient_ from '../utils/git-client';
 import * as github_ from '../utils/github-client';
 
-jest.mock('uuid');
-jest.mock('../utils/get-github-info');
-jest.mock('../utils/github-client');
-jest.mock('../utils/git-client', () => jest.requireActual('jest-mock-extended').mockDeep());
+vi.mock('uuid');
+vi.mock('../utils/get-github-info');
+vi.mock('../utils/github-client');
+vi.mock('../utils/git-client');
 
-const gitClient = jest.mocked(gitClient_);
-const github = jest.mocked(github_);
-const githubInfo = jest.mocked(githubInfo_);
+const gitClient = vi.mocked(gitClient_, true);
+const github = vi.mocked(github_, true);
+const githubInfo = vi.mocked(githubInfo_, true);
 
 const remoteMock = [
   {
@@ -57,7 +60,8 @@ const pullInfoMock = {
   pull: 55,
   commit: '930b47f011f750c44a1782267d698ccdd3c04da3',
   title: 'Legal: Fix license',
-  labels: ['documentation', 'patch', 'picked'],
+  labels: ['documentation', 'patch:yes', 'patch:done'],
+  state: 'MERGED',
   links: {
     commit:
       '[`930b47f011f750c44a1782267d698ccdd3c04da3`](https://github.com/storybookjs/storybook/commit/930b47f011f750c44a1782267d698ccdd3c04da3)',
@@ -67,26 +71,40 @@ const pullInfoMock = {
 };
 
 beforeEach(() => {
-  // mock IO
-  jest.clearAllMocks();
   gitClient.getLatestTag.mockResolvedValue('v7.2.1');
   gitClient.git.log.mockResolvedValue(gitLogMock);
   gitClient.git.getRemotes.mockResolvedValue(remoteMock);
   githubInfo.getPullInfoFromCommit.mockResolvedValue(pullInfoMock);
-  github.getLabelIds.mockResolvedValue({ picked: 'pick-id' });
+  github.getLabelIds.mockResolvedValue({ 'patch:done': 'pick-id' });
+  github.getUnpickedPRs.mockResolvedValue([
+    {
+      number: 42,
+      id: 'some-id',
+      branch: 'some-patching-branch',
+      title: 'Fix: Patch this PR',
+      mergeCommit: 'abcd1234',
+    },
+    {
+      number: 44,
+      id: 'other-id',
+      branch: 'other-patching-branch',
+      title: 'Fix: Also patch this PR',
+      mergeCommit: 'abcd1234',
+    },
+  ]);
 });
 
-test('it should fail early when no GH_TOKEN is set', async () => {
+it('should fail early when no GH_TOKEN is set', async () => {
   delete process.env.GH_TOKEN;
   await expect(run({})).rejects.toThrowErrorMatchingInlineSnapshot(
-    `"GH_TOKEN environment variable must be set, exiting."`
+    `[Error: GH_TOKEN environment variable must be set, exiting.]`
   );
 });
 
-test('it should label the PR associated with cheery picks in the current branch', async () => {
+it('should label the PR associated with cherry picks in the current branch', async () => {
   process.env.GH_TOKEN = 'MY_SECRET';
 
-  const writeStderr = jest.spyOn(process.stderr, 'write').mockImplementation();
+  const writeStderr = vi.spyOn(process.stderr, 'write').mockImplementation((() => {}) as any);
 
   await run({});
   expect(github.githubGraphQlClient.mock.calls).toMatchInlineSnapshot(`
@@ -122,7 +140,7 @@ test('it should label the PR associated with cheery picks in the current branch'
             .trim()
         : text
     )
-    .filter((it) => it !== '');
+    .filter((text) => text !== '');
 
   expect(stderrCalls).toMatchInlineSnapshot(`
     [
@@ -130,8 +148,83 @@ test('it should label the PR associated with cheery picks in the current branch'
       "Found latest tag: v7.2.1",
       "Looking at cherry pick commits since v7.2.1",
       "Found the following picks : Commit: 930b47f011f750c44a1782267d698ccdd3c04da3 PR: [#55](https://github.com/storybookjs/storybook/pull/55)",
-      "Labeling the PRs with the picked label...",
-      "Successfully labeled all PRs with the picked label.",
+      "Labeling 1 PRs with the patch:done label...",
+      "Successfully labeled all PRs with the patch:done label.",
     ]
   `);
+});
+
+it('should label all PRs when the --all flag is passed', async () => {
+  process.env.GH_TOKEN = 'MY_SECRET';
+
+  // clear the git log, it shouldn't depend on it in --all mode
+  gitClient.git.log.mockResolvedValue({
+    all: [],
+    latest: null!,
+    total: 0,
+  });
+
+  const writeStderr = vi.spyOn(process.stderr, 'write').mockImplementation((() => {}) as any);
+
+  await run({ all: true });
+  expect(github.githubGraphQlClient.mock.calls).toMatchInlineSnapshot(`
+    [
+      [
+        "
+          mutation ($input: AddLabelsToLabelableInput!) {
+            addLabelsToLabelable(input: $input) {
+              clientMutationId
+            }
+          }
+        ",
+        {
+          "input": {
+            "clientMutationId": "39cffd21-7933-56e4-9d9c-1afeda9d5906",
+            "labelIds": [
+              "pick-id",
+            ],
+            "labelableId": "some-id",
+          },
+        },
+      ],
+      [
+        "
+          mutation ($input: AddLabelsToLabelableInput!) {
+            addLabelsToLabelable(input: $input) {
+              clientMutationId
+            }
+          }
+        ",
+        {
+          "input": {
+            "clientMutationId": "cc31033b-5da7-5c9e-adf2-80a2963e19a8",
+            "labelIds": [
+              "pick-id",
+            ],
+            "labelableId": "other-id",
+          },
+        },
+      ],
+    ]
+  `);
+
+  const stderrCalls = writeStderr.mock.calls
+    .map(([text]) =>
+      typeof text === 'string'
+        ? text
+            .replace(ansiRegex(), '')
+            .replace(/[^\x20-\x7E]/g, '')
+            .replaceAll('-', '')
+            .trim()
+        : text
+    )
+    .filter((t) => t !== '');
+
+  expect(stderrCalls).toMatchInlineSnapshot(`
+    [
+      "Labeling 2 PRs with the patch:done label...",
+      "Successfully labeled all PRs with the patch:done label.",
+    ]
+  `);
+  expect(github.getUnpickedPRs).toHaveBeenCalledTimes(1);
 });

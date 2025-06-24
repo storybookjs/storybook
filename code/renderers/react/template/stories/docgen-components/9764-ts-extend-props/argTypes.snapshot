@@ -1,72 +1,68 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9764-ts-extend-props 1`] = `
-Object {
-  "checked": Object {
-    "control": Object {
+{
+  "checked": {
+    "control": {
       "type": "boolean",
     },
     "description": "",
     "name": "checked",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "boolean",
       },
     },
-    "type": Object {
+    "type": {
       "name": "boolean",
       "required": false,
     },
   },
-  "defaultChecked": Object {
-    "control": Object {
+  "defaultChecked": {
+    "control": {
       "type": "boolean",
     },
     "description": "",
     "name": "defaultChecked",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "boolean",
       },
     },
-    "type": Object {
+    "type": {
       "name": "boolean",
       "required": false,
     },
   },
-  "value": Object {
-    "control": Object {
+  "value": {
+    "control": {
       "type": "object",
     },
     "description": "The input content value",
     "name": "value",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "union",
       },
     },
-    "type": Object {
+    "type": {
       "name": "union",
       "raw": "string | number",
       "required": false,
-      "value": Array [
-        Object {
+      "value": [
+        {
           "name": "string",
         },
-        Object {
+        {
           "name": "number",
         },
       ],
     },
   },
 }
-`;

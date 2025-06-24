@@ -1,89 +1,85 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9023-js-hoc 1`] = `
-Object {
-  "classes": Object {
-    "control": Object {
+{
+  "classes": {
+    "control": {
       "type": "object",
     },
     "description": "",
     "name": "classes",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "object",
       },
     },
-    "type": Object {
+    "type": {
       "name": "object",
       "required": true,
     },
   },
-  "dismissible": Object {
-    "control": Object {
+  "dismissible": {
+    "control": {
       "type": "boolean",
     },
     "description": "",
     "name": "dismissible",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "false",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "bool",
       },
     },
-    "type": Object {
+    "type": {
       "name": "boolean",
       "required": false,
     },
   },
-  "icon": Object {
-    "control": Object {
+  "icon": {
+    "control": {
       "type": "object",
     },
     "description": "",
     "name": "icon",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "elementType",
       },
     },
-    "type": Object {
+    "type": {
       "name": "other",
       "required": false,
       "value": "elementType",
     },
   },
-  "variant": Object {
-    "control": Object {
+  "variant": {
+    "control": {
       "type": "text",
     },
     "description": "",
     "name": "variant",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'primary'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "string",
       },
     },
-    "type": Object {
+    "type": {
       "name": "string",
       "required": false,
     },
   },
 }
-`;

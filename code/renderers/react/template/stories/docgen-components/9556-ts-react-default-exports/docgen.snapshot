@@ -1,32 +1,27 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9556-ts-react-default-exports 1`] = `
-"function _extends() { _extends = Object.assign ? Object.assign.bind() : function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
-/* eslint-disable react/button-has-type */
+function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
 import React from 'react';
 export const Button = ({
   isDisabled = false,
   ...props
-}) => /*#__PURE__*/React.createElement(\\"button\\", _extends({
+}) => /*#__PURE__*/React.createElement("button", _extends({
   disabled: isDisabled
 }, props));
 export const component = Button;
 Button.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"Button\\",
-  \\"props\\": {
-    \\"isDisabled\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"false\\",
-        \\"computed\\": false
+  "description": "",
+  "methods": [],
+  "displayName": "Button",
+  "props": {
+    "isDisabled": {
+      "defaultValue": {
+        "value": "false",
+        "computed": false
       },
-      \\"required\\": false,
-      \\"tsType\\": {
-        \\"name\\": \\"boolean\\"
+      "required": false,
+      "tsType": {
+        "name": "boolean"
       },
-      \\"description\\": \\"\\"
+      "description": ""
     }
   }
-};"
-`;
+};

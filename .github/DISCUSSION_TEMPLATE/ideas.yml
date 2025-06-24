@@ -1,0 +1,37 @@
+labels:
+  - needs triage
+  - feature request
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem? Please describe.
+      description: >-
+        A clear and concise description of the problem. E.g. I'm always
+        frustrated when [...]
+  - type: textarea
+    id: describe
+    attributes:
+      label: Describe the solution you'd like
+      description: What would you like to see added to Storybook to solve problem?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered
+      description: Any alternative solutions or features you've considered.
+  - type: dropdown
+    id: help
+    attributes:
+      label: Are you able to assist to bring the feature to reality?
+      options:
+        - 'no'
+        - yes, I can
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context or screenshots about the feature request here.

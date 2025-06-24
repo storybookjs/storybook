@@ -1,10 +1,8 @@
-/* eslint-disable no-continue */
-/* eslint-disable no-restricted-syntax */
-
 import type { NodePath, PluginObj, types } from '@babel/core';
 
 /**
- * Source: https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/amp-attributes.ts
+ * Source:
+ * https://github.com/vercel/next.js/blob/canary/packages/next/src/build/babel/plugins/amp-attributes.ts
  */
 export default function AmpAttributePatcher(): PluginObj {
   return {

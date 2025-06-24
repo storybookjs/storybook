@@ -3,3 +3,4 @@ export { computesTemplateSourceFromComponent } from './client/angular-beta/Compu
 export { rendererFactory } from './client/render';
 export { AbstractRenderer } from './client/angular-beta/AbstractRenderer';
 export { getApplication } from './client/angular-beta/StorybookModule';
+export { PropertyExtractor } from './client/angular-beta/utils/PropertyExtractor';

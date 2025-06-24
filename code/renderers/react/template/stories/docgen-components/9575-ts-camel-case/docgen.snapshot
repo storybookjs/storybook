@@ -1,12 +1,9 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9575-ts-camel-case 1`] = `
-"import PropTypes from 'prop-types';
 import React from 'react';
+import PropTypes from 'prop-types';
 const iconButton = function IconButton(props) {
-  return /*#__PURE__*/React.createElement(\\"div\\", {
-    className: \\"icon-button\\"
-  }, \\"icon-button\\");
+  return /*#__PURE__*/React.createElement("div", {
+    className: "icon-button"
+  }, "icon-button");
 };
 iconButton.propTypes = {
   // deepscan-disable-next-line
@@ -16,23 +13,22 @@ iconButton.defaultProps = {
   color: 'primary'
 };
 iconButton.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"iconButton\\",
-  \\"props\\": {
-    \\"color\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'primary'\\",
-        \\"computed\\": false
+  "description": "",
+  "methods": [],
+  "displayName": "iconButton",
+  "props": {
+    "color": {
+      "defaultValue": {
+        "value": "'primary'",
+        "computed": false
       },
-      \\"description\\": \\"\\",
-      \\"type\\": {
-        \\"name\\": \\"string\\"
+      "description": "",
+      "type": {
+        "name": "string"
       },
-      \\"required\\": false
+      "required": false
     }
   }
 };
 export default iconButton;
-export const component = iconButton;"
-`;
+export const component = iconButton;

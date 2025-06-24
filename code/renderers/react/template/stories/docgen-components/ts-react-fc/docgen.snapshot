@@ -1,0 +1,26 @@
+import React from 'react';
+var DefaultEnum = /*#__PURE__*/function (DefaultEnum) {
+  DefaultEnum[DefaultEnum["TopLeft"] = 0] = "TopLeft";
+  DefaultEnum[DefaultEnum["TopRight"] = 1] = "TopRight";
+  DefaultEnum[DefaultEnum["TopCenter"] = 2] = "TopCenter";
+  return DefaultEnum;
+}(DefaultEnum || {});
+var NumericEnum = /*#__PURE__*/function (NumericEnum) {
+  NumericEnum[NumericEnum["TopLeft"] = 0] = "TopLeft";
+  NumericEnum[NumericEnum["TopRight"] = 1] = "TopRight";
+  NumericEnum[NumericEnum["TopCenter"] = 2] = "TopCenter";
+  return NumericEnum;
+}(NumericEnum || {});
+var StringEnum = /*#__PURE__*/function (StringEnum) {
+  StringEnum["TopLeft"] = "top-left";
+  StringEnum["TopRight"] = "top-right";
+  StringEnum["TopCenter"] = "top-center";
+  return StringEnum;
+}(StringEnum || {});
+export const TypeScriptProps = props => /*#__PURE__*/React.createElement("div", null, "TypeScript!");
+export const component = TypeScriptProps;
+TypeScriptProps.__docgenInfo = {
+  "description": "",
+  "methods": [],
+  "displayName": "TypeScriptProps"
+};

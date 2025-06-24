@@ -1,4 +1,3 @@
-/* eslint-disable react/button-has-type */
 import React from 'react';
 
 export interface Props extends React.ButtonHTMLAttributes<HTMLButtonElement> {

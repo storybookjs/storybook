@@ -1,22 +1,23 @@
-import { dirname, join } from 'path';
-import type { PresetProperty } from '@storybook/types';
-import type { StorybookConfig } from './types';
+import { dirname, join } from 'node:path';
 
-const wrapForPnP = (input: string) => dirname(require.resolve(join(input, 'package.json')));
+import type { PresetProperty } from 'storybook/internal/types';
 
-export const addons: PresetProperty<'addons', StorybookConfig> = [
-  wrapForPnP('@storybook/preset-server-webpack'),
+const getAbsolutePath = <I extends string>(input: I): I =>
+  dirname(require.resolve(join(input, 'package.json'))) as any;
+
+export const addons: PresetProperty<'addons'> = [
+  getAbsolutePath('@storybook/preset-server-webpack'),
 ];
 
-export const core: PresetProperty<'core', StorybookConfig> = async (config, options) => {
-  const framework = await options.presets.apply<StorybookConfig['framework']>('framework');
+export const core: PresetProperty<'core'> = async (config, options) => {
+  const framework = await options.presets.apply('framework');
 
   return {
     ...config,
     builder: {
-      name: wrapForPnP('@storybook/builder-webpack5') as '@storybook/builder-webpack5',
+      name: getAbsolutePath('@storybook/builder-webpack5'),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
-    renderer: wrapForPnP('@storybook/server'),
+    renderer: getAbsolutePath('@storybook/server'),
   };
 };

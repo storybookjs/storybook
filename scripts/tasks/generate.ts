@@ -1,8 +1,9 @@
+// eslint-disable-next-line depend/ban-dependencies
 import { pathExists, remove } from 'fs-extra';
 import { join } from 'path';
-import { REPROS_DIRECTORY } from '../utils/constants';
 
 import type { Task } from '../task';
+import { REPROS_DIRECTORY } from '../utils/constants';
 
 const logger = console;
 
@@ -30,7 +31,8 @@ export const generate: Task = {
     const { generate: generateRepro } = await import('../sandbox/generate');
 
     await generateRepro({
-      template: details.key,
+      templates: [details.key],
+      exclude: [],
       localRegistry: true,
       debug: options.debug,
     });

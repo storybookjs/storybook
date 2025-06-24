@@ -1,7 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9399-js-proptypes-shape 1`] = `
-"import React from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 export const Credits = ({
   areas
@@ -16,33 +13,32 @@ Credits.propTypes = {
 };
 export const component = Credits;
 Credits.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"Credits\\",
-  \\"props\\": {
-    \\"areas\\": {
-      \\"description\\": \\"\\",
-      \\"type\\": {
-        \\"name\\": \\"arrayOf\\",
-        \\"value\\": {
-          \\"name\\": \\"shape\\",
-          \\"value\\": {
-            \\"position\\": {
-              \\"name\\": \\"string\\",
-              \\"required\\": true
+  "description": "",
+  "methods": [],
+  "displayName": "Credits",
+  "props": {
+    "areas": {
+      "description": "",
+      "type": {
+        "name": "arrayOf",
+        "value": {
+          "name": "shape",
+          "value": {
+            "position": {
+              "name": "string",
+              "required": true
             },
-            \\"names\\": {
-              \\"name\\": \\"arrayOf\\",
-              \\"value\\": {
-                \\"name\\": \\"string\\"
+            "names": {
+              "name": "arrayOf",
+              "value": {
+                "name": "string"
               },
-              \\"required\\": true
+              "required": true
             }
           }
         }
       },
-      \\"required\\": true
+      "required": true
     }
   }
-};"
-`;
+};

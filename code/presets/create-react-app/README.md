@@ -6,7 +6,7 @@ This preset is designed to use alongside [`@storybook/react`](https://github.com
 
 ## Compatibility
 
-This version (4.x) of `@storybook/preset-create-react-app` is compatibly with Create React App version 5 and above. Earlier versions are compatible with earlier version of the preset.
+From version 4.0.0 onwards, the `@storybook/preset-create-react-app` is compatible with Create React App version 5 and later. If you're using an earlier version of Create React App, you can still utilize the preset's previous versions.
 
 ## Basic usage
 
@@ -87,7 +87,7 @@ module.exports = {
 
 ### Custom `react-scripts` packages
 
-In most cases, this preset will find your `react-scripts` package, even if it's a fork of the offical `react-scripts`.
+In most cases, this preset will find your `react-scripts` package, even if it's a fork of the official `react-scripts`.
 
 In the event that it doesn't, you can set the package's name with `scriptsPackageName`.
 

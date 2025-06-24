@@ -1,49 +1,41 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 10278-ts-multiple-components 1`] = `
-"/* eslint-disable react/destructuring-assignment */
+/* eslint-disable react/destructuring-assignment */
 import React from 'react';
-/**
- * A component
- */
+/** A component */
 const A = props => {
-  return /*#__PURE__*/React.createElement(React.Fragment, null, \\"Hi \\", props.aProperty);
+  return /*#__PURE__*/React.createElement(React.Fragment, null, "Hi ", props.aProperty);
 };
 
-/**
- * B component
- */
+/** B component */
 const B = props => {
-  return /*#__PURE__*/React.createElement(React.Fragment, null, \\"Hi \\", props.bProperty);
+  return /*#__PURE__*/React.createElement(React.Fragment, null, "Hi ", props.bProperty);
 };
 A.__docgenInfo = {
-  \\"description\\": \\"A component\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"A\\",
-  \\"props\\": {
-    \\"aProperty\\": {
-      \\"required\\": true,
-      \\"tsType\\": {
-        \\"name\\": \\"any\\"
+  "description": "A component",
+  "methods": [],
+  "displayName": "A",
+  "props": {
+    "aProperty": {
+      "required": true,
+      "tsType": {
+        "name": "any"
       },
-      \\"description\\": \\"\\"
+      "description": ""
     }
   }
 };
 B.__docgenInfo = {
-  \\"description\\": \\"B component\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"B\\",
-  \\"props\\": {
-    \\"bProperty\\": {
-      \\"required\\": true,
-      \\"tsType\\": {
-        \\"name\\": \\"any\\"
+  "description": "B component",
+  "methods": [],
+  "displayName": "B",
+  "props": {
+    "bProperty": {
+      "required": true,
+      "tsType": {
+        "name": "any"
       },
-      \\"description\\": \\"\\"
+      "description": ""
     }
   }
 };
 export { A, B };
-export const component = A;"
-`;
+export const component = A;

@@ -1,39 +1,35 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 8894-9511-ts-forward-ref 1`] = `
-"import React, { forwardRef } from 'react';
+import React, { forwardRef } from 'react';
 const Button = /*#__PURE__*/forwardRef(function Button({
   disabled = false,
   variant = 'small',
   children
 }, ref) {
-  return /*#__PURE__*/React.createElement(\\"button\\", {
-    type: \\"button\\",
+  return /*#__PURE__*/React.createElement("button", {
+    type: "button",
     disabled: disabled,
     ref: ref
-  }, children, \\" \\", variant);
+  }, children, " ", variant);
 });
 Button.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"Button\\",
-  \\"props\\": {
-    \\"disabled\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"false\\",
-        \\"computed\\": false
+  "description": "",
+  "methods": [],
+  "displayName": "Button",
+  "props": {
+    "disabled": {
+      "defaultValue": {
+        "value": "false",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"variant\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'small'\\",
-        \\"computed\\": false
+    "variant": {
+      "defaultValue": {
+        "value": "'small'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     }
   }
 };
 export default Button;
-export const component = Button;"
-`;
+export const component = Button;

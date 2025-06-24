@@ -1,14 +1,16 @@
-/* eslint-disable import/extensions */
-import { fail, danger } from 'danger';
 import { execSync } from 'child_process';
+import { danger, fail } from 'danger';
 
 execSync('npm install lodash');
 
+// eslint-disable-next-line depend/ban-dependencies
 const flatten = require('lodash/flatten.js');
+// eslint-disable-next-line depend/ban-dependencies
 const intersection = require('lodash/intersection.js');
+// eslint-disable-next-line depend/ban-dependencies
 const isEmpty = require('lodash/isEmpty.js');
 
-const pkg = require('../code/package.json'); // eslint-disable-line import/newline-after-import
+const pkg = require('../code/package.json');
 const prLogConfig = pkg['pr-log'];
 
 const Versions = {
@@ -16,6 +18,8 @@ const Versions = {
   MINOR: 'MINOR',
   MAJOR: 'MAJOR',
 };
+
+const ciLabels = ['ci:normal', 'ci:merged', 'ci:daily', 'ci:docs'];
 
 const branchVersion = Versions.MINOR;
 
@@ -41,11 +45,18 @@ const checkRequiredLabels = (labels: string[]) => {
     );
   }
 
-  const foundLabels = intersection(requiredLabels, labels);
-  if (isEmpty(foundLabels)) {
+  const foundRequiredLabels = intersection(requiredLabels, labels);
+  if (isEmpty(foundRequiredLabels)) {
     fail(`PR is not labeled with one of: ${JSON.stringify(requiredLabels)}`);
-  } else if (foundLabels.length > 1) {
-    fail(`Please choose only one of these labels: ${JSON.stringify(foundLabels)}`);
+  } else if (foundRequiredLabels.length > 1) {
+    fail(`Please choose only one of these labels: ${JSON.stringify(foundRequiredLabels)}`);
+  }
+
+  const foundCILabels = intersection(ciLabels, labels);
+  if (isEmpty(foundCILabels)) {
+    fail(`PR is not labeled with one of: ${JSON.stringify(ciLabels)}`);
+  } else if (foundCILabels.length > 1) {
+    fail(`Please choose only one of these labels: ${JSON.stringify(foundCILabels)}`);
   }
 };
 

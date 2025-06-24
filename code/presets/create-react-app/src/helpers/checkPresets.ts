@@ -1,5 +1,5 @@
-/* eslint-disable import/no-extraneous-dependencies */
-import { logger } from '@storybook/node-logger';
+import { logger } from 'storybook/internal/node-logger';
+
 import type { PluginOptions } from '../types';
 
 const incompatiblePresets = ['@storybook/preset-scss', '@storybook/preset-typescript'];
@@ -7,7 +7,7 @@ const incompatiblePresets = ['@storybook/preset-scss', '@storybook/preset-typesc
 export const checkPresets = (options: PluginOptions): void => {
   const { presetsList } = options;
 
-  presetsList.forEach((preset: string | { name: string }) => {
+  presetsList?.forEach((preset: string | { name: string }) => {
     const presetName = typeof preset === 'string' ? preset : preset.name;
     if (incompatiblePresets.includes(presetName)) {
       logger.warn(

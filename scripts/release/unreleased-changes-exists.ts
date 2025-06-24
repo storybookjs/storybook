@@ -1,12 +1,13 @@
-/* eslint-disable no-console */
-import chalk from 'chalk';
-import program from 'commander';
-import { z } from 'zod';
 import { setOutput } from '@actions/core';
-import { intersection } from 'lodash';
+import { program } from 'commander';
+import { intersection } from 'es-toolkit';
+import picocolors from 'picocolors';
+import { z } from 'zod';
+
+import { esMain } from '../utils/esmain';
+import { getCurrentVersion } from './get-current-version';
 import type { Change } from './utils/get-changes';
 import { RELEASED_LABELS, getChanges } from './utils/get-changes';
-import { getCurrentVersion } from './get-current-version';
 
 program
   .name('are-changes-unreleased')
@@ -15,7 +16,7 @@ program
     '-F, --from <version>',
     'Which version/tag/commit to go back and check changes from. Defaults to latest release tag'
   )
-  .option('-P, --unpicked-patches', 'Set to only consider PRs labeled with "patch" label')
+  .option('-P, --unpicked-patches', 'Set to only consider PRs labeled with "patch:yes" label')
   .option('-V, --verbose', 'Enable verbose logging', false);
 
 const optionsSchema = z.object({
@@ -67,17 +68,17 @@ export const run = async (
   }
   if (hasChangesToRelease) {
     console.log(
-      `${chalk.green('🦋 The following changes are releasable')}:
-${chalk.blue(changesToRelease.map(({ title, pull }) => `  #${pull}: ${title}`).join('\n'))}`
+      `${picocolors.green('🦋 The following changes are releasable')}:
+${picocolors.blue(changesToRelease.map(({ title, pull }) => `  #${pull}: ${title}`).join('\n'))}`
     );
   } else {
-    console.log(chalk.red('🫙 No changes to release!'));
+    console.log(picocolors.red('🫙 No changes to release!'));
   }
 
   return { changesToRelease, hasChangesToRelease };
 };
 
-if (require.main === module) {
+if (esMain(import.meta.url)) {
   const parsed = program.parse();
   run(parsed.opts()).catch((err) => {
     console.error(err);

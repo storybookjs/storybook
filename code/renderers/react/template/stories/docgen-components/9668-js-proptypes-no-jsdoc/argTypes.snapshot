@@ -1,42 +1,38 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9668-js-proptypes-no-jsdoc 1`] = `
-Object {
-  "heads": Object {
-    "control": Object {
+{
+  "heads": {
+    "control": {
       "type": "object",
     },
     "description": "",
     "name": "heads",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "array",
       },
     },
-    "type": Object {
+    "type": {
       "name": "array",
       "required": true,
       "value": undefined,
     },
   },
-  "onAddClick": Object {
+  "onAddClick": {
     "description": "",
     "name": "onAddClick",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "func",
       },
     },
-    "type": Object {
+    "type": {
       "name": "function",
       "required": false,
     },
   },
 }
-`;

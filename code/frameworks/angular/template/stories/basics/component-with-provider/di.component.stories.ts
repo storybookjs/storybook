@@ -1,26 +1,31 @@
-import { Args } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+
 import { DiComponent } from './di.component';
 
-export default {
+const meta: Meta<DiComponent> = {
   // title: 'Basics / Component / With Provider',
   component: DiComponent,
 };
 
-export const InputsAndInjectDependencies = () => ({
-  props: {
+export default meta;
+
+type Story = StoryObj<DiComponent>;
+
+export const InputsAndInjectDependencies: Story = {
+  render: () => ({
+    props: {
+      title: 'Component dependencies',
+    },
+  }),
+  name: 'inputs and inject dependencies',
+};
+
+export const InputsAndInjectDependenciesWithArgs: Story = {
+  name: 'inputs and inject dependencies with args',
+  argTypes: {
+    title: { control: 'text' },
+  },
+  args: {
     title: 'Component dependencies',
   },
-});
-
-InputsAndInjectDependencies.storyName = 'inputs and inject dependencies';
-
-export const InputsAndInjectDependenciesWithArgs = (args: Args) => ({
-  props: args,
-});
-InputsAndInjectDependenciesWithArgs.storyName = 'inputs and inject dependencies with args';
-InputsAndInjectDependenciesWithArgs.argTypes = {
-  title: { control: 'text' },
-};
-InputsAndInjectDependenciesWithArgs.args = {
-  title: 'Component dependencies',
 };

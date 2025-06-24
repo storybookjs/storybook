@@ -1,3 +1,5 @@
+import { expect, it } from 'vitest';
+
 import { rewriteImport } from './external-globals-plugin';
 
 const packageName = '@storybook/package';
@@ -9,6 +11,22 @@ const cases = [
     packageName,
     input: `import { Rain, Jour as Day, Nuit as Night, Sun } from "${packageName}"`,
     output: `const { Rain, Jour: Day, Nuit: Night, Sun } = ${globals[packageName]}`,
+  },
+  {
+    globals,
+    packageName,
+    input: `import {
+      Rain,
+      Jour as Day,
+      Nuit as Night,
+      Sun
+    } from "${packageName}"`,
+    output: `const {
+      Rain,
+      Jour: Day,
+      Nuit: Night,
+      Sun
+    } = ${globals[packageName]}`,
   },
   {
     globals,
@@ -36,7 +54,7 @@ const cases = [
   },
 ];
 
-test('rewriteImport', () => {
+it('rewriteImport', () => {
   cases.forEach(({ input, output, globals: caseGlobals, packageName: casePackage }) => {
     expect(rewriteImport(input, caseGlobals, casePackage)).toStrictEqual(output);
   });

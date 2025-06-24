@@ -1,48 +1,44 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 8894-9511-ts-forward-ref 1`] = `
-Object {
-  "disabled": Object {
-    "control": Object {
+{
+  "disabled": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "disabled",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "false",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
-  "variant": Object {
-    "control": Object {
+  "variant": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "variant",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'small'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
 }
-`;

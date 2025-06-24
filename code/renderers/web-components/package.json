@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "7.1.0-alpha.41",
+  "version": "9.1.0-alpha.6",
   "description": "Storybook web-components renderer",
   "keywords": [
     "lit",
@@ -25,15 +25,13 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
-    "./preview": {
-      "types": "./dist/config.d.ts",
-      "require": "./dist/config.js",
-      "import": "./dist/config.mjs"
-    },
+    "./preset": "./preset.js",
+    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
+    "./dist/entry-preview-argtypes.mjs": "./dist/entry-preview-argtypes.mjs",
+    "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
     "./package.json": "./package.json"
   },
   "main": "dist/index.js",
@@ -41,39 +39,37 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
-    "template/**/*",
+    "template/cli/**/*",
     "README.md",
     "*.js",
-    "*.d.ts"
+    "*.d.ts",
+    "!src/**/*"
   ],
   "scripts": {
-    "check": "../../../scripts/node_modules/.bin/tsc --noEmit",
-    "prep": "../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/client-logger": "7.1.0-alpha.41",
-    "@storybook/core-client": "7.1.0-alpha.41",
-    "@storybook/docs-tools": "7.1.0-alpha.41",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "7.1.0-alpha.41",
-    "@storybook/preview-api": "7.1.0-alpha.41",
-    "@storybook/types": "7.1.0-alpha.41",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@types/cross-spawn": "^6.0.2",
-    "@types/node": "^16.0.0",
-    "cross-spawn": "^7.0.3",
+    "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^22.0.0",
+    "@types/tmp": "^0.2.6",
+    "cross-spawn": "^7.0.6",
     "lit": "2.3.1",
-    "typescript": "~4.9.3",
+    "tmp": "^0.2.3",
+    "typescript": "^5.8.3",
     "web-component-analyzer": "^1.1.6"
   },
   "peerDependencies": {
-    "lit": "^2.0.0"
+    "lit": "^2.0.0 || ^3.0.0",
+    "storybook": "workspace:^"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"
@@ -81,9 +77,12 @@
   "bundler": {
     "entries": [
       "./src/index.ts",
-      "./src/config.ts"
+      "./src/preset.ts",
+      "./src/entry-preview.ts",
+      "./src/entry-preview-argtypes.ts",
+      "./src/entry-preview-docs.ts"
     ],
     "platform": "browser"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

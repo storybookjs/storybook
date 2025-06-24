@@ -15,7 +15,7 @@ To learn more about Storybook Docs, read the [general documentation](../README.m
 - [Props tables](#props-tables)
 - [MDX](#mdx)
 - [Inline stories](#inline-stories)
-- [TypeScript props with `react-docgen`](#typescript-props-with-react-docgen)
+- [TypeScript props with `react-docgen-typescript`](#typescript-props-with-react-docgen-typescript)
 - [More resources](#more-resources)
 
 ## Installation
@@ -108,17 +108,17 @@ To do so for all stories, update `.storybook/preview.js`:
 export const parameters = { docs: { story: { inline: false } } };
 ```
 
-## TypeScript props with `react-docgen`
+## TypeScript props with `react-docgen-typescript`
 
-If you're using TypeScript, there are two different options for generating props: `react-docgen-typescript` (default) or `react-docgen`.
+If you're using TypeScript, there are two different options for generating props: `react-docgen` (default) or `react-docgen-typescript`.
 
 You can add the following lines to your `.storybook/main.js` to switch between the two (or disable docgen):
 
 ```js
 export default {
   typescript: {
-    // also valid 'react-docgen-typescript' | false
-    reactDocgen: 'react-docgen',
+    // also valid 'react-docgen' | false
+    reactDocgen: 'react-docgen-typescript',
   },
 };
 ```
@@ -129,7 +129,7 @@ Neither option is perfect, so here's everything you should know if you're thinki
 | --------------- | ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | **Features**    | **Great**. The analysis produces great results which gives the best props table experience.                               | **OK**. React-docgen produces basic results that are fine for most use cases.                         |
 | **Performance** | **Slow**. It's doing a lot more work to produce those results, and may also have an inefficient implementation.           | **Blazing fast**. Adding it to your project increases build time negligibly.                          |
-| **Bugs**        | **Many**. There are a lot of corner cases that are not handled properly, and are annoying for developers.                 | **Few**. But there's a dealbreaker, which is lack for imported types (see below).                     |
+| **Bugs**        | **Some**. There are corner cases that are not handled properly, and are annoying for developers.                          | **Some**. There are corner cases that are not handled properly, and are annoying for developers.      |
 | **SB docs**     | **Good**. Our prop tables have supported `react-docgen-typescript` results from the beginning, so it's relatively stable. | **OK**. There are some obvious improvements to fully support `react-docgen`, and they're coming soon. |
 
 **Performance** is a common question, so here are build times from a random project to quantify. Your mileage may vary:
@@ -139,34 +139,6 @@ Neither option is perfect, so here's everything you should know if you're thinki
 | react-docgen-typescript | 33s        |
 | react-docgen            | 29s        |
 | none                    | 28s        |
-
-The biggest limitation of `react-docgen` is lack of support for imported types. What that means is that when a component uses a type defined in another file or package, `react-docgen` is unable to extract props information for that type.
-
-```tsx
-import React, { FC } from 'react';
-import SomeType from './someFile';
-
-type NewType = SomeType & { foo: string };
-const MyComponent: FC<NewType> = ...
-```
-
-So in the previous example, `SomeType` would simply be ignored! There's an [open PR for this in the `react-docgen` repo](https://github.com/reactjs/react-docgen/pull/352) which you can upvote if it affects you.
-
-Another common pitfall when switching to `react-docgen` is [lack of support for `React.FC`](https://github.com/reactjs/react-docgen/issues/387). This means that the following common pattern **DOESN'T WORK**:
-
-```tsx
-import React, { FC } from 'react';
-interface IProps { ... };
-const MyComponent: FC<IProps> = ({ ... }) => ...
-```
-
-Fortunately, the following workaround works:
-
-```tsx
-const MyComponent: FC<IProps> = ({ ... }: IProps) => ...
-```
-
-Please upvote [the issue](https://github.com/reactjs/react-docgen/issues/387) if this is affecting your productivity, or better yet, submit a fix!
 
 ## More resources
 

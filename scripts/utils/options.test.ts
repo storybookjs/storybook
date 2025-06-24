@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it } from 'vitest';
+
 import { createCommand } from 'commander';
 
-import type { MaybeOptionValues, OptionValues } from './options';
 import { areOptionsSatisfied, createOptions, getCommand, getOptions } from './options';
 
 const allOptions = createOptions({
@@ -35,17 +35,6 @@ const allOptions = createOptions({
   },
 });
 
-// TS "tests"
-// deepscan-disable-next-line
-function test(mv: MaybeOptionValues<typeof allOptions>, v: OptionValues<typeof allOptions>) {
-  console.log(mv.first, mv.second, mv.third, mv.fourth, mv.fifth, mv.sixth);
-  // @ts-expect-error as it's not allowed
-  console.log(mv.seventh);
-  console.log(v.first, v.second, v.third, v.fourth, v.fifth, v.sixth);
-  // @ts-expect-error as it's not allowed
-  console.log(v.seventh);
-}
-
 describe('getOptions', () => {
   it('deals with boolean options', () => {
     expect(getOptions(createCommand(), allOptions, ['command', 'name', '--first'])).toMatchObject({
@@ -71,7 +60,6 @@ describe('getOptions', () => {
   });
 
   it('deals with string options', () => {
-    const r = getOptions(createCommand(), allOptions, ['command', 'name', '--third', 'one']);
     expect(
       getOptions(createCommand(), allOptions, ['command', 'name', '--third', 'one'])
     ).toMatchObject({
@@ -162,7 +150,7 @@ describe('getCommand', () => {
   });
 
   it('works with string options', () => {
-    expect(getCommand('node foo', { third }, { third: 'one' })).toBe('node foo --third one');
+    expect(getCommand('node foo', { third }, { third: 'one' })).toBe(`node foo --third 'one'`);
   });
 
   it('works with multiple string options', () => {
@@ -174,7 +162,7 @@ describe('getCommand', () => {
   // This is for convenience
   it('works with partial options', () => {
     expect(getCommand('node foo', allOptions, { third: 'one' })).toBe(
-      'node foo --no-second --third one'
+      `node foo --no-second --third 'one'`
     );
   });
 
@@ -186,6 +174,6 @@ describe('getCommand', () => {
         third: 'one',
         fifth: ['a', 'b'],
       })
-    ).toBe('node foo --first --no-second --third one --fifth a --fifth b');
+    ).toBe(`node foo --first --no-second --third 'one' --fifth a --fifth b`);
   });
 });

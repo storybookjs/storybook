@@ -1,15 +1,19 @@
 import { render } from 'ejs';
+// eslint-disable-next-line depend/ban-dependencies
 import { readFile } from 'fs-extra';
-import { format } from 'prettier';
+import prettier from 'prettier';
+
+import { allTemplates as sandboxTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates';
 import type { GeneratorConfig } from './types';
-import { allTemplates as sandboxTemplates } from '../../../code/lib/cli/src/sandbox-templates';
 
 export async function renderTemplate(templatePath: string, templateData: Record<string, any>) {
   const template = await readFile(templatePath, 'utf8');
 
-  const output = format(render(template, templateData), {
-    parser: 'html',
-  })
+  const output = (
+    await prettier.format(render(template, templateData), {
+      parser: 'html',
+    })
+  )
     // overly complicated regex replacements to fix prettier's bad formatting
     .replace(new RegExp('</li>\\n\\n', 'g'), '</li>\n')
     .replace(new RegExp('<a\\n', 'g'), '<a')
@@ -33,20 +37,17 @@ export async function getTemplatesData(branch: string) {
     >
   >;
 
-  const templatesData = Object.keys(sandboxTemplates).reduce<TemplatesData>(
-    (acc, curr: keyof typeof sandboxTemplates) => {
-      const [dirName, templateName] = curr.split('/');
-      const groupName =
-        dirName === 'cra' ? 'CRA' : dirName.slice(0, 1).toUpperCase() + dirName.slice(1);
-      const generatorData = sandboxTemplates[curr];
-      acc[groupName] = acc[groupName] || {};
-      acc[groupName][templateName] = {
-        ...generatorData,
-        stackblitzUrl: getStackblitzUrl(curr, branch),
-      };
-      return acc;
-    },
-    {}
-  );
+  const templatesData = Object.keys(sandboxTemplates).reduce<TemplatesData>((acc, curr) => {
+    const [dirName, templateName] = curr.split('/');
+    const groupName =
+      dirName === 'cra' ? 'CRA' : dirName.slice(0, 1).toUpperCase() + dirName.slice(1);
+    const generatorData = sandboxTemplates[curr as keyof typeof sandboxTemplates];
+    acc[groupName] = acc[groupName] || {};
+    acc[groupName][templateName] = {
+      ...generatorData,
+      stackblitzUrl: getStackblitzUrl(curr, branch),
+    };
+    return acc;
+  }, {});
   return templatesData;
 }

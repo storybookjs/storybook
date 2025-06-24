@@ -1,8 +1,9 @@
-import { Addon_StoryContext } from '@storybook/types';
+import type { Addon_StoryContext } from 'storybook/internal/types';
 
+import { vi, expect, describe, it } from 'vitest';
 import { Component } from '@angular/core';
 import { moduleMetadata, applicationConfig } from './decorators';
-import { AngularRenderer } from './types';
+import type { AngularRenderer } from './types';
 
 const defaultContext: Addon_StoryContext<AngularRenderer> = {
   componentId: 'unspecified',
@@ -17,13 +18,26 @@ const defaultContext: Addon_StoryContext<AngularRenderer> = {
   args: {},
   argTypes: {},
   globals: {},
+  globalTypes: {},
+  storyGlobals: {},
+  reporting: {
+    reports: [],
+    addReport: vi.fn(),
+  },
   hooks: {},
   loaded: {},
-  originalStoryFn: jest.fn(),
+  originalStoryFn: vi.fn(),
   viewMode: 'story',
   abortSignal: undefined,
   canvasElement: undefined,
+  step: undefined,
+  context: undefined,
+  canvas: undefined,
+  userEvent: undefined,
+  mount: undefined,
 };
+
+defaultContext.context = defaultContext;
 
 class MockModule {}
 class MockModuleTwo {}

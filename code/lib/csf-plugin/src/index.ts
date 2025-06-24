@@ -1,35 +1,41 @@
+import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
+
 import { createUnplugin } from 'unplugin';
-import fs from 'fs/promises';
-import { loadCsf, enrichCsf, formatCsf } from '@storybook/csf-tools';
-import type { EnrichCsfOptions } from '@storybook/csf-tools';
+
+import { STORIES_REGEX } from './constants';
+import { rollupBasedPlugin } from './rollup-based-plugin';
 
 export type CsfPluginOptions = EnrichCsfOptions;
-
-const STORIES_REGEX = /\.(story|stories)\.[tj]sx?$/;
-
-const logger = console;
 
 export const unplugin = createUnplugin<CsfPluginOptions>((options) => {
   return {
     name: 'unplugin-csf',
-    enforce: 'pre',
-    loadInclude(id) {
-      return STORIES_REGEX.test(id);
+    rollup: {
+      ...rollupBasedPlugin(options),
     },
-    async load(fname) {
-      const code = await fs.readFile(fname, 'utf-8');
-      try {
-        const csf = loadCsf(code, { makeTitle: (userTitle) => userTitle || 'default' }).parse();
-        enrichCsf(csf, options);
-        return formatCsf(csf, { sourceMaps: true });
-      } catch (err: any) {
-        // This can be called on legacy storiesOf files, so just ignore
-        // those errors. But warn about other errors.
-        if (!err.message?.startsWith('CSF:')) {
-          logger.warn(err.message);
-        }
-        return code;
-      }
+    vite: {
+      enforce: 'pre',
+      ...(rollupBasedPlugin(options) as any),
+    },
+    webpack(compiler) {
+      compiler.options.module.rules.unshift({
+        test: STORIES_REGEX,
+        enforce: 'post',
+        use: {
+          options,
+          loader: require.resolve('@storybook/csf-plugin/dist/webpack-loader'),
+        },
+      });
+    },
+    rspack(compiler) {
+      compiler.options.module.rules.unshift({
+        test: STORIES_REGEX,
+        enforce: 'post',
+        use: {
+          options,
+          loader: require.resolve('@storybook/csf-plugin/dist/webpack-loader'),
+        },
+      });
     },
   };
 });

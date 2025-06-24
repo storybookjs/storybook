@@ -1,29 +1,34 @@
-import {
+import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
+import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
+import { addToGlobalContext } from 'storybook/internal/telemetry';
+import type { CLIOptions } from 'storybook/internal/types';
+
+import type {
   BuilderContext,
   BuilderHandlerFn,
   BuilderOutput,
   Target,
-  createBuilder,
-  targetFromTargetString,
+  Builder as DevkitBuilder,
 } from '@angular-devkit/architect';
-import { JsonObject } from '@angular-devkit/core';
-import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
-import { from, Observable, of } from 'rxjs';
-import { map, switchMap, mapTo } from 'rxjs/operators';
-import { sync as findUpSync } from 'find-up';
-import { sync as readUpSync } from 'read-pkg-up';
-
-import { CLIOptions } from '@storybook/types';
-import { getEnvConfig, versions } from '@storybook/cli';
-import { addToGlobalContext } from '@storybook/telemetry';
-import { buildDevStandalone, withTelemetry } from '@storybook/core-server';
-import {
+import { createBuilder, targetFromTargetString } from '@angular-devkit/architect';
+import type {
+  BrowserBuilderOptions,
+  StylePreprocessorOptions,
+} from '@angular-devkit/build-angular';
+import type {
   AssetPattern,
+  SourceMapUnion,
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
-import { StandaloneOptions } from '../utils/standalone-options';
+import type { JsonObject } from '@angular-devkit/core';
+import { findPackageSync } from 'fd-package-json';
+import { findUpSync } from 'find-up';
+import { Observable, from, of } from 'rxjs';
+import { map, mapTo, switchMap } from 'rxjs/operators';
+
+import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
-import { printErrorDetails, errorSummary } from '../utils/error-handler';
+import type { StandaloneOptions } from '../utils/standalone-options';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -32,9 +37,13 @@ export type StorybookBuilderOptions = JsonObject & {
   tsConfig?: string;
   compodoc: boolean;
   compodocArgs: string[];
+  enableProdMode?: boolean;
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;
   assets?: AssetPattern[];
+  preserveSymlinks?: boolean;
+  sourceMap?: SourceMapUnion;
+  experimentalZoneless?: boolean;
 } & Pick<
     // makes sure the option exists
     CLIOptions,
@@ -52,6 +61,11 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'initialPath'
     | 'open'
     | 'docs'
+    | 'debugWebpack'
+    | 'webpackStatsJson'
+    | 'statsJson'
+    | 'loglevel'
+    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
@@ -59,11 +73,16 @@ export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
 const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, context) => {
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
+      const docTSConfig = findUpSync('tsconfig.doc.json', {
+        cwd: options.configDir,
+        stopAt: getProjectRoot(),
+      });
+
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
             {
               compodocArgs: [...options.compodocArgs, ...(options.quiet ? ['--silent'] : [])],
-              tsconfig: tsConfig,
+              tsconfig: docTSConfig ?? tsConfig,
             },
             context
           ).pipe(mapTo({ tsConfig }))
@@ -79,7 +98,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         configDir: 'SBCONFIG_CONFIG_DIR',
         ci: 'CI',
       });
-      // eslint-disable-next-line no-param-reassign
+
       options.port = parseInt(`${options.port}`, 10);
 
       const {
@@ -93,6 +112,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         https,
         port,
         quiet,
+        enableProdMode = false,
         smokeTest,
         sslCa,
         sslCert,
@@ -101,10 +121,18 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         assets,
         initialPath,
         open,
+        debugWebpack,
+        loglevel,
+        webpackStatsJson,
+        statsJson,
+        previewUrl,
+        sourceMap = false,
+        preserveSymlinks = false,
+        experimentalZoneless = false,
       } = options;
 
       const standaloneOptions: StandaloneOptions = {
-        packageJson: readUpSync({ cwd: __dirname }).packageJson,
+        packageJson: findPackageSync(__dirname),
         ci,
         configDir,
         ...(docs ? { docs } : {}),
@@ -112,6 +140,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         https,
         port,
         quiet,
+        enableProdMode,
         smokeTest,
         sslCa,
         sslCert,
@@ -123,10 +152,18 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
           ...(stylePreprocessorOptions ? { stylePreprocessorOptions } : {}),
           ...(styles ? { styles } : {}),
           ...(assets ? { assets } : {}),
+          preserveSymlinks,
+          sourceMap,
+          experimentalZoneless,
         },
         tsConfig,
         initialPath,
         open,
+        debugWebpack,
+        webpackStatsJson,
+        statsJson,
+        loglevel,
+        previewUrl,
       };
 
       return standaloneOptions;
@@ -140,7 +177,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
   return builder as any as BuilderOutput;
 };
 
-export default createBuilder(commandBuilder);
+export default createBuilder(commandBuilder) as DevkitBuilder<StorybookBuilderOptions & JsonObject>;
 
 async function setup(options: StorybookBuilderOptions, context: BuilderContext) {
   let browserOptions: (JsonObject & BrowserBuilderOptions) | undefined;

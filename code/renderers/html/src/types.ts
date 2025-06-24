@@ -1,11 +1,11 @@
+import type { SourceType } from 'storybook/internal/docs-tools';
 import type {
   ArgsStoryFn,
   StoryContext as DefaultStoryContext,
   WebRenderer,
-} from '@storybook/types';
-import type { SourceType } from '@storybook/docs-tools';
+} from 'storybook/internal/types';
 
-export type { RenderContext } from '@storybook/types';
+export type { RenderContext } from 'storybook/internal/types';
 
 export type StoryFnHtmlReturnType = string | Node;
 
@@ -14,10 +14,6 @@ export interface ShowErrorArgs {
   description: string;
 }
 
-/**
- * @deprecated Use `HtmlRenderer` instead.
- */
-export type HtmlFramework = HtmlRenderer;
 export interface HtmlRenderer extends WebRenderer {
   component: string | HTMLElement | ArgsStoryFn<HtmlRenderer>;
   storyResult: StoryFnHtmlReturnType;

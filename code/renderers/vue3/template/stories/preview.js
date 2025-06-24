@@ -1,11 +1,10 @@
 import { global as globalThis } from '@storybook/global';
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { setup } from '@storybook/vue3';
 
 const somePlugin = {
   install: (app, options) => {
     // inject a globally available $greetingText() method
-    // eslint-disable-next-line no-param-reassign
+
     app.config.globalProperties.$greetingMessage = (key) => {
       // retrieve a nested property in `options`
       // using `key`
@@ -18,7 +17,7 @@ const someColor = 'someColor';
 // add components to global scope
 setup((app) => {
   // This adds a component that can be used globally in stories
-  app.component('GlobalButton', globalThis.Components.Button);
+  app.component('GlobalButton', globalThis.__TEMPLATE_COMPONENTS__.Button);
 });
 
 // this adds a plugin to vue app that can be used globally in stories

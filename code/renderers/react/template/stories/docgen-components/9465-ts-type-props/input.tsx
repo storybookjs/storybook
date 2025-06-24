@@ -5,7 +5,6 @@ type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const Component = ({ disabled = false, children }: Props) => (
-  // eslint-disable-next-line react/button-has-type
   <button disabled={disabled}>{children}</button>
 );
 

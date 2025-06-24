@@ -1,28 +1,24 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9575-ts-camel-case 1`] = `
-Object {
-  "color": Object {
-    "control": Object {
+{
+  "color": {
+    "control": {
       "type": "text",
     },
     "description": "",
     "name": "color",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'primary'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "string",
       },
     },
-    "type": Object {
+    "type": {
       "name": "string",
       "required": false,
     },
   },
 }
-`;

@@ -1,3 +1,15 @@
+# v5.0.4 (Tue Jun 24 2025)
+
+#### 🐛 Bug Fix
+
+- Add `'play-fn'`-tag to stories with play-functions [#317](https://github.com/storybookjs/addon-svelte-csf/pull/317) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v5.0.3 (Wed May 28 2025)
 
 #### 🐛 Bug Fix

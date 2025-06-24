@@ -6,6 +6,7 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
+  findConfigFile,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -23,6 +24,7 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
+import { mockerPlugin } from '@vitest/mocker/node';
 import { dedent } from 'ts-dedent';
 
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
@@ -31,6 +33,7 @@ import { defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
+import { viteInjectMockerRuntime } from './vitePlugins/vite-inject-mocker/plugin';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -318,4 +321,25 @@ export const managerEntries = async (existing: any) => {
     ),
     ...(existing || []),
   ];
+};
+
+export const viteFinal = async (
+  existing: import('vite').UserConfig,
+  options: Options
+): Promise<import('vite').UserConfig> => {
+  const previewConfigPath = findConfigFile('preview', options.configDir);
+  return {
+    ...existing,
+    plugins: [
+      ...(existing.plugins ?? []),
+      viteInjectMockerRuntime({ previewConfigPath }),
+      mockerPlugin({
+        filter: (id) => !id.includes('@vitest/mocker'),
+        hoistMocks: {
+          hoistedModule: 'storybook/test',
+          utilsObjectNames: ['sb'],
+        },
+      }),
+    ],
+  };
 };

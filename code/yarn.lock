@@ -5554,6 +5554,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@rolldown/pluginutils@npm:1.0.0-beta.18":
+  version: 1.0.0-beta.18
+  resolution: "@rolldown/pluginutils@npm:1.0.0-beta.18"
+  checksum: 10c0/5a7444da546bdaf53b0541a5888e331bab18fbdf30589d5b65be6145efbc90be5f905dded46f1a605cbd5cb32c11de80fadcd1e09e62a3c91df46437fd8ef9e3
+  languageName: node
+  linkType: hard
+
 "@rollup/pluginutils@npm:^5.0.2":
   version: 5.1.4
   resolution: "@rollup/pluginutils@npm:5.1.4"
@@ -6308,6 +6315,8 @@ __metadata:
     "@storybook/csf-plugin": "workspace:*"
     "@types/find-cache-dir": "npm:^3.2.1"
     "@types/node": "npm:^22.0.0"
+    "@vitest/mocker": "npm:^3.2.4"
+    "@vitest/spy": "npm:^3.2.4"
     es-module-lexer: "npm:^1.5.0"
     find-cache-dir: "npm:^3.0.0"
     glob: "npm:^10.0.0"
@@ -8683,6 +8692,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vitest/mocker@npm:3.0.9":
+  version: 3.0.9
+  resolution: "@vitest/mocker@npm:3.0.9"
+  dependencies:
+    "@vitest/spy": "npm:3.0.9"
+    estree-walker: "npm:^3.0.3"
+    magic-string: "npm:^0.30.17"
+  peerDependencies:
+    msw: ^2.4.9
+    vite: ^5.0.0 || ^6.0.0
+  peerDependenciesMeta:
+    msw:
+      optional: true
+    vite:
+      optional: true
+  checksum: 10c0/9083a83902ca550cf004413b9fc87c8367a789e18a3c5a61e63c72810f9153e7d1c100c66f0b0656ea1035a700a373d5b78b49de0963ab62333c720aeec9f1b3
+  languageName: node
+  linkType: hard
+
 "@vitest/mocker@npm:3.1.2":
   version: 3.1.2
   resolution: "@vitest/mocker@npm:3.1.2"
@@ -8718,6 +8746,25 @@ __metadata:
     vite:
       optional: true
   checksum: 10c0/b670f229c3b1de5561de3cbbecb18f964d4888355d7f1cb8bbff4350b2cfbe477bef834cc2f66af7727ca7dc567540018885eb652f46e0be1cda4015491dc0a9
+  languageName: node
+  linkType: hard
+
+"@vitest/mocker@npm:^3.2.4":
+  version: 3.2.4
+  resolution: "@vitest/mocker@npm:3.2.4"
+  dependencies:
+    "@vitest/spy": "npm:3.2.4"
+    estree-walker: "npm:^3.0.3"
+    magic-string: "npm:^0.30.17"
+  peerDependencies:
+    msw: ^2.4.9
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0-0
+  peerDependenciesMeta:
+    msw:
+      optional: true
+    vite:
+      optional: true
+  checksum: 10c0/f7a4aea19bbbf8f15905847ee9143b6298b2c110f8b64789224cb0ffdc2e96f9802876aa2ca83f1ec1b6e1ff45e822abb34f0054c24d57b29ab18add06536ccd
   languageName: node
   linkType: hard
 
@@ -8815,6 +8862,15 @@ __metadata:
   dependencies:
     tinyspy: "npm:^4.0.3"
   checksum: 10c0/ce77d5934ac4741513993aad9d8ff44ff03ff5cf5a177e010c7ffcd8d3060087e56df1938c1100d49de712daf952cd2c72dd83e1684d043e698bd2afe0025f5e
+  languageName: node
+  linkType: hard
+
+"@vitest/spy@npm:3.2.4, @vitest/spy@npm:^3.2.4":
+  version: 3.2.4
+  resolution: "@vitest/spy@npm:3.2.4"
+  dependencies:
+    tinyspy: "npm:^4.0.3"
+  checksum: 10c0/6ebf0b4697dc238476d6b6a60c76ba9eb1dd8167a307e30f08f64149612fd50227682b876420e4c2e09a76334e73f72e3ebf0e350714dc22474258292e202024
   languageName: node
   linkType: hard
 
@@ -24851,6 +24907,7 @@ __metadata:
     "@radix-ui/react-dialog": "npm:^1.1.2"
     "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
     "@radix-ui/react-slot": "npm:^1.0.2"
+    "@rolldown/pluginutils": "npm:1.0.0-beta.18"
     "@storybook/docs-mdx": "npm:4.0.0-next.1"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.4.0"
@@ -24876,6 +24933,7 @@ __metadata:
     "@types/semver": "npm:^7.5.8"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:3.0.9"
+    "@vitest/mocker": "npm:3.0.9"
     "@vitest/spy": "npm:3.0.9"
     "@vitest/utils": "npm:^3.0.9"
     "@yarnpkg/esbuild-plugin-pnp": "npm:^3.0.0-rc.10"

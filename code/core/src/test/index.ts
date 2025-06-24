@@ -3,6 +3,7 @@ import type { userEvent } from '@testing-library/user-event';
 
 import { instrument } from 'storybook/internal/instrumenter';
 
+import type { registerModuleMocker } from '@vitest/mocker/register';
 import { Assertion } from 'chai';
 
 import { expect as rawExpect } from './expect';
@@ -42,5 +43,9 @@ export const { expect } = instrument(
     intercept: (method) => method !== 'expect',
   }
 );
+
+export const sb = (globalThis as any).__STORYBOOK_MOCKER__ as ReturnType<
+  typeof registerModuleMocker
+>;
 
 export * from './testing-library';

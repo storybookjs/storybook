@@ -18,6 +18,7 @@ import addonTest from '@storybook/addon-vitest';
 import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
+import { sb } from 'storybook/test';
 import {
   Global,
   ThemeProvider,
@@ -32,6 +33,8 @@ import { DocsPageWrapper } from '../addons/docs/src/blocks/components';
 import * as templatePreview from '../core/template/stories/preview';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
+
+sb.mock('../core/src/test/stories/ModuleMocking.utils');
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';

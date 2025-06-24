@@ -54,6 +54,10 @@ const config = defineMain({
       titlePrefix: 'highlight',
     },
     {
+      directory: '../core/src/test/stories',
+      titlePrefix: 'test',
+    },
+    {
       directory: '../addons/docs/src/blocks',
       titlePrefix: 'addons/docs/blocks',
     },

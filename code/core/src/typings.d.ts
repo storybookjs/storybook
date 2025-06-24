@@ -1,4 +1,5 @@
 /// <reference path="../typings.d.ts" />
+import type { registerModuleMocker } from '@vitest/mocker/register';
 
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';
 declare var FEATURES: import('./types/modules/core-common').StorybookConfigRaw['features'];
@@ -22,6 +23,7 @@ declare var __STORYBOOK_STORY_STORE__: any;
 declare var __STORYBOOK_TEST__: any;
 declare var __STORYBOOK_TEST_SPY_LISTENERS__: Set<any>;
 declare var __STORYBOOK_ACTIONS__: any;
+declare var __STORYBOOK_VITEST_MOCKER__: ReturnType<typeof registerModuleMocker>;
 
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';

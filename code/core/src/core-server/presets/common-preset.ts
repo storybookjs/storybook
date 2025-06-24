@@ -25,7 +25,7 @@ import type {
 import { dirname, isAbsolute, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { resolveModule } from '../../shared/utils/resolve';
+import { resolveModule } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants';

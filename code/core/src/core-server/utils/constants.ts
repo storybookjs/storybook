@@ -1,4 +1,4 @@
-import { resolveModule } from '../../shared/utils/resolve';
+import { resolveModule } from '../../shared/utils/module';
 
 export const DEBOUNCE = 100;
 

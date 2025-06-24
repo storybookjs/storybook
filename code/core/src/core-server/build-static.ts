@@ -1,7 +1,6 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
-import { dirname, join, relative, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, relative, resolve } from 'node:path';
 
 import {
   loadAllPresets,
@@ -18,7 +17,7 @@ import { global } from '@storybook/global';
 
 import picocolors from 'picocolors';
 
-import { resolveModule } from '../shared/utils/resolve';
+import { resolveModule } from '../shared/utils/module';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';

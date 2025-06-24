@@ -11,7 +11,7 @@ import sirv from 'sirv';
 
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info';
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
-import { resolveModule } from '../shared/utils/resolve';
+import { resolveModule } from '../shared/utils/module';
 import type {
   BuilderBuildResult,
   BuilderFunction,

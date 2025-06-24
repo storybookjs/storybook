@@ -8,7 +8,6 @@ import {
 
 import { resolvePathSync } from 'mlly';
 
-import { resolveModule } from '../../shared/utils/resolve';
 import { frameworkPackages } from './get-storybook-info';
 
 const renderers = ['html', 'preact', 'react', 'server', 'svelte', 'vue', 'vue3', 'web-components'];

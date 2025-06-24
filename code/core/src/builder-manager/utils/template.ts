@@ -5,7 +5,7 @@ import type { DocsOptions, Options, Ref, TagsOptions } from 'storybook/internal/
 import { render } from 'ejs';
 import { join } from 'pathe';
 
-import { resolveModule } from '../../shared/utils/resolve';
+import { resolveModule } from '../../shared/utils/module';
 
 export const getTemplatePath = (template: string) => {
   return resolveModule({

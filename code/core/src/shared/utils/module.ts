@@ -1,5 +1,6 @@
+import { createRequire, register } from 'node:module';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 /**
  * Resolves a module path using import.meta.resolve and optionally appends a custom suffix.
@@ -82,3 +83,44 @@ export const resolveModule = ({
   }
   return join(dirname(resolvedPath), customSuffix);
 };
+
+let isTypescriptLoaderRegistered = false;
+
+/**
+ * Dynamically imports a module with TypeScript support, falling back to require if necessary.
+ *
+ * @example Import a TypeScript preset
+ *
+ * ```ts
+ * const preset = await importModule('./my-preset.ts');
+ * // Returns the default export or the entire module
+ * ```
+ *
+ * @example Import a JavaScript addon
+ *
+ * ```ts
+ * const addon = await importModule('@storybook/addon-essentials');
+ * // Returns the default export or the entire module
+ * ```
+ */
+export async function importModule(path: string) {
+  if (!isTypescriptLoaderRegistered) {
+    const typescriptLoaderPath = resolveModule({
+      pkg: 'storybook',
+      exportPath: 'internal/loader',
+    });
+    register(typescriptLoaderPath, import.meta.url);
+    isTypescriptLoaderRegistered = true;
+  }
+
+  let mod;
+
+  try {
+    const resolvedPath = path.startsWith('file:') ? path : pathToFileURL(path).href;
+    mod = await import(resolvedPath);
+  } catch (e) {
+    mod = createRequire(import.meta.url)(path);
+  }
+
+  return mod.default ?? mod;
+}

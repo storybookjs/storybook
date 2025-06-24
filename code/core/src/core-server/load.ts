@@ -12,7 +12,7 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
-import { resolveModule } from '../shared/utils/resolve';
+import { resolveModule } from '../shared/utils/module';
 
 export async function loadStorybook(
   options: CLIOptions &

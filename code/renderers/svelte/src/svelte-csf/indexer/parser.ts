@@ -245,6 +245,11 @@ export async function parseForIndexer(
           filename,
         });
       }
+
+      if (name === 'play') {
+        state.meta.tags ??= [];
+        state.meta.tags.push('play-fn');
+      }
     },
 
     Fragment(node, context) {
@@ -284,6 +289,11 @@ export async function parseForIndexer(
                 filename,
               });
             }
+
+            if (name === 'play') {
+              state.meta.tags ??= [];
+              state.meta.tags.push('play-fn');
+            }
           }
         }
       }
@@ -295,7 +305,7 @@ export async function parseForIndexer(
       ) {
         const storyAttributes = extractStoryAttributesNodes({
           component: node,
-          attributes: ['exportName', 'name', 'tags', 'template', 'asChild', 'children'],
+          attributes: ['exportName', 'name', 'tags', 'template', 'asChild', 'children', 'play'],
         });
         const templateSnippet = extractStoryTemplateSnippetBlock(node);
 
@@ -328,6 +338,9 @@ export async function parseForIndexer(
           node: storyAttributes.tags,
           filename,
         });
+        if (storyAttributes.play !== undefined) {
+          tags.push('play-fn');
+        }
 
         state.stories.push({
           exportName,

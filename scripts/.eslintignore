@@ -21,6 +21,6 @@ ember-output
 !.babelrc.js
 !.eslintrc.js
 !.eslintrc-markdown.js
-!.jest.config.js
+!.jest.config.cjs
 !.storybook
 

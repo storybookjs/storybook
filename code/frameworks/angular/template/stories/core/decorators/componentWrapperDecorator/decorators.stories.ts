@@ -1,10 +1,11 @@
 // your-component.stories.ts
+import type { Args, Meta, StoryObj } from '@storybook/angular';
+import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
 
-import { Args, Meta, Story, componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
 import ChildComponent from './child.component';
 import ParentComponent from './parent.component';
 
-export default {
+const meta: Meta<ChildComponent> = {
   // title: 'Core / Decorators / ComponentWrapperDecorator',
   component: ChildComponent,
   decorators: [
@@ -14,72 +15,79 @@ export default {
   ],
   args: { childText: 'Child text', childPrivateText: 'Child private text' },
   argTypes: { onClickChild: { action: 'onClickChild' } },
-} as Meta;
+};
 
-export const WithTemplate = (args: Args) => ({
-  template: `Child Template`,
-  props: {
-    ...args,
-  },
-});
+export default meta;
 
-export const WithComponent = (args: Args) => ({
-  props: {
-    ...args,
-  },
-});
+type Story = StoryObj<ChildComponent>;
 
-export const WithLegacyComponent = (args: Args) => ({
-  component: ChildComponent,
-  props: {
-    ...args,
-  },
-});
+export const WithTemplate: Story = {
+  render: (args: Args) => ({
+    template: `Child Template`,
+    props: args,
+  }),
+};
 
-export const WithComponentWrapperDecorator = (args: Args) => ({
-  component: ChildComponent,
-  props: {
-    ...args,
-  },
-});
-WithComponentWrapperDecorator.decorators = [
-  moduleMetadata({ declarations: [ParentComponent] }),
-  componentWrapperDecorator(ParentComponent),
-];
+export const WithComponent: Story = {};
 
-export const WithComponentWrapperDecoratorAndProps = (args: Args) => ({
-  component: ChildComponent,
-  props: {
-    ...args,
-  },
-});
-WithComponentWrapperDecoratorAndProps.decorators = [
-  moduleMetadata({ declarations: [ParentComponent] }),
-  componentWrapperDecorator(ParentComponent, {
-    parentText: 'Parent text',
-    onClickParent: () => {
-      console.log('onClickParent');
+export const WithLegacyComponent: Story = {
+  render: (args: Args) => ({
+    component: ChildComponent,
+    props: args,
+  }),
+};
+
+export const WithComponentWrapperDecorator: Story = {
+  render: (args: Args) => ({
+    component: ChildComponent,
+    props: args,
+  }),
+  decorators: [
+    moduleMetadata({ declarations: [ParentComponent] }),
+    componentWrapperDecorator(ParentComponent),
+  ],
+};
+
+export const WithComponentWrapperDecoratorAndProps: Story = {
+  render: (args: Args) => ({
+    component: ChildComponent,
+    props: {
+      ...args,
     },
   }),
-];
-
-export const WithComponentWrapperDecoratorAndArgs = (args: Args) => ({
-  component: ChildComponent,
-  props: {
-    ...args,
-  },
-});
-WithComponentWrapperDecoratorAndArgs.argTypes = {
-  parentText: { control: { type: 'text' } },
-  onClickParent: { action: 'onClickParent' },
+  decorators: [
+    moduleMetadata({ declarations: [ParentComponent] }),
+    componentWrapperDecorator(ParentComponent, {
+      parentText: 'Parent text',
+      onClickParent: () => {
+        console.log('onClickParent');
+      },
+    }),
+  ],
 };
-WithComponentWrapperDecoratorAndArgs.decorators = [
-  moduleMetadata({ declarations: [ParentComponent] }),
-  componentWrapperDecorator(ParentComponent, ({ args }) => ({
-    parentText: args.parentText,
-    onClickParent: args.onClickParent,
-  })),
-];
+
+export const WithComponentWrapperDecoratorAndArgs: StoryObj<{
+  parentText: string;
+  onClickParent: () => void;
+}> = {
+  render: (args: Args) => ({
+    component: ChildComponent,
+    props: {
+      ...args,
+    },
+  }),
+  argTypes: {
+    parentText: { control: { type: 'text' } },
+    onClickParent: { action: 'onClickParent' },
+  },
+  decorators: [
+    moduleMetadata({ declarations: [ParentComponent] }),
+    componentWrapperDecorator(ParentComponent, ({ args }) => ({
+      parentText: args.parentText,
+      onClickParent: args.onClickParent,
+    })),
+  ],
+};
 
 export const WithCustomDecorator = (args: Args) => ({
   template: `Child Template`,

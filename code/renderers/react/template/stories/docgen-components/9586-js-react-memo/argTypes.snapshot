@@ -1,41 +1,37 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9586-js-react-memo 1`] = `
-Object {
-  "label": Object {
-    "control": Object {
+{
+  "label": {
+    "control": {
       "type": "text",
     },
     "description": "",
     "name": "label",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "string",
       },
     },
-    "type": Object {
+    "type": {
       "name": "string",
       "required": true,
     },
   },
-  "onClick": Object {
+  "onClick": {
     "description": "",
     "name": "onClick",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "func",
       },
     },
-    "type": Object {
+    "type": {
       "name": "function",
       "required": true,
     },
   },
 }
-`;

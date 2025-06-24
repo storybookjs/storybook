@@ -1,27 +1,23 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 8143-ts-react-fc-generics 1`] = `
-Object {
-  "padding": Object {
-    "control": Object {
+{
+  "padding": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "padding",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'0'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
 }
-`;

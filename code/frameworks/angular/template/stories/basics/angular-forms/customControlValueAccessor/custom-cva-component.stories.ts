@@ -1,8 +1,11 @@
+import type { Meta, StoryObj } from '@storybook/angular';
+import { StoryFn, moduleMetadata } from '@storybook/angular';
+
 import { FormsModule } from '@angular/forms';
-import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+
 import { CustomCvaComponent } from './custom-cva.component';
 
-export default {
+const meta: Meta<CustomCvaComponent> = {
   // title: 'Basics / Angular forms / ControlValueAccessor',
   component: CustomCvaComponent,
   decorators: [
@@ -17,11 +20,16 @@ export default {
   ],
 } as Meta;
 
-export const SimpleInput: StoryFn = () => ({
-  props: {
-    ngModel: 'Type anything',
-    ngModelChange: () => {},
-  },
-});
+export default meta;
 
-SimpleInput.storyName = 'Simple input';
+type Story = StoryObj<CustomCvaComponent>;
+
+export const SimpleInput: Story = {
+  name: 'Simple input',
+  render: () => ({
+    props: {
+      ngModel: 'Type anything',
+      ngModelChange: () => {},
+    },
+  }),
+};

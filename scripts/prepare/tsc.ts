@@ -1,9 +1,10 @@
-#!/usr/bin/env ../../node_modules/.bin/ts-node
-
-import { join } from 'path';
-import fs, { move } from 'fs-extra';
-import * as ts from 'typescript';
+// eslint-disable-next-line depend/ban-dependencies
+import { emptyDir, move, readJson } from 'fs-extra';
+// eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
+import { join } from 'path';
+import * as ts from 'typescript';
+
 import { exec } from '../utils/exec';
 
 const hasFlag = (flags: string[], name: string) => !!flags.find((s) => s.startsWith(`--${name}`));
@@ -11,10 +12,10 @@ const hasFlag = (flags: string[], name: string) => !!flags.find((s) => s.startsW
 const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const {
     bundler: { pre, post, tsConfig: tsconfigPath = 'tsconfig.json' },
-  } = await fs.readJson(join(cwd, 'package.json'));
+  } = await readJson(join(cwd, 'package.json'));
 
   if (pre) {
-    await exec(`node -r ${__dirname}/../node_modules/esbuild-register/register.js ${pre}`, { cwd });
+    await exec(`jiti ${pre}`, { cwd });
   }
 
   const reset = hasFlag(flags, 'reset');
@@ -22,7 +23,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   // const optimized = hasFlag(flags, 'optimized');
 
   if (reset) {
-    await fs.emptyDir(join(process.cwd(), 'dist'));
+    await emptyDir(join(process.cwd(), 'dist'));
   }
 
   const content = ts.readJsonConfigFile(tsconfigPath, ts.sys.readFile);
@@ -41,6 +42,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       outDir: join(process.cwd(), 'dist'),
       target: ts.ScriptTarget.ES2020,
       declaration: true,
+      sourceMap: false,
     }
   );
 
@@ -57,7 +59,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       options: { ...compilerOptions, module: ts.ModuleKind.ES2020, declaration: false },
     }).emit();
 
-    const files = globSync(join(process.cwd(), 'dist', '*.js'));
+    const files = globSync(join(process.cwd(), 'dist', '**/*.js'));
     await Promise.all(files.map((file) => move(file, file.replace('.js', '.mjs'), {})));
 
     ts.createProgram({
@@ -67,15 +69,13 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   }
 
   if (post) {
-    await exec(
-      `node -r ${__dirname}/../node_modules/esbuild-register/register.js ${post}`,
-      { cwd },
-      { debug: true }
-    );
+    await exec(`jiti ${post}`, { cwd }, { debug: true });
   }
 
   if (!watch) {
-    console.log('done');
+    if (process.env.CI !== 'true') {
+      console.log('done');
+    }
   }
 };
 

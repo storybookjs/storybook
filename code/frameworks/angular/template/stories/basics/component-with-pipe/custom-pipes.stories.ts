@@ -1,9 +1,10 @@
-import { Meta, StoryFn, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 
 import { CustomPipePipe } from './custom.pipe';
 import { WithPipeComponent } from './with-pipe.component';
 
-export default {
+const meta: Meta<WithPipeComponent> = {
   // title: 'Basics / Component / With Pipes',
   component: WithPipeComponent,
   decorators: [
@@ -11,21 +12,26 @@ export default {
       declarations: [CustomPipePipe],
     }),
   ],
-} as Meta;
-
-export const Simple: StoryFn = () => ({
-  props: {
-    field: 'foobar',
-  },
-});
-
-export const WithArgsStory: StoryFn = (args) => ({
-  props: args,
-});
-WithArgsStory.storyName = 'With args';
-WithArgsStory.argTypes = {
-  field: { control: 'text' },
 };
-WithArgsStory.args = {
-  field: 'Foo Bar',
+
+export default meta;
+
+type Story = StoryObj<WithPipeComponent>;
+
+export const Simple: Story = {
+  render: () => ({
+    props: {
+      field: 'foobar',
+    },
+  }),
+};
+
+export const WithArgsStory: Story = {
+  name: 'With args',
+  argTypes: {
+    field: { control: 'text' },
+  },
+  args: {
+    field: 'Foo Bar',
+  },
 };

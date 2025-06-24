@@ -1,185 +1,181 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`web-components component properties lit-element-demo-card 1`] = `
-Object {
-  "--demo-wc-card-back-color": Object {
+{
+  "--demo-wc-card-back-color": {
     "description": "Font color for back",
     "name": "--demo-wc-card-back-color",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "css custom properties",
-      "defaultValue": Object {
+      "defaultValue": {
         "summary": undefined,
       },
-      "type": Object {
+      "type": {
         "summary": undefined,
       },
     },
-    "type": Object {
+    "type": {
       "name": "void",
     },
   },
-  "--demo-wc-card-front-color": Object {
+  "--demo-wc-card-front-color": {
     "description": "Font color for front",
     "name": "--demo-wc-card-front-color",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "css custom properties",
-      "defaultValue": Object {
+      "defaultValue": {
         "summary": undefined,
       },
-      "type": Object {
+      "type": {
         "summary": undefined,
       },
     },
-    "type": Object {
+    "type": {
       "name": "void",
     },
   },
-  "--demo-wc-card-header-font-size": Object {
+  "--demo-wc-card-header-font-size": {
     "description": "Header font size",
     "name": "--demo-wc-card-header-font-size",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "css custom properties",
-      "defaultValue": Object {
+      "defaultValue": {
         "summary": undefined,
       },
-      "type": Object {
+      "type": {
         "summary": undefined,
       },
     },
-    "type": Object {
+    "type": {
       "name": "void",
     },
   },
-  "back": Object {
+  "back": {
     "description": "Back of the card",
     "name": "back",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "css shadow parts",
-      "defaultValue": Object {
+      "defaultValue": {
         "summary": undefined,
       },
-      "type": Object {
+      "type": {
         "summary": undefined,
       },
     },
-    "type": Object {
+    "type": {
       "name": "void",
     },
   },
-  "back-side": Object {
+  "back-side": {
     "description": "Indicates that the back of the card is shown",
     "name": "back-side",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "attributes",
-      "defaultValue": Object {
+      "defaultValue": {
         "summary": "false",
       },
-      "type": Object {
+      "type": {
         "summary": "boolean",
       },
     },
-    "type": Object {
+    "type": {
       "name": "boolean",
     },
   },
-  "backSide": Object {
+  "backSide": {
     "description": "Indicates that the back of the card is shown",
     "name": "backSide",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "properties",
-      "defaultValue": Object {
+      "defaultValue": {
         "summary": "false",
       },
-      "type": Object {
+      "type": {
         "summary": "boolean",
       },
     },
-    "type": Object {
+    "type": {
       "name": "boolean",
     },
   },
-  "front": Object {
+  "front": {
     "description": "Front of the card",
     "name": "front",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "css shadow parts",
-      "defaultValue": Object {
+      "defaultValue": {
         "summary": undefined,
       },
-      "type": Object {
+      "type": {
         "summary": undefined,
       },
     },
-    "type": Object {
+    "type": {
       "name": "void",
     },
   },
-  "header": Object {
+  "header": {
     "description": "Header message",
     "name": "header",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "attributes",
-      "defaultValue": Object {
-        "summary": "\\"Your Message\\"",
+      "defaultValue": {
+        "summary": ""Your Message"",
       },
-      "type": Object {
+      "type": {
         "summary": "string",
       },
     },
-    "type": Object {
+    "type": {
       "name": "string",
     },
   },
-  "onSideChanged": Object {
-    "action": Object {
+  "onSideChanged": {
+    "action": {
       "name": "side-changed",
     },
     "name": "onSideChanged",
-    "table": Object {
+    "table": {
       "disable": true,
     },
   },
-  "rows": Object {
+  "rows": {
     "description": "Data rows",
     "name": "rows",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "attributes",
-      "defaultValue": Object {
+      "defaultValue": {
         "summary": "[]",
       },
-      "type": Object {
+      "type": {
         "summary": "object",
       },
     },
-    "type": Object {
+    "type": {
       "name": "object",
     },
   },
-  "side-changed": Object {
+  "side-changed": {
     "description": "Fires whenever it switches between front/back",
     "name": "side-changed",
     "required": false,
-    "table": Object {
+    "table": {
       "category": "events",
-      "defaultValue": Object {
+      "defaultValue": {
         "summary": undefined,
       },
-      "type": Object {
+      "type": {
         "summary": undefined,
       },
     },
-    "type": Object {
+    "type": {
       "name": "void",
     },
   },
 }
-`;

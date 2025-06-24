@@ -27,19 +27,28 @@ jobs:
       run:
         working-directory: scripts
     steps:
+      - name: Cancel if [skip ci]
+        if: contains(github.event.head_commit.message, '[skip ci]')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # From https://stackoverflow.com/a/75809743
+        run: |
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+
       - name: Checkout ${{ github.ref_name }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 100
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version-file: ".nvmrc"
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.yarn/berry/cache
@@ -53,6 +62,31 @@ jobs:
         run: |
           yarn install
 
+      - name: Cancel all release preparation runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn release:cancel-preparation-runs
+
+      - name: Apply deferred version bump and commit
+        working-directory: .
+        run: |
+          CURRENT_VERSION=$(cat ./code/package.json | jq '.version')
+          DEFERRED_NEXT_VERSION=$(cat ./code/package.json | jq '.deferredNextVersion')
+
+          if [[ "$DEFERRED_NEXT_VERSION" == "null" ]]; then
+              echo "No deferred version set, not bumping versions"
+              exit 0
+          fi
+          cd scripts
+          yarn release:version --apply --verbose
+          cd ..
+
+          git config --global user.name "storybook-bot"
+          git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
+          git add .
+          git commit -m "Bump version from $CURRENT_VERSION to $DEFERRED_NEXT_VERSION [skip ci]" || true
+          git push origin ${{ github.ref_name }}
+
       - name: Get current version
         id: version
         run: yarn release:get-current-version
@@ -64,7 +98,7 @@ jobs:
       - name: Check release vs prerelease
         if: steps.publish-needed.outputs.published == 'false'
         id: is-prerelease
-        run: yarn release:is-prerelease
+        run: yarn release:is-prerelease ${{ steps.version.outputs.current-version }} --verbose
 
       - name: Install code dependencies
         if: steps.publish-needed.outputs.published == 'false'
@@ -91,6 +125,7 @@ jobs:
         if: github.ref_name == 'latest-release'
         run: git fetch --tags origin
 
+      # when this is a patch release from main, label any patch PRs included in the release
       - name: Label patch PRs as picked
         if: github.ref_name == 'latest-release'
         env:
@@ -119,8 +154,16 @@ jobs:
           git merge ${{ github.ref_name }}
           git push origin ${{ steps.target.outputs.target }}
 
+      - name: Force push from 'next' to 'latest-release' and 'main' on minor/major releases
+        if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'false'
+        run: |
+          git checkout next
+          git pull
+          git push origin --force next:latest-release
+          git push origin --force next:main
+
       - name: Sync CHANGELOG.md from `main` to `next`
-        if: github.ref_name == 'latest-release'
+        if: steps.target.outputs.target == 'main'
         working-directory: .
         run: |
           git fetch origin next
@@ -128,28 +171,23 @@ jobs:
           git pull
           git checkout origin/main ./CHANGELOG.md
           git add ./CHANGELOG.md
-          git commit -m "Update CHANGELOG.md for v${{ steps.version.outputs.current-version }}"
+          git commit -m "Update CHANGELOG.md for v${{ steps.version.outputs.current-version }} [skip ci]" || true
           git push origin next
 
-      - name: Sync versions/next.json from `next` to `main`
-        if: github.ref_name == 'next-release'
+      # Sync the next.json version file to the main branch so it gets deployed to the docs site
+      # but only if this is a prerelease, because in minor/major releases we're already force pushing next-release onto main, so it's already there
+      - name: Sync version JSONs from `next-release` to `main`
+        if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'true'
         working-directory: .
         run: |
+          VERSION_FILE="./docs/versions/next.json"
           git fetch origin main
           git checkout main
           git pull
-          git checkout origin/next ./docs/versions/next.json
-          git add ./docs/versions/next.json
-          git commit -m "Update versions/next.json for v${{ steps.version.outputs.current-version }}"
+          git checkout origin/next-release $VERSION_FILE
+          git add $VERSION_FILE
+          git commit -m "Update $VERSION_FILE for v${{ steps.version.outputs.current-version }}"
           git push origin main
-
-      # Force push from next to main if it is not a prerelease, and this release is from next-release
-      # This happens when eg. next has been tracking 7.1.0-alpha.X, and now we want to release 7.1.0
-      # This will keep release-next, next and main all tracking v7.1.0
-      # - name: Force push ${{ steps.target.outputs.target }} to main
-      #   if: steps.publish-needed.outputs.published == 'false' && steps.target.outputs.target == 'next' && !steps.is-prerelease.outputs.prerelease
-      #   run: |
-      #     git push --force origin ${{ steps.target.outputs.target }}:main
 
       - name: Report job failure to Discord
         if: failure()
@@ -157,4 +195,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@master
         with:
-          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

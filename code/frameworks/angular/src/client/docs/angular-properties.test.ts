@@ -1,63 +1,37 @@
-import 'jest-specific-snapshot';
-import path from 'path';
-import fs from 'fs';
-import tmp from 'tmp';
-import { sync as spawnSync } from 'cross-spawn';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 
-import { findComponentByName, extractArgTypesFromData } from './compodoc';
-
-// @ts-expect-error (Converted from ts-ignore)
-const { SNAPSHOT_OS } = global;
+import { describe, expect, it } from 'vitest';
 
 // File hierarchy: __testfixtures__ / some-test-case / input.*
 const inputRegExp = /^input\..*$/;
 
-const runCompodoc = (inputPath: string) => {
-  const testDir = path.dirname(inputPath);
-  const { name: tmpDir, removeCallback } = tmp.dirSync();
-
-  // FIXME: for now, this requires a tsconfig.json for each test case. Tried generating
-  // one dynamically in tmpDir, but compodoc doesn't handle absolute paths properly
-  // (and screwed around with relative paths as well, but couldn't get it working)
-  spawnSync('yarn', ['compodoc', '-p', `${testDir}/tsconfig.json`, '-e', 'json', '-d', tmpDir], {
-    stdio: 'inherit',
-    shell: true,
-  });
-  const output = fs.readFileSync(`${tmpDir}/documentation.json`, 'utf8');
-  try {
-    removeCallback();
-  } catch (e) {
-    //
-  }
-  return output;
-};
-
 describe('angular component properties', () => {
-  const fixturesDir = path.join(__dirname, '__testfixtures__');
-  fs.readdirSync(fixturesDir, { withFileTypes: true }).forEach((testEntry) => {
+  const fixturesDir = join(__dirname, '__testfixtures__');
+  readdirSync(fixturesDir, { withFileTypes: true }).forEach((testEntry) => {
     if (testEntry.isDirectory()) {
-      const testDir = path.join(fixturesDir, testEntry.name);
-      const testFile = fs.readdirSync(testDir).find((fileName) => inputRegExp.test(fileName));
+      const testDir = join(fixturesDir, testEntry.name);
+      const testFile = readdirSync(testDir).find((fileName) => inputRegExp.test(fileName));
       if (testFile) {
         // TODO: Remove this as soon as the real test is fixed
         it('true', () => {
           expect(true).toEqual(true);
         });
         // TODO: Fix this test
-        // it(`${testEntry.name}`, () => {
-        //   const inputPath = path.join(testDir, testFile);
+        // it(`${testEntry.name}`, async () => {
+        //   const inputPath = join(testDir, testFile);
 
         //   // snapshot the output of compodoc
         //   const compodocOutput = runCompodoc(inputPath);
         //   const compodocJson = JSON.parse(compodocOutput);
-        //   expect(compodocJson).toMatchSpecificSnapshot(
-        //     path.join(testDir, `compodoc-${SNAPSHOT_OS}.snapshot`)
+        //   await expect(compodocJson).toMatchFileSnapshot(
+        //     join(testDir, `compodoc-${SNAPSHOT_OS}.snapshot`)
         //   );
 
         //   // snapshot the output of addon-docs angular-properties
         //   const componentData = findComponentByName('InputComponent', compodocJson);
         //   const argTypes = extractArgTypesFromData(componentData);
-        //   expect(argTypes).toMatchSpecificSnapshot(path.join(testDir, 'argtypes.snapshot'));
+        //   await expect(argTypes).toMatchFileSnapshot(join(testDir, 'argtypes.snapshot'));
         // });
       }
     }

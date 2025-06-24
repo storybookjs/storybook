@@ -1,13 +1,9 @@
-/* eslint-disable no-underscore-dangle */
-import prettier from 'prettier';
-import type { API, FileInfo } from 'jscodeshift';
-import type { BabelFile, NodePath } from '@babel/core';
-import * as babel from '@babel/core';
-import { loadCsf } from '@storybook/csf-tools';
-import * as recast from 'recast';
-import * as t from '@babel/types';
+import { type BabelFile, type NodePath, core as babel, types as t } from 'storybook/internal/babel';
+import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
-const logger = console;
+import type { API, FileInfo } from 'jscodeshift';
+import prettier from 'prettier';
 
 const deprecatedTypes = [
   'ComponentStory',
@@ -18,13 +14,16 @@ const deprecatedTypes = [
 ];
 
 function migrateType(oldType: string) {
-  if (oldType === 'Story' || oldType === 'ComponentStory') return 'StoryFn';
+  if (oldType === 'Story' || oldType === 'ComponentStory') {
+    return 'StoryFn';
+  }
   return oldType.replace('Component', '');
 }
 
-export default function transform(info: FileInfo, api: API, options: { parser?: string }) {
+export default async function transform(info: FileInfo, api: API, options: { parser?: string }) {
   // TODO what do I need to with the title?
-  const fileNode = loadCsf(info.source, { makeTitle: (title) => title })._ast;
+  const csf = loadCsf(info.source, { makeTitle: (title) => title });
+  const fileNode = csf._ast;
   // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
   const file: BabelFile = new babel.File(
     { filename: info.path },
@@ -33,18 +32,13 @@ export default function transform(info: FileInfo, api: API, options: { parser?: 
 
   upgradeDeprecatedTypes(file);
 
-  let output = recast.print(file.path.node).code;
+  let output = printCsf(csf).code;
 
   try {
-    const prettierConfig = prettier.resolveConfig.sync('.', { editorconfig: true }) || {
-      printWidth: 100,
-      tabWidth: 2,
-      bracketSpacing: true,
-      trailingComma: 'es5',
-      singleQuote: true,
-    };
-
-    output = prettier.format(output, { ...prettierConfig, filepath: info.path });
+    output = await prettier.format(output, {
+      ...(await prettier.resolveConfig(info.path)),
+      filepath: info.path,
+    });
   } catch (e) {
     logger.log(`Failed applying prettier to ${info.path}.`);
   }
@@ -74,15 +68,26 @@ export function upgradeDeprecatedTypes(file: BabelFile) {
       );
 
       const source = path.node.source.value;
-      if (!source.startsWith('@storybook')) return;
+
+      if (!source.startsWith('@storybook')) {
+        return;
+      }
 
       path.get('specifiers').forEach((specifier) => {
         if (specifier.isImportNamespaceSpecifier()) {
           importedNamespaces.add(specifier.node.local.name);
         }
-        if (!specifier.isImportSpecifier()) return;
+
+        if (!specifier.isImportSpecifier()) {
+          return;
+        }
         const imported = specifier.get('imported');
-        if (!imported.isIdentifier()) return;
+
+        if (!imported.isIdentifier()) {
+          return;
+        }
+
+        // if we find a deprecated import
 
         // if we find a deprecated import
         if (deprecatedTypes.includes(imported.node.name)) {

@@ -14,7 +14,7 @@ export const isComponentAlreadyDeclared = (
 ): boolean => {
   if (
     moduleDeclarations &&
-    moduleDeclarations.some((declaration) => declaration === componentToFind)
+    moduleDeclarations.flat().some((declaration) => declaration === componentToFind)
   ) {
     // Found component in declarations array
     return true;
@@ -23,7 +23,7 @@ export const isComponentAlreadyDeclared = (
     return false;
   }
 
-  return moduleImports.some((importItem) => {
+  return moduleImports.flat().some((importItem) => {
     const extractedNgModuleMetadata = extractNgModuleMetadata(importItem);
     if (!extractedNgModuleMetadata) {
       // Not an NgModule

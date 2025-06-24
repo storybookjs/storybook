@@ -1,32 +1,54 @@
-import { hasVitePlugins } from '@storybook/builder-vite';
-import type { PresetProperty } from '@storybook/types';
-import { mergeConfig, type PluginOption } from 'vite';
-import type { StorybookConfig } from './types';
-import { vueDocgen } from './plugins/vue-docgen';
+import { dirname, join } from 'node:path';
 
-export const core: PresetProperty<'core', StorybookConfig> = {
-  builder: '@storybook/builder-vite',
-  renderer: '@storybook/vue3',
+import type { PresetProperty } from 'storybook/internal/types';
+
+import type { Plugin } from 'vite';
+
+import { vueComponentMeta } from './plugins/vue-component-meta';
+import { vueDocgen } from './plugins/vue-docgen';
+import { templateCompilation } from './plugins/vue-template';
+import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types';
+
+const getAbsolutePath = <I extends string>(input: I): I =>
+  dirname(require.resolve(join(input, 'package.json'))) as any;
+
+export const core: PresetProperty<'core'> = {
+  builder: getAbsolutePath('@storybook/builder-vite'),
+  renderer: getAbsolutePath('@storybook/vue3'),
 };
 
-export const viteFinal: StorybookConfig['viteFinal'] = async (config, { presets }) => {
-  const plugins: PluginOption[] = [];
+export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {
+  const plugins: Plugin[] = [await templateCompilation()];
 
-  // Add vue plugin if not present
-  if (!(await hasVitePlugins(config.plugins, ['vite:vue']))) {
-    const { default: vue } = await import('@vitejs/plugin-vue');
-    plugins.push(vue());
+  const framework = await options.presets.apply('framework');
+  const frameworkOptions: FrameworkOptions =
+    typeof framework === 'string' ? {} : (framework.options ?? {});
+
+  const docgen = resolveDocgenOptions(frameworkOptions.docgen);
+
+  // add docgen plugin depending on framework option
+  if (docgen.plugin === 'vue-component-meta') {
+    plugins.push(await vueComponentMeta(docgen.tsconfig));
+  } else {
+    plugins.push(await vueDocgen());
   }
 
-  // Add docgen plugin
-  plugins.push(vueDocgen());
-
+  const { mergeConfig } = await import('vite');
   return mergeConfig(config, {
     plugins,
-    resolve: {
-      alias: {
-        vue: 'vue/dist/vue.esm-bundler.js',
-      },
-    },
   });
+};
+
+/** Resolves the docgen framework option. */
+const resolveDocgenOptions = (
+  docgen?: FrameworkOptions['docgen']
+): { plugin: VueDocgenPlugin; tsconfig?: string } => {
+  if (!docgen) {
+    return { plugin: 'vue-docgen-api' };
+  }
+
+  if (typeof docgen === 'string') {
+    return { plugin: docgen };
+  }
+  return docgen;
 };

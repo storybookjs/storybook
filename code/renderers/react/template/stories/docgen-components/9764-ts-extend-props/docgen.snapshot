@@ -1,41 +1,37 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9764-ts-extend-props 1`] = `
-"import React from 'react';
+import React from 'react';
 const Radio = props => /*#__PURE__*/React.createElement(React.Fragment, null, JSON.stringify(props));
 export const component = Radio;
 Radio.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"Radio\\",
-  \\"props\\": {
-    \\"value\\": {
-      \\"required\\": false,
-      \\"tsType\\": {
-        \\"name\\": \\"union\\",
-        \\"raw\\": \\"string | number\\",
-        \\"elements\\": [{
-          \\"name\\": \\"string\\"
+  "description": "",
+  "methods": [],
+  "displayName": "Radio",
+  "props": {
+    "value": {
+      "required": false,
+      "tsType": {
+        "name": "union",
+        "raw": "string | number",
+        "elements": [{
+          "name": "string"
         }, {
-          \\"name\\": \\"number\\"
+          "name": "number"
         }]
       },
-      \\"description\\": \\"The input content value\\"
+      "description": "The input content value"
     },
-    \\"defaultChecked\\": {
-      \\"required\\": false,
-      \\"tsType\\": {
-        \\"name\\": \\"boolean\\"
+    "defaultChecked": {
+      "required": false,
+      "tsType": {
+        "name": "boolean"
       },
-      \\"description\\": \\"\\"
+      "description": ""
     },
-    \\"checked\\": {
-      \\"required\\": false,
-      \\"tsType\\": {
-        \\"name\\": \\"boolean\\"
+    "checked": {
+      "required": false,
+      "tsType": {
+        "name": "boolean"
       },
-      \\"description\\": \\"\\"
+      "description": ""
     }
   }
-};"
-`;
+};

@@ -1,14 +1,10 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9586-js-react-memo 1`] = `
-"import React from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 function Button({
   label,
   onClick
 }) {
-  // eslint-disable-next-line react/button-has-type
-  return /*#__PURE__*/React.createElement(\\"button\\", {
+  return /*#__PURE__*/React.createElement("button", {
     onClick: onClick
   }, label);
 }
@@ -19,24 +15,23 @@ Button.propTypes = {
 const MemoButton = /*#__PURE__*/React.memo(Button);
 export const component = MemoButton;
 Button.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"Button\\",
-  \\"props\\": {
-    \\"label\\": {
-      \\"description\\": \\"\\",
-      \\"type\\": {
-        \\"name\\": \\"string\\"
+  "description": "",
+  "methods": [],
+  "displayName": "Button",
+  "props": {
+    "label": {
+      "description": "",
+      "type": {
+        "name": "string"
       },
-      \\"required\\": true
+      "required": true
     },
-    \\"onClick\\": {
-      \\"description\\": \\"\\",
-      \\"type\\": {
-        \\"name\\": \\"func\\"
+    "onClick": {
+      "description": "",
+      "type": {
+        "name": "func"
       },
-      \\"required\\": true
+      "required": true
     }
   }
-};"
-`;
+};

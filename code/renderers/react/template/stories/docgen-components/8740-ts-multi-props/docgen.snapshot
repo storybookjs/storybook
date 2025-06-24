@@ -1,17 +1,14 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 8740-ts-multi-props 1`] = `
-"import React from 'react';
+import React from 'react';
 export const Header = ({
   size = 'a',
   children
-}) => /*#__PURE__*/React.createElement(\\"div\\", {
+}) => /*#__PURE__*/React.createElement("div", {
   className: size
 }, children);
 export const Paragraph = ({
   size,
   children
-}) => /*#__PURE__*/React.createElement(\\"div\\", {
+}) => /*#__PURE__*/React.createElement("div", {
   className: size
 }, children);
 Paragraph.defaultProps = {
@@ -19,31 +16,30 @@ Paragraph.defaultProps = {
 };
 export const component = Header;
 Header.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"Header\\",
-  \\"props\\": {
-    \\"size\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'a'\\",
-        \\"computed\\": false
+  "description": "",
+  "methods": [],
+  "displayName": "Header",
+  "props": {
+    "size": {
+      "defaultValue": {
+        "value": "'a'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     }
   }
 };
 Paragraph.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"Paragraph\\",
-  \\"props\\": {
-    \\"size\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'md'\\",
-        \\"computed\\": false
+  "description": "",
+  "methods": [],
+  "displayName": "Paragraph",
+  "props": {
+    "size": {
+      "defaultValue": {
+        "value": "'md'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     }
   }
-};"
-`;
+};

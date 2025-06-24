@@ -1,27 +1,35 @@
+import type { RenderContext } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
+
 import { dedent } from 'ts-dedent';
-import type { RenderContext } from '@storybook/types';
-// @ts-expect-error (Converted from ts-ignore)
-import Component from '@ember/component'; // eslint-disable-line import/no-unresolved
-import type { OptionsArgs, EmberRenderer } from './types';
+
+import type { EmberRenderer, OptionsArgs } from './types';
 
 const { document } = global;
 
+declare let Ember: any;
+
 const rootEl = document.getElementById('storybook-root');
 
-const config = global.require(`${global.STORYBOOK_NAME}/config/environment`);
-const app = global.require(`${global.STORYBOOK_NAME}/app`).default.create({
-  autoboot: false,
-  rootElement: rootEl,
-  ...config.APP,
-});
+function loadEmberApp() {
+  const config = global.require(`${global.STORYBOOK_NAME}/config/environment`);
+  return global.require(`${global.STORYBOOK_NAME}/app`).default.create({
+    autoboot: false,
+    rootElement: rootEl,
+    ...config.APP,
+  });
+}
 
+const app = loadEmberApp();
 let lastPromise = app.boot();
 let hasRendered = false;
 let isRendering = false;
 
 function render(options: OptionsArgs, el: EmberRenderer['canvasElement']) {
-  if (isRendering) return;
+  if (isRendering) {
+    return;
+  }
   isRendering = true;
 
   const { template, context = {}, element } = options;
@@ -38,7 +46,7 @@ function render(options: OptionsArgs, el: EmberRenderer['canvasElement']) {
     .then((instance: any) => {
       instance.register(
         'component:story-mode',
-        Component.extend({
+        Ember.Component.extend({
           layout: template || options,
           ...context,
         })

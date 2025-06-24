@@ -1,1 +1,0 @@
-# Storybook Vue renderer

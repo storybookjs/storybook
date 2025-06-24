@@ -1,0 +1,8 @@
+{
+  "name": "eslint-plugin-local-rules",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "main": "index.js"
+}

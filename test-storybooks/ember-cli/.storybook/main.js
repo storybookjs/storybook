@@ -10,22 +10,10 @@ module.exports = {
   logLevel: 'debug',
   addons: [
     '@storybook/addon-a11y',
-    '@storybook/addon-storysource',
-    '@storybook/addon-actions',
     '@storybook/addon-docs',
-    '@storybook/addon-controls',
-    '@storybook/addon-links',
-    '@storybook/addon-viewport',
-    '@storybook/addon-backgrounds',
-    '@storybook/addon-highlight',
+    '@storybook/addon-links'
   ],
   webpackFinal: async (config) => {
-    config.module.rules.push({
-      test: [/\.stories\.js$/, /index\.js$/],
-      use: require.resolve('@storybook/source-loader'),
-      include: [path.resolve(__dirname, '../')],
-      enforce: 'pre',
-    });
     // eslint-disable-next-line no-param-reassign
     config.resolve.fallback = {
       fs: false,
@@ -39,13 +27,12 @@ module.exports = {
     return config;
   },
   core: {
-    channelOptions: { allowFunction: false, maxDepth: 10 },
+    channelOptions: { maxDepth: 10 },
     disableTelemetry: true,
   },
   staticDirs: ['../ember-output'],
   features: {
     buildStoriesJson: false,
-    storyStoreV7: false,
   },
   framework: { name: '@storybook/ember' },
 };

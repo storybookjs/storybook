@@ -1,14 +1,14 @@
 import { Component, forwardRef } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import type { ControlValueAccessor } from '@angular/forms';
+import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 const NOOP = () => {};
 
 @Component({
+  standalone: false,
   selector: 'storybook-custom-cva-component',
-  template: `
-    <div>{{ value }}</div>
-    <input type="text" [(ngModel)]="value" />
-  `,
+  template: ` <div>{{ value }}</div>
+<input type="text" [(ngModel)]="value" /> `,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

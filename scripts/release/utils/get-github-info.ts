@@ -4,9 +4,7 @@
  *
  * The only modification is that it also returns the PR title and labels
  */
-
 import DataLoader from 'dataloader';
-import fetch from 'node-fetch';
 
 const validRepoNameRegex = /^[\w.-]+\/[\w.-]+$/;
 
@@ -40,6 +38,7 @@ function makeQuery(repos: ReposWithCommitsAndPRsToFetch) {
                 number
                 id
                 title
+                state
                 url
                 mergedAt
                 labels(first: 50) {
@@ -63,6 +62,7 @@ function makeQuery(repos: ReposWithCommitsAndPRsToFetch) {
                   : `pr__${data.pull}: pullRequest(number: ${data.pull}) {
                     url
                     title
+                    state
                     author {
                       login
                       url
@@ -71,7 +71,7 @@ function makeQuery(repos: ReposWithCommitsAndPRsToFetch) {
                       nodes {
                         name
                       }
-                    }    
+                    }
                     mergeCommit {
                       commitUrl
                       oid
@@ -97,7 +97,7 @@ function makeQuery(repos: ReposWithCommitsAndPRsToFetch) {
 // getReleaseLine will be called a large number of times but it'll be called at the same time
 // so instead of doing a bunch of network requests, we can do a single one.
 const GHDataLoader = new DataLoader(
-  async (requests: RequestData[]) => {
+  async (requests: readonly RequestData[]) => {
     if (!process.env.GH_TOKEN) {
       throw new Error(
         'Please create a GitHub personal access token at https://github.com/settings/tokens/new with `read:user` and `repo:status` permissions and add it as the GH_TOKEN environment variable'
@@ -161,11 +161,12 @@ export type PullRequestInfo = {
   user: string | null;
   id: string | null;
   title: string | null;
+  state: string | null;
   commit: string | null;
   pull: number | null;
   labels: string[] | null;
   links: {
-    commit: string;
+    commit: string | null;
     pull: string | null;
     user: string | null;
   };
@@ -197,6 +198,7 @@ export async function getPullInfoFromCommit(request: {
       pull: null,
       commit: request.commit,
       title: null,
+      state: null,
       labels: null,
       links: {
         commit: request.commit,
@@ -205,10 +207,7 @@ export async function getPullInfoFromCommit(request: {
       },
     };
   }
-  let user = null;
-  if (data.author && data.author.user) {
-    user = data.author.user;
-  }
+  let user = data?.author?.user || null;
 
   const associatedPullRequest =
     data.associatedPullRequests &&
@@ -245,6 +244,7 @@ export async function getPullInfoFromCommit(request: {
     pull: associatedPullRequest ? associatedPullRequest.number : null,
     commit: request.commit,
     title: associatedPullRequest ? associatedPullRequest.title : null,
+    state: associatedPullRequest ? associatedPullRequest.state : null,
     labels: associatedPullRequest
       ? (associatedPullRequest.labels.nodes || []).map((label: { name: string }) => label.name)
       : null,
@@ -287,6 +287,7 @@ export async function getPullInfoFromPullRequest(request: {
     pull: request.pull,
     commit: commit ? commit.oid : null,
     title: title || null,
+    state: data?.state || null,
     labels: data ? (data.labels.nodes || []).map((label: { name: string }) => label.name) : null,
     links: {
       commit: commit ? `[\`${commit.oid}\`](${commit.commitUrl})` : null,

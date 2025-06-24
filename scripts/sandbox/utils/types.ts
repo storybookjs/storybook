@@ -6,4 +6,5 @@ export type GeneratorConfig = {
     renderer: string;
     builder: string;
   };
+  env?: Record<string, unknown>;
 };

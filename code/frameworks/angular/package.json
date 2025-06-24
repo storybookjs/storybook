@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "7.1.0-rc.0",
+  "version": "9.1.0-alpha.6",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -20,107 +20,154 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./preset": "./preset.js",
+    "./server/framework-preset-angular-ivy": "./server/framework-preset-angular-ivy.js",
+    "./server/framework-preset-angular-cli": "./server/framework-preset-angular-cli.js",
+    "./client/config": {
+      "types": "./dist/client/config.d.ts",
+      "import": "./dist/client/config.mjs",
+      "require": "./dist/client/config.js"
+    },
+    "./client/preview-prod": {
+      "types": "./dist/client/preview-prod.d.ts",
+      "import": "./dist/client/preview-prod.mjs",
+      "require": "./dist/client/preview-prod.js"
+    },
+    "./client/docs/config": {
+      "types": "./dist/client/docs/config.d.ts",
+      "import": "./dist/client/docs/config.mjs",
+      "require": "./dist/client/docs/config.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js",
+      "require": "./dist/node/index.js"
+    },
+    "./package.json": "./package.json",
+    "./*": "./*"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "*": [
+        "dist/index.d.ts"
+      ],
+      "client/config": [
+        "dist/client/config.d.ts"
+      ],
+      "client/preview-prod": [
+        "dist/client/preview-prod.d.ts"
+      ],
+      "client/docs/config": [
+        "dist/client/docs/config.d.ts"
+      ]
+    }
+  },
   "files": [
+    "builders.json",
+    "build-schema.json",
+    "start-schema.json",
     "dist/**/*",
-    "template/**/*",
+    "template/cli/**/*",
     "README.md",
     "*.js",
     "*.mjs",
-    "*.d.ts"
+    "*.d.ts",
+    "!src/**/*"
   ],
   "scripts": {
-    "check": "../../../scripts/node_modules/.bin/tsc",
-    "prep": "../../../scripts/prepare/tsc.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
-    "@storybook/builder-webpack5": "7.1.0-rc.0",
-    "@storybook/cli": "7.1.0-rc.0",
-    "@storybook/client-logger": "7.1.0-rc.0",
-    "@storybook/core-common": "7.1.0-rc.0",
-    "@storybook/core-events": "7.1.0-rc.0",
-    "@storybook/core-server": "7.1.0-rc.0",
-    "@storybook/core-webpack": "7.1.0-rc.0",
-    "@storybook/docs-tools": "7.1.0-rc.0",
+    "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
-    "@storybook/manager-api": "7.1.0-rc.0",
-    "@storybook/node-logger": "7.1.0-rc.0",
-    "@storybook/preview-api": "7.1.0-rc.0",
-    "@storybook/telemetry": "7.1.0-rc.0",
-    "@storybook/types": "7.1.0-rc.0",
-    "@types/node": "^16.0.0",
-    "@types/react": "^16.14.34",
-    "@types/react-dom": "^16.9.14",
-    "@types/semver": "^7.3.4",
-    "@types/webpack-env": "^1.18.0",
-    "find-up": "^5.0.0",
-    "read-pkg-up": "^7.0.1",
-    "semver": "^7.3.7",
-    "telejson": "^7.0.3",
+    "telejson": "8.0.0",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths-webpack-plugin": "^4.0.1",
-    "util-deprecate": "^1.0.2",
     "webpack": "5"
   },
   "devDependencies": {
-    "@angular-devkit/architect": "^0.1600.0-rc.4",
-    "@angular-devkit/build-angular": "^16.0.0-rc.4",
-    "@angular-devkit/core": "^16.0.0-rc.4",
-    "@angular/animations": "^16.0.0-rc.4",
-    "@angular/cli": "^16.0.0-rc.4",
-    "@angular/common": "^16.0.0-rc.4",
-    "@angular/compiler": "^16.0.0-rc.4",
-    "@angular/compiler-cli": "^16.0.0-rc.4",
-    "@angular/core": "^16.0.0-rc.4",
-    "@angular/forms": "^16.0.0-rc.4",
-    "@angular/platform-browser": "^16.0.0-rc.4",
-    "@angular/platform-browser-dynamic": "^16.0.0-rc.4",
-    "@types/cross-spawn": "^6.0.2",
-    "@types/tmp": "^0.2.3",
-    "cross-spawn": "^7.0.3",
-    "jest": "^29.3.1",
-    "jest-preset-angular": "^13.0.1",
-    "jest-specific-snapshot": "^8.0.0",
-    "tmp": "^0.2.1",
-    "typescript": "^5.0.4",
+    "@analogjs/vite-plugin-angular": "^1.12.1",
+    "@angular-devkit/architect": "^0.1901.1",
+    "@angular-devkit/build-angular": "^19.1.1",
+    "@angular-devkit/core": "^19.1.1",
+    "@angular/animations": "^19.1.1",
+    "@angular/common": "^19.1.1",
+    "@angular/compiler": "^19.1.1",
+    "@angular/compiler-cli": "^19.1.1",
+    "@angular/core": "^19.1.1",
+    "@angular/forms": "^19.1.1",
+    "@angular/platform-browser": "^19.1.1",
+    "@angular/platform-browser-dynamic": "^19.1.1",
+    "@storybook/core-webpack": "workspace:*",
+    "@types/node": "^22.0.0",
+    "fd-package-json": "^1.2.0",
+    "find-up": "^7.0.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3",
     "webpack": "5",
-    "zone.js": "^0.13.0"
+    "zone.js": "^0.15.0"
   },
   "peerDependencies": {
-    "@angular-devkit/architect": ">=0.1400.0 < 0.1700.0",
-    "@angular-devkit/build-angular": ">=14.1.0 < 17.0.0",
-    "@angular-devkit/core": ">=14.1.0 < 17.0.0",
-    "@angular/cli": ">=14.1.0 < 17.0.0",
-    "@angular/common": ">=14.1.0 < 17.0.0",
-    "@angular/compiler": ">=14.1.0 < 17.0.0",
-    "@angular/compiler-cli": ">=14.1.0 < 17.0.0",
-    "@angular/core": ">=14.1.0 < 17.0.0",
-    "@angular/forms": ">=14.1.0 < 17.0.0",
-    "@angular/platform-browser": ">=14.1.0 < 17.0.0",
-    "@angular/platform-browser-dynamic": ">=14.1.0 < 17.0.0",
-    "@babel/core": "*",
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "rxjs": "^6.0.0 || ^7.4.0",
-    "typescript": "^4.0.0 || ^5.0.0",
-    "zone.js": "^0.8.29 || >= 0.9.0 < 1.0.0"
+    "@angular-devkit/architect": ">=0.1800.0 < 0.2100.0",
+    "@angular-devkit/build-angular": ">=18.0.0 < 21.0.0",
+    "@angular-devkit/core": ">=18.0.0 < 21.0.0",
+    "@angular/animations": ">=18.0.0 < 21.0.0",
+    "@angular/cli": ">=18.0.0 < 21.0.0",
+    "@angular/common": ">=18.0.0 < 21.0.0",
+    "@angular/compiler": ">=18.0.0 < 21.0.0",
+    "@angular/compiler-cli": ">=18.0.0 < 21.0.0",
+    "@angular/core": ">=18.0.0 < 21.0.0",
+    "@angular/forms": ">=18.0.0 < 21.0.0",
+    "@angular/platform-browser": ">=18.0.0 < 21.0.0",
+    "@angular/platform-browser-dynamic": ">=18.0.0 < 21.0.0",
+    "rxjs": "^6.5.3 || ^7.4.0",
+    "storybook": "workspace:^",
+    "typescript": "^4.9.0 || ^5.0.0",
+    "zone.js": ">=0.14.0"
   },
   "peerDependenciesMeta": {
+    "@angular/animations": {
+      "optional": true
+    },
     "@angular/cli": {
+      "optional": true
+    },
+    "zone.js": {
       "optional": true
     }
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"
   },
-  "builders": "dist/builders/builders.json",
+  "builders": "builders.json",
   "bundler": {
-    "tsConfig": "tsconfig.build.json"
+    "previewEntries": [
+      "./src/index.ts",
+      "./src/client/index.ts",
+      "./src/client/config.ts",
+      "./src/client/preview-prod.ts",
+      "./src/client/docs/config.ts"
+    ],
+    "nodeEntries": [
+      "./src/preset.ts",
+      "./src/server/framework-preset-angular-ivy.ts",
+      "./src/server/framework-preset-angular-cli.ts",
+      "./src/builders/start-storybook/index.ts",
+      "./src/builders/build-storybook/index.ts"
+    ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

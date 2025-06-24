@@ -1,21 +1,17 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9922-ts-component-props 1`] = `
-Object {
-  "rows": Array [
-    Object {
+{
+  "rows": [
+    {
       "defaultValue": null,
       "description": "",
       "name": "spacing",
       "required": true,
-      "sbType": Object {
+      "sbType": {
         "name": "number",
       },
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "number",
       },
     },
   ],
 }
-`;

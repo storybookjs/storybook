@@ -1,20 +1,7 @@
-import { dedent } from 'ts-dedent';
+import { definePreviewAddon } from 'storybook/internal/csf';
 
-let hasWarned = false;
-
-/**
- * @deprecated please import this specific function from @storybook/addon-links/react
- */
-export function LinkTo(): null {
-  if (!hasWarned) {
-    // eslint-disable-next-line no-console
-    console.error(dedent`
-      LinkTo has moved to addon-links/react:
-      import LinkTo from '@storybook/addon-links/react';
-    `);
-    hasWarned = true;
-  }
-  return null;
-}
+import * as addonAnnotations from './preview';
 
 export { linkTo, hrefTo, withLinks, navigate } from './utils';
+
+export default () => definePreviewAddon(addonAnnotations);

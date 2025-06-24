@@ -1,34 +1,30 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 8894-9511-ts-forward-ref 1`] = `
-Object {
-  "rows": Array [
-    Object {
-      "defaultValue": Object {
+{
+  "rows": [
+    {
+      "defaultValue": {
         "detail": undefined,
         "summary": "false",
       },
       "description": undefined,
       "name": "disabled",
       "required": false,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    Object {
-      "defaultValue": Object {
+    {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'small'",
       },
       "description": undefined,
       "name": "variant",
       "required": false,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
   ],
 }
-`;

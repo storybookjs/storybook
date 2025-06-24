@@ -1,7 +1,9 @@
 import { Component, Input } from '@angular/core';
-import { componentWrapperDecorator, Meta, StoryFn } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { componentWrapperDecorator } from '@storybook/angular';
 
 @Component({
+  standalone: false,
   selector: 'sb-button',
   template: `<button [style.background-color]="color"><ng-content></ng-content></button>`,
   styles: [
@@ -17,7 +19,7 @@ class SbButtonComponent {
   color = '#5eadf5';
 }
 
-export default {
+const meta: Meta<SbButtonComponent> = {
   // title: 'Basics / Component / With ng-content / Button with different contents',
   // Implicitly declares the component to Angular
   // This will be the component described by the addon docs
@@ -35,24 +37,24 @@ export default {
   },
 } as Meta;
 
+export default meta;
+
+type Story = StoryObj<SbButtonComponent>;
+
 // By default storybook uses the default export component if no template or component is defined in the story
 // So Storybook nests the component twice because it is first added by the componentWrapperDecorator.
-export const AlwaysDefineTemplateOrComponent: StoryFn = () => ({});
+export const AlwaysDefineTemplateOrComponent: Story = {};
 
-export const EmptyButton: StoryFn = () => ({
-  template: '',
-});
-
-export const WithDynamicContentAndArgs: StoryFn = (args) => ({
-  template: `${args['content']}`,
-});
-WithDynamicContentAndArgs.argTypes = {
-  content: { control: 'text' },
+export const EmptyButton: Story = {
+  render: () => ({
+    template: '',
+  }),
 };
-WithDynamicContentAndArgs.args = { content: 'My button text' };
 
-export const InH1: StoryFn = () => ({
-  template: 'My button in h1',
-});
-InH1.decorators = [componentWrapperDecorator((story) => `<h1>${story}</h1>`)];
-InH1.storyName = 'In <h1>';
+export const InH1: Story = {
+  render: () => ({
+    template: 'My button in h1',
+  }),
+  decorators: [componentWrapperDecorator((story) => `<h1>${story}</h1>`)],
+  name: 'In <h1>',
+};

@@ -1,22 +1,35 @@
-import path from 'path';
-import { createFilter } from '@rollup/pluginutils';
-import {
-  parse,
-  handlers as docgenHandlers,
-  resolver as docgenResolver,
-  importers as docgenImporters,
-} from 'react-docgen';
-import type { DocumentationObject } from 'react-docgen/dist/Documentation';
-import MagicString from 'magic-string';
-import type { PluginOption } from 'vite';
-import actualNameHandler from './docgen-handlers/actualNameHandler';
+import { existsSync } from 'node:fs';
+import { relative, sep } from 'node:path';
 
-type DocObj = DocumentationObject & { actualName: string };
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+
+import { createFilter } from '@rollup/pluginutils';
+import { findUp } from 'find-up';
+import MagicString from 'magic-string';
+import type { Documentation } from 'react-docgen';
+import {
+  ERROR_CODES,
+  builtinHandlers as docgenHandlers,
+  builtinResolvers as docgenResolver,
+  makeFsImporter,
+  parse,
+} from 'react-docgen';
+import * as TsconfigPaths from 'tsconfig-paths';
+import type { PluginOption } from 'vite';
+
+import actualNameHandler from './docgen-handlers/actualNameHandler';
+import {
+  RESOLVE_EXTENSIONS,
+  ReactDocgenResolveError,
+  defaultLookupModule,
+} from './docgen-resolver';
+
+type DocObj = Documentation & { actualName: string; definedInFile: string };
 
 // TODO: None of these are able to be overridden, so `default` is aspirational here.
 const defaultHandlers = Object.values(docgenHandlers).map((handler) => handler);
-const defaultResolver = docgenResolver.findAllExportedComponentDefinitions;
-const defaultImporter = docgenImporters.makeFsImporter();
+const defaultResolver = new docgenResolver.FindExportedDefinitionsResolver();
 const handlers = [...defaultHandlers, actualNameHandler];
 
 type Options = {
@@ -24,46 +37,95 @@ type Options = {
   exclude?: string | RegExp | (string | RegExp)[];
 };
 
-export function reactDocgen({
+export async function reactDocgen({
   include = /\.(mjs|tsx?|jsx?)$/,
   exclude = [/node_modules\/.*/],
-}: Options = {}): PluginOption {
+}: Options = {}): Promise<PluginOption> {
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
+
+  const tsconfigPath = await findUp('tsconfig.json', { cwd, stopAt: getProjectRoot() });
+  const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
+
+  let matchPath: TsconfigPaths.MatchPath | undefined;
+
+  if (tsconfig.resultType === 'success') {
+    logger.info('Using tsconfig paths for react-docgen');
+    matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
+      'browser',
+      'module',
+      'main',
+    ]);
+  }
 
   return {
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
     async transform(src: string, id: string) {
-      const relPath = path.relative(cwd, id);
-      if (!filter(relPath)) return;
+      if (!filter(relative(cwd, id))) {
+        return;
+      }
 
       try {
-        // Since we're using `findAllExportedComponentDefinitions`, this will always be an array.
-        const docgenResults = parse(src, defaultResolver, handlers, {
-          importer: defaultImporter,
+        const docgenResults = parse(src, {
+          resolver: defaultResolver,
+          handlers,
+          importer: getReactDocgenImporter(matchPath),
           filename: id,
         }) as DocObj[];
         const s = new MagicString(src);
 
         docgenResults.forEach((info) => {
-          const { actualName, ...docgenInfo } = info;
-          if (actualName) {
+          const { actualName, definedInFile, ...docgenInfo } = info;
+          if (actualName && definedInFile == id) {
             const docNode = JSON.stringify(docgenInfo);
             s.append(`;${actualName}.__docgenInfo=${docNode}`);
           }
         });
 
-        // eslint-disable-next-line consistent-return
         return {
           code: s.toString(),
-          map: s.generateMap(),
+          map: s.generateMap({ hires: true, source: id }),
         };
-      } catch (e) {
-        // Usually this is just an error from react-docgen that it couldn't find a component
-        // Only uncomment for troubleshooting
-        // console.error(e);
+      } catch (e: any) {
+        // Ignore the error when react-docgen cannot find a react component
+        if (e.code === ERROR_CODES.MISSING_DEFINITION) {
+          return;
+        }
+        throw e;
       }
     },
   };
+}
+
+export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | undefined) {
+  return makeFsImporter((filename, basedir) => {
+    const mappedFilenameByPaths = (() => {
+      if (matchPath) {
+        const match = matchPath(filename);
+        return match || filename;
+      } else {
+        return filename;
+      }
+    })();
+
+    const result = defaultLookupModule(mappedFilenameByPaths, basedir);
+
+    if (result.includes(`${sep}react-native${sep}index.js`)) {
+      const replaced = result.replace(
+        `${sep}react-native${sep}index.js`,
+        `${sep}react-native-web${sep}dist${sep}index.js`
+      );
+      if (existsSync(replaced)) {
+        if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
+          return replaced;
+        }
+      }
+    }
+    if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
+      return result;
+    }
+
+    throw new ReactDocgenResolveError(filename);
+  });
 }

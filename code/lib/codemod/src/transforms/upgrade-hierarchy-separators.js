@@ -28,7 +28,6 @@ export default function transformer(file, api, options) {
       if (def.node.declaration && def.node.declaration.properties) {
         def.node.declaration.properties.forEach((p) => {
           if (p.key.name === 'title') {
-            // eslint-disable-next-line no-param-reassign
             p.value.value = upgradeSeparator(p.value.value);
           }
         });

@@ -25,18 +25,18 @@ jobs:
         working-directory: scripts
     steps:
       - name: Checkout main
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: main
           token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '16'
+          node-version-file: ".nvmrc"
 
       - name: Cache dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.yarn/berry/cache
@@ -88,11 +88,20 @@ jobs:
           git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
           yarn release:pick-patches
 
-      - name: Bump version
+      - name: Cancel when no patches to pick
+        if: steps.pick-patches.outputs.no-patch-prs == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # From https://stackoverflow.com/a/75809743
+        run: |
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+
+      - name: Bump version deferred
         id: bump-version
         if: steps.unreleased-changes.outputs.has-changes-to-release == 'true'
         run: |
-          yarn release:version --release-type patch --verbose
+          yarn release:version --deferred --release-type patch --verbose
 
       # We need the current version to set the branch name, even when not bumping the version
       - name: Get current version
@@ -114,14 +123,14 @@ jobs:
         run: |
           yarn release:write-changelog ${{ steps.versions.outputs.next }} --unpicked-patches --verbose
 
-      - name: 'Commit changes to branch: version-patch-from-${{ steps.versions.outputs.current }}'
+      - name: "Commit changes to branch: version-patch-from-${{ steps.versions.outputs.current }}"
         working-directory: .
         run: |
           git config --global user.name 'storybook-bot'
           git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
           git checkout -b version-patch-from-${{ steps.versions.outputs.current }}
           git add .
-          git commit -m "Bump version from ${{ steps.versions.outputs.current }} to ${{ steps.versions.outputs.next }}" || true
+          git commit -m "Write changelog for ${{ steps.versions.outputs.next }} [skip ci]" || true
           git push --force origin version-patch-from-${{ steps.versions.outputs.current }}
 
       - name: Generate PR description
@@ -176,4 +185,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@master
         with:
-          args: 'The GitHub Action for preparing the release pull request bumping from v${{ steps.versions.outputs.current }} to v${{ steps.versions.outputs.next }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          args: "The GitHub Action for preparing the release pull request bumping from v${{ steps.versions.outputs.current }} to v${{ steps.versions.outputs.next }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

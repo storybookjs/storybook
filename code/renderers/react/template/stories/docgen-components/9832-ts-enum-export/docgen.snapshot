@@ -1,16 +1,12 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9832-ts-enum-export 1`] = `
-"import React from 'react';
+import React from 'react';
 export let EnumWithExtraProps = /*#__PURE__*/function (EnumWithExtraProps) {
-  EnumWithExtraProps[\\"key1\\"] = \\"key1\\";
-  EnumWithExtraProps[\\"key2\\"] = \\"key2\\";
+  EnumWithExtraProps["key1"] = "key1";
+  EnumWithExtraProps["key2"] = "key2";
   return EnumWithExtraProps;
 }({});
-export const component = () => /*#__PURE__*/React.createElement(\\"div\\", null, \\"hello\\");
+export const component = () => /*#__PURE__*/React.createElement("div", null, "hello");
 component.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"component\\"
-};"
-`;
+  "description": "",
+  "methods": [],
+  "displayName": "component"
+};

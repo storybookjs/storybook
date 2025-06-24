@@ -1,57 +1,83 @@
-/* eslint-disable no-console */
-import { join, relative } from 'path';
-import type { Options as ExecaOptions } from 'execa';
-import pLimit from 'p-limit';
-import prettyTime from 'pretty-hrtime';
-import { copy, emptyDir, ensureDir, move, remove, rename, writeFile } from 'fs-extra';
+import * as ghActions from '@actions/core';
 import { program } from 'commander';
-import { directory } from 'tempy';
-import { execaCommand } from '../utils/exec';
+// eslint-disable-next-line depend/ban-dependencies
+import type { Options as ExecaOptions } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { execaCommand } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { copy, emptyDir, ensureDir, move, remove, writeFile } from 'fs-extra';
+import pLimit from 'p-limit';
+import { join, relative } from 'path';
+import prettyTime from 'pretty-hrtime';
+import { dedent } from 'ts-dedent';
 
+import type { JsPackageManager } from '../../code/core/src/common/js-package-manager';
+import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/JsPackageManagerFactory';
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
+import storybookVersions from '../../code/core/src/common/versions';
+import { allTemplates as sandboxTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
+import {
+  AFTER_DIR_NAME,
+  BEFORE_DIR_NAME,
+  LOCAL_REGISTRY_URL,
+  REPROS_DIRECTORY,
+  SCRIPT_TIMEOUT,
+} from '../utils/constants';
+import { esMain } from '../utils/esmain';
 import type { OptionValues } from '../utils/options';
 import { createOptions } from '../utils/options';
-import { allTemplates as sandboxTemplates } from '../../code/lib/cli/src/sandbox-templates';
-import storybookVersions from '../../code/lib/cli/src/versions';
-import { JsPackageManagerFactory } from '../../code/lib/cli/src/js-package-manager/JsPackageManagerFactory';
-
-import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
-
-// eslint-disable-next-line import/no-cycle
-import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
-import type { GeneratorConfig } from './utils/types';
 import { getStackblitzUrl, renderTemplate } from './utils/template';
-import type { JsPackageManager } from '../../code/lib/cli/src/js-package-manager';
-import {
-  BEFORE_DIR_NAME,
-  AFTER_DIR_NAME,
-  SCRIPT_TIMEOUT,
-  REPROS_DIRECTORY,
-  LOCAL_REGISTRY_URL,
-} from '../utils/constants';
+import type { GeneratorConfig } from './utils/types';
+import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
 
-const sbInit = async (cwd: string, flags?: string[], debug?: boolean) => {
-  const sbCliBinaryPath = join(__dirname, `../../code/lib/cli/bin/index.js`);
-  console.log(`🎁 Installing storybook`);
-  const env = { STORYBOOK_DISABLE_TELEMETRY: 'true' };
+const isCI = process.env.GITHUB_ACTIONS === 'true';
+
+class BeforeScriptExecutionError extends Error {}
+class StorybookInitError extends Error {}
+
+const sbInit = async (
+  cwd: string,
+  envVars: Record<string, unknown> = {},
+  flags?: string[],
+  debug?: boolean
+) => {
+  const sbCliBinaryPath = join(__dirname, `../../code/lib/create-storybook/bin/index.cjs`);
+  console.log(`🎁 Installing Storybook`);
+  const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars };
   const fullFlags = ['--yes', ...(flags || [])];
-  await runCommand(`${sbCliBinaryPath} init ${fullFlags.join(' ')}`, { cwd, env }, debug);
+  await runCommand(`${sbCliBinaryPath} ${fullFlags.join(' ')}`, { cwd, env }, debug);
 };
 
-const withLocalRegistry = async (packageManager: JsPackageManager, action: () => Promise<void>) => {
+type LocalRegistryProps = {
+  packageManager: JsPackageManager;
+  action: () => Promise<void>;
+  cwd: string;
+  env: Record<string, any>;
+  debug: boolean;
+};
+
+const withLocalRegistry = async ({
+  packageManager,
+  action,
+  cwd,
+  env,
+  debug,
+}: LocalRegistryProps) => {
   const prevUrl = await packageManager.getRegistryURL();
   let error;
   try {
     console.log(`📦 Configuring local registry: ${LOCAL_REGISTRY_URL}`);
-    packageManager.setRegistryURL(LOCAL_REGISTRY_URL);
+    // NOTE: for some reason yarn prefers the npm registry in
+    // local development, so always use npm
+    await runCommand(`npm config set registry ${LOCAL_REGISTRY_URL}`, { cwd, env }, debug);
     await action();
   } catch (e) {
     error = e;
   } finally {
     console.log(`📦 Restoring registry: ${prevUrl}`);
-    await packageManager.setRegistryURL(prevUrl);
+    await runCommand(`npm config set registry ${prevUrl}`, { cwd, env }, debug);
 
     if (error) {
-      // eslint-disable-next-line no-unsafe-finally
       throw error;
     }
   }
@@ -60,34 +86,51 @@ const withLocalRegistry = async (packageManager: JsPackageManager, action: () =>
 const addStorybook = async ({
   baseDir,
   localRegistry,
-  flags,
+  flags = [],
   debug,
+  env = {},
 }: {
   baseDir: string;
   localRegistry: boolean;
   flags?: string[];
   debug?: boolean;
+  env?: Record<string, unknown>;
 }) => {
   const beforeDir = join(baseDir, BEFORE_DIR_NAME);
   const afterDir = join(baseDir, AFTER_DIR_NAME);
-  const tmpDir = join(baseDir, 'tmp');
 
-  await ensureDir(tmpDir);
-  await emptyDir(tmpDir);
+  const tmpDir = await temporaryDirectory();
 
-  await copy(beforeDir, tmpDir);
+  try {
+    await copy(beforeDir, tmpDir);
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({}, tmpDir);
-  if (localRegistry) {
-    await withLocalRegistry(packageManager, async () => {
-      await packageManager.addPackageResolutions(storybookVersions);
+    const packageManager = JsPackageManagerFactory.getPackageManager({ force: 'yarn1' }, tmpDir);
+    if (localRegistry) {
+      await withLocalRegistry({
+        packageManager,
+        action: async () => {
+          await packageManager.addPackageResolutions({
+            ...storybookVersions,
+            // Yarn1 Issue: https://github.com/storybookjs/storybook/issues/22431
+            jackspeak: '2.1.1',
+          });
 
-      await sbInit(tmpDir, flags, debug);
-    });
-  } else {
-    await sbInit(tmpDir, flags, debug);
+          await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
+        },
+        cwd: tmpDir,
+        env,
+        debug,
+      });
+    } else {
+      await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
+    }
+  } catch (e) {
+    await remove(tmpDir);
+    throw e;
   }
-  await rename(tmpDir, afterDir);
+
+  await copy(tmpDir, afterDir);
+  await remove(tmpDir);
 };
 
 export const runCommand = async (script: string, options: ExecaOptions, debug = false) => {
@@ -98,6 +141,7 @@ export const runCommand = async (script: string, options: ExecaOptions, debug = 
   return execaCommand(script, {
     stdout: debug ? 'inherit' : 'ignore',
     shell: true,
+    cleanup: true,
     ...options,
   });
 };
@@ -125,87 +169,188 @@ const runGenerators = async (
   localRegistry = true,
   debug = false
 ) => {
-  console.log(`🤹‍♂️ Generating sandboxes with a concurrency of ${maxConcurrentTasks}`);
+  if (debug) {
+    console.log('Debug mode enabled. Verbose logs will be printed to the console.');
+  }
 
-  const limit = pLimit(maxConcurrentTasks);
+  console.log(`🤹‍♂️ Generating sandboxes with a concurrency of ${1}`);
 
-  await Promise.all(
-    generators.map(({ dirName, name, script, expected }) =>
+  const limit = pLimit(1);
+
+  const generationResults = await Promise.allSettled(
+    generators.map(({ dirName, name, script, expected, env }) =>
       limit(async () => {
-        let flags: string[] = [];
-        if (expected.renderer === '@storybook/html') flags = ['--type html'];
-        else if (expected.renderer === '@storybook/server') flags = ['--type server'];
-
-        const time = process.hrtime();
-        console.log(`🧬 Generating ${name}`);
-
         const baseDir = join(REPROS_DIRECTORY, dirName);
         const beforeDir = join(baseDir, BEFORE_DIR_NAME);
-        await emptyDir(baseDir);
+        try {
+          let flags: string[] = ['--no-dev'];
 
-        // We do the creation inside a temp dir to avoid yarn container problems
-        const createBaseDir = directory();
-        if (!script.includes('pnp')) {
-          await setupYarn({ cwd: createBaseDir });
-        }
+          if (expected.renderer === '@storybook/html') {
+            flags = ['--type html'];
+          } else if (expected.renderer === '@storybook/server') {
+            flags = ['--type server'];
+          } else if (expected.framework === '@storybook/react-native-web-vite') {
+            flags = ['--type react_native_web'];
+          }
 
-        const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);
+          const time = process.hrtime();
+          console.log(`🧬 Generating ${name} (${dirName})`);
+          await emptyDir(baseDir);
 
-        // Some tools refuse to run inside an existing directory and replace the contents,
-        // where as others are very picky about what directories can be called. So we need to
-        // handle different modes of operation.
-        if (script.includes('{{beforeDir}}')) {
-          const scriptWithBeforeDir = script.replaceAll('{{beforeDir}}', BEFORE_DIR_NAME);
-          await runCommand(
-            scriptWithBeforeDir,
-            {
-              cwd: createBaseDir,
-              timeout: SCRIPT_TIMEOUT,
-            },
-            debug
+          // We do the creation inside a temp dir to avoid yarn container problems
+          const createBaseDir = await temporaryDirectory();
+          if (!script.includes('pnp')) {
+            try {
+              await setupYarn({ cwd: createBaseDir });
+            } catch (error) {
+              const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
+              if (isCI) {
+                ghActions.error(dedent`${message}
+                  ${(error as any).stack}`);
+              } else {
+                console.error(message);
+                console.error(error);
+              }
+              throw new Error(message);
+            }
+          }
+
+          const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);
+
+          // Some tools refuse to run inside an existing directory and replace the contents,
+          // where as others are very picky about what directories can be called. So we need to
+          // handle different modes of operation.
+          try {
+            if (script.includes('{{beforeDir}}')) {
+              const scriptWithBeforeDir = script.replaceAll('{{beforeDir}}', BEFORE_DIR_NAME);
+              await runCommand(
+                scriptWithBeforeDir,
+                {
+                  cwd: createBaseDir,
+                  timeout: SCRIPT_TIMEOUT,
+                },
+                debug
+              );
+            } else {
+              await ensureDir(createBeforeDir);
+              await runCommand(script, { cwd: createBeforeDir, timeout: SCRIPT_TIMEOUT }, debug);
+            }
+          } catch (error) {
+            const message = `❌ Failed to execute before-script for template: ${name} (${dirName})`;
+            if (isCI) {
+              ghActions.error(dedent`${message}
+                ${(error as any).stack}`);
+            } else {
+              console.error(message);
+              console.error(error);
+            }
+            throw new BeforeScriptExecutionError(message, { cause: error });
+          }
+
+          await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
+
+          // Now move the created before dir into it's final location and add storybook
+          await move(createBeforeDir, beforeDir);
+
+          // Make sure there are no git projects in the folder
+          await remove(join(beforeDir, '.git'));
+
+          try {
+            await addStorybook({ baseDir, localRegistry, flags, debug, env });
+          } catch (error) {
+            const message = `❌ Failed to initialize Storybook in template: ${name} (${dirName})`;
+            if (isCI) {
+              ghActions.error(dedent`${message}
+                ${(error as any).stack}`);
+            } else {
+              console.error(message);
+              console.error(error);
+            }
+            throw new StorybookInitError(message, {
+              cause: error,
+            });
+          }
+          await addDocumentation(baseDir, { name, dirName });
+
+          console.log(
+            `✅ Generated ${name} (${dirName}) in ./${relative(
+              process.cwd(),
+              baseDir
+            )} successfully in ${prettyTime(process.hrtime(time))}`
           );
-        } else {
-          await ensureDir(createBeforeDir);
-          await runCommand(script, { cwd: createBeforeDir, timeout: SCRIPT_TIMEOUT }, debug);
+        } catch (error) {
+          throw error;
+        } finally {
+          // Remove node_modules to save space and avoid GH actions failing
+          // They're not uploaded to the git sandboxes repo anyway
+          if (process.env.CLEANUP_SANDBOX_NODE_MODULES) {
+            console.log(`🗑️ Removing ${join(beforeDir, 'node_modules')}`);
+            await remove(join(beforeDir, 'node_modules'));
+            console.log(`🗑️ Removing ${join(baseDir, AFTER_DIR_NAME, 'node_modules')}`);
+            await remove(join(baseDir, AFTER_DIR_NAME, 'node_modules'));
+          }
         }
-
-        await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
-
-        // Now move the created before dir into it's final location and add storybook
-        await move(createBeforeDir, beforeDir);
-
-        // Make sure there are no git projects in the folder
-        await remove(join(beforeDir, '.git'));
-
-        await addStorybook({ baseDir, localRegistry, flags, debug });
-
-        await addDocumentation(baseDir, { name, dirName });
-
-        // Remove node_modules to save space and avoid GH actions failing
-        // They're not uploaded to the git sandboxes repo anyway
-        if (process.env.CLEANUP_SANDBOX_NODE_MODULES) {
-          console.log(`🗑️ Removing ${join(beforeDir, 'node_modules')}`);
-          await remove(join(beforeDir, 'node_modules'));
-          console.log(`🗑️ Removing ${join(baseDir, AFTER_DIR_NAME, 'node_modules')}`);
-          await remove(join(baseDir, AFTER_DIR_NAME, 'node_modules'));
-        }
-
-        console.log(
-          `✅ Created ${dirName} in ./${relative(
-            process.cwd(),
-            baseDir
-          )} successfully in ${prettyTime(process.hrtime(time))}`
-        );
       })
     )
   );
+
+  const hasGenerationErrors = generationResults.some((result) => result.status === 'rejected');
+
+  if (!isCI) {
+    if (hasGenerationErrors) {
+      throw new Error(`Some sandboxes failed to generate`);
+    }
+    return;
+  }
+
+  ghActions.summary.addHeading('Sandbox generation summary');
+
+  if (!hasGenerationErrors) {
+    await ghActions.summary.addRaw('✅ Success!').write();
+    return;
+  }
+
+  await ghActions.summary
+    .addRaw('Some sandboxes failed, see the job log for detailed errors')
+    .addTable([
+      [
+        { data: 'Name', header: true },
+        { data: 'Key', header: true },
+        { data: 'Result', header: true },
+      ],
+      ...generationResults.map((result, index) => {
+        const { name, dirName } = generators[index];
+        const row = [name, `\`${dirName}\``];
+        if (result.status === 'fulfilled') {
+          row.push('🟢 Pass');
+          return row;
+        }
+        const generationError = (result as PromiseRejectedResult).reason as Error;
+        if (generationError instanceof BeforeScriptExecutionError) {
+          row.push('🔴 Failed to execute before script');
+        } else if (generationError instanceof StorybookInitError) {
+          row.push('🔴 Failed to initialize Storybook');
+        } else {
+          row.push('🔴 Failed with unknown error');
+        }
+        return row;
+      }),
+    ])
+    .write();
+
+  throw new Error(`Some sandboxes failed to generate`);
 };
 
 export const options = createOptions({
-  template: {
-    type: 'string',
-    description: 'Which template would you like to create?',
+  templates: {
+    type: 'string[]',
+    description: 'Which templates would you like to create?',
     values: Object.keys(sandboxTemplates),
+  },
+  exclude: {
+    type: 'string[]',
+    description: 'Space-delimited list of templates to exclude. Takes precedence over --templates',
+    promptType: false,
   },
   localRegistry: {
     type: 'boolean',
@@ -220,7 +365,8 @@ export const options = createOptions({
 });
 
 export const generate = async ({
-  template,
+  templates,
+  exclude,
   localRegistry,
   debug,
 }: OptionValues<typeof options>) => {
@@ -230,26 +376,30 @@ export const generate = async ({
       ...configuration,
     }))
     .filter(({ dirName }) => {
-      if (template) {
-        return dirName === template;
+      let include = Array.isArray(templates) ? templates.includes(dirName) : true;
+      if (Array.isArray(exclude) && include) {
+        include = !exclude.includes(dirName);
       }
-
-      return true;
+      return include;
     });
 
   await runGenerators(generatorConfigs, localRegistry, debug);
 };
 
-if (require.main === module) {
+if (esMain(import.meta.url)) {
   program
     .description('Generate sandboxes from a set of possible templates')
-    .option('--template <template>', 'Create a single template')
+    .option('--templates [templates...]', 'Space-delimited list of templates to include')
+    .option(
+      '--exclude [templates...]',
+      'Space-delimited list of templates to exclude. Takes precedence over --templates'
+    )
     .option('--debug', 'Print all the logs to the console')
     .option('--local-registry', 'Use local registry', false)
     .action((optionValues) => {
       generate(optionValues)
         .catch((e) => {
-          console.trace(e);
+          console.error(e);
           process.exit(1);
         })
         .then(() => {

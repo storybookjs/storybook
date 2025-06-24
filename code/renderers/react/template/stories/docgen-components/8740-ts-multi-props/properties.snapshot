@@ -1,21 +1,17 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 8740-ts-multi-props 1`] = `
-Object {
-  "rows": Array [
-    Object {
-      "defaultValue": Object {
+{
+  "rows": [
+    {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'a'",
       },
       "description": undefined,
       "name": "size",
       "required": false,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
   ],
 }
-`;

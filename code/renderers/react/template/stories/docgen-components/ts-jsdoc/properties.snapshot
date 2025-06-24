@@ -1,7 +1,3 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties ts-jsdoc 1`] = `
-Object {
-  "rows": Array [],
+{
+  "rows": [],
 }
-`;

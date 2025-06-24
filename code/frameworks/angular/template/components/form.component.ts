@@ -1,22 +1,21 @@
 import { Component, Output, EventEmitter } from '@angular/core';
 
 @Component({
+  standalone: false,
   selector: 'storybook-form',
   template: `
     <form id="interaction-test-form" (submit)="handleSubmit($event)">
-      <label>
-        Enter Value
-        <input type="text" data-testid="value" [(ngModel)]="value" required />
-      </label>
-      <button type="submit">Submit</button>
-      <p *ngIf="complete">Completed!!</p>
-    </form>
+  <label>
+    Enter Value
+    <input type="text" data-testid="value" [(ngModel)]="value" required />
+  </label>
+  <button type="submit">Submit</button>
+  <p *ngIf="complete">Completed!!</p>
+</form>
   `,
 })
 export default class FormComponent {
-  /**
-   * Optional success handler
-   */
+  /** Optional success handler */
   @Output()
   onSuccess = new EventEmitter<string>();
 

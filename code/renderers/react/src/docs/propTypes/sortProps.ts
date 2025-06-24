@@ -1,4 +1,4 @@
-import type { PropDef } from '@storybook/docs-tools';
+import type { PropDef } from 'storybook/internal/docs-tools';
 
 type Component = any;
 
@@ -8,7 +8,6 @@ export function keepOriginalDefinitionOrder(
   extractedProps: PropDef[],
   component: Component
 ): PropDef[] {
-  // eslint-disable-next-line react/forbid-foreign-prop-types
   const { propTypes } = component;
 
   if (propTypes != null) {

@@ -6,13 +6,9 @@ const BadComponent = () => badOutput;
 export default {
   component: BadComponent,
   parameters: {
-    storyshots: { disable: true },
     chromatic: { disable: true },
   },
-  decorators: [
-    // Skip errors if we are running in the test runner
-    (storyFn: any) => window?.navigator?.userAgent?.match(/StorybookTestRunner/) || storyFn(),
-  ],
+  tags: ['!test', '!vitest'],
 };
 
 export const RenderThrows = {

@@ -1,10 +1,11 @@
+import prettyBytes from 'pretty-bytes';
+import prettyTime from 'pretty-ms';
+
 import type { Task } from '../task';
+import { dev, PORT as devPort } from './dev';
+import { serve, PORT as servePort } from './serve';
 
-import { PORT as devPort, dev } from './dev';
-import { PORT as servePort, serve } from './serve';
-
-// eslint-disable-next-line @typescript-eslint/no-implied-eval
-const dynamicImport = new Function('specifier', 'return import(specifier)');
+const logger = console;
 
 export const bench: Task = {
   description: 'Run benchmarks against a sandbox in dev mode',
@@ -16,17 +17,17 @@ export const bench: Task = {
   async run(details, options) {
     const controllers: AbortController[] = [];
     try {
+      const { disableDocs } = options;
       const { browse } = await import('../bench/browse');
       const { saveBench, loadBench } = await import('../bench/utils');
-      const { default: prettyBytes } = await dynamicImport('pretty-bytes');
-      const { default: prettyTime } = await dynamicImport('pretty-ms');
 
       const devController = await dev.run(details, { ...options, debug: false });
       if (!devController) {
         throw new Error('dev: controller is null');
       }
       controllers.push(devController);
-      const devBrowseResult = await browse(`http://localhost:${devPort}`);
+      const devBrowseResult = await browse(`http://localhost:${devPort}`, { disableDocs });
+
       devController.abort();
 
       const serveController = await serve.run(details, { ...options, debug: false });
@@ -34,7 +35,8 @@ export const bench: Task = {
         throw new Error('serve: controller is null');
       }
       controllers.push(serveController);
-      const buildBrowseResult = await browse(`http://localhost:${servePort}`);
+
+      const buildBrowseResult = await browse(`http://localhost:${servePort}`, { disableDocs });
       serveController.abort();
 
       await saveBench(
@@ -71,6 +73,10 @@ export const bench: Task = {
         }
       });
     } catch (e) {
+      logger.log(
+        `An error occurred while running the benchmarks for the ${details.sandboxDir} sandbox`
+      );
+      logger.error(e);
       controllers.forEach((c) => c.abort());
       throw e;
     }

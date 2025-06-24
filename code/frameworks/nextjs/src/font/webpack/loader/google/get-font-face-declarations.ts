@@ -1,39 +1,42 @@
+import {
+  GoogleFontsDownloadError,
+  GoogleFontsLoadingError,
+} from 'storybook/internal/server-errors';
+
+import { fetchCSSFromGoogleFonts } from 'next/dist/compiled/@next/font/dist/google/fetch-css-from-google-fonts';
+import { getFontAxes } from 'next/dist/compiled/@next/font/dist/google/get-font-axes';
+import { getGoogleFontsUrl } from 'next/dist/compiled/@next/font/dist/google/get-google-fonts-url';
+import { validateGoogleFontFunctionCall } from 'next/dist/compiled/@next/font/dist/google/validate-google-font-function-call';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 import loaderUtils from 'next/dist/compiled/loader-utils3';
+
 import type { LoaderOptions } from '../types';
 
-const cssCache = new Map<string, Promise<string>>();
+const cssCache = new Map<string, string>();
 
 export async function getFontFaceDeclarations(options: LoaderOptions) {
-  const {
-    fetchCSSFromGoogleFonts,
-    getFontAxes,
-    getUrl,
-    validateData,
-  } = require('../utils/google-font-utils');
-
-  const { fontFamily, weights, styles, selectedVariableAxes, display, variable } = validateData(
-    options.fontFamily,
-    [options.props],
-    null
-  );
+  const { fontFamily, weights, styles, selectedVariableAxes, display, variable } =
+    validateGoogleFontFunctionCall(options.fontFamily, options.props);
 
   const fontAxes = getFontAxes(fontFamily, weights, styles, selectedVariableAxes);
-  const url = getUrl(fontFamily, fontAxes, display);
+  const url = getGoogleFontsUrl(fontFamily, fontAxes, display);
 
   try {
     const hasCachedCSS = cssCache.has(url);
     const fontFaceCSS = hasCachedCSS
       ? cssCache.get(url)
-      : await fetchCSSFromGoogleFonts(url, fontFamily).catch(() => null);
+      : await fetchCSSFromGoogleFonts(url, fontFamily, true).catch(() => null);
     if (!hasCachedCSS) {
-      cssCache.set(url, fontFaceCSS);
+      cssCache.set(url, fontFaceCSS as string);
     } else {
       cssCache.delete(url);
     }
     if (fontFaceCSS === null) {
-      throw Error(`Failed to fetch \`${fontFamily}\` from Google Fonts.`);
+      throw new GoogleFontsDownloadError({
+        fontFamily,
+        url,
+      });
     }
 
     return {
@@ -45,6 +48,6 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
       variable,
     };
   } catch (error) {
-    throw new Error("Google Fonts couldn't be loaded.");
+    throw new GoogleFontsLoadingError({ error, url });
   }
 }

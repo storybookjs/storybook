@@ -1,10 +1,3 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9023-js-hoc 1`] = `
-"/* eslint-disable react/require-default-props */
-/* eslint-disable react/forbid-prop-types */
-/* eslint-disable react/no-unused-prop-types */
-/* eslint-disable react/prefer-stateless-function */
 import React from 'react';
 import PropTypes from 'prop-types';
 
@@ -12,7 +5,7 @@ import PropTypes from 'prop-types';
 const withStyles = themeFn => Comp => Comp;
 class Alert extends React.Component {
   render() {
-    return /*#__PURE__*/React.createElement(React.Fragment, null, \\"Alert\\");
+    return /*#__PURE__*/React.createElement(React.Fragment, null, "Alert");
   }
 }
 Alert.propTypes = {
@@ -39,46 +32,45 @@ const StyledAlert = withStyles(theme => ({
 }))(Alert);
 export const component = StyledAlert;
 Alert.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"Alert\\",
-  \\"props\\": {
-    \\"variant\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'primary'\\",
-        \\"computed\\": false
+  "description": "",
+  "methods": [],
+  "displayName": "Alert",
+  "props": {
+    "variant": {
+      "defaultValue": {
+        "value": "'primary'",
+        "computed": false
       },
-      \\"description\\": \\"\\",
-      \\"type\\": {
-        \\"name\\": \\"string\\"
+      "description": "",
+      "type": {
+        "name": "string"
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"dismissible\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"false\\",
-        \\"computed\\": false
+    "dismissible": {
+      "defaultValue": {
+        "value": "false",
+        "computed": false
       },
-      \\"description\\": \\"\\",
-      \\"type\\": {
-        \\"name\\": \\"bool\\"
+      "description": "",
+      "type": {
+        "name": "bool"
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"icon\\": {
-      \\"description\\": \\"\\",
-      \\"type\\": {
-        \\"name\\": \\"elementType\\"
+    "icon": {
+      "description": "",
+      "type": {
+        "name": "elementType"
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"classes\\": {
-      \\"description\\": \\"\\",
-      \\"type\\": {
-        \\"name\\": \\"object\\"
+    "classes": {
+      "description": "",
+      "type": {
+        "name": "object"
       },
-      \\"required\\": true
+      "required": true
     }
   }
-};"
-`;
+};

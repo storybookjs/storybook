@@ -1,7 +1,5 @@
-import { global as globalThis } from '@storybook/global';
-
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   tags: ['autodocs'],
   args: {
     text: 'Demonstrates overflow',

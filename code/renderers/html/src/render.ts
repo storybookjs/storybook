@@ -1,9 +1,10 @@
-/* eslint-disable no-param-reassign */
+import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
+import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
-import { simulatePageLoad, simulateDOMContentLoaded } from '@storybook/preview-api';
-import type { RenderContext, ArgsStoryFn } from '@storybook/types';
+
 import type { HtmlRenderer } from './types';
 
 const { Node } = global;

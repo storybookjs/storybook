@@ -1,14 +1,14 @@
-import { OnInit, Component, Input } from '@angular/core';
-import { DummyService } from './dummy.service';
+import type { OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
+import type { DummyService } from './dummy.service';
 
 @Component({
+  standalone: false,
   selector: 'storybook-simple-service-component',
-  template: `
-    <p>{{ name }}:</p>
-    <ul>
-      <li *ngFor="let item of items">{{ item }}</li>
-    </ul>
-  `,
+  template: `<p>{{ name }}:</p>
+<ul>
+  <li *ngFor="let item of items">{{ item }}</li>
+</ul>`,
 })
 export class ServiceComponent implements OnInit {
   items?: {};

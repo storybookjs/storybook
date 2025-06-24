@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 import { withoutVitePlugins } from './without-vite-plugins';
 
 describe('withoutVitePlugins', () => {
@@ -7,8 +9,8 @@ describe('withoutVitePlugins', () => {
       const names = ['vite-plugin-root-to-remove'];
 
       expect(await withoutVitePlugins(plugins, names)).toMatchInlineSnapshot(`
-        Array [
-          Object {
+        [
+          {
             "name": "vite-plugin-root-keep",
           },
         ]
@@ -23,13 +25,13 @@ describe('withoutVitePlugins', () => {
       const names = ['vite-plugin-nested-to-remove'];
 
       expect(await withoutVitePlugins(plugins, names)).toMatchInlineSnapshot(`
-        Array [
-          Array [
-            Object {
+        [
+          [
+            {
               "name": "vite-plugin-nested-keep",
             },
           ],
-          Object {
+          {
             "name": "vite-plugin-root-keep",
           },
         ]
@@ -46,9 +48,9 @@ describe('withoutVitePlugins', () => {
       const names = ['vite-plugin-nested-async-to-remove'];
 
       expect(await withoutVitePlugins(plugins, names)).toMatchInlineSnapshot(`
-        Array [
-          Array [
-            Object {
+        [
+          [
+            {
               "name": "vite-plugin-nested-async-keep",
             },
           ],
@@ -64,8 +66,8 @@ describe('withoutVitePlugins', () => {
       const names = ['vite-plugin-async-root-to-remove'];
 
       expect(await withoutVitePlugins(plugins, names)).toMatchInlineSnapshot(`
-        Array [
-          Object {
+        [
+          {
             "name": "vite-plugin-async-root-keep",
           },
         ]
@@ -83,13 +85,13 @@ describe('withoutVitePlugins', () => {
       const names = ['vite-plugin-async-nested-to-remove'];
 
       expect(await withoutVitePlugins(plugins, names)).toMatchInlineSnapshot(`
-        Array [
-          Array [
-            Object {
+        [
+          [
+            {
               "name": "vite-plugin-async-nested-keep",
             },
           ],
-          Object {
+          {
             "name": "vite-plugin-async-root-keep",
           },
         ]
@@ -105,9 +107,9 @@ describe('withoutVitePlugins', () => {
       const names = ['vite-plugin-async-nested-async-to-remove'];
 
       expect(await withoutVitePlugins(plugins, names)).toMatchInlineSnapshot(`
-        Array [
-          Array [
-            Object {
+        [
+          [
+            {
               "name": "vite-plugin-async-nested-async-keep",
             },
           ],
@@ -124,8 +126,8 @@ describe('withoutVitePlugins', () => {
       const names = ['vite-plugin-root-first-to-remove', 'vite-plugin-root-second-to-remove'];
 
       expect(await withoutVitePlugins(plugins, names)).toMatchInlineSnapshot(`
-        Array [
-          Object {
+        [
+          {
             "name": "vite-plugin-root-keep",
           },
         ]
@@ -151,11 +153,11 @@ describe('withoutVitePlugins', () => {
       ];
 
       expect(await withoutVitePlugins(plugins, names)).toMatchInlineSnapshot(`
-        Array [
-          Array [],
-          Array [],
-          Array [],
-          Array [],
+        [
+          [],
+          [],
+          [],
+          [],
         ]
       `);
     });
@@ -172,25 +174,25 @@ describe('withoutVitePlugins', () => {
     const names = ['vite-plugin-to-remove-first', 'vite-plugin-to-remove-second'];
 
     expect(await withoutVitePlugins(plugins, names)).toMatchInlineSnapshot(`
-      Array [
-        Object {
+      [
+        {
           "name": "vite-plugin-root",
         },
-        Array [
-          Object {
+        [
+          {
             "name": "vite-plugin-in-nested-array",
           },
         ],
-        Object {
+        {
           "name": "vite-plugin-async-root",
         },
-        Array [
-          Object {
+        [
+          {
             "name": "vite-plugin-in-nested-async-array",
           },
         ],
-        Array [
-          Object {
+        [
+          {
             "name": "vite-plugin-async-in-nested-async-array",
           },
         ],

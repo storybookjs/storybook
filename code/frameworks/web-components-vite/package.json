@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components-vite",
-  "version": "7.1.0-rc.0",
+  "version": "9.1.0-alpha.6",
   "description": "Storybook for web-components and Vite: Develop Web Components in isolation with Hot Reloading.",
   "keywords": [
     "storybook"
@@ -23,12 +23,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "node": "./dist/index.js",
-      "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
     },
     "./preset": {
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "node": "./dist/node/index.js",
+      "import": "./dist/node/index.mjs",
+      "require": "./dist/node/index.js"
     },
     "./package.json": "./package.json"
   },
@@ -40,39 +46,37 @@
     "template/**/*",
     "README.md",
     "*.js",
-    "*.d.ts"
+    "*.d.ts",
+    "!src/**/*"
   ],
   "scripts": {
-    "check": "tsc --noEmit",
-    "prep": "../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@storybook/builder-vite": "7.1.0-rc.0",
-    "@storybook/core-server": "7.1.0-rc.0",
-    "@storybook/node-logger": "7.1.0-rc.0",
-    "@storybook/web-components": "7.1.0-rc.0",
-    "magic-string": "^0.30.0"
+    "@storybook/builder-vite": "workspace:*",
+    "@storybook/web-components": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^16.0.0",
-    "typescript": "~4.9.3"
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0"
+    "storybook": "workspace:^"
   },
   "engines": {
-    "node": "^14.18 || >=16"
+    "node": ">=20.0.0"
   },
   "publishConfig": {
     "access": "public"
   },
   "bundler": {
     "entries": [
+      "./src/node/index.ts",
       "./src/index.ts",
       "./src/preset.ts"
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

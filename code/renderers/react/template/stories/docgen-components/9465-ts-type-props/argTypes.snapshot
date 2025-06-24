@@ -1,28 +1,24 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9465-ts-type-props 1`] = `
-Object {
-  "disabled": Object {
-    "control": Object {
+{
+  "disabled": {
+    "control": {
       "type": "boolean",
     },
     "description": "",
     "name": "disabled",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "false",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "boolean",
       },
     },
-    "type": Object {
+    "type": {
       "name": "boolean",
       "required": false,
     },
   },
 }
-`;

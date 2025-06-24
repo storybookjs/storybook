@@ -1,7 +1,9 @@
-import { StoryFn, Meta, moduleMetadata } from '@storybook/angular';
-import { WithoutSelectorComponent, WITHOUT_SELECTOR_DATA } from './without-selector.component';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 
-export default {
+import { WITHOUT_SELECTOR_DATA, WithoutSelectorComponent } from './without-selector.component';
+
+const meta: Meta<WithoutSelectorComponent> = {
   // title: 'Basics / Component / without selector',
   component: WithoutSelectorComponent,
   decorators: [
@@ -11,20 +13,26 @@ export default {
   ],
 } as Meta;
 
-export const SimpleComponent: StoryFn = () => ({});
+export default meta;
+
+type Story = StoryObj<WithoutSelectorComponent>;
+
+export const SimpleComponent: Story = {};
 
 // Live changing of args by controls does not work for now. When changing args storybook does not fully
 // reload and therefore does not take into account the change of provider.
-export const WithInjectionTokenAndArgs: StoryFn = (args) => ({
-  props: args,
-  moduleMetadata: {
-    providers: [
-      { provide: WITHOUT_SELECTOR_DATA, useValue: { color: args['color'], name: args['name'] } },
-    ],
+export const WithInjectionTokenAndArgs: StoryObj = {
+  render: (args) => ({
+    props: args,
+    moduleMetadata: {
+      providers: [
+        { provide: WITHOUT_SELECTOR_DATA, useValue: { color: args['color'], name: args['name'] } },
+      ],
+    },
+  }),
+  argTypes: {
+    name: { control: 'text' },
+    color: { control: 'color' },
   },
-});
-WithInjectionTokenAndArgs.argTypes = {
-  name: { control: 'text' },
-  color: { control: 'color' },
+  args: { name: 'Color', color: 'red' },
 };
-WithInjectionTokenAndArgs.args = { name: 'Color', color: 'red' };

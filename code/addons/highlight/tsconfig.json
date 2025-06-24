@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "rootDir": "./src",
-    "types": ["webpack-env"],
-    "strict": true
-  },
-  "include": ["src/**/*"]
-}

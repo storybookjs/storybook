@@ -1,0 +1,165 @@
+name: Prepare non-patch PR
+run-name: Prepare non-patch PR, triggered by ${{ github.triggering_actor }}
+
+on:
+  push:
+    branches:
+      - next
+  workflow_dispatch:
+    inputs:
+      release-type:
+        description: "Which release type to use for bumping the version"
+        required: true
+        default: "prerelease"
+        type: choice
+        options:
+          - prerelease
+          - prepatch
+          - preminor
+          - premajor
+          - patch
+          - minor
+          - major
+      pre-id:
+        description: For prerelease versions, what prerelease identifier to use, eg. 'alpha', 'beta', 'rc'
+        required: false
+        type: string
+
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  prepare-non-patch-pull-request:
+    name: Prepare non-patch pull request
+    runs-on: ubuntu-latest
+    environment: release
+    defaults:
+      run:
+        working-directory: scripts
+    steps:
+      - name: Checkout next
+        uses: actions/checkout@v4
+        with:
+          ref: next
+          # this needs to be set to a high enough number that it will contain the last version tag
+          # as of May 2023, the whole repo had 55K commits
+          fetch-depth: 10000
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.yarn/berry/cache
+          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
+          restore-keys: |
+            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
+            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
+            yarn-v1
+
+      - name: Install Dependencies
+        working-directory: .
+        run: |
+          yarn task --task=install
+
+      - name: Check if pull request is frozen
+        if: github.event_name != 'workflow_dispatch'
+        id: check-frozen
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn release:is-pr-frozen
+
+      - name: Cancel when frozen
+        if: steps.check-frozen.outputs.frozen == 'true' && github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # From https://stackoverflow.com/a/75809743
+        run: |
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+
+      # tags are needed to get changes and changelog generation
+      - name: Fetch git tags
+        run: git fetch --tags origin
+
+      - name: Check for unreleased changes
+        if: github.event_name != 'workflow_dispatch'
+        id: unreleased-changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn release:unreleased-changes-exists
+
+      - name: Cancel when no release necessary
+        if: steps.unreleased-changes.outputs.has-changes-to-release == 'false' && github.event_name != 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # From https://stackoverflow.com/a/75809743
+        run: |
+          gh run cancel ${{ github.run_id }}
+          gh run watch ${{ github.run_id }}
+
+      - name: Bump version deferred
+        id: bump-version
+        run: |
+          yarn release:version --deferred --release-type ${{ inputs.release-type || 'prerelease' }} ${{ inputs.pre-id && format('{0} {1}', '--pre-id', inputs.pre-id) || '' }} --verbose
+
+      - name: Write changelog
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          yarn release:write-changelog ${{ steps.bump-version.outputs.next-version }} --verbose
+
+      - name: "Commit changes to branch: version-non-patch-from-${{ steps.bump-version.outputs.current-version }}"
+        working-directory: .
+        run: |
+          git config --global user.name 'storybook-bot'
+          git config --global user.email '32066757+storybook-bot@users.noreply.github.com'
+          git checkout -b version-non-patch-from-${{ steps.bump-version.outputs.current-version }}
+          git add .
+          git commit -m "Write changelog for ${{ steps.bump-version.outputs.next-version }} [skip ci]" || true
+          git push --force origin version-non-patch-from-${{ steps.bump-version.outputs.current-version }}
+
+      - name: Generate PR description
+        id: description
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn release:generate-pr-description --current-version ${{ steps.bump-version.outputs.current-version }} --next-version ${{ steps.bump-version.outputs.next-version }} --verbose
+
+      - name: Create or update pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_TYPE=${{ inputs.release-type || 'prerelease' }}
+          CAPITALIZED_RELEASE_TYPE=${RELEASE_TYPE^}
+          if PR_STATE=$(gh pr view --json state --jq .state 2>/dev/null) && [[ -n "$PR_STATE" && "$PR_STATE" == *"OPEN"* ]]; then
+            gh pr edit \
+              --repo "${{github.repository }}" \
+              --title "Release: $CAPITALIZED_RELEASE_TYPE ${{ inputs.pre-id && format('{0} ', inputs.pre-id) }}${{ steps.bump-version.outputs.next-version }}" \
+              --body "${{ steps.description.outputs.description }}"
+          else
+            gh pr create \
+              --repo "${{github.repository }}"\
+              --title "Release: $CAPITALIZED_RELEASE_TYPE ${{ inputs.pre-id && format('{0} ', inputs.pre-id) }}${{ steps.bump-version.outputs.next-version }}" \
+              --label "release" \
+              --base next-release \
+              --head version-non-patch-from-${{ steps.bump-version.outputs.current-version }} \
+              --body "${{ steps.description.outputs.description }}"
+          fi
+
+      - name: Report job failure to Discord
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
+        uses: Ilshidur/action-discord@master
+        with:
+          args: "The GitHub Action for preparing the release pull request bumping from v${{ steps.bump-version.outputs.current-version }} to v${{ steps.bump-version.outputs.next-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

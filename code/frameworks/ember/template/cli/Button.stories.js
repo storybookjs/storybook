@@ -1,26 +1,28 @@
-import { hbs } from 'ember-cli-htmlbars';
-import { action } from '@storybook/addon-actions';
 import { linkTo } from '@storybook/addon-links';
 
-// More on how to set up stories at: https://storybook.js.org/docs/ember/writing-stories/introduction
+import { hbs } from 'ember-cli-htmlbars';
+import { action } from 'storybook/actions';
+import { fn } from 'storybook/test';
+
+// More on how to set up stories at: https://storybook.js.org/docs/writing-stories
 export default {
   title: 'Example/Button',
   render: (args) => ({
-    template: hbs`<button {{action onClick}}>{{label}}</button>`,
+    template: hbs`<button {{on "click" this.onClick}}>{{this.label}}</button>`,
     context: args,
   }),
   argTypes: {
     label: { control: 'text' },
   },
-  // This component will have an automatically generated Autodocs entry: https://storybook.js.org/docs/react/writing-docs/autodocs
+  // This component will have an automatically generated Autodocs entry: https://storybook.js.org/docs/ember/writing-docs/autodocs
   tags: ['autodocs'],
+  args: { onClick: fn() },
 };
 
-// More on writing stories with args: https://storybook.js.org/docs/ember/writing-stories/args
+// More on writing stories with args: https://storybook.js.org/docs/writing-stories/args
 export const Text = {
   args: {
     label: 'Button',
-    onClick: action('onClick'),
   },
 };
 
@@ -33,7 +35,7 @@ export const Emoji = {
 export const TextWithAction = {
   render: () => ({
     template: hbs`
-    <button {{action onClick}}>
+    <button {{on "click" this.onClick}}>
       Trigger Action
     </button>
   `,
@@ -50,12 +52,12 @@ export const TextWithAction = {
 export const ButtonWithLinkToAnotherStory = {
   render: () => ({
     template: hbs`
-    <button {{action onClick}}>
+    <button {{on "click" this.onClick}}>
       Go to Welcome Story
     </button>
   `,
     context: {
-      onClick: linkTo('example-introduction--page'),
+      onClick: linkTo('example-button--docs'),
     },
   }),
   name: 'button with link to another story',

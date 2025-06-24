@@ -1,12 +1,19 @@
-import React from 'react';
-import { addons } from '@storybook/preview-api';
-import { render, screen, waitFor } from '@testing-library/react';
+// @vitest-environment happy-dom
+/// <reference types="@testing-library/jest-dom" />;
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { SELECT_STORY } from '@storybook/core-events';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import React from 'react';
+
+import { SELECT_STORY } from 'storybook/internal/core-events';
+
+import { addons } from 'storybook/preview-api';
+
 import LinkTo from './link';
 
-jest.mock('@storybook/preview-api');
-jest.mock('@storybook/global', () => ({
+vi.mock('storybook/preview-api');
+vi.mock('@storybook/global', () => ({
   global: {
     document: {
       location: {
@@ -15,30 +22,28 @@ jest.mock('@storybook/global', () => ({
         search: 'search',
       },
     },
-    window: global,
-    __STORYBOOK_STORY_STORE__: {
-      fromId: jest.fn(() => ({})),
-    },
   },
 }));
 
 const mockChannel = () => {
   return {
-    emit: jest.fn(),
-    on: jest.fn(),
-    once: jest.fn(),
+    emit: vi.fn(),
+    on: vi.fn(),
+    once: vi.fn(),
   };
 };
-const mockAddons = addons as unknown as jest.Mocked<typeof addons>;
+const mockAddons = vi.mocked(addons);
 
 describe('LinkTo', () => {
   describe('render', () => {
+    afterEach(() => {
+      cleanup();
+    });
     it('should render a link', async () => {
       const channel = mockChannel() as any;
       mockAddons.getChannel.mockReturnValue(channel);
 
       const { container } = render(
-        // eslint-disable-next-line jsx-a11y/anchor-is-valid
         <LinkTo title="foo" name="bar">
           link
         </LinkTo>
@@ -61,20 +66,27 @@ describe('LinkTo', () => {
   });
 
   describe('events', () => {
-    it('should select the kind and story on click', () => {
+    it('should select the kind and story on click', async () => {
       const channel = {
-        emit: jest.fn(),
-        on: jest.fn(),
+        emit: vi.fn(),
+        on: vi.fn(),
       } as any;
       mockAddons.getChannel.mockReturnValue(channel);
 
-      render(
-        // eslint-disable-next-line jsx-a11y/anchor-is-valid
-        <LinkTo title="foo" name="bar">
-          link
-        </LinkTo>
+      await act(async () => {
+        await render(
+          <LinkTo title="foo" name="bar">
+            link
+          </LinkTo>
+        );
+      });
+
+      expect(screen.getByText('link')).toHaveAttribute(
+        'href',
+        'originpathname?path=/story/foo--bar'
       );
-      userEvent.click(screen.getByText('link'));
+
+      await userEvent.click(screen.getByText('link'));
 
       expect(channel.emit).toHaveBeenLastCalledWith(
         SELECT_STORY,

@@ -1,26 +1,22 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 10278-ts-multiple-components 1`] = `
-Object {
-  "aProperty": Object {
-    "control": Object {
+{
+  "aProperty": {
+    "control": {
       "type": "object",
     },
     "description": "",
     "name": "aProperty",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "any",
       },
     },
-    "type": Object {
+    "type": {
       "name": "other",
       "required": true,
       "value": "any",
     },
   },
 }
-`;

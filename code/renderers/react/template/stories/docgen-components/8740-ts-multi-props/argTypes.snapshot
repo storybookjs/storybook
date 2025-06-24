@@ -1,27 +1,23 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 8740-ts-multi-props 1`] = `
-Object {
-  "size": Object {
-    "control": Object {
+{
+  "size": {
+    "control": {
       "type": "object",
     },
     "description": undefined,
     "name": "size",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'a'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "unknown",
       },
     },
-    "type": Object {
+    "type": {
       "required": false,
     },
   },
 }
-`;

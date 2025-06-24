@@ -1,34 +1,29 @@
-import type { Configuration, Stats } from 'webpack';
 import type {
-  Options,
   BuilderResult as BuilderResultBase,
+  Options,
   StorybookConfig,
+  TypescriptOptions as WebpackTypescriptOptions,
 } from '@storybook/core-webpack';
 
 import type ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import type { Configuration, Stats } from 'webpack';
 
-type TypeScriptOptionsBase = Required<StorybookConfig>['typescript'];
+type TypeScriptOptionsBase = Partial<WebpackTypescriptOptions>;
 
-/**
- * Options for TypeScript usage within Storybook.
- */
+/** Options for TypeScript usage within Storybook. */
 export interface TypescriptOptions extends TypeScriptOptionsBase {
-  /**
-   * Configures `fork-ts-checker-webpack-plugin`
-   */
+  /** Configures `fork-ts-checker-webpack-plugin` */
   checkOptions?: ConstructorParameters<typeof ForkTsCheckerWebpackPlugin>[0];
 }
 
-export interface StorybookConfigWebpack extends Pick<StorybookConfig, 'webpack' | 'webpackFinal'> {
+export interface StorybookConfigWebpack extends Omit<StorybookConfig, 'webpack' | 'webpackFinal'> {
   /**
-   * Modify or return a custom Webpack config after the Storybook's default configuration
-   * has run (mostly used by addons).
+   * Modify or return a custom Webpack config after the Storybook's default configuration has run
+   * (mostly used by addons).
    */
   webpack?: (config: Configuration, options: Options) => Configuration | Promise<Configuration>;
 
-  /**
-   * Modify or return a custom Webpack config after every addon has run.
-   */
+  /** Modify or return a custom Webpack config after every addon has run. */
   webpackFinal?: (
     config: Configuration,
     options: Options
@@ -37,7 +32,6 @@ export interface StorybookConfigWebpack extends Pick<StorybookConfig, 'webpack' 
 
 export type BuilderOptions = {
   fsCache?: boolean;
-  useSWC?: boolean;
   lazyCompilation?: boolean;
 };
 

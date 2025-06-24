@@ -1,29 +1,24 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`json-to-csf-compiler params_override.json 1`] = `
-"
 export default {
-  title: \\"Params\\",
+  title: "Params",
   parameters: {
     server: {
       params: {
-        color: \\"red\\"
+        color: "red"
       }
     }
   }
 };
 
 export const Override = {
-  name: \\"Override\\",
+  name: "Override",
   parameters: {
     server: {
-      id: \\"params/override\\",
+      id: "params/override",
       params: {
-        message: \\"Hello World\\",
-        color: \\"green\\"
+        message: "Hello World",
+        color: "green"
       }
     }
   }
 };
-"
-`;

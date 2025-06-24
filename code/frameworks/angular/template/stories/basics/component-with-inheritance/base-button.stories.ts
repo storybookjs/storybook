@@ -1,12 +1,16 @@
+import type { Meta, StoryObj } from '@storybook/angular';
+
 import { BaseButtonComponent } from './base-button.component';
 
-export default {
+const meta: Meta<BaseButtonComponent> = {
   // title: 'Basics / Component / With Inheritance',
   component: BaseButtonComponent,
 };
 
-export const BaseButton = () => ({
-  props: {
+export default meta;
+
+export const BaseButton: StoryObj<BaseButtonComponent> = {
+  args: {
     label: 'this is label',
   },
-});
+};

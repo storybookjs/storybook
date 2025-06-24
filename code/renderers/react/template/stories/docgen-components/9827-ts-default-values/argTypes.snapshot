@@ -1,72 +1,68 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9827-ts-default-values 1`] = `
-Object {
-  "bar": Object {
-    "control": Object {
+{
+  "bar": {
+    "control": {
       "type": "object",
     },
     "description": "",
     "name": "bar",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
-        "summary": "Array",
+        "summary": "string[]",
       },
     },
-    "type": Object {
+    "type": {
       "name": "array",
       "raw": "string[]",
       "required": false,
-      "value": Array [
-        Object {
+      "value": [
+        {
           "name": "string",
         },
       ],
     },
   },
-  "foo": Object {
-    "control": Object {
+  "foo": {
+    "control": {
       "type": "boolean",
     },
     "description": "",
     "name": "foo",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "boolean",
       },
     },
-    "type": Object {
+    "type": {
       "name": "boolean",
       "required": true,
     },
   },
-  "title": Object {
-    "control": Object {
+  "title": {
+    "control": {
       "type": "text",
     },
     "description": "",
     "name": "title",
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'this is the default :)'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "string",
       },
     },
-    "type": Object {
+    "type": {
       "name": "string",
       "required": false,
     },
   },
 }
-`;

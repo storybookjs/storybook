@@ -16,6 +16,7 @@ ember-output
 !.babelrc.js
 !.eslintrc.js
 !.eslintrc-markdown.js
-!.jest.config.js
 !.storybook
-
+core/assets
+core/src/core-server/utils/__search-files-tests__
+core/report

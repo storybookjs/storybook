@@ -2,7 +2,8 @@
 # Manual changes might be lost - proceed with caution!
 
 __metadata:
-  version: 6
+  version: 8
+  cacheKey: 10
 
 "@storybook/root@workspace:.":
   version: 0.0.0-use.local

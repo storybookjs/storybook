@@ -1,8 +1,10 @@
+import { describe, expect, it } from 'vitest';
+
 import {
-  generateReleaseDescription,
   generateNonReleaseDescription,
-  mapToChangelist,
+  generateReleaseDescription,
   mapCherryPicksToTodo,
+  mapToChangelist,
 } from '../generate-pr-description';
 import type { Change } from '../utils/get-changes';
 
@@ -15,6 +17,7 @@ describe('Generate PR Description', () => {
       labels: ['bug', 'build', 'other label', 'patch:yes'],
       commit: 'abc123',
       pull: 42,
+      state: 'MERGED',
       links: {
         commit: '[abc123](https://github.com/storybookjs/storybook/commit/abc123)',
         pull: '[#42](https://github.com/storybookjs/storybook/pull/42)',
@@ -26,6 +29,7 @@ describe('Generate PR Description', () => {
       id: null,
       user: 'storybook-bot',
       pull: null,
+      state: null,
       commit: '012b58140c3606efeacbe99c0c410624b0a1ed1f',
       title: 'Bump version on `next`: preminor (alpha) from 7.2.0 to 7.3.0-alpha.0',
       labels: null,
@@ -41,6 +45,7 @@ describe('Generate PR Description', () => {
       user: 'shilman',
       title: 'Some title for a "direct commit"',
       labels: null,
+      state: null,
       commit: '22bb11',
       pull: null,
       links: {
@@ -53,8 +58,9 @@ describe('Generate PR Description', () => {
       id: 'pr-id-11',
       user: 'shilman',
       title: 'Another PR `title` for docs',
-      labels: ['another label', 'documentation', 'patch'],
+      labels: ['another label', 'documentation', 'patch:yes'],
       commit: 'ddd222',
+      state: 'MERGED',
       pull: 11,
       links: {
         commit: '[ddd222](https://github.com/storybookjs/storybook/commit/ddd222)',
@@ -69,6 +75,7 @@ describe('Generate PR Description', () => {
       labels: ['feature request', 'other label'],
       commit: 'wow1337',
       pull: 48,
+      state: 'MERGED',
       links: {
         commit: '[wow1337](https://github.com/storybookjs/storybook/commit/wow1337)',
         pull: '[#48](https://github.com/storybookjs/storybook/pull/48)',
@@ -81,6 +88,7 @@ describe('Generate PR Description', () => {
       title: 'Some PR title with a missing label',
       labels: ['incorrect label', 'other label'],
       commit: 'bad999',
+      state: 'MERGED',
       pull: 77,
       links: {
         commit: '[bad999](https://github.com/storybookjs/storybook/commit/bad999)',
@@ -104,7 +112,7 @@ describe('Generate PR Description', () => {
         "- [ ] **🐛 Bug**: Some PR title for a bug [#42](https://github.com/storybookjs/storybook/pull/42) (will also be patched)
         - [ ] **✨ Feature Request**: Some PR title for a 'new' feature [#48](https://github.com/storybookjs/storybook/pull/48)
         - [ ] **⚠️ Direct commit**: Some title for a "direct commit" [22bb11](https://github.com/storybookjs/storybook/commit/22bb11)
-        - [ ] **📝 Documentation**: Another PR \`title\` for docs [#11](https://github.com/storybookjs/storybook/pull/11)
+        - [ ] **📝 Documentation**: Another PR \`title\` for docs [#11](https://github.com/storybookjs/storybook/pull/11) (will also be patched)
         - [ ] **❔ Missing Label**: Some PR title with a missing label [#77](https://github.com/storybookjs/storybook/pull/77)"
       `);
     });
@@ -155,7 +163,7 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
 - Some PR \`title\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [@JReinhold](https://github.com/JReinhold)
 - Some PR 'title' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [@JReinhold](https://github.com/JReinhold)
-- Antoher PR "title" for maintainance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@JReinhold](https://github.com/JReinhold)`;
+- Another PR "title" for maintenance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@JReinhold](https://github.com/JReinhold)`;
       expect(
         generateReleaseDescription({
           currentVersion: '7.1.0-alpha.10',
@@ -213,7 +221,9 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
         - [ ] [#42](https://github.com/storybookjs/storybook/pull/42): \\\`git cherry-pick -m1 -x abc123\\\`
 
-        If you\\'ve made any changes doing the above QA (change PR titles, revert PRs), manually trigger a re-generation of this PR with [this workflow](https://github.com/storybookjs/storybook/actions/workflows/prepare-prerelease.yml) and wait for it to finish. It will wipe your progress in this to do, which is expected.
+        If you\\'ve made any changes doing the above QA (change PR titles, revert PRs), manually trigger a re-generation of this PR with [this workflow](https://github.com/storybookjs/storybook/actions/workflows/prepare-non-patch-release.yml) and wait for it to finish. It will wipe your progress in this to do, which is expected.
+
+        Feel free to manually commit any changes necessary to this branch **after** you\\'ve done the last re-generation, following the [Make Manual Changes](https://github.com/storybookjs/storybook/blob/next/CONTRIBUTING/RELEASING.md#5-make-manual-changes) section in the docs, *especially* if you\\'re making changes to the changelog.
 
         When everything above is done:
         - Merge this PR
@@ -225,9 +235,9 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
         ## 7.1.0-alpha.11
 
-        - Some PR \\\`title\\\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [@ JReinhold](https://github.com/JReinhold)
-        - Some PR \\'title\\' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [@ JReinhold](https://github.com/JReinhold)
-        - Antoher PR \\"title\\" for maintainance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@ JReinhold](https://github.com/JReinhold)"
+        - Some PR \\\`title\\\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [JReinhold](https://github.com/JReinhold)
+        - Some PR \\'title\\' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [JReinhold](https://github.com/JReinhold)
+        - Another PR \\"title\\" for maintenance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [JReinhold](https://github.com/JReinhold)"
       `);
     });
 
@@ -273,6 +283,8 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
         If you\\'ve made any changes (change PR titles, revert PRs), manually trigger a re-generation of this PR with [this workflow](https://github.com/storybookjs/storybook/actions/workflows/prepare-patch-release.yml) and wait for it to finish.
 
+        Feel free to manually commit any changes necessary to this branch **after** you\\'ve done the last re-generation, following the [Make Manual Changes](https://github.com/storybookjs/storybook/blob/next/CONTRIBUTING/RELEASING.md#5-make-manual-changes) section in the docs.
+
         When everything above is done:
         - Merge this PR
         - [Follow the run of the publish action](https://github.com/storybookjs/storybook/actions/workflows/publish.yml)"
@@ -284,7 +296,7 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
 - Some PR \`title\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [@JReinhold](https://github.com/JReinhold)
 - Some PR 'title' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [@JReinhold](https://github.com/JReinhold)
-- Antoher PR "title" for maintainance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@JReinhold](https://github.com/JReinhold)`;
+- Another PR "title" for maintenance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@JReinhold](https://github.com/JReinhold)`;
       expect(
         generateReleaseDescription({
           currentVersion: '7.1.0-alpha.10',
@@ -336,7 +348,9 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
 
 
-        If you\\'ve made any changes doing the above QA (change PR titles, revert PRs), manually trigger a re-generation of this PR with [this workflow](https://github.com/storybookjs/storybook/actions/workflows/prepare-prerelease.yml) and wait for it to finish. It will wipe your progress in this to do, which is expected.
+        If you\\'ve made any changes doing the above QA (change PR titles, revert PRs), manually trigger a re-generation of this PR with [this workflow](https://github.com/storybookjs/storybook/actions/workflows/prepare-non-patch-release.yml) and wait for it to finish. It will wipe your progress in this to do, which is expected.
+
+        Feel free to manually commit any changes necessary to this branch **after** you\\'ve done the last re-generation, following the [Make Manual Changes](https://github.com/storybookjs/storybook/blob/next/CONTRIBUTING/RELEASING.md#5-make-manual-changes) section in the docs, *especially* if you\\'re making changes to the changelog.
 
         When everything above is done:
         - Merge this PR
@@ -348,9 +362,9 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
         ## 7.1.0-alpha.11
 
-        - Some PR \\\`title\\\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [@ JReinhold](https://github.com/JReinhold)
-        - Some PR \\'title\\' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [@ JReinhold](https://github.com/JReinhold)
-        - Antoher PR \\"title\\" for maintainance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [@ JReinhold](https://github.com/JReinhold)"
+        - Some PR \\\`title\\\` for a bug [#42](https://github.com/storybookjs/storybook/pull/42), thanks [JReinhold](https://github.com/JReinhold)
+        - Some PR \\'title\\' for a feature request [#48](https://github.com/storybookjs/storybook/pull/48), thanks [JReinhold](https://github.com/JReinhold)
+        - Another PR \\"title\\" for maintenance [#49](https://github.com/storybookjs/storybook/pull/49), thanks [JReinhold](https://github.com/JReinhold)"
       `);
     });
 
@@ -390,6 +404,8 @@ For each pull request below, you need to either manually cherry pick it, or disc
 
 
         If you\\'ve made any changes (change PR titles, revert PRs), manually trigger a re-generation of this PR with [this workflow](https://github.com/storybookjs/storybook/actions/workflows/prepare-patch-release.yml) and wait for it to finish.
+
+        Feel free to manually commit any changes necessary to this branch **after** you\\'ve done the last re-generation, following the [Make Manual Changes](https://github.com/storybookjs/storybook/blob/next/CONTRIBUTING/RELEASING.md#5-make-manual-changes) section in the docs.
 
         When everything above is done:
         - Merge this PR

@@ -1,24 +1,31 @@
-import { Args } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { argsToTemplate } from '@storybook/angular';
+
 import { DocButtonComponent } from './doc-button.component';
 
-export default {
+const meta: Meta<DocButtonComponent<any>> = {
   component: DocButtonComponent,
 };
 
-export const Basic = (args: Args) => ({
-  props: args,
-});
-Basic.args = { label: 'Args test', isDisabled: false };
-Basic.ArgTypes = {
-  theDefaultValue: {
-    table: {
-      defaultValue: { summary: 'Basic default value' },
+export default meta;
+
+type Story = StoryObj<DocButtonComponent<any>>;
+
+export const Basic: Story = {
+  args: { label: 'Args test', isDisabled: false },
+  argTypes: {
+    theDefaultValue: {
+      table: {
+        defaultValue: { summary: 'Basic default value' },
+      },
     },
   },
 };
 
-export const WithTemplate = (args: Args) => ({
-  props: args,
-  template: '<my-button [label]="label" [appearance]="appearance"></my-button>',
-});
-WithTemplate.args = { label: 'Template test', appearance: 'primary' };
+export const WithTemplate: Story = {
+  args: { label: 'Template test', appearance: 'primary' },
+  render: (args) => ({
+    props: args,
+    template: `<my-button ${argsToTemplate(args)}></my-button>`,
+  }),
+};

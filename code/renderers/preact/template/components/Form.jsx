@@ -1,8 +1,15 @@
-/* eslint-disable react/react-in-jsx-scope */
-// eslint-disable-next-line import/no-extraneous-dependencies
-import PropTypes from 'prop-types';
 import { useState } from 'preact/hooks';
 
+/**
+ * Header component
+ *
+ * @param {object} props
+ * @param {object} [props.user]
+ * @param {string} props.user.name
+ * @param {function} props.onLogin
+ * @param {function} props.onLogout
+ * @param {function} props.onCreateAccount
+ */
 export const Form = ({ onSuccess }) => {
   const [value, setValue] = useState('');
   const [complete, setComplete] = useState(false);
@@ -31,8 +38,4 @@ export const Form = ({ onSuccess }) => {
       {complete && <p>Completed!!</p>}
     </form>
   );
-};
-
-Form.propTypes = {
-  onSuccess: PropTypes.func.isRequired,
 };

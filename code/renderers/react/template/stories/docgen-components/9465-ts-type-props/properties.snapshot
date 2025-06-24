@@ -1,24 +1,20 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9465-ts-type-props 1`] = `
-Object {
-  "rows": Array [
-    Object {
-      "defaultValue": Object {
+{
+  "rows": [
+    {
+      "defaultValue": {
         "detail": undefined,
         "summary": "false",
       },
       "description": "",
       "name": "disabled",
       "required": false,
-      "sbType": Object {
+      "sbType": {
         "name": "boolean",
       },
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "boolean",
       },
     },
   ],
 }
-`;

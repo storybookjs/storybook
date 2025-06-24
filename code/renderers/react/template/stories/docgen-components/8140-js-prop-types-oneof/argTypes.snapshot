@@ -1,121 +1,118 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 8140-js-prop-types-oneof 1`] = `
-Object {
-  "blank": Object {
-    "control": Object {
+{
+  "blank": {
+    "control": {
       "type": "boolean",
     },
     "description": "No background or border if static alert",
     "name": "blank",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "bool",
       },
     },
-    "type": Object {
+    "type": {
       "name": "boolean",
       "required": false,
     },
   },
-  "icon": Object {
-    "control": Object {
+  "icon": {
+    "control": {
       "type": "text",
     },
     "description": "Allows icon override, accepts material icon name",
     "name": "icon",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "string",
       },
     },
-    "type": Object {
+    "type": {
       "name": "string",
       "required": false,
     },
   },
-  "message": Object {
-    "control": Object {
+  "message": {
+    "control": {
       "type": "text",
     },
     "description": "",
     "name": "message",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "string",
       },
     },
-    "type": Object {
+    "type": {
       "name": "string",
       "required": true,
     },
   },
-  "mode": Object {
-    "control": Object {
+  "mode": {
+    "control": {
       "type": "radio",
     },
     "description": "",
     "name": "mode",
-    "options": Array [
+    "options": [
       "static",
       "timed",
     ],
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'static'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "'static' | 'timed'",
       },
     },
-    "type": Object {
+    "type": {
       "name": "enum",
       "required": false,
-      "value": Array [
+      "value": [
         "static",
         "timed",
       ],
     },
   },
-  "type": Object {
-    "control": Object {
+  "type": {
+    "control": {
       "type": "radio",
     },
     "description": "",
     "name": "type",
-    "options": Array [
+    "options": [
       "success",
       "warning",
       "error",
       "primary",
     ],
-    "table": Object {
-      "defaultValue": Object {
+    "table": {
+      "defaultValue": {
         "detail": undefined,
         "summary": "'warning'",
       },
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "'success' | 'warning' | 'error' | 'primary'",
       },
     },
-    "type": Object {
+    "type": {
       "name": "enum",
       "required": false,
-      "value": Array [
+      "value": [
         "success",
         "warning",
         "error",
@@ -124,4 +121,3 @@ Object {
     },
   },
 }
-`;

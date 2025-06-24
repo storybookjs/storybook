@@ -1,25 +1,21 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9922-ts-component-props 1`] = `
-Object {
-  "spacing": Object {
-    "control": Object {
+{
+  "spacing": {
+    "control": {
       "type": "number",
     },
     "description": "",
     "name": "spacing",
-    "table": Object {
-      "defaultValue": null,
+    "table": {
+      "defaultValue": undefined,
       "jsDocTags": undefined,
-      "type": Object {
+      "type": {
         "detail": undefined,
         "summary": "number",
       },
     },
-    "type": Object {
+    "type": {
       "name": "number",
       "required": true,
     },
   },
 }
-`;

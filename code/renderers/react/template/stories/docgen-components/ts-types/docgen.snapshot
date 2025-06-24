@@ -1,29 +1,26 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties ts-types 1`] = `
-"import React from 'react';
+import React from 'react';
 function concat(a, b) {
   return a + b;
 }
 var DefaultEnum = /*#__PURE__*/function (DefaultEnum) {
-  DefaultEnum[DefaultEnum[\\"TopLeft\\"] = 0] = \\"TopLeft\\";
-  DefaultEnum[DefaultEnum[\\"TopRight\\"] = 1] = \\"TopRight\\";
-  DefaultEnum[DefaultEnum[\\"TopCenter\\"] = 2] = \\"TopCenter\\";
+  DefaultEnum[DefaultEnum["TopLeft"] = 0] = "TopLeft";
+  DefaultEnum[DefaultEnum["TopRight"] = 1] = "TopRight";
+  DefaultEnum[DefaultEnum["TopCenter"] = 2] = "TopCenter";
   return DefaultEnum;
 }(DefaultEnum || {});
 var NumericEnum = /*#__PURE__*/function (NumericEnum) {
-  NumericEnum[NumericEnum[\\"TopLeft\\"] = 0] = \\"TopLeft\\";
-  NumericEnum[NumericEnum[\\"TopRight\\"] = 1] = \\"TopRight\\";
-  NumericEnum[NumericEnum[\\"TopCenter\\"] = 2] = \\"TopCenter\\";
+  NumericEnum[NumericEnum["TopLeft"] = 0] = "TopLeft";
+  NumericEnum[NumericEnum["TopRight"] = 1] = "TopRight";
+  NumericEnum[NumericEnum["TopCenter"] = 2] = "TopCenter";
   return NumericEnum;
 }(NumericEnum || {});
 var StringEnum = /*#__PURE__*/function (StringEnum) {
-  StringEnum[\\"TopLeft\\"] = \\"top-left\\";
-  StringEnum[\\"TopRight\\"] = \\"top-right\\";
-  StringEnum[\\"TopCenter\\"] = \\"top-center\\";
+  StringEnum["TopLeft"] = "top-left";
+  StringEnum["TopRight"] = "top-right";
+  StringEnum["TopCenter"] = "top-center";
   return StringEnum;
 }(StringEnum || {});
-export const TypeScriptProps = () => /*#__PURE__*/React.createElement(\\"div\\", null, \\"TypeScript!\\");
+export const TypeScriptProps = () => /*#__PURE__*/React.createElement("div", null, "TypeScript!");
 TypeScriptProps.defaultProps = {
   any: 'Any value',
   string: 'A string value',
@@ -91,227 +88,226 @@ TypeScriptProps.defaultProps = {
 };
 export const component = TypeScriptProps;
 TypeScriptProps.__docgenInfo = {
-  \\"description\\": \\"\\",
-  \\"methods\\": [],
-  \\"displayName\\": \\"TypeScriptProps\\",
-  \\"props\\": {
-    \\"any\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'Any value'\\",
-        \\"computed\\": false
+  "description": "",
+  "methods": [],
+  "displayName": "TypeScriptProps",
+  "props": {
+    "any": {
+      "defaultValue": {
+        "value": "'Any value'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"string\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'A string value'\\",
-        \\"computed\\": false
+    "string": {
+      "defaultValue": {
+        "value": "'A string value'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"bool\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"true\\",
-        \\"computed\\": false
+    "bool": {
+      "defaultValue": {
+        "value": "true",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"number\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"5\\",
-        \\"computed\\": false
+    "number": {
+      "defaultValue": {
+        "value": "5",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"voidFunc\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"() => {}\\",
-        \\"computed\\": false
+    "voidFunc": {
+      "defaultValue": {
+        "value": "() => {}",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"funcWithArgsAndReturns\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"function concat(a: string, b: string): string {\\\\n  return a + b;\\\\n}\\",
-        \\"computed\\": false
+    "funcWithArgsAndReturns": {
+      "defaultValue": {
+        "value": "function concat(a: string, b: string): string {\n  return a + b;\n}",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"symbol\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"Symbol('Default symbol')\\",
-        \\"computed\\": true
+    "symbol": {
+      "defaultValue": {
+        "value": "Symbol('Default symbol')",
+        "computed": true
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"interface\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"{ text: 'foo', value: 'bar' }\\",
-        \\"computed\\": false
+    "interface": {
+      "defaultValue": {
+        "value": "{ text: 'foo', value: 'bar' }",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"genericInterface\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"{ value: 'A string value' }\\",
-        \\"computed\\": false
+    "genericInterface": {
+      "defaultValue": {
+        "value": "{ value: 'A string value' }",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"arrayOfPrimitive\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"['foo', 'bar']\\",
-        \\"computed\\": false
+    "arrayOfPrimitive": {
+      "defaultValue": {
+        "value": "['foo', 'bar']",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"arrayOfComplexObject\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"[{ text: 'foo', value: 'bar' }]\\",
-        \\"computed\\": false
+    "arrayOfComplexObject": {
+      "defaultValue": {
+        "value": "[{ text: 'foo', value: 'bar' }]",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"tupleOfPrimitive\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"['string value', 5]\\",
-        \\"computed\\": false
+    "tupleOfPrimitive": {
+      "defaultValue": {
+        "value": "['string value', 5]",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"tupleWithComplexType\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"['string value', { text: 'foo', value: 'bar' }]\\",
-        \\"computed\\": false
+    "tupleWithComplexType": {
+      "defaultValue": {
+        "value": "['string value', { text: 'foo', value: 'bar' }]",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"defaultEnum\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"DefaultEnum.TopRight\\",
-        \\"computed\\": true
+    "defaultEnum": {
+      "defaultValue": {
+        "value": "DefaultEnum.TopRight",
+        "computed": true
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"numericEnum\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"NumericEnum.TopRight\\",
-        \\"computed\\": true
+    "numericEnum": {
+      "defaultValue": {
+        "value": "NumericEnum.TopRight",
+        "computed": true
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"stringEnum\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"StringEnum.TopRight\\",
-        \\"computed\\": true
+    "stringEnum": {
+      "defaultValue": {
+        "value": "StringEnum.TopRight",
+        "computed": true
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"enumUnion\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"DefaultEnum.TopLeft\\",
-        \\"computed\\": true
+    "enumUnion": {
+      "defaultValue": {
+        "value": "DefaultEnum.TopLeft",
+        "computed": true
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"recordOfPrimitive\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"{ foo: 1, bar: 2 }\\",
-        \\"computed\\": false
+    "recordOfPrimitive": {
+      "defaultValue": {
+        "value": "{ foo: 1, bar: 2 }",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"recordOfComplexObject\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"{ foo: { text: 'bar', value: 'bar2' } }\\",
-        \\"computed\\": false
+    "recordOfComplexObject": {
+      "defaultValue": {
+        "value": "{ foo: { text: 'bar', value: 'bar2' } }",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"intersectionType\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"{ text: 'foo', value: 'bar', name: 'foo-bar' }\\",
-        \\"computed\\": false
+    "intersectionType": {
+      "defaultValue": {
+        "value": "{ text: 'foo', value: 'bar', name: 'foo-bar' }",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"intersectionWithInlineType\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"{ text: 'foo', value: 'bar', inlineValue: 'this is inlined' }\\",
-        \\"computed\\": false
+    "intersectionWithInlineType": {
+      "defaultValue": {
+        "value": "{ text: 'foo', value: 'bar', inlineValue: 'this is inlined' }",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"unionOfPrimitive\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'A string value'\\",
-        \\"computed\\": false
+    "unionOfPrimitive": {
+      "defaultValue": {
+        "value": "'A string value'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"unionOfComplexType\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"{ text: 'foo', value: 'bar' }\\",
-        \\"computed\\": false
+    "unionOfComplexType": {
+      "defaultValue": {
+        "value": "{ text: 'foo', value: 'bar' }",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"nullableComplexTypeUndefinedDefaultValue\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"undefined\\",
-        \\"computed\\": true
+    "nullableComplexTypeUndefinedDefaultValue": {
+      "defaultValue": {
+        "value": "undefined",
+        "computed": true
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"typeAlias\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'foo'\\",
-        \\"computed\\": false
+    "typeAlias": {
+      "defaultValue": {
+        "value": "'foo'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"aliasesUnion\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'foo'\\",
-        \\"computed\\": false
+    "aliasesUnion": {
+      "defaultValue": {
+        "value": "'foo'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"genericAlias\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"{ value: 'foo' }\\",
-        \\"computed\\": false
+    "genericAlias": {
+      "defaultValue": {
+        "value": "{ value: 'foo' }",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"namedStringLiteralUnion\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'top-right'\\",
-        \\"computed\\": false
+    "namedStringLiteralUnion": {
+      "defaultValue": {
+        "value": "'top-right'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"inlinedStringLiteralUnion\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"'bottom-right'\\",
-        \\"computed\\": false
+    "inlinedStringLiteralUnion": {
+      "defaultValue": {
+        "value": "'bottom-right'",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"namedNumericLiteralUnion\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"0\\",
-        \\"computed\\": false
+    "namedNumericLiteralUnion": {
+      "defaultValue": {
+        "value": "0",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     },
-    \\"inlinedNumericLiteralUnion\\": {
-      \\"defaultValue\\": {
-        \\"value\\": \\"1\\",
-        \\"computed\\": false
+    "inlinedNumericLiteralUnion": {
+      "defaultValue": {
+        "value": "1",
+        "computed": false
       },
-      \\"required\\": false
+      "required": false
     }
   }
-};"
-`;
+};

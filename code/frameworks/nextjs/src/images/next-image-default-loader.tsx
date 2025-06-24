@@ -1,6 +1,6 @@
 import type * as _NextImage from 'next/image';
 
-export const defaultLoader = ({ src, width, quality }: _NextImage.ImageLoaderProps) => {
+export const defaultLoader = ({ src, width, quality = 75 }: _NextImage.ImageLoaderProps) => {
   const missingValues = [];
   if (!src) {
     missingValues.push('src');
@@ -24,5 +24,16 @@ export const defaultLoader = ({ src, width, quality }: _NextImage.ImageLoaderPro
     );
   }
 
-  return `${src}?w=${width}&q=${quality ?? 75}`;
+  const url = new URL(src, window.location.href);
+
+  if (!url.searchParams.has('w') && !url.searchParams.has('q')) {
+    url.searchParams.set('w', width.toString());
+    url.searchParams.set('q', quality.toString());
+  }
+
+  if (!src.startsWith('http://') && !src.startsWith('https://')) {
+    return url.toString().slice(url.origin.length);
+  }
+
+  return url.toString();
 };

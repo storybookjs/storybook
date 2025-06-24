@@ -1,31 +1,24 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
-    "incremental": false,
-    "noImplicitAny": true,
-    "forceConsistentCasingInFileNames": true,
-    "jsx": "react",
-    "moduleResolution": "Node",
-    "target": "ES2020",
-    "module": "CommonJS",
-    "skipLibCheck": false,
     "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "ignoreDeprecations": "5.0",
+    "incremental": false,
     "isolatedModules": true,
-    "strictBindCallApply": true,
+    "jsx": "preserve",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "noUnusedLocals": true,
-    "types": ["jest"],
-    "strict": true
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "noImplicitAny": true,
+    "noUnusedLocals": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "strictBindCallApply": true,
+    "target": "ES2020"
   },
-  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules", "**/setup-jest.ts"],
-  "ts-node": {
-    "transpileOnly": true,
-    "files": true,
-    "compilerOptions": {
-      "types": ["node"]
-    }
-  }
+  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"]
 }

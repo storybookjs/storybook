@@ -1,28 +1,30 @@
-// @ts-expect-error (loader-utils has no webpack5 compatible types)
+import { imageSize } from 'image-size';
 import { interpolateName } from 'loader-utils';
-import imageSizeOf from 'image-size';
-import type { RawLoaderDefinition } from 'webpack';
 import type { NextConfig } from 'next';
+import type { RawLoaderDefinition } from 'webpack';
 
 interface LoaderOptions {
   filename: string;
   nextConfig: NextConfig;
 }
 
-const nextImageLoaderStub: RawLoaderDefinition<LoaderOptions> = function (content) {
+const nextImageLoaderStub: RawLoaderDefinition<LoaderOptions> = async function NextImageLoader(
+  content
+) {
   const { filename, nextConfig } = this.getOptions();
-  const outputPath = interpolateName(this, filename.replace('[ext]', '.[ext]'), {
+  const opts = {
     context: this.rootContext,
     content,
-  });
+  };
+  const outputPath = interpolateName(this, filename.replace('[ext]', '.[ext]'), opts);
 
   this.emitFile(outputPath, content);
-
-  const { width, height } = imageSizeOf(this.resourcePath);
 
   if (nextConfig.images?.disableStaticImages) {
     return `const src = '${outputPath}'; export default src;`;
   }
+
+  const { width, height } = imageSize(content as Uint8Array);
 
   return `export default ${JSON.stringify({
     src: outputPath,

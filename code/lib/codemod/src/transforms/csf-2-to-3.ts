@@ -1,22 +1,22 @@
-/* eslint-disable no-underscore-dangle */
-import prettier from 'prettier';
-import * as t from '@babel/types';
-import { isIdentifier, isTSTypeAnnotation, isTSTypeReference } from '@babel/types';
-import type { CsfFile } from '@storybook/csf-tools';
-import { loadCsf } from '@storybook/csf-tools';
+import type { BabelFile, NodePath } from 'storybook/internal/babel';
+import { core as babel, types as t } from 'storybook/internal/babel';
+import type { CsfFile } from 'storybook/internal/csf-tools';
+import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
+
 import type { API, FileInfo } from 'jscodeshift';
-import type { BabelFile, NodePath } from '@babel/core';
-import * as babel from '@babel/core';
-import * as recast from 'recast';
+import prettier from 'prettier';
+import invariant from 'tiny-invariant';
+
 import { upgradeDeprecatedTypes } from './upgrade-deprecated-types';
 
-const logger = console;
+const { isIdentifier, isTSTypeAnnotation, isTSTypeReference } = t;
 
 const renameAnnotation = (annotation: string) => {
   return annotation === 'storyName' ? 'name' : annotation;
 };
 
-const getTemplateBindVariable = (init: t.Expression) =>
+const getTemplateBindVariable = (init: t.Expression | undefined) =>
   t.isCallExpression(init) &&
   t.isMemberExpression(init.callee) &&
   t.isIdentifier(init.callee.object) &&
@@ -93,7 +93,9 @@ function removeUnusedTemplates(csf: CsfFile) {
     const references: NodePath[] = [];
     babel.traverse(csf._ast, {
       Identifier: (path) => {
-        if (path.node.name === template) references.push(path);
+        if (path.node.name === template) {
+          references.push(path as NodePath);
+        }
       },
     });
     // if there is only one reference and this reference is the variable declaration initializing the template
@@ -101,7 +103,7 @@ function removeUnusedTemplates(csf: CsfFile) {
     if (references.length === 1) {
       const reference = references[0];
       if (
-        reference.parentPath.isVariableDeclarator() &&
+        reference.parentPath?.isVariableDeclarator() &&
         reference.parentPath.node.init === templateExpression
       ) {
         reference.parentPath.remove();
@@ -110,7 +112,7 @@ function removeUnusedTemplates(csf: CsfFile) {
   });
 }
 
-export default function transform(info: FileInfo, api: API, options: { parser?: string }) {
+export default async function transform(info: FileInfo, api: API, options: { parser?: string }) {
   const makeTitle = (userTitle?: string) => {
     return userTitle || 'FIXME';
   };
@@ -125,6 +127,7 @@ export default function transform(info: FileInfo, api: API, options: { parser?: 
 
   // This allows for showing buildCodeFrameError messages
   // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
+
   const file: BabelFile = new babel.File(
     { filename: info.path },
     { code: info.source, ast: csf._ast }
@@ -138,11 +141,16 @@ export default function transform(info: FileInfo, api: API, options: { parser?: 
       return t.objectProperty(t.identifier(renameAnnotation(annotation)), val as t.Expression);
     });
 
-    if (t.isVariableDeclarator(decl)) {
-      const { init, id } = decl;
+    if (t.isVariableDeclarator(decl as t.Node)) {
+      const { init, id } = decl as any;
+      invariant(init, 'Inital value should be declared');
       // only replace arrow function expressions && template
       const template = getTemplateBindVariable(init);
-      if (!t.isArrowFunctionExpression(init) && !template) return;
+
+      if (!t.isArrowFunctionExpression(init) && !template) {
+        return;
+      }
+      // Do change the type of no-arg stories without annotations to StoryFn when applicable
       // Do change the type of no-arg stories without annotations to StoryFn when applicable
       if (isSimpleCSFStory(init, annotations)) {
         objectExports[key] = t.exportNamedDeclaration(
@@ -153,10 +161,7 @@ export default function transform(info: FileInfo, api: API, options: { parser?: 
         return;
       }
 
-      let storyFn: t.Expression = template && t.identifier(template);
-      if (!storyFn) {
-        storyFn = init;
-      }
+      const storyFn: t.Expression = template ? t.identifier(template) : init;
 
       // Remove the render function when we can hoist the template
       // const Template = (args) => <Cat {...args} />;
@@ -179,8 +184,8 @@ export default function transform(info: FileInfo, api: API, options: { parser?: 
     }
   });
 
-  csf._ast.program.body = csf._ast.program.body.reduce((acc, stmt) => {
-    const statement = stmt as t.Statement;
+  csf._ast.program.body = csf._ast.program.body.reduce((acc: t.Statement[], stmt: t.Statement) => {
+    const statement = stmt;
     // remove story annotations & template declarations
     if (isStoryAnnotation(statement, objectExports)) {
       return acc;
@@ -202,20 +207,11 @@ export default function transform(info: FileInfo, api: API, options: { parser?: 
   importHelper.removeDeprecatedStoryImport();
   removeUnusedTemplates(csf);
 
-  let output = recast.print(csf._ast, {}).code;
+  let output = printCsf(csf).code;
 
   try {
-    const prettierConfig = prettier.resolveConfig.sync('.', { editorconfig: true }) || {
-      printWidth: 100,
-      tabWidth: 2,
-      bracketSpacing: true,
-      trailingComma: 'es5',
-      singleQuote: true,
-    };
-
-    output = prettier.format(output, {
-      ...prettierConfig,
-      // This will infer the parser from the filename.
+    output = await prettier.format(output, {
+      ...(await prettier.resolveConfig(info.path)),
       filepath: info.path,
     });
   } catch (e) {
@@ -238,7 +234,10 @@ class StorybookImportHelper {
     file.path.traverse({
       ImportDeclaration: (path) => {
         const source = path.node.source.value;
-        if (source.startsWith('@storybook/csf') || !source.startsWith('@storybook')) return;
+
+        if (source.startsWith('@storybook/csf') || !source.startsWith('@storybook')) {
+          return;
+        }
         const isRendererImport = path.get('specifiers').some((specifier) => {
           if (specifier.isImportNamespaceSpecifier()) {
             // throw path.buildCodeFrameError(
@@ -250,10 +249,33 @@ class StorybookImportHelper {
                 'Replace the namespace import with named imports and try again.'
             );
           }
-          if (!specifier.isImportSpecifier()) return false;
-          const imported = specifier.get('imported');
-          if (!imported.isIdentifier()) return false;
 
+          if (!specifier.isImportSpecifier()) {
+            return false;
+          }
+          const imported = specifier.get('imported');
+
+          if (Array.isArray(imported)) {
+            return imported.some((importedSpecifier) => {
+              if (!importedSpecifier.isIdentifier()) {
+                return false;
+              }
+              return [
+                'Story',
+                'StoryFn',
+                'StoryObj',
+                'Meta',
+                'ComponentStory',
+                'ComponentStoryFn',
+                'ComponentStoryObj',
+                'ComponentMeta',
+              ].includes(importedSpecifier.node.name);
+            });
+          }
+
+          if (!imported.isIdentifier()) {
+            return false;
+          }
           return [
             'Story',
             'StoryFn',
@@ -266,7 +288,9 @@ class StorybookImportHelper {
           ].includes(imported.node.name);
         });
 
-        if (isRendererImport) found.push(path);
+        if (isRendererImport) {
+          found.push(path);
+        }
       },
     });
     return found;
@@ -277,16 +301,27 @@ class StorybookImportHelper {
     const sbImport =
       this.sbImportDeclarations.find((path) => path.node.importKind === 'type') ??
       this.sbImportDeclarations[0];
-    if (sbImport == null) return undefined;
+
+    if (sbImport == null) {
+      return undefined;
+    }
 
     const specifiers = sbImport.get('specifiers');
     const importSpecifier = specifiers.find((specifier) => {
-      if (!specifier.isImportSpecifier()) return false;
+      if (!specifier.isImportSpecifier()) {
+        return false;
+      }
       const imported = specifier.get('imported');
-      if (!imported.isIdentifier()) return false;
+
+      if (!imported.isIdentifier()) {
+        return false;
+      }
       return imported.node.name === type;
     });
-    if (importSpecifier) return importSpecifier.node.local.name;
+
+    if (importSpecifier) {
+      return importSpecifier.node.local.name;
+    }
     specifiers[0].insertBefore(t.importSpecifier(t.identifier(type), t.identifier(type)));
     return type;
   };
@@ -294,9 +329,14 @@ class StorybookImportHelper {
   removeDeprecatedStoryImport = () => {
     const specifiers = this.sbImportDeclarations.flatMap((it) => it.get('specifiers'));
     const storyImports = specifiers.filter((specifier) => {
-      if (!specifier.isImportSpecifier()) return false;
+      if (!specifier.isImportSpecifier()) {
+        return false;
+      }
       const imported = specifier.get('imported');
-      if (!imported.isIdentifier()) return false;
+
+      if (!imported.isIdentifier()) {
+        return false;
+      }
       return imported.node.name === 'Story';
     });
     storyImports.forEach((path) => path.remove());
@@ -322,7 +362,7 @@ class StorybookImportHelper {
           ...id,
           typeAnnotation: t.tsTypeAnnotation(
             t.tsTypeReference(
-              t.identifier(localTypeImport),
+              t.identifier(localTypeImport ?? ''),
               id.typeAnnotation.typeAnnotation.typeParameters
             )
           ),

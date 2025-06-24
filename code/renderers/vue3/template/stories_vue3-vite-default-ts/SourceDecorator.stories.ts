@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 
-import GlobalUsage from './GlobalUsage.vue';
 import GlobalSetup from './GlobalSetup.vue';
+import GlobalUsage from './GlobalUsage.vue';
 
 const meta: Meta = {
   component: GlobalUsage,

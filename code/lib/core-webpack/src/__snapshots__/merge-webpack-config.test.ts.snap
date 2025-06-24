@@ -1,42 +1,42 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`mergeConfigs merges partial custom config 1`] = `
-Object {
+exports[`mergeConfigs > merges partial custom config 1`] = `
+{
   "devtool": "source-map",
-  "entry": Object {
+  "entry": {
     "bundle": "index.js",
   },
-  "module": Object {
-    "rules": Array [
-      Object {
+  "module": {
+    "rules": [
+      {
         "use": "r1",
       },
-      Object {
+      {
         "use": "r2",
       },
     ],
   },
-  "optimization": Object {
+  "optimization": {
     "runtimeChunk": true,
-    "splitChunks": Object {
+    "splitChunks": {
       "chunks": "all",
     },
   },
-  "output": Object {
+  "output": {
     "filename": "[name].js",
   },
-  "plugins": Array [
+  "plugins": [
     "p1",
     "p2",
     "p3",
   ],
-  "resolve": Object {
-    "alias": Object {
+  "resolve": {
+    "alias": {
       "A1": "src/B1",
       "A2": "src/B2",
     },
     "enforceExtension": true,
-    "extensions": Array [
+    "extensions": [
       ".js",
       ".json",
       ".ts",
@@ -46,42 +46,42 @@ Object {
 }
 `;
 
-exports[`mergeConfigs merges successfully if custom config is empty 1`] = `
-Object {
+exports[`mergeConfigs > merges successfully if custom config is empty 1`] = `
+{
   "devtool": "source-map",
-  "entry": Object {
+  "entry": {
     "bundle": "index.js",
   },
-  "module": Object {
-    "rules": Array [
-      Object {
+  "module": {
+    "rules": [
+      {
         "use": "r1",
       },
-      Object {
+      {
         "use": "r2",
       },
     ],
   },
-  "optimization": Object {
+  "optimization": {
     "runtimeChunk": true,
-    "splitChunks": Object {
+    "splitChunks": {
       "chunks": "all",
     },
   },
-  "output": Object {
+  "output": {
     "filename": "[name].js",
   },
-  "plugins": Array [
+  "plugins": [
     "p1",
     "p2",
   ],
-  "resolve": Object {
-    "alias": Object {
+  "resolve": {
+    "alias": {
       "A1": "src/B1",
       "A2": "src/B2",
     },
     "enforceExtension": true,
-    "extensions": Array [
+    "extensions": [
       ".js",
       ".json",
     ],
@@ -89,57 +89,57 @@ Object {
 }
 `;
 
-exports[`mergeConfigs merges two full configs in one 1`] = `
-Object {
+exports[`mergeConfigs > merges two full configs in one 1`] = `
+{
   "devtool": "source-map",
-  "entry": Object {
+  "entry": {
     "bundle": "index.js",
   },
-  "module": Object {
+  "module": {
     "noParse": /jquery\\|lodash/,
-    "rules": Array [
-      Object {
+    "rules": [
+      {
         "use": "r1",
       },
-      Object {
+      {
         "use": "r2",
       },
-      Object {
+      {
         "use": "r3",
       },
-      Object {
+      {
         "use": "r4",
       },
     ],
   },
-  "optimization": Object {
-    "minimizer": Array [
+  "optimization": {
+    "minimizer": [
       "banana",
     ],
     "runtimeChunk": true,
-    "splitChunks": Object {
+    "splitChunks": {
       "chunks": "all",
     },
   },
-  "output": Object {
+  "output": {
     "filename": "[name].js",
   },
-  "plugins": Array [
+  "plugins": [
     "p1",
     "p2",
     "p3",
     "p4",
   ],
   "profile": true,
-  "resolve": Object {
-    "alias": Object {
+  "resolve": {
+    "alias": {
       "A1": "src/B1",
       "A2": "src/B2",
       "A3": "src/B3",
       "A4": "src/B4",
     },
     "enforceExtension": false,
-    "extensions": Array [
+    "extensions": [
       ".js",
       ".json",
       ".ts",

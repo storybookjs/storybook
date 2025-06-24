@@ -18,7 +18,6 @@ export const load: LoadHook = async (url, context, nextLoad) => {
     url.endsWith('.tsx') ||
     url.endsWith('.mts') ||
     url.endsWith('.cts') ||
-    url.endsWith('.tsx') ||
     url.endsWith('.mtsx') ||
     url.endsWith('.ctsx')
   ) {

@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'pathe';
 
 const fileExists = (basename: string) =>
-  ['.js', '.cjs'].reduce((found: string, ext: string) => {
+  ['.js', '.mjs', '.cjs'].reduce((found: string, ext: string) => {
     const filename = `${basename}${ext}`;
     return !found && existsSync(filename) ? filename : found;
   }, '');

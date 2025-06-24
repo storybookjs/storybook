@@ -22,7 +22,7 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
-import { isAbsolute, join } from 'pathe';
+import { dirname, isAbsolute, join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { resolveModule } from '../../shared/utils/resolve';
@@ -288,8 +288,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: resolveModule({ pkg: 'react' }),
-      reactDom: resolveModule({ pkg: 'react-dom' }),
+      react: dirname(resolveModule({ pkg: 'react' })),
+      reactDom: dirname(resolveModule({ pkg: 'react-dom' })),
     };
   } catch (e) {
     return existing;

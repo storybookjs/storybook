@@ -241,8 +241,8 @@ describe('Detect', () => {
         operationDir: 'some/path',
       },
       getAllDependencies: () => ({}),
-      getModulePackageJSON: () => null,
-    } as Partial<JsPackageManager>;
+      getModulePackageJSON: () => Promise.resolve(null),
+    } as unknown as Partial<JsPackageManager>;
 
     await expect(detect(packageManager as any, { html: true })).resolves.toBe(ProjectType.HTML);
   });
@@ -254,7 +254,7 @@ describe('Detect', () => {
       getAllDependencies: () => ({
         typescript: '1.0.0',
       }),
-      getModulePackageJSON: (packageName) => {
+      getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
             return {
@@ -264,7 +264,7 @@ describe('Detect', () => {
             return null;
         }
       },
-    } as Partial<JsPackageManager>;
+    } as unknown as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
     expect(logger.warn).toHaveBeenCalledWith(
@@ -287,7 +287,7 @@ describe('Detect', () => {
             return null;
         }
       },
-    } as Partial<JsPackageManager>;
+    } as unknown as Partial<JsPackageManager>;
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
@@ -306,7 +306,7 @@ describe('Detect', () => {
             return null;
         }
       },
-    } as Partial<JsPackageManager>;
+    } as unknown as Partial<JsPackageManager>;
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
@@ -325,7 +325,7 @@ describe('Detect', () => {
             return null;
         }
       },
-    } as Partial<JsPackageManager>;
+    } as unknown as Partial<JsPackageManager>;
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
@@ -344,7 +344,7 @@ describe('Detect', () => {
             return null;
         }
       },
-    } as Partial<JsPackageManager>;
+    } as unknown as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
@@ -353,7 +353,7 @@ describe('Detect', () => {
     const packageManager = {
       getAllDependencies: () => ({}),
       getModulePackageJSON: () => null,
-    } as Partial<JsPackageManager>;
+    } as unknown as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
@@ -361,7 +361,7 @@ describe('Detect', () => {
   it(`should return language Javascript even when Typescript is detected in the node_modules but not listed as a direct dependency`, async () => {
     const packageManager = {
       getAllDependencies: () => ({}),
-      getModulePackageJSON: (packageName) => {
+      getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
             return {
@@ -371,7 +371,7 @@ describe('Detect', () => {
             return null;
         }
       },
-    } as Partial<JsPackageManager>;
+    } as unknown as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });

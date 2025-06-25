@@ -1,3 +1,32 @@
+## 9.0.13
+
+- Core: Gracefully handle disallowed cross-origin clipboard access - [#31834](https://github.com/storybookjs/storybook/pull/31834), thanks @ghengeveld!
+- Core: Support array-based catch-all Next.js route segments in AppRouterProvider - [#31524](https://github.com/storybookjs/storybook/pull/31524), thanks @yatishgoel!
+- Next.js-Vite: Support Next.js v15.4 - [#31828](https://github.com/storybookjs/storybook/pull/31828), thanks @valentinpalkovic!
+- React Native Web: Fix shift spread operator in react-native-web-vite presets - [#31804](https://github.com/storybookjs/storybook/pull/31804), thanks @xlecunff-pass!
+- Telemetry: Fix prompting without checking isTTY - [#31781](https://github.com/storybookjs/storybook/pull/31781), thanks @Synar!
+- Vite: Remove addon-themes and theming from optimized deps list - [#31833](https://github.com/storybookjs/storybook/pull/31833), thanks @ghengeveld!
+
+## 9.0.12
+
+- Addon Vitest: Support init in Vitest >= 3.2 - [#31715](https://github.com/storybookjs/storybook/pull/31715), thanks @valentinpalkovic!
+- CLI: Fix package manager instantiation in empty directories - [#31743](https://github.com/storybookjs/storybook/pull/31743), thanks @yannbf!
+- CLI: Improve support for upgrading Storybook in monorepos - [#31557](https://github.com/storybookjs/storybook/pull/31557), thanks @yannbf!
+- CLI: Show Storybook version in the upgrade command - [#31774](https://github.com/storybookjs/storybook/pull/31774), thanks @yannbf!
+- Core: Enhance package manager install methods to support optional force flag - [#31796](https://github.com/storybookjs/storybook/pull/31796), thanks @valentinpalkovic!
+
+## 9.0.11
+
+- Addons: Use chromatic-com/storybook without version specifier - [#31627](https://github.com/storybookjs/storybook/pull/31627), thanks @valentinpalkovic!
+- Angular: Tailwind 4 compatibility - [#31759](https://github.com/storybookjs/storybook/pull/31759), thanks @valentinpalkovic!
+- Angular: fix Storybook experimentalZoneless is not compatible with Angular 20 - [#31772](https://github.com/storybookjs/storybook/pull/31772), thanks @guysenpai!
+- React Native: Fix window event listeners that dont exist on rn - [#31780](https://github.com/storybookjs/storybook/pull/31780), thanks @dannyhw!
+
+## 9.0.10
+
+- CLI: Add RN/RNW "both" init option - [#31778](https://github.com/storybookjs/storybook/pull/31778), thanks @shilman!
+- Nextjs-Vite: Use tsconfig paths plugin - [#31764](https://github.com/storybookjs/storybook/pull/31764), thanks @kasperpeulen!
+
 ## 9.0.9
 
 - Angular: Update MiniCssExtractPlugin configuration for cache busting - [#31752](https://github.com/storybookjs/storybook/pull/31752), thanks @valentinpalkovic!

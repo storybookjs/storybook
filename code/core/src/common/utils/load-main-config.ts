@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 
 import {
   MainFileESMOnlyImportError,
@@ -7,6 +6,7 @@ import {
 } from 'storybook/internal/server-errors';
 import type { StorybookConfig } from 'storybook/internal/types';
 
+import { fileURLToPath, pathToFileURL } from 'mlly';
 import { resolveSync } from 'mlly';
 import { relative, resolve } from 'pathe';
 
@@ -22,7 +22,7 @@ export async function loadMainConfig({
 }): Promise<StorybookConfig> {
   await validateConfigurationFiles(configDir, cwd);
 
-  const mainUrl = resolveSync(resolve(configDir, 'main'), {
+  const mainUrl = resolveSync(pathToFileURL(resolve(configDir, 'main')), {
     extensions: ['.js', '.mjs', '.cjs', '.ts', '.mts', '.cts'],
   });
 

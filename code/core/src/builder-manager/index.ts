@@ -1,5 +1,5 @@
 import { cp, rm, writeFile } from 'node:fs/promises';
-import { dirname, join, parse } from 'node:path';
+import { join, parse } from 'node:path';
 
 import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';

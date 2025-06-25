@@ -92,15 +92,14 @@
     "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
     "@types/node": "^22.0.0",
     "@types/react": "^18.0.0",
-    "@vitest/expect@npm:3.0.9": "patch:@vitest/expect@npm%3A3.0.9#~/.yarn/patches/@vitest-expect-npm-3.0.9-e2a2210fb4.patch",
+    "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
     "esbuild": "^0.25.3",
     "playwright": "1.52.0",
     "playwright-core": "1.52.0",
     "react": "^18.2.0",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19",
-    "typescript": "^5.8.3",
-    "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "@chromatic-com/storybook": "^4.0.0",

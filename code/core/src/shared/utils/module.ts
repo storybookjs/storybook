@@ -118,6 +118,9 @@ export async function importModule(path: string) {
 
   try {
     const resolvedPath = path.startsWith('file:') ? path : pathToFileURL(path).href;
+    console.log({
+      RESOLVED_PATH: resolvedPath,
+    });
     mod = await import(resolvedPath);
   } catch (e) {
     mod = createRequire(import.meta.url)(path);

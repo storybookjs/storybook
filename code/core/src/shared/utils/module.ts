@@ -76,9 +76,21 @@ export const resolveModule = ({
   exportPath?: string;
   customSuffix?: string;
 }) => {
+  console.log('start resolveModule');
   const modulePath = join(pkg, exportPath);
+  console.log({
+    MODULE_PATH: modulePath,
+  });
 
-  const resolvedPath = fileURLToPath(import.meta.resolve(modulePath, parent));
+  const resolvedURL = import.meta.resolve(modulePath, parent);
+  console.log({
+    RESOLVED_URL: resolvedURL,
+  });
+  const resolvedPath = fileURLToPath(resolvedURL);
+  console.log({
+    RESOLVED_PATH: resolvedPath,
+  });
+  console.log('end resolveModule');
   if (customSuffix === undefined) {
     return resolvedPath;
   }
@@ -105,26 +117,30 @@ let isTypescriptLoaderRegistered = false;
  * ```
  */
 export async function importModule(path: string) {
+  console.log('start importModule');
   if (!isTypescriptLoaderRegistered) {
+    console.log('registering typescript loader');
     const typescriptLoaderPath = resolveModule({
       pkg: 'storybook',
       exportPath: 'internal/loader',
+    });
+    console.log({
+      TYPESCRIPT_LOADER_PATH: typescriptLoaderPath,
     });
     register(typescriptLoaderPath, import.meta.url);
     isTypescriptLoaderRegistered = true;
   }
 
-  let mod;
-
-  try {
-    const resolvedPath = path.startsWith('file:') ? path : pathToFileURL(path).href;
-    console.log({
-      RESOLVED_PATH: resolvedPath,
-    });
-    mod = await import(resolvedPath);
-  } catch (e) {
-    mod = createRequire(import.meta.url)(path);
-  }
-
+  // try {
+  const resolvedPath = path.startsWith('file:') ? path : pathToFileURL(path).href;
+  console.log({
+    PATH: path,
+    RESOLVED_PATH: resolvedPath,
+  });
+  const mod = await import(resolvedPath);
+  // } catch (e) {
+  //   mod = createRequire(import.meta.url)(path);
+  // }
+  console.log('end importModule');
   return mod.default ?? mod;
 }

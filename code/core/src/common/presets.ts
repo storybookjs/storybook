@@ -93,12 +93,6 @@ export const resolveAddonName = (
   const managerFile = safeResolve(join(name, 'manager'));
   const previewFile = safeResolve(join(name, 'preview'));
 
-  console.log({
-    PRESET_FILE: presetFile,
-    MANAGER_FILE: managerFile,
-    PREVIEW_FILE: previewFile,
-  });
-
   if (managerFile || previewFile || presetFile) {
     const previewAnnotations = [];
     if (previewFile) {

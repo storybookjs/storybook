@@ -1,3 +1,15 @@
+# v2.0.4 (Wed Jun 25 2025)
+
+#### 🐛 Bug Fix
+
+- Extend `vite` peerDependency range to include version `7.0.0` [#46](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/46) ([@ghengeveld](https://github.com/ghengeveld))
+
+#### Authors: 1
+
+- Gert Hengeveld ([@ghengeveld](https://github.com/ghengeveld))
+
+---
+
 # v2.0.3 (Fri Jun 20 2025)
 
 #### 🐛 Bug Fix

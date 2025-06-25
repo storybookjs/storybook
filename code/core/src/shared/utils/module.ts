@@ -1,6 +1,7 @@
 import { createRequire, register } from 'node:module';
-import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+
+import { dirname, join } from 'pathe';
 
 /**
  * Resolves a module path using import.meta.resolve and optionally appends a custom suffix.

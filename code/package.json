@@ -99,7 +99,8 @@
     "react": "^18.2.0",
     "serialize-javascript": "^3.1.0",
     "type-fest": "~2.19",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch"
   },
   "dependencies": {
     "@chromatic-com/storybook": "^4.0.0",

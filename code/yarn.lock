@@ -8608,7 +8608,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/expect@npm:3.2.4, @vitest/expect@npm:^3.2.4":
+"@vitest/expect@npm:3.2.4":
   version: 3.2.4
   resolution: "@vitest/expect@npm:3.2.4"
   dependencies:
@@ -8618,6 +8618,19 @@ __metadata:
     chai: "npm:^5.2.0"
     tinyrainbow: "npm:^2.0.0"
   checksum: 10c0/7586104e3fd31dbe1e6ecaafb9a70131e4197dce2940f727b6a84131eee3decac7b10f9c7c72fa5edbdb68b6f854353bd4c0fa84779e274207fb7379563b10db
+  languageName: node
+  linkType: hard
+
+"@vitest/expect@patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch":
+  version: 3.2.4
+  resolution: "@vitest/expect@patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch::version=3.2.4&hash=6385de"
+  dependencies:
+    "@types/chai": "npm:^5.2.2"
+    "@vitest/spy": "npm:3.2.4"
+    "@vitest/utils": "npm:3.2.4"
+    chai: "npm:^5.2.0"
+    tinyrainbow: "npm:^2.0.0"
+  checksum: 10c0/7fdab5931a71a558840c91ec34cfe16b9cd9f32620c9501d80d0e55ed534f13d3b221bff1d5c5ba8ecde26fb908653f6f6bbcf53225833c7750600a74de0fc02
   languageName: node
   linkType: hard
 
@@ -8671,7 +8684,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/spy@npm:3.2.4, @vitest/spy@npm:^3.2.4":
+"@vitest/spy@npm:3.2.4":
   version: 3.2.4
   resolution: "@vitest/spy@npm:3.2.4"
   dependencies:
@@ -24733,8 +24746,8 @@ __metadata:
     "@types/react-transition-group": "npm:^4"
     "@types/semver": "npm:^7.5.8"
     "@types/ws": "npm:^8"
-    "@vitest/expect": "npm:^3.2.4"
-    "@vitest/spy": "npm:^3.2.4"
+    "@vitest/expect": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch"
+    "@vitest/spy": "npm:3.2.4"
     "@vitest/utils": "npm:^3.2.4"
     "@yarnpkg/esbuild-plugin-pnp": "npm:^3.0.0-rc.10"
     "@yarnpkg/fslib": "npm:2.10.3"

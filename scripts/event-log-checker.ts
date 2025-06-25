@@ -71,7 +71,9 @@ async function run() {
       });
     }
 
-    if (events.length === 0) throw new Error('No events were logged');
+    if (events.length === 0) {
+      throw new Error('No events were logged');
+    }
     const [bootEvent, mainEvent] = definition.noBoot ? [null, events[0]] : events;
 
     const storybookVersion = versions.storybook;

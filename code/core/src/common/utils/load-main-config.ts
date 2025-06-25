@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import {
@@ -9,7 +10,6 @@ import type { StorybookConfig } from 'storybook/internal/types';
 
 import { fileURLToPath } from 'mlly';
 import { resolveSync } from 'mlly';
-import { relative, resolve } from 'pathe';
 
 import { importModule } from '../../shared/utils/module';
 import { validateConfigurationFiles } from './validate-configuration-files';
@@ -23,9 +23,17 @@ export async function loadMainConfig({
 }): Promise<StorybookConfig> {
   await validateConfigurationFiles(configDir, cwd);
 
+  console.log({
+    RESOLVED: resolve(configDir, 'main'),
+    PATH: pathToFileURL(resolve(configDir, 'main')).href,
+  });
   // pathToFileURL is a workaround for https://github.com/unjs/mlly/issues/297
   const mainUrl = resolveSync(pathToFileURL(resolve(configDir, 'main')).href, {
     extensions: ['.js', '.mjs', '.cjs', '.ts', '.mts', '.cts'],
+  });
+
+  console.log({
+    MAIN_URL: mainUrl,
   });
 
   try {

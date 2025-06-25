@@ -4,11 +4,11 @@ import React, { useCallback, useMemo } from 'react';
 import { Badge } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
-import { CheckIcon, InfoIcon, ShareAltIcon, WandIcon } from '@storybook/icons';
+import { CheckIcon, CommandIcon, InfoIcon, ShareAltIcon, WandIcon } from '@storybook/icons';
 
 import type { API, State } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import type { Link } from '../../components/components/tooltip/TooltipLinkList';
 
@@ -32,25 +32,20 @@ const Key = styled.span(({ theme }) => ({
   padding: '0 6px',
 }));
 
-const KeyChild = styled.code(
-  ({ theme }) => `
-  padding: 0;
-  vertical-align: middle;
-
-  & + & {
-    margin-left: 6px;
-  }
-`
-);
+const KeyChild = styled.code({
+  padding: 0,
+  verticalAlign: 'middle',
+  '& + &': {
+    marginLeft: 6,
+  },
+});
 
 export const Shortcut: FC<{ keys: string[] }> = ({ keys }) => (
-  <>
-    <Key>
-      {keys.map((key, index) => (
-        <KeyChild key={key}>{shortcutToHumanString([key])}</KeyChild>
-      ))}
-    </Key>
-  </>
+  <Key>
+    {keys.map((key) => (
+      <KeyChild key={key}>{shortcutToHumanString([key])}</KeyChild>
+    ))}
+  </Key>
 );
 
 export const useMenu = (
@@ -88,6 +83,7 @@ export const useMenu = (
   const whatsNewNotificationsEnabled =
     state.whatsNewData?.status === 'SUCCESS' && !state.disableWhatsNewNotifications;
   const isWhatsNewUnread = api.isWhatsNewUnread();
+
   const whatsNew = useMemo(
     () => ({
       id: 'whats-new',
@@ -107,6 +103,7 @@ export const useMenu = (
       title: 'Keyboard shortcuts',
       onClick: () => api.changeSettingsTab('shortcuts'),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.shortcutsPage} /> : null,
+      icon: <CommandIcon />,
     }),
     [api, enableShortcuts, shortcutKeys.shortcutsPage]
   );
@@ -138,7 +135,7 @@ export const useMenu = (
   const addonsToggle = useMemo(
     () => ({
       id: 'A',
-      title: 'Show addons',
+      title: 'Show addons panel',
       onClick: () => api.togglePanel(),
       active: isPanelShown,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.togglePanel} /> : null,
@@ -249,7 +246,7 @@ export const useMenu = (
           about,
           ...(state.whatsNewData?.status === 'SUCCESS' ? [whatsNew] : []),
           documentation,
-          shortcuts,
+          ...(enableShortcuts ? [shortcuts] : []),
         ],
         [
           sidebarToggle,
@@ -284,6 +281,7 @@ export const useMenu = (
       next,
       collapse,
       getAddonsShortcuts,
+      enableShortcuts,
     ]
   );
 };

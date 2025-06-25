@@ -319,7 +319,7 @@
       ]
     }
   },
-  "bin": "./bin/index.js",
+  "bin": "./bin/index.cjs",
   "files": [
     "bin/**/*",
     "dist/**/*",

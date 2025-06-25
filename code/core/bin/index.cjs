@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
+/**
+ * This file needs to remain a CommonJS module, with a `.cjs` extension.
+ *
+ * This is of a bug in `yarn` that causes it to not add this this to the user's `node_modules/.bin`
+ * directory.
+ */
+
 const majorNodeVersion = parseInt(process.versions.node, 10);
 if (majorNodeVersion < 20) {
   console.error('To run Storybook you need to have Node.js 20 or higher');

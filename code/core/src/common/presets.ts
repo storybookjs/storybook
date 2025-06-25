@@ -12,11 +12,12 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { parseNodeModulePath, resolvePathSync, resolveSync } from 'mlly';
+import { parseNodeModulePath, resolvePathSync } from 'mlly';
 import { join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { importModule } from '../shared/utils/module';
+import { getInterpretedFile } from './utils/interpret-files';
 import { validateConfigurationFiles } from './utils/validate-configuration-files';
 
 type InterPresetOptions = Omit<
@@ -91,6 +92,12 @@ export const resolveAddonName = (
   const presetFile = safeResolve(join(name, 'preset'));
   const managerFile = safeResolve(join(name, 'manager'));
   const previewFile = safeResolve(join(name, 'preview'));
+
+  console.log({
+    PRESET_FILE: presetFile,
+    MANAGER_FILE: managerFile,
+    PREVIEW_FILE: previewFile,
+  });
 
   if (managerFile || previewFile || presetFile) {
     const previewAnnotations = [];
@@ -350,9 +357,7 @@ export async function loadAllPresets(
   const { corePresets = [], overridePresets = [], ...restOptions } = options;
   validateConfigurationFiles(options.configDir);
 
-  const mainUrl = resolveSync(resolve(options.configDir, 'main'), {
-    extensions: ['.js', '.mjs', '.cjs', '.ts', '.mts', '.cts'],
-  });
+  const mainUrl = getInterpretedFile(resolve(options.configDir, 'main')) as string;
   const presetsConfig: PresetConfig[] = [...corePresets, mainUrl, ...overridePresets];
 
   // Remove `@storybook/preset-typescript` and add a warning if in use.

@@ -1,4 +1,5 @@
 import { createRequire, register } from 'node:module';
+import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { dirname, join } from 'pathe';
@@ -128,13 +129,18 @@ export async function importModule(path: string) {
       TYPESCRIPT_LOADER_PATH: typescriptLoaderPath,
       TYPESCRIPT_LOADER_URL: pathToFileURL(typescriptLoaderPath).href,
     });
-    register(pathToFileURL(typescriptLoaderPath).href, import.meta.url);
+    register(
+      win32.isAbsolute(typescriptLoaderPath)
+        ? pathToFileURL(typescriptLoaderPath).href
+        : typescriptLoaderPath,
+      import.meta.url
+    );
     isTypescriptLoaderRegistered = true;
   }
 
   let mod;
   try {
-    const resolvedPath = path.startsWith('file:') ? path : pathToFileURL(path).href;
+    const resolvedPath = win32.isAbsolute(path) ? pathToFileURL(path).href : path;
     console.log({
       PATH: path,
       RESOLVED_PATH: resolvedPath,

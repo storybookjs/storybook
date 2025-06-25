@@ -24746,7 +24746,7 @@ __metadata:
     "@types/react-transition-group": "npm:^4"
     "@types/semver": "npm:^7.5.8"
     "@types/ws": "npm:^8"
-    "@vitest/expect": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch"
+    "@vitest/expect": "npm:3.2.4"
     "@vitest/spy": "npm:3.2.4"
     "@vitest/utils": "npm:^3.2.4"
     "@yarnpkg/esbuild-plugin-pnp": "npm:^3.0.0-rc.10"

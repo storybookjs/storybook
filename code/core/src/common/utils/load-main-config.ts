@@ -1,10 +1,6 @@
-import { readFile } from 'node:fs/promises';
 import { relative, resolve } from 'node:path';
 
-import {
-  MainFileESMOnlyImportError,
-  MainFileEvaluationError,
-} from 'storybook/internal/server-errors';
+import { MainFileEvaluationError } from 'storybook/internal/server-errors';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { importModule } from '../../shared/utils/module';
@@ -36,29 +32,6 @@ export async function loadMainConfig({
   } catch (e) {
     if (!(e instanceof Error)) {
       throw e;
-    }
-    if (e.message.match(/Cannot use import statement outside a module/)) {
-      const location = relative(process.cwd(), mainPath);
-      const numFromStack = e.stack?.match(new RegExp(`${location}:(\\d+):(\\d+)`))?.[1];
-      let num;
-      let line;
-
-      if (numFromStack) {
-        const contents = await readFile(mainPath, 'utf-8');
-        const lines = contents.split('\n');
-        num = parseInt(numFromStack, 10) - 1;
-        line = lines[num];
-      }
-
-      const out = new MainFileESMOnlyImportError({
-        line,
-        location,
-        num,
-      });
-
-      delete out.stack;
-
-      throw out;
     }
 
     throw new MainFileEvaluationError({

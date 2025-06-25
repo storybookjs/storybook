@@ -19,7 +19,7 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 
 import { type Call, CallStates, type ControlStates } from '../../instrumenter/types';
 import type { Controls } from './InteractionsPanel';
@@ -33,13 +33,13 @@ const SubnavWrapper = styled.div(({ theme }) => ({
   zIndex: 1,
 }));
 
-const StyledSubnav = styled.nav(({ theme }) => ({
+const StyledSubnav = styled.nav({
   height: 40,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   paddingLeft: 15,
-}));
+});
 
 interface SubnavProps {
   controls: Controls;
@@ -121,10 +121,11 @@ export const Subnav: React.FC<SubnavProps> = ({
   onScrollToEnd,
 }) => {
   const buttonText = status === CallStates.ERROR ? 'Scroll to error' : 'Scroll to end';
+  const theme = useTheme();
 
   return (
     <SubnavWrapper>
-      <Bar>
+      <Bar backgroundColor={theme.background.app}>
         <StyledSubnav aria-label="Component tests toolbar">
           <Group>
             <StatusBadge status={status} />

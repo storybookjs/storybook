@@ -12,7 +12,7 @@ async function generateTypesMapperContent(filePath: string) {
   const downwards = relative(cwd, filePath);
 
   return dedent`
-    // auto generated file from ${__filename}, do not edit
+    // auto generated file from ${import.meta.url}, do not edit
     export * from '${join(upwards, downwards).replaceAll(sep, '/')}';
     export type * from '${join(upwards, downwards).replaceAll(sep, '/')}';
   `;

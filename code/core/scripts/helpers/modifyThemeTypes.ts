@@ -10,7 +10,7 @@ export async function modifyThemeTypes() {
    * pre-bundle emotion in. The little hack work to ensure the `Theme` export is overloaded with our
    * `StorybookTheme` interface. (in both development and production builds)
    */
-  const target = join(__dirname, '..', '..', 'dist', 'theming', 'index.d.ts');
+  const target = join(import.meta.dirname, '..', '..', 'dist', 'theming', 'index.d.ts');
   const contents = await readFile(target, 'utf-8');
 
   const footer = contents.includes('// auto generated file')

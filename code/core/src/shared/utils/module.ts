@@ -126,21 +126,23 @@ export async function importModule(path: string) {
     });
     console.log({
       TYPESCRIPT_LOADER_PATH: typescriptLoaderPath,
+      TYPESCRIPT_LOADER_URL: pathToFileURL(typescriptLoaderPath).href,
     });
-    register(typescriptLoaderPath, import.meta.url);
+    register(pathToFileURL(typescriptLoaderPath).href, import.meta.url);
     isTypescriptLoaderRegistered = true;
   }
 
-  // try {
-  const resolvedPath = path.startsWith('file:') ? path : pathToFileURL(path).href;
-  console.log({
-    PATH: path,
-    RESOLVED_PATH: resolvedPath,
-  });
-  const mod = await import(resolvedPath);
-  // } catch (e) {
-  //   mod = createRequire(import.meta.url)(path);
-  // }
+  let mod;
+  try {
+    const resolvedPath = path.startsWith('file:') ? path : pathToFileURL(path).href;
+    console.log({
+      PATH: path,
+      RESOLVED_PATH: resolvedPath,
+    });
+    mod = await import(resolvedPath);
+  } catch (e) {
+    mod = createRequire(import.meta.url)(path);
+  }
   console.log('end importModule');
   return mod.default ?? mod;
 }

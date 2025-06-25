@@ -45,22 +45,20 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
       return;
     }
     const { inputRefKey, inputRefValue } = this.state;
-    const { addButtonElement } = this.props;
+    const { addButtonElement, handleCancel } = this.props;
     const isFormFocused = [inputRefKey, inputRefValue, addButtonElement].some(
       (elm) => elm === event.target
     );
-    if ((event.code === 'Enter' || event.key === 'Enter') && isFormFocused) {
-      event.preventDefault();
-
-      this.onSubmit();
-
+    if (!isFormFocused) {
       return;
     }
-
+    if (event.code === 'Enter' || event.key === 'Enter') {
+      event.preventDefault();
+      this.onSubmit();
+    }
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
-
-      this.props.handleCancel();
+      handleCancel();
     }
   }
 
@@ -549,21 +547,23 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
-      return;
-    }
     const { inputRef } = this.state;
-    if ((event.code === 'Enter' || event.key === 'Enter') && inputRef === event.target) {
-      event.preventDefault();
-
-      this.handleEdit();
-
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      inputRef !== event.target
+    ) {
       return;
     }
-
+    if (event.code === 'Enter' || event.key === 'Enter') {
+      event.preventDefault();
+      this.handleEdit();
+    }
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
-
       this.handleCancelEdit();
     }
   }
@@ -1437,19 +1437,23 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+    const { inputRef } = this.state;
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      inputRef !== event.target
+    ) {
       return;
     }
-    const { inputRef } = this.state;
-    if ((event.code === 'Enter' || event.key === 'Enter') && inputRef === event.target) {
+    if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
-
       this.handleEdit();
     }
-
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
-
       this.handleCancelEdit();
     }
   }

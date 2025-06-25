@@ -13,6 +13,7 @@ function getCandidate(paths: string[]) {
   return undefined;
 }
 
+// TODO: remove this when it is no longer used by @storybook/core-webpack
 export function serverRequire(filePath: string | string[]) {
   const candidatePath = serverResolve(filePath);
 
@@ -23,6 +24,7 @@ export function serverRequire(filePath: string | string[]) {
   return importModule(candidatePath);
 }
 
+// TODO: remove this when it is no longer used by @storybook/addon-vitest
 export function serverResolve(filePath: string | string[]): string | null {
   const paths = Array.isArray(filePath) ? filePath : [filePath];
   const existingCandidate = getCandidate(paths);

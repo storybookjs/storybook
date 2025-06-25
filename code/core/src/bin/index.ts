@@ -35,9 +35,10 @@ async function main() {
         ...targetCli.args,
       ];
     }
-  } finally {
-    command ??= ['npx', '--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args];
+  } catch (e) {
+    // the package couldn't be imported, use npx to install and run it instead
   }
+  command ??= ['npx', '--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args];
 
   const child = spawn(command[0], command.slice(1), { stdio: 'inherit', shell: true });
   child.on('exit', (code) => {

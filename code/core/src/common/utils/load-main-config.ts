@@ -17,13 +17,6 @@ export async function loadMainConfig({
   await validateConfigurationFiles(configDir, cwd);
 
   const mainPath = getInterpretedFile(resolve(configDir, 'main')) as string;
-  console.log({
-    RESOLVED: resolve(configDir, 'main'),
-  });
-
-  console.log({
-    MAIN_PATH: mainPath,
-  });
 
   try {
     const out = await importModule(mainPath);

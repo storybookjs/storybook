@@ -24602,7 +24602,7 @@ __metadata:
     prettier:
       optional: true
   bin:
-    storybook: ./bin/index.js
+    storybook: ./bin/index.cjs
   languageName: unknown
   linkType: soft
 

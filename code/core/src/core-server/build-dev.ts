@@ -4,12 +4,12 @@ import { join, relative, resolve } from 'node:path';
 import {
   JsPackageManagerFactory,
   getConfigInfo,
+  getInterpretedFile,
   getProjectRoot,
   loadAllPresets,
   loadMainConfig,
   resolveAddonName,
   resolvePathInStorybookCache,
-  serverResolve,
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
@@ -167,7 +167,9 @@ export async function buildDevStandalone(
       dedent(`Using CommonJS in your main configuration file is deprecated with Vite.
               - Refer to the migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#commonjs-with-vite-is-deprecated`);
 
-    const mainJsPath = serverResolve(resolve(options.configDir || '.storybook', 'main')) as string;
+    const mainJsPath = getInterpretedFile(
+      resolve(options.configDir || '.storybook', 'main')
+    ) as string;
     if (/\.c[jt]s$/.test(mainJsPath)) {
       deprecate(deprecationMessage);
     }

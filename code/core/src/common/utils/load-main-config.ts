@@ -4,7 +4,7 @@ import { MainFileEvaluationError } from 'storybook/internal/server-errors';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { importModule } from '../../shared/utils/module';
-import { serverResolve } from './interpret-require';
+import { getInterpretedFile } from './interpret-files';
 import { validateConfigurationFiles } from './validate-configuration-files';
 
 export async function loadMainConfig({
@@ -16,15 +16,7 @@ export async function loadMainConfig({
 }): Promise<StorybookConfig> {
   await validateConfigurationFiles(configDir, cwd);
 
-  // pathToFileURL is a workaround for https://github.com/unjs/mlly/issues/297
-  const mainPath = serverResolve(resolve(configDir, 'main')) as string;
-  console.log({
-    RESOLVED: resolve(configDir, 'main'),
-  });
-
-  console.log({
-    MAIN_PATH: mainPath,
-  });
+  const mainPath = getInterpretedFile(resolve(configDir, 'main')) as string;
 
   try {
     const out = await importModule(mainPath);

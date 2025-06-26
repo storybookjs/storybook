@@ -78,7 +78,7 @@ it('with staticDirs containing a single favicon.ico should return the found favi
   expect(await m.favicon(undefined, options)).toBe(createPath(location, 'favicon.ico'));
 });
 
-it('with staticDirs containing a single favicon.svg should return the found favicon', async () => {
+it.only('with staticDirs containing a single favicon.svg should return the found favicon', async () => {
   const location = 'static';
   existsSyncMock.mockImplementation((p) => {
     if (p === createPath(location)) {

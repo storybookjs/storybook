@@ -15,7 +15,7 @@ import { dedent } from 'ts-dedent';
 
 import {
   getAbsolutePathWrapperName,
-  wrapValueWithRequireWrapper,
+  wrapValueWithGetAbsolutePathWrapper,
 } from './automigrate/fixes/wrap-getAbsolutePath-utils';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { postinstallAddon } from './postinstallAddon';
@@ -179,7 +179,7 @@ export async function add(
     if (mainConfigAddons && getAbsolutePathWrapperName(main) !== null) {
       const addonNode = main.valueToNode(addonName);
       main.appendNodeToArray(['addons'], addonNode as any);
-      wrapValueWithRequireWrapper(main, addonNode as any);
+      wrapValueWithGetAbsolutePathWrapper(main, addonNode as any);
     } else {
       main.appendValueToArray(['addons'], addonName);
     }

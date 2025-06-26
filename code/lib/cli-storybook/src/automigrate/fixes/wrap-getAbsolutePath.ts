@@ -11,7 +11,7 @@ import {
   getAbsolutePathWrapperName,
   getFieldsForgetAbsolutePathWrapper,
   isGetAbsolutePathWrapperNecessary,
-  wrapValueWithRequireWrapper,
+  wrapValueWithGetAbsolutePathWrapper,
 } from './wrap-getAbsolutePath-utils';
 
 export interface WrapGetAbsolutePathRunOptions {
@@ -59,7 +59,7 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
   async run({ dryRun, mainConfigPath, result }) {
     await updateMainConfig({ dryRun: !!dryRun, mainConfigPath }, (mainConfig) => {
       getFieldsForgetAbsolutePathWrapper(mainConfig).forEach((node) => {
-        wrapValueWithRequireWrapper(mainConfig, node);
+        wrapValueWithGetAbsolutePathWrapper(mainConfig, node);
       });
 
       if (getAbsolutePathWrapperName(mainConfig) === null) {

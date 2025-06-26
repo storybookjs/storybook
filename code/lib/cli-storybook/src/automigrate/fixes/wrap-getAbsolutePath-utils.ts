@@ -1,7 +1,7 @@
 import { types as t } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 
-const defaultRequireWrapperName = 'getAbsolutePath';
+const defaultGetAbsolutePathWrapperName = 'getAbsolutePath';
 
 /**
  * Checks if the following node declarations exists in the main config file.
@@ -25,25 +25,25 @@ export function doesVariableOrFunctionDeclarationExist(node: t.Node, name: strin
 }
 
 /**
- * Wrap a value with require wrapper.
+ * Wrap a value with getAbsolutePath wrapper.
  *
  * @example
  *
  * ```ts
  * // Before
  * {
- *   framework: 'react';
+ *   framework: '@storybook/react-vite';
  * }
  *
  * // After
  * {
- *   framework: wrapForPnp('react');
+ *   framework: getAbsolutePath('@storybook/react-vite');
  * }
  * ```
  */
-function getReferenceToRequireWrapper(config: ConfigFile, value: string) {
+function getReferenceToGetAbsolutePathWrapper(config: ConfigFile, value: string) {
   return t.callExpression(
-    t.identifier(getAbsolutePathWrapperName(config) ?? defaultRequireWrapperName),
+    t.identifier(getAbsolutePathWrapperName(config) ?? defaultGetAbsolutePathWrapperName),
     [t.stringLiteral(value)]
   );
 }
@@ -51,7 +51,7 @@ function getReferenceToRequireWrapper(config: ConfigFile, value: string) {
 /**
  * Returns the name of the getAbsolutePath wrapper function if it exists in the main config file.
  *
- * @returns Name of the getAbsolutePath wrapper function.
+ * @returns Name of the getAbsolutePath wrapper function (e.g. `getAbsolutePath`).
  */
 export function getAbsolutePathWrapperName(config: ConfigFile) {
   const declarationName = config
@@ -59,8 +59,8 @@ export function getAbsolutePathWrapperName(config: ConfigFile) {
     .flatMap((node) =>
       doesVariableOrFunctionDeclarationExist(node, 'wrapForPnp')
         ? ['wrapForPnp']
-        : doesVariableOrFunctionDeclarationExist(node, defaultRequireWrapperName)
-          ? [defaultRequireWrapperName]
+        : doesVariableOrFunctionDeclarationExist(node, defaultGetAbsolutePathWrapperName)
+          ? [defaultGetAbsolutePathWrapperName]
           : []
     );
 
@@ -71,7 +71,7 @@ export function getAbsolutePathWrapperName(config: ConfigFile) {
   return null;
 }
 
-/** Check if the node needs to be wrapped with require wrapper. */
+/** Check if the node needs to be wrapped with getAbsolutePath wrapper. */
 export function isGetAbsolutePathWrapperNecessary(
   node: t.Node,
   cb: (node: t.StringLiteral | t.ObjectProperty | t.ArrayExpression) => void = () => {}
@@ -106,9 +106,9 @@ export function isGetAbsolutePathWrapperNecessary(
 }
 
 /**
- * Get all fields that need to be wrapped with require wrapper.
+ * Get all fields that need to be wrapped with getAbsolutePath wrapper.
  *
- * @returns Array of fields that need to be wrapped with require wrapper.
+ * @returns Array of fields that need to be wrapped with getAbsolutePath wrapper.
  */
 export function getFieldsForgetAbsolutePathWrapper(config: ConfigFile): t.Node[] {
   const frameworkNode = config.getFieldNode(['framework']);
@@ -142,7 +142,7 @@ export function getAbsolutePathWrapperAsCallExpression(
 ): t.FunctionDeclaration {
   const functionDeclaration = {
     ...t.functionDeclaration(
-      t.identifier(defaultRequireWrapperName),
+      t.identifier(defaultGetAbsolutePathWrapperName),
       [
         {
           ...t.identifier('value'),
@@ -184,10 +184,10 @@ export function getAbsolutePathWrapperAsCallExpression(
   return functionDeclaration;
 }
 
-export function wrapValueWithRequireWrapper(config: ConfigFile, node: t.Node) {
+export function wrapValueWithGetAbsolutePathWrapper(config: ConfigFile, node: t.Node) {
   isGetAbsolutePathWrapperNecessary(node, (n) => {
     if (t.isStringLiteral(n)) {
-      const wrapperNode = getReferenceToRequireWrapper(config, n.value);
+      const wrapperNode = getReferenceToGetAbsolutePathWrapper(config, n.value);
       Object.keys(n).forEach((k) => {
         delete n[k as keyof typeof n];
       });
@@ -197,13 +197,13 @@ export function wrapValueWithRequireWrapper(config: ConfigFile, node: t.Node) {
     }
 
     if (t.isObjectProperty(n) && t.isStringLiteral(n.value)) {
-      n.value = getReferenceToRequireWrapper(config, n.value.value) as any;
+      n.value = getReferenceToGetAbsolutePathWrapper(config, n.value.value) as any;
     }
 
     if (t.isArrayExpression(n)) {
       n.elements.forEach((element) => {
         if (element && isGetAbsolutePathWrapperNecessary(element)) {
-          wrapValueWithRequireWrapper(config, element);
+          wrapValueWithGetAbsolutePathWrapper(config, element);
         }
       });
     }

@@ -1,5 +1,6 @@
 import { detectPnp } from 'storybook/internal/cli';
 import { readConfig } from 'storybook/internal/csf-tools';
+import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
 
@@ -69,12 +70,7 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
           mainConfig?.fileName?.endsWith('.ctsx') ||
           mainConfig._code.includes('module.exports')
         ) {
-          throw new Error(
-            dedent(`
-              Support for a CommonJS Storybook config file, has been removed in Storybook 10.0.0.
-              Please migrate your config to a valid ESM file.
-            `)
-          );
+          throw new CommonJsConfigNotSupportedError();
         } else {
           mainConfig.setImport(['dirname', 'join'], 'node:path');
           mainConfig.setImport(['fileURLToPath'], 'node:url');

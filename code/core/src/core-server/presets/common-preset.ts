@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -22,7 +23,7 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
-import { dirname, isAbsolute, join } from 'pathe';
+import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { resolveModule } from '../../shared/utils/module';
@@ -331,8 +332,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(resolveModule({ pkg: 'react' })),
-      reactDom: dirname(resolveModule({ pkg: 'react-dom' })),
+      react: pathe.dirname(resolveModule({ pkg: 'react' })),
+      reactDom: pathe.dirname(resolveModule({ pkg: 'react-dom' })),
     };
   } catch (e) {
     return existing;

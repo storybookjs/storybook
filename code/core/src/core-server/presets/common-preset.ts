@@ -46,26 +46,18 @@ export const favicon = async (
   value: string | undefined,
   options: Pick<Options, 'presets' | 'configDir'>
 ) => {
-  console.log('[favicon] Starting favicon resolution', { value, configDir: options.configDir });
-
   if (value) {
-    console.log('[favicon] Using provided favicon value', { value });
     return value;
   }
 
-  console.log('[favicon] No favicon value provided, checking staticDirs');
   const staticDirsValue = await options.presets.apply('staticDirs');
-  console.log('[favicon] Retrieved staticDirs value', { staticDirsValue });
 
   const statics = staticDirsValue
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
     : [];
-  console.log('[favicon] Processed statics array', { statics });
 
   if (statics.length > 0) {
-    console.log('[favicon] Found static directories, searching for favicons');
-    const lists = statics.map((dir, index) => {
-      console.log(`[favicon] Processing static dir ${index}`, { dir });
+    const lists = statics.map((dir) => {
       const results = [];
       const normalizedDir =
         staticDirsValue && !isAbsolute(dir)
@@ -75,73 +67,39 @@ export const favicon = async (
               directory: dir,
             })
           : dir;
-      console.log(`[favicon] Normalized directory for index ${index}`, {
-        original: dir,
-        normalized: normalizedDir,
-        isAbsolute: isAbsolute(dir),
-      });
 
       const { staticPath, targetEndpoint } = parseStaticDir(normalizedDir);
-      console.log(`[favicon] Parsed static dir for index ${index}`, {
-        staticPath,
-        targetEndpoint,
-      });
 
       if (targetEndpoint === '/') {
         const url = 'favicon.svg';
         const path = join(staticPath, url);
-        console.log(`[favicon] Checking for favicon.svg at index ${index}`, { path });
         if (existsSync(path)) {
-          console.log(`[favicon] Found favicon.svg at index ${index}`, { path });
           results.push(path);
         } else {
-          console.log(`[favicon] favicon.svg not found at index ${index}`, { path });
         }
       }
       if (targetEndpoint === '/') {
         const url = 'favicon.ico';
         const path = join(staticPath, url);
-        console.log(`[favicon] Checking for favicon.ico at index ${index}`, { path });
         if (existsSync(path)) {
-          console.log(`[favicon] Found favicon.ico at index ${index}`, { path });
           results.push(path);
-        } else {
-          console.log(`[favicon] favicon.ico not found at index ${index}`, { path });
         }
       }
-
-      console.log(`[favicon] Results for static dir ${index}`, { results });
       return results;
     });
 
-    console.log('[favicon] All static dirs processed', { lists });
     const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
-    console.log('[favicon] Flattened results', { flatlist });
 
     if (flatlist.length > 1) {
-      console.log('[favicon] Multiple favicons detected, will warn and use first', {
-        count: flatlist.length,
-        favicons: flatlist,
-      });
       logger.warn(dedent`
         Looks like multiple favicons were detected. Using the first one.
 
         ${flatlist.join(', ')}
         `);
-    } else if (flatlist.length === 1) {
-      console.log('[favicon] Single favicon found', { favicon: flatlist[0] });
-    } else {
-      console.log('[favicon] No favicons found in static dirs, will use default');
     }
-
-    const result = flatlist[0] || defaultFavicon;
-    console.log('[favicon] Final favicon result', { result, isDefault: !flatlist[0] });
-    return result;
+    return flatlist[0] || defaultFavicon;
   }
 
-  console.log('[favicon] No static directories found, using default favicon', {
-    defaultFavicon,
-  });
   return defaultFavicon;
 };
 

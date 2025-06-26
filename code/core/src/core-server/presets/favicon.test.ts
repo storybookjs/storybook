@@ -1,9 +1,10 @@
 import * as fs from 'node:fs';
-import { dirname, join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
+
+import { dirname, join } from 'pathe';
 
 import * as m from './common-preset';
 
@@ -51,6 +52,7 @@ vi.mock('storybook/internal/node-logger', () => {
 vi.mock('node:fs', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:fs')>()),
   existsSync: vi.fn((p: string) => {
+    console.log('[existsSync] Mocked existsSync', { p });
     return false;
   }),
 }));
@@ -81,6 +83,11 @@ it('with staticDirs containing a single favicon.ico should return the found favi
 it.only('with staticDirs containing a single favicon.svg should return the found favicon', async () => {
   const location = 'static';
   existsSyncMock.mockImplementation((p) => {
+    console.log('[existsSync] Mocked existsSync mockImplementation', { p });
+    console.log('[existsSync] createPath(location)', { createPath: createPath(location) });
+    console.log('[existsSync] createPath(location, "favicon.svg")', {
+      createPath: createPath(location, 'favicon.svg'),
+    });
     if (p === createPath(location)) {
       return true;
     }

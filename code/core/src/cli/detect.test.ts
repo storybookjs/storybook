@@ -242,7 +242,7 @@ describe('Detect', () => {
       },
       getAllDependencies: () => ({}),
       getModulePackageJSON: () => Promise.resolve(null),
-    } as unknown as Partial<JsPackageManager>;
+    } as Partial<JsPackageManager>;
 
     await expect(detect(packageManager as any, { html: true })).resolves.toBe(ProjectType.HTML);
   });
@@ -257,14 +257,14 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '1.0.0',
-            };
+            });
           default:
             return null;
         }
       },
-    } as unknown as Partial<JsPackageManager>;
+    } as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
     expect(logger.warn).toHaveBeenCalledWith(
@@ -280,14 +280,14 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.8.0',
-            };
+            });
           default:
             return null;
         }
       },
-    } as unknown as Partial<JsPackageManager>;
+    } as Partial<JsPackageManager>;
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
@@ -299,14 +299,14 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.9.1',
-            };
+            });
           default:
             return null;
         }
       },
-    } as unknown as Partial<JsPackageManager>;
+    } as Partial<JsPackageManager>;
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
@@ -318,14 +318,14 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.9.0',
-            };
+            });
           default:
             return null;
         }
       },
-    } as unknown as Partial<JsPackageManager>;
+    } as Partial<JsPackageManager>;
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
@@ -337,14 +337,14 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.9.0-beta',
-            };
+            });
           default:
             return null;
         }
       },
-    } as unknown as Partial<JsPackageManager>;
+    } as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
@@ -352,8 +352,8 @@ describe('Detect', () => {
   it(`should return language javascript by default`, async () => {
     const packageManager = {
       getAllDependencies: () => ({}),
-      getModulePackageJSON: () => null,
-    } as unknown as Partial<JsPackageManager>;
+      getModulePackageJSON: () => Promise.resolve(null),
+    } as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
@@ -364,14 +364,14 @@ describe('Detect', () => {
       getModulePackageJSON: (packageName: string) => {
         switch (packageName) {
           case 'typescript':
-            return {
+            return Promise.resolve({
               version: '4.9.0',
-            };
+            });
           default:
             return null;
         }
       },
-    } as unknown as Partial<JsPackageManager>;
+    } as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });

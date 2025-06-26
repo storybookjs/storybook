@@ -1,9 +1,9 @@
 import { importModule } from '../../shared/utils/module';
-import { getInterpretedFileWithExt } from './interpret-files';
+import { getInterpretedFile } from './interpret-files';
 
 function getCandidate(paths: string[]) {
   for (let i = 0; i < paths.length; i += 1) {
-    const candidate = getInterpretedFileWithExt(paths[i]);
+    const candidate = getInterpretedFile(paths[i]);
 
     if (candidate) {
       return candidate;
@@ -13,23 +13,14 @@ function getCandidate(paths: string[]) {
   return undefined;
 }
 
+// TODO: remove this when it is no longer used by @storybook/core-webpack
 export function serverRequire(filePath: string | string[]) {
-  const candidatePath = serverResolve(filePath);
+  const paths = Array.isArray(filePath) ? filePath : [filePath];
+  const candidatePath = getCandidate(paths);
 
   if (!candidatePath) {
     return null;
   }
 
   return importModule(candidatePath);
-}
-
-export function serverResolve(filePath: string | string[]): string | null {
-  const paths = Array.isArray(filePath) ? filePath : [filePath];
-  const existingCandidate = getCandidate(paths);
-
-  if (!existingCandidate) {
-    return null;
-  }
-
-  return existingCandidate.path;
 }

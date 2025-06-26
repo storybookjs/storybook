@@ -13,11 +13,12 @@ import type {
 } from 'storybook/internal/types';
 
 import { parseNodeModulePath, resolvePathSync } from 'mlly';
-import { join, parse } from 'pathe';
+import { join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { importModule } from '../shared/utils/module';
-import { loadCustomPresets } from './utils/load-custom-presets';
+import { getInterpretedFile } from './utils/interpret-files';
+import { validateConfigurationFiles } from './utils/validate-configuration-files';
 
 type InterPresetOptions = Omit<
   CLIOptions &
@@ -348,12 +349,10 @@ export async function loadAllPresets(
     }
 ) {
   const { corePresets = [], overridePresets = [], ...restOptions } = options;
+  validateConfigurationFiles(options.configDir);
 
-  const presetsConfig: PresetConfig[] = [
-    ...corePresets,
-    ...(await loadCustomPresets(options)),
-    ...overridePresets,
-  ];
+  const mainUrl = getInterpretedFile(resolve(options.configDir, 'main')) as string;
+  const presetsConfig: PresetConfig[] = [...corePresets, mainUrl, ...overridePresets];
 
   // Remove `@storybook/preset-typescript` and add a warning if in use.
   const filteredPresetConfig = filterPresetsConfig(presetsConfig);

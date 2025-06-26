@@ -21,7 +21,6 @@ export * from './utils/HandledError';
 export * from './utils/interpolate';
 export * from './utils/interpret-files';
 export * from './utils/interpret-require';
-export * from './utils/load-custom-presets';
 export * from './utils/load-main-config';
 export * from './utils/load-manager-or-addons-file';
 export * from './utils/load-preview-or-config-file';

@@ -47,7 +47,7 @@ export async function temporaryFile({
 // save this list into ./code/core/src/types/frameworks.ts and export it as a union type.
 // The name of the type is `SupportedFrameworks`. Add additionally 'qwik' and `solid` to that list.
 export const generateSourceFiles = async () => {
-  const location = join(__dirname, '..', '..', 'src');
+  const location = join(import.meta.dirname, '..', '..', 'src');
   const prettierConfig = await prettier.resolveConfig(location);
 
   await Promise.all([
@@ -59,7 +59,7 @@ export const generateSourceFiles = async () => {
 };
 
 async function generateVersionsFile(prettierConfig: prettier.Options | null): Promise<void> {
-  const location = join(__dirname, '..', '..', 'src', 'common', 'versions.ts');
+  const location = join(import.meta.dirname, '..', '..', 'src', 'common', 'versions.ts');
 
   const workspace = (await getWorkspace()).filter(isNotNil);
 
@@ -91,8 +91,16 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 
 async function generateFrameworksFile(prettierConfig: prettier.Options | null): Promise<void> {
   const thirdPartyFrameworks = ['qwik', 'solid', 'nuxt', 'react-rsbuild', 'vue3-rsbuild'];
-  const location = join(__dirname, '..', '..', 'src', 'types', 'modules', 'frameworks.ts');
-  const frameworksDirectory = join(__dirname, '..', '..', '..', 'frameworks');
+  const location = join(
+    import.meta.dirname,
+    '..',
+    '..',
+    'src',
+    'types',
+    'modules',
+    'frameworks.ts'
+  );
+  const frameworksDirectory = join(import.meta.dirname, '..', '..', '..', 'frameworks');
 
   const readFrameworks = (await readdir(frameworksDirectory)).filter((framework) =>
     existsSync(join(frameworksDirectory, framework, 'project.json'))
@@ -117,24 +125,32 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
 }
 
 const localAlias = {
-  '@storybook/core': join(__dirname, '..', '..', 'src'),
-  'storybook/internal': join(__dirname, '..', '..', 'src'),
-  'storybook/theming': join(__dirname, '..', '..', 'src', 'theming'),
-  'storybook/test': join(__dirname, '..', '..', 'src', 'test'),
-  'storybook/test/preview': join(__dirname, '..', '..', 'src', 'test', 'preview'),
-  'storybook/actions': join(__dirname, '..', '..', 'src', 'actions'),
-  'storybook/preview-api': join(__dirname, '..', '..', 'src', 'preview-api'),
-  'storybook/manager-api': join(__dirname, '..', '..', 'src', 'manager-api'),
-  storybook: join(__dirname, '..', '..', 'src'),
+  '@storybook/core': join(import.meta.dirname, '..', '..', 'src'),
+  'storybook/internal': join(import.meta.dirname, '..', '..', 'src'),
+  'storybook/theming': join(import.meta.dirname, '..', '..', 'src', 'theming'),
+  'storybook/test': join(import.meta.dirname, '..', '..', 'src', 'test'),
+  'storybook/test/preview': join(import.meta.dirname, '..', '..', 'src', 'test', 'preview'),
+  'storybook/actions': join(import.meta.dirname, '..', '..', 'src', 'actions'),
+  'storybook/preview-api': join(import.meta.dirname, '..', '..', 'src', 'preview-api'),
+  'storybook/manager-api': join(import.meta.dirname, '..', '..', 'src', 'manager-api'),
+  storybook: join(import.meta.dirname, '..', '..', 'src'),
 };
 async function generateExportsFile(prettierConfig: prettier.Options | null): Promise<void> {
   function removeDefault(input: string) {
     return input !== 'default';
   }
 
-  const location = join(__dirname, '..', '..', 'src', 'manager', 'globals', 'exports.ts');
+  const location = join(import.meta.dirname, '..', '..', 'src', 'manager', 'globals', 'exports.ts');
 
-  const entryFile = join(__dirname, '..', '..', 'src', 'manager', 'globals', 'runtime.ts');
+  const entryFile = join(
+    import.meta.dirname,
+    '..',
+    '..',
+    'src',
+    'manager',
+    'globals',
+    'runtime.ts'
+  );
   const outFile = await temporaryFile({ extension: 'js' });
 
   await esbuild.build({

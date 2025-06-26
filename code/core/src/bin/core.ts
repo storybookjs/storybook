@@ -6,14 +6,25 @@ import { program } from 'commander';
 import leven from 'leven';
 import picocolors from 'picocolors';
 
-import { version } from '../../../package.json';
-import { build } from '../build';
-import { buildIndex as index } from '../buildIndex';
-import { dev } from '../dev';
-import { globalSettings } from '../globalSettings';
+import { version } from '../../package.json';
+import { build } from '../cli/build';
+import { buildIndex as index } from '../cli/buildIndex';
+import { dev } from '../cli/dev';
+import { globalSettings } from '../cli/globalSettings';
 
 addToGlobalContext('cliVersion', version);
 
+/**
+ * Core CLI for Storybook.
+ *
+ * This module provides the core CLI for Storybook, handling the following commands:
+ *
+ * - `dev`: Start the Storybook development server
+ * - `build`: Build the Storybook static files
+ * - `index`: Generate the Storybook index file
+ *
+ * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
+ */
 const command = (name: string) =>
   program
     .command(name)

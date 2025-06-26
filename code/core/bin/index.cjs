@@ -3,15 +3,9 @@
 /**
  * This file needs to remain a CommonJS module, with a `.cjs` extension.
  *
- * This is of a bug in `yarn` that causes it to not add this this to the user's `node_modules/.bin`
- * directory.
+ * This is due to a bug in `yarn` that causes it to not add this this to the user's
+ * `node_modules/.bin` directory.
  */
-
-const majorNodeVersion = parseInt(process.versions.node, 10);
-if (majorNodeVersion < 20) {
-  console.error('To run Storybook you need to have Node.js 20 or higher');
-  process.exit(1);
-}
 
 // The Storybook CLI has a catch block for all of its commands, but if an error
 // occurs before the command even runs, for instance, if an import fails, then
@@ -30,4 +24,4 @@ process.once('uncaughtException', (error) => {
   throw error;
 });
 
-import('../dist/bin/index.js');
+import('../dist/bin/dispatcher.js');

@@ -1,7 +1,8 @@
 import { types as t } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 
-const defaultGetAbsolutePathWrapperName = 'getAbsolutePath';
+const PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'getAbsolutePath';
+const ALTERNATIVE_GET_ABSOLUTE_PATH_WRAPPER_NAME = 'wrapForPnp';
 
 /**
  * Checks if the following node declarations exists in the main config file.
@@ -43,7 +44,7 @@ export function doesVariableOrFunctionDeclarationExist(node: t.Node, name: strin
  */
 function getReferenceToGetAbsolutePathWrapper(config: ConfigFile, value: string) {
   return t.callExpression(
-    t.identifier(getAbsolutePathWrapperName(config) ?? defaultGetAbsolutePathWrapperName),
+    t.identifier(getAbsolutePathWrapperName(config) ?? PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME),
     [t.stringLiteral(value)]
   );
 }
@@ -57,10 +58,10 @@ export function getAbsolutePathWrapperName(config: ConfigFile) {
   const declarationName = config
     .getBodyDeclarations()
     .flatMap((node) =>
-      doesVariableOrFunctionDeclarationExist(node, 'wrapForPnp')
-        ? ['wrapForPnp']
-        : doesVariableOrFunctionDeclarationExist(node, defaultGetAbsolutePathWrapperName)
-          ? [defaultGetAbsolutePathWrapperName]
+      doesVariableOrFunctionDeclarationExist(node, ALTERNATIVE_GET_ABSOLUTE_PATH_WRAPPER_NAME)
+        ? [ALTERNATIVE_GET_ABSOLUTE_PATH_WRAPPER_NAME]
+        : doesVariableOrFunctionDeclarationExist(node, PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME)
+          ? [PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME]
           : []
     );
 
@@ -142,7 +143,7 @@ export function getAbsolutePathWrapperAsCallExpression(
 ): t.FunctionDeclaration {
   const functionDeclaration = {
     ...t.functionDeclaration(
-      t.identifier(defaultGetAbsolutePathWrapperName),
+      t.identifier(PREFERRED_GET_ABSOLUTE_PATH_WRAPPER_NAME),
       [
         {
           ...t.identifier('value'),

@@ -111,7 +111,7 @@ export function isGetAbsolutePathWrapperNecessary(
  *
  * @returns Array of fields that need to be wrapped with getAbsolutePath wrapper.
  */
-export function getFieldsForgetAbsolutePathWrapper(config: ConfigFile): t.Node[] {
+export function getFieldsForGetAbsolutePathWrapper(config: ConfigFile): t.Node[] {
   const frameworkNode = config.getFieldNode(['framework']);
   const builderNode = config.getFieldNode(['core', 'builder']);
   const rendererNode = config.getFieldNode(['core', 'renderer']);

@@ -9,7 +9,7 @@ import type { Fix } from '../types';
 import {
   getAbsolutePathWrapperAsCallExpression,
   getAbsolutePathWrapperName,
-  getFieldsForgetAbsolutePathWrapper,
+  getFieldsForGetAbsolutePathWrapper,
   isGetAbsolutePathWrapperNecessary,
   wrapValueWithGetAbsolutePathWrapper,
 } from './wrap-getAbsolutePath-utils';
@@ -40,7 +40,7 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
     }
 
     if (
-      !getFieldsForgetAbsolutePathWrapper(config).some((node) =>
+      !getFieldsForGetAbsolutePathWrapper(config).some((node) =>
         isGetAbsolutePathWrapperNecessary(node)
       )
     ) {
@@ -58,7 +58,7 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
 
   async run({ dryRun, mainConfigPath, result }) {
     await updateMainConfig({ dryRun: !!dryRun, mainConfigPath }, (mainConfig) => {
-      getFieldsForgetAbsolutePathWrapper(mainConfig).forEach((node) => {
+      getFieldsForGetAbsolutePathWrapper(mainConfig).forEach((node) => {
         wrapValueWithGetAbsolutePathWrapper(mainConfig, node);
       });
 

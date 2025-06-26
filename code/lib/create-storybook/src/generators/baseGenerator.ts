@@ -108,14 +108,15 @@ const getRendererPackage = (framework: string | undefined, renderer: string) => 
   return `@storybook/${renderer}`;
 };
 
-const applyRequireWrapper = (packageName: string) => `%%getAbsolutePath('${packageName}')%%`;
+const applyGetAbsolutePathWrapper = (packageName: string) =>
+  `%%getAbsolutePath('${packageName}')%%`;
 
 const applyAddonRequireWrapper = (pkg: string | { name: string }) => {
   if (typeof pkg === 'string') {
-    return applyRequireWrapper(pkg);
+    return applyGetAbsolutePathWrapper(pkg);
   }
   const obj = { ...pkg } as { name: string };
-  obj.name = applyRequireWrapper(pkg.name);
+  obj.name = applyGetAbsolutePathWrapper(pkg.name);
   return obj;
 };
 
@@ -139,17 +140,17 @@ const getFrameworkDetails = (
   invariant(frameworkPackage, 'Missing framework package.');
 
   const frameworkPackagePath = shouldApplyRequireWrapperOnPackageNames
-    ? applyRequireWrapper(frameworkPackage)
+    ? applyGetAbsolutePathWrapper(frameworkPackage)
     : frameworkPackage;
 
   const rendererPackage = getRendererPackage(framework, renderer) as string;
   const rendererPackagePath = shouldApplyRequireWrapperOnPackageNames
-    ? applyRequireWrapper(rendererPackage)
+    ? applyGetAbsolutePathWrapper(rendererPackage)
     : rendererPackage;
 
   const builderPackage = getBuilderDetails(builder);
   const builderPackagePath = shouldApplyRequireWrapperOnPackageNames
-    ? applyRequireWrapper(builderPackage)
+    ? applyGetAbsolutePathWrapper(builderPackage)
     : builderPackage;
 
   const isExternalFramework = !!getExternalFramework(frameworkPackage);

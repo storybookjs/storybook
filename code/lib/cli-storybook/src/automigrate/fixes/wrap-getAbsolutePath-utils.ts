@@ -43,17 +43,17 @@ export function doesVariableOrFunctionDeclarationExist(node: t.Node, name: strin
  */
 function getReferenceToRequireWrapper(config: ConfigFile, value: string) {
   return t.callExpression(
-    t.identifier(getRequireWrapperName(config) ?? defaultRequireWrapperName),
+    t.identifier(getAbsolutePathWrapperName(config) ?? defaultRequireWrapperName),
     [t.stringLiteral(value)]
   );
 }
 
 /**
- * Returns the name of the require wrapper function if it exists in the main config file.
+ * Returns the name of the getAbsolutePath wrapper function if it exists in the main config file.
  *
- * @returns Name of the require wrapper function.
+ * @returns Name of the getAbsolutePath wrapper function.
  */
-export function getRequireWrapperName(config: ConfigFile) {
+export function getAbsolutePathWrapperName(config: ConfigFile) {
   const declarationName = config
     .getBodyDeclarations()
     .flatMap((node) =>
@@ -72,7 +72,7 @@ export function getRequireWrapperName(config: ConfigFile) {
 }
 
 /** Check if the node needs to be wrapped with require wrapper. */
-export function isRequireWrapperNecessary(
+export function isGetAbsolutePathWrapperNecessary(
   node: t.Node,
   cb: (node: t.StringLiteral | t.ObjectProperty | t.ArrayExpression) => void = () => {}
 ) {
@@ -96,7 +96,7 @@ export function isRequireWrapperNecessary(
 
   if (
     t.isArrayExpression(node) &&
-    node.elements.some((element) => element && isRequireWrapperNecessary(element))
+    node.elements.some((element) => element && isGetAbsolutePathWrapperNecessary(element))
   ) {
     cb(node);
     return true;
@@ -110,7 +110,7 @@ export function isRequireWrapperNecessary(
  *
  * @returns Array of fields that need to be wrapped with require wrapper.
  */
-export function getFieldsForRequireWrapper(config: ConfigFile): t.Node[] {
+export function getFieldsForgetAbsolutePathWrapper(config: ConfigFile): t.Node[] {
   const frameworkNode = config.getFieldNode(['framework']);
   const builderNode = config.getFieldNode(['core', 'builder']);
   const rendererNode = config.getFieldNode(['core', 'renderer']);
@@ -133,11 +133,11 @@ export function getFieldsForRequireWrapper(config: ConfigFile): t.Node[] {
  *
  * ```ts
  * function getAbsolutePath(value) {
- *   return dirname(require.resolve(join(value, 'package.json')));
+ *   return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))));
  * }
  * ```
  */
-export function getRequireWrapperAsCallExpression(
+export function getAbsolutePathWrapperAsCallExpression(
   isConfigTypescript: boolean
 ): t.FunctionDeclaration {
   const functionDeclaration = {
@@ -154,11 +154,19 @@ export function getRequireWrapperAsCallExpression(
       t.blockStatement([
         t.returnStatement(
           t.callExpression(t.identifier('dirname'), [
-            t.callExpression(t.memberExpression(t.identifier('require'), t.identifier('resolve')), [
-              t.callExpression(t.identifier('join'), [
-                t.identifier('value'),
-                t.stringLiteral('package.json'),
-              ]),
+            t.callExpression(t.identifier('fileURLToPath'), [
+              t.callExpression(
+                t.memberExpression(
+                  t.metaProperty(t.identifier('import'), t.identifier('meta')),
+                  t.identifier('resolve')
+                ),
+                [
+                  t.callExpression(t.identifier('join'), [
+                    t.identifier('value'),
+                    t.stringLiteral('package.json'),
+                  ]),
+                ]
+              ),
             ]),
           ])
         ),
@@ -177,7 +185,7 @@ export function getRequireWrapperAsCallExpression(
 }
 
 export function wrapValueWithRequireWrapper(config: ConfigFile, node: t.Node) {
-  isRequireWrapperNecessary(node, (n) => {
+  isGetAbsolutePathWrapperNecessary(node, (n) => {
     if (t.isStringLiteral(n)) {
       const wrapperNode = getReferenceToRequireWrapper(config, n.value);
       Object.keys(n).forEach((k) => {
@@ -194,7 +202,7 @@ export function wrapValueWithRequireWrapper(config: ConfigFile, node: t.Node) {
 
     if (t.isArrayExpression(n)) {
       n.elements.forEach((element) => {
-        if (element && isRequireWrapperNecessary(element)) {
+        if (element && isGetAbsolutePathWrapperNecessary(element)) {
           wrapValueWithRequireWrapper(config, element);
         }
       });

@@ -14,9 +14,9 @@ import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
 import {
-  getRequireWrapperName,
+  getAbsolutePathWrapperName,
   wrapValueWithRequireWrapper,
-} from './automigrate/fixes/wrap-require-utils';
+} from './automigrate/fixes/wrap-getAbsolutePath-utils';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { postinstallAddon } from './postinstallAddon';
 
@@ -176,7 +176,7 @@ export async function add(
     logger.log(`Adding '${addon}' to the "addons" field in ${mainConfigPath}`);
 
     const mainConfigAddons = main.getFieldNode(['addons']);
-    if (mainConfigAddons && getRequireWrapperName(main) !== null) {
+    if (mainConfigAddons && getAbsolutePathWrapperName(main) !== null) {
       const addonNode = main.valueToNode(addonName);
       main.appendNodeToArray(['addons'], addonNode as any);
       wrapValueWithRequireWrapper(main, addonNode as any);

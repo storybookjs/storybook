@@ -7,11 +7,11 @@ import {
   JsPackageManagerFactory,
   extractProperFrameworkName,
   formatFileContent,
+  getInterpretedFile,
   getProjectRoot,
   loadAllPresets,
   loadMainConfig,
   scanAndTransformFiles,
-  serverResolve,
   transformImportFiles,
   validateFrameworkName,
 } from 'storybook/internal/common';
@@ -74,7 +74,7 @@ export default async function postInstall(options: PostinstallOptions) {
     ? satisfies(vitestVersionSpecifier, '>=3.2.0')
     : true;
 
-  const mainJsPath = serverResolve(resolve(options.configDir, 'main')) as string;
+  const mainJsPath = getInterpretedFile(resolve(options.configDir, 'main')) as string;
   const config = await readConfig(mainJsPath);
 
   const hasCustomWebpackConfig = !!config.getFieldNode(['webpackFinal']);

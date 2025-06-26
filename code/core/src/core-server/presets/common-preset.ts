@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -22,7 +23,7 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
-import { dirname, isAbsolute, join } from 'pathe';
+import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import { resolveModule } from '../../shared/utils/module';
@@ -48,6 +49,7 @@ export const favicon = async (
   if (value) {
     return value;
   }
+
   const staticDirsValue = await options.presets.apply('staticDirs');
 
   const statics = staticDirsValue
@@ -73,6 +75,7 @@ export const favicon = async (
         const path = join(staticPath, url);
         if (existsSync(path)) {
           results.push(path);
+        } else {
         }
       }
       if (targetEndpoint === '/') {
@@ -82,9 +85,9 @@ export const favicon = async (
           results.push(path);
         }
       }
-
       return results;
     });
+
     const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
 
     if (flatlist.length > 1) {
@@ -94,7 +97,6 @@ export const favicon = async (
         ${flatlist.join(', ')}
         `);
     }
-
     return flatlist[0] || defaultFavicon;
   }
 
@@ -288,8 +290,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(resolveModule({ pkg: 'react' })),
-      reactDom: dirname(resolveModule({ pkg: 'react-dom' })),
+      react: pathe.dirname(resolveModule({ pkg: 'react' })),
+      reactDom: pathe.dirname(resolveModule({ pkg: 'react-dom' })),
     };
   } catch (e) {
     return existing;

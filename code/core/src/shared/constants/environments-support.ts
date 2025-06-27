@@ -14,7 +14,7 @@ export const BROWSER_TARGETS: Options['target'] = [
 
 // https://esbuild.github.io/api/#target
 // https://tsup.egoist.dev/#target-environment
-export const NODE_TARGET: Options['target'] = 'node20';
+export const NODE_TARGET: Options['target'] = 'node20.19';
 
 // https://esbuild.github.io/api/#supported
 export const SUPPORTED_FEATURES: BuildOptions['supported'] = {

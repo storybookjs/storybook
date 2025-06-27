@@ -1,6 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { existsSync, watch } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, rm, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 import type { Metafile } from 'esbuild';
 import { dirname, join } from 'pathe';
@@ -170,7 +171,6 @@ async function run() {
       outbase: 'src',
       outdir: 'dist',
       treeShaking: true,
-      target: [...(BROWSER_TARGETS as any), NODE_TARGET],
       color: true,
       external: esmOnlyExternal.filter((external) => !esmOnlyNoExternal.includes(external)),
     } as const satisfies EsbuildContextOptions;
@@ -178,6 +178,8 @@ async function run() {
     const esmOnlyRuntimeOptions = {
       ...esmOnlySharedOptions,
       platform: 'browser',
+      target: BROWSER_TARGETS,
+      supported: SUPPORTED_FEATURES,
       external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
       alias: {
         // The following aliases ensures that the runtimes bundles in the actual sources of these modules
@@ -211,6 +213,7 @@ async function run() {
         ...esmOnlySharedOptions,
         entryPoints: esmOnlyEntries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
+        target: NODE_TARGET,
         banner: {
           js: dedent`
             import CJS_COMPAT_NODE_URL from 'node:url';
@@ -225,11 +228,28 @@ async function run() {
             // ------------------------------------------------------------
             `,
         },
+        plugins: [
+          {
+            name: 'bin-executable-permissions',
+            setup(build) {
+              build.onEnd(async (result) => {
+                if (result.errors.length) {
+                  return;
+                }
+                // Change permissions for the main bin to be executable
+                const dispatcherPath = import.meta.resolve('storybook/internal/bin/dispatcher');
+                await chmod(fileURLToPath(dispatcherPath), 0o755);
+              });
+            },
+          },
+        ],
       }),
       esbuild.context({
         ...esmOnlySharedOptions,
         entryPoints: esmOnlyEntries.browser.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
+        target: BROWSER_TARGETS,
+        supported: SUPPORTED_FEATURES,
       }),
       esbuild.context({
         ...esmOnlyRuntimeOptions,

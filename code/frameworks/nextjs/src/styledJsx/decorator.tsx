@@ -1,9 +1,11 @@
+'use client';
+
 import * as React from 'react';
 
 import { StyleRegistry } from 'styled-jsx';
 
-export const StyledJsxDecorator = (Story: React.FC): React.ReactNode => (
-  <StyleRegistry>
-    <Story />
-  </StyleRegistry>
-);
+export const StyledJsxDecorator = ({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.ReactNode => <StyleRegistry>{children}</StyleRegistry>;

@@ -36,6 +36,26 @@
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
     },
+    "./dist/client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.mjs",
+      "require": "./dist/client.js"
+    },
+    "./dist/react-client-entrypoint": {
+      "types": "./dist/react-client-entrypoint.d.ts",
+      "import": "./dist/react-client-entrypoint.mjs",
+      "require": "./dist/react-client-entrypoint.js"
+    },
+    "./dist/entrypoints/react-client": {
+      "types": "./dist/entrypoints/react-client.d.ts",
+      "import": "./dist/entrypoints/react-client.mjs",
+      "require": "./dist/entrypoints/react-client.js"
+    },
+    "./dist/rsc/react-transform-loader": {
+      "types": "./dist/rsc/react-transform-loader.d.ts",
+      "import": "./dist/rsc/react-transform-loader.mjs",
+      "require": "./dist/rsc/react-transform-loader.js"
+    },
     "./font/webpack/loader/storybook-nextjs-font-loader": {
       "types": "./dist/font/webpack/loader/storybook-nextjs-font-loader.d.ts",
       "import": "./dist/font/webpack/loader/storybook-nextjs-font-loader.mjs",
@@ -155,6 +175,7 @@
     "postcss": "^8.4.38",
     "postcss-loader": "^8.1.1",
     "react-refresh": "^0.14.0",
+    "react-server-dom-webpack": "19.2.0-canary-cee7939b-20250625",
     "resolve-url-loader": "^5.0.0",
     "sass-loader": "^14.2.1",
     "semver": "^7.3.5",
@@ -201,6 +222,10 @@
       "./src/image-context.ts",
       "./src/index.ts",
       "./src/preset.ts",
+      "./src/client.tsx",
+      "./src/rsc/react-transform-loader.ts",
+      "./src/react-client-entrypoint.ts",
+      "./src/entrypoints/react-client.ts",
       "./src/node/index.ts",
       "./src/preview.tsx",
       "./src/export-mocks/index.ts",
@@ -222,6 +247,7 @@
       "sb-original/next/future/image",
       "sb-original/next/legacy/image"
     ],
+    "post": "./scripts/add-client-directive.ts",
     "platform": "node"
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"

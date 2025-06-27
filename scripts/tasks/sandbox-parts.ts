@@ -23,9 +23,10 @@ import dedent from 'ts-dedent';
 import { babelParse, types as t } from '../../code/core/src/babel';
 import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
-import { JsPackageManagerFactory, versions as storybookPackages } from '../../code/core/src/common';
+import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
+import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { writeConfig } from '../../code/core/src/csf-tools';
+import { writeConfig } from '../../code/core/src/csf-tools/ConfigFile';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
@@ -489,7 +490,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  const extraDevDeps = ['@storybook/test-runner@0.23.1--canary.de6531a.0'];
+  const extraDevDeps = ['@storybook/test-runner@0.23.1--canary.020e626.0'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);

@@ -855,10 +855,10 @@ jobs:
           environment:
             YARN_ENABLE_IMMUTABLE_INSTALLS: false
       # Disabled due to Jest not working in the ESM-only paradigm. Will require some recipe to make it work
-      # - run:
-      #     name: Run Jest tests
-      #     command: yarn jest
-      #     working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+      - run:
+          name: Run Jest tests
+          command: yarn jest
+          working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
       - run:
           name: Run Vitest tests
           command: yarn vitest

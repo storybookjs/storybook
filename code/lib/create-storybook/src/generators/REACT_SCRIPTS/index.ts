@@ -26,7 +26,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
       }
     : {};
 
-  const craVersion = packageManager.getModulePackageJSON('react-scripts')?.version ?? null;
+  const craVersion = (await packageManager.getModulePackageJSON('react-scripts'))?.version ?? null;
 
   if (craVersion === null) {
     throw new Error(dedent`

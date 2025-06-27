@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -24,8 +23,10 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
+import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { resolveModule } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
@@ -48,6 +49,7 @@ export const favicon = async (
   if (value) {
     return value;
   }
+
   const staticDirsValue = await options.presets.apply('staticDirs');
 
   const statics = staticDirsValue
@@ -82,9 +84,9 @@ export const favicon = async (
           results.push(path);
         }
       }
-
       return results;
     });
+
     const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
 
     if (flatlist.length > 1) {
@@ -94,7 +96,6 @@ export const favicon = async (
         ${flatlist.join(', ')}
         `);
     }
-
     return flatlist[0] || defaultFavicon;
   }
 
@@ -288,8 +289,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(fileURLToPath(import.meta.resolve('react/package.json'))),
-      reactDom: dirname(fileURLToPath(import.meta.resolve('react-dom/package.json'))),
+      react: pathe.dirname(resolveModule({ pkg: 'react' })),
+      reactDom: pathe.dirname(resolveModule({ pkg: 'react-dom' })),
     };
   } catch (e) {
     return existing;
@@ -308,10 +309,10 @@ export const tags = async (existing: any) => {
 
 export const managerEntries = async (existing: any) => {
   return [
-    join(
-      dirname(fileURLToPath(import.meta.resolve('storybook/internal/package.json'))),
-      'dist/core-server/presets/common-manager.js'
-    ),
+    resolveModule({
+      pkg: 'storybook',
+      customSuffix: 'dist/core-server/presets/common-manager.js',
+    }),
     ...(existing || []),
   ];
 };

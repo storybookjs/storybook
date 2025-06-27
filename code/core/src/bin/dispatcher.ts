@@ -3,10 +3,11 @@ import { spawn } from 'node:child_process';
 
 import { logger } from 'storybook/internal/node-logger';
 
+import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import versions from '../common/versions';
-import { resolveModule } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module';
 
 /**
  * Dispatches Storybook CLI commands to the appropriate handler.
@@ -36,7 +37,7 @@ async function dispatch() {
   const args = process.argv.slice(2);
 
   if (['dev', 'build', 'index'].includes(args[0])) {
-    const coreBin = resolveModule({ pkg: 'storybook', customSuffix: 'dist/bin/core.js' });
+    const coreBin = join(resolvePackageDir('storybook'), 'dist/bin/core.js');
     await import(coreBin);
     return;
   }
@@ -60,7 +61,7 @@ async function dispatch() {
     if (targetCliPackageJson.version === versions[targetCli.pkg]) {
       command = [
         'node',
-        resolveModule({ pkg: targetCli.pkg, customSuffix: 'bin/index.cjs' }),
+        join(resolvePackageDir(targetCli.pkg), 'bin/index.cjs'),
         ...targetCli.args,
       ];
     }

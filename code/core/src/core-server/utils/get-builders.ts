@@ -2,15 +2,12 @@ import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Builder, Options } from 'storybook/internal/types';
 
 import { parseNodeModulePath } from 'mlly';
-import { isAbsolute } from 'pathe';
+import { isAbsolute, join } from 'pathe';
 
-import { resolveModule } from '../../shared/utils/module';
+import { resolvePackageDir } from '../../shared/utils/module';
 
 export async function getManagerBuilder(): Promise<Builder<unknown>> {
-  const builderManagerPath = resolveModule({
-    pkg: 'storybook',
-    customSuffix: 'dist/builder-manager/index.js',
-  });
+  const builderManagerPath = join(resolvePackageDir('storybook'), 'dist/builder-manager/index.js');
   return import(builderManagerPath);
 }
 
@@ -28,10 +25,7 @@ export async function getPreviewBuilder(
     }
     builderPackage = parsedBuilderPackage.name;
   } else {
-    builderPackage = resolveModule({
-      pkg: builderName,
-      parent: configDir,
-    });
+    builderPackage = import.meta.resolve(builderName, configDir);
   }
   return await import(builderPackage);
 }

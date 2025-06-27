@@ -24,7 +24,6 @@ vi.mock('storybook/internal/node-logger', () => ({
 
 vi.mock('../shared/utils/module', () => ({
   importModule: vi.fn(),
-  resolveModule: vi.fn(),
 }));
 
 vi.mock('mlly', () => {

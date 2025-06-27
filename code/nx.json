@@ -58,12 +58,19 @@
       "cache": true
     },
     "check": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "{projectRoot}",
+        "command": "yarn typecheck"
+      },
       "configurations": {
-        "production": {}
+        "production": {
+          "args": "--production"
+        }
       },
       "inputs": ["default", "^production", "{workspaceRoot}/../scripts/prepare/check.ts"],
       "dependsOn": ["build"],
-      "cache": true
+      "cache": false
     },
     "sandbox": {
       "executor": "nx:run-commands",

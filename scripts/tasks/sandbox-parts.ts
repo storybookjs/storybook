@@ -427,7 +427,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import * as templateAnnotations from '../template-stories/core/preview'
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
-  
+
       setProjectAnnotations([
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,

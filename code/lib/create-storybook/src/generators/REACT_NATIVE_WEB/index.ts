@@ -10,7 +10,8 @@ import type { Generator } from '../types';
 const generator: Generator = async (packageManager, npmOptions, options) => {
   // Add prop-types dependency if not using TypeScript
   const language = await detectLanguage(packageManager as any);
-  const extraPackages = ['vite', 'react-native-web'];
+  // Vite 7 isn't yet supported by all dependencies, so we need to pin to 6.0.0
+  const extraPackages = ['vite@^6.0.0', 'react-native-web'];
   if (language === SupportedLanguage.JAVASCRIPT) {
     extraPackages.push('prop-types');
   }

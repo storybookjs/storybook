@@ -1,6 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { existsSync, watch } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, rm, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 import type { Metafile } from 'esbuild';
 import { dirname, join } from 'pathe';
@@ -227,6 +228,21 @@ async function run() {
             // ------------------------------------------------------------
             `,
         },
+        plugins: [
+          {
+            name: 'bin-executable-permissions',
+            setup(build) {
+              build.onEnd(async (result) => {
+                if (result.errors.length) {
+                  return;
+                }
+                // Change permissions for the main bin to be executable
+                const dispatcherPath = import.meta.resolve('storybook/internal/bin/dispatcher');
+                await chmod(fileURLToPath(dispatcherPath), 0o755);
+              });
+            },
+          },
+        ],
       }),
       esbuild.context({
         ...esmOnlySharedOptions,

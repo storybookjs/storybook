@@ -1,4 +1,5 @@
 import { createRequire, register } from 'node:module';
+import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { dirname, join } from 'pathe';
@@ -78,7 +79,9 @@ export const resolveModule = ({
 }) => {
   const modulePath = join(pkg, exportPath);
 
-  const resolvedPath = fileURLToPath(import.meta.resolve(modulePath, parent));
+  const resolvedURL = import.meta.resolve(modulePath, parent);
+  const resolvedPath = fileURLToPath(resolvedURL);
+
   if (customSuffix === undefined) {
     return resolvedPath;
   }
@@ -108,23 +111,23 @@ export async function importModule(path: string) {
   if (!isTypescriptLoaderRegistered) {
     const typescriptLoaderPath = resolveModule({
       pkg: 'storybook',
-      exportPath: 'internal/loader',
+      exportPath: 'internal/bin/loader',
     });
-    register(typescriptLoaderPath, import.meta.url);
+    register(
+      win32.isAbsolute(typescriptLoaderPath)
+        ? pathToFileURL(typescriptLoaderPath).href
+        : typescriptLoaderPath,
+      import.meta.url
+    );
     isTypescriptLoaderRegistered = true;
   }
 
   let mod;
-
   try {
-    const resolvedPath = path.startsWith('file:') ? path : pathToFileURL(path).href;
-    console.log({
-      RESOLVED_PATH: resolvedPath,
-    });
+    const resolvedPath = win32.isAbsolute(path) ? pathToFileURL(path).href : path;
     mod = await import(resolvedPath);
   } catch (e) {
     mod = createRequire(import.meta.url)(path);
   }
-
   return mod.default ?? mod;
 }

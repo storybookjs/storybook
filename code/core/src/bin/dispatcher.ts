@@ -70,10 +70,7 @@ async function dispatch() {
 
   const child = spawn(command[0], command.slice(1), { stdio: 'inherit', shell: true });
   child.on('exit', (code) => {
-    if (code != null) {
-      process.exit(code);
-    }
-    process.exit(1);
+    process.exit(code);
   });
 }
 

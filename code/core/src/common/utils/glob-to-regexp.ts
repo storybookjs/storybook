@@ -1,4 +1,4 @@
-import * as pico from 'picomatch';
+import pico from 'picomatch';
 
 export function globToRegexp(glob: string) {
   const regex = pico.makeRe(glob, {

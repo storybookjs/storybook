@@ -1,0 +1,6 @@
+{
+  "rules": {
+    "import/extensions": "off",
+    "react/no-unknown-property": "off"
+  }
+}

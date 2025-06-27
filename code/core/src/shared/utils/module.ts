@@ -111,7 +111,7 @@ export async function importModule(path: string) {
   if (!isTypescriptLoaderRegistered) {
     const typescriptLoaderPath = resolveModule({
       pkg: 'storybook',
-      exportPath: 'internal/loader',
+      exportPath: 'internal/bin/loader',
     });
     register(
       win32.isAbsolute(typescriptLoaderPath)

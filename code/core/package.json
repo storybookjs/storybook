@@ -56,6 +56,8 @@
       "types": "./dist/babel/index.d.ts",
       "default": "./dist/babel/index.js"
     },
+    "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
+    "./internal/bin/loader": "./dist/bin/loader.js",
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
       "default": "./dist/channels/index.js"
@@ -105,7 +107,6 @@
       "types": "./dist/instrumenter/index.d.ts",
       "default": "./dist/instrumenter/index.js"
     },
-    "./internal/loader": "./dist/bin/loader.js",
     "./internal/manager-api": {
       "types": "./dist/manager-api/index.d.ts",
       "default": "./dist/manager-api/index.js"
@@ -195,7 +196,7 @@
       "default": "./dist/viewport/index.js"
     }
   },
-  "bin": "./bin/index.cjs",
+  "bin": "./dist/bin/dispatcher.js",
   "files": [
     "bin/**/*",
     "dist/**/*",

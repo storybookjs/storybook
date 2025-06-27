@@ -1,26 +1,25 @@
 import * as React from 'react';
 
-import type { Addon_StoryContext } from 'storybook/internal/types';
+import type { StoryContext } from 'storybook/internal/types';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore-error (this only errors during compilation for production)
-import { ImageContext as ImageContextValue } from '@storybook/nextjs/dist/image-context';
+import { ImageContext as ImageContextValue } from '@storybook/experimental-nextjs-rsc/dist/image-context';
 
 import { type ImageContext as ImageContextType } from '../image-context';
 
 const ImageContext = ImageContextValue as typeof ImageContextType;
 
-export const ImageDecorator = (
-  Story: React.FC,
-  { parameters }: Addon_StoryContext
-): React.ReactNode => {
-  if (!parameters.nextjs?.image) {
-    return <Story />;
+export const ImageDecorator = ({
+  children,
+  nextjs,
+}: {
+  children: React.ReactNode;
+  nextjs: StoryContext['parameters']['nextjs'];
+}): React.ReactNode => {
+  if (!nextjs?.image) {
+    return children;
   }
 
-  return (
-    <ImageContext.Provider value={parameters.nextjs.image}>
-      <Story />
-    </ImageContext.Provider>
-  );
+  return <ImageContext.Provider value={nextjs.image}>{children}</ImageContext.Provider>;
 };

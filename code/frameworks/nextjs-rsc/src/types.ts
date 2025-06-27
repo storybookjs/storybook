@@ -14,7 +14,7 @@ import type {
 import type * as NextImage from 'next/image';
 import type { NextRouter } from 'next/router';
 
-type FrameworkName = CompatibleString<'@storybook/nextjs'>;
+type FrameworkName = CompatibleString<'@storybook/experimental-nextjs-rsc'>;
 type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;
 
 export type FrameworkOptions = ReactOptions & {

@@ -5,7 +5,7 @@
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
 import React, { useMemo } from 'react';
 
-import { getRouter } from '@storybook/nextjs/navigation.mock';
+import { getRouter } from '@storybook/experimental-nextjs-rsc/navigation.mock';
 
 import type { FlightRouterState } from 'next/dist/server/app-render/types';
 import {

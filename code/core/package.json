@@ -56,23 +56,15 @@
       "types": "./dist/babel/index.d.ts",
       "default": "./dist/babel/index.js"
     },
-    "./internal/bin": {
-      "import": "./dist/bin/index.js",
-      "require": "./dist/bin/index.cjs"
-    },
+    "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
+    "./internal/bin/loader": "./dist/bin/loader.js",
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
       "default": "./dist/channels/index.js"
     },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
-      "import": "./dist/cli/index.js",
-      "require": "./dist/cli/index.cjs"
-    },
-    "./internal/cli/bin": {
-      "types": "./dist/cli/bin/index.d.ts",
-      "import": "./dist/cli/bin/index.js",
-      "require": "./dist/cli/bin/index.cjs"
+      "default": "./dist/cli/index.js"
     },
     "./internal/client-logger": {
       "types": "./dist/client-logger/index.d.ts",
@@ -115,7 +107,6 @@
       "types": "./dist/instrumenter/index.d.ts",
       "default": "./dist/instrumenter/index.js"
     },
-    "./internal/loader": "./dist/bin/loader.js",
     "./internal/manager-api": {
       "types": "./dist/manager-api/index.d.ts",
       "default": "./dist/manager-api/index.js"
@@ -205,134 +196,7 @@
       "default": "./dist/viewport/index.js"
     }
   },
-  "typesVersions": {
-    "*": {
-      "*": [
-        "./dist/index.d.ts"
-      ],
-      "internal/cli": [
-        "./dist/cli/index.d.ts"
-      ],
-      "internal/cli/bin": [
-        "./dist/cli/bin/index.d.ts"
-      ],
-      "./internal/node-logger": [
-        "./dist/node-logger/index.d.ts"
-      ],
-      "./internal/server-errors": [
-        "./dist/server-errors.d.ts"
-      ],
-      "./internal/core-server": [
-        "./dist/core-server/index.d.ts"
-      ],
-      "./internal/telemetry": [
-        "./dist/telemetry/index.d.ts"
-      ],
-      "./internal/csf-tools": [
-        "./dist/csf-tools/index.d.ts"
-      ],
-      "./internal/babel": [
-        "./dist/babel/index.d.ts"
-      ],
-      "./internal/common": [
-        "./dist/common/index.d.ts"
-      ],
-      "./internal/client-logger": [
-        "./dist/client-logger/index.d.ts"
-      ],
-      "./internal/instrumenter": [
-        "./dist/instrumenter/index.d.ts"
-      ],
-      "./test": [
-        "./dist/test/index.d.ts"
-      ],
-      "./internal/test": [
-        "./dist/test/index.d.ts"
-      ],
-      "./preview-api": [
-        "./dist/preview-api/index.d.ts"
-      ],
-      "./internal/preview-api": [
-        "./dist/preview-api/index.d.ts"
-      ],
-      "./highlight": [
-        "./dist/highlight/index.d.ts"
-      ],
-      "./internal/highlight": [
-        "./dist/highlight/index.d.ts"
-      ],
-      "./actions": [
-        "./dist/actions/index.d.ts"
-      ],
-      "./internal/actions": [
-        "./dist/actions/index.d.ts"
-      ],
-      "./actions/decorator": [
-        "./dist/actions/decorator.d.ts"
-      ],
-      "./internal/actions/decorator": [
-        "./dist/actions/decorator.d.ts"
-      ],
-      "./viewport": [
-        "./dist/viewport/index.d.ts"
-      ],
-      "./internal/viewport": [
-        "./dist/viewport/index.d.ts"
-      ],
-      "./internal/preview/globals": [
-        "./dist/preview/globals.d.ts"
-      ],
-      "./internal/csf": [
-        "./dist/csf/index.d.ts"
-      ],
-      "./internal/manager-errors": [
-        "./dist/manager-errors.d.ts"
-      ],
-      "./internal/preview-errors": [
-        "./dist/preview-errors.d.ts"
-      ],
-      "./internal/manager/globals": [
-        "./dist/manager/globals.d.ts"
-      ],
-      "./theming": [
-        "./dist/theming/index.d.ts"
-      ],
-      "./internal/theming": [
-        "./dist/theming/index.d.ts"
-      ],
-      "./theming/create": [
-        "./dist/theming/create.d.ts"
-      ],
-      "./internal/theming/create": [
-        "./dist/theming/create.d.ts"
-      ],
-      "./internal/components": [
-        "./dist/components/index.d.ts"
-      ],
-      "./manager-api": [
-        "./dist/manager-api/index.d.ts"
-      ],
-      "./internal/manager-api": [
-        "./dist/manager-api/index.d.ts"
-      ],
-      "./internal/router": [
-        "./dist/router/index.d.ts"
-      ],
-      "./internal/docs-tools": [
-        "./dist/docs-tools/index.d.ts"
-      ],
-      "./internal/core-events": [
-        "./dist/core-events/index.d.ts"
-      ],
-      "./internal/channels": [
-        "./dist/channels/index.d.ts"
-      ],
-      "./internal/types": [
-        "./dist/types/index.d.ts"
-      ]
-    }
-  },
-  "bin": "./bin/index.cjs",
+  "bin": "./dist/bin/dispatcher.js",
   "files": [
     "bin/**/*",
     "dist/**/*",

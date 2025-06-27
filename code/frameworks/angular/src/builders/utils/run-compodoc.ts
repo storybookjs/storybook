@@ -2,7 +2,7 @@ import { isAbsolute, relative } from 'node:path';
 
 import { JsPackageManagerFactory } from 'storybook/internal/common';
 
-import { BuilderContext } from '@angular-devkit/architect';
+import type { BuilderContext } from '@angular-devkit/architect';
 import { Observable } from 'rxjs';
 
 const hasTsConfigArg = (args: string[]) => args.indexOf('-p') !== -1;

@@ -96,6 +96,8 @@ Both options provide a catalog of your stories that hot refreshes as you edit th
 
 {/* [Image: native + web] */}
 
+### Comparison
+
 So, which option is right for you?
 
 **Native.** You should choose this option if you want:
@@ -110,7 +112,13 @@ So, which option is right for you?
 - [**Testing**](../../writing-tests/index.mdx) - Component, visual, and a11y tests for your components.
 - [**Addons**](https://storybook.js.org/addons) - 500+ addons that improve development, documentation, testing, and integration with other tools.
 
-**Both.** It’s also possible to use both options together. However, this increases Storybook’s install footprint and requires more work to configure. Therefore, we recommend choosing one option to start and extending it once you have something working.
+**Both.** It’s also possible to use both options together. This increases Storybook’s install footprint but is a good option if you want native fidelity in addition to all of the web features. Learn more below.
+
+## Using both React Native and React Native Web
+
+The easiest way to use React Native and React Native Web is to select the "Both" option when installing Storybook. This will install and create configurations for both environments, allowing you to run Storybook for both in the same project.
+
+However, you can install them separately if one version is installed. You can add a React Native Web Storybook alongside an existing React Native Storybook by running the install command and selecting "React Native Web" in the setup wizard, and vice versa.
 
 ## API
 

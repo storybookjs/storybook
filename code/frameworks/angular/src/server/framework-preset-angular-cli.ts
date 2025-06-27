@@ -2,13 +2,15 @@ import { logger } from 'storybook/internal/node-logger';
 import { AngularLegacyBuildOptionsError } from 'storybook/internal/server-errors';
 import { WebpackDefinePlugin, WebpackIgnorePlugin } from '@storybook/builder-webpack5';
 
-import { BuilderContext, targetFromTargetString } from '@angular-devkit/architect';
-import { JsonObject, logging } from '@angular-devkit/core';
-import { findUpSync } from 'find-up';
-import webpack from 'webpack';
+import type { BuilderContext } from '@angular-devkit/architect';
+import { targetFromTargetString } from '@angular-devkit/architect';
+import type { JsonObject } from '@angular-devkit/core';
+import { logging } from '@angular-devkit/core';
+import { findUp } from 'find-up';
+import type webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
-import { PresetOptions } from './preset-options';
+import type { PresetOptions } from './preset-options';
 import { moduleIsAvailable } from './utils/module-is-available';
 import { getProjectRoot } from 'storybook/internal/common';
 
@@ -32,6 +34,16 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
   });
 
   webpackConfig.plugins = webpackConfig.plugins ?? [];
+
+  // Change the generated css filename to include the contenthash for cache busting
+  const miniCssPlugin = webpackConfig?.plugins?.find(
+    (plugin: any) => plugin?.constructor?.name === 'MiniCssExtractPlugin'
+  ) as any;
+
+  if (miniCssPlugin && 'options' in miniCssPlugin) {
+    miniCssPlugin.options.filename = '[name].[contenthash].css';
+    miniCssPlugin.options.chunkFilename = '[name].iframe.[contenthash].css';
+  }
 
   webpackConfig.plugins.push(
     new WebpackDefinePlugin({
@@ -89,7 +101,7 @@ async function getBuilderOptions(options: PresetOptions, builderContext: Builder
     ...options.angularBuilderOptions,
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() }) ??
+      (await findUp('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() })) ??
       browserTargetOptions.tsConfig,
   };
   logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);

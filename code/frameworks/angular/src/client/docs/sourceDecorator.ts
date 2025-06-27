@@ -1,9 +1,9 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 import { useRef, emitTransformCode, useEffect } from 'storybook/preview-api';
-import { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
+import type { ArgsStoryFn, PartialStoryFn } from 'storybook/internal/types';
 
 import { computesTemplateSourceFromComponent } from '../../renderer';
-import { AngularRenderer, StoryContext } from '../types';
+import type { AngularRenderer, StoryContext } from '../types';
 
 export const skipSourceRender = (context: StoryContext) => {
   const sourceParams = context?.parameters.docs?.source;

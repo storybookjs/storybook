@@ -134,8 +134,8 @@ export abstract class JsPackageManager {
     return false;
   }
 
-  async installDependencies() {
-    await prompt.executeTask(() => this.runInstall(), {
+  async installDependencies(options?: { force?: boolean }) {
+    await prompt.executeTask(() => this.runInstall(options), {
       id: 'install-dependencies',
       intro: 'Installing dependencies...',
       error: 'An error occurred while installing dependencies.',
@@ -146,13 +146,16 @@ export abstract class JsPackageManager {
     this.clearInstalledVersionCache();
   }
 
-  async dedupeDependencies() {
-    await prompt.executeTask(() => this.runInternalCommand('dedupe', [], this.cwd), {
-      id: 'dedupe-dependencies',
-      intro: 'Deduplicating dependencies...',
-      error: 'An error occurred while deduplicating dependencies.',
-      success: 'Dependencies deduplicated',
-    });
+  async dedupeDependencies(options?: { force?: boolean }) {
+    await prompt.executeTask(
+      () => this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
+      {
+        id: 'dedupe-dependencies',
+        intro: 'Deduplicating dependencies...',
+        error: 'An error occurred while deduplicating dependencies.',
+        success: 'Dependencies deduplicated',
+      }
+    );
 
     // Clear installed version cache after installation
     this.clearInstalledVersionCache();
@@ -535,7 +538,7 @@ export abstract class JsPackageManager {
     const resolutions = this.getResolutions(packageJson, versions);
     this.writePackageJson({ ...packageJson, ...resolutions }, operationDir);
   }
-  protected abstract runInstall(): ExecaChildProcess;
+  protected abstract runInstall(options?: { force?: boolean }): ExecaChildProcess;
 
   protected abstract runAddDeps(
     dependencies: string[],

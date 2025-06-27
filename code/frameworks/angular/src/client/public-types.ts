@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import {
+import type {
   AnnotatedStoryFn,
   Args,
   ComponentAnnotations,
@@ -10,8 +10,8 @@ import {
   StrictArgs,
   ProjectAnnotations,
 } from 'storybook/internal/types';
-import * as AngularCore from '@angular/core';
-import { AngularRenderer } from './types';
+import type * as AngularCore from '@angular/core';
+import type { AngularRenderer } from './types';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { Parameters as AngularParameters } from './types';

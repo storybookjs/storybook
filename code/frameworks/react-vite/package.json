@@ -41,19 +41,6 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "preset": [
-        "dist/preset.d.ts"
-      ],
-      "node": [
-        "dist/node/index.d.ts"
-      ]
-    }
-  },
   "files": [
     "dist/**/*",
     "template/**/*",

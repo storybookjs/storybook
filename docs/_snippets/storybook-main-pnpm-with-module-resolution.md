@@ -26,7 +26,7 @@ import type { StorybookConfig } from '@storybook/your-framework';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const getAbsolutePath = (packageName) =>
+const getAbsolutePath = (packageName: string) =>
   dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
 
 const config: StorybookConfig = {

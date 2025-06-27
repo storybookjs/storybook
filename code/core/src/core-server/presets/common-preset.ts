@@ -75,7 +75,6 @@ export const favicon = async (
         const path = join(staticPath, url);
         if (existsSync(path)) {
           results.push(path);
-        } else {
         }
       }
       if (targetEndpoint === '/') {

@@ -320,7 +320,7 @@
       ]
     }
   },
-  "bin": "./bin/index.cjs",
+  "bin": "./dist/bin/dispatcher.js",
   "files": [
     "bin/**/*",
     "dist/**/*",

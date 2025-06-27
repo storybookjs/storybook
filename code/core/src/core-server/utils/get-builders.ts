@@ -1,25 +1,39 @@
-import { createRequire } from 'node:module';
-import { pathToFileURL } from 'node:url';
-
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Builder, Options } from 'storybook/internal/types';
 
-export async function getManagerBuilder(): Promise<Builder<unknown>> {
-  return import('storybook/internal/builder-manager');
-}
+import { parseNodeModulePath } from 'mlly';
+import { isAbsolute } from 'pathe';
 
-const require = createRequire(import.meta.url);
+import { resolveModule } from '../../shared/utils/module';
+
+export async function getManagerBuilder(): Promise<Builder<unknown>> {
+  const builderManagerPath = resolveModule({
+    pkg: 'storybook',
+    customSuffix: 'dist/builder-manager/index.js',
+  });
+  return import(builderManagerPath);
+}
 
 export async function getPreviewBuilder(
   builderName: string,
   configDir: string
 ): Promise<Builder<unknown>> {
-  const builderPackage = require.resolve(
-    ['webpack5'].includes(builderName) ? `@storybook/builder-${builderName}` : builderName,
-    { paths: [configDir] }
-  );
-  const previewBuilder = await import(pathToFileURL(builderPackage).href);
-  return previewBuilder;
+  let builderPackage;
+  if (isAbsolute(builderName)) {
+    // TODO: test this in Yarn PnP
+    const parsedBuilderPackage = parseNodeModulePath(builderName);
+    if (!parsedBuilderPackage.name) {
+      console.error(parsedBuilderPackage);
+      throw new Error('Invalid builder package');
+    }
+    builderPackage = parsedBuilderPackage.name;
+  } else {
+    builderPackage = resolveModule({
+      pkg: builderName,
+      parent: configDir,
+    });
+  }
+  return await import(builderPackage);
 }
 
 export async function getBuilders({ presets, configDir }: Options): Promise<Builder<unknown>[]> {

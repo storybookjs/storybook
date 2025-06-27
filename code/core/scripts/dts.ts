@@ -63,7 +63,11 @@ async function run() {
 
   await Promise.all(
     list.map(async (i) => {
-      await dts(i.file, [...external, ...i.externals], join(__dirname, '..', 'tsconfig.json'));
+      await dts(
+        i.file,
+        [...external, ...i.externals],
+        join(import.meta.dirname, '..', 'tsconfig.json')
+      );
     })
   );
 }

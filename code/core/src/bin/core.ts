@@ -3,19 +3,28 @@ import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
-import { findPackage } from 'fd-package-json';
 import leven from 'leven';
 import picocolors from 'picocolors';
-import invariant from 'tiny-invariant';
 
-import { version } from '../../../package.json';
-import { build } from '../build';
-import { buildIndex as index } from '../buildIndex';
-import { dev } from '../dev';
-import { globalSettings } from '../globalSettings';
+import { version } from '../../package.json';
+import { build } from '../cli/build';
+import { buildIndex as index } from '../cli/buildIndex';
+import { dev } from '../cli/dev';
+import { globalSettings } from '../cli/globalSettings';
 
 addToGlobalContext('cliVersion', version);
 
+/**
+ * Core CLI for Storybook.
+ *
+ * This module provides the core CLI for Storybook, handling the following commands:
+ *
+ * - `dev`: Start the Storybook development server
+ * - `build`: Build the Storybook static files
+ * - `index`: Generate the Storybook index file
+ *
+ * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
+ */
 const command = (name: string) =>
   program
     .command(name)
@@ -91,10 +100,13 @@ command('dev')
   )
   .option('--preview-only', 'Use the preview without the manager UI')
   .action(async (options) => {
-    const pkg = await findPackage(__dirname);
-    invariant(pkg, 'Failed to find the closest package.json file.');
+    const { default: packageJson } = await import('storybook/package.json', {
+      with: { type: 'json' },
+    });
 
-    logger.log(picocolors.bold(`${pkg.name} v${pkg.version}`) + picocolors.reset('\n'));
+    logger.log(
+      picocolors.bold(`${packageJson.name} v${packageJson.version}`) + picocolors.reset('\n')
+    );
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -110,7 +122,7 @@ command('dev')
       options.port = parseInt(`${options.port}`, 10);
     }
 
-    await dev({ ...options, packageJson: pkg }).catch(() => process.exit(1));
+    await dev({ ...options, packageJson }).catch(() => process.exit(1));
   });
 
 command('build')
@@ -135,10 +147,11 @@ command('build')
     const { env } = process;
     env.NODE_ENV = env.NODE_ENV || 'production';
 
-    const pkg = await findPackage(__dirname);
-    invariant(pkg, 'Failed to find the closest package.json file.');
+    const { default: packageJson } = await import('storybook/package.json', {
+      with: { type: 'json' },
+    });
 
-    logger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
+    logger.log(picocolors.bold(`${packageJson.name} v${packageJson.version}\n`));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -150,7 +163,7 @@ command('build')
 
     await build({
       ...options,
-      packageJson: pkg,
+      packageJson,
       test: !!options.test || process.env.SB_TESTBUILD === 'true',
     }).catch(() => process.exit(1));
   });
@@ -163,10 +176,11 @@ command('index')
     const { env } = process;
     env.NODE_ENV = env.NODE_ENV || 'production';
 
-    const pkg = await findPackage(__dirname);
-    invariant(pkg, 'Failed to find the closest package.json file.');
+    const { default: packageJson } = await import('storybook/package.json', {
+      with: { type: 'json' },
+    });
 
-    logger.log(picocolors.bold(`${pkg.name} v${pkg.version}\n`));
+    logger.log(picocolors.bold(`${packageJson.name} v${packageJson.version}\n`));
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -177,7 +191,7 @@ command('index')
 
     await index({
       ...options,
-      packageJson: pkg,
+      packageJson,
     }).catch(() => process.exit(1));
   });
 

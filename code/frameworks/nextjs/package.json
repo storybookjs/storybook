@@ -88,34 +88,6 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "dist/image-context": [
-        "dist/image-context.d.ts"
-      ],
-      "export-mocks": [
-        "dist/export-mocks/index.d.ts"
-      ],
-      "cache.mock": [
-        "dist/export-mocks/cache/index.d.ts"
-      ],
-      "headers.mock": [
-        "dist/export-mocks/headers/index.d.ts"
-      ],
-      "router.mock": [
-        "dist/export-mocks/router/index.d.ts"
-      ],
-      "navigation.mock": [
-        "dist/export-mocks/navigation/index.d.ts"
-      ],
-      "node": [
-        "dist/node/index.d.ts"
-      ]
-    }
-  },
   "files": [
     "dist/**/*",
     "template/cli/**/*",

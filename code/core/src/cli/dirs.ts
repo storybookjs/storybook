@@ -8,6 +8,7 @@ import downloadTarballDefault from '@ndelangen/get-tarball';
 import getNpmTarballUrlDefault from 'get-npm-tarball-url';
 import invariant from 'tiny-invariant';
 
+import { resolveModule } from '../shared/utils/module';
 import { externalFrameworks } from './project_types';
 
 const resolveUsingBranchInstall = async (packageManager: JsPackageManager, request: string) => {
@@ -46,11 +47,7 @@ export async function getRendererDir(
   const errors: Error[] = [];
 
   try {
-    return dirname(
-      require.resolve(packageJsonPath, {
-        paths: [process.cwd()],
-      })
-    );
+    return dirname(resolveModule({ pkg: frameworkPackageName, parent: process.cwd() }));
   } catch (e) {
     invariant(e instanceof Error);
     errors.push(e);

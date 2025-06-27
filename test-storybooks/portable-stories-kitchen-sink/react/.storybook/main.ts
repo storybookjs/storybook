@@ -1,5 +1,6 @@
+import { join } from "node:path";
+
 import type { StorybookConfig } from "@storybook/react-vite";
-import { join } from "path";
 
 const config: StorybookConfig = {
   stories: ["../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -29,7 +30,7 @@ const config: StorybookConfig = {
         ...config.resolve,
         alias: {
           ...config.resolve?.alias,
-          "test-alias": join(__dirname, "aliased.ts"),
+          "test-alias": join(import.meta.dirname, "aliased.ts"),
         },
       },
     };
@@ -45,4 +46,5 @@ const config: StorybookConfig = {
     },
   },
 };
+
 export default config;

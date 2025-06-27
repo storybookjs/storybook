@@ -38,16 +38,6 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "experimental-playwright": [
-        "dist/playwright.d.ts"
-      ]
-    }
-  },
   "files": [
     "dist/**/*",
     "template/cli/**/*",

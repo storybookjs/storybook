@@ -1,29 +1,28 @@
-import { types as t } from 'storybook/internal/babel';
 import { detectPnp } from 'storybook/internal/cli';
 import { readConfig } from 'storybook/internal/csf-tools';
+import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 import {
-  doesVariableOrFunctionDeclarationExist,
-  getFieldsForRequireWrapper,
-  getRequireWrapperAsCallExpression,
-  getRequireWrapperName,
-  isRequireWrapperNecessary,
-  wrapValueWithRequireWrapper,
-} from './wrap-require-utils';
+  getAbsolutePathWrapperAsCallExpression,
+  getAbsolutePathWrapperName,
+  getFieldsForGetAbsolutePathWrapper,
+  isGetAbsolutePathWrapperNecessary,
+  wrapValueWithGetAbsolutePathWrapper,
+} from './wrap-getAbsolutePath-utils';
 
-export interface WrapRequireRunOptions {
+export interface WrapGetAbsolutePathRunOptions {
   storybookVersion: string;
   isStorybookInMonorepo: boolean;
   isPnp: boolean;
   isConfigTypescript: boolean;
 }
 
-export const wrapRequire: Fix<WrapRequireRunOptions> = {
-  id: 'wrap-require',
+export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
+  id: 'wrap-getAbsolutePath',
   link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
 
   async check({ packageManager, storybookVersion, mainConfigPath }) {
@@ -40,7 +39,11 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
       return null;
     }
 
-    if (!getFieldsForRequireWrapper(config).some((node) => isRequireWrapperNecessary(node))) {
+    if (
+      !getFieldsForGetAbsolutePathWrapper(config).some((node) =>
+        isGetAbsolutePathWrapperNecessary(node)
+      )
+    ) {
       return null;
     }
 
@@ -55,11 +58,11 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
 
   async run({ dryRun, mainConfigPath, result }) {
     await updateMainConfig({ dryRun: !!dryRun, mainConfigPath }, (mainConfig) => {
-      getFieldsForRequireWrapper(mainConfig).forEach((node) => {
-        wrapValueWithRequireWrapper(mainConfig, node);
+      getFieldsForGetAbsolutePathWrapper(mainConfig).forEach((node) => {
+        wrapValueWithGetAbsolutePathWrapper(mainConfig, node);
       });
 
-      if (getRequireWrapperName(mainConfig) === null) {
+      if (getAbsolutePathWrapperName(mainConfig) === null) {
         if (
           mainConfig?.fileName?.endsWith('.cjs') ||
           mainConfig?.fileName?.endsWith('.cts') ||
@@ -67,29 +70,14 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
           mainConfig?.fileName?.endsWith('.ctsx') ||
           mainConfig._code.includes('module.exports')
         ) {
-          mainConfig.setRequireImport(['dirname', 'join'], 'node:path');
+          throw new CommonJsConfigNotSupportedError();
         } else {
           mainConfig.setImport(['dirname', 'join'], 'node:path');
-          mainConfig.setImport(['createRequire'], 'node:module');
-
-          // Continue here
-          const hasRequire = mainConfig
-            .getBodyDeclarations()
-            .some((node) => doesVariableOrFunctionDeclarationExist(node, 'require'));
-
-          if (!hasRequire) {
-            const body = mainConfig._ast.program.body;
-            const lastImportIndex = body.findLastIndex((node) => t.isImportDeclaration(node));
-            const requireDeclaration = t.variableDeclaration('const', [
-              t.variableDeclarator(
-                t.identifier('require'),
-                t.callExpression(t.identifier('createRequire'), [t.identifier('import.meta.url')])
-              ),
-            ]);
-            body.splice(lastImportIndex + 1, 0, requireDeclaration);
-          }
+          mainConfig.setImport(['fileURLToPath'], 'node:url');
         }
-        mainConfig.setBodyDeclaration(getRequireWrapperAsCallExpression(result.isConfigTypescript));
+        mainConfig.setBodyDeclaration(
+          getAbsolutePathWrapperAsCallExpression(result.isConfigTypescript)
+        );
       }
     });
   },

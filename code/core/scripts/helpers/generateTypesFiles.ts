@@ -1,16 +1,20 @@
-import { join, relative } from 'node:path';
+import { join, relative } from 'pathe';
 
 import { spawn } from '../../../../scripts/prepare/tools';
-import { limit, picocolors, process } from '../../../../scripts/prepare/tools';
-import type { getEntries } from '../entries';
+import { limit, picocolors } from '../../../../scripts/prepare/tools';
+import type { ESMOnlyEntry, getEntries } from '../entries';
 import { modifyThemeTypes } from './modifyThemeTypes';
 
 export async function generateTypesFiles(
   entries: ReturnType<typeof getEntries>,
+  esmOnlyEntries: ESMOnlyEntry[],
   isOptimized: boolean,
   cwd: string
 ) {
-  const dtsEntries = entries.filter((e) => e.dts).map((e) => e.file);
+  const dtsEntries = entries
+    .filter((e) => e.dts)
+    .map((e) => e.file)
+    .concat(esmOnlyEntries.filter((e) => e.dts !== false).map((e) => e.entryPoint));
 
   if (isOptimized) {
     // Spawn each entry in it's own separate process, because they are slow & synchronous
@@ -25,11 +29,11 @@ export async function generateTypesFiles(
         return limited(async () => {
           const getDtsProcess = () =>
             spawn(
-              join(__dirname, '../../../../scripts/node_modules/.bin/jiti'),
+              join(import.meta.dirname, '../../../../scripts/node_modules/.bin/jiti'),
               ['./scripts/dts.ts', index.toString()],
               {
                 cwd,
-                stdio: ['ignore', 'pipe', 'inherit'],
+                stdio: ['ignore', 'inherit', 'inherit'],
               }
             );
           let timer: ReturnType<typeof setTimeout> | undefined;

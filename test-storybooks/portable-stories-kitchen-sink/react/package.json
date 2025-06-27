@@ -7,7 +7,7 @@
     "cypress": "cypress run --component",
     "cypress-open": "cypress open --component",
     "dev": "vite",
-    "jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "jest": "node node_modules/jest/bin/jest.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "playwright-ct": "playwright test -c playwright-ct.config.ts",
     "playwright-e2e": "playwright test -c playwright-e2e.config.ts",

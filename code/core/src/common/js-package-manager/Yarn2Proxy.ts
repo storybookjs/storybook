@@ -148,7 +148,7 @@ export class Yarn2Proxy extends JsPackageManager {
     }
   }
 
-  getModulePackageJSON(packageName: string): PackageJson | null {
+  async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
       cwd: this.cwd,
       stopAt: getProjectRoot(),
@@ -156,7 +156,7 @@ export class Yarn2Proxy extends JsPackageManager {
 
     if (pnpapiPath) {
       try {
-        const pnpApi = require(pnpapiPath);
+        const pnpApi = await import(pnpapiPath);
 
         const resolvedPath = pnpApi.resolveToUnqualified(
           packageName,

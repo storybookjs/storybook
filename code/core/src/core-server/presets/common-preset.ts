@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname, isAbsolute, join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -23,22 +23,19 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
+import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { resolveModule } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
-import { defaultStaticDirs } from '../utils/constants';
+import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
-
-const defaultFavicon = join(
-  dirname(require.resolve('storybook/internal/package.json')),
-  '/assets/browser/favicon.svg'
-);
 
 export const staticDirs: PresetPropertyFn<'staticDirs'> = async (values = []) => [
   ...defaultStaticDirs,
@@ -52,6 +49,7 @@ export const favicon = async (
   if (value) {
     return value;
   }
+
   const staticDirsValue = await options.presets.apply('staticDirs');
 
   const statics = staticDirsValue
@@ -86,9 +84,9 @@ export const favicon = async (
           results.push(path);
         }
       }
-
       return results;
     });
+
     const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
 
     if (flatlist.length > 1) {
@@ -98,7 +96,6 @@ export const favicon = async (
         ${flatlist.join(', ')}
         `);
     }
-
     return flatlist[0] || defaultFavicon;
   }
 
@@ -292,8 +289,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(require.resolve('react/package.json')),
-      reactDom: dirname(require.resolve('react-dom/package.json')),
+      react: pathe.dirname(resolveModule({ pkg: 'react' })),
+      reactDom: pathe.dirname(resolveModule({ pkg: 'react-dom' })),
     };
   } catch (e) {
     return existing;
@@ -312,10 +309,10 @@ export const tags = async (existing: any) => {
 
 export const managerEntries = async (existing: any) => {
   return [
-    join(
-      dirname(require.resolve('storybook/internal/package.json')),
-      'dist/core-server/presets/common-manager.js'
-    ),
+    resolveModule({
+      pkg: 'storybook',
+      customSuffix: 'dist/core-server/presets/common-manager.js',
+    }),
     ...(existing || []),
   ];
 };

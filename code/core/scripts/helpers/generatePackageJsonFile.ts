@@ -1,14 +1,20 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
 
-import slash from 'slash';
+import { join, relative } from 'pathe';
 
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
-import type { getEntries } from '../entries';
+import type { ESMOnlyEntriesByPlatform, getEntries } from '../entries';
 
 const cwd = process.cwd();
 
-export async function generatePackageJsonFile(entries: ReturnType<typeof getEntries>) {
+function sortObject(obj: Record<string, any>) {
+  return Object.fromEntries(Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)));
+}
+
+export async function generatePackageJsonFile(
+  entries: ReturnType<typeof getEntries>,
+  esmOnlyEntries: ESMOnlyEntriesByPlatform
+) {
   const location = join(cwd, 'package.json');
   const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
 
@@ -18,7 +24,7 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
    * correct path.
    */
   pkgJson.exports = entries.reduce<Record<string, Record<string, string>>>((acc, entry) => {
-    let main = './' + slash(relative(cwd, entry.file).replace('src', 'dist'));
+    let main = './' + relative(cwd, entry.file).replace('src', 'dist');
 
     const content: Record<string, string> = {};
     if (entry.dts) {
@@ -31,7 +37,16 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
       content.import = main.replace(/\.tsx?/, '.js');
     }
     if (entry.node) {
-      content.require = main.replace(/\.tsx?/, '.cjs');
+      // TODO: temporary hack to get this to be ESM-only
+      if (
+        entry.file.includes('/common/') ||
+        entry.file.includes('/telemetry/') ||
+        entry.file.includes('/core-server/index')
+      ) {
+        content.default = main.replace(/\.tsx?/, '.js');
+      } else {
+        content.require = main.replace(/\.tsx?/, '.cjs');
+      }
     }
     if (main === './dist/index.ts' || main === './dist/index.tsx') {
       main = '.';
@@ -72,54 +87,23 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
   pkgJson.exports['./package.json'] = './package.json';
   pkgJson.exports['./internal/package.json'] = './package.json';
 
-  /**
-   * Add the `typesVersion` field to `code/core/package.json`, to make typescript respect and find
-   * the correct type annotation files, even when not configured with `"moduleResolution":
-   * "Bundler"` If we even decide to only support `"moduleResolution": "Bundler"`, we should be able
-   * to remove this part, but that would be a breaking change.
-   */
-  pkgJson.typesVersions = {
-    '*': {
-      '*': ['./dist/index.d.ts'],
-      ...entries.reduce<Record<string, string[]>>((acc, entry) => {
-        if (!entry.dts) {
-          return acc;
-        }
+  for (const entry of Object.values(esmOnlyEntries).flat()) {
+    for (const exportEntry of entry.exportEntries ?? []) {
+      const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+      const jsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.js');
 
-        let main = slash(relative(cwd, entry.file).replace('src', 'dist'));
-        if (main === './dist/index.ts' || main === './dist/index.tsx') {
-          main = '.';
-        }
-        const key = main.replace(/\/index\.tsx?/, '').replace(/\.tsx?/, '');
+      if (entry.dts === undefined) {
+        pkgJson.exports[exportEntry] = {
+          types: dtsPath,
+          default: jsPath,
+        };
+      } else {
+        pkgJson.exports[exportEntry] = jsPath;
+      }
+    }
+  }
 
-        if (key === 'dist') {
-          return acc;
-        }
-
-        const content = ['./' + main.replace(/\.tsx?/, '.d.ts')];
-
-        /**
-         * We always write an entry for /internal/X, even when it's isPublic is true, this is for
-         * compatibility reasons. We should remove this once everything stops referencing public
-         * APIs as internal.
-         *
-         * Known references:
-         *
-         * - VTA
-         * - Design addon
-         * - Addon kit
-         *
-         * I expect that we should be able to drop it in the process of of the release of 9.0, or
-         * keep it for now, and drop it in the release of 9.1.
-         */
-        acc[key.replace('dist/', 'internal/')] = content;
-        if (entry.isPublic) {
-          acc[key.replace('dist/', '')] = content;
-        }
-        return acc;
-      }, {}),
-    },
-  };
+  pkgJson.exports = sortObject(pkgJson.exports);
 
   await writeFile(location, `${sortPackageJson(JSON.stringify(pkgJson, null, 2))}\n`, {});
 }

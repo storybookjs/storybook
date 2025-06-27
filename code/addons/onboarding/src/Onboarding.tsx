@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { SyntaxHighlighter } from 'storybook/internal/components';
-import { ADDON_ID as CONTROLS_ADDON_ID } from 'storybook/internal/controls';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 
 import type { Step } from 'react-joyride';
@@ -11,7 +10,7 @@ import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 import { Confetti } from './components/Confetti/Confetti';
 import { HighlightElement } from './components/HighlightElement/HighlightElement';
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
-import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
+import { ADDON_CONTROLS_ID, STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
 import { GuidedTour } from './features/GuidedTour/GuidedTour';
 import { SplashScreen } from './features/SplashScreen/SplashScreen';
 
@@ -120,7 +119,7 @@ export default function Onboarding({ api }: { api: API }) {
     selectStory('example-button--primary');
     api.togglePanel(true);
     api.togglePanelPosition('bottom');
-    api.setSelectedPanel(CONTROLS_ADDON_ID);
+    api.setSelectedPanel(ADDON_CONTROLS_ID);
   }, [api, selectStory]);
 
   useEffect(() => {

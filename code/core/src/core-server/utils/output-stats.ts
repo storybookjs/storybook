@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { logger } from 'storybook/internal/node-logger';
 import type { Stats } from 'storybook/internal/types';
 
-import { stringifyStream } from '@discoveryjs/json-ext';
+import dje from '@discoveryjs/json-ext';
 import picocolors from 'picocolors';
 
 export async function outputStats(directory: string, previewStats?: any, managerStats?: any) {
@@ -22,7 +22,8 @@ export const writeStats = async (directory: string, name: string, stats: Stats) 
   const filePath = join(directory, `${name}-stats.json`);
   const { chunks, ...data } = stats.toJson(); // omit chunks, which is about half of the total data
   await new Promise((resolve, reject) => {
-    stringifyStream(data, null, 2)
+    dje
+      .stringifyStream(data, null, 2)
       .on('error', reject)
       .pipe(createWriteStream(filePath))
       .on('error', reject)

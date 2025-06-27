@@ -3,7 +3,10 @@ import { existsSync, watch } from 'node:fs';
 import { chmod, mkdir, rm, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
+import { commonjs } from '@hyrious/esbuild-plugin-commonjs';
 import type { Metafile } from 'esbuild';
+import drop from 'esbuild-plugin-drop';
+import ignore from 'esbuild-plugin-ignore';
 import { dirname, join } from 'pathe';
 
 import {
@@ -171,6 +174,7 @@ async function run() {
       outbase: 'src',
       outdir: 'dist',
       treeShaking: true,
+      legalComments: 'none',
       color: true,
       external: esmOnlyExternal.filter((external) => !esmOnlyNoExternal.includes(external)),
     } as const satisfies EsbuildContextOptions;
@@ -228,7 +232,64 @@ async function run() {
             // ------------------------------------------------------------
             `,
         },
+
         plugins: [
+          ignore([
+            {
+              resourceRegExp: /browserslist$/,
+              contextRegExp: /node_modules\//,
+            },
+            // {
+            //   resourceRegExp: /debug$/,
+            //   contextRegExp: /node_modules\//,
+            // },
+          ]),
+          // drop({ modules: ['node_modules/debug', 'debug'] }),
+          commonjs({
+            include: ({ path }) => {
+              return (
+                // path.includes('node_modules/debug') ||
+                path.includes('node_modules/supports-color') ||
+                path.includes('node_modules/@babel/helper-module-imports') ||
+                path.includes('node_modules/@babel/core/lib') ||
+                path.includes('node_modules/@babel/helper-compilation-targets') ||
+                path.includes('node_modules/@babel/helper-module-transforms') ||
+                path.includes('node_modules/@babel/helper-create-class-features-plugin') ||
+                path.includes('node_modules/@babel/plugin-transform-typescript') ||
+                path.includes('node_modules/browserslist') ||
+                path.includes('node_modules/tsconfig-paths') ||
+                path.includes('node_modules/fill-range') ||
+                path.includes('node_modules/picomatch') ||
+                path.includes('node_modules/micromatch') ||
+                path.includes('node_modules/merge2') ||
+                path.includes('node_modules/@nodelib/') ||
+                path.includes('node_modules/graceful-fs') ||
+                path.includes('node_modules/watchpack') ||
+                path.includes('node_modules/fast-glob') ||
+                path.includes('node_modules/totalist/sync/index.js') ||
+                path.includes('node_modules/@polka/url') ||
+                path.includes('node_modules/sirv') ||
+                path.includes('node_modules/prompts') ||
+                path.includes('node_modules/untildify') ||
+                // path.includes('node_modules/debug') ||
+                path.includes('node_modules/is-docker') ||
+                path.includes('node_modules/open') ||
+                path.includes('node_modules/address') ||
+                // path.includes('node_modules/detect-port') ||
+                // path.includes('node_modules/@colors/colors') ||
+                // path.includes('node_modules/@aw-web-design/x-default-browser') ||
+                path.includes('node_modules/@discoveryjs/json-ext') ||
+                false
+              );
+            },
+            requireReturnsDefault: (p) =>
+              //
+              p.includes('node_modules/mrmime') ||
+              //
+              // p.includes('node_modules/debug') ||
+              false,
+            transform: true,
+          }),
           {
             name: 'bin-executable-permissions',
             setup(build) {

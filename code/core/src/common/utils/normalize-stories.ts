@@ -4,7 +4,7 @@ import { basename, dirname, relative, resolve } from 'node:path';
 import { InvalidStoriesEntryError } from 'storybook/internal/server-errors';
 import type { NormalizedStoriesSpecifier, StoriesEntry } from 'storybook/internal/types';
 
-import * as pico from 'picomatch';
+import pico from 'picomatch';
 import slash from 'slash';
 
 import { globToRegexp } from './glob-to-regexp';

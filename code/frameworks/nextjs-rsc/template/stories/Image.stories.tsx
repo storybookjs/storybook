@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/experimental-nextjs-rsc';
 
 import Image from 'next/image';
 

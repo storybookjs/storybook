@@ -6,7 +6,7 @@
 import type { PropsWithChildren } from 'react';
 import React from 'react';
 
-import { getRouter } from '@storybook/nextjs/router.mock';
+import { getRouter } from '@storybook/experimental-nextjs-rsc/router.mock';
 
 import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
 

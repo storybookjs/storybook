@@ -8,7 +8,10 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
+// @ts-expect-error no dts file
+import ReactServerWebpackPlugin from 'react-server-dom-webpack/plugin';
 import semver from 'semver';
+import type { Configuration } from 'webpack';
 
 import nextBabelPreset from './babel/preset';
 import { configureConfig } from './config/webpack';
@@ -44,12 +47,11 @@ export const core: PresetProperty<'core'> = async (config, options) => {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: dirname(require.resolve(join('@storybook/react', 'package.json'))),
   };
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const nextDir = dirname(require.resolve('@storybook/nextjs/package.json'));
+  const nextDir = dirname(require.resolve('@storybook/experimental-nextjs-rsc/package.json'));
   const result = [...entry, join(nextDir, 'dist/preview.mjs')];
   return result;
 };
@@ -151,7 +153,6 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const { configureNodePolyfills } = await import('./nodePolyfills/webpack');
   const { configureAliases } = await import('./aliases/webpack');
   const { configureFastRefresh } = await import('./fastRefresh/webpack');
-  const { configureRSC } = await import('./rsc/webpack');
   const { configureSWCLoader } = await import('./swc/loader');
   const { configureBabelLoader } = await import('./babel/loader');
 
@@ -178,10 +179,6 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
     configureFastRefresh(baseConfig);
   }
 
-  if (options.features?.experimentalRSC) {
-    configureRSC(baseConfig);
-  }
-
   if (useSWC) {
     logger.info('=> Using SWC as compiler');
     await configureSWCLoader(baseConfig, options, nextConfig);
@@ -190,5 +187,86 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
     await configureBabelLoader(baseConfig, options, nextConfig);
   }
 
+  rscBundle(baseConfig);
+
   return baseConfig;
 };
+
+function rscBundle(config: Configuration) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (config.resolve!.alias as any)[
+    '@vercel/turbopack-ecmascript-runtime/browser/dev/hmr-client/hmr-client.ts'
+  ] = 'next/dist/client/dev/noop-turbopack-hmr';
+
+  config.experiments!.layers = true;
+  config.plugins!.unshift(
+    new ReactServerWebpackPlugin({
+      isServer: false,
+      clientReferences: [
+        {
+          directory: '.',
+          recursive: true,
+          include: /\.(m?(js|ts)x?)$/,
+        },
+      ],
+    })
+  );
+  config.module?.rules?.push(
+    {
+      layer: 'client',
+      test: (request) => {
+        return /react-client-entrypoint/.test(request);
+      },
+    },
+    {
+      issuerLayer: 'client',
+      resolve: {
+        conditionNames: ['browser', ...(config.resolve?.conditionNames ?? [])],
+      },
+    },
+    // {
+    //   issuerLayer: "client",
+    //   resolve: {
+    //     alias: {
+    //       react$: "next/dist/compiled/react",
+    //       "react-dom$": "next/dist/compiled/react-dom",
+    //       "react-dom/client$": "next/dist/compiled/react-dom/client",
+    //       "react-server-dom-webpack/client$":
+    //         "next/dist/compiled/react-server-dom-webpack/client.browser",
+    //       "react-server-dom-webpack/server.browser$":
+    //         "next/dist/compiled/react-server-dom-webpack/server.browser",
+    //     },
+    //   },
+    // },
+    {
+      layer: 'rsc',
+      test: (request) => {
+        return /storybook-config-entry\.js/.test(request);
+      },
+    },
+    {
+      issuerLayer: 'rsc',
+      loader: require.resolve('@storybook/experimental-nextjs-rsc/dist/rsc/react-transform-loader'),
+      resolve: {
+        conditionNames: ['react-server', 'browser', ...(config.resolve?.conditionNames ?? [])],
+      },
+    }
+    // {
+    //   issuerLayer: "rsc",
+    //   resolve: {
+    //     alias: {
+    //       "next/dist/compiled/react$":
+    //         "next/dist/compiled/react/react.react-server",
+    //       react$: "next/dist/compiled/react/react.react-server",
+    //       "react-dom$": "next/dist/compiled/react-dom/react-dom.react-server",
+    //       "react-dom/client$":
+    //         "next/dist/compiled/react-dom/client.react-server",
+    //       "react-server-dom-webpack/client$":
+    //         "next/dist/compiled/react-server-dom-webpack/client.browser",
+    //       "react-server-dom-webpack/server.browser$":
+    //         "next/dist/compiled/react-server-dom-webpack/server.browser",
+    //     },
+    //   },
+    // },
+  );
+}

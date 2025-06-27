@@ -10,6 +10,7 @@ export const frameworkToRenderer: Record<
   ember: 'ember',
   'html-vite': 'html',
   nextjs: 'react',
+  'nextjs-rsc': 'react',
   'nextjs-vite': 'react',
   'preact-vite': 'preact',
   qwik: 'qwik',

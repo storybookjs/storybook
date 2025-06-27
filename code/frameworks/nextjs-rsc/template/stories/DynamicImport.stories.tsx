@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/experimental-nextjs-rsc';
 
 import dynamic from 'next/dynamic';
 

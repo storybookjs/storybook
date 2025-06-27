@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
-import { cookies, headers } from '@storybook/nextjs/headers.mock';
+import type { Meta, StoryObj } from '@storybook/experimental-nextjs-rsc';
+import { cookies, headers } from '@storybook/experimental-nextjs-rsc/headers.mock';
 
 import { expect, userEvent, within } from 'storybook/test';
 

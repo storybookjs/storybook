@@ -4,6 +4,7 @@ import { rename as renameAsync } from 'node:fs/promises';
 import { extname } from 'node:path';
 
 import { sync as spawnSync } from 'cross-spawn';
+import { glob as tinyglobby } from 'tinyglobby';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
 
@@ -57,11 +58,7 @@ export async function runCodemod(
     }
   }
 
-  // Dynamically import globby because it is a pure ESM module
-  // eslint-disable-next-line depend/ban-dependencies
-  const { globby } = await import('globby');
-
-  const files = await globby([glob, '!**/node_modules', '!**/dist']);
+  const files = await tinyglobby([glob, '!**/node_modules', '!**/dist']);
   const extensions = new Set(files.map((file) => extname(file).slice(1)));
   const commaSeparatedExtensions = Array.from(extensions).join(',');
 

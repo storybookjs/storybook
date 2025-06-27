@@ -6721,7 +6721,7 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     "@vitejs/plugin-react": "npm:^4.3.2"
     typescript: "npm:^5.8.3"
-    vite-plugin-babel: "npm:^1.3.0"
+    vite-plugin-babel: "npm:^1.3.2"
     vite-plugin-commonjs: "npm:^0.10.4"
     vite-tsconfig-paths: "npm:^5.1.4"
   peerDependencies:
@@ -26710,13 +26710,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-babel@npm:^1.3.0":
-  version: 1.3.0
-  resolution: "vite-plugin-babel@npm:1.3.0"
+"vite-plugin-babel@npm:^1.3.2":
+  version: 1.3.2
+  resolution: "vite-plugin-babel@npm:1.3.2"
   peerDependencies:
     "@babel/core": ^7.0.0
-    vite: ^2.7.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0
-  checksum: 10c0/1613c45ee220ffbad18aeacbbe395d4d346cbe7c971c7469b0cd96df422bd9d617821a40bacf3b6ea3e7c4ded43e6ccdfd17ec3c0899fee2835f56e8971c6b57
+    vite: ^2.7.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+  checksum: 10c0/177f51dab2956b282ee6c630cd31df625714a0b33dea7418a5648bc153f3f6aa98c54d8960d68fdbe106e5dfde9d8c2f0e65b929964f41de33815caa8e691ab7
   languageName: node
   linkType: hard
 

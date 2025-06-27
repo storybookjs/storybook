@@ -1,10 +1,10 @@
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Builder, Options } from 'storybook/internal/types';
 
-import { parseNodeModulePath } from 'mlly';
-import { isAbsolute } from 'pathe';
+import { fileURLToPath, parseNodeModulePath } from 'mlly';
+import { dirname, isAbsolute } from 'pathe';
 
-import { resolveModule } from '../../shared/utils/module';
+import { importModule, resolveModule } from '../../shared/utils/module';
 
 export async function getManagerBuilder(): Promise<Builder<unknown>> {
   const builderManagerPath = resolveModule({
@@ -22,23 +22,20 @@ export async function getPreviewBuilder(
   if (isAbsolute(builderName)) {
     // TODO: test this in Yarn PnP
     const parsedBuilderPackage = parseNodeModulePath(builderName);
-    if (!parsedBuilderPackage.name) {
-      console.error(parsedBuilderPackage);
-      throw new Error('Invalid builder package');
-    }
-    builderPackage = parsedBuilderPackage.name;
+    builderPackage =
+      parsedBuilderPackage.name ||
+      dirname(fileURLToPath(resolveModule({ pkg: builderName, parent: configDir })));
   } else {
     builderPackage = resolveModule({
       pkg: builderName,
       parent: configDir,
     });
   }
-  return await import(builderPackage);
+  return await importModule(builderPackage);
 }
 
 export async function getBuilders({ presets, configDir }: Options): Promise<Builder<unknown>[]> {
   const { builder } = await presets.apply('core', {});
-
   if (!builder) {
     throw new MissingBuilderError();
   }

@@ -1,5 +1,8 @@
 <h1>Migration</h1>
 
+- [From version 9.x to 10.0.0](#from-version-9x-to-1000)
+  - [Core Changes](#core-changes)
+    - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -97,7 +100,7 @@
     - [MDX is upgraded to v3](#mdx-is-upgraded-to-v3)
     - [Dropping support for \*.stories.mdx (CSF in MDX) format and MDX1 support](#dropping-support-for-storiesmdx-csf-in-mdx-format-and-mdx1-support)
     - [Dropping support for id, name and story in Story block](#dropping-support-for-id-name-and-story-in-story-block)
-  - [Core changes](#core-changes)
+  - [Core changes](#core-changes-1)
     - [`framework.options.builder.useSWC` for Webpack5-based projects removed](#frameworkoptionsbuilderuseswc-for-webpack5-based-projects-removed)
     - [Removed `@babel/core` and `babel-loader` from `@storybook/builder-webpack5`](#removed-babelcore-and-babel-loader-from-storybookbuilder-webpack5)
     - [`framework.options.fastRefresh` for Webpack5-based projects removed](#frameworkoptionsfastrefresh-for-webpack5-based-projects-removed)
@@ -476,6 +479,14 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 9.x to 10.0.0
+
+### Core Changes
+
+#### Node.js 20.19+ or 22.12+ required
+
+Storybook 10 now requires Node.js version 20.19+ or 22.12+. We require these new ranges so Node.js supports `require(esm)` without a flag.
 
 ## From version 8.x to 9.0.0
 

@@ -1,3 +1,44 @@
+## 9.1.0-alpha.7
+
+- Addon Vitest: Remove Optimize deps candidates due to Vitest warnings - [#31809](https://github.com/storybookjs/storybook/pull/31809), thanks @valentinpalkovic!
+- Addon Vitest: Support init in Vitest >= 3.2 - [#31715](https://github.com/storybookjs/storybook/pull/31715), thanks @valentinpalkovic!
+- Addons: Use chromatic-com/storybook without version specifier - [#31627](https://github.com/storybookjs/storybook/pull/31627), thanks @valentinpalkovic!
+- Angular: Bundle using TSup - [#31690](https://github.com/storybookjs/storybook/pull/31690), thanks @ndelangen!
+- Angular: Fix Storybook experimentalZoneless is not compatible with Angular 20 - [#31772](https://github.com/storybookjs/storybook/pull/31772), thanks @guysenpai!
+- Angular: Tailwind 4 compatibility - [#31759](https://github.com/storybookjs/storybook/pull/31759), thanks @valentinpalkovic!
+- Angular: Update MiniCssExtractPlugin configuration for cache busting - [#31752](https://github.com/storybookjs/storybook/pull/31752), thanks @valentinpalkovic!
+- CLI: Add RN/RNW "both" init option - [#31778](https://github.com/storybookjs/storybook/pull/31778), thanks @shilman!
+- CLI: Prebundle more in cli-storybook package - [#31746](https://github.com/storybookjs/storybook/pull/31746), thanks @ndelangen!
+- CLI: Show Storybook version in the upgrade command - [#31774](https://github.com/storybookjs/storybook/pull/31774), thanks @yannbf!
+- CSF: Improve controls parameters - [#31745](https://github.com/storybookjs/storybook/pull/31745), thanks @kasperpeulen!
+- CSF: Story ComponentAnnotations['subcomponents'] to correctly use its own type for subcomponents rather than attempt to inherit from the component - [#31723](https://github.com/storybookjs/storybook/pull/31723), thanks @mihkeleidast!
+- Controls: Improve the accessibility of the object control - [#31581](https://github.com/storybookjs/storybook/pull/31581), thanks @Sidnioulz!
+- Core: Cleanup of type following up v9 and small verbatimModuleSyntax type fix  - [#31823](https://github.com/storybookjs/storybook/pull/31823), thanks @alcpereira!
+- Core: Disable interactions debugger on composed stories to avoid cross-origin error - [#31685](https://github.com/storybookjs/storybook/pull/31685), thanks @ghengeveld!
+- Core: Enhance package manager install methods to support optional force flag - [#31796](https://github.com/storybookjs/storybook/pull/31796), thanks @valentinpalkovic!
+- Core: Fix FIPS compliance - [#31806](https://github.com/storybookjs/storybook/pull/31806), thanks @JReinhold!
+- Core: Fix addon scrollbars and align scrollbar colors with toolbars - [#31844](https://github.com/storybookjs/storybook/pull/31844), thanks @Sidnioulz!
+- Core: Fix aria-controls attribute on sidebar nodes to include all children - [#31491](https://github.com/storybookjs/storybook/pull/31491), thanks @candrepa1!
+- Core: Fix cyclical dependency in core addons - [#31750](https://github.com/storybookjs/storybook/pull/31750), thanks @JReinhold!
+- Core: Fix horizontal scrollbar covering part of the toolbar - [#31704](https://github.com/storybookjs/storybook/pull/31704), thanks @Sidnioulz!
+- Core: Gracefully handle disallowed cross-origin clipboard access - [#31834](https://github.com/storybookjs/storybook/pull/31834), thanks @ghengeveld!
+- Core: Restore original clipboard after invoking `userEvent.setup()` - [#31730](https://github.com/storybookjs/storybook/pull/31730), thanks @ghengeveld!
+- Core: Support array-based catch-all Next.js route segments in AppRouterProvider - [#31524](https://github.com/storybookjs/storybook/pull/31524), thanks @yatishgoel!
+- Core: Support container queries in addon panels - [#23261](https://github.com/storybookjs/storybook/pull/23261), thanks @neil-morrison44!
+- Deps: Extend `vite` peerDependencies range to include `7.0.0` - [#31859](https://github.com/storybookjs/storybook/pull/31859), thanks @ghengeveld!
+- Deps: Update vite-plugin-babel to 1.3.2 to fix vite 7.0.0 peerDependency issue - [#31888](https://github.com/storybookjs/storybook/pull/31888), thanks @ghengeveld!
+- Docs: Update `react-element-to-jsx-string` - [#31170](https://github.com/storybookjs/storybook/pull/31170), thanks @7rulnik!
+- Next.js-Vite: Support Next.js v15.4 - [#31828](https://github.com/storybookjs/storybook/pull/31828), thanks @valentinpalkovic!
+- Next.js: Add webpack alias to resolve Next.js package conflicts - [#31755](https://github.com/storybookjs/storybook/pull/31755), thanks @valentinpalkovic!
+- Next.js: Enhance Vite configuration with styled-jsx aliasing - [#31757](https://github.com/storybookjs/storybook/pull/31757), thanks @valentinpalkovic!
+- Nextjs-Vite: Use tsconfig paths plugin - [#31764](https://github.com/storybookjs/storybook/pull/31764), thanks @kasperpeulen!
+- React Native Web: Fix shift spread operator in react-native-web-vite presets - [#31804](https://github.com/storybookjs/storybook/pull/31804), thanks @xlecunff-pass!
+- React Native: Fix window event listeners that dont exist on rn - [#31780](https://github.com/storybookjs/storybook/pull/31780), thanks @dannyhw!
+- Telemetry: Fix prompting without checking isTTY - [#31781](https://github.com/storybookjs/storybook/pull/31781), thanks @Synar!
+- UI: Hide keyboard shortcuts entry from menu when shortcuts are disabled - [#23411](https://github.com/storybookjs/storybook/pull/23411), thanks @Spielboerg!
+- UI: Visual focus indicators (VFIs) aren't visible in high contrast mode (rebase) - [#31848](https://github.com/storybookjs/storybook/pull/31848), thanks @Sidnioulz!
+- Vite: Remove addon-themes and theming from optimized deps list - [#31833](https://github.com/storybookjs/storybook/pull/31833), thanks @ghengeveld!
+
 ## 9.1.0-alpha.6
 
 - CLI: Fix package manager instantiation in empty directories - [#31743](https://github.com/storybookjs/storybook/pull/31743), thanks @yannbf!

@@ -1,0 +1,78 @@
+---
+title: 'How we release Storybook'
+sidebar:
+  order: 11
+  title: Releases
+---
+
+Storybook packages ([`storybook`](https://www.npmjs.com/package/storybook) and everything under the [`@storybook` organization](https://www.npmjs.com/org/storybook)) follow [Semantic Versioning](https://semver.org/) (semver). We have a structured release process to ensure stability, compatibility, and a smooth upgrade path for users. This page outlines our release channels, supported versions, and the cadence of major, minor, patch, and pre releases.
+
+## Release Channels
+
+We publish releases on two channels. You can install a specific channel via npm tags:
+
+- **Stable channel** (`latest`): Installs the latest stable release.
+
+```bash
+npm create storybook@latest
+```
+
+- **Pre-release channel** (`next`): Installs the latest [pre-release](#pre-release).
+
+```bash
+npm create storybook@next
+```
+
+## Supported Versions
+
+We actively maintain the latest major version of Storybook. Within the current major, we patch only the latest minor version. Most fixes and new work go into the next minor (or sometimes major) and are not backported. Critical security fixes may be backported more broadly across the current major version, and in rare cases (such as for a short period immediately following a new major), to the previous major.
+
+For example, if the latest version is `9.2.1`:
+
+- We support `9.x.x` versions and release `9.2.x` patch versions
+- Most fixes and new work will be released as `9.3.0-alpha.x` versions
+  - If the next release is a major version, it would be `10.0.0-alpha.x`
+- We will backport critical security fixes to `9.1.x` or `9.0.x`
+- Rarely, we may backport critical fixes to `8.6.x` as necessary
+
+For compatibility with other libraries and tools in the JavaScript ecosystem, please refer to the [compatibility tracker](https://github.com/storybookjs/storybook/issues/23279).
+
+## Release Cycle
+
+#### Major Release
+
+**Cadence**: Roughly once per year
+
+**Channel**: Stable (`latest`)
+
+Major releases introduce breaking changes and significant new features. We use major releases to keep up with ecosystem changes, evolve Storybook’s architecture and APIs, and make the tool faster, leaner, and easier to use. 
+
+Once we start working on a major release, we pause minor releases but continue to ship patch releases as needed. Major releases go through a sequence of [pre-releases](#pre-release)—`alpha`, `beta`, and `rc` (release candidate)—before landing in the stable channel. We aim to include automated migrations and provide [a comprehensive migration guide](../releases/migration-guide.mdx) when manual changes are necessary.
+
+<Callout variant="info">
+  Storybook versions prior to 7 had a very different architecture. As a result, upgrading from v6 to newer versions can be more challenging. Starting in v7, we’ve focused heavily on smoother migrations. Upgrades from v7 to v8, and v8 to v9 (and beyond), should feel significantly easier thanks to automigrations and better tooling.
+</Callout>
+
+#### Minor Release
+
+**Cadence**: Roughly every 8 weeks
+
+**Channel**: Stable (`latest`)
+
+Minor releases deliver new features, enhancements, and non-breaking improvements. Each minor release may be preceded by an alpha [pre-release](#pre-release) (e.g. `x.y.0-alpha`).
+
+#### Patch Release
+
+**Cadence**: as needed (only for the current minor)
+
+**Channel**: Stable (`latest`)
+
+Patch releases include critical bug fixes and security updates. These are issued only for the current minor version and are not pre-released.
+
+#### Pre-release
+
+**Cadence**: Regularly
+
+**Channel**: Pre-release (`next`)
+
+Pre-releases are created to gather early feedback and ensure stability before an official release. Minor version stable releases are preceded by pre-releases with an `alpha` tag (e.g. `x.y.0-alpha`), with no patch pre-releases. Major version stable releases are preceded by a fuller cycle of `alpha`, `beta`, and `rc` pre-releases before the final release.

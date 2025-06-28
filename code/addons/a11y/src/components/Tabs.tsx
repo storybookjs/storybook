@@ -58,6 +58,8 @@ const Subnav = styled.div(({ theme }) => ({
   overflow: 'auto',
   paddingRight: 10,
   gap: 6,
+  scrollbarColor: `${theme.barTextColor} ${theme.background.app}`,
+  scrollbarWidth: 'thin',
 }));
 
 const TabsWrapper = styled.div({});

@@ -4,7 +4,7 @@ import * as addArgs from './addArgs';
 import * as loaders from './loaders';
 import type { ActionsTypes } from './types';
 
-export { type ActionsTypes };
+export type { ActionsTypes };
 
 export default () =>
   definePreviewAddon<ActionsTypes>({

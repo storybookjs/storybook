@@ -16,39 +16,57 @@ export function isTestEnvironment() {
   }
 }
 
-// Pause all animations and transitions by overriding the CSS properties
+// Pause all DocumentTimeline animations and transitions by overriding the CSS properties
 export function pauseAnimations(atEnd = true): CleanupCallback {
-  if (!('document' in globalThis && 'createElement' in globalThis.document)) {
+  if (
+    !(
+      'document' in globalThis &&
+      'createElement' in globalThis.document &&
+      'getAnimations' in globalThis.document
+    )
+  ) {
     // Don't run in React Native
     return () => {};
   }
 
-  // Remove all animations
-  const disableStyle = document.createElement('style');
-  disableStyle.textContent = `*, *:before, *:after {
-    animation: none !important;
-  }`;
-  document.head.appendChild(disableStyle);
+  // Get all DocumentTimeline animations, we skip View- and ScrollTimeline animations
+  // https://github.com/storybookjs/storybook/issues/31877
+  const animations = document
+    .getAnimations()
+    .filter((anim) => anim.timeline instanceof DocumentTimeline);
 
-  // Pause any new animations
-  const pauseStyle = document.createElement('style');
-  pauseStyle.textContent = `*, *:before, *:after {
-    animation-delay: 0s !important;
-    animation-direction: ${atEnd ? 'reverse' : 'normal'} !important;
-    animation-play-state: paused !important;
+  // Remember current states for cleanup
+  const previousStates = animations.map((anim) => ({
+    animation: anim,
+    playState: anim.playState,
+    currentTime: anim.currentTime,
+  }));
+
+  for (const animation of animations) {
+    // Seek to end before pausing
+    if (atEnd) {
+      animation.currentTime =
+        animation.effect?.getComputedTiming().endTime ?? animation.currentTime;
+    }
+    animation.pause();
+  }
+
+  // Disable transitions
+  const transitionStyle = document.createElement('style');
+  transitionStyle.textContent = `*, *::before, *::after {
     transition: none !important;
   }`;
-  document.head.appendChild(pauseStyle);
+  document.head.appendChild(transitionStyle);
 
-  // Force a reflow
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  document.body.clientHeight;
-
-  // Now recreate all animations, getting paused in their initial state
-  document.head.removeChild(disableStyle);
-
+  // Return cleanup function to restore paused animations
   return () => {
-    pauseStyle.parentNode?.removeChild(pauseStyle);
+    for (const { animation, playState, currentTime } of previousStates) {
+      animation.currentTime = currentTime;
+      if (playState === 'running') {
+        animation.play();
+      }
+    }
+    document.head.removeChild(transitionStyle);
   };
 }
 

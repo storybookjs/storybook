@@ -62,7 +62,7 @@ test.describe("composition", () => {
     await page.goto(STORYBOOK_URL);
     await new SbPage(page, expect).waitUntilLoaded();
 
-    await page.click('button[title="Open navigation menu"]');
+    await page.click('button[aria-label="Open navigation menu"]');
 
     // scroll down to the bottom of the element getByText('Skip to canvasStorybookSearch')
 
@@ -95,7 +95,7 @@ test.describe("composition", () => {
         .getByText("Default")
     ).toBeVisible({ timeout: 15000 });
 
-    await page.click('button[title="Open navigation menu"]');
+    await page.click('button[aria-label="Open navigation menu"]');
 
     // Expect composed stories `to be available in the search
     await page.getByPlaceholder("Find components").fill("Button primary");

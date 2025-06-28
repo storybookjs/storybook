@@ -135,6 +135,19 @@ describe('getIncompatibleStorybookPackages', () => {
     vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValue({ version: '9.0.0' });
   });
 
+  it('succeeds if only core storybook packages used', async () => {
+    vi.mocked(packageManagerMock.getAllDependencies).mockReturnValueOnce({
+      storybook: '9.0.0',
+    });
+
+    const result = await getIncompatibleStorybookPackages({
+      currentStorybookVersion: '9.0.0',
+      packageManager: packageManagerMock as JsPackageManager,
+    });
+
+    expect(result).toHaveLength(0);
+  });
+
   it('returns an array of incompatible packages', async () => {
     // Mock a non-core storybook package that would be found
     vi.mocked(packageManagerMock.getAllDependencies).mockReturnValueOnce({

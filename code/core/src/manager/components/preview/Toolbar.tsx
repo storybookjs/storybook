@@ -226,18 +226,18 @@ const Toolbar = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
   position: 'relative',
   color: theme.barTextColor,
   width: '100%',
-  height: 40,
   flexShrink: 0,
   overflowX: 'auto',
   overflowY: 'hidden',
   marginTop: shown ? 0 : -40,
   boxShadow: `${theme.appBorderColor}  0 -1px 0 0 inset`,
   background: theme.barBg,
+  scrollbarColor: `${theme.barTextColor} ${theme.barBg}`,
+  scrollbarWidth: 'thin',
   zIndex: 4,
 }));
 
 const ToolbarInner = styled.div({
-  position: 'absolute',
   width: 'calc(100% - 20px)',
   display: 'flex',
   justifyContent: 'space-between',

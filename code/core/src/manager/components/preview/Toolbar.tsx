@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useId } from 'react';
 
 import { IconButton, Separator, TabBar, TabButton } from 'storybook/internal/components';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
@@ -137,8 +137,18 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   tabId,
   api,
 }) {
+  const id = useId();
   return tabs || tools || toolsExtra ? (
-    <Toolbar className="sb-bar" key="toolbar" shown={isShown} data-test-id="sb-preview-toolbar">
+    <Toolbar
+      className="sb-bar"
+      key="toolbar"
+      shown={isShown}
+      data-test-id="sb-preview-toolbar"
+      aria-labelledby={id}
+    >
+      <span className="sb-sr-only" id={id}>
+        Toolbar
+      </span>
       <ToolbarInner>
         <ToolbarLeft>
           {tabs.length > 1 ? (
@@ -222,7 +232,7 @@ export function filterToolsSide(
   return tools.filter(filter);
 }
 
-const Toolbar = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
+const Toolbar = styled.section<{ shown: boolean }>(({ theme, shown }) => ({
   position: 'relative',
   color: theme.barTextColor,
   width: '100%',

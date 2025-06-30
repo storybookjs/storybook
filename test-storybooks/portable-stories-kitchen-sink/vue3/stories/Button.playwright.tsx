@@ -17,9 +17,12 @@ test('renders with composeStory (singular)', async ({ mount }) => {
 });
 
 test('renders story with props as second argument', async ({ mount }) => {
-  const component = await mount(<stories.CSF3Button primary={true} label="label from test" />);
+  let called = false
+  const component = await mount(<stories.CSF3Button primary={true} onClick={() => { called = true }} label="label from test" />);
   await expect(component).toContainText('label from test');
   await expect(component.getByRole('button')).toHaveClass(/storybook-button--primary/);
+  await component.getByRole('button').click()
+  await expect(called).toBe(true)
 });
 
 test('renders story with custom render', async ({ mount }) => {

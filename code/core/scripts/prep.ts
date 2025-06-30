@@ -11,8 +11,6 @@ import {
   esbuild,
   globalExternals,
   measure,
-  merge,
-  nodeInternals,
   picocolors,
   prettyTime,
   process,
@@ -25,7 +23,7 @@ import {
   SUPPORTED_FEATURES,
 } from '../src/shared/constants/environments-support';
 import { resolveModule } from '../src/shared/utils/module';
-import { esmOnlyDtsEntries, esmOnlyEntries } from './entries';
+import { entries } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
 import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
@@ -40,13 +38,6 @@ async function run() {
   const isWatch = flags.includes('--watch');
   const isReset = flags.includes('--reset');
 
-  const external = [
-    ...new Set([
-      ...Object.keys(pkg.dependencies),
-      ...Object.keys((pkg as any).peerDependencies || {}),
-    ]),
-  ];
-
   if (isOptimized && isWatch) {
     throw new Error('Cannot watch and optimize at the same time');
   }
@@ -60,14 +51,18 @@ async function run() {
 
   console.log(isWatch ? 'Watching...' : 'Bundling...');
 
+  const dtsEntries = Object.values(entries)
+    .flat()
+    .filter((entry) => entry.dts !== false);
+
   const files = measure(generateSourceFiles);
-  const packageJson = measure(() => generatePackageJsonFile(esmOnlyEntries));
+  const packageJson = measure(() => generatePackageJsonFile(entries));
   const dist = files.then(() => measure(generateDistFiles));
   const types = files.then(() =>
     measure(async () => {
-      await generateTypesMapperFiles(esmOnlyDtsEntries);
+      await generateTypesMapperFiles(dtsEntries);
       await modifyThemeTypes();
-      await generateTypesFiles(esmOnlyDtsEntries, isOptimized, cwd);
+      await generateTypesFiles(dtsEntries, isOptimized, cwd);
     })
   );
 
@@ -90,64 +85,14 @@ async function run() {
   );
 
   async function generateDistFiles() {
-    const esbuildDefaultOptions = {
-      absWorkingDir: cwd,
-      allowOverwrite: false,
-      assetNames: 'assets/[name]-[hash]',
-      bundle: true,
-      chunkNames: 'chunks/[name]-[hash]',
-      external: ['storybook', ...external],
-      keepNames: true,
-      legalComments: 'none',
-      lineLimit: 140,
-      metafile: true,
-      minifyIdentifiers: isOptimized,
-      minifySyntax: isOptimized,
-      minifyWhitespace: false,
-      outdir: 'dist',
-      sourcemap: false,
-      treeShaking: true,
-      supported: {
-        // This is an ES2018 feature, but esbuild is really strict here.
-        // Since not all browser support the latest Unicode characters.
-        //
-        // Also this feature only works in combination with a Regex polyfill that we don't load.
-        //
-        // The Hermes engine of React Native doesn't support this feature,
-        // but leaving the regex alone, actually allows Hermes to do its own thing,
-        // without us having to load a RegExp polyfill.
-        'regexp-unicode-property-escapes': true,
-      },
-    } satisfies EsbuildContextOptions;
-
-    const browserEsbuildOptions = {
-      ...esbuildDefaultOptions,
-      format: 'esm',
-      target: BROWSER_TARGETS,
-      supported: SUPPORTED_FEATURES,
-      splitting: false,
-      platform: 'browser',
-
-      conditions: ['browser', 'module', 'import', 'default'],
-    } satisfies EsbuildContextOptions;
-
-    const nodeEsbuildOptions = {
-      ...esbuildDefaultOptions,
-      target: NODE_TARGET,
-      splitting: false,
-      platform: 'neutral',
-      mainFields: ['main', 'module', 'node'],
-      conditions: ['node', 'module', 'import', 'require'],
-    } satisfies EsbuildContextOptions;
-
-    const esmOnlyExternal = [
+    const external = [
       'storybook',
       'react',
       'react-dom',
       'react-dom/client',
       ...Object.keys({ ...(pkg.dependencies ?? {}), ...(pkg.peerDependencies ?? {}) }),
     ];
-    const esmOnlyNoExternal = [
+    const noExternal = [
       '@testing-library/jest-dom',
       '@testing-library/user-event',
       'chai',
@@ -156,7 +101,7 @@ async function run() {
       '@vitest/utils',
     ];
 
-    const esmOnlySharedOptions = {
+    const sharedOptions = {
       format: 'esm',
       bundle: true,
       metafile: true,
@@ -168,11 +113,11 @@ async function run() {
       outdir: 'dist',
       treeShaking: true,
       color: true,
-      external: esmOnlyExternal.filter((external) => !esmOnlyNoExternal.includes(external)),
+      external: external.filter((external) => !noExternal.includes(external)),
     } as const satisfies EsbuildContextOptions;
 
-    const esmOnlyRuntimeOptions = {
-      ...esmOnlySharedOptions,
+    const runtimeOptions = {
+      ...sharedOptions,
       platform: 'browser',
       target: BROWSER_TARGETS,
       supported: SUPPORTED_FEATURES,
@@ -203,11 +148,10 @@ async function run() {
       },
     } as const satisfies EsbuildContextOptions;
 
-    // TODO: this will be the only compile to do once we've migrated all entry points over
-    const esmOnlyCompile = await Promise.all([
+    const compile = await Promise.all([
       esbuild.context({
-        ...esmOnlySharedOptions,
-        entryPoints: esmOnlyEntries.node.map(({ entryPoint }) => entryPoint),
+        ...sharedOptions,
+        entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
         target: NODE_TARGET,
         banner: {
@@ -241,26 +185,26 @@ async function run() {
         ],
       }),
       esbuild.context({
-        ...esmOnlySharedOptions,
-        entryPoints: esmOnlyEntries.browser.map(({ entryPoint }) => entryPoint),
+        ...sharedOptions,
+        entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
         target: BROWSER_TARGETS,
         supported: SUPPORTED_FEATURES,
       }),
       esbuild.context({
-        ...esmOnlyRuntimeOptions,
-        entryPoints: esmOnlyEntries.runtime.map(({ entryPoint }) => entryPoint),
+        ...runtimeOptions,
+        entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
       }),
       esbuild.context({
-        ...esmOnlyRuntimeOptions,
-        entryPoints: esmOnlyEntries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
+        ...runtimeOptions,
+        entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
         plugins: [globalExternals(globalsModuleInfoMap)],
       }),
     ]);
 
     if (isWatch) {
       await Promise.all(
-        esmOnlyCompile.map(async (context) => {
+        compile.map(async (context) => {
           await context.watch();
         })
       );
@@ -284,7 +228,7 @@ async function run() {
       }
       await mkdir(metafilesDir, { recursive: true });
       const outputs = await Promise.all(
-        esmOnlyCompile.map(async (context) => {
+        compile.map(async (context) => {
           const output = await context.rebuild();
           await context.dispose();
           return output;

@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { dts, nodeInternals, process } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
-import { esmOnlyDtsEntries } from './entries';
+import { entries } from './entries';
 
 async function run() {
   const flags = process.argv.slice(2);
@@ -43,10 +43,13 @@ async function run() {
     'storybook/internal/instrumenter',
   ];
 
-  const all = esmOnlyDtsEntries.map((esmOnlyEntry) => ({
-    file: esmOnlyEntry.entryPoint,
-    externals: [],
-  }));
+  const all = Object.values(entries)
+    .flat()
+    .filter((entry) => entry.dts !== false)
+    .map((entry) => ({
+      file: entry.entryPoint,
+      externals: [],
+    }));
 
   const list = selection === 'all' ? all : [all[Number(selection)]];
 

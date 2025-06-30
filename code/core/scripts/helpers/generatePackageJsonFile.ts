@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'pathe';
 
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
-import type { ESMOnlyEntriesByPlatform } from '../entries';
+import type { EntriesByPlatform } from '../entries';
 
 const cwd = process.cwd();
 
@@ -11,7 +11,7 @@ function sortObject(obj: Record<string, any>) {
   return Object.fromEntries(Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)));
 }
 
-export async function generatePackageJsonFile(esmOnlyEntries: ESMOnlyEntriesByPlatform) {
+export async function generatePackageJsonFile(entries: EntriesByPlatform) {
   const location = join(cwd, 'package.json');
   const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
 
@@ -19,7 +19,7 @@ export async function generatePackageJsonFile(esmOnlyEntries: ESMOnlyEntriesByPl
   pkgJson.exports['./package.json'] = './package.json';
   pkgJson.exports['./internal/package.json'] = './package.json';
 
-  for (const entry of Object.values(esmOnlyEntries).flat()) {
+  for (const entry of Object.values(entries).flat()) {
     for (const exportEntry of entry.exportEntries ?? []) {
       const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
       const jsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.js');

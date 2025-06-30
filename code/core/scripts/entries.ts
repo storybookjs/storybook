@@ -1,14 +1,14 @@
-export type ESMOnlyEntry = {
+export type Entry = {
   exportEntries?: `./${string}`[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
   dts?: false; // default to generating d.ts files for all entries, except if set to false
 };
-export type ESMOnlyEntriesByPlatform = Record<
+export type EntriesByPlatform = Record<
   'node' | 'browser' | 'runtime' | 'globalizedRuntime',
-  ESMOnlyEntry[]
+  Entry[]
 >;
 
-export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
+export const entries: EntriesByPlatform = {
   node: [
     {
       exportEntries: ['./internal/node-logger'],
@@ -183,7 +183,3 @@ export const esmOnlyEntries: ESMOnlyEntriesByPlatform = {
     },
   ],
 };
-
-export const esmOnlyDtsEntries: ESMOnlyEntry[] = Object.values(esmOnlyEntries)
-  .flat()
-  .filter((entry) => entry.dts !== false);

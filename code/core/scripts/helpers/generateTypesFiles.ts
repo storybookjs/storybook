@@ -2,15 +2,11 @@ import { join, relative } from 'pathe';
 
 import { spawn } from '../../../../scripts/prepare/tools';
 import { limit, picocolors } from '../../../../scripts/prepare/tools';
-import type { ESMOnlyEntry } from '../entries';
+import type { Entry } from '../entries';
 import { modifyThemeTypes } from './modifyThemeTypes';
 
-export async function generateTypesFiles(
-  esmOnlyEntries: ESMOnlyEntry[],
-  isOptimized: boolean,
-  cwd: string
-) {
-  const dtsEntries = esmOnlyEntries.filter((e) => e.dts !== false).map((e) => e.entryPoint);
+export async function generateTypesFiles(entries: Entry[], isOptimized: boolean, cwd: string) {
+  const dtsEntries = entries.filter((e) => e.dts !== false).map((e) => e.entryPoint);
 
   if (!isOptimized) {
     return;

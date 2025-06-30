@@ -28,7 +28,7 @@ export const ToolbarMenuButton: FC<ToolbarMenuButtonProps> = ({
   return (
     <IconButton
       active={active}
-      title={description}
+      label={description}
       disabled={disabled}
       onClick={disabled ? () => {} : onClick}
     >

@@ -99,7 +99,7 @@ const RowActions = styled.div({
   padding: 6,
 });
 
-export const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 3px',
 }));
@@ -133,7 +133,7 @@ const ErrorExplainer = styled.p(({ theme }) => ({
   textWrap: 'balance',
 }));
 
-export const Exception = ({ exception }: { exception: Call['exception'] }) => {
+const Exception = ({ exception }: { exception: Call['exception'] }) => {
   const filter = useAnsiToHtmlFilter();
   if (!exception) {
     return null;

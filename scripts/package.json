@@ -192,5 +192,8 @@
   "packageManager": "yarn@4.9.1",
   "engines": {
     "node": ">=22.16.0"
+  },
+  "devDependencies": {
+    "@happy-dom/global-registrator": "^18.0.1"
   }
 }

@@ -1,3 +1,15 @@
+# v2.0.5 (Mon Jun 30 2025)
+
+#### 🐛 Bug Fix
+
+- Fix JSON.parse error in vitePluginNextFont [#44](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/44) ([@k35o](https://github.com/k35o))
+
+#### Authors: 1
+
+- k8o ([@k35o](https://github.com/k35o))
+
+---
+
 # v2.0.4 (Wed Jun 25 2025)
 
 #### 🐛 Bug Fix

@@ -25,14 +25,12 @@ import {
   SUPPORTED_FEATURES,
 } from '../src/shared/constants/environments-support';
 import { resolveModule } from '../src/shared/utils/module';
-import { esmOnlyDtsEntries, esmOnlyEntries, getEntries } from './entries';
+import { esmOnlyDtsEntries, esmOnlyEntries } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
 import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
-import { isBrowser, isNode, noExternals } from './helpers/isEntryType';
 import { modifyThemeTypes } from './helpers/modifyThemeTypes';
 import { generateSourceFiles } from './helpers/sourcefiles';
-import { externalPlugin } from './no-externals-plugin';
 
 async function run() {
   const flags = process.argv.slice(2);
@@ -58,20 +56,18 @@ async function run() {
     await mkdir(join(cwd, 'dist'));
   }
 
-  const entries = getEntries(cwd);
-
   type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
 
   console.log(isWatch ? 'Watching...' : 'Bundling...');
 
   const files = measure(generateSourceFiles);
-  const packageJson = measure(() => generatePackageJsonFile(entries, esmOnlyEntries));
+  const packageJson = measure(() => generatePackageJsonFile(esmOnlyEntries));
   const dist = files.then(() => measure(generateDistFiles));
   const types = files.then(() =>
     measure(async () => {
-      await generateTypesMapperFiles(entries, esmOnlyDtsEntries);
+      await generateTypesMapperFiles(esmOnlyDtsEntries);
       await modifyThemeTypes();
-      await generateTypesFiles(entries, esmOnlyDtsEntries, isOptimized, cwd);
+      await generateTypesFiles(esmOnlyDtsEntries, isOptimized, cwd);
     })
   );
 
@@ -262,137 +258,9 @@ async function run() {
       }),
     ]);
 
-    const compile = await Promise.all([
-      esbuild.context(
-        merge<EsbuildContextOptions>(nodeEsbuildOptions, {
-          entryPoints: entries
-            .filter(isNode)
-            .filter(noExternals)
-            .map((e) => e.file),
-          external: [...nodeInternals, ...esbuildDefaultOptions.external],
-          format: 'cjs',
-          outExtension: {
-            '.js': '.cjs',
-          },
-        })
-      ),
-      esbuild.context(
-        merge<EsbuildContextOptions>(browserEsbuildOptions, {
-          entryPoints: entries
-            .filter(isBrowser)
-            .filter(noExternals)
-            .map((entry) => entry.file),
-          outExtension: {
-            '.js': '.js',
-          },
-        })
-      ),
-      esbuild.context(
-        merge<EsbuildContextOptions>(nodeEsbuildOptions, {
-          banner: {
-            js: dedent`
-            import ESM_COMPAT_Module from "node:module";
-            import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
-            import { dirname as ESM_COMPAT_dirname } from 'node:path';
-            const __filename = ESM_COMPAT_fileURLToPath(import.meta.url);
-            const __dirname = ESM_COMPAT_dirname(__filename);
-            const require = ESM_COMPAT_Module.createRequire(import.meta.url);
-          `,
-          },
-          entryPoints: entries
-            .filter(isNode)
-            .filter(noExternals)
-            .filter((i) => !isBrowser(i))
-            .map((entry) => entry.file),
-          external: [...nodeInternals, ...esbuildDefaultOptions.external],
-          format: 'esm',
-          outExtension: {
-            '.js': '.js',
-          },
-        })
-      ),
-      ...entries
-        .filter((entry) => !noExternals(entry))
-        .flatMap((entry) => {
-          const results = [];
-          if (entry.node) {
-            results.push(
-              esbuild.context(
-                merge<EsbuildContextOptions>(nodeEsbuildOptions, {
-                  entryPoints: [entry.file],
-                  external: [
-                    ...nodeInternals,
-                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
-                    ...entry.externals,
-                  ].filter((e) => !entry.internals.includes(e)),
-                  plugins: [
-                    externalPlugin({
-                      noExternal: entry.noExternal,
-                    }),
-                  ],
-                  format: 'cjs',
-                  outdir: dirname(entry.file).replace('src', 'dist'),
-                  outExtension: {
-                    '.js': '.cjs',
-                  },
-                })
-              )
-            );
-          }
-          if (entry.browser) {
-            results.push(
-              esbuild.context(
-                merge<EsbuildContextOptions>(browserEsbuildOptions, {
-                  entryPoints: [entry.file],
-                  external: [
-                    ...nodeInternals,
-                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
-                    ...entry.externals,
-                  ].filter((e) => !entry.internals.includes(e)),
-                  outdir: dirname(entry.file).replace('src', 'dist'),
-                  plugins: [
-                    externalPlugin({
-                      noExternal: entry.noExternal,
-                    }),
-                  ],
-                  outExtension: {
-                    '.js': '.js',
-                  },
-                })
-              )
-            );
-          } else if (entry.node) {
-            results.push(
-              esbuild.context(
-                merge<EsbuildContextOptions>(nodeEsbuildOptions, {
-                  entryPoints: [entry.file],
-                  external: [
-                    ...nodeInternals,
-                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
-                    ...entry.externals,
-                  ].filter((e) => !entry.internals.includes(e)),
-                  plugins: [
-                    externalPlugin({
-                      noExternal: entry.noExternal,
-                    }),
-                  ],
-                  format: 'esm',
-                  outdir: dirname(entry.file).replace('src', 'dist'),
-                  outExtension: {
-                    '.js': '.js',
-                  },
-                })
-              )
-            );
-          }
-
-          return results;
-        }),
-    ]);
-
     if (isWatch) {
       await Promise.all(
-        compile.concat(esmOnlyCompile).map(async (context) => {
+        esmOnlyCompile.map(async (context) => {
           await context.watch();
         })
       );
@@ -416,7 +284,7 @@ async function run() {
       }
       await mkdir(metafilesDir, { recursive: true });
       const outputs = await Promise.all(
-        compile.concat(esmOnlyCompile).map(async (context) => {
+        esmOnlyCompile.map(async (context) => {
           const output = await context.rebuild();
           await context.dispose();
           return output;

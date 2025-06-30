@@ -1,9 +1,9 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { join, relative } from 'pathe';
+import { join } from 'pathe';
 
 import { sortPackageJson } from '../../../../scripts/prepare/tools';
-import type { ESMOnlyEntriesByPlatform, getEntries } from '../entries';
+import type { ESMOnlyEntriesByPlatform } from '../entries';
 
 const cwd = process.cwd();
 
@@ -11,77 +11,9 @@ function sortObject(obj: Record<string, any>) {
   return Object.fromEntries(Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)));
 }
 
-export async function generatePackageJsonFile(
-  entries: ReturnType<typeof getEntries>,
-  esmOnlyEntries: ESMOnlyEntriesByPlatform
-) {
+export async function generatePackageJsonFile(esmOnlyEntries: ESMOnlyEntriesByPlatform) {
   const location = join(cwd, 'package.json');
   const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
-
-  /**
-   * Re-create the `exports` field in `code/core/package.json` This way we only need to update the
-   * `./scripts/entries.ts` file to ensure all things we create actually exist and are mapped to the
-   * correct path.
-   */
-  pkgJson.exports = entries.reduce<Record<string, Record<string, string>>>((acc, entry) => {
-    let main = './' + relative(cwd, entry.file).replace('src', 'dist');
-
-    const content: Record<string, string> = {};
-    if (entry.dts) {
-      content.types = main.replace(/\.tsx?/, '.d.ts');
-    }
-    if (entry.browser) {
-      content.import = main.replace(/\.tsx?/, '.js');
-    }
-    if (entry.node && !entry.browser) {
-      content.import = main.replace(/\.tsx?/, '.js');
-    }
-    if (entry.node) {
-      // TODO: temporary hack to get this to be ESM-only
-      if (
-        entry.file.includes('/common/') ||
-        entry.file.includes('/telemetry/') ||
-        entry.file.includes('/core-server/index')
-      ) {
-        content.default = main.replace(/\.tsx?/, '.js');
-      } else {
-        content.require = main.replace(/\.tsx?/, '.cjs');
-      }
-    }
-    if (main === './dist/index.ts' || main === './dist/index.tsx') {
-      main = '.';
-    }
-    /**
-     * We always write an entry for /internal/X, even when it's isPublic is true, this is for
-     * compatibility reasons. We should remove this once everything stops referencing public APIs as
-     * internal.
-     *
-     * Known references:
-     *
-     * - VTA
-     * - Design addon
-     * - Addon kit
-     *
-     * I expect that we should be able to drop it in the process of of the release of 9.0, or keep
-     * it for now, and drop it in the release of 9.1.
-     */
-    acc[
-      main
-        .replace(/\/index\.tsx?/, '')
-        .replace(/\.tsx?/, '')
-        .replace('dist/', 'internal/')
-    ] = content;
-
-    if (entry.isPublic) {
-      acc[
-        main
-          .replace(/\/index\.tsx?/, '')
-          .replace(/\.tsx?/, '')
-          .replace('dist/', '')
-      ] = content;
-    }
-    return acc;
-  }, {});
 
   // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
   pkgJson.exports['./package.json'] = './package.json';

@@ -2,16 +2,13 @@ import { join } from 'node:path';
 
 import { dts, nodeInternals, process } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
-import { esmOnlyDtsEntries, getEntries } from './entries';
+import { esmOnlyDtsEntries } from './entries';
 
 async function run() {
-  const cwd = process.cwd();
-
   const flags = process.argv.slice(2);
 
   const selection = flags[0] || 'all';
 
-  const entries = getEntries(cwd);
   const external = [
     ...Object.keys((pkg as any).dependencies || {}),
     ...Object.keys((pkg as any).peerDependencies || {}),
@@ -46,17 +43,11 @@ async function run() {
     'storybook/internal/instrumenter',
   ];
 
-  const all = entries
-    .filter((e) => e.dts)
-    .concat(
-      esmOnlyDtsEntries.map(
-        (esmOnlyEntry) =>
-          ({
-            file: esmOnlyEntry.entryPoint,
-            externals: [],
-          }) as any
-      )
-    );
+  const all = esmOnlyDtsEntries.map((esmOnlyEntry) => ({
+    file: esmOnlyEntry.entryPoint,
+    externals: [],
+  }));
+
   const list = selection === 'all' ? all : [all[Number(selection)]];
 
   console.log('Generating d.ts files for', list.map((i) => i.file).join(', '));

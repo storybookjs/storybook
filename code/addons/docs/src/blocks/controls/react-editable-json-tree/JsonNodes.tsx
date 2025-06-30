@@ -49,13 +49,21 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
       return;
     }
+    const { inputRefKey, inputRefValue } = this.state;
+    const { addButtonElement, handleCancel } = this.props;
+    const isFormFocused = [inputRefKey, inputRefValue, addButtonElement].some(
+      (elm) => elm === event.target
+    );
+    if (!isFormFocused) {
+      return;
+    }
     if (event.code === 'Enter' || event.key === 'Enter') {
       event.preventDefault();
       this.onSubmit();
     }
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
-      this.props.handleCancel();
+      handleCancel();
     }
   }
 
@@ -551,7 +559,15 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+    const { inputRef } = this.state;
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      inputRef !== event.target
+    ) {
       return;
     }
     if (event.code === 'Enter' || event.key === 'Enter') {
@@ -1463,7 +1479,15 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
   }
 
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+    const { inputRef } = this.state;
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      inputRef !== event.target
+    ) {
       return;
     }
     if (event.code === 'Enter' || event.key === 'Enter') {

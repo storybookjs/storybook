@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { expect, mocked } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview';
-import { fn } from './ModuleMocking.utils';
+import { fn } from './ModuleAutoMocking.utils';
 
 const Component = () => {
   const [state, setState] = useState(fn().join(', '));
@@ -18,7 +18,7 @@ const Component = () => {
 };
 
 const meta = preview.meta({
-  title: 'ModuleMocking',
+  title: 'ModuleAutoMocking',
   component: Component,
   parameters: {
     layout: 'fullscreen',

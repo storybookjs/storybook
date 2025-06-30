@@ -5,13 +5,10 @@ import type { DocsOptions, Options, Ref, TagsOptions } from 'storybook/internal/
 import { render } from 'ejs';
 import { join } from 'pathe';
 
-import { resolveModule } from '../../shared/utils/module';
+import { resolvePackageDir } from '../../shared/utils/module';
 
 export const getTemplatePath = (template: string) => {
-  return resolveModule({
-    pkg: 'storybook',
-    customSuffix: join('assets/server', template),
-  });
+  return join(resolvePackageDir('storybook'), 'assets/server', template);
 };
 
 export const readTemplate = async (template: string) => {

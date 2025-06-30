@@ -1,5 +1,4 @@
 import { cp, rm, writeFile } from 'node:fs/promises';
-import { join, parse } from 'node:path';
 
 import { stringifyProcessEnvs } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -7,11 +6,12 @@ import { logger } from 'storybook/internal/node-logger';
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
 import { resolvePathSync } from 'mlly';
+import { join, parse } from 'pathe';
 import sirv from 'sirv';
 
 import { globalsModuleInfoMap } from '../manager/globals/globals-module-info';
 import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
-import { resolveModule } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module';
 import type {
   BuilderBuildResult,
   BuilderFunction,
@@ -28,10 +28,7 @@ import { getTemplatePath, renderHTML } from './utils/template';
 
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support';
 
-const CORE_DIR_ORIGIN = resolveModule({
-  pkg: 'storybook',
-  customSuffix: 'dist/manager',
-});
+const CORE_DIR_ORIGIN = join(resolvePackageDir('storybook'), 'dist/manager');
 
 const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;

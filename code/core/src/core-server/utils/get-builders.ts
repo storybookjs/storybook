@@ -1,16 +1,13 @@
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Builder, Options } from 'storybook/internal/types';
 
-import { fileURLToPath, parseNodeModulePath } from 'mlly';
-import { dirname, isAbsolute } from 'pathe';
+import { parseNodeModulePath } from 'mlly';
+import { isAbsolute, join } from 'pathe';
 
-import { importModule, resolveModule } from '../../shared/utils/module';
+import { importModule, resolvePackageDir } from '../../shared/utils/module';
 
 export async function getManagerBuilder(): Promise<Builder<unknown>> {
-  const builderManagerPath = resolveModule({
-    pkg: 'storybook',
-    customSuffix: 'dist/builder-manager/index.js',
-  });
+  const builderManagerPath = join(resolvePackageDir('storybook'), 'dist/builder-manager/index.js');
   return import(builderManagerPath);
 }
 
@@ -22,14 +19,9 @@ export async function getPreviewBuilder(
   if (isAbsolute(builderName)) {
     // TODO: test this in Yarn PnP
     const parsedBuilderPackage = parseNodeModulePath(builderName);
-    builderPackage =
-      parsedBuilderPackage.name ||
-      dirname(fileURLToPath(resolveModule({ pkg: builderName, parent: configDir })));
+    builderPackage = parsedBuilderPackage.name || resolvePackageDir(builderName, configDir);
   } else {
-    builderPackage = resolveModule({
-      pkg: builderName,
-      parent: configDir,
-    });
+    builderPackage = import.meta.resolve(builderName, configDir);
   }
   return await importModule(builderPackage);
 }

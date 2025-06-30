@@ -1,4 +1,3 @@
-import { resolveModule } from '../../shared/utils/module';
 import { isCorePackage } from './cli';
 
 /**
@@ -38,7 +37,7 @@ export async function getAddonAnnotations(addon: string, configDir: string) {
 
   // If the preview endpoint doesn't exist, we don't need to add the addon to definePreview
   try {
-    resolveModule({ pkg: addon, exportPath: 'preview', parent: configDir });
+    import.meta.resolve(`${addon}/preview`, configDir);
   } catch (err) {
     return null;
   }

@@ -1,9 +1,10 @@
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 import { findUp } from 'find-up';
+import { join } from 'pathe';
 import type { PackageJson } from 'type-fest';
 
-import { resolveModule } from '../shared/utils/module';
 import type { Dependency } from './types';
 
 export const getActualPackageVersions = async (packages: Record<string, Partial<Dependency>>) => {
@@ -30,18 +31,19 @@ export const getActualPackageJson = async (
   packageName: string
 ): Promise<PackageJson | undefined> => {
   try {
-    let resolvedPackageJson = await findUp('package.json', {
-      cwd: resolveModule({ pkg: packageName, exportPath: '' }),
+    let resolvedPackageJsonPath = await findUp('package.json', {
+      cwd: fileURLToPath(import.meta.resolve(packageName, process.cwd())),
     });
-
-    if (!resolvedPackageJson) {
-      resolvedPackageJson = resolveModule({
-        pkg: packageName,
-        parent: process.cwd(),
-      });
+    if (!resolvedPackageJsonPath) {
+      resolvedPackageJsonPath = import.meta.resolve(
+        join(packageName, 'package.json'),
+        process.cwd()
+      );
     }
 
-    const packageJson = JSON.parse(await readFile(resolvedPackageJson, { encoding: 'utf8' }));
+    const { default: packageJson } = await import(resolvedPackageJsonPath, {
+      with: { type: 'json' },
+    });
     return packageJson;
   } catch (err) {
     return undefined;

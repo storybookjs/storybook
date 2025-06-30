@@ -22,7 +22,7 @@ const BASE_CORE_PKG_DIR = join(import.meta.url, '..', '..', '..', '..', '..');
 
 vi.mock('../../../shared/utils/module', () => {
   return {
-    resolveModule: () => BASE_CORE_PKG_DIR,
+    resolvePackageDir: () => BASE_CORE_PKG_DIR,
   };
 });
 

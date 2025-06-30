@@ -18,6 +18,10 @@ vi.mock('../utils/constants', () => {
   };
 });
 
+vi.mock('../../shared/utils/module', () => ({
+  resolvePackageDir: vi.fn().mockReturnValue('mocked-path'),
+}));
+
 const defaultFavicon = join(
   dirname(require.resolve('storybook/internal/package.json')),
   '/assets/browser/favicon.svg'

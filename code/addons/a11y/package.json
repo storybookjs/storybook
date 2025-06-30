@@ -39,16 +39,6 @@
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js"
   },
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "preview": [
-        "dist/preview.d.ts"
-      ]
-    }
-  },
   "files": [
     "dist/**/*",
     "README.md",

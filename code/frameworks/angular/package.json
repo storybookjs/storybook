@@ -55,22 +55,6 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "client/config": [
-        "dist/client/config.d.ts"
-      ],
-      "client/preview-prod": [
-        "dist/client/preview-prod.d.ts"
-      ],
-      "client/docs/config": [
-        "dist/client/docs/config.d.ts"
-      ]
-    }
-  },
   "files": [
     "builders.json",
     "build-schema.json",

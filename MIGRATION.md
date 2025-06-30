@@ -3,6 +3,7 @@
 - [From version 9.x to 10.0.0](#from-version-9x-to-1000)
   - [Core Changes](#core-changes)
     - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
+    - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -487,6 +488,29 @@
 #### Node.js 20.19+ or 22.12+ required
 
 Storybook 10 now requires Node.js version 20.19+ or 22.12+. We require these new ranges so Node.js supports `require(esm)` without a flag.
+
+#### Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition
+
+Storybook 10 has removed all `typesVersions` fields from `package.json` files. This field was previously needed for older TypeScript module resolution strategies that didn't support the `types` condition in package.json exports.
+
+**Required action:** Update your `tsconfig.json` to use a `moduleResolution` that supports the `types` condition:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler" // or "node16"/"nodenext"
+  }
+}
+```
+
+**Supported values:**
+
+- `"bundler"` (recommended for modern bundler-based projects)
+- `"node16"` or `"nodenext"` (Node.js 16+ module resolution)
+
+**Note:** If you're currently using `moduleResolution: "node"` (the old Node.js 10-style resolution), you'll need to upgrade to one of the supported values above.
+
+This change simplifies our package structure and aligns with modern TypeScript standards. Only TypeScript projects are affected - JavaScript projects require no changes.
 
 ## From version 8.x to 9.0.0
 

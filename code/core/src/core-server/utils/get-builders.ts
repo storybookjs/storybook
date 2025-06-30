@@ -2,7 +2,7 @@ import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Builder, Options } from 'storybook/internal/types';
 
 import { parseNodeModulePath } from 'mlly';
-import { dirname, isAbsolute, join } from 'pathe';
+import { isAbsolute, join } from 'pathe';
 
 import { importModule, resolvePackageDir } from '../../shared/utils/module';
 

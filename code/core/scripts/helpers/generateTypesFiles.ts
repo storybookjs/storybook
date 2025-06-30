@@ -5,12 +5,8 @@ import { limit, picocolors } from '../../../../scripts/prepare/tools';
 import type { Entry } from '../entries';
 import { modifyThemeTypes } from './modifyThemeTypes';
 
-export async function generateTypesFiles(entries: Entry[], isOptimized: boolean, cwd: string) {
+export async function generateTypesFiles(entries: Entry[], cwd: string) {
   const dtsEntries = entries.filter((e) => e.dts !== false).map((e) => e.entryPoint);
-
-  if (!isOptimized) {
-    return;
-  }
 
   // Spawn each entry in it's own separate process, because they are slow & synchronous
   // ...this way we do not bog down the main process/esbuild and can run them in parallel

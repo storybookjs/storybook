@@ -62,7 +62,9 @@ async function run() {
     measure(async () => {
       await generateTypesMapperFiles(dtsEntries);
       await modifyThemeTypes();
-      await generateTypesFiles(dtsEntries, isOptimized, cwd);
+      if (isOptimized) {
+        await generateTypesFiles(dtsEntries, cwd);
+      }
     })
   );
 

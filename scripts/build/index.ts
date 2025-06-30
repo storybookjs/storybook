@@ -1,7 +1,6 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { existsSync, watch } from 'node:fs';
 import { chmod, mkdir, rm, writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
@@ -25,17 +24,6 @@ import { generateTypesMapperFiles } from './utils/generate-type-mappers';
 import { generateTypesFiles } from './utils/generate-types';
 import { modifyCoreThemeTypes } from './utils/modify-core-theme-types';
 
-const dispatcherPath = join(
-  import.meta.dirname,
-  '..',
-  '..',
-  'code',
-  'core',
-  'dist',
-  'bin',
-  'dispatcher.js'
-);
-console.log(dispatcherPath);
 async function run() {
   const flags = process.argv.slice(2);
   const cwd = process.cwd();
@@ -128,7 +116,6 @@ async function run() {
     } as const satisfies EsbuildContextOptions;
 
     const runtimeOptions = {
-      ...sharedOptions,
       platform: 'browser',
       target: BROWSER_TARGETS,
       supported: SUPPORTED_FEATURES,
@@ -159,9 +146,39 @@ async function run() {
       },
     } as const satisfies EsbuildContextOptions;
 
+    function defineESBuildContext(...input: Parameters<typeof esbuild.context>) {
+      const [config, ...rest] = input;
+      const cloned = { ...config };
+
+      if (postbuild) {
+        cloned.plugins = [
+          ...(cloned.plugins ?? []),
+          {
+            name: 'postbuild',
+            setup(build) {
+              build.onEnd(async (result) => {
+                if (result.errors.length) {
+                  return;
+                }
+                console.log('postbuild', cwd);
+                await postbuild(cwd);
+              });
+            },
+          },
+        ];
+      }
+
+      return esbuild.context(
+        {
+          ...sharedOptions,
+          ...config,
+        },
+        ...rest
+      );
+    }
+
     const compile = await Promise.all([
-      esbuild.context({
-        ...sharedOptions,
+      defineESBuildContext({
         entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
         platform: 'node',
         target: NODE_TARGET,
@@ -179,43 +196,42 @@ async function run() {
             // ------------------------------------------------------------
             `,
         },
-        plugins: [
-          {
-            name: 'bin-executable-permissions',
-            setup(build) {
-              build.onEnd(async (result) => {
-                if (result.errors.length) {
-                  return;
-                }
-                // Change permissions for the main bin to be executable
-                const dispatcherPath = join(
-                  import.meta.dirname,
-                  '..',
-                  '..',
-                  'code',
-                  'core',
-                  'dist',
-                  'bin',
-                  'dispatcher.js'
-                );
-                await chmod(fileURLToPath(dispatcherPath), 0o755);
-              });
-            },
-          },
-        ],
+        // plugins: [
+        //   {
+        //     name: 'bin-executable-permissions',
+        //     setup(build) {
+        //       build.onEnd(async (result) => {
+        //         if (result.errors.length) {
+        //           return;
+        //         }
+        //         // Change permissions for the main bin to be executable
+        //         const dispatcherPath = join(
+        //           import.meta.dirname,
+        //           '..',
+        //           '..',
+        //           'code',
+        //           'core',
+        //           'dist',
+        //           'bin',
+        //           'dispatcher.js'
+        //         );
+        //         await chmod(dispatcherPath, 0o755);
+        //       });
+        //     },
+        //   },
+        // ],
       }),
-      esbuild.context({
-        ...sharedOptions,
+      defineESBuildContext({
         entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
         platform: 'browser',
         target: BROWSER_TARGETS,
         supported: SUPPORTED_FEATURES,
       }),
-      esbuild.context({
+      defineESBuildContext({
         ...runtimeOptions,
         entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
       }),
-      esbuild.context({
+      defineESBuildContext({
         ...runtimeOptions,
         entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
         plugins: [globalExternals(globalsModuleInfoMap)],

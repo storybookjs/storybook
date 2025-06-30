@@ -1,9 +1,16 @@
+import { chmod } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import type { BuildEntriesByPackageName } from '../utils';
 import { generateSourceFiles } from './storybook/generate-source-files';
 
 export const buildEntries: BuildEntriesByPackageName = {
   storybook: {
     prebuild: generateSourceFiles,
+    postbuild: async (cwd) => {
+      const dispatcherPath = join(cwd, 'dist', 'bin', 'dispatcher.js');
+      await chmod(dispatcherPath, 0o755);
+    },
     entries: {
       node: [
         {

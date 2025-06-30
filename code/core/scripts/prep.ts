@@ -24,7 +24,7 @@ import {
   NODE_TARGET,
   SUPPORTED_FEATURES,
 } from '../src/shared/constants/environments-support';
-import { resolveModule } from '../src/shared/utils/module';
+import { resolvePackageDir } from '../src/shared/utils/module';
 import { esmOnlyDtsEntries, esmOnlyEntries, getEntries } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
@@ -197,9 +197,9 @@ async function run() {
         'storybook/viewport': './src/viewport',
         // The following aliases ensures that the manager has a single version of React,
         // even if transitive dependencies would depend on other versions.
-        react: resolveModule({ pkg: 'react', customSuffix: '' }),
-        'react-dom': resolveModule({ pkg: 'react-dom', customSuffix: '' }),
-        'react-dom/client': resolveModule({ pkg: 'react-dom', customSuffix: 'client' }),
+        react: resolvePackageDir('react'),
+        'react-dom': resolvePackageDir('react-dom'),
+        'react-dom/client': join(resolvePackageDir('react-dom'), 'client'),
       },
       define: {
         // This should set react in prod mode for the manager

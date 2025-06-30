@@ -26,7 +26,7 @@ import type {
 import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { resolveModule } from '../../shared/utils/module';
+import { resolvePackageDir } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
@@ -289,8 +289,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: pathe.dirname(resolveModule({ pkg: 'react' })),
-      reactDom: pathe.dirname(resolveModule({ pkg: 'react-dom' })),
+      react: resolvePackageDir('react'),
+      reactDom: resolvePackageDir('react-dom'),
     };
   } catch (e) {
     return existing;
@@ -309,10 +309,7 @@ export const tags = async (existing: any) => {
 
 export const managerEntries = async (existing: any) => {
   return [
-    resolveModule({
-      pkg: 'storybook',
-      customSuffix: 'dist/core-server/presets/common-manager.js',
-    }),
+    pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
 };

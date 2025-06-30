@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import { resolveModule } from '../../src/shared/utils/module';
+import { resolvePackageDir } from '../../src/shared/utils/module';
 
 export async function flattenDependencies(
   list: string[],
@@ -13,7 +13,7 @@ export async function flattenDependencies(
     list.map(async (dep) => {
       let path;
       try {
-        path = resolveModule({ pkg: dep });
+        path = resolvePackageDir(dep);
       } catch (e) {
         console.log(dep + ' not found');
         return;

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import type { BuildEntriesByPackageName } from '../utils';
 
-export const buildEntries: BuildEntriesByPackageName = {
+export const buildEntries = {
   storybook: {
     prebuild: async (cwd) => {
       const CORE_PREBUILD_SCRIPT_PATH = join(
@@ -234,4 +234,16 @@ export const buildEntries: BuildEntriesByPackageName = {
       ],
     },
   },
-};
+} satisfies BuildEntriesByPackageName;
+
+export function isBuildEntries(key: string): key is keyof typeof buildEntries {
+  return key in buildEntries;
+}
+
+export function hasPrebuild(
+  entry: BuildEntriesByPackageName[keyof BuildEntriesByPackageName]
+): entry is BuildEntriesByPackageName[keyof BuildEntriesByPackageName] & {
+  prebuild: (cwd: string) => Promise<void>;
+} {
+  return 'prebuild' in entry;
+}

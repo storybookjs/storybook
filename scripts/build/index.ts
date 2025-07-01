@@ -5,7 +5,7 @@ import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
-import { buildEntries } from './entries';
+import { buildEntries, hasPrebuild, isBuildEntries } from './entries';
 import { measure } from './utils';
 import { generateDistFiles } from './utils/generate-bundle';
 import { generatePackageJsonFile } from './utils/generate-package-json';
@@ -39,27 +39,28 @@ async function run() {
       : `Building ${picocolors.greenBright(DIR_REL)}`
   );
 
-  const { entries, prebuild } = buildEntries[pkg.name];
-  if (!entries) {
+  const name = pkg.name;
+
+  if (!isBuildEntries(name)) {
     throw new Error(`TODO BETTER ERROR: No build entries found for package ${pkg.name}`);
   }
 
+  const entry = buildEntries[name];
+
   let prebuildTime: Awaited<ReturnType<typeof measure>> | undefined;
 
-  if (prebuild) {
+  if (hasPrebuild(entry)) {
     console.log(`Running prebuild script`);
-    prebuildTime = await measure(() => prebuild(DIR_CWD));
+    prebuildTime = await measure(() => entry.prebuild(DIR_CWD));
   }
 
-  await generatePackageJsonFile(DIR_CWD, buildEntries[pkg.name]);
-  const dist = measure(async () =>
-    generateDistFiles(DIR_CWD, buildEntries[pkg.name], isProduction, isWatch)
-  );
+  await generatePackageJsonFile(DIR_CWD, entry);
+  const dist = measure(async () => generateDistFiles(DIR_CWD, entry, isProduction, isWatch));
   const types = measure(async () => {
-    await generateTypesMapperFiles(DIR_CWD, buildEntries[pkg.name]);
+    await generateTypesMapperFiles(DIR_CWD, entry);
     await modifyCoreThemeTypes(DIR_CWD);
     if (isProduction) {
-      await generateTypesFiles(DIR_CWD, buildEntries[pkg.name]);
+      await generateTypesFiles(DIR_CWD, entry);
     }
   });
 

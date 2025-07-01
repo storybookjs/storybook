@@ -8,9 +8,11 @@ import { keyframes, styled } from 'storybook/theming';
 const fadeIn = keyframes`
   from {
     opacity: 0;
+    scale: 0.5;
   }
   to {
     opacity: 1;
+    scale: 1;
   }
 `;
 
@@ -21,7 +23,7 @@ const rotate = keyframes`
   }
   100% {
     transform: rotate(360deg);
-    color: dodgerblue;
+    color: yellow;
   }
 `;
 
@@ -50,7 +52,7 @@ type Story = StoryObj<typeof meta>;
 export const FadeIn: Story = {
   args: {
     styles: {
-      animation: `${fadeIn} 3s`,
+      animation: `${fadeIn} 3s linear`,
     },
   },
 };
@@ -62,8 +64,11 @@ export const Infinite: Story = {
     },
   },
   play: async () => {
-    // Randomize the delay to ensure runtime doesn't affect the end state when testing
-    await new Promise((resolve) => setTimeout(resolve, Math.random() * 3000));
+    // Wait for the animation to run to its end frame (yellow).
+    // This would cause the color-contrast check to fail, but the accessibility addon handles
+    // that by pausing all animations before running the test and restoring them afterwards.
+    // If needed, users can also import and call `pauseAnimations` from `storybook/preview-api`.
+    await new Promise((resolve) => setTimeout(resolve, 3000));
   },
 };
 

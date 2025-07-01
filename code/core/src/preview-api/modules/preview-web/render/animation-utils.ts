@@ -30,18 +30,28 @@ export function pauseAnimations(): CleanupCallback {
   }
 
   const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
+  const previousStates: {
+    animation: Animation;
+    playState: AnimationPlayState;
+    currentTime: CSSNumberish | null;
+  }[] = [];
 
   const pauseAllAnimations = () => {
     const animations = animationRoots.flatMap((el) => el?.getAnimations?.() || []);
     animations.forEach((a) => {
+      previousStates.push({
+        animation: a,
+        playState: a.playState,
+        currentTime: a.currentTime,
+      });
       if (isDocumentAnimation(a)) {
-        // Infinite animations rewind to their starting state while normal animations and
-        // transitions instantly run to their end state.
-        if (isInfiniteAnimation(a)) {
+        // Normal animations and transitions instantly run to their end state (finish),
+        // while infinite animations pause and rewind to their starting state.
+        if (isFiniteAnimation(a)) {
+          a.finish();
+        } else {
           a.pause();
           a.currentTime = 0;
-        } else {
-          a.finish();
         }
       } else {
         // Scroll/view-driven animations are paused as-is, so that play functions may affect them.
@@ -62,6 +72,14 @@ export function pauseAnimations(): CleanupCallback {
   return () => {
     removeEventListener('animationstart', pauseAllAnimations);
     removeEventListener('transitionrun', pauseAllAnimations);
+
+    while (previousStates.length > 0) {
+      const { animation, playState, currentTime } = previousStates.pop()!;
+      animation.currentTime = currentTime;
+      if (playState === 'running') {
+        animation.play();
+      }
+    }
   };
 }
 
@@ -91,7 +109,9 @@ export async function waitForAnimations(signal?: AbortSignal) {
           }
           const runningAnimations = animationRoots
             .flatMap((el) => el?.getAnimations?.() || [])
-            .filter((a) => a.playState === 'running' && !isInfiniteAnimation(a));
+            .filter(
+              (a) => a.playState === 'running' && isDocumentAnimation(a) && isFiniteAnimation(a)
+            );
           if (runningAnimations.length > 0) {
             await Promise.all(runningAnimations.map((a) => a.finished));
             await checkAnimationsFinished();
@@ -127,17 +147,12 @@ function isDocumentAnimation(anim: Animation) {
   );
 }
 
-function isInfiniteAnimation(anim: Animation) {
-  if (
-    anim instanceof CSSAnimation &&
-    anim.timeline instanceof DocumentTimeline &&
-    anim.effect instanceof KeyframeEffect &&
-    anim.effect.target
-  ) {
+function isFiniteAnimation(anim: Animation) {
+  if (anim instanceof CSSAnimation && anim.effect instanceof KeyframeEffect && anim.effect.target) {
     const style = getComputedStyle(anim.effect.target, anim.effect.pseudoElement);
     const index = style.animationName?.split(', ').indexOf(anim.animationName);
     const iterations = style.animationIterationCount.split(', ')[index];
-    return iterations === 'infinite';
+    return iterations !== 'infinite';
   }
-  return false;
+  return true;
 }

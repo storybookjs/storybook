@@ -288,34 +288,6 @@ export const TestingModule = ({
       data-updated={isUpdated}
     >
       <Card>
-        {hasTestProviders && (
-          <Collapsible
-            data-testid="collapse"
-            style={{
-              transition: isChangingCollapse ? 'max-height 250ms' : 'max-height 0ms',
-              display: hasTestProviders ? 'block' : 'none',
-              maxHeight: isCollapsed ? 0 : maxHeight,
-            }}
-          >
-            <Content ref={contentRef}>
-              {Object.values(registeredTestProviders).map((registeredTestProvider) => {
-                const { render: Render, id } = registeredTestProvider;
-                if (!Render) {
-                  once.warn(
-                    `No render function found for test provider with id '${id}', skipping...`
-                  );
-                  return null;
-                }
-                return (
-                  <TestProvider key={id} data-module-id={id}>
-                    <Render />
-                  </TestProvider>
-                );
-              })}
-            </Content>
-          </Collapsible>
-        )}
-
         <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
           <Action>
             {hasTestProviders && (
@@ -450,6 +422,35 @@ export const TestingModule = ({
             )}
           </Filters>
         </Bar>
+
+        {hasTestProviders && (
+          <Collapsible
+            data-testid="collapse"
+            {...(isCollapsed && { inert: '' as any })}
+            style={{
+              transition: isChangingCollapse ? 'max-height 250ms' : 'max-height 0ms',
+              display: hasTestProviders ? 'block' : 'none',
+              maxHeight: isCollapsed ? 0 : maxHeight,
+            }}
+          >
+            <Content ref={contentRef}>
+              {Object.values(registeredTestProviders).map((registeredTestProvider) => {
+                const { render: Render, id } = registeredTestProvider;
+                if (!Render) {
+                  once.warn(
+                    `No render function found for test provider with id '${id}', skipping...`
+                  );
+                  return null;
+                }
+                return (
+                  <TestProvider key={id} data-module-id={id}>
+                    <Render />
+                  </TestProvider>
+                );
+              })}
+            </Content>
+          </Collapsible>
+        )}
       </Card>
     </Outline>
   );

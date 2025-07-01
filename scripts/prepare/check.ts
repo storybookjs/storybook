@@ -4,9 +4,8 @@ import { join } from 'path';
 import ts from 'typescript';
 
 const run = async ({ cwd }: { cwd: string }) => {
-  const {
-    bundler: { tsConfig: tsconfigPath = 'tsconfig.json' },
-  } = await fs.readJson(join(cwd, 'package.json'));
+  const pkg = await fs.readJson(join(cwd, 'package.json'));
+  const tsconfigPath = pkg.bundler?.tsConfig || 'tsconfig.json';
 
   const { options, fileNames } = getTSFilesAndConfig(tsconfigPath);
   const { program, host } = getTSProgramAndHost(fileNames, options);

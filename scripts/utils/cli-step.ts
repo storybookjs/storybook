@@ -6,7 +6,7 @@ import { createOptions, getCommand } from './options';
 
 const require = createRequire(import.meta.url);
 const cliExecutable = require.resolve('../../code/core/dist/bin/dispatcher.js');
-const toolboxExecutable = require.resolve('../../code/lib/cli-storybook/bin/index.cjs');
+const toolboxExecutable = require.resolve('../../code/lib/cli-storybook/dist/bin/index.js');
 const createStorybookExecutable = require.resolve(
   '../../code/lib/create-storybook/dist/bin/index.js'
 );

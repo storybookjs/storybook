@@ -1,5 +1,5 @@
 import { mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -24,6 +24,7 @@ import {
 } from '../../../../core/src/common/js-package-manager/JsPackageManager';
 import { frameworkPackages } from '../../../../core/src/common/utils/get-storybook-info';
 import versions from '../../../../core/src/common/versions';
+import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 import type { SupportedFrameworks } from '../../../../core/src/types/modules/frameworks';
 import type { SupportedRenderers } from '../../../../core/src/types/modules/renderers';
 import { configureMain, configurePreview } from './configure';
@@ -466,12 +467,8 @@ export async function baseGenerator(
       packageManager: packageManager as any,
       language,
       destination: componentsDestinationPath,
-      commonAssetsDir: join(getCliDir(), 'rendererAssets', 'common'),
+      commonAssetsDir: join(resolvePackageDir('create-storybook'), 'rendererAssets', 'common'),
       features,
     });
   }
-}
-
-export function getCliDir() {
-  return dirname(require.resolve('create-storybook/package.json'));
 }

@@ -16,7 +16,7 @@ import {
   NODE_TARGET,
   SUPPORTED_FEATURES,
 } from '../../code/core/src/shared/constants/environments-support';
-import { resolveModule } from '../../code/core/src/shared/utils/module';
+import { resolvePackageDir } from '../../code/core/src/shared/utils/module';
 import { buildEntries } from './entries';
 import { getExternal, measure } from './utils';
 import { generatePackageJsonFile } from './utils/generate-package-json';
@@ -85,20 +85,7 @@ async function run() {
   );
 
   async function generateDistFiles() {
-    const sharedOptions = {
-      format: 'esm',
-      bundle: true,
-      metafile: true,
-      minifyIdentifiers: isProduction,
-      minifySyntax: isProduction,
-      minifyWhitespace: false,
-      keepNames: true, // required to show correct error messages based on class names
-      outbase: 'src',
-      outdir: 'dist',
-      treeShaking: true,
-      color: true,
-      external: (await getExternal(cwd)).runtimeExternal,
-    } as const satisfies EsbuildContextOptions;
+    const external = (await getExternal(cwd)).runtimeExternal;
 
     const runtimeOptions = {
       platform: 'browser',
@@ -121,9 +108,9 @@ async function run() {
         'storybook/viewport': './src/viewport',
         // The following aliases ensures that the manager has a single version of React,
         // even if transitive dependencies would depend on other versions.
-        react: resolveModule({ pkg: 'react', customSuffix: '' }),
-        'react-dom': resolveModule({ pkg: 'react-dom', customSuffix: '' }),
-        'react-dom/client': resolveModule({ pkg: 'react-dom', customSuffix: 'client' }),
+        react: resolvePackageDir('react'),
+        'react-dom': resolvePackageDir('react-dom'),
+        'react-dom/client': join(resolvePackageDir('react-dom'), 'client'),
       },
       define: {
         // This should set react in prod mode for the manager
@@ -132,6 +119,21 @@ async function run() {
     } as const satisfies EsbuildContextOptions;
 
     function defineESBuildContext(...input: Parameters<typeof esbuild.context>) {
+      const sharedOptions = {
+        format: 'esm',
+        bundle: true,
+        metafile: true,
+        minifyIdentifiers: isProduction,
+        minifySyntax: isProduction,
+        minifyWhitespace: false,
+        keepNames: true, // required to show correct error messages based on class names
+        outbase: 'src',
+        outdir: 'dist',
+        treeShaking: true,
+        color: true,
+        external,
+      } as const satisfies EsbuildContextOptions;
+
       const [config, ...rest] = input;
       const cloned = { ...config };
 
@@ -145,7 +147,6 @@ async function run() {
                 if (result.errors.length) {
                   return;
                 }
-                console.log('postbuild', cwd);
                 await postbuild(cwd);
               });
             },
@@ -183,30 +184,6 @@ async function run() {
             // ------------------------------------------------------------
             `,
             },
-            // plugins: [
-            //   {
-            //     name: 'bin-executable-permissions',
-            //     setup(build) {
-            //       build.onEnd(async (result) => {
-            //         if (result.errors.length) {
-            //           return;
-            //         }
-            //         // Change permissions for the main bin to be executable
-            //         const dispatcherPath = join(
-            //           import.meta.dirname,
-            //           '..',
-            //           '..',
-            //           'code',
-            //           'core',
-            //           'dist',
-            //           'bin',
-            //           'dispatcher.js'
-            //         );
-            //         await chmod(dispatcherPath, 0o755);
-            //       });
-            //     },
-            //   },
-            // ],
           }),
         entries.browser &&
           defineESBuildContext({

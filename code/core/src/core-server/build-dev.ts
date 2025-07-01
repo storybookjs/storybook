@@ -24,7 +24,7 @@ import prompts from 'prompts';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import { resolveModule } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
 import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
@@ -135,10 +135,7 @@ export async function buildDevStandalone(
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
-      resolveModule({
-        pkg: 'storybook',
-        exportPath: 'internal/core-server/presets/common-override-preset',
-      }),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     isCritical: true,
@@ -187,10 +184,7 @@ export async function buildDevStandalone(
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
     corePresets: [
-      resolveModule({
-        pkg: 'storybook',
-        customSuffix: 'dist/core-server/presets/common-preset.js',
-      }),
+      join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
@@ -198,10 +192,7 @@ export async function buildDevStandalone(
     ],
     overridePresets: [
       ...(previewBuilder.overridePresets || []),
-      resolveModule({
-        pkg: 'storybook',
-        exportPath: 'internal/core-server/presets/common-override-preset',
-      }),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
   });

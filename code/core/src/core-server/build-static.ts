@@ -17,7 +17,7 @@ import { global } from '@storybook/global';
 
 import picocolors from 'picocolors';
 
-import { resolveModule } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
@@ -61,14 +61,13 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     logger.warn(`you have not specified a framework in your ${options.configDir}/main.js`);
   }
 
-  const commonPreset = resolveModule({
-    pkg: 'storybook',
-    customSuffix: 'dist/core-server/presets/common-preset.js',
-  });
-  const commonOverridePreset = resolveModule({
-    pkg: 'storybook',
-    exportPath: 'internal/core-server/presets/common-override-preset',
-  });
+  const commonPreset = join(
+    resolvePackageDir('storybook'),
+    'dist/core-server/presets/common-preset.js'
+  );
+  const commonOverridePreset = import.meta.resolve(
+    'storybook/internal/core-server/presets/common-override-preset'
+  );
 
   logger.info('=> Loading presets');
   let presets = await loadAllPresets({
@@ -137,10 +136,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     );
   }
 
-  const coreServerPublicDir = resolveModule({
-    pkg: 'storybook',
-    customSuffix: 'assets/browser',
-  });
+  const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
 
   let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =

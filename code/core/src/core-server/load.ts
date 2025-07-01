@@ -12,7 +12,7 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
-import { resolveModule } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module';
 
 export async function loadStorybook(
   options: CLIOptions &
@@ -51,10 +51,7 @@ export async function loadStorybook(
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
-      resolveModule({
-        pkg: 'storybook',
-        exportPath: 'internal/core-server/presets/common-override-preset',
-      }),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     isCritical: true,
@@ -67,18 +64,12 @@ export async function loadStorybook(
 
   presets = await loadAllPresets({
     corePresets: [
-      resolveModule({
-        pkg: 'storybook',
-        customSuffix: 'dist/core-server/presets/common-preset.js',
-      }),
+      join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
     overridePresets: [
-      resolveModule({
-        pkg: 'storybook',
-        exportPath: 'internal/core-server/presets/common-override-preset',
-      }),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
   });

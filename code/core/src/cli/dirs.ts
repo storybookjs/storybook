@@ -1,4 +1,4 @@
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
 import { temporaryDirectory, versions } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
@@ -8,7 +8,7 @@ import downloadTarballDefault from '@ndelangen/get-tarball';
 import getNpmTarballUrlDefault from 'get-npm-tarball-url';
 import invariant from 'tiny-invariant';
 
-import { resolveModule } from '../shared/utils/module';
+import { resolvePackageDir } from '../shared/utils/module';
 import { externalFrameworks } from './project_types';
 
 const resolveUsingBranchInstall = async (packageManager: JsPackageManager, request: string) => {
@@ -47,7 +47,7 @@ export async function getRendererDir(
   const errors: Error[] = [];
 
   try {
-    return dirname(resolveModule({ pkg: frameworkPackageName, parent: process.cwd() }));
+    return resolvePackageDir(frameworkPackageName, process.cwd());
   } catch (e) {
     invariant(e instanceof Error);
     errors.push(e);

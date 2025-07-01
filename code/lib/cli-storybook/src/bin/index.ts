@@ -227,6 +227,7 @@ command('automigrate [fixId]')
     'The renderer package for the framework Storybook is using.'
   )
   .option('--skip-doctor', 'Skip doctor check')
+  .option('-f --fail', 'Exit with non-zero code on migration failure')
   .action(async (fixId, options) => {
     await doAutomigrate({ fixId, ...options }).catch(handleCommandFailure);
   });

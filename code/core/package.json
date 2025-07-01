@@ -253,6 +253,9 @@
       "import": "./dist/bin/index.js",
       "require": "./dist/bin/index.cjs"
     },
+    "./bin/index.cjs": {
+      "require": "./bin/index.cjs"
+    },
     "./internal/instrumenter": {
       "types": "./dist/instrumenter/index.d.ts",
       "import": "./dist/instrumenter/index.js",

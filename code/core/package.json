@@ -253,9 +253,6 @@
       "import": "./dist/bin/index.js",
       "require": "./dist/bin/index.cjs"
     },
-    "./bin/index.cjs": {
-      "require": "./bin/index.cjs"
-    },
     "./internal/instrumenter": {
       "types": "./dist/instrumenter/index.d.ts",
       "import": "./dist/instrumenter/index.js",
@@ -277,6 +274,7 @@
     "./internal/manager/globals-runtime": {
       "import": "./dist/manager/globals-runtime.js"
     },
+    "./bin/index.cjs": "./bin/index.cjs",
     "./package.json": "./package.json",
     "./internal/package.json": "./package.json"
   },

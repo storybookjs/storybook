@@ -31,8 +31,7 @@ export const buildEntries = {
     },
     postbuild: async (cwd) => {
       const { chmod } = await import('node:fs/promises');
-      const dispatcherPath = join(cwd, 'dist', 'bin', 'dispatcher.js');
-      await chmod(dispatcherPath, 0o755);
+      await chmod(join(cwd, 'dist', 'bin', 'dispatcher.js'), 0o755);
     },
     entries: {
       node: [
@@ -225,8 +224,7 @@ export const buildEntries = {
     },
     postbuild: async (cwd) => {
       const { chmod } = await import('node:fs/promises');
-      const dispatcherPath = join(cwd, 'dist', 'bin', 'index.js');
-      await chmod(dispatcherPath, 0o755);
+      await chmod(join(cwd, 'dist', 'bin', 'index.js'), 0o755);
     },
   },
   '@storybook/cli': {
@@ -240,8 +238,7 @@ export const buildEntries = {
     },
     postbuild: async (cwd) => {
       const { chmod } = await import('node:fs/promises');
-      const dispatcherPath = join(cwd, 'dist', 'bin', 'index.js');
-      await chmod(dispatcherPath, 0o755);
+      await chmod(join(cwd, 'dist', 'bin', 'index.js'), 0o755);
     },
   },
 } satisfies BuildEntriesByPackageName;

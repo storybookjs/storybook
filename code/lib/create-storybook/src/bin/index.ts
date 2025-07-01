@@ -19,7 +19,4 @@ if (
   process.exit(1);
 }
 
-import('./run').catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+import('./run');

@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 // @ts-expect-error no dts file
 import { getSource, transformSource } from 'react-server-dom-webpack/node-loader';
 import type { LoaderContext } from 'webpack';
@@ -9,20 +12,24 @@ export default async function reactTransformLoader(
 ): Promise<void> {
   const callback = this.async();
   try {
-    const url = 'file://' + this.resourcePath;
+    const resourceUrl = 'file://' + this.resourcePath;
 
-    await getSource(url, { format: 'module' }, async (url: string) => {
-      return { source: code };
+    const { source } = await getSource(resourceUrl, { format: 'module' }, async (url: string) => {
+      if (resourceUrl === url) {
+        return { source: code };
+      }
+      if (url.endsWith('.map')) {
+        return { source: await readFile(join(this.context, url)) };
+      }
+      throw new Error(`Cannot load ${url}`);
     });
 
-    const { source } = await transformSource(
-      code,
-      { format: 'module', url: url },
-      async (source: string) => ({
-        source,
-      })
+    const transformed = await transformSource(
+      source,
+      { format: 'module', url: resourceUrl },
+      async (source: string) => ({ source })
     );
-    callback(null, source, map);
+    callback(null, transformed.source, map);
   } catch (err) {
     if (err instanceof Error) {
       callback(err);

@@ -12,15 +12,15 @@ import { type Preview, type ReactRenderer } from '@storybook/react';
 import { ClientWrapper } from '@storybook/experimental-nextjs-rsc/dist/client';
 import {
   createFromReadableStream,
+  createNavigation,
   createRoot,
   use, // @ts-ignore (this only errors during compilation for production)
 } from '@storybook/experimental-nextjs-rsc/dist/react-client-entrypoint';
+
 // We need this import to be a singleton, and because it's used in multiple entrypoints
 // both in ESM and CJS, importing it via the package name instead of having a local import
 // is the only way to achieve it actually being a singleton
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { createNavigation } from '@storybook/experimental-nextjs-rsc/navigation.mock';
-
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
 // @ts-expect-error no types

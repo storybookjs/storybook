@@ -17,20 +17,28 @@ export async function generateTypesFiles(entries: BuildEntry[], cwd: string) {
   let processes: ReturnType<typeof spawn>[] = [];
 
   await Promise.all(
-    dtsEntries.map(async (fileName, index) => {
+    dtsEntries.map(async (entryPoint) => {
       return limited(async () => {
-        const getDtsProcess = () =>
-          spawn(
-            join(import.meta.dirname, '../../../../scripts/node_modules/.bin/jiti'),
-            ['./scripts/dts.ts', index.toString()],
-            {
-              cwd,
-              stdio: ['ignore', 'inherit', 'inherit'],
-            }
-          );
+        console.log('Generating d.ts files for', entryPoint);
+
         let timer: ReturnType<typeof setTimeout> | undefined;
-        const dtsProcess = getDtsProcess();
+        const dtsProcess = spawn(
+          join(import.meta.dirname, '..', '..', 'node_modules', '.bin', 'jiti'),
+          [join(import.meta.dirname, 'dts-process.ts'), entryPoint],
+          {
+            cwd,
+            stdio: ['ignore', 'inherit', 'pipe'],
+          }
+        );
         processes.push(dtsProcess);
+
+        // Filter stderr to exclude messages containing "are imported from external module", which is an ignorable warning from rollup
+        dtsProcess.stderr?.on('data', (data) => {
+          const message = data.toString();
+          if (!message.includes('are imported from external module')) {
+            process.stderr.write(data);
+          }
+        });
 
         await Promise.race([
           new Promise((resolve) => {
@@ -46,7 +54,7 @@ export async function generateTypesFiles(entries: BuildEntry[], cwd: string) {
           }),
           new Promise((resolve) => {
             timer = setTimeout(() => {
-              console.log(index, fileName);
+              console.log('⌛ Timed out generating d.ts files for', entryPoint);
 
               dtsProcess.kill(408); // timed out
               resolve(void 0);
@@ -60,20 +68,18 @@ export async function generateTypesFiles(entries: BuildEntry[], cwd: string) {
 
         if (dtsProcess.exitCode !== 0) {
           console.error(
-            '\nGenerating types for',
-            picocolors.cyan(relative(cwd, dtsEntries[index])),
+            '\n❌ Generating types for',
+            picocolors.cyan(relative(cwd, entryPoint)),
             ' failed'
           );
-          console.log(dtsProcess.exitCode);
           // If any fail, kill all the other processes and exit (bail)
           processes.forEach((p) => p.kill());
           processes = [];
-          console.log(index, fileName);
           process.exit(dtsProcess.exitCode || 1);
         } else {
-          console.log('Generated types for', picocolors.cyan(relative(cwd, dtsEntries[index])));
+          console.log('✅ Generated types for', picocolors.cyan(relative(cwd, entryPoint)));
 
-          if (dtsEntries[index].includes('src/theming/index')) {
+          if (entryPoint.includes('src/theming/index')) {
             console.log('Modifying theme types');
             await modifyCoreThemeTypes(cwd);
           }

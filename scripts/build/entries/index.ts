@@ -187,4 +187,18 @@ export const buildEntries: BuildEntriesByPackageName = {
       ],
     },
   },
+  'create-storybook': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          entryPoint: './src/bin/index.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 };

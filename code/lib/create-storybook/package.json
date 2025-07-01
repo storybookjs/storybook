@@ -19,13 +19,13 @@
   "author": "Storybook Team",
   "type": "module",
   "exports": {
-    ".": "./dist/index.js",
-    "./bin/index.cjs": "./bin/index.cjs",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./package.json": "./package.json"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.js",
-  "bin": "./bin/index.cjs",
+  "bin": "./dist/bin/index.js",
   "files": [
     "bin/**/*",
     "dist/**/*",
@@ -35,8 +35,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti  ../../../scripts/prepare/check.ts",
-    "prep": "jiti  ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/prepare/check.ts",
+    "prep": "jiti ../../../scripts/build/index.ts"
   },
   "dependencies": {
     "semver": "^7.6.2"
@@ -59,16 +59,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/bin/index.ts"
-    ],
-    "formats": [
-      "node-esm"
-    ],
-    "types": false
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

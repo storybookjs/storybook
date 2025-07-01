@@ -124,7 +124,6 @@
       "types": "./dist/node-logger/index.d.ts",
       "default": "./dist/node-logger/index.js"
     },
-    "./internal/package.json": "./package.json",
     "./internal/preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "default": "./dist/preview-api/index.js"

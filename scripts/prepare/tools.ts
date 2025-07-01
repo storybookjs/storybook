@@ -56,7 +56,6 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
   });
   const { output } = await out.generate({
     format: 'es',
-    // dir: dirname(entry).replace('src', 'dist'),
     file: entry.replace('src', 'dist').replace('.ts', '.d.ts'),
   });
 

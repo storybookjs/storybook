@@ -1,6 +1,6 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { existsSync, watch } from 'node:fs';
-import { chmod, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
@@ -18,7 +18,7 @@ import {
 } from '../../code/core/src/shared/constants/environments-support';
 import { resolveModule } from '../../code/core/src/shared/utils/module';
 import { buildEntries } from './entries';
-import { measure } from './utils';
+import { getExternal, measure } from './utils';
 import { generatePackageJsonFile } from './utils/generate-package-json';
 import { generateTypesMapperFiles } from './utils/generate-type-mappers';
 import { generateTypesFiles } from './utils/generate-types';
@@ -28,7 +28,8 @@ async function run() {
   const flags = process.argv.slice(2);
   const cwd = process.cwd();
 
-  const isProduction = flags.includes('--prod') || flags.includes('--production');
+  const isProduction =
+    flags.includes('--prod') || flags.includes('--production') || flags.includes('--optimized');
   const isWatch = flags.includes('--watch');
 
   if (isProduction && isWatch) {
@@ -84,22 +85,6 @@ async function run() {
   );
 
   async function generateDistFiles() {
-    const external = [
-      'storybook',
-      'react',
-      'react-dom',
-      'react-dom/client',
-      ...Object.keys({ ...(pkg.dependencies ?? {}), ...(pkg.peerDependencies ?? {}) }),
-    ];
-    const noExternal = [
-      '@testing-library/jest-dom',
-      '@testing-library/user-event',
-      'chai',
-      '@vitest/expect',
-      '@vitest/spy',
-      '@vitest/utils',
-    ];
-
     const sharedOptions = {
       format: 'esm',
       bundle: true,
@@ -112,7 +97,7 @@ async function run() {
       outdir: 'dist',
       treeShaking: true,
       color: true,
-      external: external.filter((external) => !noExternal.includes(external)),
+      external: (await getExternal(cwd)).runtimeExternal,
     } as const satisfies EsbuildContextOptions;
 
     const runtimeOptions = {
@@ -177,13 +162,15 @@ async function run() {
       );
     }
 
-    const compile = await Promise.all([
-      defineESBuildContext({
-        entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
-        platform: 'node',
-        target: NODE_TARGET,
-        banner: {
-          js: dedent`
+    const compile = await Promise.all(
+      [
+        entries.node &&
+          defineESBuildContext({
+            entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
+            platform: 'node',
+            target: NODE_TARGET,
+            banner: {
+              js: dedent`
             import CJS_COMPAT_NODE_URL from 'node:url';
             import CJS_COMPAT_NODE_PATH from 'node:path';
             import CJS_COMPAT_NODE_MODULE from "node:module";
@@ -195,48 +182,52 @@ async function run() {
             // end of CJS compatibility banner, injected by Storybook's esbuild configuration
             // ------------------------------------------------------------
             `,
-        },
-        // plugins: [
-        //   {
-        //     name: 'bin-executable-permissions',
-        //     setup(build) {
-        //       build.onEnd(async (result) => {
-        //         if (result.errors.length) {
-        //           return;
-        //         }
-        //         // Change permissions for the main bin to be executable
-        //         const dispatcherPath = join(
-        //           import.meta.dirname,
-        //           '..',
-        //           '..',
-        //           'code',
-        //           'core',
-        //           'dist',
-        //           'bin',
-        //           'dispatcher.js'
-        //         );
-        //         await chmod(dispatcherPath, 0o755);
-        //       });
-        //     },
-        //   },
-        // ],
-      }),
-      defineESBuildContext({
-        entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
-        platform: 'browser',
-        target: BROWSER_TARGETS,
-        supported: SUPPORTED_FEATURES,
-      }),
-      defineESBuildContext({
-        ...runtimeOptions,
-        entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
-      }),
-      defineESBuildContext({
-        ...runtimeOptions,
-        entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
-        plugins: [globalExternals(globalsModuleInfoMap)],
-      }),
-    ]);
+            },
+            // plugins: [
+            //   {
+            //     name: 'bin-executable-permissions',
+            //     setup(build) {
+            //       build.onEnd(async (result) => {
+            //         if (result.errors.length) {
+            //           return;
+            //         }
+            //         // Change permissions for the main bin to be executable
+            //         const dispatcherPath = join(
+            //           import.meta.dirname,
+            //           '..',
+            //           '..',
+            //           'code',
+            //           'core',
+            //           'dist',
+            //           'bin',
+            //           'dispatcher.js'
+            //         );
+            //         await chmod(dispatcherPath, 0o755);
+            //       });
+            //     },
+            //   },
+            // ],
+          }),
+        entries.browser &&
+          defineESBuildContext({
+            entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
+            platform: 'browser',
+            target: BROWSER_TARGETS,
+            supported: SUPPORTED_FEATURES,
+          }),
+        entries.runtime &&
+          defineESBuildContext({
+            ...runtimeOptions,
+            entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
+          }),
+        entries.globalizedRuntime &&
+          defineESBuildContext({
+            ...runtimeOptions,
+            entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
+            plugins: [globalExternals(globalsModuleInfoMap)],
+          }),
+      ].filter(Boolean)
+    );
 
     if (isWatch) {
       await Promise.all(

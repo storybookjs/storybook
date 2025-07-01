@@ -10,9 +10,9 @@ export async function generatePackageJsonFile(cwd: string, entries: BuildEntries
   const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
 
   // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
-  pkgJson.exports = {};
-  pkgJson.exports['./package.json'] = './package.json';
-  pkgJson.exports['./internal/package.json'] = './package.json';
+  pkgJson.exports = {
+    './package.json': './package.json',
+  };
 
   for (const entry of Object.values(entries).flat()) {
     for (const exportEntry of entry.exportEntries ?? []) {

@@ -1,14 +1,31 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import { program } from 'commander';
+import { initiate } from 'create-storybook';
+import { dedent } from 'ts-dedent';
 
 import { addToGlobalContext } from '../../../../core/src/telemetry';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
-import { initiate } from '../initiate';
 
 const IS_NON_CI = process.env.CI !== 'true';
 const IS_NON_STORYBOOK_SANDBOX = process.env.IN_STORYBOOK_SANDBOX !== 'true';
 
 addToGlobalContext('cliVersion', version);
+
+const [majorNodeVersion, minorNodeVersion] = process.versions.node.split('.').map(Number);
+
+if (
+  majorNodeVersion < 20 ||
+  (majorNodeVersion === 20 && minorNodeVersion < 19) ||
+  (majorNodeVersion === 22 && minorNodeVersion < 12)
+) {
+  logger.error(
+    dedent`To run Storybook, you need Node.js version 20.19+ or 22.12+.
+      You are currently running Node.js ${process.version}. Please upgrade your Node.js installation.`
+  );
+  process.exit(1);
+}
 
 /**
  * Create a commander application with flags for both legacy and modern. We then check the options

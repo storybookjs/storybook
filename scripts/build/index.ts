@@ -170,6 +170,7 @@ async function run() {
             entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
             platform: 'node',
             target: NODE_TARGET,
+            splitting: true,
             banner: {
               js: dedent`
             import CJS_COMPAT_NODE_URL from 'node:url';

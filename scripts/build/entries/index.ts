@@ -201,4 +201,18 @@ export const buildEntries: BuildEntriesByPackageName = {
       ],
     },
   },
+  '@storybook/cli': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          entryPoint: './src/bin/index.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 };

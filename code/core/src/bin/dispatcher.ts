@@ -60,7 +60,7 @@ async function run() {
     if (targetCliPackageJson.version === versions[targetCli.pkg]) {
       command = [
         'node',
-        join(resolvePackageDir(targetCli.pkg), 'bin/index.cjs'),
+        join(resolvePackageDir(targetCli.pkg), 'dist/bin/index.js'),
         ...targetCli.args,
       ];
     }

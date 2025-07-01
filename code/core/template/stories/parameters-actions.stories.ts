@@ -22,6 +22,8 @@ export const Basic = {
 };
 
 export const WithAllConsoleMethods = {
+  // we throw errors when console.error is called, so we disable Vitest for this story
+  tags: ['!vitest'],
   args: {
     label: "See console output in the actions panel and in the browser's console",
   },

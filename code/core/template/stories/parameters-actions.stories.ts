@@ -22,6 +22,9 @@ export const Basic = {
 };
 
 export const WithAllConsoleMethods = {
+  args: {
+    label: "See console output in the actions panel and in the browser's console",
+  },
   parameters: {
     actions: {
       console: true,
@@ -67,6 +70,7 @@ export const WithAllConsoleMethods = {
 };
 
 export const WithSomeConsoleMethods = {
+  ...WithAllConsoleMethods,
   parameters: {
     actions: {
       console: {

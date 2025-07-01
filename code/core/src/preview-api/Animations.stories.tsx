@@ -17,11 +17,11 @@ const fadeIn = keyframes`
 const rotate = keyframes`
   0% {
     transform: rotate(0deg);
-    color: red;
+    color: crimson;
   }
   100% {
     transform: rotate(360deg);
-    color: blue;
+    color: dodgerblue;
   }
 `;
 
@@ -39,7 +39,7 @@ const meta = {
   component: Component,
   title: 'Animations',
   args: {
-    children: 'Content',
+    children: <strong>Content</strong>,
   },
 } satisfies Meta<typeof Component>;
 
@@ -73,7 +73,7 @@ const Container = styled.div({
   background: 'linear-gradient(to bottom, white, silver)',
   position: 'relative',
   textAlign: 'center',
-  padding: '100px 0',
+  padding: '120px 0',
 });
 
 const Bar = styled.div({
@@ -81,8 +81,8 @@ const Bar = styled.div({
   left: 0,
   top: 0,
   width: '100%',
-  height: 20,
-  background: 'red',
+  height: 10,
+  background: 'crimson',
   transformOrigin: '0 50%',
   animation: `${growProgress} auto linear`,
   animationTimeline: 'scroll()',

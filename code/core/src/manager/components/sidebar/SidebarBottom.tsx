@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import {
   type API_FilterFunction,
@@ -84,6 +84,7 @@ interface SidebarBottomProps {
   notifications: State['notifications'];
   errorCount: number;
   warningCount: number;
+  successCount: number;
   hasStatuses: boolean;
   isDevelopment?: boolean;
   testProviderStates: TestProviderStateByProviderId;
@@ -96,6 +97,7 @@ export const SidebarBottomBase = ({
   notifications = [],
   errorCount,
   warningCount,
+  successCount,
   hasStatuses,
   isDevelopment,
   testProviderStates,
@@ -161,6 +163,7 @@ export const SidebarBottomBase = ({
               warningCount,
               warningsActive,
               setWarningsActive,
+              successCount,
             }}
           />
         )}
@@ -173,24 +176,28 @@ export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) =>
   const api = useStorybookApi();
   const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
   const { notifications } = useStorybookState();
-  const { hasStatuses, errorCount, warningCount } = experimental_useStatusStore((statuses) => {
-    return Object.values(statuses).reduce(
-      (result, storyStatuses) => {
-        Object.values(storyStatuses).forEach((status) => {
-          result.hasStatuses = true;
-          if (status.value === 'status-value:error') {
-            result.errorCount += 1;
-          }
-
-          if (status.value === 'status-value:warning') {
-            result.warningCount += 1;
-          }
-        });
-        return result;
-      },
-      { errorCount: 0, warningCount: 0, hasStatuses: false }
-    );
-  });
+  const { hasStatuses, errorCount, warningCount, successCount } = experimental_useStatusStore(
+    (statuses) => {
+      return Object.values(statuses).reduce(
+        (result, storyStatuses) => {
+          Object.values(storyStatuses).forEach((status) => {
+            result.hasStatuses = true;
+            if (status.value === 'status-value:error') {
+              result.errorCount += 1;
+            }
+            if (status.value === 'status-value:warning') {
+              result.warningCount += 1;
+            }
+            if (status.value === 'status-value:success') {
+              result.successCount += 1;
+            }
+          });
+          return result;
+        },
+        { errorCount: 0, warningCount: 0, successCount: 0, hasStatuses: false }
+      );
+    }
+  );
 
   const testProviderStates = experimental_useTestProviderStore();
 
@@ -201,6 +208,7 @@ export const SidebarBottom = ({ isDevelopment }: { isDevelopment?: boolean }) =>
       hasStatuses={hasStatuses}
       errorCount={errorCount}
       warningCount={warningCount}
+      successCount={successCount}
       isDevelopment={isDevelopment}
       testProviderStates={testProviderStates}
       registeredTestProviders={registeredTestProviders}

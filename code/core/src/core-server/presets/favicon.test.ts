@@ -57,13 +57,34 @@ vi.mock('node:fs', async (importOriginal) => ({
   existsSync: vi.fn((p: string) => {
     return false;
   }),
+  statSync: vi.fn((p: string) => {
+    return {
+      isFile: () => false,
+    };
+  }),
 }));
 const existsSyncMock = vi.mocked(fs.existsSync);
+const statSyncMock = vi.mocked(fs.statSync);
 
 it('with no staticDirs favicon should return default', async () => {
   const options = createOptions([]);
 
   expect(await m.favicon(undefined, options)).toBe(defaultFavicon);
+});
+
+it('with staticDirs referencing a favicon.ico directly should return the found favicon', async () => {
+  const location = 'favicon.ico';
+  existsSyncMock.mockImplementation((p) => {
+    return p === createPath(location);
+  });
+  statSyncMock.mockImplementation((p) => {
+    return {
+      isFile: () => p === createPath('favicon.ico'),
+    } as any;
+  });
+  const options = createOptions([location]);
+
+  expect(await m.favicon(undefined, options)).toBe(createPath('favicon.ico'));
 });
 
 it('with staticDirs containing a single favicon.ico should return the found favicon', async () => {

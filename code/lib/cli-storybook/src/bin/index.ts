@@ -1,29 +1,20 @@
 #!/usr/bin/env node
+import { logger } from 'storybook/internal/node-logger';
 
-const majorNodeVersion = parseInt(process.versions.node, 10);
-if (majorNodeVersion < 20) {
-  console.error('To run Storybook you need to have Node.js 20 or higher');
+import dedent from 'ts-dedent';
+
+const [majorNodeVersion, minorNodeVersion] = process.versions.node.split('.').map(Number);
+
+if (
+  majorNodeVersion < 20 ||
+  (majorNodeVersion === 20 && minorNodeVersion < 19) ||
+  (majorNodeVersion === 22 && minorNodeVersion < 12)
+) {
+  logger.error(
+    dedent`To run Storybook, you need Node.js version 20.19+ or 22.12+.
+      You are currently running Node.js ${process.version}. Please upgrade your Node.js installation.`
+  );
   process.exit(1);
 }
 
-// The Storybook CLI has a catch block for all of its commands, but if an error
-// occurs before the command even runs, for instance, if an import fails, then
-// such error will fall under the uncaughtException handler.
-// This is the earliest moment we can catch such errors.
-process.once('uncaughtException', (error) => {
-  if (error.message.includes('string-width')) {
-    console.error(
-      [
-        '🔴 Error: It looks like you are having a known issue with package hoisting.',
-        'Please check the following issue for details and solutions: https://github.com/storybookjs/storybook/issues/22431#issuecomment-1630086092\n\n',
-      ].join('\n')
-    );
-  }
-
-  throw error;
-});
-
-import('./run').catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+import('./run');

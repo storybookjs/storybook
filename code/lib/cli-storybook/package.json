@@ -22,10 +22,6 @@
   "author": "Storybook Team",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
     "./package.json": "./package.json"
   },
   "bin": "./dist/bin/index.js",
@@ -67,6 +63,9 @@
     "slash": "^5.0.0",
     "tiny-invariant": "^1.3.3",
     "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": "^20.19 || >=22.16.0"
   },
   "publishConfig": {
     "access": "public"

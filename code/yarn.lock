@@ -6247,7 +6247,7 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
   bin:
-    cli: ./bin/index.cjs
+    cli: ./dist/bin/index.js
   languageName: unknown
   linkType: soft
 

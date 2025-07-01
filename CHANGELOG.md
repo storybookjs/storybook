@@ -1,3 +1,13 @@
+## 9.0.15
+
+- CLI: Do not fail incompatible package check in doctor if only core packages used - [#31886](https://github.com/storybookjs/storybook/pull/31886), thanks @mrginglymus!
+- Core: Various fixes - [#31870](https://github.com/storybookjs/storybook/pull/31870), thanks @ghengeveld!
+- Docs: Prevent JSON tree control from swallowing keyboard events when not in focus - [#31841](https://github.com/storybookjs/storybook/pull/31841), thanks @takashi-kasajima!
+- Ember: Allow ember v5 as peer deps - [#25893](https://github.com/storybookjs/storybook/pull/25893), thanks @gossi!
+- NextJs-Vite: Enable next/font loading when using next-vite - [#31906](https://github.com/storybookjs/storybook/pull/31906), thanks @k35o!
+- React: Bump @joshwooding/vite-plugin-react-docgen-typescript to 0.6.1 - [#31899](https://github.com/storybookjs/storybook/pull/31899), thanks @mrginglymus!
+- UI: Set color scheme to sync scrollbar color with user-selected theme - [#28666](https://github.com/storybookjs/storybook/pull/28666), thanks @elisezhg!
+
 ## 9.0.14
 
 - CLI: Prebundle more in cli-storybook package - [#31746](https://github.com/storybookjs/storybook/pull/31746), thanks @ndelangen!

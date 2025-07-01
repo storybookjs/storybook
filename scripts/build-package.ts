@@ -1,6 +1,6 @@
+import { exec } from 'child_process';
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
-import { execaCommand } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { readJSON } from 'fs-extra';
 import { posix, resolve, sep } from 'path';
@@ -161,29 +161,37 @@ async function run() {
     }
 
     const cwd = resolve(__dirname, '..', 'code', v.location);
-    const sub = execaCommand(
+    const sub = exec(
       `${command}${watchMode ? ' --watch' : ''}${prodMode ? ' --optimized' : ''} --reset`,
       {
         cwd,
-        buffer: false,
-        shell: true,
-        cleanup: true,
         env: {
           NODE_ENV: 'production',
+          ...process.env,
+          FORCE_COLOR: '1',
         },
       }
     );
 
+    let lastName = '';
+
     sub.stdout?.on('data', (data) => {
-      process.stdout.write(`${picocolors.cyan(v.name)}:\n${data}`);
+      if (lastName !== v.name) {
+        const prefix = `${picocolors.cyan(v.name)}:\n`;
+        process.stdout.write(prefix);
+      }
+      lastName = v.name;
+      process.stdout.write(data);
     });
     sub.stderr?.on('data', (data) => {
-      process.stderr.write(`${picocolors.red(v.name)}:\n${data}`);
+      if (lastName !== v.name) {
+        const prefix = `${picocolors.cyan(v.name)}:\n`;
+        process.stdout.write(prefix);
+      }
+      lastName = v.name;
+      process.stderr.write(data);
     });
   });
 }
 
-run().catch((e) => {
-  console.log(e);
-  process.exit(1);
-});
+run();

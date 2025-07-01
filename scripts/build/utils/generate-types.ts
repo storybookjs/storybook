@@ -19,8 +19,6 @@ export async function generateTypesFiles(entries: BuildEntry[], cwd: string) {
   await Promise.all(
     dtsEntries.map(async (entryPoint) => {
       return limited(async () => {
-        console.log('Generating d.ts files for', entryPoint);
-
         let timer: ReturnType<typeof setTimeout> | undefined;
         const dtsProcess = spawn(
           join(import.meta.dirname, '..', '..', 'node_modules', '.bin', 'jiti'),

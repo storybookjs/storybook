@@ -1,13 +1,34 @@
-import { chmod } from 'node:fs/promises';
+import { exec } from 'node:child_process';
 import { join } from 'node:path';
 
 import type { BuildEntriesByPackageName } from '../utils';
-import { generateSourceFiles } from './storybook/generate-source-files';
 
 export const buildEntries: BuildEntriesByPackageName = {
   storybook: {
-    prebuild: generateSourceFiles,
+    prebuild: async () => {
+      const CORE_PREBUILD_SCRIPT_PATH = join(
+        import.meta.dirname,
+        'storybook',
+        'generate-source-files.ts'
+      );
+      return new Promise((resolve, reject) => {
+        const child = exec(`jiti ${CORE_PREBUILD_SCRIPT_PATH}`);
+        child.stdout?.on('data', (data) => {
+          process.stdout.write(data);
+        });
+        child.stderr?.on('data', (data) => {
+          process.stderr.write(data);
+        });
+        child.on('close', () => {
+          resolve(void 0);
+        });
+        child.on('error', (error) => {
+          reject(error);
+        });
+      });
+    },
     postbuild: async (cwd) => {
+      const { chmod } = await import('node:fs/promises');
       const dispatcherPath = join(cwd, 'dist', 'bin', 'dispatcher.js');
       await chmod(dispatcherPath, 0o755);
     },
@@ -204,10 +225,6 @@ export const buildEntries: BuildEntriesByPackageName = {
   '@storybook/cli': {
     entries: {
       node: [
-        // {
-        //   exportEntries: ['.'],
-        //   entryPoint: './src/index.ts',
-        // },
         {
           entryPoint: './src/bin/index.ts',
           dts: false,

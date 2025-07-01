@@ -16,7 +16,6 @@ import { dedent, esbuild, getWorkspace, prettier } from '../../../prepare/tools'
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
 const CORE_ROOT_DIR = join(import.meta.dirname, '..', '..', '..', '..', 'code', 'core');
-console.log(CORE_ROOT_DIR);
 const tempDir = () => realpath(os.tmpdir());
 const getPath = async (prefix = '') =>
   join(await tempDir(), prefix + (Math.random() + 1).toString(36).substring(7));

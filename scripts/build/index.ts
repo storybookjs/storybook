@@ -26,7 +26,8 @@ import { modifyCoreThemeTypes } from './utils/modify-core-theme-types';
 
 async function run() {
   const flags = process.argv.slice(2);
-  const cwd = process.cwd();
+  const DIR_CWD = process.cwd();
+  const DIR_DIST = join(DIR_CWD, 'dist');
 
   const isProduction =
     flags.includes('--prod') || flags.includes('--production') || flags.includes('--optimized');
@@ -36,10 +37,10 @@ async function run() {
     throw new Error('Cannot watch and build for production at the same time');
   }
 
-  const { default: pkg } = await import(join(cwd, 'package.json'), { with: { type: 'json' } });
+  const { default: pkg } = await import(join(DIR_CWD, 'package.json'), { with: { type: 'json' } });
 
-  await rm(join(cwd, 'dist'), { recursive: true }).catch(() => {});
-  await mkdir(join(cwd, 'dist'));
+  await rm(DIR_DIST, { recursive: true }).catch(() => {});
+  await mkdir(DIR_DIST);
 
   type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
 
@@ -56,20 +57,20 @@ async function run() {
 
   if (prebuild) {
     console.log(`Running prebuild script for ${pkg.name}...`);
-    const prebuildTime = await measure(() => prebuild(cwd));
+    const prebuildTime = await measure(() => prebuild(DIR_CWD));
     console.log(
       `Prebuild script for ${pkg.name} completed in`,
       picocolors.yellow(prettyTime(prebuildTime))
     );
   }
 
-  await generatePackageJsonFile(cwd, entries);
+  await generatePackageJsonFile(DIR_CWD, entries);
   const dist = measure(generateDistFiles);
   const types = measure(async () => {
-    await generateTypesMapperFiles(dtsEntries, cwd);
-    await modifyCoreThemeTypes(cwd);
+    await generateTypesMapperFiles(dtsEntries, DIR_CWD);
+    await modifyCoreThemeTypes(DIR_CWD);
     if (isProduction) {
-      await generateTypesFiles(dtsEntries, cwd);
+      await generateTypesFiles(dtsEntries, DIR_CWD);
     }
   });
 
@@ -85,7 +86,7 @@ async function run() {
   );
 
   async function generateDistFiles() {
-    const external = (await getExternal(cwd)).runtimeExternal;
+    const external = (await getExternal(DIR_CWD)).runtimeExternal;
 
     const runtimeOptions = {
       platform: 'browser',
@@ -147,7 +148,7 @@ async function run() {
                 if (result.errors.length) {
                   return;
                 }
-                await postbuild(cwd);
+                await postbuild(DIR_CWD);
               });
             },
           },
@@ -215,7 +216,7 @@ async function run() {
       );
 
       // show a log message when a file is compiled
-      watch(join(cwd, 'dist'), { recursive: true }, (_event, filename) => {
+      watch(join(DIR_CWD, 'dist'), { recursive: true }, (_event, filename) => {
         console.log(`compiled ${picocolors.cyan(filename)}`);
       });
     } else {
@@ -281,7 +282,4 @@ async function run() {
   }
 }
 
-run().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+run();

@@ -2,10 +2,13 @@ import type { Task } from '../task';
 import { exec } from '../utils/exec';
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks';
 
-const parallel = `--parallel=${process.env.CI ? 8 : maxConcurrentTasks}`;
+// The amount of VCPUs for the check task on CI is 8 (xlarge resource)
+const amountOfVCPUs = 8;
 
-const linkCommand = `nx affected -t check ${parallel}`;
-const nolinkCommand = `nx affected -t check -c production ${parallel}`;
+const parallel = `--parallel=${process.env.CI ? amountOfVCPUs - 1 : maxConcurrentTasks}`;
+
+const linkCommand = `npx nx run-many -t check ${parallel}`;
+const nolinkCommand = `npx nx run-many -t check -c production ${parallel}`;
 
 export const check: Task = {
   description: 'Typecheck the source code of the monorepo',

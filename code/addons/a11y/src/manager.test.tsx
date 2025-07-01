@@ -1,11 +1,16 @@
-import { describe, it, expect, vi } from 'vitest';
-import * as api from '@storybook/manager-api';
-import type { Addon_BaseType } from '@storybook/types';
+// @vitest-environment happy-dom
+import { describe, expect, it, vi } from 'vitest';
+
+import type { Addon_BaseType } from 'storybook/internal/types';
+
+import * as api from 'storybook/manager-api';
+
 import { PANEL_ID } from './constants';
 import './manager';
 
-vi.mock('@storybook/manager-api');
+vi.mock('storybook/manager-api');
 const mockedApi = vi.mocked<api.API>(api as any);
+mockedApi.useStorybookApi = vi.fn(() => ({ getSelectedPanel: vi.fn() }));
 mockedApi.useAddonState = vi.fn();
 const mockedAddons = vi.mocked(api.addons);
 const registrationImpl = mockedAddons.register.mock.calls[0][1];
@@ -40,22 +45,18 @@ describe('A11yManager', () => {
 
     // when / then
     expect(title()).toMatchInlineSnapshot(`
-      <div>
-        <Spaced
-          col={1}
-        >
-          <span
-            style={
-              {
-                "display": "inline-block",
-                "verticalAlign": "middle",
-              }
-            }
-          >
-            Accessibility
-          </span>
-          
-        </Spaced>
+      <div
+        style={
+          {
+            "alignItems": "center",
+            "display": "flex",
+            "gap": 6,
+          }
+        }
+      >
+        <span>
+          Accessibility
+        </span>
       </div>
     `);
   });
@@ -74,26 +75,24 @@ describe('A11yManager', () => {
 
     // when / then
     expect(title()).toMatchInlineSnapshot(`
-      <div>
-        <Spaced
-          col={1}
+      <div
+        style={
+          {
+            "alignItems": "center",
+            "display": "flex",
+            "gap": 6,
+          }
+        }
+      >
+        <span>
+          Accessibility
+        </span>
+        <Badge
+          compact={true}
+          status="neutral"
         >
-          <span
-            style={
-              {
-                "display": "inline-block",
-                "verticalAlign": "middle",
-              }
-            }
-          >
-            Accessibility
-          </span>
-          <Badge
-            status="neutral"
-          >
-            3
-          </Badge>
-        </Spaced>
+          3
+        </Badge>
       </div>
     `);
   });

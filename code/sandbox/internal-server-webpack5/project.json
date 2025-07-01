@@ -1,17 +1,8 @@
-// auto-generated from scripts/create-nx-sandbox-projects.ts
 {
   "name": "internal/server-webpack5",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "application",
-  "implicitDependencies": [
-    "cli",
-    "test",
-    "essentials",
-    "interactions",
-    "links",
-    "onboarding",
-    "blocks",
-    "server-webpack5"
-  ],
+  "implicitDependencies": ["core", "addon-links", "addon-onboarding", "server-webpack5"],
   "targets": {
     "sandbox": {},
     "sb:dev": {},

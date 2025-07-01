@@ -1,18 +1,15 @@
-/**
- * Count of stories for each storyId.
- */
+/** Count of stories for each storyId. */
 const storyCounts = new Map<string, number>();
 
 /**
  * Increments the count for a storyId and returns the next UID.
  *
- * When a story is bootstrapped, the storyId is used as the element tag. That
- * becomes an issue when a story is rendered multiple times in the same docs
- * page. This function returns a UID that is appended to the storyId to make
- * it unique.
+ * When a story is bootstrapped, the storyId is used as the element tag. That becomes an issue when
+ * a story is rendered multiple times in the same docs page. This function returns a UID that is
+ * appended to the storyId to make it unique.
  *
- * @param storyId id of a story
- * @returns uid of a story
+ * @param storyId Id of a story
+ * @returns Uid of a story
  */
 export const getNextStoryUID = (storyId: string): string => {
   if (!storyCounts.has(storyId)) {
@@ -27,12 +24,12 @@ export const getNextStoryUID = (storyId: string): string => {
 /**
  * Clears the storyId counts.
  *
- * Can be useful for testing, where you need predictable increments, without
- * reloading the global state.
+ * Can be useful for testing, where you need predictable increments, without reloading the global
+ * state.
  *
  * If onlyStoryId is provided, only that storyId is cleared.
  *
- * @param onlyStoryId id of a story
+ * @param onlyStoryId Id of a story
  */
 export const clearStoryUIDs = (onlyStoryId?: string): void => {
   if (onlyStoryId !== undefined && onlyStoryId !== null) {

@@ -1,5 +1,6 @@
-import type { PresetProperty } from '@storybook/types';
-import { join } from 'path';
+import { join } from 'node:path';
+
+import type { PresetProperty } from 'storybook/internal/types';
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
@@ -12,4 +13,20 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
     .concat(input)
     .concat([join(__dirname, 'entry-preview.mjs')])
     .concat(docsEnabled ? [join(__dirname, 'entry-preview-docs.mjs')] : []);
+};
+
+/**
+ * Alias react and react-dom to preact/compat similar to the preact vite preset
+ * https://github.com/preactjs/preset-vite/blob/main/src/index.ts#L238-L239
+ */
+export const resolvedReact = async (existing: any) => {
+  try {
+    return {
+      ...existing,
+      react: 'preact/compat',
+      reactDom: 'preact/compat',
+    };
+  } catch (e) {
+    return existing;
+  }
 };

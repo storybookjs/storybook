@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { Args } from '@storybook/types';
+
+import type { Args } from 'storybook/internal/types';
+
 import { generateSvelteSource } from './sourceDecorator';
 
 expect.addSnapshotSerializer({

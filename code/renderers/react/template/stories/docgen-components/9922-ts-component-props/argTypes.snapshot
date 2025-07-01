@@ -6,7 +6,7 @@
     "description": "",
     "name": "spacing",
     "table": {
-      "defaultValue": null,
+      "defaultValue": undefined,
       "jsDocTags": undefined,
       "type": {
         "detail": undefined,

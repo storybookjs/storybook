@@ -1,13 +1,15 @@
-/* eslint-disable import/no-extraneous-dependencies */
-import { join, relative, dirname } from 'path';
-import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
-import { logger } from '@storybook/node-logger';
+import { dirname, join, relative } from 'node:path';
+
+import { logger } from 'storybook/internal/node-logger';
+
 import PnpWebpackPlugin from 'pnp-webpack-plugin';
-import { mergePlugins } from './helpers/mergePlugins';
-import { getReactScriptsPath } from './helpers/getReactScriptsPath';
-import { processCraConfig } from './helpers/processCraConfig';
+import type { Configuration, RuleSetRule, WebpackPluginInstance } from 'webpack';
+
 import { checkPresets } from './helpers/checkPresets';
 import { getModulePath } from './helpers/getModulePath';
+import { getReactScriptsPath } from './helpers/getReactScriptsPath';
+import { mergePlugins } from './helpers/mergePlugins';
+import { processCraConfig } from './helpers/processCraConfig';
 import type { PluginOptions } from './types';
 
 const CWD = process.cwd();
@@ -126,6 +128,14 @@ const webpack = async (
         ...getModulePath(CWD),
       ],
       plugins: [PnpWebpackPlugin as any],
+      // manual copy from builder-webpack because defaults are disabled in this CRA preset
+      conditionNames: [
+        ...(webpackConfig.resolve?.conditionNames ?? []),
+        'storybook',
+        'stories',
+        'test',
+        '...',
+      ],
     },
     resolveLoader,
   } as Configuration;

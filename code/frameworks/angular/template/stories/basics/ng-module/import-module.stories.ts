@@ -1,6 +1,8 @@
-import { StoryFn, Meta, moduleMetadata, StoryObj } from '@storybook/angular';
-import { ChipsModule } from './angular-src/chips.module';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { StoryFn, moduleMetadata } from '@storybook/angular';
+
 import { ChipsGroupComponent } from './angular-src/chips-group.component';
+import { ChipsModule } from './angular-src/chips.module';
 
 const meta: Meta<ChipsGroupComponent> = {
   // title: 'Basics / NgModule / Module with multiple component',

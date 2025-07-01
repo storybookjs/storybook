@@ -1,9 +1,8 @@
 import { Component, Input } from '@angular/core';
 
-/**
- * This component is used for testing the various forms of enum types
- */
+/** This component is used for testing the various forms of enum types */
 @Component({
+  standalone: false,
   selector: 'app-enums',
   templateUrl: './enums.component.html',
 })
@@ -27,9 +26,7 @@ export class EnumsComponent {
   @Input() enumAlias?: EnumAlias;
 }
 
-/**
- * Button Priority
- */
+/** Button Priority */
 export enum EnumNumeric {
   FIRST,
   SECOND,

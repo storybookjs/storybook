@@ -1,78 +1,112 @@
-import { SNIPPET_RENDERED } from '@storybook/docs-tools';
-import { addons, useEffect } from '@storybook/preview-api';
-import type { Mock } from 'vitest';
-import { vi, describe, beforeEach, it, expect } from 'vitest';
+/** @vitest-environment happy-dom */
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
+
+import { addons, emitTransformCode, useEffect, useRef, useState } from 'storybook/preview-api';
+
 import { sourceDecorator } from './sourceDecorator';
-import type { StoryContext } from '../types';
 
-vi.mock('@storybook/preview-api');
-const mockedAddons = vi.mocked(addons);
-const mockedUseEffect = vi.mocked(useEffect);
-
-expect.addSnapshotSerializer({
-  print: (val: any) => val,
-  test: (val) => typeof val === 'string',
-});
-
-const tick = () => new Promise((r) => setTimeout(r, 0));
-
-const makeContext = (name: string, parameters: any, args: any, extra?: object): StoryContext =>
-  // @ts-expect-error haven't added unmapped args to StoryContext yet
-  ({
-    id: `html-test--${name}`,
-    kind: 'js-text',
-    name,
-    parameters,
-    componentId: '',
-    title: '',
-    story: '',
-    unmappedArgs: args,
-    args,
-    argTypes: {},
-    globals: {},
-    initialArgs: {},
-
-    ...extra,
-  }) as StoryContext;
+// Mock the storybook preview-api
+vi.mock('storybook/preview-api', () => ({
+  addons: {
+    getChannel: vi.fn(),
+  },
+  useEffect: vi.fn((fn) => fn()),
+  useRef: vi.fn(),
+  emitTransformCode: vi.fn(),
+}));
 
 describe('sourceDecorator', () => {
-  let mockChannel: { on: Mock; emit?: Mock };
+  const mockChannel = {
+    emit: vi.fn(),
+  };
+
   beforeEach(() => {
-    mockedAddons.getChannel.mockReset();
-    mockedUseEffect.mockImplementation((cb) => setTimeout(() => cb(), 0));
-
-    mockChannel = { on: vi.fn(), emit: vi.fn() };
-    mockedAddons.getChannel.mockReturnValue(mockChannel as any);
+    vi.clearAllMocks();
+    vi.mocked(addons.getChannel).mockReturnValue(mockChannel as any);
+    vi.mocked(useRef).mockReturnValue({ current: undefined });
   });
 
-  it('should render dynamically for args stories', async () => {
-    const storyFn = (args: any) => `<div>args story</div>`;
-    const context = makeContext('args', { __isArgsStory: true }, {});
-    sourceDecorator(storyFn, context);
-    await tick();
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'html-test--args',
+  it('should not render source for non-args stories', () => {
+    const storyFn = () => '<div>Test Story</div>';
+    const context = {
+      id: 'test-story',
+      parameters: {
+        __isArgsStory: false,
+        docs: { source: {} },
+      },
       args: {},
-      source: '<div>args story</div>',
-    });
+      unmappedArgs: {},
+    };
+
+    sourceDecorator(storyFn, context as any);
+
+    expect(emitTransformCode).not.toHaveBeenCalled();
   });
 
-  it('should skip dynamic rendering for no-args stories', async () => {
-    const storyFn = () => `<div>classic story</div>`;
-    const context = makeContext('classic', {}, {});
-    sourceDecorator(storyFn, context);
-    await tick();
-    expect(mockChannel.emit).not.toHaveBeenCalled();
+  it('should render source for args stories', () => {
+    const storyContent = '<div>Test Story</div>';
+    const storyFn = () => storyContent;
+    const context = {
+      id: 'test-story',
+      parameters: {
+        __isArgsStory: true,
+        docs: { source: {} },
+      },
+      args: {},
+      unmappedArgs: {},
+    };
+
+    sourceDecorator(storyFn, context as any);
+
+    expect(emitTransformCode).toHaveBeenCalledWith(storyContent, context);
   });
 
-  it('should use the originalStoryFn if excludeDecorators is set', async () => {
-    const storyFn = (args: any) => `<div>args story</div>`;
-    const decoratedStoryFn = (args: any) => `
-      <div style="padding: 25px; border: 3px solid red;">${storyFn(args)}</div>
-    `;
-    const context = makeContext(
-      'args',
-      {
+  it('should handle Element type story returns', () => {
+    const element = document.createElement('div');
+    element.innerHTML = 'Test Story';
+    const storyFn = () => element;
+    const context = {
+      id: 'test-story',
+      parameters: {
+        __isArgsStory: true,
+        docs: { source: {} },
+      },
+      args: {},
+      unmappedArgs: {},
+    };
+
+    sourceDecorator(storyFn, context as any);
+
+    expect(emitTransformCode).toHaveBeenCalledWith(element.outerHTML, context);
+  });
+
+  it('should emit SNIPPET_RENDERED event when source is available', () => {
+    const source = '<div>Test Story</div>';
+
+    const storyFn = () => source;
+    const context = {
+      id: 'test-story',
+      parameters: {
+        __isArgsStory: true,
+        docs: { source: {} },
+      },
+      args: {},
+      unmappedArgs: {},
+    };
+
+    sourceDecorator(storyFn, context as any);
+
+    expect(emitTransformCode).toHaveBeenCalledWith(source, context);
+  });
+
+  it('should respect excludeDecorators parameter', () => {
+    const originalStoryContent = '<div>Original Story</div>';
+    const decoratedStoryContent = '<div>Decorated Story</div>';
+    const context = {
+      id: 'test-story',
+      parameters: {
         __isArgsStory: true,
         docs: {
           source: {
@@ -80,15 +114,37 @@ describe('sourceDecorator', () => {
           },
         },
       },
-      {},
-      { originalStoryFn: storyFn }
-    );
-    sourceDecorator(decoratedStoryFn, context);
-    await tick();
-    expect(mockChannel.emit).toHaveBeenCalledWith(SNIPPET_RENDERED, {
-      id: 'html-test--args',
       args: {},
-      source: '<div>args story</div>',
-    });
+      unmappedArgs: {},
+      originalStoryFn: () => originalStoryContent,
+    };
+
+    const storyFn = () => decoratedStoryContent;
+
+    sourceDecorator(storyFn, context as any);
+
+    expect(emitTransformCode).toHaveBeenCalledWith(originalStoryContent, context);
+  });
+
+  it('should skip source render when type is CODE', () => {
+    const storyFn = () => '<div>Test Story</div>';
+    const context = {
+      id: 'test-story',
+      parameters: {
+        __isArgsStory: true,
+        docs: {
+          source: {
+            type: SourceType.CODE,
+            code: 'const x = 1;',
+          },
+        },
+      },
+      args: {},
+      unmappedArgs: {},
+    };
+
+    sourceDecorator(storyFn, context as any);
+
+    expect(emitTransformCode).not.toHaveBeenCalled();
   });
 });

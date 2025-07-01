@@ -1,18 +1,18 @@
 {
   "name": "sb",
-  "version": "8.1.0-alpha.4",
+  "version": "9.1.0-alpha.6",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-storybook",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/lib/cli"
+    "directory": "code/lib/cli-storybook"
   },
   "funding": {
     "type": "opencollective",
@@ -21,10 +21,10 @@
   "license": "MIT",
   "bin": "./index.js",
   "dependencies": {
-    "@storybook/cli": "workspace:*"
+    "storybook": "workspace:*"
   },
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae17"
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
 }

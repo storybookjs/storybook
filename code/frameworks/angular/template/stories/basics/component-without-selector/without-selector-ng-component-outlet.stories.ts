@@ -1,5 +1,7 @@
-import { OnInit, Type, Component, Injector, Input } from '@angular/core';
-import { Meta, componentWrapperDecorator, moduleMetadata, StoryObj } from '@storybook/angular';
+import type { OnInit, Type } from '@angular/core';
+import { Component, Injector, Input } from '@angular/core';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { componentWrapperDecorator, moduleMetadata } from '@storybook/angular';
 import { WithoutSelectorComponent, WITHOUT_SELECTOR_DATA } from './without-selector.component';
 
 const meta: Meta<WithoutSelectorComponent> = {
@@ -19,10 +21,11 @@ type Story = StoryObj<WithoutSelectorComponent>;
 // Advanced example with custom *ngComponentOutlet
 
 @Component({
+  standalone: false,
   selector: 'ng-component-outlet-wrapper',
   template: `<ng-container
-    *ngComponentOutlet="componentOutlet; injector: componentInjector; content: componentContent"
-  ></ng-container>`,
+  *ngComponentOutlet="componentOutlet; injector: componentInjector; content: componentContent"
+></ng-container>`,
 })
 class NgComponentOutletWrapperComponent implements OnInit {
   @Input()

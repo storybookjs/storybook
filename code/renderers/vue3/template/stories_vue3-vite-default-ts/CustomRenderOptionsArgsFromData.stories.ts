@@ -1,7 +1,9 @@
 import type { Meta } from '@storybook/vue3';
+
 import { defineComponent, shallowReactive } from 'vue';
-import Reactivity from './Reactivity.vue';
+
 import * as ReactiveDecorators from './ReactiveDecorators.stories';
+import Reactivity from './Reactivity.vue';
 
 // when you use custom render, you can use any vue api to create your story and garanti reactivity, otherwise i can ease kill the reactivity.
 const state = shallowReactive<{ header: any; default: any; footer: any }>({
@@ -32,6 +34,8 @@ const meta = {
                   </div>`,
     });
   },
+  // this story can't be reliably tested because the (inherited) args changes results in renderPhases disrupting test runs
+  tags: ['!vitest', '!test'],
 } satisfies Meta<typeof Reactivity>;
 
 export default meta;

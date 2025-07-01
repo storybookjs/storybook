@@ -1,19 +1,23 @@
-import type { DecoratorFunction, StoryContext, LegacyStoryFn } from '@storybook/types';
-import { sanitizeStoryContextUpdate } from '@storybook/preview-api';
+import type { DecoratorFunction, LegacyStoryFn, StoryContext } from 'storybook/internal/types';
+
 /*
-! DO NOT change this SlotDecorator import to a relative path, it will break it.
+! DO NOT change this DecoratorHandler import to a relative path, it will break it.
 ! A relative import will be compiled at build time, and Svelte will be unable to
 ! render the component together with the user's Svelte components
 ! importing from @storybook/svelte will make sure that it is compiled at runtime
 ! with the same bundle as the user's Svelte components
 */
-import SlotDecorator from '@storybook/svelte/internal/SlotDecorator.svelte';
+import DecoratorHandler from '@storybook/svelte/internal/DecoratorHandler.svelte';
+
+import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
+
 import type { SvelteRenderer } from './types';
 
 /**
- * Handle component loaded with ESM or CJS,
- * by getting the 'default' property of the object if it exists.
- * @param obj object
+ * Handle component loaded with ESM or CJS, by getting the 'default' property of the object if it
+ * exists.
+ *
+ * @param obj Object
  */
 function unWrap<T>(obj: { default: T } | T): T {
   return obj && typeof obj === 'object' && 'default' in obj ? obj.default : obj;
@@ -24,12 +28,14 @@ function unWrap<T>(obj: { default: T } | T): T {
  *
  * - `() => ({ Component: MyComponent, props: ...})` is already prepared, kept as-is
  * - `() => MyComponent` is transformed to `() => ({ Component: MyComponent })`
- * - `() => ({})` is transformed to component from context with `() => ({ Component: context.component })`
- * - A decorator component is wrapped with SlotDecorator, injecting the decorated component in a <slot />
+ * - `() => ({})` is transformed to component from context with `() => ({ Component: context.component
+ *   })`
+ * - A decorator component is wrapped with DecoratorHandler, injecting the decorated component as a
+ *   child
  *
  * @param context StoryContext
- * @param story  the current story
- * @param innerStory the story decorated by the current story
+ * @param story The current story
+ * @param innerStory The story decorated by the current story
  */
 function prepareStory(
   context: StoryContext<SvelteRenderer>,
@@ -57,10 +63,10 @@ function prepareStory(
   }
 
   if (innerStory) {
-    // render a SlotDecorator with innerStory as its regular component,
+    // render a DecoratorHandler with innerStory as its regular component,
     // and the prepared story as the decorating component
     return {
-      Component: SlotDecorator,
+      Component: DecoratorHandler,
       props: {
         // inner stories will already have been prepared, keep as is
         ...innerStory,
@@ -69,7 +75,8 @@ function prepareStory(
     };
   }
 
-  return preparedStory;
+  // no innerStory means this is the last story in the decorator chain, so it should create events from argTypes
+  return { ...preparedStory, argTypes: context.argTypes };
 }
 
 export function decorateStory(storyFn: any, decorators: any[]) {

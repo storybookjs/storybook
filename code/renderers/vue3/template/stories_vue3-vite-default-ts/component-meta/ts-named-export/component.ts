@@ -6,21 +6,23 @@ export const ComponentA = defineComponent({
   props: {
     /**
      * This is a description of the prop
-     * @values 'small', 'medium', 'large'
+     *
      * @defaultValue 'medium'
+     * @values 'small', 'medium', 'large'
      * @control select
      * @group Size
-     * */
+     */
     size: {
       type: String as PropType<'small' | 'medium' | 'large'>,
       default: 'medium',
     },
     /**
      * This is a description of the prop
+     *
      * @defaultValue false
      * @control color
      * @group Style
-     * */
+     */
     backgroundColor: {
       type: String,
       default: 'red',
@@ -36,11 +38,12 @@ export const ComponentB = defineComponent({
   props: {
     /**
      * This is a description of the prop
-     * @values true, false
+     *
      * @defaultValue false
+     * @values true, false
      * @control boolean
      * @group Size
-     * */
+     */
     primary: {
       type: Boolean,
       default: false,

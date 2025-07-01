@@ -52,10 +52,11 @@ Next, add the following to your `.storybook/preview.js` to load the generated js
 ```js
 import { setJSONDoc } from '@storybook/addon-docs/ember';
 import docJson from '../dist/storybook-docgen/index.json';
+
 setJSONDoc(docJson);
 ```
 
-Finally, be sure to fill in the `component` field in your story metadata. This should be a string that matches the name of the `@class` used in your souce comments:
+Finally, be sure to fill in the `component` field in your story metadata. This should be a string that matches the name of the `@class` used in your source comments:
 
 ```ts
 export default {

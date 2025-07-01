@@ -1,15 +1,12 @@
-import { hasDocsOrControls } from '@storybook/docs-tools';
-
 import type { Configuration } from 'webpack';
-import type { StorybookConfig } from './types';
+
 import { requirer } from './requirer';
+import type { StorybookConfig } from './types';
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,
   options
 ): Promise<Configuration> => {
-  if (!hasDocsOrControls(options)) return config;
-
   const typescriptOptions = await options.presets.apply('typescript', {} as any);
   const debug = options.loglevel === 'debug';
 

@@ -1,3 +1,8 @@
+## 9.0.15
+
+- CLI: Do not fail incompatible package check in doctor if only core packages used - [#31886](https://github.com/storybookjs/storybook/pull/31886), thanks @mrginglymus!
+- React: Bump @joshwooding/vite-plugin-react-docgen-typescript to 0.6.1 - [#31899](https://github.com/storybookjs/storybook/pull/31899), thanks @mrginglymus!
+
 ## 9.0.14
 
 - CLI: Prebundle more in cli-storybook package - [#31746](https://github.com/storybookjs/storybook/pull/31746), thanks @ndelangen!

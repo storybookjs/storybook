@@ -112,7 +112,7 @@ const getRendererPackage = (framework: string | undefined, renderer: string) => 
 const applyGetAbsolutePathWrapper = (packageName: string) =>
   `%%getAbsolutePath('${packageName}')%%`;
 
-const applyAddonRequireWrapper = (pkg: string | { name: string }) => {
+const applyAddonGetAbsolutePathWrapper = (pkg: string | { name: string }) => {
   if (typeof pkg === 'string') {
     return applyGetAbsolutePathWrapper(pkg);
   }
@@ -398,20 +398,21 @@ export async function baseGenerator(
     const prefixes = shouldApplyRequireWrapperOnPackageNames
       ? [
           'import { join, dirname } from "path"',
+          'import { fileURLToPath } from "url"',
           language === SupportedLanguage.JAVASCRIPT
             ? dedent`/**
             * This function is used to resolve the absolute path of a package.
             * It is needed in projects that use Yarn PnP or are set up within a monorepo.
             */
             function getAbsolutePath(value) {
-              return dirname(require.resolve(join(value, 'package.json')))
+              return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))))
             }`
             : dedent`/**
           * This function is used to resolve the absolute path of a package.
           * It is needed in projects that use Yarn PnP or are set up within a monorepo.
           */
           function getAbsolutePath(value: string): any {
-            return dirname(require.resolve(join(value, 'package.json')))
+            return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))))
           }`,
         ]
       : [];
@@ -425,7 +426,7 @@ export async function baseGenerator(
       prefixes,
       storybookConfigFolder,
       addons: shouldApplyRequireWrapperOnPackageNames
-        ? addons.map((addon) => applyAddonRequireWrapper(addon))
+        ? addons.map((addon) => applyAddonGetAbsolutePathWrapper(addon))
         : addons,
       extensions,
       language,

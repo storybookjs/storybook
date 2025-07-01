@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { dedent } from 'ts-dedent';
 
 import { logger } from '../../../../core/src/node-logger';

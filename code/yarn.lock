@@ -6518,7 +6518,7 @@ __metadata:
     postcss-load-config: "npm:^6.0.1"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.8.3"
-    vite-plugin-storybook-nextjs: "npm:2.0.5"
+    vite-plugin-storybook-nextjs: "npm:^2.0.5"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
@@ -26765,7 +26765,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:2.0.5":
+"vite-plugin-storybook-nextjs@npm:^2.0.5":
   version: 2.0.5
   resolution: "vite-plugin-storybook-nextjs@npm:2.0.5"
   dependencies:

@@ -1,6 +1,8 @@
 import { builtinModules } from 'node:module';
 import { join } from 'node:path';
 
+import * as esbuild from 'esbuild';
+
 export type BuildEntry = {
   exportEntries?: ('.' | `./${string}`)[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
@@ -10,14 +12,15 @@ export type BuildEntriesByPlatform = Partial<
   Record<'node' | 'browser' | 'runtime' | 'globalizedRuntime', BuildEntry[]>
 >;
 
-export type BuildEntriesByPackageName = Record<
-  string,
-  {
-    entries: BuildEntriesByPlatform;
-    prebuild?: (cwd: string) => Promise<void>;
-    postbuild?: (cwd: string) => Promise<void>;
-  }
->;
+export type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
+
+export type BuildEntries = {
+  entries: BuildEntriesByPlatform;
+  prebuild?: (cwd: string) => Promise<void>;
+  postbuild?: (cwd: string) => Promise<void>;
+};
+
+export type BuildEntriesByPackageName = Record<string, BuildEntries>;
 
 export const measure = async (fn: () => Promise<void>) => {
   const start = process.hrtime();

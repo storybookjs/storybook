@@ -3,11 +3,19 @@ import limit from 'p-limit';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 
-import type { BuildEntry } from '../utils';
+import type { BuildEntries } from '../utils';
 import { modifyCoreThemeTypes } from './modify-core-theme-types';
 
-export async function generateTypesFiles(entries: BuildEntry[], cwd: string) {
-  const dtsEntries = entries.filter((e) => e.dts !== false).map((e) => e.entryPoint);
+const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+
+export async function generateTypesFiles(cwd: string, data: BuildEntries) {
+  const DIR_CWD = cwd;
+  const DIR_REL = relative(DIR_CODE, DIR_CWD);
+
+  const dtsEntries = Object.values(data.entries)
+    .flat()
+    .filter((entry) => entry.dts !== false)
+    .map((e) => e.entryPoint);
 
   // Spawn each entry in it's own separate process, because they are slow & synchronous
   // ...this way we do not bog down the main process/esbuild and can run them in parallel
@@ -24,7 +32,7 @@ export async function generateTypesFiles(entries: BuildEntry[], cwd: string) {
           join(import.meta.dirname, '..', '..', 'node_modules', '.bin', 'jiti'),
           [join(import.meta.dirname, 'dts-process.ts'), entryPoint],
           {
-            cwd,
+            cwd: DIR_CWD,
             stdio: ['ignore', 'inherit', 'pipe'],
           }
         );
@@ -75,10 +83,9 @@ export async function generateTypesFiles(entries: BuildEntry[], cwd: string) {
           processes = [];
           process.exit(dtsProcess.exitCode || 1);
         } else {
-          console.log('✅ Generated types for', picocolors.cyan(relative(cwd, entryPoint)));
+          console.log('✅ Generated types for', picocolors.cyan(join(DIR_REL, entryPoint)));
 
           if (entryPoint.includes('src/theming/index')) {
-            console.log('Modifying theme types');
             await modifyCoreThemeTypes(cwd);
           }
         }

@@ -4,7 +4,7 @@ import { dirname, join, relative, sep } from 'node:path';
 
 import { dedent } from 'ts-dedent';
 
-import type { BuildEntry } from '../utils';
+import type { BuildEntries } from '../utils';
 
 async function generateTypesMapperContent(filePath: string, cwd: string) {
   const upwards = relative(join(filePath, '..'), cwd);
@@ -17,7 +17,7 @@ async function generateTypesMapperContent(filePath: string, cwd: string) {
   `;
 }
 
-export async function generateTypesMapperFiles(entries: BuildEntry[], cwd: string) {
+export async function generateTypesMapperFiles(cwd: string, data: BuildEntries) {
   /**
    * Generate the type mapper files, which are used to map the types to the SOURCE location. This
    * would be for development builds ONLY, **HOWEVER**: During a production build we ALSO run this,
@@ -27,7 +27,12 @@ export async function generateTypesMapperFiles(entries: BuildEntry[], cwd: strin
    * interdependencies are MEGA complex, and this simplified approach immensely is the only way to
    * ensure we can compile them in parallel.
    */
-  const all = entries.filter((e) => e.dts !== false).map((e) => e.entryPoint);
+
+  const dtsEntries = Object.values(data.entries)
+    .flat()
+    .filter((entry) => entry.dts !== false);
+
+  const all = dtsEntries.filter((e) => e.dts !== false).map((e) => e.entryPoint);
 
   await Promise.all(
     all.map(async (filePath) => {

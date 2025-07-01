@@ -1,8 +1,6 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 
-import { logger } from 'storybook/internal/node-logger';
-
 import boxen from 'boxen';
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
@@ -28,6 +26,7 @@ import { commandLog, paddedLog } from '../../../core/src/common/utils/log';
 import { getProjectRoot, invalidateProjectRootCache } from '../../../core/src/common/utils/paths';
 import versions from '../../../core/src/common/versions';
 import { withTelemetry } from '../../../core/src/core-server/withTelemetry';
+import { logger } from '../../../core/src/node-logger';
 import { NxProjectDetectedError } from '../../../core/src/server-errors';
 import { telemetry } from '../../../core/src/telemetry';
 import angularGenerator from './generators/ANGULAR';

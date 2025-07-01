@@ -5,19 +5,21 @@ import type { BuildEntriesByPackageName } from '../utils';
 
 export const buildEntries: BuildEntriesByPackageName = {
   storybook: {
-    prebuild: async () => {
+    prebuild: async (cwd) => {
       const CORE_PREBUILD_SCRIPT_PATH = join(
         import.meta.dirname,
         'storybook',
         'generate-source-files.ts'
       );
       return new Promise((resolve, reject) => {
-        const child = exec(`jiti ${CORE_PREBUILD_SCRIPT_PATH}`);
-        child.stdout?.on('data', (data) => {
-          process.stdout.write(data);
-        });
-        child.stderr?.on('data', (data) => {
-          process.stderr.write(data);
+        const child = exec(`jiti ${CORE_PREBUILD_SCRIPT_PATH}`, {
+          cwd,
+          env: {
+            ...process.env,
+            NODE_ENV: 'production',
+            FORCE_COLOR: '1',
+            stdio: 'inherit',
+          },
         });
         child.on('close', () => {
           resolve(void 0);

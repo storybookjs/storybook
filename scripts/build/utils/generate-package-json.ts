@@ -3,11 +3,13 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'pathe';
 import sortPackageJson from 'sort-package-json';
 
-import type { BuildEntriesByPlatform } from '../utils';
+import type { BuildEntries } from '../utils';
 
-export async function generatePackageJsonFile(cwd: string, entries: BuildEntriesByPlatform) {
+export async function generatePackageJsonFile(cwd: string, data: BuildEntries) {
   const location = join(cwd, 'package.json');
   const pkgJson = JSON.parse(await readFile(location, { encoding: 'utf8' }));
+
+  const { entries } = data;
 
   // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
   pkgJson.exports = {

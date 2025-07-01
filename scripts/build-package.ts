@@ -150,6 +150,8 @@ async function run() {
   }
 
   console.log('Building selected packages...');
+  let lastName = '';
+
   selection.forEach(async (v) => {
     const command = (await readJSON(resolve('../code', v.location, 'package.json'))).scripts?.prep
       .split(posix.sep)
@@ -172,8 +174,6 @@ async function run() {
         },
       }
     );
-
-    let lastName = '';
 
     sub.stdout?.on('data', (data) => {
       if (lastName !== v.name) {

@@ -1,9 +1,10 @@
 'use client';
 
-import type { PropsWithChildren } from 'react';
-import React, { useMemo } from 'react';
+import type { FC, PropsWithChildren } from 'react';
 
 import initHeadManager from 'next/dist/client/head-manager';
+// @ts-expect-error no types
+import React, { useMemo } from 'next/dist/compiled/react';
 import { HeadManagerContext } from 'next/dist/shared/lib/head-manager-context.shared-runtime';
 
 type HeadManagerValue = {
@@ -16,7 +17,7 @@ type HeadManagerValue = {
   nonce?: string | undefined;
 };
 
-const HeadManagerProvider: React.FC<PropsWithChildren> = ({ children }) => {
+const HeadManagerProvider: FC<PropsWithChildren> = ({ children }) => {
   const headManager: HeadManagerValue = useMemo(initHeadManager, []);
   headManager.getIsSsr = () => false;
 

@@ -1,5 +1,4 @@
 /* eslint-disable no-var,@typescript-eslint/ban-ts-comment */
-import React from 'react';
 import type { JSX, Usable } from 'react';
 import type { Root } from 'react-dom/client';
 
@@ -24,7 +23,9 @@ import {
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
 // @ts-expect-error no types
-import { renderToReadableStream } from 'react-server-dom-webpack/server.browser';
+import * as React from 'next/dist/compiled/react';
+// @ts-expect-error no types
+import { renderToReadableStream } from 'next/dist/compiled/react-server-dom-webpack/server.browser';
 import { defaultDecorateStory } from 'storybook/preview-api';
 
 import './config/preview';

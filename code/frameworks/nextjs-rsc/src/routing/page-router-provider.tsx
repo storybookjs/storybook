@@ -3,13 +3,14 @@
 // is the only way to achieve it actually being a singleton
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import type { PropsWithChildren } from 'react';
-import React from 'react';
+import type { FC, PropsWithChildren } from 'react';
 
 import { getRouter } from '@storybook/experimental-nextjs-rsc/router.mock';
 
+// @ts-expect-error no types
+import * as React from 'next/dist/compiled/react';
 import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
 
-export const PageRouterProvider: React.FC<PropsWithChildren> = ({ children }) => (
+export const PageRouterProvider: FC<PropsWithChildren> = ({ children }) => (
   <RouterContext.Provider value={getRouter()}>{children}</RouterContext.Provider>
 );

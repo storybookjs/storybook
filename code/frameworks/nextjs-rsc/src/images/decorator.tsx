@@ -1,10 +1,11 @@
-import * as React from 'react';
-
 import type { StoryContext } from 'storybook/internal/types';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore-error (this only errors during compilation for production)
 import { ImageContext as ImageContextValue } from '@storybook/experimental-nextjs-rsc/dist/image-context';
+
+// @ts-expect-error no types
+import * as React from 'next/dist/compiled/react';
 
 import { type ImageContext as ImageContextType } from '../image-context';
 

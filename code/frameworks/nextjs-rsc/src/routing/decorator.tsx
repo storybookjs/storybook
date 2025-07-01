@@ -1,10 +1,12 @@
 'use client';
 
-import * as React from 'react';
+import { type ReactNode } from 'react';
 
 import type { Addon_StoryContext } from 'storybook/internal/types';
 
 import { RedirectBoundary } from 'next/dist/client/components/redirect-boundary';
+// @ts-expect-error no types
+import * as React from 'next/dist/compiled/react';
 
 import { AppRouterProvider } from './app-router-provider';
 import type { RouteParams } from './types';
@@ -18,9 +20,9 @@ export const RouterDecorator = ({
   children,
   nextjs,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   nextjs: Addon_StoryContext['parameters']['nextjs'];
-}): React.ReactNode => {
+}): ReactNode => {
   if (!AppRouterProvider) {
     return null;
   }

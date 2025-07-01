@@ -9,7 +9,7 @@ import type { PresetProperty } from 'storybook/internal/types';
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
 // @ts-expect-error no dts file
-import ReactServerWebpackPlugin from 'react-server-dom-webpack/plugin';
+import ReactServerWebpackPlugin from 'next/dist/compiled/react-server-dom-webpack/plugin.js';
 import semver from 'semver';
 import type { Configuration } from 'webpack';
 
@@ -224,20 +224,20 @@ function rscBundle(config: Configuration) {
         conditionNames: ['browser', ...(config.resolve?.conditionNames ?? [])],
       },
     },
-    // {
-    //   issuerLayer: "client",
-    //   resolve: {
-    //     alias: {
-    //       react$: "next/dist/compiled/react",
-    //       "react-dom$": "next/dist/compiled/react-dom",
-    //       "react-dom/client$": "next/dist/compiled/react-dom/client",
-    //       "react-server-dom-webpack/client$":
-    //         "next/dist/compiled/react-server-dom-webpack/client.browser",
-    //       "react-server-dom-webpack/server.browser$":
-    //         "next/dist/compiled/react-server-dom-webpack/server.browser",
-    //     },
-    //   },
-    // },
+    {
+      issuerLayer: 'client',
+      resolve: {
+        alias: {
+          react$: 'next/dist/compiled/react',
+          // 'react-dom$': 'next/dist/compiled/react-dom',
+          // 'react-dom/client$': 'next/dist/compiled/react-dom/client',
+          // 'react-server-dom-webpack/client$':
+          //   'next/dist/compiled/react-server-dom-webpack/client.browser',
+          // 'react-server-dom-webpack/server.browser$':
+          //   'next/dist/compiled/react-server-dom-webpack/server.browser',
+        },
+      },
+    },
     {
       layer: 'rsc',
       test: (request) => {
@@ -250,23 +250,21 @@ function rscBundle(config: Configuration) {
       resolve: {
         conditionNames: ['react-server', 'browser', ...(config.resolve?.conditionNames ?? [])],
       },
+    },
+    {
+      issuerLayer: 'rsc',
+      resolve: {
+        alias: {
+          react$: 'next/dist/compiled/react/react.react-server',
+          // 'react-dom$': 'next/dist/compiled/react-dom/react-dom.react-server',
+          // 'react-dom/client$': 'next/dist/compiled/react-dom/client.react-server',
+          //   'react-server-dom-webpack/client$':
+          //     'next/dist/compiled/react-server-dom-webpack/client.browser',
+          //   'react-server-dom-webpack/server.browser$':
+          //     'next/dist/compiled/react-server-dom-webpack/server.browser',
+          //   'next/dist/compiled/react$': 'next/dist/compiled/react/react.react-server',
+        },
+      },
     }
-    // {
-    //   issuerLayer: "rsc",
-    //   resolve: {
-    //     alias: {
-    //       "next/dist/compiled/react$":
-    //         "next/dist/compiled/react/react.react-server",
-    //       react$: "next/dist/compiled/react/react.react-server",
-    //       "react-dom$": "next/dist/compiled/react-dom/react-dom.react-server",
-    //       "react-dom/client$":
-    //         "next/dist/compiled/react-dom/client.react-server",
-    //       "react-server-dom-webpack/client$":
-    //         "next/dist/compiled/react-server-dom-webpack/client.browser",
-    //       "react-server-dom-webpack/server.browser$":
-    //         "next/dist/compiled/react-server-dom-webpack/server.browser",
-    //     },
-    //   },
-    // },
   );
 }

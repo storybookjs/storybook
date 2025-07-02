@@ -32,7 +32,7 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
+    "check": "jiti ../../../scripts/check/check.ts",
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {

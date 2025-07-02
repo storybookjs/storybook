@@ -204,7 +204,7 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ./scripts/check.ts",
+    "check": "jiti ../../scripts/check/check.ts",
     "prep": "jiti ../../scripts/build/build-package.ts"
   },
   "resolutions": {

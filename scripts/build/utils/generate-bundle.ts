@@ -1,6 +1,6 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { existsSync, watch } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';

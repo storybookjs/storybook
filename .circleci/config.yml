@@ -532,11 +532,6 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
-      - run:
-          name: Running Test Runner in Dev mode
-          command: yarn task --task test-runner-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev) --no-link --start-from=never --junit
-      - report-workflow-on-failure:
-          template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev)
       - store_test_results:
           path: test-results
   chromatic-sandboxes:
@@ -666,16 +661,6 @@ jobs:
             cd code
             yarn wait-on tcp:127.0.0.1:6001
             yarn wait-on tcp:127.0.0.1:6002
-      - run:
-          name: NPM version check
-          command: |
-            npm -v
-      - run:
-          name: Check
-          command: |
-            curl -w "\nHTTP Status: %{http_code}\n" http://localhost:6001/create-storybook
-            curl -w "\nHTTP Status: %{http_code}\n" http://localhost:6002/create-storybook
-            curl http://localhost:6002/create-storybook
       - run:
           name: Storybook init for features
           command: |

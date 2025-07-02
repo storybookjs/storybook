@@ -10,14 +10,24 @@ import { dirname, join } from 'pathe';
  *
  * @see https://github.com/vitest-dev/vitest/issues/6953
  */
-export const importMetaResolve = import.meta.resolve;
+export const importMetaResolve = (...args: Parameters<ImportMeta['resolve']>) => {
+  if (typeof import.meta.resolve !== 'function' && process.env.VITEST === 'true') {
+    // This should only ever happen in our internal Vitest unit tests. This specific warning is silenced globally in vitest-setup.ts.
+    // If anyone sees this warning, it means that this function was used in Vitest, but not our Vitest.
+    console.warn(
+      "importMetaResolve from within Storybook is being used in a Vitest test, but it shouldn't be. Please report this at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml"
+    );
+    return `file:///${args[0]}`;
+  }
+  return import.meta.resolve(...args);
+};
 
 /** Resolves the directory of a given package, by resolving its package.json file. */
 export const resolvePackageDir = (
   pkg: Parameters<ImportMeta['resolve']>[0],
   parent?: Parameters<ImportMeta['resolve']>[0]
 ) => {
-  return dirname(fileURLToPath(import.meta.resolve(join(pkg, 'package.json'), parent)));
+  return dirname(fileURLToPath(importMetaResolve(join(pkg, 'package.json'), parent)));
 };
 
 let isTypescriptLoaderRegistered = false;
@@ -41,7 +51,7 @@ let isTypescriptLoaderRegistered = false;
  */
 export async function importModule(path: string) {
   if (!isTypescriptLoaderRegistered) {
-    const typescriptLoaderUrl = import.meta.resolve('storybook/internal/bin/loader');
+    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
     register(typescriptLoaderUrl, import.meta.url);
     isTypescriptLoaderRegistered = true;
   }

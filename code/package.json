@@ -238,9 +238,6 @@
     }
   },
   "packageManager": "yarn@4.9.1",
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"

@@ -69,6 +69,7 @@ export async function generateBundle(
     const sharedOptions = {
       format: 'esm',
       bundle: true,
+      splitting: true,
       metafile: true,
       minifyIdentifiers: isProduction,
       minifySyntax: isProduction,

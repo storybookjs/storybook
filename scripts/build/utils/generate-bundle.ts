@@ -52,6 +52,8 @@ export async function generateBundle({
     const sharedOptions = {
       format: 'esm',
       bundle: true,
+      legalComments: 'none',
+      ignoreAnnotations: true,
       splitting: true,
       metafile: true,
       minifyIdentifiers: isProduction,
@@ -59,6 +61,7 @@ export async function generateBundle({
       minifyWhitespace: false,
       keepNames: true, // required to show correct error messages based on class names
       outbase: 'src',
+      chunkNames: '_chunks/[name]-[hash]',
       outdir: 'dist',
       treeShaking: true,
       color: true,

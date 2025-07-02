@@ -1,9 +1,8 @@
 import { createRequire, register } from 'node:module';
-import { join } from 'node:path';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { dirname } from 'pathe';
+import { dirname, join } from 'pathe';
 
 /**
  * This is just an alias for import.meta.resolve. It makes it possible to mock it in Vitest with

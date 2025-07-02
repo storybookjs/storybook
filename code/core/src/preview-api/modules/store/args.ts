@@ -54,6 +54,15 @@ const map = (arg: unknown, argType: InputType): any => {
         const mapped = map(val, { type: type.value[key] });
         return mapped === INCOMPATIBLE ? acc : Object.assign(acc, { [key]: mapped });
       }, {} as Args);
+    case 'other':
+      // Only handling `other` case for ReactNode
+      if (type.value !== 'ReactNode') {
+        return INCOMPATIBLE;
+      }
+
+      if (typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean') {
+        return arg;
+      }
     default:
       return INCOMPATIBLE;
   }

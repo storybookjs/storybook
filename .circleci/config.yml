@@ -686,10 +686,9 @@ jobs:
       - run:
           name: Create zip archive
           command: |
-            cd ../features-1
-            zip -r compressed.zip . -x "node_modules/*" "*.log" ".git/*"
+            zip -r compressed.zip ../features
       - store_artifacts:
-          path: ../features-1/compressed.zip
+          path: compressed.zip
           destination: sandbox
 
   test-init-empty:

@@ -679,17 +679,6 @@ jobs:
             cd code
             yarn wait-on tcp:127.0.0.1:6001
       - run:
-          name: prep
-          command: |
-            cd ../
-            mkdir features-1
-            cd features-1
-            npm set registry http://localhost:6001 -g
-          environment:
-            IN_STORYBOOK_SANDBOX: true
-            STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
-            STORYBOOK_DISABLE_TELEMETRY: true
-      - run:
           name: NPM version check
           command: |
             npm -v
@@ -701,7 +690,7 @@ jobs:
           name: Storybook init for features
           command: |
             cd ../features-1
-            npx create-storybook --yes --package-manager npm --features dev docs test
+            npm_config_registry=http://localhost:6001 npx create-storybook --yes --package-manager npm --features dev docs test
           environment:
             IN_STORYBOOK_SANDBOX: true
             STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts

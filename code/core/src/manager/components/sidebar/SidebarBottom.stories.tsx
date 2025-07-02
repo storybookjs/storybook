@@ -78,6 +78,7 @@ const meta = {
     isDevelopment: true,
     warningCount: 0,
     errorCount: 0,
+    successCount: 0,
     hasStatuses: false,
     notifications: [],
     api: {

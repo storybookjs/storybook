@@ -24,6 +24,16 @@ export interface ControlsParameters {
     include?: string[] | RegExp;
 
     /**
+     * Custom control type matchers
+     *
+     * @see https://storybook.js.org/docs/essentials/controls#custom-control-type-matchers
+     */
+    matchers?: {
+      date?: RegExp;
+      color?: RegExp;
+    };
+
+    /**
      * Preset color swatches for the color picker control
      *
      * @example PresetColors: [{ color: '#ff4785', title: 'Coral' }, 'rgba(0, 159, 183, 1)',

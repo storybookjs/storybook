@@ -682,6 +682,10 @@ jobs:
             IN_STORYBOOK_SANDBOX: true
             STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
             STORYBOOK_DISABLE_TELEMETRY: true
+            npm_config_registry: http://localhost:6001
+      - store_artifacts:
+          path: ../features-1
+          destination: sandbox
 
   test-init-empty:
     executor:

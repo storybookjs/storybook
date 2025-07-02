@@ -6,8 +6,8 @@ import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
 
 import { buildEntries, hasPrebuild, isBuildEntries } from './entries';
-import { measure } from './utils';
-import { generateDistFiles } from './utils/generate-bundle';
+import { measure } from './utils/entry-utils';
+import { generateBundle } from './utils/generate-bundle';
 import { generatePackageJsonFile } from './utils/generate-package-json';
 import { generateTypesMapperFiles } from './utils/generate-type-mappers';
 import { generateTypesFiles } from './utils/generate-types';
@@ -56,8 +56,8 @@ async function run() {
 
   await generatePackageJsonFile(DIR_CWD, entry);
 
-  const [distTime, typesTime] = await Promise.all([
-    measure(async () => generateDistFiles(DIR_CWD, entry, isProduction, isWatch)),
+  const [bundleTime, typesTime] = await Promise.all([
+    measure(async () => generateBundle(DIR_CWD, entry, isProduction, isWatch)),
     measure(async () => {
       await generateTypesMapperFiles(DIR_CWD, entry);
       await modifyCoreThemeTypes(DIR_CWD);
@@ -73,7 +73,7 @@ async function run() {
 
   console.log(
     isWatch ? 'Watcher started in' : 'Bundled in',
-    picocolors.yellow(prettyTime(distTime))
+    picocolors.yellow(prettyTime(bundleTime))
   );
   console.log(
     isProduction ? 'Generated types in' : 'Generated type mappers in',

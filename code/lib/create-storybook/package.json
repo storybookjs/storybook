@@ -36,7 +36,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/build/index.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "semver": "^7.6.2"

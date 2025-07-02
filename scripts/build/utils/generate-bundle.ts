@@ -16,13 +16,13 @@ import {
   SUPPORTED_FEATURES,
 } from '../../../code/core/src/shared/constants/environments-support';
 import { resolvePackageDir } from '../../../code/core/src/shared/utils/module';
-import { type BuildEntries, type EsbuildContextOptions, getExternal } from '../utils';
+import { type BuildEntries, type EsbuildContextOptions, getExternal } from './entry-utils';
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(import.meta.dirname, '..', '..', '..', 'bench', 'esbuild-metafiles');
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
-export async function generateDistFiles(
+export async function generateBundle(
   cwd: string,
   data: BuildEntries,
   isProduction: boolean,

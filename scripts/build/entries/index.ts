@@ -1,7 +1,7 @@
 import { exec } from 'node:child_process';
 import { join } from 'node:path';
 
-import type { BuildEntriesByPackageName } from '../utils';
+import type { BuildEntriesByPackageName } from '../utils/entry-utils';
 
 export const buildEntries = {
   storybook: {

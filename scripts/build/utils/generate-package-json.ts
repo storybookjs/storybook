@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'pathe';
 import sortPackageJson from 'sort-package-json';
 
-import type { BuildEntries } from '../utils';
+import type { BuildEntries } from './entry-utils';
 
 export async function generatePackageJsonFile(cwd: string, data: BuildEntries) {
   const location = join(cwd, 'package.json');

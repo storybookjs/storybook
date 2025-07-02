@@ -3,7 +3,7 @@ import limit from 'p-limit';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 
-import type { BuildEntries } from '../utils';
+import type { BuildEntries } from './entry-utils';
 import { modifyCoreThemeTypes } from './modify-core-theme-types';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');

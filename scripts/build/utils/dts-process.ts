@@ -5,7 +5,7 @@ import { rollup } from 'rollup';
 import { dts } from 'rollup-plugin-dts';
 import { JsxEmit, ScriptTarget } from 'typescript';
 
-import { getExternal } from '../utils';
+import { getExternal } from './entry-utils';
 
 async function run() {
   const [entryPoint] = process.argv.slice(2);
@@ -64,7 +64,4 @@ async function run() {
   );
 }
 
-run().catch((e) => {
-  process.stderr.write(e.toString());
-  process.exit(1);
-});
+run();

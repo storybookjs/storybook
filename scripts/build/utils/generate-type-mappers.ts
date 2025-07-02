@@ -4,7 +4,7 @@ import { dirname, join, relative, sep } from 'node:path';
 
 import { dedent } from 'ts-dedent';
 
-import type { BuildEntries } from '../utils';
+import type { BuildEntries } from './entry-utils';
 
 async function generateTypesMapperContent(filePath: string, cwd: string) {
   const upwards = relative(join(filePath, '..'), cwd);

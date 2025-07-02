@@ -683,8 +683,13 @@ jobs:
             STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
             STORYBOOK_DISABLE_TELEMETRY: true
             npm_config_registry: http://localhost:6001
+      - run:
+          name: Create zip archive
+          command: |
+            cd ../features-1
+            zip -r compressed.zip . -x "node_modules/*" "*.log" ".git/*"
       - store_artifacts:
-          path: ../features-1
+          path: ../features-1/compressed.zip
           destination: sandbox
 
   test-init-empty:

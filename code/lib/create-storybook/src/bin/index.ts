@@ -3,9 +3,6 @@ import { dedent } from 'ts-dedent';
 
 import { logger } from '../../../../core/src/node-logger';
 
-export const IS_NON_CI = process.env.CI !== 'true';
-export const IS_NON_STORYBOOK_SANDBOX = process.env.IN_STORYBOOK_SANDBOX !== 'true';
-
 const [majorNodeVersion, minorNodeVersion] = process.versions.node.split('.').map(Number);
 
 if (

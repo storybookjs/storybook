@@ -214,8 +214,6 @@ export const sandbox = async ({
         const before = process.cwd();
         process.chdir(templateDestination);
         // we run doInitiate, instead of initiate, to avoid sending this init event to telemetry, because it's not a real world project
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore-error (no types for this)
         const { initiate } = await import('create-storybook');
         await initiate({
           dev: process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true',

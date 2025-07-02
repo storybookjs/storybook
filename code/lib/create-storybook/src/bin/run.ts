@@ -1,10 +1,12 @@
 import { program } from 'commander';
 import { initiate } from 'create-storybook';
 
-import { IS_NON_CI, IS_NON_STORYBOOK_SANDBOX } from '.';
 import { addToGlobalContext } from '../../../../core/src/telemetry';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
+
+const IS_NON_CI = process.env.CI !== 'true';
+const IS_NON_STORYBOOK_SANDBOX = process.env.IN_STORYBOOK_SANDBOX !== 'true';
 
 addToGlobalContext('cliVersion', version);
 

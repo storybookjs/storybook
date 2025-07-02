@@ -274,7 +274,6 @@
     "./internal/manager/globals-runtime": {
       "import": "./dist/manager/globals-runtime.js"
     },
-    "./bin/index.cjs": "./bin/index.cjs",
     "./package.json": "./package.json",
     "./internal/package.json": "./package.json"
   },

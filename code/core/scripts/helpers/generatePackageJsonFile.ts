@@ -68,9 +68,6 @@ export async function generatePackageJsonFile(entries: ReturnType<typeof getEntr
     return acc;
   }, {});
 
-  // Add CLI entry so `sb` can require it.
-  pkgJson.exports['./bin/index.cjs'] = './bin/index.cjs';
-
   // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
   pkgJson.exports['./package.json'] = './package.json';
   pkgJson.exports['./internal/package.json'] = './package.json';

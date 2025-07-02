@@ -686,7 +686,8 @@ jobs:
       - run:
           name: Check
           command: |
-            curl http://localhost:6001/create-storybook
+            curl -w "\nHTTP Status: %{http_code}\n" http://localhost:6001/create-storybook
+            curl -w "\nHTTP Status: %{http_code}\n" http://localhost:6002/create-storybook
             curl http://localhost:6002/create-storybook
       - run:
           name: Storybook init for features

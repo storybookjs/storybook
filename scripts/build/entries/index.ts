@@ -215,6 +215,7 @@ export const buildEntries = {
         {
           exportEntries: ['.'],
           entryPoint: './src/index.ts',
+          dts: false,
         },
         {
           entryPoint: './src/bin/index.ts',

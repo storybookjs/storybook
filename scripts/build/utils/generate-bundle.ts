@@ -31,48 +31,22 @@ const DIR_METAFILE_BASE = join(
 );
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
-export async function generateBundle(
-  cwd: string,
-  data: BuildEntries,
-  isProduction: boolean,
-  isWatch: boolean
-) {
+export async function generateBundle({
+  cwd,
+  entry,
+  isProduction,
+  isWatch,
+}: {
+  cwd: string;
+  entry: BuildEntries;
+  isProduction: boolean;
+  isWatch: boolean;
+}) {
   const DIR_CWD = cwd;
   const DIR_REL = relative(DIR_CODE, DIR_CWD);
   const DIR_METAFILE = join(DIR_METAFILE_BASE, DIR_REL);
   const external = (await getExternal(DIR_CWD)).runtimeExternal;
-  const { entries, postbuild } = data;
-
-  const runtimeOptions = {
-    platform: 'browser',
-    target: BROWSER_TARGETS,
-    supported: SUPPORTED_FEATURES,
-    external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
-    alias: {
-      // The following aliases ensures that the runtimes bundles in the actual sources of these modules
-      // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
-      'storybook/preview-api': './src/preview-api',
-      'storybook/manager-api': './src/manager-api',
-      'storybook/theming': './src/theming',
-      'storybook/test': './src/test',
-      'storybook/internal': './src',
-      'storybook/outline': './src/outline',
-      'storybook/backgrounds': './src/backgrounds',
-      'storybook/highlight': './src/highlight',
-      'storybook/measure': './src/measure',
-      'storybook/actions': './src/actions',
-      'storybook/viewport': './src/viewport',
-      // The following aliases ensures that the manager has a single version of React,
-      // even if transitive dependencies would depend on other versions.
-      react: resolvePackageDir('react'),
-      'react-dom': resolvePackageDir('react-dom'),
-      'react-dom/client': join(resolvePackageDir('react-dom'), 'client'),
-    },
-    define: {
-      // This should set react in prod mode for the manager
-      'process.env.NODE_ENV': JSON.stringify('production'),
-    },
-  } as const satisfies EsbuildContextOptions;
+  const { entries, postbuild } = entry;
 
   function defineESBuildContext(...input: Parameters<typeof esbuild.context>) {
     const sharedOptions = {
@@ -119,6 +93,38 @@ export async function generateBundle(
       ...rest
     );
   }
+
+  const runtimeOptions = {
+    platform: 'browser',
+    target: BROWSER_TARGETS,
+    supported: SUPPORTED_FEATURES,
+    splitting: false,
+    external: [], // don't externalize anything, we're using aliases to bundle everything into the runtimes
+    alias: {
+      // The following aliases ensures that the runtimes bundles in the actual sources of these modules
+      // instead of attempting to resolve them to the dist files, because the dist files are not available yet.
+      'storybook/preview-api': './src/preview-api',
+      'storybook/manager-api': './src/manager-api',
+      'storybook/theming': './src/theming',
+      'storybook/test': './src/test',
+      'storybook/internal': './src',
+      'storybook/outline': './src/outline',
+      'storybook/backgrounds': './src/backgrounds',
+      'storybook/highlight': './src/highlight',
+      'storybook/measure': './src/measure',
+      'storybook/actions': './src/actions',
+      'storybook/viewport': './src/viewport',
+      // The following aliases ensures that the manager has a single version of React,
+      // even if transitive dependencies would depend on other versions.
+      react: resolvePackageDir('react'),
+      'react-dom': resolvePackageDir('react-dom'),
+      'react-dom/client': join(resolvePackageDir('react-dom'), 'client'),
+    },
+    define: {
+      // This should set react in prod mode for the manager
+      'process.env.NODE_ENV': JSON.stringify('production'),
+    },
+  } as const satisfies EsbuildContextOptions;
 
   const compile = await Promise.all(
     [

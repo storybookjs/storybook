@@ -678,6 +678,7 @@ jobs:
           command: |
             cd code
             yarn wait-on tcp:127.0.0.1:6001
+            yarn wait-on tcp:127.0.0.1:6002
       - run:
           name: NPM version check
           command: |
@@ -685,7 +686,8 @@ jobs:
       - run:
           name: Check
           command: |
-            curl -s http://localhost:6001/create-storybook
+            curl http://localhost:6001/create-storybook
+            curl http://localhost:6002/create-storybook
       - run:
           name: Storybook init for features
           command: |

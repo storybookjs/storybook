@@ -1,4 +1,4 @@
-import { fn } from 'storybook/test';
+import { type Mock, fn } from 'storybook/test';
 
 // @ts-expect-error no types
 export { createRoot } from 'next/dist/compiled/react-dom/client';
@@ -38,3 +38,15 @@ export const createNavigation = (overrides: any) => {
 
   return globalThis.navigationAPI;
 };
+
+declare global {
+  // eslint-disable-next-line no-var
+  var navigationAPI: {
+    push: Mock;
+    replace: Mock;
+    forward: Mock;
+    back: Mock;
+    prefetch: Mock;
+    refresh: Mock;
+  };
+}

@@ -77,7 +77,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const optimized = hasFlag(flags, 'optimized');
   if (reset) {
     await fs.emptyDir(OUT_DIR);
-    await fs.emptyDir(metafilesDir);
+    // await fs.emptyDir(metafilesDir);
   }
 
   const tasks: Promise<any>[] = [];

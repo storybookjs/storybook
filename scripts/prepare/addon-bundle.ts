@@ -96,7 +96,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
 
   if (reset) {
     await fs.emptyDir(OUT_DIR);
-    await fs.emptyDir(metafilesDir);
+    // await fs.emptyDir(metafilesDir);
   }
 
   const tasks: (() => Promise<any>)[] = [];

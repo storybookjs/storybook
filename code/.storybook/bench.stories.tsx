@@ -35,9 +35,13 @@ export default {
         labels: Object.fromEntries(
           Object.keys(allMetafiles).map((path) => {
             const [, dirName, subEntry] = /esbuild-metafiles\/(.+)\/(.+).json/.exec(path)!;
-            const pkgName = PACKAGES_WITHOUT_ORG.includes(dirName)
+            let pkgName = PACKAGES_WITHOUT_ORG.includes(dirName)
               ? dirName
               : `@storybook/${dirName}`;
+
+            if (pkgName === '@storybook/core') {
+              pkgName = 'storybook';
+            }
 
             return [
               safeMetafileArg(path),
@@ -65,6 +69,31 @@ export default {
   ],
   render: (args, { loaded }) => {
     const { encodedMetafile = '' } = loaded ?? {};
+
+    if (encodedMetafile.length > 2020836) {
+      return (
+        <div style={{ padding: '2rem' }}>
+          <h1>Metafile is too large</h1>
+          <p>
+            The metafile <code>{args.metafile}</code> is <strong>too large</strong> to be displayed
+            in the iframe. This is because we base64-encode the contents of the metafile into the
+            URL of the <code>{'<iframe />'}</code> component, and there's a maximum length of{' '}
+            <code>~2MB</code> for the URL.
+          </p>
+          <p>
+            You can visit the{' '}
+            <a href="https://esbuild.github.io/analyze/" target="_blank" rel="noreferrer">
+              esbuild analyzer website
+            </a>{' '}
+            manually to see the metafile.
+          </p>
+          <p>
+            You will have to find the metafile in the <code>code/bench/esbuild-metafiles</code>{' '}
+            directory and upload it manually.
+          </p>
+        </div>
+      );
+    }
 
     return (
       <iframe

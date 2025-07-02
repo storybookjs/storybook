@@ -17,9 +17,18 @@ import {
 } from '../../../code/core/src/shared/constants/environments-support';
 import { resolvePackageDir } from '../../../code/core/src/shared/utils/module';
 import { type BuildEntries, type EsbuildContextOptions, getExternal } from './entry-utils';
+import { writeOptimizedMetafile } from './optimize-esbuild-metafile';
 
 // repo root/bench/esbuild-metafiles/core
-const DIR_METAFILE_BASE = join(import.meta.dirname, '..', '..', '..', 'bench', 'esbuild-metafiles');
+const DIR_METAFILE_BASE = join(
+  import.meta.dirname,
+  '..',
+  '..',
+  '..',
+  'code',
+  'bench',
+  'esbuild-metafiles'
+);
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
 export async function generateBundle(
@@ -166,10 +175,9 @@ export async function generateBundle(
       console.log(`compiled ${picocolors.cyan(join(DIR_REL, 'dist', filename))}`);
     });
   } else {
-    if (existsSync(DIR_METAFILE)) {
-      await rm(DIR_METAFILE, { recursive: true });
+    if (!existsSync(DIR_METAFILE)) {
+      await mkdir(DIR_METAFILE, { recursive: true });
     }
-    await mkdir(DIR_METAFILE, { recursive: true });
     const outputs = await Promise.all(
       compile.map(async (context) => {
         const output = await context.rebuild();
@@ -205,10 +213,7 @@ export async function generateBundle(
     await Promise.all(
       Object.entries(metafileByModule).map(async ([moduleName, metafile]) => {
         const sanitizedModuleName = moduleName.replaceAll('/', '-');
-        await writeFile(
-          join(DIR_METAFILE, `${sanitizedModuleName}.json`),
-          JSON.stringify(metafile, null, 2)
-        );
+        await writeOptimizedMetafile(metafile, join(DIR_METAFILE, `${sanitizedModuleName}.json`));
       })
     );
   }

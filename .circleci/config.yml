@@ -690,13 +690,17 @@ jobs:
             STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
             STORYBOOK_DISABLE_TELEMETRY: true
       - run:
+          name: NPM version check
+          command: |
+            nvm -v
+      - run:
           name: Check
           command: |
-            curl -s http://localhost:6001/create-storybook | jq -r '.versions | keys | .[-1]' 2>/dev/null || echo "Package not found or Verdaccio not running"
+            curl -s http://localhost:6001/create-storybook
       - run:
           name: Storybook init for features
           command: |
-            cd features-1
+            cd ../features-1
             npx create-storybook --yes --package-manager npm --features dev docs test
           environment:
             IN_STORYBOOK_SANDBOX: true

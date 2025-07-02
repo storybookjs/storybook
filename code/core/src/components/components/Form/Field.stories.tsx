@@ -3,13 +3,13 @@ import React from 'react';
 import { action } from 'storybook/actions';
 import { styled } from 'storybook/theming';
 
-import { Field as FieldComponent } from './field/field';
-import * as InputComponents from './input/input';
+import { Field as FieldComponent } from './Field';
+import * as InputComponents from './Input';
 
 const Flexed = styled(FieldComponent)({ display: 'flex' });
 
 export default {
-  title: 'Form',
+  title: 'Form/Field',
 };
 
 const sharedArgTypes = {

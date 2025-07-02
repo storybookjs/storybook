@@ -329,6 +329,8 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      - node/install:
+          node-version: '22.16.0'
       - run:
           name: Test
           command: |
@@ -468,13 +470,8 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
-      - run:
-          name: Use Node 22.16.0
-          command: |
-            npm install -g n
-            n 22.16.0
-            node -v
-            npm -v
+      - node/install:
+          node-version: '22.16.0'
       - run:
           name: Install sandbox dependencies
           command: |
@@ -507,6 +504,8 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      - node/install:
+          node-version: '22.16.0'
       - run:
           name: Install sandbox dependencies
           command: |
@@ -539,6 +538,8 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      - node/install:
+          node-version: '22.16.0'
       - run:
           name: Running Test Runner in Dev mode
           command: yarn task --task test-runner-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev) --no-link --start-from=never --junit
@@ -583,6 +584,8 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      - node/install:
+          node-version: '22.16.0'
       - run:
           name: Install sandbox dependencies
           command: |
@@ -611,6 +614,8 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      - node/install:
+          node-version: '22.16.0'
       - run:
           name: Install sandbox dependencies
           command: |
@@ -639,6 +644,8 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      - node/install:
+          node-version: '22.16.0'
       - run:
           name: Install sandbox dependencies
           command: |
@@ -825,6 +832,8 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      - node/install:
+          node-version: '22.16.0'
       - run:
           name: Install dependencies
           command: yarn install --no-immutable
@@ -853,6 +862,8 @@ jobs:
           clone_options: "--depth 1 --verbose"
       - attach_workspace:
           at: .
+      - node/install:
+          node-version: '22.16.0'
       - run:
           name: Install dependencies
           command: yarn install --no-immutable

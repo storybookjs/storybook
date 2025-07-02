@@ -96,7 +96,6 @@ export interface AutofixOptionsFromCLI {
   skipInstall?: boolean;
   hideMigrationSummary?: boolean;
   skipDoctor?: boolean;
-  fail?: boolean;
 }
 
 export enum FixStatus {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 
-import { automigrate } from './index';
+import { automigrate, runFixes } from './index';
 import type { Fix } from './types';
 
 const check1 = vi.fn();
@@ -63,36 +63,53 @@ const packageManager = new PackageManager() as any as JsPackageManager;
 
 const dryRun = false;
 const yes = true;
+const rendererPackage = 'storybook';
 const skipInstall = false;
 const configDir = '/path/to/config';
 const mainConfigPath = '/path/to/mainConfig';
 const beforeVersion = '6.5.15';
 const isUpgrade = true;
 
+const common = {
+  fixes,
+  dryRun,
+  yes,
+  mainConfig: { stories: [] },
+  rendererPackage,
+  skipInstall,
+  configDir,
+  packageManager: packageManager,
+  mainConfigPath,
+  isUpgrade,
+  storiesPaths: [],
+};
+
 const runFixWrapper = async ({
   beforeVersion,
   storybookVersion,
-  fail = false,
 }: {
   beforeVersion: string;
   storybookVersion: string;
-  fail?: boolean;
 }) => {
-  return automigrate({
-    fixes,
-    dryRun,
-    yes,
-    mainConfig: { stories: [] },
-    skipInstall,
-    configDir,
-    packageManager: packageManager,
-    mainConfigPath,
+  return runFixes({
+    ...common,
     storybookVersion,
     beforeVersion,
-    isUpgrade,
-    storiesPaths: [],
+  });
+};
+
+const runAutomigrateWrapper = async ({
+  beforeVersion,
+  storybookVersion,
+}: {
+  beforeVersion: string;
+  storybookVersion: string;
+}) => {
+  return automigrate({
+    ...common,
+    beforeVersion,
+    storybookVersion,
     isLatest: true,
-    fail,
   });
 };
 
@@ -113,8 +130,7 @@ describe('runFixes', () => {
   it('should be necessary to run fix-1 from SB 6.5.15 to 7.0.0', async () => {
     promptMocks.default.mockResolvedValue({ shouldContinue: true });
 
-    const fixResults = (await runFixWrapper({ beforeVersion, storybookVersion: '7.0.0' }))
-      ?.fixResults;
+    const { fixResults } = await runFixWrapper({ beforeVersion, storybookVersion: '7.0.0' });
 
     expect(fixResults).toEqual({
       'fix-1': 'succeeded',
@@ -132,12 +148,10 @@ describe('runFixes', () => {
     );
   });
 
-  it('should soft fail if an error is thrown', async () => {
+  it('should fail if an error is thrown by migration', async () => {
     check1.mockRejectedValue(new Error('check1 error'));
 
-    const fixResults = (
-      await runFixWrapper({ beforeVersion, storybookVersion: '7.0.0', fail: false })
-    )?.fixResults;
+    const { fixResults } = await runFixWrapper({ beforeVersion, storybookVersion: '7.0.0' });
 
     expect(fixResults).toEqual({
       'fix-1': 'check_failed',
@@ -145,10 +159,10 @@ describe('runFixes', () => {
     expect(run1).not.toHaveBeenCalled();
   });
 
-  it('should hard fail if an error is thrown', async () => {
+  it('should throw error if an error is thrown my migration', async () => {
     check1.mockRejectedValue(new Error('check1 error'));
 
-    const result = runFixWrapper({ beforeVersion, storybookVersion: '7.0.0', fail: true });
+    const result = runAutomigrateWrapper({ beforeVersion, storybookVersion: '7.0.0' });
 
     await expect(result).rejects.toThrow('Some migrations failed');
     expect(run1).not.toHaveBeenCalled();

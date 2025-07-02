@@ -103,7 +103,6 @@ export const automigrate = async ({
   isUpgrade,
   isLatest,
   storiesPaths,
-  fail,
 }: AutofixOptions): Promise<{
   fixResults: Record<string, FixStatus>;
   preCheckFailure?: PreCheckFailure;
@@ -192,7 +191,7 @@ export const automigrate = async ({
     logger.log('');
   }
 
-  if (hasFailures && fail) {
+  if (hasFailures) {
     throw new Error('Some migrations failed');
   }
 

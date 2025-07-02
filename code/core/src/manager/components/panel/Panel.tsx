@@ -103,7 +103,7 @@ export const AddonPanel = React.memo<{
                 </IconButton>
               </>
             ) : (
-              <IconButton onClick={() => setMobilePanelOpen(false)} title="Close addon panel">
+              <IconButton onClick={() => setMobilePanelOpen(false)} aria-label="Close addon panel">
                 <CloseIcon />
               </IconButton>
             )}

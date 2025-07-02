@@ -55,14 +55,15 @@ const map = (arg: unknown, argType: InputType): any => {
         return mapped === INCOMPATIBLE ? acc : Object.assign(acc, { [key]: mapped });
       }, {} as Args);
     case 'other':
-      // Only handling `other` case for ReactNode
-      if (type.value !== 'ReactNode') {
-        return INCOMPATIBLE;
-      }
+      const isPrimitiveArg =
+        typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean';
 
-      if (typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean') {
+      // Only allow primitives for `ReactNode` among all `other` cases
+      if (type.value === 'ReactNode' && isPrimitiveArg) {
         return arg;
       }
+
+      return INCOMPATIBLE;
     default:
       return INCOMPATIBLE;
   }

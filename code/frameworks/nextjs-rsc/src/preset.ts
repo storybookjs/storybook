@@ -229,12 +229,14 @@ function rscBundle(config: Configuration) {
       resolve: {
         alias: {
           react$: 'next/dist/compiled/react',
-          // 'react-dom$': 'next/dist/compiled/react-dom',
-          // 'react-dom/client$': 'next/dist/compiled/react-dom/client',
-          // 'react-server-dom-webpack/client$':
-          //   'next/dist/compiled/react-server-dom-webpack/client.browser',
-          // 'react-server-dom-webpack/server.browser$':
-          //   'next/dist/compiled/react-server-dom-webpack/server.browser',
+          'react/jsx-runtime$': 'next/dist/compiled/react/jsx-runtime',
+          'react/jsx-dev-runtime$': 'next/dist/compiled/react/jsx-dev-runtime',
+          'react-dom$': 'next/dist/compiled/react-dom',
+          'react-dom/client$': 'next/dist/compiled/react-dom/client',
+          'react-server-dom-webpack/client$':
+            'next/dist/compiled/react-server-dom-webpack/client.browser',
+          'react-server-dom-webpack/client.edge$':
+            'next/dist/compiled/react-server-dom-webpack/client.browser',
         },
       },
     },
@@ -256,13 +258,15 @@ function rscBundle(config: Configuration) {
       resolve: {
         alias: {
           react$: 'next/dist/compiled/react/react.react-server',
-          // 'react-dom$': 'next/dist/compiled/react-dom/react-dom.react-server',
-          // 'react-dom/client$': 'next/dist/compiled/react-dom/client.react-server',
-          //   'react-server-dom-webpack/client$':
-          //     'next/dist/compiled/react-server-dom-webpack/client.browser',
-          //   'react-server-dom-webpack/server.browser$':
-          //     'next/dist/compiled/react-server-dom-webpack/server.browser',
-          //   'next/dist/compiled/react$': 'next/dist/compiled/react/react.react-server',
+          'react/jsx-runtime$': 'next/dist/compiled/react/jsx-runtime.react-server',
+          'react/jsx-dev-runtime$': 'next/dist/compiled/react/jsx-dev-runtime.react-server',
+          'react-dom$': 'next/dist/compiled/react-dom/react-dom.react-server',
+          'react-dom/client$': 'next/dist/compiled/react-dom/client.react-server',
+          'react-server-dom-webpack/server$':
+            'next/dist/compiled/react-server-dom-webpack/server.browser',
+          'react-server-dom-webpack/server.browser$':
+            'next/dist/compiled/react-server-dom-webpack/server.browser',
+          'next/dist/compiled/react$': 'next/dist/compiled/react/react.react-server',
         },
       },
     }

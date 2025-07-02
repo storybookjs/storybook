@@ -686,10 +686,11 @@ jobs:
       - run:
           name: Create tar archive
           command: |
-            tar -czf compressed.tar.gz ../features
+            cs ../
+            tar -czf compressed.tar.gz features-1
           when: always
       - store_artifacts:
-          path: compressed.tar.gz
+          path: ../compressed.tar.gz
           destination: sandbox
           when: always
 

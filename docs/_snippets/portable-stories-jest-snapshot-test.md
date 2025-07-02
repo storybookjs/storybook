@@ -4,8 +4,8 @@ import * as glob from 'glob';
 
 import { describe, test, expect } from '@jest/globals';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 const compose = (entry) => {
   try {
@@ -87,8 +87,8 @@ import type { Meta, StoryFn } from '@storybook/your-framework';
 
 import { describe, test, expect } from '@jest/globals';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 type StoryFile = {
   default: Meta;

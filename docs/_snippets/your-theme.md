@@ -1,5 +1,5 @@
 ```js filename=".storybook/YourTheme.js" renderer="common" language="js"
-import { create } from '@storybook/theming/create';
+import { create } from 'storybook/theming/create';
 
 export default create({
   base: 'light',
@@ -40,4 +40,3 @@ export default create({
   inputBorderRadius: 2,
 });
 ```
-

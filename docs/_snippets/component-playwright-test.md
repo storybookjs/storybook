@@ -9,4 +9,3 @@ test('Login Form inputs', async ({ page }) => {
   await expect(password).toBe('a-random-password');
 });
 ```
-

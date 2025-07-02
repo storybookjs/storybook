@@ -3,8 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChannelTransport, Listener } from '.';
 import { Channel, WebsocketTransport } from '.';
 
-vi.useFakeTimers();
-
 const MockedWebsocket = vi.hoisted(() => {
   const ref = { current: undefined as unknown as InstanceType<typeof MyMockedWebsocket> };
   class MyMockedWebsocket {
@@ -14,7 +12,7 @@ const MockedWebsocket = vi.hoisted(() => {
 
     onerror: (e: any) => void;
 
-    onclose: () => void;
+    onclose: (event: any) => void;
 
     constructor(url: string) {
       this.onopen = vi.fn();
@@ -295,11 +293,16 @@ describe('WebsocketTransport', () => {
     });
 
     transport.setHandler(handler);
-    MockedWebsocket.ref.current.onclose();
+    MockedWebsocket.ref.current.onclose({ code: 1000, reason: 'test' });
 
     expect(handler.mock.calls[0][0]).toMatchInlineSnapshot(`
       {
-        "args": [],
+        "args": [
+          {
+            "code": 1000,
+            "reason": "test",
+          },
+        ],
         "from": "preview",
         "type": "channelWSDisconnect",
       }

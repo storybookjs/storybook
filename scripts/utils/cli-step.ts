@@ -5,7 +5,7 @@ import type { OptionSpecifier, OptionValues } from './options';
 import { createOptions, getCommand } from './options';
 
 const require = createRequire(import.meta.url);
-const cliExecutable = require.resolve('../../code/lib/cli/bin/index.cjs');
+const cliExecutable = require.resolve('../../code/core/bin/index.cjs');
 const toolboxExecutable = require.resolve('../../code/lib/cli-storybook/bin/index.cjs');
 const createStorybookExecutable = require.resolve('../../code/lib/create-storybook/bin/index.cjs');
 
@@ -40,6 +40,7 @@ export const steps = {
       yes: { type: 'boolean' },
       type: { type: 'string' },
       debug: { type: 'boolean' },
+      'skip-install': { type: 'boolean' },
     }),
   },
   add: {
@@ -47,7 +48,9 @@ export const steps = {
     description: 'Adding addon',
     icon: '+',
     hasArgument: true,
-    options: createOptions({}),
+    options: createOptions({
+      yes: { type: 'boolean' },
+    }),
   },
   link: {
     command: 'link',
@@ -71,6 +74,22 @@ export const steps = {
     icon: '🖥 ',
     options: createOptions({}),
   },
+  migrate: {
+    command: 'migrate',
+    hasArgument: true,
+    description: 'Run codemods',
+    icon: '🚀',
+    options: createOptions({
+      glob: { type: 'string' },
+    }),
+  },
+  automigrate: {
+    command: 'automigrate',
+    hasArgument: true,
+    description: 'Run automigrations',
+    icon: '🤖',
+    options: createOptions({}),
+  },
 };
 
 export async function executeCLIStep<TOptions extends OptionSpecifier>(
@@ -81,6 +100,7 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
     cwd: string;
     dryRun?: boolean;
     debug: boolean;
+    env?: Record<string, string>;
   }
 ) {
   if (cliStep.hasArgument && !options.argument) {
@@ -106,6 +126,8 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
       cwd: options.cwd,
       env: {
         STORYBOOK_DISABLE_TELEMETRY: 'true',
+        STORYBOOK_PROJECT_ROOT: options.cwd,
+        ...options.env,
       },
     },
     {

@@ -1,8 +1,8 @@
 ```js filename=".storybook/main.js" renderer="common" language="js"
 export default {
   framework: {
-    // Replace react-vite with the framework you are using (e.g., react-webpack5)
-    name: '@storybook/react-vite',
+    // Replace react-vite with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+    name: '@storybook/your-framework',
     options: {
       legacyRootApi: true,
     },
@@ -12,12 +12,12 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts"
-// Replace react-vite with the framework you are using (e.g., react-webpack5)
-import type { StorybookConfig } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {
   framework: {
-    name: '@storybook/react-vite',
+    name: '@storybook/your-framework',
     options: {
       legacyRootApi: true,
     },
@@ -27,4 +27,3 @@ const config: StorybookConfig = {
 
 export default config;
 ```
-

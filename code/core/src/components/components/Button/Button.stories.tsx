@@ -1,31 +1,26 @@
-import type { ReactNode } from 'react';
 import React from 'react';
 
-import { FaceHappyIcon } from '@storybook/icons';
-import type { Meta, StoryObj } from '@storybook/react';
+import { styled } from 'storybook/internal/theming';
 
+import { FaceHappyIcon } from '@storybook/icons';
+
+import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';
 
-const meta = {
+const meta = preview.meta({
+  id: 'button-component',
   title: 'Button',
   component: Button,
   args: { children: 'Button' },
-} satisfies Meta<typeof Button>;
+});
 
-export default meta;
-type Story = StoryObj<typeof meta>;
+const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
 
-const Stack = ({ children }: { children: ReactNode }) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>{children}</div>
-);
+const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
 
-const Row = ({ children }: { children: ReactNode }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>{children}</div>
-);
+export const Base = meta.story({});
 
-export const Base: Story = {};
-
-export const Variants: Story = {
+export const Variants = meta.story({
   render: (args) => (
     <Stack>
       <Row>
@@ -63,9 +58,43 @@ export const Variants: Story = {
       </Row>
     </Stack>
   ),
-};
+});
 
-export const Active: Story = {
+export const PseudoStates = meta.story({
+  render: () => (
+    <Stack>
+      <Row>
+        <Button variant="solid">Button</Button>
+        <Button variant="outline">Button</Button>
+        <Button variant="ghost">Button</Button>
+      </Row>
+      <Row id="hover">
+        <Button variant="solid">Hover</Button>
+        <Button variant="outline">Hover</Button>
+        <Button variant="ghost">Hover</Button>
+      </Row>
+      <Row id="focus">
+        <Button variant="solid">Focus</Button>
+        <Button variant="outline">Focus</Button>
+        <Button variant="ghost">Focus</Button>
+      </Row>
+      <Row id="active">
+        <Button variant="solid">Active</Button>
+        <Button variant="outline">Active</Button>
+        <Button variant="ghost">Active</Button>
+      </Row>
+    </Stack>
+  ),
+  parameters: {
+    pseudo: {
+      hover: '#hover button',
+      focus: '#focus button',
+      active: '#active button',
+    },
+  },
+});
+
+export const Active = meta.story({
   args: {
     active: true,
     children: (
@@ -82,9 +111,9 @@ export const Active: Story = {
       <Button variant="ghost" {...args} />
     </Row>
   ),
-};
+});
 
-export const WithIcon: Story = {
+export const WithIcon = meta.story({
   args: {
     children: (
       <>
@@ -100,9 +129,9 @@ export const WithIcon: Story = {
       <Button variant="ghost" {...args} />
     </Row>
   ),
-};
+});
 
-export const IconOnly: Story = {
+export const IconOnly = meta.story({
   args: {
     children: <FaceHappyIcon />,
     padding: 'small',
@@ -114,25 +143,25 @@ export const IconOnly: Story = {
       <Button variant="ghost" {...args} />
     </Row>
   ),
-};
+});
 
-export const Sizes: Story = {
+export const Sizes = meta.story({
   render: () => (
     <Row>
       <Button size="small">Small Button</Button>
       <Button size="medium">Medium Button</Button>
     </Row>
   ),
-};
+});
 
-export const Disabled: Story = {
+export const Disabled = meta.story({
   args: {
     disabled: true,
     children: 'Disabled Button',
   },
-};
+});
 
-export const WithHref: Story = {
+export const WithHref = meta.story({
   render: () => (
     <Row>
       <Button onClick={() => console.log('Hello')}>I am a button using onClick</Button>
@@ -141,9 +170,9 @@ export const WithHref: Story = {
       </Button>
     </Row>
   ),
-};
+});
 
-export const Animated: Story = {
+export const Animated = meta.story({
   args: {
     variant: 'outline',
   },
@@ -184,4 +213,4 @@ export const Animated: Story = {
       </Row>
     </Stack>
   ),
-};
+});

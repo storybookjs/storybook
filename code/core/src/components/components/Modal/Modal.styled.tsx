@@ -1,10 +1,10 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { keyframes, styled } from '@storybook/core/theming';
 import { CrossIcon } from '@storybook/icons';
 
 import * as Dialog from '@radix-ui/react-dialog';
+import { keyframes, styled } from 'storybook/theming';
 
 import { IconButton } from '../IconButton/IconButton';
 
@@ -30,7 +30,7 @@ const zoomIn = keyframes({
 });
 
 export const Overlay = styled.div({
-  backgroundColor: 'rgba(27, 28, 29, 0.2)',
+  backdropFilter: 'blur(24px)',
   position: 'fixed',
   inset: 0,
   width: '100%',
@@ -43,7 +43,7 @@ export const Container = styled.div<{ width?: number; height?: number }>(
   ({ theme, width, height }) => ({
     backgroundColor: theme.background.bar,
     borderRadius: 6,
-    boxShadow: `rgba(255, 255, 255, 0.05) 0 0 0 1px inset, rgba(14, 18, 22, 0.35) 0px 10px 38px -10px`,
+    boxShadow: '0px 4px 67px 0px #00000040',
     position: 'fixed',
     top: '50%',
     left: '50%',
@@ -64,7 +64,7 @@ export const Container = styled.div<{ width?: number; height?: number }>(
 
 export const CloseButton = (props: React.ComponentProps<typeof IconButton>) => (
   <Dialog.Close asChild>
-    <IconButton {...props}>
+    <IconButton aria-label="Close" {...props}>
       <CrossIcon />
     </IconButton>
   </Dialog.Close>

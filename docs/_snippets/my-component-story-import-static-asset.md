@@ -3,4 +3,3 @@
 // And return a path to be included in a src attribute
 import imageFile from './static/image.png';
 ```
-

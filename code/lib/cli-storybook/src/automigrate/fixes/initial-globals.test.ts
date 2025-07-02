@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import * as fsp from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -19,6 +18,7 @@ const check = async (previewContents: string) => {
     mainConfig: {} as any,
     storybookVersion: '8.0',
     previewConfigPath,
+    storiesPaths: [],
   });
 };
 

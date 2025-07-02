@@ -1,18 +1,24 @@
-import type { ThemeVars } from '@storybook/core/theming';
-import { create } from '@storybook/core/theming/create';
-import type { API_Layout, API_PanelPositions, API_UI } from '@storybook/core/types';
+import { SET_CONFIG } from 'storybook/internal/core-events';
+import type {
+  API_Layout,
+  API_LayoutCustomisations,
+  API_PanelPositions,
+  API_UI,
+} from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
-import { SET_CONFIG } from '@storybook/core/core-events';
-
-import { dequal as deepEqual } from 'dequal';
-import pick from 'lodash/pick.js';
+import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
+import type { ThemeVars } from 'storybook/theming';
+import { create } from 'storybook/theming/create';
 
 import merge from '../lib/merge';
 import type { ModuleFn } from '../lib/types';
 import type { State } from '../root';
 
 const { document } = global;
+
+const isFunction = (val: unknown): val is CallableFunction => typeof val === 'function';
 
 export const ActiveTabs = {
   SIDEBAR: 'sidebar' as const,
@@ -22,6 +28,7 @@ export const ActiveTabs = {
 
 export interface SubState {
   layout: API_Layout;
+  layoutCustomisations: API_LayoutCustomisations;
   ui: API_UI;
   selectedPanel: string | undefined;
   theme: ThemeVars;
@@ -79,6 +86,16 @@ export interface SubAPI {
   getIsPanelShown: () => boolean;
   /** GetIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI. */
   getIsNavShown: () => boolean;
+  /**
+   * GetShowToolbarWithCustomisations - Returns the current visibility of the toolbar, taking into
+   * account customisations requested by the end user via a layoutCustomisations function.
+   */
+  getShowToolbarWithCustomisations: (showToolbar: boolean) => boolean;
+  /**
+   * GetNavSizeWithCustomisations - Returns the size to apply to the sidebar/nav, taking into
+   * account customisations requested by the end user via a layoutCustomisations function.
+   */
+  getNavSizeWithCustomisations: (navSize: number) => number;
 }
 
 type PartialSubState = Partial<SubState>;
@@ -100,6 +117,10 @@ export const defaultLayoutState: SubState = {
     },
     panelPosition: 'bottom',
     showTabs: true,
+  },
+  layoutCustomisations: {
+    showSidebar: undefined,
+    showToolbar: undefined,
   },
   selectedPanel: undefined,
   theme: create(),
@@ -314,19 +335,22 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
 
     getInitialOptions() {
-      const { theme, selectedPanel, ...options } = provider.getConfig();
+      const { theme, selectedPanel, layoutCustomisations, ...options } = provider.getConfig();
 
       return {
         ...defaultLayoutState,
         layout: {
-          ...defaultLayoutState.layout,
-          ...pick(options, Object.keys(defaultLayoutState.layout)),
+          ...toMerged(
+            defaultLayoutState.layout,
+            pick(options, Object.keys(defaultLayoutState.layout))
+          ),
           ...(singleStory && { navSize: 0 }),
         },
-        ui: {
-          ...defaultLayoutState.ui,
-          ...pick(options, Object.keys(defaultLayoutState.ui)),
+        layoutCustomisations: {
+          ...defaultLayoutState.layoutCustomisations,
+          ...(layoutCustomisations ?? {}),
         },
+        ui: toMerged(defaultLayoutState.ui, pick(options, Object.keys(defaultLayoutState.ui))),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
         theme: theme || defaultLayoutState.theme,
       };
@@ -342,6 +366,31 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       return getIsNavShown(store.getState());
     },
 
+    getShowToolbarWithCustomisations(showToolbar: boolean) {
+      const state = store.getState();
+
+      if (isFunction(state.layoutCustomisations.showToolbar)) {
+        return state.layoutCustomisations.showToolbar(state, showToolbar) ?? showToolbar;
+      }
+
+      return showToolbar;
+    },
+
+    getNavSizeWithCustomisations(navSize: number) {
+      const state = store.getState();
+
+      if (isFunction(state.layoutCustomisations.showSidebar)) {
+        const shouldShowNav = state.layoutCustomisations.showSidebar(state, navSize !== 0);
+        if (navSize === 0 && shouldShowNav === true) {
+          return state.layout.recentVisibleSizes.navSize;
+        } else if (navSize !== 0 && shouldShowNav === false) {
+          return 0;
+        }
+      }
+
+      return navSize;
+    },
+
     setOptions: (options: any) => {
       const { layout, ui, selectedPanel, theme } = store.getState();
 
@@ -351,7 +400,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
 
       const updatedLayout = {
         ...layout,
-        ...options.layout,
+        ...(options.layout || {}),
         ...pick(options, Object.keys(layout)),
         ...(singleStory && { navSize: 0 }),
       };
@@ -359,7 +408,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       const updatedUi = {
         ...ui,
         ...options.ui,
-        ...pick(options, Object.keys(ui)),
+        ...toMerged(options.ui || {}, pick(options, Object.keys(ui))),
       };
 
       const updatedTheme = {
@@ -388,7 +437,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
   };
 
-  const persisted = pick(store.getState(), 'layout', 'selectedPanel');
+  const persisted = pick(store.getState(), ['layout', 'selectedPanel']);
 
   provider.channel?.on(SET_CONFIG, () => {
     api.setOptions(merge(api.getInitialOptions(), persisted));

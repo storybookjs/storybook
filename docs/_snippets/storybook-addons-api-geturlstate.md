@@ -6,4 +6,3 @@ addons.register('my-organisation/my-addon', (api) => {
   }).url;
 });
 ```
-

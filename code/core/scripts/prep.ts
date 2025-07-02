@@ -1,21 +1,28 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { existsSync, mkdirSync, watch } from 'node:fs';
+import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import type { Metafile } from 'esbuild';
+
 import {
-  chalk,
   dedent,
   esbuild,
   globalExternals,
   measure,
   merge,
   nodeInternals,
+  picocolors,
   prettyTime,
   process,
 } from '../../../scripts/prepare/tools';
 import pkg from '../package.json';
 import { globalsModuleInfoMap } from '../src/manager/globals-module-info';
+import {
+  BROWSER_TARGETS,
+  NODE_TARGET,
+  SUPPORTED_FEATURES,
+} from '../src/shared/constants/environments-support';
 import { getBundles, getEntries, getFinals } from './entries';
 import { generatePackageJsonFile } from './helpers/generatePackageJsonFile';
 import { generateTypesFiles } from './helpers/generateTypesFiles';
@@ -23,6 +30,7 @@ import { generateTypesMapperFiles } from './helpers/generateTypesMapperFiles';
 import { isBrowser, isNode, noExternals } from './helpers/isEntryType';
 import { modifyThemeTypes } from './helpers/modifyThemeTypes';
 import { generateSourceFiles } from './helpers/sourcefiles';
+import { externalPlugin } from './no-externals-plugin';
 
 async function run() {
   const flags = process.argv.slice(2);
@@ -57,14 +65,13 @@ async function run() {
   console.log(isWatch ? 'Watching...' : 'Bundling...');
 
   const files = measure(generateSourceFiles);
-  const packageJson = measure(() => generatePackageJsonFile(entries));
+  const packageJson = measure(() => generatePackageJsonFile(entries.concat(bundles)));
   const dist = files.then(() => measure(generateDistFiles));
   const types = files.then(() =>
     measure(async () => {
       await generateTypesMapperFiles(entries);
       await modifyThemeTypes();
       await generateTypesFiles(entries, isOptimized, cwd);
-      await modifyThemeTypes();
     })
   );
 
@@ -75,12 +82,15 @@ async function run() {
     types,
   ]);
 
-  console.log('Files generated in', chalk.yellow(prettyTime(filesTime)));
-  console.log('Package.json generated in', chalk.yellow(prettyTime(packageJsonTime)));
-  console.log(isWatch ? 'Watcher started in' : 'Bundled in', chalk.yellow(prettyTime(distTime)));
+  console.log('Files generated in', picocolors.yellow(prettyTime(filesTime)));
+  console.log('Package.json generated in', picocolors.yellow(prettyTime(packageJsonTime)));
+  console.log(
+    isWatch ? 'Watcher started in' : 'Bundled in',
+    picocolors.yellow(prettyTime(distTime))
+  );
   console.log(
     isOptimized ? 'Generated types in' : 'Generated type mappers in',
-    chalk.yellow(prettyTime(typesTime))
+    picocolors.yellow(prettyTime(typesTime))
   );
 
   async function generateDistFiles() {
@@ -90,7 +100,7 @@ async function run() {
       assetNames: 'assets/[name]-[hash]',
       bundle: true,
       chunkNames: 'chunks/[name]-[hash]',
-      external: ['@storybook/core', ...external],
+      external: ['storybook', ...external],
       keepNames: true,
       legalComments: 'none',
       lineLimit: 140,
@@ -101,12 +111,24 @@ async function run() {
       outdir: 'dist',
       sourcemap: false,
       treeShaking: true,
+      supported: {
+        // This is an ES2018 feature, but esbuild is really strict here.
+        // Since not all browser support the latest Unicode characters.
+        //
+        // Also this feature only works in combination with a Regex polyfill that we don't load.
+        //
+        // The Hermes engine of React Native doesn't support this feature,
+        // but leaving the regex alone, actually allows Hermes to do its own thing,
+        // without us having to load a RegExp polyfill.
+        'regexp-unicode-property-escapes': true,
+      },
     } satisfies EsbuildContextOptions;
 
     const browserEsbuildOptions = {
       ...esbuildDefaultOptions,
       format: 'esm',
-      target: ['chrome100', 'safari15', 'firefox91'],
+      target: BROWSER_TARGETS,
+      supported: SUPPORTED_FEATURES,
       splitting: false,
       platform: 'browser',
 
@@ -115,18 +137,12 @@ async function run() {
 
     const nodeEsbuildOptions = {
       ...esbuildDefaultOptions,
-      target: 'node18',
+      target: NODE_TARGET,
       splitting: false,
       platform: 'neutral',
       mainFields: ['main', 'module', 'node'],
       conditions: ['node', 'module', 'import', 'require'],
     } satisfies EsbuildContextOptions;
-
-    const browserAliases = {
-      assert: require.resolve('browser-assert'),
-      process: require.resolve('process/browser.js'),
-      util: require.resolve('util/util.js'),
-    };
 
     const compile = await Promise.all([
       esbuild.context(
@@ -144,7 +160,6 @@ async function run() {
       ),
       esbuild.context(
         merge<EsbuildContextOptions>(browserEsbuildOptions, {
-          alias: browserAliases,
           entryPoints: entries
             .filter(isBrowser)
             .filter(noExternals)
@@ -187,10 +202,27 @@ async function run() {
               entryPoints: [entry.file],
               outExtension: { '.js': '.js' },
               alias: {
-                ...browserAliases,
-                '@storybook/core': join(cwd, 'src'),
+                'storybook/preview-api': join(cwd, 'src', 'preview-api'),
+                'storybook/manager-api': join(cwd, 'src', 'manager-api'),
+                'storybook/theming': join(cwd, 'src', 'theming'),
+                'storybook/test': join(cwd, 'src', 'test'),
+                'storybook/internal': join(cwd, 'src'),
+                'storybook/outline': join(cwd, 'src', 'outline'),
+                'storybook/backgrounds': join(cwd, 'src', 'backgrounds'),
+                'storybook/highlight': join(cwd, 'src', 'highlight'),
+                'storybook/measure': join(cwd, 'src', 'measure'),
+                'storybook/actions': join(cwd, 'src', 'actions'),
+                'storybook/viewport': join(cwd, 'src', 'viewport'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
+                'react-dom/client': join(
+                  dirname(require.resolve('react-dom/package.json')),
+                  'client'
+                ),
+              },
+              define: {
+                // This should set react in prod mode for the manager
+                'process.env.NODE_ENV': JSON.stringify('production'),
               },
               external: [],
             })
@@ -205,7 +237,18 @@ async function run() {
           esbuild.context(
             merge<EsbuildContextOptions>(browserEsbuildOptions, {
               alias: {
-                '@storybook/core': join(cwd, 'src'),
+                'storybook/preview-api': join(cwd, 'src', 'preview-api'),
+                'storybook/manager-api': join(cwd, 'src', 'manager-api'),
+                'storybook/theming': join(cwd, 'src', 'theming'),
+                'storybook/test': join(cwd, 'src', 'test'),
+                'storybook/actions': join(cwd, 'src', 'actions'),
+                'storybook/outline': join(cwd, 'src', 'outline'),
+                'storybook/backgrounds': join(cwd, 'src', 'backgrounds'),
+                'storybook/measure': join(cwd, 'src', 'measure'),
+                'storybook/viewport': join(cwd, 'src', 'viewport'),
+                'storybook/highlight': join(cwd, 'src', 'highlight'),
+
+                'storybook/internal': join(cwd, 'src'),
                 react: dirname(require.resolve('react/package.json')),
                 'react-dom': dirname(require.resolve('react-dom/package.json')),
                 'react-dom/client': join(
@@ -241,9 +284,14 @@ async function run() {
                   entryPoints: [entry.file],
                   external: [
                     ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
+                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
+                  plugins: [
+                    externalPlugin({
+                      noExternal: entry.noExternal,
+                    }),
+                  ],
                   format: 'cjs',
                   outdir: dirname(entry.file).replace('src', 'dist'),
                   outExtension: {
@@ -260,10 +308,15 @@ async function run() {
                   entryPoints: [entry.file],
                   external: [
                     ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
+                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
                   outdir: dirname(entry.file).replace('src', 'dist'),
+                  plugins: [
+                    externalPlugin({
+                      noExternal: entry.noExternal,
+                    }),
+                  ],
                   outExtension: {
                     '.js': '.js',
                   },
@@ -277,9 +330,14 @@ async function run() {
                   entryPoints: [entry.file],
                   external: [
                     ...nodeInternals,
-                    ...esbuildDefaultOptions.external,
+                    ...esbuildDefaultOptions.external.filter((e) => !entry.noExternal.includes(e)),
                     ...entry.externals,
                   ].filter((e) => !entry.internals.includes(e)),
+                  plugins: [
+                    externalPlugin({
+                      noExternal: entry.noExternal,
+                    }),
+                  ],
                   format: 'esm',
                   outdir: dirname(entry.file).replace('src', 'dist'),
                   outExtension: {
@@ -303,30 +361,59 @@ async function run() {
 
       // show a log message when a file is compiled
       watch(join(cwd, 'dist'), { recursive: true }, (event, filename) => {
-        console.log(`compiled ${chalk.cyan(filename)}`);
+        console.log(`compiled ${picocolors.cyan(filename)}`);
       });
     } else {
-      await Promise.all(
-        compile.map(async (context, index) => {
-          const out = await context.rebuild();
+      // repo root/bench/esbuild-metafiles/core
+      const metafilesDir = join(__dirname, '..', '..', 'bench', 'esbuild-metafiles', 'core');
+      if (existsSync(metafilesDir)) {
+        await rm(metafilesDir, { recursive: true });
+      }
+      await mkdir(metafilesDir, { recursive: true });
+      const outputs = await Promise.all(
+        compile.map(async (context) => {
+          const output = await context.rebuild();
           await context.dispose();
-
-          if (out.metafile) {
-            const { outputs } = out.metafile;
-            const keys = Object.keys(outputs);
-            const format = keys.every((key) => key.endsWith('.js')) ? 'esm' : 'cjs';
-            const outName =
-              keys.length === 1 ? dirname(keys[0]).replace('dist/', '') : `meta-${format}-${index}`;
-
-            if (!existsSync('report')) {
-              mkdirSync('report');
-            }
-            await writeFile(`report/${outName}.json`, JSON.stringify(out.metafile, null, 2));
-            await writeFile(
-              `report/${outName}.txt`,
-              await esbuild.analyzeMetafile(out.metafile, { color: false, verbose: false })
-            );
+          return output;
+        })
+      );
+      const metafileByModule: Record<string, Metafile> = {};
+      for (const currentOutput of outputs) {
+        if (!currentOutput.metafile) {
+          continue;
+        }
+        for (const key of Object.keys(currentOutput.metafile.outputs)) {
+          const moduleName = dirname(key).replace('dist/', '');
+          const existingMetafile = metafileByModule[moduleName];
+          if (existingMetafile) {
+            existingMetafile.inputs = {
+              ...existingMetafile.inputs,
+              ...currentOutput.metafile.inputs,
+            };
+            existingMetafile.outputs = {
+              ...existingMetafile.outputs,
+              [key]: currentOutput.metafile.outputs[key],
+            };
+          } else {
+            metafileByModule[moduleName] = {
+              ...currentOutput.metafile,
+              outputs: { [key]: currentOutput.metafile.outputs[key] },
+            };
           }
+        }
+      }
+      await Promise.all(
+        Object.entries(metafileByModule).map(async ([moduleName, metafile]) => {
+          console.log('saving metafiles', moduleName);
+          const sanitizedModuleName = moduleName.replaceAll('/', '-');
+          await writeFile(
+            join(metafilesDir, `${sanitizedModuleName}.json`),
+            JSON.stringify(metafile, null, 2)
+          );
+          await writeFile(
+            join(metafilesDir, `${sanitizedModuleName}.txt`),
+            await esbuild.analyzeMetafile(metafile, { color: false, verbose: false })
+          );
         })
       );
     }

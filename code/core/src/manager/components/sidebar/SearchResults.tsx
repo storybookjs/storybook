@@ -1,16 +1,16 @@
 import type { FC, MouseEventHandler, PropsWithChildren, ReactNode } from 'react';
 import React, { useCallback, useEffect } from 'react';
 
-import { Button, IconButton } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { Button, IconButton } from 'storybook/internal/components';
+import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+
 import { global } from '@storybook/global';
 import { TrashIcon } from '@storybook/icons';
 
-import { PRELOAD_ENTRIES } from '@storybook/core/core-events';
-import { useStorybookApi } from '@storybook/core/manager-api';
-
 import type { ControllerStateAndHelpers } from 'downshift';
 import { transparentize } from 'polished';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { statusMapping } from '../../utils/status';
@@ -70,7 +70,7 @@ const NoResults = styled.div(({ theme }) => ({
   lineHeight: `18px`,
   color: theme.color.defaultText,
   small: {
-    color: theme.barTextColor,
+    color: theme.textMutedColor,
     fontSize: `${theme.typography.size.s1}px`,
   },
 }));
@@ -296,7 +296,7 @@ export const SearchResults: FC<{
   };
 
   return (
-    <ResultsList {...getMenuProps()}>
+    <ResultsList {...getMenuProps()} key="results-list">
       {results.length > 0 && !query && (
         <RecentlyOpenedTitle className="search-result-recentlyOpened">
           Recently opened
@@ -319,14 +319,12 @@ export const SearchResults: FC<{
       )}
       {results.map((result: DownshiftItem, index) => {
         if (isExpandType(result)) {
+          const props = { ...results, ...getItemProps({ key: index, index, item: result }) };
+          const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
               {/* @ts-expect-error (non strict) */}
-              <Button
-                {...result}
-                {...getItemProps({ key: index, index, item: result })}
-                size="small"
-              >
+              <Button key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>
             </MoreWrapper>
@@ -337,11 +335,10 @@ export const SearchResults: FC<{
         const key = `${item.refId}::${item.id}`;
         return (
           <Result
-            // @ts-expect-error (non strict)
-            key={item.id}
             {...result}
             {...getItemProps({ key, index, item: result })}
             isHighlighted={highlightedIndex === index}
+            key={key}
             data-id={result.item.id}
             data-refid={result.item.refId}
             onMouseOver={mouseOverHandler}

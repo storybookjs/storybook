@@ -1,34 +1,31 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+import type { types } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
-import type { Expression } from '@babel/types';
-import chalk from 'chalk';
-import { dedent } from 'ts-dedent';
+import picocolors from 'picocolors';
 
 import type { Fix } from '../types';
-
-const MIGRATION =
-  'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#previewjs-globals-renamed-to-initialglobals';
 
 interface Options {
   previewConfig: ConfigFile;
   previewConfigPath: string;
-  globals: Expression;
+  globals: types.Expression;
 }
 
 /** Rename preview.js globals to initialGlobals */
 export const initialGlobals: Fix<Options> = {
   id: 'initial-globals',
-  versionRange: ['*.*.*', '>=8.0.*'],
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#previewjs-globals-renamed-to-initialglobals',
+
   async check({ previewConfigPath }) {
     if (!previewConfigPath) {
       return null;
     }
 
     const previewConfig = loadConfig((await readFile(previewConfigPath)).toString()).parse();
-    const globals = previewConfig.getFieldNode(['globals']) as Expression;
+    const globals = previewConfig.getFieldNode(['globals']) as types.Expression;
 
     if (!globals) {
       return null;
@@ -37,15 +34,8 @@ export const initialGlobals: Fix<Options> = {
     return { globals, previewConfig, previewConfigPath };
   },
 
-  prompt({ previewConfigPath }) {
-    return dedent`
-      The ${chalk.cyan('globals')} setting in ${chalk.cyan(previewConfigPath)} is deprecated
-      and has been renamed to ${chalk.cyan('initialGlobals')}.
-        
-      Learn more: ${chalk.yellow(MIGRATION)}
-      
-      Rename ${chalk.cyan('globals')} to ${chalk.cyan('initalGlobals')}?
-    `;
+  prompt() {
+    return `Rename ${picocolors.cyan('globals')} to ${picocolors.cyan('initialGlobals')} in preview.js?`;
   },
 
   async run({ dryRun, result }) {

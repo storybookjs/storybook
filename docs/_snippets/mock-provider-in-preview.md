@@ -25,7 +25,9 @@ export default {
 ```tsx filename=".storybook/preview.tsx" renderer="react" language="ts"
 import React from 'react';
 
-import type { Preview } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Preview } from '@storybook/your-framework';
+
 import { ThemeProvider } from 'styled-components';
 
 // themes = { light, dark }
@@ -48,4 +50,3 @@ const preview: Preview = {
 
 export default preview;
 ```
-

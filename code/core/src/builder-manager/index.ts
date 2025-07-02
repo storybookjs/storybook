@@ -1,16 +1,15 @@
 import { cp, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, parse } from 'node:path';
 
-import { stringifyProcessEnvs } from '@storybook/core/common';
-
-import { globalsModuleInfoMap } from '@storybook/core/manager/globals-module-info';
-import { logger } from '@storybook/core/node-logger';
+import { stringifyProcessEnvs } from 'storybook/internal/common';
+import { globalsModuleInfoMap } from 'storybook/internal/manager/globals-module-info';
+import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
-import aliasPlugin from 'esbuild-plugin-alias';
-import express from 'express';
+import sirv from 'sirv';
 
+import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../shared/constants/environments-support';
 import type {
   BuilderBuildResult,
   BuilderFunction,
@@ -26,6 +25,9 @@ import { wrapManagerEntries } from './utils/managerEntries';
 import { safeResolve } from './utils/safeResolve';
 import { getTemplatePath, renderHTML } from './utils/template';
 
+export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support';
+
+const isRootPath = /^\/($|\?)/;
 let compilation: Compilation;
 let asyncIterator: ReturnType<StarterFunction> | ReturnType<BuilderFunction>;
 
@@ -67,10 +69,18 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
       '.eot': 'dataurl',
       '.ttf': 'dataurl',
     },
-    target: ['chrome100', 'safari15', 'firefox91'],
+    target: BROWSER_TARGETS,
+    supported: SUPPORTED_FEATURES,
     platform: 'browser',
     bundle: true,
-    minify: true,
+    minify: false,
+    minifyWhitespace: false,
+    minifyIdentifiers: false,
+    minifySyntax: true,
+    metafile: false, // turn this on to assist with debugging the bundling of managerEntries
+
+    // treeShaking: true,
+
     sourcemap: false,
     conditions: ['browser', 'module', 'default'],
 
@@ -82,15 +92,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     tsconfig: tsconfigPath,
 
     legalComments: 'external',
-    plugins: [
-      aliasPlugin({
-        process: require.resolve('process/browser.js'),
-        util: require.resolve('util/util.js'),
-        assert: require.resolve('browser-assert'),
-      }),
-      globalExternals(globalsModuleInfoMap),
-      pnpPlugin(),
-    ],
+    plugins: [globalExternals(globalsModuleInfoMap), pnpPlugin()],
 
     banner: {
       js: 'try{',
@@ -160,15 +162,36 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   yield;
 
   const coreDirOrigin = join(
-    dirname(require.resolve('@storybook/core/package.json')),
+    dirname(require.resolve('storybook/internal/package.json')),
     'dist',
     'manager'
   );
 
-  router.use(`/sb-addons`, express.static(addonsDir, { immutable: true, maxAge: '5m' }));
-  router.use(`/sb-manager`, express.static(coreDirOrigin, { immutable: true, maxAge: '5m' }));
+  router.use(
+    '/sb-addons',
+    sirv(addonsDir, {
+      maxAge: 300000,
+      dev: true,
+      immutable: true,
+    })
+  );
+  router.use(
+    '/sb-manager',
+    sirv(coreDirOrigin, {
+      maxAge: 300000,
+      dev: true,
+      immutable: true,
+    })
+  );
 
   const { cssFiles, jsFiles } = await readOrderedFiles(addonsDir, compilation?.outputFiles);
+
+  if (compilation.metafile && options.outputDir) {
+    await writeFile(
+      join(options.outputDir, 'metafile.json'),
+      JSON.stringify(compilation.metafile, null, 2)
+    );
+  }
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
@@ -193,15 +216,21 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   yield;
 
-  router.use(`/`, ({ path }, res, next) => {
-    if (path === '/') {
-      res.status(200).send(html);
+  router.use('/', ({ url }, res, next) => {
+    if (url && isRootPath.test(url)) {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/html');
+      res.write(html);
+      res.end();
     } else {
       next();
     }
   });
-  router.use(`/index.html`, ({ path }, res) => {
-    res.status(200).send(html);
+  router.use(`/index.html`, (req, res) => {
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/html');
+    res.write(html);
+    res.end();
   });
 
   return {
@@ -241,7 +270,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
 
   const addonsDir = config.outdir;
   const coreDirOrigin = join(
-    dirname(require.resolve('@storybook/core/package.json')),
+    dirname(require.resolve('storybook/internal/package.json')),
     'dist',
     'manager'
   );
@@ -250,7 +279,6 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   // TODO: this doesn't watch, we should change this to use the esbuild watch API: https://esbuild.github.io/api/#watch
   compilation = await instance({
     ...config,
-
     minify: true,
   });
 

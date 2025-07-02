@@ -9,4 +9,3 @@ pnpm run test-storybook
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn test-storybook
 ```
-

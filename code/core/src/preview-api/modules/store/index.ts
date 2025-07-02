@@ -10,3 +10,4 @@ export * from './decorators';
 export * from './args';
 export * from './autoTitle';
 export * from './sortStories';
+export * from './reporter-api';

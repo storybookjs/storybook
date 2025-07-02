@@ -152,16 +152,20 @@ test('should generate source code for slots with bindings', () => {
   type TestBindings = {
     foo: string;
     bar?: number;
+    boo: {
+      mimeType: string;
+    };
   };
 
   const slots = {
-    a: ({ foo, bar }: TestBindings) => `Slot with bindings ${foo} and ${bar}`,
-    b: ({ foo }: TestBindings) => h('a', { href: foo, target: foo }, `Test link: ${foo}`),
+    a: ({ foo, bar, boo }: TestBindings) => `Slot with bindings ${foo}, ${bar} and ${boo.mimeType}`,
+    b: ({ foo, boo }: TestBindings) =>
+      h('a', { href: foo, target: foo, type: boo.mimeType, ...boo }, `Test link: ${foo}`),
   };
 
-  const expectedCode = `<template #a="{ foo, bar }">Slot with bindings {{ foo }} and {{ bar }}</template>
+  const expectedCode = `<template #a="{ foo, bar, boo }">Slot with bindings {{ foo }}, {{ bar }} and {{ boo.mimeType }}</template>
 
-<template #b="{ foo }"><a :href="foo" :target="foo">Test link: {{ foo }}</a></template>`;
+<template #b="{ foo, boo }"><a :href="foo" :target="foo" :type="boo.mimeType" v-bind="boo">Test link: {{ foo }}</a></template>`;
 
   const actualCode = generateSlotSourceCode(slots, Object.keys(slots), {
     imports: {},

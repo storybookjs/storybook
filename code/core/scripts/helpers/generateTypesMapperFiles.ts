@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, sep } from 'node:path';
 
 import { dedent } from '../../../../scripts/prepare/tools';
 import type { getEntries } from '../entries';
@@ -13,8 +13,8 @@ async function generateTypesMapperContent(filePath: string) {
 
   return dedent`
     // auto generated file from ${__filename}, do not edit
-    export * from '${join(upwards, downwards)}';
-    export type * from '${join(upwards, downwards)}';
+    export * from '${join(upwards, downwards).replaceAll(sep, '/')}';
+    export type * from '${join(upwards, downwards).replaceAll(sep, '/')}';
   `;
 }
 

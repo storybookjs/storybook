@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-import type { Router } from 'express';
-import type { FileSystemCache } from 'file-system-cache';
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
-import type { Server } from 'http';
-import type * as telejson from 'telejson';
+import type { FileSystemCache } from 'storybook/internal/common';
+
+import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
+import type { Server as NetServer } from 'net';
+import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
 import type { Indexer, StoriesEntry } from './indexer';
@@ -26,7 +26,7 @@ export interface CoreConfig {
       };
   renderer?: RendererName;
   disableWebpackDefaults?: boolean;
-  channelOptions?: Partial<telejson.Options>;
+  channelOptions?: Partial<TelejsonOptions>;
   /** Disables the generation of project.json, a file containing Storybook metadata */
   disableProjectJson?: boolean;
   /**
@@ -71,6 +71,7 @@ export interface Presets {
   apply(extension: 'babel', config?: {}, args?: any): Promise<any>;
   apply(extension: 'swc', config?: {}, args?: any): Promise<any>;
   apply(extension: 'entries', config?: [], args?: any): Promise<unknown>;
+  apply(extension: 'env', config?: {}, args?: any): Promise<any>;
   apply(extension: 'stories', config?: [], args?: any): Promise<StoriesEntry[]>;
   apply(extension: 'managerEntries', config: [], args?: any): Promise<string[]>;
   apply(extension: 'refs', config?: [], args?: any): Promise<StorybookConfigRaw['refs']>;
@@ -156,20 +157,25 @@ export interface LoadOptions {
   configDir?: string;
   cacheKey?: string;
   ignorePreview?: boolean;
-  extendServer?: (server: Server) => void;
+  extendServer?: (server: HttpServer) => void;
 }
 
-export interface CLIOptions {
+export interface CLIBaseOptions {
+  disableTelemetry?: boolean;
+  enableCrashReports?: boolean;
+  configDir?: string;
+  loglevel?: string;
+  quiet?: boolean;
+}
+
+export interface CLIOptions extends CLIBaseOptions {
   port?: number;
   ignorePreview?: boolean;
   previewUrl?: string;
   forceBuildPreview?: boolean;
-  disableTelemetry?: boolean;
-  enableCrashReports?: boolean;
   host?: string;
   initialPath?: string;
   exactPort?: boolean;
-  configDir?: string;
   https?: boolean;
   sslCa?: string[];
   sslCert?: string;
@@ -178,8 +184,6 @@ export interface CLIOptions {
   managerCache?: boolean;
   open?: boolean;
   ci?: boolean;
-  loglevel?: string;
-  quiet?: boolean;
   versionUpdates?: boolean;
   docs?: boolean;
   test?: boolean;
@@ -187,6 +191,7 @@ export interface CLIOptions {
   webpackStatsJson?: string | boolean;
   statsJson?: string | boolean;
   outputDir?: string;
+  previewOnly?: boolean;
 }
 
 export interface BuilderOptions {
@@ -211,13 +216,37 @@ export type Options = LoadOptions &
   CLIOptions &
   BuilderOptions & { build?: TestBuildConfig };
 
+// A minimal version of Polka's interface to avoid exposing internal implementation details
+export type Middleware<T extends IncomingMessage = IncomingMessage> = (
+  req: T & IncomingMessage,
+  res: ServerResponse,
+  next: (err?: string | Error) => Promise<void> | void
+) => Promise<void> | void;
+
+interface ServerApp<T extends IncomingMessage = IncomingMessage> {
+  server: NetServer;
+
+  use(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  use(...handlers: Middleware<T>[]): this;
+
+  get(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  post(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  put(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  patch(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  delete(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  head(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  options(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  connect(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+  trace(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
+}
+
 export interface Builder<Config, BuilderStats extends Stats = Stats> {
   getConfig: (options: Options) => Promise<Config>;
   start: (args: {
     options: Options;
     startTime: ReturnType<typeof process.hrtime>;
-    router: Router;
-    server: Server;
+    router: ServerApp;
+    server: HttpServer;
     channel: ServerChannel;
   }) => Promise<void | {
     stats?: BuilderStats;
@@ -238,14 +267,14 @@ export interface TypescriptOptions {
   /**
    * Enables type checking within Storybook.
    *
-   * @default `false`
+   * @default false
    */
   check: boolean;
 
   /**
    * Disable parsing TypeScript files through compiler.
    *
-   * @default `false`
+   * @default false
    */
   skipCompiler: boolean;
 }
@@ -268,13 +297,6 @@ type CoreCommon_StorybookRefs = Record<
 export type DocsOptions = {
   /** What should we call the generated docs entries? */
   defaultName?: string;
-  /**
-   * Should we generate a docs entry per CSF file? Set to 'tag' (the default) to generate an entry
-   * for every CSF file with the 'autodocs' tag.
-   *
-   * @deprecated Use `tags: ['autodocs']` in `.storybook/preview.js` instead
-   */
-  autodocs?: boolean | 'tag';
   /** Only show doc entries in the side bar (usually set with the `--docs` CLI flag) */
   docsMode?: boolean;
 };
@@ -334,26 +356,100 @@ export interface StorybookConfigRaw {
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
-    /** Filter args with a "target" on the type from the render function (EXPERIMENTAL) */
+    /**
+     * Enable the integrated viewport addon
+     *
+     * @default true
+     */
+    viewport?: boolean;
+
+    /**
+     * Enable the integrated highlight addon
+     *
+     * @default true
+     */
+    highlight?: boolean;
+
+    /**
+     * Enable the integrated backgrounds addon
+     *
+     * @default true
+     */
+    backgrounds?: boolean;
+
+    /**
+     * Enable the integrated measure addon
+     *
+     * @default true
+     */
+    measure?: boolean;
+
+    /**
+     * Enable the integrated outline addon
+     *
+     * @default true
+     */
+    outline?: boolean;
+
+    /**
+     * Enable the integrated controls addon
+     *
+     * @default true
+     */
+    controls?: boolean;
+
+    /**
+     * Enable the integrated interactions addon
+     *
+     * @default true
+     */
+    interactions?: boolean;
+
+    /**
+     * Enable the integrated actions addon
+     *
+     * @default true
+     */
+    actions?: boolean;
+
+    /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
+     * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
+     */
     argTypeTargetsV7?: boolean;
 
-    /** Apply decorators from preview.js before decorators from addons or frameworks */
+    /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
+     * Apply decorators from preview.js before decorators from addons or frameworks
+     */
     legacyDecoratorFileOrder?: boolean;
 
     /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
      * Disallow implicit actions during rendering. This will be the default in Storybook 8.
      *
      * This will make sure that your story renders the same no matter if docgen is enabled or not.
      */
     disallowImplicitActionsInRenderV8?: boolean;
 
-    /** Enable asynchronous component rendering in React renderer */
+    /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
+     * Enable asynchronous component rendering in React renderer
+     */
     experimentalRSC?: boolean;
 
-    /** Use globals & globalTypes for configuring the viewport addon */
-    viewportStoryGlobals?: boolean;
-    /** Use globals & globalTypes for configuring the backgrounds addon */
-    backgroundsStoryGlobals?: boolean;
+    /**
+     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+     *
+     * Set NODE_ENV to development in built Storybooks for better testability and debuggability
+     */
+    developmentModeForBuild?: boolean;
+    /** Only show input controls in Angular */
+    angularFilterNonInputControls?: boolean;
   };
 
   build?: TestBuildConfig;
@@ -540,9 +636,9 @@ export interface CoreCommon_StorybookInfo {
   renderer: string;
   rendererPackage: string;
   configDir?: string;
-  mainConfig?: string;
-  previewConfig?: string;
-  managerConfig?: string;
+  mainConfigPath?: string;
+  previewConfigPath?: string;
+  managerConfigPath?: string;
 }
 
 /**

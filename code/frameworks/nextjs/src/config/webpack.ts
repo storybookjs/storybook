@@ -1,8 +1,7 @@
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
-import { DefinePlugin } from 'webpack';
 
-import { addScopedAlias, resolveNextConfig, setAlias } from '../utils';
+import { addScopedAlias, resolveNextConfig } from '../utils';
 
 const tryResolve = (path: string) => {
   try {
@@ -36,24 +35,27 @@ export const configureConfig = async ({
     addScopedAlias(baseConfig, 'react', 'next/dist/compiled/react');
   }
   if (tryResolve('next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js')) {
-    setAlias(
+    addScopedAlias(
       baseConfig,
       'react-dom/test-utils',
       'next/dist/compiled/react-dom/cjs/react-dom-test-utils.production.js'
     );
   }
   if (tryResolve('next/dist/compiled/react-dom')) {
-    setAlias(baseConfig, 'react-dom$', 'next/dist/compiled/react-dom');
-    setAlias(baseConfig, 'react-dom/client', 'next/dist/compiled/react-dom/client');
-    setAlias(baseConfig, 'react-dom/server', 'next/dist/compiled/react-dom/server');
+    addScopedAlias(baseConfig, 'react-dom$', 'next/dist/compiled/react-dom');
+    addScopedAlias(baseConfig, 'react-dom/client', 'next/dist/compiled/react-dom/client');
+    addScopedAlias(baseConfig, 'react-dom/server', 'next/dist/compiled/react-dom/server');
   }
 
-  setupRuntimeConfig(baseConfig, nextConfig);
+  await setupRuntimeConfig(baseConfig, nextConfig);
 
   return nextConfig;
 };
 
-const setupRuntimeConfig = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
+const setupRuntimeConfig = async (
+  baseConfig: WebpackConfig,
+  nextConfig: NextConfig
+): Promise<void> => {
   const definePluginConfig: Record<string, any> = {
     // this mimics what nextjs does client side
     // https://github.com/vercel/next.js/blob/57702cb2a9a9dba4b552e0007c16449cf36cfb44/packages/next/client/index.tsx#L101
@@ -67,5 +69,7 @@ const setupRuntimeConfig = (baseConfig: WebpackConfig, nextConfig: NextConfig): 
 
   definePluginConfig['process.env.__NEXT_NEW_LINK_BEHAVIOR'] = newNextLinkBehavior;
 
-  baseConfig.plugins?.push(new DefinePlugin(definePluginConfig));
+  // Load DefinePlugin with a dynamic import to ensure that Next.js can first
+  // replace webpack with its own internal instance, and we get that here.
+  baseConfig.plugins?.push(new (await import('webpack')).default.DefinePlugin(definePluginConfig));
 };

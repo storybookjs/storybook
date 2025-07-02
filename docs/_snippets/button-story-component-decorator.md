@@ -97,8 +97,9 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
@@ -113,26 +114,6 @@ const meta = {
     ),
   ],
 } satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  decorators: [
-    (Story) => (
-      <div style={{ margin: '3em' }}>
-        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
-        <Story />
-      </div>
-    ),
-  ],
-};
 
 export default meta;
 ```
@@ -152,7 +133,7 @@ export default {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
 import type { Meta } from 'storybook-solidjs';
 
 import { Button } from './Button';
@@ -171,26 +152,21 @@ const meta = {
 export default meta;
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta } from 'storybook-solidjs';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-import { Button } from './Button';
+  import Button from './Button.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
 
-const meta: Meta<typeof Button> = {
-  component: Button,
-  decorators: [
-    (Story) => (
-      <div style={{ margin: '3em' }}>
-        <Story />
-      </div>
-    ),
-  ],
-};
-
-export default meta;
+  const { Story } = defineMeta({
+    component: Button,
+    decorators: [() => MarginDecorator],
+  });
+</script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js"
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import Button from './Button.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
 
@@ -200,28 +176,23 @@ export default {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* Button.stories.svelte */}
-
-<script>
-  import { Meta, Template } from '@storybook/addon-svelte-csf';
-
-  import MarginDecorator from './MarginDecorator.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import Button from './Button.svelte';
+  import MarginDecorator from './MarginDecorator.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    decorators: [() => MarginDecorator],
+  });
 </script>
-
-<meta title="Button" component="{Button}" />
-
-<template let:args>
-  <MarginDecorator>
-    {/*👇 Your component here */}
-  </MarginDecorator>
-</template>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta } from '@storybook/svelte';
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 import MarginDecorator from './MarginDecorator.svelte';
@@ -229,21 +200,7 @@ import MarginDecorator from './MarginDecorator.svelte';
 const meta = {
   component: Button,
   decorators: [() => MarginDecorator],
-};
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts"
-import type { Meta } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-import MarginDecorator from './MarginDecorator.svelte';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  decorators: [() => MarginDecorator],
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 ```
@@ -257,8 +214,8 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta } from '@storybook/vue3';
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
+import type { Meta } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
 
@@ -266,19 +223,6 @@ const meta = {
   component: Button,
   decorators: [() => ({ template: '<div style="margin: 3em;"><story /></div>' })],
 } satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
-import type { Meta } from '@storybook/vue3';
-
-import Button from './Button.vue';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  decorators: [() => ({ template: '<div style="margin: 3em;"><story /></div>' })],
-};
 
 export default meta;
 ```
@@ -295,7 +239,7 @@ export const Example = {};
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -309,4 +253,3 @@ type Story = StoryObj;
 
 export const Example: Story = {};
 ```
-

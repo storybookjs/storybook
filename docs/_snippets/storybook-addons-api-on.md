@@ -4,4 +4,3 @@ addons.register('my-organisation/my-addon', (api) => {
   api.on('custom-addon-event', (eventData) => console.log(eventData));
 });
 ```
-

@@ -5,7 +5,6 @@ import { vi } from 'vitest';
 // `fs` APIs are used.
 let mockFiles = Object.create(null);
 
-// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention
 export function __setMockFiles(newMockFiles: Record<string, string | null>) {
   mockFiles = newMockFiles;
 }
@@ -19,6 +18,7 @@ export const realpathSync = vi.fn();
 export const readdir = vi.fn();
 export const readdirSync = vi.fn();
 export const readlinkSync = vi.fn();
+export const mkdirSync = vi.fn();
 
 export default {
   __setMockFiles,
@@ -29,4 +29,5 @@ export default {
   readdir,
   readdirSync,
   readlinkSync,
+  mkdirSync,
 };

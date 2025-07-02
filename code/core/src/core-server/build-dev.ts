@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
 import {
+  JsPackageManagerFactory,
   getConfigInfo,
   getProjectRoot,
   loadAllPresets,
@@ -11,13 +12,13 @@ import {
   serverResolve,
   validateFrameworkName,
   versions,
-} from '@storybook/core/common';
-import { oneWayHash, telemetry } from '@storybook/core/telemetry';
-import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
-import { global } from '@storybook/global';
+} from 'storybook/internal/common';
+import { deprecate, logger } from 'storybook/internal/node-logger';
+import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
+import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
-import { deprecate } from '@storybook/core/node-logger';
-import { MissingBuilderError, NoStatsForViteDevError } from '@storybook/core/server-errors';
+import { global } from '@storybook/global';
 
 import prompts from 'prompts';
 import invariant from 'tiny-invariant';
@@ -50,7 +51,7 @@ export async function buildDevStandalone(
       `Expected package.json#version to be defined in the "${packageJson.name}" package}`
     );
     storybookVersion = packageJson.version;
-    previewConfigPath = getConfigInfo(packageJson, configDir).previewConfig ?? undefined;
+    previewConfigPath = getConfigInfo(configDir).previewConfigPath ?? undefined;
   } else {
     if (!storybookVersion) {
       storybookVersion = versions.storybook;
@@ -76,8 +77,7 @@ export async function buildDevStandalone(
     }
   }
 
-  const rootDir = getProjectRoot();
-  const cacheKey = oneWayHash(relative(rootDir, configDir));
+  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
   let outputDir = resolve(options.outputDir || cacheOutputDir);
@@ -107,11 +107,22 @@ export async function buildDevStandalone(
 
   frameworkName = frameworkName || 'custom';
 
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
+
   try {
-    await warnOnIncompatibleAddons(storybookVersion);
+    await warnOnIncompatibleAddons(storybookVersion, packageManager);
   } catch (e) {
-    console.warn('Storybook failed to check addon compatibility', e);
+    logger.warn('Storybook failed to check addon compatibility');
+    logger.debug(`${e instanceof Error ? e.stack : String(e)}`);
   }
+
+  // TODO: Bring back in 9.x when we officialy launch CSF4
+  // We need to consider more scenarios in this function, such as removing addons from main.ts
+  // try {
+  //   await syncStorybookAddons(config, previewConfigPath!);
+  // } catch (e) {}
 
   try {
     await warnWhenUsingArgTypesRegex(previewConfigPath, config);
@@ -123,7 +134,7 @@ export async function buildDevStandalone(
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     isCritical: true,
@@ -170,7 +181,7 @@ export async function buildDevStandalone(
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-preset'),
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
@@ -178,7 +189,7 @@ export async function buildDevStandalone(
     ],
     overridePresets: [
       ...(previewBuilder.overridePresets || []),
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
   });
@@ -229,7 +240,7 @@ export async function buildDevStandalone(
         (warning) => !warning.message.includes(`Conflicting values for 'process.env.NODE_ENV'`)
       );
 
-    console.log(problems.map((p) => p.stack));
+    logger.log(problems.map((p) => p.stack).join('\n'));
     process.exit(problems.length > 0 ? 1 : 0);
   } else {
     const name =

@@ -3,22 +3,21 @@ import MockDate from 'mockdate';
 
 export default {
   async beforeEach() {
-    MockDate.reset()
-  }
+    MockDate.reset();
+  },
 };
 ```
 
 ```ts filename=".storybook/preview.ts" renderer="common" language="ts"
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, angular, etc.)
-import { Preview } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { Preview } from '@storybook/your-framework';
 import MockDate from 'mockdate';
 
 const preview: Preview = {
   async beforeEach() {
-    MockDate.reset()
-  }
+    MockDate.reset();
+  },
 };
 
 export default preview;
 ```
-

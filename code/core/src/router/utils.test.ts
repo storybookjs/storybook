@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { DEEPLY_EQUAL, buildArgsParam, deepDiff, getMatch, parsePath } from './utils';
 
-vi.mock('@storybook/core/client-logger', () => ({
+vi.mock('storybook/internal/client-logger', () => ({
   once: { warn: vi.fn() },
 }));
 

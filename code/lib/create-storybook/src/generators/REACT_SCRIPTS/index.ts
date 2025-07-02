@@ -1,16 +1,16 @@
 import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-
-import { CoreBuilder } from 'storybook/internal/cli';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
+import { CoreBuilder } from '../../../../../core/src/cli/project_types';
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
-  const monorepoRootPath = join(__dirname, '..', '..', '..', '..', '..', '..');
+  const monorepoRootPath = fileURLToPath(new URL('../../../../../../..', import.meta.url));
   const extraMain = options.linkable
     ? {
         webpackFinal: `%%(config) => {
@@ -26,7 +26,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
       }
     : {};
 
-  const craVersion = await packageManager.getPackageVersion('react-scripts');
+  const craVersion = packageManager.getModulePackageJSON('react-scripts')?.version ?? null;
 
   if (craVersion === null) {
     throw new Error(dedent`
@@ -48,7 +48,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
   // Miscellaneous dependency to add to be sure Storybook + CRA is working fine with Yarn PnP mode
   extraPackages.push('prop-types');
 
-  const extraAddons = [`@storybook/preset-create-react-app`, `@storybook/addon-onboarding`];
+  const extraAddons = [`@storybook/preset-create-react-app`];
 
   await baseGenerator(
     packageManager,

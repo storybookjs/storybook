@@ -1,8 +1,8 @@
-```yml renderer="common" language="ts" tabTitle="yml"
-# .github/workflows/storybook-tests.yml
-
+```yml filename=".github/workflows/storybook-tests.yml" renderer="common" language="ts" tabTitle="yml"
 name: 'Storybook Tests'
+
 on: push
+
 jobs:
   test:
     timeout-minutes: 60
@@ -24,4 +24,3 @@ jobs:
             "npx http-server storybook-static --port 6006 --silent" \
             "npx wait-on tcp:127.0.0.1:6006 && yarn test-storybook"
 ```
-

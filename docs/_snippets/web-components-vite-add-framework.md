@@ -6,7 +6,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="web-components" language="ts"
-import { StorybookConfig } from '@storybook/web-components-vite';
+import type { StorybookConfig } from '@storybook/web-components-vite';
 
 const config: StorybookConfig = {
   // ...
@@ -15,4 +15,3 @@ const config: StorybookConfig = {
 
 export default config;
 ```
-

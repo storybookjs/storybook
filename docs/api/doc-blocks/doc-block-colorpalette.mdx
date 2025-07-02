@@ -5,18 +5,14 @@ sidebar:
   title: ColorPalette
 ---
 
-<YouTubeCallout id="tyNIspWhFyU" title="Storybook for Design Systems - ColorPalette Doc Block" params="start=20" />
-
 The `ColorPalette` block allows you to document all color-related items (e.g., swatches) used throughout your project.
 
 ![Screenshot of ColorPalette and ColorItem blocks](../../_assets/api/doc-block-colorpalette.png)
 
 {/* prettier-ignore-start */}
 
-```md
-{/* Colors.mdx */}
-
-import { Meta, ColorPalette, ColorItem } from '@storybook/blocks';
+```md title="Colors.mdx"
+import { Meta, ColorPalette, ColorItem } from '@storybook/addon-docs/blocks';
 
 <Meta title="Colors" />
 
@@ -66,7 +62,7 @@ import { Meta, ColorPalette, ColorItem } from '@storybook/blocks';
 ## ColorPalette
 
 ```js
-import { ColorPalette } from '@storybook/blocks';
+import { ColorPalette } from '@storybook/addon-docs/blocks';
 ```
 
 `ColorPalette` is configured with the following props:
@@ -80,7 +76,7 @@ Type: `React.ReactNode`
 ## ColorItem
 
 ```js
-import { ColorItem } from '@storybook/blocks';
+import { ColorItem } from '@storybook/addon-docs/blocks';
 ```
 
 `ColorItem` is configured with the following props:

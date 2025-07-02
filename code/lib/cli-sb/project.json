@@ -1,5 +1,5 @@
 {
-  "name": "cli-sb",
+  "name": "sb",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {}

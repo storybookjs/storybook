@@ -1,7 +1,9 @@
-import { OnDestroy, OnInit, Component } from '@angular/core';
-import { Meta, StoryObj } from '@storybook/angular';
+import type { OnDestroy, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
+import type { Meta, StoryObj } from '@storybook/angular';
 
 @Component({
+  standalone: false,
   selector: 'on-destroy',
   template: `Current time: {{ time }} <br />
 📝 The current time in console should no longer display after a change of story`,

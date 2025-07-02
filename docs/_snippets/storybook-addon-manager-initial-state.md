@@ -1,5 +1,5 @@
 ```ts filename="src/manager.ts" renderer="common" language="ts"
-import { addons, types } from '@storybook/manager-api';
+import { addons, types } from 'storybook/manager-api';
 import { ADDON_ID, TOOL_ID } from './constants';
 import { Tool } from './Tool';
 
@@ -14,4 +14,3 @@ addons.register(ADDON_ID, () => {
   });
 });
 ```
-

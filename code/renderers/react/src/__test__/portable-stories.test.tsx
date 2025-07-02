@@ -1,19 +1,13 @@
 // @vitest-environment happy-dom
-
-/* eslint-disable import/namespace */
 import { cleanup, render, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 
-import { addons } from 'storybook/internal/preview-api';
-
-import type { ProjectAnnotations } from '@storybook/csf';
-import type { Meta, ReactRenderer } from '@storybook/react';
-
-import * as addonActionsPreview from '@storybook/addon-actions/preview';
+import type { Meta } from '@storybook/react';
 
 import { expectTypeOf } from 'expect-type';
+import { addons } from 'storybook/preview-api';
 
 import { composeStories, composeStory, setProjectAnnotations } from '..';
 import type { Button } from './Button';
@@ -67,7 +61,7 @@ describe('renders', () => {
   });
 
   it('should throw error when rendering a component with a render error', async () => {
-    await expect(() => ThrowsError.run()).rejects.toThrowError('Error in render');
+    await expect(ThrowsError.run()).rejects.toThrowError('Error in render');
   });
 
   it('should render component mounted in play function', async () => {
@@ -77,8 +71,8 @@ describe('renders', () => {
     expect(screen.getByTestId('loaded-data').textContent).toEqual('loaded data');
   });
 
-  it('should throw an error in play function', () => {
-    expect(() => MountInPlayFunctionThrow.run()).rejects.toThrowError('Error thrown in play');
+  it('should throw an error in play function', async () => {
+    await expect(MountInPlayFunctionThrow.run()).rejects.toThrowError('Error thrown in play');
   });
 
   it('should call and compose loaders data', async () => {
@@ -96,9 +90,7 @@ describe('projectAnnotations', () => {
     setProjectAnnotations([
       {
         parameters: { injected: true },
-        globalTypes: {
-          locale: { defaultValue: 'en' },
-        },
+        initialGlobals: { locale: 'en' },
       },
     ]);
     const WithEnglishText = composeStory(ButtonStories.CSF2StoryWithLocale, ButtonStories.default);
@@ -122,11 +114,7 @@ describe('projectAnnotations', () => {
   });
 
   it('has action arg from argTypes when addon-actions annotations are added', () => {
-    const Story = composeStory(
-      ButtonStories.WithActionArgType,
-      ButtonStories.default,
-      addonActionsPreview as ProjectAnnotations<ReactRenderer>
-    );
+    const Story = composeStory(ButtonStories.WithActionArgType, ButtonStories.default);
     expect(Story.args.someActionArg).toHaveProperty('isAction', true);
   });
 });

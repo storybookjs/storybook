@@ -1,12 +1,11 @@
 import { writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
-import type { NormalizedStoriesSpecifier, StoryIndex } from '@storybook/core/types';
+import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
+import type { NormalizedStoriesSpecifier, StoryIndex } from 'storybook/internal/types';
 
-import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
-
-import type { Request, Response, Router } from 'express';
-import debounce from 'lodash/debounce.js';
+import { debounce } from 'es-toolkit/compat';
+import type { Polka } from 'polka';
 
 import type { StoryIndexGenerator } from './StoryIndexGenerator';
 import type { ServerChannel } from './get-server-channel';
@@ -26,14 +25,14 @@ export async function extractStoriesJson(
 }
 
 export function useStoriesJson({
-  router,
+  app,
   initializedStoryIndexGenerator,
   workingDir = process.cwd(),
   configDir,
   serverChannel,
   normalizedStories,
 }: {
-  router: Router;
+  app: Polka;
   initializedStoryIndexGenerator: Promise<StoryIndexGenerator>;
   serverChannel: ServerChannel;
   workingDir?: string;
@@ -58,15 +57,15 @@ export function useStoriesJson({
     });
   }
 
-  router.use('/index.json', async (req: Request, res: Response) => {
+  app.use('/index.json', async (req, res) => {
     try {
       const generator = await initializedStoryIndexGenerator;
       const index = await generator.getIndex();
-      res.header('Content-Type', 'application/json');
-      res.send(JSON.stringify(index));
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify(index));
     } catch (err) {
-      res.status(500);
-      res.send(err instanceof Error ? err.toString() : String(err));
+      res.statusCode = 500;
+      res.end(err instanceof Error ? err.toString() : String(err));
     }
   });
 }

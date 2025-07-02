@@ -1,5 +1,6 @@
-import { action } from '@storybook/addon-actions';
-import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import { action } from 'storybook/actions';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 
 import { APP_INITIALIZER } from '@angular/core';
 

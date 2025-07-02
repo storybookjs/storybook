@@ -20,6 +20,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["stories", "playwright", "cypress"],
+  "include": ["stories", "playwright", "e2e-tests", "cypress"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

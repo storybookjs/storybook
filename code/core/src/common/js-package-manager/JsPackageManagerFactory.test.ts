@@ -3,8 +3,9 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sync as spawnSync } from 'cross-spawn';
-import { findUpSync } from 'find-up';
+import { findUpMultipleSync, findUpSync } from 'find-up';
 
+import { BUNProxy } from './BUNProxy';
 import { JsPackageManagerFactory } from './JsPackageManagerFactory';
 import { NPMProxy } from './NPMProxy';
 import { PNPMProxy } from './PNPMProxy';
@@ -16,10 +17,12 @@ const spawnSyncMock = vi.mocked(spawnSync);
 
 vi.mock('find-up');
 const findUpSyncMock = vi.mocked(findUpSync);
-
+const findUpMultipleSyncMock = vi.mocked(findUpMultipleSync);
 describe('CLASS: JsPackageManagerFactory', () => {
   beforeEach(() => {
+    JsPackageManagerFactory.clearCache();
     findUpSyncMock.mockReturnValue(undefined);
+    findUpMultipleSyncMock.mockReturnValue([]);
     spawnSyncMock.mockReturnValue({ status: 1 } as any);
     delete process.env.npm_config_user_agent;
   });
@@ -170,7 +173,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn1Proxy);
       });
 
-      it('when Yarn command is ok, Yarn version is <2, NPM is ko, PNPM is ko', () => {
+      it('when Yarn command is ok and a yarn.lock file is found', () => {
         spawnSyncMock.mockImplementation((command) => {
           // Yarn is ok
           if (command === 'yarn') {
@@ -198,7 +201,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // there is no lockfile
-        findUpSyncMock.mockReturnValue(undefined);
+        findUpSyncMock.mockReturnValue('yarn.lock');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn1Proxy);
       });
@@ -288,7 +291,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
       });
 
-      it('ONLY YARN 2: when Yarn command is ok, Yarn version is >=2, NPM is ko, PNPM is ko', () => {
+      it('ONLY YARN 2: when Yarn command is ok, Yarn version is >=2, NPM is ko, PNPM is ko, and a yarn.lock file is found', () => {
         spawnSyncMock.mockImplementation((command) => {
           // Yarn is ok
           if (command === 'yarn') {
@@ -314,6 +317,8 @@ describe('CLASS: JsPackageManagerFactory', () => {
             status: 1,
           } as any;
         });
+
+        findUpSyncMock.mockImplementation(() => 'yarn.lock');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
       });
@@ -341,6 +346,13 @@ describe('CLASS: JsPackageManagerFactory', () => {
               output: '7.9.5',
             };
           }
+
+          if (command === 'bun') {
+            return {
+              status: 0,
+              output: '1.0.0',
+            };
+          }
           // Unknown package manager is ko
           return {
             status: 1,
@@ -348,9 +360,9 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // There is a yarn.lock
-        findUpSyncMock.mockImplementation(() => '/Users/johndoe/Documents/yarn.lock');
+        findUpSyncMock.mockImplementation(() => '/Users/johndoe/Documents/bun.lockb');
 
-        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
+        expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(BUNProxy);
       });
     });
 

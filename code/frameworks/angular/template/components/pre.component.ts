@@ -1,17 +1,18 @@
 import { Component, Input } from '@angular/core';
 
 @Component({
+  standalone: false,
   selector: 'storybook-pre',
   template: `<pre data-testid="pre" [ngStyle]="style">{{ finalText }}</pre>`,
 })
 export default class PreComponent {
   /** Styles to apply to the component */
   @Input()
-  style?: Object;
+  style?: object;
 
   /** An object to render */
   @Input()
-  object?: Object;
+  object?: object;
 
   /** The code to render */
   @Input()

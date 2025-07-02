@@ -4,7 +4,7 @@ const { injectAxe, checkA11y, configureAxe } = require('axe-playwright');
 const { getStoryContext } = require('@storybook/test-runner');
 
 /*
- * See https://storybook.js.org/docs/writing-tests/test-runner#test-hook-api
+ * See https://storybook.js.org/docs/writing-tests/integrations/test-runner#test-hook-api
  * to learn more about the test-runner hooks API.
  */
 module.exports = {
@@ -20,7 +20,8 @@ module.exports = {
       rules: storyContext.parameters?.a11y?.config?.rules,
     });
 
-    await checkA11y(page, '#storybook-root', {
+    const element = storyContext.parameters?.a11y?.element ?? 'body';
+    await checkA11y(page, element, {
       detailedReport: true,
       detailedReportOptions: {
         html: true,
@@ -37,7 +38,7 @@ import { getStoryContext } from '@storybook/test-runner';
 import { injectAxe, checkA11y, configureAxe } from 'axe-playwright';
 
 /*
- * See https://storybook.js.org/docs/writing-tests/test-runner#test-hook-api
+ * See https://storybook.js.org/docs/writing-tests/integrations/test-runner#test-hook-api
  * to learn more about the test-runner hooks API.
  */
 const config: TestRunnerConfig = {
@@ -53,7 +54,8 @@ const config: TestRunnerConfig = {
       rules: storyContext.parameters?.a11y?.config?.rules,
     });
 
-    await checkA11y(page, '#storybook-root', {
+    const element = storyContext.parameters?.a11y?.element ?? 'body';
+    await checkA11y(page, element, {
       detailedReport: true,
       detailedReportOptions: {
         html: true,
@@ -64,4 +66,3 @@ const config: TestRunnerConfig = {
 
 export default config;
 ```
-

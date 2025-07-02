@@ -15,7 +15,7 @@ export const unplugin = createUnplugin<CsfPluginOptions>((options) => {
     },
     vite: {
       enforce: 'pre',
-      ...rollupBasedPlugin(options),
+      ...(rollupBasedPlugin(options) as any),
     },
     webpack(compiler) {
       compiler.options.module.rules.unshift({

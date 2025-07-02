@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalizeGitUrl } from './anonymous-id';
+import { normalizeGitUrl, unhashedProjectId } from './anonymous-id';
 
 describe('normalizeGitUrl', () => {
   it('trims off https://', () => {
@@ -69,6 +69,12 @@ describe('normalizeGitUrl', () => {
     );
   });
 
+  it('adds .git if missing', () => {
+    expect(normalizeGitUrl('https://github.com/storybookjs/storybook')).toEqual(
+      'github.com/storybookjs/storybook.git'
+    );
+  });
+
   it('trims off #hash', () => {
     expect(normalizeGitUrl('https://github.com/storybookjs/storybook.git#next')).toEqual(
       'github.com/storybookjs/storybook.git'
@@ -83,5 +89,19 @@ describe('normalizeGitUrl', () => {
     expect(normalizeGitUrl('https://github.com/storybookjs/storybook.git\n')).toEqual(
       'github.com/storybookjs/storybook.git'
     );
+  });
+});
+
+describe('unhashedProjectId', () => {
+  it('does not touch unix paths', () => {
+    expect(
+      unhashedProjectId('https://github.com/storybookjs/storybook.git\n', 'path/to/storybook')
+    ).toBe('github.com/storybookjs/storybook.gitpath/to/storybook');
+  });
+
+  it('normalizes windows paths', () => {
+    expect(
+      unhashedProjectId('https://github.com/storybookjs/storybook.git\n', 'path\\to\\storybook')
+    ).toBe('github.com/storybookjs/storybook.gitpath/to/storybook');
   });
 });

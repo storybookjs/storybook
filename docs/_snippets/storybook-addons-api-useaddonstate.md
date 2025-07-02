@@ -1,8 +1,8 @@
 ```js filename="my-addon/manager.js|ts" renderer="common" language="js"
 import React from 'react';
 
-import { useAddonState } from '@storybook/manager-api';
-import { AddonPanel, IconButton } from '@storybook/components';
+import { useAddonState } from 'storybook/manager-api';
+import { AddonPanel, IconButton } from 'storybook/internal/components';
 import { LightningIcon } from '@storybook/icons';
 
 export const Panel = () => {
@@ -31,4 +31,3 @@ export const Tool = () => {
   );
 };
 ```
-

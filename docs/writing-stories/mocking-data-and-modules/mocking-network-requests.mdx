@@ -67,7 +67,7 @@ With the MSW addon, we can write stories that use MSW to mock the REST requests.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="msw-addon-configure-handlers-http.md" usesCsf3 csf2Path="writing-stories/build-pages-with-storybook#snippet-documentscreen-story-msw-rest-request" />
+<CodeSnippets path="msw-addon-configure-handlers-http.md" />
 
 {/* prettier-ignore-end */}
 
@@ -81,15 +81,27 @@ GraphQL is another common way to fetch data in components. You can use MSW to mo
 
 {/* prettier-ignore-end */}
 
+<If renderer="svelte">
+
+<Callout variant="info">
+  This example uses [URQL](https://formidable.com/open-source/urql/) to make network requests. If you're using a different library (e.g., [Houdini](https://houdinigraphql.com/) or [Graffle](https://graffle.js.org/)), you can apply the same principles to mock network requests in Storybook.
+</Callout>
+
+</If>
+
+<If notRenderer="svelte">
+
 <Callout variant="info">
   This example uses GraphQL with [Apollo Client](https://www.apollographql.com/docs/) to make network requests. If you're using a different library (e.g. [URQL](https://formidable.com/open-source/urql/) or [React Query](https://react-query.tanstack.com/)), you can apply the same principles to mock network requests in Storybook.
 </Callout>
+
+</If>
 
 The MSW addon allows you to write stories that use MSW to mock the GraphQL requests. Here's an example demonstrating two stories for the document screen component. The first story fetches data successfully, while the second story fails.
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="msw-addon-configure-handlers-graphql.md" usesCsf3 csf2Path="writing-stories/build-pages-with-storybook#snippet-documentscreen-story-msw-graphql-query" />
+<CodeSnippets path="msw-addon-configure-handlers-graphql.md" />
 
 {/* prettier-ignore-end */}
 

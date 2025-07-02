@@ -5,4 +5,3 @@ export const managerEntries = [require.resolve('./dist/manager')];
 
 export * from './dist/preset';
 ```
-

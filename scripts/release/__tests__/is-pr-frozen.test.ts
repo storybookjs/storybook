@@ -1,8 +1,8 @@
-/* eslint-disable no-underscore-dangle */
 import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
+// eslint-disable-next-line depend/ban-dependencies
 import * as fsExtraImp from 'fs-extra';
 import * as simpleGitImp from 'simple-git';
 

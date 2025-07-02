@@ -1,6 +1,5 @@
-import type { GlobalTypes, Globals } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
+import type { GlobalTypes, Globals } from 'storybook/internal/types';
 
 import { DEEPLY_EQUAL, deepDiff } from './args';
 import { getValuesFromArgTypes } from './csf/getValuesFromArgTypes';
@@ -63,5 +62,11 @@ export class GlobalsStore {
 
   update(newGlobals: Globals) {
     this.globals = { ...this.globals, ...this.filterAllowedGlobals(newGlobals) };
+
+    for (const key in newGlobals) {
+      if (newGlobals[key] === undefined) {
+        this.globals[key] = this.initialGlobals[key];
+      }
+    }
   }
 }

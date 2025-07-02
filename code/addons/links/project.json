@@ -1,5 +1,5 @@
 {
-  "name": "links",
+  "name": "addon-links",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {

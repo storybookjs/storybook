@@ -1,13 +1,14 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type {
+  Globals,
   ProjectAnnotations,
   Renderer,
   StoryContext,
   StoryId,
   StrictArgTypes,
   Tag,
-} from '@storybook/csf';
+} from 'storybook/internal/csf';
 
+import type { ReporterAPI } from '../../preview-api';
 import type {
   AnnotatedStoryFn,
   Args,
@@ -48,7 +49,9 @@ export type ComposedStoryFn<
   storyName: string;
   parameters: Parameters;
   argTypes: StrictArgTypes<TArgs>;
+  reporting: ReporterAPI;
   tags: Tag[];
+  globals: Globals;
 };
 /**
  * Based on a module of stories, it returns all stories within it, filtering non-stories Each story

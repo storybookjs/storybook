@@ -7,4 +7,3 @@ export default {
   frameworkPresets: [require.resolve('./framework-preset-vue.js')],
 };
 ```
-

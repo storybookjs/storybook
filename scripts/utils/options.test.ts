@@ -150,7 +150,7 @@ describe('getCommand', () => {
   });
 
   it('works with string options', () => {
-    expect(getCommand('node foo', { third }, { third: 'one' })).toBe('node foo --third one');
+    expect(getCommand('node foo', { third }, { third: 'one' })).toBe(`node foo --third 'one'`);
   });
 
   it('works with multiple string options', () => {
@@ -162,7 +162,7 @@ describe('getCommand', () => {
   // This is for convenience
   it('works with partial options', () => {
     expect(getCommand('node foo', allOptions, { third: 'one' })).toBe(
-      'node foo --no-second --third one'
+      `node foo --no-second --third 'one'`
     );
   });
 
@@ -174,6 +174,6 @@ describe('getCommand', () => {
         third: 'one',
         fifth: ['a', 'b'],
       })
-    ).toBe('node foo --first --no-second --third one --fifth a --fifth b');
+    ).toBe(`node foo --first --no-second --third 'one' --fifth a --fifth b`);
   });
 });

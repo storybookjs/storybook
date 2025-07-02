@@ -5,4 +5,3 @@ const { window: globalWindow } = global;
 
 globalWindow.STORYBOOK_ENV = 'vue';
 ```
-

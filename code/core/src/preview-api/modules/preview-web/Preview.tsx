@@ -1,4 +1,30 @@
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
+import { deprecate, logger } from 'storybook/internal/client-logger';
+import {
+  ARGTYPES_INFO_REQUEST,
+  ARGTYPES_INFO_RESPONSE,
+  type ArgTypesRequestPayload,
+  type ArgTypesResponsePayload,
+  CONFIG_ERROR,
+  FORCE_REMOUNT,
+  FORCE_RE_RENDER,
+  GLOBALS_UPDATED,
+  RESET_STORY_ARGS,
+  type RequestData,
+  type ResponseData,
+  SET_GLOBALS,
+  STORY_ARGS_UPDATED,
+  STORY_INDEX_INVALIDATED,
+  UPDATE_GLOBALS,
+  UPDATE_STORY_ARGS,
+} from 'storybook/internal/core-events';
+import type { CleanupCallback } from 'storybook/internal/csf';
+import {
+  CalledPreviewMethodBeforeInitializationError,
+  MissingRenderToCanvasError,
+  StoryIndexFetchError,
+  StoryStoreAccessedBeforeInitializationError,
+} from 'storybook/internal/preview-errors';
 import type {
   Args,
   Globals,
@@ -13,37 +39,9 @@ import type {
   StoryId,
   StoryIndex,
   StoryRenderOptions,
-} from '@storybook/core/types';
-import type { CleanupCallback } from '@storybook/csf';
-import { global } from '@storybook/global';
+} from 'storybook/internal/types';
 
-import { deprecate, logger } from '@storybook/core/client-logger';
-import type {
-  ArgTypesRequestPayload,
-  ArgTypesResponsePayload,
-  RequestData,
-  ResponseData,
-} from '@storybook/core/core-events';
-import {
-  ARGTYPES_INFO_REQUEST,
-  ARGTYPES_INFO_RESPONSE,
-  CONFIG_ERROR,
-  FORCE_REMOUNT,
-  FORCE_RE_RENDER,
-  GLOBALS_UPDATED,
-  RESET_STORY_ARGS,
-  SET_GLOBALS,
-  STORY_ARGS_UPDATED,
-  STORY_INDEX_INVALIDATED,
-  UPDATE_GLOBALS,
-  UPDATE_STORY_ARGS,
-} from '@storybook/core/core-events';
-import {
-  CalledPreviewMethodBeforeInitializationError,
-  MissingRenderToCanvasError,
-  StoryIndexFetchError,
-  StoryStoreAccessedBeforeInitializationError,
-} from '@storybook/core/preview-errors';
+import { global } from '@storybook/global';
 
 import { StoryStore } from '../../store';
 import { addons } from '../addons';
@@ -58,9 +56,6 @@ const STORY_INDEX_PATH = './index.json';
 export type MaybePromise<T> = Promise<T> | T;
 
 export class Preview<TRenderer extends Renderer> {
-  /** @deprecated Will be removed in 8.0, please use channel instead */
-  serverChannel?: Channel;
-
   protected storyStoreValue?: StoryStore<TRenderer>;
 
   renderToCanvas?: RenderToCanvas<TRenderer>;
@@ -385,11 +380,6 @@ export class Preview<TRenderer extends Renderer> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onResetArgs' });
     }
-
-    // NOTE: we have to be careful here and avoid await-ing when updating a rendered's args.
-    // That's because below in `renderStoryToElement` we have also bound to this event and will
-    // render the story in the same tick.
-    // However, we can do that safely as the current story is available in `this.storyRenders`
 
     // NOTE: we have to be careful here and avoid await-ing when updating a rendered's args.
     // That's because below in `renderStoryToElement` we have also bound to this event and will

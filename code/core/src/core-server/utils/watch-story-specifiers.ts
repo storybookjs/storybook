@@ -1,8 +1,8 @@
 import { type Dirent, lstatSync, readdirSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
 
-import { commonGlobOptions } from '@storybook/core/common';
-import type { NormalizedStoriesSpecifier, Path } from '@storybook/core/types';
+import { commonGlobOptions } from 'storybook/internal/common';
+import type { NormalizedStoriesSpecifier, Path } from 'storybook/internal/types';
 
 import slash from 'slash';
 import Watchpack from 'watchpack';
@@ -97,6 +97,7 @@ export function watchStorySpecifiers(
             );
 
             // Dynamically import globby because it is a pure ESM module
+            // eslint-disable-next-line depend/ban-dependencies
             const { globby } = await import('globby');
 
             // glob only supports forward slashes

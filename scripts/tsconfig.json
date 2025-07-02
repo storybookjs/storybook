@@ -6,14 +6,14 @@
     "noImplicitAny": true,
     "jsx": "react",
     "moduleResolution": "bundler",
-    "target": "es2022",
-    "module": "ES2022",
+    "target": "ESNext",
+    "module": "Preserve",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "isolatedModules": true,
     "strictBindCallApply": true,
-    "lib": ["dom", "es2023"],
+    "lib": ["ESNext"],
     "types": ["node"],
     "strict": true,
     "strictNullChecks": false,
@@ -25,5 +25,5 @@
     "resolveJsonModule": true
   },
   "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"],
-  "include": ["./**/*", "./.eslintrc.js"]
+  "include": ["./**/*", "./.eslintrc.cjs"]
 }

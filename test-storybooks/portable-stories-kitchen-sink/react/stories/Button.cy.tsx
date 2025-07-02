@@ -1,8 +1,8 @@
 /// <reference types="cypress" />
 import * as stories from './Button.stories';
-import { composeStories } from '@storybook/react';
+import { composeStories } from '@storybook/react-vite';
 
-const { CSF3Primary, WithLoader, Modal } = composeStories(stories);
+const { CSF3Primary, WithLoader } = composeStories(stories);
 
 describe('<Button />', () => {
   it('renders with loaders and play function', () => {

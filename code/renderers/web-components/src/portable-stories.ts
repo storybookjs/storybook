@@ -1,11 +1,12 @@
-import {
-  setProjectAnnotations as originalSetProjectAnnotations,
-  setDefaultProjectAnnotations,
-} from 'storybook/internal/preview-api';
 import type {
   NamedOrDefaultProjectAnnotations,
   NormalizedProjectAnnotations,
 } from 'storybook/internal/types';
+
+import {
+  setProjectAnnotations as originalSetProjectAnnotations,
+  setDefaultProjectAnnotations,
+} from 'storybook/preview-api';
 
 import * as webComponentsAnnotations from './entry-preview';
 import type { WebComponentsRenderer } from './types';

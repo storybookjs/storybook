@@ -1,7 +1,7 @@
 import { frameworkPackages, versions as storybookCorePackages } from 'storybook/internal/common';
 import type { InstallationMetadata } from 'storybook/internal/common';
 
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 import semver from 'semver';
 
 function getPrimaryVersion(name: string | undefined, installationMetadata?: InstallationMetadata) {
@@ -17,8 +17,7 @@ function getPrimaryVersion(name: string | undefined, installationMetadata?: Inst
 }
 
 export function getMismatchingVersionsWarnings(
-  installationMetadata?: InstallationMetadata,
-  allDependencies?: Record<string, string>
+  installationMetadata?: InstallationMetadata
 ): string | undefined {
   if (!installationMetadata) {
     return undefined;
@@ -39,7 +38,7 @@ export function getMismatchingVersionsWarnings(
     }
 
     messages.push(
-      `${chalk.bold(
+      `${picocolors.bold(
         'Attention:'
       )} There seems to be a mismatch between your Storybook package versions. This can result in a broken Storybook installation.`
     );
@@ -55,9 +54,9 @@ export function getMismatchingVersionsWarnings(
     }
 
     messages.push(
-      `The version of your storybook core packages should align with ${chalk.yellow(
+      `The version of your storybook core packages should align with ${picocolors.yellow(
         versionToCompare
-      )} (from the ${chalk.cyan(packageToDisplay)} package) or higher.`
+      )} (from the ${picocolors.cyan(packageToDisplay)} package) or higher.`
     );
 
     const filteredDependencies = Object.entries(installationMetadata?.dependencies || []).filter(
@@ -72,32 +71,16 @@ export function getMismatchingVersionsWarnings(
     );
 
     if (filteredDependencies.length > 0) {
-      const packageJsonSuffix = '(in your package.json)';
       messages.push(
         `Based on your lockfile, these dependencies should be aligned:`,
         filteredDependencies
-          .map(
-            ([name, dep]) =>
-              `${chalk.hex('#ff9800')(name)}: ${dep[0].version} ${
-                allDependencies?.[name] ? packageJsonSuffix : ''
-              }`
-          )
-          .sort(
-            (a, b) =>
-              (b.includes(packageJsonSuffix) ? 1 : 0) - (a.includes(packageJsonSuffix) ? 1 : 0)
-          )
+          .map(([name, dep]) => `${picocolors.yellow(name)}: ${dep[0].version}`)
           .join('\n')
       );
     }
 
     messages.push(
-      `You can run ${chalk.cyan(
-        'npx storybook@latest upgrade'
-      )} to upgrade all of your Storybook packages to the latest version.
-
-      Alternatively you can try manually changing the versions to match in your package.json. We also recommend regenerating your lockfile, or running the following command to possibly deduplicate your Storybook package versions: ${chalk.cyan(
-        installationMetadata?.dedupeCommand
-      )}`
+      `You can run ${picocolors.cyan('npx storybook@latest upgrade')} to upgrade all of your Storybook packages to the latest version.\n\nAlternatively you can try manually changing the versions to match in your package.json. We also recommend regenerating your lockfile, or running the following command to possibly deduplicate your Storybook package versions: ${picocolors.cyan(installationMetadata?.dedupeCommand)}`
     );
 
     return messages.join('\n\n');

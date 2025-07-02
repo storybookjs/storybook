@@ -1,8 +1,9 @@
 import { join, relative } from 'node:path';
 
 import { spawn } from '../../../../scripts/prepare/tools';
-import { chalk, limit, process } from '../../../../scripts/prepare/tools';
+import { limit, picocolors, process } from '../../../../scripts/prepare/tools';
 import type { getEntries } from '../entries';
+import { modifyThemeTypes } from './modifyThemeTypes';
 
 export async function generateTypesFiles(
   entries: ReturnType<typeof getEntries>,
@@ -62,6 +63,11 @@ export async function generateTypesFiles(
           }
 
           if (dtsProcess.exitCode !== 0) {
+            console.error(
+              '\nGenerating types for',
+              picocolors.cyan(relative(cwd, dtsEntries[index])),
+              ' failed'
+            );
             console.log(dtsProcess.exitCode);
             // If any fail, kill all the other processes and exit (bail)
             processes.forEach((p) => p.kill());
@@ -69,7 +75,12 @@ export async function generateTypesFiles(
             console.log(index, fileName);
             process.exit(dtsProcess.exitCode || 1);
           } else {
-            console.log('Generated types for', chalk.cyan(relative(cwd, dtsEntries[index])));
+            console.log('Generated types for', picocolors.cyan(relative(cwd, dtsEntries[index])));
+
+            if (dtsEntries[index].includes('src/theming/index')) {
+              console.log('Modifying theme types');
+              await modifyThemeTypes();
+            }
           }
         });
       })

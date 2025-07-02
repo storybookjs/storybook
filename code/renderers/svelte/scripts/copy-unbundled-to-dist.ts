@@ -6,7 +6,7 @@ const src = join(__dirname, '..', 'src');
 const dist = join(__dirname, '..', 'dist');
 
 // relative to src directory
-const PATHS_TO_COPY = ['createSvelte5Props.svelte.js', 'components'];
+const PATHS_TO_COPY = ['createReactiveProps.svelte.js', 'components'];
 
 const run = async () => {
   console.log('Copying unbundled files to dist...');

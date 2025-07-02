@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { keyframes, styled } from '@storybook/core/theming';
 import { LightningOffIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
+import { keyframes, styled } from 'storybook/theming';
 
 import { rotate360 } from '../shared/animation';
 
@@ -63,7 +63,7 @@ const ProgressBar = styled.div(({ theme }) => ({
 const ProgressMessage = styled.div(({ theme }) => ({
   minHeight: '2em',
   fontSize: `${theme.typography.size.s1}px`,
-  color: theme.barTextColor,
+  color: theme.textMutedColor,
 }));
 
 const ErrorIcon = styled(LightningOffIcon)(({ theme }) => ({

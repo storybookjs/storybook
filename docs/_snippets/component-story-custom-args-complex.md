@@ -76,8 +76,9 @@ export const ExampleStory = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { YourComponent } from './your-component';
 
@@ -97,47 +98,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-const someFunction = (valuePropertyA, valuePropertyB) => {
-  // Do some logic here
-};
-
-export const ExampleStory: Story = {
-  render: (args) => {
-    const { propertyA, propertyB } = args;
-    //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(propertyA, propertyB);
-
-    return <YourComponent {...args} someProperty={someFunctionResult} />;
-  },
-  args: {
-    propertyA: 'Item One',
-    propertyB: 'Another Item One',
-  },
-};
-```
-
-```tsx filename="YourComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { YourComponent } from './your-component';
-
-const meta: Meta<typeof YourComponent> = {
-  component: YourComponent,
-  //👇 Creates specific argTypes with options
-  argTypes: {
-    propertyA: {
-      options: ['Item One', 'Item Two', 'Item Three'],
-      control: { type: 'select' }, // Automatically inferred when 'options' is defined
-    },
-    propertyB: {
-      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
-    },
-  },
-};
-
-export default meta;
-type Story = StoryObj<typeof YourComponent>;
 
 const someFunction = (valuePropertyA, valuePropertyB) => {
   // Do some logic here
@@ -160,6 +120,7 @@ export const ExampleStory: Story = {
 
 ```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js"
 import { createSignal, createEffect } from 'solid-js';
+
 import { YourComponent } from './your-component';
 
 export default {
@@ -181,51 +142,6 @@ const someFunction = (valuePropertyA, valuePropertyB) => {
 };
 
 export const ExampleStory = {
-  render: (args) => {
-    const [someFunctionResult, setSomeFunctionResult] = createSignal();
-
-    //👇 Assigns the function result to a signal
-    createEffect(() => {
-      setSomeFunctionResult(someFunction(args.propertyA, args.propertyB));
-    });
-
-    return <YourComponent {...args} someProperty={someFunctionResult()} />;
-  },
-  args: {
-    propertyA: 'Item One',
-    propertyB: 'Another Item One',
-  },
-};
-```
-
-```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import { createSignal, createEffect } from 'solid-js';
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { YourComponent } from './your-component';
-
-const meta = {
-  component: YourComponent,
-  //👇 Creates specific argTypes with options
-  argTypes: {
-    propertyA: {
-      options: ['Item One', 'Item Two', 'Item Three'],
-      control: { type: 'select' }, // Automatically inferred when 'options' is defined
-    },
-    propertyB: {
-      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
-    },
-  },
-} satisfies Meta<typeof YourComponent>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-const someFunction = (valuePropertyA, valuePropertyB) => {
-  // Do some logic here
-};
-
-export const ExampleStory: Story = {
   render: (args) => {
     const [someFunctionResult, setSomeFunctionResult] = createSignal();
 
@@ -244,12 +160,13 @@ export const ExampleStory: Story = {
 ```
 
 ```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
-import { createSignal, createEffect } from 'solid-js';
 import type { Meta, StoryObj } from 'storybook-solidjs';
+
+import { createSignal, createEffect } from 'solid-js';
 
 import { YourComponent } from './your-component';
 
-const meta: Meta<typeof YourComponent> = {
+const meta = {
   component: YourComponent,
   //👇 Creates specific argTypes with options
   argTypes: {
@@ -261,10 +178,10 @@ const meta: Meta<typeof YourComponent> = {
       options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
     },
   },
-};
+} satisfies Meta<typeof YourComponent>;
 
 export default meta;
-type Story = StoryObj<typeof YourComponent>;
+type Story = StoryObj<typeof meta>;
 
 const someFunction = (valuePropertyA, valuePropertyB) => {
   // Do some logic here
@@ -288,7 +205,46 @@ export const ExampleStory: Story = {
 };
 ```
 
-```js filename="YourComponent.stories.js" renderer="svelte" language="js"
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  const { Story } = defineMeta({
+      component: YourComponent,
+      //👇 Creates specific argTypes
+      argTypes: {
+        propertyA: {
+          options: ['Item One', 'Item Two', 'Item Three'],
+          control: { type: 'select' }, // Automatically inferred when 'options' is defined
+        },
+        propertyB: {
+          options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+        },
+      },
+  });
+
+  const someFunction = (valuePropertyA, valuePropertyB) => {
+    // Do some logic here
+  };
+</script>
+
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: 'Item One',
+    propertyB: 'Another Item One',
+  }}
+>
+  {#snippet template(args)}
+    <YourComponent
+      {...args}
+      someProperty={someFunction(args.propertyA, args.propertyB)}
+    />
+  {/snippet}
+</Story>
+```
+
+```js filename="YourComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import YourComponent from './YourComponent.svelte';
 
 export default {
@@ -310,9 +266,9 @@ const someFunction = (valuePropertyA, valuePropertyB) => {
 };
 
 export const ExampleStory = {
-  render: ({ propertyA, propertyB }) => {
+  render: (args) => {
     //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(propertyA, propertyB);
+    const someFunctionResult = someFunction(args.propertyA, args.propertyB);
     return {
       Component: YourComponent,
       props: {
@@ -328,33 +284,48 @@ export const ExampleStory = {
 };
 ```
 
-```html renderer="svelte" language="ts" tabTitle="native-format"
-{/* YourComponent.stories.svelte */}
+```svelte filename="YourComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-<script>
-  import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+  const { Story } = defineMeta({
+      component: YourComponent,
+      //👇 Creates specific argTypes
+      argTypes: {
+        propertyA: {
+          options: ['Item One', 'Item Two', 'Item Three'],
+          control: { type: 'select' }, // Automatically inferred when 'options' is defined
+        },
+        propertyB: {
+          options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
+        },
+      },
+  });
 
-  import YourComponent from './YourComponent.svelte';
-
-  //👇 Some function to demonstrate the behavior
-  function someFunction(valuePropertyA, valuePropertyB) {
-    // Makes some computations and returns something
-  }
+  const someFunction = (valuePropertyA, valuePropertyB) => {
+    // Do some logic here
+  };
 </script>
 
-{/*👇 Creates specific argTypes and automatically infers them when 'options' is defined */}
-
-<Meta title="YourComponent" component={YourComponent} argTypes={{ propertyA: { options: ['Item One',
-'Item Two', 'Item Three'], control: { type: 'select' }, }, propertyB: { options: ['Another Item
-One', 'Another Item Two', 'Another Item Three'], }, }} />
-
-<template let:args>
-  <YourComponent {...args} someProperty="{someFunction(args.propertyA," args.propertyB)} />
-</template>
+<Story
+  name="ExampleStory"
+  args={{
+    propertyA: 'Item One',
+    propertyB: 'Another Item One',
+  }}
+>
+  {#snippet template(args)}
+    <YourComponent
+      {...args}
+      someProperty={someFunction(args.propertyA, args.propertyB)}
+    />
+  {/snippet}
+</Story>
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/svelte';
+```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import YourComponent from './YourComponent.svelte';
 
@@ -380,54 +351,9 @@ const someFunction = (valuePropertyA, valuePropertyB) => {
 };
 
 export const ExampleStory: Story = {
-  render: ({ propertyA, propertyB }) => {
+  render: (args) => {
     //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(propertyA, propertyB);
-    return {
-      Component: YourComponent,
-      props: {
-        ...args,
-        someProperty: someFunctionResult,
-      },
-    };
-  },
-  args: {
-    propertyA: 'Item One',
-    propertyB: 'Another Item One',
-  },
-};
-```
-
-```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import YourComponent from './YourComponent.svelte';
-
-const meta: Meta<typeof YourComponent> = {
-  component: YourComponent,
-  //👇 Creates specific argTypes
-  argTypes: {
-    propertyA: {
-      options: ['Item One', 'Item Two', 'Item Three'],
-      control: { type: 'select' }, // Automatically inferred when 'options' is defined
-    },
-    propertyB: {
-      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
-    },
-  },
-};
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-const someFunction = (valuePropertyA, valuePropertyB) => {
-  // Do some logic here
-};
-
-export const ExampleStory: Story = {
-  render: ({ propertyA, propertyB }) => {
-    //👇 Assigns the function result to a variable
-    const someFunctionResult = someFunction(propertyA, propertyB);
+    const someFunctionResult = someFunction(args.propertyA, args.propertyB);
     return {
       Component: YourComponent,
       props: {
@@ -489,8 +415,8 @@ export const ExampleStory = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="YourComponent.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import YourComponent from './YourComponent.vue';
 
@@ -514,57 +440,6 @@ const someFunction = (valuePropertyA, valuePropertyB) => {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const ExampleStory: Story = {
-  render: ({ args }) => {
-    const { propertyA, propertyB } = args;
-    //👇 Assigns the function result to a variable
-    const functionResult = someFunction(propertyA, propertyB);
-    return {
-      components: { YourComponent },
-      setup() {
-        return {
-          ...args,
-          //👇 Replaces arg variable with the override (without the need of mutation)
-          someProperty: functionResult,
-        };
-      },
-      template:
-        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty"/>',
-    };
-  },
-  args: {
-    propertyA: 'Item One',
-    propertyB: 'Another Item One',
-  },
-};
-```
-
-```ts filename="YourComponent.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import YourComponent from './YourComponent.vue';
-
-const meta: Meta<typeof YourComponent> = {
-  component: YourComponent,
-  //👇 Creates specific argTypes with options
-  argTypes: {
-    propertyA: {
-      options: ['Item One', 'Item Two', 'Item Three'],
-      control: { type: 'select' }, // automatically inferred when 'options' is defined
-    },
-    propertyB: {
-      options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
-    },
-  },
-};
-
-const someFunction = (valuePropertyA, valuePropertyB) => {
-  // Do some logic here
-};
-
-export default meta;
-type Story = StoryObj<typeof YourComponent>;
 
 export const ExampleStory: Story = {
   render: ({ args }) => {
@@ -633,7 +508,7 @@ export const ExampleStory = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -677,4 +552,3 @@ export const ExampleStory: Story = {
   },
 };
 ```
-

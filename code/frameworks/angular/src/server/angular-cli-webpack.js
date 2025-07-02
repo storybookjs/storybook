@@ -8,39 +8,12 @@ const {
   default: StorybookNormalizeAngularEntryPlugin,
 } = require('./plugins/storybook-normalize-angular-entry-plugin');
 
-const getAngularWebpackUtils = () => {
-  try {
-    // Angular < 16.1.0
-    const {
-      getCommonConfig,
-      getStylesConfig,
-      getDevServerConfig,
-      getTypeScriptConfig,
-    } = require('@angular-devkit/build-angular/src/webpack/configs');
-
-    return {
-      getCommonConfig,
-      getStylesConfig,
-      getDevServerConfig,
-      getTypeScriptConfig,
-    };
-  } catch (e) {
-    // Angular > 16.1.0
-    const {
-      getCommonConfig,
-      getStylesConfig,
-      getDevServerConfig,
-      getTypeScriptConfig,
-    } = require('@angular-devkit/build-angular/src/tools/webpack/configs');
-
-    return {
-      getCommonConfig,
-      getStylesConfig,
-      getDevServerConfig,
-      getTypeScriptConfig,
-    };
-  }
-};
+const {
+  getCommonConfig,
+  getStylesConfig,
+  getDevServerConfig,
+  getTypeScriptConfig,
+} = require('@angular-devkit/build-angular/src/tools/webpack/configs');
 
 /**
  * Extract webpack config from angular-cli 13.x.x ⚠️ This file is in JavaScript to not use
@@ -52,8 +25,107 @@ const getAngularWebpackUtils = () => {
  */
 exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }) => {
   /** Get angular-cli Webpack config */
-  const { getCommonConfig, getStylesConfig, getDevServerConfig, getTypeScriptConfig } =
-    getAngularWebpackUtils();
+
+  /**
+   * Custom styles config that handles Tailwind 4 compatibility issues.
+   *
+   * Problem: Angular's getStylesConfig() doesn't support Tailwind 4's new PostCSS plugin
+   * architecture. When Tailwind 4 is detected, Angular tries to load it using the old v3 API which
+   * throws errors.
+   *
+   * Solution: Detect Tailwind 4, bypass Angular's automatic Tailwind detection by hiding config
+   * files, then manually inject the correct Tailwind 4 PostCSS plugin into the webpack
+   * configuration.
+   */
+  async function getCustomStylesConfig(wco) {
+    const { root } = wco;
+
+    /**
+     * Detect if Tailwind 4 is being used by checking for the new @tailwindcss/postcss package.
+     * Tailwind 4 uses @tailwindcss/postcss instead of the main tailwindcss package for PostCSS
+     * integration.
+     */
+    const isTailwind4 = () => {
+      try {
+        require.resolve('@tailwindcss/postcss', { paths: [root] });
+        return true;
+      } catch {
+        return false;
+      }
+    };
+
+    if (isTailwind4()) {
+      // Monkey patch readdir to make findTailwindConfigurationFile return undefined
+      const fs = require('node:fs/promises');
+      const originalReaddir = fs.readdir;
+
+      /**
+       * Hide Tailwind config files from Angular's automatic detection. This prevents Angular from
+       * trying to load Tailwind using the incompatible v3 API. By filtering out tailwind config
+       * files, findTailwindConfigurationFile() returns undefined, and Angular skips its built-in
+       * Tailwind setup entirely.
+       */
+      fs.readdir = async function (path, options) {
+        const results = await originalReaddir.call(this, path, options);
+        const tailwindFiles = [
+          'tailwind.config.js',
+          'tailwind.config.cjs',
+          'tailwind.config.mjs',
+          'tailwind.config.ts',
+        ];
+        // Filter out tailwind config files from the results
+        return results.filter((file) => !tailwindFiles.includes(file));
+      };
+
+      // Get styles config without Tailwind interference
+      const styleConfig = await getStylesConfig(wco);
+
+      // Restore original readdir immediately after getting styles config
+      fs.readdir = originalReaddir;
+
+      /**
+       * Manually inject Tailwind 4 PostCSS plugin into the webpack configuration. Since we bypassed
+       * Angular's automatic Tailwind detection, we need to manually add the correct Tailwind 4
+       * plugin to all PostCSS loader configurations.
+       */
+      const tailwindPackagePath = require.resolve('@tailwindcss/postcss', { paths: [root] });
+      const extraPostcssPlugins = [require(tailwindPackagePath)()];
+
+      /**
+       * Navigate through webpack's complex rule structure to find all postcss-loader instances and
+       * inject the Tailwind 4 plugin. This preserves Angular's existing PostCSS setup while adding
+       * Tailwind 4 support.
+       */
+      styleConfig.module.rules
+        .map((rule) => rule.rules)
+        .forEach((rule) => {
+          rule.forEach((r) => {
+            r.oneOf?.forEach?.((oneOfRule) => {
+              return oneOfRule.use.forEach((use) => {
+                if (use.loader.includes('postcss-loader') && use.options.postcssOptions) {
+                  const originalOptionsFn = use.options.postcssOptions;
+                  // Wrap the original postcssOptions function to append Tailwind 4 plugin
+                  use.options.postcssOptions = (loaderOptions) => {
+                    const originalOptions = originalOptionsFn(loaderOptions);
+
+                    return {
+                      ...originalOptions,
+                      plugins: [...originalOptions.plugins, ...extraPostcssPlugins],
+                    };
+                  };
+                }
+              });
+            });
+          });
+        });
+
+      return styleConfig;
+    } else {
+      // Use Angular's default styles config for Tailwind v3 and other CSS frameworks
+      return getStylesConfig(wco);
+    }
+  }
+
   const { config: cliConfig } = await generateI18nBrowserWebpackConfigFromContext(
     {
       // Default options
@@ -68,7 +140,7 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
       outputPath:
         typeof builderOptions.outputPath === 'string'
           ? builderOptions.outputPath
-          : builderOptions.outputPath?.base ?? 'noop-out',
+          : (builderOptions.outputPath?.base ?? 'noop-out'),
 
       // Fixed options
       optimization: false,
@@ -80,16 +152,20 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
     builderContext,
     (wco) => [
       getCommonConfig(wco),
-      getStylesConfig(wco),
+      getCustomStylesConfig(wco),
       getTypeScriptConfig ? getTypeScriptConfig(wco) : getDevServerConfig(wco),
     ]
   );
 
+  if (!builderOptions.experimentalZoneless && !cliConfig.entry.polyfills?.includes('zone.js')) {
+    cliConfig.entry.polyfills.push('zone.js');
+  }
+
   /** Merge baseConfig Webpack with angular-cli Webpack */
   const entry = [
+    ...(cliConfig.entry.polyfills ?? []),
     ...baseConfig.entry,
     ...(cliConfig.entry.styles ?? []),
-    ...(cliConfig.entry.polyfills ?? []),
   ];
 
   // Don't use storybooks styling rules because we have to use rules created by @angular-devkit/build-angular

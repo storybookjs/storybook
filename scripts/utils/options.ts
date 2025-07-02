@@ -1,8 +1,7 @@
 /** Use commander and prompts to gather a list of options for a script */
-import chalk from 'chalk';
 import { type Command, type Option as CommanderOption, program } from 'commander';
-// eslint-disable-next-line import/extensions
-import kebabCase from 'lodash/kebabCase.js';
+import { kebabCase } from 'es-toolkit/compat';
+import picocolors from 'picocolors';
 import prompts from 'prompts';
 import type { Falsy, PrevCaller, PromptObject, PromptType } from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -131,9 +130,9 @@ export function getOptions<TOptions extends OptionSpecifier>(
 
       const checkStringValue = (raw: string) => {
         if (option.values && !option.values.includes(raw)) {
-          const possibleOptions = chalk.cyan(option.values.join('\n'));
+          const possibleOptions = picocolors.cyan(option.values.join('\n'));
           throw new Error(
-            dedent`Unexpected value '${chalk.yellow(raw)}' for option '${chalk.magenta(key)}'.
+            dedent`Unexpected value '${picocolors.yellow(raw)}' for option '${picocolors.magenta(key)}'.
             
             These are the possible options:
               ${possibleOptions}\n\n`
@@ -178,7 +177,7 @@ export function getDefaults<TOptions extends OptionSpecifier>(options: TOptions)
   return Object.fromEntries(
     Object.entries(options)
       .filter(([, { type }]) => type === 'boolean' || type === 'string[]')
-      .map(([key, option]) => {
+      .map(([key, option]): any => {
         if (option.type === 'boolean') {
           return [key, !!option.inverse];
         }
@@ -297,7 +296,7 @@ function getFlag<TOption extends Option>(
 
   if (option.type === 'string') {
     if (value) {
-      return `--${longFlag(key, option)} ${value}`;
+      return `--${longFlag(key, option)} '${value}'`;
     }
     return '';
   }

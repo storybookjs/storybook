@@ -1,7 +1,7 @@
-import { StoryFnAngularReturnType } from '../types';
+import type { StoryFnAngularReturnType } from '../types';
 import { computesTemplateFromComponent } from './ComputesTemplateFromComponent';
 import { createStorybookWrapperComponent } from './StorybookWrapperComponent';
-import { PropertyExtractor } from './utils/PropertyExtractor';
+import type { PropertyExtractor } from './utils/PropertyExtractor';
 
 export const getApplication = ({
   storyFnAngular,

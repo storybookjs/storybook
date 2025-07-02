@@ -1,6 +1,6 @@
-import chalk from 'chalk';
-import type { ExecaChildProcess, Options } from 'execa';
-import { execa } from 'execa';
+// eslint-disable-next-line depend/ban-dependencies
+import { type ExecaChildProcess, type Options, execa } from 'execa';
+import picocolors from 'picocolors';
 
 const logger = console;
 
@@ -32,6 +32,7 @@ export const exec = async (
     shell: true,
     stdout: debug ? 'inherit' : 'pipe',
     stderr: debug ? 'inherit' : 'pipe',
+    stdin: 'inherit',
     signal,
   };
   let currentChild: ExecaChildProcess<string>;
@@ -50,7 +51,7 @@ export const exec = async (
     }
   } catch (err) {
     if (!(typeof err === 'object' && 'killed' in err && err.killed)) {
-      logger.error(chalk.red(`An error occurred while executing: \`${command}\``));
+      logger.error(picocolors.red(`An error occurred while executing: \`${command}\``));
       logger.log(`${errorMessage}\n`);
     }
 

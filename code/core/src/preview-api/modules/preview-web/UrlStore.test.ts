@@ -40,7 +40,7 @@ describe('UrlStore', () => {
       );
     });
     it('should replace legacy parameters but preserve others', () => {
-      document.location.search = 'foo=bar&selectedStory=selStory&selectedKind=selKind';
+      document.location.search = '?foo=bar&selectedStory=selStory&selectedKind=selKind';
       setPath({ storyId: 'story--id', viewMode: 'story' });
       expect(history.replaceState).toHaveBeenCalledWith(
         {},
@@ -49,7 +49,7 @@ describe('UrlStore', () => {
       );
     });
     it('should ignore + keep hashes', () => {
-      document.location.search = 'foo=bar&selectedStory=selStory&selectedKind=selKind';
+      document.location.search = '?foo=bar&selectedStory=selStory&selectedKind=selKind';
       document.location.hash = '#foobar';
       setPath({ storyId: 'story--id', viewMode: 'story' });
       expect(history.replaceState).toHaveBeenCalledWith(

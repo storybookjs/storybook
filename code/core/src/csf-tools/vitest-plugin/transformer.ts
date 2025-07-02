@@ -1,16 +1,13 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-
-/* eslint-disable no-underscore-dangle */
-import { types as t } from '@storybook/core/babel';
-import { getStoryTitle } from '@storybook/core/common';
-import type { StoriesEntry, Tag } from '@storybook/core/types';
-import { combineTags } from '@storybook/csf';
+import { types as t } from 'storybook/internal/babel';
+import { getStoryTitle } from 'storybook/internal/common';
+import { combineTags } from 'storybook/internal/csf';
+import { logger } from 'storybook/internal/node-logger';
+import type { StoriesEntry, Tag } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
 import { formatCsf, loadCsf } from '../CsfFile';
-
-const logger = console;
 
 type TagsFilter = {
   include: string[];
@@ -19,11 +16,14 @@ type TagsFilter = {
 };
 
 const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
-  const isIncluded =
-    tagsFilter?.include.length === 0 || tagsFilter?.include.some((tag) => storyTags.includes(tag));
-  const isNotExcluded = tagsFilter?.exclude.every((tag) => !storyTags.includes(tag));
-
-  return isIncluded && isNotExcluded;
+  if (tagsFilter.include.length && !tagsFilter.include.some((tag) => storyTags?.includes(tag))) {
+    return false;
+  }
+  if (tagsFilter.exclude.some((tag) => storyTags?.includes(tag))) {
+    return false;
+  }
+  // Skipped tests are intentionally included here
+  return true;
 };
 /**
  * TODO: the functionality in this file can be moved back to the vitest plugin itself It can use
@@ -178,13 +178,15 @@ export async function vitestTransform({
         testPathProperty
       );
 
-      // Create the final expression: import.meta.url.includes(...)
+      // Create the final expression: convertToFilePath(import.meta.url).includes(...)
       const includesCall = t.callExpression(
         t.memberExpression(
-          t.memberExpression(
-            t.memberExpression(t.identifier('import'), t.identifier('meta')),
-            t.identifier('url')
-          ),
+          t.callExpression(t.identifier('convertToFilePath'), [
+            t.memberExpression(
+              t.memberExpression(t.identifier('import'), t.identifier('meta')),
+              t.identifier('url')
+            ),
+          ]),
           t.identifier('includes')
         ),
         [nullishCoalescingExpression]
@@ -201,19 +203,23 @@ export async function vitestTransform({
     ast.program.body.push(isRunningFromThisFileDeclaration);
 
     const getTestStatementForStory = ({
+      localName,
       exportName,
+      testTitle,
       node,
     }: {
+      localName: string;
       exportName: string;
+      testTitle: string;
       node: t.Node;
     }): t.ExpressionStatement => {
       // Create the _test expression directly using the exportName identifier
       const testStoryCall = t.expressionStatement(
         t.callExpression(vitestTestId, [
-          t.stringLiteral(exportName),
+          t.stringLiteral(testTitle),
           t.callExpression(testStoryId, [
             t.stringLiteral(exportName),
-            t.identifier(exportName),
+            t.identifier(localName),
             t.identifier(metaExportName),
             skipTagsId,
           ]),
@@ -239,10 +245,10 @@ export async function vitestTransform({
           return;
         }
 
-        return getTestStatementForStory({
-          exportName,
-          node,
-        });
+        const localName = parsed._stories[exportName].localName ?? exportName;
+        // use the story's name as the test title for vitest, and fallback to exportName
+        const testTitle = parsed._stories[exportName].name ?? exportName;
+        return getTestStatementForStory({ testTitle, localName, exportName, node });
       })
       .filter((st) => !!st) as t.ExpressionStatement[];
 
@@ -259,8 +265,11 @@ export async function vitestTransform({
         t.stringLiteral('vitest')
       ),
       t.importDeclaration(
-        [t.importSpecifier(testStoryId, t.identifier('testStory'))],
-        t.stringLiteral('@storybook/experimental-addon-test/internal/test-utils')
+        [
+          t.importSpecifier(testStoryId, t.identifier('testStory')),
+          t.importSpecifier(t.identifier('convertToFilePath'), t.identifier('convertToFilePath')),
+        ],
+        t.stringLiteral('@storybook/addon-vitest/internal/test-utils')
       ),
     ];
 

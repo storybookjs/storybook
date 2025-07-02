@@ -1,19 +1,27 @@
-import { dirname, join, parse, posix, relative, resolve, sep } from 'node:path';
+import { writeFile } from 'node:fs/promises';
+import { dirname, join, parse, posix, relative, sep } from 'node:path';
 
-import aliasPlugin from 'esbuild-plugin-alias';
+import type { Metafile } from 'esbuild';
+// eslint-disable-next-line depend/ban-dependencies
 import * as fs from 'fs-extra';
+// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import slash from 'slash';
-import { dedent } from 'ts-dedent';
 import type { Options } from 'tsup';
 import { build } from 'tsup';
 import type { PackageJson } from 'type-fest';
 
+import {
+  BROWSER_TARGETS,
+  NODE_TARGET,
+  SUPPORTED_FEATURES,
+} from '../../code/core/src/shared/constants/environments-support';
 import { exec } from '../utils/exec';
+import { dedent, esbuild, nodeInternals } from './tools';
 
 /* TYPES */
 
-type Formats = 'esm' | 'cjs';
+type Formats = 'esm' | 'cjs' | 'node-esm';
 type BundlerConfig = {
   entries: string[];
   externals: string[];
@@ -22,6 +30,7 @@ type BundlerConfig = {
   pre: string;
   post: string;
   formats: Formats[];
+  types?: boolean;
 };
 type PackageJsonWithBundlerConfig = PackageJson & {
   bundler: BundlerConfig;
@@ -29,6 +38,8 @@ type PackageJsonWithBundlerConfig = PackageJson & {
 type DtsConfigSection = Pick<Options, 'dts' | 'tsconfig'>;
 
 /* MAIN */
+
+const OUT_DIR = join(process.cwd(), 'dist');
 
 const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   const {
@@ -43,6 +54,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
       pre,
       post,
       formats = ['esm', 'cjs'],
+      types = true,
     },
   } = (await fs.readJson(join(cwd, 'package.json'))) as PackageJsonWithBundlerConfig;
 
@@ -50,17 +62,26 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     await exec(`jiti ${pre}`, { cwd });
   }
 
+  const metafilesDir = join(
+    __dirname,
+    '..',
+    '..',
+    'code',
+    'bench',
+    'esbuild-metafiles',
+    name.replace('@storybook', '')
+  );
+
   const reset = hasFlag(flags, 'reset');
   const watch = hasFlag(flags, 'watch');
   const optimized = hasFlag(flags, 'optimized');
-
   if (reset) {
-    await fs.emptyDir(join(process.cwd(), 'dist'));
+    await fs.emptyDir(OUT_DIR);
+    await fs.emptyDir(metafilesDir);
   }
 
   const tasks: Promise<any>[] = [];
 
-  const outDir = join(process.cwd(), 'dist');
   const externals = [
     name,
     ...extraExternals,
@@ -74,6 +95,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
     formats,
     entries,
     optimized,
+    types,
   });
 
   /* preset files are always CJS only.
@@ -93,27 +115,70 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         entry: nonPresetEntries,
         shims: false,
         watch,
-        outDir,
+        outDir: OUT_DIR,
         sourcemap: false,
+        metafile: true,
         format: ['esm'],
-        target: platform === 'node' ? ['node18'] : ['chrome100', 'safari15', 'firefox91'],
+        target: platform === 'node' ? NODE_TARGET : (BROWSER_TARGETS as Options['target']),
         clean: false,
         ...(dtsBuild === 'esm' ? dtsConfig : {}),
         platform: platform || 'browser',
-        esbuildPlugins:
-          platform === 'node'
-            ? []
-            : [
-                aliasPlugin({
-                  process: resolve('../node_modules/process/browser.js'),
-                  util: resolve('../node_modules/util/util.js'),
-                }),
-              ],
+        define: {
+          // tsup replaces 'process.env.NODE_ENV' during build time. We don't want to do this. Instead, the builders (vite/webpack) should replace it
+          // Then, the variable can be set accordingly in dev/build mode
+          'process.env.NODE_ENV': 'process.env.NODE_ENV',
+        },
+
         external: externals,
 
         esbuildOptions: (c) => {
           c.conditions = ['module'];
           c.platform = platform || 'browser';
+          if (platform !== 'node') {
+            c.supported = SUPPORTED_FEATURES;
+          }
+          Object.assign(c, getESBuildOptions(optimized));
+        },
+      })
+    );
+  }
+  if (formats.includes('node-esm')) {
+    tasks.push(
+      build({
+        noExternal,
+        silent: true,
+        treeshake: true,
+        entry: nonPresetEntries,
+        shims: true,
+        watch,
+        outDir: OUT_DIR,
+        sourcemap: false,
+        metafile: true,
+        format: ['esm'],
+        target: NODE_TARGET,
+        clean: false,
+        ...(dtsBuild === 'node-esm' ? dtsConfig : {}),
+        platform: 'neutral',
+        define: {
+          // tsup replaces 'process.env.NODE_ENV' during build time. We don't want to do this. Instead, the builders (vite/webpack) should replace it
+          // Then, the variable can be set accordingly in dev/build mode
+          'process.env.NODE_ENV': 'process.env.NODE_ENV',
+        },
+
+        banner: {
+          js: dedent`
+            import ESM_COMPAT_Module1 from "node:module";
+            import { fileURLToPath as ESM_COMPAT_fileURLToPath1 } from 'node:url';
+            import { dirname as ESM_COMPAT_dirname1 } from 'node:path';
+            const require = ESM_COMPAT_Module1.createRequire(import.meta.url);
+          `,
+        },
+
+        external: [...externals, ...nodeInternals],
+
+        esbuildOptions: (c) => {
+          c.conditions = ['node', 'module'];
+          c.platform = 'neutral';
           Object.assign(c, getESBuildOptions(optimized));
         },
       })
@@ -127,10 +192,11 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
         silent: true,
         entry: allEntries,
         watch,
-        outDir,
+        outDir: OUT_DIR,
         sourcemap: false,
+        metafile: true,
         format: ['cjs'],
-        target: 'node18',
+        target: NODE_TARGET,
         ...(dtsBuild === 'cjs' ? dtsConfig : {}),
         platform: 'node',
         clean: false,
@@ -150,7 +216,11 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
 
   await Promise.all(tasks);
 
-  const dtsFiles = await glob(outDir + '/**/*.d.ts');
+  if (!watch) {
+    await saveMetafiles({ metafilesDir, formats });
+  }
+
+  const dtsFiles = await glob(OUT_DIR + '/**/*.d.ts');
   await Promise.all(
     dtsFiles.map(async (file) => {
       const content = await fs.readFile(file, 'utf-8');
@@ -176,15 +246,17 @@ async function getDTSConfigs({
   formats,
   entries,
   optimized,
+  types,
 }: {
   formats: Formats[];
   entries: string[];
   optimized: boolean;
+  types: boolean;
 }) {
   const tsConfigPath = join(cwd, 'tsconfig.json');
   const tsConfigExists = await fs.pathExists(tsConfigPath);
 
-  const dtsBuild = optimized && formats[0] && tsConfigExists ? formats[0] : undefined;
+  const dtsBuild = types && optimized && formats[0] && tsConfigExists ? formats[0] : undefined;
 
   const dtsConfig: DtsConfigSection = {
     tsconfig: tsConfigPath,
@@ -222,6 +294,37 @@ async function generateDTSMapperFile(file: string) {
       export * from '${rel}/${entryName}';
     `,
     { encoding: 'utf-8' }
+  );
+}
+
+async function saveMetafiles({
+  metafilesDir,
+  formats,
+}: {
+  metafilesDir: string;
+  formats: Formats[];
+}) {
+  await fs.ensureDir(metafilesDir);
+  const metafile: Metafile = {
+    inputs: {},
+    outputs: {},
+  };
+
+  await Promise.all(
+    formats.map(async (format) => {
+      const fromFilename = format === 'node-esm' ? `metafile-esm.json` : `metafile-${format}.json`;
+      const currentMetafile = await fs.readJson(join(OUT_DIR, fromFilename));
+      metafile.inputs = { ...metafile.inputs, ...currentMetafile.inputs };
+      metafile.outputs = { ...metafile.outputs, ...currentMetafile.outputs };
+
+      await fs.rm(join(OUT_DIR, fromFilename));
+    })
+  );
+
+  await writeFile(join(metafilesDir, 'metafile.json'), JSON.stringify(metafile, null, 2));
+  await writeFile(
+    join(metafilesDir, 'metafile.txt'),
+    await esbuild.analyzeMetafile(metafile, { color: false, verbose: false })
   );
 }
 

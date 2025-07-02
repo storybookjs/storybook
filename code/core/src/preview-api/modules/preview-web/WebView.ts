@@ -1,10 +1,10 @@
-import type { PreparedStory } from '@storybook/core/types';
+import { logger } from 'storybook/internal/client-logger';
+import type { PreparedStory } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
-import { logger } from '@storybook/core/client-logger';
-
 import AnsiToHtml from 'ansi-to-html';
-import qs from 'qs';
+import { parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
 import type { View } from './View';
@@ -49,10 +49,7 @@ export class WebView implements View<HTMLElement> {
   constructor() {
     // Special code for testing situations
     if (typeof document !== 'undefined') {
-      // eslint-disable-next-line @typescript-eslint/naming-convention
-      const { __SPECIAL_TEST_PARAMETER__ } = qs.parse(document.location.search, {
-        ignoreQueryPrefix: true,
-      });
+      const { __SPECIAL_TEST_PARAMETER__ } = parse(document.location.search.slice(1));
       switch (__SPECIAL_TEST_PARAMETER__) {
         case 'preparing-story': {
           this.showPreparingStory();

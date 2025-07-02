@@ -18,7 +18,7 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
+import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin } from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
@@ -72,7 +72,7 @@ export default async (
     docsOptions,
     entries,
     nonNormalizedStories,
-    modulesCount = 1000,
+    modulesCount,
     build,
     tagsOptions,
   ] = await Promise.all([
@@ -86,7 +86,7 @@ export default async (
     presets.apply('docs'),
     presets.apply<string[]>('entries', []),
     presets.apply('stories', []),
-    options.cache?.get('modulesCount').catch(() => {}),
+    options.cache?.get('modulesCount', 1000),
     options.presets.apply('build'),
     presets.apply('tags', {}),
   ]);
@@ -120,7 +120,7 @@ export default async (
 
   const externals: Record<string, string> = globalsNameReferenceMap;
   if (build?.test?.disableBlocks) {
-    externals['@storybook/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
+    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
   }
 
   const { virtualModules: virtualModuleMapping, entries: dynamicEntries } =
@@ -195,9 +195,10 @@ export default async (
       }),
       new DefinePlugin({
         ...stringifyProcessEnvs(envs),
-        NODE_ENV: JSON.stringify(process.env.NODE_ENV),
+        NODE_ENV: JSON.stringify(
+          features?.developmentModeForBuild && isProd ? 'development' : process.env.NODE_ENV
+        ),
       }),
-      new ProvidePlugin({ process: require.resolve('process/browser.js') }),
       isProd ? null : new HotModuleReplacementPlugin(),
       new CaseSensitivePathsPlugin(),
       quiet ? null : new ProgressPlugin({ modulesCount }),
@@ -238,15 +239,6 @@ export default async (
       modules: ['node_modules'].concat(envs.NODE_PATH || []),
       mainFields: ['browser', 'module', 'main'].filter(Boolean),
       alias: storybookPaths,
-      fallback: {
-        stream: false,
-        path: require.resolve('path-browserify'),
-        assert: require.resolve('browser-assert'),
-        util: require.resolve('util'),
-        url: require.resolve('url'),
-        fs: false,
-        constants: require.resolve('constants-browserify'),
-      },
       // Set webpack to resolve symlinks based on whether the user has asked node to.
       // This feels like it should be default out-of-the-box in webpack :shrug:
       symlinks: !isPreservingSymlinks(),

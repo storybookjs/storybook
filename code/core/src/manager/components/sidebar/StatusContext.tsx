@@ -1,38 +1,58 @@
 import { createContext, useContext } from 'react';
 
-import type { API_StatusObject, API_StatusState, API_StatusValue, StoryId } from '@storybook/types';
+import type {
+  Status,
+  StatusValue,
+  StatusesByStoryIdAndTypeId,
+  StoryId,
+} from 'storybook/internal/types';
 
-import type { StoriesHash } from '../../../manager-api';
+import type { StoriesHash } from 'storybook/manager-api';
+
 import type { Item } from '../../container/Sidebar';
 import { getDescendantIds } from '../../utils/tree';
 
 export const StatusContext = createContext<{
   data?: StoriesHash;
-  status?: API_StatusState;
-  groupStatus?: Record<StoryId, API_StatusValue>;
+  allStatuses?: StatusesByStoryIdAndTypeId;
+  groupStatus?: Record<StoryId, StatusValue>;
 }>({});
 
 export const useStatusSummary = (item: Item) => {
-  const { data, status, groupStatus } = useContext(StatusContext);
+  const { data, allStatuses, groupStatus } = useContext(StatusContext);
   const summary: {
-    counts: Record<API_StatusValue, number>;
-    statuses: Record<API_StatusValue, Record<StoryId, API_StatusObject[]>>;
+    counts: Record<StatusValue, number>;
+    statusesByValue: Record<StatusValue, Record<StoryId, Status[]>>;
   } = {
-    counts: { pending: 0, success: 0, error: 0, warn: 0, unknown: 0 },
-    statuses: { pending: {}, success: {}, error: {}, warn: {}, unknown: {} },
+    counts: {
+      'status-value:pending': 0,
+      'status-value:success': 0,
+      'status-value:error': 0,
+      'status-value:warning': 0,
+      'status-value:unknown': 0,
+    },
+    statusesByValue: {
+      'status-value:pending': {},
+      'status-value:success': {},
+      'status-value:error': {},
+      'status-value:warning': {},
+      'status-value:unknown': {},
+    },
   };
 
   if (
     data &&
-    status &&
+    allStatuses &&
     groupStatus &&
-    ['pending', 'warn', 'error'].includes(groupStatus[item.id])
+    ['status-value:pending', 'status-value:warning', 'status-value:error'].includes(
+      groupStatus[item.id]
+    )
   ) {
     for (const storyId of getDescendantIds(data, item.id, false)) {
-      for (const value of Object.values(status[storyId] || {})) {
-        summary.counts[value.status]++;
-        summary.statuses[value.status][storyId] = summary.statuses[value.status][storyId] || [];
-        summary.statuses[value.status][storyId].push(value);
+      for (const status of Object.values(allStatuses[storyId] ?? {})) {
+        summary.counts[status.value]++;
+        summary.statusesByValue[status.value][storyId] ??= [];
+        summary.statusesByValue[status.value][storyId].push(status);
       }
     }
   }

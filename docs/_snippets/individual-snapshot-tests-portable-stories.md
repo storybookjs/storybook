@@ -7,8 +7,8 @@ import 'jest-specific-snapshot';
 
 import { describe, test, expect } from '@jest/globals';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 const compose = (entry) => {
   try {
@@ -76,8 +76,8 @@ import "jest-specific-snapshot";
 
 import { describe, test, expect } from "@jest/globals";
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 type StoryFile = {
   default: Meta;
@@ -149,8 +149,8 @@ describe("Stories Snapshots", () => {
 import path from 'path';
 import { describe, expect, test } from 'vitest';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 const compose = (entry) => {
   try {
@@ -196,7 +196,7 @@ describe('Stories Snapshots', () => {
           await new Promise((resolve) => setTimeout(resolve, 1));
           // Defines the custom snapshot path location and file name
           const customSnapshotPath = `./__snapshots__/${componentName}.spec.js.snap`;
-          expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
+          await expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
         });
       });
     });
@@ -213,8 +213,8 @@ import type { Meta, StoryFn } from '@storybook/your-framework';
 import path from 'path';
 import { describe, expect, test } from 'vitest';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 type StoryFile = {
   default: Meta;
@@ -267,7 +267,7 @@ describe('Stories Snapshots', () => {
           await new Promise((resolve) => setTimeout(resolve, 1));
           // Defines the custom snapshot path location and file name
           const customSnapshotPath = `./__snapshots__/${componentName}.spec.ts.snap`;
-          expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
+          await expect(document.body.firstChild).toMatchFileSnapshot(customSnapshotPath);
         });
       });
     });

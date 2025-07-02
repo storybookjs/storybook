@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { describe, expect, it } from 'vitest';
 
 import React from 'react';

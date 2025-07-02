@@ -1,5 +1,5 @@
 import { cp } from 'node:fs/promises';
-import { join, parse } from 'node:path';
+import { dirname, join, parse } from 'node:path';
 
 import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
@@ -12,22 +12,26 @@ import type { Builder, Options } from 'storybook/internal/types';
 
 import { checkWebpackVersion } from '@storybook/core-webpack';
 
-import express from 'express';
 import prettyTime from 'pretty-hrtime';
-import { corePath } from 'storybook/core-path';
+import sirv from 'sirv';
 import type { Configuration, Stats, StatsOptions } from 'webpack';
-import webpack, { ProgressPlugin } from 'webpack';
+import webpackDep, { DefinePlugin, IgnorePlugin, ProgressPlugin } from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 
 export * from './types';
 export * from './preview/virtual-module-mapping';
 
+export const WebpackDefinePlugin = DefinePlugin;
+export const WebpackIgnorePlugin = IgnorePlugin;
+
 export const printDuration = (startTime: [number, number]) =>
   prettyTime(process.hrtime(startTime))
     .replace(' ms', ' milliseconds')
     .replace(' s', ' seconds')
-    .replace(' m', ' minutes');
+    .replace(' min', ' minutes');
+
+const corePath = dirname(require.resolve('storybook/internal/package.json'));
 
 let compilation: ReturnType<typeof webpackDevMiddleware> | undefined;
 let reject: (reason?: any) => void;
@@ -51,8 +55,8 @@ export const executor = {
   get: async (options: Options) => {
     const version = ((await options.presets.apply('webpackVersion')) || '5') as string;
     const webpackInstance =
-      (await options.presets.apply<{ default: typeof webpack }>('webpackInstance'))?.default ||
-      webpack;
+      (await options.presets.apply<{ default: typeof webpackDep }>('webpackInstance'))?.default ||
+      webpackDep;
     checkWebpackVersion({ version }, '5', 'builder-webpack5');
     return webpackInstance;
   },
@@ -137,7 +141,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   }
 
   yield;
-  const modulesCount = (await options.cache?.get('modulesCount').catch(() => {})) || 1000;
+  const modulesCount = await options.cache?.get('modulesCount', 1000);
   let totalModules: number;
   let value = 0;
 
@@ -147,7 +151,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
       const progress = { value, message: message.charAt(0).toUpperCase() + message.slice(1) };
       if (message === 'building') {
         // arg3 undefined in webpack5
-        const counts = (arg3 && arg3.match(/(\d+)\/(\d+)/)) || [];
+        const counts = (arg3 && arg3.match(/entries (\d+)\/(\d+)/)) || [];
         const complete = parseInt(counts[1], 10);
         const total = parseInt(counts[2], 10);
         if (!Number.isNaN(complete) && !Number.isNaN(total)) {
@@ -180,10 +184,14 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   compilation = webpackDevMiddleware(compiler, middlewareOptions);
 
   const previewResolvedDir = join(corePath, 'dist/preview');
-  const previewDirOrigin = previewResolvedDir;
-
-  router.use(`/sb-preview`, express.static(previewDirOrigin, { immutable: true, maxAge: '5m' }));
-
+  router.use(
+    '/sb-preview',
+    sirv(previewResolvedDir, {
+      maxAge: 300000,
+      dev: true,
+      immutable: true,
+    })
+  );
   router.use(compilation);
   router.use(webpackHotMiddleware(compiler, { log: false }));
 
@@ -289,10 +297,8 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   });
 
   const previewResolvedDir = join(corePath, 'dist/preview');
-  const previewDirOrigin = previewResolvedDir;
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
-
-  const previewFiles = cp(previewDirOrigin, previewDirTarget, {
+  const previewFiles = cp(previewResolvedDir, previewDirTarget, {
     filter: (src) => {
       const { ext } = parse(src);
       if (ext) {

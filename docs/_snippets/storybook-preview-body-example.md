@@ -1,6 +1,3 @@
-```html renderer="common" language="ts" tabTitle="html"
-{/*  .storybook/preview-body.html */}
-
+```html filename=".storybook/preview-body.html" renderer="common" language="js"
 <div id="custom-root"></div>
 ```
-

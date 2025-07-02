@@ -2,9 +2,8 @@ import { existsSync } from 'node:fs';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
-
-import { logger } from '@storybook/core/node-logger';
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { detect, detectFrameworkPreset, detectLanguage } from './detect';
 import { ProjectType, SupportedLanguage } from './project_types';
@@ -13,20 +12,16 @@ vi.mock('./helpers', () => ({
   isNxProject: vi.fn(),
 }));
 
-vi.mock('fs', () => ({
-  existsSync: vi.fn(),
-  stat: vi.fn(),
-  lstat: vi.fn(),
-  access: vi.fn(),
-  realpathSync: vi.fn(),
-  lstatSync: vi.fn(),
-  readdir: vi.fn(),
-  readdirSync: vi.fn(),
-  readlinkSync: vi.fn(),
-  default: vi.fn(),
-}));
+vi.mock(import('fs'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    existsSync: vi.fn(),
+  };
+});
 
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
+vi.mock('find-up');
 
 const MOCK_FRAMEWORK_FILES: {
   name: string;
@@ -37,6 +32,28 @@ const MOCK_FRAMEWORK_FILES: {
     files: {
       'package.json': {
         dependencies: {
+          vue: '^3.0.0',
+        },
+      },
+    },
+  },
+  {
+    name: ProjectType.NUXT,
+    files: {
+      'package.json': {
+        dependencies: {
+          nuxt: '^3.11.2',
+        },
+      },
+    },
+  },
+  {
+    name: ProjectType.NUXT,
+    files: {
+      'package.json': {
+        dependencies: {
+          // Nuxt projects may have Vue 3 as an explicit dependency
+          nuxt: '^3.11.2',
           vue: '^3.0.0',
         },
       },
@@ -214,9 +231,17 @@ const MOCK_FRAMEWORK_FILES: {
 describe('Detect', () => {
   it(`should return type HTML if html option is passed`, async () => {
     const packageManager = {
-      retrievePackageJson: () => Promise.resolve({ dependencies: {}, devDependencies: {} }),
-      getAllDependencies: () => Promise.resolve({}),
-      getPackageVersion: () => Promise.resolve(null),
+      primaryPackageJson: {
+        packageJson: {
+          dependencies: {},
+          devDependencies: {},
+          peerDependencies: {},
+        },
+        packageJsonPath: 'some/path',
+        operationDir: 'some/path',
+      },
+      getAllDependencies: () => ({}),
+      getModulePackageJSON: () => null,
     } as Partial<JsPackageManager>;
 
     await expect(detect(packageManager as any, { html: true })).resolves.toBe(ProjectType.HTML);
@@ -226,188 +251,129 @@ describe('Detect', () => {
     vi.mocked(logger.warn).mockClear();
 
     const packageManager = {
-      retrievePackageJson: () =>
-        Promise.resolve({
-          dependencies: {},
-          devDependencies: {
-            typescript: '1.0.0',
-          },
-        }),
-      getAllDependencies: () =>
-        Promise.resolve({
-          typescript: '1.0.0',
-        }),
-      getPackageVersion: (packageName) => {
+      getAllDependencies: () => ({
+        typescript: '1.0.0',
+      }),
+      getModulePackageJSON: (packageName) => {
         switch (packageName) {
           case 'typescript':
-            return Promise.resolve('1.0.0');
+            return {
+              version: '1.0.0',
+            };
           default:
-            return Promise.resolve(null);
+            return null;
         }
       },
     } as Partial<JsPackageManager>;
 
     await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
     expect(logger.warn).toHaveBeenCalledWith(
-      'Detected TypeScript < 3.8, populating with JavaScript examples'
+      'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
     );
   });
 
-  it(`should return language typescript-3-8 if the TS dependency is >=3.8 and <4.9`, async () => {
-    await expect(
-      detectLanguage({
-        retrievePackageJson: () =>
-          Promise.resolve({
-            dependencies: {},
-            devDependencies: {
-              typescript: '3.8.0',
-            },
-          }),
-        getAllDependencies: () =>
-          Promise.resolve({
-            typescript: '3.8.0',
-          }),
-        getPackageVersion: (packageName: string) => {
-          switch (packageName) {
-            case 'typescript':
-              return Promise.resolve('3.8.0');
-            default:
-              return Promise.resolve(null);
-          }
-        },
-      } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_3_8);
-
-    await expect(
-      detectLanguage({
-        retrievePackageJson: () =>
-          Promise.resolve({
-            dependencies: {},
-            devDependencies: {
-              typescript: '4.8.0',
-            },
-          }),
-        getAllDependencies: () =>
-          Promise.resolve({
-            typescript: '4.8.0',
-          }),
-        getPackageVersion: (packageName: string) => {
-          switch (packageName) {
-            case 'typescript':
-              return Promise.resolve('4.8.0');
-            default:
-              return Promise.resolve(null);
-          }
-        },
-      } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_3_8);
+  it(`should return language javascript if the TS dependency is <4.9`, async () => {
+    const packageManager = {
+      getAllDependencies: () => ({
+        typescript: '4.8.0',
+      }),
+      getModulePackageJSON: (packageName: string) => {
+        switch (packageName) {
+          case 'typescript':
+            return {
+              version: '4.8.0',
+            };
+          default:
+            return null;
+        }
+      },
+    } as Partial<JsPackageManager>;
+    await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
   it(`should return language typescript-4-9 if the dependency is >TS4.9`, async () => {
-    await expect(
-      detectLanguage({
-        retrievePackageJson: () =>
-          Promise.resolve({
-            dependencies: {},
-            devDependencies: {
-              typescript: '4.9.1',
-            },
-          }),
-        getAllDependencies: () =>
-          Promise.resolve({
-            typescript: '4.9.1',
-          }),
-        getPackageVersion: (packageName: string) => {
-          switch (packageName) {
-            case 'typescript':
-              return Promise.resolve('4.9.1');
-            default:
-              return Promise.resolve(null);
-          }
-        },
-      } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_4_9);
+    const packageManager = {
+      getAllDependencies: () => ({
+        typescript: '4.9.1',
+      }),
+      getModulePackageJSON: (packageName: string) => {
+        switch (packageName) {
+          case 'typescript':
+            return {
+              version: '4.9.1',
+            };
+          default:
+            return null;
+        }
+      },
+    } as Partial<JsPackageManager>;
+    await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
   it(`should return language typescript if the dependency is =TS4.9`, async () => {
-    await expect(
-      detectLanguage({
-        retrievePackageJson: () =>
-          Promise.resolve({
-            dependencies: {},
-            devDependencies: {
-              typescript: '4.9.0',
-            },
-          }),
-        getAllDependencies: () =>
-          Promise.resolve({
-            typescript: '4.9.0',
-          }),
-        getPackageVersion: (packageName: string) => {
-          switch (packageName) {
-            case 'typescript':
-              return Promise.resolve('4.9.0');
-            default:
-              return Promise.resolve(null);
-          }
-        },
-      } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_4_9);
+    const packageManager = {
+      getAllDependencies: () => ({
+        typescript: '4.9.0',
+      }),
+      getModulePackageJSON: (packageName: string) => {
+        switch (packageName) {
+          case 'typescript':
+            return {
+              version: '4.9.0',
+            };
+          default:
+            return null;
+        }
+      },
+    } as Partial<JsPackageManager>;
+    await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.TYPESCRIPT);
   });
 
-  it(`should return language typescript if the dependency is =TS4.9beta`, async () => {
-    await expect(
-      detectLanguage({
-        retrievePackageJson: () =>
-          Promise.resolve({
-            dependencies: {},
-            devDependencies: {
-              typescript: '4.9.0-beta',
-            },
-          }),
-        getAllDependencies: () =>
-          Promise.resolve({
-            typescript: '4.9.0-beta',
-          }),
-        getPackageVersion: (packageName: string) => {
-          switch (packageName) {
-            case 'typescript':
-              return Promise.resolve('4.9.0-beta');
-            default:
-              return Promise.resolve(null);
-          }
-        },
-      } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.TYPESCRIPT_3_8);
+  it(`should return language JavaScript if the dependency is =TS4.9beta`, async () => {
+    const packageManager = {
+      getAllDependencies: () => ({
+        typescript: '4.9.0-beta',
+      }),
+      getModulePackageJSON: (packageName: string) => {
+        switch (packageName) {
+          case 'typescript':
+            return {
+              version: '4.9.0-beta',
+            };
+          default:
+            return null;
+        }
+      },
+    } as Partial<JsPackageManager>;
+
+    await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
   it(`should return language javascript by default`, async () => {
-    await expect(
-      detectLanguage({
-        retrievePackageJson: () => Promise.resolve({ dependencies: {}, devDependencies: {} }),
-        getAllDependencies: () => Promise.resolve({}),
-        getPackageVersion: () => {
-          return Promise.resolve(null);
-        },
-      } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.JAVASCRIPT);
+    const packageManager = {
+      getAllDependencies: () => ({}),
+      getModulePackageJSON: () => null,
+    } as Partial<JsPackageManager>;
+
+    await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
   it(`should return language Javascript even when Typescript is detected in the node_modules but not listed as a direct dependency`, async () => {
-    await expect(
-      detectLanguage({
-        retrievePackageJson: () => Promise.resolve({ dependencies: {}, devDependencies: {} }),
-        getAllDependencies: () => Promise.resolve({}),
-        getPackageVersion: (packageName) => {
-          switch (packageName) {
-            case 'typescript':
-              return Promise.resolve('4.9.0');
-            default:
-              return Promise.resolve(null);
-          }
-        },
-      } as Partial<JsPackageManager> as JsPackageManager)
-    ).resolves.toBe(SupportedLanguage.JAVASCRIPT);
+    const packageManager = {
+      getAllDependencies: () => ({}),
+      getModulePackageJSON: (packageName) => {
+        switch (packageName) {
+          case 'typescript':
+            return {
+              version: '4.9.0',
+            };
+          default:
+            return null;
+        }
+      },
+    } as Partial<JsPackageManager>;
+
+    await expect(detectLanguage(packageManager as any)).resolves.toBe(SupportedLanguage.JAVASCRIPT);
   });
 
   describe('detectFrameworkPreset should return', () => {
@@ -432,16 +398,6 @@ describe('Detect', () => {
     it(`UNDETECTED for unknown frameworks`, () => {
       const result = detectFrameworkPreset();
       expect(result).toBe(ProjectType.UNDETECTED);
-    });
-
-    // TODO(blaine): Remove once Nuxt3 is supported
-    it(`UNSUPPORTED for Nuxt framework above version 3.0.0`, () => {
-      const result = detectFrameworkPreset({
-        dependencies: {
-          nuxt: '3.0.0',
-        },
-      });
-      expect(result).toBe(ProjectType.UNSUPPORTED);
     });
 
     // TODO: The mocking in this test causes tests after it to fail

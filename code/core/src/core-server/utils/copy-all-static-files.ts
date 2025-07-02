@@ -1,11 +1,10 @@
 import { cp } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 
-import { getDirectoryFromWorkingDir } from '@storybook/core/common';
+import { getDirectoryFromWorkingDir } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
-import { logger } from '@storybook/core/node-logger';
-
-import chalk from 'chalk';
+import picocolors from 'picocolors';
 
 import { parseStaticDir } from './server-statics';
 
@@ -14,13 +13,13 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
     await Promise.all(
       staticDirs.map(async (dir) => {
         try {
-          const { staticDir, staticPath, targetDir } = await parseStaticDir(dir);
+          const { staticDir, staticPath, targetDir } = parseStaticDir(dir);
           const targetPath = join(outputDir, targetDir);
 
-          // we copy prebuild static files from node_modules/@storybook/manager & preview
+          // we copy prebuild static files from node_modules/storybook/internal/manager & preview
           if (!staticDir.includes('node_modules')) {
-            const from = chalk.cyan(print(staticDir));
-            const to = chalk.cyan(print(targetDir));
+            const from = picocolors.cyan(print(staticDir));
+            const to = picocolors.cyan(print(targetDir));
             logger.info(`=> Copying static files: ${from} => ${to}`);
           }
 
@@ -54,7 +53,7 @@ export async function copyAllStaticFilesRelativeToMain(
     await acc;
 
     const staticDirAndTarget = typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`;
-    const { staticPath: from, targetEndpoint: to } = await parseStaticDir(
+    const { staticPath: from, targetEndpoint: to } = parseStaticDir(
       getDirectoryFromWorkingDir({
         configDir,
         workingDir,
@@ -66,7 +65,7 @@ export async function copyAllStaticFilesRelativeToMain(
     const skipPaths = ['index.html', 'iframe.html'].map((f) => join(targetPath, f));
     if (!from.includes('node_modules')) {
       logger.info(
-        `=> Copying static files: ${chalk.cyan(print(from))} at ${chalk.cyan(print(targetPath))}`
+        `=> Copying static files: ${picocolors.cyan(print(from))} at ${picocolors.cyan(print(targetPath))}`
       );
     }
     await cp(from, targetPath, {

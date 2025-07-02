@@ -1,8 +1,9 @@
 import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
-import chalk from 'chalk';
+// eslint-disable-next-line depend/ban-dependencies
 import { readJson } from 'fs-extra';
+import picocolors from 'picocolors';
 
 import { esMain } from '../utils/esmain';
 
@@ -15,7 +16,7 @@ export const getCurrentVersion = async () => {
   if (process.env.GITHUB_ACTIONS === 'true') {
     setOutput('current-version', version);
   }
-  console.log(`📦 Current version is ${chalk.green(version)}`);
+  console.log(`📦 Current version is ${picocolors.green(version)}`);
   return version;
 };
 

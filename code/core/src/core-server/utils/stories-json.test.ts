@@ -2,12 +2,11 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { normalizeStoriesEntry } from '@storybook/core/common';
+import { normalizeStoriesEntry } from 'storybook/internal/common';
+import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
-import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
-
-import type { Request, Response, Router } from 'express';
-import debounce from 'lodash/debounce.js';
+import { debounce } from 'es-toolkit/compat';
+import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
 import { csfIndexer } from '../presets/common-preset';
@@ -17,8 +16,8 @@ import type { ServerChannel } from './get-server-channel';
 import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
-vi.mock('lodash/debounce');
-vi.mock('@storybook/core/node-logger');
+vi.mock('es-toolkit/compat');
+vi.mock('storybook/internal/node-logger');
 
 const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
@@ -48,7 +47,7 @@ const getInitializedStoryIndexGenerator = async (
     indexers: [csfIndexer],
     configDir: workingDir,
     workingDir,
-    docs: { defaultName: 'docs', autodocs: false },
+    docs: { defaultName: 'docs' },
     ...overrides,
   };
   const generator = new StoryIndexGenerator(inputNormalizedStories, options);
@@ -58,24 +57,24 @@ const getInitializedStoryIndexGenerator = async (
 
 describe('useStoriesJson', () => {
   const use = vi.fn();
-  const router: Router = { use } as any;
-  const send = vi.fn();
+  const app: Polka = { use } as any;
+  const end = vi.fn();
   const write = vi.fn();
   const response: Response = {
     header: vi.fn(),
-    send,
+    send: vi.fn(),
     status: vi.fn(),
     setHeader: vi.fn(),
     flushHeaders: vi.fn(),
     write,
     flush: vi.fn(),
-    end: vi.fn(),
+    end,
     on: vi.fn(),
   } as any;
 
   beforeEach(async () => {
     use.mockClear();
-    send.mockClear();
+    end.mockClear();
     write.mockClear();
     vi.mocked(debounce).mockImplementation((cb) => cb as any);
     Watchpack.mockClear();
@@ -90,7 +89,7 @@ describe('useStoriesJson', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       console.time('useStoriesJson');
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
@@ -105,8 +104,8 @@ describe('useStoriesJson', () => {
       await route(request, response);
       console.timeEnd('route');
 
-      expect(send).toHaveBeenCalledTimes(1);
-      expect(JSON.parse(send.mock.calls[0][0])).toMatchInlineSnapshot(`
+      expect(end).toHaveBeenCalledTimes(1);
+      expect(JSON.parse(end.mock.calls[0][0])).toMatchInlineSnapshot(`
         {
           "entries": {
             "a--metaof": {
@@ -156,6 +155,19 @@ describe('useStoriesJson', () => {
               "title": "A",
               "type": "story",
             },
+            "b--docs": {
+              "id": "b--docs",
+              "importPath": "./src/B.stories.ts",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "B",
+              "type": "docs",
+            },
             "b--story-one": {
               "id": "b--story-one",
               "importPath": "./src/B.stories.ts",
@@ -203,6 +215,19 @@ describe('useStoriesJson', () => {
               ],
               "title": "componentPath/package",
               "type": "story",
+            },
+            "d--docs": {
+              "id": "d--docs",
+              "importPath": "./src/D.stories.jsx",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "D",
+              "type": "docs",
             },
             "d--story-one": {
               "id": "d--story-one",
@@ -254,6 +279,18 @@ describe('useStoriesJson', () => {
               ],
               "title": "docs2/Yabbadabbadooo",
               "type": "docs",
+            },
+            "example-button--story-one": {
+              "id": "example-button--story-one",
+              "importPath": "./src/Button.stories.ts",
+              "name": "Story One",
+              "tags": [
+                "dev",
+                "test",
+                "foobar",
+              ],
+              "title": "Example/Button",
+              "type": "story",
             },
             "first-nested-deeply-f--story-one": {
               "id": "first-nested-deeply-f--story-one",
@@ -323,6 +360,19 @@ describe('useStoriesJson', () => {
               "title": "first-nested/deeply/Features",
               "type": "story",
             },
+            "h--docs": {
+              "id": "h--docs",
+              "importPath": "./src/H.stories.mjs",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "H",
+              "type": "docs",
+            },
             "h--story-one": {
               "id": "h--story-one",
               "importPath": "./src/H.stories.mjs",
@@ -368,7 +418,7 @@ describe('useStoriesJson', () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
 
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
@@ -379,14 +429,14 @@ describe('useStoriesJson', () => {
       const route = use.mock.calls[0][1];
 
       const firstPromise = route(request, response);
-      const secondResponse = { ...response, send: vi.fn(), status: vi.fn() };
+      const secondResponse = { ...response, end: vi.fn(), status: vi.fn() };
       const secondPromise = route(request, secondResponse);
 
       await Promise.all([firstPromise, secondPromise]);
 
-      expect(send).toHaveBeenCalledTimes(1);
-      expect(response.status).not.toEqual(500);
-      expect(secondResponse.send).toHaveBeenCalledTimes(1);
+      expect(end).toHaveBeenCalledTimes(1);
+      expect(response.statusCode).not.toEqual(500);
+      expect(secondResponse.end).toHaveBeenCalledTimes(1);
       expect(secondResponse.status).not.toEqual(500);
     });
   });
@@ -394,13 +444,13 @@ describe('useStoriesJson', () => {
   describe('SSE endpoint', () => {
     beforeEach(() => {
       use.mockClear();
-      send.mockClear();
+      end.mockClear();
     });
 
     it('sends invalidate events', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
@@ -434,7 +484,7 @@ describe('useStoriesJson', () => {
     it('only sends one invalidation when multiple event listeners are listening', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
@@ -471,13 +521,12 @@ describe('useStoriesJson', () => {
 
     it('debounces invalidation events', async () => {
       vi.mocked(debounce).mockImplementation(
-        // @ts-expect-error it doesn't think default exists
-        (await vi.importActual<typeof import('lodash/debounce.js')>('lodash/debounce.js')).default
+        (await vi.importActual<typeof import('es-toolkit/compat')>('es-toolkit/compat')).debounce
       );
 
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
       useStoriesJson({
-        router,
+        app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,

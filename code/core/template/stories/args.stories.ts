@@ -1,17 +1,24 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from '@storybook/core/types';
-import { global as globalThis } from '@storybook/global';
-import { expect, within } from '@storybook/test';
-
 import {
   RESET_STORY_ARGS,
   STORY_ARGS_UPDATED,
   UPDATE_STORY_ARGS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
 
-import pick from 'lodash/pick';
+import { global as globalThis } from '@storybook/global';
+
+import { expect, within } from 'storybook/test';
+
+function pick(obj, keys) {
+  const result = {};
+  for (const key of keys) {
+    result[key] = obj[key];
+  }
+  return result;
+}
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   args: {
     componentArg: 'componentArg',
     storyArg: 'componentStoryArg',
@@ -86,5 +93,6 @@ export const Events = {
     await new Promise((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
     await within(canvasElement).findByText(/updated/);
   },
-  tags: ['!vitest'],
+  // this story can't be reliably tested because the args changes results in renderPhases disrupting test runs
+  tags: ['!vitest', '!test'],
 };

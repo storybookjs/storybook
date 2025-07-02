@@ -8,12 +8,12 @@ describe('typescript', () => {
       basenameWithoutExtension: 'foo',
       componentExportName: 'default',
       componentIsDefaultExport: true,
-      rendererPackage: '@storybook/react',
+      frameworkPackage: '@storybook/react-vite',
       exportedStoryName: 'Default',
     });
 
     expect(result).toMatchInlineSnapshot(`
-      "import type { Meta, StoryObj } from '@storybook/react';
+      "import type { Meta, StoryObj } from '@storybook/react-vite';
 
       import Foo from './foo';
 
@@ -34,12 +34,12 @@ describe('typescript', () => {
       basenameWithoutExtension: 'foo',
       componentExportName: 'Example',
       componentIsDefaultExport: false,
-      rendererPackage: '@storybook/react',
+      frameworkPackage: '@storybook/react-vite',
       exportedStoryName: 'Default',
     });
 
     expect(result).toMatchInlineSnapshot(`
-      "import type { Meta, StoryObj } from '@storybook/react';
+      "import type { Meta, StoryObj } from '@storybook/react-vite';
 
       import { Example } from './foo';
 

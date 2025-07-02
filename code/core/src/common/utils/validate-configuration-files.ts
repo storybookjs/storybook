@@ -1,17 +1,20 @@
 import { resolve } from 'node:path';
 
-import { once } from '@storybook/core/node-logger';
-import { MainFileMissingError } from '@storybook/core/server-errors';
+import { once } from 'storybook/internal/node-logger';
+import { MainFileMissingError } from 'storybook/internal/server-errors';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
 import { boost } from './interpret-files';
 
-export async function validateConfigurationFiles(configDir: string) {
+export async function validateConfigurationFiles(configDir: string, cwd?: string) {
   const extensionsPattern = `{${Array.from(boost).join(',')}}`;
-  const mainConfigMatches = await glob(slash(resolve(configDir, `main${extensionsPattern}`)));
+  const mainConfigMatches = await glob(slash(resolve(configDir, `main${extensionsPattern}`)), {
+    cwd: cwd ?? process.cwd(),
+  });
 
   const [mainConfigPath] = mainConfigMatches;
 

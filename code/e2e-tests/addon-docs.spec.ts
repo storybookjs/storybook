@@ -13,7 +13,7 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 test.describe('addon-docs', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
-    await new SbPage(page).waitUntilLoaded();
+    await new SbPage(page, expect).waitUntilLoaded();
   });
 
   test('should show descriptions for stories', async ({ page }) => {
@@ -26,7 +26,7 @@ test.describe('addon-docs', () => {
       `Skipping ${templateName}, because of wrong ordering of stories on docs page`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
 
@@ -48,7 +48,7 @@ test.describe('addon-docs', () => {
       `Skipping ${templateName}, because of wrong ordering of stories on docs page`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
 
@@ -75,7 +75,7 @@ test.describe('addon-docs', () => {
   });
 
   test('should render errors', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/error', 'docs');
     const root = sbPage.previewRoot();
 
@@ -90,7 +90,7 @@ test.describe('addon-docs', () => {
       `Skipping ${templateName}, which does not support dynamic source snippets`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
     const toggles = root.locator('.docblock-code-toggle');
@@ -106,7 +106,7 @@ test.describe('addon-docs', () => {
     for (let i = 0; i < codeCount; i += 1) {
       const code = codes.nth(i);
       const text = await code.innerText();
-      await expect(text).not.toMatch(/^\(args\) => /);
+      expect(text).not.toMatch(/^\(args\) => /);
     }
   });
 
@@ -123,13 +123,14 @@ test.describe('addon-docs', () => {
       //   - template: https://638db567ed97c3fb3e21cc22-ulhjwkqzzj.chromatic.com/?path=/docs/addons-docs-docspage-basic--docs
       //   - real: https://638db567ed97c3fb3e21cc22-ulhjwkqzzj.chromatic.com/?path=/docs/example-button--docs
       'lit-vite',
+      'react-native-web',
     ];
     test.skip(
       new RegExp(`^${skipped.join('|')}`, 'i').test(`${templateName}`),
       `Skipping ${templateName}, which does not support dynamic source snippets`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
     const root = sbPage.previewRoot();
     const toggles = root.locator('.docblock-code-toggle');
@@ -156,7 +157,7 @@ test.describe('addon-docs', () => {
   });
 
   test('should not run autoplay stories without parameter', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/autoplay', 'docs');
 
     const root = sbPage.previewRoot();
@@ -174,7 +175,7 @@ test.describe('addon-docs', () => {
       `${templateName} fails because of a known issue: https://github.com/storybookjs/storybook/issues/20941`
     );
 
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docspage/basic', 'docs');
 
     // The `<Primary>` block should render the "Basic" story, and the `<Stories/>` block should
@@ -189,23 +190,28 @@ test.describe('addon-docs', () => {
   });
 
   test('should resolve react to the correct version', async ({ page }) => {
+    test.skip(
+      templateName?.includes('nextjs') || templateName?.includes('nuxt'),
+      'TODO: remove this once sandboxes are synced (SOON!!)'
+    );
     // Arrange - Navigate to MDX docs
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('addons/docs/docs2/resolvedreact', 'mdx', 'docs');
     const root = sbPage.previewRoot();
 
     // Arrange - Setup expectations
-    let expectedReactVersionRange = /^18/;
+    let expectedReactVersionRange = /^19/;
     if (templateName.includes('react-webpack/17') || templateName.includes('react-vite/17')) {
       expectedReactVersionRange = /^17/;
     } else if (templateName.includes('react16')) {
       expectedReactVersionRange = /^16/;
     } else if (
-      templateName.includes('nextjs/prerelease') ||
-      templateName.includes('react-vite/prerelease') ||
-      templateName.includes('react-webpack/prerelease')
+      templateName.includes('internal/react18-webpack-babel') ||
+      templateName.includes('preact-vite/default-js') ||
+      templateName.includes('preact-vite/default-ts') ||
+      templateName.includes('react-webpack/18-ts')
     ) {
-      expectedReactVersionRange = /^19/;
+      expectedReactVersionRange = /^18/;
     }
 
     // Arrange - Get the actual versions
@@ -259,7 +265,7 @@ test.describe('addon-docs', () => {
   });
 
   test('should have stories from multiple CSF files in autodocs', async ({ page }) => {
-    const sbPage = new SbPage(page);
+    const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('/addons/docs/multiple-csf-files-same-title', 'docs');
     const root = sbPage.previewRoot();
 

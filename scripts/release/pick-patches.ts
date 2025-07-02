@@ -1,7 +1,8 @@
 import { setOutput } from '@actions/core';
-import chalk from 'chalk';
 import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
+import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 
 import { esMain } from '../utils/esmain';
@@ -25,7 +26,7 @@ interface PR {
 }
 
 function formatPR(pr: PR): string {
-  return `https://github.com/${OWNER}/${REPO}/pull/${pr.number} "${pr.title}" ${chalk.yellow(
+  return `https://github.com/${OWNER}/${REPO}/pull/${pr.number} "${pr.title}" ${picocolors.yellow(
     pr.mergeCommit
   )}`;
 }
@@ -71,7 +72,7 @@ export const run = async (_: unknown) => {
       }
       failedCherryPicks.push(pr.mergeCommit);
       prSpinner.info(
-        `This PR can be picked manually with: ${chalk.grey(
+        `This PR can be picked manually with: ${picocolors.gray(
           `git cherry-pick -m1 -x ${pr.mergeCommit}`
         )}`
       );

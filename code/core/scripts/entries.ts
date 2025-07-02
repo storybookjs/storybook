@@ -9,10 +9,26 @@ export const getEntries = (cwd: string) => {
     define('src/node-logger/index.ts', ['node'], true),
     define('src/client-logger/index.ts', ['browser', 'node'], true),
 
-    define('src/core-server/index.ts', ['node'], true),
+    define('src/theming/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/theming/create.ts', ['browser', 'node'], true, ['react'], [], [], true),
+
+    define('src/core-server/index.ts', ['node'], true, ['react']),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
-    define('src/core-server/presets/common-manager.ts', ['browser'], false),
+    define('src/core-server/presets/common-manager.ts', ['browser'], false, [
+      'react',
+      '@storybook/icons',
+    ]),
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
+
+    define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+
+    define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define('src/actions/decorator.ts', ['browser'], true, ['react'], [], [], true),
+
+    define('src/viewport/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+
+    define('src/controls/index.ts', ['browser', 'node'], true, ['react']),
+    define('src/controls/decorator.ts', ['browser'], true, ['react']),
 
     define('src/core-events/index.ts', ['browser', 'node'], true),
     define('src/manager-errors.ts', ['browser'], true),
@@ -22,15 +38,22 @@ export const getEntries = (cwd: string) => {
     define('src/channels/index.ts', ['browser', 'node'], true),
     define('src/types/index.ts', ['browser', 'node'], true, ['react']),
     define('src/csf-tools/index.ts', ['node'], true),
+    define('src/csf/index.ts', ['browser', 'node'], true),
     define('src/common/index.ts', ['node'], true),
     define('src/builder-manager/index.ts', ['node'], true),
     define('src/telemetry/index.ts', ['node'], true),
-    define('src/preview-api/index.ts', ['browser', 'node'], true),
-    define('src/manager-api/index.ts', ['browser', 'node'], true, ['react']),
+    define('src/preview-api/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
+    define(
+      'src/manager-api/index.ts',
+      ['browser', 'node'],
+      true,
+      ['react', 'react-dom'],
+      [],
+      [],
+      true
+    ),
     define('src/router/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/components/index.ts', ['browser', 'node'], true, ['react', 'react-dom']),
-    define('src/theming/index.ts', ['browser', 'node'], true, ['react']),
-    define('src/theming/create.ts', ['browser', 'node'], true, ['react']),
+    define('src/components/index.ts', ['browser', 'node'], true, ['react', 'react-dom'], []),
     define('src/docs-tools/index.ts', ['browser', 'node'], true),
 
     define('src/manager/globals-module-info.ts', ['node'], true),
@@ -39,6 +62,25 @@ export const getEntries = (cwd: string) => {
     define('src/cli/index.ts', ['node'], true),
     define('src/babel/index.ts', ['node'], true),
     define('src/cli/bin/index.ts', ['node'], true),
+    define('src/bin/index.ts', ['node'], false),
+
+    define('src/instrumenter/index.ts', ['browser', 'node'], true),
+    define(
+      'src/test/index.ts',
+      ['browser', 'node'],
+      true,
+      ['util', 'react'],
+      [],
+      [
+        '@testing-library/jest-dom',
+        '@testing-library/user-event',
+        'chai',
+        '@vitest/expect',
+        '@vitest/spy',
+        '@vitest/utils',
+      ],
+      true
+    ),
   ];
 };
 
@@ -59,6 +101,6 @@ export const getFinals = (cwd: string) => {
 
   return [
     //
-    define('src/manager/runtime.ts', ['browser'], false),
+    define('src/manager/runtime.tsx', ['browser'], false),
   ];
 };

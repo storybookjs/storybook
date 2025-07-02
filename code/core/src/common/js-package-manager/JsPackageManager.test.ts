@@ -11,13 +11,9 @@ vi.mock('../versions', () => ({
 describe('JsPackageManager', () => {
   let jsPackageManager: JsPackageManager;
   let mockLatestVersion: ReturnType<typeof vi.fn>;
-  let mockStorybookPackagesVersions: Record<string, string>;
 
   beforeEach(() => {
     mockLatestVersion = vi.fn();
-    mockStorybookPackagesVersions = {
-      '@storybook/react': '8.3.0',
-    };
 
     // @ts-expect-error Ignore abstract class error
     jsPackageManager = new JsPackageManager();
@@ -43,12 +39,12 @@ describe('JsPackageManager', () => {
       expect(result).toEqual(['@storybook/react@8.3.0']);
     });
 
-    it('should return the latest stable release version when there is no current version', async () => {
+    it('should get the requested version when the package is not in the monorepo', async () => {
       mockLatestVersion.mockResolvedValue('2.0.0');
 
-      const result = await jsPackageManager.getVersionedPackages(['@storybook/new-addon@^8.3.0']);
+      const result = await jsPackageManager.getVersionedPackages(['@storybook/new-addon@^next']);
 
-      expect(result).toEqual(['@storybook/new-addon@^2.0.0']);
+      expect(result).toEqual(['@storybook/new-addon@^next']);
     });
   });
 });

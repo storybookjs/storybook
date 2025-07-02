@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, ReactElement, ReactNode } from 'react';
 import React, {
   Component,
@@ -8,10 +7,20 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 
-import type { Listener } from '@storybook/core/channels';
-import type { RouterData } from '@storybook/core/router';
+import type { Listener } from 'storybook/internal/channels';
+import { deprecate } from 'storybook/internal/client-logger';
+import {
+  DOCS_PREPARED,
+  SET_STORIES,
+  SHARED_STATE_CHANGED,
+  SHARED_STATE_SET,
+  STORY_CHANGED,
+  STORY_PREPARED,
+} from 'storybook/internal/core-events';
+import type { RouterData } from 'storybook/internal/router';
 import type {
   API_ComponentEntry,
   API_ComposedRef,
@@ -31,21 +40,14 @@ import type {
   Globals,
   Parameters,
   StoryId,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
-import { deprecate } from '@storybook/core/client-logger';
-import {
-  SET_STORIES,
-  SHARED_STATE_CHANGED,
-  SHARED_STATE_SET,
-  STORY_CHANGED,
-} from '@storybook/core/core-events';
-
-import mergeWith from 'lodash/mergeWith.js';
+import { isEqual } from 'es-toolkit';
 
 import { createContext } from './context';
 import getInitialState from './initial-state';
 import { types } from './lib/addons';
+import { noArrayMerge } from './lib/merge';
 import type { ModuleFn } from './lib/types';
 import * as addons from './modules/addons';
 import * as channel from './modules/channel';
@@ -86,7 +88,6 @@ export type State = layout.SubState &
   whatsnew.SubState &
   RouterData &
   API_OptionsData &
-  DeprecatedState &
   Other;
 
 export type API = addons.SubAPI &
@@ -104,15 +105,6 @@ export type API = addons.SubAPI &
   whatsnew.SubAPI &
   Other;
 
-interface DeprecatedState {
-  /** @deprecated Use index */
-  storiesHash: API_IndexHash;
-  /** @deprecated Use previewInitialized */
-  storiesConfigured: boolean;
-  /** @deprecated Use indexError */
-  storiesFailed?: Error;
-}
-
 interface Other {
   [key: string]: any;
 }
@@ -127,16 +119,9 @@ export type ManagerProviderProps = RouterData &
     children: ReactNode | FC<Combo>;
   };
 
-// This is duplicated from @storybook/preview-api for the reasons mentioned in lib-addons/types.js
+// This is duplicated from storybook/preview-api for the reasons mentioned in lib-addons/types.js
 export const combineParameters = (...parameterSets: Parameters[]) =>
-  mergeWith({}, ...parameterSets, (objValue: any, srcValue: any) => {
-    // Treat arrays as scalars:
-    if (Array.isArray(srcValue)) {
-      return srcValue;
-    }
-
-    return undefined;
-  });
+  noArrayMerge({}, ...parameterSets);
 
 class ManagerProvider extends Component<ManagerProviderProps, State> {
   api: API = {} as API;
@@ -221,16 +206,9 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
   }
 
   shouldComponentUpdate(nextProps: ManagerProviderProps, nextState: State): boolean {
-    const prevState = this.state;
     const prevProps = this.props;
-
-    if (prevState !== nextState) {
-      return true;
-    }
-    if (prevProps.path !== nextProps.path) {
-      return true;
-    }
-    return false;
+    const prevState = this.state;
+    return prevProps.path !== nextProps.path || !isEqual(prevState, nextState);
   }
 
   initModules = () => {
@@ -309,23 +287,7 @@ function ManagerConsumer<P = Combo>({
 
 export function useStorybookState(): State {
   const { state } = useContext(ManagerContext);
-  return {
-    ...state,
-
-    // deprecated fields for back-compat
-    get storiesHash() {
-      deprecate('state.storiesHash is deprecated, please use state.index');
-      return this.index || {};
-    },
-    get storiesConfigured() {
-      deprecate('state.storiesConfigured is deprecated, please use state.previewInitialized');
-      return this.previewInitialized;
-    },
-    get storiesFailed() {
-      deprecate('state.storiesFailed is deprecated, please use state.indexError');
-      return this.indexError;
-    },
-  };
+  return state;
 }
 export function useStorybookApi(): API {
   const { api } = useContext(ManagerContext);
@@ -378,9 +340,22 @@ export function useStoryPrepared(storyId?: StoryId) {
 
 export function useParameter<S>(parameterKey: string, defaultValue?: S) {
   const api = useStorybookApi();
+  const [parameter, setParameter] = useState(api.getCurrentParameter<S>(parameterKey));
 
-  const result = api.getCurrentParameter<S>(parameterKey);
-  return orDefault<S>(result, defaultValue!);
+  const handleParameterChange = useCallback(() => {
+    const newParameter = api.getCurrentParameter<S>(parameterKey);
+    setParameter(newParameter);
+  }, [api, parameterKey]);
+
+  useChannel(
+    {
+      [STORY_PREPARED]: handleParameterChange,
+      [DOCS_PREPARED]: handleParameterChange,
+    },
+    [handleParameterChange]
+  );
+
+  return orDefault<S>(parameter, defaultValue!);
 }
 
 // cache for taking care of HMR
@@ -409,13 +384,17 @@ export function useSharedState<S>(stateId: string, defaultState?: S) {
     }
   }, [quicksync]);
 
-  const setState = async (s: S | API_StateMerger<S>, options?: Options) => {
-    await api.setAddonState<S>(stateId, s, options);
-    const result = api.getAddonState(stateId);
+  const setState = useCallback(
+    async (s: S | API_StateMerger<S>, options?: Options) => {
+      await api.setAddonState<S>(stateId, s, options);
+      const result = api.getAddonState(stateId);
 
-    STORYBOOK_ADDON_STATE[stateId] = result;
-    return result;
-  };
+      STORYBOOK_ADDON_STATE[stateId] = result;
+      return result;
+    },
+    [api, stateId]
+  );
+
   const allListeners = useMemo(() => {
     const stateChangeHandlers = {
       [`${SHARED_STATE_CHANGED}-client-${stateId}`]: setState,
@@ -455,14 +434,20 @@ export function useSharedState<S>(stateId: string, defaultState?: S) {
   }, [stateId]);
 
   const emit = useChannel(allListeners);
-  return [
-    state,
+
+  const stateSetter = useCallback(
     async (newStateOrMerger: S | API_StateMerger<S>, options?: Options) => {
       await setState(newStateOrMerger, options);
       const result = api.getAddonState(stateId);
       emit(`${SHARED_STATE_CHANGED}-manager-${stateId}`, result);
     },
-  ] as [S, (newStateOrMerger: S | API_StateMerger<S>, options?: Options) => void];
+    [api, emit, setState, stateId]
+  );
+
+  return [state, stateSetter] as [
+    S,
+    (newStateOrMerger: S | API_StateMerger<S>, options?: Options) => void,
+  ];
 }
 
 export function useAddonState<S>(addonId: string, defaultState?: S) {

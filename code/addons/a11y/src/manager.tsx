@@ -1,28 +1,34 @@
 import React from 'react';
 
-import { Badge, Spaced } from 'storybook/internal/components';
-import { addons, types, useAddonState } from 'storybook/internal/manager-api';
+import { Badge } from 'storybook/internal/components';
+
+import { addons, types, useAddonState, useStorybookApi } from 'storybook/manager-api';
 
 import { A11YPanel } from './components/A11YPanel';
-import type { Results } from './components/A11yContext';
 import { A11yContextProvider } from './components/A11yContext';
 import { VisionSimulator } from './components/VisionSimulator';
 import { ADDON_ID, PANEL_ID, PARAM_KEY } from './constants';
+import type { EnhancedResults } from './types';
 
 const Title = () => {
-  const [addonState] = useAddonState<Results>(ADDON_ID);
+  const api = useStorybookApi();
+  const selectedPanel = api.getSelectedPanel();
+  const [addonState] = useAddonState<EnhancedResults>(ADDON_ID);
   const violationsNb = addonState?.violations?.length || 0;
   const incompleteNb = addonState?.incomplete?.length || 0;
   const count = violationsNb + incompleteNb;
 
-  const suffix = count === 0 ? '' : <Badge status="neutral">{count}</Badge>;
+  const suffix =
+    count === 0 ? null : (
+      <Badge compact status={selectedPanel === PANEL_ID ? 'active' : 'neutral'}>
+        {count}
+      </Badge>
+    );
 
   return (
-    <div>
-      <Spaced col={1}>
-        <span style={{ display: 'inline-block', verticalAlign: 'middle' }}>Accessibility</span>
-        {suffix}
-      </Spaced>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <span>Accessibility</span>
+      {suffix}
     </div>
   );
 };
@@ -39,9 +45,7 @@ addons.register(ADDON_ID, (api) => {
     title: Title,
     type: types.PANEL,
     render: ({ active = true }) => (
-      <A11yContextProvider active={active}>
-        <A11YPanel />
-      </A11yContextProvider>
+      <A11yContextProvider>{active ? <A11YPanel /> : null}</A11yContextProvider>
     ),
     paramKey: PARAM_KEY,
   });

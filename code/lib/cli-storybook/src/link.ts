@@ -1,10 +1,10 @@
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import chalk from 'chalk';
 import { spawn as spawnAsync, sync as spawnSync } from 'cross-spawn';
+import picocolors from 'picocolors';
 
 type ExecOptions = Parameters<typeof spawnAsync>[2];
 
@@ -48,7 +48,7 @@ export const exec = async (
       if (code === 0) {
         resolve(undefined);
       } else {
-        logger.error(chalk.red(`An error occurred while executing: \`${command}\``));
+        logger.error(picocolors.red(`An error occurred while executing: \`${command}\``));
         if (errorMessage) {
           logger.info(errorMessage);
         }
@@ -86,10 +86,6 @@ export const link = async ({ target, local, start }: LinkOptions) => {
     reproDir = join(reprosDir, reproName);
   }
 
-  const reproPackageJson = JSON.parse(
-    await readFile(join(reproDir, 'package.json'), { encoding: 'utf8' })
-  );
-
   const version = spawnSync('yarn', ['--version'], {
     cwd: reproDir,
     stdio: 'pipe',
@@ -108,14 +104,27 @@ export const link = async ({ target, local, start }: LinkOptions) => {
   await exec(`yarn link --all --relative ${storybookDir}`, { cwd: reproDir });
 
   logger.info(`Installing ${reproName}`);
-  await exec(`yarn install`, { cwd: reproDir });
+
+  const reproPackageJson = JSON.parse(
+    await readFile(join(reproDir, 'package.json'), { encoding: 'utf8' })
+  );
 
   if (!reproPackageJson.devDependencies?.vite) {
-    await exec(`yarn add -D webpack-hot-middleware`, { cwd: reproDir });
+    reproPackageJson.devDependencies = {
+      ...reproPackageJson.devDependencies,
+      'webpack-hot-middleware': '*',
+    };
   }
 
   // ensure that linking is possible
-  await exec(`yarn add @types/node@22`, { cwd: reproDir });
+  reproPackageJson.devDependencies = {
+    ...reproPackageJson.devDependencies,
+    '@types/node': '^22',
+  };
+
+  await writeFile(join(reproDir, 'package.json'), JSON.stringify(reproPackageJson, null, 2));
+
+  await exec(`yarn install`, { cwd: reproDir });
 
   if (start) {
     logger.info(`Running ${reproName} storybook`);

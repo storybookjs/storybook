@@ -1,9 +1,10 @@
 import { readFile, stat } from 'node:fs/promises';
-import { dirname, join, parse, relative, resolve } from 'node:path';
+import { join, parse } from 'node:path';
 
-import findPackageJson from 'find-package-json';
+import { getProjectRoot } from 'storybook/internal/common';
+
 import MagicString from 'magic-string';
-import type { PluginOption } from 'vite';
+import type { ModuleNode, Plugin } from 'vite';
 import {
   type ComponentMeta,
   type MetaCheckerOptions,
@@ -21,12 +22,11 @@ type MetaSource = {
 } & ComponentMeta &
   MetaCheckerOptions['schema'];
 
-export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<PluginOption> {
+export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<Plugin> {
   const { createFilter } = await import('vite');
 
   // exclude stories, virtual modules and storybook internals
-  const exclude =
-    /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|^\/sb-preview\/|\.storybook\/.*\.(ts|js)$/;
+  const exclude = /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 
@@ -146,6 +146,20 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
         return undefined;
       }
     },
+    // handle hot updates to update the component meta on file changes
+    async handleHotUpdate({ file, read, server, modules, timestamp }) {
+      const content = await read();
+      checker.updateFile(file, content);
+      // Invalidate modules manually
+      const invalidatedModules = new Set<ModuleNode>();
+
+      for (const mod of modules) {
+        server.moduleGraph.invalidateModule(mod, invalidatedModules, timestamp, true);
+      }
+
+      server.ws.send({ type: 'full-reload' });
+      return [];
+    },
   };
 }
 
@@ -161,6 +175,7 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   };
 
   const projectRoot = getProjectRoot();
+
   const projectTsConfigPath = join(projectRoot, tsconfigPath);
 
   const defaultChecker = createCheckerByJson(projectRoot, { include: ['**/*'] }, checkerOptions);
@@ -179,16 +194,6 @@ async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
   }
 
   return defaultChecker;
-}
-
-/** Gets the absolute path to the project root. */
-function getProjectRoot() {
-  const projectRoot = findPackageJson().next().value?.path ?? '';
-
-  const currentFileDir = dirname(__filename);
-  const relativePathToProjectRoot = relative(currentFileDir, projectRoot);
-
-  return resolve(currentFileDir, relativePathToProjectRoot);
 }
 
 /** Gets the filename without file extension. */

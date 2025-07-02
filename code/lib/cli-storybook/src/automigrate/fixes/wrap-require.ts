@@ -1,12 +1,13 @@
+import { types as t } from 'storybook/internal/babel';
 import { detectPnp } from 'storybook/internal/cli';
 import { readConfig } from 'storybook/internal/csf-tools';
 
-import chalk from 'chalk';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 import {
+  doesVariableOrFunctionDeclarationExist,
   getFieldsForRequireWrapper,
   getRequireWrapperAsCallExpression,
   getRequireWrapperName,
@@ -14,7 +15,7 @@ import {
   wrapValueWithRequireWrapper,
 } from './wrap-require-utils';
 
-interface WrapRequireRunOptions {
+export interface WrapRequireRunOptions {
   storybookVersion: string;
   isStorybookInMonorepo: boolean;
   isPnp: boolean;
@@ -23,11 +24,10 @@ interface WrapRequireRunOptions {
 
 export const wrapRequire: Fix<WrapRequireRunOptions> = {
   id: 'wrap-require',
-
-  versionRange: ['*', '*'],
+  link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
 
   async check({ packageManager, storybookVersion, mainConfigPath }) {
-    const isStorybookInMonorepo = await packageManager.isStorybookInMonorepo();
+    const isStorybookInMonorepo = packageManager.isStorybookInMonorepo();
     const isPnp = await detectPnp();
 
     if (!mainConfigPath) {
@@ -49,46 +49,48 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
     return { storybookVersion, isStorybookInMonorepo, isPnp, isConfigTypescript };
   },
 
-  prompt({ storybookVersion, isStorybookInMonorepo }) {
-    const sbFormatted = chalk.cyan(`Storybook ${storybookVersion}`);
-
-    return dedent`We have detected that you're using ${sbFormatted} in a ${
-      isStorybookInMonorepo ? 'monorepo' : 'PnP'
-    } project. 
-    For Storybook to work correctly, some fields in your main config must be updated. We can do this for you automatically.
-    
-    More info: https://storybook.js.org/docs/react/faq#how-do-i-fix-module-resolution-in-special-environments`;
+  prompt() {
+    return dedent`We have detected that you're using Storybook in a monorepo or PnP project. Some fields in your main config must be updated.`;
   },
 
   async run({ dryRun, mainConfigPath, result }) {
-    return new Promise((resolve, reject) => {
-      updateMainConfig({ dryRun: !!dryRun, mainConfigPath }, (mainConfig) => {
-        try {
-          getFieldsForRequireWrapper(mainConfig).forEach((node) => {
-            wrapValueWithRequireWrapper(mainConfig, node);
-          });
-
-          if (getRequireWrapperName(mainConfig) === null) {
-            if (
-              mainConfig?.fileName?.endsWith('.cjs') ||
-              mainConfig?.fileName?.endsWith('.cts') ||
-              mainConfig?.fileName?.endsWith('.cjsx') ||
-              mainConfig?.fileName?.endsWith('.ctsx')
-            ) {
-              mainConfig.setRequireImport(['dirname', 'join'], 'path');
-            } else {
-              mainConfig.setImport(['dirname', 'join'], 'path');
-            }
-            mainConfig.setBodyDeclaration(
-              getRequireWrapperAsCallExpression(result.isConfigTypescript)
-            );
-          }
-
-          resolve();
-        } catch (e) {
-          reject(e);
-        }
+    await updateMainConfig({ dryRun: !!dryRun, mainConfigPath }, (mainConfig) => {
+      getFieldsForRequireWrapper(mainConfig).forEach((node) => {
+        wrapValueWithRequireWrapper(mainConfig, node);
       });
+
+      if (getRequireWrapperName(mainConfig) === null) {
+        if (
+          mainConfig?.fileName?.endsWith('.cjs') ||
+          mainConfig?.fileName?.endsWith('.cts') ||
+          mainConfig?.fileName?.endsWith('.cjsx') ||
+          mainConfig?.fileName?.endsWith('.ctsx') ||
+          mainConfig._code.includes('module.exports')
+        ) {
+          mainConfig.setRequireImport(['dirname', 'join'], 'node:path');
+        } else {
+          mainConfig.setImport(['dirname', 'join'], 'node:path');
+          mainConfig.setImport(['createRequire'], 'node:module');
+
+          // Continue here
+          const hasRequire = mainConfig
+            .getBodyDeclarations()
+            .some((node) => doesVariableOrFunctionDeclarationExist(node, 'require'));
+
+          if (!hasRequire) {
+            const body = mainConfig._ast.program.body;
+            const lastImportIndex = body.findLastIndex((node) => t.isImportDeclaration(node));
+            const requireDeclaration = t.variableDeclaration('const', [
+              t.variableDeclarator(
+                t.identifier('require'),
+                t.callExpression(t.identifier('createRequire'), [t.identifier('import.meta.url')])
+              ),
+            ]);
+            body.splice(lastImportIndex + 1, 0, requireDeclaration);
+          }
+        }
+        mainConfig.setBodyDeclaration(getRequireWrapperAsCallExpression(result.isConfigTypescript));
+      }
     });
   },
 };

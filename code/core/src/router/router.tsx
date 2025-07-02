@@ -6,7 +6,7 @@ import { global } from '@storybook/global';
 import * as R from 'react-router-dom';
 
 import type { LinkProps, NavigateOptions, RenderData } from './types';
-import { getMatch, parsePath, queryFromString } from './utils';
+import { getMatch, parsePath, queryFromLocation } from './utils';
 
 const { document } = global;
 
@@ -47,7 +47,11 @@ export const useNavigate = () => {
 
   return useCallback((to: R.To | number, { plain, ...options } = {} as NavigateOptions) => {
     if (typeof to === 'string' && to.startsWith('#')) {
-      document.location.hash = to;
+      if (to === '#') {
+        navigate(document.location.search);
+      } else {
+        document.location.hash = to;
+      }
       return undefined;
     }
     if (typeof to === 'string') {
@@ -72,11 +76,11 @@ Link.displayName = 'QueryLink';
 
 /**
  * A render-prop component where children is called with a location and will be called whenever it
- * changes when it changes
+ * changes
  */
 export const Location = ({ children }: LocationProps) => {
   const location = R.useLocation();
-  const { path, singleStory } = queryFromString(location.search);
+  const { path, singleStory } = queryFromLocation(location);
   const { viewMode, storyId, refId } = parsePath(path);
 
   return (

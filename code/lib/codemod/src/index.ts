@@ -7,13 +7,6 @@ import { sync as spawnSync } from 'cross-spawn';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
 
-export {
-  default as updateOrganisationName,
-  packageNames,
-} from './transforms/update-organisation-name';
-
-export { default as updateAddonInfo } from './transforms/update-addon-info';
-
 const TRANSFORM_DIR = `${__dirname}/transforms`;
 
 export function listCodemods() {
@@ -65,6 +58,7 @@ export async function runCodemod(
   }
 
   // Dynamically import globby because it is a pure ESM module
+  // eslint-disable-next-line depend/ban-dependencies
   const { globby } = await import('globby');
 
   const files = await globby([glob, '!**/node_modules', '!**/dist']);

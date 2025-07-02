@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { Channel } from '@storybook/core/channels';
+import { Channel } from 'storybook/internal/channels';
 
 import { EventEmitter } from 'events';
 import type { Server } from 'http';
@@ -69,21 +69,5 @@ describe('ServerChannelTransport', () => {
         "b": [Circular],
       }
     `);
-  });
-  it('skips telejson classes and functions in data', () => {
-    const server = new EventEmitter() as any as Server;
-    const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server);
-    const handler = vi.fn();
-    transport.setHandler(handler);
-
-    // @ts-expect-error (an internal API)
-    transport.socket.emit('connection', socket);
-
-    const input = { a() {}, b: class {} };
-    socket.emit('message', stringify(input));
-
-    expect(handler.mock.calls[0][0].a).toEqual(expect.any(String));
-    expect(handler.mock.calls[0][0].b).toEqual(expect.any(String));
   });
 });

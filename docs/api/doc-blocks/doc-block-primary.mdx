@@ -5,18 +5,14 @@ sidebar:
   title: Primary
 ---
 
-<YouTubeCallout id="uAA1JvLcl-w" title="Avoid Documentation Nightmares with Storybook's Primary Doc Block" params="start=209" />
-
 The `Primary` block displays the primary (first defined in the stories file) story, in a [`Story`](./doc-block-story.mdx) block. It is typically rendered immediately under the title in a docs entry.
 
 ![Screenshot of Primary block](../../_assets/api/doc-block-primary.png)
 
 {/* prettier-ignore-start */}
 
-```md
-{/* ButtonDocs.mdx */}
-
-import { Meta, Primary } from '@storybook/blocks';
+```md title="ButtonDocs.mdx"
+import { Meta, Primary } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
@@ -29,7 +25,7 @@ import * as ButtonStories from './Button.stories';
 ## Primary
 
 ```js
-import { Primary } from '@storybook/blocks';
+import { Primary } from '@storybook/addon-docs/blocks';
 ```
 
 `Primary` is configured with the following props:

@@ -1,6 +1,8 @@
-import type { PartialStoryFn, PlayFunctionContext, StoryContext } from '@storybook/core/types';
+import type { PartialStoryFn, PlayFunctionContext, StoryContext } from 'storybook/internal/types';
+
 import { global as globalThis } from '@storybook/global';
-import { expect, within } from '@storybook/test';
+
+import { expect, within } from 'storybook/test';
 
 const arrows = {
   ArrowUp: { name: 'ArrowUp' },
@@ -17,7 +19,7 @@ const labels = {
 };
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   decorators: [
     (storyFn: PartialStoryFn, context: StoryContext) => {
       return storyFn({

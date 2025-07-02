@@ -1,9 +1,8 @@
-import { PresetProperty } from 'storybook/internal/types';
-
 import { dirname, join } from 'node:path';
 
-import { StandaloneOptions } from './builders/utils/standalone-options';
-import { StorybookConfig } from './types';
+import type { PresetProperty } from 'storybook/internal/types';
+
+import type { StandaloneOptions } from './builders/utils/standalone-options';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
@@ -11,16 +10,32 @@ const getAbsolutePath = <I extends string>(input: I): I =>
 export const addons: PresetProperty<'addons'> = [
   require.resolve('./server/framework-preset-angular-cli'),
   require.resolve('./server/framework-preset-angular-ivy'),
-  require.resolve('./server/framework-preset-angular-docs'),
 ];
 
-export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entries = [], options) => {
-  const annotations = [...entries, require.resolve('./client/config')];
+export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
+  entries = [],
+  options
+) => {
+  const config = join(getAbsolutePath('@storybook/angular'), 'dist/client/config.mjs');
+  const annotations = [...entries, config];
 
   if ((options as any as StandaloneOptions).enableProdMode) {
-    annotations.unshift(require.resolve('./client/preview-prod'));
+    const previewProdPath = join(
+      getAbsolutePath('@storybook/angular'),
+      'dist/client/preview-prod.mjs'
+    );
+    annotations.unshift(previewProdPath);
   }
 
+  const docsConfig = await options.presets.apply('docs', {}, options);
+  const docsEnabled = Object.keys(docsConfig).length > 0;
+  if (docsEnabled) {
+    const docsConfigPath = join(
+      getAbsolutePath('@storybook/angular'),
+      'dist/client/docs/config.mjs'
+    );
+    annotations.push(docsConfigPath);
+  }
   return annotations;
 };
 

@@ -1,7 +1,5 @@
-import { global as globalThis } from '@storybook/global';
-
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['autodocs'],
   args: { onClick: () => console.log('clicked!') },
   parameters: {

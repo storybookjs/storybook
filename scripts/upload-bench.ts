@@ -1,4 +1,5 @@
 import { BigQuery } from '@google-cloud/bigquery';
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import { join } from 'path';
 
@@ -95,7 +96,7 @@ const uploadBench = async () => {
     });
 
     return prNumber && prNumber !== '0'
-      ? fetch('https://storybook-benchmark-bot.vercel.app/description', {
+      ? fetch('https://storybook-benchmark-bot.netlify.app/description', {
           method: 'POST',
           body: JSON.stringify({
             owner: 'storybookjs',

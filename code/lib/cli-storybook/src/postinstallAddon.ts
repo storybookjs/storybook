@@ -6,19 +6,20 @@ import { join } from 'pathe';
 import { importModule, resolvePackageDir } from '../../../core/src/shared/utils/module';
 import type { PostinstallOptions } from './add';
 
-const require = createRequire(import.meta.url);
+const DIR_CWD = process.cwd();
+const require = createRequire(DIR_CWD);
 export const postinstallAddon = async (addonName: string, options: PostinstallOptions) => {
   const hookPath = `${addonName}/postinstall`;
   let modulePath: string;
   try {
-    modulePath = import.meta.resolve(hookPath, process.cwd()) || require.resolve(hookPath);
+    modulePath = import.meta.resolve(hookPath, DIR_CWD) || require.resolve(hookPath);
   } catch (e) {
-    modulePath = join(resolvePackageDir(addonName), 'postinstall');
+    modulePath = join(resolvePackageDir(addonName, DIR_CWD), 'postinstall');
   }
 
   let moduledLoaded: any;
 
-  console.log({ modulePath, hookPath, cwd: process.cwd(), addonName });
+  console.log({ modulePath, hookPath, cwd: DIR_CWD, addonName });
 
   try {
     moduledLoaded = await import(hookPath)

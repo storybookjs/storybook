@@ -34,7 +34,7 @@ export const getExternal = async (cwd: string) => {
   });
 
   const runtimeExternalInclude: string[] = [
-    'storybook',
+    // 'storybook',
     'react',
     'react-dom',
     'react-dom/client',

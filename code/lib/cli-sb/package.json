@@ -23,9 +23,6 @@
   "dependencies": {
     "storybook": "workspace:*"
   },
-  "engines": {
-    "node": "^20.19 || >=22.16.0"
-  },
   "publishConfig": {
     "access": "public"
   },

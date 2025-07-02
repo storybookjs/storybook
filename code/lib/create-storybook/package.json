@@ -57,9 +57,6 @@
     "ts-dedent": "^2.0.0",
     "typescript": "^5.8.3"
   },
-  "engines": {
-    "node": "^20.19 || >=22.16.0"
-  },
   "publishConfig": {
     "access": "public"
   },

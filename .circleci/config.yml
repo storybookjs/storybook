@@ -330,7 +330,7 @@ jobs:
       - attach_workspace:
           at: .
       - node/install:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
       - run:
           name: Test
           command: |
@@ -471,7 +471,7 @@ jobs:
       - attach_workspace:
           at: .
       - node/install:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
       - run:
           name: Install sandbox dependencies
           command: |
@@ -505,7 +505,7 @@ jobs:
       - attach_workspace:
           at: .
       - node/install:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
       - run:
           name: Install sandbox dependencies
           command: |
@@ -539,7 +539,7 @@ jobs:
       - attach_workspace:
           at: .
       - node/install:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
       - run:
           name: Running Test Runner in Dev mode
           command: yarn task --task test-runner-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task test-runner-dev) --no-link --start-from=never --junit
@@ -585,7 +585,7 @@ jobs:
       - attach_workspace:
           at: .
       - node/install:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
       - run:
           name: Install sandbox dependencies
           command: |
@@ -615,7 +615,7 @@ jobs:
       - attach_workspace:
           at: .
       - node/install:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
       - run:
           name: Install sandbox dependencies
           command: |
@@ -645,7 +645,7 @@ jobs:
       - attach_workspace:
           at: .
       - node/install:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
       - run:
           name: Install sandbox dependencies
           command: |
@@ -680,16 +680,6 @@ jobs:
             cd code
             yarn wait-on tcp:127.0.0.1:6001
             yarn wait-on tcp:127.0.0.1:6002
-      - run:
-          name: NPM version check
-          command: |
-            npm -v
-      - run:
-          name: Check
-          command: |
-            curl -w "\nHTTP Status: %{http_code}\n" http://localhost:6001/create-storybook
-            curl -w "\nHTTP Status: %{http_code}\n" http://localhost:6002/create-storybook
-            curl http://localhost:6002/create-storybook
       - run:
           name: Storybook init for features
           command: |
@@ -833,7 +823,7 @@ jobs:
       - attach_workspace:
           at: .
       - node/install:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
       - run:
           name: Install dependencies
           command: yarn install --no-immutable
@@ -863,7 +853,7 @@ jobs:
       - attach_workspace:
           at: .
       - node/install:
-          node-version: '22.16.0'
+          node-version: "22.16.0"
       - run:
           name: Install dependencies
           command: yarn install --no-immutable

@@ -1,3 +1,14 @@
+/**
+ * This is the entrypoint to compile a singular package:
+ *
+ * This is not run directly, but rather through the `nr task compile` or `nr build <package-name>`
+ * commands.
+ *
+ * It is used to compile a package, and generate the dist files, type mappers, and types files.
+ *
+ * The `process.cwd()` is the root of the current package to be built.
+ */
+
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { mkdir, rm } from 'node:fs/promises';
 

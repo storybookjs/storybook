@@ -6,11 +6,5 @@
     "module": "esnext",
     "stripInternal": true
   },
-  "include": [
-    "src/**/*",
-    "scripts/**/*",
-    "*.d.ts",
-    "../../scripts/check/helpers",
-    "../../scripts/check/check.ts"
-  ]
+  "include": ["src/**/*", "scripts/**/*", "*.d.ts"]
 }

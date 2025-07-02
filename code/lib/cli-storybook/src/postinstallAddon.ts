@@ -21,6 +21,8 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
       .catch(() => importModule(hookPath))
       .catch(() => importModule(modulePath))
       .catch(() => importModule(fileURLToPath(modulePath)))
+      .catch(() => require(hookPath))
+      .catch(() => require(modulePath))
       .catch(() => require(fileURLToPath(modulePath)));
   } catch (e) {
     return;

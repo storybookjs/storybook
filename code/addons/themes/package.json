@@ -81,7 +81,7 @@
       "./src/preview.tsx"
     ]
   },
-  "gitHead": "a6a7fd8a655c69780bc20b9749c2699e44beae16",
+  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
   "storybook": {
     "displayName": "Themes",
     "unsupportedFrameworks": [

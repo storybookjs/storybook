@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { ArrowSolidDownIcon, ArrowSolidUpIcon } from '@storybook/icons';
+import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
@@ -234,7 +234,7 @@ export const Interaction = ({
                 onClick={toggleCollapsed}
                 aria-label={isCollapsed ? 'Expand interaction' : 'Collapse interaction'}
               >
-                {isCollapsed ? <ArrowSolidDownIcon /> : <ArrowSolidUpIcon />}
+                {isCollapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
               </StyledIconButton>
             </WithTooltip>
           )}

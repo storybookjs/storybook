@@ -14,11 +14,16 @@ type Story = StoryObj<typeof meta>;
 export default meta;
 
 export const Select: Story = {
-  render: (args: any) => (
+  render: (args) => (
     <Component onChange={action('onChange')} {...args}>
-      <option value="val1">Value 1</option>
-      <option value="val2">Value 2</option>
-      <option value="val3">Value 3</option>
+      <option value="" hidden disabled selected>
+        Select a Fruit
+      </option>
+      <option value="apple">Apple</option>
+      <option value="banana">Banana</option>
+      <option value="blueberry">Blueberry</option>
+      <option value="grapes">Grapes</option>
+      <option value="pineapple">Pineapple</option>
     </Component>
   ),
 };

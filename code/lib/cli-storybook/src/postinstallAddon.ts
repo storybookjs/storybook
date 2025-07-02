@@ -1,9 +1,7 @@
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
-import { join } from 'pathe';
-
-import { importModule, resolvePackageDir } from '../../../core/src/shared/utils/module';
+import { importModule } from '../../../core/src/shared/utils/module';
 import type { PostinstallOptions } from './add';
 
 const DIR_CWD = process.cwd();
@@ -12,9 +10,13 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
   const hookPath = `${addonName}/postinstall`;
   let modulePath: string;
   try {
-    modulePath = import.meta.resolve(hookPath, DIR_CWD) || require.resolve(hookPath);
+    modulePath = import.meta.resolve(hookPath, DIR_CWD);
   } catch (e) {
-    modulePath = join(resolvePackageDir(addonName, DIR_CWD), 'postinstall');
+    try {
+      modulePath = require.resolve(hookPath, { paths: [DIR_CWD] });
+    } catch (e) {
+      return;
+    }
   }
 
   let moduledLoaded: any;

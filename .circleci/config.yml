@@ -686,7 +686,7 @@ jobs:
       - run:
           name: Create tar archive
           command: |
-            cs ../
+            cd ../
             tar -czf compressed.tar.gz features-1
           when: always
       - store_artifacts:

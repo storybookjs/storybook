@@ -23,6 +23,8 @@ export async function extractStoriesNodesFromExportDefaultFn(params: Params) {
 
       if (node.callee.type === 'Identifier' && node.callee.name === storyIdentifier.name) {
         state.push(node);
+      } else {
+        context.next();
       }
     },
   };

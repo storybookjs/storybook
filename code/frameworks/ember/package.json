@@ -1,7 +1,7 @@
 {
   "name": "@storybook/ember",
   "version": "9.1.0-alpha.6",
-  "description": "Storybook for Ember: Develop Ember Component in isolation with Hot Reloading.",
+  "description": "Storybook for Ember: Develop, document, and test Ember components in isolation",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"

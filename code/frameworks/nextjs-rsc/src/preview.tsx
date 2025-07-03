@@ -70,6 +70,9 @@ export const loaders: Addon_LoaderFunction = async ({ globals, parameters }) => 
 };
 
 export const parameters = {
+  nextjs: {
+    appDirectory: true,
+  },
   docs: {
     source: {
       excludeDecorators: true,

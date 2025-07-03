@@ -1,10 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { action } from 'storybook/actions';
+
 import { IntentSurvey } from './IntentSurvey';
 
 const meta = {
   title: 'Onboarding/IntentSurvey',
   component: IntentSurvey,
+  args: {
+    onComplete: action('onComplete'),
+    onDismiss: action('onDismiss'),
+  },
 } as Meta<typeof IntentSurvey>;
 
 type Story = StoryObj<typeof meta>;

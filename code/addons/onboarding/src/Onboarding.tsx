@@ -107,14 +107,21 @@ export default function Onboarding({ api }: { api: API }) {
     setEnabled(false);
   }, [api, setEnabled]);
 
-  const completeOnboarding = useCallback(() => {
-    api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
-      step: '7:FinishedOnboarding' satisfies StepKey,
-      type: 'telemetry',
-    });
-    selectStory('configure-your-project--docs');
-    disableOnboarding();
-  }, [api, selectStory, disableOnboarding]);
+  const completeOnboarding = useCallback(
+    (answers: Record<string, string[] | string>) => {
+      api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+        step: '7:FinishedOnboarding' satisfies StepKey,
+        type: 'telemetry',
+      });
+      api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+        answers,
+        type: 'survey',
+      });
+      selectStory('configure-your-project--docs');
+      disableOnboarding();
+    },
+    [api, selectStory, disableOnboarding]
+  );
 
   useEffect(() => {
     api.setQueryParams({ onboarding: 'true' });
@@ -276,13 +283,13 @@ export default function Onboarding({ api }: { api: API }) {
       {step === '1:Intro' ? (
         <SplashScreen onDismiss={() => setStep('2:Controls')} />
       ) : step === '6:IntentSurvey' ? (
-        <IntentSurvey onDismiss={() => setStep('7:FinishedOnboarding')} />
+        <IntentSurvey onComplete={completeOnboarding} onDismiss={disableOnboarding} />
       ) : (
         <GuidedTour
           step={step}
           steps={steps}
           onClose={disableOnboarding}
-          onComplete={completeOnboarding}
+          onComplete={() => setStep('6:IntentSurvey')}
         />
       )}
     </ThemeProvider>

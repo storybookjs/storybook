@@ -178,7 +178,7 @@ type SelectProps = Omit<
   valid?: ValidationStates;
   height?: number;
 };
-const BaseSelect = styled.select(sizes, ({ theme }) => ({
+const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
   appearance: 'none',
   background: `calc(100% - 12px) center no-repeat url("data:image/svg+xml,%3Csvg width='8' height='4' viewBox='0 0 8 4' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.30303 0.196815C1.13566 0.0294472 0.864304 0.0294472 0.696937 0.196815C0.529569 0.364182 0.529569 0.635539 0.696937 0.802906L3.69694 3.80291C3.8643 3.97027 4.13566 3.97027 4.30303 3.80291L7.30303 0.802906C7.4704 0.635539 7.4704 0.364182 7.30303 0.196815C7.13566 0.0294473 6.8643 0.0294473 6.69694 0.196815L3.99998 2.89377L1.30303 0.196815Z' fill='%2373828C'/%3E%3C/svg%3E%0A")`,
   backgroundSize: 10,
@@ -262,10 +262,16 @@ const BaseSelect = styled.select(sizes, ({ theme }) => ({
       color: theme.color.secondary,
       fontWeight: theme.typography.weight.bold,
     },
+    '&:disabled': {
+      backgroundColor: 'transparent',
+      cursor: 'default',
+      color: theme.color.defaultText,
+    },
   },
 }));
 export const Select = ({ children, ...props }: SelectProps) => {
   return (
+    // @ts-expect-error Weird props mismatch
     <BaseSelect {...props}>
       <button>
         {/* @ts-expect-error Not yet supported */}

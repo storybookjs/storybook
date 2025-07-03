@@ -36,7 +36,8 @@
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
-    "semver": "^7.6.2"
+    "semver": "^7.6.2",
+    "storybook": "workspace:*"
   },
   "devDependencies": {
     "@types/prompts": "^2.0.9",

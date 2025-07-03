@@ -1,7 +1,8 @@
+import { addToGlobalContext } from 'storybook/internal/telemetry';
+
 import { program } from 'commander';
 
 import { initiate } from '..';
-import { addToGlobalContext } from '../../../../core/src/telemetry';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
 

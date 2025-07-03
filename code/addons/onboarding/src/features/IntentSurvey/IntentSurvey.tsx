@@ -213,9 +213,10 @@ export const IntentSurvey = ({
                     name={key}
                     id={key}
                     required={field.required}
+                    defaultValue=""
                     onChange={(e) => updateFormData(key, e.target.value)}
                   >
-                    <option disabled selected>
+                    <option disabled hidden value="">
                       Select an option...
                     </option>
                     {Object.entries(field.options).map(([opt, option]) => (

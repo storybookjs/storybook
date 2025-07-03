@@ -11,7 +11,7 @@ const Input = styled.input({
   flexShrink: 0,
   margin: -1,
   border: `1px solid ${color.border}`,
-  borderRadius: 14,
+  borderRadius: 8,
   backgroundColor: 'white',
   transition: 'background-color 0.1s',
 

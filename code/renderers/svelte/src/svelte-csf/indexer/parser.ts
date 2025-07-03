@@ -140,7 +140,7 @@ export async function parseForIndexer(
         if (specifier.type !== 'ImportSpecifier') {
           throw new DefaultOrNamespaceImportUsedError(filename);
         }
-        if(!('name' in specifier.imported)) {
+        if (!('name' in specifier.imported)) {
           return;
         }
 

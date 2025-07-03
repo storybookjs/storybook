@@ -265,7 +265,11 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
           if (declaration.type === 'VariableDeclaration') {
             const { init } = declaration.declarations[0];
 
-            if (init?.type === 'CallExpression' && 'name' in init.callee && init.callee.name === 'defineMeta') {
+            if (
+              init?.type === 'CallExpression' &&
+              'name' in init.callee &&
+              init.callee.name === 'defineMeta'
+            ) {
               continue;
             }
           }

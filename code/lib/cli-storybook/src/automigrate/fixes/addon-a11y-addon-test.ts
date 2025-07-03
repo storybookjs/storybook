@@ -78,7 +78,9 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
       const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
       const previewSetupSource = readFileSync(previewFile, 'utf8');
 
-      skipVitestSetupTransformation = vitestSetupSource.includes('@storybook/addon-a11y');
+      skipVitestSetupTransformation =
+        vitestSetupSource.includes('@storybook/addon-a11y') ||
+        vitestSetupSource.includes('preview.composed.beforeAll');
       skipPreviewTransformation = !shouldPreviewFileBeTransformed(previewSetupSource);
 
       if (skipVitestSetupTransformation && skipPreviewTransformation) {

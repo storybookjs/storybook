@@ -1,8 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-async function addClientDirective() {
-  const filePath = resolve('./dist/client.mjs');
+async function addClientDirective(path: string) {
+  const filePath = resolve(path);
   const content = await readFile(filePath, 'utf8');
 
   if (!content.startsWith("'use client';")) {
@@ -10,4 +10,5 @@ async function addClientDirective() {
   }
 }
 
-addClientDirective();
+addClientDirective('./dist/client.mjs');
+addClientDirective('./dist/images/next-image.mjs');

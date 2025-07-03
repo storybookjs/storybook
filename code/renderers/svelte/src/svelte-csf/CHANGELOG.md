@@ -1,3 +1,15 @@
+# v5.0.5 (Thu Jul 03 2025)
+
+#### 🐛 Bug Fix
+
+- Fix reading `rawCode` from undefined `__svelteCsf` [#319](https://github.com/storybookjs/addon-svelte-csf/pull/319) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v5.0.4 (Tue Jun 24 2025)
 
 #### 🐛 Bug Fix

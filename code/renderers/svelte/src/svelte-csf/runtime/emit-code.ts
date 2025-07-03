@@ -47,7 +47,7 @@ export const emitCode = (params: Params) => {
 const skipSourceRender = (context: Params['storyContext']) => {
   const sourceParams = context?.parameters.docs?.source;
   const isArgsStory = context?.parameters.__isArgsStory;
-  const rawCode = context?.parameters.__svelteCsf.rawCode;
+  const rawCode = context?.parameters.__svelteCsf?.rawCode;
 
   if (!rawCode) {
     return true;

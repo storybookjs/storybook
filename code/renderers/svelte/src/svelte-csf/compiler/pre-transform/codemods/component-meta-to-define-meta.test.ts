@@ -143,7 +143,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
     );
   });
 
-  it.only('tags with an array expression are left as-is', async ({ expect }) => {
+  it('tags with an array expression are left as-is', async ({ expect }) => {
     const code = `
       <script context="module">
         import { Story } from "@storybook/addon-svelte-csf";

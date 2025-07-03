@@ -5,7 +5,6 @@ import { action } from 'storybook/actions';
 import { IntentSurvey } from './IntentSurvey';
 
 const meta = {
-  title: 'Onboarding/IntentSurvey',
   component: IntentSurvey,
   args: {
     onComplete: action('onComplete'),

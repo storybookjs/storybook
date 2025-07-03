@@ -6502,7 +6502,7 @@ __metadata:
     postcss: "npm:^8.4.38"
     postcss-loader: "npm:^8.1.1"
     react-refresh: "npm:^0.14.0"
-    react-server-dom-webpack: "npm:19.2.0-canary-cee7939b-20250625"
+    react-server-dom-webpack: "npm:^19.1.0"
     resolve-url-loader: "npm:^5.0.0"
     sass-loader: "npm:^14.2.1"
     semver: "npm:^7.3.5"
@@ -22819,18 +22819,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-server-dom-webpack@npm:19.2.0-canary-cee7939b-20250625":
-  version: 19.2.0-canary-cee7939b-20250625
-  resolution: "react-server-dom-webpack@npm:19.2.0-canary-cee7939b-20250625"
+"react-server-dom-webpack@npm:^19.1.0":
+  version: 19.1.0
+  resolution: "react-server-dom-webpack@npm:19.1.0"
   dependencies:
     acorn-loose: "npm:^8.3.0"
     neo-async: "npm:^2.6.1"
     webpack-sources: "npm:^3.2.0"
   peerDependencies:
-    react: 19.2.0-canary-cee7939b-20250625
-    react-dom: 19.2.0-canary-cee7939b-20250625
+    react: ^19.1.0
+    react-dom: ^19.1.0
     webpack: ^5.59.0
-  checksum: 10c0/83917ef5f7d4f20a9fb6525bb304e69295c027cf193b5d6ab5f820a8fb2dfaf2b865e31b980f22203bb01131f009283036bf9e8a6b9a13eaf97b3449a6b55a74
+  checksum: 10c0/ba423b34eabc50fa7d6ae5738878f9fd93ee6d6720975626ed71e3db4c0c8601a2ef575c8b1f91436090add9b93a182ba3561676f6c627e79655da4327d389e5
   languageName: node
   linkType: hard
 

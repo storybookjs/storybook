@@ -175,7 +175,6 @@
     "postcss": "^8.4.38",
     "postcss-loader": "^8.1.1",
     "react-refresh": "^0.14.0",
-    "react-server-dom-webpack": "19.2.0-canary-cee7939b-20250625",
     "resolve-url-loader": "^5.0.0",
     "sass-loader": "^14.2.1",
     "semver": "^7.3.5",
@@ -193,6 +192,7 @@
     "@types/node": "^22.0.0",
     "@types/react-refresh": "^0",
     "next": "^15.2.3",
+    "react-server-dom-webpack": "^19.1.0",
     "typescript": "^5.8.3",
     "webpack": "^5.65.0"
   },

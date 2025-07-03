@@ -216,8 +216,8 @@ test.describe("component testing", () => {
 
     await runTestsButton.click();
     await expect(watchModeButton).toBeDisabled();
-
-    await expect(testingModuleDescription).toContainText("Testing");
+    await expect(testingModuleDescription).toContainText("Starting...");
+    await expect(testingModuleDescription).toContainText("Testing...");
 
     // Wait for test results to appear
     await expect(testingModuleDescription).toHaveText(/Ran \d+ tests/, {

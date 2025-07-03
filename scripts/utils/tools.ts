@@ -23,7 +23,7 @@ import type * as typefest from 'type-fest';
 import typescript from 'typescript';
 import ts from 'typescript';
 
-import { CODE_DIRECTORY } from '../utils/constants';
+import { CODE_DIRECTORY } from './constants';
 
 export { globalExternals };
 

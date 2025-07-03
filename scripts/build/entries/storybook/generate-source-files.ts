@@ -6,12 +6,15 @@ import { join } from 'node:path';
 
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import { isNotNil } from 'es-toolkit';
+import * as esbuild from 'esbuild';
+import * as prettier from 'prettier';
+import { dedent } from 'ts-dedent';
 
 import {
   BROWSER_TARGETS,
   SUPPORTED_FEATURES,
 } from '../../../../code/core/src/shared/constants/environments-support';
-import { dedent, esbuild, getWorkspace, prettier } from '../../../prepare/tools';
+import { getWorkspace } from '../../../utils/tools';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 

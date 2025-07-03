@@ -1,3 +1,16 @@
+/**
+ * This is the entrypoint for when you run:
+ *
+ * @example `nr build storybook --watch`
+ *
+ * You can pass a list of package names to build, or use the `--all` flag to build all packages.
+ *
+ * You can also pass the `--watch` flag to build in watch mode.
+ *
+ * You can also pass the `--prod` flag to build in production mode.
+ *
+ * When you pass no package names, you will be prompted to select which packages to build.
+ */
 import { exec } from 'child_process';
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies

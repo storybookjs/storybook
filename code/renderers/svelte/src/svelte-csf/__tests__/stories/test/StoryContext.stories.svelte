@@ -1,6 +1,9 @@
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
+  /**
+   * this is a meta comment
+   */
   const { Story } = defineMeta({
     title: 'StoryContext',
     parameters: {
@@ -19,6 +22,7 @@
   }
 </script>
 
+<!-- This is a story comment -->
 <Story name="Default">
   {#snippet template(_args, context)}
     <pre>

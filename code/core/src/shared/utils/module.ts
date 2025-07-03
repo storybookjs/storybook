@@ -17,7 +17,7 @@ export const importMetaResolve = (...args: Parameters<ImportMeta['resolve']>) =>
     console.warn(
       "importMetaResolve from within Storybook is being used in a Vitest test, but it shouldn't be. Please report this at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml"
     );
-    return `file:///${args[0]}`;
+    return pathToFileURL(args[0]).href;
   }
   return import.meta.resolve(...args);
 };

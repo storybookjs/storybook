@@ -191,6 +191,10 @@ export const automigrate = async ({
     logger.log('');
   }
 
+  if (hasFailures) {
+    throw new Error('Some migrations failed');
+  }
+
   return { fixResults, preCheckFailure };
 };
 

@@ -177,7 +177,7 @@ export const IntentSurvey = ({
 
   return (
     <Modal defaultOpen width={420} onEscapeKeyDown={onDismiss}>
-      <Form onSubmit={onSubmitForm} id="create-new-story-form">
+      <Form onSubmit={onSubmitForm} id="intent-survey-form">
         <Content>
           <Modal.Header>
             <Modal.Title>Help improve Storybook</Modal.Title>

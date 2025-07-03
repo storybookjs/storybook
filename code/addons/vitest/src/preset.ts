@@ -103,6 +103,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     testProviderStore.setState('test-provider-state:running');
     store.setState((s) => ({
       ...s,
+      currentRun: storeOptions.initialState.currentRun,
       fatalError: undefined,
     }));
     runTestRunner({

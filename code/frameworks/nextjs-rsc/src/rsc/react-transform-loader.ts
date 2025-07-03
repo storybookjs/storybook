@@ -1,10 +1,9 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
+// @ts-expect-error no dts file
+import { getSource, transformSource } from 'react-server-dom-webpack/node-loader';
 import type { LoaderContext } from 'webpack';
-
-// @ts-expect-error no ts file
-import { getSource, transformSource } from './ReactFlightWebpackNodeLoader.js';
 
 export default async function reactTransformLoader(
   this: LoaderContext<unknown>,

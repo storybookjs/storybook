@@ -42,7 +42,7 @@ export function findStoryAttributeTemplateSnippetBlock(options: {
   }
 
   return findSnippetBlockByName({
-    name: template.value.expression.name,
+    name: (template.value.expression as any).name,
     nodes: nodes,
   });
 }

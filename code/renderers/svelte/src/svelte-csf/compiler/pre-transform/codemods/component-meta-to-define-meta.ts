@@ -150,7 +150,7 @@ function transformTags(tags: SvelteAST.Attribute): void {
 
   // tags.value is SvelteAST.ExpressionTag
   if (!Array.isArray(tags.value)) {
-    if (typeof tags.value.expression.value !== 'string') {
+    if ('value' in tags.value.expression && typeof tags.value.expression.value !== 'string') {
       // NOTE: The error on invalid type (not a string) is likely visible
       // 1. via TypeScript
       // 2. and thrown by storybook internal, right?

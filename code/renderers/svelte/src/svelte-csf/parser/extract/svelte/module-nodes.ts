@@ -9,6 +9,7 @@ import {
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
 } from '$lib/utils/error/parser/extract/svelte.js';
+import type { Identifier } from 'estree';
 
 const AST_NODES_NAMES = {
   defineMeta: 'defineMeta',
@@ -69,7 +70,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
     },
 
     ImportSpecifier(node) {
-      if (node.imported.name === AST_NODES_NAMES.defineMeta) {
+      if ("name" in node.imported && node.imported.name === AST_NODES_NAMES.defineMeta) {
         state.defineMetaImport = node;
       }
     },

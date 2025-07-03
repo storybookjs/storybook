@@ -96,7 +96,7 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
         return transformed;
       }
 
-      return node;
+      return node as any;
     },
 
     ExportNamedDeclaration(node, context) {
@@ -235,7 +235,7 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
 
       state.currentScript = scriptContext === 'module' ? 'module' : 'instance';
 
-      content = visit(content, state) as ESTreeAST.Program;
+      content = visit(content, state) as any;
 
       return { ...rest, content, context: scriptContext };
     },
@@ -265,7 +265,7 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
           if (declaration.type === 'VariableDeclaration') {
             const { init } = declaration.declarations[0];
 
-            if (init?.type === 'CallExpression' && init.callee.name === 'defineMeta') {
+            if (init?.type === 'CallExpression' && 'name' in init.callee && init.callee.name === 'defineMeta') {
               continue;
             }
           }
@@ -273,16 +273,16 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
           instanceBody.push(declaration);
         }
 
-        node.body = instanceBody;
+        node.body = instanceBody as any;
       }
 
       if (state.currentScript === 'module') {
         if (state.storiesComponentImportDeclaration) {
-          node.body.unshift(state.storiesComponentImportDeclaration);
+          node.body.unshift(state.storiesComponentImportDeclaration as any);
         }
 
         if (state.pkgImportDeclaration) {
-          node.body.unshift(state.pkgImportDeclaration);
+          node.body.unshift(state.pkgImportDeclaration as any);
         }
 
         if (state.defineMetaFromExportConstMeta) {

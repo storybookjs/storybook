@@ -31,7 +31,7 @@ describe(transformExportMetaToDefineMeta.name, () => {
         } satisfies Meta<Button>;
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ESTreeAST.ExportNamedDeclaration>(
+    const node = await parseAndExtractSvelteNode<any>(
       code,
       'ExportNamedDeclaration'
     );
@@ -66,7 +66,7 @@ describe(transformExportMetaToDefineMeta.name, () => {
         };
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ESTreeAST.ExportNamedDeclaration>(
+    const node = await parseAndExtractSvelteNode<any>(
       code,
       'ExportNamedDeclaration'
     );

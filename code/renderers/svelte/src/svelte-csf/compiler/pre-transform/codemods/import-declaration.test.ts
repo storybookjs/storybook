@@ -13,7 +13,7 @@ describe(transformImportDeclaration.name, () => {
         import { Story, Template } from "@storybook/addon-svelte-csf";
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ESTreeAST.ImportDeclaration>(
+    const node = await parseAndExtractSvelteNode<any>(
       code,
       'ImportDeclaration'
     );
@@ -29,7 +29,7 @@ describe(transformImportDeclaration.name, () => {
         import { Story, Template, defineMeta } from "@storybook/addon-svelte-csf";
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ESTreeAST.ImportDeclaration>(
+    const node = await parseAndExtractSvelteNode<any>(
       code,
       'ImportDeclaration'
     );

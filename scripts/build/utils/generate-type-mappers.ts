@@ -2,12 +2,11 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, sep } from 'node:path';
 
-import { dedent } from '../../../../scripts/prepare/tools';
-import type { Entry } from '../entries';
+import { dedent } from 'ts-dedent';
 
-const cwd = process.cwd();
+import type { BuildEntries } from './entry-utils';
 
-async function generateTypesMapperContent(filePath: string) {
+async function generateTypesMapperContent(filePath: string, cwd: string) {
   const upwards = relative(join(filePath, '..'), cwd);
   const downwards = relative(cwd, filePath);
 
@@ -18,7 +17,7 @@ async function generateTypesMapperContent(filePath: string) {
   `;
 }
 
-export async function generateTypesMapperFiles(entries: Entry[]) {
+export async function generateTypesMapperFiles(cwd: string, data: BuildEntries) {
   /**
    * Generate the type mapper files, which are used to map the types to the SOURCE location. This
    * would be for development builds ONLY, **HOWEVER**: During a production build we ALSO run this,
@@ -28,7 +27,12 @@ export async function generateTypesMapperFiles(entries: Entry[]) {
    * interdependencies are MEGA complex, and this simplified approach immensely is the only way to
    * ensure we can compile them in parallel.
    */
-  const all = entries.filter((e) => e.dts !== false).map((e) => e.entryPoint);
+
+  const dtsEntries = Object.values(data.entries)
+    .flat()
+    .filter((entry) => entry.dts !== false);
+
+  const all = dtsEntries.filter((e) => e.dts !== false).map((e) => e.entryPoint);
 
   await Promise.all(
     all.map(async (filePath) => {
@@ -37,7 +41,7 @@ export async function generateTypesMapperFiles(entries: Entry[]) {
         const directory = dirname(location);
         await mkdir(directory, { recursive: true });
       }
-      await writeFile(location, await generateTypesMapperContent(filePath));
+      await writeFile(location, await generateTypesMapperContent(filePath, cwd));
     })
   );
 }

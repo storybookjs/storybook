@@ -47,13 +47,6 @@ export const getVersionSpecifier = (addon: string) => {
   return [addon, undefined] as const;
 };
 
-const requireMain = (configDir: string) => {
-  const absoluteConfigDir = isAbsolute(configDir) ? configDir : join(process.cwd(), configDir);
-  const mainFile = join(absoluteConfigDir, 'main');
-
-  return serverRequire(mainFile) ?? {};
-};
-
 const checkInstalled = (addonName: string, main: StorybookConfigRaw) => {
   const existingAddon = main.addons?.find((entry: string | { name: string }) => {
     const name = typeof entry === 'string' ? entry : entry.name;

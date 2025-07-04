@@ -103,7 +103,6 @@
   },
   "dependencies": {
     "@chromatic-com/storybook": "^4.0.0",
-    "@happy-dom/global-registrator": "^17.4.4",
     "@nx/vite": "20.2.2",
     "@nx/workspace": "20.2.2",
     "@playwright/test": "1.52.0",
@@ -238,9 +237,6 @@
     }
   },
   "packageManager": "yarn@4.9.1",
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"

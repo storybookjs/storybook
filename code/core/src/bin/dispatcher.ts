@@ -19,21 +19,20 @@ import { resolvePackageDir } from '../shared/utils/module';
  * - Init is routed to the create-storybook package via npx
  * - External CLI tools (upgrade, doctor, etc.) are routed to @storybook/cli via npx
  */
-async function dispatch() {
-  const [majorNodeVersion, minorNodeVersion] = process.versions.node.split('.').map(Number);
+const [majorNodeVersion, minorNodeVersion] = process.versions.node.split('.').map(Number);
+if (
+  majorNodeVersion < 20 ||
+  (majorNodeVersion === 20 && minorNodeVersion < 19) ||
+  (majorNodeVersion === 22 && minorNodeVersion < 12)
+) {
+  logger.error(
+    dedent`To run Storybook, you need Node.js version 20.19+ or 22.12+.
+    You are currently running Node.js ${process.version}. Please upgrade your Node.js installation.`
+  );
+  process.exit(1);
+}
 
-  if (
-    majorNodeVersion < 20 ||
-    (majorNodeVersion === 20 && minorNodeVersion < 19) ||
-    (majorNodeVersion === 22 && minorNodeVersion < 12)
-  ) {
-    logger.error(
-      dedent`To run Storybook, you need Node.js version 20.19+ or 22.12+.
-      You are currently running Node.js ${process.version}. Please upgrade your Node.js installation.`
-    );
-    process.exit(1);
-  }
-
+async function run() {
   const args = process.argv.slice(2);
 
   if (['dev', 'build', 'index'].includes(args[0])) {
@@ -61,7 +60,7 @@ async function dispatch() {
     if (targetCliPackageJson.version === versions[targetCli.pkg]) {
       command = [
         'node',
-        join(resolvePackageDir(targetCli.pkg), 'bin/index.cjs'),
+        join(resolvePackageDir(targetCli.pkg), 'dist/bin/index.js'),
         ...targetCli.args,
       ];
     }
@@ -76,4 +75,4 @@ async function dispatch() {
   });
 }
 
-dispatch();
+run();

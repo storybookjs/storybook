@@ -6,7 +6,7 @@
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "build-package": "jiti ./build-package.ts",
-    "check": "jiti ./prepare/check-scripts.ts",
+    "check": "jiti ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
     "docs:prettier:check": "cd ../docs && prettier --check ./_snippets || echo 'Please run \"docs:prettier:write\" in the \"scripts\" directory to fix the issues'",
     "docs:prettier:write": "cd ../docs && prettier --write ./_snippets",
@@ -64,6 +64,7 @@
     "@actions/core": "^1.11.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@google-cloud/bigquery": "^6.2.1",
+    "@happy-dom/global-registrator": "^18.0.1",
     "@octokit/graphql": "^5.0.6",
     "@octokit/request": "^8.4.1",
     "@polka/parse": "^1.0.0-next.28",
@@ -189,8 +190,5 @@
     "verdaccio": "^5.31.1",
     "verdaccio-auth-memory": "^10.2.2"
   },
-  "packageManager": "yarn@4.9.1",
-  "engines": {
-    "node": ">=22.16.0"
-  }
+  "packageManager": "yarn@4.9.1"
 }

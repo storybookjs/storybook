@@ -124,7 +124,6 @@
       "types": "./dist/node-logger/index.d.ts",
       "default": "./dist/node-logger/index.js"
     },
-    "./internal/package.json": "./package.json",
     "./internal/preview-api": {
       "types": "./dist/preview-api/index.d.ts",
       "default": "./dist/preview-api/index.js"
@@ -205,8 +204,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ./scripts/check.ts",
-    "prep": "jiti ./scripts/prep.ts"
+    "check": "jiti ../../scripts/check/check-package.ts",
+    "prep": "jiti ../../scripts/build/build-package.ts"
   },
   "resolutions": {
     "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/../.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch"
@@ -361,5 +360,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16"
 }

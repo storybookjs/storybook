@@ -23,7 +23,7 @@ import type * as typefest from 'type-fest';
 import typescript from 'typescript';
 import ts from 'typescript';
 
-import { CODE_DIRECTORY } from '../utils/constants';
+import { CODE_DIRECTORY } from './constants';
 
 export { globalExternals };
 
@@ -56,7 +56,6 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
   });
   const { output } = await out.generate({
     format: 'es',
-    // dir: dirname(entry).replace('src', 'dist'),
     file: entry.replace('src', 'dist').replace('.ts', '.d.ts'),
   });
 

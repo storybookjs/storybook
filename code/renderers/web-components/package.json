@@ -46,7 +46,7 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
+    "check": "jiti ../../../scripts/check/check-package.ts",
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
@@ -68,9 +68,6 @@
     "lit": "^2.0.0 || ^3.0.0",
     "storybook": "workspace:^"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
@@ -84,5 +81,5 @@
     ],
     "platform": "browser"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16"
 }

@@ -6,28 +6,29 @@ import { join } from 'node:path';
 
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import { isNotNil } from 'es-toolkit';
-import uniqueString from 'unique-string';
+import * as esbuild from 'esbuild';
+import * as prettier from 'prettier';
+import { dedent } from 'ts-dedent';
 
-import { dedent, esbuild, getWorkspace, prettier } from '../../../../scripts/prepare/tools';
 import {
   BROWSER_TARGETS,
   SUPPORTED_FEATURES,
-} from '../../src/shared/constants/environments-support';
+} from '../../../../code/core/src/shared/constants/environments-support';
+import { getWorkspace } from '../../../utils/tools';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
+const CORE_ROOT_DIR = join(import.meta.dirname, '..', '..', '..', '..', 'code', 'core');
 const tempDir = () => realpath(os.tmpdir());
-const getPath = async (prefix = '') => join(await tempDir(), prefix + uniqueString());
+const getPath = async (prefix = '') =>
+  join(await tempDir(), prefix + (Math.random() + 1).toString(36).substring(7));
 
-export async function temporaryDirectory({ prefix = '' } = {}) {
+async function temporaryDirectory({ prefix = '' } = {}) {
   const directory = await getPath(prefix);
   mkdirSync(directory);
   return directory;
 }
-export async function temporaryFile({
-  name,
-  extension,
-}: { name?: string; extension?: string } = {}) {
+async function temporaryFile({ name, extension }: { name?: string; extension?: string } = {}) {
   if (name) {
     if (extension !== undefined && extension !== null) {
       // eslint-disable-next-line local-rules/no-uncategorized-errors
@@ -47,11 +48,9 @@ export async function temporaryFile({
 // save this list into ./code/core/src/types/frameworks.ts and export it as a union type.
 // The name of the type is `SupportedFrameworks`. Add additionally 'qwik' and `solid` to that list.
 export const generateSourceFiles = async () => {
-  const location = join(import.meta.dirname, '..', '..', 'src');
-  const prettierConfig = await prettier.resolveConfig(location);
+  const prettierConfig = await prettier.resolveConfig(join(CORE_ROOT_DIR, 'src'));
 
   await Promise.all([
-    //
     generateFrameworksFile(prettierConfig),
     generateVersionsFile(prettierConfig),
     generateExportsFile(prettierConfig),
@@ -59,7 +58,7 @@ export const generateSourceFiles = async () => {
 };
 
 async function generateVersionsFile(prettierConfig: prettier.Options | null): Promise<void> {
-  const location = join(import.meta.dirname, '..', '..', 'src', 'common', 'versions.ts');
+  const destination = join(CORE_ROOT_DIR, 'src', 'common', 'versions.ts');
 
   const workspace = (await getWorkspace()).filter(isNotNil);
 
@@ -75,7 +74,7 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
   );
 
   await writeFile(
-    location,
+    destination,
     await prettier.format(
       dedent`
         // auto generated file, do not edit
@@ -91,26 +90,26 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 
 async function generateFrameworksFile(prettierConfig: prettier.Options | null): Promise<void> {
   const thirdPartyFrameworks = ['qwik', 'solid', 'nuxt', 'react-rsbuild', 'vue3-rsbuild'];
-  const location = join(
+  const destination = join(CORE_ROOT_DIR, 'src', 'types', 'modules', 'frameworks.ts');
+  const frameworksDirectory = join(
     import.meta.dirname,
     '..',
     '..',
-    'src',
-    'types',
-    'modules',
-    'frameworks.ts'
+    '..',
+    '..',
+    'code',
+    'frameworks'
   );
-  const frameworksDirectory = join(import.meta.dirname, '..', '..', '..', 'frameworks');
 
   const readFrameworks = (await readdir(frameworksDirectory)).filter((framework) =>
-    existsSync(join(frameworksDirectory, framework, 'project.json'))
+    existsSync(join(frameworksDirectory, framework, 'package.json'))
   );
   const frameworks = [...readFrameworks.sort(), ...thirdPartyFrameworks]
     .map((framework) => `'${framework}'`)
     .join(' | ');
 
   await writeFile(
-    location,
+    destination,
     await prettier.format(
       dedent`
         // auto generated file, do not edit
@@ -125,32 +124,23 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
 }
 
 const localAlias = {
-  '@storybook/core': join(import.meta.dirname, '..', '..', 'src'),
-  'storybook/internal': join(import.meta.dirname, '..', '..', 'src'),
-  'storybook/theming': join(import.meta.dirname, '..', '..', 'src', 'theming'),
-  'storybook/test': join(import.meta.dirname, '..', '..', 'src', 'test'),
-  'storybook/test/preview': join(import.meta.dirname, '..', '..', 'src', 'test', 'preview'),
-  'storybook/actions': join(import.meta.dirname, '..', '..', 'src', 'actions'),
-  'storybook/preview-api': join(import.meta.dirname, '..', '..', 'src', 'preview-api'),
-  'storybook/manager-api': join(import.meta.dirname, '..', '..', 'src', 'manager-api'),
-  storybook: join(import.meta.dirname, '..', '..', 'src'),
+  'storybook/internal': join(CORE_ROOT_DIR, 'src'),
+  'storybook/theming': join(CORE_ROOT_DIR, 'src', 'theming'),
+  'storybook/test': join(CORE_ROOT_DIR, 'src', 'test'),
+  'storybook/test/preview': join(CORE_ROOT_DIR, 'src', 'test', 'preview'),
+  'storybook/actions': join(CORE_ROOT_DIR, 'src', 'actions'),
+  'storybook/preview-api': join(CORE_ROOT_DIR, 'src', 'preview-api'),
+  'storybook/manager-api': join(CORE_ROOT_DIR, 'src', 'manager-api'),
+  storybook: join(CORE_ROOT_DIR, 'src'),
 };
 async function generateExportsFile(prettierConfig: prettier.Options | null): Promise<void> {
   function removeDefault(input: string) {
     return input !== 'default';
   }
 
-  const location = join(import.meta.dirname, '..', '..', 'src', 'manager', 'globals', 'exports.ts');
+  const destination = join(CORE_ROOT_DIR, 'src', 'manager', 'globals', 'exports.ts');
 
-  const entryFile = join(
-    import.meta.dirname,
-    '..',
-    '..',
-    'src',
-    'manager',
-    'globals',
-    'runtime.ts'
-  );
+  const entryFile = join(CORE_ROOT_DIR, 'src', 'manager', 'globals', 'runtime.ts');
   const outFile = await temporaryFile({ extension: 'js' });
 
   await esbuild.build({
@@ -180,7 +170,7 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
   }
 
   await writeFile(
-    location,
+    destination,
     await prettier.format(
       dedent`
       // this file is generated by sourcefiles.ts

@@ -72,9 +72,6 @@
     "storybook": "workspace:^",
     "svelte": "^5.0.0"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
@@ -89,5 +86,5 @@
     ],
     "platform": "browser"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16"
 }

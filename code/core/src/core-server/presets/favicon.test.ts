@@ -12,7 +12,7 @@ vi.mock('../utils/constants', () => {
   return {
     defaultStaticDirs: [{ from: './from', to: './to' }],
     defaultFavicon: join(
-      dirname(require.resolve('storybook/internal/package.json')),
+      dirname(require.resolve('storybook/package.json')),
       '/assets/browser/favicon.svg'
     ),
   };
@@ -23,7 +23,7 @@ vi.mock('../../shared/utils/module', () => ({
 }));
 
 const defaultFavicon = join(
-  dirname(require.resolve('storybook/internal/package.json')),
+  dirname(require.resolve('storybook/package.json')),
   '/assets/browser/favicon.svg'
 );
 

@@ -3016,15 +3016,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@happy-dom/global-registrator@npm:^17.4.4":
-  version: 17.4.4
-  resolution: "@happy-dom/global-registrator@npm:17.4.4"
-  dependencies:
-    happy-dom: "npm:^17.4.4"
-  checksum: 10c0/f63ca714ff52850f11c85a3190f04ea2681e6a02de724cf8ffb40bcc4f3adf46c58c9be5fb5c6ca7d88609958543925f883fbda4e4b2c3ce6c5f1e55303dfeed
-  languageName: node
-  linkType: hard
-
 "@humanwhocodes/config-array@npm:^0.13.0":
   version: 0.13.0
   resolution: "@humanwhocodes/config-array@npm:0.13.0"
@@ -6247,7 +6238,7 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
   bin:
-    cli: ./bin/index.cjs
+    cli: ./dist/bin/index.js
   languageName: unknown
   linkType: soft
 
@@ -6678,7 +6669,6 @@ __metadata:
   resolution: "@storybook/root@workspace:."
   dependencies:
     "@chromatic-com/storybook": "npm:^4.0.0"
-    "@happy-dom/global-registrator": "npm:^17.4.4"
     "@nx/vite": "npm:20.2.2"
     "@nx/workspace": "npm:20.2.2"
     "@playwright/test": "npm:1.52.0"
@@ -11767,7 +11757,7 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
   bin:
-    create-storybook: ./bin/index.cjs
+    create-storybook: ./dist/bin/index.js
   languageName: unknown
   linkType: soft
 

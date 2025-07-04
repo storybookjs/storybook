@@ -12,12 +12,12 @@ interface BaseField {
 
 interface CheckboxField extends BaseField {
   type: 'checkbox';
-  value: string[];
+  values: Record<keyof BaseField['options'], boolean>;
 }
 
 interface SelectField extends BaseField {
   type: 'select';
-  value: string[];
+  values: Record<keyof BaseField['options'], boolean>;
 }
 
 type FormFields = {
@@ -66,7 +66,7 @@ export const IntentSurvey = ({
   onComplete,
   onDismiss,
 }: {
-  onComplete: (formData: Record<string, string[] | string>) => void;
+  onComplete: (formData: Record<string, Record<string, boolean>>) => void;
   onDismiss: () => void;
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,71 +75,59 @@ export const IntentSurvey = ({
     building: {
       label: 'What are you building?',
       type: 'checkbox',
-      value: [],
       required: true,
       options: shuffleObject({
-        'design-system': {
-          label: 'Design system',
-        },
-        'application-ui': {
-          label: 'Application UI',
-        },
+        'design-system': { label: 'Design system' },
+        'application-ui': { label: 'Application UI' },
       }),
+      values: {
+        'design-system': false,
+        'application-ui': false,
+      },
     },
     interest: {
       label: 'Which of these are you interested in?',
       type: 'checkbox',
-      value: [],
       required: true,
       options: shuffleObject({
-        'ui-documentation': {
-          label: 'Generating UI docs',
-        },
-        'functional-testing': {
-          label: 'Functional testing',
-        },
-        'accessibility-testing': {
-          label: 'Accessibility testing',
-        },
-        'visual-testing': {
-          label: 'Visual testing',
-        },
-        'ai-augmented-development': {
-          label: 'Building UI with AI',
-        },
-        'team-collaboration': {
-          label: 'Team collaboration',
-        },
-        'design-handoff': {
-          label: 'Design handoff',
-        },
+        'ui-documentation': { label: 'Generating UI docs' },
+        'functional-testing': { label: 'Functional testing' },
+        'accessibility-testing': { label: 'Accessibility testing' },
+        'visual-testing': { label: 'Visual testing' },
+        'ai-augmented-development': { label: 'Building UI with AI' },
+        'team-collaboration': { label: 'Team collaboration' },
+        'design-handoff': { label: 'Design handoff' },
       }),
+      values: {
+        'ui-documentation': false,
+        'functional-testing': false,
+        'accessibility-testing': false,
+        'visual-testing': false,
+        'ai-augmented-development': false,
+        'team-collaboration': false,
+        'design-handoff': false,
+      },
     },
     referrer: {
       label: 'How did you learn about Storybook?',
       type: 'select',
       required: true,
-      value: [],
       options: shuffleObject({
-        'we-use-it-at-work': {
-          label: 'We use it at work',
-        },
-        'via-friend-or-colleague': {
-          label: 'Via friend or colleague',
-        },
-        'via-social-media': {
-          label: 'Via social media',
-        },
-        youtube: {
-          label: 'YouTube',
-        },
-        'web-search': {
-          label: 'Web Search',
-        },
-        'ai-agent': {
-          label: 'AI Agent (e.g. ChatGPT)',
-        },
+        'we-use-it-at-work': { label: 'We use it at work' },
+        'via-friend-or-colleague': { label: 'Via friend or colleague' },
+        'via-social-media': { label: 'Via social media' },
+        youtube: { label: 'YouTube' },
+        'web-search': { label: 'Web Search' },
+        'ai-agent': { label: 'AI Agent (e.g. ChatGPT)' },
       }),
+      values: {
+        'we-use-it-at-work': false,
+        'via-friend-or-colleague': false,
+        'via-social-media': false,
+        youtube: false,
+        'web-search': false,
+        'ai-agent': false,
+      },
     },
   });
 
@@ -147,32 +135,36 @@ export const IntentSurvey = ({
     const field = formFields[key];
     setFormFields((fields) => {
       if (field.type === 'checkbox') {
-        const newValue = value
-          ? [...field.value, optionOrValue]
-          : field.value.filter((item) => item !== optionOrValue);
-        return { ...fields, [key]: { ...field, value: newValue } };
+        const values = { ...field.values, [optionOrValue]: !!value };
+        return { ...fields, [key]: { ...field, values } };
       }
       if (field.type === 'select') {
-        return { ...fields, [key]: { ...field, value: [optionOrValue] } };
+        const values = Object.fromEntries(
+          Object.entries(field.values).map(([opt]) => [opt, opt === optionOrValue])
+        );
+        return { ...fields, [key]: { ...field, values } };
       }
       return fields;
     });
   };
 
-  const isValid = Object.values(formFields).every(
-    (field) => !field.required || field.value.length > 0
-  );
+  const isValid = Object.values(formFields).every((field) => {
+    if (!field.required) {
+      return true;
+    }
+    // Check if at least one option is selected (true)
+    return Object.values(field.values).some((value) => value === true);
+  });
 
   const onSubmitForm = (e: React.FormEvent<HTMLFormElement>) => {
     if (!isValid) {
       return;
     }
     e.preventDefault();
-    const formData = Object.fromEntries(
-      Object.entries(formFields).map(([key, field]) => [key, field.value])
-    );
     setIsSubmitting(true);
-    onComplete(formData);
+    onComplete(
+      Object.fromEntries(Object.entries(formFields).map(([key, field]) => [key, field.values]))
+    );
   };
 
   return (
@@ -198,6 +190,7 @@ export const IntentSurvey = ({
                             <Checkbox
                               name={id}
                               id={id}
+                              checked={field.values[opt]}
                               disabled={isSubmitting}
                               onChange={(e) => updateFormData(key, opt, e.target.checked)}
                             />
@@ -212,7 +205,11 @@ export const IntentSurvey = ({
                   <Form.Select
                     name={key}
                     id={key}
+                    value={
+                      Object.entries(field.values).find(([, isSelected]) => isSelected)?.[0] || ''
+                    }
                     required={field.required}
+                    disabled={isSubmitting}
                     defaultValue=""
                     onChange={(e) => updateFormData(key, e.target.value)}
                   >

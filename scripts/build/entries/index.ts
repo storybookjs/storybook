@@ -348,6 +348,21 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/addon-jest': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

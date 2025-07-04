@@ -108,7 +108,7 @@ export default function Onboarding({ api }: { api: API }) {
   }, [api, setEnabled]);
 
   const completeOnboarding = useCallback(
-    (answers: Record<string, string[] | string>) => {
+    (answers: Record<string, unknown>) => {
       api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
         step: '7:FinishedOnboarding' satisfies StepKey,
         type: 'telemetry',

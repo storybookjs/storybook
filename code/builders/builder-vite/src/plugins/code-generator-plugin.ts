@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import type { Options } from 'storybook/internal/types';
 
+import { dedent } from 'ts-dedent';
 import type { Plugin } from 'vite';
 
 import { generateImportFnScriptCode } from '../codegen-importfn-script';
@@ -71,42 +72,54 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       iframeId = `${config.root}/iframe.html`;
     },
     resolveId(source) {
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_APP_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE);
-      }
-      if (source === iframePath) {
-        return iframeId;
-      }
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
-      }
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE);
-      }
-      if (source === SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE) {
-        return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE);
-      }
+      switch (source) {
+        case SB_VIRTUAL_FILES.VIRTUAL_APP_FILE:
+          return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE);
 
-      return undefined;
+        case iframePath:
+          return iframeId;
+
+        case SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE:
+          return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
+
+        case SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE:
+          return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_FILE);
+
+        case SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE:
+          return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE);
+
+        case SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_RUNTIME_SETUP_FILE:
+          return getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_RUNTIME_SETUP_FILE);
+
+        default:
+          return undefined;
+      }
     },
-    async load(id, config) {
-      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)) {
-        return generateImportFnScriptCode(options);
-      }
+    async load(id) {
+      switch (id) {
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE):
+          return generateImportFnScriptCode(options);
 
-      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE)) {
-        return generateAddonSetupCode();
-      }
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE):
+          return generateAddonSetupCode();
 
-      if (id === getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE)) {
-        return generateModernIframeScriptCode(options, projectRoot);
-      }
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_APP_FILE):
+          return generateModernIframeScriptCode(options, projectRoot);
 
-      if (id === iframeId) {
-        return readFileSync(require.resolve('@storybook/builder-vite/input/iframe.html'), 'utf-8');
-      }
+        case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_PREVIEW_RUNTIME_SETUP_FILE):
+          return dedent`
+            import { setup } from 'storybook/internal/preview/runtime';
+            setup();`;
 
-      return undefined;
+        case iframeId:
+          return readFileSync(
+            require.resolve('@storybook/builder-vite/input/iframe.html'),
+            'utf-8'
+          );
+
+        default:
+          return undefined;
+      }
     },
     async transformIndexHtml(html, ctx) {
       if (ctx.path !== '/iframe.html') {

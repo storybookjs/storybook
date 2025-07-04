@@ -408,6 +408,25 @@ export const buildEntries = {
       ],
     },
   },
+  'storybook-addon-pseudo-states': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

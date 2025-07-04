@@ -9,12 +9,12 @@ import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
 // import * as designs from '@storybook/addon-designs/preview';
 import { definePreview } from '@storybook/react-vite';
 
-import addonA11y from '@storybook/addon-a11y';
+// import addonA11y from '@storybook/addon-a11y';
 import addonDocs from '@storybook/addon-docs';
 import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
-import addonTest from '@storybook/addon-vitest';
 
+// import addonTest from '@storybook/addon-vitest';
 import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
@@ -34,8 +34,12 @@ import * as templatePreview from '../core/template/stories/preview';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
 
-sb.mock('../core/src/test/stories/ModuleMocking.utils', { spy: true });
+sb.mock('../core/src/test/stories/ModuleMocking.utils');
+sb.mock('../core/src/test/stories/ModuleSpyMocking.utils', { spy: true });
 sb.mock('../core/src/test/stories/ModuleAutoMocking.utils');
+sb.mock('lodash');
+sb.mock('lodash/add');
+sb.mock('lodash/sum');
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';
@@ -326,23 +330,23 @@ const parameters = {
   docs: {
     theme: themes.light,
     codePanel: true,
-    source: {
-      transform: async (source) => {
-        try {
-          const prettier = await import('prettier/standalone');
-          const prettierPluginBabel = await import('prettier/plugins/babel');
-          const prettierPluginEstree = (await import('prettier/plugins/estree')).default;
+    // source: {
+    //   transform: async (source) => {
+    //     try {
+    //       const prettier = await import('prettier/standalone');
+    //       const prettierPluginBabel = await import('prettier/plugins/babel');
+    //       const prettierPluginEstree = (await import('prettier/plugins/estree')).default;
 
-          return await prettier.format(source, {
-            parser: 'babel',
-            plugins: [prettierPluginBabel, prettierPluginEstree],
-          });
-        } catch (error) {
-          console.error(error);
-          return source;
-        }
-      },
-    },
+    //       return await prettier.format(source, {
+    //         parser: 'babel',
+    //         plugins: [prettierPluginBabel, prettierPluginEstree],
+    //       });
+    //     } catch (error) {
+    //       console.error(error);
+    //       return source;
+    //     }
+    //   },
+    // },
     toc: {},
   },
   controls: {
@@ -393,8 +397,8 @@ export default definePreview({
   addons: [
     addonDocs(),
     addonThemes(),
-    addonA11y(),
-    addonTest(),
+    // addonA11y(),
+    // addonTest(),
     addonPseudoStates(),
     templatePreview,
   ],

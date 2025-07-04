@@ -13,11 +13,17 @@ export const getEntries = (cwd: string) => {
     define('src/theming/create.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
     define('src/core-server/index.ts', ['node'], true, ['react']),
+    define(
+      'src/core-server/presets/vitePlugins/vite-inject-mocker/module-mocker-build-interceptor.ts',
+      ['browser'],
+      false
+    ),
     define('src/core-server/presets/common-preset.ts', ['node'], false),
     define('src/core-server/presets/common-manager.ts', ['browser'], false, [
       'react',
       '@storybook/icons',
     ]),
+
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
     define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),

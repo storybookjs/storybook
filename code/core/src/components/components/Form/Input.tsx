@@ -1,4 +1,4 @@
-import type { HTMLProps } from 'react';
+import React, { type HTMLProps } from 'react';
 import { forwardRef } from 'react';
 
 import { styled } from 'storybook/theming';

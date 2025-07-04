@@ -1,4 +1,4 @@
-import type { CSSProperties, SelectHTMLAttributes } from 'react';
+import React, { type CSSProperties, type SelectHTMLAttributes } from 'react';
 
 import { lighten, styled } from 'storybook/theming';
 

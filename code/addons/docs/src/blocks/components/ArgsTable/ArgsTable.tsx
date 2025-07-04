@@ -1,14 +1,17 @@
 import type { FC } from 'react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
+import type { Channel } from 'storybook/internal/channels';
 import { once } from 'storybook/internal/client-logger';
 import { IconButton, Link, ResetWrapper } from 'storybook/internal/components';
+import { STORY_ARGS_UPDATED } from 'storybook/internal/core-events';
 import { includeConditionalArg } from 'storybook/internal/csf';
 
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
 import { pickBy } from 'es-toolkit/compat';
 import { transparentize } from 'polished';
+import { addons } from 'storybook/preview-api';
 import { styled } from 'storybook/theming';
 
 import { EmptyBlock } from '..';
@@ -325,6 +328,29 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     isLoading,
   } = props;
 
+  const [isResetting, setIsResetting] = useState(false);
+
+  useEffect(() => {
+    const channel = addons.getChannel() as Channel;
+
+    const handleResetComplete = () => {
+      setIsResetting(false);
+    };
+
+    channel.on(STORY_ARGS_UPDATED, handleResetComplete);
+
+    return () => {
+      channel.off(STORY_ARGS_UPDATED, handleResetComplete);
+    };
+  }, []);
+
+  const handleResetClick = () => {
+    if (!isResetting && resetArgs) {
+      resetArgs();
+      setIsResetting(true);
+    }
+  };
+
   if ('error' in props) {
     const { error } = props;
     return (
@@ -401,7 +427,11 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
                 <ControlHeadingWrapper>
                   Control{' '}
                   {!isLoading && resetArgs && (
-                    <StyledIconButton onClick={() => resetArgs()} title="Reset controls">
+                    <StyledIconButton
+                      onClick={handleResetClick}
+                      disabled={isResetting}
+                      title="Reset controls"
+                    >
                       <UndoIcon aria-hidden />
                     </StyledIconButton>
                   )}

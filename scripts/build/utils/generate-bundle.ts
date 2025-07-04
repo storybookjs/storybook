@@ -170,8 +170,8 @@ export async function generateBundle({
         entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
         plugins: [globalExternals(globalsModuleInfoMap)],
       }),
-  ];
-  const compile = await Promise.all(contexts.filter(Boolean).map(([, context]) => context));
+  ].filter(Boolean);
+  const compile = await Promise.all(contexts.map(([, context]) => context));
 
   if (isWatch) {
     await Promise.all(

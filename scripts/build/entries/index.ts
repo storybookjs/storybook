@@ -327,6 +327,27 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/react-dom-shim': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/react-18.tsx',
+        },
+        {
+          exportEntries: ['./react-16'],
+          entryPoint: './src/react-16.tsx',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

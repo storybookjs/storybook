@@ -60,20 +60,8 @@
       "default": "./dist/web-components/index.js"
     }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
-    "angular/**/*",
-    "common/**/*",
-    "ember/**/*",
-    "html/**/*",
-    "svelte/**/*",
-    "react/**/*",
-    "vue/**/*",
-    "web-components/**/*",
-    "lit/**/*",
     "README.md",
     "*.js",
     "*.d.ts",

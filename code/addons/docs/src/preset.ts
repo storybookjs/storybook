@@ -200,7 +200,7 @@ const docsX = docs as any;
 export const resolvedReact = async (existing: any) => ({
   react: existing?.react ?? resolvePackageDir('react'),
   reactDom: existing?.reactDom ?? resolvePackageDir('react-dom'),
-  mdx: existing?.mdx ?? resolvePackageDir('@mdx-js/react'),
+  mdx: existing?.mdx ?? import.meta.resolve('@mdx-js/react'),
 });
 
 const optimizeViteDeps = ['@mdx-js/react', '@storybook/addon-docs', 'markdown-to-jsx'];

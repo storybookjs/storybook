@@ -427,6 +427,32 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/addon-themes': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./postinstall'],
+          entryPoint: './src/postinstall.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

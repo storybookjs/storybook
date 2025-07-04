@@ -363,6 +363,29 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/addon-links': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./react'],
+          entryPoint: './src/react/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

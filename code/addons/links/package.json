@@ -20,29 +20,23 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
+    },
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
     },
     "./react": {
       "types": "./dist/react/index.d.ts",
-      "import": "./dist/react/index.mjs",
-      "require": "./dist/react/index.js"
-    },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
-    },
-    "./manager": "./dist/manager.js",
-    "./register": "./dist/manager.js",
-    "./package.json": "./package.json"
+      "default": "./dist/react/index.js"
+    }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -52,7 +46,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0"
@@ -71,19 +65,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "exportEntries": [
-      "./src/react/index.ts",
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.ts"
-    ],
-    "previewEntries": [
-      "./src/preview.ts"
-    ],
-    "post": "./scripts/fix-preview-api-reference.ts"
   },
   "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16",
   "storybook": {

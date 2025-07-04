@@ -3,10 +3,12 @@
 // is the only way to achieve it actually being a singleton
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import React, { useMemo } from 'react';
+import { type FC, type PropsWithChildren, useMemo } from 'react';
 
-import { getRouter } from '@storybook/nextjs/navigation.mock';
+import { getRouter } from '@storybook/experimental-nextjs-rsc/navigation.mock';
 
+// @ts-expect-error no types
+import React from 'next/dist/compiled/react';
 import type { FlightRouterState } from 'next/dist/server/app-render/types';
 import {
   AppRouterContext,
@@ -69,7 +71,7 @@ const getParallelRoutes = (segmentsList: Array<string>): FlightRouterState => {
   return [] as any;
 };
 
-export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProviderProps>> = ({
+export const AppRouterProvider: FC<PropsWithChildren<AppRouterProviderProps>> = ({
   children,
   routeParams,
 }) => {

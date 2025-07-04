@@ -1,9 +1,11 @@
-import * as React from 'react';
+'use client';
 
+import { type ReactNode } from 'react';
+
+// @ts-expect-error no types
+import * as React from 'next/dist/compiled/react';
 import { StyleRegistry } from 'styled-jsx';
 
-export const StyledJsxDecorator = (Story: React.FC): React.ReactNode => (
-  <StyleRegistry>
-    <Story />
-  </StyleRegistry>
+export const StyledJsxDecorator = ({ children }: { children: ReactNode }): ReactNode => (
+  <StyleRegistry>{children}</StyleRegistry>
 );

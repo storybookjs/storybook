@@ -1,7 +1,7 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/nextjs';
-import { getRouter } from '@storybook/nextjs/router.mock';
+import type { Meta, StoryObj } from '@storybook/experimental-nextjs-rsc';
+import { getRouter } from '@storybook/experimental-nextjs-rsc/router.mock';
 
 import Router, { useRouter } from 'next/router';
 import { expect, userEvent, within } from 'storybook/test';

@@ -1,10 +1,13 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-import React from 'react';
+'use client';
 
-// @ts-ignore-error (this only errors during compilation for production)
-import { ImageContext as ImageContextValue } from '@storybook/nextjs/dist/image-context';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore (this only errors during compilation for production)
+import { ImageContext as ImageContextValue } from '@storybook/experimental-nextjs-rsc/dist/image-context';
 
+// @ts-expect-error no types
+import React from 'next/dist/compiled/react';
 import type * as _NextImage from 'next/image';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore import is aliased in webpack config
 import * as NextImageNamespace from 'sb-original/next/image';
 
@@ -16,6 +19,7 @@ const { getImageProps: originalGetImageProps } = NextImageNamespace;
 const ImageContext = ImageContextValue as typeof ImageContextType;
 
 const MockedNextImage = React.forwardRef<HTMLImageElement, _NextImage.ImageProps>(
+  // @ts-expect-error no types
   ({ loader, ...props }, ref) => {
     const imageParameters = React.useContext(ImageContext);
 

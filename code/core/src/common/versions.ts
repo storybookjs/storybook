@@ -15,6 +15,7 @@ export default {
   '@storybook/ember': '9.1.0-alpha.6',
   '@storybook/html-vite': '9.1.0-alpha.6',
   '@storybook/nextjs': '9.1.0-alpha.6',
+  '@storybook/experimental-nextjs-rsc': '9.1.0-alpha.6',
   '@storybook/nextjs-vite': '9.1.0-alpha.6',
   '@storybook/preact-vite': '9.1.0-alpha.6',
   '@storybook/react-native-web-vite': '9.1.0-alpha.6',

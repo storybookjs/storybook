@@ -1,5 +1,5 @@
-import { createContext } from 'react';
-
+// @ts-expect-error no types
+import { createContext } from 'next/dist/compiled/react';
 import type { ImageProps, StaticImageData } from 'next/image';
 import type { ImageProps as LegacyImageProps } from 'next/legacy/image';
 

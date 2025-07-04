@@ -25,16 +25,19 @@ class HeadersAdapterMock extends HeadersAdapter {
   values = fn(super.values.bind(this)).mockName('next/headers::headers().values');
 }
 
-let headersAdapterMock: HeadersAdapterMock;
+declare global {
+  // eslint-disable-next-line no-var
+  var headersAdapterMock: HeadersAdapterMock;
+}
 
 export const headers = () => {
   if (!headersAdapterMock) {
-    headersAdapterMock = new HeadersAdapterMock();
+    globalThis.headersAdapterMock = new HeadersAdapterMock();
   }
   return headersAdapterMock;
 };
 
 // This fn is called by ./cookies to restore the headers in the right order
 headers.mockRestore = () => {
-  headersAdapterMock = new HeadersAdapterMock();
+  globalThis.headersAdapterMock = new HeadersAdapterMock();
 };

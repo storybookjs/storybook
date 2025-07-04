@@ -31,13 +31,13 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json",
+    "./postinstall": "./dist/postinstall.js",
     "./preview": {
       "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
-    },
-    "./manager": "./dist/manager.js",
-    "./package.json": "./package.json",
-    "./postinstall": "./dist/postinstall.js"
+    }
   },
   "files": [
     "dist/**/*",
@@ -48,7 +48,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
@@ -70,20 +70,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ],
-    "previewEntries": [
-      "./src/preview.tsx"
-    ],
-    "nodeEntries": [
-      "./src/postinstall.ts"
-    ]
   },
   "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16",
   "storybook": {

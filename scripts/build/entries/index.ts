@@ -242,6 +242,191 @@ export const buildEntries = {
       await chmod(join(cwd, 'dist', 'bin', 'index.js'), 0o755);
     },
   },
+  '@storybook/addon-a11y': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.tsx',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./postinstall'],
+          entryPoint: './src/postinstall.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/addon-docs': {
+    extraOutputs: {
+      './svelte/HOC.svelte': './svelte/HOC.svelte',
+    },
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./blocks'],
+          entryPoint: './src/blocks.ts',
+        },
+        {
+          exportEntries: ['./mdx-react-shim'],
+          entryPoint: './src/mdx-react-shim.ts',
+        },
+        {
+          exportEntries: ['./ember'],
+          entryPoint: './src/ember/index.ts',
+        },
+        {
+          exportEntries: ['./angular'],
+          entryPoint: './src/angular/index.ts',
+        },
+        {
+          exportEntries: ['./web-components'],
+          entryPoint: './src/web-components/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./mdx-loader'],
+          entryPoint: './src/mdx-loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/react-dom-shim': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/react-18.tsx',
+        },
+        {
+          exportEntries: ['./react-16'],
+          entryPoint: './src/react-16.tsx',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/addon-jest': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/addon-links': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./react'],
+          entryPoint: './src/react/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/addon-onboarding': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  'storybook-addon-pseudo-states': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

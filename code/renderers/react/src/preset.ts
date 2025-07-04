@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import type { PresetProperty } from 'storybook/internal/types';
 
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('@storybook/react-dom-shim/dist/preset'),
+  require.resolve('@storybook/react-dom-shim/preset'),
 ];
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (

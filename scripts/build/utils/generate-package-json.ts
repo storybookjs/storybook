@@ -14,14 +14,15 @@ export async function generatePackageJsonFile(cwd: string, data: BuildEntries) {
   // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
   pkgJson.exports = {
     './package.json': './package.json',
+    ...data.extraOutputs,
   };
 
   for (const entry of Object.values(entries).flat()) {
     for (const exportEntry of entry.exportEntries ?? []) {
-      const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
-      const jsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.js');
+      const dtsPath = entry.entryPoint?.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+      const jsPath = entry.entryPoint?.replace('src', 'dist').replace(/\.tsx?/, '.js');
 
-      if (entry.dts === undefined) {
+      if (entry.entryPoint && entry.dts === undefined) {
         pkgJson.exports[exportEntry] = {
           types: dtsPath,
           default: jsPath,

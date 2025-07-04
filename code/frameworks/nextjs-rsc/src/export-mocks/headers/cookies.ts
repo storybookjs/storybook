@@ -20,11 +20,14 @@ class RequestCookiesMock extends RequestCookies {
   delete = fn(super.delete.bind(this)).mockName('next/headers::cookies().delete');
 }
 
-let requestCookiesMock: RequestCookiesMock;
+declare global {
+  // eslint-disable-next-line no-var
+  var requestCookiesMock: RequestCookiesMock;
+}
 
 export const cookies = fn(() => {
   if (!requestCookiesMock) {
-    requestCookiesMock = new RequestCookiesMock(headers());
+    globalThis.requestCookiesMock = new RequestCookiesMock(headers());
   }
   return requestCookiesMock;
 }).mockName('next/headers::cookies()');
@@ -35,5 +38,5 @@ const originalRestore = cookies.mockRestore.bind(null);
 cookies.mockRestore = () => {
   originalRestore();
   headers.mockRestore();
-  requestCookiesMock = new RequestCookiesMock(headers());
+  globalThis.requestCookiesMock = new RequestCookiesMock(headers());
 };

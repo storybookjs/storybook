@@ -1,6 +1,6 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { existsSync, watch } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
@@ -186,9 +186,11 @@ export async function generateBundle({
       console.log(`compiled ${picocolors.cyan(join(DIR_REL, 'dist', filename))}`);
     });
   } else {
-    if (!existsSync(DIR_METAFILE)) {
-      await mkdir(DIR_METAFILE, { recursive: true });
+    if (existsSync(DIR_METAFILE)) {
+      console.log(`removing ${picocolors.cyan(DIR_METAFILE)}`);
+      await rm(DIR_METAFILE, { recursive: true, force: true });
     }
+    await mkdir(DIR_METAFILE, { recursive: true });
 
     const mapIndexToName = contexts.map(([id]) => id);
     const outputs = await Promise.all(

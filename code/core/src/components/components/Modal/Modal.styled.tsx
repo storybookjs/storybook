@@ -64,7 +64,7 @@ export const Container = styled.div<{ width?: number; height?: number }>(
 
 export const CloseButton = (props: React.ComponentProps<typeof IconButton>) => (
   <Dialog.Close asChild>
-    <IconButton {...props}>
+    <IconButton aria-label="Close" {...props}>
       <CrossIcon />
     </IconButton>
   </Dialog.Close>

@@ -149,41 +149,34 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
-      cwd: this.cwd,
-      stopAt: getProjectRoot(),
-    });
+    try {
+      // @ts-expect-error TS doesn't know about the built-in Yarn PnP API
+      const { default: pnpApi } = await import('pnpapi');
 
-    if (pnpapiPath) {
-      try {
-        const pnpApi = await import(pnpapiPath);
-
-        const resolvedPath = pnpApi.resolveToUnqualified(
-          packageName,
-          this.primaryPackageJson.operationDir,
-          {
-            considerBuiltins: false,
-          }
-        );
-
-        const pkgLocator = pnpApi.findPackageLocator(resolvedPath);
-        const pkg = pnpApi.getPackageInformation(pkgLocator);
-
-        const zipOpenFs = new ZipOpenFS({
-          libzip: getLibzipSync(),
-        });
-
-        const virtualFs = new VirtualFS({ baseFs: zipOpenFs });
-        const crossFs = new PosixFS(virtualFs);
-
-        const virtualPath = join(pkg.packageLocation, 'package.json');
-
-        return crossFs.readJsonSync(virtualPath);
-      } catch (error: any) {
-        if (error.code !== 'MODULE_NOT_FOUND') {
-          console.error('Error while fetching package version in Yarn PnP mode:', error);
+      const resolvedPath = pnpApi.resolveToUnqualified(
+        packageName,
+        this.primaryPackageJson.operationDir,
+        {
+          considerBuiltins: false,
         }
-        return null;
+      );
+
+      const pkgLocator = pnpApi.findPackageLocator(resolvedPath);
+      const pkg = pnpApi.getPackageInformation(pkgLocator);
+
+      const zipOpenFs = new ZipOpenFS({
+        libzip: getLibzipSync(),
+      });
+
+      const virtualFs = new VirtualFS({ baseFs: zipOpenFs });
+      const crossFs = new PosixFS(virtualFs);
+
+      const virtualPath = join(pkg.packageLocation, 'package.json');
+
+      return crossFs.readJsonSync(virtualPath);
+    } catch (error: any) {
+      if (error.code !== 'MODULE_NOT_FOUND') {
+        console.error('Error while fetching package version in Yarn PnP mode:', error);
       }
     }
 

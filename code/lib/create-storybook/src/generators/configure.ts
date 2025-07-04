@@ -1,10 +1,10 @@
 import { stat, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { dedent } from 'ts-dedent';
+import { SupportedLanguage } from 'storybook/internal/cli';
+import { logger } from 'storybook/internal/node-logger';
 
-import { SupportedLanguage } from '../../../../core/src/cli/project_types';
-import { logger } from '../../../../core/src/node-logger';
+import { dedent } from 'ts-dedent';
 
 interface ConfigureMainOptions {
   addons: string[];

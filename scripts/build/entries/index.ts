@@ -242,6 +242,32 @@ export const buildEntries = {
       await chmod(join(cwd, 'dist', 'bin', 'index.js'), 0o755);
     },
   },
+  '@storybook/addon-a11y': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.tsx',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./postinstall'],
+          entryPoint: './src/postinstall.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

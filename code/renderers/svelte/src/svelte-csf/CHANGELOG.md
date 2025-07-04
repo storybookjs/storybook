@@ -1,3 +1,15 @@
+# v5.0.6 (Fri Jul 04 2025)
+
+#### 🐛 Bug Fix
+
+- Fix raw code not being injected with Svelte v5.35.1+ [#321](https://github.com/storybookjs/addon-svelte-csf/pull/321) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v5.0.5 (Thu Jul 03 2025)
 
 #### 🐛 Bug Fix

@@ -20,9 +20,6 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
   }
 
   let moduledLoaded: any;
-
-  console.log({ modulePath, hookPath, cwd: DIR_CWD, addonName });
-
   try {
     moduledLoaded = await import(hookPath)
       .catch(() => importModule(hookPath))

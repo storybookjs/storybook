@@ -1,11 +1,10 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { existsSync, watch } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
-import type { Metafile } from 'esbuild';
-import { dirname, join, relative } from 'pathe';
+import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -17,7 +16,6 @@ import {
 } from '../../../code/core/src/shared/constants/environments-support';
 import { resolvePackageDir } from '../../../code/core/src/shared/utils/module';
 import { type BuildEntries, type EsbuildContextOptions, getExternal } from './entry-utils';
-import { writeOptimizedMetafile } from './optimize-esbuild-metafile';
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
@@ -48,7 +46,7 @@ export async function generateBundle({
   const external = (await getExternal(DIR_CWD)).runtimeExternal;
   const { entries, postbuild } = entry;
 
-  function defineESBuildContext(...input: Parameters<typeof esbuild.context>) {
+  function defineESBuildContext(id: string, ...input: Parameters<typeof esbuild.context>) {
     const sharedOptions = {
       format: 'esm',
       bundle: true,
@@ -61,7 +59,6 @@ export async function generateBundle({
       minifyWhitespace: false,
       keepNames: true, // required to show correct error messages based on class names
       outbase: 'src',
-      chunkNames: '_chunks/[name]-[hash]',
       outdir: 'dist',
       treeShaking: true,
       color: true,
@@ -88,13 +85,16 @@ export async function generateBundle({
       ];
     }
 
-    return esbuild.context(
-      {
-        ...sharedOptions,
-        ...config,
-      },
-      ...rest
-    );
+    return [
+      id,
+      esbuild.context(
+        {
+          ...sharedOptions,
+          ...config,
+        },
+        ...rest
+      ),
+    ] as const;
   }
 
   const runtimeOptions = {
@@ -129,15 +129,15 @@ export async function generateBundle({
     },
   } as const satisfies EsbuildContextOptions;
 
-  const compile = await Promise.all(
-    [
-      entries.node &&
-        defineESBuildContext({
-          entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
-          platform: 'node',
-          target: NODE_TARGET,
-          banner: {
-            js: dedent`
+  const contexts = [
+    entries.node &&
+      defineESBuildContext('node', {
+        entryPoints: entries.node.map(({ entryPoint }) => entryPoint),
+        platform: 'node',
+        target: NODE_TARGET,
+        chunkNames: '_node-chunks/[name]-[hash]',
+        banner: {
+          js: dedent`
             import CJS_COMPAT_NODE_URL from 'node:url';
             import CJS_COMPAT_NODE_PATH from 'node:path';
             import CJS_COMPAT_NODE_MODULE from "node:module";
@@ -149,28 +149,29 @@ export async function generateBundle({
             // end of CJS compatibility banner, injected by Storybook's esbuild configuration
             // ------------------------------------------------------------
             `,
-          },
-        }),
-      entries.browser &&
-        defineESBuildContext({
-          entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
-          platform: 'browser',
-          target: BROWSER_TARGETS,
-          supported: SUPPORTED_FEATURES,
-        }),
-      entries.runtime &&
-        defineESBuildContext({
-          ...runtimeOptions,
-          entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
-        }),
-      entries.globalizedRuntime &&
-        defineESBuildContext({
-          ...runtimeOptions,
-          entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
-          plugins: [globalExternals(globalsModuleInfoMap)],
-        }),
-    ].filter(Boolean)
-  );
+        },
+      }),
+    entries.browser &&
+      defineESBuildContext('browser', {
+        entryPoints: entries.browser.map(({ entryPoint }) => entryPoint),
+        platform: 'browser',
+        chunkNames: '_browser-chunks/[name]-[hash]',
+        target: BROWSER_TARGETS,
+        supported: SUPPORTED_FEATURES,
+      }),
+    entries.runtime &&
+      defineESBuildContext('runtime', {
+        ...runtimeOptions,
+        entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
+      }),
+    entries.globalizedRuntime &&
+      defineESBuildContext('globalized-runtime', {
+        ...runtimeOptions,
+        entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
+        plugins: [globalExternals(globalsModuleInfoMap)],
+      }),
+  ].filter(Boolean);
+  const compile = await Promise.all(contexts.map(([, context]) => context));
 
   if (isWatch) {
     await Promise.all(
@@ -185,9 +186,12 @@ export async function generateBundle({
       console.log(`compiled ${picocolors.cyan(join(DIR_REL, 'dist', filename))}`);
     });
   } else {
-    if (!existsSync(DIR_METAFILE)) {
-      await mkdir(DIR_METAFILE, { recursive: true });
+    if (existsSync(DIR_METAFILE)) {
+      await rm(DIR_METAFILE, { recursive: true, force: true });
     }
+    await mkdir(DIR_METAFILE, { recursive: true });
+
+    const mapIndexToName = contexts.map(([id]) => id);
     const outputs = await Promise.all(
       compile.map(async (context) => {
         const output = await context.rebuild();
@@ -195,36 +199,17 @@ export async function generateBundle({
         return output;
       })
     );
-    const metafileByModule: Record<string, Metafile> = {};
+    let index = 0;
     for (const currentOutput of outputs) {
+      index++;
       if (!currentOutput.metafile) {
-        continue;
+        return;
       }
-      for (const key of Object.keys(currentOutput.metafile.outputs)) {
-        const moduleName = dirname(key).replace('dist/', '');
-        const existingMetafile = metafileByModule[moduleName];
-        if (existingMetafile) {
-          existingMetafile.inputs = {
-            ...existingMetafile.inputs,
-            ...currentOutput.metafile.inputs,
-          };
-          existingMetafile.outputs = {
-            ...existingMetafile.outputs,
-            [key]: currentOutput.metafile.outputs[key],
-          };
-        } else {
-          metafileByModule[moduleName] = {
-            ...currentOutput.metafile,
-            outputs: { [key]: currentOutput.metafile.outputs[key] },
-          };
-        }
-      }
+
+      await writeFile(
+        join(DIR_METAFILE, `${mapIndexToName[index - 1]}.json`),
+        JSON.stringify(currentOutput.metafile, null, 2)
+      );
     }
-    await Promise.all(
-      Object.entries(metafileByModule).map(async ([moduleName, metafile]) => {
-        const sanitizedModuleName = moduleName.replaceAll('/', '-');
-        await writeOptimizedMetafile(metafile, join(DIR_METAFILE, `${sanitizedModuleName}.json`));
-      })
-    );
   }
 }

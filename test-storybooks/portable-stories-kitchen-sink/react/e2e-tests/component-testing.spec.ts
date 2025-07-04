@@ -205,26 +205,25 @@ test.describe("component testing", () => {
       "Run component tests"
     );
 
-    const testingModuleDescription = await page.locator(
-      "#testing-module-description"
-    );
-
     const runTestsButton = await page.getByLabel("Start test run");
     const watchModeButton = await page.getByLabel("Enable watch mode");
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();
 
     await runTestsButton.click();
-    await expect(testingModuleDescription).toContainText("Starting");
-    await expect(testingModuleDescription).toContainText("Testing", {
-      timeout: 10000, // It may take a while for Vitest to boot
-    });
     await expect(watchModeButton).toBeDisabled();
+    await expect(page.locator("#testing-module-description")).toHaveText(
+      /Starting/
+    );
+    await expect(page.locator("#testing-module-description")).toHaveText(
+      /Testing/
+    );
 
     // Wait for test results to appear
-    await expect(testingModuleDescription).toHaveText(/Ran \d+ tests/, {
-      timeout: 30000,
-    });
+    await expect(page.locator("#testing-module-description")).toHaveText(
+      /Ran \d+ tests/,
+      { timeout: 30000 }
+    );
 
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();

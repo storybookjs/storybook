@@ -268,6 +268,65 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/addon-docs': {
+    extraOutputs: {
+      './svelte/HOC.svelte': './svelte/HOC.svelte',
+    },
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./blocks'],
+          entryPoint: './src/blocks.ts',
+        },
+        {
+          exportEntries: ['./mdx-react-shim'],
+          entryPoint: './src/mdx-react-shim.ts',
+        },
+        {
+          exportEntries: ['./ember'],
+          entryPoint: './src/ember/index.ts',
+        },
+        {
+          exportEntries: ['./angular'],
+          entryPoint: './src/angular/index.ts',
+        },
+        {
+          exportEntries: ['./web-components'],
+          entryPoint: './src/web-components/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./mdx-loader'],
+          entryPoint: './src/mdx-loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

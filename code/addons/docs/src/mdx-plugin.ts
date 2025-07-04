@@ -1,12 +1,10 @@
-import { dirname, join } from 'node:path';
-
 import type { Options } from 'storybook/internal/types';
 
 import { createFilter } from '@rollup/pluginutils';
 import type { Plugin } from 'vite';
 
-import type { CompileOptions } from '../compiler';
-import { compile } from '../compiler';
+import type { CompileOptions } from './compiler';
+import { compile } from './compiler';
 
 /**
  * Storybook uses a single loader when dealing with MDX:
@@ -36,10 +34,7 @@ export async function mdxPlugin(options: Options): Promise<Plugin> {
       const mdxLoaderOptions: CompileOptions = await presets.apply('mdxLoaderOptions', {
         ...mdxPluginOptions,
         mdxCompileOptions: {
-          providerImportSource: join(
-            dirname(require.resolve('@storybook/addon-docs/package.json')),
-            '/dist/shims/mdx-react-shim.mjs'
-          ),
+          providerImportSource: import.meta.resolve('@storybook/addon-docs/mdx-react-shim'),
           ...mdxPluginOptions?.mdxCompileOptions,
           rehypePlugins: [
             ...(mdxPluginOptions?.mdxCompileOptions?.rehypePlugins ?? []),

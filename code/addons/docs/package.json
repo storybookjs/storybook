@@ -24,48 +24,41 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+    "./angular": {
+      "types": "./dist/angular/index.d.ts",
+      "default": "./dist/angular/index.js"
     },
-    "./preset": "./dist/preset.js",
     "./blocks": {
       "types": "./dist/blocks.d.ts",
-      "import": "./dist/blocks.mjs",
-      "require": "./dist/blocks.js"
+      "default": "./dist/blocks.js"
     },
-    "./dist/preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+    "./ember": {
+      "types": "./dist/ember/index.d.ts",
+      "default": "./dist/ember/index.js"
     },
-    "./dist/preset": "./dist/preset.js",
-    "./dist/shims/mdx-react-shim": {
-      "types": "./dist/shims/mdx-react-shim.d.ts",
-      "import": "./dist/shims/mdx-react-shim.mjs",
-      "require": "./dist/shims/mdx-react-shim.js"
-    },
-    "./mdx-react-shim": {
-      "types": "./dist/shims/mdx-react-shim.d.ts",
-      "import": "./dist/shims/mdx-react-shim.mjs",
-      "require": "./dist/shims/mdx-react-shim.js"
-    },
+    "./manager": "./dist/manager.js",
     "./mdx-loader": "./dist/mdx-loader.js",
-    "./svelte/HOC.svelte": "./svelte/HOC.svelte",
-    "./ember": "./ember/index.js",
-    "./ember/index.js": "./ember/index.js",
-    "./angular": "./angular/index.js",
-    "./angular/index.js": "./angular/index.js",
-    "./web-components/index.js": "./web-components/index.js",
+    "./mdx-react-shim": {
+      "types": "./dist/mdx-react-shim.d.ts",
+      "default": "./dist/mdx-react-shim.js"
+    },
     "./package.json": "./package.json",
-    "./manager": "./dist/manager.js"
+    "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    },
+    "./svelte/HOC.svelte": "./svelte/HOC.svelte",
+    "./web-components": {
+      "types": "./dist/web-components/index.d.ts",
+      "default": "./dist/web-components/index.js"
+    }
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -88,7 +81,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@mdx-js/react": "^3.0.0",

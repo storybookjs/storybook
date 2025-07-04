@@ -158,7 +158,7 @@ export const addons: PresetProperty<'addons'> = [
 export const viteFinal = async (config: any, options: Options) => {
   const { plugins = [] } = config;
 
-  const { mdxPlugin } = await import('./plugins/mdx-plugin');
+  const { mdxPlugin } = await import('./mdx-plugin');
 
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);

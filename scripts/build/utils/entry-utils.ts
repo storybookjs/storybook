@@ -16,6 +16,7 @@ export type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
 
 export type BuildEntries = {
   entries: BuildEntriesByPlatform;
+  extraOutputs?: Record<string, any>;
   prebuild?: (cwd: string) => Promise<void>;
   postbuild?: (cwd: string) => Promise<void>;
 };

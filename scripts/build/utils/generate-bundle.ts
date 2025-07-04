@@ -187,7 +187,6 @@ export async function generateBundle({
     });
   } else {
     if (existsSync(DIR_METAFILE)) {
-      console.log(`removing ${picocolors.cyan(DIR_METAFILE)}`);
       await rm(DIR_METAFILE, { recursive: true, force: true });
     }
     await mkdir(DIR_METAFILE, { recursive: true });

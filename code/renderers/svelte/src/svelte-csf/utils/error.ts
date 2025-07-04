@@ -154,7 +154,7 @@ export abstract class StorybookSvelteCSFError extends Error {
 
       // value is SvelteAST.ExpressionTag
       if (!Array.isArray(attribute.value)) {
-        return attribute.value.expression.value;
+        return 'value' in attribute.value.expression ? attribute.value.expression.value : undefined;
       }
 
       if (attribute.value[0].type === 'Text') {

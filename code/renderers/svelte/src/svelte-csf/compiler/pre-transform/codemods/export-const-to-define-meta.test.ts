@@ -31,10 +31,7 @@ describe(transformExportMetaToDefineMeta.name, () => {
         } satisfies Meta<Button>;
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ESTreeAST.ExportNamedDeclaration>(
-      code,
-      'ExportNamedDeclaration'
-    );
+    const node = await parseAndExtractSvelteNode<any>(code, 'ExportNamedDeclaration');
 
     expect(print(transformExportMetaToDefineMeta(node))).toMatchInlineSnapshot(`
 			"const { Story } = defineMeta({
@@ -66,10 +63,7 @@ describe(transformExportMetaToDefineMeta.name, () => {
         };
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ESTreeAST.ExportNamedDeclaration>(
-      code,
-      'ExportNamedDeclaration'
-    );
+    const node = await parseAndExtractSvelteNode<any>(code, 'ExportNamedDeclaration');
 
     expect(print(transformExportMetaToDefineMeta(node))).toMatchInlineSnapshot(`
 			"/**

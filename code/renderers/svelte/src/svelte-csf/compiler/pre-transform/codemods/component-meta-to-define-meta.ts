@@ -27,7 +27,7 @@ export function transformComponentMetaToDefineMeta(params: Params): ESTreeAST.Va
   const { component, comment } = params;
   const { attributes, start, end } = component;
 
-  let properties: ESTreeAST.ObjectExpression['properties'] = [];
+  const properties: ESTreeAST.ObjectExpression['properties'] = [];
 
   for (const attribute of attributes) {
     if (attribute.type === 'Attribute') {
@@ -150,7 +150,7 @@ function transformTags(tags: SvelteAST.Attribute): void {
 
   // tags.value is SvelteAST.ExpressionTag
   if (!Array.isArray(tags.value)) {
-    if (typeof tags.value.expression.value !== 'string') {
+    if (typeof (tags.value.expression as any).value !== 'string') {
       // NOTE: The error on invalid type (not a string) is likely visible
       // 1. via TypeScript
       // 2. and thrown by storybook internal, right?

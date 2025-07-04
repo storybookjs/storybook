@@ -13,10 +13,7 @@ describe(transformImportDeclaration.name, () => {
         import { Story, Template } from "@storybook/addon-svelte-csf";
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ESTreeAST.ImportDeclaration>(
-      code,
-      'ImportDeclaration'
-    );
+    const node = await parseAndExtractSvelteNode<any>(code, 'ImportDeclaration');
 
     expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
       `"import { defineMeta } from "@storybook/addon-svelte-csf";"`
@@ -29,10 +26,7 @@ describe(transformImportDeclaration.name, () => {
         import { Story, Template, defineMeta } from "@storybook/addon-svelte-csf";
       </script>
     `;
-    const node = await parseAndExtractSvelteNode<ESTreeAST.ImportDeclaration>(
-      code,
-      'ImportDeclaration'
-    );
+    const node = await parseAndExtractSvelteNode<any>(code, 'ImportDeclaration');
 
     expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
       `"import { defineMeta } from "@storybook/addon-svelte-csf";"`

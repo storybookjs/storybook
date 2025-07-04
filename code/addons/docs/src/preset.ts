@@ -1,4 +1,5 @@
 import { isAbsolute } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
@@ -23,7 +24,7 @@ const getResolvedReact = async (options: Options) => {
     // addon-docs, causing addon-docs's dependencies not to be hoisted.
     // This might also affect regular users who have a similar setup.
     // Explicitly alias @mdx-js/react to avoid this issue.
-    mdx: resolvedReact.mdx ?? import.meta.resolve('@mdx-js/react'),
+    mdx: resolvedReact.mdx ?? fileURLToPath(import.meta.resolve('@mdx-js/react')),
   };
 };
 
@@ -200,7 +201,7 @@ const docsX = docs as any;
 export const resolvedReact = async (existing: any) => ({
   react: existing?.react ?? resolvePackageDir('react'),
   reactDom: existing?.reactDom ?? resolvePackageDir('react-dom'),
-  mdx: existing?.mdx ?? import.meta.resolve('@mdx-js/react'),
+  mdx: existing?.mdx ?? fileURLToPath(import.meta.resolve('@mdx-js/react')),
 });
 
 const optimizeViteDeps = ['@mdx-js/react', '@storybook/addon-docs', 'markdown-to-jsx'];

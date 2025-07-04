@@ -23,7 +23,7 @@ const getResolvedReact = async (options: Options) => {
     // addon-docs, causing addon-docs's dependencies not to be hoisted.
     // This might also affect regular users who have a similar setup.
     // Explicitly alias @mdx-js/react to avoid this issue.
-    mdx: resolvedReact.mdx ?? resolvePackageDir('@mdx-js/react'),
+    mdx: resolvedReact.mdx ?? import.meta.resolve('@mdx-js/react'),
   };
 };
 

@@ -75,19 +75,40 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
     useLayout();
   const fullStoryName = useFullStoryName();
 
+  const handleAddonPanelClose = () => {
+    setMobilePanelOpen(false);
+  };
+
   return (
     <Container {...props}>
-      <MobileMenuDrawer>{menu}</MobileMenuDrawer>
-      {isMobilePanelOpen ? (
-        <MobileAddonsDrawer>{panel}</MobileAddonsDrawer>
-      ) : (
-        <Nav className="sb-bar">
-          <Button onClick={() => setMobileMenuOpen(!isMobileMenuOpen)} title="Open navigation menu">
+      <MobileMenuDrawer id="storybook-mobile-menu">{menu}</MobileMenuDrawer>
+
+      <MobileAddonsDrawer
+        id="storybook-mobile-addon-panel"
+        isOpen={isMobilePanelOpen}
+        onClose={handleAddonPanelClose}
+      >
+        {panel}
+      </MobileAddonsDrawer>
+
+      {!isMobilePanelOpen && (
+        <Nav className="sb-bar" role="toolbar" aria-label="Mobile navigation controls">
+          <Button
+            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label="Open navigation menu"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="storybook-mobile-menu"
+          >
             <MenuIcon />
             <Text>{fullStoryName}</Text>
           </Button>
           {showPanel && (
-            <IconButton onClick={() => setMobilePanelOpen(true)} title="Open addon panel">
+            <IconButton
+              onClick={() => setMobilePanelOpen(true)}
+              aria-label="Open addon panel"
+              aria-expanded={isMobilePanelOpen}
+              aria-controls="storybook-mobile-addon-panel"
+            >
               <BottomBarToggleIcon />
             </IconButton>
           )}
@@ -130,6 +151,11 @@ const Button = styled.button(({ theme }) => ({
     width: 14,
     height: 14,
     flexShrink: 0,
+  },
+
+  '&:focus-visible': {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
   },
 }));
 

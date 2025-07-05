@@ -74,6 +74,7 @@ const meta = {
     warningCount: 0,
     warningsActive: false,
     setWarningsActive: fn(),
+    successCount: 0,
   },
   decorators: [
     (storyFn) => (

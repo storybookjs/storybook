@@ -92,11 +92,18 @@ const enhanceContext: LoaderFunction = async (context) => {
 
   // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
   // which will throw an error in react native for example.
-  if (globalThis.window?.navigator?.clipboard) {
+  const clipboard = globalThis.window?.navigator?.clipboard;
+  if (clipboard) {
     context.userEvent = instrument(
       { userEvent: uninstrumentedUserEvent.setup() },
       { intercept: true }
     ).userEvent;
+
+    // Restore original clipboard, which was replaced with a stub by userEvent.setup()
+    Object.defineProperty(globalThis.window.navigator, 'clipboard', {
+      get: () => clipboard,
+      configurable: true,
+    });
 
     let currentFocus = HTMLElement.prototype.focus;
 

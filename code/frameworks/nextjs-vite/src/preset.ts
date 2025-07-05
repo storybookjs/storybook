@@ -1,5 +1,5 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import path from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { IncompatiblePostCssConfigError } from 'storybook/internal/server-errors';
@@ -8,7 +8,6 @@ import type { PresetProperty } from 'storybook/internal/types';
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
-import { dirname, join } from 'path';
 import postCssLoadConfig from 'postcss-load-config';
 import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
@@ -40,6 +39,8 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 export const optimizeViteDeps = [
   '@storybook/nextjs-vite/navigation.mock',
   '@storybook/nextjs-vite/router.mock',
+  '@storybook/nextjs-vite > styled-jsx',
+  '@storybook/nextjs-vite > styled-jsx/style',
 ];
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
@@ -60,10 +61,19 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
 
   const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');
 
-  const nextDir = nextConfigPath ? path.dirname(nextConfigPath) : undefined;
+  const nextDir = nextConfigPath ? dirname(nextConfigPath) : undefined;
 
   return {
     ...reactConfig,
+    resolve: {
+      ...(reactConfig?.resolve ?? {}),
+      alias: {
+        ...(reactConfig?.resolve?.alias ?? {}),
+        'styled-jsx': dirname(require.resolve('styled-jsx/package.json')),
+        'styled-jsx/style': require.resolve('styled-jsx/style'),
+        'styled-jsx/style.js': require.resolve('styled-jsx/style'),
+      },
+    },
     plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs({ dir: nextDir })],
   };
 };

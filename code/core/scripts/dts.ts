@@ -24,35 +24,16 @@ async function run() {
     'storybook/theming',
 
     'storybook/test',
-    'storybook/test/preview',
-
-    'storybook/measure',
-    'storybook/measure/preview',
-
     'storybook/highlight',
-    'storybook/highlight/preview',
-
-    'storybook/outline',
-    'storybook/outline/preview',
-
-    'storybook/backgrounds',
-    'storybook/backgrounds/preview',
-
     'storybook/actions',
-    'storybook/actions/preview',
     'storybook/actions/decorator',
-
-    'storybook/controls/preview',
-
     'storybook/viewport',
-    'storybook/viewport/preview',
 
     'storybook/internal/builder-manager',
     'storybook/internal/channels',
     'storybook/internal/client-logger',
     'storybook/internal/common',
     'storybook/internal/component-testing',
-    'storybook/internal/component-testing/preview',
     'storybook/internal/components',
     'storybook/internal/core-events',
     'storybook/internal/core-server',

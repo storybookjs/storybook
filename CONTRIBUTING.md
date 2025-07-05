@@ -31,9 +31,9 @@ You can use any version manager to install the correct version of Node.js. We re
   # Check which version you're using
   node --version
   # node version manager
-  nvm use 18
+  nvm use 22
   # pnpm
-  pnpm env use --global 18
+  pnpm env use --global 22
   ```
 
 2. Install [fnm](https://github.com/Schniz/fnm/tree/master?tab=readme-ov-file#installation) and adjust your shell configuration to include the following parameters: `fnm env`, `use-on-cd`, `corepack-enabled`, and `version-file-strategy recursive`.

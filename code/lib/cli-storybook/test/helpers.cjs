@@ -1,7 +1,16 @@
 const { sync: spawnSync } = require('cross-spawn');
 const path = require('path');
 
-const CLI_PATH = path.join(__dirname, '..', '..', '..', 'core', 'bin', 'index.cjs');
+const CORE_CLI_PATH = path.join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'core',
+  'dist',
+  'bin',
+  'dispatcher.js'
+);
 
 /**
  * Execute command
@@ -10,7 +19,7 @@ const CLI_PATH = path.join(__dirname, '..', '..', '..', 'core', 'bin', 'index.cj
  * @param {Object} options - Customize the behavior
  * @returns {Object}
  */
-const run = (args, options = {}) => spawnSync('node', [CLI_PATH].concat(args), options);
+const run = (args, options = {}) => spawnSync('node', [CORE_CLI_PATH].concat(args), options);
 
 const cleanLog = (str) => {
   const pattern = [

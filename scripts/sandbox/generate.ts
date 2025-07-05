@@ -41,7 +41,7 @@ const sbInit = async (
   flags?: string[],
   debug?: boolean
 ) => {
-  const sbCliBinaryPath = join(__dirname, `../../code/lib/create-storybook/bin/index.cjs`);
+  const sbCliBinaryPath = join(__dirname, `../../code/lib/create-storybook/dist/bin/index.js`);
   console.log(`🎁 Installing Storybook`);
   const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars };
   const fullFlags = ['--yes', ...(flags || [])];

@@ -1,5 +1,5 @@
 import { mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -18,12 +18,13 @@ import {
   SupportedLanguage,
   externalFrameworks,
 } from '../../../../core/src/cli/project_types';
-import { frameworkPackages } from '../../../../core/src/common';
 import {
   type JsPackageManager,
   getPackageDetails,
 } from '../../../../core/src/common/js-package-manager/JsPackageManager';
+import { frameworkPackages } from '../../../../core/src/common/utils/get-storybook-info';
 import versions from '../../../../core/src/common/versions';
+import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 import type { SupportedFrameworks } from '../../../../core/src/types/modules/frameworks';
 import type { SupportedRenderers } from '../../../../core/src/types/modules/renderers';
 import { configureMain, configurePreview } from './configure';
@@ -108,14 +109,15 @@ const getRendererPackage = (framework: string | undefined, renderer: string) => 
   return `@storybook/${renderer}`;
 };
 
-const applyRequireWrapper = (packageName: string) => `%%getAbsolutePath('${packageName}')%%`;
+const applyGetAbsolutePathWrapper = (packageName: string) =>
+  `%%getAbsolutePath('${packageName}')%%`;
 
-const applyAddonRequireWrapper = (pkg: string | { name: string }) => {
+const applyAddonGetAbsolutePathWrapper = (pkg: string | { name: string }) => {
   if (typeof pkg === 'string') {
-    return applyRequireWrapper(pkg);
+    return applyGetAbsolutePathWrapper(pkg);
   }
   const obj = { ...pkg } as { name: string };
-  obj.name = applyRequireWrapper(pkg.name);
+  obj.name = applyGetAbsolutePathWrapper(pkg.name);
   return obj;
 };
 
@@ -139,17 +141,17 @@ const getFrameworkDetails = (
   invariant(frameworkPackage, 'Missing framework package.');
 
   const frameworkPackagePath = shouldApplyRequireWrapperOnPackageNames
-    ? applyRequireWrapper(frameworkPackage)
+    ? applyGetAbsolutePathWrapper(frameworkPackage)
     : frameworkPackage;
 
   const rendererPackage = getRendererPackage(framework, renderer) as string;
   const rendererPackagePath = shouldApplyRequireWrapperOnPackageNames
-    ? applyRequireWrapper(rendererPackage)
+    ? applyGetAbsolutePathWrapper(rendererPackage)
     : rendererPackage;
 
   const builderPackage = getBuilderDetails(builder);
   const builderPackagePath = shouldApplyRequireWrapperOnPackageNames
-    ? applyRequireWrapper(builderPackage)
+    ? applyGetAbsolutePathWrapper(builderPackage)
     : builderPackage;
 
   const isExternalFramework = !!getExternalFramework(frameworkPackage);
@@ -396,20 +398,21 @@ export async function baseGenerator(
     const prefixes = shouldApplyRequireWrapperOnPackageNames
       ? [
           'import { join, dirname } from "path"',
+          'import { fileURLToPath } from "url"',
           language === SupportedLanguage.JAVASCRIPT
             ? dedent`/**
             * This function is used to resolve the absolute path of a package.
             * It is needed in projects that use Yarn PnP or are set up within a monorepo.
             */
             function getAbsolutePath(value) {
-              return dirname(require.resolve(join(value, 'package.json')))
+              return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))))
             }`
             : dedent`/**
           * This function is used to resolve the absolute path of a package.
           * It is needed in projects that use Yarn PnP or are set up within a monorepo.
           */
           function getAbsolutePath(value: string): any {
-            return dirname(require.resolve(join(value, 'package.json')))
+            return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))))
           }`,
         ]
       : [];
@@ -423,7 +426,7 @@ export async function baseGenerator(
       prefixes,
       storybookConfigFolder,
       addons: shouldApplyRequireWrapperOnPackageNames
-        ? addons.map((addon) => applyAddonRequireWrapper(addon))
+        ? addons.map((addon) => applyAddonGetAbsolutePathWrapper(addon))
         : addons,
       extensions,
       language,
@@ -465,12 +468,8 @@ export async function baseGenerator(
       packageManager: packageManager as any,
       language,
       destination: componentsDestinationPath,
-      commonAssetsDir: join(getCliDir(), 'rendererAssets', 'common'),
+      commonAssetsDir: join(resolvePackageDir('create-storybook'), 'rendererAssets', 'common'),
       features,
     });
   }
-}
-
-export function getCliDir() {
-  return dirname(require.resolve('create-storybook/package.json'));
 }

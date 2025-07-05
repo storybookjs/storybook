@@ -4,6 +4,8 @@ import { Button, Form, Modal } from 'storybook/internal/components';
 
 import { styled } from 'storybook/theming';
 
+import { isChromatic } from '../../../../../.storybook/isChromatic';
+
 interface BaseField {
   label: string;
   options: Record<string, { label: string }>;
@@ -246,5 +248,5 @@ function shuffle<T>(array: T[]): T[] {
 }
 
 function shuffleObject<T extends object>(object: T): T {
-  return Object.fromEntries(shuffle(Object.entries(object))) as T;
+  return isChromatic() ? object : (Object.fromEntries(shuffle(Object.entries(object))) as T);
 }

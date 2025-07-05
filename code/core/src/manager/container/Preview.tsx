@@ -1,14 +1,14 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import type { Addon_BaseType, Addon_Collection, Addon_WrapperType } from '@storybook/core/types';
-import { Addon_TypesEnum } from '@storybook/core/types';
+import type { Addon_BaseType, Addon_Collection, Addon_WrapperType } from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
-import type { State, StoriesHash } from '@storybook/core/manager-api';
-import { Consumer } from '@storybook/core/manager-api';
-
 import memoizerific from 'memoizerific';
+import type { State, StoriesHash } from 'storybook/manager-api';
+import { Consumer } from 'storybook/manager-api';
 
 import { Preview, createCanvasTab, filterTabs } from '../components/preview/Preview';
 import { filterToolsSide, fullScreenTool } from '../components/preview/Toolbar';

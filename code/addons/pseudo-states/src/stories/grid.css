@@ -1,0 +1,49 @@
+.story-grid {
+  display: inline-grid;
+  grid-template-areas:
+    'normal normal normal'
+    'hover focus active'
+    'hover-focus hover-active focus-active'
+    'hover-focus-active hover-focus-active hover-focus-active';
+  gap: 1rem;
+}
+
+.story-grid > * {
+  grid-area: normal;
+  justify-self: center;
+}
+.story-grid > .pseudo-hover-all,
+.story-grid > [data-hover] {
+  grid-area: hover;
+  justify-self: right;
+}
+.story-grid > .pseudo-focus-all,
+.story-grid > [data-focus] {
+  grid-area: focus;
+  justify-self: center;
+}
+.story-grid > .pseudo-active-all,
+.story-grid > [data-active] {
+  grid-area: active;
+  justify-self: left;
+}
+.story-grid > .pseudo-hover-all.pseudo-focus-all,
+.story-grid > [data-hover][data-focus] {
+  grid-area: hover-focus;
+  justify-self: right;
+}
+.story-grid > .pseudo-hover-all.pseudo-active-all,
+.story-grid > [data-hover][data-active] {
+  grid-area: hover-active;
+  justify-self: center;
+}
+.story-grid > .pseudo-focus-all.pseudo-active-all,
+.story-grid > [data-focus][data-active] {
+  grid-area: focus-active;
+  justify-self: left;
+}
+.story-grid > .pseudo-hover-all.pseudo-focus-all.pseudo-active-all,
+.story-grid > [data-hover][data-focus][data-active] {
+  grid-area: hover-focus-active;
+  justify-self: center;
+}

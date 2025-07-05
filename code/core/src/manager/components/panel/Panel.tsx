@@ -1,12 +1,13 @@
 import React, { Component } from 'react';
 
-import { EmptyTabContent, IconButton, Link, Tabs } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import type { Addon_BaseType } from '@storybook/core/types';
+import { EmptyTabContent, IconButton, Link, Tabs } from 'storybook/internal/components';
+import type { Addon_BaseType } from 'storybook/internal/types';
+
 import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
 
-import type { State } from '@storybook/core/manager-api';
-import { shortcutToHumanString } from '@storybook/core/manager-api';
+import type { State } from 'storybook/manager-api';
+import { shortcutToHumanString } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { useLayout } from '../layout/LayoutProvider';
 
@@ -102,7 +103,7 @@ export const AddonPanel = React.memo<{
                 </IconButton>
               </>
             ) : (
-              <IconButton onClick={() => setMobilePanelOpen(false)} title="Close addon panel">
+              <IconButton onClick={() => setMobilePanelOpen(false)} aria-label="Close addon panel">
                 <CloseIcon />
               </IconButton>
             )}

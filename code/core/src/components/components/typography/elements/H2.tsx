@@ -1,4 +1,4 @@
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/theming';
 
 import { headerCommon, withReset } from '../lib/common';
 

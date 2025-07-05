@@ -1,4 +1,16 @@
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
+import {
+  PLAY_FUNCTION_THREW_EXCEPTION,
+  STORY_FINISHED,
+  STORY_RENDERED,
+  STORY_RENDER_PHASE_CHANGED,
+  type StoryFinishedPayload,
+  UNHANDLED_ERRORS_WHILE_PLAYING,
+} from 'storybook/internal/core-events';
+import {
+  MountMustBeDestructuredError,
+  NoStoryMountedError,
+} from 'storybook/internal/preview-errors';
 import type {
   Canvas,
   PreparedStory,
@@ -10,21 +22,14 @@ import type {
   StoryId,
   StoryRenderOptions,
   TeardownRenderToCanvas,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
-import {
-  PLAY_FUNCTION_THREW_EXCEPTION,
-  STORY_FINISHED,
-  STORY_RENDERED,
-  STORY_RENDER_PHASE_CHANGED,
-  type StoryFinishedPayload,
-  UNHANDLED_ERRORS_WHILE_PLAYING,
-} from '@storybook/core/core-events';
-import { MountMustBeDestructuredError, NoStoryMountedError } from '@storybook/core/preview-errors';
+import type { UserEventObject } from 'storybook/test';
 
 import type { StoryStore } from '../../store';
 import type { Render, RenderType } from './Render';
 import { PREPARE_ABORTED } from './Render';
+import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils';
 
 const { AbortController } = globalThis;
 
@@ -35,8 +40,9 @@ export type RenderPhase =
   | 'rendering'
   | 'playing'
   | 'played'
-  | 'afterEach'
+  | 'completing'
   | 'completed'
+  | 'afterEach'
   | 'finished'
   | 'aborted'
   | 'errored';
@@ -218,6 +224,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         step: (label, play) => runStep(label, play, context),
         context: null!,
         canvas: {} as Canvas,
+        userEvent: {} as UserEventObject,
         renderToCanvas: async () => {
           const teardown = await this.renderToScreen(renderContext, canvasElement);
           this.teardownRender = teardown || (() => {});
@@ -276,7 +283,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       }
 
       const cleanupCallbacks = await applyBeforeEach(context);
-      this.store.addCleanupCallbacks(story, cleanupCallbacks);
+      this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
 
       if (this.checkIfAborted(abortSignal)) {
         return;
@@ -296,13 +303,21 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         this.story.parameters?.test?.dangerouslyIgnoreUnhandledErrors === true;
 
       const unhandledErrors: Set<unknown> = new Set<unknown>();
-      const onError = (event: ErrorEvent | PromiseRejectionEvent) =>
-        unhandledErrors.add('error' in event ? event.error : event.reason);
+      const onError = (event: ErrorEvent) => {
+        if (event.error) {
+          unhandledErrors.add(event.error);
+        }
+      };
+      const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+        if (event.reason) {
+          unhandledErrors.add(event.reason);
+        }
+      };
 
       // The phase should be 'rendering' but it might be set to 'aborted' by another render cycle
       if (this.renderOptions.autoplay && forceRemount && playFunction && this.phase !== 'errored') {
-        window.addEventListener('error', onError);
-        window.addEventListener('unhandledrejection', onError);
+        window?.addEventListener?.('error', onError);
+        window?.addEventListener?.('unhandledrejection', onUnhandledRejection);
         this.disableKeyListeners = true;
         try {
           if (!isMountDestructured) {
@@ -345,17 +360,25 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           );
         }
         this.disableKeyListeners = false;
-        window.removeEventListener('unhandledrejection', onError);
-        window.removeEventListener('error', onError);
+        window?.removeEventListener?.('unhandledrejection', onUnhandledRejection);
+        window?.removeEventListener?.('error', onError);
 
         if (abortSignal.aborted) {
           return;
         }
       }
 
-      await this.runPhase(abortSignal, 'completed', async () =>
-        this.channel.emit(STORY_RENDERED, id)
-      );
+      await this.runPhase(abortSignal, 'completing', async () => {
+        if (isTestEnvironment()) {
+          this.store.addCleanupCallbacks(story, pauseAnimations());
+        } else {
+          await waitForAnimations(abortSignal);
+        }
+      });
+
+      await this.runPhase(abortSignal, 'completed', async () => {
+        this.channel.emit(STORY_RENDERED, id);
+      });
 
       if (this.phase !== 'errored') {
         await this.runPhase(abortSignal, 'afterEach', async () => {
@@ -450,7 +473,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // If we still haven't completed, reload the page (iframe) to ensure we have a clean slate
     // for the next render. Since the reload can take a brief moment to happen, we want to stop
     // further rendering by awaiting a never-resolving promise (which is destroyed on reload).
-    window.location.reload();
+    window?.location?.reload?.();
     await new Promise(() => {});
   }
 }

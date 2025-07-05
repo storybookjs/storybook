@@ -1,11 +1,10 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { StoryContext } from '@storybook/csf';
+import type { StoryContext } from 'storybook/internal/csf';
 
 import { run } from './a11yRunner';
-import { A11Y_TEST_TAG } from './constants';
-import { experimental_afterEach } from './preview';
+import { afterEach } from './preview';
 import { getIsVitestRunning, getIsVitestStandaloneRun } from './utils';
 
 const mocks = vi.hoisted(() => {
@@ -83,17 +82,19 @@ describe('afterEach', () => {
 
   const createContext = (overrides: Partial<StoryContext> = {}): StoryContext =>
     ({
+      viewMode: 'story',
       reporting: {
         reports: [],
         addReport: vi.fn(),
       },
       parameters: {
-        a11y: {},
+        a11y: {
+          test: 'error',
+        },
       },
       globals: {
         a11y: {},
       },
-      tags: [A11Y_TEST_TAG],
       ...overrides,
     }) as any;
 
@@ -105,9 +106,9 @@ describe('afterEach', () => {
 
     mockedRun.mockResolvedValue(result as any);
 
-    await expect(() => experimental_afterEach(context)).rejects.toThrow();
+    await expect(() => afterEach(context)).rejects.toThrow();
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
 
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
@@ -126,15 +127,42 @@ describe('afterEach', () => {
     mockedRun.mockResolvedValue(result as any);
     mocks.getIsVitestStandaloneRun.mockReturnValue(false);
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
 
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
       result,
       status: 'failed',
+    });
+  });
+
+  it('should run accessibility checks and should report them as warnings', async () => {
+    const context = createContext({
+      parameters: {
+        a11y: {
+          test: 'todo',
+        },
+      },
+    });
+    const result = {
+      violations,
+    };
+
+    mockedRun.mockResolvedValue(result as any);
+    mocks.getIsVitestStandaloneRun.mockReturnValue(false);
+
+    await afterEach(context);
+
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
+
+    expect(context.reporting.addReport).toHaveBeenCalledWith({
+      type: 'a11y',
+      version: 1,
+      result,
+      status: 'warning',
     });
   });
 
@@ -145,51 +173,15 @@ describe('afterEach', () => {
     };
     mockedRun.mockResolvedValue(result as any);
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
       result,
       status: 'passed',
     });
-  });
-
-  it('should run accessibility checks if "a11ytest" flag is not available and is not running in Vitest', async () => {
-    const context = createContext({
-      tags: [],
-    });
-    const result = {
-      violations: [],
-    };
-    mockedRun.mockResolvedValue(result as any);
-    vi.mocked(getIsVitestRunning).mockReturnValue(false);
-
-    await experimental_afterEach(context);
-
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
-    expect(context.reporting.addReport).toHaveBeenCalledWith({
-      type: 'a11y',
-      version: 1,
-      result,
-      status: 'passed',
-    });
-  });
-
-  it('should not run accessibility checks when manual is true', async () => {
-    const context = createContext({
-      parameters: {
-        a11y: {
-          manual: true,
-        },
-      },
-    });
-
-    await experimental_afterEach(context);
-
-    expect(mockedRun).not.toHaveBeenCalled();
-    expect(context.reporting.addReport).not.toHaveBeenCalled();
   });
 
   it('should not run accessibility checks when disable is true', async () => {
@@ -201,7 +193,7 @@ describe('afterEach', () => {
       },
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
@@ -216,19 +208,22 @@ describe('afterEach', () => {
       },
     });
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
   });
 
-  it('should not run accessibility checks if vitest is running and story is not tagged with a11ytest', async () => {
+  it('should not run accessibility checks when parameters.a11y.test is "off"', async () => {
     const context = createContext({
-      tags: [],
+      parameters: {
+        a11y: {
+          test: 'off',
+        },
+      },
     });
-    vi.mocked(getIsVitestRunning).mockReturnValue(true);
 
-    await experimental_afterEach(context);
+    await afterEach(context);
 
     expect(mockedRun).not.toHaveBeenCalled();
     expect(context.reporting.addReport).not.toHaveBeenCalled();
@@ -239,9 +234,9 @@ describe('afterEach', () => {
     const error = new Error('Test error');
     mockedRun.mockRejectedValue(error);
 
-    await expect(() => experimental_afterEach(context)).rejects.toThrow();
+    await expect(() => afterEach(context)).rejects.toThrow();
 
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
+    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y, context.id);
     expect(context.reporting.addReport).toHaveBeenCalledWith({
       type: 'a11y',
       version: 1,
@@ -252,21 +247,14 @@ describe('afterEach', () => {
     });
   });
 
-  it('should report error when run throws an error', async () => {
-    const context = createContext();
-    const error = new Error('Test error');
-    mockedRun.mockRejectedValue(error);
-
-    await expect(() => experimental_afterEach(context)).rejects.toThrow();
-
-    expect(mockedRun).toHaveBeenCalledWith(context.parameters.a11y);
-    expect(context.reporting.addReport).toHaveBeenCalledWith({
-      type: 'a11y',
-      version: 1,
-      result: {
-        error,
-      },
-      status: 'failed',
+  it('should not run in docs mode', async () => {
+    const context = createContext({
+      viewMode: 'docs',
     });
+
+    await afterEach(context);
+
+    expect(mockedRun).not.toHaveBeenCalled();
+    expect(context.reporting.addReport).not.toHaveBeenCalled();
   });
 });

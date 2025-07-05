@@ -177,7 +177,7 @@ export function getDefaults<TOptions extends OptionSpecifier>(options: TOptions)
   return Object.fromEntries(
     Object.entries(options)
       .filter(([, { type }]) => type === 'boolean' || type === 'string[]')
-      .map(([key, option]) => {
+      .map(([key, option]): any => {
         if (option.type === 'boolean') {
           return [key, !!option.inverse];
         }
@@ -296,7 +296,7 @@ function getFlag<TOption extends Option>(
 
   if (option.type === 'string') {
     if (value) {
-      return `--${longFlag(key, option)} ${value}`;
+      return `--${longFlag(key, option)} '${value}'`;
     }
     return '';
   }

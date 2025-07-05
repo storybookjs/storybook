@@ -7,7 +7,8 @@ import type {
   API_StoryMapper,
   SetStoriesStoryData,
   StoryIndex,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import { dedent } from 'ts-dedent';
@@ -297,7 +298,6 @@ export const init: ModuleFn<SubAPI, SubState> = (
       if (singleStory) {
         return;
       }
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       let internal_index: StoryIndex | undefined;
       let index: API_IndexHash | undefined;
       let filteredIndex: API_IndexHash | undefined;
@@ -317,14 +317,14 @@ export const init: ModuleFn<SubAPI, SubState> = (
           provider,
           docsOptions,
           filters,
-          status: {},
+          allStatuses: {},
         });
         // @ts-expect-error (could be undefined)
         index = transformStoryIndexToStoriesHash(storyIndex, {
           provider,
           docsOptions,
           filters: {},
-          status: {},
+          allStatuses: {},
         });
       }
 

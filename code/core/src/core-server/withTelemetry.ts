@@ -1,9 +1,8 @@
-import { cache, loadAllPresets } from '@storybook/core/common';
-import { getPrecedingUpgrade, oneWayHash, telemetry } from '@storybook/core/telemetry';
-import type { EventType } from '@storybook/core/telemetry';
-import type { CLIOptions } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
+import { HandledError, cache, loadAllPresets } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { getPrecedingUpgrade, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import type { EventType } from 'storybook/internal/telemetry';
+import type { CLIOptions } from 'storybook/internal/types';
 
 import prompts from 'prompts';
 
@@ -15,7 +14,7 @@ type TelemetryOptions = {
 };
 
 const promptCrashReports = async () => {
-  if (process.env.CI) {
+  if (process.env.CI || !process.stdout.isTTY) {
     return undefined;
   }
 
@@ -169,8 +168,10 @@ export async function withTelemetry<T>(
       return undefined;
     }
 
-    const { printError = logger.error } = options;
-    printError(error);
+    if (!(error instanceof HandledError)) {
+      const { printError = logger.error } = options;
+      printError(error);
+    }
 
     if (enableTelemetry) {
       await sendTelemetryError(error, eventType, options);
@@ -178,6 +179,6 @@ export async function withTelemetry<T>(
 
     throw error;
   } finally {
-    process.off('SIGINIT', cancelTelemetry);
+    process.off('SIGINT', cancelTelemetry);
   }
 }

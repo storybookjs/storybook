@@ -31,9 +31,9 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     ...storybookVersions,
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
     '@swc/core': '1.5.7',
-    playwright: '1.48.1',
-    'playwright-core': '1.48.1',
-    '@playwright/test': '1.48.1',
+    playwright: '1.52.0',
+    'playwright-core': '1.52.0',
+    '@playwright/test': '1.52.0',
   };
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };
@@ -70,6 +70,7 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
 export const addWorkaroundResolutions = async ({
   cwd,
   dryRun,
+  key,
 }: YarnOptions & { key?: TemplateKey }) => {
   logger.info(`🔢 Adding resolutions for workarounds`);
 
@@ -79,11 +80,21 @@ export const addWorkaroundResolutions = async ({
 
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJSON(packageJsonPath);
+
+  const additionalReact19Resolutions = ['nextjs/default-ts', 'nextjs/prerelease'].includes(key)
+    ? {
+        react: '^19.0.0',
+        'react-dom': '^19.0.0',
+      }
+    : {};
+
   packageJson.resolutions = {
     ...packageJson.resolutions,
+    ...additionalReact19Resolutions,
     '@testing-library/dom': '^9.3.4',
-    '@testing-library/jest-dom': '^6.5.0',
+    '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
+    typescript: '~5.7.3',
   };
 
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });

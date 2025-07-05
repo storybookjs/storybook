@@ -2,7 +2,7 @@ import { sep } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StorybookConfig } from '@storybook/core/types';
+import type { StorybookConfig } from 'storybook/internal/types';
 
 import { getFrameworkInfo } from './get-framework-info';
 import { getActualPackageJson } from './package-json';

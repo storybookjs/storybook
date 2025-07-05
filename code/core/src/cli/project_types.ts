@@ -1,7 +1,4 @@
-import type {
-  SupportedRenderers as CoreSupportedRenderers,
-  SupportedFrameworks,
-} from '@storybook/core/types';
+import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
 import { minVersion, validRange } from 'semver';
 
@@ -32,9 +29,6 @@ export const externalFrameworks: ExternalFramework[] = [
   },
 ];
 
-/** @deprecated Please use `SupportedRenderers` from `@storybook/types` instead */
-export type SupportedRenderers = CoreSupportedRenderers;
-
 export const SUPPORTED_RENDERERS: SupportedRenderers[] = [
   'react',
   'react-native',
@@ -54,6 +48,7 @@ export enum ProjectType {
   REACT_SCRIPTS = 'REACT_SCRIPTS',
   REACT_NATIVE = 'REACT_NATIVE',
   REACT_NATIVE_WEB = 'REACT_NATIVE_WEB',
+  REACT_NATIVE_AND_RNW = 'REACT_NATIVE_AND_RNW',
   REACT_PROJECT = 'REACT_PROJECT',
   WEBPACK_REACT = 'WEBPACK_REACT',
   NEXTJS = 'NEXTJS',
@@ -101,8 +96,7 @@ export type Builder = CoreBuilder | (string & {});
 
 export enum SupportedLanguage {
   JAVASCRIPT = 'javascript',
-  TYPESCRIPT_3_8 = 'typescript-3-8',
-  TYPESCRIPT_4_9 = 'typescript-4-9',
+  TYPESCRIPT = 'typescript',
 }
 
 export type TemplateMatcher = {

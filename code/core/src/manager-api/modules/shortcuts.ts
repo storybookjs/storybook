@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-import { global } from '@storybook/global';
-
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,
   STORIES_COLLAPSE_ALL,
   STORIES_EXPAND_ALL,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+
+import { global } from '@storybook/global';
 
 import type { KeyboardEventLike } from '../lib/shortcut';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
@@ -150,9 +149,17 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
 
 const addonsShortcuts: API_AddonShortcuts = {};
 
-function focusInInput(event: KeyboardEvent) {
+function shouldSkipShortcut(event: KeyboardEvent) {
   const target = event.target as Element;
-  return /input|textarea/i.test(target.tagName) || target.getAttribute('contenteditable') !== null;
+  if (/input|textarea/i.test(target.tagName) || target.getAttribute('contenteditable') !== null) {
+    return true;
+  }
+  const dialogElement = target.closest('dialog[open]');
+  if (dialogElement) {
+    return true;
+  }
+
+  return false;
 }
 
 export const init: ModuleFn = ({ store, fullAPI, provider }) => {
@@ -391,7 +398,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
   const initModule = () => {
     // Listen for keydown events in the manager
     document.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (!focusInInput(event)) {
+      if (!shouldSkipShortcut(event)) {
         api.handleKeydownEvent(event);
       }
     });

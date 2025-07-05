@@ -5,7 +5,7 @@ import type {
   StrictArgTypes,
   StrictGlobalTypes,
   StrictInputType,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit';
 

@@ -12,7 +12,15 @@ const MockedConfig = vi.hoisted(() => {
 });
 const MockedPackageManager = vi.hoisted(() => {
   return {
-    retrievePackageJson: vi.fn(() => ({})),
+    getPrimaryPackageJson: vi.fn(() => ({
+      packageJson: {
+        devDependencies: {},
+        dependencies: {},
+      },
+      packageJsonPath: 'some/path',
+      operationDir: 'some/path',
+    })),
+    getDependencyVersion: vi.fn(() => '^8.0.0'),
     latestVersion: vi.fn(() => '1.0.0'),
     addDependencies: vi.fn(() => {}),
     type: 'npm',
@@ -35,6 +43,20 @@ const MockedConsole = {
   error: vi.fn(),
 } as any as Console;
 
+const MockedMainConfigFileHelper = vi.hoisted(() => {
+  return {
+    getStorybookData: vi.fn(() => ({
+      mainConfig: {},
+      mainConfigPath: '.storybook/main.ts',
+      configDir: '.storybook',
+      previewConfigPath: '.storybook/preview.ts',
+      storybookVersion: '8.0.0',
+      storybookVersionSpecifier: '^8.0.0',
+      packageManager: MockedPackageManager,
+    })),
+  };
+});
+
 vi.mock('storybook/internal/csf-tools', () => {
   return {
     readConfig: vi.fn(() => MockedConfig),
@@ -47,17 +69,25 @@ vi.mock('./postinstallAddon', () => {
 vi.mock('./automigrate/fixes/wrap-require-utils', () => {
   return MockWrapRequireUtils;
 });
+vi.mock('./automigrate/helpers/mainConfigFile', () => {
+  return MockedMainConfigFileHelper;
+});
+vi.mock('./codemod/helpers/csf-factories-utils');
 vi.mock('storybook/internal/common', () => {
   return {
     getStorybookInfo: vi.fn(() => ({ mainConfig: {}, configDir: '' })),
     serverRequire: vi.fn(() => ({})),
+    loadMainConfig: vi.fn(() => ({})),
     JsPackageManagerFactory: {
       getPackageManager: vi.fn(() => MockedPackageManager),
     },
+    syncStorybookAddons: vi.fn(),
     getCoercedStorybookVersion: vi.fn(() => '8.0.0'),
     versions: {
-      '@storybook/addon-docs': '^8.0.0',
+      storybook: '8.0.0',
+      '@storybook/addon-docs': '8.0.0',
     },
+    frameworkToRenderer: vi.fn(),
   };
 });
 
@@ -108,7 +138,7 @@ describe('add', () => {
     );
 
     expect(MockedPackageManager.addDependencies).toHaveBeenCalledWith(
-      { installAsDevDependencies: true },
+      { type: 'devDependencies', writeOutputToFile: false },
       [expected]
     );
   });

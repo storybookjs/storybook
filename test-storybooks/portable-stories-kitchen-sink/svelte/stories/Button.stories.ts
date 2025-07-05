@@ -1,4 +1,4 @@
-import { expect, fn, userEvent, within } from '@storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import type { Meta, StoryFn as CSF2Story, StoryObj } from '../..';
 
 import LoaderStoryComponent from './LoaderStoryComponent.svelte';

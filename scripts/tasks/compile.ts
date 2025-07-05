@@ -37,9 +37,10 @@ export const compile: Task = {
       return false;
     }
   },
-  async run({ codeDir }, { link, dryRun, debug, prod }) {
+  async run({ codeDir }, { link, dryRun, debug, prod, skipCache }) {
+    const command = link && !prod ? linkCommand : noLinkCommand;
     return exec(
-      link && !prod ? linkCommand : noLinkCommand,
+      `${command} ${skipCache ? '--skip-nx-cache' : ''}`,
       { cwd: codeDir },
       {
         startMessage: '🥾 Bootstrapping',

@@ -344,8 +344,7 @@ const uploadToGithub = async ({
   pullRequest: number;
 }) => {
   console.log('Uploading results to GitHub...');
-  // const response = await fetch('http://localhost:3000/package-bench', {
-  const response = await fetch('https://storybook-benchmark-bot.vercel.app/package-bench', {
+  const response = await fetch('https://storybook-benchmark-bot.netlify.app/package-bench', {
     method: 'POST',
     body: JSON.stringify({
       owner: 'storybookjs',
@@ -460,16 +459,6 @@ const run = async () => {
   if (options.baseBranch) {
     const comparisonResults = await compareResults({ results, baseBranch: options.baseBranch });
     const resultsAboveThreshold = filterResultsByThresholds(comparisonResults);
-    await saveLocally({
-      filename: `compare-with-${options.baseBranch}.json`,
-      results: comparisonResults,
-      diff: true,
-    });
-    await saveLocally({
-      filename: `comparisons-above-threshold-with-${options.baseBranch}.json`,
-      results: resultsAboveThreshold,
-      diff: true,
-    });
     if (options.pullRequest) {
       await uploadToGithub({
         results: resultsAboveThreshold,

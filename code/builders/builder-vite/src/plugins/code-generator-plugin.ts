@@ -44,7 +44,10 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         // TODO maybe use the stories declaration in main
         if (/\.stories\.([tj])sx?$/.test(path) || /\.mdx$/.test(path)) {
           // We need to emit a change event to trigger HMR
-          server.watcher.emit('change', SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
+          server.watcher.emit(
+            'change',
+            getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
+          );
         }
       });
     },

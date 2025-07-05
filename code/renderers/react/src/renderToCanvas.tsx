@@ -5,7 +5,7 @@ import type { RenderContext } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { act } from './act-compat';
+import { getAct } from './act-compat';
 import type { ReactRenderer, StoryContext } from './types';
 
 const { FRAMEWORK_OPTIONS } = global;
@@ -45,6 +45,23 @@ class ErrorBoundary extends ReactComponent<{
 
 const Wrapper = FRAMEWORK_OPTIONS?.strictMode ? StrictMode : Fragment;
 
+const actQueue: (() => Promise<void>)[] = [];
+let isActing = false;
+
+const processActQueue = async () => {
+  if (isActing || actQueue.length === 0) {
+    return;
+  }
+
+  isActing = true;
+  const actTask = actQueue.shift();
+  if (actTask) {
+    await actTask();
+  }
+  isActing = false;
+  processActQueue();
+};
+
 export async function renderToCanvas(
   {
     storyContext,
@@ -58,13 +75,12 @@ export async function renderToCanvas(
   const { renderElement, unmountElement } = await import('@storybook/react-dom-shim');
   const Story = unboundStoryFn as FC<StoryContext<ReactRenderer>>;
 
-  // eslint-disable-next-line no-underscore-dangle
   const isPortableStory = storyContext.parameters.__isPortableStory;
 
   const content = isPortableStory ? (
     <Story {...storyContext} />
   ) : (
-    <ErrorBoundary showMain={showMain} showException={showException}>
+    <ErrorBoundary key={storyContext.id} showMain={showMain} showException={showException}>
       <Story {...storyContext} />
     </ErrorBoundary>
   );
@@ -81,8 +97,21 @@ export async function renderToCanvas(
     unmountElement(canvasElement);
   }
 
-  await act(async () => {
-    await renderElement(element, canvasElement, storyContext?.parameters?.react?.rootOptions);
+  // Disable act in docs, see:
+  // https://github.com/storybookjs/storybook/issues/30356
+  const act = await getAct({ disableAct: storyContext.viewMode === 'docs' });
+  await new Promise<void>(async (resolve, reject) => {
+    actQueue.push(async () => {
+      try {
+        await act(async () => {
+          await renderElement(element, canvasElement, storyContext?.parameters?.react?.rootOptions);
+        });
+        resolve();
+      } catch (e) {
+        reject(e);
+      }
+    });
+    processActQueue();
   });
 
   return async () => {

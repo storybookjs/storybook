@@ -1,14 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJsonWithDepsAndDevDeps } from '@storybook/core/common';
+import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 
 import { runFixes } from './index';
 import type { Fix } from './types';
 
 const check1 = vi.fn();
 const run1 = vi.fn();
-const retrievePackageJson = vi.fn();
-const getPackageVersion = vi.fn();
+const getModulePackageJSON = vi.fn();
 const prompt1Message = 'prompt1Message';
 
 vi.spyOn(console, 'error').mockImplementation(console.log);
@@ -16,8 +15,6 @@ vi.spyOn(console, 'error').mockImplementation(console.log);
 const fixes: Fix<any>[] = [
   {
     id: 'fix-1',
-
-    versionRange: ['<7', '>=7'],
 
     async check(config) {
       return check1(config);
@@ -57,12 +54,8 @@ vi.mock('prompts', () => {
 });
 
 class PackageManager implements Partial<JsPackageManager> {
-  public async retrievePackageJson(): Promise<PackageJsonWithDepsAndDevDeps> {
-    return retrievePackageJson();
-  }
-
-  getPackageVersion(packageName: string, basePath?: string | undefined): Promise<string | null> {
-    return getPackageVersion(packageName, basePath);
+  getModulePackageJSON(packageName: string, basePath?: string | undefined): PackageJson | null {
+    return getModulePackageJSON(packageName, basePath);
   }
 }
 
@@ -78,7 +71,6 @@ const beforeVersion = '6.5.15';
 const isUpgrade = true;
 
 const runFixWrapper = async ({
-  // eslint-disable-next-line @typescript-eslint/no-shadow
   beforeVersion,
   storybookVersion,
 }: {
@@ -89,6 +81,7 @@ const runFixWrapper = async ({
     fixes,
     dryRun,
     yes,
+    mainConfig: { stories: [] },
     rendererPackage,
     skipInstall,
     configDir,
@@ -97,33 +90,22 @@ const runFixWrapper = async ({
     storybookVersion,
     beforeVersion,
     isUpgrade,
+    storiesPaths: [],
   });
 };
 
 describe('runFixes', () => {
   beforeEach(() => {
-    retrievePackageJson.mockResolvedValue({
-      dependencies: [],
-      devDependencies: [],
-    });
-    getPackageVersion.mockImplementation((packageName) => {
-      return beforeVersion;
+    getModulePackageJSON.mockImplementation(() => {
+      return {
+        version: beforeVersion,
+      };
     });
     check1.mockResolvedValue({ some: 'result' });
   });
 
   afterEach(() => {
     vi.clearAllMocks();
-  });
-
-  it('should be unnecessary to run fix-1 from SB 6.5.15 to 6.5.16', async () => {
-    const { fixResults } = await runFixWrapper({ beforeVersion, storybookVersion: '6.5.16' });
-
-    // Assertions
-    expect(fixResults).toEqual({
-      'fix-1': 'unnecessary',
-    });
-    expect(run1).not.toHaveBeenCalled();
   });
 
   it('should be necessary to run fix-1 from SB 6.5.15 to 7.0.0', async () => {
@@ -134,15 +116,17 @@ describe('runFixes', () => {
     expect(fixResults).toEqual({
       'fix-1': 'succeeded',
     });
-    expect(run1).toHaveBeenCalledWith({
-      dryRun,
-      mainConfigPath,
-      packageManager,
-      result: {
-        some: 'result',
-      },
-      skipInstall,
-    });
+    expect(run1).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dryRun,
+        mainConfigPath,
+        packageManager,
+        result: {
+          some: 'result',
+        },
+        skipInstall,
+      })
+    );
   });
 
   it('should fail if an error is thrown', async () => {

@@ -1,9 +1,9 @@
-import { Addon_StoryContext } from 'storybook/internal/types';
+import type { Addon_StoryContext } from 'storybook/internal/types';
 
 import { vi, expect, describe, it } from 'vitest';
 import { Component } from '@angular/core';
 import { moduleMetadata, applicationConfig } from './decorators';
-import { AngularRenderer } from './types';
+import type { AngularRenderer } from './types';
 
 const defaultContext: Addon_StoryContext<AngularRenderer> = {
   componentId: 'unspecified',
@@ -33,6 +33,7 @@ const defaultContext: Addon_StoryContext<AngularRenderer> = {
   step: undefined,
   context: undefined,
   canvas: undefined,
+  userEvent: undefined,
   mount: undefined,
 };
 

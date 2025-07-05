@@ -42,15 +42,15 @@ export const Page = () => {
         </Text>
 
         <View>
-          <View>
+          <Text>
             Use a higher-level connected component. Storybook helps you compose such data from the
             "args" of child component stories
-          </View>
+          </Text>
 
-          <View>
+          <Text>
             Assemble data in the page component from your services. You can mock these services out
             using Storybook.
-          </View>
+          </Text>
         </View>
 
         <Text style={styles.p}>

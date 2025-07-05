@@ -1,6 +1,7 @@
+import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import findUp from 'find-up';
+import { findUp } from 'find-up';
 import MagicString from 'magic-string';
 import {
   ERROR_CODES,
@@ -80,7 +81,10 @@ export default async function reactDocgenLoader(
   const { debug = false } = options;
 
   if (!tsconfigPathsInitialized) {
-    const tsconfigPath = await findUp('tsconfig.json', { cwd: process.cwd() });
+    const tsconfigPath = await findUp('tsconfig.json', {
+      cwd: process.cwd(),
+      stopAt: getProjectRoot(),
+    });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
     if (tsconfig.resultType === 'success') {

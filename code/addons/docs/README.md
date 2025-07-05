@@ -47,7 +47,7 @@ Here's an example file:
 <!-- prettier-ignore-start -->
 
 ```md
-import { Meta, Story, Canvas } from '@storybook/blocks';
+import { Meta, Story, Canvas } from '@storybook/addon-docs/blocks';
 import * as CheckboxStories from './Checkbox.stories';
 
 <Meta title="MDX/Checkbox" of={CheckboxStories} />

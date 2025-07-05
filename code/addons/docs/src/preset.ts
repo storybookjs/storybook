@@ -1,7 +1,12 @@
 import { dirname, isAbsolute, join } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { DocsOptions, Options, PresetProperty } from 'storybook/internal/types';
+import type {
+  CLIOptions,
+  Options,
+  PresetProperty,
+  StorybookConfigRaw,
+} from 'storybook/internal/types';
 
 import type { CsfPluginOptions } from '@storybook/csf-plugin';
 
@@ -69,16 +74,7 @@ async function webpack(
    * Add aliases for `@storybook/addon-docs` & `@storybook/blocks` These must be singletons to avoid
    * multiple instances of react & emotion being loaded, both would cause the components to fail to
    * render.
-   *
-   * In the future the `@storybook/theming` and `@storybook/components` can be removed, as they
-   * should be singletons in the future due to the peerDependency on `storybook` package.
    */
-  const cliPath = dirname(require.resolve('storybook/package.json'));
-  const themingPath = join(cliPath, 'core', 'theming', 'index.js');
-  const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
-
-  const componentsPath = join(cliPath, 'core', 'components', 'index.js');
-  const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
   if (Array.isArray(webpackConfig.resolve?.alias)) {
     alias = [...webpackConfig.resolve?.alias];
     alias.push(
@@ -93,33 +89,12 @@ async function webpack(
       {
         name: '@mdx-js/react',
         alias: mdx,
-      },
-      {
-        name: '@storybook/theming/create',
-        alias: themingCreatePath,
-      },
-      {
-        name: '@storybook/theming',
-        alias: themingPath,
-      },
-      {
-        name: '@storybook/components',
-        alias: componentsPath,
-      },
-      {
-        name: '@storybook/blocks',
-        alias: blocksPath,
       }
     );
   } else {
     alias = {
       ...webpackConfig.resolve?.alias,
       react,
-      '@storybook/theming/create': themingCreatePath,
-      '@storybook/theming': themingPath,
-      '@storybook/components': componentsPath,
-      '@storybook/blocks': blocksPath,
-
       'react-dom': reactDom,
       '@mdx-js/react': mdx,
     };
@@ -159,12 +134,21 @@ async function webpack(
   return result;
 }
 
-const docs = (docsOptions: DocsOptions) => {
-  return {
-    ...docsOptions,
+const docs: PresetProperty<'docs'> = (input = {}, options) => {
+  if (options?.build?.test?.disableAutoDocs) {
+    return undefined;
+  }
+
+  const result: StorybookConfigRaw['docs'] = {
+    ...input,
     defaultName: 'Docs',
-    autodocs: 'tag',
   };
+
+  const docsMode = options.docs;
+  if (docsMode) {
+    result.docsMode = docsMode;
+  }
+  return result;
 };
 
 export const addons: PresetProperty<'addons'> = [
@@ -173,20 +157,13 @@ export const addons: PresetProperty<'addons'> = [
 
 export const viteFinal = async (config: any, options: Options) => {
   const { plugins = [] } = config;
-  const { mdxPlugin } = await import('./plugins/mdx-plugin');
 
-  const rehypeSlug = (await import('rehype-slug')).default;
-  const rehypeExternalLinks = (await import('rehype-external-links')).default;
+  const { mdxPlugin } = await import('./plugins/mdx-plugin');
 
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);
 
-  const cliPath = dirname(require.resolve('storybook/package.json'));
-  const themingPath = join(cliPath, 'core', 'theming', 'index.js');
-  const themingCreatePath = join(cliPath, 'core', 'theming', 'create.js');
-  const componentsPath = join(cliPath, 'core', 'components', 'index.js');
-  const blocksPath = dirname(require.resolve('@storybook/blocks/package.json'));
-
+  const themingPath = dirname(require.resolve('storybook/theming'));
   const packageDeduplicationPlugin = {
     name: 'storybook:package-deduplication',
     enforce: 'pre',
@@ -198,19 +175,7 @@ export const viteFinal = async (config: any, options: Options) => {
           ...(isAbsolute(reactDom) && { 'react-dom/server': `${reactDom}/server.browser.js` }),
           'react-dom': reactDom,
           '@mdx-js/react': mdx,
-          /**
-           * Add aliases for `@storybook/addon-docs` & `@storybook/blocks` These must be singletons
-           * to avoid multiple instances of react & emotion being loaded, both would cause the
-           * components to fail to render.
-           *
-           * In the future the `@storybook/theming` and `@storybook/components` can be removed, as
-           * they should be singletons in the future due to the peerDependency on `storybook`
-           * package.
-           */
-          '@storybook/theming/create': themingCreatePath,
-          '@storybook/theming': themingPath,
-          '@storybook/components': componentsPath,
-          '@storybook/blocks': blocksPath,
+          'storybook/theming': themingPath,
         },
       },
     }),
@@ -222,7 +187,10 @@ export const viteFinal = async (config: any, options: Options) => {
   // mdx plugin needs to be before any react plugins
   plugins.unshift(mdxPlugin(options));
 
-  return config;
+  return {
+    ...config,
+    plugins,
+  };
 };
 
 /*
@@ -244,12 +212,6 @@ export const resolvedReact = async (existing: any) => ({
   mdx: existing?.mdx ?? dirname(require.resolve('@mdx-js/react')),
 });
 
-const optimizeViteDeps = [
-  '@mdx-js/react',
-  '@storybook/addon-docs > acorn-jsx',
-  '@storybook/addon-docs',
-  '@storybook/addon-essentials/docs/mdx-react-shim',
-  'markdown-to-jsx',
-];
+const optimizeViteDeps = ['@mdx-js/react', '@storybook/addon-docs', 'markdown-to-jsx'];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };

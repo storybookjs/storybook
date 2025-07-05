@@ -1,11 +1,12 @@
-import type { PartialStoryFn, StoryContext } from '@storybook/core/types';
-import { global as globalThis } from '@storybook/global';
-import { userEvent, within } from '@storybook/test';
+import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
 
-import { useEffect, useState } from '@storybook/core/preview-api';
+import { global as globalThis } from '@storybook/global';
+
+import { useEffect, useState } from 'storybook/preview-api';
+import { userEvent, within } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   tags: ['!vitest'],
 };
 

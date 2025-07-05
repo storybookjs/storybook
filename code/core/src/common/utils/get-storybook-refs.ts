@@ -1,15 +1,19 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import type { Options, Ref } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
+import type { Options, Ref } from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
 import resolveFrom from 'resolve-from';
 
+import { getProjectRoot } from './paths';
+
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
-  const location = await findUp('package.json', { cwd: options.configDir });
+  const location = await findUp('package.json', {
+    cwd: options.configDir,
+    stopAt: getProjectRoot(),
+  });
   if (!location) {
     return {};
   }

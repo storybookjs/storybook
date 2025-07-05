@@ -5,9 +5,9 @@ import {
 } from 'storybook/internal/core-events';
 
 import { global as globalThis } from '@storybook/global';
-import { userEvent, within } from '@storybook/test';
 import type { Meta, StoryObj } from '@storybook/vue3';
 
+import { userEvent, within } from 'storybook/test';
 import { h } from 'vue';
 
 import Reactivity from './Reactivity.vue';

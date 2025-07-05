@@ -1,11 +1,8 @@
 ```js filename="my-addon/manager.js|ts" renderer="common" language="js"
 import React from 'react';
-
-import { AddonPanel, Button } from '@storybook/components';
-
-import { STORY_CHANGED } from '@storybook/core-events';
-
-import { useChannel } from '@storybook/manager-api';
+import { useChannel } from 'storybook/manager-api';
+import { AddonPanel, Button } from 'storybook/internal/components';
+import { STORY_CHANGED } from 'storybook/internal/core-events';
 
 export const Panel = () => {
   // Creates a Storybook API channel and subscribes to the STORY_CHANGED event

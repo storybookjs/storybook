@@ -1,12 +1,11 @@
-import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { Preset } from 'storybook/internal/types';
+import type { Preset } from 'storybook/internal/types';
 
-import { Configuration } from 'webpack';
+import type { Configuration } from 'webpack';
 
-import { AngularOptions } from '../types';
-import { PresetOptions } from './preset-options';
+import type { AngularOptions } from '../types';
+import type { PresetOptions } from './preset-options';
 
 /**
  * Source :
@@ -51,36 +50,19 @@ export const runNgcc = async () => {
 };
 
 export const webpack = async (webpackConfig: Configuration, options: PresetOptions) => {
-  const packageJsonPath = require.resolve('@angular/core/package.json');
-  const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-  const VERSION = packageJson.version;
   const framework = await options.presets.apply<Preset>('framework');
   const angularOptions = (typeof framework === 'object' ? framework.options : {}) as AngularOptions;
-  const angularMajorVersion = VERSION.split('.')[0];
-  const isAngular16OrNewer = parseInt(angularMajorVersion, 10) >= 16;
 
   // Default to true, if undefined
   if (angularOptions.enableIvy === false) {
     return webpackConfig;
   }
 
-  let extraMainFields: string[] = [];
-
-  if (angularOptions.enableNgcc !== false && !isAngular16OrNewer) {
-    // TODO: Drop if Angular 14 and 15 are not supported anymore
-    runNgcc();
-    extraMainFields = ['es2015_ivy_ngcc', 'module_ivy_ngcc', 'main_ivy_ngcc'];
-  }
-
-  if (!isAngular16OrNewer) {
-    extraMainFields.push('es2015');
-  }
-
   return {
     ...webpackConfig,
     resolve: {
       ...webpackConfig.resolve,
-      mainFields: [...extraMainFields, 'browser', 'module', 'main'],
+      mainFields: ['browser', 'module', 'main'],
     },
   };
 };

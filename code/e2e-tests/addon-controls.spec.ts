@@ -78,7 +78,7 @@ test.describe('addon-controls', () => {
   });
 
   test('should set select option when value contains double spaces', async ({ page }) => {
-    await page.goto(`${storybookUrl}?path=/story/addons-controls-basics--undefined`);
+    await page.goto(`${storybookUrl}?path=/story/core-controls-basics--undefined`);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
@@ -90,7 +90,7 @@ test.describe('addon-controls', () => {
   });
 
   test('should set multiselect option when value contains double spaces', async ({ page }) => {
-    await page.goto(`${storybookUrl}?path=/story/addons-controls-basics--undefined`);
+    await page.goto(`${storybookUrl}?path=/story/core-controls-basics--undefined`);
 
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();

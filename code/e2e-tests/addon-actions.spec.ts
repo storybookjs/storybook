@@ -22,10 +22,12 @@ test.describe('addon-actions', () => {
 
     await sbPage.navigateToStory('example/button', 'primary');
     const root = sbPage.previewRoot();
-    const button = root.getByRole('button', { name: 'Button' });
+    await sbPage.viewAddonPanel('Actions');
+
+    const button = root.getByRole('button');
+    await expect(button).toBeVisible();
     await button.click();
 
-    await sbPage.viewAddonPanel('Actions');
     const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
       hasText: 'click',
     });
@@ -41,13 +43,15 @@ test.describe('addon-actions', () => {
     const sbPage = new SbPage(page, expect);
     sbPage.waitUntilLoaded();
 
-    await sbPage.navigateToStory('addons/actions/spies', 'show-spy-on-in-actions');
+    await sbPage.navigateToStory('core/spies', 'show-spy-on-in-actions');
 
     const root = sbPage.previewRoot();
-    const button = root.getByRole('button', { name: 'Button' });
+    await sbPage.viewAddonPanel('Actions');
+
+    const button = root.getByRole('button');
+    await expect(button).toBeVisible();
     await button.click();
 
-    await sbPage.viewAddonPanel('Actions');
     const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
       hasText: 'console.log',
     });

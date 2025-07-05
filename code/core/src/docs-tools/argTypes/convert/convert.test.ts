@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { transformSync } from '@storybook/core/babel';
+import { transformSync } from 'storybook/internal/babel';
 
 import { mapValues } from 'es-toolkit';
 import requireFromString from 'require-from-string';
@@ -820,7 +820,6 @@ const annotateWithDocgen = (inputCode: string, filename: string) => {
 const convertCommon = (code: string, fileExt: string) => {
   const docgenPretty = annotateWithDocgen(code, `temp.${fileExt}`);
   const { Component } = requireFromString(transformToModule(docgenPretty ?? ''));
-  // eslint-disable-next-line no-underscore-dangle
   const { props = {} } = Component.__docgenInfo || {};
   const types = mapValues(props, (prop) => convert(prop));
   return types;

@@ -1,19 +1,20 @@
+import { globalSettings } from 'storybook/internal/cli';
 import {
+  HandledError,
   JsPackageManagerFactory,
   removeAddon as remove,
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
 import envinfo from 'envinfo';
-import { findPackageSync } from 'fd-package-json';
 import leven from 'leven';
 import picocolors from 'picocolors';
-import invariant from 'tiny-invariant';
 
+import { version } from '../../package.json';
 import { add } from '../add';
 import { doAutomigrate } from '../automigrate';
 import { doctor } from '../doctor';
@@ -24,9 +25,17 @@ import { type UpgradeOptions, upgrade } from '../upgrade';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
-const pkg = findPackageSync(__dirname);
-invariant(pkg, 'Failed to find the closest package.json file.');
-const consoleLogger = console;
+// Return a failed exit code but write the logs to a file first
+const handleCommandFailure = async (error: unknown): Promise<never> => {
+  if (!(error instanceof HandledError)) {
+    logger.error(String(error));
+  }
+
+  const logFile = await logTracker.writeToFile();
+  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.outro('');
+  process.exit(1);
+};
 
 const command = (name: string) =>
   program
@@ -38,7 +47,32 @@ const command = (name: string) =>
       process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
     )
     .option('--debug', 'Get more logs in debug mode', false)
-    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data');
+    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
+    .option('--write-logs', 'Write all debug logs to a file at the end of the run')
+    .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
+    .hook('preAction', async (self) => {
+      try {
+        const options = self.opts();
+        if (options.loglevel) {
+          logger.setLogLevel(options.loglevel);
+        }
+
+        if (options.writeLogs) {
+          logTracker.enableLogWriting();
+        }
+
+        await globalSettings();
+      } catch (e) {
+        logger.error('Error loading global settings:\n' + String(e));
+      }
+    })
+    .hook('postAction', async () => {
+      if (logTracker.shouldWriteLogsToFile) {
+        const logFile = await logTracker.writeToFile();
+        logger.log(`Storybook debug logs can be found at: ${logFile}`);
+        logger.outro(CLI_COLORS.success('Done!'));
+      }
+    });
 
 command('init')
   .description('Initialize Storybook into your project')
@@ -68,8 +102,10 @@ command('add <addon>')
     'Force package manager for installing dependencies'
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option('--skip-install', 'Skip installing deps')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
   .option('-y --yes', 'Skip prompting the user')
+  .option('--skip-doctor', 'Skip doctor check')
   .action((addonName: string, options: any) => add(addonName, options));
 
 command('remove <addon>')
@@ -79,9 +115,18 @@ command('remove <addon>')
     'Force package manager for installing dependencies'
   )
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
+  .option('-s --skip-install', 'Skip installing deps')
   .action((addonName: string, options: any) =>
     withTelemetry('remove', { cliOptions: options }, async () => {
-      await remove(addonName, options);
+      const packageManager = JsPackageManagerFactory.getPackageManager({
+        configDir: options.configDir,
+        force: options.packageManager,
+      });
+      await remove(addonName, {
+        configDir: options.configDir,
+        packageManager,
+        skipInstall: options.skipInstall,
+      });
       if (!options.disableTelemetry) {
         await telemetry('remove', { addon: addonName, source: 'cli' });
       }
@@ -98,14 +143,20 @@ command('upgrade')
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')
-  .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
-  .action(async (options: UpgradeOptions) => upgrade(options).catch(() => process.exit(1)));
+  .option(
+    '-c, --config-dir <dir-name...>',
+    'Directory(ies) where to load Storybook configurations from'
+  )
+  .action(async (options: UpgradeOptions) => {
+    prompt.setPromptLibrary('clack');
+    await upgrade(options).catch(handleCommandFailure);
+  });
 
 command('info')
   .description('Prints debugging information about the local environment')
   .action(async () => {
-    consoleLogger.log(picocolors.bold('\nStorybook Environment Info:'));
-    const pkgManager = await JsPackageManagerFactory.getPackageManager();
+    logger.log(picocolors.bold('\nStorybook Environment Info:'));
+    const pkgManager = JsPackageManagerFactory.getPackageManager();
     const activePackageManager = pkgManager.type.replace(/\d/, ''); // 'yarn1' -> 'yarn'
     const output = await envinfo.run({
       System: ['OS', 'CPU', 'Shell'],
@@ -115,7 +166,7 @@ command('info')
       npmGlobalPackages: '{@storybook/*,*storybook*,sb,chromatic}',
     });
     const activePackageManagerLine = output.match(new RegExp(`${activePackageManager}:.*`, 'i'));
-    consoleLogger.log(
+    logger.log(
       output.replace(
         activePackageManagerLine,
         picocolors.bold(`${activePackageManagerLine} <----- active`)
@@ -145,10 +196,7 @@ command('migrate [migration]')
       list,
       rename,
       parser,
-    }).catch((err) => {
-      logger.error(err);
-      process.exit(1);
-    });
+    }).catch(handleCommandFailure);
   });
 
 command('sandbox [filterValue]')
@@ -157,22 +205,14 @@ command('sandbox [filterValue]')
   .option('-o --output <outDir>', 'Define an output directory')
   .option('--no-init', 'Whether to download a template without an initialized Storybook', false)
   .action((filterValue, options) =>
-    sandbox({ filterValue, ...options }).catch((e) => {
-      logger.error(e);
-      process.exit(1);
-    })
+    sandbox({ filterValue, ...options }).catch(handleCommandFailure)
   );
 
 command('link <repo-url-or-directory>')
   .description('Pull down a repro from a URL (or a local directory), link it, and run storybook')
   .option('--local', 'Link a local directory already in your file system')
   .option('--no-start', 'Start the storybook', true)
-  .action((target, { local, start }) =>
-    link({ target, local, start }).catch((e) => {
-      logger.error(e);
-      process.exit(1);
-    })
-  );
+  .action((target, { local, start }) => link({ target, local, start }).catch(handleCommandFailure));
 
 command('automigrate [fixId]')
   .description('Check storybook for incompatibilities or migrations and apply fixes')
@@ -186,11 +226,9 @@ command('automigrate [fixId]')
     '--renderer <renderer-pkg-name>',
     'The renderer package for the framework Storybook is using.'
   )
+  .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
-    await doAutomigrate({ fixId, ...options }).catch((e) => {
-      logger.error(e);
-      process.exit(1);
-    });
+    await doAutomigrate({ fixId, ...options }).catch(handleCommandFailure);
   });
 
 command('doctor')
@@ -198,23 +236,18 @@ command('doctor')
   .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options) => {
-    await doctor(options).catch((e) => {
-      logger.error(e);
-      process.exit(1);
-    });
+    await doctor(options).catch(handleCommandFailure);
   });
 
 program.on('command:*', ([invalidCmd]) => {
-  consoleLogger.error(
-    ' Invalid command: %s.\n See --help for a list of available commands.',
-    invalidCmd
-  );
+  let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;
   const availableCommands = program.commands.map((cmd) => cmd.name());
   const suggestion = availableCommands.find((cmd) => leven(cmd, invalidCmd) < 3);
   if (suggestion) {
-    consoleLogger.info(`\n Did you mean ${suggestion}?`);
+    errorMessage += `\n Did you mean ${picocolors.yellow(suggestion)}?`;
   }
+  logger.error(errorMessage);
   process.exit(1);
 });
 
-program.usage('<command> [options]').version(String(pkg.version)).parse(process.argv);
+program.usage('<command> [options]').version(String(version)).parse(process.argv);

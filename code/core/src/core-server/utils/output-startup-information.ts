@@ -1,6 +1,5 @@
-import type { VersionCheck } from '@storybook/core/types';
-
-import { colors } from '@storybook/core/node-logger';
+import { colors } from 'storybook/internal/node-logger';
+import type { VersionCheck } from 'storybook/internal/types';
 
 import boxen from 'boxen';
 import Table from 'cli-table3';

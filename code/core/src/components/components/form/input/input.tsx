@@ -1,10 +1,9 @@
 import type { HTMLProps, SelectHTMLAttributes } from 'react';
 import React, { forwardRef } from 'react';
 
-import type { CSSObject, StorybookTheme } from '@storybook/core/theming';
-import { styled } from '@storybook/core/theming';
-
 import TextareaAutoResize from 'react-textarea-autosize';
+import type { CSSObject, StorybookTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 /**
  * These types are copied from `react-textarea-autosize`. I copied them because of
@@ -60,7 +59,11 @@ const styles = (({ theme }: { theme: StorybookTheme }) => ({
   '&:focus': {
     boxShadow: `${theme.color.secondary} 0 0 0 1px inset`,
     outline: 'none',
+    '@media (forced-colors: active)': {
+      outline: '1px solid highlight',
+    },
   },
+
   '&[disabled]': {
     cursor: 'not-allowed',
     opacity: 0.5,

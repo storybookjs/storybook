@@ -91,6 +91,8 @@ export interface IndexInputStats {
   beforeEach?: boolean;
   moduleMock?: boolean;
   globals?: boolean;
+  factory?: boolean;
+  tags?: boolean;
 }
 
 /** The base input for indexing a story or docs entry. */

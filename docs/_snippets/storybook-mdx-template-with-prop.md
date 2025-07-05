@@ -1,6 +1,6 @@
 <!-- prettier-ignore -->
 ```mdx filename="DocumentationTemplate.mdx" renderer="common" language="mdx"
-import { Meta, Title, Primary, Controls, Stories } from '@storybook/blocks';
+import { Meta, Title, Primary, Controls, Stories } from '@storybook/addon-docs/blocks';
 
 {/*
   * 👇 The isTemplate property is required to tell Storybook that this is a template

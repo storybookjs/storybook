@@ -8,9 +8,12 @@ exports[`Renders CSF2Secondary story 1`] = `
       style=""
       type="button"
     >
-      label coming from story args!
-       
+      label coming from story args! 
+      <!---->
     </button>
+    <!---->
+    
+    <!---->
     
     
   </div>
@@ -28,13 +31,20 @@ exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
         style=""
         type="button"
       >
-        foo
-         
+        foo 
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
+    
+    <!---->
     
     
   </div>
@@ -49,9 +59,12 @@ exports[`Renders CSF3Button story 1`] = `
       style=""
       type="button"
     >
-      foo
-       
+      foo 
+      <!---->
     </button>
+    <!---->
+    
+    <!---->
     
     
   </div>
@@ -73,10 +86,14 @@ exports[`Renders CSF3ButtonWithRender story 1`] = `
         style=""
         type="button"
       >
-        foo
-         
+        foo 
+        <!---->
       </button>
+      <!---->
     </div>
+    <!---->
+    
+    <!---->
     
     
   </div>
@@ -89,6 +106,9 @@ exports[`Renders CSF3InputFieldFilled story 1`] = `
     <input
       data-testid="input"
     />
+    <!---->
+    
+    <!---->
     
     
   </div>
@@ -103,9 +123,12 @@ exports[`Renders CSF3Primary story 1`] = `
       style=""
       type="button"
     >
-      foo
-       
+      foo 
+      <!---->
     </button>
+    <!---->
+    
+    <!---->
     
     
   </div>
@@ -128,6 +151,9 @@ exports[`Renders LoaderStory story 1`] = `
         mockFn return value
       </div>
     </div>
+    <!---->
+    
+    <!---->
     
     
   </div>
@@ -145,13 +171,20 @@ exports[`Renders NewStory story 1`] = `
         style=""
         type="button"
       >
-        foo
-         
+        foo 
+        <!---->
       </button>
+      <!---->
       
+      <!---->
     </div>
+    <!---->
     
+    <!---->
     
+    <!---->
+    
+    <!---->
     
     
   </div>

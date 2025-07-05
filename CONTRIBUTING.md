@@ -131,8 +131,12 @@ git branch --set-upstream-to upstream/main main
 
 If you're interested in contributing to Storybook's codebase, you can run it locally to get a feel for the codebase and the development environment. To get started with the development environment, you should always run `yarn start` from the root directory. Running `yarn start` will install the required dependencies, build the project, including the packages, and generate a sandbox environment using React with TypeScript with a set of test stories to help you get started.
 
-```bash
-git clone && cd ... yarn start
+```shell
+# Navigate to the root directory of the Storybook repository 
+cd path/to/your/storybook/fork 
+
+# Install the required dependencies and start the development environment 
+yarn start
 ```
 
 You don't need to install the dependencies manually to get the project running. The `yarn start` command will install the required dependencies for you.

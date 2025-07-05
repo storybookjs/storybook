@@ -1,1 +1,1 @@
-export * from './dist/preview';
+import './dist/preview';

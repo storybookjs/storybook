@@ -180,12 +180,13 @@ yarn task --task dev --template <your template> --start-from=publish
 
 If you are working on Angular-specific code, you will need to append `--prod` to the above mentioned commands to ensure that the Angular compiler is able to pick up the changes appropriately and doesn't fail. This will build all the packages in production mode.
 
-```sh
+```shell
+# Starts the build process in production mode
 yarn task --prod
 ```
 
-```bash
-cd code
+```shell
+# Builds the specified packages in production mode
 yarn build --prod --watch angular core addon-docs
 ```
 

@@ -1,7 +1,7 @@
 # Releasing <!-- omit in toc -->
 
 > **Note**
-> This document is relevant only for maintainers that have permissions to release new versions of Storybook. Anyone can read it for interest or to suggest changes, but it's not required knowledge..
+> This document is relevant only for maintainers that have permissions to release new versions of Storybook. Anyone can read it for interest or to suggest changes, but it's not required knowledge.
 
 ## Table of Contents <!-- omit in toc -->
 

@@ -8,6 +8,7 @@ const Input = styled.input({
   placeContent: 'center',
   width: 14,
   height: 14,
+  flexShrink: 0,
   margin: 0,
   border: `1px solid ${color.border}`,
   borderRadius: 2,
@@ -38,7 +39,7 @@ const Input = styled.input({
     height: 2,
     background: 'white',
   },
-  '&:enabled:focus': {
+  '&:enabled:focus-visible': {
     outline: `1px solid ${color.secondary}`,
     outlineOffset: 1,
   },

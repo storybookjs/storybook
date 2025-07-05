@@ -15,8 +15,8 @@ export default meta;
 
 export const Select: Story = {
   render: (args) => (
-    <Component onChange={action('onChange')} {...args}>
-      <option value="" hidden disabled selected>
+    <Component onChange={action('onChange')} defaultValue="" {...args}>
+      <option value="" hidden disabled>
         Select a Fruit
       </option>
       <option value="apple">Apple</option>

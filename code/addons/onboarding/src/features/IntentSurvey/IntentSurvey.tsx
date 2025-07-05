@@ -210,7 +210,6 @@ export const IntentSurvey = ({
                     }
                     required={field.required}
                     disabled={isSubmitting}
-                    defaultValue=""
                     onChange={(e) => updateFormData(key, e.target.value)}
                   >
                     <option disabled hidden value="">

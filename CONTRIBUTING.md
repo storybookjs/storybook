@@ -145,7 +145,20 @@ You don't need to install the dependencies manually to get the project running. 
 
 If you want to make code changes to Storybook packages while running a sandbox, you'll need to do the following: 
 
-1. In a second terminal, run `yarn build --watch <package-1> <package-2>` in the `code/` directory. The package name can be found after `@storybook/` in the published package.
+1. In a second terminal, run `yarn build --watch <package-1> <package-2>` in the `code/` directory.
+
+For example, if you want to build the `@storybook/react`, `@storybook/core-server`, `@storybook/api`, and `@storybook/addon-docs` packages, you would run: 
+
+```shell 
+
+# Navigate to the code directory 
+
+cd path/to/your/storybook/fork/code 
+
+# Build the specified packages in watch mode 
+yarn build --watch react core-server api addon-docs 
+
+Most package names can be found after `@storybook/` in the published package.
 
 For instance, to build the `@storybook/react @storybook/core-server @storybook/api @storybook/addon-docs` packages at the same time in watch mode:
 

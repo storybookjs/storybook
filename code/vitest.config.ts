@@ -2,6 +2,10 @@ import { coverageConfigDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    env: {
+      NODE_ENV: 'test',
+    },
+
     coverage: {
       all: false,
       provider: 'istanbul',

@@ -1,4 +1,4 @@
-# Contributors Guide 
+# Contributors Guide
 
 We welcome contributions of any type and skill level. As an open-source project, we believe in the power of community and welcome any contributions that help us improve Storybook. Whether you are a developer, designer, writer, or someone who wants to help, we'd love to have you on board. If you are interested in contributing, please read the following guidelines.
 
@@ -50,78 +50,88 @@ You can use any version manager to install the correct version of Node.js. We re
 
 ### What's inside?
 
-Storybook uses a monorepo structure to manage the project and its packages. Currently, it's composed of the following packages and directories:
+Storybook uses a monorepo structure to manage the project and its packages.
+Here's a highlight of notable directories and files:
 
-```bash
+```shell
 .
-├── CHANGELOG.md                  # Changelog of current version of Storybook
+├── CHANGELOG.md                  # Changelog for current version of Storybook
+├── CHANGELOG.prerelease.md
+├── CHANGELOG.v1-5.md
+├── CHANGELOG.v6.md
 ├── CODEOWNERS
 ├── CODE_OF_CONDUCT.md
-├── CONTRIBUTING <---------------- You are here!
-├── Issue.md
-├── MIGRATION.md
+├── CONTRIBUTING                  # Info relevant for maintainers
+├── CONTRIBUTING.md               <--------- You are here!
+├── LICENSE
+├── MAINTAINERS.md
+├── MIGRATION.md                  # Migration Guide for Storybook
 ├── README.md
-└── code                          # Storybook packages
-    ├── __mocks__                 # Mocks for jest tests
-    ├── addons                    # Storybook addon packages
-    ├── builders                  # Storybook builder packages
-    ├── deprecated
-    ├── e2e-tests
-    └── frameworks                # Storybook meta-framework packages for spinning up new Storybook instances
-        ├── angular
-        ├── ember
-        ├── html-vite
-        ├── html-webpack5
-        ├── nextjs
-        ├── preact-vite
-        ├── preact-webpack5
-        ├── react-vite
-        ├── react-webpack5
-        ├── server-webpack5
-        ├── svelte-vite
-        ├── svelte-webpack5
-        ├── sveltekit
-        ├── vue-vite
-        ├── vue-webpack5
-        ├── vue3-vite
-        ├── vue3-webpack5
-        ├── web-components-vite
-        └── web-components-webpack5
-│   ├── lib                       # Storybook core features
-│   ├── migrations.json
+├── RESOLUTIONS.md
+├── SECURITY.md
+├── code                         # Codebase for Storybook
+│   ├── __mocks__
+│   ├── addons
+│   ├── bench
+│   ├── builders
+│   ├── chromatic.config.json
+│   ├── core                     # Core package for UI and API of Storybook
+│   ├── e2e-tests
+│   ├── frameworks               # Different framework-bundler versions of Storybook
+│   ├── lib                      # CLI and plugins
 │   ├── node_modules
 │   ├── nx.json
 │   ├── package.json
-│   ├── playwright-report
-│   ├── playwright-results
 │   ├── playwright.config.ts
-│   ├── presets                   # Storybook preset packages
-│   ├── prettier.config.js
-│   ├── renderers                 # Storybook renderer for integrating JS framework components in stories
+│   ├── presets                  # Preset packages
+│   ├── prettier.config.mjs
+│   ├── renderers                # Storybook renderers for different frameworks
+│   ├── sandbox                  # Sandboxes for Bug Reproductions or experimentation
 │   ├── tsconfig.json
-│   ├── ui
+│   ├── vitest-setup.ts
+│   ├── vitest.config.ts
+│   ├── vitest.helpers.ts
+│   ├── vitest.workspace.ts
 │   └── yarn.lock
 ├── codecov.yml
-├── docs                          # Storybook documentation - the easiest place to start!
+├── dependabot.yml
+├── docs                         # Documentation
+│   ├── _assets
+│   ├── _snippets
+│   ├── addons
+│   ├── api
+│   ├── builders
+│   ├── configure
+│   ├── contribute
+│   ├── essentials
+│   ├── faq.mdx
+│   ├── frameworks.js
+│   ├── get-started
+│   ├── index.mdx
+│   ├── migration-guide
+│   ├── sharing
+│   ├── versions
+│   ├── writing-docs
+│   ├── writing-stories
+│   └── writing-tests
 ├── node_modules
-├── package.json
-├── repros
-│   ├── cra
-│   ├── html-vite
-│   ├── nextjs
-│   └── react-vite
-├── sandbox
-├── scripts
+├── package.json                      # Root package.json for Storybook
+├── prettier.config.mjs
+├── scripts                           # Build and Helper Scripts
 ├── test-storybooks
+│   ├── ember-cli
+│   ├── external-docs
+│   ├── portable-stories-kitchen-sink
+│   ├── server-kitchen-sink
+│   └── standalone-preview
 └── yarn.lock
-
 ```
 
 ### Fork the repository 
 
 If you plan to contribute to Storybook's codebase, you should fork the repository to your GitHub account. This will allow you to make changes to the codebase and submit a pull request to the main repository when you're ready to contribute your changes. Once you've forked the repository, you should [disable Github Actions for your forked repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) as most of them (e.g., pushing to sandbox) will fail without proper authorization. In your forked repository, go to Settings > Actions > General > set the Actions Permissions to **Disable actions**. Additionally, adding our codebase as upstream ensures you can rebase against the latest changes in the main repository. To do this, run the following commands:
 
-```shell
+```bash
 git remote add upstream https://github.com/storybookjs/storybook.git
 git fetch upstream
 git branch --set-upstream-to upstream/main main
@@ -150,9 +160,7 @@ If you want to make code changes to Storybook packages while running a sandbox, 
 For example, if you want to build the `@storybook/react`, `@storybook/core-server`, `@storybook/api`, and `@storybook/addon-docs` packages, you would run: 
 
 ```shell 
-
 # Navigate to the code directory 
-
 cd path/to/your/storybook/fork/code 
 
 # Build the specified packages in watch mode 

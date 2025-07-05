@@ -4,11 +4,11 @@ We welcome contributions of any type and skill level. As an open-source project,
 
 Whether you're new to open source or a seasoned contributor, we welcome all contributions. Here are a few ways you can contribute to Storybook: 
 
-- [Create an RFC](./docs/contribute/rfc.md) for feature requests
-- Update our [documentation](./docs/contribute/documentation-updates.md) with fixes, improvements, or clarifications
-- Add [new examples](./docs/contribute/new-snippets.md) of code snippets for using Storybook with a JS framework
-- [Integrate Storybook with a JS framework](./docs/contribute/framework.md) or improve support of existing frameworks
-- [Write an addon](https://storybook.js.org/docs/addons/introduction) to extend Storybook's functionality
+- [Create an RFC](https://storybook.js.org/docs/contribute/RFC) for feature requests
+- Update our [documentation](https://storybook.js.org/docs/contribute/documentation/documentation-updates) with fixes, improvements, or clarifications
+- Add [new examples](https://storybook.js.org/docs/contribute/documentation/new-snippets) of code snippets for using Storybook with a JS framework
+- [Integrate Storybook with a JS framework](https://storybook.js.org/docs/contribute/framework) or improve support of existing frameworks
+- [Write an addon](https://storybook.js.org/docs/addons) to extend Storybook's functionality
 
 If you're not sure where to start, you can always help us by:
 
@@ -157,7 +157,7 @@ cd code yarn build --watch react core-server api addon-docs
 yarn task --task dev --template <your template> --start-from=publish 
 ``` 
 
-4. If you have made any changes inside `/code` or other packages, remember to run `yarn test` from inside the package to ensure that your changes do not break any tests. 
+4. If you have made any changes inside `/code` or other packages, remember to run `yarn test` inside the package to ensure that your changes do not break any tests. 
 
 ### Angular-specific code
 

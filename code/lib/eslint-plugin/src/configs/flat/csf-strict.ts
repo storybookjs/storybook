@@ -9,6 +9,7 @@ export = [
   ...config,
   {
     name: 'storybook:csf-strict:rules',
+    files: ['**/*.stories.@(ts|tsx|js|jsx|mjs|cjs)', '**/*.story.@(ts|tsx|js|jsx|mjs|cjs)'],
     rules: {
       'react-hooks/rules-of-hooks': 'off',
       'import/no-anonymous-default-export': 'off',

@@ -5,20 +5,6 @@ import { Input as Component } from './Input';
 const meta = {
   title: 'Form/Input',
   component: Component,
-  // argTypes: {
-  //   ...sharedArgTypes,
-  //   value: {
-  //     control: {
-  //       type: 'text',
-  //     },
-  //   },
-  //   placeholder: {
-  //     control: {
-  //       type: 'text',
-  //     },
-  //     defaultValue: 'Placeholder',
-  //   },
-  // },
 } satisfies Meta<typeof Component>;
 
 export default meta;

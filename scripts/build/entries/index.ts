@@ -494,6 +494,31 @@ export const buildEntries = {
       './templates/virtualModuleStory.template.js': './templates/virtualModuleStory.template.js',
     },
   },
+  '@storybook/html': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

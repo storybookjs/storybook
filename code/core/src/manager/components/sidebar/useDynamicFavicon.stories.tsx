@@ -28,23 +28,47 @@ export default {
   },
 };
 
-export const All = {
-  render: ({ size }: { size: number }) => {
-    return (
-      <div style={{ display: 'flex', gap: size / 2 }}>
-        <img width={size} height={size} src={'./favicon.svg'} />
-        <img width={size} height={size} src={'./favicon.svg?status=active'} />
-        <img width={size} height={size} src={'./favicon.svg?status=positive'} />
-        <img width={size} height={size} src={'./favicon.svg?status=warning'} />
-        <img width={size} height={size} src={'./favicon.svg?status=negative'} />
-        <img width={size} height={size} src={'./favicon.svg?status=critical'} />
-      </div>
-    );
+export const Statuses = {
+  argTypes: {
+    status: {
+      table: {
+        disable: true,
+      },
+    },
   },
+  parameters: {
+    chromatic: {
+      // Dynamic favicon status doesn't work in static builds
+      disableSnapshot: true,
+    },
+  },
+  render: ({ size }: { size: number }) => (
+    <div style={{ display: 'flex', gap: size / 2 }}>
+      <img width={size} height={size} src={'./favicon.svg'} />
+      <img width={size} height={size} src={'./favicon.svg?status=active'} />
+      <img width={size} height={size} src={'./favicon.svg?status=positive'} />
+      <img width={size} height={size} src={'./favicon.svg?status=warning'} />
+      <img width={size} height={size} src={'./favicon.svg?status=negative'} />
+      <img width={size} height={size} src={'./favicon.svg?status=critical'} />
+    </div>
+  ),
 };
-export const Default = {};
-export const Active = { args: { status: 'active' } };
-export const Positive = { args: { status: 'positive' } };
-export const Warning = { args: { status: 'warning' } };
-export const Negative = { args: { status: 'negative' } };
-export const Critical = { args: { status: 'critical' } };
+
+export const Sizes = {
+  argTypes: {
+    size: {
+      table: {
+        disable: true,
+      },
+    },
+  },
+  render: ({ status }: { status?: Parameters<typeof getFaviconUrl>[1] }) => (
+    <div style={{ display: 'flex', gap: 10 }}>
+      <img width={16} height={16} src={`./favicon.svg?status=${status}`} />
+      <img width={32} height={32} src={`./favicon.svg?status=${status}`} />
+      <img width={64} height={64} src={`./favicon.svg?status=${status}`} />
+      <img width={128} height={128} src={`./favicon.svg?status=${status}`} />
+      <img width={256} height={256} src={`./favicon.svg?status=${status}`} />
+    </div>
+  ),
+};

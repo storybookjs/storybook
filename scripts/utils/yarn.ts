@@ -1,4 +1,4 @@
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { pathExists, readJSON, writeJSON } from 'fs-extra';
@@ -6,7 +6,6 @@ import { pathExists, readJSON, writeJSON } from 'fs-extra';
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions';
 import type { TemplateKey } from '../get-template';
-import { CODE_DIRECTORY } from './constants';
 import { exec } from './exec';
 import touch from './touch';
 
@@ -89,12 +88,9 @@ export const addWorkaroundResolutions = async ({
       }
     : {};
 
-  const docsAddonPath = relative(cwd, join(CODE_DIRECTORY, 'addons', 'docs'));
-
   packageJson.resolutions = {
     ...packageJson.resolutions,
     ...additionalReact19Resolutions,
-    '@storybook/addon-docs': `file:${docsAddonPath}`,
     '@testing-library/dom': '^9.3.4',
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',

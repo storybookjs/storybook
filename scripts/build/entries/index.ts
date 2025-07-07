@@ -581,6 +581,31 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/preact': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

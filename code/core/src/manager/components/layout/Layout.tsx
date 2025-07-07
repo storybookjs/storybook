@@ -126,6 +126,7 @@ const useLayoutSyncingState = ({
     isDragging: internalDraggingSizeState.isDragging,
   };
 };
+
 const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
   return (
     <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>

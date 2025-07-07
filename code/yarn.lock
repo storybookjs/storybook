@@ -6184,16 +6184,16 @@ __metadata:
     "@types/webpack-hot-middleware": "npm:^2.25.6"
     case-sensitive-paths-webpack-plugin: "npm:^2.4.0"
     cjs-module-lexer: "npm:^1.2.3"
-    css-loader: "npm:^6.7.1"
+    css-loader: "npm:^7.1.2"
     es-module-lexer: "npm:^1.5.0"
-    fork-ts-checker-webpack-plugin: "npm:^8.0.0"
+    fork-ts-checker-webpack-plugin: "npm:^9.1.0"
     html-webpack-plugin: "npm:^5.5.0"
     magic-string: "npm:^0.30.5"
     pretty-hrtime: "npm:^1.0.3"
     sirv: "npm:^2.0.4"
     slash: "npm:^5.0.0"
-    style-loader: "npm:^3.3.1"
-    terser-webpack-plugin: "npm:^5.3.1"
+    style-loader: "npm:^4.0.0"
+    terser-webpack-plugin: "npm:^5.3.14"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
     webpack: "npm:5"
@@ -6421,7 +6421,7 @@ __metadata:
     postcss-loader: "npm:^8.1.1"
     react-refresh: "npm:^0.14.0"
     resolve-url-loader: "npm:^5.0.0"
-    sass-loader: "npm:^14.2.1"
+    sass-loader: "npm:^16.0.5"
     semver: "npm:^7.3.5"
     style-loader: "npm:^3.3.1"
     styled-jsx: "npm:^5.1.6"
@@ -10904,7 +10904,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chokidar@npm:^3.5.1, chokidar@npm:^3.5.3, chokidar@npm:^3.6.0":
+"chokidar@npm:^3.5.1, chokidar@npm:^3.6.0":
   version: 3.6.0
   resolution: "chokidar@npm:3.6.0"
   dependencies:
@@ -11663,7 +11663,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cosmiconfig@npm:^7.0.0, cosmiconfig@npm:^7.0.1":
+"cosmiconfig@npm:^7.0.0":
   version: 7.1.0
   resolution: "cosmiconfig@npm:7.1.0"
   dependencies:
@@ -11673,6 +11673,23 @@ __metadata:
     path-type: "npm:^4.0.0"
     yaml: "npm:^1.10.0"
   checksum: 10c0/b923ff6af581638128e5f074a5450ba12c0300b71302398ea38dbeabd33bbcaa0245ca9adbedfcf284a07da50f99ede5658c80bb3e39e2ce770a99d28a21ef03
+  languageName: node
+  linkType: hard
+
+"cosmiconfig@npm:^8.2.0":
+  version: 8.3.6
+  resolution: "cosmiconfig@npm:8.3.6"
+  dependencies:
+    import-fresh: "npm:^3.3.0"
+    js-yaml: "npm:^4.1.0"
+    parse-json: "npm:^5.2.0"
+    path-type: "npm:^4.0.0"
+  peerDependencies:
+    typescript: ">=4.9.5"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  checksum: 10c0/0382a9ed13208f8bfc22ca2f62b364855207dffdb73dc26e150ade78c3093f1cf56172df2dd460c8caf2afa91c0ed4ec8a88c62f8f9cd1cf423d26506aa8797a
   languageName: node
   linkType: hard
 
@@ -11835,7 +11852,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"css-loader@npm:7.1.2":
+"css-loader@npm:7.1.2, css-loader@npm:^7.1.2":
   version: 7.1.2
   resolution: "css-loader@npm:7.1.2"
   dependencies:
@@ -11859,7 +11876,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"css-loader@npm:^6.7.1, css-loader@npm:^6.7.3":
+"css-loader@npm:^6.7.3":
   version: 6.11.0
   resolution: "css-loader@npm:6.11.0"
   dependencies:
@@ -14919,14 +14936,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"fork-ts-checker-webpack-plugin@npm:^8.0.0":
-  version: 8.0.0
-  resolution: "fork-ts-checker-webpack-plugin@npm:8.0.0"
+"fork-ts-checker-webpack-plugin@npm:^9.1.0":
+  version: 9.1.0
+  resolution: "fork-ts-checker-webpack-plugin@npm:9.1.0"
   dependencies:
     "@babel/code-frame": "npm:^7.16.7"
     chalk: "npm:^4.1.2"
-    chokidar: "npm:^3.5.3"
-    cosmiconfig: "npm:^7.0.1"
+    chokidar: "npm:^4.0.1"
+    cosmiconfig: "npm:^8.2.0"
     deepmerge: "npm:^4.2.2"
     fs-extra: "npm:^10.0.0"
     memfs: "npm:^3.4.1"
@@ -14938,7 +14955,7 @@ __metadata:
   peerDependencies:
     typescript: ">3.6.0"
     webpack: ^5.11.0
-  checksum: 10c0/1a2bb9bbd3e943e3b3a45d7fa9e8383698f5fea1ba28f7d18c8372c804460c2f13af53f791360b973fddafd3e88de7af59082c3cb3375f4e7c3365cd85accedc
+  checksum: 10c0/b4acdf400862af5f57d3e159b3a444e7f9f73e9f4609d54604c3810f75f8adcea0165a8b17ee856ed3c65591d058ffd73cd08d273e289d4952844e75f6efa85d
   languageName: node
   linkType: hard
 
@@ -23504,7 +23521,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sass-loader@npm:16.0.5":
+"sass-loader@npm:16.0.5, sass-loader@npm:^16.0.5":
   version: 16.0.5
   resolution: "sass-loader@npm:16.0.5"
   dependencies:
@@ -23527,32 +23544,6 @@ __metadata:
     webpack:
       optional: true
   checksum: 10c0/216422b7b9e6e3f22739dc96887d883d2415f188d5c47631fd28c80608b5fae71167b26d0c74a1e917614e4d494fa73b1190ad5ca2f587c1afee84dc1d30f003
-  languageName: node
-  linkType: hard
-
-"sass-loader@npm:^14.2.1":
-  version: 14.2.1
-  resolution: "sass-loader@npm:14.2.1"
-  dependencies:
-    neo-async: "npm:^2.6.2"
-  peerDependencies:
-    "@rspack/core": 0.x || 1.x
-    node-sass: ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0 || ^9.0.0
-    sass: ^1.3.0
-    sass-embedded: "*"
-    webpack: ^5.0.0
-  peerDependenciesMeta:
-    "@rspack/core":
-      optional: true
-    node-sass:
-      optional: true
-    sass:
-      optional: true
-    sass-embedded:
-      optional: true
-    webpack:
-      optional: true
-  checksum: 10c0/9a48d454584d96d6c562eb323bb9e3c6808e930eeaaa916975b97d45831e0b87936a8655cdb3a4512a25abc9587dea65a9616e42396be0d7e7c507a4795a8146
   languageName: node
   linkType: hard
 
@@ -24887,6 +24878,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"style-loader@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "style-loader@npm:4.0.0"
+  peerDependencies:
+    webpack: ^5.27.0
+  checksum: 10c0/214bc0f3b018f8c374f79b9fa16da43df78c7fef2261e9a99e36c2f8387601fad10ac75a171aa8edba75903db214bc46952ae08b94a1f8544bd146c2c8d07d27
+  languageName: node
+  linkType: hard
+
 "style-to-js@npm:^1.0.0":
   version: 1.1.16
   resolution: "style-to-js@npm:1.1.16"
@@ -25173,7 +25173,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"terser-webpack-plugin@npm:^5.3.1, terser-webpack-plugin@npm:^5.3.11":
+"terser-webpack-plugin@npm:^5.3.11, terser-webpack-plugin@npm:^5.3.14":
   version: 5.3.14
   resolution: "terser-webpack-plugin@npm:5.3.14"
   dependencies:

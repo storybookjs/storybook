@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import type {
   CoverageOptions,
@@ -26,8 +27,6 @@ import type { TestManager } from './test-manager';
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
 const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
 
-const packageDir = dirname(require.resolve('@storybook/addon-vitest/package.json'));
-
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
 
@@ -46,7 +45,7 @@ export class VitestManager {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
-      join(packageDir, 'dist/node/coverage-reporter.js'),
+      fileURLToPath(import.meta.resolve('@storybook/addon-vitest/static/coverage-reporter.cjs')),
       {
         testManager: this.testManager,
         coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'> | undefined,

@@ -17,7 +17,7 @@
     },
     args: {
       onclick: fn(),
-    },
+    }
   });
 </script>
 

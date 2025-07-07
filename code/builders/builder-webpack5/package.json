@@ -25,19 +25,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./loaders/export-order-loader": {
-      "types": "./dist/loaders/export-order-loader.d.ts",
-      "default": "./dist/loaders/export-order-loader.js"
-    },
+    "./loaders/export-order-loader": "./dist/loaders/export-order-loader.js",
     "./package.json": "./package.json",
-    "./presets/custom-webpack-preset": {
-      "types": "./dist/presets/custom-webpack-preset.d.ts",
-      "default": "./dist/presets/custom-webpack-preset.js"
-    },
-    "./presets/preview-preset": {
-      "types": "./dist/presets/preview-preset.d.ts",
-      "default": "./dist/presets/preview-preset.js"
-    },
+    "./presets/custom-webpack-preset": "./dist/presets/custom-webpack-preset.js",
+    "./presets/preview-preset": "./dist/presets/preview-preset.js",
     "./templates/preview.ejs": "./templates/preview.ejs",
     "./templates/virtualModuleEntry.template.js": "./templates/virtualModuleEntry.template.js",
     "./templates/virtualModuleModernEntry.js": "./templates/virtualModuleModernEntry.js",
@@ -59,13 +50,13 @@
     "@storybook/core-webpack": "workspace:*",
     "case-sensitive-paths-webpack-plugin": "^2.4.0",
     "cjs-module-lexer": "^1.2.3",
-    "css-loader": "^6.7.1",
+    "css-loader": "^7.1.2",
     "es-module-lexer": "^1.5.0",
-    "fork-ts-checker-webpack-plugin": "^8.0.0",
+    "fork-ts-checker-webpack-plugin": "^9.1.0",
     "html-webpack-plugin": "^5.5.0",
     "magic-string": "^0.30.5",
-    "style-loader": "^3.3.1",
-    "terser-webpack-plugin": "^5.3.1",
+    "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.3.14",
     "ts-dedent": "^2.0.0",
     "webpack": "5",
     "webpack-dev-middleware": "^6.1.2",

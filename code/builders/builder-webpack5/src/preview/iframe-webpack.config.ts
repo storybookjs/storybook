@@ -19,12 +19,14 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin } from 'webpack';
+import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
 import type { TypescriptOptions } from '../types';
 import { getVirtualModules } from './virtual-module-mapping';
+
+const { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin } = webpackModule;
 
 export default async (
   options: Options & { typescriptOptions: TypescriptOptions }

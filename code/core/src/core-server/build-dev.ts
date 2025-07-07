@@ -155,7 +155,7 @@ export async function buildDevStandalone(
 
   const builderName = typeof builder === 'string' ? builder : builder.name;
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName, options.configDir),
+    getPreviewBuilder(builderName),
     getManagerBuilder(),
   ]);
 

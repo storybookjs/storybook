@@ -10,14 +10,11 @@ export async function getManagerBuilder(): Promise<Builder<unknown>> {
   return import(builderManagerPath);
 }
 
-export async function getPreviewBuilder(
-  builderName: string,
-  configDir: string
-): Promise<Builder<unknown>> {
-  return await importModule(import.meta.resolve(builderName, configDir));
+export async function getPreviewBuilder(builderName: string): Promise<Builder<unknown>> {
+  return await importModule(builderName);
 }
 
-export async function getBuilders({ presets, configDir }: Options): Promise<Builder<unknown>[]> {
+export async function getBuilders({ presets }: Options): Promise<Builder<unknown>[]> {
   const { builder } = await presets.apply('core', {});
   if (!builder) {
     throw new MissingBuilderError();
@@ -25,5 +22,5 @@ export async function getBuilders({ presets, configDir }: Options): Promise<Buil
 
   const builderName = typeof builder === 'string' ? builder : builder.name;
 
-  return Promise.all([getPreviewBuilder(builderName, configDir), getManagerBuilder()]);
+  return Promise.all([getPreviewBuilder(builderName), getManagerBuilder()]);
 }

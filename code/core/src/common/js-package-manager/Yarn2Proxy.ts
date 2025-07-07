@@ -175,7 +175,7 @@ export class Yarn2Proxy extends JsPackageManager {
 
       return crossFs.readJsonSync(virtualPath);
     } catch (error: any) {
-      if (error.code !== 'MODULE_NOT_FOUND') {
+      if (error.code !== 'ERR_MODULE_NOT_FOUND') {
         console.error('Error while fetching package version in Yarn PnP mode:', error);
       }
     }

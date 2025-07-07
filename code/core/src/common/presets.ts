@@ -1,3 +1,6 @@
+import { statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
 import { logger } from 'storybook/internal/node-logger';
 import { CriticalPresetLoadError } from 'storybook/internal/server-errors';
 import type {
@@ -12,11 +15,11 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { parseNodeModulePath, resolvePathSync } from 'mlly';
+import { parseNodeModulePath } from 'mlly';
 import { join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { importModule } from '../shared/utils/module';
+import { importMetaResolve, importModule } from '../shared/utils/module';
 import { getInterpretedFile } from './utils/interpret-files';
 import { validateConfigurationFiles } from './utils/validate-configuration-files';
 
@@ -70,13 +73,13 @@ export const resolveAddonName = (
   options: any
 ): CoreCommon_ResolvedAddonPreset | CoreCommon_ResolvedAddonVirtual | undefined => {
   const safeResolve = (path: string) => {
-    try {
-      return resolvePathSync(path, {
-        url: configDir,
-        extensions: ['.mjs', '.js', '.cjs'],
-      });
-    } catch (e) {
-      return undefined;
+    for (const ext of ['', '.mjs', '.js', '.cjs']) {
+      try {
+        const resolvedPath = fileURLToPath(importMetaResolve(path + ext, configDir));
+        if (statSync(resolvedPath).isFile()) {
+          return resolvedPath;
+        }
+      } catch (e) {}
     }
   };
 

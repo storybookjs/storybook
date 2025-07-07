@@ -453,6 +453,62 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/addon-vitest': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/setup-file'],
+          entryPoint: './src/vitest-plugin/setup-file.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/test-utils'],
+          entryPoint: './src/vitest-plugin/test-utils.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/global-setup'],
+          entryPoint: './src/vitest-plugin/global-setup.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./vitest'],
+          entryPoint: './src/node/vitest.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./postinstall'],
+          entryPoint: './src/postinstall.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./vitest-plugin'],
+          entryPoint: './src/vitest-plugin/index.ts',
+        },
+        {
+          exportEntries: ['./internal/coverage-reporter'],
+          entryPoint: './src/node/coverage-reporter.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

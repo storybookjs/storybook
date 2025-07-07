@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
@@ -562,7 +563,9 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const presets = await loadAllPresets({
     corePresets: [join(frameworkName, 'preset')],
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      fileURLToPath(
+        import.meta.resolve('storybook/internal/core-server/presets/common-override-preset')
+      ),
     ],
     packageJson,
     configDir,
@@ -578,7 +581,11 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   }
 
   const builderPackageJson = await fs.readFile(
-    require.resolve(join(typeof builder === 'string' ? builder : builder.name, 'package.json')),
+    fileURLToPath(
+      import.meta.resolve(
+        join(typeof builder === 'string' ? builder : builder.name, 'package.json')
+      )
+    ),
     'utf8'
   );
   const builderPackageName = JSON.parse(builderPackageJson).name;
@@ -586,7 +593,7 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   let rendererPackageName: string | undefined;
   if (renderer) {
     const rendererPackageJson = await fs.readFile(
-      require.resolve(join(renderer, 'package.json')),
+      fileURLToPath(import.meta.resolve(join(renderer, 'package.json'))),
       'utf8'
     );
     rendererPackageName = JSON.parse(rendererPackageJson).name;

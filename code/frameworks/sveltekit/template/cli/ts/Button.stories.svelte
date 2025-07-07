@@ -17,12 +17,12 @@
     },
     args: {
       onclick: fn(),
-    }
+    },
   });
 </script>
 
 <!-- More on writing stories with args: https://storybook.js.org/docs/writing-stories/args -->
-<Story name="Primary" args={{ primary: true, label: 'Button' }} />
+<Story name="Primary" args={{ variant: 'primary', label: 'Button' }} />
 
 <Story name="Secondary" args={{ label: 'Button' }} />
 

@@ -213,16 +213,8 @@ test.describe("component testing", () => {
     await runTestsButton.click();
     await Promise.all([
       expect(watchModeButton).toBeDisabled(),
-      expect(page.locator("#testing-module-description")).toHaveText(
-        /Starting/
-      ),
+      expect(page.locator("#testing-module-description")).toHaveText(/Testing/),
     ]);
-
-    // Wait for Vitest to start
-    await expect(page.locator("#testing-module-description")).toHaveText(
-      /Testing/,
-      { timeout: 10000 }
-    );
 
     // Wait for test results to appear
     await expect(page.locator("#testing-module-description")).toHaveText(

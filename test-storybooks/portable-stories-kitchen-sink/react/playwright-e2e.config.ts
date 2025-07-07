@@ -56,7 +56,5 @@ export default defineConfig({
     command: "yarn storybook",
     url: "http://127.0.0.1:6006",
     reuseExistingServer: true,
-    stdout: "pipe",
-    stderr: "pipe",
   },
 });

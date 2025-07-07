@@ -211,10 +211,12 @@ test.describe("component testing", () => {
     await expect(watchModeButton).toBeEnabled();
 
     await runTestsButton.click();
-    await expect(watchModeButton).toBeDisabled();
-    await expect(page.locator("#testing-module-description")).toHaveText(
-      /Starting/
-    );
+    await Promise.all([
+      expect(watchModeButton).toBeDisabled(),
+      expect(page.locator("#testing-module-description")).toHaveText(
+        /Starting/
+      ),
+    ]);
     await expect(page.locator("#testing-module-description")).toHaveText(
       /Testing/
     );

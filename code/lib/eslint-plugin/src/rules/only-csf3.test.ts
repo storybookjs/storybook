@@ -17,7 +17,7 @@ ruleTester.run('only-csf3', rule, {
     // Simple CSF3 story
     'export const Primary = {}',
 
-    // CSF3 object with args
+    // CSF3 with args only (uses default render)
     dedent`
       export const Primary = {
         args: {
@@ -27,10 +27,20 @@ ruleTester.run('only-csf3', rule, {
       }
     `,
 
-    // CSF3 with render function
+    // CSF3 with render function only
     dedent`
       export const Secondary = {
         render: (args) => <Button {...args} />,
+      }
+    `,
+
+    // CSF3 with both render and args
+    dedent`
+      export const Tertiary = {
+        render: (args) => <Button {...args} />,
+        args: {
+          label: 'Tertiary',
+        },
       }
     `,
 

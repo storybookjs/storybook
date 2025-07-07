@@ -476,14 +476,17 @@ export const buildEntries = {
         {
           exportEntries: ['./presets/custom-webpack-preset'],
           entryPoint: './src/presets/custom-webpack-preset.ts',
+          dts: false,
         },
         {
           exportEntries: ['./presets/preview-preset'],
           entryPoint: './src/presets/preview-preset.ts',
+          dts: false,
         },
         {
           exportEntries: ['./loaders/export-order-loader'],
           entryPoint: './src/loaders/export-order-loader.ts',
+          dts: false,
         },
       ],
     },

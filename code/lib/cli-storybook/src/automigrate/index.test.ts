@@ -2,15 +2,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
 
-import { automigrate, runFixes } from './index';
+import * as mainConfigFile from './helpers/mainConfigFile';
+import { doAutomigrate, runFixes } from './index';
 import type { Fix } from './types';
 
 const check1 = vi.fn();
 const run1 = vi.fn();
 const getModulePackageJSON = vi.fn();
+const getStorybookData = vi.fn();
 const prompt1Message = 'prompt1Message';
 
 vi.spyOn(console, 'error').mockImplementation(console.log);
+vi.spyOn(mainConfigFile, 'getStorybookData').mockImplementation(getStorybookData);
 
 const fixes: Fix<any>[] = [
   {
@@ -105,12 +108,15 @@ const runAutomigrateWrapper = async ({
   beforeVersion: string;
   storybookVersion: string;
 }) => {
-  return automigrate({
-    ...common,
-    beforeVersion,
-    storybookVersion,
-    isLatest: true,
+  getStorybookData.mockImplementation(() => {
+    return {
+      ...common,
+      beforeVersion,
+      storybookVersion,
+      isLatest: true,
+    };
   });
+  return doAutomigrate({ configDir });
 };
 
 describe('runFixes', () => {

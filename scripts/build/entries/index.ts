@@ -453,6 +453,19 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/builder-vite': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+    },
+    extraOutputs: {
+      './input/iframe.html': './input/iframe.html',
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

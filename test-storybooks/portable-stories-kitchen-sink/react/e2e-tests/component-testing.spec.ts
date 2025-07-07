@@ -217,6 +217,8 @@ test.describe("component testing", () => {
         /Starting/
       ),
     ]);
+
+    // Wait for Vitest to start
     await expect(page.locator("#testing-module-description")).toHaveText(
       /Testing/,
       { timeout: 10000 }

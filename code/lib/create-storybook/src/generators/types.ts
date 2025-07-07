@@ -46,7 +46,7 @@ export type Generator<T = void> = (
   commandOptions?: CommandOptions
 ) => Promise<T>;
 
-export type GeneratorFeature = 'docs' | 'test';
+export type GeneratorFeature = 'docs' | 'test' | 'onboarding';
 
 export type CommandOptions = {
   packageManager: PackageManagerName;

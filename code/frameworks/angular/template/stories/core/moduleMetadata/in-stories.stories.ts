@@ -1,4 +1,4 @@
-import { Meta, StoryFn } from '@storybook/angular';
+import type { Meta, StoryFn } from '@storybook/angular';
 
 import { DEFAULT_NAME, ITEMS, TokenComponent } from './angular-src/token.component';
 

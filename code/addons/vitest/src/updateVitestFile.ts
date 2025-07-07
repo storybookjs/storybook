@@ -50,6 +50,31 @@ const mergeProperties = (
   }
 };
 
+/**
+ * Merges a source Vitest configuration AST into a target configuration AST.
+ *
+ * This function intelligently combines configuration elements from a source file (typically a
+ * template) into an existing target configuration file, avoiding duplicates and preserving the
+ * structure of both files.
+ *
+ * The function performs the following operations:
+ *
+ * 1. **Import Merging**: Adds new import statements from source that don't exist in target (determined
+ *    by local specifier name). Imports are inserted after existing imports.
+ * 2. **Variable Declaration Merging**: Copies variable declarations from source to target if they
+ *    don't already exist (determined by variable name). Variables are inserted after imports.
+ * 3. **Configuration Object Merging**: Merges the configuration object properties from source into
+ *    target's default export. Supports both direct object exports and function-wrapped exports
+ *    (e.g., `defineConfig({})`). The merging is recursive:
+ *
+ *    - Nested objects are merged deeply
+ *    - Arrays are concatenated (shallow merge)
+ *    - Primitive values are overwritten
+ *
+ * @param source - The source Babel AST (template configuration to merge from)
+ * @param target - The target Babel AST (existing configuration to merge into)
+ * @returns {boolean} - True if the target was modified, false otherwise
+ */
 export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['ast']) => {
   let updated = false;
   for (const sourceNode of source.program.body) {

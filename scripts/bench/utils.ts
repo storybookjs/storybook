@@ -43,7 +43,6 @@ export async function getPreviewPage(page: Page) {
    * This loop will keep trying to access the iframe until it's available.
    */
   for (let i = 0; i < 10; i++) {
-    // eslint-disable-next-line @typescript-eslint/no-loop-func
     await page.waitForFunction(() => {
       return document.querySelector('iframe')?.contentDocument.readyState === 'complete';
     });

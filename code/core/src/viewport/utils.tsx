@@ -37,7 +37,7 @@ export const IconButtonLabel = styled.div(({ theme }) => ({
   marginLeft: 10,
 }));
 
-export const iconsMap: Record<Viewport['type'], React.ReactNode> = {
+export const iconsMap: Record<NonNullable<Viewport['type']>, React.ReactNode> = {
   desktop: <BrowserIcon />,
   mobile: <MobileIcon />,
   tablet: <TabletIcon />,

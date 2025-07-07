@@ -14,6 +14,7 @@ interface ModalProps extends Omit<React.ComponentProps<typeof Dialog.Root>, 'chi
   onInteractOutside?: ContentProps['onInteractOutside'];
   className?: string;
   container?: HTMLElement;
+  portalSelector?: string;
 }
 
 export const initial = { opacity: 0 };
@@ -28,11 +29,15 @@ function BaseModal({
   onInteractOutside = (ev) => ev.preventDefault(),
   className,
   container,
+  portalSelector,
   ...rootProps
 }: ModalProps) {
+  const containerElement =
+    container ?? (portalSelector ? document.querySelector(portalSelector) : null) ?? document.body;
+
   return (
     <Dialog.Root {...rootProps}>
-      <Dialog.Portal container={container}>
+      <Dialog.Portal container={containerElement}>
         <Dialog.Overlay asChild>
           <Components.Overlay />
         </Dialog.Overlay>

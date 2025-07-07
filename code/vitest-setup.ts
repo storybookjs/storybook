@@ -53,3 +53,41 @@ expect.extend({
     };
   },
 });
+
+vi.mock('storybook/internal/node-logger', async (importOriginal) => {
+  return {
+    ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
+    prompt: {
+      select: vi.fn(),
+      multiSelect: vi.fn(),
+      confirm: vi.fn(),
+      text: vi.fn(),
+      getPreferredStdio: vi.fn(),
+      executeTask: vi.fn(),
+      executeTaskWithSpinner: vi.fn(),
+      taskLog: vi.fn(() => ({
+        message: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+      })),
+    },
+    logger: {
+      SYMBOLS: {
+        success: '✓',
+        error: '✗',
+      },
+      plain: vi.fn(),
+      line: vi.fn(),
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      trace: vi.fn(),
+      debug: vi.fn(),
+      logBox: vi.fn(),
+      intro: vi.fn(),
+      outro: vi.fn(),
+      step: vi.fn(),
+    },
+  };
+});

@@ -1,33 +1,35 @@
-import { getEnvConfig, versions } from 'storybook/internal/common';
+import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
-import { CLIOptions } from 'storybook/internal/types';
+import type { CLIOptions } from 'storybook/internal/types';
 
-import {
+import type {
   BuilderContext,
   BuilderHandlerFn,
   BuilderOutput,
   Target,
-  createBuilder,
-  targetFromTargetString,
   Builder as DevkitBuilder,
 } from '@angular-devkit/architect';
-import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
-import {
+import { createBuilder, targetFromTargetString } from '@angular-devkit/architect';
+import type {
+  BrowserBuilderOptions,
+  StylePreprocessorOptions,
+} from '@angular-devkit/build-angular';
+import type {
   AssetPattern,
   SourceMapUnion,
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
-import { JsonObject } from '@angular-devkit/core';
+import type { JsonObject } from '@angular-devkit/core';
 import { findPackageSync } from 'fd-package-json';
-import { sync as findUpSync } from 'find-up';
+import { findUpSync } from 'find-up';
 import { Observable, from, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { joinPathFragments } from '@nx/devkit';
 
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
-import { StandaloneOptions } from '../utils/standalone-options';
+import type { StandaloneOptions } from '../utils/standalone-options';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -73,7 +75,10 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
       const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
-      const docTSConfig = findUpSync('tsconfig.doc.json', { cwd: pathToConfigDir });
+      const docTSConfig = findUpSync('tsconfig.doc.json', {
+        cwd: pathToConfigDir,
+        stopAt: getProjectRoot(),
+      });
 
       const runCompodoc$ = options.compodoc
         ? runCompodoc(

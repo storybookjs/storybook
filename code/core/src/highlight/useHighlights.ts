@@ -1,3 +1,5 @@
+/// <reference path="./typings.d.ts" />
+
 /* eslint-env browser */
 import type { Channel } from 'storybook/internal/channels';
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';

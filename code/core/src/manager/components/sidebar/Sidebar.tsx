@@ -176,6 +176,7 @@ export const Sidebar = React.memo(function Sidebar({
                     tooltip={<TooltipNoteWrapper note="Create a new story" />}
                   >
                     <CreateNewStoryButton
+                      aria-label="Create a new story"
                       isMobile={isMobile}
                       onClick={() => {
                         setIsFileSearchModalOpen(true);

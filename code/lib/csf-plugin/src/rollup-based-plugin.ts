@@ -2,12 +2,11 @@ import { readFile } from 'node:fs/promises';
 
 import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
 import { enrichCsf, formatCsf, loadCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import type { RollupPlugin } from 'unplugin';
 
 import { STORIES_REGEX } from './constants';
-
-const logger = console;
 
 export function rollupBasedPlugin(options: EnrichCsfOptions): Partial<RollupPlugin<any>> {
   return {

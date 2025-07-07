@@ -180,12 +180,12 @@ test.describe('Manager UI', () => {
       await sbPage.page.locator('[aria-label="Shortcuts"]').click();
       await sbPage.page.locator('#list-item-about').click();
 
-      await expect(sbPage.page.url()).toContain('/settings/about');
+      expect(sbPage.page.url()).toContain('/settings/about');
 
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
       await sbPage.page.locator('[title="Close settings page"]').click();
-      await expect(sbPage.page.url()).not.toContain('/settings/about');
+      expect(sbPage.page.url()).not.toContain('/settings/about');
     });
   });
 
@@ -202,8 +202,8 @@ test.describe('Manager UI', () => {
     test('Navigate to story', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 
-      const closeNavigationButton = sbPage.page.locator('[title="Close navigation menu"]');
-      const mobileNavigationHeading = sbPage.page.locator('[title="Open navigation menu"]');
+      const closeNavigationButton = sbPage.page.locator('[aria-label="Close navigation menu"]');
+      const mobileNavigationHeading = sbPage.page.locator('[aria-label="Open navigation menu"]');
 
       // navigation menu is closed
       await expect(closeNavigationButton).toBeHidden();
@@ -217,7 +217,7 @@ test.describe('Manager UI', () => {
       // navigation menu is still open
       await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeVisible();
       // story has not changed
-      await expect(sbPage.page.url()).toContain('configure-your-project');
+      expect(sbPage.page.url()).toContain('configure-your-project');
 
       await sbPage.navigateToStory('Example/Button', 'Secondary');
 
@@ -225,13 +225,13 @@ test.describe('Manager UI', () => {
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
       await expect(sbPage.page.locator('#storybook-explorer-menu')).toBeHidden();
       // story has changed
-      await expect(sbPage.page.url()).toContain('example-button--secondary');
+      expect(sbPage.page.url()).toContain('example-button--secondary');
     });
 
     test('Open and close addon panel', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 
-      const mobileNavigationHeading = sbPage.page.locator('[title="Open navigation menu"]');
+      const mobileNavigationHeading = sbPage.page.locator('[aria-label="Open navigation menu"]');
       await mobileNavigationHeading.click();
       await sbPage.navigateToStory('Example/Button', 'Secondary');
 
@@ -240,13 +240,13 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
 
       // open panel
-      await sbPage.page.locator('[title="Open addon panel"]').click();
+      await sbPage.page.locator('[aria-label="Open addon panel"]').click();
 
       // panel is open
       await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeVisible();
 
       // close panel
-      await sbPage.page.locator('[title="Close addon panel"]').click();
+      await sbPage.page.locator('[aria-label="Close addon panel"]').click();
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');

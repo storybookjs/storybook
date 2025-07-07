@@ -4,6 +4,8 @@ import { dirname, isAbsolute, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
+  JsPackageManagerFactory,
+  type RemoveAddonOptions,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -14,7 +16,6 @@ import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
-  CLIOptions,
   CoreConfig,
   Indexer,
   Options,
@@ -57,8 +58,8 @@ export const favicon = async (
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
     : [];
 
-  if (statics.length > 0) {
-    const lists = statics.map((dir) => {
+  const faviconPaths = statics
+    .map((dir) => {
       const results = [];
       const normalizedDir =
         staticDirsValue && !isAbsolute(dir)
@@ -71,37 +72,29 @@ export const favicon = async (
 
       const { staticPath, targetEndpoint } = parseStaticDir(normalizedDir);
 
-      if (targetEndpoint === '/') {
-        const url = 'favicon.svg';
-        const path = join(staticPath, url);
-        if (existsSync(path)) {
-          results.push(path);
-        }
+      // Direct favicon references (e.g. `staticDirs: ['favicon.svg']`)
+      if (['/favicon.svg', '/favicon.ico'].includes(targetEndpoint)) {
+        results.push(staticPath);
       }
+      // Favicon files in a static directory (e.g. `staticDirs: ['static']`)
       if (targetEndpoint === '/') {
-        const url = 'favicon.ico';
-        const path = join(staticPath, url);
-        if (existsSync(path)) {
-          results.push(path);
-        }
+        results.push(join(staticPath, 'favicon.svg'));
+        results.push(join(staticPath, 'favicon.ico'));
       }
 
-      return results;
-    });
-    const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
+      return results.filter((path) => existsSync(path));
+    })
+    .reduce((l1, l2) => l1.concat(l2), []);
 
-    if (flatlist.length > 1) {
-      logger.warn(dedent`
-        Looks like multiple favicons were detected. Using the first one.
+  if (faviconPaths.length > 1) {
+    logger.warn(dedent`
+      Looks like multiple favicons were detected. Using the first one.
 
-        ${flatlist.join(', ')}
-        `);
-    }
-
-    return flatlist[0] || defaultFavicon;
+      ${faviconPaths.join(', ')}
+    `);
   }
 
-  return defaultFavicon;
+  return faviconPaths[0] || defaultFavicon;
 };
 
 export const babel = async (_: unknown, options: Options) => {
@@ -186,12 +179,16 @@ const optionalEnvToBoolean = (input: string | undefined): boolean | undefined =>
   return undefined;
 };
 
+/** This API is used by third-parties to access certain APIs in a Node environment */
 export const experimental_serverAPI = (extension: Record<string, Function>, options: Options) => {
   let removeAddon = removeAddonBase;
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
   if (!options.disableTelemetry) {
-    removeAddon = async (id: string, opts: any) => {
+    removeAddon = async (id: string, opts: RemoveAddonOptions) => {
       await telemetry('remove', { addon: id, source: 'api' });
-      return removeAddonBase(id, opts);
+      return removeAddonBase(id, { ...opts, packageManager });
     };
   }
   return { ...extension, removeAddon };

@@ -1,34 +1,36 @@
-import { getEnvConfig, versions } from 'storybook/internal/common';
+import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
-import { CLIOptions } from 'storybook/internal/types';
+import type { CLIOptions } from 'storybook/internal/types';
 
-import {
+import type {
   BuilderContext,
   BuilderHandlerFn,
   BuilderOutput,
   BuilderOutputLike,
   Target,
-  createBuilder,
-  targetFromTargetString,
   Builder as DevkitBuilder,
 } from '@angular-devkit/architect';
-import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
-import {
+import { createBuilder, targetFromTargetString } from '@angular-devkit/architect';
+import type {
+  BrowserBuilderOptions,
+  StylePreprocessorOptions,
+} from '@angular-devkit/build-angular';
+import type {
   AssetPattern,
   SourceMapUnion,
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
-import { JsonObject } from '@angular-devkit/core';
+import type { JsonObject } from '@angular-devkit/core';
 import { findPackageSync } from 'fd-package-json';
-import { sync as findUpSync } from 'find-up';
+import { findUpSync } from 'find-up';
 import { from, of, throwError } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { joinPathFragments } from '@nx/devkit';
 
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
-import { StandaloneOptions } from '../utils/standalone-options';
+import type { StandaloneOptions } from '../utils/standalone-options';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -72,7 +74,10 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
       const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
-      const docTSConfig = findUpSync('tsconfig.doc.json', { cwd: pathToConfigDir });
+      const docTSConfig = findUpSync('tsconfig.doc.json', {
+        cwd: pathToConfigDir,
+        stopAt: getProjectRoot(),
+      });
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
             { compodocArgs: options.compodocArgs, tsconfig: docTSConfig ?? tsConfig },
@@ -169,7 +174,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   return {
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: pathToConfigDir }) ??
+      findUpSync('tsconfig.json', { cwd: pathToConfigDir, stopAt: getProjectRoot() }) ??
       browserOptions.tsConfig,
   };
 }

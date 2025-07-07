@@ -1,16 +1,6 @@
-import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
-import {
-  JsPackageManagerFactory,
-  getCoercedStorybookVersion,
-  getStorybookInfo,
-} from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { listCodemods, runCodemod } from '@storybook/codemod';
-
-import { runFixes } from './automigrate';
-import { getStorybookData } from './automigrate/helpers/mainConfigFile';
-
-const logger = console;
 
 type CLIOptions = {
   glob: string;
@@ -23,10 +13,7 @@ type CLIOptions = {
   parser?: 'babel' | 'babylon' | 'flow' | 'ts' | 'tsx';
 };
 
-export async function migrate(
-  migration: any,
-  { glob, dryRun, list, rename, parser, configDir: userSpecifiedConfigDir }: CLIOptions
-) {
+export async function migrate(migration: any, { glob, dryRun, list, rename, parser }: CLIOptions) {
   if (list) {
     listCodemods().forEach((key: any) => logger.log(key));
   } else if (migration) {

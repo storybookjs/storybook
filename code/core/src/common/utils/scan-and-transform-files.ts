@@ -39,8 +39,6 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
         initial: defaultGlob,
       });
 
-  const projectRoot = getProjectRoot();
-
   console.log('Scanning for affected files...');
 
   // eslint-disable-next-line depend/ban-dependencies
@@ -50,7 +48,7 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
     ...commonGlobOptions(''),
     ignore: ['**/node_modules/**'],
     dot: true,
-    cwd: projectRoot,
+    cwd: getProjectRoot(),
     absolute: true,
   });
 

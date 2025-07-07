@@ -96,9 +96,15 @@ type SaveStoryProps = {
   saveStory: () => Promise<unknown>;
   createStory: (storyName: string) => Promise<unknown>;
   resetArgs: () => void;
+  portalSelector?: string;
 };
 
-export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps) => {
+export const SaveStory = ({
+  saveStory,
+  createStory,
+  resetArgs,
+  portalSelector,
+}: SaveStoryProps) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [saving, setSaving] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
@@ -191,7 +197,12 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
           </Label>
         </Info>
 
-        <Modal width={350} open={creating} onOpenChange={setCreating}>
+        <Modal
+          width={350}
+          open={creating}
+          onOpenChange={setCreating}
+          portalSelector={portalSelector}
+        >
           <Form onSubmit={onSubmitForm} id="create-new-story-form">
             <Modal.Content>
               <Modal.Header>

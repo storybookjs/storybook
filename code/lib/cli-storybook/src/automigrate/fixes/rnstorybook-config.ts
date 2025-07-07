@@ -2,13 +2,11 @@ import { existsSync } from 'node:fs';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { Fix } from '../types';
 
 interface Options {
-  dotStorybookReferences: string[];
   storybookDir: string;
   rnStorybookDir: string;
 }
@@ -24,24 +22,47 @@ async function renameInFile(filePath: string, oldText: string, newText: string):
   }
 }
 
-const getDotStorybookReferences = async () => {
+const getDotStorybookReferences = async (searchDir: string) => {
   try {
     // eslint-disable-next-line depend/ban-dependencies
-    const { $ } = await import('execa');
-    const { stdout } = await $`git grep -l \\.storybook`;
-    return stdout.split('\n').filter(Boolean);
-  } catch (error) {
+    const { globby } = await import('globby');
+    const { readFile } = await import('node:fs/promises');
+
+    // Find all relevant files (excluding common directories that shouldn't be searched)
+    const files = await globby(`${searchDir}/**/*`, {
+      onlyFiles: true,
+      gitignore: true,
+    });
+
+    const referencedFiles: string[] = [];
+
+    // Check each file for .storybook references
+    await Promise.all(
+      files.map(async (file) => {
+        try {
+          const content = await readFile(file, 'utf8');
+          if (content.includes('.storybook')) {
+            referencedFiles.push(file);
+          }
+        } catch (readError) {
+          // Skip files that can't be read (e.g., binary files)
+        }
+      })
+    );
+
+    return referencedFiles;
+  } catch (fsError) {
+    console.warn('Unable to search for .storybook references:', fsError);
     return [];
   }
 };
 
 export const rnstorybookConfig: Fix<Options> = {
   id: 'rnstorybook-config',
-
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-native-config-dir-renamed',
 
   async check({ packageManager, mainConfigPath }) {
-    const allDependencies = await packageManager.getAllDependencies();
+    const allDependencies = packageManager.getAllDependencies();
 
     if (!allDependencies['@storybook/react-native']) {
       return null;
@@ -57,37 +78,20 @@ export const rnstorybookConfig: Fix<Options> = {
     const requiresFiles = await globby(join(storybookDir, 'storybook.requires.*'));
 
     if (existsSync(storybookDir) && requiresFiles.length > 0 && !existsSync(rnStorybookDir)) {
-      const dotStorybookReferences = await getDotStorybookReferences();
-      return { storybookDir, rnStorybookDir, dotStorybookReferences };
+      return { storybookDir, rnStorybookDir };
     }
 
     return null;
   },
 
-  prompt({ dotStorybookReferences }) {
-    const references =
-      dotStorybookReferences.length > 0
-        ? dedent`
-          We will update the following files to reference ${picocolors.yellow('.rnstorybook')}:
-          ${dotStorybookReferences.map((ref: string) => picocolors.cyan('- ' + ref)).join('\n')}
-        `.trim()
-        : dedent`
-          Oddly, we did not find any source files that reference the ${picocolors.yellow('.storybook')} directory.
-          If they exist, please update them by hand to reference ${picocolors.yellow('.rnstorybook')} instead.
-        `.trim();
-
-    return dedent`
-      In Storybook 9, React Native projects use the ${picocolors.yellow('.rnstorybook')} directory for
-      configuration instead of ${picocolors.yellow('.storybook')}.
-
-      ${references}
-
-      More info: ${picocolors.cyan('https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-native-config-dir-renamed')}
-
-      Would you like to automatically move your config files to the new location?`;
+  prompt() {
+    return dedent`We'll rename your .storybook directory to .rnstorybook and update all references to it.`;
   },
 
-  async run({ result: { storybookDir, rnStorybookDir, dotStorybookReferences }, dryRun }) {
+  async run({ result: { storybookDir, rnStorybookDir }, dryRun, packageManager }) {
+    const instanceDir = packageManager.instanceDir;
+    const dotStorybookReferences = await getDotStorybookReferences(instanceDir);
+
     if (!dryRun) {
       await Promise.all(
         dotStorybookReferences.map(async (ref) => {

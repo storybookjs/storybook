@@ -876,7 +876,6 @@ jobs:
           at: .
       - node/install:
           node-version: "22.17.0"
-      - run: node --version
       - run:
           name: Install dependencies
           command: yarn install --no-immutable

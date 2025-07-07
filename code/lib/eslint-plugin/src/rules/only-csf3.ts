@@ -42,21 +42,11 @@ export = createStorybookRule({
       reported: boolean;
     }
 
-    interface PropertyAssignment {
-      type: 'property';
+    interface Assignment {
       property: string;
-      value: TSESTree.Expression;
-      node: TSESTree.AssignmentExpression;
+      value: TSESTree.Expression | TSESTree.Identifier;
+      node: TSESTree.AssignmentExpression | TSESTree.CallExpression;
     }
-
-    interface RenderAssignment {
-      type: 'render';
-      property: 'render';
-      value: TSESTree.Identifier;
-      templateNode: TSESTree.CallExpression;
-    }
-
-    type Assignment = PropertyAssignment | RenderAssignment;
 
     //----------------------------------------------------------------------
     // Helpers
@@ -91,49 +81,35 @@ export = createStorybookRule({
         return '{}';
       }
 
-      let assignments = [...story.assignments];
+      const assignments = [...story.assignments];
 
-      // Handle Template.bind() case - add render property
+      // Handle Template.bind() case - add render property first
       if (story.isTemplateBind && story.node.type === 'CallExpression') {
         const callExpr = story.node;
         if (
           callExpr.callee.type === 'MemberExpression' &&
           callExpr.callee.object.type === 'Identifier'
         ) {
-          const template = callExpr.callee.object;
-          assignments = assignments.filter((a) => a.property !== 'render');
+          // Add render property as first property
           assignments.unshift({
-            type: 'render',
             property: 'render',
-            value: template,
-            templateNode: callExpr,
+            value: callExpr.callee.object,
+            node: callExpr,
           });
         }
       }
 
-      // Sort properties: render first
-      const renderIdx = assignments.findIndex((a) => a.property === 'render');
-      if (renderIdx > 0) {
-        const render = assignments[renderIdx];
-        if (render) {
-          assignments.splice(renderIdx, 1);
-          assignments.unshift(render);
-        }
-      } else if (renderIdx === -1) {
-        assignments.sort((a, b) => a.property.localeCompare(b.property));
-      }
+      // Format properties - maintain order, with render first if present
+      const renderAssignment = assignments.find((a) => a.property === 'render');
+      const otherAssignments = assignments.filter((a) => a.property !== 'render');
 
-      // Format as multi-line for readability when multiple properties
-      if (assignments.length > 1) {
-        const props = assignments.map((a) => `  ${a.property}: ${getNodeText(a.value)},`);
-        return `{\n${props.join('\n')}\n}`;
-      } else {
-        const prop = assignments[0];
-        if (!prop) {
-          return '{}';
-        }
-        return `{\n  ${prop.property}: ${getNodeText(prop.value)},\n}`;
-      }
+      const orderedAssignments = renderAssignment
+        ? [renderAssignment, ...otherAssignments]
+        : otherAssignments;
+
+      // Format properties
+      const props = orderedAssignments.map((a) => `  ${a.property}: ${getNodeText(a.value)},`);
+      return `{\n${props.join('\n')}\n}`;
     };
 
     const createFunctionCSF3 = (
@@ -261,7 +237,6 @@ export = createStorybookRule({
         const story = storyNodes.get(name);
         if (story) {
           story.assignments.push({
-            type: 'property',
             property: node.left.property.name,
             value: node.right,
             node,
@@ -279,7 +254,7 @@ export = createStorybookRule({
           const lastAssign = story.assignments[story.assignments.length - 1];
           const reportNode = story.isTemplateBind
             ? story.node
-            : lastAssign?.type === 'property'
+            : lastAssign?.node.type === 'AssignmentExpression'
               ? lastAssign.node
               : story.node;
 
@@ -294,7 +269,7 @@ export = createStorybookRule({
             },
             fix: (fixer) => {
               const startNode = story.exportNode || story.node;
-              const endNode = lastAssign?.type === 'property' ? lastAssign.node : story.node;
+              const endNode = lastAssign?.node || story.node;
               const csf3Code = createCSF3Object(story);
 
               if (!startNode.range || !endNode.range) {

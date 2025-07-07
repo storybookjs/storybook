@@ -1,5 +1,6 @@
 import { cp } from 'node:fs/promises';
 import { dirname, join, parse } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { PREVIEW_BUILDER_PROGRESS } from 'storybook/internal/core-events';
 import { logger } from 'storybook/internal/node-logger';
@@ -31,7 +32,7 @@ export const printDuration = (startTime: [number, number]) =>
     .replace(' s', ' seconds')
     .replace(' min', ' minutes');
 
-const corePath = dirname(require.resolve('storybook/package.json'));
+const corePath = dirname(fileURLToPath(import.meta.resolve('storybook/package.json')));
 
 let compilation: ReturnType<typeof webpackDevMiddleware> | undefined;
 let reject: (reason?: any) => void;
@@ -336,5 +337,9 @@ export const build = async (options: BuilderStartOptions) => {
   return result.value;
 };
 
-export const corePresets = [join(__dirname, 'presets/preview-preset.js')];
-export const overridePresets = [join(__dirname, './presets/custom-webpack-preset.js')];
+export const corePresets = [
+  import.meta.resolve('@storybook/builder-webpack5/presets/preview-preset'),
+];
+export const overridePresets = [
+  import.meta.resolve('@storybook/builder-webpack5/presets/custom-webpack-preset'),
+];

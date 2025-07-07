@@ -466,6 +466,34 @@ export const buildEntries = {
       './input/iframe.html': './input/iframe.html',
     },
   },
+  '@storybook/builder-webpack5': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./presets/custom-webpack-preset'],
+          entryPoint: './src/presets/custom-webpack-preset.ts',
+        },
+        {
+          exportEntries: ['./presets/preview-preset'],
+          entryPoint: './src/presets/preview-preset.ts',
+        },
+        {
+          exportEntries: ['./loaders/export-order-loader'],
+          entryPoint: './src/loaders/export-order-loader.ts',
+        },
+      ],
+    },
+    extraOutputs: {
+      './templates/virtualModuleModernEntry.js': './templates/virtualModuleModernEntry.js',
+      './templates/preview.ejs': './templates/preview.ejs',
+      './templates/virtualModuleEntry.template.js': './templates/virtualModuleEntry.template.js',
+      './templates/virtualModuleStory.template.js': './templates/virtualModuleStory.template.js',
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

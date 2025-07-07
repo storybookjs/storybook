@@ -552,6 +552,9 @@ export const buildEntries = {
         },
       ],
     },
+    extraOutputs: {
+      './static/coverage-reporter.cjs': './static/coverage-reporter.cjs',
+    },
   },
 } satisfies BuildEntriesByPackageName;
 

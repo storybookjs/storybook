@@ -205,10 +205,6 @@ test.describe("component testing", () => {
       "Run component tests"
     );
 
-    const testingModuleDescription = await page.locator(
-      "#testing-module-description"
-    );
-
     const runTestsButton = await page.getByLabel("Start test run");
     const watchModeButton = await page.getByLabel("Enable watch mode");
     await expect(runTestsButton).toBeEnabled();
@@ -219,13 +215,15 @@ test.describe("component testing", () => {
     // Wait for both the watch mode button to be disabled and the testing text to appear
     await Promise.all([
       expect(watchModeButton).toBeDisabled(),
-      expect(testingModuleDescription).toContainText("Testing"),
+      expect(page.locator("#testing-module-description")).toHaveText(/Testing/),
+
     ]);
 
     // Wait for test results to appear
-    await expect(testingModuleDescription).toHaveText(/Ran \d+ tests/, {
-      timeout: 30000,
-    });
+    await expect(page.locator("#testing-module-description")).toHaveText(
+      /Ran \d+ tests/,
+      { timeout: 30000 }
+    );
 
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();

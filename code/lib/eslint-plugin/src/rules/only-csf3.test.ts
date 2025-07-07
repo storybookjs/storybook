@@ -216,12 +216,13 @@ ruleTester.run('only-csf3', rule, {
       ],
     },
 
-    // CSF2: Complex story with multiple properties
+    // CSF2: Complex story with multiple properties - preserves assignment order(render always first)
     {
       code: dedent`
         export const Complex = Template.bind({})
         Complex.args = { label: 'Complex' }
         Complex.parameters = { layout: 'centered' }
+        Complex.decorators = [withActions]
         Complex.play = async () => { /* test interactions */ }
       `,
       output: dedent`
@@ -229,6 +230,7 @@ ruleTester.run('only-csf3', rule, {
           render: Template,
           args: { label: 'Complex' },
           parameters: { layout: 'centered' },
+          decorators: [withActions],
           play: async () => { /* test interactions */ },
         }
       `,

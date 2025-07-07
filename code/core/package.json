@@ -72,6 +72,9 @@
       "import": "./dist/core-server/index.js",
       "require": "./dist/core-server/index.cjs"
     },
+    "./internal/core-server/presets/vitePlugins/vite-inject-mocker/module-mocker-build-interceptor": {
+      "import": "./dist/core-server/presets/vitePlugins/vite-inject-mocker/module-mocker-build-interceptor.js"
+    },
     "./internal/core-server/presets/common-preset": {
       "import": "./dist/core-server/presets/common-preset.js",
       "require": "./dist/core-server/presets/common-preset.cjs"
@@ -423,6 +426,7 @@
   "files": [
     "dist/**/*",
     "assets/**/*",
+    "templates/**/*",
     "README.md",
     "!src/**/*"
   ],
@@ -480,6 +484,7 @@
     "@types/ejs": "^3.1.1",
     "@types/find-cache-dir": "^5.0.0",
     "@types/js-yaml": "^4.0.5",
+    "@types/lodash": "^4.17.13",
     "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^2.3.0",
@@ -529,8 +534,10 @@
     "jsdoc-type-pratt-parser": "^4.0.0",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
+    "lodash": "^4.17.21",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
+    "msw": "^2.0.0",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^8.4.0",
@@ -575,6 +582,7 @@
     "zod": "^3.24.1"
   },
   "peerDependencies": {
+    "msw": "^2.0.0",
     "prettier": "^2 || ^3"
   },
   "peerDependenciesMeta": {

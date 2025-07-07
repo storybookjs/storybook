@@ -34,8 +34,12 @@ import * as templatePreview from '../core/template/stories/preview';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
 
-sb.mock('../core/src/test/stories/ModuleMocking.utils', { spy: true });
+sb.mock('../core/src/test/stories/ModuleMocking.utils');
+sb.mock('../core/src/test/stories/ModuleSpyMocking.utils', { spy: true });
 sb.mock('../core/src/test/stories/ModuleAutoMocking.utils');
+sb.mock('lodash');
+sb.mock('lodash/add');
+sb.mock('lodash/sum');
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';

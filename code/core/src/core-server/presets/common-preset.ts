@@ -333,15 +333,23 @@ export const viteFinal = async (
     ...existing,
     plugins: [
       ...(existing.plugins ?? []),
-      viteInjectMockerRuntime({ previewConfigPath }),
-      mockerPlugin({
-        filter: (id) => !id.includes('@vitest/mocker'),
-        hoistMocks: {
-          hoistedModule: 'storybook/test',
-          utilsObjectNames: ['sb'],
-        },
-      }),
-      ...(previewConfigPath ? [viteMockBuildManifestPlugin({ previewConfigPath })] : []),
+      ...(previewConfigPath
+        ? [
+            viteInjectMockerRuntime({ previewConfigPath }),
+            mockerPlugin({
+              filter: (id) =>
+                !id.includes('@vitest/mocker') &&
+                !id.includes('vite-inject-mocker-entry') &&
+                !id.includes('virtual:module-mocker-build-interceptor') &&
+                !id.includes('virtual:/@storybook/builder-vite/vite-app.js'),
+              hoistMocks: {
+                hoistedModule: 'storybook/test',
+                utilsObjectNames: ['sb'],
+              },
+            }),
+            viteMockBuildManifestPlugin({ previewConfigPath }),
+          ]
+        : []),
     ],
   };
 };

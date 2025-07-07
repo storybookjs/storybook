@@ -4,37 +4,19 @@ import { exactRegex } from '@rolldown/pluginutils';
 import { dedent } from 'ts-dedent';
 import type { ResolvedConfig, ViteDevServer } from 'vite';
 
+import {
+  VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR,
+  __STORYBOOK_GLOBAL_THIS_ACCESSOR__,
+} from './utils';
+import { runtimeCode } from './utils';
+
 const entryPath = '/vite-inject-mocker-entry.js';
+const setupPath = '/setup.js';
 
 const entryCode = dedent`
+    <script type="module" src="${setupPath}"></script>
     <script type="module" src="${entryPath}"></script>
   `;
-
-const __STORYBOOK_GLOBAL_THIS_ACCESSOR__ = '__vitest_mocker__';
-
-const runtimeCode = (command: ResolvedConfig['command']) => {
-  if (command === 'serve') {
-    return dedent`
-      import { ModuleMockerServerInterceptor } from "@vitest/mocker/browser";
-      import { registerModuleMocker } from "@vitest/mocker/register";
-      globalThis.__STORYBOOK_MOCKER__ = registerModuleMocker((globalThisAccessor) => new ModuleMockerServerInterceptor(globalThisAccessor));
-
-      if (import.meta.hot) {
-        import.meta.hot.on('invalidate-mocker', (payload) => {
-          globalThis.${__STORYBOOK_GLOBAL_THIS_ACCESSOR__}.invalidate();
-        });
-      }
-    `;
-  } else {
-    return dedent`
-      // For 'build', we'll use a custom interceptor that works with a pre-built manifest
-      const { ModuleMockerBuildInterceptor } = await import('./ModuleMockerBuildInterceptor'); // We will create this
-      const { registerModuleMocker } = await import('@vitest/mocker/register');
-      globalThis.__STORYBOOK_MOCKER__ = registerModuleMocker(
-        (accessor) => new ModuleMockerBuildInterceptor({ globalThisAccessor: accessor })
-    `;
-  }
-};
 
 let server: ViteDevServer;
 
@@ -44,7 +26,21 @@ export const viteInjectMockerRuntime = (options: {
   let viteConfig: ResolvedConfig;
 
   return {
-    name: 'vite:inject-mocker-runtime',
+    name: 'vite:storybook-inject-mocker-runtime',
+    buildStart() {
+      if (viteConfig.command === 'build') {
+        this.emitFile({
+          type: 'chunk',
+          id: require.resolve('../../../templates/mocker-runtime-build-code.template.js'),
+          fileName: entryPath.slice(1),
+        });
+        this.emitFile({
+          type: 'chunk',
+          id: require.resolve('../../../templates/setup.template.js'),
+          fileName: setupPath.slice(1),
+        });
+      }
+    },
     configResolved(config) {
       viteConfig = config;
     },
@@ -63,10 +59,18 @@ export const viteInjectMockerRuntime = (options: {
     },
     resolveId: {
       filter: {
-        id: [exactRegex(entryPath)],
+        id: [
+          exactRegex(entryPath),
+          exactRegex(setupPath),
+          exactRegex(VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR),
+        ],
       },
       handler(id) {
-        if (exactRegex(id).test(entryPath)) {
+        if (
+          exactRegex(id).test(entryPath) ||
+          exactRegex(id).test(setupPath) ||
+          exactRegex(id).test(VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR)
+        ) {
           return id;
         }
         return null;
@@ -77,6 +81,20 @@ export const viteInjectMockerRuntime = (options: {
         return runtimeCode(viteConfig.command);
       }
 
+      if (exactRegex(id).test(setupPath)) {
+        return dedent`
+          import { setup } from 'storybook/internal/preview/runtime';
+          setup();
+        `;
+      }
+
+      if (exactRegex(id).test(VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR)) {
+        return await readFile(
+          require.resolve('./vitePlugins/vite-inject-mocker/module-mocker-build-interceptor.js'),
+          'utf-8'
+        );
+      }
+
       if (id.includes('@vitest/mocker/dist/register.js')) {
         const content = await readFile(require.resolve('@vitest/mocker/dist/register.js'), 'utf-8');
         const result = content
@@ -84,7 +102,7 @@ export const viteInjectMockerRuntime = (options: {
             /__VITEST_GLOBAL_THIS_ACCESSOR__/g,
             JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__)
           )
-          .replace('__VITEST_MOCKER_ROOT__', JSON.stringify(server.config.root));
+          .replace('__VITEST_MOCKER_ROOT__', JSON.stringify(server?.config.root ?? ''));
         return result;
       }
       return null;

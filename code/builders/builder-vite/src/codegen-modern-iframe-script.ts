@@ -115,25 +115,27 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
    *
    * @todo Inline variable and remove `noinspection`
    */
+  // Generate dynamic import statements for each preview annotation
+  const dynamicImports = variables
+    .map((variable, i) => `const ${variable} = await import('${previewAnnotationURLs[i]}');`)
+    .join('\n');
+
   const code = dedent`
-  import { setup } from 'storybook/internal/preview/runtime';
-
-  import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
-
-  setup();
-
   import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
   import { isPreview } from 'storybook/internal/csf';
-  import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
 
-  ${options.isCsf4 ? previewFileImport : imports.join('\n')}
-  ${getPreviewAnnotationsFunction}
+  window.onload = async () => {
+    await import('${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}');
+    const { importFn } = await import('${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}');
 
-  window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+    ${dynamicImports}
+    ${getPreviewAnnotationsFunction}
 
-  window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
+    window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+    window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
 
-  ${generateHMRHandler()};
+    ${generateHMRHandler()};
+  };
   `.trim();
   return code;
 }

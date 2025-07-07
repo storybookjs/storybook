@@ -414,6 +414,18 @@ jobs:
             # Verify yarn is working
             which yarn
             yarn --version
+      - run:
+          name: Verdaccio
+          background: true
+          command: |
+            cd code
+            yarn local-registry --open
+      - run:
+          name: Wait on verdaccio
+          command: |
+            cd code
+            yarn wait-on tcp:127.0.0.1:6001
+            yarn wait-on tcp:127.0.0.1:6002
       - start-event-collector
       - run:
           name: Create Sandboxes
@@ -426,6 +438,7 @@ jobs:
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && rm -rf node_modules
           environment:
             STORYBOOK_TELEMETRY_DEBUG: 1
+            npm_config_registry: http://localhost:6001
             STORYBOOK_TELEMETRY_URL: "http://localhost:6007/event-log"
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)

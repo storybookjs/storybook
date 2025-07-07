@@ -2,7 +2,11 @@
   import './button.css';
 
   interface Props {
-    /** Is this the principal call to action on the page? */
+    /**
+     * The variant of the button
+     *
+     * @default primary
+     */
     variant?: 'primary' | 'secondary' | 'flat';
     /** What background color to use */
     backgroundColor?: string;

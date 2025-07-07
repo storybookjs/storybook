@@ -54,7 +54,7 @@ export async function generateBundle({
       ignoreAnnotations: true,
       splitting: true,
       metafile: true,
-      minifyIdentifiers: isProduction,
+      minifyIdentifiers: true,
       minifySyntax: isProduction,
       minifyWhitespace: false,
       keepNames: true, // required to show correct error messages based on class names

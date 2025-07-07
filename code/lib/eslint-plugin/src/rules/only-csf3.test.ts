@@ -1,16 +1,12 @@
-/**
- * @fileoverview Enforce CSF3 format for stories
- */
-
+/** @file Enforce CSF3 format for stories */
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
+import { AST_NODE_TYPES } from '@typescript-eslint/utils';
+import dedent from 'ts-dedent';
 
-import { AST_NODE_TYPES } from '@typescript-eslint/utils'
-import dedent from 'ts-dedent'
-
-import rule from '../../../lib/rules/only-csf3'
-import ruleTester from '../../utils/rule-tester'
+import ruleTester from '../test-utils';
+import rule from './only-csf3';
 
 //------------------------------------------------------------------------------
 // Tests
@@ -238,5 +234,4 @@ ruleTester.run('only-csf3', rule, {
       ],
     },
   ],
-})
-
+});

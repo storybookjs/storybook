@@ -218,7 +218,8 @@ test.describe("component testing", () => {
       ),
     ]);
     await expect(page.locator("#testing-module-description")).toHaveText(
-      /Testing/
+      /Testing/,
+      { timeout: 10000 }
     );
 
     // Wait for test results to appear

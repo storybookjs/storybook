@@ -25,6 +25,7 @@ import noRendererPackages from './rules/no-renderer-packages';
 import noStoriesOf from './rules/no-stories-of';
 import noTitlePropertyInMeta from './rules/no-title-property-in-meta';
 import noUninstalledAddons from './rules/no-uninstalled-addons';
+import onlyCsf3 from './rules/only-csf3';
 import preferPascalCase from './rules/prefer-pascal-case';
 import storyExports from './rules/story-exports';
 import useStorybookExpect from './rules/use-storybook-expect';
@@ -58,6 +59,7 @@ export = {
     'no-stories-of': noStoriesOf,
     'no-title-property-in-meta': noTitlePropertyInMeta,
     'no-uninstalled-addons': noUninstalledAddons,
+    'only-csf3': onlyCsf3,
     'prefer-pascal-case': preferPascalCase,
     'story-exports': storyExports,
     'use-storybook-expect': useStorybookExpect,

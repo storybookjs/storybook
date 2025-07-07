@@ -62,7 +62,7 @@ export const Sizes = {
       },
     },
   },
-  render: ({ status }: { status: Parameters<typeof getFaviconUrl>[1] }) => (
+  render: ({ status }: { status?: Parameters<typeof getFaviconUrl>[1] }) => (
     <div style={{ display: 'flex', gap: 10 }}>
       <img width={16} height={16} src={`./favicon.svg?status=${status}`} />
       <img width={32} height={32} src={`./favicon.svg?status=${status}`} />

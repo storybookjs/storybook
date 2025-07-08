@@ -1,4 +1,5 @@
-import { normalize } from 'node:path';
+import path, { join, normalize, relative } from 'node:path';
+import { fileURLToPath, pathToFileURL, resolve } from 'node:url';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -24,40 +25,35 @@ vi.mock('storybook/internal/node-logger', () => ({
 
 vi.mock('../shared/utils/module', () => ({
   importModule: vi.fn(),
+  safeResolveModule: vi.fn(({ specifier }) => {
+    const KNOWN_FILES = [
+      '@storybook/react',
+      'storybook/actions/manager',
+      './local/preset',
+      './local/addons',
+      '/absolute/preset',
+      '/absolute/addons',
+      '@storybook/addon-docs',
+      '@storybook/addon-cool',
+      '@storybook/addon-docs/preset',
+      '@storybook/addon-essentials',
+      '@storybook/addon-knobs/manager',
+      '@storybook/addon-knobs/register',
+      '@storybook/addon-notes/register-panel',
+      '@storybook/preset-create-react-app',
+      '@storybook/preset-typescript',
+      'addon-bar/preset.js',
+      'addon-bar',
+      'addon-baz/register.js',
+      'addon-foo/register.js',
+    ];
+    if (KNOWN_FILES.includes(specifier)) {
+      return specifier;
+    }
+    return undefined;
+  }),
 }));
 
-vi.mock('mlly', () => {
-  const KNOWN_FILES = [
-    '@storybook/react',
-    'storybook/actions/manager',
-    './local/preset',
-    './local/addons',
-    '/absolute/preset',
-    '/absolute/addons',
-    '@storybook/addon-docs',
-    '@storybook/addon-cool',
-    '@storybook/addon-docs/preset',
-    '@storybook/addon-essentials',
-    '@storybook/addon-knobs/manager',
-    '@storybook/addon-knobs/register',
-    '@storybook/addon-notes/register-panel',
-    '@storybook/preset-create-react-app',
-    '@storybook/preset-typescript',
-    'addon-bar/preset.js',
-    'addon-bar',
-    'addon-baz/register.js',
-    'addon-foo/register.js',
-  ];
-
-  return {
-    resolvePathSync: vi.fn((name: string) => {
-      if (KNOWN_FILES.includes(name)) {
-        return name;
-      }
-      throw new Error(`Could not resolve ${name}`);
-    }),
-  };
-});
 const mockedResolveUtils = vi.mocked(resolveUtils);
 
 describe('presets', () => {
@@ -485,32 +481,20 @@ describe('loadPreset', () => {
   beforeEach(() => {
     vi.spyOn(logger, 'warn');
     mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
-      if (path === '@storybook/react') {
-        return {};
-      }
-      if (path === '@storybook/preset-typescript') {
-        return {};
-      }
-      if (path === '@storybook/addon-docs/preset') {
-        return {};
-      }
-      if (path === 'addon-foo/register.js') {
-        return {};
-      }
-      if (path === '@storybook/addon-cool') {
-        return {};
-      }
-      if (path === 'addon-bar') {
-        return {
-          addons: ['@storybook/addon-cool'],
-          presets: [],
-        };
-      }
-      if (path === 'addon-baz/register.js') {
-        return {};
-      }
-      if (path === '@storybook/addon-notes/register-panel') {
-        return {};
+      switch (path) {
+        case '@storybook/react':
+        case '@storybook/preset-typescript':
+        case '@storybook/addon-docs/preset':
+        case 'addon-foo/register.js':
+        case '@storybook/addon-cool':
+        case 'addon-baz/register.js':
+        case '@storybook/addon-notes/register-panel':
+          return {};
+        case 'addon-bar':
+          return {
+            addons: ['@storybook/addon-cool'],
+            presets: [],
+          };
       }
       throw new Error(`Could not resolve ${path}`);
     });

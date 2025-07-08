@@ -330,6 +330,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         optimizeDeps: {
           include: [
             ...extraOptimizeDeps,
+            ...INCLUDE_CANDIDATES,
             '@storybook/addon-vitest/internal/setup-file',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',

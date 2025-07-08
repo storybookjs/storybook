@@ -1,3 +1,4 @@
+import { statSync } from 'node:fs';
 import { createRequire, register } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -67,3 +68,47 @@ export async function importModule(path: string) {
   }
   return mod.default ?? mod;
 }
+
+/**
+ * Safely resolves a module specifier to its absolute file path.
+ *
+ * Attempts to resolve the given module specifier by trying different file extensions until a valid
+ * file is found. Returns undefined if the module cannot be resolved.
+ *
+ * Optionally pass in a list of file extensions to try, defaulting to `.mjs`, `.js`, and `.cjs`.
+ *
+ * @example
+ *
+ * ```typescript
+ * // Resolve a relative module
+ * const path = safeResolveModule({
+ *   specifier: './utils',
+ *   parent: import.meta.url,
+ * });
+ *
+ * // Resolve with custom extensions
+ * const path = safeResolveModule({
+ *   specifier: './config',
+ *   extensions: ['.json', '.js'],
+ * });
+ * ```
+ */
+export const safeResolveModule = ({
+  specifier,
+  parent,
+  extensions = ['.mjs', '.js', '.cjs'],
+}: {
+  specifier: string;
+  parent?: string;
+  extensions?: string[];
+}) => {
+  for (const extension of [''].concat(extensions)) {
+    try {
+      const resolvedPath = fileURLToPath(importMetaResolve(specifier + extension, parent));
+      if (statSync(resolvedPath).isFile()) {
+        return resolvedPath;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {}
+  }
+};

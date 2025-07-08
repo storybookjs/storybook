@@ -67,12 +67,11 @@ export class TestManager {
 
     this.store.subscribe('TRIGGER_RUN', this.handleTriggerRunEvent.bind(this));
     this.store.subscribe('CANCEL_RUN', this.handleCancelEvent.bind(this));
-
     this.store
       .untilReady()
-      .then(() =>
-        this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage })
-      )
+      .then(() => {
+        return this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage });
+      })
       .then(() => this.onReady?.())
       .catch((e) => {
         this.reportFatalError('Failed to start Vitest', e);

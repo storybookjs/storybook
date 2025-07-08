@@ -1,5 +1,4 @@
 import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
 import type {
   CoverageOptions,
@@ -17,6 +16,7 @@ import { findUp } from 'find-up';
 import path, { dirname, join, normalize } from 'pathe';
 import slash from 'slash';
 
+import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 import { COVERAGE_DIRECTORY } from '../constants';
 import { log } from '../logger';
 import type { TriggerRunEvent } from '../types';
@@ -45,7 +45,7 @@ export class VitestManager {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
-      fileURLToPath(import.meta.resolve('@storybook/addon-vitest/static/coverage-reporter.cjs')),
+      join(resolvePackageDir('@storybook/addon-vitest'), 'static/coverage-reporter.cjs'),
       {
         testManager: this.testManager,
         coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'> | undefined,

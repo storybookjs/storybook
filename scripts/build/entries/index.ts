@@ -69,9 +69,6 @@ export const buildEntries = {
           entryPoint: './src/babel/index.ts',
         },
         {
-          entryPoint: './src/builder-manager/index.ts',
-        },
-        {
           exportEntries: ['./internal/bin/dispatcher'],
           entryPoint: './src/bin/dispatcher.ts',
           dts: false,
@@ -269,9 +266,6 @@ export const buildEntries = {
     },
   },
   '@storybook/addon-docs': {
-    extraOutputs: {
-      './svelte/HOC.svelte': './svelte/HOC.svelte',
-    },
     entries: {
       browser: [
         {

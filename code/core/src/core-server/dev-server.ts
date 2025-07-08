@@ -60,7 +60,7 @@ export async function storybookDevServer(options: Options) {
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
 
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName),
+    getPreviewBuilder(builderName, options.configDir),
     getManagerBuilder(),
     useStatics(app, options),
   ]);

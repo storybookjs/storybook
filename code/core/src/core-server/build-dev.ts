@@ -154,7 +154,10 @@ export async function buildDevStandalone(
   }
 
   const builderName = typeof builder === 'string' ? builder : builder.name;
-  const [previewBuilder, managerBuilder] = await getBuilders(options);
+  const [previewBuilder, managerBuilder] = await getBuilders({
+    presets,
+    configDir: options.configDir,
+  });
 
   if (builderName.includes('builder-vite')) {
     const deprecationMessage =

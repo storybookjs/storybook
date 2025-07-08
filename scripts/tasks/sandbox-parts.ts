@@ -424,7 +424,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       setupFilePath,
       dedent`import { beforeAll } from 'vitest'
       import { setProjectAnnotations } from '${storybookPackage}'
-      import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
+      import * as rendererDocsAnnotations from '${template.expected.renderer}/entry-preview-docs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
       import '../src/stories/components'
       import * as templateAnnotations from '../template-stories/core/preview'

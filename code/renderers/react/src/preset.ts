@@ -10,19 +10,22 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options
 ) => {
-  const docsConfig = await options.presets.apply('docs', {}, options);
-  const features = await options.presets.apply('features', {}, options);
+  const [docsConfig, features] = await Promise.all([
+    options.presets.apply('docs', {}, options),
+    options.presets.apply('features', {}, options),
+  ]);
   const docsEnabled = Object.keys(docsConfig).length > 0;
+  const experimentalRSC = features?.experimentalRSC;
   const result: string[] = [];
 
   return result
     .concat(input)
-    .concat([import.meta.resolve('@storybook/react/entry-preview')])
-    .concat([import.meta.resolve('@storybook/react/entry-preview-argtypes')])
+    .concat([
+      import.meta.resolve('@storybook/react/entry-preview'),
+      import.meta.resolve('@storybook/react/entry-preview-argtypes'),
+    ])
     .concat(docsEnabled ? [import.meta.resolve('@storybook/react/entry-preview-docs')] : [])
-    .concat(
-      features?.experimentalRSC ? [import.meta.resolve('@storybook/react/entry-preview-rsc')] : []
-    );
+    .concat(experimentalRSC ? [import.meta.resolve('@storybook/react/entry-preview-rsc')] : []);
 };
 
 /**

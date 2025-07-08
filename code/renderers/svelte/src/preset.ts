@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import type { PresetProperty } from 'storybook/internal/types';
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
@@ -9,6 +11,11 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
 
   return result
     .concat(input)
-    .concat([import.meta.resolve('@storybook/svelte/entry-preview')])
-    .concat(docsEnabled ? [import.meta.resolve('@storybook/svelte/entry-preview-docs')] : []);
+    .concat([fileURLToPath(import.meta.resolve('@storybook/svelte/entry-preview'))])
+    .concat(
+      docsEnabled
+        ? [fileURLToPath(import.meta.resolve('@storybook/svelte/entry-preview-docs'))]
+        : []
+    );
 };
+console.log('NEW');

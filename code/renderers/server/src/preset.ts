@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 
 import type { ComponentTitle, PresetProperty, StoryName, Tag } from 'storybook/internal/types';
 

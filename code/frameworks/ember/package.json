@@ -1,6 +1,6 @@
 {
   "name": "@storybook/ember",
-  "version": "9.0.15",
+  "version": "9.0.16",
   "description": "Storybook for Ember: Develop, document, and test Ember components in isolation",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember",
   "bugs": {

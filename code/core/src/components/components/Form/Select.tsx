@@ -114,6 +114,7 @@ export const Select = ({ children, ...props }: SelectProps) => {
   return (
     // @ts-expect-error Weird props mismatch
     <BaseSelect {...props}>
+      {/* TODO Remove condition when this issue is resolved: https://github.com/facebook/react/issues/33609 */}
       {!isTestEnvironment() && (
         <button>
           {/* @ts-expect-error Not yet supported */}

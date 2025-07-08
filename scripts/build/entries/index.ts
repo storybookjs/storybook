@@ -69,9 +69,6 @@ export const buildEntries = {
           entryPoint: './src/babel/index.ts',
         },
         {
-          entryPoint: './src/builder-manager/index.ts',
-        },
-        {
           exportEntries: ['./internal/bin/dispatcher'],
           entryPoint: './src/bin/dispatcher.ts',
           dts: false,

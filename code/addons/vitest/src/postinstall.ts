@@ -10,12 +10,12 @@ import {
   formatFileContent,
   getInterpretedFile,
   getProjectRoot,
-  loadAllPresets,
   loadMainConfig,
   scanAndTransformFiles,
   transformImportFiles,
   validateFrameworkName,
 } from 'storybook/internal/common';
+import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -27,7 +27,6 @@ import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 import { DOCUMENTATION_LINK, SUPPORTED_FRAMEWORKS } from './constants';
 import { printError, printInfo, printSuccess, printWarning, step } from './postinstall-logger';
@@ -561,16 +560,18 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   validateFrameworkName(frameworkName);
   const frameworkPackageName = extractProperFrameworkName(frameworkName);
 
-  const presets = await loadAllPresets({
-    corePresets: [join(frameworkName, 'preset')],
-    overridePresets: [
-      fileURLToPath(
-        import.meta.resolve('storybook/internal/core-server/presets/common-override-preset')
-      ),
-    ],
-    packageJson,
+  const { presets } = await experimental_loadStorybook({
     configDir,
-    isCritical: true,
+    packageJson,
+    // corePresets: [join(frameworkName, 'preset')],
+    // overridePresets: [
+    //   fileURLToPath(
+    //     import.meta.resolve('storybook/internal/core-server/presets/common-override-preset')
+    //   ),
+    // ],
+    // packageJson,
+    // configDir,
+    // isCritical: true,
   });
 
   const core = await presets.apply('core', {});
@@ -581,13 +582,22 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     throw new Error('Could not detect your Storybook builder.');
   }
 
-  const builderName = typeof builder === 'string' ? builder : builder.name;
-  const builderPackageJson = await fs.readFile(resolvePackageDir(builderName), 'utf8');
+  const builderPackageJson = await fs.readFile(
+    fileURLToPath(
+      import.meta.resolve(
+        join(typeof builder === 'string' ? builder : builder.name, 'package.json')
+      )
+    ),
+    'utf8'
+  );
   const builderPackageName = JSON.parse(builderPackageJson).name;
 
   let rendererPackageName: string | undefined;
   if (renderer) {
-    const rendererPackageJson = await fs.readFile(resolvePackageDir(renderer), 'utf8');
+    const rendererPackageJson = await fs.readFile(
+      fileURLToPath(import.meta.resolve(join(renderer, 'package.json'))),
+      'utf8'
+    );
     rendererPackageName = JSON.parse(rendererPackageJson).name;
   }
 

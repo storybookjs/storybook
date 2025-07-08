@@ -878,6 +878,32 @@ jobs:
           name: Run Cypress CT tests
           command: yarn cypress
           working_directory: test-storybooks/portable-stories-kitchen-sink/<< parameters.directory >>
+  test-yarn-pnp:
+    executor:
+      name: sb_playwright
+      class: medium
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: "--depth 1 --verbose"
+      - attach_workspace:
+          at: .
+      - node/install:
+          node-version: "22.17.0"
+      - run:
+          name: Install dependencies
+          command: yarn install --no-immutable
+          working_directory: test-storybooks/yarn-pnp
+          environment:
+            YARN_ENABLE_IMMUTABLE_INSTALLS: false
+      # Disabled due to Jest not working in the ESM-only paradigm. Will require some recipe to make it work
+      - run:
+          name: Build Storybook
+          command: yarn build-storybook
+          working_directory: test-storybooks/yarn-pnp
+      - run:
+          name: Run Vitest tests
+          command: yarn vitest run
+          working_directory: test-storybooks/yarn-pnp
       - report-workflow-on-failure
 workflows:
   docs:
@@ -957,6 +983,9 @@ workflows:
           matrix:
             parameters:
               directory: ["react", "vue3", "nextjs", "svelte"]
+      - test-yarn-pnp:
+          requires:
+            - build
       # TODO: reenable once we find out the source of flakyness
       # - test-runner-dev:
       #     requires:
@@ -1026,6 +1055,9 @@ workflows:
           requires:
             - build
       - test-init-features:
+          requires:
+            - build
+      - test-yarn-pnp:
           requires:
             - build
   # TODO: don't forget to reenable this
@@ -1123,6 +1155,9 @@ workflows:
                 # --smoke-test is not supported for the angular builder right now
                 # - "angular-cli"
                 - "lit-vite-ts"
+      - test-yarn-pnp:
+          requires:
+            - build
 # TODO: don't forget to reenable this
 #      - bench-sandboxes:
 #          parallelism: 5

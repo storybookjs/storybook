@@ -5,6 +5,8 @@ import type { Builder, Options } from 'storybook/internal/types';
 
 import { join } from 'pathe';
 
+import { importModule } from '../../shared/utils/module';
+
 export async function getManagerBuilder(): Promise<Builder<unknown>> {
   return import('../../builder-manager/index');
 }
@@ -39,8 +41,7 @@ export async function getPreviewBuilder(
   builderName: string,
   configDir: string
 ): Promise<Builder<unknown>> {
-  const builderPackage = await resolveBuilderEntrypoint(builderName, configDir);
-  return await import(builderPackage);
+  return await importModule(await resolveBuilderEntrypoint(builderName, configDir));
 }
 
 export async function getBuilders({ presets, configDir }: Options): Promise<Builder<unknown>[]> {

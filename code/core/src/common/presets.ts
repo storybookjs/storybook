@@ -12,11 +12,11 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { parseNodeModulePath, resolvePathSync } from 'mlly';
+import { parseNodeModulePath } from 'mlly';
 import { join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { importModule } from '../shared/utils/module';
+import { importModule, safeResolveModule } from '../shared/utils/module';
 import { getInterpretedFile } from './utils/interpret-files';
 import { validateConfigurationFiles } from './utils/validate-configuration-files';
 
@@ -69,18 +69,7 @@ export const resolveAddonName = (
   name: string,
   options: any
 ): CoreCommon_ResolvedAddonPreset | CoreCommon_ResolvedAddonVirtual | undefined => {
-  const safeResolve = (path: string) => {
-    try {
-      return resolvePathSync(path, {
-        url: configDir,
-        extensions: ['.mjs', '.js', '.cjs'],
-      });
-    } catch (e) {
-      return undefined;
-    }
-  };
-
-  const resolved = safeResolve(name);
+  const resolved = safeResolveModule({ specifier: name, parent: configDir });
 
   if (resolved && parse(name).name === 'preset') {
     return {
@@ -89,9 +78,9 @@ export const resolveAddonName = (
     };
   }
 
-  const presetFile = safeResolve(join(name, 'preset'));
-  const managerFile = safeResolve(join(name, 'manager'));
-  const previewFile = safeResolve(join(name, 'preview'));
+  const presetFile = safeResolveModule({ specifier: join(name, 'preset'), parent: configDir });
+  const managerFile = safeResolveModule({ specifier: join(name, 'manager'), parent: configDir });
+  const previewFile = safeResolveModule({ specifier: join(name, 'preview'), parent: configDir });
 
   if (managerFile || previewFile || presetFile) {
     const previewAnnotations = [];

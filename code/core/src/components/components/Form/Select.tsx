@@ -2,6 +2,7 @@ import React, { type CSSProperties, type SelectHTMLAttributes } from 'react';
 
 import { lighten, styled } from 'storybook/theming';
 
+import { isTestEnvironment } from '../../../preview-api/modules/preview-web/render/animation-utils';
 import { type Alignments, type Sizes, type ValidationStates, sizes } from './styles';
 
 type SelectProps = Omit<
@@ -22,7 +23,7 @@ const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
   appearance: 'none',
   background: `calc(100% - 12px) center no-repeat url("data:image/svg+xml,%3Csvg width='8' height='4' viewBox='0 0 8 4' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1.30303 0.196815C1.13566 0.0294472 0.864304 0.0294472 0.696937 0.196815C0.529569 0.364182 0.529569 0.635539 0.696937 0.802906L3.69694 3.80291C3.8643 3.97027 4.13566 3.97027 4.30303 3.80291L7.30303 0.802906C7.4704 0.635539 7.4704 0.364182 7.30303 0.196815C7.13566 0.0294473 6.8643 0.0294473 6.69694 0.196815L3.99998 2.89377L1.30303 0.196815Z' fill='%2373828C'/%3E%3C/svg%3E%0A")`,
   backgroundSize: 10,
-  padding: '6px 18px 6px 10px',
+  padding: '6px 30px 6px 10px',
   '@supports (appearance: base-select)': {
     appearance: 'base-select' as CSSProperties['appearance'],
     background: theme.input.background,
@@ -113,22 +114,24 @@ export const Select = ({ children, ...props }: SelectProps) => {
   return (
     // @ts-expect-error Weird props mismatch
     <BaseSelect {...props}>
-      <button>
-        {/* @ts-expect-error Not yet supported */}
-        <selectedcontent></selectedcontent>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="m6 9 6 6 6-6"></path>
-        </svg>
-      </button>
+      {!isTestEnvironment() && (
+        <button>
+          {/* @ts-expect-error Not yet supported */}
+          <selectedcontent></selectedcontent>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m6 9 6 6 6-6"></path>
+          </svg>
+        </button>
+      )}
       <optgroup>{children}</optgroup>
     </BaseSelect>
   );

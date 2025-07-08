@@ -35,7 +35,7 @@ export class FileSystemCache {
 
   constructor(options: FileSystemCacheOptions = {}) {
     this.prefix = (options.ns || options.prefix || '') + '-';
-    this.hash_alg = options.hash_alg || 'sha256';
+    this.hash_alg = options.hash_alg || 'md5';
     this.cache_dir =
       options.basePath || join(tmpdir(), randomBytes(15).toString('base64').replace(/\//g, '-'));
     this.ttl = options.ttl || 0;

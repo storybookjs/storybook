@@ -269,9 +269,6 @@ export const buildEntries = {
     },
   },
   '@storybook/addon-docs': {
-    extraOutputs: {
-      './svelte/HOC.svelte': './svelte/HOC.svelte',
-    },
     entries: {
       browser: [
         {

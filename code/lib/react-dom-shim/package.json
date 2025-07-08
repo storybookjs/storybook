@@ -22,16 +22,10 @@
   "sideEffects": false,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/react-18.d.ts",
-      "default": "./dist/react-18.js"
-    },
+    ".": "./dist/react-18.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
-    "./react-16": {
-      "types": "./dist/react-16.d.ts",
-      "default": "./dist/react-16.js"
-    }
+    "./react-16": "./dist/react-16.js"
   },
   "files": [
     "dist/**/*",

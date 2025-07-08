@@ -330,10 +330,12 @@ export const buildEntries = {
         {
           exportEntries: ['.'],
           entryPoint: './src/react-18.tsx',
+          dts: false,
         },
         {
           exportEntries: ['./react-16'],
           entryPoint: './src/react-16.tsx',
+          dts: false,
         },
       ],
       node: [

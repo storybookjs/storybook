@@ -27,6 +27,7 @@ import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
+import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 import { DOCUMENTATION_LINK, SUPPORTED_FRAMEWORKS } from './constants';
 import { printError, printInfo, printSuccess, printWarning, step } from './postinstall-logger';
@@ -580,22 +581,13 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     throw new Error('Could not detect your Storybook builder.');
   }
 
-  const builderPackageJson = await fs.readFile(
-    fileURLToPath(
-      import.meta.resolve(
-        join(typeof builder === 'string' ? builder : builder.name, 'package.json')
-      )
-    ),
-    'utf8'
-  );
+  const builderName = typeof builder === 'string' ? builder : builder.name;
+  const builderPackageJson = await fs.readFile(resolvePackageDir(builderName), 'utf8');
   const builderPackageName = JSON.parse(builderPackageJson).name;
 
   let rendererPackageName: string | undefined;
   if (renderer) {
-    const rendererPackageJson = await fs.readFile(
-      fileURLToPath(import.meta.resolve(join(renderer, 'package.json'))),
-      'utf8'
-    );
+    const rendererPackageJson = await fs.readFile(resolvePackageDir(renderer), 'utf8');
     rendererPackageName = JSON.parse(rendererPackageJson).name;
   }
 

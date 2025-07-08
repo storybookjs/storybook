@@ -25,7 +25,7 @@ declare global {
   var requestCookiesMock: RequestCookiesMock;
 }
 
-export const cookies = fn(() => {
+export const cookies = fn(async () => {
   if (!requestCookiesMock) {
     globalThis.requestCookiesMock = new RequestCookiesMock(headers());
   }

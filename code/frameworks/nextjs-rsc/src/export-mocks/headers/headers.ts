@@ -30,7 +30,7 @@ declare global {
   var headersAdapterMock: HeadersAdapterMock;
 }
 
-export const headers = () => {
+export const headers = async () => {
   if (!headersAdapterMock) {
     globalThis.headersAdapterMock = new HeadersAdapterMock();
   }

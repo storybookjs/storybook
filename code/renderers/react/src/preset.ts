@@ -1,9 +1,9 @@
-import { dirname, join } from 'node:path';
-
 import type { PresetProperty } from 'storybook/internal/types';
 
+import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('@storybook/react-dom-shim/preset'),
+  import.meta.resolve('@storybook/react-dom-shim/preset'),
 ];
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
@@ -17,9 +17,12 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
 
   return result
     .concat(input)
-    .concat(join(__dirname, 'entry-preview.mjs'), join(__dirname, 'entry-preview-argtypes.mjs'))
-    .concat(docsEnabled ? [join(__dirname, 'entry-preview-docs.mjs')] : [])
-    .concat(features?.experimentalRSC ? [join(__dirname, 'entry-preview-rsc.mjs')] : []);
+    .concat([import.meta.resolve('@storybook/react/entry-preview')])
+    .concat([import.meta.resolve('@storybook/react/entry-preview-argtypes')])
+    .concat(docsEnabled ? [import.meta.resolve('@storybook/react/entry-preview-docs')] : [])
+    .concat(
+      features?.experimentalRSC ? [import.meta.resolve('@storybook/react/entry-preview-rsc')] : []
+    );
 };
 
 /**
@@ -38,8 +41,8 @@ export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(require.resolve('react/package.json')),
-      reactDom: dirname(require.resolve('react-dom/package.json')),
+      react: resolvePackageDir('react'),
+      reactDom: resolvePackageDir('react-dom'),
     };
   } catch (e) {
     return existing;

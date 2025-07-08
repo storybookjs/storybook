@@ -48,5 +48,5 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   }
   const result: string[] = [];
 
-  return result.concat(input).concat([join(__dirname, 'entry-preview.mjs')]);
+  return result.concat(input).concat([import.meta.resolve('@storybook/server/entry-preview')]);
 };

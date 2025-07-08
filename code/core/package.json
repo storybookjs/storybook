@@ -212,6 +212,7 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
+    "@storybook/icons": "^1.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
@@ -244,7 +245,6 @@
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@storybook/docs-mdx": "4.0.0-next.1",
-    "@storybook/icons": "^1.4.0",
     "@tanstack/react-virtual": "^3.3.0",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "^14.0.0",

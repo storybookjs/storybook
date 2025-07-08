@@ -10,12 +10,12 @@ import {
   formatFileContent,
   getInterpretedFile,
   getProjectRoot,
-  loadAllPresets,
   loadMainConfig,
   scanAndTransformFiles,
   transformImportFiles,
   validateFrameworkName,
 } from 'storybook/internal/common';
+import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -560,16 +560,18 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   validateFrameworkName(frameworkName);
   const frameworkPackageName = extractProperFrameworkName(frameworkName);
 
-  const presets = await loadAllPresets({
-    corePresets: [join(frameworkName, 'preset')],
-    overridePresets: [
-      fileURLToPath(
-        import.meta.resolve('storybook/internal/core-server/presets/common-override-preset')
-      ),
-    ],
-    packageJson,
+  const { presets } = await experimental_loadStorybook({
     configDir,
-    isCritical: true,
+    packageJson,
+    // corePresets: [join(frameworkName, 'preset')],
+    // overridePresets: [
+    //   fileURLToPath(
+    //     import.meta.resolve('storybook/internal/core-server/presets/common-override-preset')
+    //   ),
+    // ],
+    // packageJson,
+    // configDir,
+    // isCritical: true,
   });
 
   const core = await presets.apply('core', {});

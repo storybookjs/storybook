@@ -54,7 +54,6 @@
       "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
     },
-    "./svelte/HOC.svelte": "./svelte/HOC.svelte",
     "./web-components": {
       "types": "./dist/web-components/index.d.ts",
       "default": "./dist/web-components/index.js"

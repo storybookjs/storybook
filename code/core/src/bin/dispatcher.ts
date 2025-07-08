@@ -6,6 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { join } from 'pathe';
 import { dedent } from 'ts-dedent';
 
+import { JsPackageManagerFactory } from '../common';
 import versions from '../common/versions';
 import { resolvePackageDir } from '../shared/utils/module';
 
@@ -52,22 +53,27 @@ async function run() {
           args,
         } as const);
 
+  const packageManager = JsPackageManagerFactory.getPackageManager();
+
   let command;
   try {
     const { default: targetCliPackageJson } = await import(`${targetCli.pkg}/package.json`, {
       with: { type: 'json' },
     });
     if (targetCliPackageJson.version === versions[targetCli.pkg]) {
-      command = [
-        'node',
+      command = packageManager.getRunNodeCommand(
         join(resolvePackageDir(targetCli.pkg), 'dist/bin/index.js'),
-        ...targetCli.args,
-      ];
+        targetCli.args
+      );
     }
   } catch (e) {
     // the package couldn't be imported, use npx to install and run it instead
   }
-  command ??= ['npx', '--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args];
+  command ??= packageManager.getRemoteRunCommand(
+    targetCli.pkg,
+    targetCli.args,
+    versions[targetCli.pkg]
+  );
 
   const child = spawn(command[0], command.slice(1), { stdio: 'inherit', shell: true });
   child.on('exit', (code) => {

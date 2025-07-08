@@ -68,13 +68,8 @@ export class NPMProxy extends JsPackageManager {
 
   installArgs: string[] | undefined;
 
-  getRunCommand(command: string): string {
-    return `npm run ${command}`;
-  }
-
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `npx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
-  }
+  runCommand = ['npm', 'run'];
+  remoteRunCommand = ['npx'];
 
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const packageJsonPath = findUpSync(

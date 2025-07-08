@@ -41,13 +41,8 @@ export class Yarn1Proxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  getRunCommand(command: string): string {
-    return `yarn ${command}`;
-  }
-
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `npx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
-  }
+  runCommand = ['yarn'];
+  remoteRunCommand = ['npx'];
 
   public runPackageCommandSync(
     command: string,

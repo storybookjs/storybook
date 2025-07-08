@@ -76,13 +76,8 @@ export class BUNProxy extends JsPackageManager {
     return 'bun run storybook';
   }
 
-  getRunCommand(command: string): string {
-    return `bun run ${command}`;
-  }
-
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `bunx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
-  }
+  runCommand = ['bun', 'run'];
+  remoteRunCommand = ['bunx'];
 
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const packageJsonPath = findUpSync(

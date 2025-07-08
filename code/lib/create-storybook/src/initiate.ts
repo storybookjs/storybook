@@ -649,7 +649,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
       Then to start RN Storybook, run:
 
-      ${picocolors.inverse(' ' + packageManager.getRunCommand('start') + ' ')}
+      ${picocolors.inverse(' ' + packageManager.getRunCommand('start').join(' ') + ' ')}
     `);
 
     if (projectType === ProjectType.REACT_NATIVE_AND_RNW) {
@@ -659,7 +659,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
         To start RNW Storybook, run:
 
-        ${picocolors.inverse(' ' + packageManager.getRunCommand('storybook') + ' ')}
+        ${picocolors.inverse(' ' + packageManager.getRunCommand('storybook').join(' ') + ' ')}
       `);
     }
     return { shouldRunDev: false };
@@ -686,7 +686,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const storybookCommand =
     projectType === ProjectType.ANGULAR
       ? `ng run ${installResult.projectName}:storybook`
-      : packageManager.getRunCommand('storybook');
+      : packageManager.getRunCommand('storybook').join(' ');
 
   if (selectedFeatures.has('test')) {
     const flags = ['--yes', options.skipInstall && '--skip-install'].filter(Boolean).join(' ');

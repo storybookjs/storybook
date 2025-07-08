@@ -44,13 +44,8 @@ export class PNPMProxy extends JsPackageManager {
     return existsSync(pnpmWorkspaceYaml);
   }
 
-  getRunCommand(command: string): string {
-    return `pnpm run ${command}`;
-  }
-
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `pnpm dlx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
-  }
+  runCommand = ['pnpm', 'run'];
+  remoteRunCommand = ['pnpm', 'dlx'];
 
   async getPnpmVersion(): Promise<string> {
     const result = await this.executeCommand({

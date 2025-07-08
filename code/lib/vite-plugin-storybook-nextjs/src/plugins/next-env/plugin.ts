@@ -15,18 +15,23 @@ export function vitePluginNextEnv(
 
   const resolvedDir = resolve(rootDir);
 
-  let getDefineEnv: typeof import("next/dist/build/define-env.js").getDefineEnv;
-  let isNext1540 = false;
-
-  try {
-    // Next.js >= 15.4.0
-    getDefineEnv = require("next/dist/build/define-env.js").getDefineEnv;
-    isNext1540 = true;
-  } catch (error) {
-    // Next.js < 15.4.0
-    getDefineEnv =
-      require("next/dist/build/webpack/plugins/define-env-plugin.js").getDefineEnv;
-  }
+  // Try Next.js >= 15.4.0
+  const getDefineEnvModule = import("next/dist/build/define-env.js")
+    .then((mod) => ({
+      getDefineEnv: mod.getDefineEnv,
+      isNext1540: true,
+    }))
+    .catch(() => {
+      // Fallback for Next.js < 15.4.0
+      return import(
+        // @ts-expect-error this module only exists in versions below 15.4.0, but this package depends on version 15.4.0 or higher.
+        "next/dist/build/webpack/plugins/define-env-plugin.js"
+      ).then((mod) => ({
+        getDefineEnv:
+          mod.getDefineEnv as typeof import("next/dist/build/define-env").getDefineEnv,
+        isNext1540: false,
+      }));
+    });
 
   return {
     name: "vite-plugin-storybook-nextjs-env",
@@ -45,6 +50,8 @@ export function vitePluginNextEnv(
             return [`process.env.${key}`, JSON.stringify(value)];
           }),
       );
+
+      const { getDefineEnv, isNext1540 } = await getDefineEnvModule;
 
       const finalConfig = {
         ...config.define,

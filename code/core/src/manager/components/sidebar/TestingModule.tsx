@@ -68,6 +68,8 @@ const Card = styled.div(({ theme }) => ({
   zIndex: 1,
   borderRadius: theme.appBorderRadius,
   backgroundColor: theme.background.content,
+  display: 'flex',
+  flexDirection: 'column-reverse',
 
   '&:hover #testing-module-collapse-toggle': {
     opacity: 1,
@@ -76,7 +78,6 @@ const Card = styled.div(({ theme }) => ({
 
 const Collapsible = styled.div(({ theme }) => ({
   overflow: 'hidden',
-
   willChange: 'auto',
   boxShadow: `inset 0 -1px 0 ${theme.appBorderColor}`,
 }));
@@ -270,34 +271,6 @@ export const TestingModule = ({
       data-updated={isUpdated}
     >
       <Card>
-        {hasTestProviders && (
-          <Collapsible
-            data-testid="collapse"
-            style={{
-              transition: isChangingCollapse ? 'max-height 250ms' : 'max-height 0ms',
-              display: hasTestProviders ? 'block' : 'none',
-              maxHeight: isCollapsed ? 0 : maxHeight,
-            }}
-          >
-            <Content ref={contentRef}>
-              {Object.values(registeredTestProviders).map((registeredTestProvider) => {
-                const { render: Render, id } = registeredTestProvider;
-                if (!Render) {
-                  once.warn(
-                    `No render function found for test provider with id '${id}', skipping...`
-                  );
-                  return null;
-                }
-                return (
-                  <TestProvider key={id} data-module-id={id}>
-                    <Render />
-                  </TestProvider>
-                );
-              })}
-            </Content>
-          </Collapsible>
-        )}
-
         <Bar {...(hasTestProviders ? { onClick: (e) => toggleCollapsed(e) } : {})}>
           <Action>
             {hasTestProviders && (
@@ -432,6 +405,35 @@ export const TestingModule = ({
             )}
           </Filters>
         </Bar>
+
+        {hasTestProviders && (
+          <Collapsible
+            data-testid="collapse"
+            {...(isCollapsed && { inert: '' })}
+            style={{
+              transition: isChangingCollapse ? 'max-height 250ms' : 'max-height 0ms',
+              display: hasTestProviders ? 'block' : 'none',
+              maxHeight: isCollapsed ? 0 : maxHeight,
+            }}
+          >
+            <Content ref={contentRef}>
+              {Object.values(registeredTestProviders).map((registeredTestProvider) => {
+                const { render: Render, id } = registeredTestProvider;
+                if (!Render) {
+                  once.warn(
+                    `No render function found for test provider with id '${id}', skipping...`
+                  );
+                  return null;
+                }
+                return (
+                  <TestProvider key={id} data-module-id={id}>
+                    <Render />
+                  </TestProvider>
+                );
+              })}
+            </Content>
+          </Collapsible>
+        )}
       </Card>
     </Outline>
   );

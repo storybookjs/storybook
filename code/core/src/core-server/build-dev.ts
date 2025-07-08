@@ -27,7 +27,7 @@ import { dedent } from 'ts-dedent';
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
 import { buildOrThrow } from './utils/build-or-throw';
-import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
+import { getBuilders } from './utils/get-builders';
 import { outputStartupInformation } from './utils/output-startup-information';
 import { outputStats } from './utils/output-stats';
 import { getServerChannelUrl, getServerPort } from './utils/server-address';
@@ -154,10 +154,7 @@ export async function buildDevStandalone(
   }
 
   const builderName = typeof builder === 'string' ? builder : builder.name;
-  const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName),
-    getManagerBuilder(),
-  ]);
+  const [previewBuilder, managerBuilder] = await getBuilders(options);
 
   if (builderName.includes('builder-vite')) {
     const deprecationMessage =

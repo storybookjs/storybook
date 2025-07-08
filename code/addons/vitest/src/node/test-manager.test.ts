@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-
 import { describe, expect, it, vi } from 'vitest';
 import { createVitest as actualCreateVitest } from 'vitest/node';
 
@@ -49,13 +47,13 @@ vi.mock('vitest/node', async (importOriginal) => ({
   createVitest: vi.fn(() => Promise.resolve(vitest)),
 }));
 
-vi.mock('../../../../core/src/shared/utils/module', () => ({
-  importMetaResolve: vi
-    .fn()
-    .mockImplementation(
-      (a) => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')
-    ),
-}));
+// vi.mock('../../../../core/src/shared/utils/module', () => ({
+//   importMetaResolve: vi
+//     .fn()
+//     .mockImplementation(
+//       (a) => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')
+//     ),
+// }));
 
 const createVitest = vi.mocked(actualCreateVitest);
 

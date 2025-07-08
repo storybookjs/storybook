@@ -156,7 +156,16 @@ export class Yarn2Proxy extends JsPackageManager {
 
     if (pnpapiPath) {
       try {
-        const pnpApi = await import(pnpapiPath);
+        /*
+          This is a rather fragile way to access Yarn's PnP API, essentially manually loading it.
+          The proper way to do this would be to just do await import('pnpapi'),
+          as documented at https://yarnpkg.com/advanced/pnpapi#requirepnpapi
+          
+          However the 'pnpapi' module is only injected when the Node process is started via Yarn,
+          which is not always the case for us, because we spawn child processes directly with Node,
+          eg. when running automigrations.
+        */
+        const { default: pnpApi } = await import(pnpapiPath);
 
         const resolvedPath = pnpApi.resolveToUnqualified(
           packageName,
@@ -180,7 +189,7 @@ export class Yarn2Proxy extends JsPackageManager {
 
         return crossFs.readJsonSync(virtualPath);
       } catch (error: any) {
-        if (error.code !== 'MODULE_NOT_FOUND') {
+        if (error.code !== 'ERR_MODULE_NOT_FOUND') {
           console.error('Error while fetching package version in Yarn PnP mode:', error);
         }
         return null;

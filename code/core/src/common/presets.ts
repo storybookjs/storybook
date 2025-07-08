@@ -1,6 +1,3 @@
-import { statSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-
 import { logger } from 'storybook/internal/node-logger';
 import { CriticalPresetLoadError } from 'storybook/internal/server-errors';
 import type {
@@ -19,7 +16,7 @@ import { parseNodeModulePath } from 'mlly';
 import { join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { importMetaResolve, importModule } from '../shared/utils/module';
+import { importModule, safeResolveModule } from '../shared/utils/module';
 import { getInterpretedFile } from './utils/interpret-files';
 import { validateConfigurationFiles } from './utils/validate-configuration-files';
 
@@ -72,18 +69,7 @@ export const resolveAddonName = (
   name: string,
   options: any
 ): CoreCommon_ResolvedAddonPreset | CoreCommon_ResolvedAddonVirtual | undefined => {
-  const safeResolve = (path: string) => {
-    for (const ext of ['', '.mjs', '.js', '.cjs']) {
-      try {
-        const resolvedPath = fileURLToPath(importMetaResolve(path + ext, configDir));
-        if (statSync(resolvedPath).isFile()) {
-          return resolvedPath;
-        }
-      } catch (e) {}
-    }
-  };
-
-  const resolved = safeResolve(name);
+  const resolved = safeResolveModule({ specifier: name, parent: configDir });
 
   if (resolved && parse(name).name === 'preset') {
     return {
@@ -92,9 +78,9 @@ export const resolveAddonName = (
     };
   }
 
-  const presetFile = safeResolve(join(name, 'preset'));
-  const managerFile = safeResolve(join(name, 'manager'));
-  const previewFile = safeResolve(join(name, 'preview'));
+  const presetFile = safeResolveModule({ specifier: join(name, 'preset'), parent: configDir });
+  const managerFile = safeResolveModule({ specifier: join(name, 'manager'), parent: configDir });
+  const previewFile = safeResolveModule({ specifier: join(name, 'preview'), parent: configDir });
 
   if (managerFile || previewFile || presetFile) {
     const previewAnnotations = [];

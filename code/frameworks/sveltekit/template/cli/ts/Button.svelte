@@ -29,6 +29,7 @@
   const variantToClass = {
     primary: 'storybook-button--primary',
     secondary: 'storybook-button--secondary',
+    // Flat only exists to verify type inference for the control creation works
     flat: '',
   };
 

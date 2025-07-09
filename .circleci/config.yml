@@ -330,10 +330,10 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Test
+          name: Split and run tests
           command: |
-            cd code
-            SHARD="$((${CIRCLE_NODE_INDEX}+1))"; yarn test --reporter=blob --reporter=default --shard=${SHARD}/${CIRCLE_NODE_TOTAL}
+            chmod +x .circleci/scripts/run-tests.sh
+            .circleci/scripts/run-tests.sh
       # TODO: bring coverage back later. This has caused flakiness in the tests because
       # Somehow Vitest reports coverage while some tests are still running,
       # then it tries to report coverage again and as result it crashes like this:

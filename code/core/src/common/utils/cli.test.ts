@@ -6,7 +6,7 @@ describe('UTILS', () => {
   describe.each([
     ['@storybook/react', true],
     ['storybook', true],
-    ['@storybook/linter-config', true],
+    ['@storybook/linter-config', false],
     ['@storybook/design-system', false],
     ['@storybook/addon-styling', false],
     ['@storybook/addon-styling-webpack', false],

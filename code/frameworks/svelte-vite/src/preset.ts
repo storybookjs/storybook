@@ -11,7 +11,7 @@ const getAbsolutePath = <I extends string>(input: I): I =>
 
 export const core: PresetProperty<'core'> = {
   builder: getAbsolutePath('@storybook/builder-vite'),
-  renderer: getAbsolutePath('@storybook/svelte'),
+  renderer: require.resolve('@storybook/svelte/preset'),
 };
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {

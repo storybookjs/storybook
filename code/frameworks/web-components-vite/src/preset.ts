@@ -7,5 +7,5 @@ const getAbsolutePath = <I extends string>(input: I): I =>
 
 export const core: PresetProperty<'core'> = {
   builder: getAbsolutePath('@storybook/builder-vite'),
-  renderer: getAbsolutePath('@storybook/web-components'),
+  renderer: require.resolve('@storybook/web-components/preset'),
 };

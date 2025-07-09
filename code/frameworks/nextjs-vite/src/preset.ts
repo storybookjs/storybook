@@ -26,7 +26,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: dirname(require.resolve(join('@storybook/react', 'package.json'))),
+    renderer: require.resolve('@storybook/react/preset'),
   };
 };
 

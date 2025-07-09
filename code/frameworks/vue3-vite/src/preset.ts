@@ -14,7 +14,7 @@ const getAbsolutePath = <I extends string>(input: I): I =>
 
 export const core: PresetProperty<'core'> = {
   builder: getAbsolutePath('@storybook/builder-vite'),
-  renderer: getAbsolutePath('@storybook/vue3'),
+  renderer: require.resolve('@storybook/vue3/preset'),
 };
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {

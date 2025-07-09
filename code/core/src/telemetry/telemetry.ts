@@ -75,7 +75,7 @@ const prepareRequest = async (data: TelemetryData, context: Record<string, any>,
 
 function getVersionNumber() {
   try {
-    return JSON.parse(readFileSync(require.resolve('storybook/package.json'), 'utf8'));
+    return JSON.parse(readFileSync(require.resolve('storybook/package.json'), 'utf8')).name;
   } catch (e) {
     return version;
   }

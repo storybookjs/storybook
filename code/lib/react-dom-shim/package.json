@@ -28,10 +28,7 @@
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
-    "./react-16": {
-      "types": "./dist/react-16.d.ts",
-      "default": "./dist/react-16.js"
-    }
+    "./react-16": "./dist/react-16.js"
   },
   "files": [
     "dist/**/*",
@@ -55,5 +52,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae16"
 }

@@ -387,7 +387,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const { packageManager: pkgMgr } = options;
 
   const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
-  let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
+  let packageManagerType = await JsPackageManagerFactory.getPackageManagerType();
 
   // Check if the current directory is empty.
   if (isEmptyDirProject) {
@@ -404,7 +404,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     invalidateProjectRootCache();
   }
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({
+  const packageManager = await JsPackageManagerFactory.getPackageManager({
     force: pkgMgr,
   });
 

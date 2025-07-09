@@ -53,7 +53,7 @@ async function run() {
           args,
         } as const);
 
-  const packageManager = JsPackageManagerFactory.getPackageManager();
+  const packageManager = await JsPackageManagerFactory.getPackageManager();
 
   let command;
   try {

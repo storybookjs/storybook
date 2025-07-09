@@ -47,14 +47,6 @@ vi.mock('vitest/node', async (importOriginal) => ({
   createVitest: vi.fn(() => Promise.resolve(vitest)),
 }));
 
-// vi.mock('../../../../core/src/shared/utils/module', () => ({
-//   importMetaResolve: vi
-//     .fn()
-//     .mockImplementation(
-//       (a) => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')
-//     ),
-// }));
-
 const createVitest = vi.mocked(actualCreateVitest);
 
 const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;

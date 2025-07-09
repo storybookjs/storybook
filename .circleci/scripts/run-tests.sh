@@ -8,9 +8,23 @@ set -e
 # Change to the code directory where tests are located
 cd code
 
+# Ensure the vitest-reports directory exists
+mkdir -p .vitest-reports
+
 # Get the list of test files for this shard
 echo "Splitting tests across containers..."
+echo "Current directory: $(pwd)"
+echo "Looking for test files with pattern: **/*.{test,spec}.?(c|m)[jt]s?(x)"
+
+# First, let's see what test files exist
+echo "Available test files:"
+find . -name "*.test.*" -o -name "*.spec.*" | head -10
+
+# Get the list of test files for this shard
 circleci tests glob "**/*.{test,spec}.?(c|m)[jt]s?(x)" | circleci tests split --split-by=timings --timings-type=filename > /tmp/test-files.txt
+
+echo "Test files assigned to this shard:"
+cat /tmp/test-files.txt
 
 # Check if we have test files for this shard
 if [ -s /tmp/test-files.txt ]; then
@@ -25,5 +39,9 @@ if [ -s /tmp/test-files.txt ]; then
     yarn test --reporter=blob --reporter=default $TEST_PATTERNS
 else
     echo "No test files found for this shard"
+    echo "This might be normal for the first run or if there are no tests in this shard"
+    # Create an empty report to ensure the workspace step doesn't fail
+    echo "Creating empty test report for workspace persistence"
+    echo '<?xml version="1.0" encoding="UTF-8"?><testsuites></testsuites>' > .vitest-reports/empty.xml
     exit 0
 fi

@@ -5,6 +5,7 @@ import * as os from 'node:os';
 import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
+import { version } from '../../package.json';
 import { getAnonymousProjectId } from './anonymous-id';
 import { set as saveToCache } from './event-cache';
 import { fetch } from './fetch';
@@ -49,8 +50,7 @@ const globalContext = {
   isTTY: process.stdout.isTTY,
   platform: getOperatingSystem(),
   nodeVersion: process.versions.node,
-  storybookVersion: JSON.parse(readFileSync(require.resolve('storybook/package.json'), 'utf8'))
-    .version,
+  storybookVersion: getVersionNumber().version,
 } as Record<string, any>;
 
 const prepareRequest = async (data: TelemetryData, context: Record<string, any>, options: any) => {
@@ -72,6 +72,14 @@ const prepareRequest = async (data: TelemetryData, context: Record<string, any>,
         : 1000),
   });
 };
+
+function getVersionNumber() {
+  try {
+    return JSON.parse(readFileSync(require.resolve('storybook/package.json'), 'utf8'));
+  } catch (e) {
+    return version;
+  }
+}
 
 export async function sendTelemetry(
   data: TelemetryData,

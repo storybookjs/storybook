@@ -37,9 +37,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: dirname(
-        require.resolve(join('@storybook/builder-webpack5', 'package.json'))
-      ) as '@storybook/builder-webpack5',
+      name: require.resolve('@storybook/builder-webpack5'),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },

@@ -1,5 +1,3 @@
-import { dirname, join } from 'node:path';
-
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
@@ -9,11 +7,8 @@ import { vueDocgen } from './plugins/vue-docgen';
 import { templateCompilation } from './plugins/vue-template';
 import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types';
 
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
-
 export const core: PresetProperty<'core'> = {
-  builder: getAbsolutePath('@storybook/builder-vite'),
+  builder: require.resolve('@storybook/builder-vite'),
   renderer: require.resolve('@storybook/vue3/preset'),
 };
 

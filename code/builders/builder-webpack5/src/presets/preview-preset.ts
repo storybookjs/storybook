@@ -12,7 +12,7 @@ export const entries = async (_: unknown, options: any) => {
     // parameter would also suppress warnings.
     result = result.concat(
       `${fileURLToPath(
-        import.meta.resolve('webpack-hot-middleware/client')
+        import.meta.resolve('webpack-hot-middleware/client.js')
       )}?reload=true&quiet=false&overlay=${JSON.stringify({
         errors: true,
         warnings: false,

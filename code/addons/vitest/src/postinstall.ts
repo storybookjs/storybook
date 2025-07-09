@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
@@ -9,12 +10,12 @@ import {
   formatFileContent,
   getInterpretedFile,
   getProjectRoot,
-  loadAllPresets,
   loadMainConfig,
   scanAndTransformFiles,
   transformImportFiles,
   validateFrameworkName,
 } from 'storybook/internal/common';
+import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -559,14 +560,9 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   validateFrameworkName(frameworkName);
   const frameworkPackageName = extractProperFrameworkName(frameworkName);
 
-  const presets = await loadAllPresets({
-    corePresets: [join(frameworkName, 'preset')],
-    overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
-    ],
-    packageJson,
+  const { presets } = await experimental_loadStorybook({
     configDir,
-    isCritical: true,
+    packageJson,
   });
 
   const core = await presets.apply('core', {});
@@ -578,7 +574,11 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   }
 
   const builderPackageJson = await fs.readFile(
-    require.resolve(join(typeof builder === 'string' ? builder : builder.name, 'package.json')),
+    fileURLToPath(
+      import.meta.resolve(
+        join(typeof builder === 'string' ? builder : builder.name, 'package.json')
+      )
+    ),
     'utf8'
   );
   const builderPackageName = JSON.parse(builderPackageJson).name;
@@ -586,7 +586,7 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   let rendererPackageName: string | undefined;
   if (renderer) {
     const rendererPackageJson = await fs.readFile(
-      require.resolve(join(renderer, 'package.json')),
+      fileURLToPath(import.meta.resolve(join(renderer, 'package.json'))),
       'utf8'
     );
     rendererPackageName = JSON.parse(rendererPackageJson).name;

@@ -15,8 +15,29 @@ export type BuildEntriesByPlatform = Partial<
 export type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
 
 export type BuildEntries = {
+  /**
+   * The map of entry points by platform
+   *
+   * Each platform is optional
+   */
   entries: BuildEntriesByPlatform;
+  /**
+   * The map of extra outputs to be added to the package.json's exports
+   *
+   * This can be useful to expose non-compiled/non-js files such as Svelte components,
+   */
+  extraOutputs?: Record<string, any>;
+  /**
+   * The function to run before the build
+   *
+   * @note this runs only **once** when watch-mode is enabled
+   */
   prebuild?: (cwd: string) => Promise<void>;
+  /**
+   * The function to run after each successful build (works with watch-mode)
+   *
+   * @note this runs **after** each successful build, even in watch-mode
+   */
   postbuild?: (cwd: string) => Promise<void>;
 };
 
@@ -37,6 +58,7 @@ export const getExternal = async (cwd: string) => {
     'react',
     'react-dom',
     'react-dom/client',
+    '@storybook/icons',
     packageJson.name,
     ...Object.keys(packageJson.dependencies || {}),
     ...Object.keys(packageJson.peerDependencies || {}),

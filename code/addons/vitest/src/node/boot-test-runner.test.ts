@@ -1,3 +1,5 @@
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
@@ -40,6 +42,14 @@ vi.mock('execa', () => ({
 
 vi.mock('../logger', () => ({
   log: vi.fn(),
+}));
+
+vi.mock('../../../../core/src/shared/utils/module', () => ({
+  importMetaResolve: vi
+    .fn()
+    .mockImplementation(
+      (a) => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')
+    ),
 }));
 
 let statusStoreSubscriber = vi.hoisted(() => undefined);
@@ -89,7 +99,7 @@ describe('bootTestRunner', () => {
 
   it('should execute vitest.js', async () => {
     runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
-    expect(execaNode).toHaveBeenCalledWith(expect.stringMatching(/vitest\.mjs$/), {
+    expect(execaNode).toHaveBeenCalledWith(expect.stringMatching(/vitest\.js$/), {
       env: {
         NODE_ENV: 'test',
         TEST: 'true',

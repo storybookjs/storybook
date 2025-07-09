@@ -8,8 +8,6 @@ import type { EmberRenderer, OptionsArgs } from './types';
 
 const { document } = global;
 
-declare let Ember: any;
-
 const rootEl = document.getElementById('storybook-root');
 
 function loadEmberApp() {
@@ -44,15 +42,15 @@ function render(options: OptionsArgs, el: EmberRenderer['canvasElement']) {
       return appInstancePrivate.boot().then(() => appInstancePrivate);
     })
     .then((instance: any) => {
-      instance.register(
-        'component:story-mode',
-        Ember.Component.extend({
-          layout: template || options,
-          ...context,
-        })
-      );
+      const { class: componentBaseClass } = instance.factoryFor('component:storybook/story');
+      const componentClass = componentBaseClass.extend({
+        layout: template || options,
+        ...context,
+      });
 
-      const component = instance.lookup('component:story-mode');
+      instance.register('component:storybook/story-mode', componentClass);
+
+      const component = instance.lookup('component:storybook/story-mode');
 
       if (element) {
         component.appendTo(element);

@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
@@ -21,11 +23,17 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   return result
     .concat(input)
     .concat([
-      import.meta.resolve('@storybook/react/entry-preview'),
-      import.meta.resolve('@storybook/react/entry-preview-argtypes'),
+      fileURLToPath(import.meta.resolve('@storybook/react/entry-preview')),
+      fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-argtypes')),
     ])
-    .concat(docsEnabled ? [import.meta.resolve('@storybook/react/entry-preview-docs')] : [])
-    .concat(experimentalRSC ? [import.meta.resolve('@storybook/react/entry-preview-rsc')] : []);
+    .concat(
+      docsEnabled ? [fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-docs'))] : []
+    )
+    .concat(
+      experimentalRSC
+        ? [fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-rsc'))]
+        : []
+    );
 };
 
 /**

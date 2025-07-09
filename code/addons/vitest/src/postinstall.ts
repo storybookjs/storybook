@@ -563,15 +563,6 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const { presets } = await experimental_loadStorybook({
     configDir,
     packageJson,
-    // corePresets: [join(frameworkName, 'preset')],
-    // overridePresets: [
-    //   fileURLToPath(
-    //     import.meta.resolve('storybook/internal/core-server/presets/common-override-preset')
-    //   ),
-    // ],
-    // packageJson,
-    // configDir,
-    // isCritical: true,
   });
 
   const core = await presets.apply('core', {});
@@ -582,23 +573,29 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     throw new Error('Could not detect your Storybook builder.');
   }
 
-  const builderPackageJson = await fs.readFile(
-    fileURLToPath(
-      import.meta.resolve(
-        join(typeof builder === 'string' ? builder : builder.name, 'package.json')
-      )
+  const builderPackageJsonPath = await findUp('package.json', {
+    cwd: fileURLToPath(
+      import.meta.resolve(join(typeof builder === 'string' ? builder : builder.name))
     ),
-    'utf8'
-  );
+  });
+
+  if (!builderPackageJsonPath) {
+    throw new Error('Could not detect your Storybook builder.');
+  }
+
+  const builderPackageJson = await fs.readFile(builderPackageJsonPath, 'utf8');
   const builderPackageName = JSON.parse(builderPackageJson).name;
 
   let rendererPackageName: string | undefined;
   if (renderer) {
-    const rendererPackageJson = await fs.readFile(
-      fileURLToPath(import.meta.resolve(join(renderer, 'package.json'))),
-      'utf8'
-    );
-    rendererPackageName = JSON.parse(rendererPackageJson).name;
+    const renderPackageJsonPath = await findUp('package.json', {
+      cwd: fileURLToPath(import.meta.resolve(renderer)),
+    });
+
+    if (renderPackageJsonPath) {
+      const rendererPackageJson = await fs.readFile(renderPackageJsonPath, 'utf8');
+      rendererPackageName = JSON.parse(rendererPackageJson).name;
+    }
   }
 
   return {

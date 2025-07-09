@@ -70,13 +70,22 @@ export const viteInjectMockerRuntime = (options: {
     async load(id) {
       if (exactRegex(id).test(entryPath)) {
         return readFileSync(
-          require.resolve('../../../templates/mocker-runtime-build-code.template.js'),
+          require.resolve(
+            join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime-build-code.template.js')
+          ),
           'utf-8'
         );
       }
       if (exactRegex(id).test(VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR)) {
         return await readFile(
-          require.resolve('./vitePlugins/vite-inject-mocker/module-mocker-build-interceptor.js'),
+          require.resolve(
+            join(
+              __dirname,
+              'vitePlugins',
+              'vite-inject-mocker',
+              'module-mocker-build-interceptor.js'
+            )
+          ),
           'utf-8'
         );
       }

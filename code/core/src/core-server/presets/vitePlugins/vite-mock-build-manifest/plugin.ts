@@ -44,7 +44,6 @@ export function viteMockPlugin(options: MockBuildManifestPluginOptions): Plugin[
 
       buildStart() {
         parse = this.parse.bind(this);
-        this.addWatchFile(options.previewConfigPath);
         mockCalls = extractMockCalls(options, parse, viteConfig);
       },
 
@@ -86,39 +85,6 @@ export function viteMockPlugin(options: MockBuildManifestPluginOptions): Plugin[
         server.watcher.on('add', invalidateAffectedFiles);
         server.watcher.on('unlink', invalidateAffectedFiles);
       },
-
-      // handleHotUpdate({ file, server }) {
-      //   if (file === options.previewConfigPath) {
-      //     // Store the old mocks before updating
-      //     const oldMockCalls = mockCalls;
-      //     // Re-extract mocks to get the latest list
-      //     mockCalls = extractMockCalls(options, parse, viteConfig);
-
-      //     // Invalidate the preview file
-      //     const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);
-      //     if (previewMod) {
-      //       server.moduleGraph.invalidateModule(previewMod);
-      //     }
-
-      //     // Invalidate all current mocks (including optimized/node_modules variants)
-      //     for (const call of mockCalls) {
-      //       invalidateAllRelatedModules(server, call.absolutePath, call.path);
-      //     }
-
-      //     // Invalidate all removed mocks (present in old, missing in new)
-      //     const newAbsPaths = new Set(mockCalls.map((c) => c.absolutePath));
-      //     for (const oldCall of oldMockCalls) {
-      //       if (!newAbsPaths.has(oldCall.absolutePath)) {
-      //         invalidateAllRelatedModules(server, oldCall.absolutePath, oldCall.path);
-      //       }
-      //     }
-
-      //     // Force a full browser reload so all affected files are refetched
-      //     server.ws.send({ type: 'full-reload' });
-
-      //     return [];
-      //   }
-      // },
 
       async load(id) {
         for (const call of mockCalls) {

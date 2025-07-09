@@ -91,7 +91,7 @@ export class PostMessageTransport implements ChannelTransport {
 
     const stringifyOptions = {
       ...defaultEventOptions,
-      ...(global.CHANNEL_OPTIONS || {}),
+      ...((global as any).CHANNEL_OPTIONS || {}),
       ...eventOptions,
     };
 
@@ -195,7 +195,9 @@ export class PostMessageTransport implements ChannelTransport {
     try {
       const { data } = rawEvent;
       const { key, event, refId } =
-        typeof data === 'string' && isJSON(data) ? parse(data, global.CHANNEL_OPTIONS || {}) : data;
+        typeof data === 'string' && isJSON(data)
+          ? parse(data, (global as any).CHANNEL_OPTIONS || {})
+          : data;
 
       if (key === KEY) {
         const pageString =

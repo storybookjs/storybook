@@ -96,8 +96,9 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
   };
 });
 
-vi.mock('./core/src/shared/utils/module.ts', async () => {
+vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
   return {
+    ...(await importOriginal()),
     resolvePackageDir: vi.fn().mockReturnValue('/mocked/package/dir'),
     importModule: vi.fn().mockResolvedValue({
       mocked: true,

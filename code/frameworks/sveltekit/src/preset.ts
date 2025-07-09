@@ -13,7 +13,7 @@ export const core: PresetProperty<'core'> = {
 };
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => [
   ...entry,
-  require.resolve('@storybook/sveltekit/preview'),
+  require.resolve('@storybook/sveltekit/dist/preview.mjs'),
 ];
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {

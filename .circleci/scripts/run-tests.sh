@@ -4,7 +4,7 @@ set -e
 cd code
 
 echo "Splitting tests across containers..."
-circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx}" | circleci tests split --split-by=timings --timings-type=filename > /tmp/test-files.txt
+circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx}" | circleci tests split --split-by=timings --timings-type=filename > /tmp/test-files.txt
 
 # Check if we have test files for this shard
 if [ -s /tmp/test-files.txt ]; then

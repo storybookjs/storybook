@@ -19,8 +19,8 @@ export async function generatePackageJsonFile(cwd: string, data: BuildEntries) {
 
   for (const entry of Object.values(entries).flat()) {
     for (const exportEntry of entry.exportEntries ?? []) {
-      const dtsPath = entry.entryPoint?.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
-      const jsPath = entry.entryPoint?.replace('src', 'dist').replace(/\.tsx?/, '.js');
+      const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+      const jsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.js');
 
       if (entry.dts === undefined) {
         pkgJson.exports[exportEntry] = {

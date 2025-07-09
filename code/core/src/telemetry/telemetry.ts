@@ -50,7 +50,7 @@ const globalContext = {
   isTTY: process.stdout.isTTY,
   platform: getOperatingSystem(),
   nodeVersion: process.versions.node,
-  storybookVersion: getVersionNumber().version,
+  storybookVersion: getVersionNumber(),
 } as Record<string, any>;
 
 const prepareRequest = async (data: TelemetryData, context: Record<string, any>, options: any) => {
@@ -75,7 +75,7 @@ const prepareRequest = async (data: TelemetryData, context: Record<string, any>,
 
 function getVersionNumber() {
   try {
-    return JSON.parse(readFileSync(require.resolve('storybook/package.json'), 'utf8')).name;
+    return JSON.parse(readFileSync(require.resolve('storybook/package.json'), 'utf8')).version;
   } catch (e) {
     return version;
   }

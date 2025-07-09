@@ -27,7 +27,7 @@ import { dedent } from 'ts-dedent';
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
 import { buildOrThrow } from './utils/build-or-throw';
-import { getBuilders } from './utils/get-builders';
+import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { outputStartupInformation } from './utils/output-startup-information';
 import { outputStats } from './utils/output-stats';
 import { getServerChannelUrl, getServerPort } from './utils/server-address';
@@ -153,13 +153,13 @@ export async function buildDevStandalone(
     }
   }
 
-  const builderName = typeof builder === 'string' ? builder : builder.name;
-  const [previewBuilder, managerBuilder] = await getBuilders({
-    presets,
-    configDir: options.configDir,
-  });
+  const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
+  const [previewBuilder, managerBuilder] = await Promise.all([
+    getPreviewBuilder(resolvedPreviewBuilder),
+    getManagerBuilder(),
+  ]);
 
-  if (builderName.includes('builder-vite')) {
+  if (resolvedPreviewBuilder.includes('builder-vite')) {
     const deprecationMessage =
       dedent(`Using CommonJS in your main configuration file is deprecated with Vite.
               - Refer to the migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#commonjs-with-vite-is-deprecated`);

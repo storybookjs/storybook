@@ -359,18 +359,7 @@ jobs:
           at: .
       - run:
           name: Merge test results
-          command: |
-            cd code
-            # Ensure the vitest-reports directory exists
-            mkdir -p .vitest-reports
-
-            # Merge Vitest reports if they exist and contain actual test results
-            if [ -d ".vitest-reports" ] && [ "$(ls -A .vitest-reports 2>/dev/null)" ]; then
-              yarn vitest run --merge-reports --reporter=junit --outputFile=junit.xml
-            else
-              # Create an empty junit.xml if no reports exist
-              echo '<?xml version="1.0" encoding="UTF-8"?><testsuites></testsuites>' > junit.xml
-            fi
+          command: cd code && yarn vitest run --merge-reports --reporter=junit --outputFile=junit.xml
       - store_test_results:
           path: code/junit.xml
   coverage:

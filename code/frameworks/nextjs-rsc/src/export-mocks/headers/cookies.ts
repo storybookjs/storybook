@@ -27,7 +27,7 @@ declare global {
 
 export const cookies = fn(async () => {
   if (!requestCookiesMock) {
-    globalThis.requestCookiesMock = new RequestCookiesMock(headers());
+    globalThis.requestCookiesMock = new RequestCookiesMock(await headers());
   }
   return requestCookiesMock;
 }).mockName('next/headers::cookies()');
@@ -38,5 +38,5 @@ const originalRestore = cookies.mockRestore.bind(null);
 cookies.mockRestore = () => {
   originalRestore();
   headers.mockRestore();
-  globalThis.requestCookiesMock = new RequestCookiesMock(headers());
+  globalThis.requestCookiesMock = new RequestCookiesMock(globalThis.headersAdapterMock);
 };

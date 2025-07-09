@@ -89,8 +89,14 @@
     },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
-      "import": "./dist/export-mocks/navigation/index.mjs",
-      "require": "./dist/export-mocks/navigation/index.js"
+      "import": {
+        "react-server": "./dist/export-mocks/navigation/react-server.mjs",
+        "default": "./dist/export-mocks/navigation/index.mjs"
+      },
+      "require": {
+        "react-server": "./dist/export-mocks/navigation/react-server.js",
+        "default": "./dist/export-mocks/navigation/index.js"
+      }
     },
     "./router.mock": {
       "types": "./dist/export-mocks/router/index.d.ts",
@@ -194,7 +200,6 @@
     "@types/node": "^22.0.0",
     "@types/react-refresh": "^0",
     "next": "^15.3.5",
-    "react-server-dom-webpack": "^19.1.0",
     "typescript": "^5.8.3",
     "webpack": "^5.65.0"
   },
@@ -235,6 +240,7 @@
       "./src/export-mocks/headers/index.ts",
       "./src/export-mocks/router/index.ts",
       "./src/export-mocks/navigation/index.ts",
+      "./src/export-mocks/navigation/react-server.ts",
       "./src/compatibility/draft-mode.compat.ts",
       "./src/next-image-loader-stub.ts",
       "./src/images/decorator.tsx",

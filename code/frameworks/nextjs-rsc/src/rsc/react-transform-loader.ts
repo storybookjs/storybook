@@ -1,9 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-// @ts-expect-error no dts file
-import { getSource, transformSource } from 'react-server-dom-webpack/node-loader';
 import type { LoaderContext } from 'webpack';
+
+// @ts-expect-error js file
+import { getSource, transformSource } from './react-server-dom-webpack-node-loader';
 
 export default async function reactTransformLoader(
   this: LoaderContext<unknown>,

@@ -7,8 +7,6 @@ import { getCompatibilityAliases } from '../compatibility/compatibility-map';
 const mapping = {
   'next/headers': '/dist/export-mocks/headers/index',
   '@storybook/experimental-nextjs-rsc/headers.mock': '/dist/export-mocks/headers/index',
-  'next/navigation': '/dist/export-mocks/navigation/index',
-  '@storybook/experimental-nextjs-rsc/navigation.mock': '/dist/export-mocks/navigation/index',
   'next/router': '/dist/export-mocks/router/index',
   '@storybook/experimental-nextjs-rsc/router.mock': '/dist/export-mocks/router/index',
   'next/cache': '/dist/export-mocks/cache/index',

@@ -237,6 +237,9 @@ function rscBundle(config: Configuration) {
             'next/dist/compiled/react-server-dom-webpack/client.browser',
           'react-server-dom-webpack/client.edge$':
             'next/dist/compiled/react-server-dom-webpack/client.browser',
+          'next/navigation$': `${dirname(
+            require.resolve('@storybook/experimental-nextjs-rsc/package.json')
+          )}/dist/export-mocks/navigation/index`,
         },
       },
     },
@@ -267,6 +270,9 @@ function rscBundle(config: Configuration) {
           'react-server-dom-webpack/server.browser$':
             'next/dist/compiled/react-server-dom-webpack/server.browser',
           'next/dist/compiled/react$': 'next/dist/compiled/react/react.react-server',
+          'next/navigation$': `${dirname(
+            require.resolve('@storybook/experimental-nextjs-rsc/package.json')
+          )}/dist/export-mocks/navigation/react-server`,
         },
       },
     }

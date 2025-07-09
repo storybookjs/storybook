@@ -334,9 +334,9 @@ jobs:
           command: |
             cd code
             TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx}")
-            echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=junit-${CIRCLE_NODE_INDEX}.xml" --verbose
+            echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
       - store_test_results:
-          path: code/junit-*.xml
+          path: test-results
       # TODO: bring coverage back later. This has caused flakiness in the tests because
       # Somehow Vitest reports coverage while some tests are still running,
       # then it tries to report coverage again and as result it crashes like this:

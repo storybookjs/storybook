@@ -1,11 +1,11 @@
 import React from 'react';
 
 // eslint-disable-next-line depend/ban-dependencies
-import lodash from 'lodash';
+import lodash from 'lodash-es';
 // eslint-disable-next-line depend/ban-dependencies
-import add from 'lodash/add';
+import add from 'lodash-es/add';
 // eslint-disable-next-line depend/ban-dependencies
-import sum from 'lodash/sum';
+import sum from 'lodash-es/sum';
 import { mocked } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview';

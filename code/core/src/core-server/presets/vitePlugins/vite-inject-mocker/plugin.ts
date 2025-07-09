@@ -1,4 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { exactRegex } from '@rolldown/pluginutils';
 import { dedent } from 'ts-dedent';
@@ -7,14 +9,11 @@ import type { ResolvedConfig, ViteDevServer } from 'vite';
 import {
   VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR,
   __STORYBOOK_GLOBAL_THIS_ACCESSOR__,
-} from './utils';
-import { runtimeCode } from './utils';
+} from './constants';
 
 const entryPath = '/vite-inject-mocker-entry.js';
-const setupPath = '/setup.js';
 
 const entryCode = dedent`
-    <script type="module" src="${setupPath}"></script>
     <script type="module" src="${entryPath}"></script>
   `;
 
@@ -31,13 +30,10 @@ export const viteInjectMockerRuntime = (options: {
       if (viteConfig.command === 'build') {
         this.emitFile({
           type: 'chunk',
-          id: require.resolve('../../../templates/mocker-runtime-build-code.template.js'),
+          id: require.resolve(
+            join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime-build-code.template.js')
+          ),
           fileName: entryPath.slice(1),
-        });
-        this.emitFile({
-          type: 'chunk',
-          id: require.resolve('../../../templates/setup.template.js'),
-          fileName: setupPath.slice(1),
         });
       }
     },
@@ -59,16 +55,11 @@ export const viteInjectMockerRuntime = (options: {
     },
     resolveId: {
       filter: {
-        id: [
-          exactRegex(entryPath),
-          exactRegex(setupPath),
-          exactRegex(VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR),
-        ],
+        id: [exactRegex(entryPath), exactRegex(VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR)],
       },
       handler(id) {
         if (
           exactRegex(id).test(entryPath) ||
-          exactRegex(id).test(setupPath) ||
           exactRegex(id).test(VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR)
         ) {
           return id;
@@ -78,16 +69,11 @@ export const viteInjectMockerRuntime = (options: {
     },
     async load(id) {
       if (exactRegex(id).test(entryPath)) {
-        return runtimeCode(viteConfig.command);
+        return readFileSync(
+          require.resolve('../../../templates/mocker-runtime-build-code.template.js'),
+          'utf-8'
+        );
       }
-
-      if (exactRegex(id).test(setupPath)) {
-        return dedent`
-          import { setup } from 'storybook/internal/preview/runtime';
-          setup();
-        `;
-      }
-
       if (exactRegex(id).test(VIRTUAL_MODULE_MOCKER_BUILD_INTERCEPTOR)) {
         return await readFile(
           require.resolve('./vitePlugins/vite-inject-mocker/module-mocker-build-interceptor.js'),

@@ -5,11 +5,11 @@ import type { Channel } from 'storybook/internal/channels';
 import { global } from '@storybook/global';
 
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
-// TODO add empty preview
-// import * as designs from '@storybook/addon-designs/preview';
 import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
+// TODO add empty preview
+import * as designs from '@storybook/addon-designs/preview';
 import addonDocs from '@storybook/addon-docs';
 import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
@@ -37,9 +37,9 @@ import { isChromatic } from './isChromatic';
 sb.mock('../core/src/test/stories/ModuleMocking.utils');
 sb.mock('../core/src/test/stories/ModuleSpyMocking.utils', { spy: true });
 sb.mock('../core/src/test/stories/ModuleAutoMocking.utils');
-sb.mock('lodash');
-sb.mock('lodash/add');
-sb.mock('lodash/sum');
+sb.mock('lodash-es');
+sb.mock('lodash-es/add');
+sb.mock('lodash-es/sum');
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';

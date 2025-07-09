@@ -44,8 +44,14 @@ export const { expect } = instrument(
   }
 );
 
-export const sb = (globalThis as any).__STORYBOOK_MOCKER__ as ReturnType<
-  typeof registerModuleMocker
->;
+type ReturnTypeOfModuleMocker = ReturnType<typeof registerModuleMocker>;
+
+export const sb: {
+  mock: ReturnTypeOfModuleMocker['mock'];
+} = {
+  mock: () => {
+    // noop
+  },
+};
 
 export * from './testing-library';

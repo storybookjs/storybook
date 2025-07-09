@@ -36,3 +36,7 @@ export function setup() {
   global.addEventListener('unhandledrejection', unhandledRejectionListener);
   maybeSetupPreviewNavigator();
 }
+
+// TODO: In the future, remove this call to make the module side-effect free
+// when the webpack builder also imports this as a regular file
+setup();

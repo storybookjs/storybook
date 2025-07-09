@@ -24,8 +24,9 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
-import { mockerPlugin } from '@vitest/mocker/node';
+import { dynamicImportPlugin, hoistMocksPlugin } from '@vitest/mocker/node';
 import { dedent } from 'ts-dedent';
+import type { Plugin } from 'vite';
 
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
@@ -34,7 +35,7 @@ import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
 import { viteInjectMockerRuntime } from './vitePlugins/vite-inject-mocker/plugin';
-import { viteMockBuildManifestPlugin } from './vitePlugins/vite-mock-build-manifest/plugin';
+import { viteMockPlugin } from './vitePlugins/vite-mock-build-manifest/plugin';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -334,21 +335,7 @@ export const viteFinal = async (
     plugins: [
       ...(existing.plugins ?? []),
       ...(previewConfigPath
-        ? [
-            viteInjectMockerRuntime({ previewConfigPath }),
-            mockerPlugin({
-              filter: (id) =>
-                !id.includes('@vitest/mocker') &&
-                !id.includes('vite-inject-mocker-entry') &&
-                !id.includes('virtual:module-mocker-build-interceptor') &&
-                !id.includes('virtual:/@storybook/builder-vite/vite-app.js'),
-              hoistMocks: {
-                hoistedModule: 'storybook/test',
-                utilsObjectNames: ['sb'],
-              },
-            }),
-            viteMockBuildManifestPlugin({ previewConfigPath }),
-          ]
+        ? [viteInjectMockerRuntime({ previewConfigPath }), viteMockPlugin({ previewConfigPath })]
         : []),
     ],
   };

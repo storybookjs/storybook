@@ -1,3 +1,16 @@
+## 9.0.16
+
+- Automigration: Fail with non-zero exit code on migration failure - [#31923](https://github.com/storybookjs/storybook/pull/31923), thanks @mrginglymus!
+- CLI: Fix `sb` CLI by explicitly exporting `bin/index.cjs` from `storybook` package - [#31922](https://github.com/storybookjs/storybook/pull/31922), thanks @ghengeveld!
+- Core: Fix issue where collapsed test controls can be tabbed into - [#31921](https://github.com/storybookjs/storybook/pull/31921), thanks @zenocross!
+- Core: Various fixes - [#31870](https://github.com/storybookjs/storybook/pull/31870), thanks @ghengeveld!
+- Docs: Prevent JSON tree control from swallowing keyboard events when not in focus - [#31841](https://github.com/storybookjs/storybook/pull/31841), thanks @takashi-kasajima!
+- Ember: Allow ember v5 as peer deps - [#25893](https://github.com/storybookjs/storybook/pull/25893), thanks @gossi!
+- Next.js: upgrade sass-loader to 16.0.5 - [#31855](https://github.com/storybookjs/storybook/pull/31855), thanks @terrymun!
+- NextJs-Vite: Enable next/font loading when using next-vite - [#31906](https://github.com/storybookjs/storybook/pull/31906), thanks @k35o!
+- Portable stories: Fix playwright CT to allow functions to be passed as props - [#31335](https://github.com/storybookjs/storybook/pull/31335), thanks @adamscybot!
+- UI: Set color scheme to sync scrollbar color with user-selected theme - [#28666](https://github.com/storybookjs/storybook/pull/28666), thanks @elisezhg!
+
 ## 9.0.15
 
 - CLI: Do not fail incompatible package check in doctor if only core packages used - [#31886](https://github.com/storybookjs/storybook/pull/31886), thanks @mrginglymus!

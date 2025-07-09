@@ -27,6 +27,7 @@ export const testRunnerBuild: Task & { port: number } = {
         env: {
           JEST_JUNIT_OUTPUT_FILE: junitFilename,
           TEST_ROOT: sandboxDir,
+          NODE_OPTIONS: '--experimental-vm-modules',
         },
       },
       { dryRun, debug }

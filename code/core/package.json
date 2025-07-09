@@ -538,7 +538,6 @@
     "lodash": "^4.17.21",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
-    "msw": "^2.0.0",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^8.4.0",
@@ -583,7 +582,6 @@
     "zod": "^3.24.1"
   },
   "peerDependencies": {
-    "msw": "^2.0.0",
     "prettier": "^2 || ^3"
   },
   "peerDependenciesMeta": {

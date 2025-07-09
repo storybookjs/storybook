@@ -52,7 +52,7 @@ export const Container = styled.div<{ width?: number; height?: number }>(
     height: height ?? 'auto',
     maxWidth: 'calc(100% - 40px)',
     maxHeight: '85vh',
-    overflow: 'hidden',
+    overflow: 'auto',
     zIndex: 11,
     animation: `${zoomIn} 200ms`,
 

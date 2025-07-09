@@ -1,20 +1,18 @@
 import { readFileSync } from 'node:fs';
-import { isAbsolute, join } from 'node:path';
 
 import { automockModule } from '@vitest/mocker/node';
-import { findMockRedirect } from '@vitest/mocker/redirect';
-import { transformSync } from 'esbuild';
-import { walk } from 'estree-walker';
 import type { PluginContext } from 'rollup';
 import type { Plugin, ResolvedConfig } from 'vite';
 
 import { __STORYBOOK_GLOBAL_THIS_ACCESSOR__ } from '../vite-inject-mocker/constants';
-import { isModuleDirectory } from './utils';
+import { type MockCall, extractMockCalls, getCleanId, invalidateAllRelatedModules } from './utils';
 
 interface MockBuildManifestPluginOptions {
   /** The absolute path to the preview.tsx file where mocks are defined. */
   previewConfigPath: string;
 }
+
+let parse: PluginContext['parse'];
 
 /**
  * Vite plugin for Storybook module mocking manifest generation.
@@ -35,96 +33,6 @@ export function viteMockPlugin(options: MockBuildManifestPluginOptions): Plugin[
   let viteConfig: ResolvedConfig;
   let mockCalls: MockCall[] = [];
 
-  // --- Types ---
-  type MockCall = { path: string; absolutePath: string; redirectPath: string | null; spy: boolean };
-
-  // --- Helpers ---
-
-  /**
-   * Extracts all sb.mock() calls from the preview config file.
-   *
-   * @param this PluginContext
-   */
-  function extractMockCalls(this: PluginContext): MockCall[] {
-    const previewConfigCode = readFileSync(options.previewConfigPath, 'utf-8');
-    const { code: jsCode } = transformSync(previewConfigCode, { loader: 'tsx', format: 'esm' });
-    const ast = this.parse(jsCode);
-    const mocks: MockCall[] = [];
-
-    /** Helper to check if an ObjectExpression node has spy: true */
-    function hasSpyTrue(objectExpression: any): boolean {
-      if (!objectExpression || !objectExpression.properties) {
-        return false;
-      }
-      for (const prop of objectExpression.properties) {
-        if (
-          prop.type === 'Property' &&
-          ((prop.key.type === 'Identifier' && prop.key.name === 'spy') ||
-            (prop.key.type === 'Literal' && prop.key.value === 'spy')) &&
-          prop.value.type === 'Literal' &&
-          prop.value.value === true
-        ) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    walk(ast as any, {
-      enter(node) {
-        if (
-          node.type !== 'CallExpression' ||
-          node.callee.type !== 'MemberExpression' ||
-          node.callee.object.type !== 'Identifier' ||
-          node.callee.object.name !== 'sb' ||
-          node.callee.property.type !== 'Identifier' ||
-          node.callee.property.name !== 'mock'
-        ) {
-          return;
-        }
-
-        if (node.arguments.length === 0 || node.arguments[0].type !== 'Literal') {
-          return;
-        }
-        const spy =
-          node.arguments.length > 1 &&
-          node.arguments[1].type === 'ObjectExpression' &&
-          hasSpyTrue(node.arguments[1]);
-
-        const path = node.arguments[0].value as string;
-
-        const isExternal = (function () {
-          try {
-            return (
-              !isAbsolute(path) &&
-              isModuleDirectory(require.resolve(path, { paths: [viteConfig.root] }))
-            );
-          } catch (e) {
-            return false;
-          }
-        })();
-
-        const external = isExternal ? path : null;
-
-        const absolutePath = external
-          ? require.resolve(path, { paths: [viteConfig.root] })
-          : require.resolve(join(options.previewConfigPath, '..', path), {
-              paths: [viteConfig.root],
-            });
-
-        const redirectPath = findMockRedirect(viteConfig.root, absolutePath, external);
-
-        mocks.push({
-          path,
-          absolutePath,
-          redirectPath,
-          spy,
-        });
-      },
-    });
-    return mocks;
-  }
-
   // --- Plugin Definition ---
   return [
     {
@@ -135,8 +43,82 @@ export function viteMockPlugin(options: MockBuildManifestPluginOptions): Plugin[
       },
 
       buildStart() {
-        mockCalls = extractMockCalls.bind(this)();
+        parse = this.parse.bind(this);
+        this.addWatchFile(options.previewConfigPath);
+        mockCalls = extractMockCalls(options, parse, viteConfig);
       },
+
+      configureServer(server) {
+        async function invalidateAffectedFiles(file: string) {
+          if (file === options.previewConfigPath || file.includes('__mocks__')) {
+            // Store the old mocks before updating
+            const oldMockCalls = mockCalls;
+            // Re-extract mocks to get the latest list
+            mockCalls = extractMockCalls(options, parse, viteConfig);
+
+            // Invalidate the preview file
+            const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);
+            if (previewMod) {
+              server.moduleGraph.invalidateModule(previewMod);
+            }
+
+            // Invalidate all current mocks (including optimized/node_modules variants)
+            for (const call of mockCalls) {
+              invalidateAllRelatedModules(server, call.absolutePath, call.path);
+            }
+
+            // Invalidate all removed mocks (present in old, missing in new)
+            const newAbsPaths = new Set(mockCalls.map((c) => c.absolutePath));
+            for (const oldCall of oldMockCalls) {
+              if (!newAbsPaths.has(oldCall.absolutePath)) {
+                invalidateAllRelatedModules(server, oldCall.absolutePath, oldCall.path);
+              }
+            }
+
+            // Force a full browser reload so all affected files are refetched
+            server.ws.send({ type: 'full-reload' });
+
+            return [];
+          }
+        }
+
+        server.watcher.on('change', invalidateAffectedFiles);
+        server.watcher.on('add', invalidateAffectedFiles);
+        server.watcher.on('unlink', invalidateAffectedFiles);
+      },
+
+      // handleHotUpdate({ file, server }) {
+      //   if (file === options.previewConfigPath) {
+      //     // Store the old mocks before updating
+      //     const oldMockCalls = mockCalls;
+      //     // Re-extract mocks to get the latest list
+      //     mockCalls = extractMockCalls(options, parse, viteConfig);
+
+      //     // Invalidate the preview file
+      //     const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);
+      //     if (previewMod) {
+      //       server.moduleGraph.invalidateModule(previewMod);
+      //     }
+
+      //     // Invalidate all current mocks (including optimized/node_modules variants)
+      //     for (const call of mockCalls) {
+      //       invalidateAllRelatedModules(server, call.absolutePath, call.path);
+      //     }
+
+      //     // Invalidate all removed mocks (present in old, missing in new)
+      //     const newAbsPaths = new Set(mockCalls.map((c) => c.absolutePath));
+      //     for (const oldCall of oldMockCalls) {
+      //       if (!newAbsPaths.has(oldCall.absolutePath)) {
+      //         invalidateAllRelatedModules(server, oldCall.absolutePath, oldCall.path);
+      //       }
+      //     }
+
+      //     // Force a full browser reload so all affected files are refetched
+      //     server.ws.send({ type: 'full-reload' });
+
+      //     return [];
+      //   }
+      // },
 
       async load(id) {
         for (const call of mockCalls) {
@@ -166,10 +148,7 @@ export function viteMockPlugin(options: MockBuildManifestPluginOptions): Plugin[
 
             const isOptimizedDeps = id.includes('/sb-vite/deps/');
 
-            const cleanId = id
-              .replace(/^.*\/deps\//, '') // Remove everything up to and including /deps/
-              .replace(/\.js.*$/, '') // Remove .js and anything after (query params)
-              .replace(/_/g, '/'); // Replace underscores with slashes
+            const cleanId = getCleanId(id);
 
             if (
               viteConfig.command === 'serve' &&

@@ -1,5 +1,5 @@
 {
-  "name": "@storybook/nextjs",
+  "name": "@storybook/experimental-nextjs-rsc",
   "version": "9.1.0-alpha.6",
   "description": "Storybook for Next.js",
   "keywords": [
@@ -36,6 +36,26 @@
       "types": "./dist/preset.d.ts",
       "require": "./dist/preset.js"
     },
+    "./dist/client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.mjs",
+      "require": "./dist/client.js"
+    },
+    "./dist/react-client-entrypoint": {
+      "types": "./dist/react-client-entrypoint.d.ts",
+      "import": "./dist/react-client-entrypoint.mjs",
+      "require": "./dist/react-client-entrypoint.js"
+    },
+    "./dist/entrypoints/react-client": {
+      "types": "./dist/entrypoints/react-client.d.ts",
+      "import": "./dist/entrypoints/react-client.mjs",
+      "require": "./dist/entrypoints/react-client.js"
+    },
+    "./dist/rsc/react-transform-loader": {
+      "types": "./dist/rsc/react-transform-loader.d.ts",
+      "import": "./dist/rsc/react-transform-loader.mjs",
+      "require": "./dist/rsc/react-transform-loader.js"
+    },
     "./font/webpack/loader/storybook-nextjs-font-loader": {
       "types": "./dist/font/webpack/loader/storybook-nextjs-font-loader.d.ts",
       "import": "./dist/font/webpack/loader/storybook-nextjs-font-loader.mjs",
@@ -69,8 +89,14 @@
     },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
-      "import": "./dist/export-mocks/navigation/index.mjs",
-      "require": "./dist/export-mocks/navigation/index.js"
+      "import": {
+        "react-server": "./dist/export-mocks/navigation/react-server.mjs",
+        "default": "./dist/export-mocks/navigation/index.mjs"
+      },
+      "require": {
+        "react-server": "./dist/export-mocks/navigation/react-server.js",
+        "default": "./dist/export-mocks/navigation/index.js"
+      }
     },
     "./router.mock": {
       "types": "./dist/export-mocks/router/index.d.ts",
@@ -147,6 +173,7 @@
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
     "@types/semver": "^7.3.4",
+    "acorn-loose": "^8.5.2",
     "babel-loader": "^9.1.3",
     "css-loader": "^6.7.3",
     "image-size": "^2.0.2",
@@ -161,7 +188,8 @@
     "style-loader": "^3.3.1",
     "styled-jsx": "^5.1.6",
     "tsconfig-paths": "^4.0.0",
-    "tsconfig-paths-webpack-plugin": "^4.0.1"
+    "tsconfig-paths-webpack-plugin": "^4.0.1",
+    "webpack-sources": "^3.2.1"
   },
   "devDependencies": {
     "@babel/types": "^7.24.0",
@@ -171,7 +199,7 @@
     "@types/loader-utils": "^2.0.5",
     "@types/node": "^22.0.0",
     "@types/react-refresh": "^0",
-    "next": "^15.2.3",
+    "next": "^15.3.5",
     "typescript": "^5.8.3",
     "webpack": "^5.65.0"
   },
@@ -201,6 +229,10 @@
       "./src/image-context.ts",
       "./src/index.ts",
       "./src/preset.ts",
+      "./src/client.tsx",
+      "./src/rsc/react-transform-loader.ts",
+      "./src/react-client-entrypoint.ts",
+      "./src/entrypoints/react-client.ts",
       "./src/node/index.ts",
       "./src/preview.tsx",
       "./src/export-mocks/index.ts",
@@ -208,6 +240,7 @@
       "./src/export-mocks/headers/index.ts",
       "./src/export-mocks/router/index.ts",
       "./src/export-mocks/navigation/index.ts",
+      "./src/export-mocks/navigation/react-server.ts",
       "./src/compatibility/draft-mode.compat.ts",
       "./src/next-image-loader-stub.ts",
       "./src/images/decorator.tsx",
@@ -222,6 +255,7 @@
       "sb-original/next/future/image",
       "sb-original/next/legacy/image"
     ],
+    "post": "./scripts/add-client-directive.ts",
     "platform": "node"
   },
   "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"

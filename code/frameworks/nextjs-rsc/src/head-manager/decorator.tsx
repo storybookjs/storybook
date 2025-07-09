@@ -1,4 +1,5 @@
-import * as React from 'react';
+// @ts-expect-error no types
+import * as React from 'next/dist/compiled/react';
 
 import HeadManagerProvider from './head-manager-provider';
 

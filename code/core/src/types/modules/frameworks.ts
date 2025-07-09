@@ -4,6 +4,7 @@ export type SupportedFrameworks =
   | 'ember'
   | 'html-vite'
   | 'nextjs'
+  | 'nextjs-rsc'
   | 'nextjs-vite'
   | 'preact-vite'
   | 'react-native-web-vite'

@@ -2,7 +2,7 @@ import type { Configuration } from 'webpack';
 
 export function configureNextFont(baseConfig: Configuration, isSWC?: boolean) {
   const fontLoaderPath = require.resolve(
-    '@storybook/nextjs/font/webpack/loader/storybook-nextjs-font-loader'
+    '@storybook/experimental-nextjs-rsc/font/webpack/loader/storybook-nextjs-font-loader'
   );
 
   if (isSWC) {

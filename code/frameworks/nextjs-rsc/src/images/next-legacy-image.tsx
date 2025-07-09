@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import React from 'react';
-
 // @ts-ignore-error (this only errors during compilation for production)
-import { ImageContext as ImageContextValue } from '@storybook/nextjs/dist/image-context';
+import { ImageContext as ImageContextValue } from '@storybook/experimental-nextjs-rsc/dist/image-context';
 
+// @ts-expect-error no types
+import React from 'next/dist/compiled/react';
 import type * as _NextLegacyImage from 'next/legacy/image';
 // @ts-ignore import is aliased in webpack config
 import OriginalNextLegacyImage from 'sb-original/next/legacy/image';

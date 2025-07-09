@@ -1,24 +1,34 @@
+/* eslint-disable no-var,@typescript-eslint/ban-ts-comment */
+import type { JSX, Usable } from 'react';
+import type { Root } from 'react-dom/client';
+
 import type { Addon_DecoratorFunction, Addon_LoaderFunction } from 'storybook/internal/types';
+import type { DecoratorFunction, LegacyStoryFn, RenderContext } from 'storybook/internal/types';
+
+import { type Preview, type ReactRenderer } from '@storybook/react';
+
+// @ts-ignore (this only errors during compilation for production)
+import { ClientWrapper } from '@storybook/experimental-nextjs-rsc/dist/client';
+import {
+  createFromReadableStream,
+  createNavigation,
+  createRoot,
+  use, // @ts-ignore (this only errors during compilation for production)
+} from '@storybook/experimental-nextjs-rsc/dist/react-client-entrypoint';
 
 // We need this import to be a singleton, and because it's used in multiple entrypoints
 // both in ESM and CJS, importing it via the package name instead of having a local import
 // is the only way to achieve it actually being a singleton
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { createNavigation } from '@storybook/nextjs/navigation.mock';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { createRouter } from '@storybook/nextjs/router.mock';
-
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
+// @ts-expect-error no types
+import * as React from 'next/dist/compiled/react';
+// @ts-expect-error no types
+import { renderToReadableStream } from 'next/dist/compiled/react-server-dom-webpack/server.browser';
+import { defaultDecorateStory } from 'storybook/preview-api';
 
 import './config/preview';
-import { HeadManagerDecorator } from './head-manager/decorator';
-import { ImageDecorator } from './images/decorator';
-import { RouterDecorator } from './routing/decorator';
-import { StyledJsxDecorator } from './styledJsx/decorator';
 
 function addNextHeadCount() {
   const meta = document.createElement('meta');
@@ -27,14 +37,6 @@ function addNextHeadCount() {
   document.head.appendChild(meta);
 }
 
-function isAsyncClientComponentError(error: unknown) {
-  return (
-    typeof error === 'string' &&
-    (error.includes('Only Server Components can be async at the moment.') ||
-      error.includes('A component was suspended by an uncached promise.') ||
-      error.includes('async/await is not yet supported in Client Components'))
-  );
-}
 addNextHeadCount();
 
 // Copying Next patch of console.error:
@@ -42,39 +44,35 @@ addNextHeadCount();
 const origConsoleError = globalThis.console.error;
 globalThis.console.error = (...args: unknown[]) => {
   const error = args[0];
-  if (isNextRouterError(error) || isAsyncClientComponentError(error)) {
+  if (isNextRouterError(error)) {
     return;
   }
   origConsoleError.apply(globalThis.console, args);
 };
 
 globalThis.addEventListener('error', (ev: WindowEventMap['error']): void => {
-  if (isNextRouterError(ev.error) || isAsyncClientComponentError(ev.error)) {
+  if (isNextRouterError(ev.error)) {
     ev.preventDefault();
     return;
   }
 });
 
 export const decorators: Addon_DecoratorFunction<any>[] = [
-  StyledJsxDecorator,
-  ImageDecorator,
-  RouterDecorator,
-  HeadManagerDecorator,
+  (Story, context) => (
+    <ClientWrapper nextjs={context.parameters.nextjs}>
+      <Story />
+    </ClientWrapper>
+  ),
 ];
 
 export const loaders: Addon_LoaderFunction = async ({ globals, parameters }) => {
-  const { router, appDirectory } = parameters.nextjs ?? {};
-  if (appDirectory) {
-    createNavigation(router);
-  } else {
-    createRouter({
-      locale: globals.locale,
-      ...router,
-    });
-  }
+  createNavigation(parameters.nextjs.router);
 };
 
 export const parameters = {
+  nextjs: {
+    appDirectory: true,
+  },
   docs: {
     source: {
       excludeDecorators: true,
@@ -91,3 +89,78 @@ export const parameters = {
     },
   },
 };
+
+function Use({ value }: { value: Usable<JSX.Element> }) {
+  return use(value);
+}
+
+const nodes = new Map<Element, Root>();
+
+const getReactRoot = (el: Element): Root => {
+  if (!nodes.get(el)) {
+    nodes.set(el, createRoot(el));
+  }
+  return nodes.get(el)!;
+};
+
+const preview: Preview = {
+  render: (args, context) => {
+    const { id, component: Component } = context;
+    if (!Component) {
+      throw new Error(
+        `Unable to render story ${id} as the component annotation is missing from the default export`
+      );
+    }
+    return <Component {...args} />;
+  },
+
+  applyDecorators: (
+    storyFn: LegacyStoryFn<ReactRenderer>,
+    decorators: DecoratorFunction<ReactRenderer>[]
+  ): LegacyStoryFn<ReactRenderer> => {
+    return defaultDecorateStory((context) => React.createElement(storyFn, context), decorators);
+  },
+
+  renderToCanvas: async function (
+    { storyContext, unboundStoryFn, showMain }: RenderContext<ReactRenderer>,
+    canvasElement: ReactRenderer['canvasElement']
+  ) {
+    const manifest = await fetch('/react-client-manifest.json').then((it) => it.json());
+
+    const root = getReactRoot(canvasElement);
+    const Story = unboundStoryFn;
+
+    const stream = renderToReadableStream(<Story {...storyContext} />, manifest);
+    root.render(
+      <Use
+        value={createFromReadableStream(stream, {
+          callServer: async (id: string, args: unknown[]) => {
+            console.log(`action called with`, { id, args });
+
+            // for example: file:///Users/kasperpeulen/code/rsc-webpack-browser5/src/components/actions.ts#saveToDb
+            const [filepath, name] = id!.split('#');
+
+            // TODO probably too hacky, but not sure how else
+            const module = Object.keys(__webpack_modules__).find((id) =>
+              filepath?.endsWith(id.replace('(rsc)/./', ''))
+            );
+            if (module) {
+              const action = __webpack_require__(module)[name!];
+              // setTimeout(renderStory, 0);
+              return action?.(...args);
+            }
+          },
+        })}
+      />
+    );
+
+    showMain();
+  },
+};
+
+export const { render, applyDecorators, renderToCanvas } = preview;
+
+declare global {
+  var __webpack_modules__: Record<string, unknown>;
+  var __webpack_require__: (id: string) => Record<string, (...args: any[]) => any>;
+}

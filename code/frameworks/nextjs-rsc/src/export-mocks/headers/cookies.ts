@@ -3,7 +3,7 @@
 // is the only way to achieve it actually being a singleton
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { headers } from '@storybook/nextjs/headers.mock';
+import { headers } from '@storybook/experimental-nextjs-rsc/headers.mock';
 
 import { RequestCookies } from 'next/dist/compiled/@edge-runtime/cookies';
 import { fn } from 'storybook/test';
@@ -20,11 +20,14 @@ class RequestCookiesMock extends RequestCookies {
   delete = fn(super.delete.bind(this)).mockName('next/headers::cookies().delete');
 }
 
-let requestCookiesMock: RequestCookiesMock;
+declare global {
+  // eslint-disable-next-line no-var
+  var requestCookiesMock: RequestCookiesMock;
+}
 
-export const cookies = fn(() => {
+export const cookies = fn(async () => {
   if (!requestCookiesMock) {
-    requestCookiesMock = new RequestCookiesMock(headers());
+    globalThis.requestCookiesMock = new RequestCookiesMock(await headers());
   }
   return requestCookiesMock;
 }).mockName('next/headers::cookies()');
@@ -35,5 +38,5 @@ const originalRestore = cookies.mockRestore.bind(null);
 cookies.mockRestore = () => {
   originalRestore();
   headers.mockRestore();
-  requestCookiesMock = new RequestCookiesMock(headers());
+  globalThis.requestCookiesMock = new RequestCookiesMock(globalThis.headersAdapterMock);
 };

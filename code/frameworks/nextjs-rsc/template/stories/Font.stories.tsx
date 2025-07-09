@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs';
+import type { Meta, StoryObj } from '@storybook/experimental-nextjs-rsc';
 
 import Font from './Font';
 

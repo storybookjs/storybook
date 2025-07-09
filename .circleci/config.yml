@@ -359,7 +359,10 @@ jobs:
           at: .
       - run:
           name: Merge test results
-          command: cd code && yarn vitest run --merge-reports --reporter=junit --outputFile=junit.xml
+          command: |
+            cd code
+            yarn vitest run --merge-reports --reporter=junit --outputFile=junit.xml
+            cat junit.xml
       - store_test_results:
           path: code/junit.xml
   coverage:

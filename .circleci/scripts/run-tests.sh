@@ -14,14 +14,20 @@ mkdir -p .vitest-reports
 # Get the list of test files for this shard
 echo "Splitting tests across containers..."
 echo "Current directory: $(pwd)"
-echo "Looking for test files with pattern: **/*.{test,spec}.?(c|m)[jt]s?(x)"
+echo "Looking for test files with pattern: **/*.{test,spec}.{ts,tsx}"
 
 # First, let's see what test files exist
 echo "Available test files:"
 find . -name "*.test.*" -o -name "*.spec.*" | head -10
 
+# Test the circleci tests glob command directly
+echo "Testing circleci tests glob command:"
+circleci tests glob "**/*.{test,spec}.{ts,tsx}" > /tmp/glob-output.txt
+echo "Glob output:"
+cat /tmp/glob-output.txt
+
 # Get the list of test files for this shard
-circleci tests glob "**/*.{test,spec}.?(c|m)[jt]s?(x)" | circleci tests split --split-by=timings --timings-type=filename > /tmp/test-files.txt
+circleci tests glob "**/*.{test,spec}.{ts,tsx}" | circleci tests split --split-by=timings --timings-type=filename > /tmp/test-files.txt
 
 echo "Test files assigned to this shard:"
 cat /tmp/test-files.txt

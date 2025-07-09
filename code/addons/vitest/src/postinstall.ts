@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
@@ -22,7 +21,7 @@ import { logger } from 'storybook/internal/node-logger';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
 import { findUp } from 'find-up';
-import { dirname, join, relative, resolve } from 'pathe';
+import { dirname, relative, resolve } from 'pathe';
 import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -591,11 +590,10 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     const rendererPackageJsonPath = await findUp('package.json', {
       cwd: renderer,
     });
-    if (!rendererPackageJsonPath) {
-      return;
+    if (rendererPackageJsonPath) {
+      const rendererPackageJson = await fs.readFile(rendererPackageJsonPath, 'utf8');
+      rendererPackageName = JSON.parse(rendererPackageJson).name;
     }
-    const rendererPackageJson = await fs.readFile(rendererPackageJsonPath, 'utf8');
-    rendererPackageName = JSON.parse(rendererPackageJson).name;
   }
 
   return {

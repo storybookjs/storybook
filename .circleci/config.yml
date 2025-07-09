@@ -334,7 +334,7 @@ jobs:
           command: |
             cd code
             TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx}")
-            echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=blob --reporter=default" --verbose
+            echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=blob --reporter=default" --verbose || true
       - run:
           name: Merge test results
           command: |

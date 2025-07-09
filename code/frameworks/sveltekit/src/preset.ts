@@ -1,3 +1,5 @@
+import { dirname, join } from 'node:path';
+
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { withoutVitePlugins } from '@storybook/builder-vite';
@@ -13,7 +15,7 @@ export const core: PresetProperty<'core'> = {
 };
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => [
   ...entry,
-  require.resolve('@storybook/sveltekit/dist/preview.mjs'),
+  join(dirname(require.resolve('@storybook/sveltekit/package.json')), 'dist/preview.mjs'),
 ];
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {

@@ -9,7 +9,7 @@ import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
 // TODO add empty preview
-import * as designs from '@storybook/addon-designs/preview';
+// import * as designs from '@storybook/addon-designs/preview';
 import addonDocs from '@storybook/addon-docs';
 import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';

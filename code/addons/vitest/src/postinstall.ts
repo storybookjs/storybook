@@ -563,15 +563,6 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const { presets } = await experimental_loadStorybook({
     configDir,
     packageJson,
-    // corePresets: [join(frameworkName, 'preset')],
-    // overridePresets: [
-    //   fileURLToPath(
-    //     import.meta.resolve('storybook/internal/core-server/presets/common-override-preset')
-    //   ),
-    // ],
-    // packageJson,
-    // configDir,
-    // isCritical: true,
   });
 
   const core = await presets.apply('core', {});

@@ -29,6 +29,9 @@
       "node": "./dist/index.js",
       "require": "./dist/index.js"
     },
+    "./preview": {
+      "import": "./dist/preview.mjs"
+    },
     "./dist/preview.mjs": {
       "import": "./dist/preview.mjs"
     },

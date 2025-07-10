@@ -6,7 +6,7 @@ import { exactRegex } from '@rolldown/pluginutils';
 import { dedent } from 'ts-dedent';
 import type { ResolvedConfig, ViteDevServer } from 'vite';
 
-import { VIRTUAL_MODULE_MOCKER_INTERCEPTOR, __STORYBOOK_GLOBAL_THIS_ACCESSOR__ } from './constants';
+import { __STORYBOOK_GLOBAL_THIS_ACCESSOR__ } from './constants';
 
 const entryPath = '/vite-inject-mocker-entry.js';
 
@@ -37,7 +37,7 @@ export const viteInjectMockerRuntime = (options: {
     config() {
       return {
         optimizeDeps: {
-          include: ['@vitest/mocker'],
+          include: ['@vitest/mocker', '@vitest/mocker/browser'],
         },
         resolve: {
           alias: {
@@ -66,13 +66,10 @@ export const viteInjectMockerRuntime = (options: {
     },
     resolveId: {
       filter: {
-        id: [exactRegex(entryPath), exactRegex(VIRTUAL_MODULE_MOCKER_INTERCEPTOR)],
+        id: [exactRegex(entryPath)],
       },
       handler(id) {
-        if (
-          exactRegex(id).test(entryPath) ||
-          exactRegex(id).test(VIRTUAL_MODULE_MOCKER_INTERCEPTOR)
-        ) {
+        if (exactRegex(id).test(entryPath)) {
           return id;
         }
         return null;
@@ -83,14 +80,6 @@ export const viteInjectMockerRuntime = (options: {
         return readFileSync(
           require.resolve(
             join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime.template.js')
-          ),
-          'utf-8'
-        );
-      }
-      if (exactRegex(id).test(VIRTUAL_MODULE_MOCKER_INTERCEPTOR)) {
-        return await readFile(
-          require.resolve(
-            join(__dirname, 'vitePlugins', 'vite-inject-mocker', 'module-mocker-interceptor.js')
           ),
           'utf-8'
         );

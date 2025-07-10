@@ -7,7 +7,7 @@ import lodash from 'lodash-es';
 import add from 'lodash-es/add';
 // eslint-disable-next-line depend/ban-dependencies
 import sum from 'lodash-es/sum';
-import { expect, mocked, within } from 'storybook/test';
+import { expect, mocked } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview';
 

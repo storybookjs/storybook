@@ -139,7 +139,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
                   code: automockedCode.toString(),
                   map: automockedCode.generateMap(),
                 };
-              } else if (call.redirectPath && isOptimizedDeps) {
+              } else {
                 return readFileSync(call.redirectPath, 'utf-8');
               }
             } catch (e) {

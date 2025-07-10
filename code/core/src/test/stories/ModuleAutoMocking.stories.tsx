@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { expect } from 'storybook/test';
+
 import preview from '../../../../.storybook/preview';
 import { fn } from './ModuleAutoMocking.utils';
 
@@ -25,4 +27,8 @@ const meta = preview.meta({
   },
 });
 
-export const Original = meta.story({});
+export const Original = meta.story({
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Function: automocked value')).toBeInTheDocument();
+  },
+});

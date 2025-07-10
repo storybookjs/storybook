@@ -7,7 +7,7 @@ import lodash from 'lodash-es';
 import add from 'lodash-es/add';
 // eslint-disable-next-line depend/ban-dependencies
 import sum from 'lodash-es/sum';
-import { mocked } from 'storybook/test';
+import { expect, mocked, within } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview';
 
@@ -52,6 +52,11 @@ const meta = preview.meta({
     mocked(sum).mockImplementation(() => {
       return 'mocked 10' as any;
     });
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Lodash Version: 1.0.0-mocked!')).toBeInTheDocument();
+    await expect(canvas.getByText('Mocked Add (1,2): mocked 3')).toBeInTheDocument();
+    await expect(canvas.getByText('Inline Sum (2,2): mocked 10')).toBeInTheDocument();
   },
 });
 

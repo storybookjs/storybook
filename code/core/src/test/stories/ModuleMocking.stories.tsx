@@ -26,7 +26,7 @@ const Component = () => {
       </p>
       <button onClick={() => setState((fn() ?? []).join(', '))}>Update State</button>
       <ul>
-        <li>Function: {state}</li>
+        <li>Function: {state === '' ? 'no value' : state}</li>
       </ul>
     </div>
   );
@@ -44,14 +44,18 @@ const meta = preview.meta({
 });
 
 export const Original = meta.story({
-  play: async () => {
-    expect(mocked(fn)).toHaveBeenCalledWith();
+  play: async ({ canvas }) => {
+    await expect(mocked(fn)).toHaveBeenCalledWith();
+    await expect(canvas.getByText('Function: no value')).toBeInTheDocument();
   },
 });
 
 export const Mocked = meta.story({
   beforeEach() {
     mocked(fn).mockReturnValue(['mocked value']);
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.getByText('Function: mocked value')).toBeInTheDocument();
   },
 });
 

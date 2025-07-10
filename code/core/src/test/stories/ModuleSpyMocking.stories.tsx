@@ -38,7 +38,8 @@ const meta = preview.meta({
 });
 
 export const Original = meta.story({
-  play: async () => {
+  play: async ({ canvas }) => {
     expect(mocked(fn)).toHaveBeenCalledWith();
+    await expect(canvas.getByText('Function: original value')).toBeInTheDocument();
   },
 });

@@ -31,7 +31,7 @@ export const viteInjectMockerRuntime = (options: {
         this.emitFile({
           type: 'chunk',
           id: require.resolve(
-            join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime-build-code.template.js')
+            join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime.template.js')
           ),
           fileName: entryPath.slice(1),
         });
@@ -71,7 +71,7 @@ export const viteInjectMockerRuntime = (options: {
       if (exactRegex(id).test(entryPath)) {
         return readFileSync(
           require.resolve(
-            join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime-build-code.template.js')
+            join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime.template.js')
           ),
           'utf-8'
         );

@@ -44,6 +44,7 @@ export * from './utils/sync-main-preview-addons';
 export * from './js-package-manager';
 export * from './utils/scan-and-transform-files';
 export * from './utils/transform-imports';
+export * from '../shared/utils/module';
 
 export { versions };
 

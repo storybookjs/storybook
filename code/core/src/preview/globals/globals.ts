@@ -3,6 +3,7 @@
 export const globalsNameReferenceMap = {
   '@storybook/global': '__STORYBOOK_MODULE_GLOBAL__',
 
+  'storybook/test': '__STORYBOOK_MODULE_TEST__',
   'storybook/actions': '__STORYBOOK_MODULE_ACTIONS__',
   'storybook/preview-api': '__STORYBOOK_MODULE_PREVIEW_API__',
 

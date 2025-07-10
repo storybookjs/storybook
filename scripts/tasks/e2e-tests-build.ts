@@ -21,9 +21,13 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
       `);
     }
 
+    const extraArgs = process.argv.slice(
+      process.argv.findLastIndex((arg) => arg.startsWith('--')) + 1
+    );
+
     const playwrightCommand = process.env.DEBUG
-      ? 'yarn playwright test --project=chromium --ui'
-      : 'yarn playwright test';
+      ? `yarn playwright test --project=chromium --ui ${extraArgs.join(' ')}`
+      : `yarn playwright test ${extraArgs.join(' ')}`;
 
     await exec(
       playwrightCommand,

@@ -18,4 +18,3 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
         : []
     );
 };
-console.log('NEW');

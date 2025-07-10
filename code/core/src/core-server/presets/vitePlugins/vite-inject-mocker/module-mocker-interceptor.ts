@@ -1,11 +1,8 @@
 import type { MockedModule } from '@vitest/mocker';
 import { MockerRegistry } from '@vitest/mocker';
 
-/**
- * An interceptor for production builds. It uses a pre-generated manifest and MSW to intercept
- * module requests and serve mocked versions.
- */
-export class ModuleMockerBuildInterceptor {
+/** An interceptor for module mocking. */
+export class ModuleMockerInterceptor {
   // A registry for runtime mocks (e.g., `sb.mock('path', () => ({}))`)
   private mocks = new MockerRegistry();
 

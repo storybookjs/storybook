@@ -1,7 +1,7 @@
 globalThis.__STORYBOOK_MOCKER__PROMISE = new Promise(async (resolve) => {
   const { ModuleMocker, createCompilerHints } = await import('@vitest/mocker/browser');
   const { spyOn } = await import('@vitest/spy');
-  const moduleMockerBuildInterceptor = await import('virtual:module-mocker-build-interceptor');
+  const moduleMockerInterceptor = await import('virtual:module-mocker-interceptor');
 
   // Dummy implementation of the RPC interface, since it is not used in build mode.
   const rpc = (method) => {
@@ -61,7 +61,7 @@ globalThis.__STORYBOOK_MOCKER__PROMISE = new Promise(async (resolve) => {
   }
 
   globalThis.__STORYBOOK_MOCKER__ = registerModuleMocker(
-    () => new moduleMockerBuildInterceptor.ModuleMockerBuildInterceptor()
+    () => new moduleMockerInterceptor.ModuleMockerInterceptor()
   );
   resolve(globalThis.__STORYBOOK_MOCKER__);
 });

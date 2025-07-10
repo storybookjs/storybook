@@ -72,8 +72,8 @@
       "import": "./dist/core-server/index.js",
       "require": "./dist/core-server/index.cjs"
     },
-    "./internal/core-server/presets/vitePlugins/vite-inject-mocker/module-mocker-build-interceptor": {
-      "import": "./dist/core-server/presets/vitePlugins/vite-inject-mocker/module-mocker-build-interceptor.js"
+    "./internal/core-server/presets/vitePlugins/vite-inject-mocker/module-mocker-interceptor": {
+      "import": "./dist/core-server/presets/vitePlugins/vite-inject-mocker/module-mocker-interceptor.js"
     },
     "./internal/core-server/presets/common-preset": {
       "import": "./dist/core-server/presets/common-preset.js",

@@ -14,7 +14,7 @@ export const getEntries = (cwd: string) => {
 
     define('src/core-server/index.ts', ['node'], true, ['react']),
     define(
-      'src/core-server/presets/vitePlugins/vite-inject-mocker/module-mocker-build-interceptor.ts',
+      'src/core-server/presets/vitePlugins/vite-inject-mocker/module-mocker-interceptor.ts',
       ['browser'],
       false
     ),

@@ -65,7 +65,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae18",
+  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae78",
   "storybook": {
     "displayName": "Themes",
     "unsupportedFrameworks": [

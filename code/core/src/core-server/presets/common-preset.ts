@@ -34,8 +34,6 @@ import { defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
-import { viteInjectMockerRuntime } from './vitePlugins/vite-inject-mocker/plugin';
-import { viteMockPlugin } from './vitePlugins/vite-mock-build-manifest/plugin';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -322,6 +320,8 @@ export const viteFinal = async (
   options: Options
 ): Promise<import('vite').UserConfig> => {
   const previewConfigPath = findConfigFile('preview', options.configDir);
+  const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
+  const { viteMockPlugin } = await import('./vitePlugins/vite-mock-build-manifest/plugin');
   return {
     ...existing,
     plugins: [

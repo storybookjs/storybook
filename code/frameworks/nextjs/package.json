@@ -88,34 +88,6 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "dist/image-context": [
-        "dist/image-context.d.ts"
-      ],
-      "export-mocks": [
-        "dist/export-mocks/index.d.ts"
-      ],
-      "cache.mock": [
-        "dist/export-mocks/cache/index.d.ts"
-      ],
-      "headers.mock": [
-        "dist/export-mocks/headers/index.d.ts"
-      ],
-      "router.mock": [
-        "dist/export-mocks/router/index.d.ts"
-      ],
-      "navigation.mock": [
-        "dist/export-mocks/navigation/index.d.ts"
-      ],
-      "node": [
-        "dist/node/index.d.ts"
-      ]
-    }
-  },
   "files": [
     "dist/**/*",
     "template/cli/**/*",
@@ -125,7 +97,7 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
+    "check": "jiti ../../../scripts/check/check-package.ts",
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
@@ -190,9 +162,6 @@
       "optional": true
     }
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
@@ -224,5 +193,5 @@
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16"
 }

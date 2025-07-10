@@ -2,6 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { builtinModules } from 'node:module';
 
 import type { Metafile } from 'esbuild';
+import * as esbuild from 'esbuild';
 // eslint-disable-next-line depend/ban-dependencies
 import * as fs from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies
@@ -21,7 +22,6 @@ import {
   SUPPORTED_FEATURES,
 } from '../../code/core/src/shared/constants/environments-support';
 import { exec } from '../utils/exec';
-import { esbuild } from './tools';
 
 /* TYPES */
 
@@ -96,7 +96,7 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
 
   if (reset) {
     await fs.emptyDir(OUT_DIR);
-    await fs.emptyDir(metafilesDir);
+    // await fs.emptyDir(metafilesDir);
   }
 
   const tasks: (() => Promise<any>)[] = [];

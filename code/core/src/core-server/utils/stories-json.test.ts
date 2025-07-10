@@ -19,6 +19,13 @@ vi.mock('watchpack');
 vi.mock('es-toolkit/compat');
 vi.mock('storybook/internal/node-logger');
 
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: './favicon.svg',
+  };
+});
+
 const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
   normalizeStoriesEntry(

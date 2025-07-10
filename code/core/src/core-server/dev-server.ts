@@ -46,7 +46,7 @@ export async function storybookDevServer(options: Options) {
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 
-  getMiddleware(options.configDir)(app);
+  (await getMiddleware(options.configDir))(app);
 
   const { port, host, initialPath } = options;
   invariant(port, 'expected options to have a port');
@@ -60,7 +60,7 @@ export async function storybookDevServer(options: Options) {
   const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
 
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName, options.configDir),
+    getPreviewBuilder(builderName),
     getManagerBuilder(),
     useStatics(app, options),
   ]);

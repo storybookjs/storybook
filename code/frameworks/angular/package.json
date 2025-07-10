@@ -55,22 +55,6 @@
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "client/config": [
-        "dist/client/config.d.ts"
-      ],
-      "client/preview-prod": [
-        "dist/client/preview-prod.d.ts"
-      ],
-      "client/docs/config": [
-        "dist/client/docs/config.d.ts"
-      ]
-    }
-  },
   "files": [
     "builders.json",
     "build-schema.json",
@@ -84,7 +68,7 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
+    "check": "jiti ../../../scripts/check/check-package.ts",
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
@@ -146,9 +130,6 @@
       "optional": true
     }
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
@@ -169,5 +150,5 @@
       "./src/builders/build-storybook/index.ts"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16"
 }

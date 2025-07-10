@@ -25,14 +25,8 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./entry-preview": {
-      "types": "./dist/entry-preview.d.ts",
-      "default": "./dist/entry-preview.js"
-    },
-    "./entry-preview-docs": {
-      "types": "./dist/entry-preview-docs.d.ts",
-      "default": "./dist/entry-preview-docs.js"
-    },
+    "./entry-preview": "./dist/entry-preview.js",
+    "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"
   },

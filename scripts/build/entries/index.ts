@@ -561,10 +561,12 @@ export const buildEntries = {
         {
           exportEntries: ['./entry-preview'],
           entryPoint: './src/entry-preview.ts',
+          dts: false,
         },
         {
           exportEntries: ['./entry-preview-docs'],
           entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
         },
       ],
       node: [
@@ -586,10 +588,12 @@ export const buildEntries = {
         {
           exportEntries: ['./entry-preview'],
           entryPoint: './src/entry-preview.ts',
+          dts: false,
         },
         {
           exportEntries: ['./entry-preview-docs'],
           entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
         },
       ],
       node: [

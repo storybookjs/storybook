@@ -39,6 +39,13 @@ export const viteInjectMockerRuntime = (options: {
         optimizeDeps: {
           include: ['@vitest/mocker'],
         },
+        resolve: {
+          alias: {
+            '@vitest/mocker/browser': require.resolve('@vitest/mocker/browser'),
+            '@vitest/mocker': require.resolve('@vitest/mocker'),
+            '@vitest/spy': require.resolve('@vitest/spy'),
+          },
+        },
       };
     },
     configResolved(config) {

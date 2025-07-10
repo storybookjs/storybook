@@ -116,30 +116,26 @@ export async function generateModernIframeScriptCodeFromPreviews(options: {
    * @todo Inline variable and remove `noinspection`
    */
   const code = dedent`
-    import { setup } from 'storybook/internal/preview/runtime';
+  import { setup } from 'storybook/internal/preview/runtime';
   
-    import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
+  import '${SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE}';
   
-    setup();
+  setup();
   
+  import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
+  import { isPreview } from 'storybook/internal/csf';
+  import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
   
-    import { composeConfigs, PreviewWeb } from 'storybook/preview-api';
-    import { isPreview } from 'storybook/internal/csf';
-    import { importFn } from '${SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE}';
+  ${options.isCsf4 ? previewFileImport : imports.join('\n')}
+  ${getPreviewAnnotationsFunction}
   
-    ${options.isCsf4 ? previewFileImport : imports.join('\n')}
-    ${getPreviewAnnotationsFunction}
+  window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
   
+  window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
   
-    window.__STORYBOOK_PREVIEW__ = window.__STORYBOOK_PREVIEW__ || new PreviewWeb(importFn, getProjectAnnotations);
+  ${generateHMRHandler()};
   
-  
-    window.__STORYBOOK_STORY_STORE__ = window.__STORYBOOK_STORY_STORE__ || window.__STORYBOOK_PREVIEW__.storyStore;
-  
-  
-    ${generateHMRHandler()};
-  
-    `.trim();
+  `.trim();
   return code;
 }
 function hash(value: string) {

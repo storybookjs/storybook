@@ -1,3 +1,4 @@
+import { createRequire } from 'node:module';
 import { dirname, sep } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
@@ -7,6 +8,8 @@ import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 import loadConfig from 'next/dist/server/config';
 import { DefinePlugin } from 'webpack';
 import type { Configuration as WebpackConfig } from 'webpack';
+
+const require = createRequire(import.meta.url);
 
 export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfig): void => {
   baseConfig.plugins?.push(

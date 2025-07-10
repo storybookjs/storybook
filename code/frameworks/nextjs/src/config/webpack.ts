@@ -1,7 +1,11 @@
+import { createRequire } from 'node:module';
+
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { addScopedAlias, resolveNextConfig } from '../utils';
+
+const require = createRequire(import.meta.url);
 
 const tryResolve = (path: string) => {
   try {

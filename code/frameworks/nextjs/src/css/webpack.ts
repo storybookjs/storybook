@@ -1,3 +1,5 @@
+import { createRequire } from 'node:module';
+
 import type { NextConfig } from 'next';
 import { cssFileResolve } from 'next/dist/build/webpack/config/blocks/css/loaders/file-resolve';
 import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent';
@@ -5,6 +7,8 @@ import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { scopedResolve } from '../utils';
+
+const require = createRequire(import.meta.url);
 
 // This tries to follow nextjs's css config, please refer to this file for more info:
 // https://github.com/vercel/next.js/blob/canary/packages/next/build/webpack-config.ts

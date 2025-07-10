@@ -1,6 +1,9 @@
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 
 import type { PluginItem } from '@babel/core';
+
+const require = createRequire(import.meta.url);
 
 const isLoadIntentTest = process.env.NODE_ENV === 'test';
 const isLoadIntentDevelopment = process.env.NODE_ENV === 'development';

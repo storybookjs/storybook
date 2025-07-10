@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
@@ -40,7 +41,7 @@ export const configureSWCLoader = async (
     use: {
       // we use our own patch because we need to remove tracing from the original code
       // which is not possible otherwise
-      loader: require.resolve('./swc/next-swc-loader-patch.js'),
+      loader: fileURLToPath(import.meta.resolve('@storybook/nextjs/next-swc-loader-patch')),
       options: {
         isServer: false,
         rootDir: projectRoot,

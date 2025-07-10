@@ -793,6 +793,74 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/nextjs': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.tsx',
+        },
+        {
+          exportEntries: ['./cache.mock'],
+          entryPoint: './src/export-mocks/cache/index.ts',
+        },
+        {
+          exportEntries: ['./headers.mock'],
+          entryPoint: './src/export-mocks/headers/index.ts',
+        },
+        {
+          exportEntries: ['./navigation.mock'],
+          entryPoint: './src/export-mocks/navigation/index.ts',
+        },
+        {
+          exportEntries: ['./router.mock'],
+          entryPoint: './src/export-mocks/router/index.ts',
+        },
+        {
+          exportEntries: ['./compatibility/draft-mode.compat'],
+          entryPoint: './src/compatibility/draft-mode.compat.ts',
+        },
+        {
+          exportEntries: ['./next-image-loader-stub'],
+          entryPoint: './src/next-image-loader-stub.ts',
+        },
+        {
+          exportEntries: ['./image-context'],
+          entryPoint: './src/image-context.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./export-mocks'],
+          entryPoint: './src/export-mocks/index.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./next-swc-loader-patch'],
+          entryPoint: './src/swc/next-swc-loader-patch.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./rsc/server-only'],
+          entryPoint: './src/rsc/server-only.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

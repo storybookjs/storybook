@@ -4,6 +4,8 @@ import type { Task } from '../task';
 import { exec } from '../utils/exec';
 import { PORT } from './serve';
 
+const testFileRegex = /(test|spec)\.(js|ts|mjs)$/;
+
 export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
   description: 'Run e2e tests against a sandbox in prod mode',
   dependsOn: ['serve'],
@@ -21,13 +23,12 @@ export const e2eTestsBuild: Task & { port: number; type: 'build' | 'dev' } = {
       `);
     }
 
-    const extraArgs = process.argv.slice(
-      process.argv.findLastIndex((arg) => arg.startsWith('--')) + 1
-    );
+    const firstTestFileArgIndex = process.argv.findIndex((arg) => testFileRegex.test(arg));
+    const testFiles = firstTestFileArgIndex === -1 ? [] : process.argv.slice(firstTestFileArgIndex);
 
     const playwrightCommand = process.env.DEBUG
-      ? `yarn playwright test --project=chromium --ui ${extraArgs.join(' ')}`
-      : `yarn playwright test ${extraArgs.join(' ')}`;
+      ? `yarn playwright test --project=chromium --ui ${testFiles.join(' ')}`
+      : `yarn playwright test ${testFiles.join(' ')}`;
 
     await exec(
       playwrightCommand,

@@ -7,7 +7,7 @@ import type { Plugin, ResolvedConfig } from 'vite';
 import { __STORYBOOK_GLOBAL_THIS_ACCESSOR__ } from '../vite-inject-mocker/constants';
 import { type MockCall, extractMockCalls, getCleanId, invalidateAllRelatedModules } from './utils';
 
-interface MockBuildManifestPluginOptions {
+interface MockPluginOptions {
   /** The absolute path to the preview.tsx file where mocks are defined. */
   previewConfigPath: string;
 }
@@ -26,9 +26,9 @@ let parse: PluginContext['parse'];
  * - Resolve and emit mock/automock chunks
  * - Generate a manifest mapping original modules to their mocks
  *
- * @see MockBuildManifestPluginOptions
+ * @see MockPluginOptions
  */
-export function viteMockPlugin(options: MockBuildManifestPluginOptions): Plugin[] {
+export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
   // --- Plugin State ---
   let viteConfig: ResolvedConfig;
   let mockCalls: MockCall[] = [];

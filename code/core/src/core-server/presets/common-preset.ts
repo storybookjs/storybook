@@ -321,7 +321,7 @@ export const viteFinal = async (
 ): Promise<import('vite').UserConfig> => {
   const previewConfigPath = findConfigFile('preview', options.configDir);
   const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
-  const { viteMockPlugin } = await import('./vitePlugins/vite-mock-build-manifest/plugin');
+  const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
   return {
     ...existing,
     plugins: [

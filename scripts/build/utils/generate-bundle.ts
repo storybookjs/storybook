@@ -131,6 +131,10 @@ export async function generateBundle({
       'react-dom': resolvePackageDir('react-dom'),
       'react-dom/client': join(resolvePackageDir('react-dom'), 'client'),
     },
+    define: {
+      // This should set react in prod mode for the manager
+      'process.env.NODE_ENV': '"production"',
+    },
   } as const satisfies EsbuildContextOptions;
 
   const contexts = [
@@ -173,10 +177,6 @@ export async function generateBundle({
         ...runtimeOptions,
         entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
         plugins: [globalExternals(globalsModuleInfoMap)],
-        define: {
-          // This should set react in prod mode for the manager
-          'process.env.NODE_ENV': JSON.stringify('production'),
-        },
       }),
   ].filter(Boolean);
   const compile = await Promise.all(contexts.map(([, context]) => context));

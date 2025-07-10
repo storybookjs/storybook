@@ -1,5 +1,6 @@
 import React from 'react';
 
+// @ts-expect-error - VERSION is exported from `lodash-es`
 // eslint-disable-next-line depend/ban-dependencies
 import lodash from 'lodash-es';
 // eslint-disable-next-line depend/ban-dependencies

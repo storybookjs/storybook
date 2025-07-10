@@ -13,7 +13,7 @@ const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
 
 export const core: PresetProperty<'core'> = {
-  builder: getAbsolutePath('@storybook/builder-vite'),
+  builder: require.resolve('@storybook/builder-vite'),
   renderer: getAbsolutePath('@storybook/svelte'),
 };
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => [

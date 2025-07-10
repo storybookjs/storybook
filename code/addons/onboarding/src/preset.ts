@@ -2,6 +2,7 @@ import type { Channel } from 'storybook/internal/channels';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
+import { version as addonVersion } from '../package.json';
 import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
 
 type Event = {
@@ -17,15 +18,11 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     return channel;
   }
 
-  const { default: packageJson } = await import('@storybook/addon-onboarding/package.json', {
-    with: { type: 'json' },
-  });
-
   channel.on(STORYBOOK_ADDON_ONBOARDING_CHANNEL, ({ type, ...event }: Event) => {
     if (type === 'telemetry') {
-      telemetry('addon-onboarding', { ...event, addonVersion: packageJson.version });
+      telemetry('addon-onboarding', { ...event, addonVersion });
     } else if (type === 'survey') {
-      telemetry('onboarding-survey', { ...event, addonVersion: packageJson.version });
+      telemetry('onboarding-survey', { ...event, addonVersion });
     }
   });
 

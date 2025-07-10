@@ -24,9 +24,7 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
-import { dynamicImportPlugin, hoistMocksPlugin } from '@vitest/mocker/node';
 import { dedent } from 'ts-dedent';
-import type { Plugin } from 'vite';
 
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';

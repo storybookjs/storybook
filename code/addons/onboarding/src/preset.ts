@@ -28,4 +28,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       telemetry('onboarding-survey', { ...event, addonVersion: packageJson.version });
     }
   });
+
+  return channel;
 };

@@ -2,11 +2,11 @@
 import React from 'react';
 
 // @ts-ignore-error (this only errors during compilation for production)
-import { ImageContext as ImageContextValue } from '@storybook/nextjs/dist/image-context';
+import { ImageContext as ImageContextValue } from '@storybook/nextjs/image-context';
 
 import type * as _NextLegacyImage from 'next/legacy/image';
 // @ts-ignore import is aliased in webpack config
-import OriginalNextLegacyImage from 'sb-original/next/legacy/image';
+import OriginalNextLegacyImage from 'sb-original/next/images/next-legacy-image';
 
 import { type ImageContext as ImageContextType } from '../image-context';
 import { defaultLoader } from './next-image-default-loader';

@@ -7,7 +7,7 @@ import type { Options } from 'storybook/internal/types';
 import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { NextConfig } from 'next';
-import loadJsConfig from 'next/dist/build/load-jsconfig';
+import nextJSLoadConfigModule from 'next/dist/build/load-jsconfig.js';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { getNodeModulesExcludeRegex } from '../utils';
@@ -21,6 +21,10 @@ export const configureSWCLoader = async (
 
   const { virtualModules } = await getVirtualModules(options);
   const projectRoot = getProjectRoot();
+  const loadJsConfig =
+    typeof nextJSLoadConfigModule === 'function'
+      ? nextJSLoadConfigModule
+      : (nextJSLoadConfigModule as any).default;
 
   const { jsConfig } = await loadJsConfig(projectRoot, nextConfig as any);
 
@@ -50,7 +54,7 @@ export const configureSWCLoader = async (
         hasReactRefresh: isDevelopment,
         jsConfig,
         nextConfig,
-        supportedBrowsers: require('next/dist/build/utils').getSupportedBrowsers(
+        supportedBrowsers: (await import('next/dist/build/utils.js')).getSupportedBrowsers(
           projectRoot,
           isDevelopment
         ),

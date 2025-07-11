@@ -807,30 +807,47 @@ export const buildEntries = {
         {
           exportEntries: ['./cache.mock'],
           entryPoint: './src/export-mocks/cache/index.ts',
+          dts: false,
         },
         {
           exportEntries: ['./headers.mock'],
           entryPoint: './src/export-mocks/headers/index.ts',
+          dts: false,
         },
         {
           exportEntries: ['./navigation.mock'],
           entryPoint: './src/export-mocks/navigation/index.ts',
+          dts: false,
         },
         {
           exportEntries: ['./router.mock'],
           entryPoint: './src/export-mocks/router/index.ts',
+          dts: false,
         },
         {
           exportEntries: ['./compatibility/draft-mode.compat'],
           entryPoint: './src/compatibility/draft-mode.compat.ts',
+          dts: false,
         },
         {
           exportEntries: ['./next-image-loader-stub'],
           entryPoint: './src/next-image-loader-stub.ts',
+          dts: false,
         },
         {
           exportEntries: ['./image-context'],
           entryPoint: './src/image-context.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./images/next-image'],
+          entryPoint: './src/images/next-image.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./images/next-legacy-image'],
+          entryPoint: './src/images/next-legacy-image.tsx',
+          dts: false,
         },
       ],
       node: [
@@ -851,6 +868,11 @@ export const buildEntries = {
         {
           exportEntries: ['./next-swc-loader-patch'],
           entryPoint: './src/swc/next-swc-loader-patch.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./storybook-nextjs-font-loader'],
+          entryPoint: './src/font/webpack/loader/storybook-nextjs-font-loader.ts',
           dts: false,
         },
         {

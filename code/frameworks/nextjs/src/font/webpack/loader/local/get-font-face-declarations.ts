@@ -2,10 +2,10 @@ import { dirname, join } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 
-import { validateLocalFontFunctionCall } from 'next/dist/compiled/@next/font/dist/local/validate-local-font-function-call';
+import { validateLocalFontFunctionCall } from 'next/dist/compiled/@next/font/dist/local/validate-local-font-function-call.js';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
-import loaderUtils from 'next/dist/compiled/loader-utils3';
+import loaderUtils from 'next/dist/compiled/loader-utils3.js';
 
 import type { LoaderOptions } from '../types';
 

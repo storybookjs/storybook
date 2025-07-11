@@ -1,17 +1,19 @@
-import { createRequire } from 'node:module';
-import { dirname, sep } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 
 import type { NextConfig } from 'next';
-import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
-import loadConfig from 'next/dist/server/config';
-import { DefinePlugin } from 'webpack';
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
+import nextJsLoadConfigModule from 'next/dist/server/config.js';
+import webpack from 'webpack';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-const require = createRequire(import.meta.url);
+import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 
 export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfig): void => {
+  const { DefinePlugin } = webpack;
   baseConfig.plugins?.push(
     new DefinePlugin({
       'process.env.__NEXT_VERSION': JSON.stringify(getNextjsVersion()),
@@ -19,7 +21,8 @@ export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfi
   );
 };
 
-export const getNextjsVersion = (): string => require(scopedResolve('next/package.json')).version;
+export const getNextjsVersion = (): string =>
+  JSON.parse(readFileSync(join(resolvePackageDir('next'), 'package.json'), 'utf8')).version;
 
 export const resolveNextConfig = async ({
   nextConfigPath,
@@ -27,6 +30,10 @@ export const resolveNextConfig = async ({
   nextConfigPath?: string;
 }): Promise<NextConfig> => {
   const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
+  const loadConfig =
+    typeof nextJsLoadConfigModule === 'function'
+      ? nextJsLoadConfigModule
+      : (nextJsLoadConfigModule as any).default;
   return loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
 };
 
@@ -86,7 +93,7 @@ export const addScopedAlias = (baseConfig: WebpackConfig, name: string, alias?: 
  * that to just include the path to the module folder when the id provided is a package or named export.
  */
 export const scopedResolve = (id: string): string => {
-  const scopedModulePath = require.resolve(id);
+  const scopedModulePath = fileURLToPath(import.meta.resolve(id));
   const idWithNativePathSep = id.replace(/\//g /* all '/' occurrences */, sep);
 
   // If the id referenced the file specifically, return the full module path & filename

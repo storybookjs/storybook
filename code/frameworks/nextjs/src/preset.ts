@@ -1,6 +1,6 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
@@ -20,6 +20,8 @@ import type { FrameworkOptions, StorybookConfig } from './types';
 export const addons: PresetProperty<'addons'> = [
   resolvePackageDir('@storybook/preset-react-webpack'),
 ];
+
+console.log('nextjs preset LOADED');
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply<StorybookConfig['framework']>('framework');
@@ -49,8 +51,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const nextDir = resolvePackageDir('@storybook/nextjs');
-  const result = [...entry, join(nextDir, 'dist/preview.mjs')];
+  const result = [...entry, fileURLToPath(import.meta.resolve('@storybook/nextjs/preview'))];
   return result;
 };
 

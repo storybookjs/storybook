@@ -34,9 +34,9 @@ import * as templatePreview from '../core/template/stories/preview';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
 
-sb.mock('../core/src/test/stories/ModuleMocking.utils');
-sb.mock('../core/src/test/stories/ModuleSpyMocking.utils', { spy: true });
-sb.mock('../core/src/test/stories/ModuleAutoMocking.utils');
+sb.mock('../core/template/stories/test/ModuleMocking.utils');
+sb.mock('../core/template/stories/test/ModuleSpyMocking.utils', { spy: true });
+sb.mock('../core/template/stories/test/ModuleAutoMocking.utils');
 sb.mock('lodash-es');
 sb.mock('lodash-es/add');
 sb.mock('lodash-es/sum');

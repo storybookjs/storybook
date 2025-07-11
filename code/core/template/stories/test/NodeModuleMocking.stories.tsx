@@ -9,8 +9,6 @@ import add from 'lodash-es/add';
 import sum from 'lodash-es/sum';
 import { expect, mocked } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview';
-
 const Component = () => {
   return (
     <div style={{ padding: '20px' }}>
@@ -42,8 +40,7 @@ const Component = () => {
   );
 };
 
-const meta = preview.meta({
-  title: 'NodeModuleMocking',
+export default {
   component: Component,
   parameters: {
     layout: 'fullscreen',
@@ -53,11 +50,11 @@ const meta = preview.meta({
       return 'mocked 10' as any;
     });
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }: any) => {
     await expect(canvas.getByText('Lodash Version: 1.0.0-mocked!')).toBeInTheDocument();
     await expect(canvas.getByText('Mocked Add (1,2): mocked 3')).toBeInTheDocument();
     await expect(canvas.getByText('Inline Sum (2,2): mocked 10')).toBeInTheDocument();
   },
-});
+};
 
-export const Original = meta.story({});
+export const Original = {};

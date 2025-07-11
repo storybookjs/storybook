@@ -2,7 +2,6 @@ import React from 'react';
 
 import { expect, mocked } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview';
 import { fn } from './ModuleSpyMocking.utils';
 
 const Component = () => {
@@ -26,8 +25,7 @@ const Component = () => {
   );
 };
 
-const meta = preview.meta({
-  title: 'ModuleSpyMocking',
+export default {
   component: Component,
   parameters: {
     layout: 'fullscreen',
@@ -35,11 +33,11 @@ const meta = preview.meta({
   beforeEach() {
     mocked(fn).mockReset?.();
   },
-});
+};
 
-export const Original = meta.story({
-  play: async ({ canvas }) => {
+export const Original = {
+  play: async ({ canvas }: any) => {
     expect(mocked(fn)).toHaveBeenCalledWith();
     await expect(canvas.getByText('Function: original value')).toBeInTheDocument();
   },
-});
+};

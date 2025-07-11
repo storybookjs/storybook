@@ -2,7 +2,6 @@ import React from 'react';
 
 import { expect } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview';
 import { fn } from './ModuleAutoMocking.utils';
 
 const Component = () => {
@@ -19,16 +18,15 @@ const Component = () => {
   );
 };
 
-const meta = preview.meta({
-  title: 'ModuleAutoMocking',
+export default {
   component: Component,
   parameters: {
     layout: 'fullscreen',
   },
-});
+};
 
-export const Original = meta.story({
-  play: async ({ canvas }) => {
+export const Original = {
+  play: async ({ canvas }: any) => {
     await expect(canvas.getByText('Function: automocked value')).toBeInTheDocument();
   },
-});
+};

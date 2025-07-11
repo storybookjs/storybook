@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 
 import { expect, mocked } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview';
 import { fn } from './ModuleMocking.utils';
 
 const Component = () => {
@@ -32,8 +31,7 @@ const Component = () => {
   );
 };
 
-const meta = preview.meta({
-  title: 'ModuleMocking',
+export default {
   component: Component,
   parameters: {
     layout: 'fullscreen',
@@ -41,26 +39,26 @@ const meta = preview.meta({
   beforeEach() {
     mocked(fn).mockReset();
   },
-});
+};
 
-export const Original = meta.story({
-  play: async ({ canvas }) => {
+export const Original = {
+  play: async ({ canvas }: any) => {
     await expect(mocked(fn)).toHaveBeenCalledWith();
     await expect(canvas.getByText('Function: no value')).toBeInTheDocument();
   },
-});
+};
 
-export const Mocked = meta.story({
+export const Mocked = {
   beforeEach() {
     mocked(fn).mockReturnValue(['mocked value']);
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas }: any) => {
     await expect(canvas.getByText('Function: mocked value')).toBeInTheDocument();
   },
-});
+};
 
-export const MockInPlay = meta.story({
-  play: async ({ canvasElement, userEvent }) => {
+export const MockInPlay = {
+  play: async ({ canvasElement, userEvent }: any) => {
     expect(canvasElement).toHaveTextContent('Function:');
     await userEvent.click(canvasElement.querySelector('button')!);
     expect(canvasElement).toHaveTextContent('Function:');
@@ -68,4 +66,4 @@ export const MockInPlay = meta.story({
     await userEvent.click(canvasElement.querySelector('button')!);
     expect(canvasElement).toHaveTextContent('Function: mocked value');
   },
-});
+};

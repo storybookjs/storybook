@@ -59,6 +59,7 @@ export const getExternal = async (cwd: string) => {
     'react-dom',
     'react-dom/client',
     '@storybook/icons',
+    'sb-original',
     packageJson.name,
     ...Object.keys(packageJson.dependencies || {}),
     ...Object.keys(packageJson.peerDependencies || {}),

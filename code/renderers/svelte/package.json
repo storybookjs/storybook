@@ -61,7 +61,6 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@testing-library/svelte": "^5.2.4",
-    "expect-type": "^1.1.0",
     "svelte": "^5.20.5",
     "svelte-check": "^4.1.4",
     "sveltedoc-parser": "^4.2.1",

@@ -7,6 +7,7 @@ import { createRequire } from "node:module";
 import type { DefineEnvOptions } from "next/dist/build/define-env";
 import * as NextUtils from "../../utils/nextjs";
 
+// Require is not available in Vitest ESM
 const require = createRequire(import.meta.url);
 
 export function vitePluginNextEnv(

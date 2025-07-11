@@ -60,11 +60,11 @@ async function run() {
         );
       });
     } else {
-      test('Should log 2 events', () => {
-        assert.equal(
-          events.length,
-          2,
-          `Expected 2 events but received ${
+      // two or three events are logged, depending on whether the template has a `vitest-integration` task
+      test('Should log 2 or 3 events', () => {
+        assert.ok(
+          events.length === 2 || events.length === 3,
+          `Expected 2 or 3 events but received ${
             events.length
           } instead. The following events were logged: ${JSON.stringify(events)}`
         );

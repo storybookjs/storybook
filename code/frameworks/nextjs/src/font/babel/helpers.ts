@@ -216,7 +216,7 @@ export function removeTransformedVariableDeclarations(
  * });
  * ```
  */
-export function replaceImportWithParamterImport(
+export function replaceImportWithParameterImport(
   path: BabelCoreNamespace.NodePath<BabelCoreNamespace.types.ImportDeclaration>,
   types: BabelTypes,
   source: BabelCoreNamespace.types.StringLiteral,

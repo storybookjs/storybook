@@ -845,6 +845,11 @@ export const buildEntries = {
           entryPoint: './src/images/next-legacy-image.tsx',
           dts: false,
         },
+        {
+          exportEntries: ['./rsc/server-only'],
+          entryPoint: './src/rsc/server-only.ts',
+          dts: false,
+        },
       ],
       node: [
         {
@@ -869,11 +874,6 @@ export const buildEntries = {
         {
           exportEntries: ['./storybook-nextjs-font-loader'],
           entryPoint: './src/font/webpack/loader/storybook-nextjs-font-loader.ts',
-          dts: false,
-        },
-        {
-          exportEntries: ['./rsc/server-only'],
-          entryPoint: './src/rsc/server-only.ts',
           dts: false,
         },
       ],

@@ -45,7 +45,7 @@ export const configureSWCLoader = async (
     use: {
       // we use our own patch because we need to remove tracing from the original code
       // which is not possible otherwise
-      loader: fileURLToPath(import.meta.resolve('@storybook/nextjs/next-swc-loader-patch')),
+      loader: '@storybook/nextjs/next-swc-loader-patch',
       options: {
         isServer: false,
         rootDir: projectRoot,

@@ -108,7 +108,7 @@ export async function pluginConfig(options: Options) {
         // add storybook specific directories only if there's an allow list so that we don't end up
         // disallowing the root unless root is already disallowed
         if (config?.server?.fs?.allow) {
-          config.server.fs.allow.push('.storybook');
+          config.server.fs.allow.push(options.configDir);
         }
       },
     },

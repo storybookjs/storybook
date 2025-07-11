@@ -7,7 +7,7 @@ import type { CoreConfig, Options } from 'storybook/internal/types';
 import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
 
 type Event = {
-  type: 'telemetry';
+  type: 'telemetry' | 'survey';
   step: string;
   payload?: any;
 };
@@ -24,11 +24,9 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
     channel.on(STORYBOOK_ADDON_ONBOARDING_CHANNEL, ({ type, ...event }: Event) => {
       if (type === 'telemetry') {
-        // @ts-expect-error (bad string)
-        telemetry('addon-onboarding', {
-          ...event,
-          addonVersion,
-        });
+        telemetry('addon-onboarding', { ...event, addonVersion });
+      } else if (type === 'survey') {
+        telemetry('onboarding-survey', { ...event, addonVersion });
       }
     });
   }

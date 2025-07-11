@@ -551,6 +551,227 @@ export const buildEntries = {
       './static/coverage-reporter.cjs': './static/coverage-reporter.cjs',
     },
   },
+  '@storybook/html': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/preact': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/react': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.tsx',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-argtypes'],
+          entryPoint: './src/entry-preview-argtypes.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-rsc'],
+          entryPoint: './src/entry-preview-rsc.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./experimental-playwright'],
+          entryPoint: './src/playwright.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/server': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/svelte': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./experimental-playwright'],
+          entryPoint: './src/playwright.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+    extraOutputs: {
+      './internal/PreviewRender.svelte': './static/PreviewRender.svelte',
+      './internal/DecoratorHandler.svelte': './static/DecoratorHandler.svelte',
+      './internal/AddStorybookIdDecorator.svelte': './static/AddStorybookIdDecorator.svelte',
+      './internal/createReactiveProps': './static/createReactiveProps.svelte.js',
+    },
+  },
+  '@storybook/vue3': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./experimental-playwright'],
+          entryPoint: './src/playwright.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/web-components': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-argtypes'],
+          entryPoint: './src/entry-preview-argtypes.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

@@ -19,25 +19,21 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
+    "./entry-preview": "./dist/entry-preview.js",
+    "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
-      "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js"
+      "default": "./dist/playwright.js"
     },
-    "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
-    "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "template/cli/**/*",
@@ -48,7 +44,7 @@
   ],
   "scripts": {
     "check": "vue-tsc --noEmit",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
@@ -69,15 +65,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
-      "./src/entry-preview.ts",
-      "./src/entry-preview-docs.ts",
-      "./src/playwright.ts"
-    ],
-    "platform": "browser"
-  },
-  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae10"
+  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae78"
 }

@@ -63,6 +63,14 @@ export async function generateBundle({
       treeShaking: true,
       color: true,
       external,
+      define: {
+        /*
+         * We need to disable the default behavior of replacing process.env.NODE_ENV with "development"
+         * Because we have code that reads this value to determine if the code is running in a production environment.
+         * @see 6th bullet in "browser" section in https://esbuild.github.io/api/#platform
+         */
+        'process.env.NODE_ENV': 'process.env.NODE_ENV',
+      },
     } as const satisfies EsbuildContextOptions;
 
     const [config, ...rest] = input;
@@ -125,7 +133,7 @@ export async function generateBundle({
     },
     define: {
       // This should set react in prod mode for the manager
-      'process.env.NODE_ENV': JSON.stringify('production'),
+      'process.env.NODE_ENV': '"production"',
     },
   } as const satisfies EsbuildContextOptions;
 

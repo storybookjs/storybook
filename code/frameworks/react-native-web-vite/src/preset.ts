@@ -1,5 +1,3 @@
-import { dirname, join } from 'node:path';
-
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import { esbuildFlowPlugin, flowPlugin } from '@bunchtogether/vite-plugin-flow';
@@ -147,5 +145,5 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 
 export const core = {
   builder: require.resolve('@storybook/builder-vite'),
-  renderer: dirname(require.resolve(join('@storybook/react', 'package.json'))),
+  renderer: require.resolve('@storybook/react/preset'),
 };

@@ -18,6 +18,6 @@ export const core: PresetProperty<'core'> = async (config, options) => {
       name: require.resolve('@storybook/builder-webpack5'),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
-    renderer: getAbsolutePath('@storybook/server'),
+    renderer: require.resolve('@storybook/server/preset'),
   };
 };

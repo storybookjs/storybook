@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
@@ -22,7 +21,7 @@ import { logger } from 'storybook/internal/node-logger';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
 import { findUp } from 'find-up';
-import { dirname, join, relative, resolve } from 'pathe';
+import { dirname, relative, resolve } from 'pathe';
 import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -568,15 +567,14 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const core = await presets.apply('core', {});
 
   const { builder, renderer } = core;
-
   if (!builder) {
     throw new Error('Could not detect your Storybook builder.');
   }
 
+  const builderRawPath = typeof builder === 'string' ? builder : builder.name;
+
   const builderPackageJsonPath = await findUp('package.json', {
-    cwd: fileURLToPath(
-      import.meta.resolve(join(typeof builder === 'string' ? builder : builder.name))
-    ),
+    cwd: builderRawPath,
   });
 
   if (!builderPackageJsonPath) {
@@ -587,13 +585,13 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
   const builderPackageName = JSON.parse(builderPackageJson).name;
 
   let rendererPackageName: string | undefined;
-  if (renderer) {
-    const renderPackageJsonPath = await findUp('package.json', {
-      cwd: fileURLToPath(import.meta.resolve(renderer)),
-    });
 
-    if (renderPackageJsonPath) {
-      const rendererPackageJson = await fs.readFile(renderPackageJsonPath, 'utf8');
+  if (renderer) {
+    const rendererPackageJsonPath = await findUp('package.json', {
+      cwd: renderer,
+    });
+    if (rendererPackageJsonPath) {
+      const rendererPackageJson = await fs.readFile(rendererPackageJsonPath, 'utf8');
       rendererPackageName = JSON.parse(rendererPackageJson).name;
     }
   }

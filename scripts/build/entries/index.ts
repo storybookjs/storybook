@@ -807,22 +807,18 @@ export const buildEntries = {
         {
           exportEntries: ['./cache.mock'],
           entryPoint: './src/export-mocks/cache/index.ts',
-          dts: false,
         },
         {
           exportEntries: ['./headers.mock'],
           entryPoint: './src/export-mocks/headers/index.ts',
-          dts: false,
         },
         {
           exportEntries: ['./navigation.mock'],
           entryPoint: './src/export-mocks/navigation/index.ts',
-          dts: false,
         },
         {
           exportEntries: ['./router.mock'],
           entryPoint: './src/export-mocks/router/index.ts',
-          dts: false,
         },
         {
           exportEntries: ['./compatibility/draft-mode.compat'],

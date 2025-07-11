@@ -4,12 +4,12 @@ import { join, relative, resolve } from 'node:path';
 import {
   JsPackageManagerFactory,
   getConfigInfo,
+  getInterpretedFile,
   getProjectRoot,
   loadAllPresets,
   loadMainConfig,
   resolveAddonName,
   resolvePathInStorybookCache,
-  serverResolve,
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
@@ -24,6 +24,7 @@ import prompts from 'prompts';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
+import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
 import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
@@ -134,7 +135,7 @@ export async function buildDevStandalone(
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     isCritical: true,
@@ -152,18 +153,20 @@ export async function buildDevStandalone(
     }
   }
 
-  const builderName = typeof builder === 'string' ? builder : builder.name;
+  const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName, options.configDir),
+    getPreviewBuilder(resolvedPreviewBuilder),
     getManagerBuilder(),
   ]);
 
-  if (builderName.includes('builder-vite')) {
+  if (resolvedPreviewBuilder.includes('builder-vite')) {
     const deprecationMessage =
       dedent(`Using CommonJS in your main configuration file is deprecated with Vite.
               - Refer to the migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#commonjs-with-vite-is-deprecated`);
 
-    const mainJsPath = serverResolve(resolve(options.configDir || '.storybook', 'main')) as string;
+    const mainJsPath = getInterpretedFile(
+      resolve(options.configDir || '.storybook', 'main')
+    ) as string;
     if (/\.c[jt]s$/.test(mainJsPath)) {
       deprecate(deprecationMessage);
     }
@@ -181,7 +184,7 @@ export async function buildDevStandalone(
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
+      join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
@@ -189,7 +192,7 @@ export async function buildDevStandalone(
     ],
     overridePresets: [
       ...(previewBuilder.overridePresets || []),
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
   });

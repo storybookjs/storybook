@@ -19,7 +19,7 @@ export function globToRegexp(glob: string) {
   // creates a matcher that expects files with no prefix (e.g. `src/file.js`)
   // but if you pass it a directory that starts with `../` it expects files that
   // start with `../`. Let's make it consistent.
-  // Globs starting `**` require special treatment due to the regex they
+  // Globs starting `**` need special treatment due to the regex they
   // produce, specifically a negative look-ahead
   return new RegExp(
     ['^\\.', glob.startsWith('./**') ? '' : '[\\\\/]', regex.source.substring(1)].join('')

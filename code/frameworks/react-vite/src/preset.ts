@@ -1,15 +1,10 @@
-import { dirname, join } from 'node:path';
-
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StorybookConfig } from './types';
 
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
-
 export const core: PresetProperty<'core'> = {
-  builder: getAbsolutePath('@storybook/builder-vite'),
-  renderer: getAbsolutePath('@storybook/react'),
+  builder: require.resolve('@storybook/builder-vite'),
+  renderer: require.resolve('@storybook/react/preset'),
 };
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, { presets }) => {

@@ -19,14 +19,12 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: dirname(
-        require.resolve(join('@storybook/builder-vite', 'package.json'))
-      ) as '@storybook/builder-vite',
+      name: require.resolve('@storybook/builder-vite'),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: dirname(require.resolve(join('@storybook/react', 'package.json'))),
+    renderer: require.resolve('@storybook/react/preset'),
   };
 };
 

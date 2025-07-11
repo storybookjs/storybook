@@ -22,40 +22,21 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
-    },
+    "./entry-preview": "./dist/entry-preview.js",
+    "./entry-preview-argtypes": "./dist/entry-preview-argtypes.js",
+    "./entry-preview-docs": "./dist/entry-preview-docs.js",
+    "./entry-preview-rsc": "./dist/entry-preview-rsc.js",
     "./experimental-playwright": {
       "types": "./dist/playwright.d.ts",
-      "import": "./dist/playwright.mjs",
-      "require": "./dist/playwright.js"
+      "default": "./dist/playwright.js"
     },
-    "./preset": "./preset.js",
-    "./dist/entry-preview.mjs": "./dist/entry-preview.mjs",
-    "./dist/entry-preview-argtypes.mjs": "./dist/entry-preview-argtypes.mjs",
-    "./dist/entry-preview-docs.mjs": "./dist/entry-preview-docs.mjs",
-    "./dist/entry-preview-rsc.mjs": "./dist/entry-preview-rsc.mjs",
-    "./package.json": "./package.json"
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ],
-      "preview": [
-        "dist/preview.d.ts"
-      ],
-      "experimental-playwright": [
-        "dist/playwright.d.ts"
-      ]
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
     }
   },
   "files": [
@@ -67,8 +48,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
@@ -106,24 +87,8 @@
       "optional": true
     }
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/preset.ts",
-      "./src/preview.tsx",
-      "./src/entry-preview.tsx",
-      "./src/entry-preview-argtypes.ts",
-      "./src/entry-preview-docs.ts",
-      "./src/entry-preview-rsc.tsx",
-      "./src/playwright.ts"
-    ],
-    "platform": "browser"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae78"
 }

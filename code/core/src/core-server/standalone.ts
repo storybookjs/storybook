@@ -1,13 +1,13 @@
-import { dirname } from 'node:path';
-
 import { buildDevStandalone } from './build-dev';
 import { buildIndexStandalone } from './build-index';
 import { buildStaticStandalone } from './build-static';
 
 async function build(options: any = {}, frameworkOptions: any = {}) {
   const { mode = 'dev' } = options;
-  const packageJsonDir = dirname(require.resolve('storybook/internal/package.json'));
-  const packageJson = JSON.parse(require('fs').readFileSync(`${packageJsonDir}/package.json`));
+
+  const { default: packageJson } = await import('storybook/package.json', {
+    with: { type: 'json' },
+  });
 
   const commonOptions = {
     ...options,

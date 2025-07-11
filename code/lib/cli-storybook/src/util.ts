@@ -319,7 +319,7 @@ const processProject = async ({
       previewConfigPath,
       storiesPaths,
       storybookVersion: beforeVersion,
-    } = await getStorybookData({ configDir, cache: true });
+    } = await getStorybookData({ configDir });
 
     // Validate version and upgrade compatibility
     logger.debug(`${name} - Validating before version... ${beforeVersion}`);

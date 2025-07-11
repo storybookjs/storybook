@@ -1,4 +1,5 @@
 import { type ChildProcess } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
@@ -9,8 +10,9 @@ import type { EventInfo, Options } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
-import { join, normalize } from 'pathe';
+import { normalize } from 'pathe';
 
+import { importMetaResolve } from '../../../../core/src/shared/utils/module';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
@@ -23,7 +25,7 @@ const MAX_START_TIME = 30000;
 
 // This path is a bit confusing, but essentially `boot-test-runner` gets bundled into the preset bundle
 // which is at the root. Then, from the root, we want to load `node/vitest.mjs`
-const vitestModulePath = join(__dirname, 'node', 'vitest.mjs');
+const vitestModulePath = fileURLToPath(importMetaResolve('@storybook/addon-vitest/vitest'));
 
 // Events that were triggered before Vitest was ready are queued up and resent once it's ready
 const eventQueue: { type: string; args?: any[] }[] = [];

@@ -144,6 +144,6 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 };
 
 export const core = {
-  builder: '@storybook/builder-vite',
-  renderer: '@storybook/react',
+  builder: require.resolve('@storybook/builder-vite'),
+  renderer: require.resolve('@storybook/react/preset'),
 };

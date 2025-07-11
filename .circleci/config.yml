@@ -331,9 +331,11 @@ jobs:
           at: .
       - run:
           name: Run tests
+          # TEST_FILES should include all relevant test files, including story files, but not e2e-tests
+          # `circleci tests run` shards tests across parallel runners and allows rerunning failed tests by passing a subset of test files to the command via `xargs`
           command: |
             cd code
-            TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}")
+            TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-tests/d")
             echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
       - store_test_results:
           path: test-results
@@ -568,6 +570,9 @@ jobs:
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
       - run:
           name: Running E2E Tests
+          # TEST_FILES should include all relevant test files, in this case we use the default playwright pattern
+          # `circleci tests run` allows rerunning failed tests by passing a subset of test files to the command via `xargs`
+          # --index0 --total=1 ensures we run all tests on all runners, since each runner handles a different sandbox
           command: |
             TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
             echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests) --no-link --start-from=never --junit" --verbose --index=0 --total=1
@@ -598,9 +603,12 @@ jobs:
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
       - run:
           name: Running E2E Tests
+          # TEST_FILES should include all relevant test files, in this case we use the default playwright pattern
+          # `circleci tests run` allows rerunning failed tests by passing a subset of test files to the command via `xargs`
+          # --index0 --total=1 ensures we run all tests on all runners, since each runner handles a different sandbox
           command: |
             TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
-            echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev) --no-link --start-from=never --junit" --verbose
+            echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev) --no-link --start-from=never --junit" --verbose --index=0 --total=1
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
       - store_test_results:

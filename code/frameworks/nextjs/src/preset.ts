@@ -21,8 +21,6 @@ export const addons: PresetProperty<'addons'> = [
   resolvePackageDir('@storybook/preset-react-webpack'),
 ];
 
-console.log('nextjs preset LOADED');
-
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply<StorybookConfig['framework']>('framework');
 

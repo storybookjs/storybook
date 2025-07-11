@@ -8,12 +8,12 @@ import {
   ensureSymlink,
   existsSync,
   pathExists,
+  readFile,
   readFileSync,
   readJson,
   writeFile,
   writeJson,
 } from 'fs-extra';
-import { readFile } from 'fs/promises';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
@@ -25,7 +25,7 @@ import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { JsPackageManagerFactory, versions as storybookPackages } from '../../code/core/src/common';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { writeConfig } from '../../code/core/src/csf-tools';
+import { formatConfig, writeConfig } from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
@@ -519,6 +519,10 @@ export async function addExtraDependencies({
   }
 }
 
+export const addGlobalMocks: Task['run'] = async ({ sandboxDir }) => {
+  await copy(join(CODE_DIRECTORY, 'core', 'template', '__mocks__'), join(sandboxDir, '__mocks__'));
+};
+
 export const addStories: Task['run'] = async (
   { sandboxDir, template, key },
   { addon: extraAddons, disableDocs }
@@ -765,6 +769,30 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
 
   if (template.expected.builder.includes('vite')) {
     previewConfig.setFieldValue(['tags'], ['vitest']);
+  }
+
+  if (!template.skipTasks?.includes('vitest-integration')) {
+    previewConfig.setImport(['sb'], 'storybook/test');
+    let config = formatConfig(previewConfig);
+
+    const mockBlock = [
+      "sb.mock('../template-stories/core/test/ModuleMocking.utils');",
+      "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils', { spy: true });",
+      "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils');",
+      "sb.mock('lodash-es');",
+      "sb.mock('lodash-es/add');",
+      "sb.mock('lodash-es/sum');",
+      '',
+    ].join('\n');
+
+    // find last import statement and append sb.mock calls
+    config = config.replace(
+      'import { sb } from "storybook/test";',
+      `import { sb } from 'storybook/test';\n\n${mockBlock}`
+    );
+
+    await writeFile(previewConfig.fileName, config);
+    return;
   }
 
   await writeConfig(previewConfig);

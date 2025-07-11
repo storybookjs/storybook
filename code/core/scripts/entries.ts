@@ -18,6 +18,7 @@ export const getEntries = (cwd: string) => {
       'react',
       '@storybook/icons',
     ]),
+
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
     define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),

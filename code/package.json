@@ -147,6 +147,7 @@
     "@testing-library/react": "^16.2.0",
     "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
+    "@types/lodash-es": "^4.17.12",
     "@types/mock-require": "^2.0.3",
     "@types/node": "^22.0.0",
     "@types/react": "^18.0.37",

@@ -3,6 +3,7 @@ import type { userEvent } from '@testing-library/user-event';
 
 import { instrument } from 'storybook/internal/instrumenter';
 
+import type { registerModuleMocker } from '@vitest/mocker/register';
 import { Assertion } from 'chai';
 
 import { expect as rawExpect } from './expect';
@@ -42,5 +43,15 @@ export const { expect } = instrument(
     intercept: (method) => method !== 'expect',
   }
 );
+
+type ReturnTypeOfModuleMocker = ReturnType<typeof registerModuleMocker>;
+
+export const sb: {
+  mock: ReturnTypeOfModuleMocker['mock'];
+} = {
+  mock: () => {
+    // noop
+  },
+};
 
 export * from './testing-library';

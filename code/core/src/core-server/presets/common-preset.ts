@@ -6,6 +6,7 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
+  findConfigFile,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -310,4 +311,27 @@ export const managerEntries = async (existing: any) => {
     ),
     ...(existing || []),
   ];
+};
+
+export const viteFinal = async (
+  existing: import('vite').UserConfig,
+  options: Options
+): Promise<import('vite').UserConfig> => {
+  const previewConfigPath = findConfigFile('preview', options.configDir);
+  const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
+  const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
+  const coreOptions = await options.presets.apply('core');
+
+  return {
+    ...existing,
+    plugins: [
+      ...(existing.plugins ?? []),
+      ...(previewConfigPath
+        ? [
+            viteInjectMockerRuntime({ previewConfigPath }),
+            viteMockPlugin({ previewConfigPath, coreOptions, configDir: options.configDir }),
+          ]
+        : []),
+    ],
+  };
 };

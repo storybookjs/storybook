@@ -7,9 +7,7 @@ import { fetchCSSFromGoogleFonts } from 'next/dist/compiled/@next/font/dist/goog
 import { getFontAxes } from 'next/dist/compiled/@next/font/dist/google/get-font-axes.js';
 import { getGoogleFontsUrl } from 'next/dist/compiled/@next/font/dist/google/get-google-fonts-url.js';
 import { validateGoogleFontFunctionCall } from 'next/dist/compiled/@next/font/dist/google/validate-google-font-function-call.js';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-import loaderUtils from 'next/dist/compiled/loader-utils3.js';
+import loaderUtils from 'next/dist/compiled/loader-utils3/index.js';
 
 import type { LoaderOptions } from '../types';
 

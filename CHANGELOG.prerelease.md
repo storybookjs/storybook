@@ -1,3 +1,9 @@
+## 9.1.0-alpha.8
+
+- Angular: Prevent directory import in Angular builders - [#32012](https://github.com/storybookjs/storybook/pull/32012), thanks @ghengeveld!
+- Automigration: Fail with non-zero exit code on migration failure - [#31923](https://github.com/storybookjs/storybook/pull/31923), thanks @mrginglymus!
+- Onboarding: Intent survey - [#31944](https://github.com/storybookjs/storybook/pull/31944), thanks @ghengeveld!
+
 ## 9.1.0-alpha.7
 
 - A11y: Improved toolbar a11y by fixing semantics - [#28672](https://github.com/storybookjs/storybook/pull/28672), thanks @mehm8128!

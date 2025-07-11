@@ -46,6 +46,11 @@ test.describe('addon-onboarding', () => {
     await expect(page.getByText('You just added your first')).toBeVisible();
     await page.getByLabel('Last').click();
 
+    await page.getByRole('checkbox', { name: 'Application UI' }).check();
+    await page.getByRole('checkbox', { name: 'Functional testing' }).check();
+    await page.getByRole('combobox').selectOption('Web Search');
+    await page.getByRole('button', { name: 'Submit' }).click();
+
     await expect(
       sbPage.previewIframe().getByRole('heading', { name: 'Configure your project' })
     ).toBeVisible();

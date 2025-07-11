@@ -16,5 +16,6 @@ jobs:
           labels-to-add-when-unstale: "needs triage"
           days-before-issue-close: 7
           days-before-issue-stale: 21
+          days-before-pr-close: -1
           days-before-pr-stale: 10
           exempt-draft-pr: true

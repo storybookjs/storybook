@@ -46,8 +46,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/prepare/bundle.ts",
+    "typecheck": "jiti ../../../scripts/prepare/check.ts"
   },
   "dependencies": {
     "unplugin": "^1.3.1"

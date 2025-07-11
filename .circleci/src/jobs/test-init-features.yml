@@ -1,0 +1,25 @@
+executor:
+  class: small
+  name: sb_node_22_browsers
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: .
+  - run:
+      name: Storybook init for features
+      command: |
+        cd code
+        yarn local-registry --open &
+        yarn wait-on tcp:127.0.0.1:6001
+        cd ../../
+        mkdir features-1
+        cd features-1
+        npm set registry http://localhost:6001
+        npx create-storybook --yes --package-manager npm --features dev docs test
+        npx vitest
+      environment:
+        IN_STORYBOOK_SANDBOX: true
+        STORYBOOK_INIT_EMPTY_TYPE: react-vite-ts
+        STORYBOOK_DISABLE_TELEMETRY: true

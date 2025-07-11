@@ -1,0 +1,26 @@
+executor:
+  class: medium
+  name: sb_node_22_classic
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - restore_cache:
+      name: Restore Yarn cache
+      keys:
+        - prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+  - run:
+      name: Install
+      command: |
+        cd scripts
+        yarn install
+  - save_cache:
+      name: Save Yarn cache
+      key: prettydocs-yarn-2-cache-v8--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+      paths:
+        - ~/.yarn/berry/cache
+  - run:
+      name: Prettier
+      command: |
+        cd scripts
+        yarn docs:prettier:check

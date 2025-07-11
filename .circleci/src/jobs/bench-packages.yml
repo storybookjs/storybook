@@ -1,0 +1,49 @@
+executor:
+  class: small
+  name: sb_node_22_classic
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: .
+  # if there is a base branch AND a PR number in parameters, benchmark packages against those
+  # this happens when run against a PR
+  - when:
+      condition:
+        and:
+          - << pipeline.parameters.ghBaseBranch >>
+          - << pipeline.parameters.ghPrNumber >>
+      steps:
+        - run:
+            name: Benchmarking packages against base branch
+            working_directory: scripts
+            command: |
+              yarn local-registry --open &
+              until curl -s http://localhost:6001 > /dev/null; do
+                echo 'Waiting for local registry to be available...'
+                sleep 2
+              done
+              yarn bench-packages --base-branch << pipeline.parameters.ghBaseBranch >> --pull-request << pipeline.parameters.ghPrNumber >> --upload
+  # if there is a NOT a base branch OR NOT a PR number in parameters, just upload benchmarks for the branch
+  # this happens when runned directly on branches, like next or main
+  - when:
+      condition:
+        or:
+          - not: << pipeline.parameters.ghBaseBranch >>
+          - not: << pipeline.parameters.ghPrNumber >>
+      steps:
+        - run:
+            name: Uploading package benchmarks for branch
+            working_directory: scripts
+            command: |
+              yarn local-registry --open &
+              until curl -s http://localhost:6001 > /dev/null; do
+                echo 'Waiting for local registry to be available...'
+                sleep 2
+              done
+              yarn bench-packages --upload
+  - store_artifacts:
+      path: bench/packages/results.json
+  - report-workflow-on-failure
+  - cancel-workflow-on-failure

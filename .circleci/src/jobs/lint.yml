@@ -1,0 +1,16 @@
+executor:
+  class: medium+
+  name: sb_node_22_classic
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - attach_workspace:
+      at: .
+  - run:
+      name: Lint
+      command: |
+        cd code
+        yarn lint
+  - report-workflow-on-failure
+  - cancel-workflow-on-failure

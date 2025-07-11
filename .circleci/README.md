@@ -34,9 +34,9 @@ The Storybook CircleCI setup is a multi-workflow system designed to test Storybo
 
 The configuration accepts several pipeline parameters:
 
-- `workflow`: Which workflow to run (`normal`, `merged`, `daily`, `skipped`, `docs`)
-- `ghPrNumber`: GitHub PR number for PR-specific testing
-- `ghBaseBranch`: Base branch name for comparison testing
+- **`workflow`**: Which workflow to run (`normal`, `merged`, `daily`, `skipped`, `docs`)
+- **`ghPrNumber`**: GitHub PR number for PR-specific testing
+- **`ghBaseBranch`**: Base branch name for comparison testing
 
 ### Workflows
 

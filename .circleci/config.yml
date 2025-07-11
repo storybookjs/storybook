@@ -335,7 +335,7 @@ jobs:
           # `circleci tests run` shards tests across parallel runners and allows rerunning failed tests by passing a subset of test files to the command via `xargs`
           command: |
             cd code
-            TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-tests/d")
+            TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
             echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
       - store_test_results:
           path: test-results

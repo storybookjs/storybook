@@ -320,12 +320,17 @@ export const viteFinal = async (
   const previewConfigPath = findConfigFile('preview', options.configDir);
   const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
   const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
+  const coreOptions = await options.presets.apply('core');
+
   return {
     ...existing,
     plugins: [
       ...(existing.plugins ?? []),
       ...(previewConfigPath
-        ? [viteInjectMockerRuntime({ previewConfigPath }), viteMockPlugin({ previewConfigPath })]
+        ? [
+            viteInjectMockerRuntime({ previewConfigPath }),
+            viteMockPlugin({ previewConfigPath, coreOptions, configDir: options.configDir }),
+          ]
         : []),
     ],
   };

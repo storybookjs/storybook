@@ -7,6 +7,9 @@ import { readFileSync } from 'fs';
 import type { PluginContext } from 'rollup';
 import type { ResolvedConfig, ViteDevServer } from 'vite';
 
+import { telemetry } from '../../../../telemetry';
+import type { MockPluginOptions } from './plugin';
+
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
 
 export function isModuleDirectory(path: string) {
@@ -55,7 +58,7 @@ export type MockCall = {
  * @param this PluginContext
  */
 export function extractMockCalls(
-  options: { previewConfigPath: string },
+  options: MockPluginOptions,
   parse: PluginContext['parse'],
   viteConfig: ResolvedConfig
 ): MockCall[] {
@@ -135,5 +138,17 @@ export function extractMockCalls(
       });
     },
   });
+
+  if (!options.coreOptions?.disableTelemetry) {
+    telemetry(
+      'mocking',
+      {
+        modulesMocked: mocks.length,
+        modulesSpied: mocks.map((mock) => mock.spy).filter(Boolean).length,
+        modulesManuallyMocked: mocks.map((mock) => !!mock.redirectPath).filter(Boolean).length,
+      },
+      { configDir: options.configDir }
+    );
+  }
   return mocks;
 }

@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+import type { CoreConfig } from 'storybook/internal/types';
+
 import { automockModule } from '@vitest/mocker/node';
 import type { PluginContext } from 'rollup';
 import type { Plugin, ResolvedConfig } from 'vite';
@@ -7,9 +9,13 @@ import type { Plugin, ResolvedConfig } from 'vite';
 import { __STORYBOOK_GLOBAL_THIS_ACCESSOR__ } from '../vite-inject-mocker/constants';
 import { type MockCall, extractMockCalls, getCleanId, invalidateAllRelatedModules } from './utils';
 
-interface MockPluginOptions {
+export interface MockPluginOptions {
   /** The absolute path to the preview.tsx file where mocks are defined. */
   previewConfigPath: string;
+  /** The absolute path to the Storybook config directory. */
+  coreOptions?: CoreConfig;
+  /** Configuration directory */
+  configDir: string;
 }
 
 let parse: PluginContext['parse'];
@@ -111,8 +117,6 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             if (call.absolutePath !== id && viteConfig.command !== 'serve') {
               continue;
             }
-
-            const isOptimizedDeps = id.includes('/sb-vite/deps/');
 
             const cleanId = getCleanId(id);
 

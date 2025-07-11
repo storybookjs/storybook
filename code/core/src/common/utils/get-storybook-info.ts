@@ -22,6 +22,7 @@ export const rendererPackages: Record<string, string> = {
   // community (outside of monorepo)
   'storybook-framework-qwik': 'qwik',
   'storybook-solidjs': 'solid',
+  '@stencil/storybook-plugin': 'stencil',
 
   /** @deprecated This is deprecated. */
   '@storybook/vue': 'vue',
@@ -47,6 +48,7 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   'storybook-solidjs-vite': 'solid',
   'storybook-react-rsbuild': 'react-rsbuild',
   'storybook-vue3-rsbuild': 'vue3-rsbuild',
+  '@stencil/storybook-plugin': 'stencil',
 };
 
 export const builderPackages = ['@storybook/builder-webpack5', '@storybook/builder-vite'];

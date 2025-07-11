@@ -34,6 +34,21 @@ export interface ActionsParameters {
      * @see https://storybook.js.org/docs/essentials/actions#action-event-handlers
      */
     handles?: string[];
+
+    /**
+     * Create actions for any specified method on console, or all of them.
+     *
+     * This is useful when you want to see a story's console output in the actions panel.
+     *
+     * You can specify a boolean to enable all console methods, or an object to enable specific
+     * methods.
+     *
+     * @example `console: true` to make all console methods trigger actions
+     *
+     * @example `console: { log: true, warn: true }` to make only `console.log` and `console.warn`
+     * trigger actions
+     */
+    console?: boolean | Record<Partial<keyof Console>, boolean>;
   };
 }
 

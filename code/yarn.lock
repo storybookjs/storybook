@@ -6400,11 +6400,11 @@ __metadata:
     ansi-regex: "npm:^6.0.1"
     cross-spawn: "npm:^7.0.6"
     es-toolkit: "npm:^1.36.0"
-    globby: "npm:^14.0.1"
     jscodeshift: "npm:^0.15.1"
     prettier: "npm:^3.5.3"
     storybook: "workspace:*"
     tiny-invariant: "npm:^1.3.1"
+    tinyglobby: "npm:^0.2.13"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^5.8.3"
   languageName: unknown

@@ -83,6 +83,10 @@
       "import": "./dist/core-server/presets/common-override-preset.js",
       "require": "./dist/core-server/presets/common-override-preset.cjs"
     },
+    "./internal/core-server/presets/webpack/plugins/webpack-automock-loader": {
+      "import": "./dist/core-server/presets/webpack/plugins/webpack-automock-loader.js",
+      "require": "./dist/core-server/presets/webpack/plugins/webpack-automock-loader.cjs"
+    },
     "./internal/highlight": {
       "types": "./dist/highlight/index.d.ts",
       "import": "./dist/highlight/index.js",

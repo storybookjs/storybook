@@ -21,6 +21,8 @@ export const getEntries = (cwd: string) => {
 
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
 
+    define('src/core-server/presets/webpack/plugins/webpack-automock-loader.ts', ['node'], false),
+
     define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
 
     define('src/actions/index.ts', ['browser', 'node'], true, ['react'], [], [], true),

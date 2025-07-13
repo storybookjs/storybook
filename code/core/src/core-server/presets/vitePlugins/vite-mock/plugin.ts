@@ -2,12 +2,12 @@ import { readFileSync } from 'node:fs';
 
 import type { CoreConfig } from 'storybook/internal/types';
 
-import { automockModule } from '@vitest/mocker/node';
 import type { PluginContext } from 'rollup';
 import type { Plugin, ResolvedConfig } from 'vite';
 
-import { __STORYBOOK_GLOBAL_THIS_ACCESSOR__ } from '../vite-inject-mocker/constants';
-import { type MockCall, extractMockCalls, getCleanId, invalidateAllRelatedModules } from './utils';
+import { getAutomockCode } from '../../../mocking-utils/automock';
+import { extractMockCalls } from '../../../mocking-utils/extract';
+import { type MockCall, getCleanId, invalidateAllRelatedModules } from './utils';
 
 export interface MockPluginOptions {
   /** The absolute path to the preview.tsx file where mocks are defined. */
@@ -50,7 +50,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
       buildStart() {
         parse = this.parse.bind(this);
-        mockCalls = extractMockCalls(options, parse, viteConfig);
+        mockCalls = extractMockCalls(options, parse, viteConfig.root);
       },
 
       configureServer(server) {
@@ -59,7 +59,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             // Store the old mocks before updating
             const oldMockCalls = mockCalls;
             // Re-extract mocks to get the latest list
-            mockCalls = extractMockCalls(options, parse, viteConfig);
+            mockCalls = extractMockCalls(options, parse, viteConfig.root);
 
             // Invalidate the preview file
             const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);
@@ -130,14 +130,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
             try {
               if (!call.redirectPath) {
-                const automockedCode = automockModule(
-                  code,
-                  call.spy ? 'autospy' : 'automock',
-                  this.parse,
-                  {
-                    globalThisAccessor: JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__),
-                  }
-                );
+                const automockedCode = getAutomockCode(code, call.spy, this.parse);
 
                 return {
                   code: automockedCode.toString(),

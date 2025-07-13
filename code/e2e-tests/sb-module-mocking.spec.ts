@@ -1,13 +1,11 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage, hasVitestIntegration } from './util';
+import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 
 test.describe('sb-module-mocking', () => {
-  test.skip(!hasVitestIntegration, 'Only run for Vite-based frameworks with Vitest integration');
-
   test.beforeEach(async ({ page }) => {
     await page.goto(storybookUrl);
     await new SbPage(page, expect).waitUntilLoaded();

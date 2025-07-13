@@ -771,31 +771,26 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  if (!template.skipTasks?.includes('vitest-integration')) {
-    previewConfig.setImport(['sb'], 'storybook/test');
-    let config = formatConfig(previewConfig);
+  previewConfig.setImport(['sb'], 'storybook/test');
+  let config = formatConfig(previewConfig);
 
-    const mockBlock = [
-      "sb.mock('../template-stories/core/test/ModuleMocking.utils');",
-      "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils', { spy: true });",
-      "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils');",
-      "sb.mock('lodash-es');",
-      "sb.mock('lodash-es/add');",
-      "sb.mock('lodash-es/sum');",
-      '',
-    ].join('\n');
+  const mockBlock = [
+    "sb.mock('../template-stories/core/test/ModuleMocking.utils');",
+    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils', { spy: true });",
+    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils');",
+    "sb.mock('lodash-es');",
+    "sb.mock('lodash-es/add');",
+    "sb.mock('lodash-es/sum');",
+    '',
+  ].join('\n');
 
-    // find last import statement and append sb.mock calls
-    config = config.replace(
-      'import { sb } from "storybook/test";',
-      `import { sb } from 'storybook/test';\n\n${mockBlock}`
-    );
+  // find last import statement and append sb.mock calls
+  config = config.replace(
+    'import { sb } from "storybook/test";',
+    `import { sb } from 'storybook/test';\n\n${mockBlock}`
+  );
 
-    await writeFile(previewConfig.fileName, config);
-    return;
-  }
-
-  await writeConfig(previewConfig);
+  await writeFile(previewConfig.fileName, config);
 };
 
 export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dryRun, debug }) => {

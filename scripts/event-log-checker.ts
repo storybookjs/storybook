@@ -74,7 +74,9 @@ async function run() {
     if (events.length === 0) {
       throw new Error('No events were logged');
     }
-    const [bootEvent, mainEvent] = definition.noBoot ? [null, events[0]] : events;
+    const [bootEvent, mainEvent] = definition.noBoot
+      ? [null, events.find((e: any) => e.eventType === eventType)]
+      : events;
 
     const storybookVersion = versions.storybook;
     if (bootEvent) {

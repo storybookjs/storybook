@@ -9,10 +9,10 @@ import { fn } from './ModuleSpyMocking.utils';
 // .storybook/preview.js file contains a sb.mock(module, {spy: true}) call for it.
 
 export default {
-  component: globalThis.__TEMPLATE_COMPONENTS__.Html,
-  render: () => {
-    return `Function: ${(fn() ?? []).join(', ') || 'no value'}`;
-  },
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
+  decorators: [
+    (storyFn: any) => storyFn({ args: { object: `Function: ${fn().join(', ') || 'no value'}` } }),
+  ],
   parameters: {
     layout: 'fullscreen',
   },
@@ -22,8 +22,8 @@ export default {
 };
 
 export const Original = {
-  play: async ({ canvas }: any) => {
+  play: async ({ canvasElement }: any) => {
     expect(mocked(fn)).toHaveBeenCalledWith();
-    await expect(canvas.getByText('Function: original value')).toBeInTheDocument();
+    await expect(canvasElement.innerHTML).toContain('Function: original value');
   },
 };

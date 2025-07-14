@@ -21,10 +21,15 @@ import { expect, mocked } from 'storybook/test';
 // __mocks__ directory does not contain a lodash/sum.js file. Mocking has to happen at runtime.
 
 export default {
-  component: globalThis.__TEMPLATE_COMPONENTS__.Html,
-  render: () => {
-    return `Lodash Version: ${lodash.VERSION} | Mocked Add (1,2): ${add(1, 2)} | Inline Sum (2,2): ${sum([2, 2])}`;
-  },
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
+  decorators: [
+    (storyFn: any) =>
+      storyFn({
+        args: {
+          object: `Lodash Version: ${lodash.VERSION} | Mocked Add (1,2): ${add(1, 2)} | Inline Sum (2,2): ${sum([2, 2])}`,
+        },
+      }),
+  ],
   parameters: {
     layout: 'fullscreen',
   },

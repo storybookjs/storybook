@@ -10,10 +10,7 @@ import { fn } from './ModuleMocking.utils';
 // the mock has to happen at runtime.
 
 export default {
-  component: globalThis.__TEMPLATE_COMPONENTS__.Html,
-  render: () => {
-    return `Function: ${(fn() ?? []).join(', ') || 'no value'}`;
-  },
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   parameters: {
     layout: 'fullscreen',
   },
@@ -23,17 +20,24 @@ export default {
 };
 
 export const Original = {
-  play: async ({ canvas }: any) => {
+  decorators: [
+    (storyFn: any) =>
+      storyFn({ args: { object: `Function: ${(fn() ?? []).join(', ') || 'no value'}` } }),
+  ],
+  play: async ({ canvasElement }: any) => {
     await expect(mocked(fn)).toHaveBeenCalledWith();
-    await expect(canvas.getByText('Function: no value')).toBeInTheDocument();
+    await expect(canvasElement.innerHTML).toContain('Function: no value');
   },
 };
 
 export const Mocked = {
+  decorators: [
+    (storyFn: any) => storyFn({ args: { object: `Function: ${fn().join(', ') || 'no value'}` } }),
+  ],
   beforeEach() {
     mocked(fn).mockReturnValue(['mocked value']);
   },
-  play: async ({ canvas }: any) => {
-    await expect(canvas.getByText('Function: mocked value')).toBeInTheDocument();
+  play: async ({ canvasElement }: any) => {
+    await expect(canvasElement.innerHTML).toContain('Function: mocked value');
   },
 };

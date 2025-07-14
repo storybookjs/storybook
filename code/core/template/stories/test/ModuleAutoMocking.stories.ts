@@ -8,12 +8,10 @@ import { fn } from './ModuleAutoMocking.utils';
 // because a __mocks__/ModuleAutoMocking.utils.ts file exists.
 
 export default {
-  component: globalThis.__TEMPLATE_COMPONENTS__.Html,
-  render: () => {
-    return `
-      Function: ${fn().join(', ')}
-    `;
-  },
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
+  decorators: [
+    (storyFn: any) => storyFn({ args: { object: `Function: ${fn().join(', ') || 'no value'}` } }),
+  ],
   parameters: {
     layout: 'fullscreen',
   },

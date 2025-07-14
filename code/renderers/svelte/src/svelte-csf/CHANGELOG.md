@@ -1,3 +1,15 @@
+# v5.0.7 (Mon Jul 14 2025)
+
+#### 🐛 Bug Fix
+
+- Update peer deps for vite@7 [#324](https://github.com/storybookjs/addon-svelte-csf/pull/324) ([@timc13](https://github.com/timc13))
+
+#### Authors: 1
+
+- Tim Chen ([@timc13](https://github.com/timc13))
+
+---
+
 # v5.0.6 (Fri Jul 04 2025)
 
 #### 🐛 Bug Fix

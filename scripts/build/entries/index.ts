@@ -974,7 +974,6 @@ export const buildEntries = {
         {
           exportEntries: ['./preset'],
           entryPoint: './src/preset.ts',
-          dts: false,
         },
         {
           exportEntries: ['./node'],

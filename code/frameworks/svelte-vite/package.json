@@ -29,7 +29,10 @@
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "default": "./dist/preset.js"
+    }
   },
   "files": [
     "dist/**/*",

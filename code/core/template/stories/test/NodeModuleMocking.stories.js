@@ -1,6 +1,5 @@
 import { global as globalThis } from '@storybook/global';
 
-// @ts-expect-error - VERSION is exported from `lodash-es`
 // eslint-disable-next-line depend/ban-dependencies
 import lodash from 'lodash-es';
 // eslint-disable-next-line depend/ban-dependencies
@@ -23,7 +22,7 @@ import { expect, mocked } from 'storybook/test';
 export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   decorators: [
-    (storyFn: any) =>
+    (storyFn) =>
       storyFn({
         args: {
           object: `Lodash Version: ${lodash.VERSION} | Mocked Add (1,2): ${add(1, 2)} | Inline Sum (2,2): ${sum([2, 2])}`,
@@ -35,10 +34,10 @@ export default {
   },
   beforeEach: () => {
     mocked(sum).mockImplementation(() => {
-      return 'mocked 10' as any;
+      return 'mocked 10';
     });
   },
-  play: async ({ canvasElement }: any) => {
+  play: async ({ canvasElement }) => {
     await expect(canvasElement.innerHTML).toContain('Lodash Version: 1.0.0-mocked!');
     await expect(canvasElement.innerHTML).toContain('Mocked Add (1,2): mocked 3');
     await expect(canvasElement.innerHTML).toContain('Inline Sum (2,2): mocked 10');

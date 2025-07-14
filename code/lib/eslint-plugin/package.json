@@ -1,6 +1,6 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "9.1.0-alpha.6",
+  "version": "9.1.0-alpha.7",
   "description": "Best practice rules for Storybook",
   "keywords": [
     "eslint",
@@ -46,7 +46,7 @@
     "@typescript-eslint/eslint-plugin": "^8.8.1",
     "@typescript-eslint/parser": "^8.8.1",
     "@typescript-eslint/rule-tester": "^8.8.1",
-    "@vitest/coverage-v8": "^3.0.9",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^8.57.1",
     "eslint-plugin-eslint-plugin": "^6.2.0",
     "eslint-plugin-node": "^11.1.0",

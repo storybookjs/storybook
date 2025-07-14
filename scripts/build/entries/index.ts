@@ -1182,6 +1182,31 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/sveltekit': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./vite-plugin'],
+          entryPoint: './src/vite-plugin.ts',
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

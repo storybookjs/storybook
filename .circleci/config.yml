@@ -430,6 +430,7 @@ jobs:
       - run:
           name: Create Sandboxes
           command: |
+            TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
             yarn task --task build --template $TEMPLATE --no-link --start-from=sandbox --junit
             if [[ $TEMPLATE != bench/* ]]; then
               yarn --cwd scripts jiti ./event-log-checker.ts build $TEMPLATE
@@ -439,15 +440,13 @@ jobs:
             STORYBOOK_TELEMETRY_DEBUG: 1
             npm_config_registry: http://localhost:6001
             STORYBOOK_TELEMETRY_URL: "http://localhost:6007/event-log"
-            TEMPLATE: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
-
       - run:
           name: Zip failed sandbox
           when: on_fail
           command: |
+            TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
             tar -czf /sandbox-artifacts/$TEMPLATE.tar.gz sandbox/$(yarn get-sandbox-dir --template $TEMPLATE)
           environment:
-            TEMPLATE: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task sandbox)
       - store_artifacts:
           path: /sandbox-artifacts/*.tar.gz
           destination: sandbox

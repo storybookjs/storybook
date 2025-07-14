@@ -1,3 +1,4 @@
+import { realpathSync } from 'fs';
 import type { ViteDevServer } from 'vite';
 
 /**
@@ -26,6 +27,18 @@ export function invalidateAllRelatedModules(
     if (mod.id === absPath || (mod.id && getCleanId(mod.id) === pkgName)) {
       server.moduleGraph.invalidateModule(mod);
     }
+  }
+}
+
+/**
+ * Normalizes a file path for comparison, resolving symlinks if possible. Falls back to the original
+ * path if resolution fails.
+ */
+export function normalizePathForComparison(path: string, preserveSymlinks: boolean): string {
+  try {
+    return preserveSymlinks ? realpathSync(path) : path;
+  } catch {
+    return path;
   }
 }
 

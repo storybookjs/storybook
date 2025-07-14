@@ -7,7 +7,12 @@ import type { Plugin, ResolvedConfig } from 'vite';
 
 import { getAutomockCode } from '../../../mocking-utils/automock';
 import { extractMockCalls } from '../../../mocking-utils/extract';
-import { type MockCall, getCleanId, invalidateAllRelatedModules } from './utils';
+import {
+  type MockCall,
+  getCleanId,
+  invalidateAllRelatedModules,
+  normalizePathForComparison,
+} from './utils';
 
 export interface MockPluginOptions {
   /** The absolute path to the preview.tsx file where mocks are defined. */
@@ -114,22 +119,24 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
         order: 'post',
         handler(code, id) {
           for (const call of mockCalls) {
-            if (call.absolutePath !== id && viteConfig.command !== 'serve') {
+            const preserveSymlinks = viteConfig.resolve.preserveSymlinks;
+
+            const idNorm = normalizePathForComparison(id, preserveSymlinks);
+            const callNorm = normalizePathForComparison(call.absolutePath, preserveSymlinks);
+
+            if (callNorm !== idNorm && viteConfig.command !== 'serve') {
               continue;
             }
 
-            const cleanId = getCleanId(id);
+            const cleanId = getCleanId(idNorm);
 
-            if (
-              viteConfig.command === 'serve' &&
-              call.path !== cleanId &&
-              call.absolutePath !== id
-            ) {
+            if (viteConfig.command === 'serve' && call.path !== cleanId && callNorm !== idNorm) {
               continue;
             }
 
             try {
               if (!call.redirectPath) {
+                console.log(call.path);
                 const automockedCode = getAutomockCode(code, call.spy, this.parse);
 
                 return {

@@ -30,9 +30,7 @@ export default {
     layout: 'fullscreen',
   },
   beforeEach() {
-    // Make function available globally for the script
-    (globalThis as any).fn = fn;
-    mocked(fn).mockReset?.();
+    mocked(fn).mockReset();
   },
 };
 

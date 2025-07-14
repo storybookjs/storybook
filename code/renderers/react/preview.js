@@ -1,1 +1,1 @@
-export * from './dist/preview.js'; 
+export * from './dist/preview.js';

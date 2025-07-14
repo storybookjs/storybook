@@ -1,0 +1,45 @@
+executor:
+  class: large
+  name: sb_node_22_classic
+
+steps:
+  - git-shallow-clone/checkout_advanced:
+      clone_options: '--depth 1 --verbose'
+  - restore_cache:
+      name: Restore Yarn cache
+      keys:
+        - build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+  - run:
+      name: Compile
+      command: |
+        yarn task --task compile --start-from=auto --no-link --debug
+        git diff --exit-code
+        yarn dedupe --check
+  - run:
+      name: Publish to Verdaccio
+      command: |
+        cd code
+        yarn local-registry --publish
+  - report-workflow-on-failure
+  - store_artifacts:
+      path: code/bench/esbuild-metafiles
+  - save_cache:
+      name: Save Yarn cache
+      key: build-yarn-2-cache-v5--{{ checksum "code/yarn.lock" }}--{{ checksum "scripts/yarn.lock" }}
+      paths:
+        - ~/.yarn/berry/cache
+  - persist_to_workspace:
+      root: .
+      paths:
+        - code/node_modules
+        - code/addons
+        - scripts/node_modules
+        - code/bench
+        - code/examples
+        - code/frameworks
+        - code/lib
+        - code/core
+        - code/builders
+        - code/renderers
+        - code/presets
+        - .verdaccio-cache

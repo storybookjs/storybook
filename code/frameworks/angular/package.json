@@ -20,6 +20,7 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -55,9 +56,6 @@
     "./server/framework-preset-angular-cli": "./dist/server/framework-preset-angular-cli.js",
     "./server/framework-preset-angular-ivy": "./dist/server/framework-preset-angular-ivy.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "builders.json",
     "build-schema.json",

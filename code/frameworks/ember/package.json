@@ -16,6 +16,7 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -29,9 +30,6 @@
     "./preset": "./dist/preset.js",
     "./server/framework-preset-babel-ember": "./dist/server/framework-preset-babel-ember.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "template/cli/**/*",

@@ -33,6 +33,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     playwright: '1.52.0',
     'playwright-core': '1.52.0',
     '@playwright/test': '1.52.0',
+    rollup: '4.44.2',
   };
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });
 };

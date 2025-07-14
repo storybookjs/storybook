@@ -30,7 +30,6 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
     ...packageJson.resolutions,
     ...storybookVersions,
     // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
-    '@swc/core': '1.5.7',
     playwright: '1.52.0',
     'playwright-core': '1.52.0',
     '@playwright/test': '1.52.0',

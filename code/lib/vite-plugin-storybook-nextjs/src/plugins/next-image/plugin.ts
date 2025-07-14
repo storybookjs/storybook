@@ -22,6 +22,8 @@ export function vitePluginNextImage(
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
 ) {
   let isBrowser = !isVitestEnv;
+  let excludeSvg = false;
+
   return {
     name: "vite-plugin-storybook-nextjs-image",
     enforce: "pre" as const,
@@ -29,6 +31,19 @@ export function vitePluginNextImage(
       if (config.test?.browser?.enabled === true) {
         isBrowser = true;
       }
+
+      // Auto-detect SVGR plugin
+      const hasVitePluginSvgr = config.plugins?.some(
+        (plugin) =>
+          plugin &&
+          typeof plugin === "object" &&
+          "name" in plugin &&
+          (plugin.name === "vite-plugin-svgr" || plugin.name.includes("svgr")),
+      );
+      if (hasVitePluginSvgr) {
+        excludeSvg = true;
+      }
+
       return {
         resolve: {
           alias: getAlias(isBrowser ? "browser" : "node"),
@@ -39,6 +54,12 @@ export function vitePluginNextImage(
       const [source, queryA] = id.split("?");
 
       if (queryA === "ignore") {
+        return null;
+      }
+
+      // For SVG files, only process if they don't have ?react parameter and SVG processing is enabled
+      const isSvg = /\.svg$/.test(source);
+      if (isSvg && (excludeSvg || queryA === "react")) {
         return null;
       }
 

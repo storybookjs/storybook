@@ -10,6 +10,7 @@ export const monorepoConfigs = {
   Lerna: 'lerna.json',
   Rush: 'rush.json',
   Lage: 'lage.config.json',
+  Pnpm: 'pnpm-workspace.yaml',
 } as const;
 
 export type MonorepoType = keyof typeof monorepoConfigs | 'Workspaces' | undefined;

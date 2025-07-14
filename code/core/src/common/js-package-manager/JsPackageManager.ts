@@ -112,8 +112,9 @@ export abstract class JsPackageManager {
     const turboJsonPath = findUpSync(`turbo.json`, { stopAt: getProjectRoot() });
     const rushJsonPath = findUpSync(`rush.json`, { stopAt: getProjectRoot() });
     const nxJsonPath = findUpSync(`nx.json`, { stopAt: getProjectRoot() });
+    const pnpmWorkspaceYamlPath = findUpSync(`pnpm-workspace.yaml`, { stopAt: getProjectRoot() });
 
-    if (turboJsonPath || rushJsonPath || nxJsonPath) {
+    if (turboJsonPath || rushJsonPath || nxJsonPath || pnpmWorkspaceYamlPath) {
       return true;
     }
 

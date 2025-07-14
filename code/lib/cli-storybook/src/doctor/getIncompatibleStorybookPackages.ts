@@ -25,6 +25,36 @@ type Context = {
   skipErrors?: boolean;
 };
 
+/**
+ * Determines if a package is part of the Storybook monorepo and should be checked for
+ * compatibility. External packages (community addons) should not be subject to this compatibility
+ * check.
+ */
+const isMonorepoPackage = (packageName: string): boolean => {
+  // If it's a core package, it's definitely part of the monorepo
+  if (storybookCorePackages[packageName as keyof typeof storybookCorePackages]) {
+    return true;
+  }
+
+  // Check if it's a legacy consolidated package that's part of the monorepo
+  if (consolidatedPackages[packageName as keyof typeof consolidatedPackages]) {
+    return true;
+  }
+
+  // These are official Storybook packages that are part of the monorepo
+  // but may not be in the current versions list
+  const monorepoPackagePatterns = [
+    /^@storybook\/addon-(a11y|docs|jest|links|onboarding|themes|vitest)$/,
+    /^@storybook\/builder-(vite|webpack5)$/,
+    /^@storybook\/(angular|ember|html|nextjs|preact|react|server|svelte|vue3|web-components)(-vite|-webpack5)?$/,
+    /^@storybook\/preset-(create-react-app|react-webpack|server-webpack)$/,
+    /^@storybook\/(cli|codemod|core-webpack|csf-plugin|react-dom-shim)$/,
+    /^(storybook|sb|create-storybook|storybook-addon-pseudo-states|eslint-plugin-storybook)$/,
+  ];
+
+  return monorepoPackagePatterns.some((pattern) => pattern.test(packageName));
+};
+
 export const checkPackageCompatibility = async (
   dependency: string,
   context: Context
@@ -109,6 +139,7 @@ export const getIncompatibleStorybookPackages = async (
   return Promise.all(
     storybookLikeDeps
       .filter((dep) => !storybookCorePackages[dep as keyof typeof storybookCorePackages])
+      .filter(isMonorepoPackage) // Only check packages that are part of the monorepo
       .map((dep) => checkPackageCompatibility(dep, context))
   );
 };

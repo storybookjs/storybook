@@ -148,18 +148,43 @@ describe('getIncompatibleStorybookPackages', () => {
     expect(result).toHaveLength(0);
   });
 
-  it('returns an array of incompatible packages', async () => {
-    // Mock a non-core storybook package that would be found
+  it('returns an array of incompatible packages for monorepo packages only', async () => {
+    // Mock a monorepo storybook package that would be checked
     vi.mocked(packageManagerMock.getAllDependencies).mockReturnValueOnce({
-      'react-storybook-addon': '1.0.0',
+      '@storybook/core-common': '8.0.0', // This is a consolidated package (monorepo)
+      '@storybook/addon-svelte-csf': '5.0.6', // This is external, should be ignored
+      'react-storybook-addon': '1.0.0', // This is external, should be ignored
     });
 
-    vi.mocked(packageManagerMock.getModulePackageJSON).mockReturnValueOnce({
-      name: 'react-storybook-addon',
-      version: '1.0.0',
-      dependencies: {
-        storybook: '8.0.0',
-      },
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockImplementation((packageName) => {
+      if (packageName === '@storybook/core-common') {
+        return {
+          name: '@storybook/core-common',
+          version: '8.0.0',
+          dependencies: {
+            storybook: '8.0.0',
+          },
+        };
+      }
+      if (packageName === '@storybook/addon-svelte-csf') {
+        return {
+          name: '@storybook/addon-svelte-csf',
+          version: '5.0.6',
+          dependencies: {
+            '@storybook/csf': '^0.1.13',
+          },
+        };
+      }
+      if (packageName === 'react-storybook-addon') {
+        return {
+          name: 'react-storybook-addon',
+          version: '1.0.0',
+          dependencies: {
+            storybook: '8.0.0',
+          },
+        };
+      }
+      return null;
     });
 
     const result = await getIncompatibleStorybookPackages({
@@ -167,12 +192,52 @@ describe('getIncompatibleStorybookPackages', () => {
       packageManager: packageManagerMock as JsPackageManager,
     });
 
-    expect(result).toEqual([
+    // Should only return the monorepo package, not external packages
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual(
       expect.objectContaining({
-        packageName: 'react-storybook-addon',
+        packageName: '@storybook/core-common',
         hasIncompatibleDependencies: true,
-      }),
-    ]);
+      })
+    );
+  });
+
+  it('excludes external packages from compatibility check', async () => {
+    // Mock only external packages
+    vi.mocked(packageManagerMock.getAllDependencies).mockReturnValueOnce({
+      '@storybook/addon-svelte-csf': '5.0.6', // External package
+      'react-storybook-addon': '1.0.0', // External package
+    });
+
+    vi.mocked(packageManagerMock.getModulePackageJSON).mockImplementation((packageName) => {
+      if (packageName === '@storybook/addon-svelte-csf') {
+        return {
+          name: '@storybook/addon-svelte-csf',
+          version: '5.0.6',
+          dependencies: {
+            '@storybook/csf': '^0.1.13',
+          },
+        };
+      }
+      if (packageName === 'react-storybook-addon') {
+        return {
+          name: 'react-storybook-addon',
+          version: '1.0.0',
+          dependencies: {
+            storybook: '8.0.0',
+          },
+        };
+      }
+      return null;
+    });
+
+    const result = await getIncompatibleStorybookPackages({
+      currentStorybookVersion: '9.0.0',
+      packageManager: packageManagerMock as JsPackageManager,
+    });
+
+    // Should return empty array since external packages are excluded
+    expect(result).toHaveLength(0);
   });
 });
 

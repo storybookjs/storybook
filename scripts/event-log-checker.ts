@@ -48,14 +48,15 @@ async function run() {
     }
 
     const events: any = await (await fetch(`http://localhost:${PORT}/event-log`)).json();
+    const eventsWithoutMocks = events.filter((e: any) => e.eventType !== 'mocking');
 
     if (definition.noBoot) {
       test('Should log 1 event', () => {
         assert.equal(
-          events.length,
+          eventsWithoutMocks.length,
           1,
           `Expected 1 event but received ${
-            events.length
+            eventsWithoutMocks.length
           } instead. The following events were logged: ${JSON.stringify(events)}`
         );
       });
@@ -63,18 +64,17 @@ async function run() {
       // two or three events are logged, depending on whether the template has a `vitest-integration` task
       test('Should log 2 or 3 events', () => {
         assert.ok(
-          events.length === 2 || events.length === 3,
+          eventsWithoutMocks.length === 2 || eventsWithoutMocks.length === 3,
           `Expected 2 or 3 events but received ${
-            events.length
-          } instead. The following events were logged: ${JSON.stringify(events)}`
+            eventsWithoutMocks.length
+          } instead. The following events were logged: ${JSON.stringify(eventsWithoutMocks)}`
         );
       });
     }
 
-    if (events.length === 0) {
+    if (eventsWithoutMocks.length === 0) {
       throw new Error('No events were logged');
     }
-    const eventsWithoutMocks = events.filter((e: any) => e.eventType !== 'mocking');
 
     const [bootEvent, mainEvent] = definition.noBoot
       ? [null, eventsWithoutMocks[0]]

@@ -3,7 +3,6 @@ import { Component, Input } from '@angular/core';
 // Type-only imports are stripped during compilation, causing runtime errors like "DomSanitizer is not defined".
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import { DomSanitizer } from '@angular/platform-browser';
-
 @Component({
   standalone: false,
   selector: 'storybook-html',
@@ -11,17 +10,16 @@ import { DomSanitizer } from '@angular/platform-browser';
 })
 export default class HtmlComponent {
   /**
-   * The HTML to render. Can be a string or a function that returns a string.
+   * The HTML to render
    *
    * @required
    */
   @Input()
-  content: string | (() => string) = '';
+  content = '';
 
   constructor(private sanitizer: DomSanitizer) {}
 
   get safeContent() {
-    const contentValue = typeof this.content === 'function' ? this.content() : this.content;
-    return this.sanitizer.bypassSecurityTrustHtml(contentValue);
+    return this.sanitizer.bypassSecurityTrustHtml(this.content);
   }
 }

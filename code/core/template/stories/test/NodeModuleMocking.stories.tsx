@@ -9,37 +9,21 @@ import add from 'lodash-es/add';
 import sum from 'lodash-es/sum';
 import { expect, mocked } from 'storybook/test';
 
+// This story is used to test the node module mocking.
+//
+// lodash is mocked, because sb.mock('lodash') is called in the .storybook/preview.js and the
+// __mocks__ directory contains a lodash.js file.
+//
+// lodash/add is mocked, because sb.mock('lodash/add') is called in the .storybook/preview.js and the
+// __mocks__ directory contains a lodash/add.js file.
+//
+// lodash/sum is automocked, because sb.mock('lodash/sum') is called in the .storybook/preview.js and the
+// __mocks__ directory does not contain a lodash/sum.js file. Mocking has to happen at runtime.
+
 export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Html,
-  args: {
-    content: () => `
-      <div style="padding: 20px;">
-        <p>This story is used to test the node module mocking.</p>
-        <ul>
-          <li>
-            <strong>lodash</strong> is mocked, because <strong>sb.mock('lodash')</strong> is
-            called in the <strong>.storybook/preview.js</strong> and the <strong>__mocks__</strong>
-            directory contains a <strong>lodash.js</strong> file.
-          </li>
-          <li>
-            <strong>lodash/add</strong> is mocked, because <strong>sb.mock('lodash/add')</strong>
-            is called in the <strong>.storybook/preview.js</strong> and the
-            <strong>__mocks__</strong> directory contains a <strong>lodash/add.js</strong> file.
-          </li>
-          <li>
-            <strong>lodash/sum</strong> is automocked, because
-            <strong>sb.mock('lodash/sum')</strong> is called in the
-            <strong>.storybook/preview.js</strong> and the <strong>__mocks__</strong> does
-            <strong>not</strong> contain a <strong>lodash/sum.js</strong> file. Mocking has to
-            happen at runtime.
-          </li>
-        </ul>
-
-        <p>Lodash Version: ${lodash.VERSION}</p>
-        <p>Mocked Add (1,2): ${add(1, 2)}</p>
-        <p>Inline Sum (2,2): ${sum([2, 2])}</p>
-      </div>
-    `,
+  render: () => {
+    return `Lodash Version: ${lodash.VERSION} | Mocked Add (1,2): ${add(1, 2)} | Inline Sum (2,2): ${sum([2, 2])}`;
   },
   parameters: {
     layout: 'fullscreen',
@@ -49,10 +33,10 @@ export default {
       return 'mocked 10' as any;
     });
   },
-  play: async ({ canvas }: any) => {
-    await expect(canvas.getByText('Lodash Version: 1.0.0-mocked!')).toBeInTheDocument();
-    await expect(canvas.getByText('Mocked Add (1,2): mocked 3')).toBeInTheDocument();
-    await expect(canvas.getByText('Inline Sum (2,2): mocked 10')).toBeInTheDocument();
+  play: async ({ canvasElement }: any) => {
+    await expect(canvasElement.innerHTML).toContain('Lodash Version: 1.0.0-mocked!');
+    await expect(canvasElement.innerHTML).toContain('Mocked Add (1,2): mocked 3');
+    await expect(canvasElement.innerHTML).toContain('Inline Sum (2,2): mocked 10');
   },
 };
 

@@ -1,12 +1,7 @@
-import React from 'react';
-
 import PropTypes from 'prop-types';
 
-export const Html = ({ content }) => {
-  const contentValue = typeof content === 'function' ? content() : content;
-  return <div dangerouslySetInnerHTML={{ __html: contentValue }} />;
-};
+export const Html = ({ content }) => <div dangerouslySetInnerHTML={{ __html: content }} />;
 
 Html.propTypes = {
-  content: PropTypes.oneOfType([PropTypes.string, PropTypes.func]).isRequired,
+  content: PropTypes.string.isRequired,
 };

@@ -1,24 +1,16 @@
 <template>
-  <div v-html="contentValue"></div>
+  <div v-html="content"></div>
 </template>
 
 <script>
 export default {
   name: 'my-html',
-
   props: {
     content: {
-      type: [String, Function],
+      type: String,
       required: true,
     },
   },
-
-  computed: {
-    contentValue() {
-      return typeof this.content === 'function' ? this.content() : this.content;
-    },
-  },
-
   setup() {},
 };
 </script>

@@ -4,20 +4,15 @@ import { expect } from 'storybook/test';
 
 import { fn } from './ModuleAutoMocking.utils';
 
+// This story demonstrates module mocking. The imported util function is automocked,
+// because a __mocks__/ModuleAutoMocking.utils.ts file exists.
+
 export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Html,
-  args: {
-    content: () => `
-      <div style="padding: 20px;">
-        <p>
-          This story demonstrates module mocking. The imported util function is automocked, because a
-          <strong>__mocks__/ModuleAutoMocking.utils.ts</strong> file exists.
-        </p>
-        <ul>
-          <li>Function: ${fn().join(', ')}</li>
-        </ul>
-      </div>
-    `,
+  render: () => {
+    return `
+      Function: ${fn().join(', ')}
+    `;
   },
   parameters: {
     layout: 'fullscreen',
@@ -25,7 +20,7 @@ export default {
 };
 
 export const Original = {
-  play: async ({ canvas }: any) => {
-    await expect(canvas.getByText('Function: automocked value')).toBeInTheDocument();
+  play: async ({ canvasElement }: any) => {
+    await expect(canvasElement.innerHTML).toContain('Function: automocked value');
   },
 };

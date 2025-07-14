@@ -207,7 +207,7 @@
     "svelte": "^5.0.0-next.268",
     "ts-dedent": "^2.0.0",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5",
+    "vite": "^7.0.4",
     "vite-plugin-inspect": "^11.0.0",
     "vitest": "^3.2.4",
     "wait-on": "^8.0.3"

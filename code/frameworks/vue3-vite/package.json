@@ -71,7 +71,7 @@
     "@types/find-package-json": "^1.2.6",
     "@types/node": "^22.0.0",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5"
+    "vite": "^7.0.4"
   },
   "peerDependencies": {
     "storybook": "workspace:^",

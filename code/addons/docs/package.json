@@ -98,7 +98,7 @@
     "telejson": "8.0.0",
     "tocbot": "^4.20.1",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5"
+    "vite": "^7.0.4"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

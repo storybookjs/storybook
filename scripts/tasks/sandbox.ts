@@ -135,7 +135,7 @@ export const sandbox: Task = {
     }
 
     // not if sandbox is bench
-    if (!details.template.name.includes('bench')) {
+    if (!details.template.name.includes('Bench')) {
       await addGlobalMocks(details, options);
     }
 

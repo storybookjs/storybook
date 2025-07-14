@@ -771,7 +771,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  if (template.name.includes('bench')) {
+  if (template.name.includes('Bench')) {
     await writeConfig(previewConfig);
     return;
   }

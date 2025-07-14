@@ -8,8 +8,8 @@ import { templateCompilation } from './plugins/vue-template';
 import type { FrameworkOptions, StorybookConfig, VueDocgenPlugin } from './types';
 
 export const core: PresetProperty<'core'> = {
-  builder: require.resolve('@storybook/builder-vite'),
-  renderer: require.resolve('@storybook/vue3/preset'),
+  builder: import.meta.resolve('@storybook/builder-vite'),
+  renderer: import.meta.resolve('@storybook/vue3/preset'),
 };
 
 export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) => {

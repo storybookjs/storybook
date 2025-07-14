@@ -1,3 +1,7 @@
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+
 // Private angular devkit stuff
 const {
   generateI18nBrowserWebpackConfigFromContext,

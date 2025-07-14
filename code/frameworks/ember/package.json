@@ -26,7 +26,8 @@
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js"
+    "./preset": "./dist/preset.js",
+    "./server/framework-preset-babel-ember": "./dist/server/framework-preset-babel-ember.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",

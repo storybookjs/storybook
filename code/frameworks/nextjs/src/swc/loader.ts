@@ -1,5 +1,4 @@
 import { join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';

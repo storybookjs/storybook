@@ -1,7 +1,7 @@
 export const moduleIsAvailable = (moduleName: string): boolean => {
   try {
-    require.resolve(moduleName);
-    return true;
+    const resolved = import.meta.resolve(moduleName);
+    return !!resolved;
   } catch (e) {
     return false;
   }

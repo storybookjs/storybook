@@ -1,5 +1,3 @@
-import { dirname, join } from 'node:path';
-
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { withoutVitePlugins } from '@storybook/builder-vite';
@@ -10,12 +8,12 @@ import { mockSveltekitStores } from './plugins/mock-sveltekit-stores';
 import { type StorybookConfig } from './types';
 
 export const core: PresetProperty<'core'> = {
-  builder: require.resolve('@storybook/builder-vite'),
-  renderer: require.resolve('@storybook/svelte/preset'),
+  builder: import.meta.resolve('@storybook/builder-vite'),
+  renderer: import.meta.resolve('@storybook/svelte/preset'),
 };
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => [
   ...entry,
-  join(dirname(require.resolve('@storybook/sveltekit/package.json')), 'dist/preview.mjs'),
+  import.meta.resolve('@storybook/sveltekit/preview'),
 ];
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {

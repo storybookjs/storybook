@@ -25,7 +25,7 @@ export default {
     (storyFn) =>
       storyFn({
         args: {
-          object: `Lodash Version: ${lodash.VERSION} | Mocked Add (1,2): ${add(1, 2)} | Inline Sum (2,2): ${sum([2, 2])}`,
+          text: `Lodash Version: ${lodash.VERSION} | Mocked Add (1,2): ${add(1, 2)} | Inline Sum (2,2): ${sum([2, 2])}`,
         },
       }),
   ],

@@ -22,7 +22,7 @@ export default {
 export const Original = {
   decorators: [
     (storyFn: any) =>
-      storyFn({ args: { object: `Function: ${(fn() ?? []).join(', ') || 'no value'}` } }),
+      storyFn({ args: { text: `Function: ${(fn() ?? []).join(', ') || 'no value'}` } }),
   ],
   play: async ({ canvasElement }: any) => {
     await expect(mocked(fn)).toHaveBeenCalledWith();
@@ -32,7 +32,7 @@ export const Original = {
 
 export const Mocked = {
   decorators: [
-    (storyFn: any) => storyFn({ args: { object: `Function: ${fn().join(', ') || 'no value'}` } }),
+    (storyFn: any) => storyFn({ args: { text: `Function: ${fn().join(', ') || 'no value'}` } }),
   ],
   beforeEach() {
     mocked(fn).mockReturnValue(['mocked value']);

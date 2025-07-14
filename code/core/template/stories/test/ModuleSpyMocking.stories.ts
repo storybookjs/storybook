@@ -11,7 +11,7 @@ import { fn } from './ModuleSpyMocking.utils';
 export default {
   component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   decorators: [
-    (storyFn: any) => storyFn({ args: { object: `Function: ${fn().join(', ') || 'no value'}` } }),
+    (storyFn: any) => storyFn({ args: { text: `Function: ${fn().join(', ') || 'no value'}` } }),
   ],
   parameters: {
     layout: 'fullscreen',

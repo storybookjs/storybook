@@ -1028,6 +1028,64 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/angular': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./client'],
+          entryPoint: './src/client/index.ts',
+        },
+        {
+          exportEntries: ['./client/config'],
+          entryPoint: './src/client/config.ts',
+        },
+        {
+          exportEntries: ['./client/preview-prod'],
+          entryPoint: './src/client/preview-prod.ts',
+        },
+        {
+          exportEntries: ['./client/docs/config'],
+          entryPoint: './src/client/docs/config.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+
+        {
+          exportEntries: ['./server/framework-preset-angular-ivy'],
+          entryPoint: './src/server/framework-preset-angular-ivy.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./server/framework-preset-angular-cli'],
+          entryPoint: './src/server/framework-preset-angular-cli.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./builders/start-storybook'],
+          entryPoint: './src/builders/start-storybook/index.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./builders/build-storybook'],
+          entryPoint: './src/builders/build-storybook/index.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

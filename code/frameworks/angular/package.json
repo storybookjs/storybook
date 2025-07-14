@@ -23,34 +23,34 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preset": "./preset.js",
-    "./server/framework-preset-angular-ivy": "./server/framework-preset-angular-ivy.js",
-    "./server/framework-preset-angular-cli": "./server/framework-preset-angular-cli.js",
+    "./builders/build-storybook": "./dist/builders/build-storybook/index.js",
+    "./builders/start-storybook": "./dist/builders/start-storybook/index.js",
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
     "./client/config": {
       "types": "./dist/client/config.d.ts",
-      "import": "./dist/client/config.mjs",
-      "require": "./dist/client/config.js"
-    },
-    "./client/preview-prod": {
-      "types": "./dist/client/preview-prod.d.ts",
-      "import": "./dist/client/preview-prod.mjs",
-      "require": "./dist/client/preview-prod.js"
+      "default": "./dist/client/config.js"
     },
     "./client/docs/config": {
       "types": "./dist/client/docs/config.d.ts",
-      "import": "./dist/client/docs/config.mjs",
-      "require": "./dist/client/docs/config.js"
+      "default": "./dist/client/docs/config.js"
+    },
+    "./client/preview-prod": {
+      "types": "./dist/client/preview-prod.d.ts",
+      "default": "./dist/client/preview-prod.js"
     },
     "./node": {
       "types": "./dist/node/index.d.ts",
-      "import": "./dist/node/index.js",
-      "require": "./dist/node/index.js"
+      "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./*": "./*"
+    "./preset": "./dist/preset.js",
+    "./server/framework-preset-angular-cli": "./dist/server/framework-preset-angular-cli.js",
+    "./server/framework-preset-angular-ivy": "./dist/server/framework-preset-angular-ivy.js"
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -69,7 +69,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/builder-webpack5": "workspace:*",

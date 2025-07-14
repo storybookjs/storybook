@@ -74,9 +74,11 @@ async function run() {
     if (events.length === 0) {
       throw new Error('No events were logged');
     }
+    const eventsWithoutMocks = events.filter((e: any) => e.eventType !== 'mocking');
+
     const [bootEvent, mainEvent] = definition.noBoot
-      ? [null, events.find((e: any) => e.eventType === eventType)]
-      : events;
+      ? [null, eventsWithoutMocks[0]]
+      : eventsWithoutMocks;
 
     const storybookVersion = versions.storybook;
     if (bootEvent) {

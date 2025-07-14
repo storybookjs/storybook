@@ -11,16 +11,17 @@ import { DomSanitizer } from '@angular/platform-browser';
 })
 export default class HtmlComponent {
   /**
-   * The HTML to render
+   * The HTML to render. Can be a string or a function that returns a string.
    *
    * @required
    */
   @Input()
-  content = '';
+  content: string | (() => string) = '';
 
   constructor(private sanitizer: DomSanitizer) {}
 
   get safeContent() {
-    return this.sanitizer.bypassSecurityTrustHtml(this.content);
+    const contentValue = typeof this.content === 'function' ? this.content() : this.content;
+    return this.sanitizer.bypassSecurityTrustHtml(contentValue);
   }
 }

@@ -8,7 +8,7 @@ const { customElements } = globalThis;
 export class SbHtml extends LitElement {
   static get properties() {
     return {
-      content: { type: String },
+      content: { type: Object }, // Can be string or function
     };
   }
 
@@ -18,7 +18,8 @@ export class SbHtml extends LitElement {
   }
 
   render() {
-    this.renderRoot.innerHTML = this.content;
+    const contentValue = typeof this.content === 'function' ? this.content() : this.content;
+    this.renderRoot.innerHTML = contentValue;
   }
 
   // render into the light dom so we can test this

@@ -1,5 +1,5 @@
 <template>
-  <div v-html="content"></div>
+  <div v-html="contentValue"></div>
 </template>
 
 <script>
@@ -8,8 +8,14 @@ export default {
 
   props: {
     content: {
-      type: String,
+      type: [String, Function],
       required: true,
+    },
+  },
+
+  computed: {
+    contentValue() {
+      return typeof this.content === 'function' ? this.content() : this.content;
     },
   },
 

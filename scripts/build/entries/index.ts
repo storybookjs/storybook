@@ -942,6 +942,27 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/server-webpack5': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

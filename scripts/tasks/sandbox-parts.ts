@@ -771,6 +771,11 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
+  if (template.name.includes('bench')) {
+    await writeConfig(previewConfig);
+    return;
+  }
+
   previewConfig.setImport(['sb'], 'storybook/test');
   let config = formatConfig(previewConfig);
 

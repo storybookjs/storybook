@@ -134,7 +134,10 @@ export const sandbox: Task = {
       await addStories(details, options);
     }
 
-    await addGlobalMocks(details, options);
+    // not if sandbox is bench
+    if (!details.template.name.includes('bench')) {
+      await addGlobalMocks(details, options);
+    }
 
     if (shouldAddVitestIntegration) {
       await setupVitest(details, options);

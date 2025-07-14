@@ -1107,6 +1107,51 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/nextjs-vite': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.tsx',
+        },
+        {
+          exportEntries: ['./cache.mock'],
+          entryPoint: './src/export-mocks/cache/index.ts',
+        },
+        {
+          exportEntries: ['./headers.mock'],
+          entryPoint: './src/export-mocks/headers/index.ts',
+        },
+        {
+          exportEntries: ['./navigation.mock'],
+          entryPoint: './src/export-mocks/navigation/index.ts',
+        },
+        {
+          exportEntries: ['./router.mock'],
+          entryPoint: './src/export-mocks/router/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./vite-plugin'],
+          entryPoint: './src/vite-plugin/index.ts',
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

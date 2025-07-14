@@ -24,47 +24,38 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "require": "./dist/preset.js"
-    },
-    "./dist/preview.mjs": "./dist/preview.mjs",
     "./cache.mock": {
       "types": "./dist/export-mocks/cache/index.d.ts",
-      "import": "./dist/export-mocks/cache/index.mjs",
-      "require": "./dist/export-mocks/cache/index.js"
+      "default": "./dist/export-mocks/cache/index.js"
     },
     "./headers.mock": {
       "types": "./dist/export-mocks/headers/index.d.ts",
-      "import": "./dist/export-mocks/headers/index.mjs",
-      "require": "./dist/export-mocks/headers/index.js"
+      "default": "./dist/export-mocks/headers/index.js"
     },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
-      "import": "./dist/export-mocks/navigation/index.mjs",
-      "require": "./dist/export-mocks/navigation/index.js"
-    },
-    "./router.mock": {
-      "types": "./dist/export-mocks/router/index.d.ts",
-      "import": "./dist/export-mocks/router/index.mjs",
-      "require": "./dist/export-mocks/router/index.js"
-    },
-    "./vite-plugin": {
-      "types": "./dist/vite-plugin/index.d.ts",
-      "import": "./dist/vite-plugin/index.mjs",
-      "require": "./dist/vite-plugin/index.js"
+      "default": "./dist/export-mocks/navigation/index.js"
     },
     "./node": {
       "types": "./dist/node/index.d.ts",
-      "node": "./dist/node/index.js",
-      "import": "./dist/node/index.mjs",
-      "require": "./dist/node/index.js"
+      "default": "./dist/node/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    },
+    "./router.mock": {
+      "types": "./dist/export-mocks/router/index.d.ts",
+      "default": "./dist/export-mocks/router/index.js"
+    },
+    "./vite-plugin": {
+      "types": "./dist/vite-plugin/index.d.ts",
+      "default": "./dist/vite-plugin/index.js"
+    }
   },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -79,7 +70,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
@@ -108,25 +99,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/vite-plugin/index.ts",
-      "./src/preset.ts",
-      "./src/node/index.ts",
-      "./src/preview.tsx",
-      "./src/export-mocks/cache/index.ts",
-      "./src/export-mocks/headers/index.ts",
-      "./src/export-mocks/router/index.ts",
-      "./src/export-mocks/navigation/index.ts",
-      "./src/images/decorator.tsx"
-    ],
-    "externals": [
-      "sb-original/image-context",
-      "sb-original/default-loader"
-    ],
-    "platform": "node"
   },
   "gitHead": "a0e7fd8a655c69780bc20b9749c2699e45beae78"
 }

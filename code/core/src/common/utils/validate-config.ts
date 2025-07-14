@@ -37,6 +37,7 @@ export function validateFrameworkName(
   try {
     resolvePathSync(join(frameworkName, 'preset'), {
       extensions: ['.mjs', '.js', '.cjs'],
+      conditions: ['node', 'import', 'require'],
     });
   } catch (err) {
     throw new CouldNotEvaluateFrameworkError({ frameworkName });

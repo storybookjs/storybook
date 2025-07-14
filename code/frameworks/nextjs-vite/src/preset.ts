@@ -1,4 +1,5 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,9 +11,13 @@ import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import postCssLoadConfig from 'postcss-load-config';
-import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
+// import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 import type { FrameworkOptions } from './types';
+
+const require = createRequire(import.meta.url);
+
+const vitePluginStorybookNextjs = require('vite-plugin-storybook-nextjs');
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');

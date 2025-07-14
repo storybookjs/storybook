@@ -48,7 +48,10 @@
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js",
+    "./preset": {
+      "types": "./dist/preset.d.ts",
+      "default": "./dist/preset.js"
+    },
     "./server/framework-preset-angular-cli": "./dist/server/framework-preset-angular-cli.js",
     "./server/framework-preset-angular-ivy": "./dist/server/framework-preset-angular-ivy.js"
   },
@@ -134,21 +137,5 @@
     "access": "public"
   },
   "builders": "builders.json",
-  "bundler": {
-    "previewEntries": [
-      "./src/index.ts",
-      "./src/client/index.ts",
-      "./src/client/config.ts",
-      "./src/client/preview-prod.ts",
-      "./src/client/docs/config.ts"
-    ],
-    "nodeEntries": [
-      "./src/preset.ts",
-      "./src/server/framework-preset-angular-ivy.ts",
-      "./src/server/framework-preset-angular-cli.ts",
-      "./src/builders/start-storybook/index.ts",
-      "./src/builders/build-storybook/index.ts"
-    ]
-  },
   "gitHead": "a0e7fd8a655c69780bc20b9749c2699e45beae78"
 }

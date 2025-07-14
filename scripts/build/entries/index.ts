@@ -1086,6 +1086,27 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/ember': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

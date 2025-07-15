@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
-import { isAbsolute } from 'node:path';
+import { isAbsolute, posix, sep } from 'node:path';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
@@ -38,6 +38,21 @@ const addonA11yName = '@storybook/addon-a11y';
 
 let hasErrors = false;
 
+function nameMatches(name: string, pattern: string) {
+  if (name === pattern) {
+    return true;
+  }
+
+  if (name.includes(`${pattern}${sep}`)) {
+    return true;
+  }
+  if (name.includes(`${pattern}${posix.sep}`)) {
+    return true;
+  }
+
+  return false;
+}
+
 const logErrors = (...args: Parameters<typeof printError>) => {
   hasErrors = true;
   printError(...args);
@@ -64,6 +79,7 @@ export default async function postInstall(options: PostinstallOptions) {
   });
 
   const info = await getStorybookInfo(options);
+  console.log({ info });
   const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
   const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
@@ -80,7 +96,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const isInteractive = process.stdout.isTTY && !process.env.CI;
 
-  if (info.frameworkPackageName === '@storybook/nextjs' && !hasCustomWebpackConfig) {
+  if (nameMatches(info.frameworkPackageName, '@storybook/nextjs') && !hasCustomWebpackConfig) {
     const out =
       options.yes || !isInteractive
         ? { migrateToNextjsVite: !!options.yes }
@@ -129,7 +145,9 @@ export default async function postInstall(options: PostinstallOptions) {
     }
   }
 
-  const annotationsImport = SUPPORTED_FRAMEWORKS.includes(info.frameworkPackageName)
+  const annotationsImport = SUPPORTED_FRAMEWORKS.find((f) =>
+    nameMatches(info.frameworkPackageName, f)
+  )
     ? info.frameworkPackageName === '@storybook/nextjs'
       ? '@storybook/nextjs-vite'
       : info.frameworkPackageName
@@ -145,8 +163,8 @@ export default async function postInstall(options: PostinstallOptions) {
     }
 
     if (
-      info.frameworkPackageName !== '@storybook/nextjs' &&
-      info.builderPackageName !== '@storybook/builder-vite'
+      !nameMatches(info.frameworkPackageName, '@storybook/nextjs') &&
+      !nameMatches(info.builderPackageName, '@storybook/builder-vite')
     ) {
       reasons.push(
         '• The addon can only be used with a Vite-based Storybook framework or Next.js.'
@@ -176,7 +194,7 @@ export default async function postInstall(options: PostinstallOptions) {
       `);
     }
 
-    if (info.frameworkPackageName === '@storybook/nextjs') {
+    if (nameMatches(info.frameworkPackageName, '@storybook/nextjs')) {
       const nextVersion = await packageManager.getInstalledVersion('next');
       if (!nextVersion) {
         reasons.push(dedent`

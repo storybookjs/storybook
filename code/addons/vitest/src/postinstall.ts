@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
+import { isAbsolute } from 'node:path';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
@@ -547,6 +548,10 @@ export default async function postInstall(options: PostinstallOptions) {
 }
 
 async function getPackageNameFromPath(path: string): Promise<string> {
+  if (!isAbsolute(path)) {
+    return path;
+  }
+
   const packageJsonPath = await findUp('package.json', {
     cwd: path,
   });

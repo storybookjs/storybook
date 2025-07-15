@@ -1261,6 +1261,17 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/preset-create-react-app': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['./index'],
+          entryPoint: './src/index.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

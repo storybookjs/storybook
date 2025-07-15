@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "tsc -b && vite build",
-    "build-storybook": "NODE_OPTIONS=\"${NODE_OPTIONS:-} --inspect-brk\" storybook build",
+    "build-storybook": "storybook build",
     "dev": "vite",
     "lint": "eslint .",
     "preview": "vite preview",

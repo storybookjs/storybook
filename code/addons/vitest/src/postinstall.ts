@@ -5,14 +5,12 @@ import { writeFile } from 'node:fs/promises';
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
   JsPackageManagerFactory,
-  extractProperFrameworkName,
   formatFileContent,
   getInterpretedFile,
   getProjectRoot,
   loadMainConfig,
   scanAndTransformFiles,
   transformImportFiles,
-  validateFrameworkName,
 } from 'storybook/internal/common';
 import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
@@ -548,22 +546,31 @@ export default async function postInstall(options: PostinstallOptions) {
   logger.line(1);
 }
 
+async function getPackageNameFromPath(path: string): Promise<string> {
+  const packageJsonPath = await findUp('package.json', {
+    cwd: path,
+  });
+
+  if (!packageJsonPath) {
+    throw new Error(`Could not find package.json in path: ${path}`);
+  }
+
+  const packageJson = await fs.readFile(packageJsonPath, 'utf8');
+  return JSON.parse(packageJson).name;
+}
+
 async function getStorybookInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {
   const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr, configDir });
   const { packageJson } = packageManager.primaryPackageJson;
 
   const config = await loadMainConfig({ configDir });
-  const { framework } = config;
-
-  const frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  validateFrameworkName(frameworkName);
-  const frameworkPackageName = extractProperFrameworkName(frameworkName);
 
   const { presets } = await experimental_loadStorybook({
     configDir,
     packageJson,
   });
 
+  const framework = await presets.apply('framework', {});
   const core = await presets.apply('core', {});
 
   const { builder, renderer } = core;
@@ -571,29 +578,18 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     throw new Error('Could not detect your Storybook builder.');
   }
 
-  const builderRawPath = typeof builder === 'string' ? builder : builder.name;
+  const frameworkPackageName = await getPackageNameFromPath(
+    typeof framework === 'string' ? framework : framework.name
+  );
 
-  const builderPackageJsonPath = await findUp('package.json', {
-    cwd: builderRawPath,
-  });
-
-  if (!builderPackageJsonPath) {
-    throw new Error('Could not detect your Storybook builder.');
-  }
-
-  const builderPackageJson = await fs.readFile(builderPackageJsonPath, 'utf8');
-  const builderPackageName = JSON.parse(builderPackageJson).name;
+  const builderPackageName = await getPackageNameFromPath(
+    typeof builder === 'string' ? builder : builder.name
+  );
 
   let rendererPackageName: string | undefined;
 
   if (renderer) {
-    const rendererPackageJsonPath = await findUp('package.json', {
-      cwd: renderer,
-    });
-    if (rendererPackageJsonPath) {
-      const rendererPackageJson = await fs.readFile(rendererPackageJsonPath, 'utf8');
-      rendererPackageName = JSON.parse(rendererPackageJson).name;
-    }
+    rendererPackageName = await getPackageNameFromPath(renderer);
   }
 
   return {

@@ -76,8 +76,7 @@ describe('transformer-playwright', () => {
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, beforeAll as _beforeAll, afterAll as _afterAll, expect as _expect } from "vitest";
           import { chromium } from "playwright";
-          import { convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript } from "@storybook/addon-vitest/internal/playwright-utils";
+          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript, convertToFilePath } from "@storybook/addon-vitest/internal/playwright-utils";
           const _meta = {
             component: Button,
             title: "automatic/calculated/title"
@@ -100,7 +99,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", _testStory("automatic-calculated-title--story", page));
+            _test("Story", async () => _testStory("automatic-calculated-title--story", page));
           }
         `);
       });
@@ -121,8 +120,7 @@ describe('transformer-playwright', () => {
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, beforeAll as _beforeAll, afterAll as _afterAll, expect as _expect } from "vitest";
           import { chromium } from "playwright";
-          import { convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript } from "@storybook/addon-vitest/internal/playwright-utils";
+          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript, convertToFilePath } from "@storybook/addon-vitest/internal/playwright-utils";
           const _meta = {
             title: "automatic/calculated/title",
             component: Button
@@ -145,7 +143,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", _testStory("automatic-calculated-title--story", page));
+            _test("Story", async () => _testStory("automatic-calculated-title--story", page));
           }
         `);
       });
@@ -167,8 +165,7 @@ describe('transformer-playwright', () => {
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, beforeAll as _beforeAll, afterAll as _afterAll, expect as _expect } from "vitest";
           import { chromium } from "playwright";
-          import { convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript } from "@storybook/addon-vitest/internal/playwright-utils";
+          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript, convertToFilePath } from "@storybook/addon-vitest/internal/playwright-utils";
           const meta = {
             component: Button,
             title: "automatic/calculated/title"
@@ -191,7 +188,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", _testStory("automatic-calculated-title--story", page));
+            _test("Story", async () => _testStory("automatic-calculated-title--story", page));
           }
         `);
       });
@@ -214,8 +211,7 @@ describe('transformer-playwright', () => {
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, beforeAll as _beforeAll, afterAll as _afterAll, expect as _expect } from "vitest";
           import { chromium } from "playwright";
-          import { convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript } from "@storybook/addon-vitest/internal/playwright-utils";
+          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript, convertToFilePath } from "@storybook/addon-vitest/internal/playwright-utils";
           const meta = {
             title: "automatic/calculated/title",
             component: Button
@@ -238,7 +234,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", _testStory("automatic-calculated-title--story", page));
+            _test("Story", async () => _testStory("automatic-calculated-title--story", page));
           }
         `);
       });
@@ -262,8 +258,7 @@ describe('transformer-playwright', () => {
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, beforeAll as _beforeAll, afterAll as _afterAll, expect as _expect } from "vitest";
           import { chromium } from "playwright";
-          import { convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript } from "@storybook/addon-vitest/internal/playwright-utils";
+          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript, convertToFilePath } from "@storybook/addon-vitest/internal/playwright-utils";
           const _meta = {
             component: Button,
             title: "automatic/calculated/title"
@@ -290,7 +285,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Primary", _testStory("automatic-calculated-title--primary", page));
+            _test("Primary", async () => _testStory("automatic-calculated-title--primary", page));
           }
         `);
       });
@@ -313,8 +308,7 @@ describe('transformer-playwright', () => {
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, beforeAll as _beforeAll, afterAll as _afterAll, expect as _expect } from "vitest";
           import { chromium } from "playwright";
-          import { convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
-          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript } from "@storybook/addon-vitest/internal/playwright-utils";
+          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript, convertToFilePath } from "@storybook/addon-vitest/internal/playwright-utils";
           const _meta = {
             component: Button,
             title: "automatic/calculated/title"
@@ -342,7 +336,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Primary", _testStory("automatic-calculated-title--primary", page));
+            _test("Primary", async () => _testStory("automatic-calculated-title--primary", page));
           }
         `);
       });

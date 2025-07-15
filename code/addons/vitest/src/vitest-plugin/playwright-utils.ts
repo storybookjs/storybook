@@ -11,6 +11,15 @@ declare global {
   const logToPage: (message: string) => Promise<void>;
 }
 
+export const convertToFilePath = (url: string): string => {
+  // Remove the file:// protocol
+  const path = url.replace(/^file:\/\//, '');
+  // Handle Windows paths
+  const normalizedPath = path.replace(/^\/+([a-zA-Z]:)/, '$1');
+  // Convert %20 to spaces
+  return normalizedPath.replace(/%20/g, ' ');
+};
+
 export async function prepareScript(page: Page) {
   await page.goto('http://localhost:6006/iframe.html', { waitUntil: 'load' }).catch((err) => {
     if (err.message?.includes('ERR_CONNECTION_REFUSED')) {
@@ -594,8 +603,8 @@ export async function setupPageScript(page: Page) {
 }
 
 export async function testStory(storyId: string, page: Page): Promise<void> {
-  await page.evaluate(async () => {
+  await page.evaluate(async (storyId: string) => {
     // @ts-expect-error Need to fix with augmentation
     return await globalThis.__test(storyId);
-  });
+  }, storyId);
 }

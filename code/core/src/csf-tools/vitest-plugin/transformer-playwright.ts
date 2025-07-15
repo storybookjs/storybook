@@ -199,7 +199,11 @@ export async function vitestPlaywrightTransform({
       const testStoryCall = t.expressionStatement(
         t.callExpression(vitestTestId, [
           t.stringLiteral(testTitle),
-          t.callExpression(testStoryId, [t.stringLiteral(storyId), t.identifier('page')]),
+          t.arrowFunctionExpression(
+            [],
+            t.callExpression(testStoryId, [t.stringLiteral(storyId), t.identifier('page')]),
+            true // async
+          ),
         ])
       );
 
@@ -338,14 +342,11 @@ export async function vitestPlaywrightTransform({
         t.stringLiteral('playwright')
       ),
       t.importDeclaration(
-        [t.importSpecifier(t.identifier('convertToFilePath'), t.identifier('convertToFilePath'))],
-        t.stringLiteral('@storybook/addon-vitest/internal/test-utils')
-      ),
-      t.importDeclaration(
         [
           t.importSpecifier(testStoryId, t.identifier('testStory')),
           t.importSpecifier(prepareScriptId, t.identifier('prepareScript')),
           t.importSpecifier(setupPageScriptId, t.identifier('setupPageScript')),
+          t.importSpecifier(t.identifier('convertToFilePath'), t.identifier('convertToFilePath')),
         ],
         t.stringLiteral('@storybook/addon-vitest/internal/playwright-utils')
       ),

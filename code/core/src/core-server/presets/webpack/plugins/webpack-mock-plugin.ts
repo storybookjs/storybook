@@ -132,7 +132,6 @@ export class WebpackMockPlugin {
           // A `__mocks__` file exists. Use it directly as the replacement.
           replacementResource = redirectPath;
         } else {
-          console.log('no redirectPath');
           // No `__mocks__` file found. Use our custom loader to automock the module.
           const loaderPath = require.resolve(
             'storybook/internal/core-server/presets/webpack/plugins/webpack-automock-loader'
@@ -146,7 +145,6 @@ export class WebpackMockPlugin {
           replacementResource,
         });
       } catch (e) {
-        console.log('e', e);
         logger.warn(`Could not resolve mock for "${mock.path}". It will be ignored.`);
       }
     }

@@ -136,7 +136,6 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
             try {
               if (!call.redirectPath) {
-                console.log(call.path);
                 const automockedCode = getAutomockCode(code, call.spy, this.parse);
 
                 return {

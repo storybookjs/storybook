@@ -4,13 +4,15 @@ import type { CoreConfig } from 'storybook/internal/types';
 import { transformSync } from 'esbuild';
 import { type Node, walk } from 'estree-walker';
 import { readFileSync } from 'fs';
+import { normalize } from 'pathe';
 
 import { resolveMock } from './resolve';
 
 const DEFAULT_MODULE_DIRECTORIES = ['/node_modules/'];
 
 export function isModuleDirectory(path: string) {
-  return DEFAULT_MODULE_DIRECTORIES.some((dir: string) => path.includes(dir));
+  const normalizedPath = normalize(path);
+  return DEFAULT_MODULE_DIRECTORIES.some((dir: string) => normalizedPath.includes(dir));
 }
 
 export type MockCall = {

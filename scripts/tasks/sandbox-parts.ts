@@ -43,6 +43,21 @@ import {
   installYarn2,
 } from '../utils/yarn';
 
+// Windows-compatible symlink function that falls back to copying
+async function ensureSymlinkOrCopy(source: string, target: string): Promise<void> {
+  try {
+    await ensureSymlink(source, target);
+  } catch (error: any) {
+    // If symlink fails (typically on Windows without admin privileges), fall back to copy
+    if (error.code === 'EPERM' || error.code === 'EEXIST') {
+      logger.info(`Symlink failed for ${target}, falling back to copy`);
+      await copy(source, target, { overwrite: true });
+    } else {
+      throw error;
+    }
+  }
+}
+
 const logger = console;
 
 export const essentialsAddons = [
@@ -332,7 +347,7 @@ async function linkPackageStories(
     ? resolve(linkInDir, variant ? getStoriesFolderWithVariant(variant, packageDir) : packageDir)
     : resolve(cwd, 'template-stories', packageDir);
 
-  await ensureSymlink(source, target);
+  await ensureSymlinkOrCopy(source, target);
 
   if (!linkInDir) {
     addStoriesEntry(mainConfig, packageDir, disableDocs);
@@ -552,7 +567,7 @@ export const addStories: Task['run'] = async (
   if (isCoreRenderer) {
     // Link in the template/components/index.js from preview-api, the renderer and the addons
     const rendererPath = await workspacePath('renderer', template.expected.renderer);
-    await ensureSymlink(
+    await ensureSymlinkOrCopy(
       join(CODE_DIRECTORY, rendererPath, 'template', 'components'),
       resolve(cwd, storiesPath, 'components')
     );

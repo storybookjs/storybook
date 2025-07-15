@@ -1,5 +1,5 @@
 import { findMockRedirect } from '@vitest/mocker/redirect';
-import { isAbsolute, join } from 'path';
+import { isAbsolute, join, resolve } from 'pathe';
 
 import { isModuleDirectory } from './extract';
 
@@ -22,10 +22,12 @@ export function resolveMock(mockPath: string, root: string, previewConfigPath: s
         paths: [root],
       });
 
-  const redirectPath = findMockRedirect(root, absolutePath, external);
+  const normalizedAbsolutePath = resolve(absolutePath);
+
+  const redirectPath = findMockRedirect(root, normalizedAbsolutePath, external);
 
   return {
-    absolutePath,
+    absolutePath: normalizedAbsolutePath,
     redirectPath, // will be null if no __mocks__ file is found
   };
 }

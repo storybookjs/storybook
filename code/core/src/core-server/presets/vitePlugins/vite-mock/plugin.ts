@@ -116,7 +116,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
         return null;
       },
       transform: {
-        order: 'post',
+        order: 'pre',
         handler(code, id) {
           for (const call of mockCalls) {
             const preserveSymlinks = viteConfig.resolve.preserveSymlinks;

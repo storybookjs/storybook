@@ -5943,7 +5943,7 @@ __metadata:
     "@storybook/icons": "npm:^1.2.12"
     "@storybook/react-dom-shim": "workspace:*"
     "@types/color-convert": "npm:^2.0.0"
-    "@types/react": "npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+    "@types/react": "npm:^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0"
     color-convert: "npm:^2.0.1"
     es-toolkit: "npm:^1.36.0"
     github-slugger: "npm:^2.0.0"
@@ -5988,7 +5988,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     typescript: "npm:^5.8.3"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     storybook: "workspace:^"
   peerDependenciesMeta:
     react:
@@ -6281,7 +6281,20 @@ __metadata:
     typescript: "npm:^5.8.3"
     unplugin: "npm:^2.3.5"
   peerDependencies:
+    esbuild: "*"
+    rollup: "*"
     storybook: "workspace:^"
+    vite: "*"
+    webpack: "*"
+  peerDependenciesMeta:
+    esbuild:
+      optional: true
+    rollup:
+      optional: true
+    vite:
+      optional: true
+    webpack:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -6309,8 +6322,8 @@ __metadata:
     babel-plugin-ember-modules-api-polyfill: ^3.5.0
     babel-plugin-htmlbars-inline-precompile: ^5.3.1
     ember-source: ~3.28.1 || >=4.0.0
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -6372,8 +6385,8 @@ __metadata:
     vite-plugin-storybook-nextjs: "npm:^2.0.5"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
   peerDependenciesMeta:
@@ -6431,8 +6444,8 @@ __metadata:
     webpack: "npm:^5.65.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     storybook: "workspace:^"
     webpack: ^5.0.0
   peerDependenciesMeta:
@@ -6506,8 +6519,8 @@ __metadata:
     typescript: "npm:^5.8.3"
     webpack: "npm:5"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     storybook: "workspace:^"
   peerDependenciesMeta:
     typescript:
@@ -6521,11 +6534,11 @@ __metadata:
   dependencies:
     "@storybook/core-webpack": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    safe-identifier: "npm:^0.4.1"
+    safe-identifier: "npm:^0.4.2"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
-    yaml: "npm:^2.3.1"
-    yaml-loader: "npm:^0.8.0"
+    yaml: "npm:^2.8.0"
+    yaml-loader: "npm:^0.8.1"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -6555,8 +6568,8 @@ __metadata:
   dependencies:
     typescript: "npm:^5.8.3"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -6576,8 +6589,8 @@ __metadata:
     vite-plugin-commonjs: "npm:^0.10.4"
     vite-tsconfig-paths: "npm:^5.1.4"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     react-native: ">=0.74.5"
     react-native-web: ^0.19.12 || ^0.20.0
     storybook: "workspace:^"
@@ -6602,8 +6615,8 @@ __metadata:
     typescript: "npm:^5.8.3"
     vite: "npm:^7.0.4"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
   languageName: unknown
@@ -6618,8 +6631,8 @@ __metadata:
     "@storybook/react": "workspace:*"
     "@types/node": "npm:^22.0.0"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     storybook: "workspace:^"
     typescript: ">= 4.9.x"
   peerDependenciesMeta:
@@ -6654,8 +6667,8 @@ __metadata:
     ts-dedent: "npm:^2.0.0"
     type-fest: "npm:~2.19"
   peerDependencies:
-    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
-    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta || ^19.0.0
     storybook: "workspace:^"
     typescript: ">= 4.9.x"
   peerDependenciesMeta:
@@ -23495,7 +23508,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"safe-identifier@npm:^0.4.1":
+"safe-identifier@npm:^0.4.2":
   version: 0.4.2
   resolution: "safe-identifier@npm:0.4.2"
   checksum: 10c0/a6b0cdb5347e48c5ea4ddf4cdca5359b12529a11a7368225c39f882fcc0e679c81e82e3b13e36bd27ba7bdec9286f4cc062e3e527464d93ba61290b6e0bc6747
@@ -27594,7 +27607,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yaml-loader@npm:^0.8.0":
+"yaml-loader@npm:^0.8.1":
   version: 0.8.1
   resolution: "yaml-loader@npm:0.8.1"
   dependencies:
@@ -27625,6 +27638,15 @@ __metadata:
   bin:
     yaml: bin.mjs
   checksum: 10c0/ee2126398ab7d1fdde566b4013b68e36930b9e6d8e68b6db356875c99614c10d678b6f45597a145ff6d63814961221fc305bf9242af8bf7450177f8a68537590
+  languageName: node
+  linkType: hard
+
+"yaml@npm:^2.8.0":
+  version: 2.8.0
+  resolution: "yaml@npm:2.8.0"
+  bin:
+    yaml: bin.mjs
+  checksum: 10c0/f6f7310cf7264a8107e72c1376f4de37389945d2fb4656f8060eca83f01d2d703f9d1b925dd8f39852a57034fafefde6225409ddd9f22aebfda16c6141b71858
   languageName: node
   linkType: hard
 

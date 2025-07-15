@@ -1,13 +1,14 @@
+import { fileURLToPath } from 'node:url';
+
 import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
 
+import type { UnpluginFactory } from 'unplugin';
 import { createUnplugin } from 'unplugin';
 
 import { STORIES_REGEX } from './constants';
 import { rollupBasedPlugin } from './rollup-based-plugin';
 
-export type CsfPluginOptions = EnrichCsfOptions;
-
-export const unplugin = createUnplugin<CsfPluginOptions>((options) => {
+export const unpluginFactory: UnpluginFactory<EnrichCsfOptions> = (options) => {
   return {
     name: 'unplugin-csf',
     rollup: {
@@ -23,7 +24,7 @@ export const unplugin = createUnplugin<CsfPluginOptions>((options) => {
         enforce: 'post',
         use: {
           options,
-          loader: require.resolve('@storybook/csf-plugin/dist/webpack-loader'),
+          loader: fileURLToPath(import.meta.resolve('@storybook/csf-plugin/webpack-loader')),
         },
       });
     },
@@ -33,12 +34,14 @@ export const unplugin = createUnplugin<CsfPluginOptions>((options) => {
         enforce: 'post',
         use: {
           options,
-          loader: require.resolve('@storybook/csf-plugin/dist/webpack-loader'),
+          loader: fileURLToPath(import.meta.resolve('@storybook/csf-plugin/webpack-loader')),
         },
       });
     },
   };
-});
+};
+
+export const unplugin = /* #__PURE__ */ createUnplugin(unpluginFactory);
 
 export const { esbuild } = unplugin;
 export const { webpack } = unplugin;

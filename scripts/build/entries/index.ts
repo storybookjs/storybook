@@ -1246,6 +1246,21 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/csf-plugin': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./webpack-loader'],
+          entryPoint: './src/webpack-loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

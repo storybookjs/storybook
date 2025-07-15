@@ -1298,6 +1298,22 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/preset-server-webpack': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['./index'],
+          entryPoint: './src/index.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./loader'],
+          entryPoint: './src/loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

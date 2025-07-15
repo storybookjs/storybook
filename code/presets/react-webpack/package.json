@@ -21,7 +21,10 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    "./index": "./dist/index.js",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./package.json": "./package.json",
     "./preset-cra": "./dist/framework-preset-cra.js",
     "./preset-react-docs": "./dist/framework-preset-react-docs.js",

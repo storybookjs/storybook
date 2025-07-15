@@ -1276,9 +1276,8 @@ export const buildEntries = {
     entries: {
       node: [
         {
-          exportEntries: ['./index'],
+          exportEntries: ['.'],
           entryPoint: './src/index.ts',
-          dts: false,
         },
         {
           exportEntries: ['./preset-cra'],
@@ -1302,9 +1301,8 @@ export const buildEntries = {
     entries: {
       node: [
         {
-          exportEntries: ['./index'],
+          exportEntries: ['.'],
           entryPoint: './src/index.ts',
-          dts: false,
         },
         {
           exportEntries: ['./loader'],

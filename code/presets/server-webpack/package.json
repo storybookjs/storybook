@@ -21,7 +21,10 @@
   "license": "MIT",
   "type": "module",
   "exports": {
-    "./index": "./dist/index.js",
+    "./index": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
     "./loader": "./dist/loader.js",
     "./package.json": "./package.json"
   },

@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
@@ -5,7 +7,7 @@ import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
 import type { StorybookConfig } from './types';
 
 export const addons: PresetProperty<'addons'> = [
-  import.meta.resolve('@storybook/preset-react-webpack'),
+  fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {

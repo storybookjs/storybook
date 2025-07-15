@@ -51,7 +51,7 @@ export const statusMapping: Record<StatusValue, [ReactElement | null, string | n
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="error" />
     </svg>,
-    'brown',
+    '#D43900',
   ],
 };
 

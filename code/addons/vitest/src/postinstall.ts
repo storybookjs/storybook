@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import { isAbsolute, posix, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
@@ -79,7 +80,6 @@ export default async function postInstall(options: PostinstallOptions) {
   });
 
   const info = await getStorybookInfo(options);
-  console.log({ info });
   const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
   const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
@@ -565,7 +565,8 @@ export default async function postInstall(options: PostinstallOptions) {
   logger.line(1);
 }
 
-async function getPackageNameFromPath(path: string): Promise<string> {
+async function getPackageNameFromPath(input: string): Promise<string> {
+  const path = input.startsWith('file://') ? fileURLToPath(input) : input;
   if (!isAbsolute(path)) {
     return path;
   }

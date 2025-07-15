@@ -54,6 +54,11 @@
       "import": "./dist/vitest-plugin/test-utils.mjs",
       "require": "./dist/vitest-plugin/test-utils.js"
     },
+    "./internal/playwright-utils": {
+      "types": "./dist/vitest-plugin/playwright-utils.d.ts",
+      "import": "./dist/vitest-plugin/playwright-utils.mjs",
+      "require": "./dist/vitest-plugin/playwright-utils.js"
+    },
     "./internal/coverage-reporter": {
       "types": "./dist/node/coverage-reporter.d.ts",
       "import": "./dist/node/coverage-reporter.mjs",
@@ -145,6 +150,7 @@
     "exportEntries": [
       "./src/index.ts",
       "./src/vitest-plugin/test-utils.ts",
+      "./src/vitest-plugin/playwright-utils.ts",
       "./src/vitest-plugin/setup-file.ts"
     ],
     "managerEntries": [

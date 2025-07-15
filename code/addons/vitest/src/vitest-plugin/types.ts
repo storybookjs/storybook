@@ -1,5 +1,11 @@
 export type UserOptions = {
   /**
+   * Whether to use Playwright to run the tests.
+   *
+   * @default false
+   */
+  usePlaywright?: boolean;
+  /**
    * The directory where the Storybook configuration is located, relative to the vitest
    * configuration file. If not provided, the plugin will use '.storybook' in the current working
    * directory.

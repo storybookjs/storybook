@@ -16,7 +16,11 @@ import type {
   mapStaticDir as MapStaticDirType,
   StoryIndexGenerator as StoryIndexGeneratorType,
 } from 'storybook/internal/core-server';
-import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
+import {
+  readConfig,
+  vitestPlaywrightTransform,
+  vitestTransform,
+} from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 import { oneWayHash } from 'storybook/internal/telemetry';
@@ -51,6 +55,7 @@ const defaultOptions: UserOptions = {
   configDir: resolve(join(WORKING_DIR, '.storybook')),
   storybookUrl: 'http://localhost:6006',
   disableAddonDocs: true,
+  usePlaywright: false,
 };
 
 const extractTagsFromPreview = async (configDir: string) => {
@@ -333,6 +338,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             '@storybook/addon-vitest/internal/setup-file',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
+            '@storybook/addon-vitest/internal/playwright-utils',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),
@@ -418,7 +424,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       const relativeId = relative(finalOptions.vitestRoot, id);
 
       if (match([relativeId], finalOptions.includeStories).length > 0) {
-        return vitestTransform({
+        const transformer = finalOptions.usePlaywright
+          ? vitestPlaywrightTransform
+          : vitestTransform;
+        return transformer({
           code,
           fileName: id,
           configDir: finalOptions.configDir,

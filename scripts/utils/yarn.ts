@@ -95,6 +95,7 @@ export const addWorkaroundResolutions = async ({
     '@testing-library/jest-dom': '^6.6.3',
     '@testing-library/user-event': '^14.5.2',
     typescript: '~5.7.3',
+    rollup: '4.44.2',
   };
 
   await writeJSON(packageJsonPath, packageJson, { spaces: 2 });

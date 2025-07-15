@@ -53,7 +53,6 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
       getStyle,
       addButtonElement,
       cancelButtonElement,
-      editButtonElement,
       inputElement,
       textareaElement,
       minusMenuElement,
@@ -98,7 +97,6 @@ export class JsonTree extends Component<JsonTreeProps, JsonTreeState> {
             getStyle={getStyle ?? (() => ({}))}
             addButtonElement={addButtonElement}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementFunction as (...args: any) => any}
             textareaElementGenerator={textareaElementFunction as (...args: any) => any}
             minusMenuElement={minusMenuElement}
@@ -128,7 +126,6 @@ interface JsonTreeProps {
   getStyle?: (...args: any) => any;
   addButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
-  editButtonElement?: ReactElement;
   inputElement?: ReactElement | ((...args: any) => ReactElement);
   textareaElement?: ReactElement | ((...args: any) => ReactElement);
   minusMenuElement?: ReactElement;

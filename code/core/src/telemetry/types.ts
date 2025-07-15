@@ -10,6 +10,7 @@ export type EventType =
   | 'build'
   | 'index'
   | 'upgrade'
+  | 'multi-upgrade'
   | 'init'
   | 'init-step'
   | 'scaffolded-empty'
@@ -27,7 +28,9 @@ export type EventType =
   | 'testing-module-completed-report'
   | 'testing-module-crash-report'
   | 'addon-test'
-  | 'test-run';
+  | 'test-run'
+  | 'addon-onboarding'
+  | 'onboarding-survey';
 
 export interface Dependency {
   version: string | undefined;

@@ -30,6 +30,7 @@ import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants';
 import { InteractionsPanel } from './InteractionsPanel';
 
 const INITIAL_CONTROL_STATES = {
+  detached: false,
   start: false,
   back: false,
   goto: false,
@@ -116,296 +117,299 @@ const getInternalRenderLogItem = (status: CallStates): LogItem => ({
   ancestors: [],
 });
 
-export const Panel = memo<{ storyId: string }>(function PanelMemoized({ storyId }) {
-  const { statusValue, testRunId } = experimental_useStatusStore((state) => {
-    const storyStatus = state[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
-    return {
-      statusValue: storyStatus?.value,
-      testRunId: storyStatus?.data?.testRunId,
-    };
-  });
+export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>(
+  function PanelMemoized({ refId, storyId, storyUrl }) {
+    const { statusValue, testRunId } = experimental_useStatusStore((state) => {
+      const storyStatus = refId ? undefined : state[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
+      return {
+        statusValue: storyStatus?.value,
+        testRunId: storyStatus?.data?.testRunId,
+      };
+    });
 
-  // shared state
-  const [addonState, set] = useAddonState(ADDON_ID, {
-    controlStates: INITIAL_CONTROL_STATES,
-    isErrored: false,
-    pausedAt: undefined,
-    interactions: [],
-    isPlaying: false,
-    hasException: false,
-    caughtException: undefined,
-    interactionsCount: 0,
-    unhandledErrors: undefined,
-  });
+    // shared state
+    const [addonState, set] = useAddonState(ADDON_ID, {
+      controlStates: INITIAL_CONTROL_STATES,
+      isErrored: false,
+      pausedAt: undefined,
+      interactions: [],
+      isPlaying: false,
+      hasException: false,
+      caughtException: undefined,
+      interactionsCount: 0,
+      unhandledErrors: undefined,
+    });
 
-  // local state
-  const [scrollTarget, setScrollTarget] = useState<HTMLElement | undefined>(undefined);
-  const [collapsed, setCollapsed] = useState<Set<Call['id']>>(new Set());
-  const [hasResultMismatch, setResultMismatch] = useState(false);
+    // local state
+    const [scrollTarget, setScrollTarget] = useState<HTMLElement | undefined>(undefined);
+    const [collapsed, setCollapsed] = useState<Set<Call['id']>>(new Set());
+    const [hasResultMismatch, setResultMismatch] = useState(false);
 
-  const {
-    controlStates = INITIAL_CONTROL_STATES,
-    isErrored = false,
-    pausedAt = undefined,
-    interactions = [],
-    isPlaying = false,
-    caughtException = undefined,
-    unhandledErrors = undefined,
-  } = addonState;
+    const {
+      controlStates = INITIAL_CONTROL_STATES,
+      isErrored = false,
+      pausedAt = undefined,
+      interactions = [],
+      isPlaying = false,
+      caughtException = undefined,
+      unhandledErrors = undefined,
+    } = addonState;
 
-  // Log and calls are tracked in a ref so we don't needlessly rerender.
-  const log = useRef<LogItem[]>([getInternalRenderLogItem(CallStates.ACTIVE)]);
-  const calls = useRef<Map<Call['id'], Omit<Call, 'status'>>>(
-    new Map([[INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId)]])
-  );
-  const setCall = ({ status, ...call }: Call) => calls.current.set(call.id, call);
+    // Log and calls are tracked in a ref so we don't needlessly rerender.
+    const log = useRef<LogItem[]>([getInternalRenderLogItem(CallStates.ACTIVE)]);
+    const calls = useRef<Map<Call['id'], Omit<Call, 'status'>>>(
+      new Map([[INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId)]])
+    );
+    const setCall = ({ status, ...call }: Call) => calls.current.set(call.id, call);
 
-  const endRef = useRef<HTMLDivElement>();
-  useEffect(() => {
-    let observer: IntersectionObserver;
-    if (global.IntersectionObserver) {
-      observer = new global.IntersectionObserver(
-        ([end]: any) => setScrollTarget(end.isIntersecting ? undefined : end.target),
-        { root: global.document.querySelector('#panel-tab-content') }
-      );
+    const endRef = useRef<HTMLDivElement>();
+    useEffect(() => {
+      let observer: IntersectionObserver;
+      if (global.IntersectionObserver) {
+        observer = new global.IntersectionObserver(
+          ([end]: any) => setScrollTarget(end.isIntersecting ? undefined : end.target),
+          { root: global.document.querySelector('#panel-tab-content') }
+        );
 
-      if (endRef.current) {
-        observer.observe(endRef.current);
+        if (endRef.current) {
+          observer.observe(endRef.current);
+        }
       }
-    }
-    return () => observer?.disconnect();
-  }, []);
+      return () => observer?.disconnect();
+    }, []);
 
-  const emit = useChannel(
-    {
-      [EVENTS.CALL]: setCall,
-      [EVENTS.SYNC]: (payload) => {
-        log.current = [getInternalRenderLogItem(CallStates.DONE), ...payload.logItems];
-        set((s) => {
+    const emit = useChannel(
+      {
+        [EVENTS.CALL]: setCall,
+        [EVENTS.SYNC]: (payload) => {
+          log.current = [getInternalRenderLogItem(CallStates.DONE), ...payload.logItems];
+          set((s) => {
+            const interactionsList = getInteractions({
+              log: log.current,
+              calls: calls.current,
+              collapsed,
+              setCollapsed,
+            });
+            const interactionsCount = interactionsList.filter(
+              ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
+            ).length;
+            return {
+              ...s,
+              controlStates: payload.controlStates,
+              pausedAt: payload.pausedAt,
+              interactions: interactionsList,
+              interactionsCount,
+            } as typeof s;
+          });
+        },
+        [STORY_RENDER_PHASE_CHANGED]: (event) => {
+          if (event.newPhase === 'preparing') {
+            log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
+            calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId));
+            set({
+              controlStates: INITIAL_CONTROL_STATES,
+              isErrored: false,
+              pausedAt: undefined,
+              interactions: [],
+              isPlaying: false,
+              hasException: false,
+              caughtException: undefined,
+              interactionsCount: 0,
+              unhandledErrors: undefined,
+            });
+          } else {
+            const interactionsList = getInteractions({
+              log: log.current,
+              calls: calls.current,
+              collapsed,
+              setCollapsed,
+            });
+            const interactionsCount = interactionsList.filter(
+              ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
+            ).length;
+            set(
+              (s) =>
+                ({
+                  ...s,
+                  interactions: interactionsList,
+                  interactionsCount,
+                  isPlaying: event.newPhase === 'playing',
+                  pausedAt: undefined,
+                }) as typeof s
+            );
+          }
+        },
+        [STORY_THREW_EXCEPTION]: (e: { name: string; message: string; stack: string }) => {
+          log.current = [getInternalRenderLogItem(CallStates.ERROR)];
+          calls.current.set(
+            INTERNAL_RENDER_CALL_ID,
+            getInternalRenderCall(storyId, { ...e, callId: INTERNAL_RENDER_CALL_ID })
+          );
           const interactionsList = getInteractions({
             log: log.current,
             calls: calls.current,
             collapsed,
             setCollapsed,
           });
-          const interactionsCount = interactionsList.filter(
-            ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
-          ).length;
-          return {
-            ...s,
-            controlStates: payload.controlStates,
-            pausedAt: payload.pausedAt,
-            interactions: interactionsList,
-            interactionsCount,
-          } as typeof s;
-        });
-      },
-      [STORY_RENDER_PHASE_CHANGED]: (event) => {
-        if (event.newPhase === 'preparing') {
-          log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
-          calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId));
-          set({
-            controlStates: INITIAL_CONTROL_STATES,
-            isErrored: false,
-            pausedAt: undefined,
-            interactions: [],
-            isPlaying: false,
-            hasException: false,
-            caughtException: undefined,
-            interactionsCount: 0,
-            unhandledErrors: undefined,
-          });
-        } else {
-          const interactionsList = getInteractions({
-            log: log.current,
-            calls: calls.current,
-            collapsed,
-            setCollapsed,
-          });
-          const interactionsCount = interactionsList.filter(
-            ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
-          ).length;
           set(
             (s) =>
               ({
                 ...s,
-                interactions: interactionsList,
-                interactionsCount,
-                isPlaying: event.newPhase === 'playing',
+                isErrored: true,
+                hasException: true,
+                caughtException: undefined,
+                controlStates: INITIAL_CONTROL_STATES,
                 pausedAt: undefined,
+                interactions: interactionsList,
+                interactionsCount: 0,
               }) as typeof s
           );
-        }
+        },
+        [PLAY_FUNCTION_THREW_EXCEPTION]: (e) => {
+          set((s) => ({ ...s, caughtException: e, hasException: true }));
+        },
+        [UNHANDLED_ERRORS_WHILE_PLAYING]: (e) => {
+          set((s) => ({ ...s, unhandledErrors: e, hasException: true }));
+        },
       },
-      [STORY_THREW_EXCEPTION]: (e: { name: string; message: string; stack: string }) => {
-        log.current = [getInternalRenderLogItem(CallStates.ERROR)];
-        calls.current.set(
-          INTERNAL_RENDER_CALL_ID,
-          getInternalRenderCall(storyId, { ...e, callId: INTERNAL_RENDER_CALL_ID })
-        );
+      [collapsed]
+    );
+
+    useEffect(() => {
+      // @ts-expect-error TODO
+      set((s) => {
         const interactionsList = getInteractions({
           log: log.current,
           calls: calls.current,
           collapsed,
           setCollapsed,
         });
-        set(
-          (s) =>
-            ({
-              ...s,
-              isErrored: true,
-              hasException: true,
-              caughtException: undefined,
-              controlStates: INITIAL_CONTROL_STATES,
-              pausedAt: undefined,
-              interactions: interactionsList,
-              interactionsCount: 0,
-            }) as typeof s
-        );
-      },
-      [PLAY_FUNCTION_THREW_EXCEPTION]: (e) => {
-        set((s) => ({ ...s, caughtException: e, hasException: true }));
-      },
-      [UNHANDLED_ERRORS_WHILE_PLAYING]: (e) => {
-        set((s) => ({ ...s, unhandledErrors: e, hasException: true }));
-      },
-    },
-    [collapsed]
-  );
-
-  useEffect(() => {
-    // @ts-expect-error TODO
-    set((s) => {
-      const interactionsList = getInteractions({
-        log: log.current,
-        calls: calls.current,
-        collapsed,
-        setCollapsed,
+        const interactionsCount = interactionsList.filter(
+          ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
+        ).length;
+        return { ...s, interactions: interactionsList, interactionsCount };
       });
-      const interactionsCount = interactionsList.filter(
-        ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
-      ).length;
-      return { ...s, interactions: interactionsList, interactionsCount };
-    });
-  }, [set, collapsed]);
+    }, [set, collapsed]);
 
-  const controls = useMemo(
-    () => ({
-      start: () => emit(EVENTS.START, { storyId }),
-      back: () => emit(EVENTS.BACK, { storyId }),
-      goto: (callId: string) => emit(EVENTS.GOTO, { storyId, callId }),
-      next: () => emit(EVENTS.NEXT, { storyId }),
-      end: () => emit(EVENTS.END, { storyId }),
-      rerun: () => {
-        emit(FORCE_REMOUNT, { storyId });
+    const controls = useMemo(
+      () => ({
+        start: () => emit(EVENTS.START, { storyId }),
+        back: () => emit(EVENTS.BACK, { storyId }),
+        goto: (callId: string) => emit(EVENTS.GOTO, { storyId, callId }),
+        next: () => emit(EVENTS.NEXT, { storyId }),
+        end: () => emit(EVENTS.END, { storyId }),
+        rerun: () => {
+          emit(FORCE_REMOUNT, { storyId });
+        },
+      }),
+      [emit, storyId]
+    );
+
+    const storyFilePath = useParameter('fileName', '');
+    const [fileName] = storyFilePath.toString().split('/').slice(-1);
+    const scrollToTarget = useCallback(
+      () => scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'end' }),
+      [scrollTarget]
+    );
+
+    const [highlightedElements, setHighlightedElements] = useState<string[]>([]);
+    const onHighlightElements = useCallback(
+      (selectors: string[], highlight = true) => {
+        setHighlightedElements(highlight ? selectors : []);
       },
-    }),
-    [emit, storyId]
-  );
+      [setHighlightedElements]
+    );
 
-  const storyFilePath = useParameter('fileName', '');
-  const [fileName] = storyFilePath.toString().split('/').slice(-1);
-  const scrollToTarget = useCallback(
-    () => scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'end' }),
-    [scrollTarget]
-  );
-
-  const [highlightedElements, setHighlightedElements] = useState<string[]>([]);
-  const onHighlightElements = useCallback(
-    (selectors: string[], highlight = true) => {
-      setHighlightedElements(highlight ? selectors : []);
-    },
-    [setHighlightedElements]
-  );
-
-  useEffect(() => {
-    const keyframeName = `kf-${Math.random().toString(36).substring(2, 15)}`;
-    emit(SCROLL_INTO_VIEW, highlightedElements, { highlight: false });
-    emit(HIGHLIGHT, {
-      id: `${ADDON_ID}/highlight`,
-      selectors: highlightedElements,
-      styles: {
-        outline: '2px solid #1EA7FD',
-        outlineOffset: '-1px',
-        animation: `${keyframeName} 1s linear forwards`,
-      },
-      keyframes: `@keyframes ${keyframeName} {
+    useEffect(() => {
+      const keyframeName = `kf-${Math.random().toString(36).substring(2, 15)}`;
+      emit(SCROLL_INTO_VIEW, highlightedElements, { highlight: false });
+      emit(HIGHLIGHT, {
+        id: `${ADDON_ID}/highlight`,
+        selectors: highlightedElements,
+        styles: {
+          outline: '2px solid #1EA7FD',
+          outlineOffset: '-1px',
+          animation: `${keyframeName} 1s linear forwards`,
+        },
+        keyframes: `@keyframes ${keyframeName} {
         0% { outline: 2px solid #1EA7FD00; }
         33% { outline: 2px solid #1EA7FD; }
         66% { outline: 2px solid #1EA7FD00; }
         100% { outline: 2px solid #1EA7FD; }
       }`,
-    });
-    return () => emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/highlight`);
-  }, [emit, highlightedElements]);
+      });
+      return () => emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/highlight`);
+    }, [emit, highlightedElements]);
 
-  const hasException =
-    !!caughtException ||
-    !!unhandledErrors ||
-    // @ts-expect-error TODO
-    interactions.some((v) => v.status === CallStates.ERROR);
+    const hasException =
+      !!caughtException ||
+      !!unhandledErrors ||
+      // @ts-expect-error TODO
+      interactions.some((v) => v.status === CallStates.ERROR);
 
-  const browserTestStatus = useMemo<CallStates | undefined>(() => {
-    if (!isPlaying && (interactions.length > 0 || hasException)) {
-      return hasException ? CallStates.ERROR : CallStates.DONE;
-    }
-    return isPlaying ? CallStates.ACTIVE : undefined;
-  }, [isPlaying, interactions, hasException]);
+    const browserTestStatus = useMemo<CallStates | undefined>(() => {
+      if (!isPlaying && (interactions.length > 0 || hasException)) {
+        return hasException ? CallStates.ERROR : CallStates.DONE;
+      }
+      return isPlaying ? CallStates.ACTIVE : undefined;
+    }, [isPlaying, interactions, hasException]);
 
-  useEffect(() => {
-    const isMismatch =
-      browserTestStatus &&
-      statusValue &&
-      statusValue !== 'status-value:pending' &&
-      statusValue !== statusMap[browserTestStatus];
+    useEffect(() => {
+      const isMismatch =
+        browserTestStatus &&
+        statusValue &&
+        statusValue !== 'status-value:pending' &&
+        statusValue !== statusMap[browserTestStatus];
 
-    if (isMismatch) {
-      const timeout = setTimeout(
-        () =>
-          setResultMismatch((currentValue) => {
-            if (!currentValue) {
-              emit(STORYBOOK_ADDON_TEST_CHANNEL, {
-                type: 'test-discrepancy',
-                payload: {
-                  browserStatus: browserTestStatus === CallStates.DONE ? 'PASS' : 'FAIL',
-                  cliStatus: browserTestStatus === CallStates.DONE ? 'FAIL' : 'PASS',
-                  storyId,
-                  testRunId,
-                },
-              });
-            }
-            return true;
-          }),
-        2000
-      );
-      return () => clearTimeout(timeout);
-    } else {
-      setResultMismatch(false);
-    }
-  }, [emit, browserTestStatus, statusValue, storyId, testRunId]);
+      if (isMismatch) {
+        const timeout = setTimeout(
+          () =>
+            setResultMismatch((currentValue) => {
+              if (!currentValue) {
+                emit(STORYBOOK_ADDON_TEST_CHANNEL, {
+                  type: 'test-discrepancy',
+                  payload: {
+                    browserStatus: browserTestStatus === CallStates.DONE ? 'PASS' : 'FAIL',
+                    cliStatus: browserTestStatus === CallStates.DONE ? 'FAIL' : 'PASS',
+                    storyId,
+                    testRunId,
+                  },
+                });
+              }
+              return true;
+            }),
+          2000
+        );
+        return () => clearTimeout(timeout);
+      } else {
+        setResultMismatch(false);
+      }
+    }, [emit, browserTestStatus, statusValue, storyId, testRunId]);
 
-  return (
-    <Fragment key="component-tests">
-      <InteractionsPanel
-        hasResultMismatch={hasResultMismatch}
-        browserTestStatus={browserTestStatus}
-        calls={calls.current}
-        controls={controls}
-        controlStates={controlStates}
-        interactions={interactions}
-        fileName={fileName}
-        hasException={hasException}
-        caughtException={caughtException}
-        unhandledErrors={unhandledErrors}
-        isErrored={isErrored}
-        isPlaying={isPlaying}
-        pausedAt={pausedAt}
-        // @ts-expect-error TODO
-        endRef={endRef}
-        onScrollToEnd={scrollTarget && scrollToTarget}
-        highlightedElements={highlightedElements}
-        onHighlightElements={onHighlightElements}
-      />
-    </Fragment>
-  );
-});
+    return (
+      <Fragment key="component-tests">
+        <InteractionsPanel
+          storyUrl={storyUrl}
+          hasResultMismatch={hasResultMismatch}
+          browserTestStatus={browserTestStatus}
+          calls={calls.current}
+          controls={controls}
+          controlStates={{ ...controlStates, detached: !!refId || controlStates.detached }}
+          interactions={interactions}
+          fileName={fileName}
+          hasException={hasException}
+          caughtException={caughtException}
+          unhandledErrors={unhandledErrors}
+          isErrored={isErrored}
+          isPlaying={isPlaying}
+          pausedAt={pausedAt}
+          // @ts-expect-error TODO
+          endRef={endRef}
+          onScrollToEnd={scrollTarget && scrollToTarget}
+          highlightedElements={highlightedElements}
+          onHighlightElements={onHighlightElements}
+        />
+      </Fragment>
+    );
+  }
+);

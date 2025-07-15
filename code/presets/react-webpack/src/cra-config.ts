@@ -49,10 +49,12 @@ export function getReactScriptsPath({ noCache }: { noCache?: boolean } = {}) {
   return reactScriptsPath;
 }
 
-export function isReactScriptsInstalled(requiredVersion = '2.0.0') {
+export async function isReactScriptsInstalled(minimum_version = '2.0.0') {
   try {
-    const reactScriptsJson = require(join(getReactScriptsPath(), 'package.json'));
-    return !semver.gtr(requiredVersion, reactScriptsJson.version);
+    const reactScriptsJson = await import(join(getReactScriptsPath(), 'package.json'), {
+      assert: { type: 'json' },
+    });
+    return !semver.gtr(minimum_version, reactScriptsJson.version);
   } catch (e) {
     return false;
   }

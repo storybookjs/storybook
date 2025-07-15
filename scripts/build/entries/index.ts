@@ -1272,6 +1272,32 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/preset-react-webpack': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['./index'],
+          entryPoint: './src/index.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preset-cra'],
+          entryPoint: './src/framework-preset-cra.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preset-react-docs'],
+          entryPoint: './src/framework-preset-react-docs.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./react-docgen-loader'],
+          entryPoint: './src/loaders/react-docgen-loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

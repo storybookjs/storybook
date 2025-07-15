@@ -1188,6 +1188,26 @@ export const buildEntries = {
           exportEntries: ['.'],
           entryPoint: './src/index.ts',
         },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/mocks/app/forms'],
+          entryPoint: './src/mocks/app/forms.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/mocks/app/navigation'],
+          entryPoint: './src/mocks/app/navigation.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/mocks/app/stores'],
+          entryPoint: './src/mocks/app/stores.ts',
+          dts: false,
+        },
       ],
       node: [
         {

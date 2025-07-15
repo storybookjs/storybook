@@ -398,7 +398,11 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     ? template.expected.framework
     : template.expected.renderer;
 
-  const setupFilePath = join(sandboxDir, '.storybook/vitest.setup.ts');
+  const isTypeScriptSandbox = template.name.includes('TypeScript');
+  const setupFilePath = join(
+    sandboxDir,
+    isTypeScriptSandbox ? '.storybook/vitest.setup.ts' : '.storybook/vitest.setup.js'
+  );
 
   const shouldUseCsf4 = template.expected.framework === '@storybook/react-vite';
   if (shouldUseCsf4) {

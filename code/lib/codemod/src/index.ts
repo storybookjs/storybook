@@ -1,13 +1,18 @@
 /* eslint import/prefer-default-export: "off" */
 import { readdirSync } from 'node:fs';
 import { rename as renameAsync } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { extname } from 'node:path';
+
+import { resolvePackageDir } from 'storybook/internal/common';
 
 import { sync as spawnSync } from 'cross-spawn';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
 
-const TRANSFORM_DIR = `${__dirname}/transforms`;
+const require = createRequire(import.meta.url);
+
+const TRANSFORM_DIR = `${resolvePackageDir('@storybook/codemod')}/dist/transforms`;
 
 export function listCodemods() {
   return readdirSync(TRANSFORM_DIR)

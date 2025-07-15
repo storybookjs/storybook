@@ -228,19 +228,19 @@ export async function detect(
   options: { force?: boolean; html?: boolean } = {}
 ) {
   try {
-    logger.debug('Checking for NX project');
+    process.stdout.write('\nChecking for NX project\n');
     if (await isNxProject()) {
       return ProjectType.NX;
     }
 
-    logger.debug('Checking for HTML project');
+    process.stdout.write('\nChecking for HTML project\n');
     if (options.html) {
       return ProjectType.HTML;
     }
 
     const { packageJson } = packageManager.primaryPackageJson;
-    logger.debug(
-      `Checking package.json for framework preset:\n${JSON.stringify(packageJson, null, 2)}`
+    process.stdout.write(
+      `\nChecking package.json for framework preset:\n${JSON.stringify(packageJson, null, 2)}\n`
     );
     return detectFrameworkPreset(packageJson);
   } catch (e) {

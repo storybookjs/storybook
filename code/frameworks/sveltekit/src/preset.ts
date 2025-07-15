@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { withoutVitePlugins } from '@storybook/builder-vite';
@@ -13,7 +15,7 @@ export const core: PresetProperty<'core'> = {
 };
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => [
   ...entry,
-  import.meta.resolve('@storybook/sveltekit/preview'),
+  fileURLToPath(import.meta.resolve('@storybook/sveltekit/preview')),
 ];
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
@@ -32,3 +34,9 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     ],
   };
 };
+
+export const optimizeViteDeps: PresetProperty<'optimizeViteDeps'> = [
+  '@storybook/sveltekit/internal/mocks/app/forms',
+  '@storybook/sveltekit/internal/mocks/app/navigation',
+  '@storybook/sveltekit/internal/mocks/app/stores',
+];

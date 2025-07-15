@@ -8,6 +8,8 @@ import { createUnplugin } from 'unplugin';
 import { STORIES_REGEX } from './constants';
 import { rollupBasedPlugin } from './rollup-based-plugin';
 
+export type CsfPluginOptions = EnrichCsfOptions;
+
 export const unpluginFactory: UnpluginFactory<EnrichCsfOptions> = (options) => {
   return {
     name: 'unplugin-csf',

@@ -59,6 +59,13 @@ export const getExternal = async (cwd: string) => {
     'react-dom',
     'react-dom/client',
     '@storybook/icons',
+
+    /**
+     * @note This is not a real package, it's a hack to allow `frameworks/nextjs` to be able to alias
+     * whilst also able to use the nextjs version
+     *
+     * @see `code/frameworks/nextjs/src/images/next-image.tsx`
+     */
     'sb-original',
     packageJson.name,
     ...Object.keys(packageJson.dependencies || {}),

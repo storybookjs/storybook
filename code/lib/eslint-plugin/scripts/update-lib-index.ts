@@ -37,20 +37,23 @@ ${categoryIds
 // rules
 ${rules.map((rule) => `import ${camelize(rule.name)} from './rules/${rule.name}'`).join('\n')}
 
-// export plugin
-export = {
-  configs: {
-    // eslintrc configs
-    ${categoryIds.map((categoryId) => `'${categoryId}': ${camelize(categoryId)}`).join(',\n')},
+export const configs = {
+  // eslintrc configs
+  ${categoryIds.map((categoryId) => `'${categoryId}': ${camelize(categoryId)}`).join(',\n')},
 
-    // flat configs
-    ${categoryIds
-      .map((categoryId) => `'flat/${categoryId}': ${camelize(`flat-${categoryId}`)}`)
-      .join(',\n')},
-  },
-  rules: {
-    ${rules.map((rule) => `'${rule.name}': ${camelize(rule.name)}`).join(',\n')}
-  }
+  // flat configs
+  ${categoryIds
+    .map((categoryId) => `'flat/${categoryId}': ${camelize(`flat-${categoryId}`)}`)
+    .join(',\n')},
+};
+
+export const rules = {
+  ${rules.map((rule) => `'${rule.name}': ${camelize(rule.name)}`).join(',\n')}
+};
+
+export default {
+  configs,
+  rules,
 }
 `;
   const content = await format(rawContent, {

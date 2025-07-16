@@ -21,18 +21,19 @@ import {
 function formatCategory(category: TCategory) {
   const extendsCategoryId = extendsCategories[category.categoryId];
   if (extendsCategoryId == null) {
-    return `/*
+    return `
+      import storybook from '../../index';
+
+      /*
       * IMPORTANT!
       * This file has been automatically generated,
       * in order to update its content, execute "yarn update-rules" or rebuild this package.
       */
-      export = [
+      export default [
         {
           name: 'storybook:${category.categoryId}:setup',
           plugins: {
-            get storybook() {
-              return require('../../index')
-            }
+            storybook
           }
         },
         {
@@ -55,7 +56,7 @@ function formatCategory(category: TCategory) {
     */
     import config from './${extendsCategoryId}'
 
-    export = [
+    export default [
       ...config,
       {
         name: 'storybook:${category.categoryId}:rules',

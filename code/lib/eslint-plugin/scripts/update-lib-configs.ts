@@ -26,7 +26,7 @@ function formatCategory(category: TCategory) {
       * This file has been automatically generated,
       * in order to update its content, execute "yarn update-rules" or rebuild this package.
       */
-      export = {
+      export default {
         plugins: [
           'storybook'
         ],
@@ -45,7 +45,7 @@ function formatCategory(category: TCategory) {
     * This file has been automatically generated,
     * in order to update its content, execute "yarn update-rules" or rebuild this package.
     */
-    export = {
+    export default {
       // This file is bundled in an index.js file at the root
       // so the reference is relative to the src directory
       extends: './configs/${extendsCategoryId}',

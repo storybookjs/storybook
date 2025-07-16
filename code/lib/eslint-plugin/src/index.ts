@@ -30,7 +30,6 @@ import storyExports from './rules/story-exports';
 import useStorybookExpect from './rules/use-storybook-expect';
 import useStorybookTestingLibrary from './rules/use-storybook-testing-library';
 
-// export plugin
 export const configs = {
   // eslintrc configs
   csf: csf,

@@ -120,9 +120,13 @@
       "default": "./dist/manager/globals.js"
     },
     "./internal/manager/globals-runtime": "./dist/manager/globals-runtime.js",
+    "./internal/node": {
+      "types": "./dist/node-all/index.d.ts",
+      "default": "./dist/node-all/index.js"
+    },
     "./internal/node-logger": {
-      "types": "./dist/node-logger/index.d.ts",
-      "default": "./dist/node-logger/index.js"
+      "types": "./dist/node-shims/node-logger.d.ts",
+      "default": "./dist/node-shims/node-logger.js"
     },
     "./internal/preview-api": {
       "types": "./dist/preview-api/index.d.ts",

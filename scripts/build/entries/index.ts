@@ -36,8 +36,12 @@ export const buildEntries = {
     entries: {
       node: [
         {
+          exportEntries: ['./internal/node'],
+          entryPoint: './src/node-all/index.ts',
+        },
+        {
           exportEntries: ['./internal/node-logger'],
-          entryPoint: './src/node-logger/index.ts',
+          entryPoint: './src/node-shims/node-logger.ts',
         },
         {
           exportEntries: ['./internal/server-errors'],

@@ -38,10 +38,7 @@
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": "./dist/preview.js",
-    "./vite-plugin": {
-      "types": "./dist/vite-plugin.d.ts",
-      "default": "./dist/vite-plugin.js"
-    }
+    "./vite-plugin": "./dist/vite-plugin.js"
   },
   "files": [
     "dist/**/*",

@@ -27,7 +27,7 @@ const DIR_METAFILE_BASE = join(
   'bench',
   'esbuild-metafiles'
 );
-const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
 export async function generateBundle({
   cwd,

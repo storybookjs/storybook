@@ -2,6 +2,7 @@ import { exec } from 'node:child_process';
 import { join } from 'node:path';
 
 import type { BuildEntriesByPackageName } from '../utils/entry-utils';
+import { DIR_CODE } from '../utils/generate-bundle';
 
 export const buildEntries = {
   storybook: {
@@ -1333,6 +1334,32 @@ export const buildEntries = {
     },
   },
   'eslint-plugin-storybook': {
+    prebuild: async (cwd) => {
+      const ESLINT_PLUGIN_PREBUILD_SCRIPT_PATH = join(
+        DIR_CODE,
+        'lib',
+        'eslint-plugin',
+        'scripts',
+        'update-all.ts'
+      );
+      return new Promise((resolve, reject) => {
+        const child = exec(`jiti ${ESLINT_PLUGIN_PREBUILD_SCRIPT_PATH}`, {
+          cwd,
+          env: {
+            ...process.env,
+            NODE_ENV: 'production',
+            FORCE_COLOR: '1',
+            stdio: 'inherit',
+          },
+        });
+        child.on('close', () => {
+          resolve(void 0);
+        });
+        child.on('error', (error) => {
+          reject(error);
+        });
+      });
+    },
     entries: {
       node: [
         {

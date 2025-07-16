@@ -69,20 +69,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "pre": "./scripts/update-all.ts",
-    "entries": [
-      "./src/index.ts",
-      "./src/configs/recommended.ts",
-      "./src/configs/csf.ts",
-      "./src/configs/csf-strict.ts",
-      "./src/configs/addon-interactions.ts",
-      "./src/configs/flat/recommended.ts",
-      "./src/configs/flat/csf.ts",
-      "./src/configs/flat/csf-strict.ts",
-      "./src/configs/flat/addon-interactions.ts"
-    ],
-    "platform": "node"
-  },
   "gitHead": "a0e7fd8a655c69780bc20b9749c2699e45beae18"
 }

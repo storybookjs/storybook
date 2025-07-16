@@ -155,7 +155,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
                 return readFileSync(call.redirectPath, 'utf-8');
               }
             } catch (e) {
-              logger.error(`Error automocking ${id}`, e);
+              logger.error(`Error automocking ${id}: ${e}`);
               return null;
             }
           }

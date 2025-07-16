@@ -99,7 +99,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", _testStory("automatic-calculated-title--story", page));
+            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context));
           }
         `);
       });
@@ -143,7 +143,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", _testStory("automatic-calculated-title--story", page));
+            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context));
           }
         `);
       });
@@ -188,7 +188,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", _testStory("automatic-calculated-title--story", page));
+            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context));
           }
         `);
       });
@@ -234,7 +234,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", _testStory("automatic-calculated-title--story", page));
+            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context));
           }
         `);
       });
@@ -285,7 +285,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Primary", _testStory("automatic-calculated-title--primary", page));
+            _test("Primary", async context => _testStory("automatic-calculated-title--primary", page, context));
           }
         `);
       });
@@ -336,7 +336,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Primary", _testStory("automatic-calculated-title--primary", page));
+            _test("Primary", async context => _testStory("automatic-calculated-title--primary", page, context));
           }
         `);
       });

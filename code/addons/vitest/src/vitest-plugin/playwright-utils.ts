@@ -604,16 +604,14 @@ export async function setupPageScript(page: Page) {
   });
 }
 
-export function testStory(storyId: string, page: Page) {
-  return async (context: TestContext) => {
-    const _task = context.task as RunnerTask & {
-      meta: TaskMeta & { storyId: string; reports: Report[] };
-    };
-    _task.meta.storyId = storyId;
-
-    await page.evaluate(async (storyId: string) => {
-      // @ts-expect-error Need to fix with augmentation
-      return await globalThis.__test(storyId);
-    }, storyId);
+export async function testStory(storyId: string, page: Page, context: TestContext) {
+  const _task = context.task as RunnerTask & {
+    meta: TaskMeta & { storyId: string; reports: Report[] };
   };
+  _task.meta.storyId = storyId;
+
+  await page.evaluate(async (storyId: string) => {
+    // @ts-expect-error Need to fix with augmentation
+    return await globalThis.__test(storyId);
+  }, storyId);
 }

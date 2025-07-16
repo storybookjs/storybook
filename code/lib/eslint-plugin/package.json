@@ -25,7 +25,14 @@
       "email": "rafaelrozon.developer@gmail.com"
     }
   ],
-  "main": "dist/index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist/**/*",
     "README.md"
@@ -33,7 +40,7 @@
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",
     "generate-rule": "jiti ./scripts/generate-rule",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts",
     "update-rules": "jiti ./scripts/update-all.ts"
   },
   "dependencies": {

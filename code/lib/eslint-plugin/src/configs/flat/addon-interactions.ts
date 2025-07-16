@@ -1,15 +1,15 @@
+import storybook from '../../index';
+
 /*
  * IMPORTANT!
  * This file has been automatically generated,
  * in order to update its content, execute "yarn update-rules" or rebuild this package.
  */
-export = [
+export default [
   {
     name: 'storybook:addon-interactions:setup',
     plugins: {
-      get storybook() {
-        return require('../../index');
-      },
+      storybook,
     },
   },
   {

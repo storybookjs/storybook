@@ -5,7 +5,7 @@
  */
 import config from './csf';
 
-export = [
+export default [
   ...config,
   {
     name: 'storybook:csf-strict:rules',

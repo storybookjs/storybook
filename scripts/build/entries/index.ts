@@ -1332,6 +1332,16 @@ export const buildEntries = {
       ],
     },
   },
+  'eslint-plugin-storybook': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

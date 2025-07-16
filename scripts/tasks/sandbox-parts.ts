@@ -422,7 +422,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       setupFilePath,
       dedent`import { beforeAll } from 'vitest'
       import { setProjectAnnotations } from '${storybookPackage}'
-      import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
+      import * as rendererDocsAnnotations from '${template.expected.renderer}/entry-preview-docs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
       import '../src/stories/components'
       import * as templateAnnotations from '../template-stories/core/preview'
@@ -490,7 +490,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  const extraDevDeps = ['@storybook/test-runner@0.23.1--canary.8609766.0'];
+  const extraDevDeps = ['@storybook/test-runner@0.23.1--canary.db60cb3.0'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);

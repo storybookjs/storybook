@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-onboarding",
-  "version": "9.1.0-alpha.7",
+  "version": "9.1.0-alpha.8",
   "description": "Storybook Addon Onboarding - Introduces a new onboarding experience",
   "keywords": [
     "storybook-addons",
@@ -20,19 +20,16 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./preset": "./dist/preset.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -42,7 +39,7 @@
   ],
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "devDependencies": {
     "@neoconfetti/react": "^1.0.0",
@@ -57,16 +54,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ],
-    "nodeEntries": [
-      "./src/preset.ts"
-    ]
   }
 }

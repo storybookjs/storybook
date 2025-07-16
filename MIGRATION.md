@@ -4,6 +4,7 @@
   - [Core Changes](#core-changes)
     - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
+    - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -511,6 +512,30 @@ Storybook 10 has removed all `typesVersions` fields from `package.json` files. T
 **Note:** If you're currently using `moduleResolution: "node"` (the old Node.js 10-style resolution), you'll need to upgrade to one of the supported values above.
 
 This change simplifies our package structure and aligns with modern TypeScript standards. Only TypeScript projects are affected - JavaScript projects require no changes.
+
+#### `core.builder` configuration must be a fully resolved path
+
+> [!NOTE]  
+> In the majority of cases, this is only relevant for authors of Storybook framework packages, as regular users very rarely set the `core.builder` property manually.
+
+When setting the `core.builder` or `core.builder.name` option in the main configuration, it must now be a fully resolved path to a builder's entry point, instead of just to the builder package's root directory.
+
+In a preset:
+
+```diff
+import { dirname, join } from 'node:path';
+
+const getAbsolutePath = (input) =>
+  dirname(require.resolve(join(input, 'package.json')));
+
+export const core = {
+-  builder: getAbsolutePath('@storybook/builder-vite'),
+-  // 👆 results in eg. `/absolute/path/node_modules/@storybook/builder-vite
++  builder: import.meta.resolve('@storybook/builder-vite'),
++  // 👆 results in eg. `/absolute/path/node_modules/@storybook/builder-vite/index.js
+  renderer: getAbsolutePath('@storybook/react'),
+};
+```
 
 ## From version 8.x to 9.0.0
 

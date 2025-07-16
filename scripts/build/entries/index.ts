@@ -69,9 +69,6 @@ export const buildEntries = {
           entryPoint: './src/babel/index.ts',
         },
         {
-          entryPoint: './src/builder-manager/index.ts',
-        },
-        {
           exportEntries: ['./internal/bin/dispatcher'],
           entryPoint: './src/bin/dispatcher.ts',
           dts: false,
@@ -240,6 +237,539 @@ export const buildEntries = {
     postbuild: async (cwd) => {
       const { chmod } = await import('node:fs/promises');
       await chmod(join(cwd, 'dist', 'bin', 'index.js'), 0o755);
+    },
+  },
+  '@storybook/addon-a11y': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.tsx',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./postinstall'],
+          entryPoint: './src/postinstall.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/addon-docs': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./blocks'],
+          entryPoint: './src/blocks.ts',
+        },
+        {
+          exportEntries: ['./mdx-react-shim'],
+          entryPoint: './src/mdx-react-shim.ts',
+        },
+        {
+          exportEntries: ['./ember'],
+          entryPoint: './src/ember/index.ts',
+        },
+        {
+          exportEntries: ['./angular'],
+          entryPoint: './src/angular/index.ts',
+        },
+        {
+          exportEntries: ['./web-components'],
+          entryPoint: './src/web-components/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./mdx-loader'],
+          entryPoint: './src/mdx-loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/react-dom-shim': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/react-18.tsx',
+        },
+        {
+          exportEntries: ['./react-16'],
+          entryPoint: './src/react-16.tsx',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/addon-jest': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/addon-links': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./react'],
+          entryPoint: './src/react/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/addon-onboarding': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  'storybook-addon-pseudo-states': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+      ],
+    },
+  },
+  '@storybook/addon-themes': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./postinstall'],
+          entryPoint: './src/postinstall.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/builder-vite': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+    },
+    extraOutputs: {
+      './input/iframe.html': './input/iframe.html',
+    },
+  },
+  '@storybook/builder-webpack5': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./presets/custom-webpack-preset'],
+          entryPoint: './src/presets/custom-webpack-preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./presets/preview-preset'],
+          entryPoint: './src/presets/preview-preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./loaders/export-order-loader'],
+          entryPoint: './src/loaders/export-order-loader.ts',
+          dts: false,
+        },
+      ],
+    },
+    extraOutputs: {
+      './templates/virtualModuleModernEntry.js': './templates/virtualModuleModernEntry.js',
+      './templates/preview.ejs': './templates/preview.ejs',
+      './templates/virtualModuleEntry.template.js': './templates/virtualModuleEntry.template.js',
+      './templates/virtualModuleStory.template.js': './templates/virtualModuleStory.template.js',
+    },
+  },
+  '@storybook/addon-vitest': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./manager'],
+          entryPoint: './src/manager.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/setup-file'],
+          entryPoint: './src/vitest-plugin/setup-file.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/test-utils'],
+          entryPoint: './src/vitest-plugin/test-utils.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/global-setup'],
+          entryPoint: './src/vitest-plugin/global-setup.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./vitest'],
+          entryPoint: './src/node/vitest.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./postinstall'],
+          entryPoint: './src/postinstall.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./vitest-plugin'],
+          entryPoint: './src/vitest-plugin/index.ts',
+        },
+        {
+          exportEntries: ['./internal/coverage-reporter'],
+          entryPoint: './src/node/coverage-reporter.ts',
+          dts: false,
+        },
+      ],
+    },
+    extraOutputs: {
+      './static/coverage-reporter.cjs': './static/coverage-reporter.cjs',
+    },
+  },
+  '@storybook/html': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/preact': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/react': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.tsx',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-argtypes'],
+          entryPoint: './src/entry-preview-argtypes.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-rsc'],
+          entryPoint: './src/entry-preview-rsc.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./experimental-playwright'],
+          entryPoint: './src/playwright.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/server': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/svelte': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./experimental-playwright'],
+          entryPoint: './src/playwright.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+    extraOutputs: {
+      './internal/PreviewRender.svelte': './static/PreviewRender.svelte',
+      './internal/DecoratorHandler.svelte': './static/DecoratorHandler.svelte',
+      './internal/AddStorybookIdDecorator.svelte': './static/AddStorybookIdDecorator.svelte',
+      './internal/createReactiveProps': './static/createReactiveProps.svelte.js',
+    },
+  },
+  '@storybook/vue3': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./experimental-playwright'],
+          entryPoint: './src/playwright.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/web-components': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./entry-preview'],
+          entryPoint: './src/entry-preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-argtypes'],
+          entryPoint: './src/entry-preview-argtypes.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./entry-preview-docs'],
+          entryPoint: './src/entry-preview-docs.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
     },
   },
 } satisfies BuildEntriesByPackageName;

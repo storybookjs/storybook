@@ -1,6 +1,6 @@
 {
   "name": "@storybook/ember",
-  "version": "9.1.0-alpha.7",
+  "version": "9.1.0-alpha.8",
   "description": "Storybook for Ember: Develop, document, and test Ember components in isolation",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember",
   "bugs": {
@@ -71,5 +71,5 @@
     "access": "public"
   },
   "bundler": {},
-  "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae78"
 }

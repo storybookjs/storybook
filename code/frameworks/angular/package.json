@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "9.1.0-alpha.7",
+  "version": "9.1.0-alpha.8",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -150,5 +150,5 @@
       "./src/builders/build-storybook/index.ts"
     ]
   },
-  "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae78"
 }

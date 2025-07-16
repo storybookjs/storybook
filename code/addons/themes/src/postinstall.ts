@@ -1,4 +1,4 @@
-const { spawn } = require('child_process');
+import { spawn } from 'child_process';
 
 const PACKAGE_MANAGER_TO_COMMAND = {
   npm: ['npx'],
@@ -8,9 +8,10 @@ const PACKAGE_MANAGER_TO_COMMAND = {
   bun: ['bunx'],
 };
 
-const selectPackageManagerCommand = (packageManager) => PACKAGE_MANAGER_TO_COMMAND[packageManager];
+const selectPackageManagerCommand = (packageManager: string) =>
+  PACKAGE_MANAGER_TO_COMMAND[packageManager as keyof typeof PACKAGE_MANAGER_TO_COMMAND];
 
-const spawnPackageManagerScript = async (packageManager, args) => {
+const spawnPackageManagerScript = async (packageManager: string, args: string[]) => {
   const [command, ...baseArgs] = selectPackageManagerCommand(packageManager);
 
   await spawn(command, [...baseArgs, ...args], {
@@ -20,6 +21,6 @@ const spawnPackageManagerScript = async (packageManager, args) => {
   });
 };
 
-module.exports = async function postinstall({ packageManager = 'npm' }) {
+export default async function postinstall({ packageManager = 'npm' }) {
   await spawnPackageManagerScript(packageManager, ['@storybook/auto-config', 'themes']);
-};
+}

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-native-web-vite",
-  "version": "9.1.0-alpha.7",
+  "version": "9.1.0-alpha.8",
   "description": "Develop react-native components an isolated web environment with hot reloading.",
   "keywords": [
     "storybook"
@@ -92,5 +92,5 @@
     ],
     "platform": "node"
   },
-  "gitHead": "e6e7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae78"
 }

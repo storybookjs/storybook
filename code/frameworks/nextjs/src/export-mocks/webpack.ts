@@ -13,11 +13,7 @@ const mapping = {
 // Utility that assists in adding aliases to the Webpack configuration
 // and also doubles as alias solution for portable stories in Jest/Vitest/etc.
 export const getPackageAliases = () => {
-  const aliases = Object.fromEntries(
-    Object.entries(mapping).map(([originalPath, aliasedPath]) => [originalPath, aliasedPath])
-  );
-
-  return aliases;
+  return mapping;
 };
 
 export const configureNextExportMocks = (baseConfig: WebpackConfig): void => {
@@ -25,6 +21,6 @@ export const configureNextExportMocks = (baseConfig: WebpackConfig): void => {
 
   resolve.alias = {
     ...resolve.alias,
-    ...getPackageAliases(),
+    ...mapping,
   };
 };

@@ -1,6 +1,7 @@
-import cp from 'child_process';
-import fs from 'fs/promises';
-import path from 'path';
+import cp from 'node:child_process';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
 import type { PromptObject } from 'prompts';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -61,9 +62,9 @@ const generateRule = async () => {
     },
   });
 
-  const ruleFile = path.resolve(__dirname, `../src/rules/${ruleId}.ts`);
-  const testFile = path.resolve(__dirname, `../tests/rules/${ruleId}.test.ts`);
-  const docFile = path.resolve(__dirname, `../docs/rules/${ruleId}.md`);
+  const ruleFile = path.resolve(import.meta.dirname, `../src/rules/${ruleId}.ts`);
+  const testFile = path.resolve(import.meta.dirname, `../tests/rules/${ruleId}.test.ts`);
+  const docFile = path.resolve(import.meta.dirname, `../docs/rules/${ruleId}.md`);
 
   logger.log(`creating src/rules/${ruleId}.ts`);
   await fs.writeFile(

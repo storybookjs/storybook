@@ -1,16 +1,17 @@
-import { readFile, writeFile } from 'fs/promises';
-import { resolve } from 'path';
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
 import { format, resolveConfig } from 'prettier';
 
 import type { TRuleListWithoutName, TRulesList } from '../update-rules-list';
 import { categoryIds } from './categories';
 
-const prettierConfig = resolveConfig(__dirname);
-const readmePath = resolve(
-  __dirname,
+const prettierConfig = resolveConfig(import.meta.dirname);
+const readmePath = path.resolve(
+  import.meta.dirname,
   `../../../../../docs/configure/integration/eslint-plugin.mdx`
 );
-const ruleDocsPath = resolve(__dirname, `../../docs/rules`);
+const ruleDocsPath = path.resolve(import.meta.dirname, `../../docs/rules`);
 
 export const configBadges = categoryIds.reduce(
   (badges, category) => ({
@@ -104,7 +105,7 @@ export const updateRulesDocs = async (rulesList: TRulesList[]) => {
   await Promise.all(
     rulesList.map(async (rule) => {
       const ruleName = rule[0];
-      const ruleDocFilePath = resolve(ruleDocsPath, `${ruleName}.md`);
+      const ruleDocFilePath = path.resolve(ruleDocsPath, `${ruleName}.md`);
       const ruleDocFile = await readFile(ruleDocFilePath, 'utf8');
 
       const updatedDocFile = await format(overWriteRuleDocs(rule, ruleDocFile), {

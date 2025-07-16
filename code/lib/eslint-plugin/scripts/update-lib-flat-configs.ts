@@ -1,8 +1,9 @@
 /*
 This script updates `lib/configs/flat/*.js` files from rule's meta data.
 */
-import fs from 'fs/promises';
-import path from 'path';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+
 import type { Options } from 'prettier';
 import { format } from 'prettier';
 
@@ -66,7 +67,7 @@ function formatCategory(category: TCategory) {
   `;
 }
 
-const FLAT_CONFIG_DIR = path.resolve(__dirname, '../src/configs/flat');
+const FLAT_CONFIG_DIR = path.resolve(import.meta.dirname, '../src/configs/flat');
 
 export async function update() {
   // setup config directory

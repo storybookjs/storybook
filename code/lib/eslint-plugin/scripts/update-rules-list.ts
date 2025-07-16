@@ -1,5 +1,5 @@
 import { emojiKey, updateRulesDocs, writeRulesListInReadme } from './utils/docs';
-import rules from './utils/rules';
+import getRules from './utils/rules';
 import { extendsCategories } from './utils/updates';
 
 /*
@@ -22,6 +22,7 @@ const ruleDocsPath =
 const createRuleLink = (ruleName: string) =>
   `[\`storybook/${ruleName}\`](${ruleDocsPath}${ruleName}.md)`;
 
+const rules = await getRules();
 const rulesList: TRulesList[] = Object.entries(rules)
   .sort(([_, { name: ruleNameA }], [__, { name: ruleNameB }]) => {
     return ruleNameA.localeCompare(ruleNameB);

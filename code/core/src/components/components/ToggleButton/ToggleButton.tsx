@@ -11,7 +11,7 @@ export interface ToggleButtonProps extends ButtonProps {
   pressed: boolean;
 }
 
-// TODO: discuss ideal aria attrs based on https://adrianroselli.com/2021/10/Toggle-role-support.html.
+// TODO: discuss ideal aria attrs based on https://adrianroselli.com/2021/10/switch-role-support.html.
 
 export const ToggleButton = forwardRef<HTMLButtonElement, ToggleButtonProps>(
   ({ pressed, ...props }, ref) => {

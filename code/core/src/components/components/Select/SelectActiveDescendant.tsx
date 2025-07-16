@@ -102,15 +102,18 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       setIsOpen(false);
     }, []);
 
+    const openWithDefaultPosition = useCallback(
+      (defaultPos: number) => {
+        setIsOpen(true);
+        if (!activeOption) {
+          setActiveOption(options[defaultPos]);
+        }
+      },
+      [activeOption, options]
+    );
+
     const handleKeyDown = useCallback(
       (event: KeyboardEvent<HTMLButtonElement>) => {
-        const openWithDefaultPosition = (defaultPos: number) => {
-          setIsOpen(true);
-          if (!activeOption) {
-            setActiveOption(options[defaultPos]);
-          }
-        };
-
         if (event.key === 'ArrowDown') {
           event.preventDefault();
           if (!isOpen) {
@@ -148,7 +151,15 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           setIsOpen(false);
         }
       },
-      [isOpen, activeOption, options, handleSelectOption, moveActiveOptionDown, moveActiveOptionUp]
+      [
+        isOpen,
+        activeOption,
+        options,
+        handleSelectOption,
+        moveActiveOptionDown,
+        moveActiveOptionUp,
+        openWithDefaultPosition,
+      ]
     );
 
     // TODO: Implement a-z typing.
@@ -187,8 +198,15 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           id={id}
           ref={ref}
           disabled={disabled}
-          onClick={() => setIsOpen((prev) => !prev)}
+          onClick={() => {
+            if (!isOpen) {
+              openWithDefaultPosition(0);
+            } else {
+              setIsOpen(false);
+            }
+          }}
           onKeyDown={handleKeyDown}
+          role="combobox"
           aria-expanded={isOpen}
           aria-activedescendant={isOpen && activeOption ? valueToId(id, activeOption) : undefined}
         >

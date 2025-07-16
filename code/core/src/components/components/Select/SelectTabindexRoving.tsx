@@ -1,5 +1,7 @@
+import { ac } from 'vitest/dist/chunks/reporters.d.79o4mouw.js';
+
 import type { ButtonHTMLAttributes, KeyboardEvent } from 'react';
-import React, { forwardRef, useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { act, forwardRef, useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 
@@ -103,9 +105,15 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       [isOpen, activeOption, options]
     );
 
-    const handleOpen = useCallback(() => {
-      setIsOpen(true);
-    }, []);
+    const handleOpen = useCallback(
+      (defaultPos: number) => {
+        if (!activeOption) {
+          setActiveOption(options[defaultPos]);
+        }
+        setIsOpen(true);
+      },
+      [options, activeOption]
+    );
 
     const handleClose = useCallback(() => {
       setIsOpen(false);
@@ -124,19 +132,13 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       (event: KeyboardEvent<HTMLButtonElement>) => {
         if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          if (!activeOption) {
-            setActiveOption(options[0]);
-          }
-          handleOpen();
+          handleOpen(0);
         } else if (event.key === 'ArrowUp') {
           event.preventDefault();
-          if (!activeOption) {
-            setActiveOption(options[options.length - 1]);
-          }
-          handleOpen();
+          handleOpen(options.length - 1);
         }
       },
-      [activeOption, options, handleOpen]
+      [options, handleOpen]
     );
 
     // Transfer focus to the active option whenever we open the listbox.
@@ -218,11 +220,12 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             if (isOpen) {
               handleClose();
             } else {
-              handleOpen();
+              handleOpen(0);
             }
           }}
           tabIndex={isOpen ? -1 : 0}
           onKeyDown={handleKeyDown}
+          role="combobox"
           aria-expanded={isOpen}
           aria-controls={listboxId}
         >

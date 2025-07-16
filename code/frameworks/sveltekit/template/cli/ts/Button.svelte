@@ -2,12 +2,8 @@
   import './button.css';
 
   interface Props {
-    /**
-     * The variant of the button
-     *
-     * @default primary
-     */
-    variant?: 'primary' | 'secondary' | 'flat';
+    /** Is this the principal call to action on the page? */
+    primary?: boolean;
     /** What background color to use */
     backgroundColor?: string;
     /** How large should the button be? */
@@ -18,22 +14,9 @@
     onclick?: () => void;
   }
 
-  const {
-    variant = 'primary',
-    backgroundColor,
-    size = 'medium',
-    label,
-    ...props
-  }: Props = $props();
+  const { primary = false, backgroundColor, size = 'medium', label, ...props }: Props = $props();
 
-  const variantToClass = {
-    primary: 'storybook-button--primary',
-    secondary: 'storybook-button--secondary',
-    // Flat only exists to verify type inference for the control creation works
-    flat: '',
-  };
-
-  let mode = $derived(variantToClass[variant]);
+  let mode = $derived(primary ? 'storybook-button--primary' : 'storybook-button--secondary');
   let style = $derived(backgroundColor ? `background-color: ${backgroundColor}` : '');
 </script>
 

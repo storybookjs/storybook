@@ -1182,6 +1182,7 @@ export const buildEntries = {
         {
           exportEntries: ['./vite-plugin'],
           entryPoint: './src/vite-plugin.ts',
+          dts: false,
         },
       ],
     },

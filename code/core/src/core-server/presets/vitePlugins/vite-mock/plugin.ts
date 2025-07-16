@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 
+import { logger } from 'storybook/internal/node-logger';
 import type { CoreConfig } from 'storybook/internal/types';
 
-import type { PluginContext } from 'rollup';
+import type { ParserOptions } from '@babel/core';
+import { parse } from '@babel/parser';
 import type { Plugin, ResolvedConfig } from 'vite';
 
 import { getAutomockCode } from '../../../mocking-utils/automock';
@@ -23,8 +25,6 @@ export interface MockPluginOptions {
   configDir: string;
 }
 
-let parse: PluginContext['parse'];
-
 /**
  * Vite plugin for Storybook module mocking manifest generation.
  *
@@ -44,6 +44,16 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
   let viteConfig: ResolvedConfig;
   let mockCalls: MockCall[] = [];
 
+  const parseFn = (code: string) => {
+    const parserOptions: ParserOptions = {
+      sourceType: 'module',
+      // Enable plugins to handle modern JavaScript features, including TSX.
+      plugins: ['typescript', 'jsx', 'classProperties', 'objectRestSpread'],
+      errorRecovery: true,
+    };
+    return parse(code, parserOptions).program;
+  };
+
   // --- Plugin Definition ---
   return [
     {
@@ -54,8 +64,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       },
 
       buildStart() {
-        parse = this.parse.bind(this);
-        mockCalls = extractMockCalls(options, parse, viteConfig.root);
+        mockCalls = extractMockCalls(options, parseFn as any, viteConfig.root);
       },
 
       configureServer(server) {
@@ -64,7 +73,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             // Store the old mocks before updating
             const oldMockCalls = mockCalls;
             // Re-extract mocks to get the latest list
-            mockCalls = extractMockCalls(options, parse, viteConfig.root);
+            mockCalls = extractMockCalls(options, parseFn as any, viteConfig.root);
 
             // Invalidate the preview file
             const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);
@@ -136,7 +145,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
             try {
               if (!call.redirectPath) {
-                const automockedCode = getAutomockCode(code, call.spy, this.parse);
+                const automockedCode = getAutomockCode(code, call.spy, parseFn as any);
 
                 return {
                   code: automockedCode.toString(),
@@ -146,6 +155,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
                 return readFileSync(call.redirectPath, 'utf-8');
               }
             } catch (e) {
+              logger.error(`Error automocking ${id}`, e);
               return null;
             }
           }

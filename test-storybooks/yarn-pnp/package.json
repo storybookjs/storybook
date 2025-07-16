@@ -48,7 +48,6 @@
     "@storybook/web-components-vite": "file:../../code/frameworks/web-components-vite",
     "eslint-plugin-storybook": "file:../../code/lib/eslint-plugin",
     "playwright": "1.52.0",
-    "rollup": "4.44.2",
     "storybook": "file:../../code/core"
   },
   "dependencies": {

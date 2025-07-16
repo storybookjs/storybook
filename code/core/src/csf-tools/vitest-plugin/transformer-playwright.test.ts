@@ -99,7 +99,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", async () => _testStory("automatic-calculated-title--story", page));
+            _test("Story", _testStory("automatic-calculated-title--story", page));
           }
         `);
       });
@@ -143,7 +143,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", async () => _testStory("automatic-calculated-title--story", page));
+            _test("Story", _testStory("automatic-calculated-title--story", page));
           }
         `);
       });
@@ -188,7 +188,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", async () => _testStory("automatic-calculated-title--story", page));
+            _test("Story", _testStory("automatic-calculated-title--story", page));
           }
         `);
       });
@@ -234,7 +234,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", async () => _testStory("automatic-calculated-title--story", page));
+            _test("Story", _testStory("automatic-calculated-title--story", page));
           }
         `);
       });
@@ -285,7 +285,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Primary", async () => _testStory("automatic-calculated-title--primary", page));
+            _test("Primary", _testStory("automatic-calculated-title--primary", page));
           }
         `);
       });
@@ -336,7 +336,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Primary", async () => _testStory("automatic-calculated-title--primary", page));
+            _test("Primary", _testStory("automatic-calculated-title--primary", page));
           }
         `);
       });

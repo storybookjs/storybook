@@ -1,6 +1,8 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
+
 import type { StoryContext } from 'storybook/internal/csf';
 
 import { type Page } from '@playwright/test';
@@ -602,9 +604,16 @@ export async function setupPageScript(page: Page) {
   });
 }
 
-export async function testStory(storyId: string, page: Page): Promise<void> {
-  await page.evaluate(async (storyId: string) => {
-    // @ts-expect-error Need to fix with augmentation
-    return await globalThis.__test(storyId);
-  }, storyId);
+export function testStory(storyId: string, page: Page) {
+  return async (context: TestContext) => {
+    const _task = context.task as RunnerTask & {
+      meta: TaskMeta & { storyId: string; reports: Report[] };
+    };
+    _task.meta.storyId = storyId;
+
+    await page.evaluate(async (storyId: string) => {
+      // @ts-expect-error Need to fix with augmentation
+      return await globalThis.__test(storyId);
+    }, storyId);
+  };
 }

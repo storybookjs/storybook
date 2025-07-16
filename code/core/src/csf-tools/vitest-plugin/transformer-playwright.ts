@@ -199,11 +199,7 @@ export async function vitestPlaywrightTransform({
       const testStoryCall = t.expressionStatement(
         t.callExpression(vitestTestId, [
           t.stringLiteral(testTitle),
-          t.arrowFunctionExpression(
-            [],
-            t.callExpression(testStoryId, [t.stringLiteral(storyId), t.identifier('page')]),
-            true // async
-          ),
+          t.callExpression(testStoryId, [t.stringLiteral(storyId), t.identifier('page')]),
         ])
       );
 

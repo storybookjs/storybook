@@ -59,6 +59,7 @@ export = createStorybookRule({
             },
           },
         },
+        additionalProperties: false,
       },
     ],
   },

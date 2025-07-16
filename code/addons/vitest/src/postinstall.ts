@@ -579,8 +579,8 @@ async function getPackageNameFromPath(input: string): Promise<string> {
     throw new Error(`Could not find package.json in path: ${path}`);
   }
 
-  const packageJson = await fs.readFile(packageJsonPath, 'utf8');
-  return JSON.parse(packageJson).name;
+  const { default: packageJson } = await import(packageJsonPath, { with: { type: 'json' } });
+  return packageJson.name;
 }
 
 async function getStorybookInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {

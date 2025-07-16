@@ -997,12 +997,13 @@ export const buildEntries = {
           dts: false,
         },
         {
-          exportEntries: ['./vite-plugin'],
-          entryPoint: './src/vite-plugin.ts',
-        },
-        {
           exportEntries: ['./node'],
           entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./vite-plugin'],
+          entryPoint: './src/vite-plugin.ts',
+          dts: false,
         },
       ],
     },
@@ -1038,18 +1039,22 @@ export const buildEntries = {
         {
           exportEntries: ['./client'],
           entryPoint: './src/client/index.ts',
+          dts: false,
         },
         {
           exportEntries: ['./client/config'],
           entryPoint: './src/client/config.ts',
+          dts: false,
         },
         {
           exportEntries: ['./client/preview-prod'],
           entryPoint: './src/client/preview-prod.ts',
+          dts: false,
         },
         {
           exportEntries: ['./client/docs/config'],
           entryPoint: './src/client/docs/config.ts',
+          dts: false,
         },
       ],
       node: [
@@ -1060,6 +1065,7 @@ export const buildEntries = {
         {
           exportEntries: ['./preset'],
           entryPoint: './src/preset.ts',
+          dts: false,
         },
 
         {
@@ -1177,6 +1183,7 @@ export const buildEntries = {
         {
           exportEntries: ['./vite-plugin'],
           entryPoint: './src/vite-plugin.ts',
+          dts: false,
         },
       ],
     },
@@ -1217,6 +1224,7 @@ export const buildEntries = {
         {
           exportEntries: ['./vite-plugin'],
           entryPoint: './src/vite-plugin.ts',
+          dts: false,
         },
         {
           exportEntries: ['./preset'],

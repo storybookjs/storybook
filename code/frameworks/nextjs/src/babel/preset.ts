@@ -1,10 +1,18 @@
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import type { PluginItem } from '@babel/core';
 
+import ampAttributesPlugin from './plugins/amp-attributes';
+// Static imports for relative requires
+import jsxPragmaPlugin from './plugins/jsx-pragma';
+import optimizeHookDestructuringPlugin from './plugins/optimize-hook-destructuring';
+import reactLoadablePlugin from './plugins/react-loadable-plugin';
+
 const isLoadIntentTest = process.env.NODE_ENV === 'test';
 const isLoadIntentDevelopment = process.env.NODE_ENV === 'development';
+
+const require = createRequire(import.meta.url);
 
 type StyledJsxPlugin = [string, any] | string;
 type StyledJsxBabelOptions =
@@ -27,10 +35,10 @@ function styledJsxOptions(options: StyledJsxBabelOptions) {
   options.plugins = options.plugins.map((plugin: StyledJsxPlugin): StyledJsxPlugin => {
     if (Array.isArray(plugin)) {
       const [name, pluginOptions] = plugin;
-      return [fileURLToPath(import.meta.resolve(name)), pluginOptions];
+      return [require.resolve(name), pluginOptions];
     }
 
-    return fileURLToPath(import.meta.resolve(plugin));
+    return require.resolve(plugin);
   });
 
   return options;
@@ -111,9 +119,9 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
   return {
     sourceType: 'unambiguous',
     presets: [
-      [fileURLToPath(import.meta.resolve('@babel/preset-env')), presetEnvConfig],
+      [require('@babel/preset-env'), presetEnvConfig],
       [
-        fileURLToPath(import.meta.resolve('@babel/preset-react')),
+        require('@babel/preset-react'),
         {
           // This adds @babel/plugin-transform-react-jsx-source and
           // @babel/plugin-transform-react-jsx-self automatically in development
@@ -123,14 +131,14 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
         },
       ],
       [
-        fileURLToPath(import.meta.resolve('@babel/preset-typescript')),
+        require('@babel/preset-typescript'),
         { allowNamespaces: true, ...options['preset-typescript'] },
       ],
     ],
     plugins: [
-      isDevelopment && fileURLToPath(import.meta.resolve('react-refresh/babel')),
+      isDevelopment && require.resolve('react-refresh/babel'),
       !useJsxRuntime && [
-        fileURLToPath(import.meta.resolve('./plugins/jsx-pragma')),
+        jsxPragmaPlugin,
         {
           // This produces the following injected import for modules containing JSX:
           //   import React from 'react';
@@ -142,50 +150,47 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
         },
       ],
       [
-        fileURLToPath(import.meta.resolve('./plugins/optimize-hook-destructuring')),
+        optimizeHookDestructuringPlugin,
         {
           // only optimize hook functions imported from React/Preact
           lib: true,
         },
       ],
-      fileURLToPath(import.meta.resolve('@babel/plugin-syntax-dynamic-import')),
-      fileURLToPath(import.meta.resolve('@babel/plugin-syntax-import-assertions')),
-      fileURLToPath(import.meta.resolve('./plugins/react-loadable-plugin')),
+      require('@babel/plugin-syntax-dynamic-import'),
+      require('@babel/plugin-syntax-import-assertions'),
+      reactLoadablePlugin,
+      [require('@babel/plugin-transform-class-properties'), options['class-properties'] || {}],
       [
-        fileURLToPath(import.meta.resolve('@babel/plugin-transform-class-properties')),
-        options['class-properties'] || {},
-      ],
-      [
-        fileURLToPath(import.meta.resolve('@babel/plugin-transform-object-rest-spread')),
+        require('@babel/plugin-transform-object-rest-spread'),
         {
           useBuiltIns: true,
         },
       ],
       !isServer && [
-        fileURLToPath(import.meta.resolve('@babel/plugin-transform-runtime')),
+        require('@babel/plugin-transform-runtime'),
         {
           corejs: false,
           helpers: true,
           regenerator: true,
           useESModules: supportsESM && presetEnvConfig.modules !== 'commonjs',
           absoluteRuntime: isBabelLoader
-            ? dirname(fileURLToPath(import.meta.resolve('@babel/runtime/package.json')))
+            ? dirname(require.resolve('@babel/runtime/package.json'))
             : undefined,
           ...options['transform-runtime'],
         },
       ],
       [
         isTest && options['styled-jsx'] && options['styled-jsx']['babel-test']
-          ? fileURLToPath(import.meta.resolve('styled-jsx/babel-test'))
-          : fileURLToPath(import.meta.resolve('styled-jsx/babel')),
+          ? require('styled-jsx/babel-test')
+          : require('styled-jsx/babel'),
         styledJsxOptions(options['styled-jsx']),
       ],
-      fileURLToPath(import.meta.resolve('./plugins/amp-attributes')),
-      isServer && fileURLToPath(import.meta.resolve('@babel/plugin-syntax-bigint')),
+      ampAttributesPlugin,
+      isServer && require('@babel/plugin-syntax-bigint'),
       // Always compile numeric separator because the resulting number is
       // smaller.
-      fileURLToPath(import.meta.resolve('@babel/plugin-transform-numeric-separator')),
-      fileURLToPath(import.meta.resolve('@babel/plugin-transform-export-namespace-from')),
+      require('@babel/plugin-transform-numeric-separator'),
+      require('@babel/plugin-transform-export-namespace-from'),
     ].filter(Boolean),
   };
 };

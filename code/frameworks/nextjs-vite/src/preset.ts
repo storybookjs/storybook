@@ -12,11 +12,11 @@ import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import postCssLoadConfig from 'postcss-load-config';
 
-// import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 import type { FrameworkOptions } from './types';
 
 const require = createRequire(import.meta.url);
 
+// the ESM output of this package is broken, so I had to force it to use the CJS version it's shipping.
 const vitePluginStorybookNextjs = require('vite-plugin-storybook-nextjs');
 
 export const core: PresetProperty<'core'> = async (config, options) => {

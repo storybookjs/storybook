@@ -19,9 +19,11 @@ export const DOCUMENTATION_FATAL_ERROR_LINK = `${DOCUMENTATION_LINK}#what-happen
 export const COVERAGE_DIRECTORY = 'coverage';
 
 export const SUPPORTED_FRAMEWORKS = [
+  '@storybook/angular',
   '@storybook/nextjs',
   '@storybook/nextjs-vite',
   '@storybook/react-vite',
+  '@storybook/react-webpack5',
   '@storybook/svelte-vite',
   '@storybook/vue3-vite',
   '@storybook/html-vite',

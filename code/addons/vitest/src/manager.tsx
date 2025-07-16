@@ -17,81 +17,81 @@ import { A11Y_PANEL_ID, ADDON_ID, COMPONENT_TESTING_PANEL_ID, TEST_PROVIDER_ID }
 import { useTestProvider } from './use-test-provider-state';
 
 addons.register(ADDON_ID, (api) => {
-  const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
-  if (storybookBuilder.includes('vite')) {
-    const openPanel = (panelId: string) => {
-      api.setSelectedPanel(panelId);
-      api.togglePanel(true);
-    };
-    componentTestStatusStore.onSelect(() => {
-      openPanel(COMPONENT_TESTING_PANEL_ID);
-    });
-    a11yStatusStore.onSelect(() => {
-      openPanel(A11Y_PANEL_ID);
-    });
-    testProviderStore.onRunAll(() => {
-      store.send({
-        type: 'TRIGGER_RUN',
-        payload: {
-          triggeredBy: 'run-all',
-        },
-      });
-    });
-    store.untilReady().then(() => {
-      store.setState((state) => ({
-        ...state,
-        indexUrl: new URL('index.json', window.location.href).toString(),
-      }));
-    });
-
-    addons.add(TEST_PROVIDER_ID, {
-      type: Addon_TypesEnum.experimental_TEST_PROVIDER,
-      render: () => {
-        const [isModalOpen, setModalOpen] = useState(false);
-        const {
-          storeState,
-          setStoreState,
-          testProviderState,
-          componentTestStatusValueToStoryIds,
-          a11yStatusValueToStoryIds,
-          isSettingsUpdated,
-        } = useTestProvider(api);
-        return (
-          <GlobalErrorContext.Provider value={{ isModalOpen, setModalOpen }}>
-            <TestProviderRender
-              api={api}
-              storeState={storeState}
-              setStoreState={setStoreState}
-              isSettingsUpdated={isSettingsUpdated}
-              testProviderState={testProviderState}
-              componentTestStatusValueToStoryIds={componentTestStatusValueToStoryIds}
-              a11yStatusValueToStoryIds={a11yStatusValueToStoryIds}
-            />
-            <GlobalErrorModal
-              storeState={storeState}
-              onRerun={() => {
-                setModalOpen(false);
-                store.send({
-                  type: 'TRIGGER_RUN',
-                  payload: {
-                    triggeredBy: 'global',
-                  },
-                });
-              }}
-            />
-          </GlobalErrorContext.Provider>
-        );
-      },
-
-      sidebarContextMenu: ({ context }) => {
-        if (context.type === 'docs') {
-          return null;
-        }
-        if (context.type === 'story' && !context.tags.includes('test')) {
-          return null;
-        }
-        return <SidebarContextMenu context={context} api={api} />;
+  // const storybookBuilder = (globalThis as any).STORYBOOK_BUILDER || '';
+  // if (storybookBuilder.includes('vite')) {
+  const openPanel = (panelId: string) => {
+    api.setSelectedPanel(panelId);
+    api.togglePanel(true);
+  };
+  componentTestStatusStore.onSelect(() => {
+    openPanel(COMPONENT_TESTING_PANEL_ID);
+  });
+  a11yStatusStore.onSelect(() => {
+    openPanel(A11Y_PANEL_ID);
+  });
+  testProviderStore.onRunAll(() => {
+    store.send({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'run-all',
       },
     });
-  }
+  });
+  store.untilReady().then(() => {
+    store.setState((state) => ({
+      ...state,
+      indexUrl: new URL('index.json', window.location.href).toString(),
+    }));
+  });
+
+  addons.add(TEST_PROVIDER_ID, {
+    type: Addon_TypesEnum.experimental_TEST_PROVIDER,
+    render: () => {
+      const [isModalOpen, setModalOpen] = useState(false);
+      const {
+        storeState,
+        setStoreState,
+        testProviderState,
+        componentTestStatusValueToStoryIds,
+        a11yStatusValueToStoryIds,
+        isSettingsUpdated,
+      } = useTestProvider(api);
+      return (
+        <GlobalErrorContext.Provider value={{ isModalOpen, setModalOpen }}>
+          <TestProviderRender
+            api={api}
+            storeState={storeState}
+            setStoreState={setStoreState}
+            isSettingsUpdated={isSettingsUpdated}
+            testProviderState={testProviderState}
+            componentTestStatusValueToStoryIds={componentTestStatusValueToStoryIds}
+            a11yStatusValueToStoryIds={a11yStatusValueToStoryIds}
+          />
+          <GlobalErrorModal
+            storeState={storeState}
+            onRerun={() => {
+              setModalOpen(false);
+              store.send({
+                type: 'TRIGGER_RUN',
+                payload: {
+                  triggeredBy: 'global',
+                },
+              });
+            }}
+          />
+        </GlobalErrorContext.Provider>
+      );
+    },
+
+    sidebarContextMenu: ({ context }) => {
+      if (context.type === 'docs') {
+        return null;
+      }
+      if (context.type === 'story' && !context.tags.includes('test')) {
+        return null;
+      }
+      return <SidebarContextMenu context={context} api={api} />;
+    },
+  });
+  // }
 });

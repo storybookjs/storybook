@@ -56,20 +56,21 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     options
   );
 
-  const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
-  const framework = await getFrameworkName(options);
+  // Commenting this out for experimentation purposes
+  // const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
+  // const framework = await getFrameworkName(options);
 
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
-  if (!builderName?.includes('vite')) {
-    if (framework.includes('nextjs')) {
-      log(dedent`
-        You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
+  // if (!builderName?.includes('vite')) {
+  //   if (framework.includes('nextjs')) {
+  //     log(dedent`
+  //       You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
 
-        Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite')}\n
-      `);
-    }
-    return channel;
-  }
+  //       Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite')}\n
+  //     `);
+  //   }
+  //   return channel;
+  // }
 
   const fsCache = createFileSystemCache({
     basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),

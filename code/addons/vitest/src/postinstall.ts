@@ -141,18 +141,18 @@ export default async function postInstall(options: PostinstallOptions) {
   const prerequisiteCheck = async () => {
     const reasons = [];
 
-    if (hasCustomWebpackConfig) {
-      reasons.push('• The addon can not be used with a custom Webpack configuration.');
-    }
+    // if (hasCustomWebpackConfig) {
+    //   reasons.push('• The addon can not be used with a custom Webpack configuration.');
+    // }
 
-    if (
-      info.frameworkPackageName !== '@storybook/nextjs' &&
-      info.builderPackageName !== '@storybook/builder-vite'
-    ) {
-      reasons.push(
-        '• The addon can only be used with a Vite-based Storybook framework or Next.js.'
-      );
-    }
+    // if (
+    //   info.frameworkPackageName !== '@storybook/nextjs' &&
+    //   info.builderPackageName !== '@storybook/builder-vite'
+    // ) {
+    //   reasons.push(
+    //     '• The addon can only be used with a Vite-based Storybook framework or Next.js.'
+    //   );
+    // }
 
     if (!isRendererSupported) {
       reasons.push(dedent`

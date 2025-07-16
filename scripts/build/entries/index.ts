@@ -997,12 +997,13 @@ export const buildEntries = {
           dts: false,
         },
         {
-          exportEntries: ['./vite-plugin'],
-          entryPoint: './src/vite-plugin.ts',
-        },
-        {
           exportEntries: ['./node'],
           entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./vite-plugin'],
+          entryPoint: './src/vite-plugin.ts',
+          dts: false,
         },
       ],
     },

@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+
+import { styled } from 'storybook/internal/theming';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -8,64 +10,86 @@ const meta = {
   title: 'ToggleButton',
   component: ToggleButton,
   tags: ['autodocs'],
-  args: { children: 'Enable feature' },
+  args: { children: 'Click me' },
 } satisfies Meta<typeof ToggleButton>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Base = {};
+const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
 
-export const Types: Story = {
+const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
+
+export const Base: Story = {
   args: { pressed: false },
-  render: ({ ...args }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-      <ToggleButton {...args} variant="solid" />
-      <ToggleButton {...args} variant="outline" />
-      <ToggleButton {...args} variant="ghost" />
-    </div>
-  ),
+  render: ({ pressed, ...args }) => {
+    const [isPressed, setIsPressed] = useState(pressed);
+    const handleOnClick = () => setIsPressed((prev) => !prev);
+
+    return <ToggleButton {...args} pressed={isPressed} onClick={handleOnClick} />;
+  },
 };
 
 export const Pressed: Story = {
   args: { pressed: true },
-  render: ({ ...args }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-      <ToggleButton {...args} variant="solid" />
-      <ToggleButton {...args} variant="outline" />
-      <ToggleButton {...args} variant="ghost" />
-    </div>
-  ),
+  render: ({ pressed, ...args }) => {
+    const [isPressed, setIsPressed] = useState(pressed);
+    const handleOnClick = () => setIsPressed((prev) => !prev);
+
+    return <ToggleButton {...args} pressed={isPressed} onClick={handleOnClick} />;
+  },
+};
+
+export const Variants: Story = {
+  args: { pressed: false },
+  render: (args) => {
+    return (
+      <Stack>
+        <Row>Unpressed</Row>
+        <Row>
+          <ToggleButton {...args} pressed={false} variant="solid" />
+          <ToggleButton {...args} pressed={false} variant="outline" />
+          <ToggleButton {...args} pressed={false} variant="ghost" />
+        </Row>
+        <Row>Pressed</Row>
+        <Row>
+          <ToggleButton {...args} pressed={true} variant="solid" />
+          <ToggleButton {...args} pressed={true} variant="outline" />
+          <ToggleButton {...args} pressed={true} variant="ghost" />
+        </Row>
+      </Stack>
+    );
+  },
 };
 
 export const Sizes: Story = {
   args: { pressed: false, variant: 'solid' },
   render: ({ ...args }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-      <ToggleButton {...args} size="small" />
+    <Row>
       <ToggleButton {...args} size="medium" />
-    </div>
+      <ToggleButton {...args} size="small" />
+    </Row>
   ),
 };
 
 export const Disabled: Story = {
   args: { disabled: true, pressed: false },
-  render: ({ ...args }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-      <ToggleButton {...args} variant="solid" />
-      <ToggleButton {...args} variant="outline" />
-      <ToggleButton {...args} variant="ghost" />
-    </div>
-  ),
-};
-
-export const DisabledAndPressed: Story = {
-  args: { disabled: true, pressed: true },
-  render: ({ ...args }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-      <ToggleButton {...args} variant="solid" />
-      <ToggleButton {...args} variant="outline" />
-      <ToggleButton {...args} variant="ghost" />
-    </div>
-  ),
+  render: (args) => {
+    return (
+      <Stack>
+        <Row>Unpressed</Row>
+        <Row>
+          <ToggleButton {...args} pressed={false} variant="solid" />
+          <ToggleButton {...args} pressed={false} variant="outline" />
+          <ToggleButton {...args} pressed={false} variant="ghost" />
+        </Row>
+        <Row>Pressed</Row>
+        <Row>
+          <ToggleButton {...args} pressed={true} variant="solid" />
+          <ToggleButton {...args} pressed={true} variant="outline" />
+          <ToggleButton {...args} pressed={true} variant="ghost" />
+        </Row>
+      </Stack>
+    );
+  },
 };

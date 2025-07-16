@@ -30,10 +30,7 @@ export const resolveNextConfig = async ({
   nextConfigPath?: string;
 }): Promise<NextConfig> => {
   const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
-  const loadConfig =
-    typeof nextJsLoadConfigModule === 'function'
-      ? nextJsLoadConfigModule
-      : (nextJsLoadConfigModule as any).default;
+  const loadConfig = (nextJsLoadConfigModule as any).default ?? nextJsLoadConfigModule;
   return loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
 };
 

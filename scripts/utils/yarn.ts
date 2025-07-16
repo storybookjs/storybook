@@ -86,7 +86,12 @@ export const addWorkaroundResolutions = async ({
         react: '^19.0.0',
         'react-dom': '^19.0.0',
       }
-    : {};
+    : key === 'react-webpack/prerelease-ts'
+      ? {
+          react: packageJson.dependencies.react,
+          'react-dom': packageJson.dependencies['react-dom'],
+        }
+      : {};
 
   packageJson.resolutions = {
     ...packageJson.resolutions,

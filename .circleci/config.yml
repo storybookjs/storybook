@@ -330,10 +330,15 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: Test
+          name: Run tests
+          # TEST_FILES should include all relevant test files, including story files, but not e2e-tests
+          # `circleci tests run` shards tests across parallel runners and allows rerunning failed tests by passing a subset of test files to the command via `xargs`
           command: |
             cd code
-            SHARD="$((${CIRCLE_NODE_INDEX}+1))"; yarn test --reporter=blob --reporter=default --shard=${SHARD}/${CIRCLE_NODE_TOTAL}
+            TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
+            echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
+      - store_test_results:
+          path: test-results
       # TODO: bring coverage back later. This has caused flakiness in the tests because
       # Somehow Vitest reports coverage while some tests are still running,
       # then it tries to report coverage again and as result it crashes like this:
@@ -342,26 +347,8 @@ jobs:
       #     root: .
       #     paths:
       #       - code/coverage
-      - persist_to_workspace:
-          root: .
-          paths:
-            - code/.vitest-reports
       - report-workflow-on-failure
       - cancel-workflow-on-failure
-  store-test-results:
-    executor:
-      class: small
-      name: sb_node_22_browsers
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: Merge test results
-          command: cd code && yarn vitest run --merge-reports --reporter=junit --outputFile=junit.xml
-      - store_test_results:
-          path: code/junit.xml
   coverage:
     executor:
       class: small
@@ -583,7 +570,12 @@ jobs:
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
       - run:
           name: Running E2E Tests
-          command: yarn task --task e2e-tests --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests) --no-link --start-from=never --junit
+          # TEST_FILES should include all relevant test files, in this case we use the default playwright pattern
+          # `circleci tests run` allows rerunning failed tests by passing a subset of test files to the command via `xargs`
+          # --index0 --total=1 ensures we run all tests on all runners, since each runner handles a different sandbox
+          command: |
+            TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+            echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests) --no-link --start-from=never --junit" --verbose --index=0 --total=1
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests)
       - store_test_results:
@@ -611,7 +603,12 @@ jobs:
             cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
       - run:
           name: Running E2E Tests
-          command: yarn task --task e2e-tests-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev) --no-link --start-from=never --junit
+          # TEST_FILES should include all relevant test files, in this case we use the default playwright pattern
+          # `circleci tests run` allows rerunning failed tests by passing a subset of test files to the command via `xargs`
+          # --index0 --total=1 ensures we run all tests on all runners, since each runner handles a different sandbox
+          command: |
+            TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
+            echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev) --no-link --start-from=never --junit" --verbose --index=0 --total=1
       - report-workflow-on-failure:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev)
       - store_test_results:
@@ -867,9 +864,6 @@ workflows:
       - unit-tests:
           requires:
             - build
-      - store-test-results:
-          requires:
-            - unit-tests
       - script-checks:
           requires:
             - build
@@ -943,9 +937,6 @@ workflows:
       - unit-tests:
           requires:
             - build
-      - store-test-results:
-          requires:
-            - unit-tests
       - script-checks:
           requires:
             - build
@@ -1020,9 +1011,6 @@ workflows:
       - unit-tests:
           requires:
             - build
-      - store-test-results:
-          requires:
-            - unit-tests
       - script-checks:
           requires:
             - build

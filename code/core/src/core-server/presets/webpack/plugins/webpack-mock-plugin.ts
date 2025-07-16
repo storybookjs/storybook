@@ -1,11 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { dirname, isAbsolute } from 'node:path';
+
 import { parse } from '@babel/parser';
 import { transformSync } from 'esbuild';
 import type { CallExpression, Literal } from 'estree';
 import { walk } from 'estree-walker';
-import { readFileSync } from 'fs';
-import { type Compiler } from 'webpack';
+import type { Compiler } from 'webpack';
 
 import { resolveMock } from '../../../mocking-utils/resolve';
+
+// --- Type Definitions ---
 
 /** Options for configuring the WebpackMockPlugin. */
 export interface WebpackMockPluginOptions {
@@ -32,10 +36,16 @@ interface ResolvedMock extends ExtractedMock {
   replacementResource: string;
 }
 
-const PLUGIN_NAME = 'WebpackMockPlugin';
+const PLUGIN_NAME = 'storybook-mock-plugin';
 
+/**
+ * A Webpack plugin that enables module mocking for Storybook. It scans the preview config for
+ * `sb.mock()` calls and uses Webpack's NormalModuleReplacementPlugin to substitute the original
+ * modules with mocks.
+ */
 export class WebpackMockPlugin {
   private readonly options: WebpackMockPluginOptions;
+  private mockMap: Map<string, ResolvedMock> = new Map();
 
   constructor(options: WebpackMockPluginOptions) {
     if (!options.previewConfigPath) {
@@ -44,45 +54,53 @@ export class WebpackMockPlugin {
     this.options = options;
   }
 
-  apply(compiler: Compiler) {
+  /**
+   * The main entry point for the Webpack plugin.
+   *
+   * @param {Compiler} compiler The Webpack compiler instance.
+   */
+  public apply(compiler: Compiler): void {
     const logger = compiler.getInfrastructureLogger(PLUGIN_NAME);
-    const resolvedMocks = this.extractAndResolveMocks(compiler);
 
-    if (resolvedMocks.length === 0) {
-      logger.info('No `sb.mock()` calls found. Skipping module replacement.');
-      return;
-    }
+    // This function will be called to update the mock map before each compilation.
+    const updateMocks = () => {
+      this.mockMap = new Map(
+        this.extractAndResolveMocks(compiler).map((mock) => [mock.absolutePath, mock])
+      );
+      logger.info(`Mock map updated with ${this.mockMap.size} mocks.`);
+    };
 
-    logger.info(`Found ${resolvedMocks.length} module mock(s). Applying replacements...`);
+    // Hook into `beforeRun` for single builds and `watchRun` for development mode.
+    compiler.hooks.beforeRun.tap(PLUGIN_NAME, updateMocks);
+    compiler.hooks.watchRun.tap(PLUGIN_NAME, updateMocks);
 
-    // Create a Map for efficient lookup of absolute paths to their mock data.
-    const mockMap = new Map<string, ResolvedMock>(
-      resolvedMocks.map((mock) => [mock.absolutePath, mock])
-    );
+    // Apply the replacement plugin. Its callback will now use the dynamically updated mockMap.
+    new compiler.webpack.NormalModuleReplacementPlugin(/.*/, (resource) => {
+      try {
+        const absolutePath = require.resolve(resource.request, {
+          paths: [resource.context],
+        });
+        if (this.mockMap.has(absolutePath)) {
+          const mock = this.mockMap.get(absolutePath)!;
+          resource.request = mock.replacementResource;
+        }
+      } catch (e) {
+        // Ignore errors for virtual modules, built-ins, etc.
+      }
+    }).apply(compiler);
 
-    // For each resolved mock, apply a replacement rule.
-    new compiler.webpack.NormalModuleReplacementPlugin(
-      /.*/, // Intercept every module request.
-      (resource) => {
-        try {
-          // `resource.request` is the raw string (e.g., '../utils/api')
-          // `resource.context` is the directory of the file making the import.
-          const absolutePath = require.resolve(resource.request, {
-            paths: [resource.context],
-          });
+    compiler.hooks.afterCompile.tap(PLUGIN_NAME, (compilation) => {
+      compilation.fileDependencies.add(this.options.previewConfigPath);
 
-          // Check if the resolved absolute path is one we need to mock.
-          if (mockMap.has(absolutePath)) {
-            const mock = mockMap.get(absolutePath)!;
-            // If so, rewrite the request to point to our mock resource.
-            resource.request = mock.replacementResource;
-          }
-        } catch (e) {
-          // This can fail for virtual modules, built-ins, etc.
-          // It's safe to ignore these errors as they are not user modules we intend to mock.
+      for (const mock of this.mockMap.values()) {
+        if (
+          isAbsolute(mock.replacementResource) &&
+          mock.replacementResource.includes('__mocks__')
+        ) {
+          compilation.contextDependencies.add(dirname(mock.replacementResource));
         }
       }
-    ).apply(compiler);
+    });
   }
 
   /**
@@ -169,16 +187,5 @@ export class WebpackMockPlugin {
       node.arguments.length > 0 &&
       node.arguments[0].type === 'StringLiteral'
     );
-  }
-
-  /**
-   * Escapes a string for use in a regular expression.
-   *
-   * @param {string} str The string to escape.
-   * @returns {string}
-   */
-  private escapeRegex(str: string): string {
-    // Escape characters with special meaning in regular expressions.
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 }

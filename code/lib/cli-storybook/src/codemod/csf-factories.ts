@@ -29,15 +29,17 @@ async function runStoriesCodemod(options: {
 
     logger.log('\n🛠️  Applying codemod on your stories, this might take some time...');
 
+    const command = packageManager.getRemoteRunCommand('storybook', [
+      'migrate',
+      'csf-2-to-3',
+      '--glob',
+      globString,
+    ]);
+
     // TODO: Move the csf-2-to-3 codemod into automigrations
     await packageManager.executeCommand({
-      command: packageManager.getRemoteRunCommand('storybook', [
-        'migrate',
-        'csf-2-to-3',
-        '--glob',
-        globString,
-      ]),
-      args: [],
+      command: command[0],
+      args: command.slice(1),
       stdio: 'ignore',
       ignoreError: true,
     });

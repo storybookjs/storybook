@@ -97,13 +97,26 @@ export abstract class JsPackageManager {
     this.primaryPackageJson = this.#getPrimaryPackageJson();
   }
 
-  /** Runs arbitrary package scripts. */
-  abstract getRunCommand(command: string): string;
+  abstract readonly runCommand: string[];
+  readonly runNodeCommand: string[] = ['node'];
+  abstract readonly remoteRunCommand: string[];
+
+  /** Returns the command to execute arbitrary package scripts. */
+  getRunCommand(command: string, args?: string[]): string[] {
+    return [...this.runCommand, command, ...(args || [])];
+  }
+  /** Returns the command to execute node in the package managers runtime */
+  getRunNodeCommand(command: string, args?: string[]): string[] {
+    return [...this.runNodeCommand, command, ...(args || [])];
+  }
   /**
-   * Run a command from a local or remote. Fetches a package from the registry without installing it
-   * as a dependency, hotloads it, and runs whatever default command binary it exposes.
+   * Returns command to execute from a local or remote. Fetches a package from the registry without
+   * installing it as a dependency, hotloads it, and runs whatever default command binary it
+   * exposes.
    */
-  abstract getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string;
+  getRemoteRunCommand(pkg: string, args?: string[], specifier?: string): string[] {
+    return [...this.remoteRunCommand, specifier ? `${pkg}@${specifier}` : pkg, ...(args || [])];
+  }
 
   /** Get the package.json file for a given module. */
   abstract getModulePackageJSON(packageName: string): Promise<PackageJson | null>;
@@ -509,7 +522,9 @@ export abstract class JsPackageManager {
     const storybookCmd = `storybook dev -p ${sbPort}`;
     const buildStorybookCmd = `storybook build`;
 
-    const preCommand = options?.preCommand ? this.getRunCommand(options.preCommand) : undefined;
+    const preCommand = options?.preCommand
+      ? this.getRunCommand(options.preCommand).join(' ')
+      : undefined;
 
     this.addScripts({
       storybook: [preCommand, storybookCmd].filter(Boolean).join(' && '),

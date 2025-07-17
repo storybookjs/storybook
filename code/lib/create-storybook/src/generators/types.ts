@@ -1,13 +1,7 @@
-import type { NpmOptions } from '../../../../core/src/cli/NpmOptions';
-import type {
-  Builder,
-  ProjectType,
-  SupportedLanguage,
-} from '../../../../core/src/cli/project_types';
-import type {
-  JsPackageManager,
-  PackageManagerName,
-} from '../../../../core/src/common/js-package-manager/JsPackageManager';
+import type { NpmOptions } from 'storybook/internal/cli';
+import type { Builder, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
+import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+
 import type { FrameworkPreviewParts } from './configure';
 
 export type GeneratorOptions = {

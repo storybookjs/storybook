@@ -18,7 +18,6 @@ import * as rpd from 'rollup-plugin-dts';
 import slash from 'slash';
 import sortPackageJson from 'sort-package-json';
 import { dedent } from 'ts-dedent';
-import * as tsup from 'tsup';
 import type * as typefest from 'type-fest';
 import typescript from 'typescript';
 import ts from 'typescript';
@@ -104,7 +103,6 @@ export const measure = async (fn: () => Promise<void>) => {
 
 export {
   typescript,
-  tsup,
   typefest,
   process,
   esbuild,

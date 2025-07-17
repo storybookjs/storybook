@@ -1,10 +1,8 @@
 import { CategoryId } from '../../src/utils/constants';
-import getRules from './rules';
+import type { TRules } from './rules';
+import rules from './rules';
 
-type TCategoriesConfig = Record<
-  string,
-  { text: string; rules: Awaited<ReturnType<typeof getRules>> }
->;
+type TCategoriesConfig = Record<string, { text: string; rules: TRules }>;
 
 const categoriesConfig: TCategoriesConfig = {
   [CategoryId.CSF]: {
@@ -26,8 +24,6 @@ const categoriesConfig: TCategoriesConfig = {
 };
 
 export const categoryIds = Object.keys(categoriesConfig) as CategoryId[];
-
-const rules = await getRules();
 
 for (const categoryId of categoryIds) {
   const category = categoriesConfig[categoryId] as (typeof categoriesConfig)[CategoryId];

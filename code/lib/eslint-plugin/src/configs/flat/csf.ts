@@ -1,4 +1,4 @@
-import storybook from '../../index';
+import storybookPlugin from '../../index';
 
 /*
  * IMPORTANT!
@@ -9,7 +9,10 @@ export default [
   {
     name: 'storybook:csf:setup',
     plugins: {
-      storybook,
+      get storybook() {
+        // this getter could just be a direct import, but we need to use a getter to avoid circular references in the types
+        return storybookPlugin;
+      },
     },
   },
   {

@@ -62,9 +62,9 @@ const generateRule = async () => {
     },
   });
 
-  const ruleFile = path.resolve(import.meta.dirname, `../src/rules/${ruleId}.ts`);
-  const testFile = path.resolve(import.meta.dirname, `../tests/rules/${ruleId}.test.ts`);
-  const docFile = path.resolve(import.meta.dirname, `../docs/rules/${ruleId}.md`);
+  const ruleFile = path.resolve(__dirname, `../src/rules/${ruleId}.ts`);
+  const testFile = path.resolve(__dirname, `../tests/rules/${ruleId}.test.ts`);
+  const docFile = path.resolve(__dirname, `../docs/rules/${ruleId}.md`);
 
   logger.log(`creating src/rules/${ruleId}.ts`);
   await fs.writeFile(

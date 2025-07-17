@@ -55,7 +55,7 @@ function formatCategory(category: TCategory) {
   `;
 }
 
-const CONFIG_DIR = path.resolve(import.meta.dirname, '../src/configs/');
+const CONFIG_DIR = path.resolve(__dirname, '../src/configs/');
 
 export async function update() {
   // setup config directory

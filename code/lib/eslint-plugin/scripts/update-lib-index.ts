@@ -3,16 +3,15 @@
 /*
 This script updates `src/index.js` file from rule's meta data.
 */
-import fs from 'node:fs/promises';
-import path from 'node:path';
-
+import fs from 'fs/promises';
+import path from 'path';
 import type { Options } from 'prettier';
 import { format } from 'prettier';
 
 // @ts-expect-error this file has no types
 import prettierConfig from '../../../../prettier.config.mjs';
 import { categoryIds } from './utils/categories';
-import getRules from './utils/rules';
+import rules from './utils/rules';
 
 function camelize(text: string) {
   const a = text.toLowerCase().replace(/[-_\s.]+(.)?/g, (_, c) => (c ? c.toUpperCase() : ''));
@@ -20,7 +19,6 @@ function camelize(text: string) {
 }
 
 export async function update() {
-  const rules = await getRules();
   const rawContent = `/*
  * IMPORTANT!
  * This file has been automatically generated,
@@ -40,17 +38,17 @@ ${categoryIds
 ${rules.map((rule) => `import ${camelize(rule.name)} from './rules/${rule.name}'`).join('\n')}
 
 export const configs = {
-  // eslintrc configs
-  ${categoryIds.map((categoryId) => `'${categoryId}': ${camelize(categoryId)}`).join(',\n')},
+    // eslintrc configs
+    ${categoryIds.map((categoryId) => `'${categoryId}': ${camelize(categoryId)}`).join(',\n')},
 
-  // flat configs
-  ${categoryIds
-    .map((categoryId) => `'flat/${categoryId}': ${camelize(`flat-${categoryId}`)}`)
-    .join(',\n')},
+    // flat configs
+    ${categoryIds
+      .map((categoryId) => `'flat/${categoryId}': ${camelize(`flat-${categoryId}`)}`)
+      .join(',\n')},
 };
 
 export const rules = {
-  ${rules.map((rule) => `'${rule.name}': ${camelize(rule.name)}`).join(',\n')}
+    ${rules.map((rule) => `'${rule.name}': ${camelize(rule.name)}`).join(',\n')}
 };
 
 export default {
@@ -62,5 +60,5 @@ export default {
     parser: 'typescript',
     ...(prettierConfig as Options),
   });
-  await fs.writeFile(path.resolve(import.meta.dirname, '../src/index.ts'), content);
+  await fs.writeFile(path.resolve(__dirname, '../src/index.ts'), content);
 }

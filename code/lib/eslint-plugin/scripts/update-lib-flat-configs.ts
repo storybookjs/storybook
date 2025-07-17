@@ -23,7 +23,7 @@ function formatCategory(category: TCategory) {
   const extendsCategoryId = extendsCategories[category.categoryId];
   if (extendsCategoryId == null) {
     return `
-      import storybook from '../../index';
+      import storybookPlugin from '../../index';
 
       /*
       * IMPORTANT!
@@ -34,7 +34,10 @@ function formatCategory(category: TCategory) {
         {
           name: 'storybook:${category.categoryId}:setup',
           plugins: {
-            storybook
+            get storybook() {
+              // this getter could just be a direct import, but we need to use a getter to avoid circular references in the types
+              return storybookPlugin;
+            },
           }
         },
         {

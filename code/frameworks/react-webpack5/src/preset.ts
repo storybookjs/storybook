@@ -16,10 +16,10 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: import.meta.resolve('@storybook/builder-webpack5'),
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
-    renderer: import.meta.resolve('@storybook/react/preset'),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };
 };
 
@@ -28,7 +28,7 @@ export const webpack: StorybookConfig['webpack'] = async (config, options) => {
 
   config.resolve.alias = {
     ...config.resolve?.alias,
-    '@storybook/react': import.meta.resolve('@storybook/react'),
+    '@storybook/react': fileURLToPath(import.meta.resolve('@storybook/react')),
   };
 
   if (options.features?.developmentModeForBuild) {

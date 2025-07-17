@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "9.1.0-alpha.7",
+  "version": "9.1.0-alpha.8",
   "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
   "keywords": [
     "storybook",
@@ -28,31 +28,16 @@
     },
     "./builders/build-storybook": "./dist/builders/build-storybook/index.js",
     "./builders/start-storybook": "./dist/builders/start-storybook/index.js",
-    "./client": {
-      "types": "./dist/client/index.d.ts",
-      "default": "./dist/client/index.js"
-    },
-    "./client/config": {
-      "types": "./dist/client/config.d.ts",
-      "default": "./dist/client/config.js"
-    },
-    "./client/docs/config": {
-      "types": "./dist/client/docs/config.d.ts",
-      "default": "./dist/client/docs/config.js"
-    },
-    "./client/preview-prod": {
-      "types": "./dist/client/preview-prod.d.ts",
-      "default": "./dist/client/preview-prod.js"
-    },
+    "./client": "./dist/client/index.js",
+    "./client/config": "./dist/client/config.js",
+    "./client/docs/config": "./dist/client/docs/config.js",
+    "./client/preview-prod": "./dist/client/preview-prod.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
-    "./preset": {
-      "types": "./dist/preset.d.ts",
-      "default": "./dist/preset.js"
-    },
+    "./preset": "./dist/preset.js",
     "./server/framework-preset-angular-cli": "./dist/server/framework-preset-angular-cli.js",
     "./server/framework-preset-angular-ivy": "./dist/server/framework-preset-angular-ivy.js"
   },

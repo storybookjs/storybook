@@ -1,6 +1,6 @@
 {
   "name": "@storybook/sveltekit",
-  "version": "9.1.0-alpha.7",
+  "version": "9.1.0-alpha.8",
   "description": "Storybook for SvelteKit",
   "keywords": [
     "storybook",
@@ -38,10 +38,7 @@
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": "./dist/preview.js",
-    "./vite-plugin": {
-      "types": "./dist/vite-plugin.d.ts",
-      "default": "./dist/vite-plugin.js"
-    }
+    "./vite-plugin": "./dist/vite-plugin.js"
   },
   "files": [
     "dist/**/*",

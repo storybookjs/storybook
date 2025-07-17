@@ -1,11 +1,13 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs';
 import * as os from 'node:os';
+import { join } from 'node:path';
 
 import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
+import { resolvePackageDir } from '../shared/utils/module';
 import { getAnonymousProjectId } from './anonymous-id';
 import { set as saveToCache } from './event-cache';
 import { fetch } from './fetch';
@@ -75,7 +77,8 @@ const prepareRequest = async (data: TelemetryData, context: Record<string, any>,
 
 function getVersionNumber() {
   try {
-    return JSON.parse(readFileSync(require.resolve('storybook/package.json'), 'utf8')).version;
+    return JSON.parse(readFileSync(join(resolvePackageDir('storybook'), 'package.json'), 'utf8'))
+      .version;
   } catch (e) {
     return version;
   }

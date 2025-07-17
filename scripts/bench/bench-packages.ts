@@ -435,7 +435,11 @@ const run = async () => {
   program.parse(process.argv);
 
   const packageNames = (
-    program.args.length > 0 ? program.args : Object.keys(versions).filter((pkg) => pkg !== 'sb')
+    program.args.length > 0
+      ? program.args
+      : Object.keys(versions)
+          // the sb package is never built, it doesn't have metafiles, it's unnecessary to benchmark it
+          .filter((pkg) => pkg !== 'sb')
   ) as PackageName[];
   const options = program.opts<{ pullRequest?: number; baseBranch?: string; upload?: boolean }>();
 

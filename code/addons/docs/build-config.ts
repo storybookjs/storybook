@@ -36,11 +36,6 @@ const config: BuildEntries = {
         exportEntries: ['./web-components'],
         entryPoint: './src/web-components/index.ts',
       },
-      {
-        exportEntries: ['./manager'],
-        entryPoint: './src/manager.tsx',
-        dts: false,
-      },
     ],
     node: [
       {

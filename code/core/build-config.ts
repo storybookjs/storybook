@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { x } from 'tinyexec';
@@ -20,8 +21,7 @@ const config: BuildEntries = {
     });
   },
   postbuild: async (cwd) => {
-    const { chmod } = await import('node:fs/promises');
-    await chmod(join(cwd, 'dist', 'bin', 'dispatcher.js'), 0o755);
+    await fs.chmod(path.join(cwd, 'dist', 'bin', 'dispatcher.js'), 0o755);
   },
   entries: {
     node: [

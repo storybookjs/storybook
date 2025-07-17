@@ -10,11 +10,8 @@ import * as esbuild from 'esbuild';
 import * as prettier from 'prettier';
 import { dedent } from 'ts-dedent';
 
-import {
-  BROWSER_TARGETS,
-  SUPPORTED_FEATURES,
-} from '../../../../code/core/src/shared/constants/environments-support';
-import { getWorkspace } from '../../../utils/tools';
+import { getWorkspace } from '../../../scripts/utils/tools';
+import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../src/shared/constants/environments-support';
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 

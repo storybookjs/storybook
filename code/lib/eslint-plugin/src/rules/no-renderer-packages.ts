@@ -46,7 +46,7 @@ const rendererToFrameworks: Record<RendererPackage, string[]> = {
 type MessageIds = 'noRendererPackages';
 type Options = readonly [];
 
-export = createStorybookRule<Options, MessageIds>({
+export default createStorybookRule<Options, MessageIds>({
   name: 'no-renderer-packages',
   defaultOptions: [] as const,
   meta: {

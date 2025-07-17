@@ -196,6 +196,29 @@ export async function vitestPlaywrightTransform({
       node: t.Node;
     }): t.ExpressionStatement => {
       // Create the _test expression directly using the exportName identifier
+
+      // Check if the story has a playwright function
+      let playwrightFn = null;
+
+      if (
+        t.isExportNamedDeclaration(node) &&
+        node.declaration &&
+        t.isVariableDeclaration(node.declaration)
+      ) {
+        const declarator = node.declaration.declarations[0];
+        if (t.isVariableDeclarator(declarator) && t.isObjectExpression(declarator.init)) {
+          declarator.init.properties.forEach((prop: any) => {
+            if (
+              t.isObjectProperty(prop) &&
+              t.isIdentifier(prop.key) &&
+              prop.key.name === 'playwright'
+            ) {
+              playwrightFn = prop.value;
+            }
+          });
+        }
+      }
+
       const testStoryCall = t.expressionStatement(
         t.callExpression(vitestTestId, [
           t.stringLiteral(testTitle),
@@ -205,6 +228,7 @@ export async function vitestPlaywrightTransform({
               t.stringLiteral(storyId),
               t.identifier('page'),
               t.identifier('context'),
+              playwrightFn ?? t.nullLiteral(),
             ]),
             true // async
           ),
@@ -258,7 +282,7 @@ export async function vitestPlaywrightTransform({
               t.variableDeclarator(
                 t.identifier('options'),
                 t.objectExpression([
-                  t.objectProperty(t.identifier('headless'), t.booleanLiteral(false)),
+                  t.objectProperty(t.identifier('headless'), t.booleanLiteral(true)),
                 ])
               ),
             ]),

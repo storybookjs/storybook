@@ -399,6 +399,11 @@ export async function setupPageScript(page: Page) {
       return violations;
     }
 
+    async function __getContext(storyId: string): Promise<any> {
+      // @ts-expect-error TODO: fix later
+      return globalThis.__STORYBOOK_PREVIEW__.storyStore.loadStory({ storyId });
+    }
+
     async function __test(storyId: string): Promise<any> {
       try {
         await __waitForStorybook();
@@ -601,10 +606,17 @@ export async function setupPageScript(page: Page) {
     }
     // @ts-expect-error Need to fix with augmentation
     globalThis.__test = __test;
+    // @ts-expect-error Need to fix with augmentation
+    globalThis.__getContext = __getContext;
   });
 }
 
-export async function testStory(storyId: string, page: Page, context: TestContext) {
+export async function testStory(
+  storyId: string,
+  page: Page,
+  context: TestContext,
+  playwrightFn?: any
+) {
   const _task = context.task as RunnerTask & {
     meta: TaskMeta & { storyId: string; reports: Report[] };
   };
@@ -614,4 +626,13 @@ export async function testStory(storyId: string, page: Page, context: TestContex
     // @ts-expect-error Need to fix with augmentation
     return await globalThis.__test(storyId);
   }, storyId);
+
+  if (playwrightFn) {
+    const storyContext = await page.evaluate(
+      // @ts-expect-error Need to fix with augmentation
+      (storyId) => globalThis.__getContext(storyId),
+      storyId
+    );
+    await playwrightFn({ page, context: storyContext });
+  }
 }

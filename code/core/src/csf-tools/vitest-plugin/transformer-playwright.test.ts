@@ -89,7 +89,7 @@ describe('transformer-playwright', () => {
             let page;
             _beforeAll(async () => {
               const options = {
-                headless: false
+                headless: true
               };
               browser = await chromium.launch(options);
               page = await browser.newPage();
@@ -99,7 +99,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context));
+            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context, null));
           }
         `);
       });
@@ -133,7 +133,7 @@ describe('transformer-playwright', () => {
             let page;
             _beforeAll(async () => {
               const options = {
-                headless: false
+                headless: true
               };
               browser = await chromium.launch(options);
               page = await browser.newPage();
@@ -143,7 +143,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context));
+            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context, null));
           }
         `);
       });
@@ -178,7 +178,7 @@ describe('transformer-playwright', () => {
             let page;
             _beforeAll(async () => {
               const options = {
-                headless: false
+                headless: true
               };
               browser = await chromium.launch(options);
               page = await browser.newPage();
@@ -188,7 +188,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context));
+            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context, null));
           }
         `);
       });
@@ -224,7 +224,7 @@ describe('transformer-playwright', () => {
             let page;
             _beforeAll(async () => {
               const options = {
-                headless: false
+                headless: true
               };
               browser = await chromium.launch(options);
               page = await browser.newPage();
@@ -234,7 +234,62 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context));
+            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context, null));
+          }
+        `);
+      });
+
+      it('should pass playwright function to testStory if defined', async () => {
+        const code = `
+          export default {
+            component: Button,
+          };
+          export const Story = {
+            playwright: async ({ page }) => {
+              await page.goto('https://www.google.com');
+            },
+          };
+        `;
+
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, beforeAll as _beforeAll, afterAll as _afterAll, expect as _expect } from "vitest";
+          import { chromium } from "playwright";
+          import { testStory as _testStory, prepareScript as _prepareScript, setupPageScript as _setupPageScript, convertToFilePath } from "@storybook/addon-vitest/internal/playwright-utils";
+          const _meta = {
+            component: Button,
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Story = {
+            playwright: async ({
+              page
+            }) => {
+              await page.goto('https://www.google.com');
+            }
+          };
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            let browser;
+            let page;
+            _beforeAll(async () => {
+              const options = {
+                headless: true
+              };
+              browser = await chromium.launch(options);
+              page = await browser.newPage();
+              await _prepareScript(page);
+              await _setupPageScript(page);
+            });
+            _afterAll(async () => {
+              await browser.close();
+            });
+            _test("Story", async context => _testStory("automatic-calculated-title--story", page, context, async ({
+              page
+            }) => {
+              await page.goto('https://www.google.com');
+            }));
           }
         `);
       });
@@ -275,7 +330,7 @@ describe('transformer-playwright', () => {
             let page;
             _beforeAll(async () => {
               const options = {
-                headless: false
+                headless: true
               };
               browser = await chromium.launch(options);
               page = await browser.newPage();
@@ -285,7 +340,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Primary", async context => _testStory("automatic-calculated-title--primary", page, context));
+            _test("Primary", async context => _testStory("automatic-calculated-title--primary", page, context, null));
           }
         `);
       });
@@ -326,7 +381,7 @@ describe('transformer-playwright', () => {
             let page;
             _beforeAll(async () => {
               const options = {
-                headless: false
+                headless: true
               };
               browser = await chromium.launch(options);
               page = await browser.newPage();
@@ -336,7 +391,7 @@ describe('transformer-playwright', () => {
             _afterAll(async () => {
               await browser.close();
             });
-            _test("Primary", async context => _testStory("automatic-calculated-title--primary", page, context));
+            _test("Primary", async context => _testStory("automatic-calculated-title--primary", page, context, null));
           }
         `);
       });

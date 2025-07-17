@@ -15,6 +15,11 @@ import { esMain } from '../utils/esmain';
 import { safeMetafileArg } from './safe-args';
 
 const METAFILES_DIR = path.join(__dirname, '..', '..', 'code', 'bench', 'esbuild-metafiles');
+/**
+ * Returns a map of package names to their metafile arguments, that will be used in the bench story.
+ *
+ * This is based on the metafiles and their paths in the metafile directory
+ */
 async function getMetafileArgsByPackage() {
   const result: Record<string, string[]> = {};
   async function walk(dir: string, rel: string) {
@@ -37,7 +42,6 @@ async function getMetafileArgsByPackage() {
   await walk(METAFILES_DIR, '');
   return result;
 }
-console.dir(await getMetafileArgsByPackage(), { depth: null });
 
 const Thresholds = {
   SELF_SIZE_RATIO: 0.1,

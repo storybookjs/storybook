@@ -20,6 +20,7 @@ export function getAutomockCode(originalCode: string, isSpy: boolean, parse: Par
   return mocked;
 }
 
+// TODO: Remove as soon as https://github.com/vitest-dev/vitest/pull/8301 is released and we use it
 /**
  * Copyright (c) Vitest
  * https://github.com/vitest-dev/vitest/blob/v3.2.4/packages/mocker/src/node/automockPlugin.ts#L36C17-L36C31

@@ -1,4 +1,4 @@
-import type { BuildEntries } from '../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
 
 const config: BuildEntries = {
   entries: {

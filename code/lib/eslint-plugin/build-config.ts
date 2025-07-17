@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { x } from 'tinyexec';
 
-import type { BuildEntries } from '../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
 
 const config: BuildEntries = {
   prebuild: async (cwd) => {

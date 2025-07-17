@@ -55,9 +55,6 @@ const config: BuildEntries = {
       },
     ],
   },
-  extraOutputs: {
-    './static/coverage-reporter.cjs': './static/coverage-reporter.cjs',
-  },
 };
 
 export default config;

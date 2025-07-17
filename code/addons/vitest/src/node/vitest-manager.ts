@@ -45,7 +45,7 @@ export class VitestManager {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
-      join(resolvePackageDir('@storybook/addon-vitest'), 'static/coverage-reporter.cjs'),
+      '@storybook/addon-vitest/internal/coverage-reporter',
       {
         testManager: this.testManager,
         coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'> | undefined,

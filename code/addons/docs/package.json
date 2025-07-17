@@ -106,23 +106,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "previewEntries": [
-      "./src/preview.ts"
-    ],
-    "exportEntries": [
-      "./src/index.ts",
-      "./src/blocks.ts",
-      "./src/shims/mdx-react-shim.ts"
-    ],
-    "nodeEntries": [
-      "./src/mdx-loader.ts",
-      "./src/preset.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ]
-  },
   "gitHead": "a0e7fd8a655c69780bc20b9749c2699e45beae18",
   "storybook": {
     "displayName": "Docs",

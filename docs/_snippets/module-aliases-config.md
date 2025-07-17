@@ -8,12 +8,12 @@ export default {
       config.resolve.alias = {
         ...config.resolve?.alias,
         // 👇 External module
-        lodash: require.resolve('./lodash.mock'),
+        lodash: import.meta.resolve('./lodash.mock'),
         // 👇 Internal modules
-        '@/api': path.resolve(__dirname, './api.mock.ts'),
-        '@/app/actions': path.resolve(__dirname, './app/actions.mock.ts'),
-        '@/lib/session': path.resolve(__dirname, './lib/session.mock.ts'),
-        '@/lib/db': path.resolve(__dirname, './lib/db.mock.ts'),
+        '@/api': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db': import.meta.resolve('./lib/db.mock.ts'),
       };
     }
 
@@ -34,12 +34,12 @@ const config: StorybookConfig = {
       config.resolve.alias = {
         ...config.resolve?.alias,
         // 👇 External module
-        lodash: require.resolve('./lodash.mock'),
+        lodash: import.meta.resolve('./lodash.mock'),
         // 👇 Internal modules
-        '@/api': path.resolve(__dirname, './api.mock.ts'),
-        '@/app/actions': path.resolve(__dirname, './app/actions.mock.ts'),
-        '@/lib/session': path.resolve(__dirname, './lib/session.mock.ts'),
-        '@/lib/db': path.resolve(__dirname, './lib/db.mock.ts'),
+        '@/api': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db': import.meta.resolve('./lib/db.mock.ts'),
       };
     }
 
@@ -51,6 +51,8 @@ export default config;
 ```
 
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="webpack"
+import path from 'node:path';
+
 export default {
   // Replace your-framework with the framework you are using (e.g., nextjs, react-webpack5)
   framework: '@storybook/your-framework',
@@ -60,12 +62,12 @@ export default {
       config.resolve.alias = {
         ...config.resolve.alias,
         // 👇 External module
-        lodash: require.resolve('./lodash.mock'),
+        lodash: import.meta.resolve('./lodash.mock'),
         // 👇 Internal modules
-        '@/api$': path.resolve(__dirname, './api.mock.ts'),
-        '@/app/actions$': path.resolve(__dirname, './app/actions.mock.ts'),
-        '@/lib/session$': path.resolve(__dirname, './lib/session.mock.ts'),
-        '@/lib/db$': path.resolve(__dirname, './lib/db.mock.ts'),
+        '@/api$': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions$': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session$': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db$': import.meta.resolve('./lib/db.mock.ts'),
       };
     }
 
@@ -86,12 +88,12 @@ const config: StorybookConfig = {
       config.resolve.alias = {
         ...config.resolve.alias,
         // 👇 External module
-        lodash: require.resolve('./lodash.mock'),
+        lodash: import.meta.resolve('./lodash.mock'),
         // 👇 Internal modules
-        '@/api$': path.resolve(__dirname, './api.mock.ts'),
-        '@/app/actions$': path.resolve(__dirname, './app/actions.mock.ts'),
-        '@/lib/session$': path.resolve(__dirname, './lib/session.mock.ts'),
-        '@/lib/db$': path.resolve(__dirname, './lib/db.mock.ts'),
+        '@/api$': import.meta.resolve('./api.mock.ts'),
+        '@/app/actions$': import.meta.resolve('./app/actions.mock.ts'),
+        '@/lib/session$': import.meta.resolve('./lib/session.mock.ts'),
+        '@/lib/db$': import.meta.resolve('./lib/db.mock.ts'),
       };
     }
 

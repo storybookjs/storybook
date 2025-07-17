@@ -144,23 +144,11 @@ const config: StorybookConfig = {
           presets: Array<string | [string, any]>,
           // ... other compatible babel options
         }
-        include: Array<string|RegExp>,
-        exclude: Array<string|RegExp>,
+        include: Array<string|RegExp>, 
+        
+        // default excludes: /\/node_modules\/(?!react-native|@react-native|expo|@expo)/;
+        exclude: Array<string|RegExp>, 
         // ... other compatible @vitejs/plugin-react options
-      }
-
-      // these options are used to configure transpilation of node_modules via babel
-      // in most cases, you don't need to configure these options, but they are available if you need them
-      pluginBabelOptions: {
-        include: Array<string|RegExp>, // default: [/node_modules\/(react-native|@react-native)/]
-        exclude: Array<string|RegExp>, // default: undefined
-        presets: Array<string|[string, any]>,
-        plugins: Array<string|[string, any]>,
-        presetReact?: {
-          runtime?: 'automatic' | 'classic'; // default: 'automatic'
-          importSource?: string; // default: 'react'
-        };
-        // ... other compatible vite-plugin-babel options
       }
     },
   },
@@ -204,6 +192,26 @@ const main: StorybookConfig = {
     options: {
       pluginReactOptions: {
         jsxImportSource: "nativewind",
+      },
+    },
+  },
+}
+```
+
+#### Example configuration to transpile additional node_modules
+
+Lets say you need to transpile a library called `my-library` that is not included in the default excludes.
+You can do so by overriding the `exclude` option.
+
+```ts title=".storybook/main.ts"
+const main: StorybookConfig = {
+  // ... rest of config
+
+  framework: {
+    name: "@storybook/react-native-web-vite",
+    options: {
+      pluginReactOptions: {
+        exclude: /\/node_modules\/(?!react-native|@react-native|expo|@expo|my-library)/;
       },
     },
   },

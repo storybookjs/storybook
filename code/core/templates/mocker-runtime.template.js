@@ -1,6 +1,5 @@
 import { MockerRegistry } from '@vitest/mocker';
 import { ModuleMocker, createCompilerHints } from '@vitest/mocker/browser';
-import { spyOn } from '@vitest/spy';
 
 /** An interceptor for module mocking. */
 export class ModuleMockerInterceptor {
@@ -72,7 +71,9 @@ function registerModuleMocker(interceptor) {
         return rpc('invalidate', { ids });
       },
     },
-    spyOn,
+    (...args) => {
+      return globalThis.__STORYBOOK_MODULE_TEST__.spyOn(...args);
+    },
     {
       root: '',
     }

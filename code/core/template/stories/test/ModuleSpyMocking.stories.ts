@@ -16,9 +16,6 @@ export default {
   parameters: {
     layout: 'fullscreen',
   },
-  beforeEach() {
-    mocked(fn).mockReset();
-  },
 };
 
 export const Original = {

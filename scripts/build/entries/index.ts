@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import { x } from 'tinyexec';
+import { x as exec } from 'tinyexec';
 
 import type { BuildEntriesByPackageName } from '../utils/entry-utils';
 import { DIR_CODE } from '../utils/generate-bundle';
@@ -13,7 +13,7 @@ export const buildEntries = {
         'storybook',
         'generate-source-files.ts'
       );
-      await x('jiti', [CORE_PREBUILD_SCRIPT_PATH], {
+      await exec('jiti', [CORE_PREBUILD_SCRIPT_PATH], {
         nodeOptions: {
           cwd,
           env: {
@@ -1346,7 +1346,7 @@ export const buildEntries = {
         'scripts',
         'update-all.ts'
       );
-      await x('jiti', [ESLINT_PLUGIN_PREBUILD_SCRIPT_PATH], {
+      await exec('jiti', [ESLINT_PLUGIN_PREBUILD_SCRIPT_PATH], {
         nodeOptions: {
           cwd,
           env: {

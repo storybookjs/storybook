@@ -40,8 +40,7 @@
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",
     "generate-rule": "jiti ./scripts/generate-rule",
-    "prep": "jiti ../../../scripts/build/build-package.ts",
-    "update-rules": "jiti ./scripts/update-all.ts"
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@typescript-eslint/utils": "^8.8.1"

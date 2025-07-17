@@ -37,8 +37,8 @@ export interface MockPluginOptions {
  * Responsibilities:
  *
  * - Extract mock calls from preview config
- * - Resolve and emit mock/automock chunks
- * - Generate a manifest mapping original modules to their mocks
+ * - Invalidate affected files when mocks change
+ * - Transform mock calls to automocked code
  *
  * @see MockPluginOptions
  */
@@ -107,14 +107,8 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             continue;
           }
 
-          try {
-            if (call.redirectPath) {
-              return readFileSync(call.redirectPath, 'utf-8');
-            } else {
-              return null;
-            }
-          } catch (e) {
-            return null;
+          if (call.redirectPath) {
+            return readFileSync(call.redirectPath, 'utf-8');
           }
         }
         return null;

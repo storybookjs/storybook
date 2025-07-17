@@ -2,6 +2,7 @@
 
 - [From version 9.x to 10.0.0](#from-version-9x-to-1000)
   - [Core Changes](#core-changes)
+    - [The `.storybook/main.*`-file must be valid ESM](#the-storybookmain-file-must-be-valid-esm)
     - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
@@ -485,6 +486,25 @@
 ## From version 9.x to 10.0.0
 
 ### Core Changes
+
+#### The `.storybook/main.*`-file must be valid ESM
+
+Storybook will load the `.storybook/main.*` file as an ESM file.
+Thus CJS constants (`require`, `__dirname`, `__filename`) will not be defined.
+
+You can define these constants yourself, like so:
+
+```ts
+import { createRequire } from "node:module";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
+```
+
+A `main.ts` file that's CJS is no longer supported.
 
 #### Node.js 20.19+ or 22.12+ required
 

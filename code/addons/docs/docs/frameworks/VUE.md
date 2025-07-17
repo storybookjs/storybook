@@ -39,8 +39,6 @@ export default {
 The `addon-docs` preset for Vue has a configuration option that can be used to configure [`vue-docgen-api`](https://github.com/vue-styleguidist/vue-styleguidist/tree/dev/packages/vue-docgen-api), a tool which extracts information from Vue components. Here's an example of how to use the preset with options for Vue app:
 
 ```js
-import * as path from 'path';
-
 export default {
   addons: [
     {
@@ -48,7 +46,7 @@ export default {
       options: {
         vueDocgenOptions: {
           alias: {
-            '@': path.resolve(__dirname, '../'),
+            '@': path.resolve(process.cwd(), 'src'),
           },
         },
       },
@@ -76,17 +74,6 @@ export default {
   title: 'InfoButton',
   component: InfoButton,
 };
-```
-
-If you haven't upgraded from `storiesOf`, you can use a parameter to do the same thing:
-
-```ts
-import { storiesOf } from '@storybook/vue';
-import { InfoButton } from './InfoButton.vue';
-
-storiesOf('InfoButton', module)
-  .addParameters({ component: InfoButton })
-  .add( ... );
 ```
 
 ## MDX

@@ -112,17 +112,6 @@ export default {
 };
 ```
 
-If you haven't upgraded from `storiesOf`, you can use a parameter to do the same thing:
-
-```ts
-import { storiesOf } from '@storybook/angular';
-import { AppComponent } from './app.component';
-
-storiesOf('App Component', module)
-  .addParameters({ component: AppComponent })
-  .add( ... );
-```
-
 ## MDX
 
 [MDX](../docs/mdx.md) is a convenient way to document your components in Markdown and embed documentation components, such as stories and props tables, inline.

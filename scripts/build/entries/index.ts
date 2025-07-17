@@ -1,5 +1,6 @@
-import { exec } from 'node:child_process';
 import { join } from 'node:path';
+
+import { x } from 'tinyexec';
 
 import type { BuildEntriesByPackageName } from '../utils/entry-utils';
 import { DIR_CODE } from '../utils/generate-bundle';
@@ -12,22 +13,17 @@ export const buildEntries = {
         'storybook',
         'generate-source-files.ts'
       );
-      return new Promise((resolve, reject) => {
-        const child = exec(`jiti ${CORE_PREBUILD_SCRIPT_PATH}`, {
+      await x('jiti', [CORE_PREBUILD_SCRIPT_PATH], {
+        nodeOptions: {
           cwd,
           env: {
             ...process.env,
             NODE_ENV: 'production',
             FORCE_COLOR: '1',
-            stdio: 'inherit',
           },
-        });
-        child.on('close', () => {
-          resolve(void 0);
-        });
-        child.on('error', (error) => {
-          reject(error);
-        });
+          stdio: 'inherit',
+        },
+        throwOnError: true,
       });
     },
     postbuild: async (cwd) => {
@@ -1342,22 +1338,16 @@ export const buildEntries = {
         'scripts',
         'update-all.ts'
       );
-      return new Promise((resolve, reject) => {
-        const child = exec(`jiti ${ESLINT_PLUGIN_PREBUILD_SCRIPT_PATH}`, {
+      await x('jiti', [ESLINT_PLUGIN_PREBUILD_SCRIPT_PATH], {
+        nodeOptions: {
           cwd,
           env: {
             ...process.env,
-            NODE_ENV: 'production',
             FORCE_COLOR: '1',
-            stdio: 'inherit',
           },
-        });
-        child.on('close', () => {
-          resolve(void 0);
-        });
-        child.on('error', (error) => {
-          reject(error);
-        });
+          stdio: 'inherit',
+        },
+        throwOnError: true,
       });
     },
     entries: {

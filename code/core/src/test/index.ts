@@ -3,7 +3,6 @@ import type { userEvent } from '@testing-library/user-event';
 
 import { instrument } from 'storybook/internal/instrumenter';
 
-import type { registerModuleMocker } from '@vitest/mocker/register';
 import { Assertion } from 'chai';
 
 import { expect as rawExpect } from './expect';
@@ -44,10 +43,16 @@ export const { expect } = instrument(
   }
 );
 
-type ReturnTypeOfModuleMocker = ReturnType<typeof registerModuleMocker>;
+type ModuleMockOptions = {
+  spy?: boolean;
+};
+type ReturnTypeOfModuleMocker = (
+  path: string | Promise<unknown>,
+  factory?: ModuleMockOptions
+) => void;
 
 export const sb: {
-  mock: ReturnTypeOfModuleMocker['mock'];
+  mock: ReturnTypeOfModuleMocker;
 } = {
   mock: () => {
     // noop

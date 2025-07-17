@@ -11,14 +11,13 @@ import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
 import semver from 'semver';
 
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
 import nextBabelPreset from './babel/preset';
 import { configureConfig } from './config/webpack';
 import TransformFontImports from './font/babel';
 import type { FrameworkOptions, StorybookConfig } from './types';
 
 export const addons: PresetProperty<'addons'> = [
-  resolvePackageDir('@storybook/preset-react-webpack'),
+  fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {

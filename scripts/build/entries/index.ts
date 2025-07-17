@@ -1234,6 +1234,112 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/codemod': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./transforms/csf-2-to-3'],
+          entryPoint: './src/transforms/csf-2-to-3.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./transforms/find-implicit-spies'],
+          entryPoint: './src/transforms/find-implicit-spies.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./transforms/upgrade-deprecated-types'],
+          entryPoint: './src/transforms/upgrade-deprecated-types.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./transforms/upgrade-hierarchy-separators'],
+          entryPoint: './src/transforms/upgrade-hierarchy-separators.js',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/core-webpack': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+    },
+  },
+  '@storybook/csf-plugin': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./webpack-loader'],
+          entryPoint: './src/webpack-loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/preset-create-react-app': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['./index'],
+          entryPoint: './src/index.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/preset-react-webpack': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preset-cra'],
+          entryPoint: './src/framework-preset-cra.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preset-react-docs'],
+          entryPoint: './src/framework-preset-react-docs.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./react-docgen-loader'],
+          entryPoint: './src/loaders/react-docgen-loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/preset-server-webpack': {
+    entries: {
+      node: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./loader'],
+          entryPoint: './src/loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

@@ -63,7 +63,7 @@
     "svelte-check": "^4.1.4",
     "sveltedoc-parser": "^4.2.1",
     "typescript": "^5.8.3",
-    "vite": "^6.2.5"
+    "vite": "^7.0.4"
   },
   "peerDependencies": {
     "storybook": "workspace:^",
@@ -72,5 +72,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae78"
+  "gitHead": "a0e7fd8a655c69780bc20b9749c2699e45beae18"
 }

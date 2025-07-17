@@ -3,8 +3,8 @@ import type { PresetProperty } from 'storybook/internal/types';
 import type { StorybookConfig } from './types';
 
 export const core: PresetProperty<'core'> = {
-  builder: require.resolve('@storybook/builder-vite'),
-  renderer: require.resolve('@storybook/react/preset'),
+  builder: import.meta.resolve('@storybook/builder-vite'),
+  renderer: import.meta.resolve('@storybook/react/preset'),
 };
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, { presets }) => {
@@ -18,7 +18,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
   let typescriptPresent;
 
   try {
-    require.resolve('typescript');
+    import.meta.resolve('typescript');
     typescriptPresent = true;
   } catch (e) {
     typescriptPresent = false;
@@ -26,7 +26,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   if (reactDocgenOption === 'react-docgen-typescript' && typescriptPresent) {
     plugins.push(
-      require('@joshwooding/vite-plugin-react-docgen-typescript')({
+      (await import('@joshwooding/vite-plugin-react-docgen-typescript')).default({
         ...reactDocgenTypescriptOptions,
         // We *need* this set so that RDT returns default values in the same format as react-docgen
         savePropValueAsString: true,

@@ -772,6 +772,468 @@ export const buildEntries = {
       ],
     },
   },
+  '@storybook/html-vite': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+      ],
+    },
+  },
+  '@storybook/nextjs': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.tsx',
+        },
+        {
+          exportEntries: ['./cache.mock'],
+          entryPoint: './src/export-mocks/cache/index.ts',
+        },
+        {
+          exportEntries: ['./headers.mock'],
+          entryPoint: './src/export-mocks/headers/index.ts',
+        },
+        {
+          exportEntries: ['./navigation.mock'],
+          entryPoint: './src/export-mocks/navigation/index.ts',
+        },
+        {
+          exportEntries: ['./router.mock'],
+          entryPoint: './src/export-mocks/router/index.ts',
+        },
+        {
+          exportEntries: ['./compatibility/draft-mode.compat'],
+          entryPoint: './src/compatibility/draft-mode.compat.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./next-image-loader-stub'],
+          entryPoint: './src/next-image-loader-stub.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./image-context'],
+          entryPoint: './src/image-context.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./images/next-image'],
+          entryPoint: './src/images/next-image.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./images/next-legacy-image'],
+          entryPoint: './src/images/next-legacy-image.tsx',
+          dts: false,
+        },
+        {
+          exportEntries: ['./rsc/server-only'],
+          entryPoint: './src/rsc/server-only.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./export-mocks'],
+          entryPoint: './src/export-mocks/index.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./next-swc-loader-patch'],
+          entryPoint: './src/swc/next-swc-loader-patch.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./storybook-nextjs-font-loader'],
+          entryPoint: './src/font/webpack/loader/storybook-nextjs-font-loader.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/preact-vite': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+      ],
+    },
+  },
+  '@storybook/react-vite': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+        },
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+      ],
+    },
+  },
+  '@storybook/react-webpack5': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+      ],
+    },
+  },
+  '@storybook/server-webpack5': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+      ],
+    },
+  },
+  '@storybook/svelte-vite': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+        },
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+      ],
+    },
+  },
+  '@storybook/vue3-vite': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./vite-plugin'],
+          entryPoint: './src/vite-plugin.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/web-components-vite': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+      ],
+    },
+  },
+  '@storybook/angular': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./client'],
+          entryPoint: './src/client/index.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./client/config'],
+          entryPoint: './src/client/config.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./client/preview-prod'],
+          entryPoint: './src/client/preview-prod.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./client/docs/config'],
+          entryPoint: './src/client/docs/config.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+
+        {
+          exportEntries: ['./server/framework-preset-angular-ivy'],
+          entryPoint: './src/server/framework-preset-angular-ivy.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./server/framework-preset-angular-cli'],
+          entryPoint: './src/server/framework-preset-angular-cli.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./builders/start-storybook'],
+          entryPoint: './src/builders/start-storybook/index.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./builders/build-storybook'],
+          entryPoint: './src/builders/build-storybook/index.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/ember': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./server/framework-preset-babel-ember'],
+          entryPoint: './src/server/framework-preset-babel-ember.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/nextjs-vite': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.tsx',
+        },
+        {
+          exportEntries: ['./cache.mock'],
+          entryPoint: './src/export-mocks/cache/index.ts',
+        },
+        {
+          exportEntries: ['./headers.mock'],
+          entryPoint: './src/export-mocks/headers/index.ts',
+        },
+        {
+          exportEntries: ['./navigation.mock'],
+          entryPoint: './src/export-mocks/navigation/index.ts',
+        },
+        {
+          exportEntries: ['./router.mock'],
+          entryPoint: './src/export-mocks/router/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./vite-plugin'],
+          entryPoint: './src/vite-plugin/index.ts',
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/react-native-web-vite': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./vite-plugin'],
+          entryPoint: './src/vite-plugin.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
+  '@storybook/sveltekit': {
+    entries: {
+      browser: [
+        {
+          exportEntries: ['.'],
+          entryPoint: './src/index.ts',
+        },
+        {
+          exportEntries: ['./preview'],
+          entryPoint: './src/preview.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/mocks/app/forms'],
+          entryPoint: './src/mocks/app/forms.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/mocks/app/navigation'],
+          entryPoint: './src/mocks/app/navigation.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./internal/mocks/app/stores'],
+          entryPoint: './src/mocks/app/stores.ts',
+          dts: false,
+        },
+      ],
+      node: [
+        {
+          exportEntries: ['./node'],
+          entryPoint: './src/node/index.ts',
+        },
+        {
+          exportEntries: ['./vite-plugin'],
+          entryPoint: './src/vite-plugin.ts',
+          dts: false,
+        },
+        {
+          exportEntries: ['./preset'],
+          entryPoint: './src/preset.ts',
+          dts: false,
+        },
+      ],
+    },
+  },
 } satisfies BuildEntriesByPackageName;
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {

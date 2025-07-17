@@ -52,7 +52,7 @@
     "magic-string": "^0.30.0",
     "pathe": "^1.1.2",
     "slash": "^5.0.0",
-    "vite": "^6.2.5"
+    "vite": "^7.0.4"
   },
   "peerDependencies": {
     "storybook": "workspace:^",
@@ -61,5 +61,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a6e7fd8a655c69780bc20b9749c2699e44beae78"
+  "gitHead": "a0e7fd8a655c69780bc20b9749c2699e45beae18"
 }

@@ -1,12 +1,9 @@
 import { readFileSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { exactRegex } from '@rolldown/pluginutils';
 import { dedent } from 'ts-dedent';
 import type { ResolvedConfig, ViteDevServer } from 'vite';
-
-import { __STORYBOOK_GLOBAL_THIS_ACCESSOR__ } from './constants';
 
 const entryPath = '/vite-inject-mocker-entry.js';
 
@@ -40,6 +37,9 @@ export const viteInjectMockerRuntime = (options: {
           include: ['@vitest/mocker', '@vitest/mocker/browser', '@vitest/spy'],
         },
         resolve: {
+          // Aliasing necessary for package managers like pnpm, since resolving modules from a virtual module
+          // leads to errors, if the imported module is not a dependency of the project.
+          // By resolving the module to the real path, we can avoid this issue.
           alias: {
             '@vitest/mocker/browser': require.resolve('@vitest/mocker/browser'),
             '@vitest/mocker': require.resolve('@vitest/mocker'),
@@ -85,16 +85,6 @@ export const viteInjectMockerRuntime = (options: {
         );
       }
 
-      if (id.includes('@vitest/mocker/dist/register.js')) {
-        const content = await readFile(require.resolve('@vitest/mocker/dist/register.js'), 'utf-8');
-        const result = content
-          .replace(
-            /__VITEST_GLOBAL_THIS_ACCESSOR__/g,
-            JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__)
-          )
-          .replace('__VITEST_MOCKER_ROOT__', JSON.stringify(server?.config.root ?? ''));
-        return result;
-      }
       return null;
     },
     transformIndexHtml(html: string) {

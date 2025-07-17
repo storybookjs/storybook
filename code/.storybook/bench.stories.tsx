@@ -2,18 +2,10 @@ import React from 'react';
 
 import type { Meta } from '@storybook/react-vite';
 
+import { safeMetafileArg } from '../../scripts/bench/safe-args';
+
 // @ts-expect-error - TS doesn't know about import.meta.glob from Vite
 const allMetafiles = import.meta.glob(['../bench/esbuild-metafiles/**/*.json']);
-
-const METAFILES_DIR = '../bench/esbuild-metafiles/';
-const PACKAGES_WITHOUT_ORG = ['storybook', 'sb', 'create-storybook'];
-
-// allows the metafile path to be used in the URL hash
-const safeMetafileArg = (path: string) =>
-  path
-    .replace(METAFILES_DIR, '')
-    .replaceAll('/', '__')
-    .replace(/(\w*).json/, '$1');
 
 export default {
   title: 'Bench',
@@ -35,18 +27,7 @@ export default {
         labels: Object.fromEntries(
           Object.keys(allMetafiles).map((path) => {
             const [, dirName, subEntry] = /esbuild-metafiles\/(.+)\/(.+).json/.exec(path)!;
-            let pkgName = PACKAGES_WITHOUT_ORG.includes(dirName)
-              ? dirName
-              : `@storybook/${dirName}`;
-
-            if (pkgName === '@storybook/core') {
-              pkgName = 'storybook';
-            }
-
-            return [
-              safeMetafileArg(path),
-              subEntry !== 'metafile' ? `${pkgName} - ${subEntry}` : pkgName,
-            ];
+            return [safeMetafileArg(path), `${dirName} - ${subEntry}`];
           })
         ),
       },
@@ -88,7 +69,8 @@ export default {
             manually to see the metafile.
           </p>
           <p>
-            You will have to find the metafile in the <code>code/bench/esbuild-metafiles</code>{' '}
+            You will have to find the metafile in the{' '}
+            <code>code/bench/esbuild-metafiles/{args.metafile.split('esbuild-metafiles/')[1]}</code>{' '}
             directory and upload it manually.
           </p>
         </div>

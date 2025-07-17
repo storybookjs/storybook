@@ -1,13 +1,13 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
-import { x } from 'tinyexec';
+import { x as exec } from 'tinyexec';
 
 import type { BuildEntries } from '../../scripts/build/utils/entry-utils';
 
 const config: BuildEntries = {
   prebuild: async (cwd) => {
-    await x('jiti', [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')], {
+    await exec('jiti', [path.join(import.meta.dirname, 'scripts', 'generate-source-files.ts')], {
       nodeOptions: {
         cwd,
         env: {

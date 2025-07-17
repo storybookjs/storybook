@@ -635,4 +635,15 @@ export async function testStory(
     );
     await playwrightFn({ page, context: storyContext });
   }
+
+  // @ts-expect-error Need to fix with augmentation
+  const coverage = await page.evaluate(() => globalThis.__coverage__);
+  if (coverage) {
+    // @ts-expect-error Need to fix with augmentation
+    await globalThis.__vitest_worker__.rpc.onAfterSuiteRun({
+      coverage,
+      testFiles: [],
+      transformMode: 'web',
+    });
+  }
 }

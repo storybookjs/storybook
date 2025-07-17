@@ -1,12 +1,8 @@
-import { readFileSync } from 'node:fs';
 import { dirname, isAbsolute } from 'node:path';
 
-import { parse } from '@babel/parser';
-import { transformSync } from 'esbuild';
-import type { CallExpression, Literal } from 'estree';
-import { walk } from 'estree-walker';
 import type { Compiler } from 'webpack';
 
+import { babelParser, extractMockCalls } from '../../../mocking-utils/extract';
 import { resolveMock } from '../../../mocking-utils/resolve';
 
 // --- Type Definitions ---
@@ -114,29 +110,16 @@ export class WebpackMockPlugin {
     const { previewConfigPath } = this.options;
     const logger = compiler.getInfrastructureLogger(PLUGIN_NAME);
 
-    // 1. Extract raw mock calls from the preview file's AST.
-    const code = readFileSync(previewConfigPath, 'utf-8');
-    const { code: jsCode } = transformSync(code, { loader: 'tsx' });
-    const ast = parse(jsCode, {
-      sourceType: 'module',
-    });
-
-    const extractedMocks: ExtractedMock[] = [];
-    walk(ast as any, {
-      enter: (node) => {
-        if (this.isSbMockCall(node)) {
-          const path = (node.arguments[0] as Literal).value as string;
-          const spy = node.arguments[1]?.properties.some(
-            (p: any) => p.key.name === 'spy' && p.value.value === true
-          );
-          extractedMocks.push({ path, spy });
-        }
-      },
-    });
+    // Use extractMockCalls to get all mocks from the transformed preview file
+    const mocks = extractMockCalls(
+      { previewConfigPath, configDir: dirname(previewConfigPath) },
+      babelParser,
+      compiler.context
+    );
 
     // 2. Resolve each mock call to its absolute path and replacement resource.
     const resolvedMocks: ResolvedMock[] = [];
-    for (const mock of extractedMocks) {
+    for (const mock of mocks) {
       try {
         const { absolutePath, redirectPath } = resolveMock(
           mock.path,
@@ -152,7 +135,7 @@ export class WebpackMockPlugin {
         } else {
           // No `__mocks__` file found. Use our custom loader to automock the module.
           const loaderPath = require.resolve(
-            'storybook/internal/core-server/presets/webpack/plugins/webpack-automock-loader'
+            'storybook/internal/core-server/presets/webpack/loaders/webpack-automock-loader'
           );
           replacementResource = `${loaderPath}?spy=${mock.spy}!${absolutePath}`;
         }
@@ -168,24 +151,5 @@ export class WebpackMockPlugin {
     }
 
     return resolvedMocks;
-  }
-
-  /**
-   * Type guard to check if an AST node is a valid `sb.mock()` call expression.
-   *
-   * @param {any} node The AST node to check.
-   * @returns {node is CallExpression}
-   */
-  private isSbMockCall(node: any): node is CallExpression & { arguments: [Literal, ...any[]] } {
-    return (
-      node.type === 'CallExpression' &&
-      node.callee.type === 'MemberExpression' &&
-      node.callee.object.type === 'Identifier' &&
-      node.callee.object.name === 'sb' &&
-      node.callee.property.type === 'Identifier' &&
-      node.callee.property.name === 'mock' &&
-      node.arguments.length > 0 &&
-      node.arguments[0].type === 'StringLiteral'
-    );
   }
 }

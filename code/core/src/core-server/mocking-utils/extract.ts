@@ -2,11 +2,15 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
 
+import { generate } from '@babel/generator';
+import { parse } from '@babel/parser';
+import type { ParserOptions } from '@babel/parser';
 import type { Node } from '@babel/types';
+import * as t from '@babel/types';
 import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { readFileSync } from 'fs';
-import { normalize } from 'pathe';
+import { basename, normalize } from 'pathe';
 
 import { resolveMock } from './resolve';
 
@@ -31,6 +35,50 @@ interface ExtractMockCallsOptions {
   coreOptions?: CoreConfig;
   /** Configuration directory */
   configDir: string;
+}
+
+/**
+ * A wrapper around the babel parser that enables the necessary plugins to handle modern JavaScript
+ * features, including TSX.
+ *
+ * @param code - The code to parse.
+ * @returns The parsed code.
+ */
+export const babelParser = (code: string) => {
+  const parserOptions: ParserOptions = {
+    sourceType: 'module',
+    // Enable plugins to handle modern JavaScript features, including TSX.
+    plugins: ['typescript', 'jsx', 'classProperties', 'objectRestSpread'],
+    errorRecovery: true,
+  };
+  return parse(code, parserOptions).program;
+};
+
+/** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
+export function rewriteSbMockImportCalls(code: string) {
+  const ast = babelParser(code);
+
+  walk(ast as any, {
+    enter(node: any) {
+      if (
+        node.type === 'CallExpression' &&
+        node.callee.type === 'MemberExpression' &&
+        node.callee.object.type === 'Identifier' &&
+        node.callee.object.name === 'sb' &&
+        node.callee.property.type === 'Identifier' &&
+        node.callee.property.name === 'mock' &&
+        node.arguments.length > 0 &&
+        node.arguments[0].type === 'CallExpression' &&
+        node.arguments[0].callee.type === 'Import' &&
+        node.arguments[0].arguments.length === 1 &&
+        node.arguments[0].arguments[0].type === 'StringLiteral'
+      ) {
+        // Replace sb.mock(import('foo'), ...) with sb.mock('foo', ...)
+        node.arguments[0] = t.stringLiteral(node.arguments[0].arguments[0].value);
+      }
+    },
+  });
+  return generate(ast, {}, code);
 }
 
 /**
@@ -88,20 +136,40 @@ export function extractMockCalls(
           return;
         }
 
-        if (node.arguments.length === 0 || node.arguments[0].type !== 'StringLiteral') {
+        if (node.arguments.length === 0) {
           return;
         }
+
+        let path: string | undefined;
+        // Support sb.mock('foo', ...) and sb.mock(import('foo'), ...)
+        if (node.arguments[0].type === 'StringLiteral') {
+          path = node.arguments[0].value as string;
+        } else if (
+          node.arguments[0].type === 'CallExpression' &&
+          node.arguments[0].callee.type === 'Import' &&
+          node.arguments[0].arguments[0].type === 'StringLiteral'
+        ) {
+          path = node.arguments[0].arguments[0].value;
+        } else {
+          return;
+        }
+
         const spy =
           node.arguments.length > 1 &&
           node.arguments[1].type === 'ObjectExpression' &&
           hasSpyTrue(node.arguments[1]);
 
-        const path = node.arguments[0].value as string;
-
         const { absolutePath, redirectPath } = resolveMock(path, root, options.previewConfigPath);
 
+        const pathWithoutExtension = path.replace(/\.[^/.]+$/, '');
+        const basenameAbsolutePath = basename(absolutePath);
+        const basenamePath = basename(path);
+
+        const pathWithoutExtensionAndBasename =
+          basenameAbsolutePath === basenamePath ? pathWithoutExtension : path;
+
         mocks.push({
-          path,
+          path: pathWithoutExtensionAndBasename,
           absolutePath,
           redirectPath,
           spy,

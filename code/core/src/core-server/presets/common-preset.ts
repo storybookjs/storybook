@@ -358,14 +358,25 @@ export const webpackFinal = async (
     './webpack/plugins/webpack-inject-mocker-runtime-plugin'
   );
 
-  // Ensure the plugins array exists.
   config.plugins = config.plugins || [];
 
-  // 1. Add the plugin to handle module replacement based on sb.mock() calls.
+  // 1. Add the loader to normalize sb.mock(import(...)) calls.
+  config.module!.rules!.push({
+    test: /preview\.(t|j)sx?$/,
+    use: [
+      {
+        loader: require.resolve(
+          'storybook/internal/core-server/presets/webpack/loaders/storybook-mock-transform-loader'
+        ),
+      },
+    ],
+  });
+
+  // 2. Add the plugin to handle module replacement based on sb.mock() calls.
   // This plugin scans the preview file and sets up rules to swap modules.
   config.plugins.push(new WebpackMockPlugin({ previewConfigPath }));
 
-  // 2. Add the plugin to inject the mocker runtime script into the HTML.
+  // 3. Add the plugin to inject the mocker runtime script into the HTML.
   // This ensures the `sb` object is available before any other code runs.
   config.plugins.push(new WebpackInjectMockerRuntimePlugin());
 

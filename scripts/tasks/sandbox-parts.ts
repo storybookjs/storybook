@@ -795,12 +795,12 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   let config = formatConfig(previewConfig);
 
   const mockBlock = [
-    "sb.mock('../template-stories/core/test/ModuleMocking.utils');",
-    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils', { spy: true });",
-    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils');",
-    "sb.mock('lodash-es');",
-    "sb.mock('lodash-es/add');",
-    "sb.mock('lodash-es/sum');",
+    "sb.mock(import('../template-stories/core/test/ModuleMocking.utils'));",
+    "sb.mock(import('../template-stories/core/test/ModuleSpyMocking.utils'), { spy: true });",
+    "sb.mock(import('../template-stories/core/test/ModuleAutoMocking.utils'));",
+    "sb.mock(import('lodash-es'));",
+    "sb.mock(import('lodash-es/add'));",
+    "sb.mock(import('lodash-es/sum'));",
     '',
   ].join('\n');
 

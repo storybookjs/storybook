@@ -133,6 +133,8 @@ const config: StorybookConfig = {
   framework: {
     name: '@storybook/react-native-web-vite',
     options: {
+      modulesToTranspile: ['my-library'], // add libraries that are not transpiled for web by default
+
       // You should apply babel plugins and presets here for your project that you want to apply to your code
       // for example put the reanimated preset here if you are using reanimated
       // or the nativewind jsxImportSource for example
@@ -146,7 +148,6 @@ const config: StorybookConfig = {
         }
         include: Array<string|RegExp>, 
         
-        // default excludes: /\/node_modules\/(?!react-native|@react-native|expo|@expo)/;
         exclude: Array<string|RegExp>, 
         // ... other compatible @vitejs/plugin-react options
       }
@@ -200,8 +201,8 @@ const main: StorybookConfig = {
 
 #### Example configuration to transpile additional node_modules
 
-Lets say you need to transpile a library called `my-library` that is not included in the default excludes.
-You can do so by overriding the `exclude` option.
+Lets say you need to transpile a library called `my-library` that is not transpiled for web by default.
+You can add it to the `modulesToTranspile` option.
 
 ```ts title=".storybook/main.ts"
 const main: StorybookConfig = {
@@ -210,9 +211,7 @@ const main: StorybookConfig = {
   framework: {
     name: "@storybook/react-native-web-vite",
     options: {
-      pluginReactOptions: {
-        exclude: /\/node_modules\/(?!react-native|@react-native|expo|@expo|my-library)/;
-      },
+      modulesToTranspile: ['my-library'],
     },
   },
 }

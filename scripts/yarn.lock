@@ -618,16 +618,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@happy-dom/global-registrator@npm:^18.0.1":
-  version: 18.0.1
-  resolution: "@happy-dom/global-registrator@npm:18.0.1"
-  dependencies:
-    "@types/node": "npm:^20.0.0"
-    happy-dom: "npm:^18.0.1"
-  checksum: 10c0/db97936215b8148ae966f2619533188fc006a66af7c122664eee9263bd2ffc2172c08de4221ded0f6f3af089d3a727ff98f70e1278395979a3c6e9dd55acf032
-  languageName: node
-  linkType: hard
-
 "@humanwhocodes/config-array@npm:^0.11.14":
   version: 0.11.14
   resolution: "@humanwhocodes/config-array@npm:0.11.14"
@@ -1526,7 +1516,6 @@ __metadata:
     "@actions/core": "npm:^1.11.1"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@google-cloud/bigquery": "npm:^6.2.1"
-    "@happy-dom/global-registrator": "npm:^18.0.1"
     "@octokit/graphql": "npm:^5.0.6"
     "@octokit/request": "npm:^8.4.1"
     "@polka/parse": "npm:^1.0.0-next.28"
@@ -1977,15 +1966,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:^20.0.0":
-  version: 20.19.2
-  resolution: "@types/node@npm:20.19.2"
-  dependencies:
-    undici-types: "npm:~6.21.0"
-  checksum: 10c0/85195d2435a215c886b3dabb2a93c557397e2b933a18803c6dd4fb3f87c3de9c8290fe78f08b52ebeb3b14063a00b217f66b4f9c0192581dc7a677c4f8663a9c
-  languageName: node
-  linkType: hard
-
 "@types/normalize-package-data@npm:^2.4.0":
   version: 2.4.3
   resolution: "@types/normalize-package-data@npm:2.4.3"
@@ -2114,13 +2094,6 @@ __metadata:
   dependencies:
     "@types/node": "npm:*"
   checksum: 10c0/e366fbfa78fbed4a033aa03072291ba869328dc1a1b715109540af3a328f8f023ec868219f6d2148d5a2ea21f1ce0f12d29e42411f3255ba155da2af978319ee
-  languageName: node
-  linkType: hard
-
-"@types/whatwg-mimetype@npm:^3.0.2":
-  version: 3.0.2
-  resolution: "@types/whatwg-mimetype@npm:3.0.2"
-  checksum: 10c0/dad39d1e4abe760a0a963c84bbdbd26b1df0eb68aff83bdf6ecbb50ad781ead777f6906d19a87007790b750f7500a12e5624d31fc6a1529d14bd19b5c3a316d1
   languageName: node
   linkType: hard
 
@@ -6669,17 +6642,6 @@ __metadata:
   bin:
     handlebars: bin/handlebars
   checksum: 10c0/7aff423ea38a14bb379316f3857fe0df3c5d66119270944247f155ba1f08e07a92b340c58edaa00cfe985c21508870ee5183e0634dcb53dd405f35c93ef7f10d
-  languageName: node
-  linkType: hard
-
-"happy-dom@npm:^18.0.1":
-  version: 18.0.1
-  resolution: "happy-dom@npm:18.0.1"
-  dependencies:
-    "@types/node": "npm:^20.0.0"
-    "@types/whatwg-mimetype": "npm:^3.0.2"
-    whatwg-mimetype: "npm:^3.0.0"
-  checksum: 10c0/10f2115f5001fdaf1aedcbda89c15248a1c2e43a25d7e774cb641a35bf6763cef9097b438ef3c2248ab59a0ef33b3e88cb94da096f2bb0fc109ba3f43f7c66d4
   languageName: node
   linkType: hard
 
@@ -12458,13 +12420,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici-types@npm:~6.21.0":
-  version: 6.21.0
-  resolution: "undici-types@npm:6.21.0"
-  checksum: 10c0/c01ed51829b10aa72fc3ce64b747f8e74ae9b60eafa19a7b46ef624403508a54c526ffab06a14a26b3120d055e1104d7abe7c9017e83ced038ea5cf52f8d5e04
-  languageName: node
-  linkType: hard
-
 "undici@npm:^5.25.4":
   version: 5.27.2
   resolution: "undici@npm:5.27.2"
@@ -13006,13 +12961,6 @@ __metadata:
   dependencies:
     iconv-lite: "npm:0.6.3"
   checksum: 10c0/91b90a49f312dc751496fd23a7e68981e62f33afe938b97281ad766235c4872fc4e66319f925c5e9001502b3040dd25a33b02a9c693b73a4cbbfdc4ad10c3e3e
-  languageName: node
-  linkType: hard
-
-"whatwg-mimetype@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "whatwg-mimetype@npm:3.0.0"
-  checksum: 10c0/323895a1cda29a5fb0b9ca82831d2c316309fede0365047c4c323073e3239067a304a09a1f4b123b9532641ab604203f33a1403b5ca6a62ef405bcd7a204080f
   languageName: node
   linkType: hard
 

@@ -165,6 +165,24 @@ describe('extractMockCalls', () => {
     ]);
   });
 
+  it('supports sb.mock(import("<xyz>"), { spy: true }) without extensions', () => {
+    const previewContent = `
+      sb.mock(import('./bar/baz.utils'), { spy: true });
+    `;
+
+    const result = extractMockCalls(previewContent);
+
+    // The path should be the import argument value, if extractMockCalls supports this pattern
+    expect(result).toEqual([
+      {
+        path: './bar/baz.utils',
+        absolutePath: '/abs/path/bar/baz.utils.ts',
+        redirectPath: null,
+        spy: true,
+      },
+    ]);
+  });
+
   describe('rewriteSbMockImportCalls', () => {
     it('rewrites sb.mock(import("<xyz>"), { spy: true }) to sb.mock("<xyz>", { spy: true })', () => {
       const code = `

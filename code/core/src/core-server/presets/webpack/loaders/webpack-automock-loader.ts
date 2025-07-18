@@ -3,6 +3,7 @@ import type { ParserOptions } from '@babel/parser';
 import type { LoaderContext } from 'webpack';
 
 import { getAutomockCode } from '../../../mocking-utils/automock';
+import { babelParser } from '../../../mocking-utils/extract';
 
 /** Defines the options that can be passed to the webpack-automock-loader. */
 interface AutomockLoaderOptions {
@@ -32,19 +33,8 @@ export default function webpackAutomockLoader(
   const options = this.getOptions();
   const isSpy = options.spy === 'true';
 
-  // Define the parsing function that `automockModule` will use.
-  // We use @babel/parser as it's a shared dependency and can handle modern syntax.
-  const parseFn = (code: string) => {
-    const parserOptions: ParserOptions = {
-      sourceType: 'module',
-      // Enable plugins to handle modern JavaScript features, including TSX.
-      plugins: ['typescript', 'jsx', 'classProperties', 'objectRestSpread'],
-    };
-    return parse(code, parserOptions).program;
-  };
-
   // Generate the mocked source code using the utility from @vitest/mocker.
-  const mocked = getAutomockCode(source, isSpy, parseFn as any);
+  const mocked = getAutomockCode(source, isSpy, babelParser as any);
 
   // Return the transformed code to Webpack for further processing.
   return mocked.toString();

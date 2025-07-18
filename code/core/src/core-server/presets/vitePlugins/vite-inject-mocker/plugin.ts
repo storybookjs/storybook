@@ -34,7 +34,7 @@ export const viteInjectMockerRuntime = (options: {
     config() {
       return {
         optimizeDeps: {
-          include: ['@vitest/mocker', '@vitest/mocker/browser', '@vitest/spy'],
+          include: ['@vitest/mocker', '@vitest/mocker/browser'],
         },
         resolve: {
           // Aliasing necessary for package managers like pnpm, since resolving modules from a virtual module
@@ -43,7 +43,6 @@ export const viteInjectMockerRuntime = (options: {
           alias: {
             '@vitest/mocker/browser': require.resolve('@vitest/mocker/browser'),
             '@vitest/mocker': require.resolve('@vitest/mocker'),
-            '@vitest/spy': require.resolve('@vitest/spy'),
           },
         },
       };

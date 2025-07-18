@@ -106,7 +106,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a0e7fd8a655c69780bc28b9749c2699e45beae70",
+  "gitHead": "a0e7fd8a655c69780bc28a9749c2699e45beae70",
   "storybook": {
     "displayName": "Docs",
     "icon": "https://user-images.githubusercontent.com/263385/101991672-48355c80-3c7c-11eb-82d9-95fa12438f64.png",

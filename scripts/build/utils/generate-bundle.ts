@@ -196,10 +196,16 @@ export async function generateBundle({
           external,
           entry: entries.node.map(({ entryPoint }) => entryPoint),
           outDir: 'dist',
+          platform: 'node',
           target: NODE_TARGET,
           outputOptions: {
             legalComments: 'none',
             sourcemap: false,
+          },
+          minify: {
+            compress: isProduction,
+            mangle: false,
+            removeWhitespace: false,
           },
           treeshake: true,
           shims: true,
@@ -210,10 +216,17 @@ export async function generateBundle({
       ? tsdown.build({
           external,
           clean: false,
+          platform: 'neutral',
           outputOptions: {
             legalComments: 'none',
             sourcemap: false,
           },
+          minify: {
+            compress: isProduction,
+            mangle: false,
+            removeWhitespace: false,
+          },
+
           treeshake: true,
           entry: entries.browser.map(({ entryPoint }) => entryPoint),
           outDir: 'dist',

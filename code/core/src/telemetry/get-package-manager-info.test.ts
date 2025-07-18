@@ -139,7 +139,7 @@ describe('getPackageManagerInfo', () => {
       detect.mockResolvedValue({
         name: 'npm',
         version: '9.8.0',
-        agent: 'npm@9.8.0',
+        agent: 'npm',
       });
     });
 
@@ -149,7 +149,7 @@ describe('getPackageManagerInfo', () => {
       expect(result).toEqual({
         type: 'npm',
         version: '9.8.0',
-        agent: 'npm@9.8.0',
+        agent: 'npm',
         nodeLinker: 'node_modules',
       });
       expect(execaCommand).not.toHaveBeenCalled();

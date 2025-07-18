@@ -7,6 +7,7 @@ import * as esbuild from 'esbuild';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
+import * as tsdown from 'tsdown';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info';
 import {
@@ -16,6 +17,7 @@ import {
 } from '../../../code/core/src/shared/constants/environments-support';
 import { resolvePackageDir } from '../../../code/core/src/shared/utils/module';
 import { type BuildEntries, type EsbuildContextOptions, getExternal } from './entry-utils';
+import { generateTypesMapperFiles } from './generate-type-mappers';
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
@@ -54,6 +56,8 @@ export async function generateBundle({
       ignoreAnnotations: true,
       splitting: true,
       metafile: true,
+      write: false,
+      chunkNames: '_node-chunks/[name]-[hash]',
       minifyIdentifiers: true,
       minifySyntax: isProduction,
       minifyWhitespace: false,
@@ -170,16 +174,67 @@ export async function generateBundle({
     entries.runtime &&
       defineESBuildContext('runtime', {
         ...runtimeOptions,
+        write: true,
         entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
       }),
     entries.globalizedRuntime &&
       defineESBuildContext('globalized-runtime', {
         ...runtimeOptions,
+        write: true,
         entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
         plugins: [globalExternals(globalsModuleInfoMap)],
       }),
   ].filter(Boolean);
   const compile = await Promise.all(contexts.map(([, context]) => context));
+
+  await generateTypesMapperFiles(DIR_CWD, entry);
+
+  await Promise.all([
+    entries.node
+      ? tsdown.build({
+          clean: false,
+          external,
+          entry: entries.node.map(({ entryPoint }) => entryPoint),
+          outDir: 'dist',
+          platform: 'node',
+          target: NODE_TARGET,
+          outputOptions: {
+            legalComments: 'none',
+            sourcemap: false,
+          },
+          minify: {
+            compress: isProduction,
+            mangle: false,
+            removeWhitespace: false,
+          },
+          treeshake: true,
+          shims: true,
+          dts: isProduction,
+        })
+      : Promise.resolve(),
+    entries.browser
+      ? tsdown.build({
+          external,
+          clean: false,
+          platform: 'neutral',
+          outputOptions: {
+            legalComments: 'none',
+            sourcemap: false,
+          },
+          minify: {
+            compress: isProduction,
+            mangle: false,
+            removeWhitespace: false,
+          },
+
+          treeshake: true,
+          entry: entries.browser.map(({ entryPoint }) => entryPoint),
+          outDir: 'dist',
+          target: BROWSER_TARGETS,
+          dts: isProduction,
+        })
+      : Promise.resolve(),
+  ]);
 
   if (isWatch) {
     await Promise.all(

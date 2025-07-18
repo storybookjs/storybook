@@ -30,7 +30,8 @@ export type EventType =
   | 'addon-test'
   | 'test-run'
   | 'addon-onboarding'
-  | 'onboarding-survey';
+  | 'onboarding-survey'
+  | 'mocking';
 
 export interface Dependency {
   version: string | undefined;

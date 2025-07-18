@@ -7,6 +7,7 @@ import * as esbuild from 'esbuild';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
+import * as tsdown from 'tsdown';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info';
 import {
@@ -54,6 +55,8 @@ export async function generateBundle({
       ignoreAnnotations: true,
       splitting: true,
       metafile: true,
+      write: false,
+      chunkNames: '_node-chunks/[name]-[hash]',
       minifyIdentifiers: true,
       minifySyntax: isProduction,
       minifyWhitespace: false,
@@ -170,16 +173,41 @@ export async function generateBundle({
     entries.runtime &&
       defineESBuildContext('runtime', {
         ...runtimeOptions,
+        write: true,
         entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
       }),
     entries.globalizedRuntime &&
       defineESBuildContext('globalized-runtime', {
         ...runtimeOptions,
+        write: true,
         entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
         plugins: [globalExternals(globalsModuleInfoMap)],
       }),
   ].filter(Boolean);
   const compile = await Promise.all(contexts.map(([, context]) => context));
+
+  await Promise.all([
+    entries.node
+      ? tsdown.build({
+          clean: false,
+          external,
+          entry: entries.node.map(({ entryPoint }) => entryPoint),
+          outDir: 'dist',
+          target: NODE_TARGET,
+          dts: true,
+        })
+      : Promise.resolve(),
+    entries.browser
+      ? tsdown.build({
+          external,
+          clean: false,
+          entry: entries.browser.map(({ entryPoint }) => entryPoint),
+          outDir: 'dist',
+          target: BROWSER_TARGETS,
+          dts: true,
+        })
+      : Promise.resolve(),
+  ]);
 
   if (isWatch) {
     await Promise.all(

@@ -59,6 +59,7 @@ export type StorybookMetadata = {
     type: DetectResult['name'];
     version: DetectResult['version'];
     agent: DetectResult['agent'];
+    nodeLinker: 'node_modules' | 'pnp' | 'pnpm' | 'isolated' | 'hoisted';
   };
   typescriptOptions?: Partial<TypescriptOptions>;
   addons?: Record<string, StorybookAddon>;

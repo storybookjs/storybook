@@ -1,3 +1,9 @@
+## 9.0.17
+
+- Addon Vitest: Fix support for plain `stories.tsx` files - [#32041](https://github.com/storybookjs/storybook/pull/32041), thanks @ghengeveld!
+- Onboarding: Intent survey - [#31944](https://github.com/storybookjs/storybook/pull/31944), thanks @ghengeveld!
+- UI: Fix text color for failing stories in sidebar - [#32042](https://github.com/storybookjs/storybook/pull/32042), thanks @ghengeveld!
+
 ## 9.0.16
 
 - Automigration: Fail with non-zero exit code on migration failure - [#31923](https://github.com/storybookjs/storybook/pull/31923), thanks @mrginglymus!

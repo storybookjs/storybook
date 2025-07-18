@@ -1,12 +1,15 @@
+import { createRequire } from 'node:module';
+
+import StorybookNormalizeAngularEntryPlugin from './plugins/storybook-normalize-angular-entry-plugin';
+import { filterOutStylingRules } from './utils/filter-out-styling-rules';
+
+const require = createRequire(import.meta.url);
+
 // Private angular devkit stuff
 const {
   generateI18nBrowserWebpackConfigFromContext,
 } = require('@angular-devkit/build-angular/src/utils/webpack-browser-config');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
-const { filterOutStylingRules } = require('./utils/filter-out-styling-rules');
-const {
-  default: StorybookNormalizeAngularEntryPlugin,
-} = require('./plugins/storybook-normalize-angular-entry-plugin');
 
 const {
   getCommonConfig,
@@ -23,7 +26,7 @@ const {
  * @param {any} baseConfig Previous webpack config from storybook
  * @param {any} options { builderOptions, builderContext }
  */
-exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }) => {
+export const getWebpackConfig = async (baseConfig, { builderOptions, builderContext }) => {
   /** Get angular-cli Webpack config */
 
   /**

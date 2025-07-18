@@ -1,20 +1,18 @@
 import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
 
 import type { DocsOptions, Options, Ref, TagsOptions } from 'storybook/internal/types';
 
 import { render } from 'ejs';
+import { join } from 'pathe';
 
-export const getTemplatePath = async (template: string) => {
-  return join(
-    dirname(require.resolve('storybook/internal/package.json')),
-    'assets/server',
-    template
-  );
+import { resolvePackageDir } from '../../shared/utils/module';
+
+export const getTemplatePath = (template: string) => {
+  return join(resolvePackageDir('storybook'), 'assets/server', template);
 };
 
 export const readTemplate = async (template: string) => {
-  const path = await getTemplatePath(template);
+  const path = getTemplatePath(template);
 
   return readFile(path, { encoding: 'utf8' });
 };

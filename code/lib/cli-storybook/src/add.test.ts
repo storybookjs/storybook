@@ -31,10 +31,10 @@ const MockedPostInstall = vi.hoisted(() => {
     postinstallAddon: vi.fn(),
   };
 });
-const MockWrapRequireUtils = vi.hoisted(() => {
+const MockWrapGetAbsolutePathUtils = vi.hoisted(() => {
   return {
-    getRequireWrapperName: vi.fn(),
-    wrapValueWithRequireWrapper: vi.fn(),
+    getAbsolutePathWrapperName: vi.fn(),
+    wrapValueWithGetAbsolutePathWrapper: vi.fn(),
   };
 });
 const MockedConsole = {
@@ -66,8 +66,8 @@ vi.mock('storybook/internal/csf-tools', () => {
 vi.mock('./postinstallAddon', () => {
   return MockedPostInstall;
 });
-vi.mock('./automigrate/fixes/wrap-require-utils', () => {
-  return MockWrapRequireUtils;
+vi.mock('./automigrate/fixes/wrap-getAbsolutePath-utils', () => {
+  return MockWrapGetAbsolutePathUtils;
 });
 vi.mock('./automigrate/helpers/mainConfigFile', () => {
   return MockedMainConfigFileHelper;
@@ -148,29 +148,29 @@ describe('add (extra)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
-  test('should not add a "wrap require" to the addon when not needed', async () => {
+  test('should not add a "wrap getAbsolutePath" to the addon when not needed', async () => {
     MockedConfig.getFieldNode.mockReturnValue({});
-    MockWrapRequireUtils.getRequireWrapperName.mockReturnValue(null);
+    MockWrapGetAbsolutePathUtils.getAbsolutePathWrapperName.mockReturnValue(null);
     await add(
       '@storybook/addon-docs',
       { packageManager: 'npm', skipPostinstall: true },
       MockedConsole
     );
 
-    expect(MockWrapRequireUtils.wrapValueWithRequireWrapper).not.toHaveBeenCalled();
+    expect(MockWrapGetAbsolutePathUtils.wrapValueWithGetAbsolutePathWrapper).not.toHaveBeenCalled();
     expect(MockedConfig.appendValueToArray).toHaveBeenCalled();
     expect(MockedConfig.appendNodeToArray).not.toHaveBeenCalled();
   });
-  test('should add a "wrap require" to the addon when applicable', async () => {
+  test('should add a "wrap getAbsolutePath" to the addon when applicable', async () => {
     MockedConfig.getFieldNode.mockReturnValue({});
-    MockWrapRequireUtils.getRequireWrapperName.mockReturnValue('require');
+    MockWrapGetAbsolutePathUtils.getAbsolutePathWrapperName.mockReturnValue('getAbsolutePath');
     await add(
       '@storybook/addon-docs',
       { packageManager: 'npm', skipPostinstall: true },
       MockedConsole
     );
 
-    expect(MockWrapRequireUtils.wrapValueWithRequireWrapper).toHaveBeenCalled();
+    expect(MockWrapGetAbsolutePathUtils.wrapValueWithGetAbsolutePathWrapper).toHaveBeenCalled();
     expect(MockedConfig.appendValueToArray).not.toHaveBeenCalled();
     expect(MockedConfig.appendNodeToArray).toHaveBeenCalled();
   });

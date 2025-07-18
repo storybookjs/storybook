@@ -12,6 +12,13 @@ import { csfIndexer } from '../presets/common-preset';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
 
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: './favicon.svg',
+  };
+});
+
 vi.mock('storybook/internal/csf', async (importOriginal) => {
   const csf = await importOriginal<typeof import('storybook/internal/csf')>();
   return {

@@ -1,5 +1,6 @@
 // noinspection JSUnusedGlobalSymbols
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 
 import { NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import type { Middleware, Options } from 'storybook/internal/types';
@@ -17,9 +18,12 @@ export * from './types';
 
 function iframeHandler(options: Options, server: ViteDevServer): Middleware {
   return async (req, res) => {
-    const indexHtml = await readFile(require.resolve('@storybook/builder-vite/input/iframe.html'), {
-      encoding: 'utf8',
-    });
+    const indexHtml = await readFile(
+      fileURLToPath(import.meta.resolve('@storybook/builder-vite/input/iframe.html')),
+      {
+        encoding: 'utf8',
+      }
+    );
     const transformed = await server.transformIndexHtml('/iframe.html', indexHtml);
     res.setHeader('Content-Type', 'text/html');
     res.statusCode = 200;

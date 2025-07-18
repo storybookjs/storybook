@@ -6,7 +6,7 @@
   "scripts": {
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "build-package": "jiti ./build-package.ts",
-    "check": "jiti ./prepare/check-scripts.ts",
+    "check": "jiti ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
     "docs:prettier:check": "cd ../docs && prettier --check ./_snippets || echo 'Please run \"docs:prettier:write\" in the \"scripts\" directory to fix the issues'",
     "docs:prettier:write": "cd ../docs && prettier --write ./_snippets",
@@ -133,7 +133,7 @@
     "glob": "^10.4.5",
     "http-server": "^14.1.1",
     "husky": "^4.3.7",
-    "jiti": "^1.21.7",
+    "jiti": "^2.4.2",
     "json5": "^2.2.3",
     "junit-xml": "^1.2.0",
     "knip": "^5.51.0",
@@ -174,7 +174,6 @@
     "tinyexec": "^0.3.0",
     "trash": "^7.2.0",
     "ts-dedent": "^2.2.0",
-    "tsup": "^6.7.0",
     "type-fest": "~2.19",
     "typescript": "^5.8.3",
     "uuid": "^9.0.1",
@@ -189,8 +188,5 @@
     "verdaccio": "^5.31.1",
     "verdaccio-auth-memory": "^10.2.2"
   },
-  "packageManager": "yarn@4.9.1",
-  "engines": {
-    "node": ">=22.0.0"
-  }
+  "packageManager": "yarn@4.9.1"
 }

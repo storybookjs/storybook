@@ -45,7 +45,7 @@ export const getProjectRoot = () => {
   }
 
   try {
-    const splitDirname = __dirname.split('node_modules');
+    const splitDirname = import.meta.dirname.split('node_modules');
     const isSplitDirnameReachable = !relative(splitDirname[0], process.cwd()).startsWith('..');
     result =
       result ||

@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { ListUnorderedIcon } from '@storybook/icons';
+import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
@@ -230,8 +230,11 @@ export const Interaction = ({
               hasChrome={false}
               tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}
             >
-              <StyledIconButton onClick={toggleCollapsed}>
-                <ListUnorderedIcon />
+              <StyledIconButton
+                onClick={toggleCollapsed}
+                aria-label={isCollapsed ? 'Expand interaction' : 'Collapse interaction'}
+              >
+                {isCollapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
               </StyledIconButton>
             </WithTooltip>
           )}

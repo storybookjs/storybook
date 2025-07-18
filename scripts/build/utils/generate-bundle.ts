@@ -17,6 +17,7 @@ import {
 } from '../../../code/core/src/shared/constants/environments-support';
 import { resolvePackageDir } from '../../../code/core/src/shared/utils/module';
 import { type BuildEntries, type EsbuildContextOptions, getExternal } from './entry-utils';
+import { generateTypesMapperFiles } from './generate-type-mappers';
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
@@ -186,6 +187,8 @@ export async function generateBundle({
   ].filter(Boolean);
   const compile = await Promise.all(contexts.map(([, context]) => context));
 
+  await generateTypesMapperFiles(DIR_CWD, entry);
+
   await Promise.all([
     entries.node
       ? tsdown.build({
@@ -194,7 +197,7 @@ export async function generateBundle({
           entry: entries.node.map(({ entryPoint }) => entryPoint),
           outDir: 'dist',
           target: NODE_TARGET,
-          dts: true,
+          dts: isProduction,
         })
       : Promise.resolve(),
     entries.browser
@@ -204,7 +207,7 @@ export async function generateBundle({
           entry: entries.browser.map(({ entryPoint }) => entryPoint),
           outDir: 'dist',
           target: BROWSER_TARGETS,
-          dts: true,
+          dts: isProduction,
         })
       : Promise.resolve(),
   ]);

@@ -228,6 +228,8 @@ command('automigrate [fixId]')
   )
   .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
+    // FIXME: I have no idea what I'm doing.
+    prompt.setPromptLibrary('clack');
     await doAutomigrate({ fixId, ...options }).catch(handleCommandFailure);
   });
 

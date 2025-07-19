@@ -25,15 +25,10 @@ export const resolveNextConfig = async ({
 }: {
   nextConfigPath?: string;
 }): Promise<NextConfig> => {
-  // const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
   let dir: string;
   if (nextConfigPath) {
     const absolutePath = require('path').resolve(nextConfigPath);
     dir = dirname(absolutePath);
-    console.log('🔧 resolveNextConfig - nextConfigPath:', nextConfigPath);
-    console.log('🔧 resolveNextConfig - absoluteConfigPath:', absolutePath);
-    console.log('🔧 resolveNextConfig - dir:', dir);
-    console.log('🔧 resolveNextConfig - config exists:', require('fs').existsSync(absolutePath));
   } else {
     dir = getProjectRoot();
   }

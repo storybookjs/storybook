@@ -1,5 +1,7 @@
 import { dirname, resolve as resolvePath } from 'node:path';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import type { NextConfig } from 'next';
 import semver from 'semver';
 import type { RuleSetRule, Configuration as WebpackConfig } from 'webpack';
@@ -10,29 +12,22 @@ import { getNextjsVersion } from '../utils';
 export const configureImages = (
   baseConfig: WebpackConfig,
   nextConfig: NextConfig,
-  nextConfigPath: string
+  nextConfigPath?: string
 ): void => {
   configureStaticImageImport(baseConfig, nextConfig);
-  // configureImageDefaults(baseConfig);
   let customLoaderPath: string | null = null;
 
   try {
     const customLoaderConfig = getCustomImageLoaderConfig(nextConfig);
-    console.log('🔧 customLoaderConfig:', customLoaderConfig);
     if (customLoaderConfig) {
       const configDir = nextConfigPath ? dirname(nextConfigPath) : process.cwd();
-      console.log('🔧 configDir:', configDir);
-      console.log('🔧 trying to resolve:', customLoaderConfig.loaderFile);
 
-      // Resolve the path to the custom loader file
       customLoaderPath = require.resolve(customLoaderConfig.loaderFile, { paths: [configDir] });
-
-      console.log('🔧 Found custom image loader at:', customLoaderPath);
-    } else {
-      console.log('🔧 No custom loader config found');
+      logger.info(`=> Using custom image loader: ${customLoaderConfig.loaderFile}`);
     }
   } catch (error) {
-    console.error('🔧 Failed to resolve custom image loader:', error);
+    logger.warn(`=> Failed to resolve custom image loader: ${error.message}`);
+    logger.warn('=> Falling back to default image loader');
   }
 
   configureImageDefaults(baseConfig, customLoaderPath);
@@ -40,17 +35,21 @@ export const configureImages = (
 
 const fallbackFilename = 'static/media/[path][name][ext]';
 
+import { logger } from 'storybook/internal/node-logger';
+
 const configureImageDefaults = (
   baseConfig: WebpackConfig,
   customLoaderPath: string | null
 ): void => {
   const version = getNextjsVersion();
   const resolve = baseConfig.resolve ?? {};
+
   resolve.alias = {
     ...resolve.alias,
     'sb-original/next/image': require.resolve('next/image'),
     'next/image': resolvePath(__dirname, './images/next-image'),
   };
+
   if (customLoaderPath) {
     try {
       // Load the custom loader function
@@ -66,12 +65,16 @@ const configureImageDefaults = (
             __STORYBOOK_CUSTOM_LOADER__: `(${customLoaderFunction.toString()})`,
           })
         );
-        console.log('🔧 Injected custom loader via DefinePlugin');
+        logger.info('=> Custom image loader integrated successfully');
+      } else {
+        logger.warn('=> Custom loader file does not export a function, using default loader');
       }
     } catch (error) {
-      console.error('🔧 Failed to load custom loader for DefinePlugin:', error);
+      logger.warn(`=> Failed to load custom image loader: ${error.message}`);
+      logger.warn('=> Using default image loader instead');
     }
   }
+
   if (semver.satisfies(version, '>=13.0.0')) {
     resolve.alias = {
       ...resolve.alias,

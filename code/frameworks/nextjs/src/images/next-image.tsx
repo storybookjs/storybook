@@ -11,7 +11,6 @@ import * as NextImageNamespace from 'sb-original/next/image';
 import { type ImageContext as ImageContextType } from '../image-context';
 import { defaultLoader } from './next-image-default-loader';
 
-// This will be defined by webpack's DefinePlugin if a custom loader exists
 declare const __STORYBOOK_CUSTOM_LOADER__:
   | ((props: _NextImage.ImageLoaderProps) => string)
   | undefined;
@@ -28,14 +27,12 @@ const MockedNextImage = React.forwardRef<HTMLImageElement, _NextImage.ImageProps
 
     if (!finalLoader && typeof __STORYBOOK_CUSTOM_LOADER__ !== 'undefined') {
       finalLoader = __STORYBOOK_CUSTOM_LOADER__;
-      console.log('🔥 Using webpack-defined custom image loader');
     }
 
     if (!finalLoader) {
       finalLoader = defaultLoader;
     }
 
-    console.log('🔥 Final loader being used:', typeof finalLoader);
     return <OriginalNextImage ref={ref} {...imageParameters} {...props} loader={finalLoader} />;
   }
 );

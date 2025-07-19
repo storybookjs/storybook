@@ -99,6 +99,7 @@ export function detectFrameworkPreset(
   packageJson = {} as PackageJsonWithMaybeDeps
 ): ProjectType | null {
   const result = [...supportedTemplates, unsupportedTemplate].find((framework) => {
+    logger.debug(`- Trying framework preset: ${framework.preset}`);
     return getFrameworkPreset(packageJson, framework) !== null;
   });
 
@@ -227,16 +228,20 @@ export async function detect(
   options: { force?: boolean; html?: boolean } = {}
 ) {
   try {
+    process.stdout.write('\nChecking for NX project\n');
     if (await isNxProject()) {
       return ProjectType.NX;
     }
 
+    process.stdout.write('\nChecking for HTML project\n');
     if (options.html) {
       return ProjectType.HTML;
     }
 
     const { packageJson } = packageManager.primaryPackageJson;
-
+    process.stdout.write(
+      `\nChecking package.json for framework preset:\n${JSON.stringify(packageJson, null, 2)}\n`
+    );
     return detectFrameworkPreset(packageJson);
   } catch (e) {
     return ProjectType.UNDETECTED;

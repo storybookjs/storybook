@@ -8,6 +8,8 @@ import loadConfig from 'next/dist/server/config';
 import { DefinePlugin } from 'webpack';
 import type { Configuration as WebpackConfig } from 'webpack';
 
+import type { ICustomImageLoaderConfig } from './types';
+
 export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfig): void => {
   baseConfig.plugins?.push(
     new DefinePlugin({
@@ -23,7 +25,18 @@ export const resolveNextConfig = async ({
 }: {
   nextConfigPath?: string;
 }): Promise<NextConfig> => {
-  const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
+  // const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
+  let dir: string;
+  if (nextConfigPath) {
+    const absolutePath = require('path').resolve(nextConfigPath);
+    dir = dirname(absolutePath);
+    console.log('🔧 resolveNextConfig - nextConfigPath:', nextConfigPath);
+    console.log('🔧 resolveNextConfig - absoluteConfigPath:', absolutePath);
+    console.log('🔧 resolveNextConfig - dir:', dir);
+    console.log('🔧 resolveNextConfig - config exists:', require('fs').existsSync(absolutePath));
+  } else {
+    dir = getProjectRoot();
+  }
   return loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
 };
 
@@ -48,6 +61,18 @@ export const addScopedAlias = (baseConfig: WebpackConfig, name: string, alias?: 
   const scopedAlias = scopedResolve(`${alias ?? name}`);
 
   setAlias(baseConfig, name, scopedAlias);
+};
+
+export const getCustomImageLoaderConfig = (
+  nextConfig: NextConfig
+): ICustomImageLoaderConfig | null => {
+  if (nextConfig.images?.loader === 'custom' && nextConfig.images.loaderFile) {
+    return {
+      loader: 'custom',
+      loaderFile: nextConfig.images.loaderFile,
+    };
+  }
+  return null;
 };
 
 /**

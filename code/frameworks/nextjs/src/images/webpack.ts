@@ -26,7 +26,8 @@ export const configureImages = (
       logger.info(`=> Using custom image loader: ${customLoaderConfig.loaderFile}`);
     }
   } catch (error) {
-    logger.warn(`=> Failed to resolve custom image loader: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.warn(`=> Failed to resolve custom image loader: ${errorMessage}`);
     logger.warn('=> Falling back to default image loader');
   }
 
@@ -34,8 +35,6 @@ export const configureImages = (
 };
 
 const fallbackFilename = 'static/media/[path][name][ext]';
-
-import { logger } from 'storybook/internal/node-logger';
 
 const configureImageDefaults = (
   baseConfig: WebpackConfig,
@@ -70,7 +69,8 @@ const configureImageDefaults = (
         logger.warn('=> Custom loader file does not export a function, using default loader');
       }
     } catch (error) {
-      logger.warn(`=> Failed to load custom image loader: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.warn(`=> Failed to load custom image loader: ${errorMessage}`);
       logger.warn('=> Using default image loader instead');
     }
   }

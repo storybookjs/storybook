@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
+import { ChevronDownIcon, ChevronUpIcon, LocationIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
@@ -100,7 +100,6 @@ const RowActions = styled.div({
 });
 
 export const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
-  color: theme.textMutedColor,
   margin: '0 3px',
 }));
 
@@ -186,6 +185,8 @@ export const Interaction = ({
   isCollapsed,
   toggleCollapsed,
   pausedAt,
+  highlightedElements,
+  onHighlightElements,
 }: {
   call: Call;
   callsById: Map<Call['id'], Call>;
@@ -196,6 +197,8 @@ export const Interaction = ({
   isCollapsed: boolean;
   toggleCollapsed: () => void;
   pausedAt?: Call['id'];
+  highlightedElements: string[];
+  onHighlightElements: (selectors: string[], highlight?: boolean) => void;
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors?.length;
@@ -207,6 +210,8 @@ export const Interaction = ({
   if (call.id === INTERNAL_RENDER_CALL_ID) {
     return null;
   }
+
+  const isHighlighted = call.selectors?.every((selector) => highlightedElements.includes(selector));
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>
@@ -225,9 +230,28 @@ export const Interaction = ({
           </MethodCallWrapper>
         </RowLabel>
         <RowActions>
+          {call.selectors?.length && (
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={
+                <Note
+                  note={call.selectors.length === 1 ? 'Highlight element' : 'Highlight elements'}
+                />
+              }
+            >
+              <StyledIconButton
+                active={isHighlighted}
+                onClick={() => onHighlightElements(call.selectors!, !isHighlighted)}
+              >
+                <LocationIcon />
+              </StyledIconButton>
+            </WithTooltip>
+          )}
           {(childCallIds?.length ?? 0) > 0 && (
             <WithTooltip
               hasChrome={false}
+              trigger="hover"
               tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}
             >
               <StyledIconButton

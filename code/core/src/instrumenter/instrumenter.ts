@@ -9,6 +9,7 @@ import type { StoryId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
+import { finder } from '@medv/finder';
 import { processError } from '@vitest/utils/error';
 
 import { EVENTS } from './EVENTS';
@@ -79,6 +80,19 @@ const getRetainedState = (state: State, isDebugging = false) => {
     Array.from(state.callRefsByResult.entries()).filter(([, ref]) => ref.retain)
   );
   return { cursor: calls.length, calls, callRefsByResult };
+};
+
+const getSelectors = (result: unknown): string[] | undefined => {
+  if (result instanceof Element) {
+    const selectors = [finder(result, { timeoutMs: 1 })].filter(Boolean);
+    return selectors.length ? selectors : undefined;
+  }
+  if (Array.isArray(result)) {
+    const elements = result.filter((item) => item instanceof Element);
+    const selectors = elements.map((item) => finder(item, { timeoutMs: 1 })).filter(Boolean);
+    return selectors.length ? selectors : undefined;
+  }
+  return undefined;
 };
 
 /** This class is not supposed to be used directly. Use the `instrument` function below instead. */
@@ -625,12 +639,17 @@ export class Instrumenter {
 
       this.update({
         ...info,
+        selectors: getSelectors(result),
         status: result instanceof Promise ? CallStates.ACTIVE : CallStates.DONE,
       });
 
       if (result instanceof Promise) {
         return result.then((value) => {
-          this.update({ ...info, status: CallStates.DONE });
+          this.update({
+            ...info,
+            selectors: getSelectors(value),
+            status: CallStates.DONE,
+          });
           return value;
         }, handleException);
       }

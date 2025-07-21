@@ -378,7 +378,7 @@ const uploadToGithub = async ({
 
   const metafilesArgsByPackage = await getMetafileArgsByPackage();
 
-  const response = await fetch('http://localhost:3000/package-bench', {
+  const response = await fetch('https://storybook-benchmark-bot.netlify.app/package-bench', {
     method: 'POST',
     body: JSON.stringify({
       owner: 'storybookjs',

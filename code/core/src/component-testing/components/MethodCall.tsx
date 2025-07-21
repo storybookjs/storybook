@@ -435,7 +435,7 @@ export const MethodCall = ({
   }
 
   if (call.method === 'step' && call.path?.length === 0) {
-    return <StepNode label={call.args[0]} />;
+    return <StepNode label={call.args[0] as string} />;
   }
 
   const path = call.path?.flatMap((elem, index) => {

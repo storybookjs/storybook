@@ -3592,13 +3592,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@medv/finder@npm:^4.0.2":
-  version: 4.0.2
-  resolution: "@medv/finder@npm:4.0.2"
-  checksum: 10c0/f9b7fec9ad7077a47901a9c4f4fc585b092e8fe8e91f05001c90d1da150cc041822c008fc12726f0458211d5663c82b67243e6e03ca55f3096b5b4feb3ce13e3
-  languageName: node
-  linkType: hard
-
 "@msgpackr-extract/msgpackr-extract-darwin-arm64@npm:3.0.3":
   version: 3.0.3
   resolution: "@msgpackr-extract/msgpackr-extract-darwin-arm64@npm:3.0.3"
@@ -24697,7 +24690,6 @@ __metadata:
     "@emotion/react": "npm:^11.14.0"
     "@emotion/styled": "npm:^11.14.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
-    "@medv/finder": "npm:^4.0.2"
     "@ndelangen/get-tarball": "npm:^3.0.7"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"

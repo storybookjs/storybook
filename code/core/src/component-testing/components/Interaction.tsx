@@ -185,8 +185,9 @@ export const Interaction = ({
   isCollapsed,
   toggleCollapsed,
   pausedAt,
-  highlightedElements,
   onHighlightElements,
+  onSelectElements,
+  selectedElements,
 }: {
   call: Call;
   callsById: Map<Call['id'], Call>;
@@ -197,8 +198,9 @@ export const Interaction = ({
   isCollapsed: boolean;
   toggleCollapsed: () => void;
   pausedAt?: Call['id'];
-  highlightedElements: string[];
-  onHighlightElements: (selectors: string[], highlight?: boolean) => void;
+  onHighlightElements: (callId: Call['id'], highlight?: boolean) => void;
+  onSelectElements: (callId: Call['id'], select?: boolean) => void;
+  selectedElements: Call['id'][];
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors?.length;
@@ -211,7 +213,10 @@ export const Interaction = ({
     return null;
   }
 
-  const isHighlighted = call.selectors?.every((selector) => highlightedElements.includes(selector));
+  const getElementArgs = (call: Call) =>
+    call.args.filter((arg) => arg && Object.hasOwn(arg, '__element__'));
+  const elementCount = getElementArgs(call).length;
+  const isSelected = selectedElements?.includes(call.id);
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>
@@ -230,19 +235,18 @@ export const Interaction = ({
           </MethodCallWrapper>
         </RowLabel>
         <RowActions>
-          {call.selectors?.length && (
+          {elementCount > 0 && (
             <WithTooltip
               hasChrome={false}
               trigger="hover"
-              tooltip={
-                <Note
-                  note={call.selectors.length === 1 ? 'Highlight element' : 'Highlight elements'}
-                />
-              }
+              tooltip={<Note note={`Highlight target element${elementCount === 1 ? '' : 's'}`} />}
             >
               <StyledIconButton
-                active={isHighlighted}
-                onClick={() => onHighlightElements(call.selectors!, !isHighlighted)}
+                active={isSelected}
+                onMouseEnter={() => onHighlightElements(call.id, true)}
+                onMouseLeave={() => onHighlightElements(call.id, false)}
+                onClick={() => onSelectElements(call.id, !isSelected)}
+                disabled={call.status === CallStates.WAITING}
               >
                 <LocationIcon />
               </StyledIconButton>

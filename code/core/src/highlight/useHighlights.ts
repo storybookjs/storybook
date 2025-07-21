@@ -4,6 +4,7 @@
 import type { Channel } from 'storybook/internal/channels';
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
+import type { CallRef } from '../instrumenter';
 import {
   HIGHLIGHT,
   MAX_Z_INDEX,
@@ -24,6 +25,7 @@ import {
   mapBoxes,
   mapElements,
   normalizeOptions,
+  selectElements,
   showPopover,
   useStore,
 } from './utils';
@@ -42,7 +44,7 @@ export const useHighlights = (channel: Channel) => {
   const { document } = globalThis;
 
   const highlights = useStore<HighlightOptions[]>([]);
-  const elements = useStore<Map<HTMLElement, Highlight>>(new Map());
+  const elements = useStore<Map<Element, Highlight>>(new Map());
   const boxes = useStore<Box[]>([]);
 
   const clickCoords = useStore<{ x: number; y: number } | undefined>();
@@ -100,7 +102,9 @@ export const useHighlights = (channel: Channel) => {
 
   // Update highlight boxes for sticky elements when scrolling the window
   elements.subscribe((value) => {
-    const sticky = Array.from(value.keys()).filter(({ style }) => style.position === 'sticky');
+    const sticky = Array.from(value.keys()).filter(
+      (element) => getComputedStyle(element).position === 'sticky'
+    );
     const updateBoxes = () =>
       requestAnimationFrame(() => {
         boxes.set((current) =>
@@ -165,7 +169,7 @@ export const useHighlights = (channel: Channel) => {
     });
   });
 
-  const boxElementByTargetElement = new Map<HTMLElement, HTMLDivElement>(new Map());
+  const boxElementByTargetElement = new Map<Element, HTMLDivElement>(new Map());
 
   // Create an element for every highlight box
   boxes.subscribe((value) => {
@@ -561,7 +565,7 @@ export const useHighlights = (channel: Channel) => {
 
   let removeTimeout: NodeJS.Timeout;
   const scrollIntoView = (
-    targets: string | string[],
+    targets: string | string[] | CallRef[],
     options: { highlight?: boolean } & ScrollIntoViewOptions = {}
   ) => {
     const id = 'scrollIntoView-highlight';
@@ -572,7 +576,8 @@ export const useHighlights = (channel: Channel) => {
     if (!selectors.length) {
       return;
     }
-    const elements = selectors.flatMap((target) => Array.from(document.querySelectorAll(target)));
+    const root = document.getElementById('storybook-root');
+    const elements = selectors.flatMap((target) => selectElements(root, target));
     if (elements.length === 0) {
       console.warn(`No elements found for (${targets})`);
       return;

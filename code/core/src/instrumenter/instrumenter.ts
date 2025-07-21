@@ -9,7 +9,6 @@ import type { StoryId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { finder } from '@medv/finder';
 import { processError } from '@vitest/utils/error';
 
 import { EVENTS } from './EVENTS';
@@ -80,19 +79,6 @@ const getRetainedState = (state: State, isDebugging = false) => {
     Array.from(state.callRefsByResult.entries()).filter(([, ref]) => ref.retain)
   );
   return { cursor: calls.length, calls, callRefsByResult };
-};
-
-const getSelectors = (result: unknown): string[] | undefined => {
-  if (result instanceof Element) {
-    const selectors = [finder(result, { timeoutMs: 1 })].filter(Boolean);
-    return selectors.length ? selectors : undefined;
-  }
-  if (Array.isArray(result)) {
-    const elements = result.filter((item) => item instanceof Element);
-    const selectors = elements.map((item) => finder(item, { timeoutMs: 1 })).filter(Boolean);
-    return selectors.length ? selectors : undefined;
-  }
-  return undefined;
 };
 
 /** This class is not supposed to be used directly. Use the `instrument` function below instead. */
@@ -336,8 +322,8 @@ export class Instrumenter {
     const seen = new Set();
     return merged.reduceRight<LogItem[]>((acc, call) => {
       call.args.forEach((arg) => {
-        if (arg?.__callId__) {
-          seen.add(arg.__callId__);
+        if ((arg as CallRef)?.__callId__) {
+          seen.add((arg as CallRef).__callId__);
         }
       });
       call.path.forEach((node) => {
@@ -345,7 +331,7 @@ export class Instrumenter {
           seen.add((node as CallRef).__callId__);
         }
       });
-      if ((call.interceptable || call.exception) && !seen.has(call.id)) {
+      if (call.interceptable || call.exception) {
         acc.unshift({ callId: call.id, status: call.status, ancestors: call.ancestors });
         seen.add(call.id);
       }
@@ -473,63 +459,74 @@ export class Instrumenter {
   invoke(fn: Function, object: Record<string, unknown>, call: Call, options: Options) {
     const { callRefsByResult, renderPhase } = this.getState(call.storyId);
 
-    // TODO This function should not needed anymore, as the channel already serializes values with telejson
-    // Possibly we need to add HTMLElement support to telejson though
-    // Keeping this function here, as removing it means we need to refactor the deserializing that happens in core interactions
-    const maximumDepth = 25; // mimicks the max depth of telejson
-    const serializeValues = (value: any, depth: number, seen: unknown[]): any => {
+    const serializeValues = (value: unknown, depth: number, seen: unknown[]): unknown => {
+      if (value === null || !['object', 'function', 'symbol'].includes(typeof value)) {
+        return value;
+      }
       if (seen.includes(value)) {
         return '[Circular]';
       }
       seen = [...seen, value];
 
-      if (depth > maximumDepth) {
+      // mimicks the max depth of telejson
+      if (depth > 25) {
         return '...';
       }
-
-      if (callRefsByResult.has(value)) {
-        return callRefsByResult.get(value);
-      }
+      const callRef = callRefsByResult.get(value) || {};
       if (value instanceof Array) {
-        return value.map((it) => serializeValues(it, ++depth, seen));
+        const array = value.map((it) => serializeValues(it, ++depth, seen));
+        Object.assign(array, callRef);
+        return array;
       }
       if (value instanceof Date) {
-        return { __date__: { value: value.toISOString() } };
+        return { ...callRef, __date__: { value: value.toISOString() } };
       }
       if (value instanceof Error) {
         const { name, message, stack } = value;
-        return { __error__: { name, message, stack } };
+        return { ...callRef, __error__: { name, message, stack } };
       }
       if (value instanceof RegExp) {
         const { flags, source } = value;
-        return { __regexp__: { flags, source } };
+        return { ...callRef, __regexp__: { flags, source } };
       }
       if (value instanceof global.window?.HTMLElement) {
         const { prefix, localName, id, classList, innerText } = value;
         const classNames = Array.from(classList);
-        return { __element__: { prefix, localName, id, classNames, innerText } };
+        return { ...callRef, __element__: { prefix, localName, id, classNames, innerText } };
       }
       if (typeof value === 'function') {
         return {
-          __function__: { name: 'getMockName' in value ? value.getMockName() : value.name },
+          ...callRef,
+          __function__: {
+            name:
+              'getMockName' in value && typeof value.getMockName === 'function'
+                ? value.getMockName()
+                : value.name,
+          },
         };
       }
       if (typeof value === 'symbol') {
-        return { __symbol__: { description: value.description } };
+        return { ...callRef, __symbol__: { description: value.description } };
       }
       if (
         typeof value === 'object' &&
         value?.constructor?.name &&
         value?.constructor?.name !== 'Object'
       ) {
-        return { __class__: { name: value.constructor.name } };
+        return { ...callRef, __class__: { name: value.constructor.name } };
       }
-      if (Object.prototype.toString.call(value) === '[object Object]') {
-        return Object.fromEntries(
-          Object.entries(value).map(([key, val]) => [key, serializeValues(val, ++depth, seen)])
-        );
+      if (
+        typeof value === 'object' &&
+        Object.prototype.toString.call(value) === '[object Object]'
+      ) {
+        return {
+          ...callRef,
+          ...Object.fromEntries(
+            Object.entries(value).map(([key, val]) => [key, serializeValues(val, ++depth, seen)])
+          ),
+        };
       }
-      return value;
+      return callRefsByResult.has(value) ? callRef : value;
     };
 
     const info: Call = {
@@ -626,30 +623,17 @@ export class Instrumenter {
 
       const result = fn.apply(object, finalArgs);
 
-      // Track the result so we can trace later uses of it back to the originating call.
-      // Primitive results (undefined, null, boolean, string, number, BigInt) are ignored.
-      if (result && ['object', 'function', 'symbol'].includes(typeof result)) {
-        this.setState(call.storyId, (state) => ({
-          callRefsByResult: new Map([
-            ...Array.from(state.callRefsByResult.entries()),
-            [result, { __callId__: call.id, retain: call.retain }],
-          ]),
-        }));
-      }
-
+      this.trackResult(result, call);
       this.update({
         ...info,
-        selectors: getSelectors(result),
+        actualArgs,
         status: result instanceof Promise ? CallStates.ACTIVE : CallStates.DONE,
       });
 
       if (result instanceof Promise) {
         return result.then((value) => {
-          this.update({
-            ...info,
-            selectors: getSelectors(value),
-            status: CallStates.DONE,
-          });
+          this.trackResult(value, call, result);
+          this.update({ ...info, actualArgs, status: CallStates.DONE });
           return value;
         }, handleException);
       }
@@ -662,7 +646,8 @@ export class Instrumenter {
 
   // Sends the call info to the manager and synchronizes the log.
   update(call: Call) {
-    this.channel?.emit(EVENTS.CALL, call);
+    const { actualArgs, ...rest } = call;
+    this.channel?.emit(EVENTS.CALL, rest);
     this.setState(call.storyId, ({ calls }) => {
       // Omit earlier calls for the same ID, which may have been superseded by a later invocation.
       // This typically happens when calls are part of a callback which runs multiple times.
@@ -724,6 +709,20 @@ export class Instrumenter {
       clearTimeout(syncTimeout);
       return { syncTimeout: setTimeout(synchronize, 0) };
     });
+  }
+
+  // Tracks the result so we can trace later uses of it back to the originating call.
+  // Primitive results (undefined, null, boolean, string, number, BigInt) are ignored.
+  // If the result was awaited, we reference the original (tracked) promise.
+  trackResult<T = unknown>(result: T, call: Call, promise?: Promise<T>) {
+    if (result && ['object', 'function', 'symbol'].includes(typeof result)) {
+      this.setState(call.storyId, (state) => ({
+        callRefsByResult: new Map([
+          ...Array.from(state.callRefsByResult.entries()),
+          [result, { __callId__: call.id, retain: call.retain, promise }],
+        ]),
+      }));
+    }
   }
 }
 

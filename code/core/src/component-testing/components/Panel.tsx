@@ -117,8 +117,8 @@ const getInternalRenderLogItem = (status: CallStates): LogItem => ({
   ancestors: [],
 });
 
-export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>(
-  function PanelMemoized({ refId, storyId, storyUrl }) {
+export const Panel = memo<{ active: boolean; refId?: string; storyId: string; storyUrl: string }>(
+  function PanelMemoized({ refId, storyId, storyUrl, active }) {
     const { statusValue, testRunId } = experimental_useStatusStore((state) => {
       const storyStatus = refId ? undefined : state[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
       return {
@@ -312,34 +312,53 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       [scrollTarget]
     );
 
-    const [highlightedElements, setHighlightedElements] = useState<string[]>([]);
+    const [highlightedElements, setHighlightedElements] = useState<Call['id'][]>([]);
+    const [selectedElements, setSelectedElements] = useState<Call['id'][]>([]);
     const onHighlightElements = useCallback(
-      (selectors: string[], highlight = true) => {
-        setHighlightedElements(highlight ? selectors : []);
+      (callId: Call['id'], highlight = true) => {
+        setHighlightedElements(highlight ? [callId] : []);
       },
       [setHighlightedElements]
     );
+    const onSelectElements = useCallback(
+      (callId: Call['id'], select = true) => {
+        setSelectedElements(select ? [callId] : []);
+      },
+      [setSelectedElements]
+    );
 
     useEffect(() => {
-      const keyframeName = `kf-${Math.random().toString(36).substring(2, 15)}`;
-      emit(SCROLL_INTO_VIEW, highlightedElements, { highlight: false });
+      if (!active) {
+        return;
+      }
+
+      const selectedCallRefs = selectedElements.map((id) => ({ __callId__: id }));
+      const highlightedCallRefs = highlightedElements
+        .filter((id) => !selectedElements.includes(id))
+        .map((id) => ({ __callId__: id }));
+
+      emit(SCROLL_INTO_VIEW, selectedCallRefs, { highlight: false });
       emit(HIGHLIGHT, {
-        id: `${ADDON_ID}/highlight`,
-        selectors: highlightedElements,
+        id: `${ADDON_ID}/highlight/selected`,
+        selectors: selectedCallRefs,
         styles: {
-          outline: '2px solid #1EA7FD',
-          outlineOffset: '-1px',
-          animation: `${keyframeName} 1s linear forwards`,
+          outline: `2px solid color-mix(in srgb, #1EA7FD, transparent 30%)`,
+          backgroundColor: `transparent`,
         },
-        keyframes: `@keyframes ${keyframeName} {
-        0% { outline: 2px solid #1EA7FD00; }
-        33% { outline: 2px solid #1EA7FD; }
-        66% { outline: 2px solid #1EA7FD00; }
-        100% { outline: 2px solid #1EA7FD; }
-      }`,
       });
-      return () => emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/highlight`);
-    }, [emit, highlightedElements]);
+      emit(HIGHLIGHT, {
+        id: `${ADDON_ID}/highlight/highlighted`,
+        selectors: highlightedCallRefs,
+        styles: {
+          outline: `1px solid color-mix(in srgb, #1EA7FD, transparent 30%)`,
+          backgroundColor: `color-mix(in srgb, #1EA7FD, transparent 60%)`,
+        },
+      });
+      return () => {
+        emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/highlight/selected`);
+        emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/highlight/highlighted`);
+      };
+    }, [active, emit, highlightedElements, selectedElements]);
 
     const hasException =
       !!caughtException ||
@@ -406,8 +425,9 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           // @ts-expect-error TODO
           endRef={endRef}
           onScrollToEnd={scrollTarget && scrollToTarget}
-          highlightedElements={highlightedElements}
           onHighlightElements={onHighlightElements}
+          onSelectElements={onSelectElements}
+          selectedElements={selectedElements}
         />
       </Fragment>
     );

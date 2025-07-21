@@ -1,3 +1,4 @@
+import type { CallRef } from '../instrumenter';
 import type { IconName } from './icons';
 
 export interface HighlightTypes {
@@ -36,8 +37,8 @@ export interface HighlightMenuItem {
 export interface HighlightOptions {
   /** Unique identifier for the highlight, required if you want to remove the highlight later */
   id?: string;
-  /** HTML selectors of the elements */
-  selectors: string[];
+  /** CSS selectors or instrumenter call refs */
+  selectors: (string | CallRef)[];
   /** Priority of the highlight, higher takes precedence, defaults to 0 */
   priority?: number;
   /** CSS styles to apply to the highlight */
@@ -57,7 +58,7 @@ export interface ClickEventDetails {
   left: number;
   width: number;
   height: number;
-  selectors: string[];
+  selectors: (string | CallRef)[];
   element: {
     attributes: Record<string, string>;
     localName: string;
@@ -78,10 +79,13 @@ export interface LegacyHighlightOptions {
 
 export type RawHighlightOptions = HighlightOptions | LegacyHighlightOptions;
 
+export const isLegacyFormat = (options: RawHighlightOptions): options is LegacyHighlightOptions =>
+  'elements' in options && options.elements.every((element) => typeof element === 'string');
+
 export type Highlight = {
   id?: string;
   priority: number;
-  selectors: string[];
+  selectors: (string | CallRef)[];
   styles: Record<string, string>;
   hoverStyles?: Record<string, string>;
   focusStyles?: Record<string, string>;
@@ -89,7 +93,7 @@ export type Highlight = {
 };
 
 export type Box = {
-  element: HTMLElement;
+  element: Element;
   selectors: Highlight['selectors'];
   styles: Highlight['styles'];
   hoverStyles?: Highlight['hoverStyles'];

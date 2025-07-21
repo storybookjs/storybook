@@ -8,7 +8,7 @@ module.exports = {
     'plugin:prettier/recommended',
     'plugin:react-hooks/recommended',
     'plugin:react/recommended',
-    'plugin:jsx-a11y/recommended'
+    'plugin:jsx-a11y/recommended',
   ],
   env: {
     es6: true,
@@ -58,7 +58,18 @@ module.exports = {
     '@typescript-eslint/no-wrapper-object-types': 'warn',
     '@typescript-eslint/no-empty-object-type': 'warn',
     '@typescript-eslint/ban-ts-comment': 'error',
-    '@typescript-eslint/no-unused-vars': 'warn',
+    '@typescript-eslint/no-unused-vars': [
+      'warn',
+      {
+        args: 'all',
+        argsIgnorePattern: '^_',
+        caughtErrors: 'all',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      },
+    ],
     '@typescript-eslint/no-redeclare': 'off',
     '@typescript-eslint/no-unsafe-function-type': 'warn',
     '@typescript-eslint/consistent-type-imports': ['error', { disallowTypeAnnotations: false }],

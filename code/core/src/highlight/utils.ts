@@ -1,12 +1,14 @@
 /* eslint-env browser */
+import type { CallRef, State } from '../instrumenter';
 import { MIN_TOUCH_AREA_SIZE } from './constants';
 import { type IconName, iconPaths } from './icons';
-import type {
-  Box,
-  ClickEventDetails,
-  Highlight,
-  HighlightOptions,
-  RawHighlightOptions,
+import {
+  type Box,
+  type ClickEventDetails,
+  type Highlight,
+  type HighlightOptions,
+  type RawHighlightOptions,
+  isLegacyFormat,
 } from './types';
 
 const svgElements = 'svg,path,rect,circle,line,polyline,polygon,ellipse,text'.split(',');
@@ -67,9 +69,8 @@ export const createIcon = (name: IconName) =>
     )
   );
 
-export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
-  if ('elements' in options) {
-    // Legacy format
+export const normalizeOptions = (options: RawHighlightOptions): HighlightOptions => {
+  if (isLegacyFormat(options)) {
     const { elements, color, style } = options;
     return {
       id: undefined,
@@ -84,14 +85,9 @@ export const normalizeOptions = (options: RawHighlightOptions): Highlight => {
     };
   }
 
-  const { menu, ...rest } = options;
+  const { menu } = options;
   return {
-    id: undefined,
-    priority: 0,
-    styles: {
-      outline: '2px dashed #029cfd',
-    },
-    ...rest,
+    ...options,
     menu: Array.isArray(menu) ? (menu.every(Array.isArray) ? menu : [menu]) : undefined,
   };
 };
@@ -145,28 +141,68 @@ export const useStore = <T>(initialValue?: T) => {
   return { get, set, subscribe, teardown } as const;
 };
 
-export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Highlight> => {
+export const selectElements = (root: HTMLElement | null, selector: string | CallRef): Element[] => {
+  // CSS selector
+  if (typeof selector === 'string') {
+    return [
+      ...document.querySelectorAll(
+        // Elements matching the selector, excluding storybook elements and their descendants.
+        // Necessary to find portaled elements (e.g. children of `body`).
+        `:is(${selector}):not([id^="storybook-"], [id^="storybook-"] *, .sb-wrapper, .sb-wrapper *)`
+      ),
+      // Elements matching the selector inside the storybook root, as these were excluded above.
+      ...(root?.querySelectorAll(selector) || []),
+    ];
+  }
+  // Instrumented call reference, targeting args
+  if (typeof selector === 'object' && '__callId__' in selector) {
+    const storyId = window?.__STORYBOOK_PREVIEW__?.currentSelection?.storyId;
+    const state: State =
+      window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__?.[storyId];
+    if (state) {
+      const call = state.calls.find((call) => call.id === selector.__callId__);
+      return call?.actualArgs?.filter((arg) => arg instanceof HTMLElement) || [];
+    }
+  }
+  return [];
+};
+
+const dedupeSelectors = (selectors: (string | CallRef)[]) =>
+  selectors.reduce(
+    (acc, selector) => {
+      if (
+        (typeof selector === 'string' && !acc.includes(selector)) ||
+        (typeof selector === 'object' &&
+          !acc.some((s) => typeof s === 'object' && s.__callId__ === selector.__callId__))
+      ) {
+        acc.push(selector);
+      }
+      return acc;
+    },
+    [] as (string | CallRef)[]
+  );
+
+const defaultStyles = { outline: '2px dashed #029cfd' };
+
+export const mapElements = (highlights: HighlightOptions[]): Map<Element, Highlight> => {
   const root = document.getElementById('storybook-root');
-  const map = new Map();
+  const map = new Map<Element, Highlight>();
+
   for (const highlight of highlights) {
-    const { priority = 0 } = highlight;
     for (const selector of highlight.selectors) {
-      const elements = [
-        ...document.querySelectorAll(
-          // Elements matching the selector, excluding storybook elements and their descendants.
-          // Necessary to find portaled elements (e.g. children of `body`).
-          `:is(${selector}):not([id^="storybook-"], [id^="storybook-"] *, .sb-wrapper, .sb-wrapper *)`
-        ),
-        // Elements matching the selector inside the storybook root, as these were excluded above.
-        ...(root?.querySelectorAll(selector) || []),
-      ];
+      const elements = selectElements(root, selector);
+
       for (const element of elements) {
         const existing = map.get(element);
-        if (!existing || existing.priority <= priority) {
+        if (!existing || existing.priority <= (highlight.priority || 0)) {
           map.set(element, {
-            ...highlight,
-            priority,
-            selectors: Array.from(new Set((existing?.selectors || []).concat(selector))),
+            id: highlight.id,
+            priority: highlight.priority || 0,
+            selectors: dedupeSelectors([...(existing?.selectors || []), selector]),
+            styles: highlight.styles || defaultStyles,
+            hoverStyles: highlight.hoverStyles,
+            focusStyles: highlight.focusStyles,
+            menu: highlight.menu,
           });
         }
       }
@@ -175,7 +211,7 @@ export const mapElements = (highlights: HighlightOptions[]): Map<HTMLElement, Hi
   return map;
 };
 
-export const mapBoxes = (elements: Map<HTMLElement, Highlight>): Box[] =>
+export const mapBoxes = (elements: Map<Element, Highlight>): Box[] =>
   Array.from(elements.entries())
     .map<Box>(([element, { selectors, styles, hoverStyles, focusStyles, menu }]) => {
       const { top, left, width, height } = element.getBoundingClientRect();

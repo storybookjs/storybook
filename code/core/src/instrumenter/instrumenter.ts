@@ -21,6 +21,8 @@ type PatchedObj<TObj extends Record<string, unknown>> = {
   [Property in keyof TObj]: TObj[Property] & { __originalFn__: TObj[Property] };
 };
 
+const circularReferenceMarker = Symbol('[Circular]');
+
 const alreadyCompletedException = new Error(
   `This function ran after the play function completed. Did you forget to \`await\` it?`
 );
@@ -331,7 +333,7 @@ export class Instrumenter {
           seen.add((node as CallRef).__callId__);
         }
       });
-      if (call.interceptable || call.exception) {
+      if ((call.interceptable || call.exception) && !seen.has(call.id)) {
         acc.unshift({ callId: call.id, status: call.status, ancestors: call.ancestors });
         seen.add(call.id);
       }
@@ -464,7 +466,7 @@ export class Instrumenter {
         return value;
       }
       if (seen.includes(value)) {
-        return '[Circular]';
+        return circularReferenceMarker;
       }
       seen = [...seen, value];
 
@@ -474,9 +476,7 @@ export class Instrumenter {
       }
       const callRef = callRefsByResult.get(value) || {};
       if (value instanceof Array) {
-        const array = value.map((it) => serializeValues(it, ++depth, seen));
-        Object.assign(array, callRef);
-        return array;
+        return { ...callRef, __array__: value.map((it) => serializeValues(it, ++depth, seen)) };
       }
       if (value instanceof Date) {
         return { ...callRef, __date__: { value: value.toISOString() } };
@@ -492,7 +492,11 @@ export class Instrumenter {
       if (value instanceof global.window?.HTMLElement) {
         const { prefix, localName, id, classList, innerText } = value;
         const classNames = Array.from(classList);
-        return { ...callRef, __element__: { prefix, localName, id, classNames, innerText } };
+        const testId = value.getAttribute('data-testid');
+        return {
+          ...callRef,
+          __element__: { prefix, localName, id, classNames, innerText, testId },
+        };
       }
       if (typeof value === 'function') {
         return {
@@ -521,7 +525,7 @@ export class Instrumenter {
       ) {
         return {
           ...callRef,
-          ...Object.fromEntries(
+          __object__: Object.fromEntries(
             Object.entries(value).map(([key, val]) => [key, serializeValues(val, ++depth, seen)])
           ),
         };

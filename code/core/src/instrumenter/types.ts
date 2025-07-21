@@ -42,6 +42,7 @@ export interface ElementRef {
     id?: string;
     classNames?: string[];
     innerText?: string;
+    testId?: string;
   };
 }
 

@@ -124,6 +124,17 @@ export const Node = ({
     case typeof value === 'boolean':
       return <BooleanNode {...props} value={value} />;
 
+    case Object.prototype.hasOwnProperty.call(value, '__object__'):
+      return (
+        <ObjectNode
+          {...props}
+          value={value.__object__}
+          callsById={callsById}
+          showInspector={showObjectInspector}
+        />
+      );
+    case Object.prototype.hasOwnProperty.call(value, '__array__'):
+      return <ArrayNode {...props} value={value.__array__} callsById={callsById} />;
     case Object.prototype.hasOwnProperty.call(value, '__date__'):
       return <DateNode {...props} {...value.__date__} />;
     case Object.prototype.hasOwnProperty.call(value, '__error__'):
@@ -308,6 +319,7 @@ export const ElementNode = ({
   id,
   classNames = [],
   innerText,
+  testId,
 }: ElementRef['__element__']) => {
   const name = prefix ? `${prefix}:${localName}` : localName;
   const colors = useThemeColors();
@@ -319,13 +331,31 @@ export const ElementNode = ({
       <span key={`${name}_tag`} style={{ color: colors.tag.name }}>
         {name}
       </span>
-      <span key={`${name}_suffix`} style={{ color: colors.tag.suffix }}>
-        {id ? `#${id}` : classNames.reduce((acc, className) => `${acc}.${className}`, '')}
-      </span>
+      {id && (
+        <span key={`${name}_id`} style={{ color: colors.tag.suffix }}>
+          #{id}
+        </span>
+      )}
+      {!id && testId && (
+        <>
+          <span key={`${name}_test_id_attr`} style={{ color: colors.objectkey }}>
+            {' '}
+            data-testid=
+          </span>
+          <span key={`${name}_test_id_value`} style={{ color: colors.tag.suffix }}>
+            &quot;{testId}&quot;
+          </span>
+        </>
+      )}
+      {!id && !testId && classNames.length > 0 && (
+        <span key={`${name}_class_names`} style={{ color: colors.tag.suffix }}>
+          {classNames.reduce((acc, className) => `${acc}.${className}`, '')}
+        </span>
+      )}
       <span key={`${name}_gt`} style={{ color: colors.muted }}>
         &gt;
       </span>
-      {!id && classNames.length === 0 && innerText && (
+      {!id && !testId && classNames.length === 0 && innerText && (
         <>
           <span key={`${name}_text`}>{innerText}</span>
           <span key={`${name}_close_lt`} style={{ color: colors.muted }}>
@@ -393,7 +423,9 @@ export const RegExpNode = ({ flags, source }: { flags: string; source: string })
 
 export const SymbolNode = ({ description }: { description: string }) => {
   const colors = useThemeColors();
-  return (
+  return description === '[Circular]' ? (
+    <span style={{ whiteSpace: 'nowrap', color: colors.nullish }}>{description}</span>
+  ) : (
     <span style={{ whiteSpace: 'nowrap', color: colors.instance }}>
       Symbol(
       {description && <span style={{ color: colors.meta }}>"{description}"</span>})

@@ -80,6 +80,16 @@ const config: BuildEntries = {
         entryPoint: './src/cli/index.ts',
         exportEntries: ['./internal/cli'],
       },
+      {
+        entryPoint: './src/core-server/presets/webpack/loaders/webpack-automock-loader.ts',
+        exportEntries: ['./webpack/loaders/webpack-automock-loader'],
+        dts: false,
+      },
+      {
+        entryPoint: './src/core-server/presets/webpack/loaders/storybook-mock-transform-loader.ts',
+        exportEntries: ['./webpack/loaders/storybook-mock-transform-loader'],
+        dts: false,
+      },
     ],
     browser: [
       {

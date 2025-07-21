@@ -5555,6 +5555,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@rolldown/pluginutils@npm:1.0.0-beta.18":
+  version: 1.0.0-beta.18
+  resolution: "@rolldown/pluginutils@npm:1.0.0-beta.18"
+  checksum: 10c0/5a7444da546bdaf53b0541a5888e331bab18fbdf30589d5b65be6145efbc90be5f905dded46f1a605cbd5cb32c11de80fadcd1e09e62a3c91df46437fd8ef9e3
+  languageName: node
+  linkType: hard
+
 "@rollup/pluginutils@npm:^5.0.2":
   version: 5.1.4
   resolution: "@rollup/pluginutils@npm:5.1.4"
@@ -6735,6 +6742,7 @@ __metadata:
     "@testing-library/react": "npm:^16.2.0"
     "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch"
     "@trivago/prettier-plugin-sort-imports": "npm:^4.3.0"
+    "@types/lodash-es": "npm:^4.17.12"
     "@types/mock-require": "npm:^2.0.3"
     "@types/node": "npm:^22.0.0"
     "@types/react": "npm:^18.0.37"
@@ -7743,6 +7751,22 @@ __metadata:
     "@types/node": "npm:*"
     "@types/webpack": "npm:^4"
   checksum: 10c0/df178981861ef09f0618eae4aa865b81ed3f2c4ab1359711fe6077236f57dee31fb94f1de9bd156d0a3d252eb95da01c424f9fa822aeaf7e3057bc082bb4bda7
+  languageName: node
+  linkType: hard
+
+"@types/lodash-es@npm:^4.17.12":
+  version: 4.17.12
+  resolution: "@types/lodash-es@npm:4.17.12"
+  dependencies:
+    "@types/lodash": "npm:*"
+  checksum: 10c0/5d12d2cede07f07ab067541371ed1b838a33edb3c35cb81b73284e93c6fd0c4bbeaefee984e69294bffb53f62d7272c5d679fdba8e595ff71e11d00f2601dde0
+  languageName: node
+  linkType: hard
+
+"@types/lodash@npm:*, @types/lodash@npm:^4.17.13":
+  version: 4.17.20
+  resolution: "@types/lodash@npm:4.17.20"
+  checksum: 10c0/98cdd0faae22cbb8079a01a3bb65aa8f8c41143367486c1cbf5adc83f16c9272a2a5d2c1f541f61d0d73da543c16ee1d21cf2ef86cb93cd0cc0ac3bced6dd88f
   languageName: node
   linkType: hard
 
@@ -24381,6 +24405,7 @@ __metadata:
     "@radix-ui/react-dialog": "npm:^1.1.2"
     "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
     "@radix-ui/react-slot": "npm:^1.0.2"
+    "@rolldown/pluginutils": "npm:1.0.0-beta.18"
     "@storybook/docs-mdx": "npm:4.0.0-next.1"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/icons": "npm:^1.4.0"
@@ -24395,6 +24420,7 @@ __metadata:
     "@types/ejs": "npm:^3.1.1"
     "@types/find-cache-dir": "npm:^5.0.0"
     "@types/js-yaml": "npm:^4.0.5"
+    "@types/lodash": "npm:^4.17.13"
     "@types/node": "npm:^22.0.0"
     "@types/npmlog": "npm:^7.0.0"
     "@types/picomatch": "npm:^2.3.0"
@@ -24406,6 +24432,7 @@ __metadata:
     "@types/semver": "npm:^7.5.8"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:3.2.4"
+    "@vitest/mocker": "npm:3.2.4"
     "@vitest/spy": "npm:3.2.4"
     "@vitest/utils": "npm:^3.2.4"
     "@yarnpkg/esbuild-plugin-pnp": "npm:^3.0.0-rc.10"
@@ -24447,6 +24474,7 @@ __metadata:
     jsdoc-type-pratt-parser: "npm:^4.0.0"
     lazy-universal-dotenv: "npm:^4.0.0"
     leven: "npm:^4.0.0"
+    lodash: "npm:^4.17.21"
     memfs: "npm:^4.11.1"
     memoizerific: "npm:^1.11.3"
     mlly: "npm:^1.7.4"

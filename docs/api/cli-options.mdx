@@ -170,7 +170,7 @@ Options include:
 
 ### `upgrade`
 
-Upgrades your Storybook instance to the specified version (e.g., `@latest`, `@8`, `@next`). Read more in the [upgrade guide](../configure/upgrading.mdx).
+Upgrades your Storybook instance to the specified version (e.g., `@latest`, `@8`, `@next`). Read more in the [upgrade guide](../releases/upgrading.mdx).
 
 ```shell
 storybook[@version] upgrade [options]
@@ -183,7 +183,7 @@ Options include:
 | Option                   | Description                                                                                                                                                                                       |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `-h`, `--help`           | Output usage information.<br />`storybook upgrade --help`                                                                                                                                         |
-| `-c`, `--config-dir`     | Storybook configuration directory.<br />`storybook upgrade --config-dir .storybook`                                                                                           |
+| `-c, --config-dir <dir-name...>` | Directory or directories to find Storybook configurations<br />`storybook upgrade --config-dir .storybook`                                                                                |
 | `-n`, `--dry-run`        | Checks for version upgrades without installing them.<br />`storybook upgrade --dry-run`                                                                                                           |
 | `-s`, `--skip-check`     | Skips the migration check step during the upgrade process.<br />`storybook upgrade --skip-check`                                                                                                  |
 | `-y`, `--yes`            | Skips interactive prompts and automatically upgrades Storybook to the latest version.<br />`storybook upgrade --yes`                                                                              |
@@ -192,10 +192,12 @@ Options include:
 | `--debug`                | Outputs more logs in the CLI to assist debugging.<br />`storybook upgrade --debug`                                                                                                                |
 | `--disable-telemetry`    | Disables Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#how-to-opt-out).<br />`storybook upgrade --disable-telemetry`                                               |
 | `--enable-crash-reports` | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook upgrade --enable-crash-reports` |
+| `--write-logs`           | Write all debug logs to a file at the end of the run.<br />`storybook upgrade --write-logs`                                                                                                       |
+| `--loglevel <level>`     | Define log level: `debug`, `error`, `info`, `silent`, `trace`, or `warn` (default: `info`).<br />`storybook upgrade --loglevel debug`                                                             |
 
 ### `migrate`
 
-Runs the provided codemod to ensure your Storybook project is compatible with the specified version. Read more in the [migration guide](../configure/upgrading.mdx).
+Runs the provided codemod to ensure your Storybook project is compatible with the specified version. Read more in the [migration guide](../releases/upgrading.mdx).
 
 ```shell
 storybook[@version] migrate [codemod] [options]
@@ -224,7 +226,7 @@ Options include:
 
 ### `automigrate`
 
-Perform standard configuration checks to determine if your Storybook project can be automatically migrated to the specified version. Read more in the [migration guide](../configure/upgrading.mdx#automigrate-script).
+Perform standard configuration checks to determine if your Storybook project can be automatically migrated to the specified version. Read more in the [migration guide](../releases/upgrading.mdx#automigrate-script).
 
 ```shell
 storybook[@version] automigrate [fixId] [options]
@@ -250,7 +252,7 @@ Options include:
 
 ### `doctor`
 
-Performs a health check on your Storybook project for common issues (e.g., duplicate dependencies, incompatible addons or mismatched versions) and provides suggestions on how to fix them. Applicable when [upgrading](../configure/upgrading.mdx#verifying-the-upgrade) Storybook versions.
+Performs a health check on your Storybook project for common issues (e.g., duplicate dependencies, incompatible addons or mismatched versions) and provides suggestions on how to fix them. Applicable when [upgrading](../releases/upgrading.mdx#verifying-the-upgrade) Storybook versions.
 
 ```shell
 storybook doctor [options]

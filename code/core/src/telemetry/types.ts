@@ -10,6 +10,7 @@ export type EventType =
   | 'build'
   | 'index'
   | 'upgrade'
+  | 'multi-upgrade'
   | 'init'
   | 'init-step'
   | 'scaffolded-empty'
@@ -27,7 +28,10 @@ export type EventType =
   | 'testing-module-completed-report'
   | 'testing-module-crash-report'
   | 'addon-test'
-  | 'test-run';
+  | 'test-run'
+  | 'addon-onboarding'
+  | 'onboarding-survey'
+  | 'mocking';
 
 export interface Dependency {
   version: string | undefined;
@@ -55,6 +59,7 @@ export type StorybookMetadata = {
     type: DetectResult['name'];
     version: DetectResult['version'];
     agent: DetectResult['agent'];
+    nodeLinker: 'node_modules' | 'pnp' | 'pnpm' | 'isolated' | 'hoisted';
   };
   typescriptOptions?: Partial<TypescriptOptions>;
   addons?: Record<string, StorybookAddon>;

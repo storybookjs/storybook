@@ -9,6 +9,7 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { getWrapperComponent } from './TestBedWrapperComponent';
 import { storyPropsProvider } from './StorybookProvider';
 import { getApplication } from './StorybookModule';
+import { getProvideZonelessChangeDetectionFn } from './utils/Zoneless';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
@@ -188,14 +189,15 @@ export abstract class AbstractRenderer {
       ...(storyFnAngular.applicationConfig?.providers ?? []),
     ];
 
-    // if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
-    //   const { provideExperimentalZonelessChangeDetection } = await import('@angular/core');
-    //   if (!provideExperimentalZonelessChangeDetection) {
-    //     throw new Error('Experimental zoneless change detection requires Angular 18 or higher');
-    //   } else {
-    //     environmentProviders.unshift(provideExperimentalZonelessChangeDetection());
-    //   }
-    // }
+    if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
+      const provideZonelessChangeDetectionFn = await getProvideZonelessChangeDetectionFn();
+
+      if (!provideZonelessChangeDetectionFn) {
+        throw new Error('Zoneless change detection requires Angular 18 or higher');
+      } else {
+        environmentProviders.unshift(provideZonelessChangeDetectionFn());
+      }
+    }
 
     return {
       environmentProviders,

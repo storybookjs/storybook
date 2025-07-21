@@ -1,10 +1,10 @@
-import {
+import type {
   Parameters as DefaultParameters,
   StoryContext as DefaultStoryContext,
   WebRenderer,
 } from 'storybook/internal/types';
-import { ExtraOptions, Routes } from '@angular/router';
-import { EnvironmentProviders, Provider } from '@angular/core';
+import type { ExtraOptions, Routes } from '@angular/router';
+import type { EnvironmentProviders, Provider } from '@angular/core';
 
 export interface NgModuleMetadata {
   /** List of components, directives, and pipes that belong to your component. */

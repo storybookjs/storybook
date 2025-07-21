@@ -3,7 +3,7 @@ import type * as fs from 'node:fs/promises';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { CheckOptions, Fix } from '../types';
@@ -22,18 +22,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   };
 });
 
-const mockPackageManager = {
-  retrievePackageJson: vi.fn().mockResolvedValue({
-    dependencies: {},
-    devDependencies: {},
-  }),
-  runPackageCommand: vi.fn(),
-} as unknown as JsPackageManager;
-
-const mockPackageJson = {
-  dependencies: {},
-  devDependencies: {},
-} as PackageJson;
+const mockPackageManager = vi.mocked(JsPackageManager.prototype);
 
 const baseCheckOptions: CheckOptions = {
   packageManager: mockPackageManager,
@@ -42,6 +31,7 @@ const baseCheckOptions: CheckOptions = {
   } as StorybookConfigRaw,
   storybookVersion: '9.0.0',
   configDir: '.storybook',
+  storiesPaths: [],
 };
 
 const typedRemoveDocsAutodocs = removeDocsAutodocs as Required<
@@ -130,11 +120,11 @@ describe('run phase', () => {
     await typedRemoveDocsAutodocs.run({
       result: { autodocs: 'tag' },
       packageManager: mockPackageManager,
-      packageJson: mockPackageJson,
       configDir: '.storybook',
       mainConfigPath: '.storybook/main.ts',
       storybookVersion: '9.0.0',
       mainConfig: {} as StorybookConfigRaw,
+      storiesPaths: [],
     });
 
     expect(writeFile).toHaveBeenCalledTimes(1);
@@ -174,12 +164,12 @@ describe('run phase', () => {
     await typedRemoveDocsAutodocs.run({
       result: { autodocs: true },
       packageManager: mockPackageManager,
-      packageJson: mockPackageJson,
       configDir: '.storybook',
       mainConfigPath: '.storybook/main.ts',
       previewConfigPath: '.storybook/preview.ts',
       storybookVersion: '9.0.0',
       mainConfig: {} as StorybookConfigRaw,
+      storiesPaths: [],
     });
 
     expect(writeFile).toHaveBeenCalledTimes(2);
@@ -225,12 +215,12 @@ describe('run phase', () => {
     await typedRemoveDocsAutodocs.run({
       result: { autodocs: true },
       packageManager: mockPackageManager,
-      packageJson: mockPackageJson,
       configDir: '.storybook',
       mainConfigPath: '.storybook/main.ts',
       previewConfigPath: '.storybook/preview.ts',
       storybookVersion: '9.0.0',
       mainConfig: {} as StorybookConfigRaw,
+      storiesPaths: [],
     });
 
     expect(writeFile).toHaveBeenCalledTimes(2);
@@ -275,13 +265,13 @@ describe('run phase', () => {
     await typedRemoveDocsAutodocs.run({
       result: { autodocs: true },
       packageManager: mockPackageManager,
-      packageJson: mockPackageJson,
       mainConfigPath: '.storybook/main.ts',
       configDir: '.storybook',
       previewConfigPath: '.storybook/preview.ts',
       storybookVersion: '9.0.0',
       mainConfig: {} as StorybookConfigRaw,
       dryRun: true,
+      storiesPaths: [],
     });
 
     expect(writeFile).not.toHaveBeenCalled();

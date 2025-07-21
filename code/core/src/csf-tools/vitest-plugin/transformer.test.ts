@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getStoryTitle } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { type RawSourceMap, SourceMapConsumer } from 'source-map';
 
@@ -47,17 +48,6 @@ const transform = async ({
 };
 
 describe('transformer', () => {
-  describe('no-op', () => {
-    it('should return original code if the file is not a story file', async () => {
-      const code = `console.log('Not a story file');`;
-      const fileName = 'src/components/Button.js';
-
-      const result = await transform({ code, fileName });
-
-      expect(result.code).toMatchInlineSnapshot(`console.log('Not a story file');`);
-    });
-  });
-
   describe('CSF v1/v2/v3', () => {
     describe('default exports (meta)', () => {
       it('should add title to inline default export if not present', async () => {
@@ -123,7 +113,7 @@ describe('transformer', () => {
             component: Button,
           };
           export default meta;
-  
+
           export const Story = {};
         `;
 
@@ -152,9 +142,9 @@ describe('transformer', () => {
           const meta = {
             title: 'Button',
             component: Button,
-          };  
+          };
           export default meta;
-  
+
           export const Story = {};
         `;
 
@@ -271,7 +261,7 @@ describe('transformer', () => {
               label: 'Primary Button',
             },
           };
-  
+
           export { Primary };
         `;
 
@@ -305,7 +295,7 @@ describe('transformer', () => {
               label: 'Primary Button',
             },
           };
-  
+
           export { Primary as PrimaryStory };
         `;
 
@@ -339,9 +329,9 @@ describe('transformer', () => {
               label: 'Primary Button',
             },
           };
-  
+
           export const Secondary = {}
-  
+
           export { Primary };
         `;
 
@@ -429,7 +419,7 @@ describe('transformer', () => {
         const code = `
           export default {};
           export const Included = { tags: ['include-me'] };
-  
+
           export const NotIncluded = {}
         `;
 
@@ -460,7 +450,7 @@ describe('transformer', () => {
         const code = `
           export default {};
           export const Included = {};
-  
+
           export const NotIncluded = { tags: ['exclude-me'] }
         `;
 
@@ -635,7 +625,7 @@ describe('transformer', () => {
         const code = `
         import { config } from '#.storybook/preview';
         const meta = config.meta({ component: Button });
-        const Primary = meta.story({ 
+        const Primary = meta.story({
           args: {
             label: 'Primary Button',
           }
@@ -671,7 +661,7 @@ describe('transformer', () => {
         const code = `
         import { config } from '#.storybook/preview';
         const meta = config.meta({ component: Button });
-        const Primary = meta.story({ 
+        const Primary = meta.story({
           args: {
             label: 'Primary Button',
           }
@@ -947,7 +937,7 @@ describe('transformer', () => {
   });
 
   describe('error handling', () => {
-    const warnSpy = vi.spyOn(console, 'warn');
+    const warnSpy = vi.spyOn(logger, 'warn');
     beforeEach(() => {
       vi.mocked(getStoryTitle).mockRestore();
       warnSpy.mockReset();

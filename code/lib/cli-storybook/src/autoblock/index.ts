@@ -1,79 +1,40 @@
-import { logger } from 'storybook/internal/node-logger';
-
-import boxen from 'boxen';
-import picocolors from 'picocolors';
-
-import type { AutoblockOptions, Blocker } from './types';
-
-const excludesFalse = <T>(x: T | false): x is T => x !== false;
+import type {
+  AutoblockOptions,
+  AutoblockerResult,
+  Blocker,
+  BlockerCheckResult,
+  BlockerModule,
+} from './types';
 
 const blockers: () => BlockerModule<any>[] = () => [
   // add/remove blockers here
-  import('./block-storystorev6'),
   import('./block-dependencies-versions'),
   import('./block-node-version'),
-  import('./block-svelte-webpack5'),
+  import('./block-webpack5-frameworks'),
   import('./block-major-version'),
   import('./block-experimental-addon-test'),
 ];
 
-type BlockerModule<T> = Promise<{ blocker: Blocker<T> }>;
-
-const segmentDivider = '\n\n─────────────────────────────────────────────────\n\n';
-
-export const autoblock = async (
+/**
+ * Runs autoblockers for a given project
+ *
+ * @param options - The options for the autoblockers.
+ * @param list - The list of autoblockers to run.
+ * @returns The results of the autoblockers.
+ */
+export const autoblock = async <R = unknown>(
   options: AutoblockOptions,
-  list: BlockerModule<any>[] = blockers()
-) => {
+  list: BlockerModule<unknown>[] = blockers()
+): Promise<AutoblockerResult<R>[] | null> => {
   if (list.length === 0) {
     return null;
   }
 
-  logger.info('Checking for upgrade blockers...');
-
-  const out = await Promise.all(
+  return await Promise.all(
     list.map(async (i) => {
-      const { blocker } = await i;
-      const result = await blocker.check(options);
-      if (result) {
-        return {
-          id: blocker.id,
-          value: true,
-          log: blocker.log(options, result),
-        };
-      } else {
-        return false;
-      }
+      const blocker = (await i).blocker as Blocker<R>;
+      const result = (await blocker.check(options)) as BlockerCheckResult<R>;
+      return { result, blocker };
     })
   );
-
-  const faults = out.filter(excludesFalse);
-
-  if (faults.length > 0) {
-    const messages = {
-      welcome: `Storybook has found potential blockers in your project that need to be resolved before upgrading:`,
-      reminder: picocolors.yellow(
-        'Fix the above issues and try running the upgrade command again.'
-      ),
-    };
-    const borderColor = '#FC521F';
-
-    logger.plain(
-      boxen(
-        [messages.welcome]
-          .concat(['\n\n'])
-          .concat([faults.map((i) => i.log).join(segmentDivider)])
-          .concat([segmentDivider, messages.reminder])
-          .join(''),
-        { borderStyle: 'round', padding: 1, borderColor }
-      )
-    );
-
-    return faults[0].id;
-  }
-
-  logger.plain('No blockers found.');
-  logger.line();
-
-  return null;
 };

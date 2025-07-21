@@ -53,7 +53,7 @@ const generateRule = async () => {
   logger.log(
     '👋 Welcome to the Storybook ESLint rule generator! Please answer a few questions so I can provide everything you need for your new rule.'
   );
-  logger.log();
+  logger.log('');
   const { authorName, ruleId, ruleDescription, isAutoFixable } = await prompts(questions, {
     onCancel: () => {
       logger.log('Process canceled by the user.');

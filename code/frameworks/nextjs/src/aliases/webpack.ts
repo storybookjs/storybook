@@ -1,3 +1,4 @@
+import path from 'path';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { configureCompatibilityAliases } from '../compatibility/compatibility-map';
@@ -12,6 +13,7 @@ export const configureAliases = (baseConfig: WebpackConfig): void => {
     alias: {
       ...(baseConfig.resolve?.alias ?? {}),
       '@opentelemetry/api': 'next/dist/compiled/@opentelemetry/api',
+      next: path.dirname(require.resolve('next/package.json')),
     },
   };
 

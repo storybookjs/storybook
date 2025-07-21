@@ -8,12 +8,21 @@ steps:
   - attach_workspace:
       at: .
   - run:
-      name: Storybook init for features
+      name: Verdaccio
+      background: true
       command: |
         cd code
-        yarn local-registry --open &
+        yarn local-registry --open
+  - run:
+      name: Wait on Verdaccio
+      command: |
+        cd code
         yarn wait-on tcp:127.0.0.1:6001
-        cd ../../
+        yarn wait-on tcp:127.0.0.1:6002
+  - run:
+      name: Storybook init for features
+      command: |
+        cd ..
         mkdir features-1
         cd features-1
         npm set registry http://localhost:6001

@@ -18,11 +18,21 @@ steps:
         equal: ['npm', << parameters.packageManager >>]
       steps:
         - run:
-            name: Storybook init from empty directory (NPM)
+            name: Verdaccio
+            background: true
             command: |
               cd code
-              yarn local-registry --open &
-              cd ../../
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Storybook init from empty directory (NPM)
+            command: |
+              cd ..
               mkdir empty-<< parameters.template >>
               cd empty-<< parameters.template >>
               npm set registry http://localhost:6001
@@ -37,11 +47,21 @@ steps:
         equal: ['yarn1', << parameters.packageManager >>]
       steps:
         - run:
-            name: Storybook init from empty directory (Yarn 1)
+            name: Verdaccio
+            background: true
             command: |
               cd code
-              yarn local-registry --open &
-              cd ../../
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Storybook init from empty directory (Yarn 1)
+            command: |
+              cd ..
               mkdir empty-<< parameters.template >>
               cd empty-<< parameters.template >>
               npx storybook init --yes --package-manager yarn1
@@ -55,11 +75,21 @@ steps:
         equal: ['yarn2', << parameters.packageManager >>]
       steps:
         - run:
-            name: Storybook init from empty directory (Yarn 2)
+            name: Verdaccio
+            background: true
             command: |
               cd code
-              yarn local-registry --open &
-              cd ../../
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Storybook init from empty directory (Yarn 2)
+            command: |
+              cd ..
               mkdir empty-<< parameters.template >>
               cd empty-<< parameters.template >>
               yarn set version berry
@@ -75,11 +105,21 @@ steps:
         equal: ['pnpm', << parameters.packageManager >>]
       steps:
         - run:
-            name: Storybook init from empty directory (PNPM)
+            name: Verdaccio
+            background: true
             command: |
               cd code
-              yarn local-registry --open &
-              cd ../../
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Storybook init from empty directory (PNPM)
+            command: |
+              cd ..
               mkdir empty-<< parameters.template >>
               cd empty-<< parameters.template >>
               npm i -g pnpm
@@ -95,11 +135,21 @@ steps:
         equal: ['react-vite-ts', << parameters.template >>]
       steps:
         - run:
-            name: Storybook init from empty directory (--skip-install)
+            name: Verdaccio
+            background: true
             command: |
               cd code
-              yarn local-registry --open &
-              cd ../../
+              yarn local-registry --open
+        - run:
+            name: Wait on Verdaccio
+            command: |
+              cd code
+              yarn wait-on tcp:127.0.0.1:6001
+              yarn wait-on tcp:127.0.0.1:6002
+        - run:
+            name: Storybook init from empty directory (--skip-install)
+            command: |
+              cd ..
               mkdir empty-<< parameters.template >>-no-install
               cd empty-<< parameters.template >>-no-install
               npx storybook init --yes --skip-install

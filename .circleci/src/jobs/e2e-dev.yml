@@ -22,7 +22,7 @@ steps:
       name: Running E2E Tests
       # TEST_FILES should include all relevant test files, in this case we use the default playwright pattern
       # `circleci tests run` allows rerunning failed tests by passing a subset of test files to the command via `xargs`
-      # --index0 --total=1 ensures we run all tests on all runners, since each runner handles a different sandbox
+      # --index=0 --total=1 ensures we run all tests on all runners, since each runner handles a different sandbox
       command: |
         TEST_FILES=$(circleci tests glob "code/e2e-tests/*.{test,spec}.{ts,js,mjs}")
         echo "$TEST_FILES" | circleci tests run --command="xargs yarn task --task e2e-tests-dev --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task e2e-tests-dev) --no-link --start-from=never --junit" --verbose --index=0 --total=1

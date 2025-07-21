@@ -202,7 +202,6 @@
     "bin/**/*",
     "dist/**/*",
     "assets/**/*",
-    "templates/**/*",
     "README.md",
     "!src/**/*"
   ],

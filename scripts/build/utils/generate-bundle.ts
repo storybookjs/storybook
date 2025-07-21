@@ -54,9 +54,6 @@ export async function generateBundle({
       ignoreAnnotations: true,
       splitting: true,
       metafile: true,
-      minifyIdentifiers: true,
-      minifySyntax: isProduction,
-      minifyWhitespace: false,
       keepNames: true, // required to show correct error messages based on class names
       outbase: 'src',
       outdir: 'dist',
@@ -137,6 +134,7 @@ export async function generateBundle({
     },
   } as const satisfies EsbuildContextOptions;
 
+  const uid = Math.random().toString(36).substring(2, 15);
   const contexts = [
     entries.node &&
       defineESBuildContext('node', {
@@ -146,13 +144,14 @@ export async function generateBundle({
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {
           js: dedent`
-            import CJS_COMPAT_NODE_URL from 'node:url';
-            import CJS_COMPAT_NODE_PATH from 'node:path';
-            import CJS_COMPAT_NODE_MODULE from "node:module";
+            import CJS_COMPAT_NODE_URL_${uid} from 'node:url';
+            import CJS_COMPAT_NODE_PATH_${uid} from 'node:path';
+            import CJS_COMPAT_NODE_MODULE_${uid} from "node:module";
 
-            const __filename = CJS_COMPAT_NODE_URL.fileURLToPath(import.meta.url);
-            const __dirname = CJS_COMPAT_NODE_PATH.dirname(__filename);
-            const require = CJS_COMPAT_NODE_MODULE.createRequire(import.meta.url);
+            var __filename = CJS_COMPAT_NODE_URL_${uid}.fileURLToPath(import.meta.url);
+            var __dirname = CJS_COMPAT_NODE_PATH_${uid}.dirname(__filename);
+            var require = CJS_COMPAT_NODE_MODULE_${uid}.createRequire(import.meta.url);
+
             // ------------------------------------------------------------
             // end of CJS compatibility banner, injected by Storybook's esbuild configuration
             // ------------------------------------------------------------

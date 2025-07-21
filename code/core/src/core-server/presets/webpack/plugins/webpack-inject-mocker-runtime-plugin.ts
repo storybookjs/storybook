@@ -59,7 +59,8 @@ export class WebpackInjectMockerRuntimePlugin {
             // as all mocking logic is handled at build time or by the dev server's transform.
             const runtimeTemplatePath = join(
               resolvePackageDir('storybook'),
-              'templates',
+              'assets',
+              'server',
               'mocker-runtime.template.js'
             );
             // Use esbuild to bundle the runtime script and its dependencies (`@vitest/mocker`, etc.)

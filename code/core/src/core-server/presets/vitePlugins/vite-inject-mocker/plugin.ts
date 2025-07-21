@@ -27,7 +27,12 @@ export const viteInjectMockerRuntime = (options: {
       if (viteConfig.command === 'build') {
         this.emitFile({
           type: 'chunk',
-          id: join(resolvePackageDir('storybook'), 'templates', 'mocker-runtime.template.js'),
+          id: join(
+            resolvePackageDir('storybook'),
+            'assets',
+            'server',
+            'mocker-runtime.template.js'
+          ),
           fileName: entryPath.slice(1),
         });
       }
@@ -78,7 +83,7 @@ export const viteInjectMockerRuntime = (options: {
     async load(id) {
       if (exactRegex(id).test(entryPath)) {
         return readFileSync(
-          join(resolvePackageDir('storybook'), 'templates', 'mocker-runtime.template.js'),
+          join(resolvePackageDir('storybook'), 'assets', 'server', 'mocker-runtime.template.js'),
           'utf-8'
         );
       }

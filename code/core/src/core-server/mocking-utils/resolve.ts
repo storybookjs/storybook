@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { findMockRedirect } from '@vitest/mocker/redirect';
 import { isAbsolute, join, resolve } from 'pathe';
 
@@ -7,7 +9,8 @@ export function resolveMock(mockPath: string, root: string, previewConfigPath: s
   const isExternal = (function () {
     try {
       return (
-        !isAbsolute(mockPath) && isModuleDirectory(require.resolve(mockPath, { paths: [root] }))
+        !isAbsolute(mockPath) &&
+        isModuleDirectory(fileURLToPath(import.meta.resolve(mockPath, root)))
       );
     } catch (e) {
       return false;
@@ -17,10 +20,8 @@ export function resolveMock(mockPath: string, root: string, previewConfigPath: s
   const external = isExternal ? mockPath : null;
 
   const absolutePath = external
-    ? require.resolve(mockPath, { paths: [root] })
-    : require.resolve(join(previewConfigPath, '..', mockPath), {
-        paths: [root],
-      });
+    ? fileURLToPath(import.meta.resolve(mockPath, root))
+    : fileURLToPath(import.meta.resolve(join(previewConfigPath, '..', mockPath), root));
 
   const normalizedAbsolutePath = resolve(absolutePath);
 

@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { exactRegex } from '@rolldown/pluginutils';
 import { dedent } from 'ts-dedent';
 import type { ResolvedConfig, ViteDevServer } from 'vite';
+
+import { resolvePackageDir } from '../../../../shared/utils/module';
 
 const entryPath = '/vite-inject-mocker-entry.js';
 
@@ -24,9 +27,7 @@ export const viteInjectMockerRuntime = (options: {
       if (viteConfig.command === 'build') {
         this.emitFile({
           type: 'chunk',
-          id: require.resolve(
-            join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime.template.js')
-          ),
+          id: join(resolvePackageDir('storybook'), 'templates', 'mocker-runtime.template.js'),
           fileName: entryPath.slice(1),
         });
       }
@@ -41,8 +42,8 @@ export const viteInjectMockerRuntime = (options: {
           // leads to errors, if the imported module is not a dependency of the project.
           // By resolving the module to the real path, we can avoid this issue.
           alias: {
-            '@vitest/mocker/browser': require.resolve('@vitest/mocker/browser'),
-            '@vitest/mocker': require.resolve('@vitest/mocker'),
+            '@vitest/mocker/browser': fileURLToPath(import.meta.resolve('@vitest/mocker/browser')),
+            '@vitest/mocker': fileURLToPath(import.meta.resolve('@vitest/mocker')),
           },
         },
       };
@@ -77,9 +78,7 @@ export const viteInjectMockerRuntime = (options: {
     async load(id) {
       if (exactRegex(id).test(entryPath)) {
         return readFileSync(
-          require.resolve(
-            join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime.template.js')
-          ),
+          join(resolvePackageDir('storybook'), 'templates', 'mocker-runtime.template.js'),
           'utf-8'
         );
       }

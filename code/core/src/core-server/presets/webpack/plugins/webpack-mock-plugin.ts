@@ -74,9 +74,7 @@ export class WebpackMockPlugin {
     // Apply the replacement plugin. Its callback will now use the dynamically updated mockMap.
     new compiler.webpack.NormalModuleReplacementPlugin(/.*/, (resource) => {
       try {
-        const absolutePath = require.resolve(resource.request, {
-          paths: [resource.context],
-        });
+        const absolutePath = fileURLToPath(import.meta.resolve(resource.request, resource.context));
         if (this.mockMap.has(absolutePath)) {
           const mock = this.mockMap.get(absolutePath)!;
           resource.request = mock.replacementResource;

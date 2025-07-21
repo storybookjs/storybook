@@ -6,6 +6,8 @@ import { buildSync } from 'esbuild';
 import type HtmlWebpackPlugin from 'html-webpack-plugin';
 import type { Compiler } from 'webpack';
 
+import { resolvePackageDir } from '../../../../shared/utils/module';
+
 const PLUGIN_NAME = 'WebpackInjectMockerRuntimePlugin';
 
 /**
@@ -55,8 +57,10 @@ export class WebpackInjectMockerRuntimePlugin {
           try {
             // The runtime template is the same for both dev and build in the final implementation,
             // as all mocking logic is handled at build time or by the dev server's transform.
-            const runtimeTemplatePath = require.resolve(
-              join(__dirname, '..', '..', '..', 'templates', 'mocker-runtime.template.js')
+            const runtimeTemplatePath = join(
+              resolvePackageDir('storybook'),
+              'templates',
+              'mocker-runtime.template.js'
             );
             // Use esbuild to bundle the runtime script and its dependencies (`@vitest/mocker`, etc.)
             // into a single, self-contained string of code.

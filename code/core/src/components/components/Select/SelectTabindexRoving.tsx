@@ -1,7 +1,5 @@
-import { ac } from 'vitest/dist/chunks/reporters.d.79o4mouw.js';
-
 import type { ButtonHTMLAttributes, KeyboardEvent } from 'react';
-import React, { act, forwardRef, useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 
@@ -155,11 +153,16 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 
     // TODO: Implement a-z typing.
     // TODO: Add scrollable area to listbox.
-    // TODO: Ensure we close up when focus is transferred outside the button & listbox.
 
     return (
       <WithTooltipPure
+        closeOnOutsideClick={true}
         visible={isOpen && !disabled}
+        onVisibleChange={(newVisible) => {
+          if (!newVisible) {
+            handleClose();
+          }
+        }}
         tooltip={
           <div role="listbox" id={listboxId} ref={listboxRef}>
             {options.map((option) => (

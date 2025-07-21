@@ -174,7 +174,13 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 
     return (
       <WithTooltipPure
+        closeOnOutsideClick={true}
         visible={isOpen && !disabled}
+        onVisibleChange={(newVisible) => {
+          if (!newVisible) {
+            setIsOpen(false);
+          }
+        }}
         tooltip={
           <div role="listbox" id={listboxId} ref={listboxRef}>
             {options.map((option) => (

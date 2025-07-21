@@ -261,9 +261,7 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
 }
 
 export async function isNxProject() {
-  process.stdout.write(`\ncwd: ${process.cwd()}\n`);
   const projectRoot = getProjectRoot();
-  process.stdout.write(`\nprojectRoot: ${projectRoot}\n`);
   return findUpSync('nx.json', { stopAt: projectRoot });
 }
 

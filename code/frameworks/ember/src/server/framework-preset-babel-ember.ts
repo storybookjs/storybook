@@ -28,21 +28,35 @@ export const babel: PresetPropertyFn<'babel'> = (config: TransformOptions, optio
     });
   }
 
+  const isDebug = options.configType === 'DEVELOPMENT';
   const babelConfigPlugins = config?.plugins || [];
 
   const extraPlugins = [
     [
-      require.resolve('babel-plugin-htmlbars-inline-precompile'),
+      require.resolve('babel-plugin-debug-macros'),
       {
-        precompile: precompileWithPlugins,
-        modules: {
-          'ember-cli-htmlbars': 'hbs',
-          'ember-cli-htmlbars-inline-precompile': 'default',
-          'htmlbars-inline-precompile': 'default',
+        debugTools: {
+          source: '@glimmer/debug',
+          isDebug,
         },
+        externalizeHelpers: {
+          module: true,
+        },
+        flags: [{ source: '@glimmer/env', flags: { DEBUG: isDebug } }],
       },
     ],
-    [require.resolve('babel-plugin-ember-modules-api-polyfill')],
+    [
+      require.resolve('babel-plugin-ember-template-compilation'),
+      {
+        compiler: precompileWithPlugins,
+        compilerPath: 'ember-source/dist/ember-template-compiler',
+        enableLegacyModules: [
+          'ember-cli-htmlbars',
+          'ember-cli-htmlbars-inline-precompile',
+          'htmlbars-inline-precompile',
+        ],
+      },
+    ],
   ];
 
   return {

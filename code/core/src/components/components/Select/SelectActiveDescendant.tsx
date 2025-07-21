@@ -164,7 +164,6 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 
     // TODO: Implement a-z typing.
     // TODO: Add scrollable area to listbox.
-    // TODO: Ensure we close up when focus is transferred outside the button & listbox.
 
     useEffect(() => {
       if (isOpen && activeOption) {
@@ -204,6 +203,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           id={id}
           ref={ref}
           disabled={disabled}
+          onBlur={() => setIsOpen(false)}
           onClick={() => {
             if (!isOpen) {
               openWithDefaultPosition(0);

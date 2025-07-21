@@ -65,6 +65,7 @@ const configureImageDefaults = (
           })
         );
         logger.info('=> Custom image loader integrated successfully');
+        logger.info('=> Note: Custom loaders must be self-contained (no external variables)');
       } else {
         logger.warn('=> Custom loader file does not export a function, using default loader');
       }

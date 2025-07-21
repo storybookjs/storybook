@@ -49,7 +49,7 @@ export const getImageProps = (props: _NextImage.ImageProps) => {
   if (!finalLoader) {
     finalLoader = defaultLoader;
   }
-  originalGetImageProps?.({ loader: finalLoader, ...props });
+  return originalGetImageProps?.({ loader: finalLoader, ...props });
 };
 
 export default MockedNextImage;

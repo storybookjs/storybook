@@ -9,7 +9,7 @@ import type { BabelOptions, Options as ReactOptions } from 'vite-plugin-rnw';
 
 export type FrameworkOptions = FrameworkOptionsBase & {
   /**
-   * Many react native libraries arent transpiled for the web, add them to this list to make sure
+   * Many react native libraries aren't transpiled for the web, add them to this list to make sure
    * they get transpiled before attempting to load them on the web. We will automatically add
    * `react-native`, `@react-native`, `expo`, and `@expo` to this list.
    *

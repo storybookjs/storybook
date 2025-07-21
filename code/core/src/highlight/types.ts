@@ -80,7 +80,7 @@ export interface LegacyHighlightOptions {
 export type RawHighlightOptions = HighlightOptions | LegacyHighlightOptions;
 
 export const isLegacyFormat = (options: RawHighlightOptions): options is LegacyHighlightOptions =>
-  'elements' in options && options.elements.every((element) => typeof element === 'string');
+  'elements' in options && options.elements?.every((element) => typeof element === 'string');
 
 export type Highlight = {
   id?: string;

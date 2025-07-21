@@ -315,15 +315,11 @@ export const Panel = memo<{ active: boolean; refId?: string; storyId: string; st
     const [highlightedElements, setHighlightedElements] = useState<Call['id'][]>([]);
     const [selectedElements, setSelectedElements] = useState<Call['id'][]>([]);
     const onHighlightElements = useCallback(
-      (callId: Call['id'], highlight = true) => {
-        setHighlightedElements(highlight ? [callId] : []);
-      },
+      (callId: Call['id'], highlight: boolean) => setHighlightedElements(highlight ? [callId] : []),
       [setHighlightedElements]
     );
     const onSelectElements = useCallback(
-      (callId: Call['id'], select = true) => {
-        setSelectedElements(select ? [callId] : []);
-      },
+      (callId: Call['id'], select: boolean) => setSelectedElements(select ? [callId] : []),
       [setSelectedElements]
     );
 

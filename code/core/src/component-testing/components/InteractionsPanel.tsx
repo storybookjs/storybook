@@ -43,8 +43,8 @@ interface InteractionsPanelProps {
   onScrollToEnd?: () => void;
   hasResultMismatch?: boolean;
   browserTestStatus?: CallStates;
-  onHighlightElements: (callId: Call['id'], highlight?: boolean) => void;
-  onSelectElements: (callId: Call['id'], select?: boolean) => void;
+  onHighlightElements: (callId: Call['id'], highlight: boolean) => void;
+  onSelectElements: (callId: Call['id'], select: boolean) => void;
   selectedElements: Call['id'][];
 }
 

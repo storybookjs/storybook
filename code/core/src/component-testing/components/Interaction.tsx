@@ -198,8 +198,8 @@ export const Interaction = ({
   isCollapsed: boolean;
   toggleCollapsed: () => void;
   pausedAt?: Call['id'];
-  onHighlightElements: (callId: Call['id'], highlight?: boolean) => void;
-  onSelectElements: (callId: Call['id'], select?: boolean) => void;
+  onHighlightElements: (callId: Call['id'], highlight: boolean) => void;
+  onSelectElements: (callId: Call['id'], select: boolean) => void;
   selectedElements: Call['id'][];
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);

@@ -1,6 +1,5 @@
-import { Component, NgModule, Type } from '@angular/core';
-import { MetadataOverride } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import type { Component, NgModule, Type } from '@angular/core';
+import type { MetadataOverride } from '@angular/core/testing';
 
 export const GenerateComponentMetaData = (
   selector: string,

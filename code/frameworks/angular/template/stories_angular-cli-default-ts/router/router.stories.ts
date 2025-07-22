@@ -1,4 +1,5 @@
-import { Meta, StoryObj, applicationConfig, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { applicationConfig, moduleMetadata } from '@storybook/angular';
 import { RouterModule } from '@angular/router';
 import { Component } from '@angular/core';
 import ProvideRouterComponent from './router-component/router-component';

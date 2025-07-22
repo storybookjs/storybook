@@ -1,7 +1,8 @@
-import { ApplicationRef, NgModule } from '@angular/core';
-import { BehaviorSubject, Subject } from 'rxjs';
+import type { ApplicationRef, NgModule } from '@angular/core';
+import type { Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { stringify } from 'telejson';
-import { ICollection, StoryFnAngularReturnType } from '../types';
+import type { ICollection, StoryFnAngularReturnType } from '../types';
 import { PropertyExtractor } from './utils/PropertyExtractor';
 import { TestBedComponentBuilder } from './utils/TestBedComponentBuilder';
 import { queueBootstrapping } from './utils/BootstrapQueue';
@@ -125,12 +126,10 @@ export abstract class AbstractRenderer {
    */
   public async renderWithTestBed({
     storyFnAngular,
-    forced,
     component,
     targetDOMNode,
   }: {
     storyFnAngular: StoryFnAngularReturnType;
-    forced: boolean;
     component?: any;
     targetDOMNode: HTMLElement;
   }) {
@@ -148,9 +147,14 @@ export abstract class AbstractRenderer {
       .setMetaData(analyzedMetadata)
       .setTargetNode(targetDOMNode)
       .setEnvironmentProviders(environmentProviders)
-      .configure()
-      .initRouter()
-      .compileComponents();
+      .configure();
+
+    try {
+      const { Router } = await import('@angular/router');
+      componentBuilder.initRouter(Router).compileComponents();
+    } catch (e) {
+      componentBuilder.compileComponents();
+    }
 
     componentBuilder.copyComponentIntoTargetNode();
 

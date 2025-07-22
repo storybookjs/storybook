@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import type { Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 
 @Component({
   standalone: true,

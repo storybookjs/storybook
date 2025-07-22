@@ -1,13 +1,13 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import type { ComponentFixture } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
-import { RouterTestingModule } from '@angular/router/testing';
-import { Router } from '@angular/router';
-import { ApplicationRef, ComponentFactoryResolver, Type } from '@angular/core';
-import { PropertyExtractor } from './PropertyExtractor';
-import { ICollection, StoryFnAngularReturnType } from '../../types';
+import type { Type } from '@angular/core';
+import { ApplicationRef, ComponentFactoryResolver } from '@angular/core';
+import type { PropertyExtractor } from './PropertyExtractor';
+import type { ICollection, StoryFnAngularReturnType } from '../../types';
 import { getWrapperModule } from '../TestBedWrapperComponent';
 import {
   GenerateComponentMetaData,
@@ -91,13 +91,22 @@ export class TestBedComponentBuilder {
     return this;
   }
 
-  configure() {
+  async configure() {
     this.throwOnMissingTestBedInstance();
     this.throwOnMissingComponent();
     const wrapperModule = getWrapperModule();
+    const imports = await (async () => {
+      try {
+        const { RouterTestingModule } = await import('@angular/router/testing');
+        const routeModuleImport = this.getRouteModuleImport(RouterTestingModule);
+        if (routeModuleImport.length > 0) return [routeModuleImport];
+      } catch (e) {
+        return [];
+      }
+    })();
     this.testBedInstance
       .configureTestingModule({
-        imports: [this.getRouteModuleImport()],
+        imports,
       })
       .overrideComponent(
         this.component,
@@ -117,7 +126,7 @@ export class TestBedComponentBuilder {
     return this;
   }
 
-  initRouter() {
+  initRouter(Router: typeof import('@angular/router').Router) {
     const router = this.testBedInstance.inject(Router);
     router.initialNavigation();
     return this;
@@ -164,7 +173,9 @@ export class TestBedComponentBuilder {
     return this;
   }
 
-  private getRouteModuleImport(): any[] {
+  private getRouteModuleImport(
+    RouterTestingModule: typeof import('@angular/router/testing').RouterTestingModule
+  ): any[] {
     if (this.routes === null || this.routes === undefined) return [];
 
     return [RouterTestingModule.withRoutes(this.routes.routes, this.routes.options)];

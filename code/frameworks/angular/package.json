@@ -89,7 +89,6 @@
   },
   "dependencies": {
     "@angular/platform-browser-dynamic": "^20.0.0",
-    "@angular/router": "^20.0.0",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
     "telejson": "8.0.0",
@@ -144,6 +143,9 @@
       "optional": true
     },
     "@angular/cli": {
+      "optional": true
+    },
+    "@angular/router": {
       "optional": true
     },
     "zone.js": {

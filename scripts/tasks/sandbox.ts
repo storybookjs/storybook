@@ -64,6 +64,7 @@ export const sandbox: Task = {
       addStories,
       extendMain,
       extendPreview,
+      mutateTSConfig,
       init,
       addExtraDependencies,
       setImportMap,
@@ -164,6 +165,8 @@ export const sandbox: Task = {
     await runMigrations(details, options);
 
     await extendPreview(details, options);
+
+    await mutateTSConfig(details.sandboxDir);
 
     logger.info(`✅ Storybook sandbox created at ${details.sandboxDir}`);
   },

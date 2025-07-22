@@ -142,6 +142,17 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
   }
 };
 
+export const mutateTSConfig = async (cwd: string) => {
+  const tsConfigPath = join(cwd, 'tsconfig.json');
+  if (!existsSync(tsConfigPath)) {
+    return;
+  }
+  const tsConfig = await readJson(tsConfigPath);
+  // This is needed to allow importing .ts files as part of sb.mock() calls.
+  tsConfig.compilerOptions.allowImportingTsExtensions = true;
+  await writeJson(tsConfigPath, tsConfig, { spaces: 2 });
+};
+
 export const init: Task['run'] = async (
   { sandboxDir, template },
   { dryRun, debug, addon: addons, skipTemplateStories }

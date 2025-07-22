@@ -13,7 +13,7 @@ const StatusColorMapping: Record<PlayStatus, keyof Color> = {
   playing: 'warning',
   completed: 'positive',
   errored: 'negative',
-  aborted: 'mediumdark',
+  aborted: 'purple',
 } as const;
 
 const StatusTextMapping: Record<PlayStatus, string> = {

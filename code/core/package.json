@@ -193,7 +193,9 @@
     "./viewport": {
       "types": "./dist/viewport/index.d.ts",
       "default": "./dist/viewport/index.js"
-    }
+    },
+    "./webpack/loaders/storybook-mock-transform-loader": "./dist/core-server/presets/webpack/loaders/storybook-mock-transform-loader.js",
+    "./webpack/loaders/webpack-automock-loader": "./dist/core-server/presets/webpack/loaders/webpack-automock-loader.js"
   },
   "bin": "./dist/bin/dispatcher.js",
   "files": [
@@ -216,6 +218,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
+    "@vitest/mocker": "3.2.4",
     "@vitest/spy": "3.2.4",
     "better-opn": "^3.0.2",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
@@ -238,12 +241,14 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
+    "@happy-dom/global-registrator": "^18.0.1",
     "@ndelangen/get-tarball": "^3.0.7",
     "@ngard/tiny-isequal": "^1.1.0",
     "@polka/compression": "^1.0.0-next.28",
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
+    "@rolldown/pluginutils": "1.0.0-beta.18",
     "@storybook/docs-mdx": "4.0.0-next.1",
     "@tanstack/react-virtual": "^3.3.0",
     "@testing-library/dom": "10.4.0",
@@ -254,6 +259,7 @@
     "@types/ejs": "^3.1.1",
     "@types/find-cache-dir": "^5.0.0",
     "@types/js-yaml": "^4.0.5",
+    "@types/lodash": "^4.17.13",
     "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^2.3.0",
@@ -303,6 +309,7 @@
     "jsdoc-type-pratt-parser": "^4.0.0",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
+    "lodash": "^4.17.21",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
     "mlly": "^1.7.4",
@@ -341,7 +348,6 @@
     "tinyspy": "^3.0.2",
     "ts-dedent": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
-    "tsup": "^6.7.0",
     "type-fest": "^4.18.1",
     "typescript": "^5.8.3",
     "unique-string": "^3.0.0",
@@ -360,5 +366,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a0e7fd8a655c69780bc20b9749c2699e45beae18"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae18"
 }

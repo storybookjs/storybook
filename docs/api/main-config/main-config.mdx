@@ -10,7 +10,11 @@ The main configuration defines a Storybook project's behavior, including the loc
 
 ## The main configuration file: `main.js` or `main.ts`
 
-> **NOTE:** This file must be valid ESM, meaning it must use `import` instead of `require`, and neither `__dirname` nor `__filename` are available.
+<Callout variant="warning">
+
+This file must be valid ESM. In other words, it must use `import` instead of `require`, and neither `__dirname` nor `__filename` are available.
+
+</Callout>
 
 This configuration is defined in `.storybook/main.js|ts`, which is located relative to the root of your project.
 

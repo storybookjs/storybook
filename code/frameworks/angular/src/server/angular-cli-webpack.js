@@ -50,8 +50,8 @@ export const getWebpackConfig = async (baseConfig, { builderOptions, builderCont
      */
     const isTailwind4 = () => {
       try {
-        require.resolve('@tailwindcss/postcss', { paths: [root] });
-        return true;
+        const output = import.meta.resolve('@tailwindcss/postcss', root);
+        return isAbsolute(output);
       } catch {
         return false;
       }
@@ -91,8 +91,11 @@ export const getWebpackConfig = async (baseConfig, { builderOptions, builderCont
        * Angular's automatic Tailwind detection, we need to manually add the correct Tailwind 4
        * plugin to all PostCSS loader configurations.
        */
-      const tailwindPackagePath = require.resolve('@tailwindcss/postcss', { paths: [root] });
-      const extraPostcssPlugins = [require(tailwindPackagePath)()];
+      const tailwindPackagePath = fileURLToPath(import.meta.resolve('@tailwindcss/postcss', root));
+      const tailwindPackage = await import(tailwindPackagePath);
+      const extraPostcssPlugins = [
+        typeof tailwindPackage === 'function' ? tailwindPackage() : tailwindPackage.default(),
+      ];
 
       /**
        * Navigate through webpack's complex rule structure to find all postcss-loader instances and

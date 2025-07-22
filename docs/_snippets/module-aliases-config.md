@@ -51,8 +51,6 @@ export default config;
 ```
 
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="webpack"
-import path from 'node:path';
-
 export default {
   // Replace your-framework with the framework you are using (e.g., nextjs, react-webpack5)
   framework: '@storybook/your-framework',

@@ -151,9 +151,9 @@ export abstract class AbstractRenderer {
 
     try {
       const { Router } = await import('@angular/router');
-      componentBuilder.initRouter(Router).compileComponents();
+      await componentBuilder.initRouter(Router).compileComponents();
     } catch (e) {
-      componentBuilder.compileComponents();
+      await componentBuilder.compileComponents();
     }
 
     componentBuilder.copyComponentIntoTargetNode();

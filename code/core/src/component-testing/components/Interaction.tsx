@@ -243,6 +243,7 @@ export const Interaction = ({
             >
               <StyledIconButton
                 active={isSelected}
+                aria-label={`Highlight target element${elementCount === 1 ? '' : 's'}`}
                 onMouseEnter={() => onHighlightElements(call.id, true)}
                 onMouseLeave={() => onHighlightElements(call.id, false)}
                 onClick={() => onSelectElements(call.id, !isSelected)}

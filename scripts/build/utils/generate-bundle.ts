@@ -32,17 +32,19 @@ export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 export async function generateBundle({
   cwd,
   entry,
+  name,
   isProduction,
   isWatch,
 }: {
   cwd: string;
   entry: BuildEntries;
+  name: string;
   isProduction: boolean;
   isWatch: boolean;
 }) {
   const DIR_CWD = cwd;
   const DIR_REL = relative(DIR_CODE, DIR_CWD);
-  const DIR_METAFILE = join(DIR_METAFILE_BASE, DIR_REL);
+  const DIR_METAFILE = join(DIR_METAFILE_BASE, name);
   const external = (await getExternal(DIR_CWD)).runtimeExternal;
   const { entries, postbuild } = entry;
 
@@ -198,7 +200,7 @@ export async function generateBundle({
     }
     await mkdir(DIR_METAFILE, { recursive: true });
 
-    const mapIndexToName = contexts.map(([id]) => id);
+    const nameByIndex = contexts.map(([id]) => id);
     const outputs = await Promise.all(
       compile.map(async (context) => {
         const output = await context.rebuild();
@@ -214,7 +216,7 @@ export async function generateBundle({
       }
 
       await writeFile(
-        join(DIR_METAFILE, `${mapIndexToName[index - 1]}.json`),
+        join(DIR_METAFILE, `${nameByIndex[index - 1]}.json`),
         JSON.stringify(currentOutput.metafile, null, 2)
       );
     }

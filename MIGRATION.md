@@ -2,6 +2,7 @@
 
 - [From version 9.x to 10.0.0](#from-version-9x-to-1000)
   - [Core Changes](#core-changes)
+    - [Local addons must be fully resolved](#local-addons-must-be-fully-resolved)
     - [The `.storybook/main.*`-file must be valid ESM](#the-storybookmain-file-must-be-valid-esm)
     - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
@@ -486,6 +487,28 @@
 ## From version 9.x to 10.0.0
 
 ### Core Changes
+
+#### Local addons must be fully resolved
+
+In Storybook 9 it was possible to do reference local addons by a relative path, like so:
+
+```ts
+// main.ts
+
+export default {
+  addons: ["./my-addon.ts"],
+};
+```
+
+In Storybook 10 this relative path, should be fully resolved, like so:
+
+```ts
+// main.ts
+
+export default {
+  addons: [import.meta.resolve("./my-addon.ts")],
+};
+```
 
 #### The `.storybook/main.*`-file must be valid ESM
 

@@ -1,5 +1,4 @@
-import { copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
-import { SupportedLanguage } from 'storybook/internal/cli';
+import { SupportedLanguage, copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
 
 import type { Generator } from '../types';
 

@@ -9,7 +9,6 @@ import {
   promptForCompoDocs,
 } from 'storybook/internal/cli';
 import { commandLog } from 'storybook/internal/common';
-import { resolvePackageDir } from 'storybook/internal/common';
 
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';

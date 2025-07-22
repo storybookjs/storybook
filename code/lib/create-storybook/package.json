@@ -50,7 +50,6 @@
     "picocolors": "^1.1.0",
     "prompts": "^2.4.0",
     "react": "^18.2.0",
-    "storybook": "workspace:*",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.0.0",
     "typescript": "^5.8.3"

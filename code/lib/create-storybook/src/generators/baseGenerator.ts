@@ -17,8 +17,8 @@ import {
   type JsPackageManager,
   frameworkPackages,
   getPackageDetails,
+  versions,
 } from 'storybook/internal/common';
-import { versions } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 

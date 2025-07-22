@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Settings } from 'storybook/internal/cli';
-import { ProjectType } from 'storybook/internal/cli';
+import { ProjectType, type Settings } from 'storybook/internal/cli';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import prompts from 'prompts';

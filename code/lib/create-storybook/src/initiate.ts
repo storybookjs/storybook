@@ -2,17 +2,28 @@ import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 
 import * as babel from 'storybook/internal/babel';
-import type { NpmOptions } from 'storybook/internal/cli';
-import { detect, detectLanguage, detectPnp, isStorybookInstantiated } from 'storybook/internal/cli';
-import { type Settings, globalSettings } from 'storybook/internal/cli';
-import type { Builder } from 'storybook/internal/cli';
-import { ProjectType, installableProjectTypes } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { JsPackageManagerFactory } from 'storybook/internal/common';
-import { HandledError } from 'storybook/internal/common';
-import { commandLog, paddedLog } from 'storybook/internal/common';
-import { getProjectRoot, invalidateProjectRootCache } from 'storybook/internal/common';
-import { versions } from 'storybook/internal/common';
+import {
+  type Builder,
+  type NpmOptions,
+  ProjectType,
+  type Settings,
+  detect,
+  detectLanguage,
+  detectPnp,
+  globalSettings,
+  installableProjectTypes,
+  isStorybookInstantiated,
+} from 'storybook/internal/cli';
+import {
+  HandledError,
+  type JsPackageManager,
+  JsPackageManagerFactory,
+  commandLog,
+  getProjectRoot,
+  invalidateProjectRootCache,
+  paddedLog,
+  versions,
+} from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { NxProjectDetectedError } from 'storybook/internal/server-errors';

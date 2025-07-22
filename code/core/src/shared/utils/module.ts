@@ -61,10 +61,15 @@ export async function importModule(path: string) {
   try {
     const resolvedPath = win32.isAbsolute(path) ? pathToFileURL(path).href : path;
     mod = await import(resolvedPath);
-  } catch (e) {
-    // fallback to require to support older behavior
-    const require = createRequire(import.meta.url);
-    mod = require(path);
+  } catch (importError) {
+    await new Promise((resolve) => setImmediate(resolve));
+    try {
+      // fallback to require to support older behavior
+      const require = createRequire(import.meta.url);
+      mod = require(path);
+    } catch (requireError) {
+      throw importError;
+    }
   }
   return mod.default ?? mod;
 }

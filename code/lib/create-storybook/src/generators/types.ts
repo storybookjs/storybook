@@ -1,5 +1,4 @@
-import type { NpmOptions } from 'storybook/internal/cli';
-import type { Builder, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
+import type { Builder, NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 
 import type { FrameworkPreviewParts } from './configure';

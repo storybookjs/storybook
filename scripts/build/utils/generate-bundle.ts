@@ -145,6 +145,16 @@ export async function generateBundle({
         target: NODE_TARGET,
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {
+          /*
+          This banner injects CJS compatibility code into the bundle, for when
+          dependencies need require, __filename, or __dirname.
+
+          We're adding unique names to the imports to avoid collisions
+          when one of our packages bundles in another of our packages,
+          like create-storybook bundling in parts of storybook core.
+          Similarly we're using var definitions as they can be redefined
+          without causing errors.
+          */
           js: dedent`
             import CJS_COMPAT_NODE_URL_${uid} from 'node:url';
             import CJS_COMPAT_NODE_PATH_${uid} from 'node:path';

@@ -9,6 +9,7 @@ import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
 import { DetachedDebuggerMessage } from './DetachedDebuggerMessage';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';
+import type { PlayStatus } from './StatusBadge';
 import { Subnav } from './Subnav';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 
@@ -23,6 +24,7 @@ export interface Controls {
 
 interface InteractionsPanelProps {
   storyUrl: string;
+  status: PlayStatus;
   controls: Controls;
   controlStates: ControlStates;
   interactions: (Call & {
@@ -92,6 +94,7 @@ const CaughtExceptionStack = styled.pre(({ theme }) => ({
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({
     storyUrl,
+    status,
     calls,
     controls,
     controlStates,
@@ -123,7 +126,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           <Subnav
             controls={controls}
             controlStates={controlStates}
-            status={browserTestStatus}
+            status={status}
             storyFileName={fileName}
             onScrollToEnd={onScrollToEnd}
           />

@@ -25,9 +25,10 @@ import {
 } from '../../../../addons/vitest/src/constants';
 import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from '../../highlight';
 import { EVENTS } from '../../instrumenter/EVENTS';
-import { type Call, CallStates, type LogItem } from '../../instrumenter/types';
+import { type Call, CallStates, type LogItem, type RenderPhase } from '../../instrumenter/types';
 import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants';
 import { InteractionsPanel } from './InteractionsPanel';
+import type { PlayStatus } from './StatusBadge';
 
 const INITIAL_CONTROL_STATES = {
   detached: false,
@@ -38,7 +39,18 @@ const INITIAL_CONTROL_STATES = {
   end: false,
 };
 
-const statusMap: Record<CallStates, StatusValue> = {
+const playStatusMap: Record<
+  Extract<RenderPhase, 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted'>,
+  PlayStatus
+> = {
+  rendering: 'rendering',
+  playing: 'playing',
+  completed: 'completed',
+  errored: 'errored',
+  aborted: 'aborted',
+};
+
+const storyStatusMap: Record<CallStates, StatusValue> = {
   [CallStates.DONE]: 'status-value:success',
   [CallStates.ERROR]: 'status-value:error',
   [CallStates.ACTIVE]: 'status-value:pending',
@@ -129,6 +141,7 @@ export const Panel = memo<{ active: boolean; refId?: string; storyId: string; st
 
     // shared state
     const [addonState, set] = useAddonState(ADDON_ID, {
+      status: 'rendering' as PlayStatus,
       controlStates: INITIAL_CONTROL_STATES,
       isErrored: false,
       pausedAt: undefined,
@@ -146,6 +159,7 @@ export const Panel = memo<{ active: boolean; refId?: string; storyId: string; st
     const [hasResultMismatch, setResultMismatch] = useState(false);
 
     const {
+      status = 'rendering',
       controlStates = INITIAL_CONTROL_STATES,
       isErrored = false,
       pausedAt = undefined,
@@ -207,6 +221,7 @@ export const Panel = memo<{ active: boolean; refId?: string; storyId: string; st
             log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
             calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId));
             set({
+              status: 'rendering',
               controlStates: INITIAL_CONTROL_STATES,
               isErrored: false,
               pausedAt: undefined,
@@ -231,6 +246,10 @@ export const Panel = memo<{ active: boolean; refId?: string; storyId: string; st
               (s) =>
                 ({
                   ...s,
+                  status:
+                    event.newPhase in playStatusMap
+                      ? playStatusMap[event.newPhase as keyof typeof playStatusMap]
+                      : s.status,
                   interactions: interactionsList,
                   interactionsCount,
                   isPlaying: event.newPhase === 'playing',
@@ -374,7 +393,7 @@ export const Panel = memo<{ active: boolean; refId?: string; storyId: string; st
         browserTestStatus &&
         statusValue &&
         statusValue !== 'status-value:pending' &&
-        statusValue !== statusMap[browserTestStatus];
+        statusValue !== storyStatusMap[browserTestStatus];
 
       if (isMismatch) {
         const timeout = setTimeout(
@@ -405,6 +424,7 @@ export const Panel = memo<{ active: boolean; refId?: string; storyId: string; st
       <Fragment key="component-tests">
         <InteractionsPanel
           storyUrl={storyUrl}
+          status={status}
           hasResultMismatch={hasResultMismatch}
           browserTestStatus={browserTestStatus}
           calls={calls.current}

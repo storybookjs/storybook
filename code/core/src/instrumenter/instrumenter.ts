@@ -13,7 +13,16 @@ import { processError } from '@vitest/utils/error';
 
 import { EVENTS } from './EVENTS';
 import { addons } from './preview-api';
-import type { Call, CallRef, ControlStates, LogItem, Options, State, SyncPayload } from './types';
+import type {
+  Call,
+  CallRef,
+  ControlStates,
+  LogItem,
+  Options,
+  RenderPhase,
+  State,
+  SyncPayload,
+} from './types';
 import { CallStates } from './types';
 import './typings.d.ts';
 
@@ -56,7 +65,7 @@ const construct = (obj: any) => {
 };
 
 const getInitialState = (): State => ({
-  renderPhase: undefined,
+  renderPhase: 'preparing',
   isDebugging: false,
   isPlaying: false,
   isLocked: false,
@@ -100,10 +109,12 @@ export class Instrumenter {
     // When called from `start`, isDebugging will be true.
     const resetState = ({
       storyId,
+      renderPhase,
       isPlaying = true,
       isDebugging = false,
     }: {
       storyId: StoryId;
+      renderPhase?: RenderPhase;
       isPlaying?: boolean;
       isDebugging?: boolean;
     }) => {
@@ -111,6 +122,7 @@ export class Instrumenter {
       this.setState(storyId, {
         ...getInitialState(),
         ...getRetainedState(state, isDebugging),
+        renderPhase: renderPhase || state.renderPhase,
         shadowCalls: isDebugging ? state.shadowCalls : [],
         chainedCallIds: isDebugging ? state.chainedCallIds : new Set<Call['id']>(),
         playUntil: isDebugging ? state.playUntil : undefined,
@@ -204,28 +216,46 @@ export class Instrumenter {
       Object.values(this.getState(storyId).resolvers).forEach((resolve) => resolve());
     };
 
-    const renderPhaseChanged = ({ storyId, newPhase }: { storyId: string; newPhase: any }) => {
+    const renderPhaseChanged = ({
+      storyId,
+      newPhase,
+    }: {
+      storyId: string;
+      newPhase: RenderPhase;
+    }) => {
       const { isDebugging } = this.getState(storyId);
-      this.setState(storyId, { renderPhase: newPhase });
       if (newPhase === 'preparing' && isDebugging) {
-        resetState({ storyId });
+        return resetState({ storyId, renderPhase: newPhase });
+      } else if (newPhase === 'playing') {
+        return resetState({ storyId, renderPhase: newPhase, isDebugging });
       }
-      if (newPhase === 'playing') {
-        resetState({ storyId, isDebugging });
-      }
+
       if (newPhase === 'played') {
         this.setState(storyId, {
+          renderPhase: newPhase,
           isLocked: false,
           isPlaying: false,
           isDebugging: false,
         });
-      }
-      if (newPhase === 'errored') {
+      } else if (newPhase === 'errored') {
         this.setState(storyId, {
+          renderPhase: newPhase,
           isLocked: false,
           isPlaying: false,
         });
+      } else if (newPhase === 'aborted') {
+        this.setState(storyId, {
+          renderPhase: newPhase,
+          isLocked: true,
+          isPlaying: false,
+        });
+      } else {
+        this.setState(storyId, {
+          renderPhase: newPhase,
+        });
       }
+
+      this.sync(storyId);
     };
 
     // Support portable stories where addons are not available
@@ -280,11 +310,13 @@ export class Instrumenter {
   }
 
   setState(storyId: StoryId, update: Partial<State> | ((state: State) => Partial<State>)) {
-    const state = this.getState(storyId);
-    const patch = typeof update === 'function' ? update(state) : update;
-    this.state = { ...this.state, [storyId]: { ...state, ...patch } };
-    // Track state on the parent window so we can reload the iframe without losing state.
-    this.updateParentWindowState();
+    if (storyId) {
+      const state = this.getState(storyId);
+      const patch = typeof update === 'function' ? update(state) : update;
+      this.state = { ...this.state, [storyId]: { ...state, ...patch } };
+      // Track state on the parent window so we can reload the iframe without losing state.
+      this.updateParentWindowState();
+    }
   }
 
   cleanup() {

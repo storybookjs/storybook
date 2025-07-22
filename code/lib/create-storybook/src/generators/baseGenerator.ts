@@ -1,5 +1,6 @@
 import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   type Builder,
@@ -17,6 +18,7 @@ import {
   frameworkPackages,
   getPackageDetails,
 } from 'storybook/internal/common';
+import { versions } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
@@ -25,8 +27,6 @@ import ora from 'ora';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import versions from '../../../../core/src/common/versions';
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 import { configureMain, configurePreview } from './configure';
 import type { FrameworkOptions, GeneratorOptions } from './types';
 
@@ -468,7 +468,11 @@ export async function baseGenerator(
       packageManager: packageManager as any,
       language,
       destination: componentsDestinationPath,
-      commonAssetsDir: join(resolvePackageDir('create-storybook'), 'rendererAssets', 'common'),
+      commonAssetsDir: join(
+        dirname(fileURLToPath(import.meta.resolve('create-storybook/package.json'))),
+        'rendererAssets',
+        'common'
+      ),
       features,
     });
   }

@@ -12,6 +12,7 @@ import { JsPackageManagerFactory } from 'storybook/internal/common';
 import { HandledError } from 'storybook/internal/common';
 import { commandLog, paddedLog } from 'storybook/internal/common';
 import { getProjectRoot, invalidateProjectRootCache } from 'storybook/internal/common';
+import { versions } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { NxProjectDetectedError } from 'storybook/internal/server-errors';
@@ -24,7 +25,6 @@ import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import versions from '../../../core/src/common/versions';
 import angularGenerator from './generators/ANGULAR';
 import emberGenerator from './generators/EMBER';
 import htmlGenerator from './generators/HTML';

@@ -1,14 +1,16 @@
-import { join } from 'node:path';
-
-import { CoreBuilder, copyTemplate } from 'storybook/internal/cli';
-import { commandLog } from 'storybook/internal/common';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   AngularJSON,
+  CoreBuilder,
   compoDocPreviewPrefix,
+  copyTemplate,
   promptForCompoDocs,
-} from '../../../../../core/src/cli/angular/helpers';
-import { resolvePackageDir } from '../../../../../core/src/shared/utils/module';
+} from 'storybook/internal/cli';
+import { commandLog } from 'storybook/internal/common';
+import { resolvePackageDir } from 'storybook/internal/common';
+
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
@@ -102,11 +104,12 @@ const generator: Generator<{ projectName: string }> = async (
   }
 
   const templateDir = join(
-    resolvePackageDir('create-storybook'),
+    dirname(fileURLToPath(import.meta.resolve('create-storybook/package.json'))),
     'templates',
     'angular',
     projectTypeValue
   );
+
   if (templateDir) {
     copyTemplate(templateDir, root || undefined);
   }

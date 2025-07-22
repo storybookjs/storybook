@@ -33,13 +33,11 @@ export async function generateBundle({
   cwd,
   entry,
   name,
-  isProduction,
   isWatch,
 }: {
   cwd: string;
   entry: BuildEntries;
   name: string;
-  isProduction: boolean;
   isWatch: boolean;
 }) {
   const DIR_CWD = cwd;

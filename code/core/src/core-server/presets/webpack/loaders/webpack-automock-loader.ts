@@ -1,5 +1,3 @@
-import { parse } from '@babel/parser';
-import type { ParserOptions } from '@babel/parser';
 import type { LoaderContext } from 'webpack';
 
 import { getAutomockCode } from '../../../mocking-utils/automock';

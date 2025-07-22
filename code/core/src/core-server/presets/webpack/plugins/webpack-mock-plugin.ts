@@ -1,10 +1,13 @@
-import { dirname, isAbsolute } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Compiler } from 'webpack';
 
 import { babelParser, extractMockCalls } from '../../../mocking-utils/extract';
-import { resolveMock } from '../../../mocking-utils/resolve';
+import { isExternal } from '../../../mocking-utils/resolve';
+
+const require = createRequire(import.meta.url);
 
 // --- Type Definitions ---
 
@@ -62,22 +65,33 @@ export class WebpackMockPlugin {
     // This function will be called to update the mock map before each compilation.
     const updateMocks = () => {
       this.mockMap = new Map(
-        this.extractAndResolveMocks(compiler).map((mock) => [mock.absolutePath, mock])
+        this.extractAndResolveMocks(compiler).flatMap((mock) => [
+          // first one, full path
+          [mock.absolutePath, mock],
+          // second one, without the extension
+          [mock.absolutePath.replace(/\.[^.]+$/, ''), mock],
+        ])
       );
-      logger.info(`Mock map updated with ${this.mockMap.size} mocks.`);
+      // divide by 2 because we add both the full path and the path without the extension
+      logger.info(`Mock map updated with ${this.mockMap.size / 2} mocks.`);
     };
 
-    // Hook into `beforeRun` for single builds and `watchRun` for development mode.
-    compiler.hooks.beforeRun.tap(PLUGIN_NAME, updateMocks);
-    compiler.hooks.watchRun.tap(PLUGIN_NAME, updateMocks);
+    compiler.hooks.beforeRun.tap(PLUGIN_NAME, updateMocks); // for build
+    compiler.hooks.watchRun.tap(PLUGIN_NAME, updateMocks); // for dev
 
     // Apply the replacement plugin. Its callback will now use the dynamically updated mockMap.
     new compiler.webpack.NormalModuleReplacementPlugin(/.*/, (resource) => {
       try {
-        const absolutePath = fileURLToPath(import.meta.resolve(resource.request, resource.context));
+        const external = isExternal(resource.request, resource.context);
+        const absolutePath = external
+          ? require.resolve(resource.request, { paths: [resource.context] })
+          : join(resource.context, resource.request);
+
         if (this.mockMap.has(absolutePath)) {
-          const mock = this.mockMap.get(absolutePath)!;
-          resource.request = mock.replacementResource;
+          if (!absolutePath) {
+            throw new Error(`[${PLUGIN_NAME}] Could not resolve mock for "${resource.request}".`);
+          }
+          resource.request = this.mockMap.get(absolutePath)!.replacementResource;
         }
       } catch (e) {
         // Ignore errors for virtual modules, built-ins, etc.
@@ -120,11 +134,7 @@ export class WebpackMockPlugin {
     const resolvedMocks: ResolvedMock[] = [];
     for (const mock of mocks) {
       try {
-        const { absolutePath, redirectPath } = resolveMock(
-          mock.path,
-          compiler.context,
-          previewConfigPath
-        );
+        const { absolutePath, redirectPath } = mock;
 
         let replacementResource: string;
 
@@ -141,7 +151,6 @@ export class WebpackMockPlugin {
 
         resolvedMocks.push({
           ...mock,
-          absolutePath,
           replacementResource,
         });
       } catch (e) {

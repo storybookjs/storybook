@@ -88,6 +88,7 @@
     "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
   },
   "dependencies": {
+    "@angular/platform-browser-dynamic": "^20.0.0",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
     "telejson": "8.0.0",
@@ -97,17 +98,18 @@
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^1.12.1",
-    "@angular-devkit/architect": "^0.1901.1",
-    "@angular-devkit/build-angular": "^19.1.1",
-    "@angular-devkit/core": "^19.1.1",
-    "@angular/animations": "^19.1.1",
-    "@angular/common": "^19.1.1",
-    "@angular/compiler": "^19.1.1",
-    "@angular/compiler-cli": "^19.1.1",
-    "@angular/core": "^19.1.1",
-    "@angular/forms": "^19.1.1",
-    "@angular/platform-browser": "^19.1.1",
-    "@angular/platform-browser-dynamic": "^19.1.1",
+    "@angular-devkit/architect": "^0.2000.1",
+    "@angular-devkit/build-angular": "^20.0.0",
+    "@angular-devkit/core": "^20.0.0",
+    "@angular/animations": "^20.0.0",
+    "@angular/common": "^20.0.0",
+    "@angular/compiler": "^20.0.0",
+    "@angular/compiler-cli": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/platform-browser": "^20.0.0",
+    "@angular/platform-browser-dynamic": "^20.0.0",
+    "@angular/router": "^20.0.0",
     "@storybook/core-webpack": "workspace:*",
     "@types/node": "^22.0.0",
     "fd-package-json": "^1.2.0",
@@ -130,6 +132,7 @@
     "@angular/forms": ">=18.0.0 < 21.0.0",
     "@angular/platform-browser": ">=18.0.0 < 21.0.0",
     "@angular/platform-browser-dynamic": ">=18.0.0 < 21.0.0",
+    "@angular/router": ">=18.0.0 < 21.0.0",
     "rxjs": "^6.5.3 || ^7.4.0",
     "storybook": "workspace:^",
     "typescript": "^4.9.0 || ^5.0.0",
@@ -140,6 +143,9 @@
       "optional": true
     },
     "@angular/cli": {
+      "optional": true
+    },
+    "@angular/router": {
       "optional": true
     },
     "zone.js": {

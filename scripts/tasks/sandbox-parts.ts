@@ -8,12 +8,12 @@ import {
   ensureSymlink,
   existsSync,
   pathExists,
+  readFile,
   readFileSync,
   readJson,
   writeFile,
   writeJson,
 } from 'fs-extra';
-import { readFile } from 'fs/promises';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
@@ -26,7 +26,7 @@ import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
 import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { writeConfig } from '../../code/core/src/csf-tools/ConfigFile';
+import { formatConfig, writeConfig } from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
@@ -43,6 +43,21 @@ import {
   configureYarn2ForVerdaccio,
   installYarn2,
 } from '../utils/yarn';
+
+// Windows-compatible symlink function that falls back to copying
+async function ensureSymlinkOrCopy(source: string, target: string): Promise<void> {
+  try {
+    await ensureSymlink(source, target);
+  } catch (error: any) {
+    // If symlink fails (typically on Windows without admin privileges), fall back to copy
+    if (error.code === 'EPERM' || error.code === 'EEXIST') {
+      logger.info(`Symlink failed for ${target}, falling back to copy`);
+      await copy(source, target, { overwrite: true });
+    } else {
+      throw error;
+    }
+  }
+}
 
 const logger = console;
 
@@ -333,7 +348,7 @@ async function linkPackageStories(
     ? resolve(linkInDir, variant ? getStoriesFolderWithVariant(variant, packageDir) : packageDir)
     : resolve(cwd, 'template-stories', packageDir);
 
-  await ensureSymlink(source, target);
+  await ensureSymlinkOrCopy(source, target);
 
   if (!linkInDir) {
     addStoriesEntry(mainConfig, packageDir, disableDocs);
@@ -519,6 +534,10 @@ export async function addExtraDependencies({
   }
 }
 
+export const addGlobalMocks: Task['run'] = async ({ sandboxDir }) => {
+  await copy(join(CODE_DIRECTORY, 'core', 'template', '__mocks__'), join(sandboxDir, '__mocks__'));
+};
+
 export const addStories: Task['run'] = async (
   { sandboxDir, template, key },
   { addon: extraAddons, disableDocs }
@@ -548,7 +567,7 @@ export const addStories: Task['run'] = async (
   if (isCoreRenderer) {
     // Link in the template/components/index.js from preview-api, the renderer and the addons
     const rendererPath = await workspacePath('renderer', template.expected.renderer);
-    await ensureSymlink(
+    await ensureSymlinkOrCopy(
       join(CODE_DIRECTORY, rendererPath, 'template', 'components'),
       resolve(cwd, storiesPath, 'components')
     );
@@ -767,7 +786,31 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  await writeConfig(previewConfig);
+  if (template.name.includes('Bench')) {
+    await writeConfig(previewConfig);
+    return;
+  }
+
+  previewConfig.setImport(['sb'], 'storybook/test');
+  let config = formatConfig(previewConfig);
+
+  const mockBlock = [
+    "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
+    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
+    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
+    "sb.mock(import('lodash-es'));",
+    "sb.mock(import('lodash-es/add'));",
+    "sb.mock(import('lodash-es/sum'));",
+    '',
+  ].join('\n');
+
+  // find last import statement and append sb.mock calls
+  config = config.replace(
+    'import { sb } from "storybook/test";',
+    `import { sb } from 'storybook/test';\n\n${mockBlock}`
+  );
+
+  await writeFile(previewConfig.fileName, config);
 };
 
 export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dryRun, debug }) => {

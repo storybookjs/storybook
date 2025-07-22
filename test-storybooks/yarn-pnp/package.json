@@ -23,9 +23,9 @@
     "@storybook/builder-vite": "file:../../code/builders/builder-vite",
     "@storybook/builder-webpack5": "file:../../code/builders/builder-webpack5",
     "@storybook/codemod": "file:../../code/lib/codemod",
-    "@storybook/core-webpack": "portal:../../code/lib/core-webpack",
+    "@storybook/core-webpack": "file:../../code/lib/core-webpack",
     "@storybook/csf-plugin": "file:../../code/lib/csf-plugin",
-    "@storybook/ember": "portal:../../code/frameworks/ember",
+    "@storybook/ember": "file:../../code/frameworks/ember",
     "@storybook/html": "file:../../code/renderers/html",
     "@storybook/nextjs": "file:../../code/frameworks/nextjs",
     "@storybook/preact": "file:../../code/renderers/preact",
@@ -48,7 +48,7 @@
     "@storybook/web-components-vite": "file:../../code/frameworks/web-components-vite",
     "eslint-plugin-storybook": "file:../../code/lib/eslint-plugin",
     "playwright": "1.52.0",
-    "storybook": "portal:../../code/core"
+    "storybook": "file:../../code/core"
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -73,7 +73,7 @@
     "eslint-plugin-storybook": "9.1.0-alpha.6",
     "globals": "^16.2.0",
     "playwright": "1.52.0",
-    "storybook": "9.1.0-alpha.6",
+    "storybook": "file:../../code/core",
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.34.1",
     "vite": "^7.0.0",

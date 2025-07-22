@@ -1,5 +1,7 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { dirname, join } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { IncompatiblePostCssConfigError } from 'storybook/internal/server-errors';
@@ -9,9 +11,13 @@ import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import postCssLoadConfig from 'postcss-load-config';
-import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
 import type { FrameworkOptions } from './types';
+
+const require = createRequire(import.meta.url);
+
+// the ESM output of this package is broken, so I had to force it to use the CJS version it's shipping.
+const vitePluginStorybookNextjs = require('vite-plugin-storybook-nextjs');
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -19,18 +25,17 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: require.resolve('@storybook/builder-vite'),
+      name: import.meta.resolve('@storybook/builder-vite'),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: require.resolve('@storybook/react/preset'),
+    renderer: import.meta.resolve('@storybook/react/preset'),
   };
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const nextDir = dirname(require.resolve('@storybook/nextjs-vite/package.json'));
-  const result = [...entry, join(nextDir, 'dist/preview.mjs')];
+  const result = [...entry, import.meta.resolve('@storybook/nextjs-vite/preview')];
   return result;
 };
 
@@ -67,9 +72,9 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
       ...(reactConfig?.resolve ?? {}),
       alias: {
         ...(reactConfig?.resolve?.alias ?? {}),
-        'styled-jsx': dirname(require.resolve('styled-jsx/package.json')),
-        'styled-jsx/style': require.resolve('styled-jsx/style'),
-        'styled-jsx/style.js': require.resolve('styled-jsx/style'),
+        'styled-jsx': dirname(fileURLToPath(import.meta.resolve('styled-jsx/package.json'))),
+        'styled-jsx/style': fileURLToPath(import.meta.resolve('styled-jsx/style')),
+        'styled-jsx/style.js': fileURLToPath(import.meta.resolve('styled-jsx/style')),
       },
     },
     plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs({ dir: nextDir })],

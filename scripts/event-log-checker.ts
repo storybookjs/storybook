@@ -1,7 +1,7 @@
 import assert from 'assert';
 import picocolors from 'picocolors';
 
-import versions from '../code/core/src/common/versions';
+// import versions from '../code/core/src/common/versions';
 import { oneWayHash } from '../code/core/src/telemetry/one-way-hash';
 import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates';
 import { esMain } from './utils/esmain';

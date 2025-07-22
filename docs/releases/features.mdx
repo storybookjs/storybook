@@ -1,0 +1,34 @@
+---
+title: 'Features Lifecycle'
+sidebar:
+  order: 4
+  title: Feature Lifecycle
+---
+
+This page explains how the Storybook team classifies features using four lifecycle labels: **Experimental**, **Preview**, **Stable**, and **Deprecated**.
+
+These labels help users understand our level of commitment, the expected quality, likelihood of breaking changes, and anticipated timeline for each feature. By making this process transparent, we aim to support better adoption decisions and build trust in how Storybook evolves.
+
+### Experimental
+
+This stage marks the beginning of a feature’s development, where we’re validating ideas and shaping direction. 
+
+Experimental features are functional but still evolving, with room for iteration based on real-world use. They’re ideal for trying out in prototypes or early integrations, not yet something to build critical paths around. Each experimental feature comes with an [RFC](https://github.com/storybookjs/storybook/discussions/categories/rfc) where we share the initial idea and report progress. We strongly encourage feedback to help guide the next steps. 
+
+During this stage, we’re committed to fully exploring the concept. As such, specific implementation details may change significantly before stabilization.
+
+### Preview
+
+Preview features are nearly production-ready and generally reliable, with documentation in place and most known issues addressed. They should be fully functional for at least one supported framework, but may still be incomplete or less polished in others. These features are suitable for use in real projects, and we encourage teams to adopt them and share feedback. 
+
+While the feature is stable in direction, we may introduce minimal breaking changes in minor releases to address gaps or refine behavior. In those cases, we provide automigrations where possible to ease the transition. We aim to collect feedback and iterate for 1-2 minor releases before promoting to stable.
+
+### Stable
+
+Stable features are fully supported and safe for production use across all projects. They are well-documented, thoroughly tested in all of our core frameworks, and follow [semantic versioning](https://semver.org). Users can expect long-term support, with any breaking changes reserved for major releases.
+
+### Deprecated
+
+Deprecated features are in the process of being phased out and will be removed in an upcoming major release. Users should begin migrating to supported alternatives as soon as possible. These features no longer receive active development or bug fixes, and their functionality may degrade over time. While they may still work, they should not be used for new development. 
+
+Typically, a deprecated feature is removed within the next major release cycle (for example, if deprecated in 8.x, removal is expected in 9.0).

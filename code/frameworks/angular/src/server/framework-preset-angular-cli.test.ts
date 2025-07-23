@@ -1,31 +1,5 @@
 import { vi, expect, describe, it } from 'vitest';
-
-// Since getBuilderOptions is not exported, we'll test the deepMerge logic separately
-// by creating a similar function
-
-function deepMerge(target: any, source: any): any {
-  const result = { ...target };
-
-  for (const key in source) {
-    if (source[key] !== undefined && source[key] !== null) {
-      if (
-        typeof source[key] === 'object' &&
-        !Array.isArray(source[key]) &&
-        typeof target[key] === 'object' &&
-        !Array.isArray(target[key]) &&
-        target[key] !== null
-      ) {
-        // Deep merge nested objects
-        result[key] = deepMerge(target[key], source[key]);
-      } else {
-        // Override with source value
-        result[key] = source[key];
-      }
-    }
-  }
-
-  return result;
-}
+import { deepMerge } from './framework-preset-angular-cli';
 
 describe('Angular CLI Framework Preset - Deep Merge Fix', () => {
   describe('deepMerge', () => {
@@ -122,7 +96,7 @@ describe('Angular CLI Framework Preset - Deep Merge Fix', () => {
         assets: ['src/assets'],
       };
 
-      const storybookOptions = {
+      const storybookOptions: any = {
         stylePreprocessorOptions: null,
         assets: undefined,
         newOption: 'value',

@@ -83,8 +83,9 @@ function getBuilderContext(options: PresetOptions): BuilderContext {
 /**
  * Deep merge function that properly handles nested objects
  * Preserves arrays and objects from source when they exist in target
+ * @internal - exported for testing purposes
  */
-function deepMerge(target: JsonObject, source: JsonObject): JsonObject {
+export function deepMerge(target: JsonObject, source: JsonObject): JsonObject {
   const result = { ...target };
 
   for (const key in source) {

@@ -1,10 +1,10 @@
 import * as React from 'react';
 
 import semver from 'semver';
+import { configure } from 'storybook/test';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
 import type { Decorator } from './public-types';
-import { configure } from 'storybook/test';
 
 export { render } from './render';
 export { renderToCanvas } from './renderToCanvas';
@@ -35,7 +35,7 @@ export const beforeAll = async () => {
   try {
     // copied from
     // https://github.com/testing-library/react-testing-library/blob/3dcd8a9649e25054c0e650d95fca2317b7008576/src/pure.js
-    
+
     const act = await getAct();
 
     configure({

@@ -1,4 +1,5 @@
-import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 import NotStandaloneComponent, {
   ApiModule,
 } from './not-standalone-component/not-standalone-component';
@@ -11,9 +12,6 @@ const meta: Meta<NotStandaloneComponent> = {
       imports: [ApiModule],
     }),
   ],
-  parameters: {
-    useTestBedRenderer: true,
-  },
 };
 
 export default meta;

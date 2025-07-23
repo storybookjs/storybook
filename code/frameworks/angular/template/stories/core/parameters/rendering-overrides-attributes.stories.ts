@@ -1,12 +1,9 @@
-import { Meta, StoryObj } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
 import RenderingBugComponent from './rendering-bug-component/rendering-bug-component';
 
 const meta: Meta<RenderingBugComponent> = {
   component: RenderingBugComponent,
   tags: ['autodocs'],
-  parameters: {
-    useTestBedRenderer: true,
-  },
 };
 
 export default meta;

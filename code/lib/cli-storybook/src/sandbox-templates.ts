@@ -479,6 +479,13 @@ export const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
+    modifications: {
+      mainConfig: {
+        features: {
+          previewTestBedRenderer: true,
+        },
+      },
+    },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'angular-cli/default-ts': {
@@ -489,6 +496,13 @@ export const baseTemplates = {
       framework: '@storybook/angular',
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
+    },
+    modifications: {
+      mainConfig: {
+        features: {
+          previewTestBedRenderer: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },

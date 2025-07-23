@@ -17,7 +17,7 @@ export async function renderToCanvas(
 
   const renderer = await rendererFactory.getRendererInstance(
     element,
-    storyContext.parameters.useTestBedRenderer ?? false
+    globalThis.FEATURES?.previewTestBedRenderer ?? false
   );
 
   await renderer.render({

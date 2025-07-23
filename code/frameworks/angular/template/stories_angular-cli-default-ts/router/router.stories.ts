@@ -32,9 +32,6 @@ const meta: Meta<ProvideRouterComponent> = {
       },
     }),
   ],
-  parameters: {
-    useTestBedRenderer: true,
-  },
   render: (args) => {
     return {
       template: `

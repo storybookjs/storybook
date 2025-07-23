@@ -1,4 +1,5 @@
-import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 import ProviderButtonComponent, { ApiService } from './test-component/provider-button';
 
 class MockService {
@@ -15,9 +16,6 @@ const meta: Meta<ProviderButtonComponent> = {
       providers: [{ provide: ApiService, useValue: mockService }],
     }),
   ],
-  parameters: {
-    useTestBedRenderer: true,
-  },
 };
 
 export default meta;

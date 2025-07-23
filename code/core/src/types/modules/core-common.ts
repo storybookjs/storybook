@@ -448,6 +448,13 @@ export interface StorybookConfigRaw {
      * Set NODE_ENV to development in built Storybooks for better testability and debuggability
      */
     developmentModeForBuild?: boolean;
+
+    /**
+     * Use TestBed to render Angular components in the preview instead of the default renderer. See:
+     * https://github.com/storybookjs/storybook/discussions/31088
+     */
+    previewTestBedRenderer?: boolean;
+
     /** Only show input controls in Angular */
     angularFilterNonInputControls?: boolean;
   };

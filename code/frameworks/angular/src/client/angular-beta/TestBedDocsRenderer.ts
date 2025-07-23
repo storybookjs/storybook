@@ -33,7 +33,7 @@ export class TestBedDocsRenderer extends AbstractRenderer {
       await TestBedDocsRenderer.resetApplications();
     });
 
-    await super.renderWithTestBed({ ...options, forced: true });
+    await super.renderWithTestBed({ ...options });
   }
 
   async beforeFullRender(domNode?: HTMLElement): Promise<void> {

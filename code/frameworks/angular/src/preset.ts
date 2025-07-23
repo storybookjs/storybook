@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options';
+import { logger } from 'storybook/internal/node-logger';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;
@@ -19,12 +20,22 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   const config = join(getAbsolutePath('@storybook/angular'), 'dist/client/config.mjs');
   const annotations = [...entries, config];
 
-  if ((options as any as StandaloneOptions).enableProdMode) {
+  const isTestBedRenderer = options.features?.previewTestBedRenderer ?? false;
+  const isProdMode = (options as any as StandaloneOptions).enableProdMode;
+
+  if (isProdMode && isTestBedRenderer !== true) {
+    logger.info('Angular is running in production mode');
     const previewProdPath = join(
       getAbsolutePath('@storybook/angular'),
       'dist/client/preview-prod.mjs'
     );
     annotations.unshift(previewProdPath);
+  } else {
+    logger.info(
+      isProdMode
+        ? 'New TestBed Renderer is enabled: Angular is running in development mode'
+        : 'Angular is running in development mode'
+    );
   }
 
   const docsConfig = await options.presets.apply('docs', {}, options);

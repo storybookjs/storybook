@@ -1,5 +1,3 @@
-import { parse } from '@babel/parser';
-import type { ParserOptions } from '@babel/parser';
 import type { LoaderContext } from 'webpack';
 
 import { getAutomockCode } from '../../../mocking-utils/automock';
@@ -28,14 +26,15 @@ interface AutomockLoaderOptions {
 export default function webpackAutomockLoader(
   this: LoaderContext<AutomockLoaderOptions>,
   source: string
-): string {
+) {
   // Retrieve the options passed in the resource query string (e.g., `?spy=true`).
   const options = this.getOptions();
+  const callback = this.async();
   const isSpy = options.spy === 'true';
 
   // Generate the mocked source code using the utility from @vitest/mocker.
   const mocked = getAutomockCode(source, isSpy, babelParser as any);
 
   // Return the transformed code to Webpack for further processing.
-  return mocked.toString();
+  callback(null, mocked.toString(), mocked.generateMap());
 }

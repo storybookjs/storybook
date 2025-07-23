@@ -4,7 +4,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
-import { join, relative } from 'pathe';
+import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -68,6 +68,7 @@ export async function generateBundle({
 }) {
   const DIR_CWD = cwd;
   const DIR_REL = relative(DIR_CODE, DIR_CWD);
+  const PACKAGE_DIR_NAME = basename(DIR_CWD);
   const external = (await getExternal(DIR_CWD)).runtimeExternal;
   const { entries, postbuild } = entry;
 
@@ -174,7 +175,7 @@ export async function generateBundle({
         },
         plugins: [
           ...sharedOptions.plugins,
-          metafileWriterPlugin('node', join(DIR_METAFILE_BASE, name)),
+          metafileWriterPlugin('node', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );
@@ -191,7 +192,7 @@ export async function generateBundle({
         supported: SUPPORTED_FEATURES,
         plugins: [
           ...sharedOptions.plugins,
-          metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, name)),
+          metafileWriterPlugin('browser', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );
@@ -204,7 +205,7 @@ export async function generateBundle({
         entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
-          metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, name)),
+          metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );
@@ -218,7 +219,7 @@ export async function generateBundle({
         plugins: [
           ...runtimeOptions.plugins,
           globalExternals(globalsModuleInfoMap),
-          metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, name)),
+          metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
         ],
       })
     );

@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.1.0-alpha.8",
+  "version": "9.1.0-alpha.9",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -366,5 +366,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae18"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae19"
 }

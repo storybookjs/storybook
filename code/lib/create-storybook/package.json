@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "9.1.0-alpha.8",
+  "version": "9.1.0-alpha.9",
   "description": "Initialize Storybook into your project",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/create-storybook",
   "bugs": {
@@ -36,7 +36,8 @@
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
-    "semver": "^7.6.2"
+    "semver": "^7.6.2",
+    "storybook": "workspace:*"
   },
   "devDependencies": {
     "@types/prompts": "^2.0.9",
@@ -49,7 +50,6 @@
     "picocolors": "^1.1.0",
     "prompts": "^2.4.0",
     "react": "^18.2.0",
-    "storybook": "workspace:*",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.0.0",
     "typescript": "^5.8.3"
@@ -57,5 +57,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae18"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae19"
 }

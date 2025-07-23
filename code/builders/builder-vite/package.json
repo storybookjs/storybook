@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "9.1.0-alpha.8",
+  "version": "9.1.0-alpha.9",
   "description": "A plugin to run and build Storybooks with Vite",
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/builders/builder-vite/#readme",
   "bugs": {
@@ -61,5 +61,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae18"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae19"
 }

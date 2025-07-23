@@ -482,7 +482,7 @@ export const baseTemplates = {
     modifications: {
       mainConfig: {
         features: {
-          previewTestBedRenderer: false,
+          previewTestBedRenderer: true,
         },
       },
     },
@@ -500,7 +500,7 @@ export const baseTemplates = {
     modifications: {
       mainConfig: {
         features: {
-          previewTestBedRenderer: false,
+          previewTestBedRenderer: true,
         },
       },
     },

@@ -3,14 +3,14 @@ import { join } from 'node:path';
 
 import * as esbuild from 'esbuild';
 
+export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
+
 export type BuildEntry = {
   exportEntries?: ('.' | `./${string}`)[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts"
   dts?: false; // default to generating d.ts files for all entries, except if set to false
 };
-export type BuildEntriesByPlatform = Partial<
-  Record<'node' | 'browser' | 'runtime' | 'globalizedRuntime', BuildEntry[]>
->;
+export type BuildEntriesByPlatform = Partial<Record<EntryType, BuildEntry[]>>;
 
 export type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
 

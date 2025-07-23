@@ -57,13 +57,11 @@ export async function generateBundle({
   cwd,
   entry,
   name,
-  isProduction,
   isWatch,
 }: {
   cwd: string;
   entry: BuildEntries;
   name: string;
-  isProduction: boolean;
   isWatch: boolean;
 }) {
   const DIR_CWD = cwd;
@@ -79,9 +77,6 @@ export async function generateBundle({
     ignoreAnnotations: true,
     splitting: true,
     metafile: true,
-    minifyIdentifiers: true,
-    minifySyntax: isProduction,
-    minifyWhitespace: false,
     keepNames: true, // required to show correct error messages based on class names
     outbase: 'src',
     outdir: 'dist',
@@ -152,6 +147,7 @@ export async function generateBundle({
   const contexts: Array<ReturnType<typeof esbuild.context>> = [];
 
   if (entries.node) {
+    const uid = Math.random().toString(36).substring(2, 15);
     contexts.push(
       esbuild.context({
         ...sharedOptions,
@@ -160,18 +156,29 @@ export async function generateBundle({
         target: NODE_TARGET,
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {
+          /*
+          This banner injects CJS compatibility code into the bundle, for when
+          dependencies need require, __filename, or __dirname.
+
+          We're adding unique names to the imports to avoid collisions
+          when one of our packages bundles in another of our packages,
+          like create-storybook bundling in parts of storybook core.
+          Similarly we're using var definitions as they can be redefined
+          without causing errors.
+          */
           js: dedent`
-          import CJS_COMPAT_NODE_URL from 'node:url';
-          import CJS_COMPAT_NODE_PATH from 'node:path';
-          import CJS_COMPAT_NODE_MODULE from "node:module";
-    
-          const __filename = CJS_COMPAT_NODE_URL.fileURLToPath(import.meta.url);
-          const __dirname = CJS_COMPAT_NODE_PATH.dirname(__filename);
-          const require = CJS_COMPAT_NODE_MODULE.createRequire(import.meta.url);
-          // ------------------------------------------------------------
-          // end of CJS compatibility banner, injected by Storybook's esbuild configuration
-          // ------------------------------------------------------------
-          `,
+            import CJS_COMPAT_NODE_URL_${uid} from 'node:url';
+            import CJS_COMPAT_NODE_PATH_${uid} from 'node:path';
+            import CJS_COMPAT_NODE_MODULE_${uid} from "node:module";
+
+            var __filename = CJS_COMPAT_NODE_URL_${uid}.fileURLToPath(import.meta.url);
+            var __dirname = CJS_COMPAT_NODE_PATH_${uid}.dirname(__filename);
+            var require = CJS_COMPAT_NODE_MODULE_${uid}.createRequire(import.meta.url);
+
+            // ------------------------------------------------------------
+            // end of CJS compatibility banner, injected by Storybook's esbuild configuration
+            // ------------------------------------------------------------
+            `,
         },
         plugins: [
           ...sharedOptions.plugins,

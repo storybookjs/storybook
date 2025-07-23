@@ -34,6 +34,13 @@ const DIR_METAFILE_BASE = join(
 );
 export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
+/*
+ * This plugin writes the metafile to a file in the output directory.
+ * It is used to analyze the bundle size of the different entry points.
+ * The outputDir must be the package's directory, as that is the projectName in the NX config,
+ * and what will become part of the build output cache. If there is a mismatch,
+ * the metafiles won't be available whenever NX uses its cached results of the build step.
+ */
 function metafileWriterPlugin(entryType: EntryType, outputDir: string): esbuild.Plugin {
   return {
     name: 'metafile-writer',
@@ -56,7 +63,6 @@ function metafileWriterPlugin(entryType: EntryType, outputDir: string): esbuild.
 export async function generateBundle({
   cwd,
   entry,
-  name,
   isWatch,
 }: {
   cwd: string;

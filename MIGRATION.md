@@ -2,8 +2,11 @@
 
 - [From version 9.x to 10.0.0](#from-version-9x-to-1000)
   - [Core Changes](#core-changes)
+    - [Local addons must be fully resolved](#local-addons-must-be-fully-resolved)
+    - [The `.storybook/main.*`-file must be valid ESM](#the-storybookmain-file-must-be-valid-esm)
     - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
+    - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -485,6 +488,47 @@
 
 ### Core Changes
 
+#### Local addons must be fully resolved
+
+In Storybook 9 it was possible to do reference local addons by a relative path, like so:
+
+```ts
+// main.ts
+
+export default {
+  addons: ["./my-addon.ts"],
+};
+```
+
+In Storybook 10 this relative path, should be fully resolved, like so:
+
+```ts
+// main.ts
+
+export default {
+  addons: [import.meta.resolve("./my-addon.ts")],
+};
+```
+
+#### The `.storybook/main.*`-file must be valid ESM
+
+Storybook will load the `.storybook/main.*` file as an ESM file.
+Thus CJS constants (`require`, `__dirname`, `__filename`) will not be defined.
+
+You can define these constants yourself, like so:
+
+```ts
+import { createRequire } from "node:module";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
+```
+
+A `main.ts` file that's CJS is no longer supported.
+
 #### Node.js 20.19+ or 22.12+ required
 
 Storybook 10 now requires Node.js version 20.19+ or 22.12+. We require these new ranges so Node.js supports `require(esm)` without a flag.
@@ -511,6 +555,30 @@ Storybook 10 has removed all `typesVersions` fields from `package.json` files. T
 **Note:** If you're currently using `moduleResolution: "node"` (the old Node.js 10-style resolution), you'll need to upgrade to one of the supported values above.
 
 This change simplifies our package structure and aligns with modern TypeScript standards. Only TypeScript projects are affected - JavaScript projects require no changes.
+
+#### `core.builder` configuration must be a fully resolved path
+
+> [!NOTE]  
+> In the majority of cases, this is only relevant for authors of Storybook framework packages, as regular users very rarely set the `core.builder` property manually.
+
+When setting the `core.builder` or `core.builder.name` option in the main configuration, it must now be a fully resolved path to a builder's entry point, instead of just to the builder package's root directory.
+
+In a preset:
+
+```diff
+import { dirname, join } from 'node:path';
+
+const getAbsolutePath = (input) =>
+  dirname(require.resolve(join(input, 'package.json')));
+
+export const core = {
+-  builder: getAbsolutePath('@storybook/builder-vite'),
+-  // 👆 results in eg. `/absolute/path/node_modules/@storybook/builder-vite
++  builder: import.meta.resolve('@storybook/builder-vite'),
++  // 👆 results in eg. `/absolute/path/node_modules/@storybook/builder-vite/index.js
+  renderer: getAbsolutePath('@storybook/react'),
+};
+```
 
 ## From version 8.x to 9.0.0
 

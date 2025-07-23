@@ -27,22 +27,24 @@ const DIR_METAFILE_BASE = join(
   'bench',
   'esbuild-metafiles'
 );
-const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 
 export async function generateBundle({
   cwd,
   entry,
+  name,
   isProduction,
   isWatch,
 }: {
   cwd: string;
   entry: BuildEntries;
+  name: string;
   isProduction: boolean;
   isWatch: boolean;
 }) {
   const DIR_CWD = cwd;
   const DIR_REL = relative(DIR_CODE, DIR_CWD);
-  const DIR_METAFILE = join(DIR_METAFILE_BASE, DIR_REL);
+  const DIR_METAFILE = join(DIR_METAFILE_BASE, name);
   const external = (await getExternal(DIR_CWD)).runtimeExternal;
   const { entries, postbuild } = entry;
 
@@ -54,7 +56,7 @@ export async function generateBundle({
       ignoreAnnotations: true,
       splitting: true,
       metafile: true,
-      minifyIdentifiers: isProduction,
+      minifyIdentifiers: true,
       minifySyntax: isProduction,
       minifyWhitespace: false,
       keepNames: true, // required to show correct error messages based on class names
@@ -63,6 +65,14 @@ export async function generateBundle({
       treeShaking: true,
       color: true,
       external,
+      define: {
+        /*
+         * We need to disable the default behavior of replacing process.env.NODE_ENV with "development"
+         * Because we have code that reads this value to determine if the code is running in a production environment.
+         * @see 6th bullet in "browser" section in https://esbuild.github.io/api/#platform
+         */
+        'process.env.NODE_ENV': 'process.env.NODE_ENV',
+      },
     } as const satisfies EsbuildContextOptions;
 
     const [config, ...rest] = input;
@@ -125,7 +135,7 @@ export async function generateBundle({
     },
     define: {
       // This should set react in prod mode for the manager
-      'process.env.NODE_ENV': JSON.stringify('production'),
+      'process.env.NODE_ENV': '"production"',
     },
   } as const satisfies EsbuildContextOptions;
 
@@ -191,7 +201,7 @@ export async function generateBundle({
     }
     await mkdir(DIR_METAFILE, { recursive: true });
 
-    const mapIndexToName = contexts.map(([id]) => id);
+    const nameByIndex = contexts.map(([id]) => id);
     const outputs = await Promise.all(
       compile.map(async (context) => {
         const output = await context.rebuild();
@@ -207,7 +217,7 @@ export async function generateBundle({
       }
 
       await writeFile(
-        join(DIR_METAFILE, `${mapIndexToName[index - 1]}.json`),
+        join(DIR_METAFILE, `${nameByIndex[index - 1]}.json`),
         JSON.stringify(currentOutput.metafile, null, 2)
       );
     }

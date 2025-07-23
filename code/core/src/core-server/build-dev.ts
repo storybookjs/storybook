@@ -153,13 +153,13 @@ export async function buildDevStandalone(
     }
   }
 
-  const builderName = typeof builder === 'string' ? builder : builder.name;
+  const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName),
+    getPreviewBuilder(resolvedPreviewBuilder),
     getManagerBuilder(),
   ]);
 
-  if (builderName.includes('builder-vite')) {
+  if (resolvedPreviewBuilder.includes('builder-vite')) {
     const deprecationMessage =
       dedent(`Using CommonJS in your main configuration file is deprecated with Vite.
               - Refer to the migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#commonjs-with-vite-is-deprecated`);

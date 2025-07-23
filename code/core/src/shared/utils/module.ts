@@ -61,10 +61,20 @@ export async function importModule(path: string) {
   try {
     const resolvedPath = win32.isAbsolute(path) ? pathToFileURL(path).href : path;
     mod = await import(resolvedPath);
-  } catch (e) {
-    // fallback to require to support older behavior
-    const require = createRequire(import.meta.url);
-    mod = require(path);
+  } catch (importError) {
+    try {
+      // fallback to require to support older behavior
+      // this is relevant for presets that are only available with the "require" condition in a package's export map
+      const require = createRequire(import.meta.url);
+      mod = require(path);
+    } catch (requireError) {
+      /*
+        If everything fails, throw the original import error, as the require error won't be helpful
+        in Node 20 requireError will always be "Error [ERR_REQUIRE_CYCLE_MODULE]: Cannot require() ES Module"
+        in Node 22 requireError will always be "Error [ERR_INTERNAL_ASSERTION]: Unexpected module status 5. Cannot require() ES Module"
+      */
+      throw importError;
+    }
   }
   return mod.default ?? mod;
 }

@@ -42,21 +42,6 @@ const pathExists = async (path: string) => {
     .catch(() => false);
 };
 
-/**
- * We need to clean up the paths in case of pnp input:
- * `path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))` output:
- * `@storybook/react-webpack5`
- */
-const sanitizeFramework = (framework: string) => {
-  // extract either @storybook/<framework> or storybook-<framework>
-  const matches = framework.match(/(@storybook\/\w+(?:-\w+)*)|(storybook-(\w+(?:-\w+)*))/g);
-  if (!matches) {
-    return undefined;
-  }
-
-  return matches[0];
-};
-
 export async function configureMain({
   addons,
   extensions = ['js', 'jsx', 'mjs', 'ts', 'tsx'],

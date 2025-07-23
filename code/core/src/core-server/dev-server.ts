@@ -57,10 +57,11 @@ export async function storybookDevServer(options: Options) {
     throw new MissingBuilderError();
   }
 
-  const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
+  const resolvedPreviewBuilder =
+    typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
 
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName),
+    getPreviewBuilder(resolvedPreviewBuilder),
     getManagerBuilder(),
     useStatics(app, options),
   ]);

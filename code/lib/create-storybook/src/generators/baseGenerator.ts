@@ -1,32 +1,32 @@
 import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
+import {
+  type Builder,
+  type NpmOptions,
+  ProjectType,
+  SupportedLanguage,
+  configureEslintPlugin,
+  copyTemplateFiles,
+  detectBuilder,
+  externalFrameworks,
+  extractEslintInfo,
+} from 'storybook/internal/cli';
+import {
+  type JsPackageManager,
+  frameworkPackages,
+  getPackageDetails,
+  versions,
+} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
-import type { NpmOptions } from '../../../../core/src/cli/NpmOptions';
-import { detectBuilder } from '../../../../core/src/cli/detect';
-import { configureEslintPlugin, extractEslintInfo } from '../../../../core/src/cli/eslintPlugin';
-import { copyTemplateFiles } from '../../../../core/src/cli/helpers';
-import {
-  type Builder,
-  ProjectType,
-  SupportedLanguage,
-  externalFrameworks,
-} from '../../../../core/src/cli/project_types';
-import {
-  type JsPackageManager,
-  getPackageDetails,
-} from '../../../../core/src/common/js-package-manager/JsPackageManager';
-import { frameworkPackages } from '../../../../core/src/common/utils/get-storybook-info';
-import versions from '../../../../core/src/common/versions';
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
-import type { SupportedFrameworks } from '../../../../core/src/types/modules/frameworks';
-import type { SupportedRenderers } from '../../../../core/src/types/modules/renderers';
 import { configureMain, configurePreview } from './configure';
 import type { FrameworkOptions, GeneratorOptions } from './types';
 
@@ -468,7 +468,11 @@ export async function baseGenerator(
       packageManager: packageManager as any,
       language,
       destination: componentsDestinationPath,
-      commonAssetsDir: join(resolvePackageDir('create-storybook'), 'rendererAssets', 'common'),
+      commonAssetsDir: join(
+        dirname(fileURLToPath(import.meta.resolve('create-storybook/package.json'))),
+        'rendererAssets',
+        'common'
+      ),
       features,
     });
   }

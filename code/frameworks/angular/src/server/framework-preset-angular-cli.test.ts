@@ -1,4 +1,4 @@
-import { vi, expect, describe, it } from 'vitest';
+import { expect, describe, it } from 'vitest';
 import { deepMerge } from './framework-preset-angular-cli';
 
 describe('Angular CLI Framework Preset - Deep Merge Fix', () => {

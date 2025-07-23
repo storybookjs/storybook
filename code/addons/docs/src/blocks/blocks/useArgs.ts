@@ -16,12 +16,7 @@ export const useArgs = (
   story: PreparedStory,
   context: DocsContextProps
 ): [Args, (args: Args) => void, (argNames?: string[]) => void] => {
-  const result = useArgsIfDefined(story, context);
-
-  if (!result) {
-    throw new Error('No result when story was defined');
-  }
-  return result;
+  return useDocsArgs(story, context);
 };
 
 /**

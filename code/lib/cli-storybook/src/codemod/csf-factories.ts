@@ -57,7 +57,7 @@ async function runStoriesCodemod(options: {
 export const csfFactories: CommandFix = {
   id: 'csf-factories',
   promptType: 'command',
-  async run({ dryRun, mainConfig, mainConfigPath, previewConfigPath, packageManager }) {
+  async run({ dryRun, mainConfig, mainConfigPath, previewConfigPath, packageManager, configDir }) {
     let useSubPathImports = true;
     if (!process.env.IN_STORYBOOK_SANDBOX) {
       // prompt whether the user wants to use imports map
@@ -116,7 +116,7 @@ export const csfFactories: CommandFix = {
       configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
     );
 
-    await syncStorybookAddons(mainConfig, previewConfigPath!);
+    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
 
     logger.logBox(
       dedent`

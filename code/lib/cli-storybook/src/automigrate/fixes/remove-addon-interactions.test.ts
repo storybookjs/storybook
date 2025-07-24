@@ -24,28 +24,32 @@ vi.mock('picocolors', async (importOriginal) => {
 });
 
 describe('removeAddonInteractions', () => {
+  const mockPackageManager = {
+    isDependencyInstalled: vi.fn(),
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(mockPackageManager.isDependencyInstalled).mockReturnValue(false);
   });
 
   describe('check', () => {
     it('should return null if addon-interactions is not present', async () => {
       vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-essentials']);
-      const result = await removeAddonInteractions.check({ mainConfig: {} } as any);
+      const result = await removeAddonInteractions.check({
+        mainConfig: {},
+        packageManager: mockPackageManager,
+      } as any);
       expect(result).toBeNull();
     });
 
-    it('should return empty object if addon-interactions is present', async () => {
+    it('should return true if addon-interactions is present', async () => {
       vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-interactions']);
-      const result = await removeAddonInteractions.check({ mainConfig: {} } as any);
-      expect(result).toEqual({});
-    });
-  });
-
-  describe('prompt', () => {
-    it('should return the correct message', () => {
-      const message = removeAddonInteractions.prompt({});
-      expect(message).toContain('@storybook/addon-interactions has been moved to Storybook core');
+      const result = await removeAddonInteractions.check({
+        mainConfig: {},
+        packageManager: mockPackageManager,
+      } as any);
+      expect(result).toEqual(true);
     });
   });
 

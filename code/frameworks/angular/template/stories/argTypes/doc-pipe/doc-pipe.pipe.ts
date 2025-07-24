@@ -1,4 +1,5 @@
-import { PipeTransform, Pipe } from '@angular/core';
+import type { PipeTransform } from '@angular/core';
+import { Pipe } from '@angular/core';
 
 /** This is an Angular Pipe example that has a Prop Table. */
 @Pipe({

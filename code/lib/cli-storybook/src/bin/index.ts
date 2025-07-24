@@ -1,11 +1,12 @@
 import { globalSettings } from 'storybook/internal/cli';
 import {
+  HandledError,
   JsPackageManagerFactory,
   removeAddon as remove,
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
@@ -26,9 +27,13 @@ addToGlobalContext('cliVersion', versions.storybook);
 
 // Return a failed exit code but write the logs to a file first
 const handleCommandFailure = async (error: unknown): Promise<never> => {
-  logger.error(String(error));
+  if (!(error instanceof HandledError)) {
+    logger.error(String(error));
+  }
+
   const logFile = await logTracker.writeToFile();
-  logger.outro(`Storybook debug logs can be found at: ${logFile}`);
+  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.outro('');
   process.exit(1);
 };
 
@@ -48,8 +53,8 @@ const command = (name: string) =>
     .hook('preAction', async (self) => {
       try {
         const options = self.opts();
-        if (options.logLevel) {
-          logger.setLogLevel(options.logLevel);
+        if (options.loglevel) {
+          logger.setLogLevel(options.loglevel);
         }
 
         if (options.writeLogs) {
@@ -64,7 +69,8 @@ const command = (name: string) =>
     .hook('postAction', async () => {
       if (logTracker.shouldWriteLogsToFile) {
         const logFile = await logTracker.writeToFile();
-        logger.outro(`Storybook debug logs can be found at: ${logFile}`);
+        logger.log(`Storybook debug logs can be found at: ${logFile}`);
+        logger.outro(CLI_COLORS.success('Done!'));
       }
     });
 
@@ -222,6 +228,7 @@ command('automigrate [fixId]')
   )
   .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
+    prompt.setPromptLibrary('clack');
     await doAutomigrate({ fixId, ...options }).catch(handleCommandFailure);
   });
 

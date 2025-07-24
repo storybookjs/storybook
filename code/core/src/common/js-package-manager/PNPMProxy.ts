@@ -114,26 +114,25 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
-    const process = this.executeCommand({
+    const childProcess = await this.executeCommand({
       command: 'pnpm',
       args: ['config', 'get', 'registry'],
     });
-    const result = await process;
-    const url = (result.stdout ?? '').trim();
+    const url = (childProcess.stdout ?? '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     try {
-      const process = this.executeCommand({
+      const childProcess = await this.executeCommand({
         command: 'pnpm',
         args: ['list', pattern.map((p) => `"${p}"`).join(' '), '--json', `--depth=${depth}`],
         env: {
           FORCE_COLOR: 'false',
         },
+        cwd: this.instanceDir,
       });
-      const result = await process;
-      const commandResult = result.stdout ?? '';
+      const commandResult = childProcess.stdout ?? '';
 
       const parsedOutput = JSON.parse(commandResult);
       return this.mapDependencies(parsedOutput, pattern);
@@ -196,10 +195,10 @@ export class PNPMProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall() {
+  protected runInstall(options?: { force?: boolean }) {
     return this.executeCommand({
       command: 'pnpm',
-      args: ['install', ...this.getInstallArgs()],
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });

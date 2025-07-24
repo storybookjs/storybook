@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
-import { commonGlobOptions, normalizeStoryPath } from 'storybook/internal/common';
+import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
 import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
@@ -103,6 +103,9 @@ export class StoryIndexGenerator {
   // Later, we'll combine each of these subsets together to form the full index
   private specifierToCache: Map<NormalizedStoriesSpecifier, SpecifierStoriesCache>;
 
+  /** Cache for findMatchingFiles results */
+  private static findMatchingFilesCache = new Map<string, SpecifierStoriesCache>();
+
   // Cache the last value of `getStoryIndex`. We invalidate (by unsetting) when:
   //  - any file changes, including deletions
   //  - the preview changes [not yet implemented]
@@ -121,11 +124,37 @@ export class StoryIndexGenerator {
     this.specifierToCache = new Map();
   }
 
+  /** Generate a cache key for findMatchingFiles */
+  private static getFindMatchingFilesCacheKey(
+    specifier: NormalizedStoriesSpecifier,
+    workingDir: Path,
+    ignoreWarnings: boolean
+  ): string {
+    return JSON.stringify({
+      directory: specifier.directory,
+      files: specifier.files,
+      workingDir,
+      ignoreWarnings,
+    });
+  }
+
+  /** Clear the findMatchingFiles cache */
+  public static clearFindMatchingFilesCache(): void {
+    this.findMatchingFilesCache.clear();
+  }
+
   static async findMatchingFiles(
     specifier: NormalizedStoriesSpecifier,
     workingDir: Path,
     ignoreWarnings = false
   ): Promise<SpecifierStoriesCache> {
+    // Check cache first
+    const cacheKey = this.getFindMatchingFilesCacheKey(specifier, workingDir, ignoreWarnings);
+    const cached = this.findMatchingFilesCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const pathToSubIndex = {} as SpecifierStoriesCache;
 
     const fullGlob = slash(join(specifier.directory, specifier.files));
@@ -159,6 +188,8 @@ export class StoryIndexGenerator {
       pathToSubIndex[absolutePath] = false;
     });
 
+    // Store in cache before returning
+    this.findMatchingFilesCache.set(cacheKey, pathToSubIndex);
     return pathToSubIndex;
   }
 
@@ -383,7 +414,10 @@ export class StoryIndexGenerator {
     invariant(indexer, `No matching indexer found for ${absolutePath}`);
 
     const indexInputs = await indexer.createIndex(absolutePath, { makeTitle: defaultMakeTitle });
-    const tsconfigPath = await findUp('tsconfig.json', { cwd: this.options.workingDir });
+    const tsconfigPath = await findUp('tsconfig.json', {
+      cwd: this.options.workingDir,
+      stopAt: getProjectRoot(),
+    });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
     let matchPath: TsconfigPaths.MatchPath | undefined;
     if (tsconfig.resultType === 'success') {

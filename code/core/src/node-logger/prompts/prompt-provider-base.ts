@@ -51,11 +51,18 @@ export interface SpinnerInstance {
 
 export interface TaskLogInstance {
   message: (text: string) => void;
-  success: (message: string) => void;
+  success: (message: string, options?: { showLog?: boolean }) => void;
   error: (message: string) => void;
 }
 
+export interface SpinnerOptions {
+  /** The id of the task, to be used by the log tracker. */
+  id: string;
+}
+
 export interface TaskLogOptions {
+  /** The id of the task, to be used by the log tracker. */
+  id: string;
   title: string;
   retainLog?: boolean;
   limit?: number;
@@ -73,7 +80,7 @@ export abstract class PromptProvider {
     promptOptions?: PromptOptions
   ): Promise<T[]>;
 
-  abstract spinner(): SpinnerInstance;
+  abstract spinner(options: SpinnerOptions): SpinnerInstance;
 
   abstract taskLog(options: TaskLogOptions): TaskLogInstance;
 }

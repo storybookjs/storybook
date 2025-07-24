@@ -53,13 +53,24 @@ import { packageVersions } from './ink/steps/checks/packageVersions';
 import { vitestConfigFiles } from './ink/steps/checks/vitestConfigFiles';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from './scaffold-new-project';
 
+const ONBOARDING_PROJECT_TYPES = [
+  ProjectType.REACT,
+  ProjectType.REACT_SCRIPTS,
+  ProjectType.REACT_NATIVE_WEB,
+  ProjectType.REACT_PROJECT,
+  ProjectType.WEBPACK_REACT,
+  ProjectType.NEXTJS,
+  ProjectType.VUE3,
+  ProjectType.ANGULAR,
+];
+
 const installStorybook = async <Project extends ProjectType>(
   projectType: Project,
   packageManager: JsPackageManager,
   options: CommandOptions
 ): Promise<any> => {
   const npmOptions: NpmOptions = {
-    installAsDevDependencies: true,
+    type: 'devDependencies',
     skipInstall: options.skipInstall,
   };
 
@@ -98,6 +109,12 @@ const installStorybook = async <Project extends ProjectType>(
         return reactNativeWebGenerator(packageManager, npmOptions, generatorOptions).then(
           commandLog('Adding Storybook support to your "React Native" app')
         );
+      }
+
+      case ProjectType.REACT_NATIVE_AND_RNW: {
+        commandLog('Adding Storybook support to your "React Native" app');
+        await reactNativeGenerator(packageManager, npmOptions, generatorOptions);
+        return reactNativeWebGenerator(packageManager, npmOptions, generatorOptions);
       }
 
       case ProjectType.QWIK: {
@@ -370,29 +387,33 @@ export async function doInitiate(options: CommandOptions): Promise<
 > {
   const { packageManager: pkgMgr } = options;
 
-  let packageManager = JsPackageManagerFactory.getPackageManager({
-    force: pkgMgr,
-  });
+  const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
+  let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
 
   // Check if the current directory is empty.
-  if (options.force !== true && currentDirectoryIsEmpty(packageManager.type)) {
+  if (isEmptyDirProject) {
     // Initializing Storybook in an empty directory with yarn1
-    // will very likely fail due to different kind of hoisting issues
+    // will very likely fail due to different kinds of hoisting issues
     // which doesn't get fixed anymore in yarn1.
     // We will fallback to npm in this case.
-    if (packageManager.type === 'yarn1') {
-      packageManager = JsPackageManagerFactory.getPackageManager({ force: 'npm' });
+    if (packageManagerType === 'yarn1') {
+      packageManagerType = 'npm';
     }
+
     // Prompt the user to create a new project from our list.
-    await scaffoldNewProject(packageManager.type, options);
+    await scaffoldNewProject(packageManagerType, options);
     invalidateProjectRootCache();
   }
+
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    force: pkgMgr,
+  });
 
   if (!options.skipInstall) {
     await packageManager.installDependencies();
   }
 
-  const latestVersion = await packageManager.latestVersion('storybook');
+  const latestVersion = (await packageManager.latestVersion('storybook'))!;
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, latestVersion);
@@ -458,12 +479,16 @@ export async function doInitiate(options: CommandOptions): Promise<
     if (isInteractive) {
       selectedFeatures.add('test');
     }
+    if (newUser) {
+      selectedFeatures.add('onboarding');
+    }
   }
 
   const telemetryFeatures = {
     dev: true,
     docs: selectedFeatures.has('docs'),
     test: selectedFeatures.has('test'),
+    onboarding: selectedFeatures.has('onboarding'),
   };
 
   let projectType: ProjectType;
@@ -500,6 +525,10 @@ export async function doInitiate(options: CommandOptions): Promise<
             {
               title: `${picocolors.bold('React Native Web')}: Storybook on web for docs, test, and sharing`,
               value: ProjectType.REACT_NATIVE_WEB,
+            },
+            {
+              title: `${picocolors.bold('Both')}: Add both native and web Storybooks`,
+              value: ProjectType.REACT_NATIVE_AND_RNW,
             },
           ],
         });
@@ -580,6 +609,11 @@ export async function doInitiate(options: CommandOptions): Promise<
       }
     }
   }
+
+  if (selectedFeatures.has('onboarding') && !ONBOARDING_PROJECT_TYPES.includes(projectType)) {
+    selectedFeatures.delete('onboarding');
+  }
+
   // Update the options object with the selected features before passing it down to the generator
   options.features = Array.from(selectedFeatures);
 
@@ -596,11 +630,11 @@ export async function doInitiate(options: CommandOptions): Promise<
     await telemetry('init', { projectType, features: telemetryFeatures, newUser });
   }
 
-  if (projectType === ProjectType.REACT_NATIVE) {
+  if ([ProjectType.REACT_NATIVE, ProjectType.REACT_NATIVE_AND_RNW].includes(projectType)) {
     logger.log(dedent`
-      ${picocolors.yellow('NOTE: installation is not 100% automated.')}
+      ${picocolors.yellow('React Native (RN) Storybook installation is not 100% automated.')}
 
-      To run Storybook, you will need to:
+      To run RN Storybook, you will need to:
 
       1. Replace the contents of your app entry with the following
 
@@ -614,12 +648,21 @@ export async function doInitiate(options: CommandOptions): Promise<
       For more details go to:
       ${picocolors.cyan('https://github.com/storybookjs/react-native#getting-started')}
 
-      Then to run your Storybook, type:
+      Then to start RN Storybook, run:
 
       ${picocolors.inverse(' ' + packageManager.getRunCommand('start') + ' ')}
-
     `);
 
+    if (projectType === ProjectType.REACT_NATIVE_AND_RNW) {
+      logger.log(dedent`
+
+        ${picocolors.yellow('React Native Web (RNW) Storybook is fully installed.')}
+
+        To start RNW Storybook, run:
+
+        ${picocolors.inverse(' ' + packageManager.getRunCommand('storybook') + ' ')}
+      `);
+    }
     return { shouldRunDev: false };
   }
 

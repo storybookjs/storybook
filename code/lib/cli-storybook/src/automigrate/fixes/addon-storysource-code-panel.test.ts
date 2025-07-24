@@ -140,30 +140,6 @@ describe('addon-storysource-remove', () => {
     });
   });
 
-  describe('prompt phase', () => {
-    it('returns the correct prompt message', () => {
-      const promptMessage = addonStorysourceCodePanel.prompt({
-        hasStorysource: true,
-        hasDocs: true,
-      });
-
-      expect(promptMessage).toMatchInlineSnapshot(
-        `"We'll remove @storybook/addon-storysource and enable the Code Panel instead."`
-      );
-    });
-
-    it('returns the correct prompt message when docs addon is not present', () => {
-      const promptMessage = addonStorysourceCodePanel.prompt({
-        hasStorysource: true,
-        hasDocs: false,
-      });
-
-      expect(promptMessage).toMatchInlineSnapshot(
-        `"We'll remove @storybook/addon-storysource and enable the Code Panel instead."`
-      );
-    });
-  });
-
   describe('run phase', () => {
     it('does nothing if storysource addon not found', async () => {
       await addonStorysourceCodePanel.run?.({
@@ -240,10 +216,11 @@ describe('addon-storysource-remove', () => {
         storybookVersion: '9.0.0',
       } as RunOptions<StorysourceOptions>);
 
-      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-docs@9.0.0', {
+      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-docs', {
         configDir: '.storybook',
         skipInstall: true,
         skipPostinstall: true,
+        yes: true,
       });
     });
 

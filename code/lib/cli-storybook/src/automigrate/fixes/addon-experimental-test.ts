@@ -1,5 +1,4 @@
 import { readFileSync, writeFileSync } from 'fs';
-import picocolors from 'picocolors';
 
 import { findFilesUp } from '../../util';
 import type { Fix } from '../types';
@@ -19,19 +18,16 @@ interface AddonExperimentalTestOptions {
  */
 export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
   id: 'addon-experimental-test',
-
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
-
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimental-test-addon-stabilized-and-renamed',
 
   promptType: 'auto',
 
   async check({ packageManager }) {
-    const experimentalAddonTestVersion = await packageManager.getInstalledVersion(
+    const isExperimentalAddonTestInstalled = await packageManager.isPackageInstalled(
       '@storybook/experimental-addon-test'
     );
 
-    if (!experimentalAddonTestVersion) {
+    if (!isExperimentalAddonTestInstalled) {
       return null;
     }
 
@@ -59,7 +55,7 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
   },
 
   prompt() {
-    return `We'll migrate ${picocolors.cyan('@storybook/experimental-addon-test')} to ${picocolors.cyan('@storybook/addon-vitest')}`;
+    return "We'll migrate @storybook/experimental-addon-test to @storybook/addon-vitest";
   },
 
   async run({ result: { matchingFiles }, packageManager, dryRun, storybookVersion }) {
@@ -83,7 +79,7 @@ export const addonExperimentalTest: Fix<AddonExperimentalTestOptions> = {
     // Update package.json if needed
     if (!dryRun) {
       await packageManager.removeDependencies(['@storybook/experimental-addon-test']);
-      await packageManager.addDependencies({ installAsDevDependencies: true, skipInstall: true }, [
+      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `@storybook/addon-vitest@${storybookVersion}`,
       ]);
     }

@@ -19,11 +19,11 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 
-import { type Call, CallStates, type ControlStates } from '../../instrumenter/types';
+import { type ControlStates } from '../../instrumenter/types';
 import type { Controls } from './InteractionsPanel';
-import { StatusBadge } from './StatusBadge';
+import { type PlayStatus, StatusBadge } from './StatusBadge';
 
 const SubnavWrapper = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
@@ -33,18 +33,18 @@ const SubnavWrapper = styled.div(({ theme }) => ({
   zIndex: 1,
 }));
 
-const StyledSubnav = styled.nav(({ theme }) => ({
+const StyledSubnav = styled.nav({
   height: 40,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
   paddingLeft: 15,
-}));
+});
 
 interface SubnavProps {
   controls: Controls;
   controlStates: ControlStates;
-  status: Call['status'];
+  status: PlayStatus;
   storyFileName?: string;
   onScrollToEnd?: () => void;
 }
@@ -120,11 +120,12 @@ export const Subnav: React.FC<SubnavProps> = ({
   storyFileName,
   onScrollToEnd,
 }) => {
-  const buttonText = status === CallStates.ERROR ? 'Scroll to error' : 'Scroll to end';
+  const buttonText = status === 'errored' ? 'Scroll to error' : 'Scroll to end';
+  const theme = useTheme();
 
   return (
     <SubnavWrapper>
-      <Bar>
+      <Bar backgroundColor={theme.background.app}>
         <StyledSubnav aria-label="Component tests toolbar">
           <Group>
             <StatusBadge status={status} />

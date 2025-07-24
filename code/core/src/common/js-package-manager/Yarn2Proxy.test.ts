@@ -10,6 +10,7 @@ describe('Yarn 2 Proxy', () => {
 
   beforeEach(() => {
     yarn2Proxy = new Yarn2Proxy();
+    JsPackageManager.clearLatestVersionCache();
     vi.spyOn(yarn2Proxy, 'writePackageJson').mockImplementation(vi.fn());
     vi.spyOn(yarn2Proxy, 'executeCommand').mockClear();
   });
@@ -21,8 +22,8 @@ describe('Yarn 2 Proxy', () => {
   describe('installDependencies', () => {
     it('should run `yarn`', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
-      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fns: any) => {
-        await Promise.all(fns.map((fn: () => void) => fn()));
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
       });
       const executeCommandSpy = vi.spyOn(yarn2Proxy, 'executeCommand').mockResolvedValue({
         stdout: '',
@@ -59,7 +60,7 @@ describe('Yarn 2 Proxy', () => {
         stdout: '',
       } as any);
 
-      await yarn2Proxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+      await yarn2Proxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -140,7 +141,7 @@ describe('Yarn 2 Proxy', () => {
         stdout: 'NOT A JSON',
       } as any);
 
-      await expect(yarn2Proxy.latestVersion('storybook')).rejects.toThrow();
+      await expect(yarn2Proxy.latestVersion('storybook')).resolves.toBe(null);
     });
   });
 

@@ -87,7 +87,7 @@ export async function getBabelDependencies(packageManager: JsPackageManager) {
       babelCoreVersion
     );
     // Babel 6
-    if (satisfies(latestCompatibleBabelVersion, '^6.0.0')) {
+    if (latestCompatibleBabelVersion && satisfies(latestCompatibleBabelVersion, '^6.0.0')) {
       babelLoaderVersion = '^7.0.0';
     }
   }
@@ -258,25 +258,6 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
   });
 
   await writeFile(templatePath, template);
-}
-
-// Given a package.json, finds any official storybook package within it
-// and if it exists, returns the version of that package from the specified package.json
-export function getStorybookVersionSpecifier(packageJson: PackageJsonWithDepsAndDevDeps) {
-  const allDeps = {
-    ...packageJson.dependencies,
-    ...packageJson.devDependencies,
-    ...packageJson.optionalDependencies,
-  };
-  const storybookPackage = Object.keys(allDeps).find((name: string) => {
-    return storybookMonorepoPackages[name as keyof typeof storybookMonorepoPackages];
-  });
-
-  if (!storybookPackage) {
-    throw new Error(`Couldn't find any official storybook packages in package.json`);
-  }
-
-  return allDeps[storybookPackage];
 }
 
 export async function isNxProject() {

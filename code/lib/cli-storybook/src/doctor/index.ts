@@ -1,5 +1,5 @@
 import { JsPackageManager } from 'storybook/internal/common';
-import { logTracker, logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -23,6 +23,40 @@ import type {
   ProjectDoctorResults,
 } from './types';
 
+/** Collects deduplicated diagnostic results across multiple projects */
+export function collectDeduplicatedDiagnostics(
+  projectResults: Record<string, ProjectDoctorResults>
+): DiagnosticResult[] {
+  const diagnosticMap = new Map<DiagnosticType, DiagnosticResult>();
+
+  Object.entries(projectResults).forEach(([configDir, result]) => {
+    Object.entries(result.diagnostics).forEach(([type, status]) => {
+      if (status !== DiagnosticStatus.PASSED) {
+        const diagnosticType = type as DiagnosticType;
+        const message = result.messages[diagnosticType];
+
+        if (message) {
+          const existing = diagnosticMap.get(diagnosticType);
+          if (existing) {
+            // Add project to existing diagnostic
+            existing.projects.push({ configDir });
+          } else {
+            // Create new diagnostic entry
+            diagnosticMap.set(diagnosticType, {
+              type: diagnosticType,
+              title: type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+              message,
+              projects: [{ configDir }],
+            });
+          }
+        }
+      }
+    });
+  });
+
+  return Array.from(diagnosticMap.values());
+}
+
 /** Displays project-based doctor results (similar to automigration pattern) */
 export function displayDoctorResults(
   projectResults: Record<string, ProjectDoctorResults>
@@ -37,16 +71,17 @@ export function displayDoctorResults(
 
   if (!hasAnyIssues) {
     if (projectCount === 1) {
-      logger.log(`🥳 Your Storybook project looks good!`);
+      logger.log(`Your Storybook project looks good!`);
     } else {
-      logger.log(`🥳 All ${projectCount} Storybook projects look good!`);
+      logger.log(`All ${projectCount} Storybook projects look good!`);
     }
     return false;
   }
 
-  // Display results for each project
-  Object.entries(projectResults).forEach(([configDir, result]) => {
-    const projectName = picocolors.cyan(shortenPath(configDir) || '.');
+  // For single project, display per-project results
+  if (projectCount === 1) {
+    const [configDir, result] = Object.entries(projectResults)[0];
+    const projectName = shortenPath(configDir) || '.';
 
     if (result.status === 'healthy') {
       logger.log(`✅ ${projectName}: No issues found`);
@@ -55,9 +90,11 @@ export function displayDoctorResults(
         (status) => status !== DiagnosticStatus.PASSED
       ).length;
       if (result.status === 'check_error') {
-        logger.error(`${projectName}: ${issueCount} problem(s) found`);
+        logger.error(
+          `${projectName}: ${issueCount} ${issueCount === 1 ? 'problem' : 'problems'} found`
+        );
       } else {
-        logger.warn(`${projectName}: ${issueCount} issue(s) found`);
+        logger.warn(`${projectName}: ${issueCount} ${issueCount === 1 ? 'issue' : 'issues'} found`);
       }
 
       // Display each diagnostic issue
@@ -65,14 +102,57 @@ export function displayDoctorResults(
         if (status !== DiagnosticStatus.PASSED) {
           const message = result.messages[type as DiagnosticType];
           if (message) {
+            const title = type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
             logger.logBox(message, {
-              title: type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+              title:
+                status === DiagnosticStatus.CHECK_ERROR
+                  ? CLI_COLORS.error(title)
+                  : CLI_COLORS.warning(title),
             });
           }
         }
       });
     }
-  });
+  } else {
+    // For multiple projects, use deduplicated approach
+    const deduplicatedDiagnostics = collectDeduplicatedDiagnostics(projectResults);
+
+    const totalIssues = deduplicatedDiagnostics.length;
+    const errorCount = Object.values(projectResults).filter(
+      (result) => result.status === 'check_error'
+    ).length;
+
+    if (errorCount > 0) {
+      logger.error(
+        `Found ${totalIssues} ${totalIssues === 1 ? 'issue' : 'issues'} across ${projectCount} projects`
+      );
+    } else {
+      logger.warn(
+        `Found ${totalIssues} ${totalIssues === 1 ? 'issue' : 'issues'} across ${projectCount} projects`
+      );
+    }
+
+    // Display deduplicated diagnostics
+    deduplicatedDiagnostics.forEach((diagnostic) => {
+      let messageWithProjects = diagnostic.message;
+
+      if (diagnostic.projects.length > 1) {
+        const projectNames = diagnostic.projects
+          .map((p) => shortenPath(p.configDir) || '.')
+          .join(', ');
+        messageWithProjects += `\n\nAffected projects: ${projectNames}`;
+      } else {
+        const projectName = shortenPath(diagnostic.projects[0].configDir) || '.';
+        messageWithProjects += `\n\nAffected project: ${projectName}`;
+      }
+
+      logger.logBox(messageWithProjects, {
+        title: CLI_COLORS.warning(diagnostic.title),
+      });
+    });
+  }
+
+  logger.step('Storybook doctor is complete!');
 
   const commandMessage = `You can always recheck the health of your project(s) by running:\n${picocolors.cyan(
     'npx storybook doctor'
@@ -107,7 +187,7 @@ export const doctor = async ({
   configDir: userSpecifiedConfigDir,
   packageManager: packageManagerName,
 }: DoctorOptions) => {
-  logger.step('🩺 Checking the health of your Storybook..');
+  logger.step('Checking the health of your Storybook..');
 
   const diagnosticResults: DiagnosticResult[] = [];
 
@@ -204,10 +284,10 @@ export async function getDoctorDiagnostics({
   if (!hasStorybookDependency) {
     results.push({
       type: DiagType.MISSING_STORYBOOK_DEPENDENCY,
-      title: `Package ${picocolors.cyan('storybook')} not found`,
+      title: `Package "storybook" not found`,
       message: dedent`
-        The ${picocolors.cyan('storybook')} package was not found in your package.json.
-        Installing ${picocolors.cyan('storybook')} as a direct dev dependency in your package.json is required.
+        The "storybook" package was not found in your package.json.
+        Installing "storybook" as a direct dev dependency in your package.json is required.
       `,
       project: { configDir },
     });
@@ -232,7 +312,6 @@ export async function getDoctorDiagnostics({
     });
   }
 
-  const allDependencies = packageManager.getAllDependencies() as Record<string, string>;
   const installationMetadata = await packageManager.findInstallations([
     '@storybook/*',
     'storybook',
@@ -241,10 +320,7 @@ export async function getDoctorDiagnostics({
   // If we found incompatible packages, we let the users fix that first
   // If they run doctor again and there are still issues, we show the other warnings
   if (!incompatiblePackagesMessage) {
-    const mismatchingVersionMessage = getMismatchingVersionsWarnings(
-      installationMetadata,
-      allDependencies
-    );
+    const mismatchingVersionMessage = getMismatchingVersionsWarnings(installationMetadata);
 
     if (mismatchingVersionMessage) {
       results.push({
@@ -318,7 +394,7 @@ export async function collectDoctorResultsByProject(
         messages,
       };
     } catch (error) {
-      console.error(`Failed to run doctor checks for project ${configDir}:`, error);
+      logger.error(`Failed to run doctor checks for project ${configDir}:\n${error}`);
 
       // Mark as error state
       const diagnostics: Record<DiagnosticType, DiagnosticStatus> = {} as Record<

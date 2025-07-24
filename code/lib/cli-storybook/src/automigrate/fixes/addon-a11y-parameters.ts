@@ -19,7 +19,6 @@ interface A11yOptions {
 
 export const addonA11yParameters: Fix<A11yOptions> = {
   id: 'addon-a11y-parameters',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter',
 
   check: async ({ mainConfig, previewConfigPath, storiesPaths }) => {

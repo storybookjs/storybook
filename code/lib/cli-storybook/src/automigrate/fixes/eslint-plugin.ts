@@ -24,8 +24,6 @@ interface EslintPluginRunOptions {
  */
 export const eslintPlugin: Fix<EslintPluginRunOptions> = {
   id: 'eslintPlugin',
-
-  versionRange: ['*', '*'],
   link: 'https://storybook.js.org/docs/9/configure/integration/eslint-plugin',
 
   async check({ packageManager }) {
@@ -62,10 +60,7 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
 
     logger.debug(`Adding dependencies: ${deps}`);
     if (!dryRun) {
-      await packageManager.addDependencies(
-        { installAsDevDependencies: true, skipInstall: true },
-        deps
-      );
+      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, deps);
     }
 
     if (!dryRun && unsupportedExtension) {

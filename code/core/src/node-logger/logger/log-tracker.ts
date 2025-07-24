@@ -1,5 +1,5 @@
 import { promises as fs } from 'node:fs';
-import { join } from 'node:path';
+import path, { join } from 'node:path';
 
 import { cleanLog } from '../../../../lib/cli-storybook/src/automigrate/helpers/cleanLog';
 import type { LogLevel } from './logger';
@@ -86,7 +86,9 @@ class LogTracker {
   async writeToFile(filePath: string = this.#logFilePath): Promise<string> {
     const logContent = this.#logs
       .map((log) => {
-        const timestamp = log.timestamp.toISOString().split('T')[1].slice(0, -1);
+        const timestamp =
+          log.timestamp.toLocaleTimeString('en-US', { hour12: false }) +
+          `.${log.timestamp.getMilliseconds().toString().padStart(3, '0')}`;
         const metadata = log.metadata ? ` ${JSON.stringify(log.metadata)}` : '';
         return `[${timestamp}] [${log.level.toUpperCase()}] ${log.message}${metadata}`;
       })
@@ -95,7 +97,7 @@ class LogTracker {
     await fs.writeFile(filePath, logContent, 'utf-8');
     this.#logs = [];
 
-    return filePath;
+    return process.env.CI ? filePath : path.relative(process.cwd(), filePath);
   }
 }
 

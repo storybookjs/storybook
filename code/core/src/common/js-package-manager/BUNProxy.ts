@@ -175,7 +175,7 @@ export class BUNProxy extends JsPackageManager {
 
         return this.mapDependencies(parsedOutput, pattern);
       } catch (err) {
-        logger.warn(`An issue occurred while trying to find dependencies metadata using npm.`);
+        logger.debug(`An issue occurred while trying to find dependencies metadata using npm.`);
         return undefined;
       }
     }
@@ -190,10 +190,10 @@ export class BUNProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall() {
+  protected runInstall(options?: { force?: boolean }) {
     return this.executeCommand({
       command: 'bun',
-      args: ['install', ...this.getInstallArgs()],
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       stdio: 'inherit',
       cwd: this.cwd,
     });

@@ -1,4 +1,4 @@
-import { normalize } from 'node:path';
+import { dirname, isAbsolute, join, normalize } from 'node:path';
 
 import {
   JsPackageManagerFactory,
@@ -128,11 +128,14 @@ export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
   cwd,
   packageManagerName,
+  cache = false,
 }: {
   configDir?: string;
   cwd?: string;
   packageManagerName?: PackageManagerName;
+  cache?: boolean;
 }) => {
+  logger.debug('Getting Storybook info...');
   const {
     mainConfigPath: mainConfigPath,
     version: storybookVersionSpecifier,
@@ -142,27 +145,36 @@ export const getStorybookData = async ({
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({
-    force: packageManagerName,
-    configDir,
-  });
-
-  const storybookVersion = await getCoercedStorybookVersion(packageManager);
-
+  logger.debug('Loading main config...');
   let mainConfig: StorybookConfigRaw;
   try {
-    mainConfig = (await loadMainConfig({ configDir, noCache: true, cwd })) as StorybookConfigRaw;
+    mainConfig = (await loadMainConfig({ configDir, noCache: !cache, cwd })) as StorybookConfigRaw;
   } catch (err) {
     throw new Error(
       dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`
     );
   }
 
+  const workingDir = isAbsolute(configDir)
+    ? dirname(configDir)
+    : dirname(join(cwd ?? process.cwd(), configDir));
+
+  logger.debug('Getting stories paths...');
   const storiesPaths = await getStoriesPathsFromConfig({
     stories: mainConfig.stories,
     configDir,
-    workingDir: packageManager.instanceDir,
+    workingDir,
   });
+
+  logger.debug('Getting package manager...');
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    force: packageManagerName,
+    configDir,
+    storiesPaths,
+  });
+
+  logger.debug('Getting Storybook version...');
+  const storybookVersion = await getCoercedStorybookVersion(packageManager);
 
   return {
     configDir,

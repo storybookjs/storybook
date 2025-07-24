@@ -3,7 +3,6 @@ import type * as fs from 'node:fs/promises';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import type { PackageJson } from 'storybook/internal/common';
 import { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 

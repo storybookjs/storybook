@@ -34,9 +34,14 @@ export interface Blocker<T> {
    * @param data Returned from the check method.
    * @returns The string to print to the log-file.
    */
-  log: (data: T) => string | string[];
-  /** A link to the documentation for the blocker. */
-  link?: string;
+  log: (data: T) => {
+    /** The title of the blocker. */
+    title: string;
+    /** The message of the blocker. */
+    message: string;
+    /** A link to the documentation for the blocker. */
+    link?: string;
+  };
 }
 
 export function createBlocker<T>(block: Blocker<T>) {

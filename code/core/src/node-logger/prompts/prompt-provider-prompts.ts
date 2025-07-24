@@ -9,6 +9,7 @@ import type {
   PromptOptions,
   SelectPromptOptions,
   SpinnerInstance,
+  SpinnerOptions,
   TaskLogInstance,
   TaskLogOptions,
   TextPromptOptions,
@@ -119,15 +120,16 @@ export class PromptsPromptProvider extends PromptProvider {
     return result.value as T[];
   }
 
-  spinner(): SpinnerInstance {
+  spinner(options: SpinnerOptions): SpinnerInstance {
     // Simple spinner implementation using process.stdout.write since prompts doesn't have a built-in spinner
     let interval: NodeJS.Timeout;
     const chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
     let i = 0;
+    const spinnerId = `${options.id}-spinner`;
 
     return {
       start: (message?: string) => {
-        logTracker.addLog('info', `spinner-start: ${message}`);
+        logTracker.addLog('info', `${spinnerId}-start: ${message}`);
         process.stdout.write('\x1b[?25l'); // Hide cursor
         interval = setInterval(() => {
           process.stdout.write(`\r${chars[i]} ${message || 'Loading...'}`);
@@ -135,7 +137,7 @@ export class PromptsPromptProvider extends PromptProvider {
         }, 100);
       },
       stop: (message?: string) => {
-        logTracker.addLog('info', `spinner-stop: ${message}`);
+        logTracker.addLog('info', `${spinnerId}-stop: ${message}`);
         clearInterval(interval);
         process.stdout.write('\x1b[?25h'); // Show cursor
         if (message) {
@@ -145,7 +147,7 @@ export class PromptsPromptProvider extends PromptProvider {
         }
       },
       message: (text: string) => {
-        logTracker.addLog('info', `spinner: ${text}`);
+        logTracker.addLog('info', `${spinnerId}: ${text}`);
         process.stdout.write(`\r${text}`);
       },
     };
@@ -154,20 +156,21 @@ export class PromptsPromptProvider extends PromptProvider {
   taskLog(options: TaskLogOptions): TaskLogInstance {
     // Simple logs because prompts doesn't allow for clearing lines
     logger.info(`${options.title}\n`);
-    logTracker.addLog('info', `task-start: ${options.title}`);
+    const taskId = `${options.id}-task`;
+    logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
     return {
       message: (text: string) => {
         logger.info(text);
-        logTracker.addLog('info', `task: ${text}`);
+        logTracker.addLog('info', `${taskId}: ${text}`);
       },
       success: (message: string) => {
         logger.info(message);
-        logTracker.addLog('info', `task-success: ${message}`);
+        logTracker.addLog('info', `${taskId}-success: ${message}`);
       },
       error: (message: string) => {
         logger.error(message);
-        logTracker.addLog('error', `task-error: ${message}`);
+        logTracker.addLog('error', `${taskId}-error: ${message}`);
       },
     };
   }

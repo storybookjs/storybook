@@ -765,7 +765,6 @@ export const MyStory = {
 };
 ```
 
-
 ### API and Component Changes
 
 #### Button Component API Changes
@@ -913,6 +912,15 @@ The package `@storybook/blocks` is no longer published as of Storybook 9.
 
 All exports can now be found in the export `@storybook/addon-docs/blocks`.
 
+Previously, you were able to import all blocks from `@storybook/addon-docs`, this is no longer the case.
+
+This is the only correct import path:
+
+```diff
+- import { Meta } from "@storybook/addon-docs";
++ import { Meta } from "@storybook/addon-docs/blocks";
+```
+
 ### Configuration and Type Changes
 
 #### Manager builder removed alias for `util`, `assert` and `process`
@@ -924,7 +932,6 @@ Starting with Storybook `9.0`, we no longer alias these anymore.
 Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
 
 If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
-
 
 #### Type System Updates
 
@@ -947,7 +954,6 @@ Deprecated getters have been removed from the CsfFile class:
 
 - `_fileName`
 - `_makeTitle`
-
 
 #### React-Native config dir renamed
 
@@ -1110,7 +1116,7 @@ To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 ```tsx
 export default {
   features: {
-    angularFilterNonInputControls: true
+    angularFilterNonInputControls: true,
   },
   // ... other configurations
 };

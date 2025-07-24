@@ -98,17 +98,11 @@ export async function add(
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
 
-  const {
-    mainConfig,
-    mainConfigPath,
-    configDir,
-    previewConfigPath,
-    storybookVersion,
-    packageManager,
-  } = await getStorybookData({
-    configDir: userSpecifiedConfigDir,
-    packageManagerName: pkgMgr,
-  });
+  const { mainConfig, mainConfigPath, configDir, previewConfigPath, packageManager } =
+    await getStorybookData({
+      configDir: userSpecifiedConfigDir,
+      packageManagerName: pkgMgr,
+    });
 
   if (typeof configDir === 'undefined') {
     throw new Error(dedent`
@@ -141,28 +135,40 @@ export async function add(
 
   let version = inputVersion;
 
-  if (!version && isCoreAddon(addonName) && storybookVersion) {
-    version = storybookVersion;
-  }
-  if (!version) {
-    version = await packageManager.latestVersion(addonName);
+  if (!version && isCoreAddon(addonName)) {
+    version = versions.storybook;
   }
 
-  if (isCoreAddon(addonName) && version !== storybookVersion) {
+  if (!version) {
+    const latestVersion = await packageManager.latestVersion(addonName);
+    if (!latestVersion) {
+      throw new Error(`No version found for ${addonName}`);
+    }
+    version = latestVersion;
+  }
+
+  const storybookVersion = versions.storybook;
+  const versionIsStorybook = version === versions.storybook;
+
+  if (isCoreAddon(addonName) && !versionIsStorybook) {
     logger.warn(
       `The version of ${addonName} (${version}) you are installing is not the same as the version of Storybook you are using (${storybookVersion}). This may lead to unexpected behavior.`
     );
   }
 
-  const addonWithVersion =
-    isValidVersion(version) && !version.includes('-pr-')
+  const storybookVersionSpecifier = packageManager.getDependencyVersion('storybook');
+  const versionRange = storybookVersionSpecifier?.match(/^[~^]/)?.[0] ?? '';
+
+  const addonWithVersion = versionIsStorybook
+    ? `${addonName}@${versionRange}${storybookVersion}`
+    : isValidVersion(version) && !version.includes('-pr-')
       ? `${addonName}@^${version}`
       : `${addonName}@${version}`;
 
   logger.log(`Installing ${addonWithVersion}`);
 
   await packageManager.addDependencies(
-    { installAsDevDependencies: true, writeOutputToFile: false, skipInstall },
+    { type: 'devDependencies', writeOutputToFile: false, skipInstall },
     [addonWithVersion]
   );
 
@@ -183,7 +189,7 @@ export async function add(
 
   // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
   try {
-    await syncStorybookAddons(mainConfig, previewConfigPath!);
+    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
   } catch (e) {
     //
   }

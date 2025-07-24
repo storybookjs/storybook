@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "dbaeumer.vscode-eslint",
+    "EditorConfig.EditorConfig",
     "unifiedjs.vscode-mdx",
     "yzhang.markdown-all-in-one"
   ]

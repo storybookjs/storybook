@@ -29,8 +29,8 @@ async function getLatestVersions(
   return Promise.all(
     packages.map(async ([packageName]) => ({
       packageName,
-      beforeVersion: await packageManager.getInstalledVersion(packageName).catch(() => null),
-      afterVersion: await packageManager.latestVersion(packageName).catch(() => null),
+      beforeVersion: await packageManager.getInstalledVersion(packageName),
+      afterVersion: await packageManager.latestVersion(packageName),
     }))
   );
 }
@@ -65,10 +65,9 @@ function isValidVersionType(packageName: string, specifier: string) {
  * See: https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
  */
 export const upgradeStorybookRelatedDependencies = {
-  id: 'upgradeStorybookRelatedDependencies',
-  versionRange: ['*.*.*', '*.*.*'],
+  id: 'upgrade-storybook-related-dependencies',
   promptType: 'auto',
-  promptDefaultValue: false,
+  defaultSelected: false,
 
   async check({ packageManager, storybookVersion }) {
     logger.debug('Checking for incompatible storybook packages...');
@@ -97,14 +96,19 @@ export const upgradeStorybookRelatedDependencies = {
     ).map((packageName) => [packageName, allDependencies[packageName]]) as [string, string][];
 
     const packageVersions = await getLatestVersions(packageManager, uniquePackages);
+    const upgradablePackages = packageVersions.filter(
+      ({ afterVersion, beforeVersion, packageName }) => {
+        if (
+          beforeVersion === null ||
+          afterVersion === null ||
+          allDependencies[packageName] === null
+        ) {
+          return false;
+        }
 
-    const upgradablePackages = packageVersions.filter(({ afterVersion, beforeVersion }) => {
-      if (beforeVersion === null || afterVersion === null) {
-        return false;
+        return gt(afterVersion, beforeVersion);
       }
-
-      return gt(afterVersion, beforeVersion);
-    });
+    );
 
     return upgradablePackages.length > 0 ? { upgradable: upgradablePackages } : null;
   },

@@ -75,7 +75,7 @@ describe('eslint-plugin fix', () => {
 
         expect(loggerSpy).toHaveBeenCalledWith('Unable to find eslint config file, skipping');
 
-        await expect(result).toBeFalsy();
+        expect(result).toBeFalsy();
         loggerSpy.mockRestore();
       });
     });

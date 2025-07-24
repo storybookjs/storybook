@@ -15,7 +15,6 @@ export interface StorysourceOptions {
 
 export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
   id: 'addon-storysource-code-panel',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysource-addon-removed',
 
   async check({ mainConfigPath, mainConfig }) {
@@ -39,19 +38,12 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
 
   prompt: () => {
     return dedent`
-      We'll remove ${picocolors.yellow('@storybook/addon-storysource')} and enable the Code Panel instead.
+      We'll remove @storybook/addon-storysource and enable the Code Panel instead.
     `;
   },
 
   run: async (options: RunOptions<StorysourceOptions>) => {
-    const {
-      result,
-      dryRun = false,
-      packageManager,
-      configDir,
-      previewConfigPath,
-      storybookVersion,
-    } = options;
+    const { result, dryRun = false, packageManager, configDir, previewConfigPath } = options;
     const { hasStorysource, hasDocs } = result;
     const errors: Array<{ file: string; error: Error }> = [];
 
@@ -61,7 +53,7 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
 
     // Remove the addon
     if (!dryRun) {
-      logger.log('Removing @storybook/addon-storysource...');
+      logger.debug('Removing @storybook/addon-storysource...');
 
       await removeAddon('@storybook/addon-storysource', {
         configDir,
@@ -72,11 +64,12 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
       if (!hasDocs) {
         logger.log('Installing @storybook/addon-docs...');
 
-        await add(`@storybook/addon-docs@${storybookVersion}`, {
+        await add(`@storybook/addon-docs`, {
           configDir,
           packageManager: packageManager.type,
           skipInstall: true,
           skipPostinstall: true,
+          yes: true,
         });
       }
 

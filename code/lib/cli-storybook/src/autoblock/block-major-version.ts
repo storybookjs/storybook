@@ -1,8 +1,7 @@
-import { getStorybookVersionSpecifier } from 'storybook/internal/cli';
 import { versions } from 'storybook/internal/common';
+import { CLI_COLORS } from 'storybook/internal/node-logger';
 
-import picocolors from 'picocolors';
-import { coerce, gt, major, parse, prerelease } from 'semver';
+import { coerce, gt, major, parse } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { createBlocker } from './types';
@@ -15,7 +14,10 @@ interface MajorVersionData {
 }
 
 /** Returns the status of the upgrade check */
-export function checkUpgrade(currentVersion: string, targetVersion: string): UpgradeCheckResult {
+export function validateVersionTransition(
+  currentVersion: string,
+  targetVersion: string
+): UpgradeCheckResult {
   // Skip check for missing versions
   if (!currentVersion || !targetVersion) {
     return 'ok';
@@ -24,11 +26,6 @@ export function checkUpgrade(currentVersion: string, targetVersion: string): Upg
   const current = parse(currentVersion);
   const target = parse(targetVersion);
   if (!current || !target) {
-    return 'ok';
-  }
-
-  // Never block if upgrading from or to a prerelease
-  if (prerelease(currentVersion) || prerelease(targetVersion)) {
     return 'ok';
   }
 
@@ -49,25 +46,22 @@ export function checkUpgrade(currentVersion: string, targetVersion: string): Upg
 
 export const blocker = createBlocker<MajorVersionData>({
   id: 'major-version-gap',
-  link: 'https://storybook.js.org/docs/9/migration-guide',
   async check(options) {
     const { packageManager } = options;
-
-    const { packageJson } = packageManager.primaryPackageJson;
     try {
-      const current = getStorybookVersionSpecifier(packageJson);
-      if (!current) {
+      const currentStorybookVersion = packageManager.getAllDependencies().storybook;
+      if (!currentStorybookVersion) {
         return false;
       }
 
       const target = versions.storybook;
-      const result = checkUpgrade(current, target);
+      const result = validateVersionTransition(currentStorybookVersion, target);
       if (result === 'ok') {
         return false;
       }
 
       return {
-        currentVersion: current,
+        currentVersion: currentStorybookVersion,
         reason: result,
       };
     } catch (e) {
@@ -79,26 +73,31 @@ export const blocker = createBlocker<MajorVersionData>({
     const coercedVersion = coerce(data.currentVersion);
 
     if (data.reason === 'downgrade') {
-      return dedent`
-        ${picocolors.red('Downgrade Not Supported')}
-        Your Storybook version (v${data.currentVersion}) is newer than the target release (v${versions.storybook}).
-        Downgrading is not supported.`;
+      return {
+        title: 'Downgrade Not Supported',
+        message: dedent`
+          Your Storybook version (v${data.currentVersion}) is newer than the target release (v${versions.storybook}).Downgrading is not supported.
+          Please follow the 8.0 migration guide to upgrade to v8.0 first.
+          `,
+        link: 'https://storybook.js.org/docs/8/migration-guide',
+      };
     }
-    const message = dedent`
-      ${picocolors.red('Major Version Gap Detected')}
-      Your Storybook version (v${data.currentVersion}) is more than one major version behind the target release (v${versions.storybook}).
-      Please upgrade one major version at a time.`;
 
     if (coercedVersion) {
       const currentMajor = major(coercedVersion);
       const nextMajor = currentMajor + 1;
-      const cmd = `npx storybook@${nextMajor} upgrade`;
-      return `
-        ${message}
-
-        You can upgrade to version ${nextMajor} by running:
-        ${picocolors.cyan(cmd)}`;
+      return {
+        title: 'Major Version Gap Detected',
+        message: dedent`
+          Your Storybook version (v${data.currentVersion}) is more than one major version behind the target release (v${versions.storybook}). Please upgrade one major version at a time.
+          
+          You can upgrade to version ${nextMajor} by running:
+          ${CLI_COLORS.info(`npx storybook@${nextMajor} upgrade`)}
+        `,
+        link: `https://storybook.js.org/docs/${nextMajor}/migration-guide`,
+      };
     }
-    return message;
+
+    throw new Error('No message found');
   },
 });

@@ -2,8 +2,6 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { transformImportFiles, versions } from 'storybook/internal/common';
 
-import { dedent } from 'ts-dedent';
-
 import { consolidatedPackages } from '../helpers/consolidated-packages';
 import type { Fix } from '../types';
 
@@ -19,7 +17,7 @@ function transformPackageJson(content: string): string | null {
   const packagesToAdd = new Set<string>();
 
   // Check both dependencies and devDependencies
-  const depTypes = ['dependencies', 'devDependencies'] as const;
+  const depTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
 
   // Determine where storybook is installed and get its version
   let storybookVersion: string | null = null;
@@ -91,7 +89,6 @@ export const transformPackageJsonFiles = async (files: string[], dryRun: boolean
 
 export const consolidatedImports: Fix<ConsolidatedOptions> = {
   id: 'consolidated-imports',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages',
   check: async ({ packageManager }) => {
     const consolidatedDeps = new Set<keyof typeof consolidatedPackages>();
@@ -133,19 +130,9 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     };
   },
   prompt: () => {
-    return dedent`
-      We've detected Storybook packages that have been renamed or consolidated.
-
-      We'll update these packages by scanning your codebase and updating any imports from these packages.
-    `;
+    return "We've detected Storybook packages that have been renamed or consolidated. We'll update these packages by scanning your codebase and updating any imports from these packages.";
   },
-  run: async ({
-    dryRun = false,
-    packageManager,
-    storiesPaths,
-    mainConfigPath,
-    previewConfigPath,
-  }) => {
+  run: async ({ dryRun = false, packageManager, storiesPaths, configDir }) => {
     const errors: Array<{ file: string; error: Error }> = [];
 
     const packageJsonErrors = await transformPackageJsonFiles(
@@ -154,8 +141,12 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
     );
     errors.push(...packageJsonErrors);
 
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
+    const configFiles = await globby([`${configDir}/**/*`]);
+
     const importErrors = await transformImportFiles(
-      [...storiesPaths, mainConfigPath, previewConfigPath].filter(Boolean) as string[],
+      [...storiesPaths, ...configFiles].filter(Boolean) as string[],
       consolidatedPackages,
       !!dryRun
     );

@@ -10,6 +10,7 @@ describe('NPM Proxy', () => {
 
   beforeEach(() => {
     npmProxy = new NPMProxy();
+    JsPackageManager.clearLatestVersionCache();
     vi.spyOn(npmProxy, 'writePackageJson').mockImplementation(vi.fn());
   });
 
@@ -21,8 +22,8 @@ describe('NPM Proxy', () => {
     describe('npm6', () => {
       it('should run `npm install`', async () => {
         // sort of un-mock part of the function so executeCommand (also mocked) is called
-        vi.mocked(prompt.executeTask).mockImplementationOnce(async (fns: any) => {
-          await Promise.all(fns.map((fn: () => void) => fn()));
+        vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
         });
         const executeCommandSpy = vi
           .spyOn(npmProxy, 'executeCommand')
@@ -38,8 +39,8 @@ describe('NPM Proxy', () => {
     describe('npm7', () => {
       it('should run `npm install`', async () => {
         // sort of un-mock part of the function so executeCommand (also mocked) is called
-        vi.mocked(prompt.executeTask).mockImplementationOnce(async (fns: any) => {
-          await Promise.all(fns.map((fn: () => void) => fn()));
+        vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+          await Promise.resolve(fn());
         });
         const executeCommandSpy = vi
           .spyOn(npmProxy, 'executeCommand')
@@ -96,7 +97,7 @@ describe('NPM Proxy', () => {
           .spyOn(npmProxy, 'executeCommand')
           .mockResolvedValue({ stdout: '6.0.0' } as any);
 
-        await npmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+        await npmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
         expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -112,7 +113,7 @@ describe('NPM Proxy', () => {
           .spyOn(npmProxy, 'executeCommand')
           .mockResolvedValue({ stdout: '7.0.0' } as any);
 
-        await npmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+        await npmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
         expect(executeCommandSpy).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -196,7 +197,7 @@ describe('NPM Proxy', () => {
     it('with constraint it throws an error if command output is not a valid JSON', async () => {
       vi.spyOn(npmProxy, 'executeCommand').mockResolvedValue({ stdout: 'NOT A JSON' } as any);
 
-      await expect(npmProxy.latestVersion('storybook', '5.X')).rejects.toThrow();
+      await expect(npmProxy.latestVersion('storybook', '5.X')).resolves.toBe(null);
     });
   });
 

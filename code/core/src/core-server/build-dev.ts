@@ -13,7 +13,7 @@ import {
   validateFrameworkName,
   versions,
 } from 'storybook/internal/common';
-import { deprecate } from 'storybook/internal/node-logger';
+import { deprecate, logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
@@ -114,7 +114,8 @@ export async function buildDevStandalone(
   try {
     await warnOnIncompatibleAddons(storybookVersion, packageManager);
   } catch (e) {
-    console.warn('Storybook failed to check addon compatibility', e);
+    logger.warn('Storybook failed to check addon compatibility');
+    logger.debug(`${e instanceof Error ? e.stack : String(e)}`);
   }
 
   // TODO: Bring back in 9.x when we officialy launch CSF4
@@ -239,7 +240,7 @@ export async function buildDevStandalone(
         (warning) => !warning.message.includes(`Conflicting values for 'process.env.NODE_ENV'`)
       );
 
-    console.log(problems.map((p) => p.stack));
+    logger.log(problems.map((p) => p.stack).join('\n'));
     process.exit(problems.length > 0 ? 1 : 0);
   } else {
     const name =

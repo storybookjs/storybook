@@ -10,6 +10,7 @@ describe('PNPM Proxy', () => {
 
   beforeEach(() => {
     pnpmProxy = new PNPMProxy();
+    JsPackageManager.clearLatestVersionCache();
     vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
   });
 
@@ -20,8 +21,8 @@ describe('PNPM Proxy', () => {
   describe('installDependencies', () => {
     it('should run `pnpm install`', async () => {
       // sort of un-mock part of the function so executeCommand (also mocked) is called
-      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fns: any) => {
-        await Promise.all(fns.map((fn: () => void) => fn()));
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
       });
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
@@ -58,7 +59,7 @@ describe('PNPM Proxy', () => {
         .spyOn(pnpmProxy, 'executeCommand')
         .mockResolvedValue({ stdout: '6.0.0' } as any);
 
-      await pnpmProxy.addDependencies({ installAsDevDependencies: true }, ['storybook']);
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -137,7 +138,7 @@ describe('PNPM Proxy', () => {
     it('with constraint it throws an error if command output is not a valid JSON', async () => {
       vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValue({ stdout: 'NOT A JSON' } as any);
 
-      await expect(pnpmProxy.latestVersion('storybook', '5.X')).rejects.toThrow();
+      await expect(pnpmProxy.latestVersion('storybook', '5.X')).resolves.toBe(null);
     });
   });
 

@@ -98,12 +98,11 @@ export class Yarn1Proxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
-    const process = this.executeCommand({
+    const childProcess = await this.executeCommand({
       command: 'yarn',
       args: ['config', 'get', 'registry'],
     });
-    const result = await process;
-    const url = (result.stdout ?? '').trim();
+    const url = (childProcess.stdout ?? '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
@@ -121,6 +120,7 @@ export class Yarn1Proxy extends JsPackageManager {
         env: {
           FORCE_COLOR: 'false',
         },
+        cwd: this.instanceDir,
       });
       const result = await process;
       const commandResult = result.stdout ?? '';
@@ -141,10 +141,10 @@ export class Yarn1Proxy extends JsPackageManager {
     };
   }
 
-  protected runInstall() {
+  protected runInstall(options?: { force?: boolean }) {
     return this.executeCommand({
       command: 'yarn',
-      args: ['install', ...this.getInstallArgs()],
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       stdio: prompt.getPreferredStdio(),
       cwd: this.cwd,
     });

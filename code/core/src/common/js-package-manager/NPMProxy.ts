@@ -143,7 +143,7 @@ export class NPMProxy extends JsPackageManager {
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
-    const exec = async ({ packageDepth }: { packageDepth: number }) => {
+    const exec = ({ packageDepth }: { packageDepth: number }) => {
       const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
       return this.executeCommand({
         command: 'npm',
@@ -151,13 +151,13 @@ export class NPMProxy extends JsPackageManager {
         env: {
           FORCE_COLOR: 'false',
         },
+        cwd: this.instanceDir,
       });
     };
 
     try {
-      const process = await exec({ packageDepth: depth });
-      const result = await process;
-      const commandResult = result.stdout ?? '';
+      const childProcess = await exec({ packageDepth: depth });
+      const commandResult = childProcess.stdout ?? '';
       const parsedOutput = JSON.parse(commandResult);
 
       return this.mapDependencies(parsedOutput, pattern);
@@ -165,14 +165,13 @@ export class NPMProxy extends JsPackageManager {
       // when --depth is higher than 0, npm can return a non-zero exit code
       // in case the user's project has peer dependency issues. So we try again with no depth
       try {
-        const process = await exec({ packageDepth: 0 });
-        const result = await process;
-        const commandResult = result.stdout ?? '';
+        const childProcess = await exec({ packageDepth: 0 });
+        const commandResult = childProcess.stdout ?? '';
         const parsedOutput = JSON.parse(commandResult);
 
         return this.mapDependencies(parsedOutput, pattern);
       } catch (err) {
-        logger.warn(`An issue occurred while trying to find dependencies metadata using npm.`);
+        logger.debug(`An issue occurred while trying to find dependencies metadata using npm.`);
         return undefined;
       }
     }
@@ -187,13 +186,12 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  protected runInstall() {
+  protected runInstall(options?: { force?: boolean }) {
     return this.executeCommand({
       command: 'npm',
-      args: ['install', ...this.getInstallArgs()],
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       cwd: this.cwd,
       stdio: prompt.getPreferredStdio(),
-      ignoreError: true,
     });
   }
 

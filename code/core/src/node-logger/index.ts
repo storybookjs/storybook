@@ -3,9 +3,13 @@ import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
 import * as newLogger from './logger/logger';
+import { isClackEnabled } from './prompts/prompt-config';
 
 export { prompt } from './prompts';
 export { logTracker } from './logger/log-tracker';
+export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base';
+export { protectUrls, createHyperlink } from './wrap-utils';
+export { CLI_COLORS } from './logger/colors';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621
@@ -31,6 +35,7 @@ function hex(hexColor: string) {
   return (text: string) => `\x1b[38;2;${r};${g};${b}m${text}\x1b[39m`;
 }
 
+/** @deprecated Use CLI_COLORS instead */
 export const colors = {
   pink: hex('#F1618C'),
   purple: hex('#B57EE5'),
@@ -44,7 +49,8 @@ export const colors = {
 export const logger = {
   ...newLogger,
   verbose: (message: string): void => newLogger.debug(message),
-  info: (message: string): void => npmLog.info('', message),
+  info: (message: string): void =>
+    isClackEnabled() ? newLogger.info(message) : npmLog.info('', message),
   plain: (message: string): void => newLogger.log(message),
   line: (count = 1): void => newLogger.log(`${Array(count - 1).fill('\n')}`),
   warn: (message: string): void => newLogger.warn(message),

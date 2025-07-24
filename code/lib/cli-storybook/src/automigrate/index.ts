@@ -18,7 +18,6 @@ import type {
 } from './fixes';
 import { FixStatus, allFixes, commandFixes } from './fixes';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies';
-import { shouldRunFix } from './helpers/checkVersionRange';
 import { logMigrationSummary } from './helpers/logMigrationSummary';
 import { getStorybookData } from './helpers/mainConfigFile';
 
@@ -32,6 +31,12 @@ const logAvailableMigrations = () => {
     The following migrations are available:
     ${availableFixes}
   `);
+};
+
+const hasFailures = (fixResults: Record<string, FixStatus> | undefined): boolean => {
+  return Object.values(fixResults || {}).some(
+    (r) => r === FixStatus.FAILED || r === FixStatus.CHECK_FAILED
+  );
 };
 
 export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
@@ -82,6 +87,10 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
 
   if (outcome && !options.skipDoctor) {
     await doctor({ configDir, packageManager: options.packageManager });
+  }
+
+  if (hasFailures(outcome?.fixResults)) {
+    throw new Error('Some migrations failed');
   }
 };
 
@@ -174,12 +183,8 @@ export const automigrate = async ({
     storiesPaths,
   });
 
-  const hasFailures = Object.values(fixResults).some(
-    (r) => r === FixStatus.FAILED || r === FixStatus.CHECK_FAILED
-  );
-
   // if migration failed, display a log file in the users cwd
-  if (hasFailures) {
+  if (hasFailures(fixResults)) {
     logTracker.enableLogWriting();
   }
 
@@ -224,8 +229,6 @@ export async function runFixes({
   mainConfigPath,
   previewConfigPath,
   storybookVersion,
-  beforeVersion,
-  isUpgrade,
   storiesPaths,
 }: RunFixesOptions): Promise<{
   preCheckFailure?: PreCheckFailure;
@@ -240,20 +243,18 @@ export async function runFixes({
     let result;
 
     try {
-      if (shouldRunFix(f, beforeVersion, storybookVersion, !!isUpgrade)) {
-        logger.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
-        result = await f.check({
-          packageManager,
-          configDir,
-          rendererPackage,
-          mainConfig,
-          storybookVersion,
-          previewConfigPath,
-          mainConfigPath,
-          storiesPaths,
-        });
-        logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
-      }
+      logger.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
+      result = await f.check({
+        packageManager,
+        configDir,
+        rendererPackage,
+        mainConfig,
+        storybookVersion,
+        previewConfigPath,
+        mainConfigPath,
+        storiesPaths,
+      });
+      logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
     } catch (error) {
       logger.warn(`⚠️  failed to check fix ${picocolors.bold(f.id)}`);
       if (error instanceof Error) {
@@ -267,7 +268,7 @@ export async function runFixes({
       const promptType: Prompt =
         typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
 
-      logger.log(`\n🔎 found a '${picocolors.cyan(f.id)}' migration:`);
+      logger.log(`🔎 found a '${picocolors.cyan(f.id)}' migration:`);
 
       const getTitle = () => {
         switch (promptType) {
@@ -281,11 +282,11 @@ export async function runFixes({
       };
 
       const currentTaskLogger = prompt.taskLog({
+        id: `automigrate-task-${f.id}`,
         title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
       });
 
-      logger.logBox(f.prompt(result));
-      // currentTaskLogger.message(f.prompt(result));
+      logger.logBox(f.prompt());
 
       let runAnswer: { fix: boolean } | undefined;
 
@@ -326,7 +327,7 @@ export async function runFixes({
           const shouldRun = await prompt.confirm(
             {
               message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
-              initialValue: f.promptDefaultValue ?? true,
+              initialValue: f.defaultSelected ?? true,
             },
             {
               onCancel: () => {

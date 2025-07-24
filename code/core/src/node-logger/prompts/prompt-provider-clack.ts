@@ -7,11 +7,14 @@ import type {
   PromptOptions,
   SelectPromptOptions,
   SpinnerInstance,
+  SpinnerOptions,
   TaskLogInstance,
   TaskLogOptions,
   TextPromptOptions,
 } from './prompt-provider-base';
 import { PromptProvider } from './prompt-provider-base';
+
+export let currentTaskLog: ReturnType<typeof clack.taskLog> | null = null;
 
 export class ClackPromptProvider extends PromptProvider {
   private handleCancel(result: unknown | symbol, promptOptions?: PromptOptions) {
@@ -56,20 +59,21 @@ export class ClackPromptProvider extends PromptProvider {
     return result as T[];
   }
 
-  spinner(): SpinnerInstance {
+  spinner(options: SpinnerOptions): SpinnerInstance {
     const task = clack.spinner();
+    const spinnerId = `${options.id}-spinner`;
 
     return {
       start: (message) => {
-        logTracker.addLog('info', `spinner-start: ${message}`);
+        logTracker.addLog('info', `${spinnerId}-start: ${message}`);
         task.start(message);
       },
       message: (message) => {
-        logTracker.addLog('info', `spinner: ${message}`);
+        logTracker.addLog('info', `${spinnerId}: ${message}`);
         task.message(message);
       },
       stop: (message) => {
-        logTracker.addLog('info', `spinner-stop: ${message}`);
+        logTracker.addLog('info', `${spinnerId}-stop: ${message}`);
         task.stop(message);
       },
     };
@@ -77,20 +81,25 @@ export class ClackPromptProvider extends PromptProvider {
 
   taskLog(options: TaskLogOptions): TaskLogInstance {
     const task = clack.taskLog(options);
-    logTracker.addLog('info', `task-start: ${options.title}`);
+    const taskId = `${options.id}-task`;
+    logTracker.addLog('info', `${taskId}-start: ${options.title}`);
+
+    currentTaskLog = task;
 
     return {
       message: (message) => {
-        logTracker.addLog('info', `task: ${message}`);
+        logTracker.addLog('info', `${taskId}: ${message}`);
         task.message(message);
       },
       error: (message) => {
-        logTracker.addLog('error', `task-error: ${message}`);
-        task.error(message);
+        logTracker.addLog('error', `${taskId}-error: ${message}`);
+        task.error(message, { showLog: true });
+        currentTaskLog = null;
       },
-      success: (message) => {
-        logTracker.addLog('info', `task-success: ${message}`);
-        task.success(message);
+      success: (message, options) => {
+        logTracker.addLog('info', `${taskId}-success: ${message}`);
+        task.success(message, options);
+        currentTaskLog = null;
       },
     };
   }

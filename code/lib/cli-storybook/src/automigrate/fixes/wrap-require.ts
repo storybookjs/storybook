@@ -2,7 +2,6 @@ import { types as t } from 'storybook/internal/babel';
 import { detectPnp } from 'storybook/internal/cli';
 import { readConfig } from 'storybook/internal/csf-tools';
 
-import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { updateMainConfig } from '../helpers/mainConfigFile';
@@ -25,12 +24,10 @@ export interface WrapRequireRunOptions {
 
 export const wrapRequire: Fix<WrapRequireRunOptions> = {
   id: 'wrap-require',
-
-  versionRange: ['*', '*'],
   link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
 
   async check({ packageManager, storybookVersion, mainConfigPath }) {
-    const isStorybookInMonorepo = await packageManager.isStorybookInMonorepo();
+    const isStorybookInMonorepo = packageManager.isStorybookInMonorepo();
     const isPnp = await detectPnp();
 
     if (!mainConfigPath) {
@@ -67,7 +64,8 @@ export const wrapRequire: Fix<WrapRequireRunOptions> = {
           mainConfig?.fileName?.endsWith('.cjs') ||
           mainConfig?.fileName?.endsWith('.cts') ||
           mainConfig?.fileName?.endsWith('.cjsx') ||
-          mainConfig?.fileName?.endsWith('.ctsx')
+          mainConfig?.fileName?.endsWith('.ctsx') ||
+          mainConfig._code.includes('module.exports')
         ) {
           mainConfig.setRequireImport(['dirname', 'join'], 'node:path');
         } else {

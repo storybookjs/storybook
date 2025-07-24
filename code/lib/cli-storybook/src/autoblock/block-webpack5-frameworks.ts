@@ -1,5 +1,3 @@
-import { lt } from 'semver';
-
 import { createBlocker } from './types';
 import { findOutdatedPackage } from './utils';
 
@@ -11,27 +9,47 @@ const minimalVersionsMap = {
   '@storybook/html-webpack5': '9.0.0',
   '@storybook/preset-html-webpack': '9.0.0',
   '@storybook/web-components-webpack5': '9.0.0',
+  '@storybook/svelte-webpack5': '9.0.0',
 } as const;
 
 export const blocker = createBlocker({
   id: 'dependenciesVersions',
-  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite',
   async check({ packageManager }) {
     return findOutdatedPackage<typeof minimalVersionsMap>(minimalVersionsMap, { packageManager });
   },
   log(data) {
+    const additionalInfo =
+      'Please migrate your Webpack5-based frameworks to their Vite equivalents.';
+    const link =
+      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-webpack5-builder-support-in-favor-of-vite';
+
+    let title: string;
+
     switch (data.packageName) {
       case '@storybook/preact-webpack5':
       case '@storybook/preset-preact-webpack':
-        return 'Support for Preact Webpack5 has been removed.';
+        title = 'Preact Webpack5 support removed';
+        break;
       case '@storybook/vue3-webpack5':
       case '@storybook/preset-vue3-webpack':
-        return 'Support for Vue3 Webpack5 has been removed.';
+        title = 'Vue3 Webpack5 support removed';
+        break;
       case '@storybook/html-webpack5':
       case '@storybook/preset-html-webpack':
-        return 'Support for HTML Webpack5 has been removed.';
+        title = 'HTML Webpack5 support removed';
+        break;
       case '@storybook/web-components-webpack5':
-        return 'Support for Web Components Webpack5 has been removed.';
+        title = 'Web Components Webpack5 support removed';
+        break;
+      case '@storybook/svelte-webpack5':
+        title = 'Svelte Webpack5 support removed';
+        break;
     }
+
+    return {
+      title,
+      message: additionalInfo,
+      link,
+    };
   },
 });

@@ -72,6 +72,10 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
       })),
     },
     logger: {
+      SYMBOLS: {
+        success: '✓',
+        error: '✗',
+      },
       plain: vi.fn(),
       line: vi.fn(),
       error: vi.fn(),

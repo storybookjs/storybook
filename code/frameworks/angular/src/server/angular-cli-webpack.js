@@ -91,7 +91,7 @@ export const getWebpackConfig = async (baseConfig, { builderOptions, builderCont
        * Angular's automatic Tailwind detection, we need to manually add the correct Tailwind 4
        * plugin to all PostCSS loader configurations.
        */
-      const tailwindPackagePath = fileURLToPath(import.meta.resolve('@tailwindcss/postcss', root));
+      const tailwindPackagePath = import.meta.resolve('@tailwindcss/postcss', root);
       const tailwindPackage = await import(tailwindPackagePath);
       const extraPostcssPlugins = [
         typeof tailwindPackage === 'function' ? tailwindPackage() : tailwindPackage.default(),

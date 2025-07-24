@@ -11,6 +11,7 @@
 
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { mkdir, rm } from 'node:fs/promises';
+import { pathToFileURL } from 'node:url';
 
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
@@ -39,7 +40,9 @@ async function run() {
     throw new Error('Cannot watch and build for production at the same time');
   }
 
-  const { default: pkg } = await import(join(DIR_CWD, 'package.json'), { with: { type: 'json' } });
+  const { default: pkg } = await import(pathToFileURL(join(DIR_CWD, 'package.json')).href, {
+    with: { type: 'json' },
+  });
 
   await rm(DIR_DIST, { recursive: true }).catch(() => {});
   await mkdir(DIR_DIST);

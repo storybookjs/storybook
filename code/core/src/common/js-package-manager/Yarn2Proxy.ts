@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
@@ -165,7 +166,7 @@ export class Yarn2Proxy extends JsPackageManager {
           which is not always the case for us, because we spawn child processes directly with Node,
           eg. when running automigrations.
         */
-        const { default: pnpApi } = await import(pnpapiPath);
+        const { default: pnpApi } = await import(pathToFileURL(pnpapiPath).href);
 
         const resolvedPath = pnpApi.resolveToUnqualified(
           packageName,

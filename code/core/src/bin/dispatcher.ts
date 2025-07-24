@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -36,7 +37,7 @@ async function run() {
   const args = process.argv.slice(2);
 
   if (['dev', 'build', 'index'].includes(args[0])) {
-    const coreBin = join(resolvePackageDir('storybook'), 'dist/bin/core.js');
+    const coreBin = pathToFileURL(join(resolvePackageDir('storybook'), 'dist/bin/core.js')).href;
     await import(coreBin);
     return;
   }
@@ -60,7 +61,7 @@ async function run() {
     if (targetCliPackageJson.version === versions[targetCli.pkg]) {
       command = [
         'node',
-        join(resolvePackageDir(targetCli.pkg), 'dist/bin/index.js'),
+        `"${join(resolvePackageDir(targetCli.pkg), 'dist/bin/index.js')}"`,
         ...targetCli.args,
       ];
     }

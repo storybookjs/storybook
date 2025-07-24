@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { readdir, realpath, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 import { isNotNil } from 'es-toolkit';
@@ -154,7 +155,7 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
     supported: SUPPORTED_FEATURES,
   });
 
-  const { globalsNameValueMap: data } = await import(outFile);
+  const { globalsNameValueMap: data } = await import(pathToFileURL(outFile).href);
 
   // loop over all values of the keys of the data object and remove the default key
   for (const key in data) {

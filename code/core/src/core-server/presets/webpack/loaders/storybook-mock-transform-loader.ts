@@ -10,5 +10,6 @@ import { rewriteSbMockImportCalls } from '../../../mocking-utils/extract';
  */
 export default function storybookMockTransformLoader(this: LoaderContext<{}>, source: string) {
   const result = rewriteSbMockImportCalls(source);
-  return result.code;
+  const callback = this.async();
+  callback(null, result.code, result.map || undefined);
 }

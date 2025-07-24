@@ -1,7 +1,5 @@
 import { getAddonNames, removeAddon } from 'storybook/internal/common';
 
-import picocolors from 'picocolors';
-
 import type { Fix } from '../types';
 
 type AddonMdxGfmOptions = true;

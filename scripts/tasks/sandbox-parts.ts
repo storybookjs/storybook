@@ -99,7 +99,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
 
   if (link) {
     await executeCLIStep(steps.link, {
-      argument: sandboxDir,
+      argument: `"${sandboxDir}"`,
       cwd: CODE_DIRECTORY,
       optionValues: { local: true, start: false },
       dryRun,

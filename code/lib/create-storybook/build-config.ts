@@ -16,10 +16,6 @@ const config: BuildEntries = {
       },
     ],
   },
-  postbuild: async (cwd) => {
-    const { chmod } = await import('node:fs/promises');
-    await chmod(join(cwd, 'dist', 'bin', 'index.js'), 0o755);
-  },
 };
 
 export default config;

@@ -20,9 +20,6 @@ const config: BuildEntries = {
       throwOnError: true,
     });
   },
-  postbuild: async (cwd) => {
-    await fs.chmod(path.join(cwd, 'dist', 'bin', 'dispatcher.js'), 0o755);
-  },
   entries: {
     node: [
       {

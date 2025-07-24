@@ -1,3 +1,13 @@
+## 9.1.0-alpha.10
+
+- Core: Abort play function on HMR - [#31542](https://github.com/storybookjs/storybook/pull/31542), thanks @ghengeveld!
+- Core: Fix moving log file across drives and projectRoot detection on Windows - [#32020](https://github.com/storybookjs/storybook/pull/32020), thanks @ghengeveld!
+- Maintenance: Add flag to toggle default automigrations - [#32113](https://github.com/storybookjs/storybook/pull/32113), thanks @yannbf!
+- React Native Web: Simplify config by using vite-plugin-rnw - [#32051](https://github.com/storybookjs/storybook/pull/32051), thanks @dannyhw!
+- Telemetry: Add automigration errors - [#32103](https://github.com/storybookjs/storybook/pull/32103), thanks @yannbf!
+- Test: Fix missing source map for Webpack/Vite mock loaders and plugins - [#32111](https://github.com/storybookjs/storybook/pull/32111), thanks @valentinpalkovic!
+- Test: Remove source map generation from webpack automock-loader - [#32115](https://github.com/storybookjs/storybook/pull/32115), thanks @valentinpalkovic!
+
 ## 9.1.0-alpha.9
 
 - CLI: Fix Storybook doctor compatibility checks - [#32077](https://github.com/storybookjs/storybook/pull/32077), thanks @yannbf!

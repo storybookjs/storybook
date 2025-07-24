@@ -236,7 +236,6 @@ export async function detect(
     }
 
     const { packageJson } = packageManager.primaryPackageJson;
-
     return detectFrameworkPreset(packageJson);
   } catch (e) {
     return ProjectType.UNDETECTED;

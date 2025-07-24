@@ -18,7 +18,15 @@ export const getEntries = (cwd: string) => {
       'react',
       '@storybook/icons',
     ]),
+
     define('src/core-server/presets/common-override-preset.ts', ['node'], false),
+
+    define('src/core-server/presets/webpack/loaders/webpack-automock-loader.ts', ['node'], false),
+    define(
+      'src/core-server/presets/webpack/loaders/storybook-mock-transform-loader.ts',
+      ['node'],
+      false
+    ),
 
     define('src/highlight/index.ts', ['browser', 'node'], true, ['react'], [], [], true),
 

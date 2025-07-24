@@ -1,0 +1,8 @@
+# Documentation checks
+# Triggered via the `ci:docs` pull request label
+
+when:
+  equal: [docs, << pipeline.parameters.workflow >>]
+
+jobs:
+  - pretty-docs

@@ -14,6 +14,7 @@ import {
   type ResponseData,
   SET_GLOBALS,
   STORY_ARGS_UPDATED,
+  STORY_HOT_UPDATED,
   STORY_INDEX_INVALIDATED,
   UPDATE_GLOBALS,
   UPDATE_STORY_ARGS,
@@ -144,6 +145,7 @@ export class Preview<TRenderer extends Renderer> {
     this.channel.on(RESET_STORY_ARGS, this.onResetArgs.bind(this));
     this.channel.on(FORCE_RE_RENDER, this.onForceReRender.bind(this));
     this.channel.on(FORCE_REMOUNT, this.onForceRemount.bind(this));
+    this.channel.on(STORY_HOT_UPDATED, this.onStoryHotUpdated.bind(this));
   }
 
   async getProjectAnnotationsOrRenderError(): Promise<ProjectAnnotations<TRenderer>> {
@@ -411,6 +413,10 @@ export class Preview<TRenderer extends Renderer> {
 
   async onForceRemount({ storyId }: { storyId: StoryId }) {
     await Promise.all(this.storyRenders.filter((r) => r.id === storyId).map((r) => r.remount()));
+  }
+
+  async onStoryHotUpdated() {
+    await Promise.all(this.storyRenders.map((r) => r.cancelPlayFunction()));
   }
 
   // Used by docs to render a story to a given element

@@ -60,6 +60,7 @@ export const sandbox: Task = {
     const {
       create,
       install,
+      addGlobalMocks,
       addStories,
       extendMain,
       extendPreview,
@@ -75,6 +76,7 @@ export const sandbox: Task = {
       // The storybook package forwards some CLI commands to @storybook/cli with npx.
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
+      'lodash-es',
     ];
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
@@ -130,6 +132,11 @@ export const sandbox: Task = {
 
     if (!options.skipTemplateStories) {
       await addStories(details, options);
+    }
+
+    // not if sandbox is bench
+    if (!details.template.name.includes('Bench')) {
+      await addGlobalMocks(details, options);
     }
 
     if (shouldAddVitestIntegration) {

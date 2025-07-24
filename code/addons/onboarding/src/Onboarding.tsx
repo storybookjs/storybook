@@ -13,6 +13,7 @@ import { HighlightElement } from './components/HighlightElement/HighlightElement
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
 import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
 import { GuidedTour } from './features/GuidedTour/GuidedTour';
+import { IntentSurvey } from './features/IntentSurvey/IntentSurvey';
 import { SplashScreen } from './features/SplashScreen/SplashScreen';
 
 const SpanHighlight = styled.span(({ theme }) => ({
@@ -106,14 +107,21 @@ export default function Onboarding({ api }: { api: API }) {
     setEnabled(false);
   }, [api, setEnabled]);
 
-  const completeOnboarding = useCallback(() => {
-    api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
-      step: '6:FinishedOnboarding' satisfies StepKey,
-      type: 'telemetry',
-    });
-    selectStory('configure-your-project--docs');
-    disableOnboarding();
-  }, [api, selectStory, disableOnboarding]);
+  const completeOnboarding = useCallback(
+    (answers: Record<string, unknown>) => {
+      api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+        step: '7:FinishedOnboarding' satisfies StepKey,
+        type: 'telemetry',
+      });
+      api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+        answers,
+        type: 'survey',
+      });
+      selectStory('configure-your-project--docs');
+      disableOnboarding();
+    },
+    [api, selectStory, disableOnboarding]
+  );
 
   useEffect(() => {
     api.setQueryParams({ onboarding: 'true' });
@@ -136,7 +144,9 @@ export default function Onboarding({ api }: { api: API }) {
 
   useEffect(() => {
     setStep((current) => {
-      if (['1:Intro', '5:StoryCreated', '6:FinishedOnboarding'].includes(current)) {
+      if (
+        ['1:Intro', '5:StoryCreated', '6:IntentSurvey', '7:FinishedOnboarding'].includes(current)
+      ) {
         return current;
       }
 
@@ -272,12 +282,14 @@ export default function Onboarding({ api }: { api: API }) {
       {showConfetti && <Confetti />}
       {step === '1:Intro' ? (
         <SplashScreen onDismiss={() => setStep('2:Controls')} />
+      ) : step === '6:IntentSurvey' ? (
+        <IntentSurvey onComplete={completeOnboarding} onDismiss={disableOnboarding} />
       ) : (
         <GuidedTour
           step={step}
           steps={steps}
           onClose={disableOnboarding}
-          onComplete={completeOnboarding}
+          onComplete={() => setStep('6:IntentSurvey')}
         />
       )}
     </ThemeProvider>

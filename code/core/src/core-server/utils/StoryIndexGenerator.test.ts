@@ -22,7 +22,6 @@ vi.mock('storybook/internal/csf', async (importOriginal) => {
 
 vi.mock('storybook/internal/node-logger');
 
-const toIdMock = vi.mocked(toId);
 vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   const csfTools = await importOriginal<typeof import('storybook/internal/csf-tools')>();
   return {
@@ -32,6 +31,7 @@ vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   };
 });
 
+const toIdMock = vi.mocked(toId);
 const readCsfMock = vi.mocked(readCsf);
 const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
@@ -46,6 +46,10 @@ describe('StoryIndexGenerator', () => {
   beforeEach(() => {
     vi.mocked(logger.warn).mockClear();
     vi.mocked(once.warn).mockClear();
+    toIdMock.mockClear();
+    readCsfMock.mockClear();
+    getStorySortParameterMock.mockClear();
+    StoryIndexGenerator.clearFindMatchingFilesCache();
   });
   describe('extraction', () => {
     const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
@@ -1444,6 +1448,21 @@ describe('StoryIndexGenerator', () => {
                 "title": "NoTitle",
                 "type": "docs",
               },
+              "tags--docs": {
+                "id": "tags--docs",
+                "importPath": "./src/docs2/Tags.mdx",
+                "name": "docs",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "foo",
+                  "bar",
+                  "unattached-mdx",
+                ],
+                "title": "Tags",
+                "type": "docs",
+              },
             },
             "v": 5,
           }
@@ -1473,6 +1492,7 @@ describe('StoryIndexGenerator', () => {
               "A",
               "titlePrefix/NoTitle",
               "A",
+              "titlePrefix/Tags",
               "titlePrefix/docs2/Yabbadabbadooo",
             ]
           `);
@@ -1577,6 +1597,21 @@ describe('StoryIndexGenerator', () => {
                   "unattached-mdx",
                 ],
                 "title": "NoTitle",
+                "type": "docs",
+              },
+              "tags--info": {
+                "id": "tags--info",
+                "importPath": "./src/docs2/Tags.mdx",
+                "name": "Info",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "foo",
+                  "bar",
+                  "unattached-mdx",
+                ],
+                "title": "Tags",
                 "type": "docs",
               },
             },
@@ -1827,6 +1862,7 @@ describe('StoryIndexGenerator', () => {
             "a--metaof",
             "notitle--docs",
             "a--second-docs",
+            "tags--docs",
             "docs2-yabbadabbadooo--docs",
           ]
         `);
@@ -1869,33 +1905,34 @@ describe('StoryIndexGenerator', () => {
       });
 
       expect(Object.keys((await generator.getIndex()).entries)).toMatchInlineSnapshot(`
-  [
-    "docs2-yabbadabbadooo--docs",
-    "d--docs",
-    "d--story-one",
-    "b--docs",
-    "b--story-one",
-    "nested-button--story-one",
-    "a--metaof",
-    "a--second-docs",
-    "a--story-one",
-    "second-nested-g--story-one",
-    "componentreference--docs",
-    "notitle--docs",
-    "example-button--story-one",
-    "h--docs",
-    "h--story-one",
-    "componentpath-extension--story-one",
-    "componentpath-noextension--story-one",
-    "componentpath-package--story-one",
-    "first-nested-deeply-f--story-one",
-    "first-nested-deeply-features--with-play",
-    "first-nested-deeply-features--with-story-fn",
-    "first-nested-deeply-features--with-render",
-    "first-nested-deeply-features--with-test",
-    "first-nested-deeply-features--with-csf-1",
-  ]
-`);
+        [
+          "docs2-yabbadabbadooo--docs",
+          "d--docs",
+          "d--story-one",
+          "b--docs",
+          "b--story-one",
+          "nested-button--story-one",
+          "a--metaof",
+          "a--second-docs",
+          "a--story-one",
+          "second-nested-g--story-one",
+          "componentreference--docs",
+          "notitle--docs",
+          "tags--docs",
+          "example-button--story-one",
+          "h--docs",
+          "h--story-one",
+          "componentpath-extension--story-one",
+          "componentpath-noextension--story-one",
+          "componentpath-package--story-one",
+          "first-nested-deeply-f--story-one",
+          "first-nested-deeply-features--with-play",
+          "first-nested-deeply-features--with-story-fn",
+          "first-nested-deeply-features--with-render",
+          "first-nested-deeply-features--with-test",
+          "first-nested-deeply-features--with-csf-1",
+        ]
+      `);
     });
   });
 
@@ -1933,7 +1970,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         toIdMock.mockClear();
         await generator.getIndex();
@@ -1992,7 +2029,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         generator.invalidate(docsSpecifier, './src/docs2/Title.mdx', false);
 
@@ -2014,7 +2051,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         generator.invalidate(storiesSpecifier, './src/A.stories.js', false);
 
@@ -2114,7 +2151,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('notitle--docs');
 
@@ -2136,7 +2173,7 @@ describe('StoryIndexGenerator', () => {
         const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], options);
         await generator.initialize();
         await generator.getIndex();
-        expect(toId).toHaveBeenCalledTimes(6);
+        expect(toId).toHaveBeenCalledTimes(7);
 
         expect(Object.keys((await generator.getIndex()).entries)).toContain('a--metaof');
 

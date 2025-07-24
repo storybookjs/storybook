@@ -52,7 +52,7 @@ export const Container = styled.div<{ width?: number; height?: number }>(
     height: height ?? 'auto',
     maxWidth: 'calc(100% - 40px)',
     maxHeight: '85vh',
-    overflow: 'hidden',
+    overflow: 'auto',
     zIndex: 11,
     animation: `${zoomIn} 200ms`,
 
@@ -64,7 +64,7 @@ export const Container = styled.div<{ width?: number; height?: number }>(
 
 export const CloseButton = (props: React.ComponentProps<typeof IconButton>) => (
   <Dialog.Close asChild>
-    <IconButton {...props}>
+    <IconButton aria-label="Close" {...props}>
       <CrossIcon />
     </IconButton>
   </Dialog.Close>

@@ -206,7 +206,7 @@ export const baseTemplates = {
     skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'nextjs-vite/14-ts': {
-    name: 'Next.js Latest (Vite | TypeScript)',
+    name: 'Next.js v14 (Vite | TypeScript)',
     script:
       'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
@@ -417,16 +417,16 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests-dev', 'bench'],
   },
-  'nuxt-vite/default-ts': {
-    name: 'Nuxt v3 (Vite | TypeScript)',
-    script: 'npx nuxi init --packageManager yarn --gitInit false -M @nuxt/ui {{beforeDir}}',
-    expected: {
-      framework: '@storybook-vue/nuxt',
-      renderer: '@storybook/vue3',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
-  },
+  // 'nuxt-vite/default-ts': {
+  //   name: 'Nuxt v3 (Vite | TypeScript)',
+  //   script: 'npx nuxi init --packageManager yarn --gitInit false -M @nuxt/ui {{beforeDir}}',
+  //   expected: {
+  //     framework: '@storybook-vue/nuxt',
+  //     renderer: '@storybook/vue3',
+  //     builder: '@storybook/builder-vite',
+  //   },
+  //   skipTasks: ['e2e-tests-dev', 'bench', 'vitest-integration'],
+  // },
   'html-vite/default-js': {
     name: 'HTML Latest (Vite | JavaScript)',
     script:
@@ -786,7 +786,7 @@ export const normal: TemplateKey[] = [
   'react-vite/default-ts',
   'angular-cli/default-ts',
   'vue3-vite/default-ts',
-  'nuxt-vite/default-ts',
+  // 'nuxt-vite/default-ts',
   'lit-vite/default-ts',
   'svelte-vite/default-ts',
   'svelte-kit/skeleton-ts',

@@ -1,6 +1,8 @@
 import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
+import { logger } from 'storybook/internal/node-logger';
+
 // eslint-disable-next-line depend/ban-dependencies
 import ora from 'ora';
 import invariant from 'tiny-invariant';
@@ -26,8 +28,6 @@ import type { SupportedFrameworks } from '../../../../core/src/types/modules/fra
 import type { SupportedRenderers } from '../../../../core/src/types/modules/renderers';
 import { configureMain, configurePreview } from './configure';
 import type { FrameworkOptions, GeneratorOptions } from './types';
-
-const logger = console;
 
 const defaultOptions: FrameworkOptions = {
   extraPackages: [],
@@ -287,14 +287,16 @@ export async function baseGenerator(
 
   const compiler = webpackCompiler ? webpackCompiler({ builder }) : undefined;
 
-  // TODO: change the semver range to '^4' when VTA 4 and SB 9 is released
   if (features.includes('test')) {
-    extraAddons.push('@chromatic-com/storybook@^4.0.0-0');
+    extraAddons.push('@chromatic-com/storybook');
   }
 
-  // Add @storybook/addon-docs when docs feature is selected
   if (features.includes('docs')) {
     extraAddons.push('@storybook/addon-docs');
+  }
+
+  if (features.includes('onboarding')) {
+    extraAddons.push('@storybook/addon-onboarding');
   }
 
   // added to main.js
@@ -309,7 +311,7 @@ export async function baseGenerator(
     ...extraAddons,
   ].filter(Boolean);
 
-  const packageJson = await packageManager.retrievePackageJson();
+  const { packageJson } = packageManager.primaryPackageJson;
   const installedDependencies = new Set(
     Object.keys({ ...packageJson.dependencies, ...packageJson.devDependencies })
   );
@@ -344,7 +346,7 @@ export async function baseGenerator(
       !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
   );
 
-  logger.log();
+  logger.log('');
 
   const versionedPackagesSpinner = ora({
     indent: 2,
@@ -354,13 +356,15 @@ export async function baseGenerator(
   try {
     if (process.env.CI !== 'true') {
       const { hasEslint, isStorybookPluginInstalled, isFlatConfig, eslintConfigFile } =
-        await extractEslintInfo(packageManager);
+        // TODO: Investigate why packageManager type does not match on CI
+        await extractEslintInfo(packageManager as any);
 
       if (hasEslint && !isStorybookPluginInstalled) {
         packagesToInstall.push('eslint-plugin-storybook');
         await configureEslintPlugin({
           eslintConfigFile,
-          packageManager,
+          // TODO: Investigate why packageManager type does not match on CI
+          packageManager: packageManager as any,
           isFlatConfig,
         });
       }
@@ -380,7 +384,7 @@ export async function baseGenerator(
       text: 'Installing Storybook dependencies',
     }).start();
 
-    await packageManager.addDependencies({ ...npmOptions, packageJson }, versionedPackages);
+    await packageManager.addDependencies({ ...npmOptions }, versionedPackages);
     addDependenciesSpinner.succeed();
   }
 
@@ -445,7 +449,7 @@ export async function baseGenerator(
   }
 
   if (addScripts) {
-    await packageManager.addStorybookCommandInScripts({
+    packageManager.addStorybookCommandInScripts({
       port: 6006,
     });
   }

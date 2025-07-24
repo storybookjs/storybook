@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.0.0-rc.4",
+  "version": "9.1.0-alpha.10",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"
@@ -83,65 +83,13 @@
       "import": "./dist/core-server/presets/common-override-preset.js",
       "require": "./dist/core-server/presets/common-override-preset.cjs"
     },
-    "./internal/backgrounds": {
-      "types": "./dist/backgrounds/index.d.ts",
-      "import": "./dist/backgrounds/index.js",
-      "require": "./dist/backgrounds/index.cjs"
+    "./internal/core-server/presets/webpack/loaders/webpack-automock-loader": {
+      "import": "./dist/core-server/presets/webpack/loaders/webpack-automock-loader.js",
+      "require": "./dist/core-server/presets/webpack/loaders/webpack-automock-loader.cjs"
     },
-    "./backgrounds": {
-      "types": "./dist/backgrounds/index.d.ts",
-      "import": "./dist/backgrounds/index.js",
-      "require": "./dist/backgrounds/index.cjs"
-    },
-    "./internal/backgrounds/preview": {
-      "types": "./dist/backgrounds/preview.d.ts",
-      "import": "./dist/backgrounds/preview.js",
-      "require": "./dist/backgrounds/preview.cjs"
-    },
-    "./backgrounds/preview": {
-      "types": "./dist/backgrounds/preview.d.ts",
-      "import": "./dist/backgrounds/preview.js",
-      "require": "./dist/backgrounds/preview.cjs"
-    },
-    "./internal/measure": {
-      "types": "./dist/measure/index.d.ts",
-      "import": "./dist/measure/index.js",
-      "require": "./dist/measure/index.cjs"
-    },
-    "./measure": {
-      "types": "./dist/measure/index.d.ts",
-      "import": "./dist/measure/index.js",
-      "require": "./dist/measure/index.cjs"
-    },
-    "./internal/measure/preview": {
-      "types": "./dist/measure/preview.d.ts",
-      "import": "./dist/measure/preview.js",
-      "require": "./dist/measure/preview.cjs"
-    },
-    "./measure/preview": {
-      "types": "./dist/measure/preview.d.ts",
-      "import": "./dist/measure/preview.js",
-      "require": "./dist/measure/preview.cjs"
-    },
-    "./internal/outline": {
-      "types": "./dist/outline/index.d.ts",
-      "import": "./dist/outline/index.js",
-      "require": "./dist/outline/index.cjs"
-    },
-    "./outline": {
-      "types": "./dist/outline/index.d.ts",
-      "import": "./dist/outline/index.js",
-      "require": "./dist/outline/index.cjs"
-    },
-    "./internal/outline/preview": {
-      "types": "./dist/outline/preview.d.ts",
-      "import": "./dist/outline/preview.js",
-      "require": "./dist/outline/preview.cjs"
-    },
-    "./outline/preview": {
-      "types": "./dist/outline/preview.d.ts",
-      "import": "./dist/outline/preview.js",
-      "require": "./dist/outline/preview.cjs"
+    "./internal/core-server/presets/webpack/loaders/storybook-mock-transform-loader": {
+      "import": "./dist/core-server/presets/webpack/loaders/storybook-mock-transform-loader.js",
+      "require": "./dist/core-server/presets/webpack/loaders/storybook-mock-transform-loader.cjs"
     },
     "./internal/highlight": {
       "types": "./dist/highlight/index.d.ts",
@@ -153,16 +101,6 @@
       "import": "./dist/highlight/index.js",
       "require": "./dist/highlight/index.cjs"
     },
-    "./internal/highlight/preview": {
-      "types": "./dist/highlight/preview.d.ts",
-      "import": "./dist/highlight/preview.js",
-      "require": "./dist/highlight/preview.cjs"
-    },
-    "./highlight/preview": {
-      "types": "./dist/highlight/preview.d.ts",
-      "import": "./dist/highlight/preview.js",
-      "require": "./dist/highlight/preview.cjs"
-    },
     "./internal/actions": {
       "types": "./dist/actions/index.d.ts",
       "import": "./dist/actions/index.js",
@@ -173,16 +111,6 @@
       "import": "./dist/actions/index.js",
       "require": "./dist/actions/index.cjs"
     },
-    "./internal/actions/preview": {
-      "types": "./dist/actions/preview.d.ts",
-      "import": "./dist/actions/preview.js",
-      "require": "./dist/actions/preview.cjs"
-    },
-    "./actions/preview": {
-      "types": "./dist/actions/preview.d.ts",
-      "import": "./dist/actions/preview.js",
-      "require": "./dist/actions/preview.cjs"
-    },
     "./internal/actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
@@ -190,16 +118,6 @@
     "./actions/decorator": {
       "types": "./dist/actions/decorator.d.ts",
       "import": "./dist/actions/decorator.js"
-    },
-    "./internal/component-testing": {
-      "types": "./dist/component-testing/index.d.ts",
-      "import": "./dist/component-testing/index.js",
-      "require": "./dist/component-testing/index.cjs"
-    },
-    "./internal/component-testing/preview": {
-      "types": "./dist/component-testing/preview.d.ts",
-      "import": "./dist/component-testing/preview.js",
-      "require": "./dist/component-testing/preview.cjs"
     },
     "./internal/viewport": {
       "types": "./dist/viewport/index.d.ts",
@@ -211,25 +129,10 @@
       "import": "./dist/viewport/index.js",
       "require": "./dist/viewport/index.cjs"
     },
-    "./internal/viewport/preview": {
-      "types": "./dist/viewport/preview.d.ts",
-      "import": "./dist/viewport/preview.js",
-      "require": "./dist/viewport/preview.cjs"
-    },
-    "./viewport/preview": {
-      "types": "./dist/viewport/preview.d.ts",
-      "import": "./dist/viewport/preview.js",
-      "require": "./dist/viewport/preview.cjs"
-    },
     "./internal/controls": {
       "types": "./dist/controls/index.d.ts",
       "import": "./dist/controls/index.js",
       "require": "./dist/controls/index.cjs"
-    },
-    "./internal/controls/preview": {
-      "types": "./dist/controls/preview.d.ts",
-      "import": "./dist/controls/preview.js",
-      "require": "./dist/controls/preview.cjs"
     },
     "./internal/controls/decorator": {
       "types": "./dist/controls/decorator.d.ts",
@@ -363,16 +266,6 @@
       "import": "./dist/instrumenter/index.js",
       "require": "./dist/instrumenter/index.cjs"
     },
-    "./internal/test/preview": {
-      "types": "./dist/test/preview.d.ts",
-      "import": "./dist/test/preview.js",
-      "require": "./dist/test/preview.cjs"
-    },
-    "./test/preview": {
-      "types": "./dist/test/preview.d.ts",
-      "import": "./dist/test/preview.js",
-      "require": "./dist/test/preview.cjs"
-    },
     "./internal/test": {
       "types": "./dist/test/index.d.ts",
       "import": "./dist/test/index.js",
@@ -389,6 +282,7 @@
     "./internal/manager/globals-runtime": {
       "import": "./dist/manager/globals-runtime.js"
     },
+    "./bin/index.cjs": "./bin/index.cjs",
     "./package.json": "./package.json",
     "./internal/package.json": "./package.json"
   },
@@ -421,53 +315,11 @@
       "internal/core-server": [
         "./dist/core-server/index.d.ts"
       ],
-      "internal/backgrounds": [
-        "./dist/backgrounds/index.d.ts"
-      ],
-      "backgrounds": [
-        "./dist/backgrounds/index.d.ts"
-      ],
-      "internal/backgrounds/preview": [
-        "./dist/backgrounds/preview.d.ts"
-      ],
-      "backgrounds/preview": [
-        "./dist/backgrounds/preview.d.ts"
-      ],
-      "internal/measure": [
-        "./dist/measure/index.d.ts"
-      ],
-      "measure": [
-        "./dist/measure/index.d.ts"
-      ],
-      "internal/measure/preview": [
-        "./dist/measure/preview.d.ts"
-      ],
-      "measure/preview": [
-        "./dist/measure/preview.d.ts"
-      ],
-      "internal/outline": [
-        "./dist/outline/index.d.ts"
-      ],
-      "outline": [
-        "./dist/outline/index.d.ts"
-      ],
-      "internal/outline/preview": [
-        "./dist/outline/preview.d.ts"
-      ],
-      "outline/preview": [
-        "./dist/outline/preview.d.ts"
-      ],
       "internal/highlight": [
         "./dist/highlight/index.d.ts"
       ],
       "highlight": [
         "./dist/highlight/index.d.ts"
-      ],
-      "internal/highlight/preview": [
-        "./dist/highlight/preview.d.ts"
-      ],
-      "highlight/preview": [
-        "./dist/highlight/preview.d.ts"
       ],
       "internal/actions": [
         "./dist/actions/index.d.ts"
@@ -475,23 +327,11 @@
       "actions": [
         "./dist/actions/index.d.ts"
       ],
-      "internal/actions/preview": [
-        "./dist/actions/preview.d.ts"
-      ],
-      "actions/preview": [
-        "./dist/actions/preview.d.ts"
-      ],
       "internal/actions/decorator": [
         "./dist/actions/decorator.d.ts"
       ],
       "actions/decorator": [
         "./dist/actions/decorator.d.ts"
-      ],
-      "internal/component-testing": [
-        "./dist/component-testing/index.d.ts"
-      ],
-      "internal/component-testing/preview": [
-        "./dist/component-testing/preview.d.ts"
       ],
       "internal/viewport": [
         "./dist/viewport/index.d.ts"
@@ -499,17 +339,8 @@
       "viewport": [
         "./dist/viewport/index.d.ts"
       ],
-      "internal/viewport/preview": [
-        "./dist/viewport/preview.d.ts"
-      ],
-      "viewport/preview": [
-        "./dist/viewport/preview.d.ts"
-      ],
       "internal/controls": [
         "./dist/controls/index.d.ts"
-      ],
-      "internal/controls/preview": [
-        "./dist/controls/preview.d.ts"
       ],
       "internal/controls/decorator": [
         "./dist/controls/decorator.d.ts"
@@ -589,12 +420,6 @@
       "internal/instrumenter": [
         "./dist/instrumenter/index.d.ts"
       ],
-      "internal/test/preview": [
-        "./dist/test/preview.d.ts"
-      ],
-      "test/preview": [
-        "./dist/test/preview.d.ts"
-      ],
       "internal/test": [
         "./dist/test/index.d.ts"
       ],
@@ -607,6 +432,7 @@
   "files": [
     "dist/**/*",
     "assets/**/*",
+    "templates/**/*",
     "README.md",
     "!src/**/*"
   ],
@@ -621,8 +447,9 @@
     "@storybook/global": "^5.0.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
-    "@vitest/expect": "3.0.9",
-    "@vitest/spy": "3.0.9",
+    "@vitest/expect": "3.2.4",
+    "@vitest/mocker": "3.2.4",
+    "@vitest/spy": "3.2.4",
     "better-opn": "^3.0.2",
     "esbuild": "^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0",
     "esbuild-register": "^3.5.0",
@@ -637,6 +464,7 @@
     "@babel/parser": "^7.26.9",
     "@babel/traverse": "^7.26.9",
     "@babel/types": "^7.26.8",
+    "@clack/prompts": "^1.0.0-alpha.0",
     "@devtools-ds/object-inspector": "^1.1.2",
     "@discoveryjs/json-ext": "^0.5.3",
     "@emotion/cache": "^11.14.0",
@@ -650,6 +478,7 @@
     "@radix-ui/react-dialog": "^1.1.2",
     "@radix-ui/react-scroll-area": "1.2.0-rc.7",
     "@radix-ui/react-slot": "^1.0.2",
+    "@rolldown/pluginutils": "1.0.0-beta.18",
     "@storybook/docs-mdx": "4.0.0-next.1",
     "@storybook/icons": "^1.4.0",
     "@tanstack/react-virtual": "^3.3.0",
@@ -661,6 +490,7 @@
     "@types/ejs": "^3.1.1",
     "@types/find-cache-dir": "^5.0.0",
     "@types/js-yaml": "^4.0.5",
+    "@types/lodash": "^4.17.13",
     "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^2.3.0",
@@ -671,7 +501,7 @@
     "@types/react-transition-group": "^4",
     "@types/semver": "^7.5.8",
     "@types/ws": "^8",
-    "@vitest/utils": "^3.0.9",
+    "@vitest/utils": "^3.2.4",
     "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.10",
     "@yarnpkg/fslib": "2.10.3",
     "@yarnpkg/libzip": "2.3.0",
@@ -710,6 +540,7 @@
     "jsdoc-type-pratt-parser": "^4.0.0",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
+    "lodash": "^4.17.21",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
     "nanoid": "^4.0.2",

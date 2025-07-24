@@ -1,7 +1,7 @@
 import type { LoaderFunction } from 'storybook/internal/csf';
+import { definePreviewAddon } from 'storybook/internal/csf';
 import { instrument } from 'storybook/internal/instrumenter';
 
-import { definePreview } from 'storybook/preview-api';
 import {
   clearAllMocks,
   fn,
@@ -59,7 +59,9 @@ export const traverseArgs = (value: unknown, depth = 0, key?: string): unknown =
     // we loop instead of map to prevent this lit issue:
     // https://github.com/storybookjs/storybook/issues/25651
     for (let i = 0; i < value.length; i++) {
-      value[i] = traverseArgs(value[i], depth);
+      if (Object.getOwnPropertyDescriptor(value, i)?.writable) {
+        value[i] = traverseArgs(value[i], depth);
+      }
     }
     return value;
   }
@@ -90,11 +92,18 @@ const enhanceContext: LoaderFunction = async (context) => {
 
   // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
   // which will throw an error in react native for example.
-  if (globalThis.window?.navigator?.clipboard) {
+  const clipboard = globalThis.window?.navigator?.clipboard;
+  if (clipboard) {
     context.userEvent = instrument(
       { userEvent: uninstrumentedUserEvent.setup() },
       { intercept: true }
     ).userEvent;
+
+    // Restore original clipboard, which was replaced with a stub by userEvent.setup()
+    Object.defineProperty(globalThis.window.navigator, 'clipboard', {
+      get: () => clipboard,
+      configurable: true,
+    });
 
     let currentFocus = HTMLElement.prototype.focus;
 
@@ -120,7 +129,21 @@ const enhanceContext: LoaderFunction = async (context) => {
   }
 };
 
+interface TestParameters {
+  test?: {
+    /** Ignore unhandled errors during test execution */
+    dangerouslyIgnoreUnhandledErrors?: boolean;
+
+    /** Whether to throw exceptions coming from the play function */
+    throwPlayFunctionExceptions?: boolean;
+  };
+}
+
+export interface TestTypes {
+  parameters: TestParameters;
+}
+
 export default () =>
-  definePreview({
+  definePreviewAddon<TestTypes>({
     loaders: [resetAllMocksLoader, nameSpiesAndWrapActionsInSpies, enhanceContext],
   });

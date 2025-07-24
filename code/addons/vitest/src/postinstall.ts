@@ -513,7 +513,7 @@ export default async function postInstall(options: PostinstallOptions) {
       }
 
       if (options.configDir !== '.storybook') {
-        command.push('--config-dir', options.configDir);
+        command.push('--config-dir', `"${options.configDir}"`);
       }
 
       await execa('storybook', command, {

@@ -18,7 +18,7 @@ import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { babelParse, types as t } from '../../code/core/src/babel';
 import { detectLanguage } from '../../code/core/src/cli/detect';

@@ -59,6 +59,8 @@ const Info = styled.div({
   alignItems: 'center',
   marginLeft: 10,
   gap: 6,
+  position: 'relative',
+  zIndex: 10,
 });
 
 const Actions = styled.div(({ theme }) => ({

@@ -29,7 +29,6 @@ import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
 // ! Relative import to prebundle it without needing to depend on the Vite builder
-import { INCLUDE_CANDIDATES } from '../../../../builders/builder-vite/src/constants';
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
 

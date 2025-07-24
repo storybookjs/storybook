@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { findUp } from 'find-up';
 import { join } from 'pathe';
@@ -41,7 +41,7 @@ export const getActualPackageJson = async (
       );
     }
 
-    const { default: packageJson } = await import(resolvedPackageJsonPath, {
+    const { default: packageJson } = await import(pathToFileURL(resolvedPackageJsonPath).href, {
       with: { type: 'json' },
     });
     return packageJson;

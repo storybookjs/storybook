@@ -2,6 +2,7 @@ import { builtinModules } from 'node:module';
 import { join } from 'node:path';
 
 import * as esbuild from 'esbuild';
+import { pathToFileURL } from 'node:url';
 
 export type BuildEntry = {
   exportEntries?: ('.' | `./${string}`)[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
@@ -50,7 +51,7 @@ export const measure = async (fn: () => Promise<void>) => {
 };
 
 export const getExternal = async (cwd: string) => {
-  const { default: packageJson } = await import(join(cwd, 'package.json'), {
+  const { default: packageJson } = await import(pathToFileURL(join(cwd, 'package.json')).href, {
     with: { type: 'json' },
   });
 

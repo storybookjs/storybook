@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
 import { isAbsolute, posix, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
@@ -579,7 +579,9 @@ async function getPackageNameFromPath(input: string): Promise<string> {
     throw new Error(`Could not find package.json in path: ${path}`);
   }
 
-  const { default: packageJson } = await import(packageJsonPath, { with: { type: 'json' } });
+  const { default: packageJson } = await import(pathToFileURL(packageJsonPath).href, {
+    with: { type: 'json' },
+  });
   return packageJson.name;
 }
 
@@ -606,6 +608,7 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     typeof framework === 'string' ? framework : framework.name
   );
 
+  console.log(builder);
   const builderPackageName = await getPackageNameFromPath(
     typeof builder === 'string' ? builder : builder.name
   );

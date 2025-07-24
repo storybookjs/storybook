@@ -608,7 +608,6 @@ async function getStorybookInfo({ configDir, packageManager: pkgMgr }: Postinsta
     typeof framework === 'string' ? framework : framework.name
   );
 
-  console.log(builder);
   const builderPackageName = await getPackageNameFromPath(
     typeof builder === 'string' ? builder : builder.name
   );

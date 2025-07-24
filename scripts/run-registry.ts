@@ -129,23 +129,21 @@ const publish = async (packages: { name: string; location: string }[], url: stri
     packages.map(({ name, location }) =>
       limit(
         () =>
-          new Promise((res, rej) => {
-            logger.log(
-              `🛫 publishing ${name} (${location.replace(resolvePath(join(__dirname, '..')), '.')})`
-            );
+          new Promise((resolve, reject) => {
+            const loggedLocation = location.replace(resolvePath(join(__dirname, '..')), '.');
+            const resolvedLocation = resolvePath('../code', location);
+
+            logger.log(`🛫 publishing ${name} (${loggedLocation})`);
 
             const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
-            const command = `cd "${resolvePath(
-              '../code',
-              location
-            )}" && yarn pack --out="${PACKS_DIRECTORY}/${tarballFilename}" && cd "${PACKS_DIRECTORY}" && npm publish "./${tarballFilename}" --registry ${url} --force --tag="xyz" --ignore-scripts`;
+            const command = `cd "${resolvedLocation}" && yarn pack --out="${PACKS_DIRECTORY}/${tarballFilename}" && cd "${PACKS_DIRECTORY}" && npm publish "./${tarballFilename}" --registry ${url} --force --tag="xyz" --ignore-scripts`;
             exec(command, (e) => {
               if (e) {
-                rej(e);
+                reject(e);
               } else {
                 i += 1;
                 logger.log(`${i}/${packages.length} 🛬 successful publish of ${name}!`);
-                res(undefined);
+                resolve(undefined);
               }
             });
           })

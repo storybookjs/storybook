@@ -235,13 +235,14 @@ export async function promptForAutomigrations(
       value: am.fix.id,
       label,
       hint: hint.join('\n'),
+      defaultSelected: am.fix.defaultSelected ?? true,
     };
   });
 
   const selectedIds = await prompt.multiselect({
     message: 'Select automigrations to run',
     options: choices,
-    initialValues: choices.map((c) => c.value),
+    initialValues: choices.filter((c) => c.defaultSelected).map((c) => c.value),
   });
 
   return automigrations.filter((am) => selectedIds.includes(am.fix.id));

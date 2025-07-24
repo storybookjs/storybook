@@ -1,0 +1,15 @@
+docker:
+  - image: cimg/node:22.15.0
+    environment:
+      NODE_OPTIONS: --max_old_space_size=6144
+
+parameters:
+  class:
+    description: The Resource class
+    type: enum
+    enum: ['small', 'medium', 'medium+', 'large', 'xlarge']
+    default: 'small'
+
+resource_class: <<parameters.class>>
+
+working_directory: /tmp/storybook

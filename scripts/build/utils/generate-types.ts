@@ -29,9 +29,10 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
       return limited(async () => {
         let timer: ReturnType<typeof setTimeout> | undefined;
         const dtsProcess = spawn(
-          join(import.meta.dirname, '..', '..', 'node_modules', '.bin', 'jiti'),
-          [join(import.meta.dirname, 'dts-process.ts'), entryPoint],
+          `"${join(import.meta.dirname, '..', '..', 'node_modules', '.bin', 'jiti')}"`,
+          [`"${join(import.meta.dirname, 'dts-process.ts')}"`, `"${entryPoint}"`],
           {
+            shell: true,
             cwd: DIR_CWD,
             stdio: ['ignore', 'inherit', 'pipe'],
           }

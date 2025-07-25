@@ -2,7 +2,7 @@ import React, { type CSSProperties, type SelectHTMLAttributes } from 'react';
 
 import { lighten, styled } from 'storybook/theming';
 
-import { isTestEnvironment } from '../../../preview-api/modules/preview-web/render/animation-utils';
+import { isVitestEnvironment } from '../../../preview-api/modules/preview-web/render/animation-utils';
 import { type Alignments, type Sizes, type ValidationStates, sizes } from './styles';
 
 type SelectProps = Omit<
@@ -115,7 +115,7 @@ export const Select = ({ children, ...props }: SelectProps) => {
     // @ts-expect-error Weird props mismatch
     <BaseSelect {...props}>
       {/* TODO Remove condition when this issue is resolved: https://github.com/facebook/react/issues/33609 */}
-      {!isTestEnvironment() && (
+      {!isVitestEnvironment() && (
         <button>
           {/* @ts-expect-error Not yet supported */}
           <selectedcontent></selectedcontent>

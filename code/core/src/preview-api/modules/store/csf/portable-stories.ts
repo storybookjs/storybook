@@ -25,7 +25,7 @@ import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
 import {
-  isTestEnvironment,
+  isVitestEnvironment,
   pauseAnimations,
   waitForAnimations,
 } from '../../preview-web/render/animation-utils';
@@ -424,7 +424,7 @@ async function runStory<TRenderer extends Renderer>(
   }
 
   let cleanUp: CleanupCallback | undefined;
-  if (isTestEnvironment()) {
+  if (isVitestEnvironment()) {
     cleanUp = pauseAnimations();
   } else {
     await waitForAnimations(context.abortSignal);

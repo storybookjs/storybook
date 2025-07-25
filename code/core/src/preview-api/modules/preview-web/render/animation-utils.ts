@@ -2,16 +2,11 @@ import type { CleanupCallback } from 'storybook/internal/csf';
 
 const ANIMATION_TIMEOUT = 5000;
 
-export function isTestEnvironment() {
+export function isVitestEnvironment() {
   try {
-    return (
-      // @ts-expect-error this property exists in certain environments
-      !!globalThis.__vitest_browser__ ||
-      // @ts-expect-error this property exists in certain environments
-      !!globalThis.__playwright__binding__
-    );
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (e) {
+    // @ts-expect-error this property exists in certain environments
+    return !!globalThis.__vitest_browser__;
+  } catch {
     return false;
   }
 }

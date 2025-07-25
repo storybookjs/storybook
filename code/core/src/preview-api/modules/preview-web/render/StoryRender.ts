@@ -29,7 +29,7 @@ import type { UserEventObject } from 'storybook/test';
 import type { StoryStore } from '../../store';
 import type { Render, RenderType } from './Render';
 import { PREPARE_ABORTED } from './Render';
-import { isVitestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils';
+import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils';
 
 const { AbortController } = globalThis;
 
@@ -369,7 +369,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       }
 
       await this.runPhase(abortSignal, 'completing', async () => {
-        if (isVitestEnvironment()) {
+        if (isTestEnvironment()) {
           this.store.addCleanupCallbacks(story, pauseAnimations());
         } else {
           await waitForAnimations(abortSignal);

@@ -1,0 +1,44 @@
+name: Monthly PR metrics
+on:
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Date range for PR metrics. Format: `first_day..last_day` or `last_month`.'
+        required: true
+        default: 'last_month'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: issue metrics
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+    steps:
+    - name: Get dates for the date range
+      shell: bash
+      run: |
+        if [ "${{ github.event.inputs.date }}" == "last_month" ]; then
+          first_day=$(date -d "last month" +%Y-%m-01)
+          last_day=$(date -d "$first_day +1 month -1 day" +%Y-%m-%d)
+        else
+          first_day=$(echo "${{ github.event.inputs.date }}" | awk -F'\\.\\.' '{print $1}')
+          last_day=$(echo "${{ github.event.inputs.date }}" | awk -F'\\.\\.' '{print $2}')
+        fi
+        echo "date_range=$first_day..$last_day" >> "$GITHUB_ENV"
+
+    - name: Run issue-metrics tool
+      uses: github/issue-metrics@v3
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SEARCH_QUERY: 'repo:storybookjs/storybook is:pr created:${{ env.date_range }}'
+
+    - name: Create issue
+      uses: peter-evans/create-issue-from-file@v5
+      with:
+        title: Monthly PR metrics report
+        token: ${{ secrets.GITHUB_TOKEN }}
+        content-filepath: ./issue_metrics.md

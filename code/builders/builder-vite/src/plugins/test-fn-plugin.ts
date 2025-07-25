@@ -1,15 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { testTransform } from 'storybook/internal/csf-tools';
 
-import type { Plugin } from 'vite';
-
 /** This transforms the test function of a story into another story */
-export async function storybookTestFn(): Promise<Plugin> {
+export async function storybookTestFn(): Promise<any> {
+  // export async function storybookTestFn(): Promise<Plugin> {
   const storiesRegex = /\.stories\.(tsx?|jsx?)$/;
 
   return {
     name: 'storybook:test-function',
     enforce: 'post',
-    async transform(src, id) {
+    async transform(src: any, id: any) {
       if (!storiesRegex.test(id)) {
         return undefined;
       }

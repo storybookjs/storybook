@@ -284,5 +284,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "9.1.0-beta.0"
 }

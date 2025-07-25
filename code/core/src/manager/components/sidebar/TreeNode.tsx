@@ -7,7 +7,7 @@ import { styled } from 'storybook/theming';
 import { UseSymbol } from './IconSymbols';
 import { CollapseIcon } from './components/CollapseIcon';
 
-export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'group' | 'document' }>(
+export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'group' | 'document' }>(
   ({ theme, type }) => ({
     width: 14,
     height: 14,
@@ -27,6 +27,10 @@ export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'group' | 'do
 
       if (type === 'story') {
         return theme.color.seafoam;
+      }
+
+      if (type === 'test') {
+        return theme.color.green;
       }
       return 'currentColor';
     })(),
@@ -57,23 +61,26 @@ const BranchNode = styled.button<{
   paddingBottom: 4,
 }));
 
-const LeafNode = styled.a<{ depth?: number }>(({ theme, depth = 0 }) => ({
-  width: '100%',
-  cursor: 'pointer',
-  color: 'inherit',
-  display: 'flex',
-  gap: 6,
-  flex: 1,
-  alignItems: 'start',
-  paddingLeft: `${22 + depth * 18}px`,
-  paddingTop: 5,
-  paddingBottom: 4,
-  fontSize: `${theme.typography.size.s2}px`,
-  textDecoration: 'none',
-  overflowWrap: 'break-word',
-  wordWrap: 'break-word',
-  wordBreak: 'break-word',
-}));
+const LeafNode = styled.a<{ depth?: number; type?: 'story' | 'test' }>(
+  ({ theme, depth = 0, type }) => ({
+    width: '100%',
+    cursor: 'pointer',
+    color: 'inherit',
+    display: 'flex',
+    gap: 6,
+    flex: 1,
+    alignItems: 'start',
+    // TODO: hack stuff, should be fixed later
+    paddingLeft: type === 'test' ? `${32 + depth * 18}px` : `${22 + depth * 18}px`,
+    paddingTop: 5,
+    paddingBottom: 4,
+    fontSize: `${theme.typography.size.s2}px`,
+    textDecoration: 'none',
+    overflowWrap: 'break-word',
+    wordWrap: 'break-word',
+    wordBreak: 'break-word',
+  })
+);
 
 export const RootNode = styled.div(({ theme }) => ({
   display: 'flex',
@@ -150,19 +157,17 @@ export const DocumentNode: FC<ComponentProps<typeof LeafNode> & { docsMode: bool
   }
 );
 
-export const StoryNode: FC<ComponentProps<typeof LeafNode>> = React.memo(function StoryNode({
-  theme,
-  children,
-  ...props
-}) {
-  return (
-    <LeafNode tabIndex={-1} {...props}>
-      <Wrapper>
-        <TypeIcon viewBox="0 0 14 14" width="12" height="12" type="story">
-          <UseSymbol type="story" />
-        </TypeIcon>
-      </Wrapper>
-      {children}
-    </LeafNode>
-  );
-});
+// TODO: hack stuff, should be done in a new component
+export const StoryNode: FC<ComponentProps<typeof LeafNode> & { type: 'story' | 'test' }> =
+  React.memo(function StoryNode({ theme, children, type = 'story', ...props }) {
+    return (
+      <LeafNode tabIndex={-1} type={type} {...props}>
+        <Wrapper>
+          <TypeIcon viewBox="0 0 14 14" width="12" height="12" type={type}>
+            <UseSymbol type={type} />
+          </TypeIcon>
+        </Wrapper>
+        {children}
+      </LeafNode>
+    );
+  });

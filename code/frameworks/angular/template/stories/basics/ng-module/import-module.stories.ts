@@ -9,7 +9,7 @@ const meta: Meta<ChipsGroupComponent> = {
   component: ChipsGroupComponent,
   decorators: [
     moduleMetadata({
-      imports: [ChipsModule],
+      imports: [ChipsModule.forRoot()],
     }),
   ],
 };

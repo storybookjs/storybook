@@ -1,6 +1,6 @@
-import { Component, Injectable, Input, OnChanges } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import type { OnChanges } from '@angular/core';
+import { Component, Injectable, Input } from '@angular/core';
+import type { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Injectable()
 export class ApiService {

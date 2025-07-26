@@ -146,8 +146,8 @@ export class TestBedComponentBuilder {
   copyComponentIntoTargetNode() {
     this.throwOnMissingFixture();
     this.throwOnMissingTargetNode();
-    this.targetNode.appendChild(this.fixture.nativeElement);
-    this.fixture.autoDetectChanges(true);
+    this.targetNode.append(...this.fixture.nativeElement.childNodes);
+    this.fixture.detectChanges();
   }
 
   private calculateComponentInputs() {

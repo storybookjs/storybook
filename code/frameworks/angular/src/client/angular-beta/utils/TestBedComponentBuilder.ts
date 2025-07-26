@@ -77,6 +77,7 @@ export class TestBedComponentBuilder {
     const { imports, declarations, providers } = metaData;
     this.imports = imports;
     this.declarations = declarations;
+    // only works on standalone component
     this.componentProviders = providers;
     return this;
   }
@@ -120,7 +121,11 @@ export class TestBedComponentBuilder {
       )
       .overrideModule(
         wrapperModule,
-        GenerateModuleMetaData(this.environmentProviders, this.declarations, this.imports)
+        GenerateModuleMetaData(
+          [...this.componentProviders, ...this.environmentProviders],
+          this.declarations,
+          this.imports
+        )
       );
 
     return this;

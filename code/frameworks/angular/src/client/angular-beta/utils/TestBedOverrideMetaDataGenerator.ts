@@ -1,4 +1,4 @@
-import type { Component, NgModule, Type } from '@angular/core';
+import type { Component, ModuleWithProviders, NgModule, Type } from '@angular/core';
 import type { MetadataOverride } from '@angular/core/testing';
 
 export const GenerateComponentMetaData = (
@@ -29,12 +29,18 @@ export const GenerateModuleMetaData = (
   declarations: any[],
   imports: any[]
 ) => {
+  const moduleWithProviders = imports.filter(isModuleWithProviders) as ModuleWithProviders<any>[];
+  const plainModules = imports.filter((imp) => !isModuleWithProviders(imp));
   return {
     add: {
-      exports: [...declarations, ...imports],
+      exports: [...declarations, ...moduleWithProviders.map((x) => x.ngModule), ...plainModules],
       declarations: declarations,
-      imports: imports,
-      providers: environmentProvider,
+      imports: [...moduleWithProviders.map((x) => x.ngModule), ...plainModules],
+      providers: [...environmentProvider, ...moduleWithProviders.flatMap((x) => x.providers)],
     },
   } as MetadataOverride<NgModule>;
 };
+
+function isModuleWithProviders(obj: any): obj is ModuleWithProviders<any> {
+  return obj && typeof obj === 'object' && 'ngModule' in obj;
+}

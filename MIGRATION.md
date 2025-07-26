@@ -1703,13 +1703,12 @@ These sections explain the rationale, and the required changes you might have to
 
 ### Deprecated `@storybook/testing-library` package
 
-    @@ -1082,7 +800,7 @@ To migrate by hand, install `@storybook/test` and replace `@storybook/testing-li
+ The `@storybook/testing-library` package has been deprecated with the release of Storybook 8.0, and we recommend using the `@storybook/test` package instead. If you're migrating manually, you'll need to install the new package and update your imports as follows:
 
-```ts
+```diff
 - import { userEvent } from '@storybook/testing-library';
 + import { userEvent } from '@storybook/test';
 ```
-
 
 ### Framework-specific Vite plugins have to be explicitly added
 

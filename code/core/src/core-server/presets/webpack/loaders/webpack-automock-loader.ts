@@ -1,5 +1,3 @@
-import { parse } from '@babel/parser';
-import type { ParserOptions } from '@babel/parser';
 import type { LoaderContext } from 'webpack';
 
 import { getAutomockCode } from '../../../mocking-utils/automock';
@@ -28,7 +26,7 @@ interface AutomockLoaderOptions {
 export default function webpackAutomockLoader(
   this: LoaderContext<AutomockLoaderOptions>,
   source: string
-): string {
+) {
   // Retrieve the options passed in the resource query string (e.g., `?spy=true`).
   const options = this.getOptions();
   const isSpy = options.spy === 'true';

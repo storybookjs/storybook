@@ -759,6 +759,7 @@ export const findFilesUp = (matchers: string[], cwd: string) => {
     matchingFiles.push(
       ...globbySync(matchers, {
         gitignore: true,
+        absolute: true,
         cwd: directory,
       })
     );

@@ -64,7 +64,7 @@ export const invalidateProjectRootCache = () => {
 export const findFilesUp = (matchers: string[], baseDir = process.cwd()) => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(baseDir, { last: getProjectRoot() })) {
-    matchingFiles.push(...globSync(matchers, { cwd: directory }));
+    matchingFiles.push(...globSync(matchers, { cwd: directory, absolute: true }));
   }
 
   return matchingFiles;

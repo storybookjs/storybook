@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 import sort from 'semver/functions/sort.js';
 
 import { getProjectRoot } from '../utils/paths';
@@ -77,13 +77,8 @@ export class NPMProxy extends JsPackageManager {
   }
 
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const packageJsonPath = findUpSync(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: this.primaryPackageJson.operationDir, stopAt: getProjectRoot() }
-    );
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, stop: getProjectRoot() });
 
     if (!packageJsonPath) {
       return null;

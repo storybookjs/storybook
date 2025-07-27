@@ -2,12 +2,12 @@ import { join, sep } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 import slash from 'slash';
 
 import { getProjectRoot, normalizeStoryPath } from '../paths';
 
-vi.mock('find-up');
+vi.mock('empathic/find');
 
 describe('paths - normalizeStoryPath()', () => {
   it('returns a path starting with "./" unchanged', () => {
@@ -48,7 +48,7 @@ describe('paths - normalizeStoryPath()', () => {
 
 describe('getProjectRoot', () => {
   it('should return the root directory containing a .git directory', () => {
-    vi.mocked(findUpSync).mockImplementation((name) =>
+    vi.mocked(find.up).mockImplementation((name) =>
       name === ('.git' as any) ? '/path/to/root' : undefined
     );
 
@@ -56,7 +56,7 @@ describe('getProjectRoot', () => {
   });
 
   it('should return the root directory containing a .svn directory if there is no .git directory', () => {
-    vi.mocked(findUpSync).mockImplementation((name) =>
+    vi.mocked(find.up).mockImplementation((name) =>
       name === ('.svn' as any) ? '/path/to/root' : undefined
     );
 
@@ -64,7 +64,7 @@ describe('getProjectRoot', () => {
   });
 
   it('should return the root directory containing a .yarn directory if there is no .git or .svn directory', () => {
-    vi.mocked(findUpSync).mockImplementation((name) =>
+    vi.mocked(find.up).mockImplementation((name) =>
       name === ('.yarn' as any) ? '/path/to/root' : undefined
     );
 

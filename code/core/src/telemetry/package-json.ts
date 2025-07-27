@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import { join } from 'pathe';
 import type { PackageJson } from 'type-fest';
 
@@ -31,7 +31,7 @@ export const getActualPackageJson = async (
   packageName: string
 ): Promise<PackageJson | undefined> => {
   try {
-    let resolvedPackageJsonPath = await findUp('package.json', {
+    let resolvedPackageJsonPath = find.up('package.json', {
       cwd: fileURLToPath(import.meta.resolve(packageName, process.cwd())),
     });
     if (!resolvedPackageJsonPath) {

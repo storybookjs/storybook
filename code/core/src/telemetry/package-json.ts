@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import type { PackageJson } from 'type-fest';
 
 import type { Dependency } from './types';
@@ -30,7 +30,7 @@ export const getActualPackageJson = async (
   packageName: string
 ): Promise<PackageJson | undefined> => {
   try {
-    let resolvedPackageJson = await findUp('package.json', { cwd: require.resolve(packageName) });
+    let resolvedPackageJson = find.up('package.json', { cwd: require.resolve(packageName) });
 
     if (!resolvedPackageJson) {
       // fallback to require.resolve

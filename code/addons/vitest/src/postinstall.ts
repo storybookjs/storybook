@@ -18,9 +18,9 @@ import {
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
+import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
-import { findUp } from 'find-up';
 import { dirname, join, relative, resolve } from 'pathe';
 import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
@@ -44,10 +44,10 @@ const logErrors = (...args: Parameters<typeof printError>) => {
   printError(...args);
 };
 
-const findFile = async (basename: string, extensions = EXTENSIONS) =>
-  findUp(
+const findFile = (basename: string, extensions = EXTENSIONS) =>
+  find.any(
     extensions.map((ext) => basename + ext),
-    { stopAt: getProjectRoot() }
+    { stop: getProjectRoot() }
   );
 
 export default async function postInstall(options: PostinstallOptions) {
@@ -298,7 +298,7 @@ export default async function postInstall(options: PostinstallOptions) {
   }
 
   const fileExtension =
-    allDeps.typescript || (await findFile('tsconfig', [...EXTENSIONS, '.json'])) ? 'ts' : 'js';
+    allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
 
   const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
   if (existsSync(vitestSetupFile)) {
@@ -345,11 +345,11 @@ export default async function postInstall(options: PostinstallOptions) {
   );
 
   const vitestWorkspaceFile =
-    (await findFile('vitest.workspace', ['.ts', '.js', '.json'])) ||
-    (await findFile('vitest.projects', ['.ts', '.js', '.json']));
-  const viteConfigFile = await findFile('vite.config');
-  const vitestConfigFile = await findFile('vitest.config');
-  const vitestShimFile = await findFile('vitest.shims.d');
+    findFile('vitest.workspace', ['.ts', '.js', '.json']) ||
+    findFile('vitest.projects', ['.ts', '.js', '.json']);
+  const viteConfigFile = findFile('vite.config');
+  const vitestConfigFile = findFile('vitest.config');
+  const vitestShimFile = findFile('vitest.shims.d');
   const rootConfig = vitestConfigFile || viteConfigFile;
 
   const browserConfig = `{

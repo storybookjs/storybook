@@ -4,7 +4,7 @@ import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
-import type { Type } from '@angular/core';
+import type { ModuleWithProviders, Type } from '@angular/core';
 import { ApplicationRef, ComponentFactoryResolver } from '@angular/core';
 import type { PropertyExtractor } from './PropertyExtractor';
 import type { ICollection, StoryFnAngularReturnType } from '../../types';
@@ -100,14 +100,15 @@ export class TestBedComponentBuilder {
       try {
         const { RouterTestingModule } = await import('@angular/router/testing');
         const routeModuleImport = this.getRouteModuleImport(RouterTestingModule);
-        if (routeModuleImport.length > 0) return [routeModuleImport];
+        return routeModuleImport.length > 0 ? [routeModuleImport] : [];
       } catch (e) {
         return [];
       }
     })();
+    const moduleWithProviders = this.imports.filter(this.isModuleWithProviders);
     this.testBedInstance
       .configureTestingModule({
-        imports,
+        imports: [...imports, ...moduleWithProviders],
       })
       .overrideComponent(
         this.component,
@@ -200,5 +201,9 @@ export class TestBedComponentBuilder {
 
   private throwOnMissingTargetNode() {
     if (this.targetNode == null) throw new Error('TargetNode is null');
+  }
+
+  private isModuleWithProviders(obj: any): obj is ModuleWithProviders<any> {
+    return obj && typeof obj === 'object' && 'ngModule' in obj;
   }
 }

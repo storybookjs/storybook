@@ -327,7 +327,7 @@ export async function runFixes({
           const shouldRun = await prompt.confirm(
             {
               message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
-              initialValue: f.promptDefaultValue ?? true,
+              initialValue: f.defaultSelected ?? true,
             },
             {
               onCancel: () => {

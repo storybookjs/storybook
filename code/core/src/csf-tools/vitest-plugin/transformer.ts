@@ -46,11 +46,6 @@ export async function vitestTransform({
   stories: StoriesEntry[];
   previewLevelTags: Tag[];
 }): Promise<ReturnType<typeof formatCsf>> {
-  const isStoryFile = /\.stor(y|ies)\./.test(fileName);
-  if (!isStoryFile) {
-    return code;
-  }
-
   const parsed = loadCsf(code, {
     fileName,
     transformInlineMeta: true,

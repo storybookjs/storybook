@@ -8,12 +8,12 @@ sidebar:
 We sincerely appreciate the dedication and effort addon creators put into keeping the Storybook ecosystem vibrant and up-to-date. As Storybook evolves to version 9.0, bringing new features and improvements, this guide is here to assist you in migrating your addons from 8.x to 9.0. If you need to migrate your addon from an earlier version of Storybook, please first refer to the [Addon migration guide for Storybook 8.0](../../../release-8-6/docs/addons/addon-migration-guide.mdx).
 
 <Callout variant="info">
-  As we gather feedback from the community, we'll update this page. We also have a general [Storybook migration guide](../migration-guide/index.mdx) if you're looking for that.
+  As we gather feedback from the community, we'll update this page. We also have a general [Storybook migration guide](../releases/migration-guide.mdx) if you're looking for that.
 </Callout>
 
 ## Replacing dependencies
 
-Many previously-published packages have [moved to be part of Storybook's core](../migration-guide/index.mdx#package-structure-changes). If your addon depends on any of these packages, you should remove them from your `package.json` and update your addon to import from the new location. If your addon does not already depend on the `storybook` package, you should add it to your `package.json` as a dependency.
+Many previously-published packages have [moved to be part of Storybook's core](../releases/migration-guide.mdx#package-structure-changes). If your addon depends on any of these packages, you should remove them from your `package.json` and update your addon to import from the new location. If your addon does not already depend on the `storybook` package, you should add it to your `package.json` as a dependency.
 
 ```diff title="package.json"
 {

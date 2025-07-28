@@ -93,6 +93,11 @@ const config = defineMain({
       directory: '../addons/vitest/template/stories',
       titlePrefix: 'addons/vitest',
     },
+    {
+      directory: '../addons/vitest/src',
+      titlePrefix: 'addons/vitest',
+      files: 'stories.tsx',
+    },
   ],
   addons: [
     '@storybook/addon-themes',

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 
@@ -49,10 +50,15 @@ export function getReactScriptsPath({ noCache }: { noCache?: boolean } = {}) {
   return reactScriptsPath;
 }
 
-export function isReactScriptsInstalled(requiredVersion = '2.0.0') {
+export async function isReactScriptsInstalled(minimumVersion = '2.0.0') {
   try {
-    const reactScriptsJson = require(join(getReactScriptsPath(), 'package.json'));
-    return !semver.gtr(requiredVersion, reactScriptsJson.version);
+    const { default: reactScriptsJson } = await import(
+      pathToFileURL(join(getReactScriptsPath(), 'package.json')).href,
+      {
+        with: { type: 'json' },
+      }
+    );
+    return !semver.gtr(minimumVersion, reactScriptsJson.version);
   } catch (e) {
     return false;
   }

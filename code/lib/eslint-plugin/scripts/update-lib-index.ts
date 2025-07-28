@@ -37,9 +37,7 @@ ${categoryIds
 // rules
 ${rules.map((rule) => `import ${camelize(rule.name)} from './rules/${rule.name}'`).join('\n')}
 
-// export plugin
-export = {
-  configs: {
+export const configs = {
     // eslintrc configs
     ${categoryIds.map((categoryId) => `'${categoryId}': ${camelize(categoryId)}`).join(',\n')},
 
@@ -47,10 +45,15 @@ export = {
     ${categoryIds
       .map((categoryId) => `'flat/${categoryId}': ${camelize(`flat-${categoryId}`)}`)
       .join(',\n')},
-  },
-  rules: {
+};
+
+export const rules = {
     ${rules.map((rule) => `'${rule.name}': ${camelize(rule.name)}`).join(',\n')}
-  }
+};
+
+export default {
+  configs,
+  rules,
 }
 `;
   const content = await format(rawContent, {

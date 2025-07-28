@@ -14,7 +14,7 @@ import { removeEssentials } from './remove-essentials';
 import { rendererToFramework } from './renderer-to-framework';
 import { rnstorybookConfig } from './rnstorybook-config';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies';
-import { wrapRequire } from './wrap-require';
+import { wrapGetAbsolutePath } from './wrap-getAbsolutePath';
 
 export * from '../types';
 
@@ -33,7 +33,7 @@ export const allFixes: Fix[] = [
   removeEssentials,
   addonA11yParameters,
   removeDocsAutodocs,
-  wrapRequire,
+  wrapGetAbsolutePath,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

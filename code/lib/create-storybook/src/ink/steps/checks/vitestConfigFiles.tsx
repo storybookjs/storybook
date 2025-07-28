@@ -1,9 +1,10 @@
 import * as fs from 'node:fs/promises';
 
+import * as babel from 'storybook/internal/babel';
+import { getProjectRoot } from 'storybook/internal/common';
+
 import { findUp } from 'find-up';
 
-import * as babel from '../../../../../../core/src/babel';
-import { getProjectRoot } from '../../../../../../core/src/common/utils/paths';
 import type { Check } from './Check';
 import { CompatibilityType } from './CompatibilityType';
 

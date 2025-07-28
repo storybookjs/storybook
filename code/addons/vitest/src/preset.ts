@@ -56,11 +56,12 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     options
   );
 
-  const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
+  const resolvedPreviewBuilder =
+    typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
-  if (!builderName?.includes('vite')) {
+  if (!resolvedPreviewBuilder?.includes('vite')) {
     if (framework.includes('nextjs')) {
       log(dedent`
         You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.

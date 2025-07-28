@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
 
@@ -5,7 +7,7 @@ import { addScopedAlias, resolveNextConfig } from '../utils';
 
 const tryResolve = (path: string) => {
   try {
-    return require.resolve(path);
+    return fileURLToPath(import.meta.resolve(path)) || false;
   } catch (err) {
     return false;
   }

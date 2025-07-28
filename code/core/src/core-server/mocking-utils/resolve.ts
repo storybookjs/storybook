@@ -1,26 +1,18 @@
+import { createRequire } from 'node:module';
+
 import { findMockRedirect } from '@vitest/mocker/redirect';
 import { isAbsolute, join, resolve } from 'pathe';
 
 import { isModuleDirectory } from './extract';
 
-export function resolveMock(mockPath: string, root: string, previewConfigPath: string) {
-  const isExternal = (function () {
-    try {
-      return (
-        !isAbsolute(mockPath) && isModuleDirectory(require.resolve(mockPath, { paths: [root] }))
-      );
-    } catch (e) {
-      return false;
-    }
-  })();
+const require = createRequire(import.meta.url);
 
-  const external = isExternal ? mockPath : null;
+export function resolveMock(mockPath: string, root: string, previewConfigPath: string) {
+  const external = isExternal(mockPath, root) ? mockPath : null;
 
   const absolutePath = external
     ? require.resolve(mockPath, { paths: [root] })
-    : require.resolve(join(previewConfigPath, '..', mockPath), {
-        paths: [root],
-      });
+    : require.resolve(join(previewConfigPath, '..', mockPath), { paths: [root] });
 
   const normalizedAbsolutePath = resolve(absolutePath);
 
@@ -30,4 +22,23 @@ export function resolveMock(mockPath: string, root: string, previewConfigPath: s
     absolutePath: normalizedAbsolutePath,
     redirectPath, // will be null if no __mocks__ file is found
   };
+}
+
+/**
+ * External mean not absolute, and not relative
+ *
+ * We use `require.resolve` here, becasue import.meta.resolve needs a experimental node flag
+ * (`--experimental-import-meta-resolve`) to be enabled to respect the context option.
+ *
+ * @param path - The path to the mock file
+ * @param from - The root of the project, this should be an absolute path
+ * @returns True if the mock path is external, false otherwise
+ * @link https://nodejs.org/api/cli.html#--experimental-import-meta-resolve
+ */
+export function isExternal(path: string, from: string) {
+  try {
+    return !isAbsolute(path) && isModuleDirectory(require.resolve(path, { paths: [from] }));
+  } catch (e) {
+    return false;
+  }
 }

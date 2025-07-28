@@ -29,7 +29,7 @@ export default {
 
 ## When Not To Use It
 
-While we encourage each CSF file to clearly correspond to a single component, it's possible to organize a Storybook in any way you choose. If you have some other organization scheme, especially if you're migrating from the legacy `storiesOf` API, this rule might not apply to you.
+While we encourage each CSF file to clearly correspond to a single component, it's possible to organize a Storybook in any way you choose. If you have some other organization scheme, this rule might not apply to you.
 
 ## Further Reading
 

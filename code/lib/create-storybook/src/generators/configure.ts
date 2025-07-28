@@ -1,10 +1,10 @@
 import { stat, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { dedent } from 'ts-dedent';
+import { SupportedLanguage } from 'storybook/internal/cli';
+import { logger } from 'storybook/internal/node-logger';
 
-import { SupportedLanguage } from '../../../../core/src/cli/project_types';
-import { logger } from '../../../../core/src/node-logger';
+import { dedent } from 'ts-dedent';
 
 interface ConfigureMainOptions {
   addons: string[];
@@ -40,21 +40,6 @@ const pathExists = async (path: string) => {
   return stat(path)
     .then(() => true)
     .catch(() => false);
-};
-
-/**
- * We need to clean up the paths in case of pnp input:
- * `path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))` output:
- * `@storybook/react-webpack5`
- */
-const sanitizeFramework = (framework: string) => {
-  // extract either @storybook/<framework> or storybook-<framework>
-  const matches = framework.match(/(@storybook\/\w+(?:-\w+)*)|(storybook-(\w+(?:-\w+)*))/g);
-  if (!matches) {
-    return undefined;
-  }
-
-  return matches[0];
 };
 
 export async function configureMain({

@@ -3,9 +3,10 @@ import * as fsp from 'node:fs/promises';
 
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { SupportedLanguage } from 'storybook/internal/cli';
+
 import { dedent } from 'ts-dedent';
 
-import { SupportedLanguage } from '../../../../core/src/cli/project_types';
 import { configureMain, configurePreview } from './configure';
 
 vi.mock('node:fs/promises');

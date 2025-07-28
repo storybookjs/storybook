@@ -6,6 +6,7 @@ import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
+import { ScrollArea } from '../ScrollArea/ScrollArea';
 import { WithTooltipPure } from '../tooltip/WithTooltip';
 
 export interface OptionProps {
@@ -31,6 +32,10 @@ function valueToId(parentId: string, { value }: { value: string }): string {
 
 const SelectedOptionLabel = styled('span')({
   appearance: 'none',
+});
+
+const Listbox = styled('div')({
+  maxHeight: '60vh',
 });
 
 const Option = styled('div')<{ active: boolean }>(({ theme, active }) => ({
@@ -152,7 +157,6 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     }, [isOpen, activeOption, id]);
 
     // TODO: Implement a-z typing.
-    // TODO: Add scrollable area to listbox.
 
     return (
       <WithTooltipPure
@@ -164,54 +168,56 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           }
         }}
         tooltip={
-          <div role="listbox" id={listboxId} ref={listboxRef}>
-            {options.map((option) => (
-              <Option
-                key={option.value}
-                id={valueToId(id, option)}
-                role="option"
-                tabIndex={isOpen && activeOption?.value === option.value ? 0 : -1}
-                aria-selected={selectedOption?.value === option.value}
-                active={activeOption?.value === option.value}
-                onClick={() => handleSelectOption(option)}
-                onMouseEnter={() => setActiveOption(option)}
-                onFocus={() => setActiveOption(option)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleSelectOption(option);
-                  } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    handleClose();
-                  } else if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    moveActiveOptionDown();
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    moveActiveOptionUp();
-                  } else if (e.key === 'Home') {
-                    e.preventDefault();
-                    setActiveOption(options[0]);
-                  } else if (e.key === 'End') {
-                    e.preventDefault();
-                    setActiveOption(options[options.length - 1]);
-                  } else if (e.key === 'PageDown') {
-                    e.preventDefault();
-                    moveActiveOptionDown(5);
-                  } else if (e.key === 'PageUp') {
-                    e.preventDefault();
-                    moveActiveOptionUp(5);
-                  } else if (e.key === 'Tab') {
-                    handleSelectOption(option);
-                    // Here, we don't prevent default, so that the Tab or Shift+Tab goes
-                    // through after we've repositioned to the Button.
-                  }
-                }}
-              >
-                {option.children ?? option.label}
-              </Option>
-            ))}
-          </div>
+          <ScrollArea vertical>
+            <Listbox role="listbox" id={listboxId} ref={listboxRef}>
+              {options.map((option) => (
+                <Option
+                  key={option.value}
+                  id={valueToId(id, option)}
+                  role="option"
+                  tabIndex={isOpen && activeOption?.value === option.value ? 0 : -1}
+                  aria-selected={selectedOption?.value === option.value}
+                  active={activeOption?.value === option.value}
+                  onClick={() => handleSelectOption(option)}
+                  onMouseEnter={() => setActiveOption(option)}
+                  onFocus={() => setActiveOption(option)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelectOption(option);
+                    } else if (e.key === 'Escape') {
+                      e.preventDefault();
+                      handleClose();
+                    } else if (e.key === 'ArrowDown') {
+                      e.preventDefault();
+                      moveActiveOptionDown();
+                    } else if (e.key === 'ArrowUp') {
+                      e.preventDefault();
+                      moveActiveOptionUp();
+                    } else if (e.key === 'Home') {
+                      e.preventDefault();
+                      setActiveOption(options[0]);
+                    } else if (e.key === 'End') {
+                      e.preventDefault();
+                      setActiveOption(options[options.length - 1]);
+                    } else if (e.key === 'PageDown') {
+                      e.preventDefault();
+                      moveActiveOptionDown(5);
+                    } else if (e.key === 'PageUp') {
+                      e.preventDefault();
+                      moveActiveOptionUp(5);
+                    } else if (e.key === 'Tab') {
+                      handleSelectOption(option);
+                      // Here, we don't prevent default, so that the Tab or Shift+Tab goes
+                      // through after we've repositioned to the Button.
+                    }
+                  }}
+                >
+                  {option.children ?? option.label}
+                </Option>
+              ))}
+            </Listbox>
+          </ScrollArea>
         }
       >
         <Button

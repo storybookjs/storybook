@@ -2,6 +2,12 @@ import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
+  const extraStories = ['../components/**/*.stories.@(js|jsx|ts|tsx)'];
+
+  if (options.features.includes('docs')) {
+    extraStories.push('../components/**/*.mdx');
+  }
+
   await baseGenerator(
     packageManager,
     {
@@ -16,7 +22,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
       installFrameworkPackages: false,
       componentsDestinationPath: './components',
       extraMain: {
-        stories: ['../components/**/*.mdx', '../components/**/*.stories.@(js|jsx|ts|tsx|mdx)'],
+        stories: extraStories,
       },
     },
     'nuxt'

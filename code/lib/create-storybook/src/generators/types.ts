@@ -19,7 +19,7 @@ export type GeneratorOptions = {
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
   yes: boolean;
-  features: string[];
+  features: Array<GeneratorFeature>;
 };
 
 export interface FrameworkOptions {

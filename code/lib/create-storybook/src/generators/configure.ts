@@ -56,11 +56,9 @@ export async function configureMain({
 }: ConfigureMainOptions) {
   const srcPath = resolve(storybookConfigFolder, '../src');
   const prefix = (await pathExists(srcPath)) ? '../src' : '../stories';
-  const stories = [`**/*.stories.@(${extensions.join('|')})`];
+  const stories = features.includes('docs') ? [`${prefix}/**/*.mdx`] : [];
 
-  if (features.includes('docs')) {
-    stories.push(`${prefix}/**/*.mdx`);
-  }
+  stories.push(`${prefix}/**/*.stories.@(${extensions.join('|')})`);
 
   const config = {
     stories,

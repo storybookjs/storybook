@@ -2,11 +2,9 @@ import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
-  const extraStories = ['../components/**/*.stories.@(js|jsx|ts|tsx)'];
+  const extraStories = options.features.includes('docs') ? ['../components/**/*.mdx'] : [];
 
-  if (options.features.includes('docs')) {
-    extraStories.push('../components/**/*.mdx');
-  }
+  extraStories.push('../components/**/*.stories.@(js|jsx|ts|tsx|mdx)');
 
   await baseGenerator(
     packageManager,

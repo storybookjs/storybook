@@ -6,6 +6,7 @@ import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
+import { ScrollArea } from '../ScrollArea/ScrollArea';
 import { WithTooltipPure } from '../tooltip/WithTooltip';
 
 export interface OptionProps {
@@ -31,6 +32,10 @@ function valueToId(parentId: string, { value }: { value: string }): string {
 
 const SelectedOptionLabel = styled('span')({
   appearance: 'none',
+});
+
+const Listbox = styled('div')({
+  maxHeight: '60vh',
 });
 
 const Option = styled('div')<{ active: boolean }>(({ theme, active }) => ({
@@ -163,7 +168,6 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     );
 
     // TODO: Implement a-z typing.
-    // TODO: Add scrollable area to listbox.
 
     useEffect(() => {
       if (isOpen && activeOption) {
@@ -181,21 +185,23 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           }
         }}
         tooltip={
-          <div role="listbox" id={listboxId} ref={listboxRef}>
-            {options.map((option) => (
-              <Option
-                key={option.value}
-                id={valueToId(id, option)}
-                role="option"
-                aria-selected={selectedOption?.value === option.value}
-                active={activeOption?.value === option.value}
-                onClick={() => handleSelectOption(option)}
-                onMouseEnter={() => setActiveOption(option)}
-              >
-                {option.children ?? option.label}
-              </Option>
-            ))}
-          </div>
+          <ScrollArea vertical>
+            <Listbox role="listbox" id={listboxId} ref={listboxRef}>
+              {options.map((option) => (
+                <Option
+                  key={option.value}
+                  id={valueToId(id, option)}
+                  role="option"
+                  aria-selected={selectedOption?.value === option.value}
+                  active={activeOption?.value === option.value}
+                  onClick={() => handleSelectOption(option)}
+                  onMouseEnter={() => setActiveOption(option)}
+                >
+                  {option.children ?? option.label}
+                </Option>
+              ))}
+            </Listbox>
+          </ScrollArea>
         }
       >
         <Button

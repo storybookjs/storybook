@@ -951,7 +951,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-production:
-                parallelism: 1
+                parallelism: 7
                 requires:
                     - create-sandboxes
             - e2e-dev:
@@ -1040,7 +1040,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-production:
-                parallelism: 1
+                parallelism: 6
                 requires:
                     - create-sandboxes
             - e2e-dev:
@@ -1110,7 +1110,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-production:
-                parallelism: 1
+                parallelism: 6
                 requires:
                     - create-sandboxes
             - e2e-dev:

@@ -182,7 +182,7 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['bench', 'vitest-integration'],
   },
   'nextjs/prerelease': {
     name: 'Next.js Prerelease (Webpack | TypeScript)',
@@ -247,7 +247,7 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
     },
-    skipTasks: ['e2e-tests', 'bench'],
+    skipTasks: ['bench'],
   },
   'react-vite/default-js': {
     name: 'React Latest (Vite | JavaScript)',
@@ -415,7 +415,7 @@ export const baseTemplates = {
       renderer: '@storybook/vue3',
       builder: '@storybook/builder-vite',
     },
-    skipTasks: ['e2e-tests', 'bench'],
+    skipTasks: ['bench'],
   },
   // 'nuxt-vite/default-ts': {
   //   name: 'Nuxt v3 (Vite | TypeScript)',
@@ -468,7 +468,7 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     // Remove smoke-test from the list once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'e2e-tests', 'bench'],
+    skipTasks: ['smoke-test', 'bench'],
   },
   'angular-cli/prerelease': {
     name: 'Angular CLI Prerelease (Webpack | TypeScript)',
@@ -490,7 +490,7 @@ export const baseTemplates = {
       renderer: '@storybook/angular',
       builder: '@storybook/builder-webpack5',
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['bench', 'vitest-integration'],
   },
   'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
@@ -606,7 +606,7 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['bench', 'vitest-integration'],
   },
   'react-native-web-vite/rn-cli-ts': {
     // NOTE: create-expo-app installs React 18.2.0. But yarn portal

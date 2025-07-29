@@ -42,7 +42,12 @@ export class SbPage {
   }
 
   /** Visit a story by selecting it from the sidebar. */
-  async navigateToStory(title: string, name: string, viewMode?: 'docs' | 'story') {
+  async navigateToStory(
+    title: string,
+    name: string,
+    viewMode?: 'docs' | 'story',
+    skipWaitUntilLoaded = false
+  ) {
     await this.openComponent(title);
 
     const titleId = toId(title);
@@ -54,7 +59,7 @@ export class SbPage {
 
     await this.page.waitForURL((url) =>
       url.search.includes(
-        `path=/${(viewMode ?? name === 'docs') ? 'docs' : 'story'}/${titleId}--${storyId}`
+        `path=/${viewMode ?? (name === 'docs' ? 'docs' : 'story')}/${titleId}--${storyId}`
       )
     );
 
@@ -62,7 +67,10 @@ export class SbPage {
     await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
-    await this.waitUntilLoaded();
+
+    if (!skipWaitUntilLoaded) {
+      await this.waitUntilLoaded();
+    }
   }
 
   async navigateToUnattachedDocs(title: string, name = 'docs') {

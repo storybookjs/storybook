@@ -1,3 +1,9 @@
+## 9.0.18
+
+- CLI: Fix Storybook doctor compatibility checks - [#32077](https://github.com/storybookjs/storybook/pull/32077), thanks @yannbf!
+- Svelte: Fix union types generating invalid labels in argTypes - [#31980](https://github.com/storybookjs/storybook/pull/31980), thanks @grantralls!
+- Telemetry: Add nodeLinker to telemetry - [#32072](https://github.com/storybookjs/storybook/pull/32072), thanks @valentinpalkovic!
+
 ## 9.0.17
 
 - Addon Vitest: Fix support for plain `stories.tsx` files - [#32041](https://github.com/storybookjs/storybook/pull/32041), thanks @ghengeveld!

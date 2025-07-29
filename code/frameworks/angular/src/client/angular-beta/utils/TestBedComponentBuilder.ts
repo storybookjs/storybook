@@ -108,7 +108,7 @@ export class TestBedComponentBuilder {
     const moduleWithProviders = this.imports.filter(this.isModuleWithProviders);
     this.testBedInstance
       .configureTestingModule({
-        imports: [...imports, ...moduleWithProviders],
+        imports: [...imports, ...moduleWithProviders, wrapperModule],
       })
       .overrideComponent(
         this.component,
@@ -125,7 +125,7 @@ export class TestBedComponentBuilder {
         GenerateModuleMetaData(
           [...this.componentProviders, ...this.environmentProviders],
           this.declarations,
-          this.imports
+          [...this.imports, ...moduleWithProviders.map((x) => x.ngModule)]
         )
       );
 
@@ -167,10 +167,17 @@ export class TestBedComponentBuilder {
   private updateComponentProps() {
     this.throwOnMissingFixture();
     this.calculateComponentInputs();
-    if (this.props != null) {
-      this.fixture.componentInstance = Object.assign(this.fixture.componentInstance, this.props);
-      for (const key in this.props) {
-        if (!this.componentInputs.includes(key)) continue;
+    if (this.props == null) {
+      this.fixture.detectChanges();
+      return this;
+    }
+    for (const key in this.props) {
+      if (!this.componentInputs.includes(key)) {
+        this.fixture.componentInstance = Object.assign(
+          this.fixture.componentInstance,
+          this.props[key]
+        );
+      } else {
         // had to be done to trigger angular's lifecycle hook like ngOnchange
         this.fixture.componentRef.setInput(key, this.props[key]);
       }

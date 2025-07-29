@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 
-import findCacheDirectory from 'find-cache-dir';
+import * as pkg from 'empathic/package';
 
 /**
  * Get the path of the file or directory with input name inside the Storybook cache directory:
@@ -12,7 +12,7 @@ import findCacheDirectory from 'find-cache-dir';
  * @returns {string} Absolute path to the file or directory
  */
 export function resolvePathInStorybookCache(fileOrDirectoryName: string, sub = 'default'): string {
-  let cacheDirectory = findCacheDirectory({ name: 'storybook' });
+  let cacheDirectory = pkg.cache('storybook');
   cacheDirectory ||= join(process.cwd(), 'node_modules', '.cache', 'storybook');
 
   return join(cacheDirectory, sub, fileOrDirectoryName);

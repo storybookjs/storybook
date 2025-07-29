@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sync as spawnSync } from 'cross-spawn';
-import { findUpMultipleSync, findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 
 import { BUNProxy } from './BUNProxy';
 import { JsPackageManagerFactory } from './JsPackageManagerFactory';
@@ -15,14 +15,13 @@ import { Yarn2Proxy } from './Yarn2Proxy';
 vi.mock('cross-spawn');
 const spawnSyncMock = vi.mocked(spawnSync);
 
-vi.mock('find-up');
-const findUpSyncMock = vi.mocked(findUpSync);
-const findUpMultipleSyncMock = vi.mocked(findUpMultipleSync);
+vi.mock('empathic/find');
+const findMock = vi.mocked(find);
+
 describe('CLASS: JsPackageManagerFactory', () => {
   beforeEach(() => {
     JsPackageManagerFactory.clearCache();
-    findUpSyncMock.mockReturnValue(undefined);
-    findUpMultipleSyncMock.mockReturnValue([]);
+    findMock.up.mockReturnValue(undefined);
     spawnSyncMock.mockReturnValue({ status: 1 } as any);
     delete process.env.npm_config_user_agent;
   });
@@ -70,7 +69,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // There is only a package-lock.json
-        findUpSyncMock.mockImplementation(() => '/Users/johndoe/Documents/package-lock.json');
+        findMock.up.mockImplementation(() => '/Users/johndoe/Documents/package-lock.json');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(NPMProxy);
       });
@@ -118,15 +117,15 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // There is only a pnpm-lock.yaml
-        findUpSyncMock.mockImplementation(() => '/Users/johndoe/Documents/pnpm-lock.yaml');
+        findMock.up.mockImplementation(() => '/Users/johndoe/Documents/pnpm-lock.yaml');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(PNPMProxy);
       });
 
       it('PNPM LOCK IF CLOSER: when a pnpm-lock.yaml file is closer than a yarn.lock', async () => {
-        // Allow find-up to work as normal, we'll set the cwd to our fixture package
-        findUpSyncMock.mockImplementation(
-          (await vi.importActual<typeof import('find-up')>('find-up')).findUpSync
+        // Allow find to work as normal, we'll set the cwd to our fixture package
+        findMock.up.mockImplementation(
+          (await vi.importActual<typeof import('empathic/find')>('empathic/find')).up
         );
 
         spawnSyncMock.mockImplementation((command) => {
@@ -201,7 +200,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // there is no lockfile
-        findUpSyncMock.mockReturnValue('yarn.lock');
+        findMock.up.mockReturnValue('yarn.lock');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn1Proxy);
       });
@@ -236,15 +235,15 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // There is a yarn.lock
-        findUpSyncMock.mockImplementation(() => '/Users/johndoe/Documents/yarn.lock');
+        findMock.up.mockImplementation(() => '/Users/johndoe/Documents/yarn.lock');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn1Proxy);
       });
 
       it('when multiple lockfiles are in a project, prefers yarn', async () => {
-        // Allow find-up to work as normal, we'll set the cwd to our fixture package
-        findUpSyncMock.mockImplementation(
-          (await vi.importActual<typeof import('find-up')>('find-up')).findUpSync
+        // Allow find to work as normal, we'll set the cwd to our fixture package
+        findMock.up.mockImplementation(
+          (await vi.importActual<typeof import('empathic/find')>('empathic/find')).up
         );
 
         spawnSyncMock.mockImplementation((command) => {
@@ -318,7 +317,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
           } as any;
         });
 
-        findUpSyncMock.mockImplementation(() => 'yarn.lock');
+        findMock.up.mockImplementation(() => 'yarn.lock');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(Yarn2Proxy);
       });
@@ -360,7 +359,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // There is a yarn.lock
-        findUpSyncMock.mockImplementation(() => '/Users/johndoe/Documents/bun.lockb');
+        findMock.up.mockImplementation(() => '/Users/johndoe/Documents/bun.lockb');
 
         expect(JsPackageManagerFactory.getPackageManager()).toBeInstanceOf(BUNProxy);
       });

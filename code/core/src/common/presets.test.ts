@@ -27,7 +27,7 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock('./utils/safeResolve', () => {
+vi.mock('empathic/resolve', () => {
   const KNOWN_FILES = [
     '@storybook/react',
     'storybook/actions/manager',
@@ -51,13 +51,13 @@ vi.mock('./utils/safeResolve', () => {
   ];
 
   return {
-    safeResolveFrom: vi.fn((l: any, name: string) => {
+    from: vi.fn((l: any, name: string) => {
       if (KNOWN_FILES.includes(name)) {
         return name;
       }
       return undefined;
     }),
-    safeResolve: vi.fn((name: string) => {
+    cwd: vi.fn((name: string) => {
       if (KNOWN_FILES.includes(name)) {
         return name;
       }

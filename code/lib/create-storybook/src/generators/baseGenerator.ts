@@ -419,6 +419,7 @@ export async function baseGenerator(
         name: frameworkPackagePath,
         options: options.framework || {},
       },
+      features,
       frameworkPackage,
       prefixes,
       storybookConfigFolder,

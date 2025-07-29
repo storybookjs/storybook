@@ -47,6 +47,7 @@ const meta = {
   ],
   parameters: { layout: 'fullscreen' },
   args: {
+    status: 'completed',
     calls: new Map(getCalls(CallStates.DONE).map((call) => [call.id, call])),
     controls: SubnavStories.args.controls,
     controlStates: SubnavStories.args.controlStates,
@@ -105,6 +106,7 @@ export const Passing: Story = {
 
 export const Paused: Story = {
   args: {
+    status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
     isPlaying: true,
     interactions: getInteractions(CallStates.WAITING),
@@ -122,6 +124,7 @@ export const Paused: Story = {
 
 export const Playing: Story = {
   args: {
+    status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
     isPlaying: true,
     interactions: getInteractions(CallStates.ACTIVE),
@@ -130,6 +133,7 @@ export const Playing: Story = {
 
 export const Failed: Story = {
   args: {
+    status: 'errored',
     browserTestStatus: CallStates.ERROR,
     hasException: true,
     interactions: getInteractions(CallStates.ERROR),
@@ -138,6 +142,7 @@ export const Failed: Story = {
 
 export const CaughtException: Story = {
   args: {
+    status: 'errored',
     browserTestStatus: CallStates.ERROR,
     hasException: true,
     interactions: [],

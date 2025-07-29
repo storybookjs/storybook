@@ -38,14 +38,23 @@ It works with two steps. First, register the modules you want to mock in your St
 
 ### Registering modules to mock
 
-There are three ways to register modules to mock in your Storybook configuration.
+When automocking, you use the `sb.mock` utility function to register modules you want to mock. There are three ways to register modules: as spy-only, automatically mocked, or with a mock file. Each method has its use cases and benefits.
+
+There are some key details to keep in mind when using the `sb.mock` utility:
+
+- You can register both local modules (e.g., `../lib/session.ts`) and packages in `node_modules` (e.g., `uuid`).
+- You can only register mocked modules in your project-level configuration: `.storybook/preview.js|ts`. This ensures consistent and performant mocking across all stories in your project. You can modify the behavior of these modules in your stories, but you cannot register them directly in the story files.
+- You must pass the full relative path, without aliasing and including the file extension, when registering a mock for a local module. For packages in `node_modules`, you can use the package name without the file extension.
+- If you are using Typescript, you can wrap the module path in `import()` to ensure the module is correctly resolved and typed. For example, `sb.mock(import('../lib/session.ts'))`.
+- If you are using the [Webpack builder](../../builders/webpack.mdx), you can only automatically mock `node_module` packages that have ESModules (ESM) entry points. If a module has both CommonJS (CJS) and ESM entry points, Webpack doesn't correctly resolve the ESM entry and it cannot be mocked. Webpack users can still mock CJS `node_module` packages by providing a [mock file](#mock-files).
 
 #### Spy-only
 
-For most cases, you register a mocked module as spy-only, by setting the `spy` option to `true`. This leaves the original module's functionality intact, while still allowing you to modify the behavior if needed and make assertions in your tests.
+For most cases, you should register a mocked module as spy-only, by setting the `spy` option to `true`. This leaves the original module's functionality intact, while still allowing you to modify the behavior if needed and make assertions in your tests.
 
-For example, if you want to spy on the `getUserFromSession` function and the `uuidv4` function from the `uuid` package, you can do the following in your `.storybook/preview.js|ts` file:
+For example, if you want to spy on the `getUserFromSession` function and the `uuidv4` function from the `uuid` package, you can call the `sb.mock` utility function in your `.storybook/preview.js|ts` file:
 
+{/* TODO: Snippetize */}
 ```ts title=".storybook/preview.ts"
 import { sb } from 'storybook/test';
 
@@ -57,22 +66,25 @@ sb.mock('uuid', { spy: true });
 // ...rest of the file
 ```
 
+You can then [control the behavior of these modules](#using-automocked-modules-in-stories) and make assertions about them in your stories, such as checking if a function was called or what arguments it was called with.
+
 #### Automatically mocked modules
 
 For cases where you need to prevent the original module's functionality from ever executing, set the `spy` option to `false` (or omit it, because that is the default value). This will automatically replace all exports from the module with [Vitest mock functions](https://vitest.dev/api/mock.html), allowing you to control their behavior and make assertions while being certain that the original functionality never runs.
 
+{/* TODO: Snippetize */}
 ```ts title=".storybook/preview.ts"
 import { sb } from 'storybook/test';
 
 // 👇 Automatically replaces all exports from the `lib/session` local module with mock functions
-sb.mock('../lib/session');
+sb.mock('../lib/session.ts');
 // 👇 Automatically replaces all exports from the `uuid` package in `node_modules` with mock functions
 sb.mock('uuid');
 
 // ...rest of the file
 ```
 
-You can then control the behavior of these mock functions in your stories, just like with the spy-only approach.
+You can then [control the behavior of these modules](#using-automocked-modules-in-stories) and make assertions about them in your stories, just like with the spy-only approach.
 
 #### Mock files
 
@@ -80,6 +92,7 @@ If you want to mock a module with more complex behavior or reuse a mock's behavi
 
 For example, to mock the `session` module in the `lib` directory, create a file named `session.js|ts` in the `lib/__mocks__` directory:
 
+{/* TODO: Snippetize */}
 ```ts title="lib/__mocks__/session.ts"
 export function getUserFromSession() {
   return { name: 'Mocked User' };
@@ -88,6 +101,7 @@ export function getUserFromSession() {
 
 For packages in your `node_modules`, create a `__mocks__` directory in the root of your project and create the mock file there. For example, to mock the `uuid` package, create a file named `uuid.js|ts` in the `__mocks__` directory:
 
+{/* TODO: Snippetize */}
 ```ts title="__mocks__/uuid.ts"
 export function v4() {
   return '1234-5678-90ab-cdef';
@@ -104,21 +118,25 @@ They must export the same named exports as the original module. If you want to m
 
 You can then use the `sb.mock` utility to register these mock files in your `preview.js|ts` file:
 
+{/* TODO: Snippetize */}
 ```ts title=".storybook/preview.ts"
 import { sb } from 'storybook/test';
 
 // 👇 Replaces imports of this module with imports to `../lib/__mocks__/session.ts`
 sb.mock('../lib/session.ts');
-// 👇 Replaces imports of this module with imports to `../__mocks__/uuid.js`
+// 👇 Replaces imports of this module with imports to `../__mocks__/uuid.ts`
 sb.mock('uuid');
 
 // ...rest of the file
 ```
 
+Note that the API for registering automatically mocked modules and mock files is the same. The only difference is that `sb.mock` will first look for a mock file in the appropriate directory before automatically mocking the module.
+
 ### Using automocked modules in stories
 
-All registered automocked modules are used in the same way within your stories. You can control the behavior and make assertions about the modules, such as checking if a function was called or what arguments it was called with.
+All registered automocked modules are used the same way within your stories. You can control the behavior, such as defining what it returns, and make assertions about the modules.
 
+{/* TODO: Snippetize */}
 ```ts title="AuthButton.stories.ts"
 import { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, mocked } from 'storybook/test';
@@ -163,6 +181,33 @@ Mocked functions created with the `sb.mock` utility are full [Vitest mock functi
 If you are [writing your stories in TypeScript](../typescript.mdx), you can use the `mocked` utility from `storybook/test` to ensure that the mocked functions are correctly typed in your stories. This utility is a type-safe wrapper around the Vitest `vi.mocked` function.
 
 </Callout>
+
+### How it works
+
+Storybook's automocking is built on Vitest's mocking engine. The behavior adjusts depending on whether you're in development mode or build mode:
+
+**Dev Mode**
+
+In dev mode, mocking relies on Vite's module graph invalidation. When a mock is added, changed, or removed (either in `.storybook/preview.js|ts` or the `__mocks__` directory), the plugin intelligently invalidates all affected modules and triggers a hot reload. This provides a fast and interactive development experience.
+
+**Dev and build mode**
+
+- Build-time analysis: A new Vite plugin, viteMockPlugin, scans `.storybook/preview.js|ts` for all `sb.mock()` calls during the build process.
+- Mock Processing:
+  - `__mocks__` redirects: If a corresponding file is found in the top-level `__mocks__` directory, that file is loaded and transformed by Vite.
+  - Automocking & spies: If no `__mocks__` file is found, the original module's code is transformed at build-time to replace its exports with mocks or spies.
+- No runtime overhead: Because all mocking decisions and transformations happen at build time, there is no performance penalty or complex interception logic needed in the final built application. The mocked modules are directly bundled in place of the originals.
+
+#### Comparison to Vitest mocking
+
+While this feature uses Vitest's mocking engine, the implementation within Storybook has some key differences:
+
+- Scope: Mocks are global and defined only in `.storybook/preview.js|ts`. Unlike Vitest, you cannot call `sb.mock()` inside individual story files.
+- Static by Design: All mocking decisions are finalized at build time. This makes the system robust and performant but less dynamic than Vitest's test-by-test mocking capabilities. There is no `sb.unmock()` or equivalent, as the module graph is fixed in a production build.
+- Runtime Mocking: While the module swap is static, you can still control the behavior of the mocked functions at runtime within a play function or `beforeEach` hook (e.g., `mocked(myFunction).mockReturnValue('new value')`).
+- No Factory Functions: The `sb.mock()` API does not accept a factory function as its second argument (e.g., `sb.mock('path', () => ({...}))`). This is because all mocking decisions are resolved at build time, whereas factories are executed at runtime.
+
+---
 
 ## Subpath imports
 
@@ -248,56 +293,12 @@ import { getUserFromSession } from '#lib/session';
 
 ### Using subpath imports in stories
 
-When you use the `fn` utility to mock a module, you create full [Vitest mock functions](https://vitest.dev/api/mock.html) which have many useful methods. Some of the most useful methods include:
+When you use the `fn` utility to mock a module, you create full [Vitest mock functions](https://vitest.dev/api/mock.html), which have many methods available. Some of the most useful methods include:
 
 | Method                                                                          | Description                                           |
 | ------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | [`mockReturnValue(value)`](https://vitest.dev/api/mock.html#mockreturnvalue)    | Sets the return value of the mocked function.         |
 | [`mockImplementation(fn)`](https://vitest.dev/api/mock.html#mockimplementation) | Sets a custom implementation for the mocked function. |
-
-Here, we define `beforeEach` on a story (which will run before the story is rendered) to set a mocked return value for the `getUserFromSession` function used by the Page component:
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="storybook-test-mock-return-value.md" />
-
-{/* prettier-ignore-end */}
-
-<Callout variant="info">
-  If you are [writing your stories in TypeScript](../typescript.mdx), you must import your mock modules using the full mocked file name to have the functions correctly typed in your stories. You do **not** need to do this in your component files. That's what the [subpath import](#subpath-imports) or [builder alias](#builder-aliases) is for.
-</Callout>
-
-
-
-## Builder aliases
-
-If your project is unable to use [automocking](#automocking) or [subpath imports](#subpath-imports), you can configure your Storybook builder to alias the module to the mock file. This will instruct the builder to replace the module with the mock file when bundling your Storybook stories.
-
-{/* prettier-ignore-start */}
-
-<CodeSnippets path="module-aliases-config.md" />
-
-{/* prettier-ignore-end */}
-
-Usage of the alias is similar to when using subpath imports, but you import the module using the alias instead of the subpath. TK
-
-
-
-
-
-
-
-
-
-
-
------
-
-{/* Current content */}
-
-## Using mocked modules in stories
-
-When you use the `fn` utility to mock a module, you create full [Vitest mock functions](https://vitest.dev/api/mock.html) which have many useful methods. For example, you can use the [`mockReturnValue`](https://vitest.dev/api/mock.html#mockreturnvalue) method to set a return value for the mocked function or [`mockImplementation`](https://vitest.dev/api/mock.html#mockimplementation) to define a custom implementation.
 
 Here, we define `beforeEach` on a story (which will run before the story is rendered) to set a mocked return value for the `getUserFromSession` function used by the Page component:
 
@@ -322,6 +323,24 @@ For example, this story checks that the `saveNote` function was called when the 
 <CodeSnippets path="storybook-test-fn-mock-spy.md" />
 
 {/* prettier-ignore-end */}
+
+---
+
+## Builder aliases
+
+If your project is unable to use [automocking](#automocking) or [subpath imports](#subpath-imports), you can configure your Storybook builder to alias the module to the [mock file](#mock-files-1). This will instruct the builder to replace the module with the mock file when bundling your Storybook stories.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="module-aliases-config.md" />
+
+{/* prettier-ignore-end */}
+
+Usage of the aliased module in stories is similar to when [using subpath imports in stories](#using-subpath-imports-in-stories), but you import the module using the alias instead of the subpath.
+
+-----
+
+## Common scenarios
 
 ### Setting up and cleaning up
 

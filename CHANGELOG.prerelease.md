@@ -1,3 +1,7 @@
+## 9.1.0-beta.0
+
+- Core: Avoid pausing animations in non-Vitest Playwright environments - [#32123](https://github.com/storybookjs/storybook/pull/32123), thanks @ghengeveld!
+
 ## 9.1.0-alpha.10
 
 - Core: Abort play function on HMR - [#31542](https://github.com/storybookjs/storybook/pull/31542), thanks @ghengeveld!

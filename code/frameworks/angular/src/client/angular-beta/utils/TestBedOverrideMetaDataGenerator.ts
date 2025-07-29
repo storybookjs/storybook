@@ -5,15 +5,13 @@ export const GenerateComponentMetaData = (
   selector: string,
   componentProvider: any[],
   styles: string[],
-  schemas: any[],
-  wrapperModule: Type<any>
+  schemas: any[]
 ) => {
   const overrideMetadata = {
     add: {
       providers: componentProvider ?? [],
       styles: styles ?? [],
       selector: selector,
-      imports: [wrapperModule],
     },
   } as MetadataOverride<Component>;
 

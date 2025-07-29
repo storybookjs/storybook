@@ -112,13 +112,7 @@ export class TestBedComponentBuilder {
       })
       .overrideComponent(
         this.component,
-        GenerateComponentMetaData(
-          this.selector,
-          this.componentProviders,
-          this.styles,
-          this.schemas,
-          wrapperModule
-        )
+        GenerateComponentMetaData(this.selector, this.componentProviders, this.styles, this.schemas)
       )
       .overrideModule(
         wrapperModule,

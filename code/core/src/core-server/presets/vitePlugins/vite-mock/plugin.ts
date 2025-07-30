@@ -117,7 +117,6 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             }
 
             if (call.redirectPath) {
-              this.addWatchFile(call.redirectPath);
               return readFileSync(call.redirectPath, 'utf-8');
             }
           }

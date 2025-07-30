@@ -54,7 +54,6 @@ const meta = {
     interactions,
     fileName: 'addon-interactions.stories.tsx',
     hasException: false,
-    isPlaying: false,
     onScrollToEnd: () => {},
     endRef: null,
     // prop for the AddonPanel used as wrapper of Panel
@@ -108,7 +107,6 @@ export const Paused: Story = {
   args: {
     status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
-    isPlaying: true,
     interactions: getInteractions(CallStates.WAITING),
     controlStates: {
       detached: false,
@@ -126,7 +124,6 @@ export const Playing: Story = {
   args: {
     status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
-    isPlaying: true,
     interactions: getInteractions(CallStates.ACTIVE),
   },
 };

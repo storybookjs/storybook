@@ -24,10 +24,27 @@ import {
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
 import { EVENTS } from '../../instrumenter/EVENTS';
-import { type Call, CallStates, type LogItem, type RenderPhase } from '../../instrumenter/types';
+import {
+  type Call,
+  CallStates,
+  type ControlStates,
+  type LogItem,
+  type RenderPhase,
+} from '../../instrumenter/types';
 import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants';
-import { InteractionsPanel } from './InteractionsPanel';
+import { InteractionsPanel, type SerializedError } from './InteractionsPanel';
 import type { PlayStatus } from './StatusBadge';
+
+export interface PanelState {
+  status: PlayStatus;
+  controlStates: ControlStates;
+  interactions: ReturnType<typeof getInteractions>;
+  interactionsCount: number;
+  hasException: boolean;
+  pausedAt?: Call['id'];
+  caughtException?: Error;
+  unhandledErrors?: SerializedError[];
+}
 
 const INITIAL_CONTROL_STATES = {
   detached: false,
@@ -109,6 +126,41 @@ export const getInteractions = ({
   return interactions;
 };
 
+const getPanelState = (
+  state: PanelState,
+  {
+    log,
+    calls,
+    collapsed,
+    setCollapsed,
+  }: {
+    log: LogItem[];
+    calls: Map<Call['id'], Call>;
+    collapsed: Set<Call['id']>;
+    setCollapsed: Dispatch<SetStateAction<Set<string>>>;
+  }
+): PanelState =>
+  getInteractions({ log, calls, collapsed, setCollapsed }).reduce(
+    (acc, interaction) => {
+      if (interaction.id === INTERNAL_RENDER_CALL_ID) {
+        acc.interactions.push(interaction);
+      } else if (state.status !== 'rendering') {
+        acc.controlStates = state.controlStates;
+        acc.interactions.push(interaction);
+        if (interaction.method !== 'step') {
+          acc.interactionsCount++;
+        }
+      }
+      return acc;
+    },
+    {
+      ...state,
+      controlStates: INITIAL_CONTROL_STATES,
+      interactions: [] as ReturnType<typeof getInteractions>,
+      interactionsCount: 0,
+    }
+  );
+
 const getInternalRenderCall = (storyId: string, exception?: Call['exception']): Call => ({
   id: INTERNAL_RENDER_CALL_ID,
   method: 'render',
@@ -139,16 +191,14 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     });
 
     // shared state
-    const [addonState, set] = useAddonState(ADDON_ID, {
+    const [panelState, set] = useAddonState<PanelState>(ADDON_ID, {
       status: 'rendering' as PlayStatus,
       controlStates: INITIAL_CONTROL_STATES,
-      isErrored: false,
-      pausedAt: undefined,
-      interactions: [],
-      isPlaying: false,
-      hasException: false,
-      caughtException: undefined,
+      interactions: [] as ReturnType<typeof getInteractions>,
       interactionsCount: 0,
+      hasException: false,
+      pausedAt: undefined,
+      caughtException: undefined,
       unhandledErrors: undefined,
     });
 
@@ -160,13 +210,11 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     const {
       status = 'rendering',
       controlStates = INITIAL_CONTROL_STATES,
-      isErrored = false,
-      pausedAt = undefined,
       interactions = [],
-      isPlaying = false,
+      pausedAt = undefined,
       caughtException = undefined,
       unhandledErrors = undefined,
-    } = addonState;
+    } = panelState;
 
     // Log and calls are tracked in a ref so we don't needlessly rerender.
     const log = useRef<LogItem[]>([getInternalRenderLogItem(CallStates.ACTIVE)]);
@@ -197,24 +245,12 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
         [EVENTS.CALL]: setCall,
         [EVENTS.SYNC]: (payload) => {
           log.current = [getInternalRenderLogItem(CallStates.DONE), ...payload.logItems];
-          set((s) => {
-            const interactionsList = getInteractions({
-              log: log.current,
-              calls: calls.current,
-              collapsed,
-              setCollapsed,
-            });
-            const interactionsCount = interactionsList.filter(
-              ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
-            ).length;
-            return {
-              ...s,
-              controlStates: payload.controlStates,
-              pausedAt: payload.pausedAt,
-              interactions: interactionsList,
-              interactionsCount,
-            } as typeof s;
-          });
+          set((state) =>
+            getPanelState(
+              { ...state, controlStates: payload.controlStates, pausedAt: payload.pausedAt },
+              { log: log.current, calls: calls.current, collapsed, setCollapsed }
+            )
+          );
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
           lastRenderId.current = Math.max(lastRenderId.current, event.renderId || 0);
@@ -228,39 +264,24 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
             set({
               status: 'rendering',
               controlStates: INITIAL_CONTROL_STATES,
-              isErrored: false,
               pausedAt: undefined,
               interactions: [],
-              isPlaying: false,
+              interactionsCount: 0,
               hasException: false,
               caughtException: undefined,
-              interactionsCount: 0,
               unhandledErrors: undefined,
             });
           } else {
-            const interactionsList = getInteractions({
-              log: log.current,
-              calls: calls.current,
-              collapsed,
-              setCollapsed,
+            set((state) => {
+              const status =
+                event.newPhase in playStatusMap
+                  ? playStatusMap[event.newPhase as keyof typeof playStatusMap]
+                  : state.status;
+              return getPanelState(
+                { ...state, status, pausedAt: undefined },
+                { log: log.current, calls: calls.current, collapsed, setCollapsed }
+              );
             });
-            const interactionsCount = interactionsList.filter(
-              ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
-            ).length;
-            set(
-              (s) =>
-                ({
-                  ...s,
-                  status:
-                    event.newPhase in playStatusMap
-                      ? playStatusMap[event.newPhase as keyof typeof playStatusMap]
-                      : s.status,
-                  interactions: interactionsList,
-                  interactionsCount,
-                  isPlaying: event.newPhase === 'playing',
-                  pausedAt: undefined,
-                }) as typeof s
-            );
           }
         },
         [STORY_THREW_EXCEPTION]: (e: { name: string; message: string; stack: string }) => {
@@ -269,50 +290,33 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
             INTERNAL_RENDER_CALL_ID,
             getInternalRenderCall(storyId, { ...e, callId: INTERNAL_RENDER_CALL_ID })
           );
-          const interactionsList = getInteractions({
-            log: log.current,
-            calls: calls.current,
-            collapsed,
-            setCollapsed,
-          });
-          set(
-            (s) =>
-              ({
-                ...s,
-                isErrored: true,
+          set((state) =>
+            getPanelState(
+              {
+                ...state,
                 hasException: true,
                 caughtException: undefined,
                 controlStates: INITIAL_CONTROL_STATES,
                 pausedAt: undefined,
-                interactions: interactionsList,
-                interactionsCount: 0,
-              }) as typeof s
+              },
+              { log: log.current, calls: calls.current, collapsed, setCollapsed }
+            )
           );
         },
-        [PLAY_FUNCTION_THREW_EXCEPTION]: (e) => {
-          set((s) => ({ ...s, caughtException: e, hasException: true }));
+        [PLAY_FUNCTION_THREW_EXCEPTION]: (caughtException) => {
+          set((state) => ({ ...state, caughtException, hasException: true }));
         },
-        [UNHANDLED_ERRORS_WHILE_PLAYING]: (e) => {
-          set((s) => ({ ...s, unhandledErrors: e, hasException: true }));
+        [UNHANDLED_ERRORS_WHILE_PLAYING]: (unhandledErrors) => {
+          set((state) => ({ ...state, unhandledErrors, hasException: true }));
         },
       },
       [collapsed]
     );
 
     useEffect(() => {
-      // @ts-expect-error TODO
-      set((s) => {
-        const interactionsList = getInteractions({
-          log: log.current,
-          calls: calls.current,
-          collapsed,
-          setCollapsed,
-        });
-        const interactionsCount = interactionsList.filter(
-          ({ id, method }) => id !== INTERNAL_RENDER_CALL_ID && method !== 'step'
-        ).length;
-        return { ...s, interactions: interactionsList, interactionsCount };
-      });
+      set((state) =>
+        getPanelState(state, { log: log.current, calls: calls.current, collapsed, setCollapsed })
+      );
     }, [set, collapsed]);
 
     const controls = useMemo(
@@ -336,15 +340,14 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     const hasException =
       !!caughtException ||
       !!unhandledErrors ||
-      // @ts-expect-error TODO
       interactions.some((v) => v.status === CallStates.ERROR);
 
     const browserTestStatus = useMemo<CallStates | undefined>(() => {
-      if (!isPlaying && (interactions.length > 0 || hasException)) {
+      if (status !== 'playing' && (interactions.length > 0 || hasException)) {
         return hasException ? CallStates.ERROR : CallStates.DONE;
       }
-      return isPlaying ? CallStates.ACTIVE : undefined;
-    }, [isPlaying, interactions, hasException]);
+      return status === 'playing' ? CallStates.ACTIVE : undefined;
+    }, [status, interactions, hasException]);
 
     useEffect(() => {
       const isMismatch =
@@ -393,8 +396,6 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           hasException={hasException}
           caughtException={caughtException}
           unhandledErrors={unhandledErrors}
-          isErrored={isErrored}
-          isPlaying={isPlaying}
           pausedAt={pausedAt}
           // @ts-expect-error TODO
           endRef={endRef}

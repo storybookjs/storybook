@@ -191,6 +191,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       return () => observer?.disconnect();
     }, []);
 
+    const lastRenderId = useRef<number>(0);
     const emit = useChannel(
       {
         [EVENTS.CALL]: setCall,
@@ -216,6 +217,11 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           });
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
+          lastRenderId.current = Math.max(lastRenderId.current, event.renderId || 0);
+          if (lastRenderId.current !== event.renderId) {
+            return;
+          }
+
           if (event.newPhase === 'preparing') {
             log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
             calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId));

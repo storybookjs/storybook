@@ -116,15 +116,13 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
         {controlStates.detached && (hasRealInteractions || hasException) && (
           <DetachedDebuggerMessage storyUrl={storyUrl} />
         )}
-        {(interactions.length > 0 || hasException) && (
-          <Subnav
-            controls={controls}
-            controlStates={controlStates}
-            status={status}
-            storyFileName={fileName}
-            onScrollToEnd={onScrollToEnd}
-          />
-        )}
+        <Subnav
+          controls={controls}
+          controlStates={controlStates}
+          status={status}
+          storyFileName={fileName}
+          onScrollToEnd={onScrollToEnd}
+        />
         <div aria-label="Interactions list">
           {interactions.map((call) => (
             <Interaction

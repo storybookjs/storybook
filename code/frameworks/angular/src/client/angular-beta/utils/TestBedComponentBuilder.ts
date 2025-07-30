@@ -108,19 +108,26 @@ export class TestBedComponentBuilder {
     const moduleWithProviders = this.imports.filter(this.isModuleWithProviders);
     this.testBedInstance
       .configureTestingModule({
-        imports: [...imports, ...moduleWithProviders, wrapperModule],
+        imports: [...imports, ...moduleWithProviders],
+        declarations: [...this.declarations],
+        providers: [...this.componentProviders, ...this.environmentProviders],
       })
       .overrideComponent(
         this.component,
-        GenerateComponentMetaData(this.selector, this.componentProviders, this.styles, this.schemas)
+        GenerateComponentMetaData(
+          this.selector,
+          this.componentProviders,
+          this.styles,
+          this.schemas,
+          wrapperModule
+        )
       )
       .overrideModule(
         wrapperModule,
-        GenerateModuleMetaData(
-          [...this.componentProviders, ...this.environmentProviders],
-          this.declarations,
-          [...this.imports, ...moduleWithProviders.map((x) => x.ngModule)]
-        )
+        GenerateModuleMetaData(this.declarations, [
+          ...this.imports,
+          ...moduleWithProviders.map((x) => x.ngModule),
+        ])
       );
 
     return this;

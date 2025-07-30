@@ -5,13 +5,15 @@ export const GenerateComponentMetaData = (
   selector: string,
   componentProvider: any[],
   styles: string[],
-  schemas: any[]
+  schemas: any[],
+  wrapperModule: any
 ) => {
   const overrideMetadata = {
     add: {
       providers: componentProvider ?? [],
       styles: styles ?? [],
       selector: selector,
+      imports: [wrapperModule],
     },
   } as MetadataOverride<Component>;
 
@@ -22,17 +24,12 @@ export const GenerateComponentMetaData = (
   return overrideMetadata;
 };
 
-export const GenerateModuleMetaData = (
-  environmentProvider: any[],
-  declarations: any[],
-  imports: any[]
-) => {
+export const GenerateModuleMetaData = (declarations: any[], imports: any[]) => {
   return {
     add: {
       exports: [...declarations, ...imports],
       declarations: declarations,
       imports: imports,
-      providers: environmentProvider,
     },
   } as MetadataOverride<NgModule>;
 };

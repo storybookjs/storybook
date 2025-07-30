@@ -1,4 +1,4 @@
-import { test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
 import { definePreview, definePreviewAddon } from './csf-factories';
 
@@ -16,7 +16,9 @@ const addon2 = definePreviewAddon<Addon2Types>({});
 
 const preview = definePreview({ addons: [addon, addon2] });
 
-const meta = preview.meta({});
+const meta = preview.meta({
+  render: () => 'hello',
+});
 
 test('addon parameters are inferred', () => {
   const MyStory = meta.story({
@@ -40,4 +42,12 @@ test('addon parameters are inferred', () => {
       },
     },
   });
+});
+
+test('test function is defined', async () => {
+  const MyStory = meta.story({});
+  const testFn = vi.fn();
+  MyStory.test('should run test', testFn);
+  await MyStory.__runTest('should run test');
+  expect(testFn).toHaveBeenCalledWith(MyStory.composed);
 });

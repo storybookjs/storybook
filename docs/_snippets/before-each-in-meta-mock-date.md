@@ -3,8 +3,6 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 import MockDate from 'mockdate';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 import { Page } from './Page';
 
 const meta: Meta<Page> = {
@@ -36,9 +34,6 @@ export const Default: Story = {
 
   import MockDate from 'mockdate';
 
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getUserFromSession } from '#api/session.mock';
-
   import Page from './Page.svelte';
 
   const meta = defineMeta({
@@ -63,8 +58,6 @@ export const Default: Story = {
 
 ```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import MockDate from 'mockdate';
-
-import { getUserFromSession } from '#api/session.mock';
 
 import Page from './Page.svelte';
 
@@ -91,7 +84,6 @@ export const Default = {
 ```js filename="Page.stories.js" renderer="common" language="js"
 import MockDate from 'mockdate';
 
-import { getUserFromSession } from '#api/session.mock';
 import { Page } from './Page';
 
 export default {
@@ -119,9 +111,6 @@ export const Default = {
   import { defineMeta } from '@storybook/addon-svelte-csf';
 
   import MockDate from 'mockdate';
-
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getUserFromSession } from '#api/session.mock';
 
   import Page from './Page.svelte';
 
@@ -151,8 +140,6 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MockDate from 'mockdate';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 import Page from './Page.svelte';
 
 const meta = {
@@ -184,8 +171,6 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MockDate from 'mockdate';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 import { Page } from './Page';
 
 const meta = {
@@ -214,8 +199,6 @@ export const Default: Story = {
 ```js filename="Page.stories.js" renderer="web-components" language="js"
 import MockDate from 'mockdate';
 
-import { getUserFromSession } from '../../api/session.mock';
-
 export default {
   component: 'my-page',
   // 👇 Set the value of Date for every story in the file
@@ -240,9 +223,6 @@ export const Default = {
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import MockDate from 'mockdate';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 
 const meta: Meta = {
   component: 'my-page',

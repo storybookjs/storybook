@@ -13,7 +13,7 @@ sb.mock(import('uuid'), { spy: true });
 import { sb } from 'storybook/test';
 
 // 👇 Automatically spies on all exports from the `lib/session` local module
-sb.mock('../lib/session.ts', { spy: true });
+sb.mock('../lib/session.js', { spy: true });
 // 👇 Automatically spies on all exports from the `uuid` package in `node_modules`
 sb.mock('uuid', { spy: true });
 

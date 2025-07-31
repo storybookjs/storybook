@@ -13,7 +13,7 @@ sb.mock(import('uuid'));
 import { sb } from 'storybook/test';
 
 // 👇 Replaces imports of this module with imports to `../lib/__mocks__/session.ts`
-sb.mock('../lib/session.ts');
+sb.mock('../lib/session.js');
 // 👇 Replaces imports of this module with imports to `../__mocks__/uuid.ts`
 sb.mock('uuid');
 

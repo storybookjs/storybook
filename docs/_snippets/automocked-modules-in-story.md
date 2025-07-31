@@ -1,4 +1,4 @@
-```ts filename="EventForm.stories.ts" renderer="angular" language="ts"
+```ts filename="AuthButton.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
 import { expect, mocked } from 'storybook/test';
 
@@ -65,7 +65,7 @@ export const LogIn: Story = {
 };
 ```
 
-```js filename="EventForm.stories.js" renderer="common" language="js"
+```js filename="AuthButton.stories.js" renderer="common" language="js"
 import { expect } from 'storybook/test';
 
 import { AuthButton } from './AuthButton';
@@ -94,7 +94,7 @@ export const LogIn = {
 };
 ```
 
-```svelte filename="EventForm.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import { expect, mocked } from 'storybook/test';
@@ -127,7 +127,7 @@ export const LogIn = {
 />
 ```
 
-```ts filename="EventForm.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+```ts filename="AuthButton.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
 // Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect, mocked } from 'storybook/test';
@@ -161,10 +161,10 @@ export const LogIn: Story = {
 };
 ```
 
-```svelte filename="EventForm.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+```svelte filename="AuthButton.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
-  import { expect, mocked } from 'storybook/test';
+  import { expect } from 'storybook/test';
 
   import { AuthButton } from './AuthButton.svelte';
 
@@ -194,7 +194,7 @@ export const LogIn: Story = {
 />
 ```
 
-```js filename="EventForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+```js filename="AuthButton.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import { expect } from 'storybook/test';
 
 import { AuthButton } from './AuthButton.svelte';
@@ -223,7 +223,7 @@ export const LogIn = {
 };
 ```
 
-```ts filename="EventForm.stories.ts" renderer="web-components" language="ts"
+```ts filename="AuthButton.stories.ts" renderer="web-components" language="ts"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { expect, mocked } from 'storybook/test';
 
@@ -254,7 +254,7 @@ export const LogIn: Story = {
 };
 ```
 
-```js filename="EventForm.stories.js" renderer="web-components" language="js"
+```js filename="AuthButton.stories.js" renderer="web-components" language="js"
 import { expect } from 'storybook/test';
 
 import { v4 as uuidv4 } from 'uuid';

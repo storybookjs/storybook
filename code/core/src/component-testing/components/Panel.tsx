@@ -126,7 +126,7 @@ export const getInteractions = ({
   return interactions;
 };
 
-const getPanelState = (
+export const getPanelState = (
   state: PanelState,
   {
     log,

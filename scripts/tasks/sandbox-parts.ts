@@ -801,6 +801,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     "sb.mock(import('lodash-es'));",
     "sb.mock(import('lodash-es/add'));",
     "sb.mock(import('lodash-es/sum'));",
+    "sb.mock(import('uuid'));",
     '',
   ].join('\n');
 

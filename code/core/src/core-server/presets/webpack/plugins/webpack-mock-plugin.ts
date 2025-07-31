@@ -3,7 +3,7 @@ import { dirname, isAbsolute } from 'node:path';
 import type { Compiler } from 'webpack';
 
 import { babelParser, extractMockCalls } from '../../../mocking-utils/extract';
-import { resolveMock } from '../../../mocking-utils/resolve';
+import { getIsExternal, resolveExternalModule, resolveMock } from '../../../mocking-utils/resolve';
 
 // --- Type Definitions ---
 
@@ -73,9 +73,14 @@ export class WebpackMockPlugin {
     // Apply the replacement plugin. Its callback will now use the dynamically updated mockMap.
     new compiler.webpack.NormalModuleReplacementPlugin(/.*/, (resource) => {
       try {
-        const absolutePath = require.resolve(resource.request, {
-          paths: [resource.context],
-        });
+        const path = resource.request;
+        const importer = resource.context;
+
+        const isExternal = getIsExternal(path, importer);
+        const absolutePath = isExternal
+          ? resolveExternalModule(path, importer)
+          : require.resolve(path, { paths: [importer] });
+
         if (this.mockMap.has(absolutePath)) {
           const mock = this.mockMap.get(absolutePath)!;
           resource.request = mock.replacementResource;

@@ -89,7 +89,7 @@ command('init')
   .option(
     '--dev',
     'Launch the development server after completing initialization. Enabled by default (default: true)',
-    !isCI && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)
+    !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)
   )
   .option(
     '--no-dev',

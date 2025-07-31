@@ -47,7 +47,7 @@ const getOperatingSystem = (): 'Windows' | 'macOS' | 'Linux' | `Other: ${string}
 // by the app. currently:
 // - cliVersion
 const globalContext = {
-  inCI: isCI,
+  inCI: isCI(),
   isTTY: process.stdout.isTTY,
   platform: getOperatingSystem(),
   nodeVersion: process.versions.node,

@@ -354,7 +354,7 @@ export async function baseGenerator(
   }).start();
 
   try {
-    if (!isCI) {
+    if (!isCI()) {
       const { hasEslint, isStorybookPluginInstalled, isFlatConfig, eslintConfigFile } =
         // TODO: Investigate why packageManager type does not match on CI
         await extractEslintInfo(packageManager as any);

@@ -226,7 +226,7 @@ export const sandbox = async ({
         // @ts-ignore-error (no types for this)
         const { initiate } = await import('create-storybook');
         await initiate({
-          dev: isCI && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX),
+          dev: isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX),
           ...options,
           features: ['docs', 'test'],
         });

@@ -80,7 +80,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const hasCustomWebpackConfig = !!config.getFieldNode(['webpackFinal']);
 
-  const isInteractive = process.stdout.isTTY && !isCI;
+  const isInteractive = process.stdout.isTTY && !isCI();
 
   if (info.frameworkPackageName === '@storybook/nextjs' && !hasCustomWebpackConfig) {
     const out =

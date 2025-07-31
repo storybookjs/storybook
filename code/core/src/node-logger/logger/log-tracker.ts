@@ -99,7 +99,7 @@ class LogTracker {
     await fs.writeFile(filePath, logContent, 'utf-8');
     this.#logs = [];
 
-    return isCI ? filePath : path.relative(process.cwd(), filePath);
+    return isCI() ? filePath : path.relative(process.cwd(), filePath);
   }
 }
 

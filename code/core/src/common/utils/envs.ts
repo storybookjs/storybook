@@ -87,4 +87,6 @@ export const optionalEnvToBoolean = (input: string | undefined): boolean | undef
  * Doing Boolean(process.env.CI) or !process.env.CI is not enough, because users might set CI=false
  * or CI=0, which would be truthy, and thus return true in those cases.
  */
-export const isCI = optionalEnvToBoolean(process.env.CI);
+export function isCI(): boolean | undefined {
+  return optionalEnvToBoolean(process.env.CI);
+}

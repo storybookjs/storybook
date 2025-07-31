@@ -51,8 +51,10 @@ const createStorybookProgram = program
 
 createStorybookProgram
   .action(async (options) => {
+    const isNeitherCiNorSandbox =
+      !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
     options.debug = options.debug ?? false;
-    options.dev = options.dev ?? (isCI && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX));
+    options.dev = options.dev ?? isNeitherCiNorSandbox;
 
     await initiate(options as CommandOptions).catch(() => process.exit(1));
   })

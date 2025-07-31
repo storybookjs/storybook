@@ -14,7 +14,7 @@ type TelemetryOptions = {
 };
 
 const promptCrashReports = async () => {
-  if (isCI || !process.stdout.isTTY) {
+  if (isCI() || !process.stdout.isTTY) {
     return undefined;
   }
 

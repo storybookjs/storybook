@@ -442,7 +442,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     )
   );
 
-  const isInteractive = process.stdout.isTTY && !isCI;
+  const isInteractive = process.stdout.isTTY && !isCI();
 
   const settings = await globalSettings();
   const promptOptions = {

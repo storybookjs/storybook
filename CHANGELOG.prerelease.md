@@ -1,3 +1,6 @@
+## 9.2.0-alpha.0
+
+
 ## 9.1.0-beta.3
 
 - Core: Prevent interactions panel from flickering and showing incorrect state - [#32150](https://github.com/storybookjs/storybook/pull/32150), thanks @ghengeveld!

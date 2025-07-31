@@ -179,5 +179,13 @@ export const RenderOnly: Story = {
 export const Empty: Story = {
   args: {
     interactions: [],
+    controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };

@@ -1,7 +1,6 @@
-import { isCI, optionalEnvToBoolean } from 'storybook/internal/common';
-
 import { program } from 'commander';
 
+import { isCI, optionalEnvToBoolean } from '../../../../core/src/common/utils/envs';
 import { addToGlobalContext } from '../../../../core/src/telemetry';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';

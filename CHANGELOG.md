@@ -1,3 +1,8 @@
+## 9.1.0
+
+- Core: Disable dynamic favicon behavior when using custom favicon filename - [#32147](https://github.com/storybookjs/storybook/pull/32147), thanks @ghengeveld!
+- Core: Don't update interactions panel state until we reach the rendering phase - [#32163](https://github.com/storybookjs/storybook/pull/32163), thanks @ghengeveld!
+
 ## 9.0.18
 
 - CLI: Fix Storybook doctor compatibility checks - [#32077](https://github.com/storybookjs/storybook/pull/32077), thanks @yannbf!

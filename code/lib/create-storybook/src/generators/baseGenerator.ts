@@ -288,7 +288,7 @@ export async function baseGenerator(
   const compiler = webpackCompiler ? webpackCompiler({ builder }) : undefined;
 
   if (features.includes('test')) {
-    extraAddons.push('@chromatic-com/storybook@^4');
+    extraAddons.push('@chromatic-com/storybook');
   }
 
   if (features.includes('docs')) {
@@ -419,6 +419,7 @@ export async function baseGenerator(
         name: frameworkPackagePath,
         options: options.framework || {},
       },
+      features,
       frameworkPackage,
       prefixes,
       storybookConfigFolder,

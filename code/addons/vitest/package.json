@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "9.1.0-alpha.6",
+  "version": "9.1.0-beta.1",
   "description": "Storybook addon for testing components",
   "keywords": [
     "storybook-addons",
@@ -100,8 +100,8 @@
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.0.0",
     "@types/semver": "^7",
-    "@vitest/browser": "^3.1.1",
-    "@vitest/runner": "^3.1.1",
+    "@vitest/browser": "^3.2.4",
+    "@vitest/runner": "^3.2.4",
     "boxen": "^8.0.1",
     "es-toolkit": "^1.36.0",
     "execa": "^8.0.1",
@@ -119,7 +119,7 @@
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.8.3",
-    "vitest": "^3.1.1"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "@vitest/browser": "^3.0.0",

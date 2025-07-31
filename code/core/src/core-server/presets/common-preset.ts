@@ -7,6 +7,7 @@ import { optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
+  findConfigFile,
   getDirectoryFromWorkingDir,
   getPreviewBodyTemplate,
   getPreviewHeadTemplate,
@@ -59,8 +60,8 @@ export const favicon = async (
     ? staticDirsValue.map((dir) => (typeof dir === 'string' ? dir : `${dir.from}:${dir.to}`))
     : [];
 
-  if (statics.length > 0) {
-    const lists = statics.map((dir) => {
+  const faviconPaths = statics
+    .map((dir) => {
       const results = [];
       const normalizedDir =
         staticDirsValue && !isAbsolute(dir)
@@ -73,37 +74,29 @@ export const favicon = async (
 
       const { staticPath, targetEndpoint } = parseStaticDir(normalizedDir);
 
-      if (targetEndpoint === '/') {
-        const url = 'favicon.svg';
-        const path = join(staticPath, url);
-        if (existsSync(path)) {
-          results.push(path);
-        }
+      // Direct favicon references (e.g. `staticDirs: ['favicon.svg']`)
+      if (['/favicon.svg', '/favicon.ico'].includes(targetEndpoint)) {
+        results.push(staticPath);
       }
+      // Favicon files in a static directory (e.g. `staticDirs: ['static']`)
       if (targetEndpoint === '/') {
-        const url = 'favicon.ico';
-        const path = join(staticPath, url);
-        if (existsSync(path)) {
-          results.push(path);
-        }
+        results.push(join(staticPath, 'favicon.svg'));
+        results.push(join(staticPath, 'favicon.ico'));
       }
 
-      return results;
-    });
-    const flatlist = lists.reduce((l1, l2) => l1.concat(l2), []);
+      return results.filter((path) => existsSync(path));
+    })
+    .reduce((l1, l2) => l1.concat(l2), []);
 
-    if (flatlist.length > 1) {
-      logger.warn(dedent`
-        Looks like multiple favicons were detected. Using the first one.
+  if (faviconPaths.length > 1) {
+    logger.warn(dedent`
+      Looks like multiple favicons were detected. Using the first one.
 
-        ${flatlist.join(', ')}
-        `);
-    }
-
-    return flatlist[0] || defaultFavicon;
+      ${faviconPaths.join(', ')}
+    `);
   }
 
-  return defaultFavicon;
+  return faviconPaths[0] || defaultFavicon;
 };
 
 export const babel = async (_: unknown, options: Options) => {
@@ -303,4 +296,74 @@ export const managerEntries = async (existing: any) => {
     ),
     ...(existing || []),
   ];
+};
+
+export const viteFinal = async (
+  existing: import('vite').UserConfig,
+  options: Options
+): Promise<import('vite').UserConfig> => {
+  const previewConfigPath = findConfigFile('preview', options.configDir);
+
+  // If there's no preview file, there's nothing to mock.
+  if (!previewConfigPath) {
+    return existing;
+  }
+
+  const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
+  const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
+  const coreOptions = await options.presets.apply('core');
+
+  return {
+    ...existing,
+    plugins: [
+      ...(existing.plugins ?? []),
+      ...(previewConfigPath
+        ? [
+            viteInjectMockerRuntime({ previewConfigPath }),
+            viteMockPlugin({ previewConfigPath, coreOptions, configDir: options.configDir }),
+          ]
+        : []),
+    ],
+  };
+};
+
+export const webpackFinal = async (
+  config: import('webpack').Configuration,
+  options: Options
+): Promise<import('webpack').Configuration> => {
+  const previewConfigPath = findConfigFile('preview', options.configDir);
+
+  // If there's no preview file, there's nothing to mock.
+  if (!previewConfigPath) {
+    return config;
+  }
+
+  const { WebpackMockPlugin } = await import('./webpack/plugins/webpack-mock-plugin');
+  const { WebpackInjectMockerRuntimePlugin } = await import(
+    './webpack/plugins/webpack-inject-mocker-runtime-plugin'
+  );
+
+  config.plugins = config.plugins || [];
+
+  // 1. Add the loader to normalize sb.mock(import(...)) calls.
+  config.module!.rules!.push({
+    test: /preview\.(t|j)sx?$/,
+    use: [
+      {
+        loader: require.resolve(
+          'storybook/internal/core-server/presets/webpack/loaders/storybook-mock-transform-loader'
+        ),
+      },
+    ],
+  });
+
+  // 2. Add the plugin to handle module replacement based on sb.mock() calls.
+  // This plugin scans the preview file and sets up rules to swap modules.
+  config.plugins.push(new WebpackMockPlugin({ previewConfigPath }));
+
+  // 3. Add the plugin to inject the mocker runtime script into the HTML.
+  // This ensures the `sb` object is available before any other code runs.
+  config.plugins.push(new WebpackInjectMockerRuntimePlugin());
+
+  return config;
 };

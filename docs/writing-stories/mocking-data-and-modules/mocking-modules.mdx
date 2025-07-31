@@ -105,11 +105,11 @@ The root of your project is determined differently depending on your builder:
 
 **Vite projects**
 
-The root `__mocks__` directory should be placed in the [`root` directory](https://vite.dev/config/shared-options.html#root), as defined in your project's Vite configuration. If that is unavailable, it defaults to the directory containing your `.storybook` directory.
+The root `__mocks__` directory should be placed in the [`root` directory](https://vite.dev/config/shared-options.html#root), as defined in your project's Vite configuration (typically `process.cwd()`) If that is unavailable, it defaults to the directory containing your `.storybook` directory.
 
 **Webpack projects**
 
-The root `__mocks__` directory should be placed in the [`context` directory](https://webpack.js.org/configuration/entry-context/#context), as defined in your project's Webpack configuration. If that is unavailable, it defaults to root of your repository.
+The root `__mocks__` directory should be placed in the [`context` directory](https://webpack.js.org/configuration/entry-context/#context), as defined in your project's Webpack configuration (typically `process.cwd()`). If that is unavailable, it defaults to the root of your repository.
 
 <Callout variant="info">
 

@@ -7194,6 +7194,7 @@ __metadata:
     svelte: "npm:^5.0.0-next.268"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
+    uuid: "npm:^11.1.0"
     vite: "npm:^6.2.5"
     vite-plugin-inspect: "npm:^11.0.0"
     vitest: "npm:^3.2.4"
@@ -23507,7 +23508,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"resolve.exports@npm:2.0.3":
+"resolve.exports@npm:2.0.3, resolve.exports@npm:^2.0.3":
   version: 2.0.3
   resolution: "resolve.exports@npm:2.0.3"
   checksum: 10c0/1ade1493f4642a6267d0a5e68faeac20b3d220f18c28b140343feb83694d8fed7a286852aef43689d16042c61e2ddb270be6578ad4a13990769e12065191200d
@@ -25081,6 +25082,7 @@ __metadata:
     recast: "npm:^0.23.5"
     require-from-string: "npm:^2.0.2"
     resolve-from: "npm:^5.0.0"
+    resolve.exports: "npm:^2.0.3"
     semver: "npm:^7.6.2"
     sirv: "npm:^2.0.4"
     slash: "npm:^5.0.0"
@@ -26868,6 +26870,15 @@ __metadata:
   version: 1.0.1
   resolution: "utils-merge@npm:1.0.1"
   checksum: 10c0/02ba649de1b7ca8854bfe20a82f1dfbdda3fb57a22ab4a8972a63a34553cf7aa51bc9081cf7e001b035b88186d23689d69e71b510e610a09a4c66f68aa95b672
+  languageName: node
+  linkType: hard
+
+"uuid@npm:^11.1.0":
+  version: 11.1.0
+  resolution: "uuid@npm:11.1.0"
+  bin:
+    uuid: dist/esm/bin/uuid
+  checksum: 10c0/34aa51b9874ae398c2b799c88a127701408cd581ee89ec3baa53509dd8728cbb25826f2a038f9465f8b7be446f0fbf11558862965b18d21c993684297628d4d3
   languageName: node
   linkType: hard
 

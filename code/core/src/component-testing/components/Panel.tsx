@@ -253,12 +253,18 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           );
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
+          if (event.newPhase === 'preparing' || event.newPhase === 'loading') {
+            // A render cycle may not actually make it to the rendering phase.
+            // We don't want to update any state until it does.
+            return;
+          }
+
           lastRenderId.current = Math.max(lastRenderId.current, event.renderId || 0);
           if (lastRenderId.current !== event.renderId) {
             return;
           }
 
-          if (event.newPhase === 'preparing') {
+          if (event.newPhase === 'rendering') {
             log.current = [getInternalRenderLogItem(CallStates.ACTIVE)];
             calls.current.set(INTERNAL_RENDER_CALL_ID, getInternalRenderCall(storyId));
             set({

@@ -1,1 +1,1 @@
-{"version":"9.1.0-beta.2","info":{"plain":"- Test: Consider exports map - [#32157](https://github.com/storybookjs/storybook/pull/32157), thanks @valentinpalkovic!\n- Test: Invalidate vite cache for manual mocks - [#32152](https://github.com/storybookjs/storybook/pull/32152), thanks @valentinpalkovic!"}}
+{"version":"9.1.0-beta.3","info":{"plain":"- Core: Prevent interactions panel from flickering and showing incorrect state - [#32150](https://github.com/storybookjs/storybook/pull/32150), thanks @ghengeveld!"}}

@@ -1,3 +1,7 @@
+## 9.1.0-beta.3
+
+- Core: Prevent interactions panel from flickering and showing incorrect state - [#32150](https://github.com/storybookjs/storybook/pull/32150), thanks @ghengeveld!
+
 ## 9.1.0-beta.2
 
 - Test: Consider exports map - [#32157](https://github.com/storybookjs/storybook/pull/32157), thanks @valentinpalkovic!

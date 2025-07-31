@@ -7,7 +7,7 @@ const meta: Meta<Page> = {
   component: Page,
   // 👇 Runs after each story in this file
   async afterEach(context) {
-    console.log(`Tested ${context.name} story`);
+    console.log(`✅ Tested ${context.name} story`);
   },
 };
 export default meta;
@@ -31,7 +31,7 @@ export const Default: Story = {
     component: Page,
     // 👇 Runs after each story in this file
     async afterEach(context) {
-      console.log(`Tested ${context.name} story`);
+      console.log(`✅ Tested ${context.name} story`);
     },
   });
 </script>
@@ -49,7 +49,7 @@ export default {
   component: Page,
   // 👇 Runs after each story in this file
   async afterEach(context) {
-    console.log(`Tested ${context.name} story`);
+    console.log(`✅ Tested ${context.name} story`);
   },
 };
 
@@ -67,7 +67,7 @@ export default {
   component: Page,
   // 👇 Runs after each story in this file
   async afterEach(context) {
-    console.log(`Tested ${context.name} story`);
+    console.log(`✅ Tested ${context.name} story`);
   },
 };
 
@@ -88,7 +88,7 @@ export const Default = {
     component: Page,
     // 👇 Runs after each story in this file
     async afterEach(context) {
-      console.log(`Tested ${context.name} story`);
+      console.log(`✅ Tested ${context.name} story`);
     },
   });
 </script>
@@ -109,7 +109,7 @@ const meta = {
   component: Page,
   // 👇 Runs after each story in this file
   async afterEach(context) {
-    console.log(`Tested ${context.name} story`);
+    console.log(`✅ Tested ${context.name} story`);
   },
 } satisfies Meta<typeof Page>;
 export default meta;
@@ -133,7 +133,7 @@ const meta = {
   component: Page,
   // 👇 Runs after each story in this file
   async afterEach(context) {
-    console.log(`Tested ${context.name} story`);
+    console.log(`✅ Tested ${context.name} story`);
   },
 } satisfies Meta<typeof Page>;
 export default meta;
@@ -170,7 +170,7 @@ const meta: Meta = {
   component: 'my-page',
   // 👇 Runs after each story in this file
   async afterEach(context) {
-    console.log(`Tested ${context.name} story`);
+    console.log(`✅ Tested ${context.name} story`);
   },
 };
 export default meta;

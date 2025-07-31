@@ -245,7 +245,7 @@ Sometimes, you may need to make assertions or run code after the component has b
 
 #### `afterEach`
 
-`afterEach` runs after the story is rendered and the play function has completed. It can be used at the project level in the preview file (`.storybook/preview.js|ts`), at the component level in the component meta, or at the story level in the story definition. This is useful for making assertions after the component has been rendered and interacted with, such as running accessibility checks or logging information.
+`afterEach` runs after the story is rendered and the play function has completed. It can be used at the project level in the preview file (`.storybook/preview.js|ts`), at the component level in the component meta, or at the story level in the story definition. This is useful for making assertions after the component has been rendered and interacted with, such as running checks on the final rendered output or logging information.
 
 Like the `play` function, `afterEach` receives the `context` object, which contains the `args`, `canvas`, and other properties related to the story. You can use this to make assertions or run code after the story has been rendered.
 

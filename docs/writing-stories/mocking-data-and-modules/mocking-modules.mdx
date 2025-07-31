@@ -103,10 +103,13 @@ If you need to mock an external module that has a deeper import path (e.g. `loda
 
 The root of your project is determined differently depending on your builder:
 
-- For Vite projects, the root is equivalent to `process.cwd()`, which is the directory where you run the Storybook command, or the `root` definition in your Vite configuration.
-- For Webpack projects, the root is equivalent to `process.cwd()`, which is the directory where you run the Storybook command, or the `context` definition in your Webpack configuration.
+**Vite projects**
 
-You can set the project root manually by providing the `STORYBOOK_PROJECT_ROOT` environment variable when running or building Storybook.
+The root `__mocks__` directory should be placed in the [`root` directory](https://vite.dev/config/shared-options.html#root), as defined in your project's Vite configuration. If that is unavailable, it defaults to the directory containing your `.storybook` directory.
+
+**Webpack projects**
+
+The root `__mocks__` directory should be placed in the [`context` directory](https://webpack.js.org/configuration/entry-context/#context), as defined in your project's Webpack configuration. If that is unavailable, it defaults to root of your repository.
 
 <Callout variant="info">
 

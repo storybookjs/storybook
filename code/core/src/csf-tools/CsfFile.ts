@@ -513,8 +513,8 @@ export class CsfFile {
                     t.isTSAsExpression(decl.init) ||
                     t.isTSSatisfiesExpression(decl.init)
                   ) {
-                    // export default { ... } as Meta<...>
-                    // export default { ... } satisfies Meta<...>
+                    // { ... } as Meta<...>
+                    // { ... } satisfies Meta<...>
                     storyNode = decl.init.expression;
                   } else {
                     storyNode = decl.init;

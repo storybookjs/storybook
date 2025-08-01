@@ -151,7 +151,7 @@
     "css-loader": "^6.7.3",
     "image-size": "^2.0.2",
     "loader-utils": "^3.2.1",
-    "node-polyfill-webpack-plugin": "^2.0.1",
+    "node-polyfill-webpack-plugin": "^4.1.0",
     "postcss": "^8.4.38",
     "postcss-loader": "^8.1.1",
     "react-refresh": "^0.14.0",

@@ -144,7 +144,8 @@ export const previewHead = async (base: any, { configDir, presets }: Options) =>
 };
 
 export const env = async () => {
-  return loadEnvs({ production: true }).raw;
+  const { raw } = await loadEnvs({ production: true });
+  return raw;
 };
 
 export const previewBody = async (base: any, { configDir, presets }: Options) => {

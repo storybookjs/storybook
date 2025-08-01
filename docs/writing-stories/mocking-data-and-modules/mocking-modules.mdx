@@ -170,14 +170,6 @@ While this feature uses Vitest's mocking engine, the implementation within Story
 - Runtime Mocking: While the module swap is static, you can still control the behavior of the mocked functions at runtime within a play function or `beforeEach` hook (e.g., `mocked(myFunction).mockReturnValue('new value')`).
 - No Factory Functions: The `sb.mock()` API does not accept a factory function as its second argument (e.g., `sb.mock('path', () => ({...}))`). This is because all mocking decisions are resolved at build time, whereas factories are executed at runtime.
 
-### Troubleshooting
-
-#### Receiving an `exports is not defined` error
-
-Webpack projects may encounter an `exports is not defined` error when using automocking. This is usually caused by attempting to mock a module with CommonJS (CJS) entry points. Automocking with Webpack only works with modules that have ESModules (ESM) entry points exclusively, so you must use a [mock file](#mock-files) to mock CJS modules.
-
----
-
 ## Alternative methods
 
 If [automocking](#automocking) is not suitable for your project, there are two alternative methods to mock modules in Storybook: [subpath imports](#subpath-imports) and [builder aliases](#builder-aliases). These methods require a bit more setup but provide similar functionality to automocking, allowing you to control the behavior of modules in your stories.
@@ -331,3 +323,11 @@ Here's an example of using the [`mockdate`](https://github.com/boblauer/MockDate
 <CodeSnippets path="before-each-in-meta-mock-date.md" />
 
 {/* prettier-ignore-end */}
+
+-----
+
+## Troubleshooting
+
+### Receiving an `exports is not defined` error
+
+Webpack projects may encounter an `exports is not defined` error when using [automocking](#automocking). This is usually caused by attempting to mock a module with CommonJS (CJS) entry points. Automocking with Webpack only works with modules that have ESModules (ESM) entry points exclusively, so you must use a [mock file](#mock-files) to mock CJS modules.

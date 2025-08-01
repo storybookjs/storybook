@@ -1,4 +1,8 @@
-import { type JsPackageManager, syncStorybookAddons } from 'storybook/internal/common';
+import {
+  type JsPackageManager,
+  optionalEnvToBoolean,
+  syncStorybookAddons,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -19,7 +23,7 @@ async function runStoriesCodemod(options: {
   const { dryRun, packageManager, ...codemodOptions } = options;
   try {
     let globString = '{stories,src}/**/{Button,Header,Page}.stories.*';
-    if (!process.env.IN_STORYBOOK_SANDBOX) {
+    if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
@@ -59,7 +63,7 @@ export const csfFactories: CommandFix = {
   promptType: 'command',
   async run({ dryRun, mainConfig, mainConfigPath, previewConfigPath, packageManager, configDir }) {
     let useSubPathImports = true;
-    if (!process.env.IN_STORYBOOK_SANDBOX) {
+    if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
         The CSF factories format benefits from subpath imports (the imports property in your \`package.json\`), which is a node standard for module resolution. This makes it more convenient to import the preview config in your story files.

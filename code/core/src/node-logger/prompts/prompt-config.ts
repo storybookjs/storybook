@@ -1,3 +1,4 @@
+import { optionalEnvToBoolean } from '../../common/utils/envs';
 import type { PromptProvider } from './prompt-provider-base';
 import { ClackPromptProvider } from './prompt-provider-clack';
 import { PromptsPromptProvider } from './prompt-provider-prompts';
@@ -9,7 +10,9 @@ const PROVIDERS = {
   prompts: new PromptsPromptProvider(),
 } as const;
 
-let currentPromptLibrary: PromptLibrary = process.env.USE_CLACK === 'true' ? 'clack' : 'prompts';
+let currentPromptLibrary: PromptLibrary = optionalEnvToBoolean(process.env.USE_CLACK)
+  ? 'clack'
+  : 'prompts';
 
 export const setPromptLibrary = (library: PromptLibrary): void => {
   currentPromptLibrary = library;

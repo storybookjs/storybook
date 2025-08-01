@@ -476,7 +476,8 @@ export async function doInitiate(options: CommandOptions): Promise<
   let selectedFeatures = new Set<GeneratorFeature>(options.features || []);
   if (installType === 'recommended') {
     selectedFeatures.add('docs');
-    if (isInteractive) {
+    // Don't install in CI but install in non-TTY environments like agentic installs
+    if (!isCI()) {
       selectedFeatures.add('test');
     }
     if (newUser) {

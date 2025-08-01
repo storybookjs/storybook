@@ -239,6 +239,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       return () => observer?.disconnect();
     }, []);
 
+    const lastStoryId = useRef<string>(undefined);
     const lastRenderId = useRef<number>(0);
     const emit = useChannel(
       {
@@ -253,12 +254,16 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           );
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
-          if (event.newPhase === 'preparing' || event.newPhase === 'loading') {
-            // A render cycle may not actually make it to the rendering phase.
+          if (
+            lastStoryId.current === event.storyId &&
+            ['preparing', 'loading'].includes(event.newPhase)
+          ) {
+            // A rerender cycle may not actually make it to the rendering phase.
             // We don't want to update any state until it does.
             return;
           }
 
+          lastStoryId.current = event.storyId;
           lastRenderId.current = Math.max(lastRenderId.current, event.renderId || 0);
           if (lastRenderId.current !== event.renderId) {
             return;

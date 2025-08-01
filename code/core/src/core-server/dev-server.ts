@@ -132,14 +132,12 @@ export async function storybookDevServer(options: Options) {
   // Now the preview has successfully started, we can count this as a 'dev' event.
   doTelemetry(app, core, initializedStoryIndexGenerator, options);
 
-  // Duplicative to withTelemetry's cancelTelemetry because
-  // - this is a long-running process and withTelemetry has already exited
-  // - we want to report the index stats and don't have it e.g. init
   async function cancelTelemetry() {
     const payload = { eventType: 'dev' };
     try {
       const generator = await initializedStoryIndexGenerator;
       const indexAndStats = await generator?.getIndexAndStats();
+      // compute stats so we can get more accurate story counts
       if (indexAndStats) {
         Object.assign(payload, {
           storyIndex: summarizeIndex(indexAndStats.storyIndex),

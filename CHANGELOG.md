@@ -1,3 +1,8 @@
+## 9.1.1
+
+- CLI: Fix throwing in readonly environments - [#31785](https://github.com/storybookjs/storybook/pull/31785), thanks @JReinhold!
+- Telemetry: Send index stats on dev exit - [#32168](https://github.com/storybookjs/storybook/pull/32168), thanks @shilman!
+
 ## 9.1.0
 
 Storybook 9.1 is packed with new features and improvements to enhance accessibility, streamline testing, and make your development workflow even smoother!

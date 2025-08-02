@@ -1,10 +1,21 @@
-import type { Decorator } from '@storybook/svelte';
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import type { Decorator, Preview } from '@storybook/svelte';
+// @ts-ignore -- TS doesn't understand importing from its own package
+import { setAfterNavigateArgument } from '@storybook/sveltekit/internal/mocks/app/navigation';
+import {
+  setAppStateNavigating,
+  setAppStatePage,
+  setAppStateUpdated, // @ts-ignore -- TS doesn't understand importing from its own package
+} from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
+import {
+  setAppStoresNavigating,
+  setAppStoresPage,
+  setAppStoresUpdated, // @ts-ignore -- TS doesn't understand importing from its own package
+} from '@storybook/sveltekit/internal/mocks/app/stores';
 
 import { action } from 'storybook/actions';
 import { onMount } from 'svelte';
 
-import { setAfterNavigateArgument } from './mocks/app/navigation';
-import { setNavigating, setPage, setUpdated } from './mocks/app/stores';
 import type { HrefConfig, NormalizedHrefConfig, SvelteKitParameters } from './types';
 
 const normalizeHrefConfig = (hrefConfig: HrefConfig): NormalizedHrefConfig => {
@@ -16,9 +27,10 @@ const normalizeHrefConfig = (hrefConfig: HrefConfig): NormalizedHrefConfig => {
 
 const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
   const svelteKitParameters: SvelteKitParameters = ctx.parameters?.sveltekit_experimental ?? {};
-  setPage(svelteKitParameters?.stores?.page);
-  setNavigating(svelteKitParameters?.stores?.navigating);
-  setUpdated(svelteKitParameters?.stores?.updated);
+
+  setAppStoresPage(svelteKitParameters?.stores?.page);
+  setAppStoresNavigating(svelteKitParameters?.stores?.navigating);
+  setAppStoresUpdated(svelteKitParameters?.stores?.updated);
   setAfterNavigateArgument(svelteKitParameters?.navigation?.afterNavigate);
 
   onMount(() => {
@@ -136,3 +148,11 @@ const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
 };
 
 export const decorators: Decorator[] = [svelteKitMocksDecorator];
+
+export const beforeEach: Preview['beforeEach'] = async (ctx) => {
+  const svelteKitParameters: SvelteKitParameters = ctx.parameters?.sveltekit_experimental ?? {};
+
+  setAppStatePage(svelteKitParameters?.state?.page);
+  setAppStateNavigating(svelteKitParameters?.state?.navigating);
+  setAppStateUpdated(svelteKitParameters?.state?.updated);
+};

@@ -77,3 +77,8 @@ export interface NextJsParameters {
 export interface NextJsTypes {
   parameters: NextJsParameters;
 }
+
+export interface ICustomImageLoaderConfig {
+  loader: 'custom';
+  loaderFile: string;
+}

@@ -5,6 +5,7 @@ export default {
       storySort: {
         method: '',
         order: [],
+        weights: {},
         locales: '',
       },
     },
@@ -22,6 +23,7 @@ const preview: Preview = {
       storySort: {
         method: '',
         order: [],
+        weights: {},
         locales: '',
       },
     },

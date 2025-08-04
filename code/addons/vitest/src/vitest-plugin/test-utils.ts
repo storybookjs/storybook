@@ -34,7 +34,8 @@ export const testStory = (
   exportName: string,
   story: ComposedStoryFn,
   meta: ComponentAnnotations,
-  skipTags: string[]
+  skipTags: string[],
+  testName?: string
 ) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
     const annotations = getCsfFactoryAnnotations(story, meta);
@@ -59,6 +60,10 @@ export const testStory = (
 
     await setViewport(composedStory.parameters, composedStory.globals);
     await composedStory.run();
+
+    if (testName) {
+      await composedStory.runTest(testName);
+    }
 
     _task.meta.reports = composedStory.reporting.reports;
   };

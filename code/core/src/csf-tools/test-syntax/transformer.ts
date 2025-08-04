@@ -123,10 +123,7 @@ export async function testTransform({
               true // async
             )
           ),
-          t.objectProperty(
-            t.identifier('name'),
-            t.stringLiteral(`${storyInfo.name || storyExportName}: ${testName}`)
-          ),
+          t.objectProperty(t.identifier('name'), t.stringLiteral(testName)),
         ]);
 
         // Create export statement

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "9.1.0-alpha.9",
+  "version": "9.1.0",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",
@@ -112,7 +112,7 @@
   "dependencies": {
     "@mdx-js/react": "^3.0.0",
     "@storybook/csf-plugin": "workspace:*",
-    "@storybook/icons": "^1.2.12",
+    "@storybook/icons": "^1.4.0",
     "@storybook/react-dom-shim": "workspace:*",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",

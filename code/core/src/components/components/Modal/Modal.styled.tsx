@@ -6,7 +6,7 @@ import { CrossIcon } from '@storybook/icons';
 import * as Dialog from '@radix-ui/react-dialog';
 import { keyframes, styled } from 'storybook/theming';
 
-import { IconButton, type IconButtonProps } from '../IconButton/IconButton';
+import { IconButton } from '../IconButton/IconButton';
 
 const fadeIn = keyframes({
   from: { opacity: 0 },
@@ -65,7 +65,7 @@ export const Container = styled.div<{ width?: number; height?: number }>(
 // TODO: test if Esc always closes modal, in which case, add `tooltip` prop.
 export const CloseButton = () => (
   <Dialog.Close asChild>
-    <IconButton label="Close modal">
+    <IconButton ariaLabel="Close modal" shortcut={['Escape']}>
       <CrossIcon />
     </IconButton>
   </Dialog.Close>

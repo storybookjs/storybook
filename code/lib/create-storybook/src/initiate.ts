@@ -1,8 +1,6 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 
-import { logger } from 'storybook/internal/node-logger';
-
 import boxen from 'boxen';
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
@@ -24,10 +22,12 @@ import { ProjectType, installableProjectTypes } from '../../../core/src/cli/proj
 import type { JsPackageManager } from '../../../core/src/common/js-package-manager/JsPackageManager';
 import { JsPackageManagerFactory } from '../../../core/src/common/js-package-manager/JsPackageManagerFactory';
 import { HandledError } from '../../../core/src/common/utils/HandledError';
+import { isCI } from '../../../core/src/common/utils/envs';
 import { commandLog, paddedLog } from '../../../core/src/common/utils/log';
 import { getProjectRoot, invalidateProjectRootCache } from '../../../core/src/common/utils/paths';
 import versions from '../../../core/src/common/versions';
 import { withTelemetry } from '../../../core/src/core-server/withTelemetry';
+import { logger } from '../../../core/src/node-logger';
 import { NxProjectDetectedError } from '../../../core/src/server-errors';
 import { telemetry } from '../../../core/src/telemetry';
 import angularGenerator from './generators/ANGULAR';
@@ -441,7 +441,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     )
   );
 
-  const isInteractive = process.stdout.isTTY && !process.env.CI;
+  const isInteractive = process.stdout.isTTY && !isCI();
 
   const settings = await globalSettings();
   const promptOptions = {
@@ -476,7 +476,8 @@ export async function doInitiate(options: CommandOptions): Promise<
   let selectedFeatures = new Set<GeneratorFeature>(options.features || []);
   if (installType === 'recommended') {
     selectedFeatures.add('docs');
-    if (isInteractive) {
+    // Don't install in CI but install in non-TTY environments like agentic installs
+    if (!isCI()) {
       selectedFeatures.add('test');
     }
     if (newUser) {

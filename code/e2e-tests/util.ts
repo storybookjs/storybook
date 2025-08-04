@@ -207,3 +207,8 @@ const templateName: keyof typeof allTemplates = process.env.STORYBOOK_TEMPLATE_N
 const templates = allTemplates;
 export const hasVitestIntegration =
   !templates[templateName]?.skipTasks?.includes('vitest-integration');
+
+export const hasOnboardingFeature = (templateName: string) =>
+  ['@storybook/react', '@storybook/vue3', '@storybook/angular'].includes(
+    templates[templateName as keyof typeof templates]?.expected.renderer
+  );

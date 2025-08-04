@@ -8,6 +8,7 @@ import {
   DEFAULT_FILES_PATTERN,
   getInterpretedFile,
   normalizeStories,
+  optionalEnvToBoolean,
   resolvePathInStorybookCache,
   validateConfigurationFiles,
 } from 'storybook/internal/common';
@@ -124,13 +125,17 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
   } as InternalOptions;
 
-  if (process.env.DEBUG) {
+  if (optionalEnvToBoolean(process.env.DEBUG)) {
     finalOptions.debug = true;
   }
 
   // To be accessed by the global setup file
   process.env.__STORYBOOK_URL__ = finalOptions.storybookUrl;
   process.env.__STORYBOOK_SCRIPT__ = finalOptions.storybookScript;
+
+  // We signal the test runner that we are not running it via Storybook
+  // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
+  const isVitestStorybook = optionalEnvToBoolean(process.env.VITEST_STORYBOOK);
 
   const directories = {
     configDir: finalOptions.configDir,
@@ -213,10 +218,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       //   plugin.name?.startsWith('vitest:browser')
       // )
 
-      // We signal the test runner that we are not running it via Storybook
-      // We are overriding the environment variable to 'true' if vitest runs via @storybook/addon-vitest's backend
-      const vitestStorybook = process.env.VITEST_STORYBOOK ?? 'false';
-
       const testConfig = nonMutableInputConfig.test;
       finalOptions.vitestRoot =
         testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
@@ -261,7 +262,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             // To be accessed by the setup file
             __STORYBOOK_URL__: finalOptions.storybookUrl,
 
-            VITEST_STORYBOOK: vitestStorybook,
+            VITEST_STORYBOOK: isVitestStorybook ? 'true' : 'false',
             __VITEST_INCLUDE_TAGS__: finalOptions.tags.include.join(','),
             __VITEST_EXCLUDE_TAGS__: finalOptions.tags.exclude.join(','),
             __VITEST_SKIP_TAGS__: finalOptions.tags.skip.join(','),
@@ -289,9 +290,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
               getInitialGlobals: () => {
                 const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
 
-                const shouldRunA11yTests = process.env.VITEST_STORYBOOK
-                  ? (envConfig.a11y ?? false)
-                  : true;
+                const shouldRunA11yTests = isVitestStorybook ? (envConfig.a11y ?? false) : true;
 
                 return {
                   a11y: {
@@ -374,10 +373,10 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
-      const disableTelemetryVar =
-        process.env.STORYBOOK_DISABLE_TELEMETRY &&
-        process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false';
-      if (!core?.disableTelemetry && !disableTelemetryVar) {
+      if (
+        !core?.disableTelemetry &&
+        !optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
+      ) {
         // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
         // before the tests do. If not we may miss the event, we are OK with that.
         telemetry(
@@ -411,7 +410,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
     },
     async transform(code, id) {
-      if (process.env.VITEST !== 'true') {
+      if (!optionalEnvToBoolean(process.env.VITEST)) {
         return code;
       }
 
@@ -436,7 +435,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
   // When running tests via the Storybook UI, we need
   // to find the right project to run, thus we override
   // with a unique identifier using the path to the config dir
-  if (process.env.VITEST_STORYBOOK) {
+  if (isVitestStorybook) {
     const projectName = `storybook:${normalize(finalOptions.configDir)}`;
     plugins.push({
       name: 'storybook:workspace-name-override',

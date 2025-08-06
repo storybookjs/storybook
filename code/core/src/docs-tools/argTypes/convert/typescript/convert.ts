@@ -56,6 +56,9 @@ export const convert = (type: TSType): SBType | void => {
       return result;
     case 'intersection':
       return { ...base, name, value: type.elements?.map(convert) };
+    case 'literal':
+      // Handle literal types (including null, undefined, boolean literals, etc.)
+      return { ...base, name: 'other', value: parseLiteral(type.value) };
     default:
       return { ...base, name: 'other', value: name };
   }

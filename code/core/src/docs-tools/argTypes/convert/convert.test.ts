@@ -520,7 +520,43 @@ describe('storybook type system', () => {
         export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
         "
       `);
-      expect(convertTs(input)).toMatchInlineSnapshot('TODO: Check null handling');
+      expect(convertTs(input)).toMatchInlineSnapshot(`
+        {
+          "nullableUnion": {
+            "raw": "string | null | number",
+            "name": "union",
+            "value": [
+              {
+                "name": "string"
+              },
+              {
+                "name": "other",
+                "value": null
+              },
+              {
+                "name": "number"
+              }
+            ]
+          },
+          "explicitNull": {
+            "name": "other",
+            "value": null
+          },
+          "booleanOrNull": {
+            "raw": "boolean | null",
+            "name": "union",
+            "value": [
+              {
+                "name": "boolean"
+              },
+              {
+                "name": "other",
+                "value": null
+              }
+            ]
+          }
+        }
+      `);
     });
   });
   describe('PropTypes', () => {

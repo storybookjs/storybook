@@ -11,11 +11,15 @@ export const StorybookLogoStyled = styled(StorybookLogo)(({ theme }) => ({
   color: theme.base === 'light' ? theme.color.defaultText : theme.color.lightest,
 }));
 
-export const Img = styled.img({
+export const Img = styled.img(({ theme }) => ({
   display: 'block',
-  maxWidth: '150px !important',
+  maxWidth: '150px',
   maxHeight: '100px',
-});
+  // Increase specificity to override generic Img component without !important
+  '&&': {
+    maxWidth: '150px',
+  },
+}));
 
 export const LogoLink = styled.a(({ theme }) => ({
   display: 'inline-block',

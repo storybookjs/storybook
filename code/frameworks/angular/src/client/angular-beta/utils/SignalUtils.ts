@@ -1,56 +1,36 @@
 /**
- * Utility functions for detecting Angular signals, particularly query signals like
- * contentChildren(), viewChildren(), etc.
+ * Utility functions for safely handling property assignment in Angular components,
+ * particularly to preserve Angular signal functions like contentChildren(), viewChildren(), etc.
  */
 
 /**
- * Determines if a given value is an Angular signal function.
- * Angular signals are functions that should not be overwritten during property assignment.
+ * Determines if a given value is likely an Angular signal or other function that should be preserved.
+ * Uses a conservative approach: any function should be preserved when being overwritten by non-functions.
  * 
- * @param value - The value to check
- * @returns true if the value is an Angular signal, false otherwise
+ * @param existingValue - The current value on the target object
+ * @param newValue - The new value being assigned
+ * @returns true if the existing value should be preserved, false otherwise
  */
-export function isAngularSignal(value: any): boolean {
-  // Must be a function
-  if (typeof value !== 'function') {
-    return false;
+export function shouldPreserveExistingValue(existingValue: any, newValue: any): boolean {
+  // If the existing value is a function and the new value is not a function,
+  // preserve the existing function to avoid breaking Angular signals
+  if (typeof existingValue === 'function' && typeof newValue !== 'function') {
+    return true;
   }
 
-  // Angular signals have specific constructor names or internal markers
-  const constructorName = value?.constructor?.name;
-  
-  if (constructorName) {
-    // Check for common Angular signal constructor patterns
-    const signalPatterns = [
-      'Signal',
-      'QuerySignal', 
-      'ContentChildrenQueryImpl',
-      'ViewChildrenQueryImpl',
-      'ContentChildQueryImpl',
-      'ViewChildQueryImpl'
-    ];
-    
-    if (signalPatterns.some(pattern => constructorName.includes(pattern))) {
-      return true;
-    }
+  // For additional safety, also preserve functions when new value is an array
+  // This specifically handles the contentChildren -> array assignment case
+  if (typeof existingValue === 'function' && Array.isArray(newValue)) {
+    return true;
   }
 
-  // Check for Angular internal signal markers
-  // These are properties that Angular uses internally to mark signals
-  return !!(
-    value['ɵsignal'] ||  // Internal signal marker in newer Angular versions
-    value['__isSignal'] ||  // Potential signal marker
-    value['ɵquerySignal'] ||  // Query signal marker
-    (value._signal !== undefined) ||  // Signal reference property
-    // Additional check for function that behaves like a signal
-    (typeof value === 'function' && value.constructor && 
-     value.toString().includes('[object Signal]'))
-  );
+  return false;
 }
 
 /**
- * Safely assigns properties to a target object, preserving Angular signals.
- * This function replaces Object.assign() to avoid overwriting signal functions.
+ * Safely assigns properties to a target object, preserving Angular signal functions.
+ * This function replaces Object.assign() to avoid overwriting function properties
+ * with non-function values, which is particularly important for Angular signals.
  * 
  * @param target - The target object to assign properties to
  * @param source - The source object containing properties to assign
@@ -64,9 +44,18 @@ export function safeAssignProperties(target: any, source: any): void {
     const existingValue = target[key];
     const newValue = source[key];
 
-    // If the existing value is an Angular signal, don't overwrite it
-    if (isAngularSignal(existingValue)) {
-      // Skip assignment to preserve the signal function
+    // Preserve existing functions when new value is not a function
+    if (shouldPreserveExistingValue(existingValue, newValue)) {
+      // Log when we preserve a function for debugging
+      if (typeof console !== 'undefined' && console.debug) {
+        console.debug(`[SignalUtils] Preserving function property '${key}' (likely Angular signal)`, {
+          existingType: typeof existingValue,
+          existingConstructor: existingValue?.constructor?.name,
+          newValueType: typeof newValue,
+          newValue: Array.isArray(newValue) ? `Array(${newValue.length})` : newValue
+        });
+      }
+      // Skip assignment to preserve the function
       return;
     }
 

@@ -1,4 +1,4 @@
-import { getEnvConfig, parseList } from 'storybook/internal/common';
+import { getEnvConfig, optionalEnvToBoolean, parseList } from 'storybook/internal/common';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
@@ -22,8 +22,7 @@ const command = (name: string) =>
     .option(
       '--disable-telemetry',
       'Disable sending telemetry data',
-      // default value is false, but if the user sets STORYBOOK_DISABLE_TELEMETRY, it can be true
-      process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
+      optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
     )
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
@@ -151,7 +150,7 @@ command('build')
     await build({
       ...options,
       packageJson: pkg,
-      test: !!options.test || process.env.SB_TESTBUILD === 'true',
+      test: !!options.test || optionalEnvToBoolean(process.env.SB_TESTBUILD),
     }).catch(() => process.exit(1));
   });
 

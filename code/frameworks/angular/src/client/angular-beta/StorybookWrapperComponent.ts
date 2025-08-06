@@ -15,6 +15,7 @@ import { STORY_PROPS } from './StorybookProvider';
 import type { ComponentInputsOutputs } from './utils/NgComponentAnalyzer';
 import { getComponentInputsOutputs } from './utils/NgComponentAnalyzer';
 import { PropertyExtractor } from './utils/PropertyExtractor';
+import { safeAssignProperties } from './utils/SignalUtils';
 
 const getNonInputsOutputsProps = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
@@ -92,8 +93,8 @@ export const createStorybookWrapperComponent = ({
     ngOnInit(): void {
       // Subscribes to the observable storyProps$ to keep these properties up to date
       this.storyWrapperPropsSubscription = this.storyProps$.subscribe((storyProps = {}) => {
-        // All props are added as component properties
-        Object.assign(this, storyProps);
+        // Use safe assignment to preserve Angular signals
+        safeAssignProperties(this, storyProps);
 
         this.changeDetectorRef.detectChanges();
         this.changeDetectorRef.markForCheck();
@@ -109,8 +110,9 @@ export const createStorybookWrapperComponent = ({
 
         // Initializes properties that are not Inputs | Outputs
         // Allows story props to override local component properties
+        // Use safe assignment to preserve Angular signals
         initialOtherProps.forEach((p) => {
-          (this.storyComponentElementRef as any)[p] = initialProps[p];
+          safeAssignProperties(this.storyComponentElementRef, { [p]: initialProps[p] });
         });
         // `markForCheck` the component in case this uses changeDetection: OnPush
         // And then forces the `detectChanges`
@@ -127,8 +129,8 @@ export const createStorybookWrapperComponent = ({
             })
           )
           .subscribe((props) => {
-            // Replace inputs with new ones from props
-            Object.assign(this.storyComponentElementRef, props);
+            // Use safe assignment to preserve Angular signals
+            safeAssignProperties(this.storyComponentElementRef, props);
 
             // `markForCheck` the component in case this uses changeDetection: OnPush
             // And then forces the `detectChanges`

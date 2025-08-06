@@ -39,6 +39,39 @@ describe('converts React Symbol to displayName string', () => {
   it.each(symbolCases)('"%s" to "%s"', (symbol, expectedValue) => {
     expect(getReactSymbolName(Symbol(symbol))).toEqual(expectedValue);
   });
+
+  // Test edge cases that could cause "Cannot convert a Symbol value to a string" errors
+  describe('handles edge cases safely', () => {
+    it('handles null input', () => {
+      expect(getReactSymbolName(null)).toEqual('unknown');
+    });
+
+    it('handles undefined input', () => {
+      expect(getReactSymbolName(undefined)).toEqual('unknown');
+    });
+
+    it('handles object without toString method', () => {
+      const objWithoutToString = Object.create(null);
+      expect(getReactSymbolName(objWithoutToString)).toEqual('unknown');
+    });
+
+    it('handles object with $$typeof that lacks toString', () => {
+      const objWithBadTypeof = {
+        $$typeof: Object.create(null),
+      };
+      expect(getReactSymbolName(objWithBadTypeof)).toEqual('unknown');
+    });
+
+    it('handles regular objects', () => {
+      const regularObject = { prop: 'value' };
+      expect(getReactSymbolName(regularObject)).toEqual('[object Object]');
+    });
+
+    it('handles primitive values', () => {
+      expect(getReactSymbolName(42)).toEqual('42');
+      expect(getReactSymbolName('test')).toEqual('Test');
+    });
+  });
 });
 
 describe('renderJsx', () => {
@@ -258,6 +291,30 @@ describe('renderJsx', () => {
         )
       )
     ).toMatchInlineSnapshot(`<Button label={<p>Abcd</p>} />`);
+  });
+
+  it('handles React node as prop without symbol conversion errors', () => {
+    function ComponentWithNodeProp({ children, icon }: any) {
+      return <div>{icon}{children}</div>;
+    }
+    
+    // This test specifically ensures that passing React nodes as props doesn't cause
+    // "Cannot convert a Symbol value to a string" errors in the docs rendering
+    const reactNodeProp = <span>Icon</span>;
+    const component = createElement(
+      ComponentWithNodeProp,
+      {
+        icon: reactNodeProp,
+      },
+      'Content'
+    );
+
+    // This should not throw any errors about symbol conversion
+    expect(() => renderJsx(component)).not.toThrow();
+    
+    const result = renderJsx(component);
+    expect(result).toContain('ComponentWithNodeProp');
+    expect(result).toContain('<span>Icon</span>');
   });
 
   it('Suspense', () => {

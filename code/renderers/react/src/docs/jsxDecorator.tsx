@@ -37,8 +37,28 @@ const toPascalCase = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
  *   null.
  */
 export const getReactSymbolName = (elementType: any): string => {
+  // Handle null/undefined inputs safely
+  if (elementType == null) {
+    return 'unknown';
+  }
+  
   const elementName = elementType.$$typeof || elementType;
-  const symbolDescription: string = elementName.toString().replace(/^Symbol\((.*)\)$/, '$1');
+  
+  // Safe string conversion with fallback for objects without toString
+  let symbolDescription: string;
+  try {
+    if (typeof elementName === 'symbol') {
+      symbolDescription = elementName.toString().replace(/^Symbol\((.*)\)$/, '$1');
+    } else if (elementName && typeof elementName.toString === 'function') {
+      symbolDescription = elementName.toString().replace(/^Symbol\((.*)\)$/, '$1');
+    } else {
+      // Fallback for objects without toString method
+      symbolDescription = String(elementName).replace(/^Symbol\((.*)\)$/, '$1');
+    }
+  } catch (error) {
+    // Fallback to a safe string representation
+    symbolDescription = 'unknown';
+  }
 
   const reactComponentName = symbolDescription
     .split('.')

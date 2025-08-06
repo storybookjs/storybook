@@ -348,7 +348,7 @@ export const webpackFinal = async (
 
   // 1. Add the loader to normalize sb.mock(import(...)) calls.
   config.module!.rules!.push({
-    test: /preview\.(t|j)sx?$/,
+    test: /[\/\\]preview\.(t|j)sx?$/,
     use: [
       {
         loader: require.resolve(

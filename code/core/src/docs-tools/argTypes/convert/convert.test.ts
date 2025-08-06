@@ -505,6 +505,23 @@ describe('storybook type system', () => {
         }
       `);
     });
+    it('null types', () => {
+      const input = readFixture('typescript/null-types.tsx');
+      expect(input).toMatchInlineSnapshot(`
+        "import type { FC } from 'react';
+        import React from 'react';
+
+        interface Props {
+          nullableUnion: string | null | number;
+          explicitNull: null;
+          booleanOrNull: boolean | null;
+        }
+
+        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        "
+      `);
+      expect(convertTs(input)).toMatchInlineSnapshot('TODO: Check null handling');
+    });
   });
   describe('PropTypes', () => {
     it('scalars', () => {

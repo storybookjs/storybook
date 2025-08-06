@@ -558,6 +558,138 @@ describe('storybook type system', () => {
         }
       `);
     });
+    it('comprehensive null and literal types', () => {
+      const input = readFixture('typescript/comprehensive-null-types.tsx');
+      expect(input).toMatchInlineSnapshot(`
+        "import type { FC } from 'react';
+        import React from 'react';
+
+        interface Props {
+          // Mixed unions with null
+          nullableString: string | null;
+          nullableNumber: number | null;
+          nullableBoolean: boolean | null;
+          
+          // Literal unions with null
+          literalWithNull: 'option1' | 'option2' | null;
+          
+          // Boolean literal unions
+          booleanLiterals: true | false | null;
+          
+          // Complex unions
+          complexUnion: string | number | boolean | null | undefined;
+          
+          // Just literal values
+          justNull: null;
+          justUndefined: undefined;
+          justTrue: true;
+          justFalse: false;
+        }
+
+        export const Component: FC<Props> = (props: Props) => <>JSON.stringify(props)</>;
+        "
+      `);
+      expect(convertTs(input)).toMatchInlineSnapshot(`
+        {
+          "nullableString": {
+            "raw": "string | null",
+            "name": "union",
+            "value": [
+              {
+                "name": "string"
+              },
+              {
+                "name": "other",
+                "value": null
+              }
+            ]
+          },
+          "nullableNumber": {
+            "raw": "number | null",
+            "name": "union",
+            "value": [
+              {
+                "name": "number"
+              },
+              {
+                "name": "other",
+                "value": null
+              }
+            ]
+          },
+          "nullableBoolean": {
+            "raw": "boolean | null",
+            "name": "union",
+            "value": [
+              {
+                "name": "boolean"
+              },
+              {
+                "name": "other",
+                "value": null
+              }
+            ]
+          },
+          "literalWithNull": {
+            "raw": "'option1' | 'option2' | null",
+            "name": "enum",
+            "value": [
+              "option1",
+              "option2",
+              null
+            ]
+          },
+          "booleanLiterals": {
+            "raw": "true | false | null",
+            "name": "enum",
+            "value": [
+              true,
+              false,
+              null
+            ]
+          },
+          "complexUnion": {
+            "raw": "string | number | boolean | null | undefined",
+            "name": "union",
+            "value": [
+              {
+                "name": "string"
+              },
+              {
+                "name": "number"
+              },
+              {
+                "name": "boolean"
+              },
+              {
+                "name": "other",
+                "value": null
+              },
+              {
+                "name": "other",
+                "value": undefined
+              }
+            ]
+          },
+          "justNull": {
+            "name": "other",
+            "value": null
+          },
+          "justUndefined": {
+            "name": "other",
+            "value": undefined
+          },
+          "justTrue": {
+            "name": "other",
+            "value": true
+          },
+          "justFalse": {
+            "name": "other",
+            "value": false
+          }
+        }
+      `);
+    });
   });
   describe('PropTypes', () => {
     it('scalars', () => {
@@ -670,9 +802,9 @@ describe('storybook type system', () => {
           "oneOfMiscellaneous": {
             "name": "enum",
             "value": [
-              "false",
-              "true",
-              "undefined"
+              false,
+              true,
+              undefined
             ]
           },
           "oneOfStringNumber": {

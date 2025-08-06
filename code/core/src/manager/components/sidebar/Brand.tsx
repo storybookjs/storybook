@@ -13,7 +13,6 @@ export const StorybookLogoStyled = styled(StorybookLogo)(({ theme }) => ({
 
 export const Img = styled.img(({ theme }) => ({
   display: 'block',
-  maxWidth: '150px',
   maxHeight: '100px',
   // Increase specificity to override generic Img component without !important
   '&&': {

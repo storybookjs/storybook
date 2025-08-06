@@ -59,7 +59,12 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
         loader: require.resolve('sass-loader'),
         options: {
           sourceMap: true,
-          sassOptions: nextConfig.sassOptions,
+          sassOptions: {
+            ...nextConfig.sassOptions,
+            // Remove additionalData and prependData from sassOptions to avoid conflicts
+            additionalData: undefined,
+            prependData: undefined,
+          },
           additionalData:
             nextConfig.sassOptions?.prependData || nextConfig.sassOptions?.additionalData,
         },

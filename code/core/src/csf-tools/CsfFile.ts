@@ -908,7 +908,7 @@ export class CsfFile {
             importPath: fileName,
             rawComponentPath: this._rawComponentPath,
             exportName,
-            name: `${story.name}: ${test.name}`,
+            name: test.name,
             title: this.meta?.title,
             metaId: this.meta?.id,
             tags: [...tags, 'test-fn'],

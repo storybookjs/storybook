@@ -165,6 +165,7 @@ export function prepareStory<TRenderer extends Renderer>(
     testingLibraryRender,
     renderToCanvas: projectAnnotations.renderToCanvas,
     usesMount,
+    __tests: storyAnnotations.__tests,
   };
 }
 export function prepareMeta<TRenderer extends Renderer>(

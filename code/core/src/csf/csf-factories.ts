@@ -108,8 +108,9 @@ function defineMeta<
     _tag: 'Meta',
     input,
     preview,
-    get composed(): never {
-      throw new Error('Not implemented');
+    get composed() {
+      // TODO: check this later
+      return composeConfigs([preview.input, input]);
     },
     // @ts-expect-error hard
     story(
@@ -144,13 +145,15 @@ export interface Story<
   meta: Meta<TRenderer>;
   __compose: () => ComposedStoryFn<TRenderer>;
   play: TInput['play'];
-  run: (context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>) => Promise<void>;
+  run: (
+    context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>,
+    testName?: string
+  ) => Promise<void>;
 
   extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input: TInput
   ): Story<TRenderer, TInput>;
   test: (name: string, fn: TestFunction<TRenderer, TRenderer['args']>) => void;
-  __runTest: (name: string) => Promise<void>;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -162,8 +165,7 @@ function defineStory<
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
 >(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
   let composed: ComposedStoryFn<TRenderer>;
-  const __tests: Record<string, () => Promise<void>> = {};
-
+  input.__tests ??= {};
   const compose = () => {
     if (!composed) {
       composed = composeStory(
@@ -180,14 +182,6 @@ function defineStory<
     input,
     meta,
     __compose: compose,
-    __runTest: (name: string) => {
-      if (!__tests[name]) {
-        // eslint-disable-next-line local-rules/no-uncategorized-errors
-        throw new Error(`Test ${name} not found for story ${compose().name}`);
-      }
-
-      return __tests[name]();
-    },
     get composed() {
       const composed = compose();
       const { args, argTypes, parameters, id, tags, globals, storyName: name } = composed;
@@ -200,11 +194,8 @@ function defineStory<
       return compose().run ?? (async () => {});
     },
     test(name: string, fn: TestFunction<TRenderer, TRenderer['args']>) {
-      __tests[name] = async () => {
-        // TODO: figure out best type for the context
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await fn(this.composed as any);
-      };
+      // @ts-expect-error fix this later
+      input.__tests[name] = fn;
       return this;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {

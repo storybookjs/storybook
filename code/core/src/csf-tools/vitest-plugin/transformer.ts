@@ -249,7 +249,7 @@ export async function vitestTransform({
         t.blockStatement([
           getTestStatementForStory({
             ...options,
-            testTitle: 'render test',
+            testTitle: 'base story',
             overrideSourcemap: false,
           }),
           ...tests.map(({ name: testName, node: testNode }) => {

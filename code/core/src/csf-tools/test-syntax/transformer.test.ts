@@ -77,6 +77,9 @@ describe('transformer', () => {
             label: 'Primary Button'
           }
         });
+        Primary.test('just a log', () => {
+          console.log('test');
+        });
         export const PrimaryJustALog = meta.story({
           ...Primary.composed,
           tags: ["test-fn"],
@@ -86,6 +89,9 @@ describe('transformer', () => {
           },
           name: "just a log"
         });
+        Primary.test('using context', context => {
+          const button = context.canvas.getByRole('button');
+        });
         export const PrimaryUsingContext = meta.story({
           ...Primary.composed,
           tags: ["test-fn"],
@@ -94,6 +100,11 @@ describe('transformer', () => {
             const button = context.canvas.getByRole('button');
           },
           name: "using context"
+        });
+        Primary.test('destructuring context', async ({
+          canvas
+        }) => {
+          const button = await canvas.findByRole('button');
         });
         export const PrimaryDestructuringContext = meta.story({
           ...Primary.composed,

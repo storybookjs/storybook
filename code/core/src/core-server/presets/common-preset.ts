@@ -310,9 +310,15 @@ export const viteFinal = async (
     return existing;
   }
 
+  const coreOptions = await options.presets.apply('core');
+
+  // If mocking is disabled, skip adding mock plugins
+  if (coreOptions.disableMocking) {
+    return existing;
+  }
+
   const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
   const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
-  const coreOptions = await options.presets.apply('core');
 
   return {
     ...existing,
@@ -336,6 +342,13 @@ export const webpackFinal = async (
 
   // If there's no preview file, there's nothing to mock.
   if (!previewConfigPath) {
+    return config;
+  }
+
+  const coreOptions = await options.presets.apply('core');
+
+  // If mocking is disabled, skip adding mock plugins and loaders
+  if (coreOptions.disableMocking) {
     return config;
   }
 

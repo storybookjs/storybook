@@ -1,6 +1,6 @@
 import { expect, it, describe, vi } from 'vitest';
 import type { Configuration } from 'webpack';
-import { webpackFinal } from './common-preset';
+import { webpackFinal, viteFinal } from './common-preset';
 
 // Mock findConfigFile
 vi.mock('storybook/internal/common', () => ({
@@ -16,6 +16,15 @@ vi.mock('./webpack/plugins/webpack-inject-mocker-runtime-plugin', () => ({
   WebpackInjectMockerRuntimePlugin: vi.fn().mockImplementation(() => ({})),
 }));
 
+// Mock the vite plugins  
+vi.mock('./vitePlugins/vite-inject-mocker/plugin', () => ({
+  viteInjectMockerRuntime: vi.fn().mockImplementation(() => ({})),
+}));
+
+vi.mock('./vitePlugins/vite-mock/plugin', () => ({
+  viteMockPlugin: vi.fn().mockImplementation(() => ({})),
+}));
+
 describe('webpackFinal mock loader rule', () => {
   const createMockConfig = (): Configuration => ({
     module: {
@@ -24,16 +33,20 @@ describe('webpackFinal mock loader rule', () => {
     plugins: [],
   });
 
-  const mockOptions = {
+  const createMockOptions = (coreOptions = {}) => ({
     configDir: '.storybook',
-  } as any;
+    presets: {
+      apply: vi.fn().mockResolvedValue(coreOptions),
+    },
+  } as any);
 
   it('should add mock loader rule that only matches preview config files', async () => {
     const { findConfigFile } = await import('storybook/internal/common');
     vi.mocked(findConfigFile).mockReturnValue('.storybook/preview.ts');
 
     const config = createMockConfig();
-    const result = await webpackFinal(config, mockOptions);
+    const options = createMockOptions();
+    const result = await webpackFinal(config, options);
 
     // Find the mock loader rule
     const mockLoaderRule = result.module!.rules!.find((rule: any) => 
@@ -69,7 +82,8 @@ describe('webpackFinal mock loader rule', () => {
     vi.mocked(findConfigFile).mockReturnValue(null);
 
     const config = createMockConfig();
-    const result = await webpackFinal(config, mockOptions);
+    const options = createMockOptions();
+    const result = await webpackFinal(config, options);
 
     // Should not add any mock loader rules
     const mockLoaderRule = result.module!.rules!.find((rule: any) => 
@@ -77,5 +91,83 @@ describe('webpackFinal mock loader rule', () => {
     );
 
     expect(mockLoaderRule).toBeUndefined();
+  });
+
+  it('should not add mock loader rule when mocking is disabled', async () => {
+    const { findConfigFile } = await import('storybook/internal/common');
+    vi.mocked(findConfigFile).mockReturnValue('.storybook/preview.ts');
+
+    const config = createMockConfig();
+    const options = createMockOptions({ disableMocking: true });
+    const result = await webpackFinal(config, options);
+
+    // Should not add any mock loader rules when mocking is disabled
+    const mockLoaderRule = result.module!.rules!.find((rule: any) => 
+      rule.use?.[0]?.loader?.includes('storybook-mock-transform-loader')
+    );
+
+    expect(mockLoaderRule).toBeUndefined();
+  });
+});
+
+describe('viteFinal mock plugins', () => {
+  const createMockViteConfig = () => ({
+    plugins: [],
+  });
+
+  const createMockOptions = (coreOptions = {}) => ({
+    configDir: '.storybook',
+    presets: {
+      apply: vi.fn().mockResolvedValue(coreOptions),
+    },
+  } as any);
+
+  it('should add mock plugins when preview config exists', async () => {
+    const { findConfigFile } = await import('storybook/internal/common');
+    const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
+    const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
+    
+    vi.mocked(findConfigFile).mockReturnValue('.storybook/preview.ts');
+
+    const config = createMockViteConfig();
+    const options = createMockOptions();
+    const result = await viteFinal(config, options);
+
+    expect(viteInjectMockerRuntime).toHaveBeenCalledWith({ previewConfigPath: '.storybook/preview.ts' });
+    expect(viteMockPlugin).toHaveBeenCalledWith({ 
+      previewConfigPath: '.storybook/preview.ts', 
+      coreOptions: {}, 
+      configDir: '.storybook' 
+    });
+  });
+
+  it('should not add mock plugins when no preview config exists', async () => {
+    const { findConfigFile } = await import('storybook/internal/common');
+    const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
+    const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
+    
+    vi.mocked(findConfigFile).mockReturnValue(null);
+
+    const config = createMockViteConfig();
+    const options = createMockOptions();
+    const result = await viteFinal(config, options);
+
+    expect(viteInjectMockerRuntime).not.toHaveBeenCalled();
+    expect(viteMockPlugin).not.toHaveBeenCalled();
+  });
+
+  it('should not add mock plugins when mocking is disabled', async () => {
+    const { findConfigFile } = await import('storybook/internal/common');
+    const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
+    const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
+    
+    vi.mocked(findConfigFile).mockReturnValue('.storybook/preview.ts');
+
+    const config = createMockViteConfig();
+    const options = createMockOptions({ disableMocking: true });
+    const result = await viteFinal(config, options);
+
+    expect(viteInjectMockerRuntime).not.toHaveBeenCalled();
+    expect(viteMockPlugin).not.toHaveBeenCalled();
   });
 });

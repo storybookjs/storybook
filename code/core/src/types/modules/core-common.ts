@@ -54,6 +54,13 @@ export interface CoreConfig {
    * ```
    */
   crossOriginIsolated?: boolean;
+  /**
+   * Disables Storybook's mocking functionality entirely
+   *
+   * When set to true, Storybook will not add any mocking-related webpack loaders or plugins.
+   * This can be useful if you want to avoid any potential conflicts with your own mocking setup.
+   */
+  disableMocking?: boolean;
 }
 
 interface DirectoryMapping {

@@ -63,7 +63,7 @@ export const Toolbar: FC<ToolbarProps> = ({ isLoading, zoom, resetZoom, ...rest 
               e.preventDefault();
               zoom(0.8);
             }}
-            label="Zoom in"
+            ariaLabel="Zoom in"
           >
             <ZoomIcon />
           </IconButton>
@@ -73,7 +73,7 @@ export const Toolbar: FC<ToolbarProps> = ({ isLoading, zoom, resetZoom, ...rest 
               e.preventDefault();
               zoom(1.25);
             }}
-            label="Zoom out"
+            ariaLabel="Zoom out"
           >
             <ZoomOutIcon />
           </IconButton>
@@ -83,7 +83,7 @@ export const Toolbar: FC<ToolbarProps> = ({ isLoading, zoom, resetZoom, ...rest 
               e.preventDefault();
               resetZoom();
             }}
-            label="Reset zoom"
+            ariaLabel="Reset zoom"
           >
             <ZoomResetIcon />
           </IconButton>

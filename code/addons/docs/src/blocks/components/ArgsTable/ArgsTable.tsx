@@ -401,7 +401,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
                 <ControlHeadingWrapper>
                   Control{' '}
                   {!isLoading && resetArgs && (
-                    <StyledIconButton onClick={() => resetArgs()} label="Reset controls">
+                    <StyledIconButton onClick={() => resetArgs()} ariaLabel="Reset controls">
                       <UndoIcon aria-hidden />
                     </StyledIconButton>
                   )}

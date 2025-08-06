@@ -1,9 +1,9 @@
 import type { ComponentProps, FC, FocusEvent, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Form, IconButton } from 'storybook/internal/components';
+import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
-import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
+import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/compat';
 import { type Theme, styled, useTheme } from 'storybook/theming';
@@ -120,24 +120,24 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButton = styled(IconButton)(({ theme }) => ({
+const RawButton = styled(ToggleButton)(({ theme }) => ({
   position: 'absolute',
   zIndex: 2,
   top: 2,
   right: 2,
-  height: 21,
-  padding: '0 3px',
-  background: theme.background.bar,
-  border: `1px solid ${theme.appBorderColor}`,
-  borderRadius: 3,
-  color: theme.textMutedColor,
-  fontSize: '9px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  span: {
-    marginLeft: 3,
-    marginTop: 1,
-  },
+  // height: 21,
+  // padding: '0 3px',
+  // background: theme.background.bar,
+  // border: `1px solid ${theme.appBorderColor}`,
+  // borderRadius: 3,
+  // color: theme.textMutedColor,
+  // fontSize: '9px',
+  // fontWeight: 'bold',
+  // textDecoration: 'none',
+  // span: {
+  //   marginLeft: 3,
+  //   marginTop: 1,
+  // },
 }));
 
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
@@ -251,19 +251,15 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
   return (
     <Wrapper aria-readonly={readonly}>
       {isObjectOrArray && (
-        // TODO: migrate to Button, this is not an IconButton
         <RawButton
-          role="switch"
-          aria-checked={showRaw}
-          aria-label={`Edit the ${name} properties in text format`}
+          pressed={showRaw}
+          ariaLabel={`Edit the ${name} properties in text format`}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);
           }}
-          label={showRaw ? 'Switch to object editor' : 'Switch to raw JSON editor'}
         >
-          {showRaw ? <EyeCloseIcon /> : <EyeIcon />}
-          <span>RAW</span>
+          <span>Raw JSON</span>
         </RawButton>
       )}
       {!showRaw ? (

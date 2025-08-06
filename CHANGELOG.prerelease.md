@@ -1,3 +1,7 @@
+## 9.2.0-alpha.2
+
+- Onboarding: Tweak referral wording in survey - [#32185](https://github.com/storybookjs/storybook/pull/32185), thanks @shilman!
+
 ## 9.2.0-alpha.1
 
 - Addon Docs: Add `__STORYBOOK_UNSAFE_TOCBOT__` global - [#32176](https://github.com/storybookjs/storybook/pull/32176), thanks @yannbf!

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { expect, spyOn } from 'storybook/test';
+import { expect, fn, spyOn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
@@ -13,7 +13,7 @@ const meta = preview.meta({
   title: 'IconButton',
   component: IconButton,
   tags: ['autodocs'],
-  args: { children: <FaceHappyIcon /> },
+  args: { children: <FaceHappyIcon />, onClick: fn() },
   beforeEach() {
     spyOn(console, 'warn').mockName('console.warn');
   },

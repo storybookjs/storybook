@@ -129,12 +129,11 @@ export const Tooltip: FC<TooltipProps> = ({
       <Wrapper>
         <TooltipHeader>
           {step.title && <TooltipTitle>{step.title}</TooltipTitle>}
-          {/* TODO: could someone please show me how/where to test this? */}
           <IconButton
             {...closeProps}
             onClick={closeProps.onClick as any}
             variant="solid"
-            label="Close"
+            ariaLabel="Close"
           >
             <CloseAltIcon />
           </IconButton>

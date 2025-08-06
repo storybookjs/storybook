@@ -511,6 +511,7 @@ export default {
     'ProgressSpinner',
     'ResetWrapper',
     'ScrollArea',
+    'Select',
     'Separator',
     'Spaced',
     'Span',

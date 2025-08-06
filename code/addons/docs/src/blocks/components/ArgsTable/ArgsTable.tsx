@@ -388,7 +388,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
       <TablePositionWrapper>
         {updateArgs && !isLoading && resetArgs && (
           <ButtonPositionWrapper>
-            <StyledIconButton onClick={() => resetArgs()} label="Reset controls">
+            <StyledIconButton onClick={() => resetArgs()} ariaLabel="Reset controls">
               <UndoIcon aria-hidden />
             </StyledIconButton>
           </ButtonPositionWrapper>

@@ -4,6 +4,8 @@ import { styled } from 'storybook/internal/theming';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
+import { fn } from 'storybook/test';
+
 import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';
 
@@ -11,7 +13,7 @@ const meta = preview.meta({
   id: 'button-component',
   title: 'Button',
   component: Button,
-  args: { children: 'Button' },
+  args: { children: 'Button', onClick: fn() },
 });
 
 const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });

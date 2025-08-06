@@ -1,147 +1,299 @@
-import { expect, describe, it } from 'vitest';
-import { deepMerge } from './framework-preset-angular-cli';
+import { vi, expect, describe, it, beforeEach } from 'vitest';
 
-describe('Angular CLI Framework Preset - Deep Merge Fix', () => {
-  describe('deepMerge', () => {
-    it('should preserve stylePreprocessorOptions.includePaths from browserTarget when not in storybook options', () => {
-      const browserTargetOptions = {
-        stylePreprocessorOptions: {
-          includePaths: ['src/styles', 'node_modules'],
-        },
-        assets: ['src/assets'],
-        styles: ['src/styles.scss'],
-      };
+import { logger } from 'storybook/internal/node-logger';
 
-      const storybookOptions = {};
+import type { BuilderContext } from '@angular-devkit/architect';
+import { logging } from '@angular-devkit/core';
 
-      const result = deepMerge(browserTargetOptions, storybookOptions);
+import { getBuilderOptions } from './framework-preset-angular-cli';
+import type { PresetOptions } from './preset-options';
 
-      expect(result.stylePreprocessorOptions).toEqual({
-        includePaths: ['src/styles', 'node_modules'],
-      });
-      expect(result.assets).toEqual(['src/assets']);
-      expect(result.styles).toEqual(['src/styles.scss']);
+// Mock all dependencies
+vi.mock('storybook/internal/node-logger', () => ({
+  logger: {
+    info: vi.fn(),
+  },
+}));
+
+vi.mock('storybook/internal/server-errors', () => ({
+  AngularLegacyBuildOptionsError: class AngularLegacyBuildOptionsError extends Error {
+    constructor() {
+      super('AngularLegacyBuildOptionsError');
+      this.name = 'AngularLegacyBuildOptionsError';
+    }
+  },
+}));
+
+vi.mock('storybook/internal/common', () => ({
+  getProjectRoot: vi.fn(),
+}));
+
+vi.mock('@angular-devkit/architect', () => ({
+  targetFromTargetString: vi.fn(),
+}));
+
+vi.mock('find-up', () => ({
+  findUp: vi.fn(),
+}));
+
+vi.mock('./utils/module-is-available', () => ({
+  moduleIsAvailable: vi.fn(),
+}));
+
+vi.mock('./angular-cli-webpack', () => ({
+  getWebpackConfig: vi.fn(),
+}));
+
+vi.mock('./preset-options', () => ({
+  PresetOptions: {},
+}));
+
+// Mock require.resolve for @angular/animations
+vi.mock('@angular/animations', () => ({}));
+
+const mockedLogger = vi.mocked(logger);
+
+const mockedTargetFromTargetString = vi.mocked(
+  await import('@angular-devkit/architect')
+).targetFromTargetString;
+const mockedFindUp = vi.mocked(await import('find-up')).findUp;
+const mockedGetProjectRoot = vi.mocked(await import('storybook/internal/common')).getProjectRoot;
+
+describe('framework-preset-angular-cli', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('getBuilderOptions', () => {
+    const mockBuilderContext: BuilderContext = {
+      target: { project: 'test-project', builder: 'test-builder', options: {} },
+      workspaceRoot: '/test/workspace',
+      getProjectMetadata: vi.fn().mockResolvedValue({}),
+      getTargetOptions: vi.fn().mockResolvedValue({}),
+      logger: new logging.Logger('Test'),
+    } as unknown as BuilderContext;
+
+    beforeEach(() => {
+      mockedGetProjectRoot.mockReturnValue('/test/project');
+      mockedFindUp.mockResolvedValue('/test/tsconfig.json');
     });
 
-    it('should override browserTarget options with storybook-specific options when provided', () => {
-      const browserTargetOptions = {
-        stylePreprocessorOptions: {
-          includePaths: ['src/styles'],
-        },
-        assets: ['src/assets'],
-        styles: ['src/styles.scss'],
+    it('should get browser target options when angularBrowserTarget is provided', async () => {
+      const mockTarget = { project: 'test-project', target: 'build', configuration: 'development' };
+      mockedTargetFromTargetString.mockReturnValue(mockTarget);
+
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
+        angularBrowserTarget: 'test-project:build:development',
       };
 
-      const storybookOptions = {
-        stylePreprocessorOptions: {
-          includePaths: ['storybook/styles'],
-        },
-        preserveSymlinks: true,
-      };
+      await getBuilderOptions(options, mockBuilderContext);
 
-      const result = deepMerge(browserTargetOptions, storybookOptions);
-
-      expect(result.stylePreprocessorOptions).toEqual({
-        includePaths: ['storybook/styles'],
-      });
-      expect(result.assets).toEqual(['src/assets']);
-      expect(result.styles).toEqual(['src/styles.scss']);
-      expect(result.preserveSymlinks).toBe(true);
+      expect(mockedTargetFromTargetString).toHaveBeenCalledWith('test-project:build:development');
+      expect(mockedLogger.info).toHaveBeenCalledWith(
+        '=> Using angular browser target options from "test-project:build:development"'
+      );
+      expect(mockBuilderContext.getTargetOptions).toHaveBeenCalledWith(mockTarget);
     });
 
-    it('should deeply merge stylePreprocessorOptions instead of overriding completely', () => {
-      const browserTargetOptions = {
-        stylePreprocessorOptions: {
-          includePaths: ['src/styles'],
-          precision: 8,
-        },
+    it('should merge browser target options with storybook options', async () => {
+      const mockTarget = { project: 'test-project', target: 'build' };
+      mockedTargetFromTargetString.mockReturnValue(mockTarget);
+
+      const browserTargetOptions = { a: 1, nested: { x: 10 } };
+      const storybookOptions = { b: 2, nested: { y: 20 } };
+
+      vi.mocked(mockBuilderContext.getTargetOptions).mockResolvedValue(browserTargetOptions);
+
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
+        angularBrowserTarget: 'test-project:build',
+        angularBuilderOptions: storybookOptions,
       };
 
-      const storybookOptions = {
-        stylePreprocessorOptions: {
-          additionalData: '@import "storybook-vars";',
-        },
-      };
+      const result = await getBuilderOptions(options, mockBuilderContext);
 
-      const result = deepMerge(browserTargetOptions, storybookOptions);
-
-      expect(result.stylePreprocessorOptions).toEqual({
-        includePaths: ['src/styles'],
-        precision: 8,
-        additionalData: '@import "storybook-vars";',
+      expect(result).toEqual({
+        a: 1,
+        b: 2,
+        nested: { x: 10, y: 20 },
+        tsConfig: '/test/tsconfig.json',
       });
     });
 
-    it('should handle arrays correctly (override instead of merge)', () => {
-      const browserTargetOptions = {
-        assets: ['src/assets', 'src/fonts'],
-        styles: ['src/styles.scss'],
+    it('should use provided tsConfig when available', async () => {
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
+        tsConfig: '/custom/tsconfig.json',
       };
 
-      const storybookOptions = {
-        assets: ['storybook/assets'],
-      };
+      const result = await getBuilderOptions(options, mockBuilderContext);
 
-      const result = deepMerge(browserTargetOptions, storybookOptions);
-
-      expect(result.assets).toEqual(['storybook/assets']);
-      expect(result.styles).toEqual(['src/styles.scss']);
+      expect(result.tsConfig).toBe('/custom/tsconfig.json');
+      expect(mockedLogger.info).toHaveBeenCalledWith(
+        '=> Using angular project with "tsConfig:/custom/tsconfig.json"'
+      );
     });
 
-    it('should handle null and undefined values correctly', () => {
-      const browserTargetOptions = {
-        stylePreprocessorOptions: {
-          includePaths: ['src/styles'],
-        },
-        assets: ['src/assets'],
+    it('should find tsconfig.json when not provided', async () => {
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
       };
 
-      const storybookOptions: any = {
-        stylePreprocessorOptions: null,
-        assets: undefined,
-        newOption: 'value',
-      };
+      const result = await getBuilderOptions(options, mockBuilderContext);
 
-      const result = deepMerge(browserTargetOptions, storybookOptions);
-
-      // Null and undefined should not override existing values
-      expect(result.stylePreprocessorOptions).toEqual({
-        includePaths: ['src/styles'],
+      expect(mockedFindUp).toHaveBeenCalledWith('tsconfig.json', {
+        cwd: '/test/config',
+        stopAt: '/test/project',
       });
-      expect(result.assets).toEqual(['src/assets']);
-      expect(result.newOption).toBe('value');
+      expect(result.tsConfig).toBe('/test/tsconfig.json');
     });
 
-    it('should preserve complex nested structures', () => {
-      const browserTargetOptions = {
-        buildOptimizer: false,
-        optimization: {
-          scripts: true,
-          styles: {
-            minify: true,
-            inlineCritical: false,
-          },
-        },
+    it('should use browser target tsConfig when no other tsConfig is available', async () => {
+      const mockTarget = { project: 'test-project', target: 'build' };
+      mockedTargetFromTargetString.mockReturnValue(mockTarget);
+      mockedFindUp.mockResolvedValue(null);
+
+      const browserTargetOptions = { tsConfig: '/browser/tsconfig.json' };
+      vi.mocked(mockBuilderContext.getTargetOptions).mockResolvedValue(browserTargetOptions);
+
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
+        angularBrowserTarget: 'test-project:build',
       };
 
-      const storybookOptions = {
-        optimization: {
-          styles: {
-            inlineCritical: true,
-          },
-        },
+      const result = await getBuilderOptions(options, mockBuilderContext);
+
+      expect(result.tsConfig).toBe('/browser/tsconfig.json');
+    });
+
+    it('should handle case when no angularBrowserTarget is provided', async () => {
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
       };
 
-      const result = deepMerge(browserTargetOptions, storybookOptions);
+      const result = await getBuilderOptions(options, mockBuilderContext);
 
-      expect(result.optimization).toEqual({
-        scripts: true,
-        styles: {
-          minify: true,
-          inlineCritical: true,
-        },
+      expect(mockedTargetFromTargetString).not.toHaveBeenCalled();
+      expect(mockBuilderContext.getTargetOptions).not.toHaveBeenCalled();
+      expect(result).toEqual({
+        tsConfig: '/test/tsconfig.json',
       });
-      expect(result.buildOptimizer).toBe(false);
+    });
+
+    it('should handle browser target without configuration', async () => {
+      const mockTarget = { project: 'test-project', target: 'build' };
+      mockedTargetFromTargetString.mockReturnValue(mockTarget);
+
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
+        angularBrowserTarget: 'test-project:build',
+      };
+
+      const result = await getBuilderOptions(options, mockBuilderContext);
+
+      expect(mockedLogger.info).toHaveBeenCalledWith(
+        '=> Using angular browser target options from "test-project:build"'
+      );
+    });
+
+    it('should handle browser target with configuration', async () => {
+      const mockTarget = { project: 'test-project', target: 'build', configuration: 'production' };
+      mockedTargetFromTargetString.mockReturnValue(mockTarget);
+
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
+        angularBrowserTarget: 'test-project:build:production',
+      };
+
+      const result = await getBuilderOptions(options, mockBuilderContext);
+
+      expect(mockedLogger.info).toHaveBeenCalledWith(
+        '=> Using angular browser target options from "test-project:build:production"'
+      );
+    });
+
+    it('should handle empty angularBuilderOptions', async () => {
+      const mockTarget = { project: 'test-project', target: 'build' };
+      mockedTargetFromTargetString.mockReturnValue(mockTarget);
+
+      const browserTargetOptions = { a: 1, b: 2 };
+      vi.mocked(mockBuilderContext.getTargetOptions).mockResolvedValue(browserTargetOptions);
+
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
+        angularBrowserTarget: 'test-project:build',
+        angularBuilderOptions: {},
+      };
+
+      const result = await getBuilderOptions(options, mockBuilderContext);
+
+      expect(result).toEqual({
+        a: 1,
+        b: 2,
+        tsConfig: '/test/tsconfig.json',
+      });
+    });
+
+    it('should handle undefined angularBuilderOptions', async () => {
+      const mockTarget = { project: 'test-project', target: 'build' };
+      mockedTargetFromTargetString.mockReturnValue(mockTarget);
+
+      const browserTargetOptions = { a: 1, b: 2 };
+      vi.mocked(mockBuilderContext.getTargetOptions).mockResolvedValue(browserTargetOptions);
+
+      const options: PresetOptions = {
+        configType: 'DEVELOPMENT',
+        configDir: '/test/config',
+        presets: {
+          apply: vi.fn(),
+        } as any,
+        angularBrowserTarget: 'test-project:build',
+      };
+
+      const result = await getBuilderOptions(options, mockBuilderContext);
+
+      expect(result).toEqual({
+        a: 1,
+        b: 2,
+        tsConfig: '/test/tsconfig.json',
+      });
     });
   });
 });

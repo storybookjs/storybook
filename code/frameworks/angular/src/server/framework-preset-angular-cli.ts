@@ -81,8 +81,9 @@ function getBuilderContext(options: PresetOptions): BuilderContext {
 }
 
 /**
- * Deep merge function that properly handles nested objects
- * Preserves arrays and objects from source when they exist in target
+ * Deep merge function that properly handles nested objects. Preserves arrays and objects from
+ * source when they exist in target
+ *
  * @internal - exported for testing purposes
  */
 export function deepMerge(target: JsonObject, source: JsonObject): JsonObject {
@@ -110,7 +111,7 @@ export function deepMerge(target: JsonObject, source: JsonObject): JsonObject {
 }
 
 /** Get builder options Merge target options from browser target and from storybook options */
-async function getBuilderOptions(options: PresetOptions, builderContext: BuilderContext) {
+export async function getBuilderOptions(options: PresetOptions, builderContext: BuilderContext) {
   /** Get Browser Target options */
   let browserTargetOptions: JsonObject = {};
   if (options.angularBrowserTarget) {
@@ -124,15 +125,12 @@ async function getBuilderOptions(options: PresetOptions, builderContext: Builder
     browserTargetOptions = await builderContext.getTargetOptions(browserTarget);
   }
 
-  /** 
-   * Merge target options from browser target options and from storybook options
-   * Use deep merge to preserve nested properties like stylePreprocessorOptions.includePaths
-   * when they exist in browserTarget but not in storybook options
+  /**
+   * Merge target options from browser target options and from storybook options Use deep merge to
+   * preserve nested properties like stylePreprocessorOptions.includePaths when they exist in
+   * browserTarget but not in storybook options
    */
-  const builderOptions = deepMerge(
-    browserTargetOptions,
-    options.angularBuilderOptions || {}
-  );
+  const builderOptions = deepMerge(browserTargetOptions, options.angularBuilderOptions || {});
 
   // Handle tsConfig separately to maintain existing logic
   builderOptions.tsConfig =

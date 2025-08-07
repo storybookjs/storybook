@@ -21,7 +21,8 @@ const storybookMockTransformLoader: LoaderDefinition = function mockTransformLoa
     const result = rewriteSbMockImportCalls(source);
     callback(null, result.code, result.map || undefined, meta);
   } catch (error) {
-    logger.debug(`Could not transform sb.mock(import(...)) calls: ${error}`);
+    const filePath = this.resourcePath;
+    logger.debug(`Could not transform sb.mock(import(...)) calls in ${filePath}: ${error}`);
     callback(null, source, sourceMap, meta);
   }
 };

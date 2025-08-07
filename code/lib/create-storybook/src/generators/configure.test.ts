@@ -26,6 +26,7 @@ describe('configureMain', () => {
         name: '@storybook/react-vite',
       },
       frameworkPackage: '@storybook/react-vite',
+      features: [],
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -37,6 +38,39 @@ describe('configureMain', () => {
 
       /** @type { import('@storybook/react-vite').StorybookConfig } */
       const config = {
+        "stories": [
+          "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+        ],
+        "addons": [],
+        "framework": {
+          "name": "@storybook/react-vite"
+        }
+      };
+      export default config;"
+    `);
+  });
+
+  it('should generate main.ts with docs feature', async () => {
+    await configureMain({
+      language: SupportedLanguage.TYPESCRIPT,
+      addons: [],
+      prefixes: [],
+      storybookConfigFolder: '.storybook',
+      framework: {
+        name: '@storybook/react-vite',
+      },
+      frameworkPackage: '@storybook/react-vite',
+      features: ['docs'],
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [mainConfigPath, mainConfigContent] = calls[0];
+
+    expect(mainConfigPath).toEqual('./.storybook/main.ts');
+    expect(mainConfigContent).toMatchInlineSnapshot(`
+      "import type { StorybookConfig } from '@storybook/react-vite';
+
+      const config: StorybookConfig = {
         "stories": [
           "../stories/**/*.mdx",
           "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
@@ -50,7 +84,7 @@ describe('configureMain', () => {
     `);
   });
 
-  it('should generate main.ts', async () => {
+  it('should generate main.ts without docs feature', async () => {
     await configureMain({
       language: SupportedLanguage.TYPESCRIPT,
       addons: [],
@@ -60,6 +94,7 @@ describe('configureMain', () => {
         name: '@storybook/react-vite',
       },
       frameworkPackage: '@storybook/react-vite',
+      features: [],
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -71,7 +106,6 @@ describe('configureMain', () => {
 
       const config: StorybookConfig = {
         "stories": [
-          "../stories/**/*.mdx",
           "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
         ],
         "addons": [],
@@ -96,6 +130,7 @@ describe('configureMain', () => {
         name: "%%path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))%%",
       },
       frameworkPackage: '@storybook/react-webpack5',
+      features: ['docs'],
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;

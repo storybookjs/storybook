@@ -1,1 +1,1 @@
-{"version":"9.1.0-beta.0","info":{"plain":"- Core: Avoid pausing animations in non-Vitest Playwright environments - [#32123](https://github.com/storybookjs/storybook/pull/32123), thanks @ghengeveld!"}}
+{"version":"9.2.0-alpha.2","info":{"plain":"- Onboarding: Tweak referral wording in survey - [#32185](https://github.com/storybookjs/storybook/pull/32185), thanks @shilman!"}}

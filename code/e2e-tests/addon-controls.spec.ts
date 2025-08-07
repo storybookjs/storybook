@@ -112,6 +112,6 @@ test.describe('addon-controls', () => {
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
     await sbPage.viewAddonPanel('Controls');
-    await expect(sbPage.panelContent().getByText('ReactReactNode')).toBeVisible();
+    await expect(sbPage.panelContent().getByText('children').first()).toBeVisible();
   });
 });

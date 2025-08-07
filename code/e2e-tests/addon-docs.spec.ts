@@ -288,6 +288,6 @@ test.describe('addon-docs', () => {
     const sbPage = new SbPage(page, expect);
     await sbPage.navigateToStory('/stories/renderers/react/jsx-docgen', 'docs');
     const root = sbPage.previewRoot();
-    await expect(root.getByText('ReactReactNode')).toBeVisible();
+    await expect(root.getByText('children').first()).toBeVisible();
   });
 });

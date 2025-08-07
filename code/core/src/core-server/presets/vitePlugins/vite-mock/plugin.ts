@@ -170,7 +170,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
           try {
             return rewriteSbMockImportCalls(code);
           } catch (e) {
-            logger.debug(`Could not transform sb.mock(import(...)) calls: ${e}`);
+            logger.debug(`Could not transform sb.mock(import(...)) calls in ${id}: ${e}`);
             return null;
           }
         }

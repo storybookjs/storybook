@@ -100,6 +100,103 @@ components/
 
 {/* prettier-ignore-end */}
 
+<If renderer="svelte">
+
+<details>
+<summary>Alternative story definitions</summary>
+ 
+For most cases, we recommend Svelte CSF users define their stories as above, which uses the default rendering of the component. However, there are alternatives to this approach.
+
+Any `children` elements passed to the Story component will be passed along as `args.children` to the component:
+
+```svelte title="Alert.stories.svelte"
+{/* Renders <Alert>Alert text</Alert> */}
+<Story name="Alert with children">
+  Alert text
+</Story>
+```
+
+If you need to customize the rendering of your story, you can provide a snippet that accepts `args` and renders whatever you need.
+
+```svelte title="Button.stories.svelte"
+<Story
+  name="Primary in alert"
+  args={{
+    label: 'Button',
+    primary: true,
+  }}>
+  {#snippet template(args)}
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  {/snippet}
+</Story>
+```
+
+You can reuse this snippet in other stories, by defining it outside the Story component and referencing it in the `template` prop:
+
+```svelte title="Button.stories.svelte"
+{#snippet template(args)}
+  <Alert>
+    Alert text
+    <Button {...args} />
+  </Alert>
+{/snippet}
+
+<Story name="Default in alert" args={{ label: 'Button' }} {template} />
+
+<Story name="Primary in alert" args={{ label: 'Button', primary: true }} {template} />
+```
+
+You can also apply a snippet to all stories by assigning it to `render` in the `defineMeta` function:
+
+```svelte title="Button.stories.svelte"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    render: template,
+  });
+</script>
+
+{#snippet template(args)}
+  <Alert>
+    Alert text
+    <Button {...args} />
+  </Alert>
+{/snippet}
+
+<Story name="Default in alert" args={{ label: 'Button' }} />
+
+<Story name="Primary in alert" args={{ label: 'Button', primary: true }} />
+```
+
+If you do not need to pass `args` to a component in the story, you can use the `asChild` prop to render the passed children directly without the need for a snippet:
+
+```svelte title="Button.stories.svelte"
+<Story
+  name="Default in alert"
+  asChild
+  <Alert>
+    Alert text
+    <Button />
+  </Alert>
+</Story>
+```
+
+<Callout variant="warning">
+
+Note that features that require `args` like [Controls](../essentials/controls.mdx) will not work when using `asChild`.
+
+</Callout>
+
+</details>
+
+</If>
+
 <IfRenderer renderer="react">
   #### Working with React Hooks
 
@@ -126,7 +223,13 @@ components/
 
 ### Rename stories
 
-You can rename any particular story you need. For instance, to give it a more accurate name. Here's how you can change the name of the `Primary` story:
+By default, Storybook uses the name of the story export as the basis for the story name. However, you can customize the name of your story by adding a `name` property to the story object. This is useful when you want to provide a more descriptive or user-friendly name for your story.
+
+<If renderer="svelte">
+
+If you're using Svelte CSF, the `name` property is usually fairly descriptive and user-friendly already, so there is little need for renaming. However, the `name` is used as the basis for the export name, which must be unique within a file. In rare cases, this can lead to naming conflicts. For example, stories with the names "Primary" and "Primary!" would both be transformed to the "Primary" export name. To avoid this, you can use the `exportName` property to specify a unique export name for your story.
+
+</If>
 
 {/* prettier-ignore-start */}
 
@@ -134,8 +237,11 @@ You can rename any particular story you need. For instance, to give it a more ac
 
 {/* prettier-ignore-end */}
 
+<If notRenderer="svelte">
 
 Your story will now be shown in the sidebar with the given text.
+
+</If>
 
 {/* Maintaining a prior heading */}
 
@@ -261,7 +367,7 @@ Sometimes you may have two or more components created to work together. For inst
 
 {/* prettier-ignore-end */}
 
-In such cases, it makes sense to render a different function for each story:
+In such cases, it makes sense to define a new snippet (for Svelte CSF) use the [`render`](../api/csf/index.mdx#custom-render-functions) property (for CSF) to define a new function to render the `List` component with different numbers of `ListItem` children.
 
 {/* prettier-ignore-start */}
 

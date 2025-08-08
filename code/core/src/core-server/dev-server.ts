@@ -151,6 +151,7 @@ export async function storybookDevServer(options: Options) {
 
   if (!core?.disableTelemetry) {
     process.on('SIGINT', cancelTelemetry);
+    process.on('SIGTERM', cancelTelemetry);
   }
 
   return { previewResult, managerResult, address, networkAddress };

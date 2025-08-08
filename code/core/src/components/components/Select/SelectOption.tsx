@@ -31,6 +31,12 @@ export interface SelectOptionProps {
   onClick: () => void;
   onFocus: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
+
+  /**
+   * Whether to print out the option as if it could not be enabled. Does NOT prevent event handlers
+   * from being called as we need them to implement keyboard navigation.
+   */
+  disabled: boolean;
 }
 
 const Item = styled('li')(({ theme }) => ({
@@ -38,6 +44,10 @@ const Item = styled('li')(({ theme }) => ({
   background: 'transparent',
   cursor: 'pointer',
   borderRadius: 4,
+  '&[aria-disabled="true"]': {
+    opacity: 0.5,
+    cursor: 'not-allowed',
+  },
   '&[aria-selected="true"]': {
     color: theme.color.secondary,
     fontWeight: theme.typography.weight.bold,
@@ -85,6 +95,7 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
   onClick,
   onFocus,
   onKeyDown,
+  disabled = false,
   ...props
 }) => {
   return (
@@ -94,6 +105,7 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
       role="option"
       tabIndex={isActive ? 0 : -1}
       aria-selected={isSelected}
+      aria-disabled={disabled ? true : undefined}
       onClick={onClick}
       onFocus={onFocus}
       onKeyDown={onKeyDown}

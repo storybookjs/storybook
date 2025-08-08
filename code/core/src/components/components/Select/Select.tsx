@@ -114,6 +114,16 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       document.getElementById(id)?.focus();
     }, [id]);
 
+    // Used when the user explicitly chooses to reset. In contrast, we
+    // perform reset and empty options when, in single select mode, the
+    // roving tabindex causes us to focus on the reset option (but then
+    // we don't close the Select).
+    const handleReset = useCallback(() => {
+      onReset?.();
+      setSelectedOptions([]);
+      handleClose();
+    }, [onReset, handleClose]);
+
     // Selects an option (updating the selection state based on multiSelect) and decides whether to close the listbox.
     const handleSelectOption = useCallback(
       (option: SelectOption, close: 'always' | 'single-only' | 'never') => {
@@ -151,52 +161,28 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       [handleClose, multiSelect, onChange, onSelect, onDeselect]
     );
 
-    const options = useMemo(() => {
-      const opts = calleeOptions.map((option) => ({
-        ...option,
-        onClick: () => handleSelectOption(option, 'single-only'),
-        onKeyDown: (e: KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleSelectOption(option, 'single-only');
-          } else if (e.key === 'Tab') {
-            // FIXME: for sure we dont want this in multi. probably also not in solo.
-            if (!multiSelect) {
-              handleSelectOption(option, 'always');
-            } else {
-              handleClose();
-            }
-          }
-        },
-      }));
-
-      if (onReset) {
-        opts.unshift({
-          value: RESET_VALUE,
-          title: resetLabel ?? 'Reset selection',
-          icon: <RefreshIcon />,
-          onClick: () => {
-            onReset();
-            handleClose();
-          },
-          onKeyDown: (e: KeyboardEvent) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onReset();
-              handleClose();
-            } else if (e.key === 'Tab') {
-              handleClose();
-            }
-          },
-        });
-      }
-
-      return opts;
-    }, [calleeOptions, onReset, resetLabel, multiSelect, handleClose, handleSelectOption]);
-
     // The last selected option(s), which will be used by the app.
     const [selectedOptions, setSelectedOptions] = useState<SelectOption[]>(
-      setSelectedFromDefault(options, defaultOptions)
+      setSelectedFromDefault(calleeOptions, defaultOptions)
+    );
+
+    // Reset option appears if a handler is defined and there are selected options.
+    const resetOption = useMemo(
+      () =>
+        onReset
+          ? {
+              value: RESET_VALUE,
+              title: resetLabel ?? 'Reset selection',
+              icon: <RefreshIcon />,
+            }
+          : undefined,
+      [onReset, resetLabel]
+    );
+
+    // Synthetic object allowing us to implement the roving tabindex.
+    const options = useMemo(
+      () => (resetOption ? [resetOption, ...calleeOptions] : calleeOptions),
+      [calleeOptions, resetOption]
     );
 
     // We must do this to account for callees that have an unstable data model.
@@ -348,7 +334,31 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                 }
               }}
             >
-              {options.map((option) => (
+              {onReset && resetOption && (
+                <SelectOption
+                  key={resetOption.value}
+                  title={resetOption.title}
+                  icon={resetOption.icon}
+                  id={valueToId(id, resetOption)}
+                  isActive={isOpen && activeOption?.value === resetOption.value}
+                  isSelected={false}
+                  onClick={() => handleReset()}
+                  onFocus={() => setActiveOption(resetOption)}
+                  disabled={
+                    selectedOptions.length === 0 ||
+                    (selectedOptions.length === 1 && selectedOptions[0].value === RESET_VALUE)
+                  }
+                  onKeyDown={(e: KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleReset();
+                    } else if (e.key === 'Tab') {
+                      handleClose();
+                    }
+                  }}
+                />
+              )}
+              {calleeOptions.map((option) => (
                 <SelectOption
                   key={option.value}
                   title={option.title}
@@ -357,9 +367,21 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                   id={valueToId(id, option)}
                   isActive={isOpen && activeOption?.value === option.value}
                   isSelected={selectedOptions?.some((sel) => sel.value === option.value)}
-                  onClick={option.onClick}
-                  onKeyDown={option.onKeyDown}
+                  onClick={() => handleSelectOption(option, 'single-only')}
                   onFocus={() => setActiveOption(option)}
+                  onKeyDown={(e: KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleSelectOption(option, 'single-only');
+                    } else if (e.key === 'Tab') {
+                      // FIXME: for sure we dont want this in multi. probably also not in solo.
+                      if (!multiSelect) {
+                        handleSelectOption(option, 'always');
+                      } else {
+                        handleClose();
+                      }
+                    }
+                  }}
                 >
                   {option.children}
                 </SelectOption>

@@ -44,6 +44,9 @@ interface InteractionsPanelProps {
   onScrollToEnd?: () => void;
   hasResultMismatch?: boolean;
   browserTestStatus?: CallStates;
+  onHighlightElements: (callId: Call['id'], highlight: boolean) => void;
+  onSelectElements: (callId: Call['id'], select: boolean) => void;
+  selectedElements: Call['id'][];
 }
 
 const Container = styled.div(({ theme }) => ({
@@ -104,6 +107,9 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     endRef,
     hasResultMismatch,
     browserTestStatus,
+    onHighlightElements,
+    onSelectElements,
+    selectedElements,
   }) {
     const filter = useAnsiToHtmlFilter();
     const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
@@ -134,6 +140,9 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
               isCollapsed={call.isCollapsed}
               toggleCollapsed={call.toggleCollapsed}
               pausedAt={pausedAt}
+              onHighlightElements={onHighlightElements}
+              onSelectElements={onSelectElements}
+              selectedElements={selectedElements}
             />
           ))}
         </div>

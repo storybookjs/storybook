@@ -98,7 +98,7 @@ const Pages: FC<{
             e.preventDefault();
             return onClose();
           }}
-          label="Close settings page"
+          ariaLabel="Close settings page"
         >
           <CloseIcon />
         </IconButton>

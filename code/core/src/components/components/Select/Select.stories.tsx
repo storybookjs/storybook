@@ -4,7 +4,6 @@ import { styled } from 'storybook/internal/theming';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { use } from 'chai';
 import type { StoryAnnotations } from 'core/src/types';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
@@ -22,9 +21,9 @@ const meta = preview.meta({
     onSelect: fn(),
     onDeselect: fn(),
     options: [
-      { label: 'Tadpole', value: 'tadpole' },
-      { label: 'Pollywog', value: 'pollywog' },
-      { label: 'Frog', value: 'frog' },
+      { title: 'Tadpole', value: 'tadpole' },
+      { title: 'Pollywog', value: 'pollywog' },
+      { title: 'Frog', value: 'frog' },
     ],
   },
 });
@@ -158,7 +157,7 @@ export const PseudoStates = meta.story({
 export const ManyOptions = meta.story({
   args: {
     options: Array.from({ length: 20 }, (_, i) => ({
-      label: `Option ${i + 1}`,
+      title: `Option ${i + 1}`,
       value: `option-${i + 1}`,
     })),
   },
@@ -170,15 +169,15 @@ export const LongOptionLabels = meta.story({
     children: 'Long labels',
     options: [
       {
-        label: 'This is a very long option label that might cause wrapping issues',
+        title: 'This is a very long option label that might cause wrapping issues',
         value: 'long1',
       },
       {
-        label:
+        title:
           'Another extremely long option label that tests how the component handles overflow, and if you think that is too long, you may well be justified in thinking so, albeit it is a test case',
         value: 'long2',
       },
-      { label: 'Short', value: 'short' },
+      { title: 'Short', value: 'short' },
     ],
   },
 });
@@ -189,7 +188,7 @@ export const CustomOptionRendering = meta.story({
     children: 'Custom options',
     options: [
       {
-        label: 'Tadpole',
+        title: 'Tadpole',
         value: 'tadpole',
         children: (
           <>
@@ -198,7 +197,7 @@ export const CustomOptionRendering = meta.story({
         ),
       },
       {
-        label: 'Pollywog',
+        title: 'Pollywog',
         value: 'pollywog',
         children: (
           <>
@@ -207,7 +206,7 @@ export const CustomOptionRendering = meta.story({
         ),
       },
       {
-        label: 'Frog',
+        title: 'Frog',
         value: 'frog',
         children: (
           <>
@@ -232,7 +231,7 @@ export const WithSiblings = meta.story({
 export const DefaultOption = meta.story({
   name: 'Default Option (single)',
   args: {
-    defaultOption: 'frog',
+    defaultOptions: 'frog',
   },
 });
 
@@ -240,7 +239,7 @@ export const DefaultOptionMulti = meta.story({
   name: 'Default Option (multi)',
   args: {
     multiSelect: true,
-    defaultOption: ['tadpole', 'frog'],
+    defaultOptions: ['tadpole', 'frog'],
   },
 });
 
@@ -299,12 +298,8 @@ export const MouseSelection = meta.story({
     const pollywogOption = screen.getByRole('option', { name: 'Pollywog' });
     await userEvent.click(pollywogOption);
 
-    expect(args.onSelect).toHaveBeenCalledWith(
-      expect.objectContaining({ label: 'Pollywog', value: 'pollywog' })
-    );
-    expect(args.onChange).toHaveBeenCalledWith([
-      expect.objectContaining({ label: 'Pollywog', value: 'pollywog' }),
-    ]);
+    expect(args.onSelect).toHaveBeenCalledWith('pollywog');
+    expect(args.onChange).toHaveBeenCalledWith(['pollywog']);
 
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(selectButton).toHaveTextContent('Pollywog');
@@ -330,22 +325,15 @@ export const MouseSelectionMulti = meta.story({
     const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
     await userEvent.click(tadpoleOption);
 
-    expect(args.onSelect).toHaveBeenCalledWith(
-      expect.objectContaining({ label: 'Tadpole', value: 'tadpole' })
-    );
-    expect(args.onChange).toHaveBeenCalledWith([
-      expect.objectContaining({ label: 'Tadpole', value: 'tadpole' }),
-    ]);
+    expect(args.onSelect).toHaveBeenCalledWith('tadpole');
+    expect(args.onChange).toHaveBeenCalledWith(['tadpole']);
     expect(selectButton).toHaveTextContent('1');
     expect(screen.getByRole('listbox')).toBeInTheDocument(); // Listbox should not close in multi select mode.
 
     const pollywogOption = screen.getByRole('option', { name: 'Pollywog' });
     await userEvent.click(pollywogOption);
 
-    expect(args.onChange).toHaveBeenLastCalledWith([
-      expect.objectContaining({ label: 'Tadpole', value: 'tadpole' }),
-      expect.objectContaining({ label: 'Pollywog', value: 'pollywog' }),
-    ]);
+    expect(args.onChange).toHaveBeenLastCalledWith(['tadpole', 'pollywog']);
     expect(selectButton).toHaveTextContent('2');
     expect(screen.getByRole('listbox')).toBeInTheDocument();
 
@@ -376,12 +364,8 @@ const kbSelectionTest =
 
     await step('Select active option (closes the Select)', async () => {
       await userEvent.keyboard(selectKey);
-      expect(args.onSelect).toHaveBeenCalledWith(
-        expect.objectContaining({ label: 'Pollywog', value: 'pollywog' })
-      );
-      expect(args.onChange).toHaveBeenCalledWith([
-        expect.objectContaining({ label: 'Pollywog', value: 'pollywog' }),
-      ]);
+      expect(args.onSelect).toHaveBeenCalledWith('pollywog');
+      expect(args.onChange).toHaveBeenCalledWith(['pollywog']);
 
       expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
       expect(selectButton).toHaveTextContent('Pollywog');
@@ -424,12 +408,8 @@ const kbMultiSelectionTest =
 
     await step('Select option one', async () => {
       await userEvent.keyboard(selectKey);
-      expect(args.onSelect).toHaveBeenCalledWith(
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' })
-      );
-      expect(args.onChange).toHaveBeenCalledWith([
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' }),
-      ]);
+      expect(args.onSelect).toHaveBeenCalledWith('tadpole');
+      expect(args.onChange).toHaveBeenCalledWith(['tadpole']);
       expect(screen.queryByRole('listbox')).toBeInTheDocument();
     });
 
@@ -441,13 +421,8 @@ const kbMultiSelectionTest =
 
     await step('Select option two', async () => {
       await userEvent.keyboard(selectKey);
-      expect(args.onSelect).toHaveBeenCalledWith(
-        expect.objectContaining({ label: 'Pollywog', value: 'pollywog' })
-      );
-      expect(args.onChange).toHaveBeenCalledWith([
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' }),
-        expect.objectContaining({ label: 'Pollywog', value: 'pollywog' }),
-      ]);
+      expect(args.onSelect).toHaveBeenCalledWith('pollywog');
+      expect(args.onChange).toHaveBeenCalledWith(['tadpole', 'pollywog']);
       expect(screen.queryByRole('listbox')).toBeInTheDocument();
       expect(selectButton).toHaveTextContent('2');
     });
@@ -516,12 +491,8 @@ export const KeyboardOpenAutoselect = meta.story({
     });
 
     await step('Validate the first item was selected', async () => {
-      expect(args.onSelect).toHaveBeenCalledWith(
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' })
-      );
-      expect(args.onChange).toHaveBeenCalledWith([
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' }),
-      ]);
+      expect(args.onSelect).toHaveBeenCalledWith('tadpole');
+      expect(args.onChange).toHaveBeenCalledWith(['tadpole']);
       expect(selectButton).toHaveTextContent('Tadpole');
     });
 
@@ -531,12 +502,8 @@ export const KeyboardOpenAutoselect = meta.story({
     });
 
     await step('Validate the first item is still selected', async () => {
-      expect(args.onSelect).toHaveBeenCalledWith(
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' })
-      );
-      expect(args.onChange).toHaveBeenCalledWith([
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' }),
-      ]);
+      expect(args.onSelect).toHaveBeenCalledWith('tadpole');
+      expect(args.onChange).toHaveBeenCalledWith(['tadpole']);
       expect(selectButton).toHaveTextContent('Tadpole');
     });
   },
@@ -548,12 +515,8 @@ export const ArrowDownAutoSelect = meta.story({
     const selectButton = within(canvasElement).getByRole('combobox');
     selectButton.focus();
     await userEvent.keyboard('{ArrowDown}');
-    expect(args.onSelect).toHaveBeenCalledWith(
-      expect.objectContaining({ label: 'Tadpole', value: 'tadpole' })
-    );
-    expect(args.onChange).toHaveBeenCalledWith([
-      expect.objectContaining({ label: 'Tadpole', value: 'tadpole' }),
-    ]);
+    expect(args.onSelect).toHaveBeenCalledWith('tadpole');
+    expect(args.onChange).toHaveBeenCalledWith(['tadpole']);
     expect(selectButton).toHaveTextContent('Tadpole');
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -566,12 +529,8 @@ export const ArrowUpAutoSelect = meta.story({
     const selectButton = within(canvasElement).getByRole('combobox');
     selectButton.focus();
     await userEvent.keyboard('{ArrowUp}');
-    expect(args.onSelect).toHaveBeenCalledWith(
-      expect.objectContaining({ label: 'Frog', value: 'frog' })
-    );
-    expect(args.onChange).toHaveBeenCalledWith([
-      expect.objectContaining({ label: 'Frog', value: 'frog' }),
-    ]);
+    expect(args.onSelect).toHaveBeenCalledWith('frog');
+    expect(args.onChange).toHaveBeenCalledWith(['frog']);
     expect(selectButton).toHaveTextContent('Frog');
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
@@ -582,7 +541,7 @@ export const MouseFastNavPage = meta.story({
   name: 'Mouse Open - PageUp/Down',
   args: {
     options: Array.from({ length: 20 }, (_, i) => ({
-      label: `Option ${i + 1}`,
+      title: `Option ${i + 1}`,
       value: `option-${i + 1}`,
     })),
   },
@@ -613,7 +572,7 @@ export const KeyboardFastNavPage = meta.story({
   name: 'KB Open - PageUp/Down',
   args: {
     options: Array.from({ length: 20 }, (_, i) => ({
-      label: `Option ${i + 1}`,
+      title: `Option ${i + 1}`,
       value: `option-${i + 1}`,
     })),
   },
@@ -647,7 +606,7 @@ export const MouseFastNavHomeEnd = meta.story({
   name: 'Mouse Open - Home/End',
   args: {
     options: Array.from({ length: 20 }, (_, i) => ({
-      label: `Option ${i + 1}`,
+      title: `Option ${i + 1}`,
       value: `option-${i + 1}`,
     })),
   },
@@ -685,7 +644,7 @@ export const KeyboardFastNavHomeEnd = meta.story({
   name: 'KB Open - Home/End',
   args: {
     options: Array.from({ length: 20 }, (_, i) => ({
-      label: `Option ${i + 1}`,
+      title: `Option ${i + 1}`,
       value: `option-${i + 1}`,
     })),
   },
@@ -743,12 +702,8 @@ export const MouseDeselection = meta.story({
       const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
       expect(tadpoleOption).toHaveAttribute('aria-selected', 'true');
       await userEvent.click(tadpoleOption);
-      expect(args.onDeselect).toHaveBeenCalledWith(
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' })
-      );
-      expect(args.onChange).toHaveBeenCalledWith([
-        expect.objectContaining({ label: 'Pollywog', value: 'pollywog' }),
-      ]);
+      expect(args.onDeselect).toHaveBeenCalledWith('tadpole');
+      expect(args.onChange).toHaveBeenCalledWith(['pollywog']);
     });
 
     await step('Check final state', async () => {
@@ -780,12 +735,8 @@ export const KeyboardDeselection = meta.story({
       const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
       expect(tadpoleOption).toHaveAttribute('aria-selected', 'true');
       await userEvent.keyboard('{Enter}');
-      expect(args.onDeselect).toHaveBeenCalledWith(
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' })
-      );
-      expect(args.onChange).toHaveBeenCalledWith([
-        expect.objectContaining({ label: 'Pollywog', value: 'pollywog' }),
-      ]);
+      expect(args.onDeselect).toHaveBeenCalledWith('tadpole');
+      expect(args.onChange).toHaveBeenCalledWith(['pollywog']);
     });
 
     await step('Tab away (closes the Select)', async () => {
@@ -814,9 +765,7 @@ export const OnSelectHandler = meta.story({
     await userEvent.click(frogOption);
 
     expect(args.onSelect).toHaveBeenCalledTimes(1);
-    expect(args.onSelect).toHaveBeenCalledWith(
-      expect.objectContaining({ label: 'Frog', value: 'frog' })
-    );
+    expect(args.onSelect).toHaveBeenCalledWith('frog');
   },
 });
 
@@ -836,9 +785,7 @@ export const OnDeselectHandler = meta.story({
     await userEvent.click(tadpoleOption);
 
     expect(args.onDeselect).toHaveBeenCalledTimes(1);
-    expect(args.onDeselect).toHaveBeenCalledWith(
-      expect.objectContaining({ label: 'Tadpole', value: 'tadpole' })
-    );
+    expect(args.onDeselect).toHaveBeenCalledWith('tadpole');
   },
 });
 
@@ -859,18 +806,13 @@ export const OnChangeHandler = meta.story({
     await step('Select first option', async () => {
       const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
       await userEvent.click(tadpoleOption);
-      expect(args.onChange).toHaveBeenCalledWith([
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' }),
-      ]);
+      expect(args.onChange).toHaveBeenCalledWith(['tadpole']);
     });
 
     await step('Select second option', async () => {
       const frogOption = screen.getByRole('option', { name: 'Frog' });
       await userEvent.click(frogOption);
-      expect(args.onChange).toHaveBeenLastCalledWith([
-        expect.objectContaining({ label: 'Tadpole', value: 'tadpole' }),
-        expect.objectContaining({ label: 'Frog', value: 'frog' }),
-      ]);
+      expect(args.onChange).toHaveBeenLastCalledWith(['tadpole', 'frog']);
     });
   },
 });

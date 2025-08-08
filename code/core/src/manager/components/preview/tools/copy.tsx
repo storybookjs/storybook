@@ -44,7 +44,8 @@ export const copyTool: Addon_BaseType = {
             key="copy"
             // @ts-expect-error (non strict)
             onClick={() => copy(getStoryHref(baseUrl, storyId, queryParams))}
-            label="Copy canvas link"
+            // FIXME: copy check, canvas vs preview area vs content
+            ariaLabel="Copy canvas link"
           >
             <LinkIcon />
           </IconButton>

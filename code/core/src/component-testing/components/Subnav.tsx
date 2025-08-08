@@ -125,7 +125,7 @@ export const Subnav: React.FC<SubnavProps> = ({
             <StyledSeparator />
 
             <RewindButton
-              label="Go to start"
+              ariaLabel="Go to start"
               onClick={controls.start}
               disabled={!controlStates.start}
             >
@@ -133,7 +133,7 @@ export const Subnav: React.FC<SubnavProps> = ({
             </RewindButton>
 
             <StyledIconButton
-              label="Go back"
+              ariaLabel="Go back"
               onClick={controls.back}
               disabled={!controlStates.back}
             >
@@ -141,7 +141,7 @@ export const Subnav: React.FC<SubnavProps> = ({
             </StyledIconButton>
 
             <StyledIconButton
-              label="Go forward"
+              ariaLabel="Go forward"
               onClick={controls.next}
               disabled={!controlStates.next}
             >
@@ -149,14 +149,14 @@ export const Subnav: React.FC<SubnavProps> = ({
             </StyledIconButton>
 
             <StyledIconButton
-              label="Go to end"
+              ariaLabel="Go to end"
               onClick={controls.end}
               disabled={!controlStates.end}
             >
               <FastForwardIcon />
             </StyledIconButton>
 
-            <RerunButton label="Rerun" onClick={controls.rerun}>
+            <RerunButton ariaLabel="Rerun" onClick={controls.rerun}>
               <SyncIcon />
             </RerunButton>
           </Group>

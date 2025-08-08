@@ -62,9 +62,9 @@ export const Container = styled.div<{ width?: number; height?: number }>(
   })
 );
 
-// TODO: test if Esc always closes modal, in which case, add `tooltip` prop.
 export const CloseButton = () => (
   <Dialog.Close asChild>
+    {/* TODO: test if Esc always closes modal, in which case, add `shortcut` prop. */}
     <IconButton ariaLabel="Close modal" shortcut={['Escape']}>
       <CrossIcon />
     </IconButton>

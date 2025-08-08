@@ -43,13 +43,13 @@ const Zoom = memo<{
 }>(function Zoom({ zoomIn, zoomOut, reset }) {
   return (
     <>
-      <IconButton key="zoomin" onClick={zoomIn} label="Zoom in">
+      <IconButton key="zoomin" onClick={zoomIn} ariaLabel="Zoom in">
         <ZoomIcon />
       </IconButton>
-      <IconButton key="zoomout" onClick={zoomOut} label="Zoom out">
+      <IconButton key="zoomout" onClick={zoomOut} ariaLabel="Zoom out">
         <ZoomOutIcon />
       </IconButton>
-      <IconButton key="zoomreset" onClick={reset} label="Reset zoom">
+      <IconButton key="zoomreset" onClick={reset} ariaLabel="Reset zoom">
         <ZoomResetIcon />
       </IconButton>
     </>

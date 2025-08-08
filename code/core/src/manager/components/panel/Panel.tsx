@@ -87,7 +87,7 @@ export const AddonPanel = React.memo<{
                 <IconButton
                   key="position"
                   onClick={actions.togglePosition}
-                  label="Change addon orientation"
+                  ariaLabel="Change addon orientation"
                   shortcut={shortcuts.panelPosition}
                 >
                   {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
@@ -95,14 +95,14 @@ export const AddonPanel = React.memo<{
                 <IconButton
                   key="visibility"
                   onClick={actions.toggleVisibility}
-                  label="Hide addons"
+                  ariaLabel="Hide addons"
                   shortcut={shortcuts.togglePanel}
                 >
                   <CloseIcon />
                 </IconButton>
               </>
             ) : (
-              <IconButton onClick={() => setMobilePanelOpen(false)} label="Close addon panel">
+              <IconButton onClick={() => setMobilePanelOpen(false)} ariaLabel="Close addon panel">
                 <CloseIcon />
               </IconButton>
             )}

@@ -1,4 +1,4 @@
-import React, { type ComponentProps } from 'react';
+import React from 'react';
 
 import { Select } from 'storybook/internal/components';
 
@@ -17,21 +17,17 @@ export const PseudoStateTool = () => {
     pseudoStates.includes(key as keyof typeof PSEUDO_STATES)
   );
 
-  const options: ComponentProps<typeof Select>['options'] = pseudoStates.map((option) => {
+  const options = pseudoStates.map((option) => {
     return {
-      label: PSEUDO_STATES[option],
+      title: PSEUDO_STATES[option],
       value: option,
     };
   });
 
   return (
     <Select
-      key="pseudo-states-select-dbg"
-      // TODO: reintegrate "reset all", by having it as a Select prop.
-      // hasReset={true}
-      // resetLabel="Reset pseudo states"
-      // NOTE: could have onReset but it's redundant in this use case.
-      // onReset={() => updateGlobals({ [PARAM_KEY]: {} })}
+      resetLabel="Reset pseudo states"
+      onReset={() => updateGlobals({ [PARAM_KEY]: {} })}
       ariaLabel="Select CSS pseudo states"
       variant="ghost"
       defaultOptions={defaultOptions}
@@ -39,7 +35,7 @@ export const PseudoStateTool = () => {
       multiSelect
       onChange={(selected) => {
         updateGlobals({
-          [PARAM_KEY]: selected.reduce((acc, curr) => ({ ...acc, [curr.value]: true }), {}),
+          [PARAM_KEY]: selected.reduce((acc, curr) => ({ ...acc, [curr]: true }), {}),
         });
       }}
     >

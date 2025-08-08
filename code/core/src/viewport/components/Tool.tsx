@@ -1,8 +1,8 @@
-import React, { type FC, Fragment, useCallback, useEffect, useState } from 'react';
+import React, { type FC, Fragment, useCallback, useEffect } from 'react';
 
-import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { IconButton, Select } from 'storybook/internal/components';
 
-import { GrowIcon, RefreshIcon, TransferIcon } from '@storybook/icons';
+import { GrowIcon, TransferIcon } from '@storybook/icons';
 
 import { type API, useGlobals, useParameter } from 'storybook/manager-api';
 import { Global, styled } from 'storybook/theming';
@@ -12,33 +12,22 @@ import { MINIMAL_VIEWPORTS } from '../defaults';
 import { responsiveViewport } from '../responsiveViewport';
 import { registerShortcuts } from '../shortcuts';
 import type { GlobalStateUpdate, Viewport, ViewportMap, ViewportParameters } from '../types';
-import {
-  ActiveViewportLabel,
-  ActiveViewportSize,
-  IconButtonLabel,
-  IconButtonWithLabel,
-  iconsMap,
-} from '../utils';
+import { ActiveViewportLabel, ActiveViewportSize, iconsMap } from '../utils';
 
 interface PureProps {
   item: Viewport;
   updateGlobals: ReturnType<typeof useGlobals>['1'];
-  setIsTooltipVisible: React.Dispatch<React.SetStateAction<boolean>>;
   viewportMap: ViewportMap;
   viewportName: any;
   isLocked: boolean;
-  isActive: boolean;
   isRotated: any;
   width: string;
   height: string;
 }
 
-type Link = Parameters<typeof TooltipLinkList>['0']['links'][0];
-
 export const ViewportTool: FC<{ api: API }> = ({ api }) => {
   const config = useParameter<ViewportParameters['viewport']>(PARAM_KEY);
   const [globals, updateGlobals, storyGlobals] = useGlobals();
-  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
   const { options = MINIMAL_VIEWPORTS, disable } = config || {};
   const data = globals?.[PARAM_KEY] || {};
@@ -46,7 +35,6 @@ export const ViewportTool: FC<{ api: API }> = ({ api }) => {
   const isRotated: boolean = typeof data === 'string' ? false : data.isRotated;
 
   const item = options[viewportName] || responsiveViewport;
-  const isActive = isTooltipVisible || item !== responsiveViewport;
   const isLocked = PARAM_KEY in storyGlobals;
 
   const length = Object.keys(options).length;
@@ -81,9 +69,7 @@ export const ViewportTool: FC<{ api: API }> = ({ api }) => {
         viewportMap: options,
         viewportName,
         isRotated,
-        setIsTooltipVisible,
         isLocked,
-        isActive,
         width,
         height,
       }}
@@ -105,80 +91,46 @@ const LastDimension = styled(ActiveViewportLabel)({
 });
 
 const Pure = React.memo(function PureTool(props: PureProps) {
-  const {
-    item,
-    viewportMap,
-    viewportName,
-    isRotated,
-    updateGlobals,
-    setIsTooltipVisible,
-    isLocked,
-    isActive,
-    width,
-    height,
-  } = props;
+  const { item, viewportMap, viewportName, isRotated, updateGlobals, isLocked, width, height } =
+    props;
 
   const update = useCallback(
     (input: GlobalStateUpdate | undefined) => updateGlobals({ [PARAM_KEY]: input }),
     [updateGlobals]
   );
 
+  const options = Object.entries(viewportMap).map(([k, value]) => ({
+    value: k,
+    title: value.name,
+    icon: iconsMap[value.type!],
+  }));
+
   return (
     <Fragment>
-      <WithTooltip
-        placement="bottom"
-        tooltip={({ onHide }) => (
-          <TooltipLinkList
-            links={[
-              ...(length > 0 && item !== responsiveViewport
-                ? [
-                    {
-                      id: 'reset',
-                      title: 'Reset viewport',
-                      icon: <RefreshIcon />,
-                      onClick: () => {
-                        update(undefined);
-                        onHide();
-                      },
-                    },
-                  ]
-                : []),
-              ...Object.entries(viewportMap).map<Link>(([k, value]) => ({
-                id: k,
-                title: value.name,
-                icon: iconsMap[value.type!],
-                active: k === viewportName,
-                onClick: () => {
-                  update({ value: k, isRotated: false });
-                  onHide();
-                },
-              })),
-            ].flat()}
-          />
-        )}
-        closeOnOutsideClick
-        onVisibleChange={setIsTooltipVisible}
+      <Select
+        resetLabel="Reset viewport"
+        onReset={() => update({ value: undefined, isRotated: false })}
+        key="viewport"
+        disabled={isLocked}
+        ariaLabel={
+          // TODO: consider shorter labels ("Set preview viewport size")
+          isLocked
+            ? 'Preview size (overridden by story parameters)'
+            : 'Change the size of the preview'
+        }
+        description="Select a viewport size among predefined options or reset to the default size."
+        variant="ghost"
+        defaultOptions={viewportName}
+        options={options}
+        onSelect={(selected) => update({ value: selected, isRotated: false })}
       >
-        {/* TODO migrate to an IconSelect where the current
-        value is announced as part of the AN but not in the tooltip */}
-        <IconButtonWithLabel
-          disabled={isLocked}
-          key="viewport"
-          label="Change the size of the preview"
-          description="Select a viewport size among predefined options or reset to the default size."
-          active={isActive}
-          onDoubleClick={() => {
-            update({ value: undefined, isRotated: false });
-          }}
-        >
-          <GrowIcon />
-          {item !== responsiveViewport ? (
-            <IconButtonLabel>
-              {item.name} {isRotated ? `(L)` : `(P)`}
-            </IconButtonLabel>
-          ) : null}
-        </IconButtonWithLabel>
-      </WithTooltip>
+        <GrowIcon />
+        {item !== responsiveViewport ? (
+          <>
+            {item.name} {isRotated ? `(L)` : `(P)`}
+          </>
+        ) : null}
+      </Select>
 
       <Global
         styles={{
@@ -201,7 +153,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
             <DimensionSeparator>
               <IconButton
                 key="viewport-rotate"
-                label="Rotate viewport"
+                ariaLabel="Rotate viewport"
                 onClick={() => {
                   update({ value: viewportName, isRotated: !isRotated });
                 }}

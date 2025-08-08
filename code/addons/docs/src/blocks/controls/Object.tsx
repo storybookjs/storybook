@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
-import { AddIcon, EditIcon, SubtractIcon } from '@storybook/icons';
+import { AddIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/compat';
 import { type Theme, styled, useTheme } from 'storybook/theming';
@@ -19,6 +19,7 @@ type JsonTreeProps = ComponentProps<typeof JsonTree>;
 const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
+  isolation: 'isolate',
 
   '&[aria-readonly="true"]': {
     opacity: 0.5,

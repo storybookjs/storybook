@@ -205,6 +205,10 @@ export class SbPage {
 const templateName: keyof typeof allTemplates = process.env.STORYBOOK_TEMPLATE_NAME || ('' as any);
 
 const templates = allTemplates;
+
+export const isReactSandbox = (templateName: string) =>
+  templates[templateName as keyof typeof templates]?.expected.renderer === '@storybook/react';
+
 export const hasVitestIntegration =
   !templates[templateName]?.skipTasks?.includes('vitest-integration');
 

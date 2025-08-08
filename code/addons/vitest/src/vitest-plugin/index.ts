@@ -29,6 +29,7 @@ import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
+import { storybookTestFn } from '../../../../builders/builder-vite/src/plugins/test-fn-plugin';
 // ! Relative import to prebundle it without needing to depend on the Vite builder
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
@@ -428,6 +429,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
   };
 
+  plugins.push(await storybookTestFn());
   plugins.push(storybookTestPlugin);
 
   // When running tests via the Storybook UI, we need

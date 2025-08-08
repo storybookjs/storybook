@@ -25,6 +25,7 @@ import {
   pluginWebpackStats,
   stripStoryHMRBoundary,
 } from './plugins';
+import { storybookTestFn } from './plugins/test-fn-plugin';
 import type { BuilderOptions } from './types';
 
 export type PluginConfigType = 'build' | 'development';
@@ -98,6 +99,7 @@ export async function pluginConfig(options: Options) {
     await csfPlugin(options),
     await injectExportOrderPlugin(),
     await stripStoryHMRBoundary(),
+    await storybookTestFn(),
     {
       name: 'storybook:allow-storybook-dir',
       enforce: 'post',

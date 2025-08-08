@@ -114,6 +114,8 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     renderToCanvas?: ProjectAnnotations<TRenderer>['renderToCanvas'];
     usesMount: boolean;
     storyGlobals: Globals;
+    /** @private */
+    __tests?: Record<string, (context: StoryContext<TRenderer>) => Promise<void>>;
   };
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<

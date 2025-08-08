@@ -1,5 +1,6 @@
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
+import { sanitize } from 'storybook/internal/csf';
 import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
@@ -34,7 +35,8 @@ export const testStory = (
   exportName: string,
   story: ComposedStoryFn,
   meta: ComponentAnnotations,
-  skipTags: string[]
+  skipTags: string[],
+  testName?: string
 ) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
     const annotations = getCsfFactoryAnnotations(story, meta);
@@ -55,10 +57,17 @@ export const testStory = (
     const _task = context.task as RunnerTask & {
       meta: TaskMeta & { storyId: string; reports: Report[] };
     };
-    _task.meta.storyId = composedStory.id;
+
+    if (testName) {
+      // TODO: this should be reworked
+      _task.meta.storyId = `${composedStory.id}-${sanitize(testName)}`;
+    } else {
+      _task.meta.storyId = composedStory.id;
+    }
 
     await setViewport(composedStory.parameters, composedStory.globals);
-    await composedStory.run();
+
+    await composedStory.run(undefined, testName);
 
     _task.meta.reports = composedStory.reporting.reports;
   };

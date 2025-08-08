@@ -214,10 +214,13 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     return story.playFunction!(context);
   };
 
-  const run = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
+  const run = (
+    extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>,
+    testName?: string
+  ) => {
     const context = initializeContext();
     Object.assign(context, extraContext);
-    return runStory(story, context);
+    return runStory(story, context, testName);
   };
 
   const playFunction = story.playFunction ? play : undefined;
@@ -376,7 +379,8 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
 // Will make a follow up PR for that
 async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
-  context: StoryContext<TRenderer>
+  context: StoryContext<TRenderer>,
+  testName?: string
 ) {
   for (const callback of [...cleanups].reverse()) {
     await callback();
@@ -421,6 +425,10 @@ async function runStory<TRenderer extends Renderer>(
       };
     }
     await playFunction(context);
+  }
+
+  if (testName) {
+    await story.__tests?.[testName](context);
   }
 
   let cleanUp: CleanupCallback | undefined;

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage } from './util';
+import { SbPage, isReactSandbox } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -102,5 +102,16 @@ test.describe('addon-controls', () => {
     );
 
     await expect(page).toHaveURL(/.*multiSelect\[0]:double\+\+space.*/);
+  });
+
+  // We want to avoid the controls panel crashing when JSX elements are part of args table
+  test('should show JSX elements in controls panel', async ({ page }) => {
+    test.skip(!isReactSandbox(templateName), 'This is a React only feature');
+    await page.goto(`${storybookUrl}?path=/story/stories-renderers-react-jsx-docgen--default`);
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.waitUntilLoaded();
+    await sbPage.viewAddonPanel('Controls');
+    await expect(sbPage.panelContent().getByText('children').first()).toBeVisible();
   });
 });

@@ -113,7 +113,7 @@ export const Primary = {
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { TodoItem } from './TodoItem';
 

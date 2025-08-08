@@ -125,7 +125,7 @@ export default {
 ```
 
 ```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts"
-import type { Preview } from 'storybook-solidjs';
+import type { Preview } from 'storybook-solidjs-vite';
 
 const preview: Preview = {
   decorators: [

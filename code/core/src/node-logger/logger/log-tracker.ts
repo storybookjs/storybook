@@ -1,6 +1,8 @@
 import { promises as fs } from 'node:fs';
 import path, { join } from 'node:path';
 
+import { isCI } from 'storybook/internal/common';
+
 import { cleanLog } from '../../../../lib/cli-storybook/src/automigrate/helpers/cleanLog';
 import type { LogLevel } from './logger';
 
@@ -97,7 +99,7 @@ class LogTracker {
     await fs.writeFile(filePath, logContent, 'utf-8');
     this.#logs = [];
 
-    return process.env.CI ? filePath : path.relative(process.cwd(), filePath);
+    return isCI() ? filePath : path.relative(process.cwd(), filePath);
   }
 }
 

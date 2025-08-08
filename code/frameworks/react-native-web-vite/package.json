@@ -1,6 +1,6 @@
 {
   "name": "@storybook/react-native-web-vite",
-  "version": "9.1.0-alpha.7",
+  "version": "9.2.0-alpha.2",
   "description": "Develop react-native components an isolated web environment with hot reloading.",
   "keywords": [
     "storybook"
@@ -59,13 +59,10 @@
     "prep": "jiti ../../../scripts/prepare/bundle.ts"
   },
   "dependencies": {
-    "@bunchtogether/vite-plugin-flow": "^1.0.2",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
-    "@vitejs/plugin-react": "^4.3.2",
-    "vite-plugin-babel": "^1.3.2",
-    "vite-plugin-commonjs": "^0.10.4",
+    "vite-plugin-rnw": "^0.0.6",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
@@ -95,5 +92,5 @@
     ],
     "platform": "node"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "ce6a1e4a8d5ad69c699021a0b183df89cfc7b684"
 }

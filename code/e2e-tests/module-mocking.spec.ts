@@ -33,10 +33,24 @@ test.describe('module-mocking', () => {
       '9 - [from meta afterEach]',
     ];
 
-    // Assert that each LI text content contains the expected text in order
-    for (let i = 0; i < expectedTexts.length; i++) {
-      const nthText = await logItem.locator(`li >> nth=${i}`).innerText();
-      expect(nthText).toMatch(expectedTexts[i]);
+    // Collect all logs in the panel but only check the order of the logs
+    // we care about, disregarding any other logs that could appear in between
+    const logItemsCount = await logItem.locator('li').count();
+    const actualTexts = [];
+    for (let i = 0; i < logItemsCount; i++) {
+      actualTexts.push(await logItem.locator(`li >> nth=${i}`).innerText());
+    }
+
+    let lastMatchIndex = -1;
+
+    for (const expected of expectedTexts) {
+      const foundIndex = actualTexts.findIndex(
+        (text, i) => i > lastMatchIndex && text.includes(expected)
+      );
+      expect(foundIndex, `Expected log "${expected}" to appear in order`).toBeGreaterThan(
+        lastMatchIndex
+      );
+      lastMatchIndex = foundIndex;
     }
   });
 

@@ -19,7 +19,7 @@ export const Text: Story = {
     // The argsToTemplate helper function converts the args to property and event bindings.
     // You could also write the template in plain HTML and bind to the component's inputs and outputs yourself:
     // <storybook-button ["label"]="label" (onClick)="onClick($event)">
-    // We don't recommend the latter since it can conflict with how Storybook applies arguments via its controls addon.
+    // We don't recommend the latter since it can conflict with how Storybook applies arguments via the Controls panel.
     // Binding to the component's inputs and outputs yourself will conflict with default values set inside the component's class.
     // In edge-case scenarios, you may need to define the template yourself, though.
     template: `<storybook-button ${argsToTemplate(args)}></storybook-button>`,

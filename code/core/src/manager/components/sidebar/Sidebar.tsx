@@ -165,7 +165,7 @@ export const Sidebar = React.memo(function Sidebar({
                     onClick={() => {
                       setIsFileSearchModalOpen(true);
                     }}
-                    label="Create a new story"
+                    ariaLabel="Create a new story"
                     variant="outline"
                   >
                     <PlusIcon />

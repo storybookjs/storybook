@@ -1,7 +1,7 @@
 import type { KeyboardEvent } from 'react';
-import React, { forwardRef, useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
+import { ChevronDownIcon, ChevronUpIcon, RefreshIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
@@ -9,19 +9,25 @@ import type { ButtonProps } from '../Button/Button';
 import { Button } from '../Button/Button';
 import { ScrollArea } from '../ScrollArea/ScrollArea';
 import { WithTooltipPure } from '../tooltip/WithTooltip';
+import { SelectOption } from './SelectOption';
 
 export interface SelectOption {
   /** Optional rendering of the option. */
   children?: React.ReactNode;
-  label: string;
+  title: string;
+  description?: string;
+  icon?: React.ReactNode;
   value: string;
 }
 
+const RESET_VALUE = '__sb_internal_reset';
 const PAGE_STEP_SIZE = 5;
 
 // TODO: add typeahead capability.
-// TODO: add reset option, must be first, use optgroups maybe? skip it when 0 options are selected.
+// TODO: consider if we do want "reset on double click" as in some tools
 // TODO: ensure options can be disabled, but not skipped in kb nav
+// TODO: add story that shows that when opening a Select with a selected option, the reference index for
+// all kb nav is the first selected option index, not 0.
 
 export interface SelectProps extends Omit<ButtonProps, 'onClick' | 'onChange' | 'onSelect'> {
   size?: 'small' | 'medium';
@@ -34,9 +40,12 @@ export interface SelectProps extends Omit<ButtonProps, 'onClick' | 'onChange' | 
   defaultOptions?: string | string[];
   defaultOpen?: boolean;
 
-  onSelect?: (option: SelectOption) => void;
-  onDeselect?: (option: SelectOption) => void;
-  onChange?: (selected: SelectOption[]) => void;
+  onReset?: () => void;
+  resetLabel?: string;
+
+  onSelect?: (option: string) => void;
+  onDeselect?: (option: string) => void;
+  onChange?: (selected: string[]) => void;
 }
 
 function valueToId(parentId: string, { value }: { value: string }): string {
@@ -62,31 +71,31 @@ const Listbox = styled('ul')({
   padding: 0,
 });
 
-const Option = styled('li')<{ active: boolean }>(({ theme, active }) => ({
-  padding: '6px 12px',
-  background: active ? theme.background.hoverable : 'transparent',
-  cursor: 'pointer',
-  borderRadius: 4,
-  '&[aria-selected="true"]': {
-    fontWeight: theme.typography.weight.bold,
-  },
-  ':hover': {
-    background: theme.background.hoverable,
-  },
-  ':focus-visible': {
-    boxShadow: `inset 0 0 0 2px ${theme.color.ultraviolet}`,
-    outline: 'none',
-  },
-}));
+function setSelectedFromDefault(
+  options: SelectProps['options'],
+  defaultOptions: SelectProps['defaultOptions']
+): SelectOption[] {
+  if (!defaultOptions) {
+    return [];
+  }
+
+  if (typeof defaultOptions === 'string') {
+    return options.filter((opt) => opt.value === defaultOptions);
+  }
+
+  return options.filter((opt) => defaultOptions.some((def) => opt.value === def));
+}
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
   (
     {
       children,
       disabled = false,
-      options,
-      defaultOption,
+      options: calleeOptions,
+      defaultOptions,
       multiSelect = false,
+      onReset,
+      resetLabel,
       onSelect,
       onDeselect,
       onChange,
@@ -99,22 +108,6 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     const id = useId();
     const listboxId = `${id}-listbox`;
     const listboxRef = useRef<HTMLUListElement>(null);
-
-    // The last selected option(s), which will be used by the app.
-    const [selectedOptions, setSelectedOptions] = useState<SelectOption[]>(() => {
-      if (!defaultOption) {
-        return [];
-      }
-
-      if (typeof defaultOption === 'string') {
-        return options.filter((opt) => opt.value === defaultOption);
-      }
-
-      return options.filter((opt) => defaultOption.some((def) => opt.value === def));
-    });
-
-    // The active option in the listbox, which will receive focus when the listbox is open.
-    const [activeOption, setActiveOptionReact] = useState<SelectOption | undefined>(undefined);
 
     const handleClose = useCallback(() => {
       setIsOpen(false);
@@ -130,21 +123,21 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
 
             const isSelected = previous?.some((opt) => opt.value === option.value);
             if (isSelected) {
-              onDeselect?.(option);
+              onDeselect?.(option.value);
               newSelected = previous?.filter((opt) => opt.value !== option.value) ?? [];
             } else {
-              onSelect?.(option);
+              onSelect?.(option.value);
               newSelected = [...(previous ?? []), option];
             }
 
-            onChange?.(newSelected);
+            onChange?.(newSelected.map((opt) => opt.value));
             return newSelected;
           });
         } else {
           setSelectedOptions((current) => {
             if (current.every((opt) => opt.value !== option.value)) {
-              onSelect?.(option);
-              onChange?.([option]);
+              onSelect?.(option.value);
+              onChange?.([option.value]);
               return [option];
             }
             return current;
@@ -157,6 +150,67 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       },
       [handleClose, multiSelect, onChange, onSelect, onDeselect]
     );
+
+    const options = useMemo(() => {
+      const opts = calleeOptions.map((option) => ({
+        ...option,
+        onClick: () => handleSelectOption(option, 'single-only'),
+        onKeyDown: (e: KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleSelectOption(option, 'single-only');
+          } else if (e.key === 'Tab') {
+            // FIXME: for sure we dont want this in multi. probably also not in solo.
+            if (!multiSelect) {
+              handleSelectOption(option, 'always');
+            } else {
+              handleClose();
+            }
+          }
+        },
+      }));
+
+      if (onReset) {
+        opts.unshift({
+          value: RESET_VALUE,
+          title: resetLabel ?? 'Reset selection',
+          icon: <RefreshIcon />,
+          onClick: () => {
+            onReset();
+            handleClose();
+          },
+          onKeyDown: (e: KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onReset();
+              handleClose();
+            } else if (e.key === 'Tab') {
+              handleClose();
+            }
+          },
+        });
+      }
+
+      return opts;
+    }, [calleeOptions, onReset, resetLabel, multiSelect, handleClose, handleSelectOption]);
+
+    // The last selected option(s), which will be used by the app.
+    const [selectedOptions, setSelectedOptions] = useState<SelectOption[]>(
+      setSelectedFromDefault(options, defaultOptions)
+    );
+
+    // We must do this to account for callees that have an unstable data model.
+    // For instance, when a URL query param is passed for the theme addon, the
+    // addon receives, undefined, then the default theme value (incorrectly),
+    // then the actual URL query param as a selected theme.
+    useEffect(() => {
+      if (defaultOptions) {
+        setSelectedOptions(setSelectedFromDefault(options, defaultOptions));
+      }
+    }, [defaultOptions, options]);
+
+    // The active option in the listbox, which will receive focus when the listbox is open.
+    const [activeOption, setActiveOptionReact] = useState<SelectOption | undefined>(undefined);
 
     // In single select mode, the active option is the selected one, so we
     // wrap setActiveOption to handle selection. We never close the listbox
@@ -215,40 +269,29 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       [isOpen, activeOption, setActiveOption, options]
     );
 
-    const handleButtonOpen = useCallback(
-      (defaultPos?: number) => {
-        if (!activeOption && defaultPos !== undefined) {
-          setActiveOption(options[defaultPos]);
-        }
-        setIsOpen(true);
-      },
-      [options, activeOption, setActiveOption]
-    );
-
     const handleButtonKeyDown = useCallback(
       (e: KeyboardEvent<HTMLButtonElement>) => {
+        const openAt = (index: number) => {
+          e.preventDefault();
+          setActiveOption(options[index]);
+          setIsOpen(true);
+        };
+
         if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          setActiveOption(options[0]);
+          openAt(0);
         } else if (e.key === 'ArrowUp') {
-          e.preventDefault();
-          setActiveOption(options[options.length - 1]);
+          openAt(options.length - 1);
         } else if (e.key === 'Home') {
-          e.preventDefault();
-          setActiveOption(options[0]);
+          openAt(0);
         } else if (e.key === 'End') {
-          e.preventDefault();
-          setActiveOption(options[options.length - 1]);
+          openAt(options.length - 1);
         } else if (e.key === 'PageDown') {
-          e.preventDefault();
-          setActiveOption(options[Math.min(PAGE_STEP_SIZE, options.length - 1)]);
+          openAt(Math.min(PAGE_STEP_SIZE, options.length - 1));
         } else if (e.key === 'PageUp') {
-          e.preventDefault();
-          setActiveOption(options[Math.max(0, options.length - 1 - PAGE_STEP_SIZE)]);
+          openAt(Math.max(0, options.length - 1 - PAGE_STEP_SIZE));
         }
-        handleButtonOpen();
       },
-      [options, handleButtonOpen, setActiveOption]
+      [options, setActiveOption]
     );
 
     // Transfer focus to the active option whenever we open the listbox.
@@ -282,52 +325,44 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
               id={listboxId}
               ref={listboxRef}
               aria-multiselectable={multiSelect}
+              onKeyDown={(e) => {
+                // We don't prevent default on Tab, so that the Tab or Shift+Tab goes
+                // through after we've repositioned to the Button.
+                if (e.key !== 'Tab') {
+                  e.preventDefault();
+                }
+                if (e.key === 'Escape') {
+                  handleClose();
+                } else if (e.key === 'ArrowDown') {
+                  moveActiveOptionDown();
+                } else if (e.key === 'ArrowUp') {
+                  moveActiveOptionUp();
+                } else if (e.key === 'Home') {
+                  setActiveOption(options[0]);
+                } else if (e.key === 'End') {
+                  setActiveOption(options[options.length - 1]);
+                } else if (e.key === 'PageDown') {
+                  moveActiveOptionDown(PAGE_STEP_SIZE);
+                } else if (e.key === 'PageUp') {
+                  moveActiveOptionUp(PAGE_STEP_SIZE);
+                }
+              }}
             >
               {options.map((option) => (
-                <Option
+                <SelectOption
                   key={option.value}
+                  title={option.title}
+                  description={option.description}
+                  icon={option.icon}
                   id={valueToId(id, option)}
-                  role="option"
-                  tabIndex={isOpen && activeOption?.value === option.value ? 0 : -1}
-                  aria-selected={selectedOptions?.some((opt) => opt.value === option.value)}
-                  active={activeOption?.value === option.value}
-                  onClick={() => handleSelectOption(option, 'single-only')}
+                  isActive={isOpen && activeOption?.value === option.value}
+                  isSelected={selectedOptions?.some((sel) => sel.value === option.value)}
+                  onClick={option.onClick}
+                  onKeyDown={option.onKeyDown}
                   onFocus={() => setActiveOption(option)}
-                  onKeyDown={(e) => {
-                    // HWe don't prevent default on Tab, so that the Tab or Shift+Tab goes
-                    // through after we've repositioned to the Button.
-                    if (e.key !== 'Tab') {
-                      e.preventDefault();
-                    }
-
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      handleSelectOption(option, 'single-only');
-                    } else if (e.key === 'Escape') {
-                      handleClose();
-                    } else if (e.key === 'ArrowDown') {
-                      moveActiveOptionDown();
-                    } else if (e.key === 'ArrowUp') {
-                      moveActiveOptionUp();
-                    } else if (e.key === 'Home') {
-                      setActiveOption(options[0]);
-                    } else if (e.key === 'End') {
-                      setActiveOption(options[options.length - 1]);
-                    } else if (e.key === 'PageDown') {
-                      moveActiveOptionDown(PAGE_STEP_SIZE);
-                    } else if (e.key === 'PageUp') {
-                      moveActiveOptionUp(PAGE_STEP_SIZE);
-                    } else if (e.key === 'Tab') {
-                      // FIXME: for sure we dont want this in multi. probably also not in solo.
-                      if (!multiSelect) {
-                        handleSelectOption(option, 'always');
-                      } else {
-                        handleClose();
-                      }
-                    }
-                  }}
                 >
-                  {option.children ?? option.label}
-                </Option>
+                  {option.children}
+                </SelectOption>
               ))}
             </Listbox>
           </ScrollArea>
@@ -342,12 +377,13 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             if (isOpen) {
               handleClose();
             } else {
-              handleButtonOpen();
+              setIsOpen(true);
             }
           }}
           tabIndex={isOpen ? -1 : 0}
           onKeyDown={handleButtonKeyDown}
           role="combobox"
+          aria-autocomplete="none"
           aria-expanded={isOpen}
           aria-controls={listboxId}
         >
@@ -357,7 +393,12 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           - always show the original label
           - or have this controlled by a prop
           
-          Based on that, craft aria-label to always have label + name or count of selected options */}
+          Based on that, craft aria-label to always have label + name or count of selected options.
+          
+          NOTE: by showing children, we let callees customise output freely (e.g. the theme picker)
+          but that runs the risk of having a poor accessible name; ariaLabel could be made mandatory
+          to counter that.
+          */}
 
           {/* Option A: always show selected option */}
           {/*
@@ -370,14 +411,20 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           {/* Option B: always show label */}
           {!multiSelect && children}
           {!multiSelect && selectedOptions.length !== 0 && (
-            <span className="sb-sr-only">currently selected: {selectedOptions[0].label}</span>
+            <span className="sb-sr-only">currently selected: {selectedOptions[0].title}</span>
           )}
 
           {/* Option C needs to be coded if we go there. */}
 
+          {/* TODO: once a decision was made re: how to display children, we must apply
+           this select's `ariaLabel` prop TO THE CHILDREN and not to the component root,
+           so that the computed accessible name retains the part below on current selection. */}
+
           {multiSelect && children}
           {multiSelect && !!selectedOptions.length && (
-            <SelectedOptionCount aria-label={`${selectedOptions.length} items selected`}>
+            <SelectedOptionCount
+              aria-label={`${selectedOptions.length} ${selectedOptions.length > 1 ? 'items' : 'item'} selected`}
+            >
               {selectedOptions?.length}
             </SelectedOptionCount>
           )}

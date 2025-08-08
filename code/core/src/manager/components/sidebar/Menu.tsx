@@ -8,7 +8,7 @@ import {
   WithTooltip,
 } from 'storybook/internal/components';
 
-import { CloseIcon, CogIcon } from '@storybook/icons';
+import { CloseIcon, CogIcon, InfoIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { type Theme, css, styled } from 'storybook/theming';
@@ -32,6 +32,7 @@ const buttonStyleAdditions = ({
   margin-top: 0;
   z-index: 1;
   // TODO/FIXME: questionable, should be an option of the component if relevant.
+  // Or could be handled through dedicated design tokens.
   // AA: 24px AAA: 44px
   ${isMobile &&
   `
@@ -112,7 +113,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
           onClick={onClick}
           isMobile={true}
         >
-          <CogIcon />
+          <InfoIcon />
         </SidebarIconButton>
         <SidebarIconButton
           ariaLabel="Close menu"

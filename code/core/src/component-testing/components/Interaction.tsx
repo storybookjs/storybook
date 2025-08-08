@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { IconButton, TooltipNote } from 'storybook/internal/components';
 
 import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
 
@@ -226,17 +226,13 @@ export const Interaction = ({
         </RowLabel>
         <RowActions>
           {(childCallIds?.length ?? 0) > 0 && (
-            <WithTooltip
-              hasChrome={false}
-              tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}
+            <StyledIconButton
+              onClick={toggleCollapsed}
+              ariaLabel={`${isCollapsed ? 'Show' : 'Hide'} step interactions`}
             >
-              <StyledIconButton
-                onClick={toggleCollapsed}
-                aria-label={isCollapsed ? 'Expand interaction' : 'Collapse interaction'}
-              >
-                {isCollapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
-              </StyledIconButton>
-            </WithTooltip>
+              {/* FIXME: accordion pattern */}
+              {isCollapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}
+            </StyledIconButton>
           )}
         </RowActions>
       </RowHeader>

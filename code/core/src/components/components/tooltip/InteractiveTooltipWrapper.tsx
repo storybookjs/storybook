@@ -12,6 +12,7 @@ const NoMarginNote = styled(TooltipNote)(() => ({
 }));
 
 // TODO: Improve delay management; make the delay near-instantaneous if any instance of this component has been recently shown.
+// TODO: Find way to trigger the tooltip when the child component is focused too. Will need this for general a11y but particularly for Sidebar nav secondary actions.
 
 export const InteractiveTooltipWrapper: React.FC<{
   children: React.ReactNode;

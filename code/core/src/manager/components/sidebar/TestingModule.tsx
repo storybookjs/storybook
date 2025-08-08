@@ -415,7 +415,6 @@ export const TestingModule = ({
                     clearStatuses();
                   }}
                   disabled={isRunning}
-                  aria-busy={isRunning}
                   label={'Clear all statuses'}
                   description={
                     isRunning ? "Can't clear statuses while tests are running" : undefined

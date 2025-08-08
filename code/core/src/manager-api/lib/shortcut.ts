@@ -155,5 +155,18 @@ export const shortcutToHumanString = (shortcut: API_KeyCollection): string => {
 
 // Display the shortcut for use in an aria-keyshortcuts attribute
 export const shortcutToAriaKeyshortcuts = (shortcut: API_KeyCollection): string => {
-  return shortcut.map((shortcut) => shortcut[0].toUpperCase() + shortcut.slice(1)).join('+');
+  return shortcut
+    .map((shortcut) => {
+      // aria-keyshortcuts needs `+` translated
+      if (shortcut === '+') {
+        return 'plus';
+      }
+
+      if (shortcut === ' ') {
+        return 'space';
+      }
+
+      return shortcut;
+    })
+    .join('+');
 };

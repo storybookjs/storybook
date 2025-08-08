@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
+import { Badge, IconButton, Select, WithTooltip } from 'storybook/internal/components';
 import type { StoryIndex, Tag } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
@@ -104,37 +104,58 @@ export const TagsFilter = ({
     return null;
   }
 
+  const tagOptions = useMemo(() => {
+    return Array.from(allTags)
+      .sort()
+      .map((tag) => ({
+        title: tag,
+        value: tag,
+      }));
+  }, [allTags]);
+
   const tags = Array.from(allTags);
   tags.sort();
 
   return (
-    <WithTooltip
-      placement="bottom"
-      trigger="click"
-      onVisibleChange={setExpanded}
-      tooltip={() => (
-        <TagsFilterPanel
-          api={api}
-          allTags={tags}
-          selectedTags={selectedTags}
-          toggleTag={toggleTag}
-          isDevelopment={isDevelopment}
-        />
-      )}
-      closeOnOutsideClick
-    >
-      <Wrapper>
-        <IconButton
-          key="tags"
-          label="Tag filters"
-          description="Filter the items shown in a sidebar based on the tags applied to them."
-          active={tagsActive}
-          onClick={handleToggleExpand}
-        >
-          <FilterIcon />
-        </IconButton>
-        {selectedTags.length > 0 && <TagSelected />}
-      </Wrapper>
-    </WithTooltip>
+    <>
+      <Select
+        key="tags-select"
+        ariaLabel="Tag filters"
+        description="Filter the items shown in a sidebar based on the tags applied to them."
+        options={tagOptions}
+        defaultOptions={selectedTags}
+        multiSelect
+      >
+        <FilterIcon />
+      </Select>
+      <WithTooltip
+        placement="bottom"
+        trigger="click"
+        onVisibleChange={setExpanded}
+        tooltip={() => (
+          <TagsFilterPanel
+            api={api}
+            allTags={tags}
+            selectedTags={selectedTags}
+            toggleTag={toggleTag}
+            isDevelopment={isDevelopment}
+          />
+        )}
+        closeOnOutsideClick
+      >
+        <Wrapper>
+          <IconButton
+            key="tags"
+            ariaLabel="Tag filters"
+            description="Filter the items shown in a sidebar based on the tags applied to them."
+            active={tagsActive}
+            onClick={handleToggleExpand}
+          >
+            <FilterIcon />
+          </IconButton>
+          {selectedTags.length > 0 && <TagSelected />}
+        </Wrapper>
+      </WithTooltip>
+    </>
   );
 };

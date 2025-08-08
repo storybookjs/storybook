@@ -5,6 +5,7 @@ import {
   IconButton,
   ListItem,
   ProgressSpinner,
+  ToggleIconButton,
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
@@ -182,10 +183,15 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
 
         <Actions>
           {!entry && (
-            <IconButton
-              label={`${watching ? 'Disable' : 'Enable'} watch mode`}
+            <ToggleIconButton
+              ariaLabel={isRunning ? 'Watch mode (cannot toggle while running)' : 'Watch mode'}
+              tooltip={
+                isRunning
+                  ? 'Watch mode unavailable while running'
+                  : `Watch mode is ${watching ? 'enabled' : 'disabled'}`
+              }
               size="medium"
-              active={watching}
+              pressed={watching}
               onClick={() =>
                 store.send({
                   type: 'TOGGLE_WATCHING',
@@ -197,11 +203,15 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               disabled={isRunning}
             >
               <EyeIcon />
-            </IconButton>
+            </ToggleIconButton>
           )}
           {isRunning ? (
             <IconButton
-              label={cancelling ? 'Stopping...' : 'Stop test run'}
+              // FIXME: we must clarify why isStarting has any impact here.
+              // TODO: if technical reasons explain why we must wait for tests to finish
+              // initialising, we'll want to have an ARIA Live region to announce when
+              // the run actually starts.
+              ariaLabel={cancelling ? 'Stop test run (already stopping...)' : 'Stop test run'}
               padding="none"
               size="medium"
               onClick={() =>
@@ -223,7 +233,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             </IconButton>
           ) : (
             <IconButton
-              label="Start test run"
+              ariaLabel="Start test run"
               size="medium"
               onClick={() =>
                 store.send({
@@ -240,16 +250,17 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           )}
         </Actions>
       </Heading>
-
+      {/* FIXME: aria labels and tooltips in this entire section need to be reviewed. We should state what we navigate to when clicking. */}
       <Extras>
         <Row>
           <ListItem
             as="label"
+            // FIXME: why interactions? why not components?
             title="Interactions"
             icon={entry ? null : <Form.Checkbox checked disabled />}
           />
           <IconButton
-            label={`${componentTestStatusLabel}${
+            ariaLabel={`${componentTestStatusLabel}${
               componentTestStatusValueToStoryIds['status-value:error'].length +
                 componentTestStatusValueToStoryIds['status-value:warning'].length >
               0
@@ -302,65 +313,60 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 />
               }
             />
-            <WithTooltip
-              hasChrome={false}
-              trigger="hover"
-              tooltip={
-                <TooltipNote
-                  note={
-                    watching
-                      ? 'Unavailable in watch mode'
-                      : currentRun.triggeredBy &&
-                          !FULL_RUN_TRIGGERS.includes(currentRun.triggeredBy)
-                        ? 'Unavailable when running focused tests'
-                        : isRunning
-                          ? 'Testing in progress'
-                          : currentRun.coverageSummary
-                            ? 'View coverage report'
-                            : fatalError
-                              ? 'Component tests crashed'
-                              : 'Run tests to calculate coverage'
-                  }
-                />
-              }
-            >
-              {watching ||
-              (currentRun.triggeredBy && !FULL_RUN_TRIGGERS.includes(currentRun.triggeredBy)) ? (
-                <IconButton
-                  size="medium"
-                  disabled
-                  label={
-                    watching
-                      ? `Coverage is unavailable in watch mode`
-                      : `Coverage is unavailable when running focused tests`
-                  }
-                >
-                  <InfoIcon />
-                </IconButton>
-              ) : currentRun.coverageSummary ? (
-                <IconButton
-                  asChild
-                  size="medium"
-                  label={`Open coverage report (${currentRun.coverageSummary.percentage}% coverage)`}
-                >
-                  <a href="/coverage/index.html" target="_blank">
-                    <TestStatusIcon
-                      isRunning={isRunning}
-                      percentage={currentRun.coverageSummary.percentage}
-                      status={currentRun.coverageSummary.status}
-                    />
-                    {currentRun.coverageSummary.percentage}%
-                  </a>
-                </IconButton>
-              ) : (
-                <IconButton size="medium" disabled label="Coverage status: unknown">
+
+            {/* FIXME: aria labels were not 100% consistent with the tooltip logic. Double check this logic during review please! */}
+            {watching ||
+            (currentRun.triggeredBy && !FULL_RUN_TRIGGERS.includes(currentRun.triggeredBy)) ? (
+              <IconButton
+                size="medium"
+                disabled
+                ariaLabel={
+                  watching
+                    ? `Coverage unavailable in watch mode`
+                    : `Coverage unavailable when running focused tests`
+                }
+              >
+                <InfoIcon />
+              </IconButton>
+            ) : currentRun.coverageSummary ? (
+              <IconButton
+                asChild
+                size="medium"
+                ariaLabel={
+                  // FIXME: I can't deduce from the original tooltip logic whether this use case
+                  // is logically possible or not. It is a reachable conditional branch in the original code.
+                  isRunning
+                    ? 'Open coverage report (testing still in progress)'
+                    : `Open coverage report (${currentRun.coverageSummary.percentage}% coverage)`
+                }
+              >
+                <a href="/coverage/index.html" target="_blank">
                   <TestStatusIcon
                     isRunning={isRunning}
-                    status={fatalError ? 'critical' : 'unknown'}
+                    percentage={currentRun.coverageSummary.percentage}
+                    status={currentRun.coverageSummary.status}
                   />
-                </IconButton>
-              )}
-            </WithTooltip>
+                  {currentRun.coverageSummary.percentage}%
+                </a>
+              </IconButton>
+            ) : (
+              <IconButton
+                size="medium"
+                disabled
+                ariaLabel={
+                  isRunning
+                    ? 'Coverage unavailable, testing still in progress'
+                    : fatalError
+                      ? 'Coverage unavailable, component tests crashed'
+                      : 'Coverage unavailable, run tests first'
+                }
+              >
+                <TestStatusIcon
+                  isRunning={isRunning}
+                  status={fatalError ? 'critical' : 'unknown'}
+                />
+              </IconButton>
+            )}
           </Row>
         )}
 
@@ -385,7 +391,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               }
             />
             <IconButton
-              label={a11yStatusLabel}
+              ariaLabel={a11yStatusLabel}
               size="medium"
               disabled={
                 a11yStatusValueToStoryIds['status-value:error'].length === 0 &&

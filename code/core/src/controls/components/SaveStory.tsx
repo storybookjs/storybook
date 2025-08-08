@@ -36,7 +36,7 @@ const Container = styled.div({
 const Bar = styled(BaseBar)(({ theme }) => ({
   '--highlight-bg-color': theme.base === 'dark' ? '#153B5B' : '#E0F0FF',
   display: 'flex',
-  flexDirection: 'row-reverse', // hide Info rather than Actions on overflow
+  // flexDirection: 'row-reverse', // hide Info rather than Actions on overflow
   alignItems: 'center',
   justifyContent: 'space-between',
   flexWrap: 'wrap',
@@ -54,6 +54,7 @@ const Bar = styled(BaseBar)(({ theme }) => ({
 }));
 
 const Info = styled.div({
+  order: 2,
   display: 'flex',
   flex: '99 0 auto',
   alignItems: 'center',
@@ -62,6 +63,9 @@ const Info = styled.div({
 });
 
 const Actions = styled.div(({ theme }) => ({
+  // We want actions to appear first and be hidden last on overflow,
+  // but the screenreader reading order must start with Info.
+  order: 1,
   display: 'flex',
   flex: '1 0 0',
   alignItems: 'center',
@@ -153,52 +157,37 @@ export const SaveStory = ({
   return (
     <Container id="save-from-controls">
       <Bar>
-        <Actions>
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            trigger="hover"
-            tooltip={<TooltipNote note="Save changes to story" />}
-          >
-            {/* TODO: replace this IconButton with an actual Button. Add an aria-describedby for longer-form explanations. */}
-            <IconButton aria-label="Save changes to story" disabled={saving} onClick={onSaveStory}>
-              <CheckIcon />
-              <Label data-short-label="Save">Update story</Label>
-            </IconButton>
-          </WithTooltip>
-
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            trigger="hover"
-            tooltip={<TooltipNote note="Create new story with these settings" />}
-          >
-            {/* TODO: replace this IconButton with an actual Button. Add an aria-describedby for longer-form explanations. */}
-            <IconButton aria-label="Create new story with these settings" onClick={onShowForm}>
-              <AddIcon />
-              <Label data-short-label="New">Create new story</Label>
-            </IconButton>
-          </WithTooltip>
-
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            trigger="hover"
-            tooltip={<TooltipNote note="Reset changes" />}
-          >
-            {/* TODO: replace this IconButton with an actual Button. Add an aria-describedby for longer-form explanations. */}
-            <IconButton aria-label="Reset changes" onClick={() => resetArgs()}>
-              <UndoIcon />
-              <span>Reset</span>
-            </IconButton>
-          </WithTooltip>
-        </Actions>
-
         <Info>
           <Label data-short-label="Unsaved changes">
             You modified this story. Do you want to save your changes?
           </Label>
         </Info>
+
+        <Actions>
+          <Button
+            ariaLabel={saving ? 'Saving changes to story' : 'Save changes to story'}
+            tooltip="Save changes to story"
+            disabled={saving}
+            onClick={onSaveStory}
+          >
+            <CheckIcon />
+            <Label data-short-label="Save">Update story</Label>
+          </Button>
+
+          <Button
+            ariaLabel="Create new story with these settings"
+            tooltip="Create new story with these settings"
+            onClick={onShowForm}
+          >
+            <AddIcon />
+            <Label data-short-label="New">Create new story</Label>
+          </Button>
+
+          <Button ariaLabel="Reset changes" onClick={() => resetArgs()}>
+            <UndoIcon />
+            <span>Reset</span>
+          </Button>
+        </Actions>
 
         <Modal
           width={350}

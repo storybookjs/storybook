@@ -55,7 +55,6 @@ export { IconButton } from './components/IconButton/IconButton';
 export { ToggleButton } from './components/ToggleButton/ToggleButton';
 export { ToggleIconButton } from './components/ToggleIconButton/ToggleIconButton';
 export { Select } from './components/Select/Select';
-// TODO either IconSelect or dedupe icon components
 
 // Forms
 export { Form } from './components/Form/Form';

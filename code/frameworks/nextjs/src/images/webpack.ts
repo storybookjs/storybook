@@ -1,26 +1,80 @@
-import { resolve as resolvePath } from 'node:path';
+import { dirname, resolve as resolvePath } from 'node:path';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import type { NextConfig } from 'next';
 import semver from 'semver';
 import type { RuleSetRule, Configuration as WebpackConfig } from 'webpack';
 
+import { getCustomImageLoaderConfig } from '../utils';
 import { getNextjsVersion } from '../utils';
 
-export const configureImages = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
+export const configureImages = (
+  baseConfig: WebpackConfig,
+  nextConfig: NextConfig,
+  nextConfigPath?: string
+): void => {
   configureStaticImageImport(baseConfig, nextConfig);
-  configureImageDefaults(baseConfig);
+  let customLoaderPath: string | null = null;
+
+  try {
+    const customLoaderConfig = getCustomImageLoaderConfig(nextConfig);
+    if (customLoaderConfig) {
+      const configDir = nextConfigPath ? dirname(nextConfigPath) : process.cwd();
+
+      customLoaderPath = require.resolve(customLoaderConfig.loaderFile, { paths: [configDir] });
+      logger.info(`=> Using custom image loader: ${customLoaderConfig.loaderFile}`);
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.warn(`=> Failed to resolve custom image loader: ${errorMessage}`);
+    logger.warn('=> Falling back to default image loader');
+  }
+
+  configureImageDefaults(baseConfig, customLoaderPath);
 };
 
 const fallbackFilename = 'static/media/[path][name][ext]';
 
-const configureImageDefaults = (baseConfig: WebpackConfig): void => {
+const configureImageDefaults = (
+  baseConfig: WebpackConfig,
+  customLoaderPath: string | null
+): void => {
   const version = getNextjsVersion();
   const resolve = baseConfig.resolve ?? {};
+
   resolve.alias = {
     ...resolve.alias,
     'sb-original/next/image': require.resolve('next/image'),
     'next/image': resolvePath(__dirname, './images/next-image'),
   };
+
+  if (customLoaderPath) {
+    try {
+      // Load the custom loader function
+      delete require.cache[customLoaderPath];
+      const loaderModule = require(customLoaderPath);
+      const customLoaderFunction = loaderModule.default || loaderModule;
+
+      if (typeof customLoaderFunction === 'function') {
+        baseConfig.plugins = baseConfig.plugins || [];
+        const webpack = require('webpack');
+        baseConfig.plugins.push(
+          new webpack.DefinePlugin({
+            __STORYBOOK_CUSTOM_LOADER__: `(${customLoaderFunction.toString()})`,
+          })
+        );
+        logger.info('=> Custom image loader integrated successfully');
+        logger.info('=> Note: Custom loaders must be self-contained (no external variables)');
+      } else {
+        logger.warn('=> Custom loader file does not export a function, using default loader');
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.warn(`=> Failed to load custom image loader: ${errorMessage}`);
+      logger.warn('=> Using default image loader instead');
+    }
+  }
 
   if (semver.satisfies(version, '>=13.0.0')) {
     resolve.alias = {

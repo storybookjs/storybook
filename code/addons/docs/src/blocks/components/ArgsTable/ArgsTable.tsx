@@ -167,9 +167,9 @@ export const TableWrapper = styled.table<{
   },
 }));
 
-const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
+const StyledIconButton = styled(IconButton)({
   margin: '-4px -12px -4px 0',
-}));
+});
 
 const ControlHeadingWrapper = styled.span({
   display: 'flex',
@@ -401,7 +401,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
                 <ControlHeadingWrapper>
                   Control{' '}
                   {!isLoading && resetArgs && (
-                    <StyledIconButton onClick={() => resetArgs()} title="Reset controls">
+                    <StyledIconButton onClick={() => resetArgs()} ariaLabel="Reset controls">
                       <UndoIcon aria-hidden />
                     </StyledIconButton>
                   )}

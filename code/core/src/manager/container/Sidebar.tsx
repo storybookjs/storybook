@@ -1,6 +1,4 @@
-import React, { useMemo } from 'react';
-
-import { Addon_TypesEnum } from 'storybook/internal/types';
+import React from 'react';
 
 import type { Combo, StoriesHash } from 'storybook/manager-api';
 import { Consumer, experimental_useStatusStore } from 'storybook/manager-api';

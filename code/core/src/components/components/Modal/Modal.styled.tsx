@@ -62,9 +62,10 @@ export const Container = styled.div<{ width?: number; height?: number }>(
   })
 );
 
-export const CloseButton = (props: React.ComponentProps<typeof IconButton>) => (
+export const CloseButton = () => (
   <Dialog.Close asChild>
-    <IconButton aria-label="Close" {...props}>
+    {/* TODO: test if Esc always closes modal, in which case, add `shortcut` prop. */}
+    <IconButton ariaLabel="Close modal" shortcut={['Escape']}>
       <CrossIcon />
     </IconButton>
   </Dialog.Close>

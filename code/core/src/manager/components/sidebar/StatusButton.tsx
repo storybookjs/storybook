@@ -26,7 +26,6 @@ export const StatusLabel = styled.div<{ status: StatusValue }>(withStatusColor, 
   margin: 3,
 });
 
-// TODO: handle instances of this component too.
 export const StatusButton = styled(IconButton)<{
   height?: number;
   width?: number;

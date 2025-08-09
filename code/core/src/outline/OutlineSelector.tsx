@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useEffect } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { ToggleIconButton } from 'storybook/internal/components';
 
 import { OutlineIcon } from '@storybook/icons';
 
@@ -19,7 +19,7 @@ export const OutlineSelector = memo(function OutlineSelector() {
       updateGlobals({
         [PARAM_KEY]: !isActive,
       }),
-    [isActive]
+    [isActive, updateGlobals]
   );
 
   useEffect(() => {
@@ -33,13 +33,14 @@ export const OutlineSelector = memo(function OutlineSelector() {
   }, [toggleOutline, api]);
 
   return (
-    <IconButton
+    <ToggleIconButton
       key="outline"
-      active={isActive}
-      label="Apply outlines to the preview"
+      pressed={isActive}
+      ariaLabel="Apply outlines to preview area"
+      tooltip="Apply outlines to the preview"
       onClick={toggleOutline}
     >
       <OutlineIcon />
-    </IconButton>
+    </ToggleIconButton>
   );
 });

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { ToggleIconButton } from 'storybook/internal/components';
 
 import { RulerIcon } from '@storybook/icons';
 
@@ -32,13 +32,13 @@ export const Tool = () => {
   }, [toggleMeasure, api]);
 
   return (
-    <IconButton
+    <ToggleIconButton
       key={TOOL_ID}
-      active={measureEnabled}
-      label="Enable measure"
+      pressed={measureEnabled}
+      ariaLabel="Enable measure"
       onClick={toggleMeasure}
     >
       <RulerIcon />
-    </IconButton>
+    </ToggleIconButton>
   );
 };

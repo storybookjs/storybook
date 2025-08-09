@@ -92,6 +92,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
           }}
           tooltip={<LiveContextMenu context={context} links={links} />}
         >
+          {/* FIXME: also not a button, but a decorative icon. MA, We should turn the button into a TestStatusPill */}
           <FloatingStatusButton type="button" status="status-value:pending">
             <EllipsisIcon />
           </FloatingStatusButton>

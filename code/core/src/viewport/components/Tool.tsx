@@ -112,13 +112,12 @@ const Pure = React.memo(function PureTool(props: PureProps) {
         onReset={() => update({ value: undefined, isRotated: false })}
         key="viewport"
         disabled={isLocked}
-        ariaLabel={
-          // TODO: consider shorter labels ("Set preview viewport size")
-          isLocked
-            ? 'Preview size (overridden by story parameters)'
-            : 'Change the size of the preview'
+        // FYI Michael: I used viewport here instead of preview which matches the name of the tool
+        ariaLabel={isLocked ? 'Viewport size (overridden by story parameters)' : 'Viewport size'}
+        tooltip={
+          isLocked ? 'Viewport size (overridden by story parameters)' : 'Resize preview viewport'
         }
-        description="Select a viewport size among predefined options or reset to the default size."
+        description="Select a viewport size among predefined options for the preview area, or reset to the default size."
         variant="ghost"
         defaultOptions={viewportName}
         options={options}

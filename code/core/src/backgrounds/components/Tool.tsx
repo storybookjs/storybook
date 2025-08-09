@@ -101,8 +101,8 @@ const Pure = memo(function PureTool(props: PureProps) {
           onReset={() => update(undefined)}
           disabled={isLocked}
           key="background"
-          ariaLabel={
-            // TODO: consider shorter labels ("Set preview background")
+          ariaLabel={isLocked ? 'Background (overridden by story parameters)' : 'Background'}
+          tooltip={
             isLocked
               ? 'Background (overridden by story parameters)'
               : 'Change the background of the preview'

@@ -36,11 +36,13 @@ export interface SelectOptionProps {
    * Whether to print out the option as if it could not be enabled. Does NOT prevent event handlers
    * from being called as we need them to implement keyboard navigation.
    */
-  disabled: boolean;
+  shouldLookDisabled: boolean;
 }
 
 const Item = styled('li')(({ theme }) => ({
   padding: '6px 12px',
+  fontSize: 12,
+  lineHeight: 1.5,
   background: 'transparent',
   cursor: 'pointer',
   borderRadius: 4,
@@ -95,7 +97,7 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
   onClick,
   onFocus,
   onKeyDown,
-  disabled = false,
+  shouldLookDisabled = false,
   ...props
 }) => {
   return (
@@ -105,7 +107,7 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
       role="option"
       tabIndex={isActive ? 0 : -1}
       aria-selected={isSelected}
-      aria-disabled={disabled ? true : undefined}
+      aria-disabled={shouldLookDisabled ? true : undefined}
       onClick={onClick}
       onFocus={onFocus}
       onKeyDown={onKeyDown}

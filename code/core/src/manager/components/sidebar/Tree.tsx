@@ -60,7 +60,7 @@ const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
   marginBottom: 20,
 }));
 
-const CollapseButton = styled.button(({ theme }) => ({
+const CollapseButton = styled.button({
   all: 'unset',
   display: 'flex',
   padding: '0px 8px',
@@ -75,7 +75,7 @@ const CollapseButton = styled.button(({ theme }) => ({
     outline: 'none',
     background: 'var(--tree-node-background-hover)',
   },
-}));
+});
 
 export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   position: 'relative',
@@ -342,8 +342,14 @@ const Node = React.memo<NodeProps>(function Node({
         )}
         {contextMenu.node}
         {icon ? (
+          // FIXME: it seems this component is only used to display an icon. It doesn't have a click handler,
+          // yet it's gonna be advertised as a button to SRs. We need to replace it with a labelled decorative
+          // icon.
           <StatusButton
-            aria-label={`Test status: ${statusValue.replace('status-value:', '')}`}
+            ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
+            // FIXME: this means 100's of live aria announcements none of which is calling the name of the component/story
+            // Instead we likely want one summary notification + onboarding users on filtering features so they can
+            // go to the stories with errors/warnings themselves
             role="status"
             type="button"
             status={statusValue}
@@ -381,7 +387,7 @@ const Node = React.memo<NodeProps>(function Node({
         {isExpanded && (
           <IconButton
             className="sidebar-subheading-action"
-            label={isFullyExpanded ? 'Expand' : 'Collapse'}
+            ariaLabel={isFullyExpanded ? 'Expand' : 'Collapse'}
             data-action="expand-all"
             data-expanded={isFullyExpanded}
             onClick={(event) => {
@@ -444,7 +450,14 @@ const Node = React.memo<NodeProps>(function Node({
         </BranchNode>
         {contextMenu.node}
         {(['status-value:error', 'status-value:warning'] as StatusValue[]).includes(itemStatus) && (
-          <StatusButton type="button" status={itemStatus}>
+          // FIXME: it seems this component is only used to display an icon. It doesn't have a click handler,
+          // yet it's gonna be advertised as a button to SRs. We need to replace it with a labelled decorative
+          // icon.
+          <StatusButton
+            type="button"
+            status={itemStatus}
+            ariaLabel={`Test status: ${itemStatus.replace('status-value:', '')}`}
+          >
             <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
               <UseSymbol type="dot" />
             </svg>

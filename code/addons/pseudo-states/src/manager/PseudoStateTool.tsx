@@ -28,7 +28,8 @@ export const PseudoStateTool = () => {
     <Select
       resetLabel="Reset pseudo states"
       onReset={() => updateGlobals({ [PARAM_KEY]: {} })}
-      ariaLabel="Select CSS pseudo states"
+      ariaLabel="CSS pseudo states"
+      tooltip="Apply CSS pseudo states"
       variant="ghost"
       defaultOptions={defaultOptions}
       options={options}

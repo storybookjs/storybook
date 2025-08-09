@@ -158,6 +158,7 @@ exports.getWebpackConfig = async (baseConfig, { builderOptions, builderContext }
   );
 
   if (!builderOptions.experimentalZoneless && !cliConfig.entry.polyfills?.includes('zone.js')) {
+    cliConfig.entry.polyfills ??= [];
     cliConfig.entry.polyfills.push('zone.js');
   }
 

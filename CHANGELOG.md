@@ -203,7 +203,7 @@ This is a huge release focused on testing and bundle size.
 - 🌐 Story globals
 - 🏗️ Major upgrades: Svelte, Next, React Native, Angular
 
-Please checkout our [Migration guide](https://storybook.js.org/docs/9/migration-guide) to upgrade from earlier versions of Storybook. To see a comprehensive list of changes that went into 9.0, you can refer to the [9.0 prerelease changelogs](./CHANGELOG.prerelease.md)
+Please checkout our [Migration guide](https://storybook.js.org/docs/releases/migration-guide) to upgrade from earlier versions of Storybook. To see a comprehensive list of changes that went into 9.0, you can refer to the [9.0 prerelease changelogs](./CHANGELOG.prerelease.md)
 
 <details>
 <summary>List of all updates</summary>

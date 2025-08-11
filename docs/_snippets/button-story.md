@@ -239,7 +239,7 @@ export const Primary = {
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
@@ -294,7 +294,7 @@ export const Primary = {
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="with-hooks"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { createSignal } from 'solid-js';
 

@@ -18,7 +18,7 @@ import {
   SupportedLanguage,
   externalFrameworks,
 } from '../../../../core/src/cli/project_types';
-import { frameworkPackages } from '../../../../core/src/common';
+import { frameworkPackages, isCI, optionalEnvToBoolean } from '../../../../core/src/common';
 import {
   type JsPackageManager,
   getPackageDetails,
@@ -192,7 +192,7 @@ const hasFrameworkTemplates = (framework?: string) => {
   // As the Nuxt framework templates are not compatible with the stories we need for CI.
   // See: https://github.com/storybookjs/storybook/pull/28607#issuecomment-2467903327
   if (framework === 'nuxt') {
-    return process.env.IN_STORYBOOK_SANDBOX !== 'true';
+    return !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
   }
 
   const frameworksWithTemplates: SupportedFrameworks[] = [
@@ -354,7 +354,7 @@ export async function baseGenerator(
   }).start();
 
   try {
-    if (process.env.CI !== 'true') {
+    if (!isCI()) {
       const { hasEslint, isStorybookPluginInstalled, isFlatConfig, eslintConfigFile } =
         // TODO: Investigate why packageManager type does not match on CI
         await extractEslintInfo(packageManager as any);
@@ -419,6 +419,7 @@ export async function baseGenerator(
         name: frameworkPackagePath,
         options: options.framework || {},
       },
+      features,
       frameworkPackage,
       prefixes,
       storybookConfigFolder,

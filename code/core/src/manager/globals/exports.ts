@@ -454,6 +454,7 @@ export default {
     'queryHelpers',
     'resetAllMocks',
     'restoreAllMocks',
+    'sb',
     'screen',
     'spyOn',
     'uninstrumentedUserEvent',

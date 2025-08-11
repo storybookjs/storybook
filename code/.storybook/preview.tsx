@@ -1,3 +1,4 @@
+/* eslint-disable depend/ban-dependencies */
 import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -5,11 +6,11 @@ import type { Channel } from 'storybook/internal/channels';
 import { global } from '@storybook/global';
 
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
-// TODO add empty preview
-// import * as designs from '@storybook/addon-designs/preview';
 import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
+// TODO add empty preview
+// import * as designs from '@storybook/addon-designs/preview';
 import addonDocs from '@storybook/addon-docs';
 import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
@@ -18,6 +19,7 @@ import addonTest from '@storybook/addon-vitest';
 import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
+import { sb } from 'storybook/test';
 import {
   Global,
   ThemeProvider,
@@ -32,6 +34,14 @@ import { DocsPageWrapper } from '../addons/docs/src/blocks/components';
 import * as templatePreview from '../core/template/stories/preview';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
+
+sb.mock(import('../core/template/stories/test/ModuleMocking.utils'));
+sb.mock(import('../core/template/stories/test/ModuleSpyMocking.utils'), { spy: true });
+sb.mock(import('../core/template/stories/test/ModuleAutoMocking.utils'));
+sb.mock(import('lodash-es'));
+sb.mock(import('lodash-es/add'));
+sb.mock(import('lodash-es/sum'));
+sb.mock(import('uuid'));
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';

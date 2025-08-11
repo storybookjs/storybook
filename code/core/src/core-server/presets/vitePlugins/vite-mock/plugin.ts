@@ -167,7 +167,12 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       name: 'storybook:mock-loader-preview',
       transform(code, id) {
         if (id === normalizedPreviewConfigPath) {
-          return rewriteSbMockImportCalls(code);
+          try {
+            return rewriteSbMockImportCalls(code);
+          } catch (e) {
+            logger.debug(`Could not transform sb.mock(import(...)) calls in ${id}: ${e}`);
+            return null;
+          }
         }
         return null;
       },

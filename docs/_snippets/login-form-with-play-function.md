@@ -134,7 +134,7 @@ export const FilledForm = {
 ```
 
 ```tsx filename="LoginForm.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { expect } from 'storybook/test';
 

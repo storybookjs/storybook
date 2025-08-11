@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "9.1.1",
+  "version": "9.1.2",
   "description": "Storybook framework-agnostic API",
   "keywords": [
     "storybook"

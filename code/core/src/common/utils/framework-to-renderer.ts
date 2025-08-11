@@ -31,6 +31,7 @@ export const frameworkToRenderer: Record<
   'react-native-web-vite': 'react',
   react: 'react',
   server: 'server',
+  stencil: 'stencil',
   svelte: 'svelte',
   vue3: 'vue3',
   'web-components': 'web-components',

@@ -100,6 +100,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       defaultOptions,
       multiSelect = false,
       onReset,
+      padding = 'small',
       resetLabel,
       onSelect,
       onDeselect,
@@ -392,6 +393,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           tooltip={isOpen ? undefined : (tooltip ?? ariaLabel)}
           id={id}
           ref={ref}
+          padding={padding}
           disabled={disabled}
           onClick={() => {
             if (isOpen) {

@@ -13,7 +13,7 @@ import addonA11y from '@storybook/addon-a11y';
 // import * as designs from '@storybook/addon-designs/preview';
 import addonDocs from '@storybook/addon-docs';
 import { DocsContext } from '@storybook/addon-docs/blocks';
-import addonThemes from '@storybook/addon-themes';
+import addonThemes, { withThemeByClassName } from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
 
 import addonPseudoStates from 'storybook-addon-pseudo-states';
@@ -191,6 +191,16 @@ const loaders = [
 ] as Loader[];
 
 const decorators = [
+  withThemeByClassName({
+    themes: {
+      light: 'debug',
+      dark: 'also-debug',
+      darker: 'still-debug',
+      darkest: 'forever-debug',
+    },
+    defaultTheme: 'light',
+  }),
+
   // This decorator adds the DocsContext created in the loader above
   (Story, { loaded: { docsContext } }) =>
     docsContext ? (
@@ -378,9 +388,15 @@ const parameters = {
       'slategray',
     ],
   },
+  // FIXME: re-enabled to test the UI on the IconButton rework PR.
+  // FIXME: can be disabled again before merging.
+  // themes: {
+  //   disable: true,
+  // },
   themes: {
-    disable: true,
+    disable: false,
   },
+
   backgrounds: {
     options: {
       light: { name: 'light', value: '#edecec' },

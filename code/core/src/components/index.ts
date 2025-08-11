@@ -49,9 +49,14 @@ export { Zoom } from './components/Zoom/Zoom';
 export type { ActionItem } from './components/ActionBar/ActionBar';
 export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
 
-// Forms
+// Buttons
 export { Button } from './components/Button/Button';
 export { IconButton } from './components/IconButton/IconButton';
+export { ToggleButton } from './components/ToggleButton/ToggleButton';
+export { ToggleIconButton } from './components/ToggleIconButton/ToggleIconButton';
+export { Select } from './components/Select/Select';
+
+// Forms
 export { Form } from './components/Form/Form';
 
 // Tooltips

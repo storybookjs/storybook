@@ -92,27 +92,32 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
       </MobileAddonsDrawer>
 
       {!isMobilePanelOpen && (
-        <Nav className="sb-bar" role="toolbar" aria-label="Mobile navigation controls">
-          <Button
+        <MobileBottomBar className="sb-bar" aria-label="Mobile navigation controls">
+          <BottomBarIconButton
             onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Open navigation menu"
+            ariaLabel="Open navigation menu"
             aria-expanded={isMobileMenuOpen}
             aria-controls="storybook-mobile-menu"
           >
             <MenuIcon />
             <Text>{fullStoryName}</Text>
-          </Button>
+          </BottomBarIconButton>
+          {/* TODO: test this with AssistivLabs */}
+          {/* TODO: check use of aria-current, it may not be applicable here. */}
+          <span className="sb-sr-only" aria-current="page">
+            {fullStoryName}
+          </span>
           {showPanel && (
-            <IconButton
+            <BottomBarIconButton
               onClick={() => setMobilePanelOpen(true)}
-              aria-label="Open addon panel"
+              ariaLabel="Open addon panel"
               aria-expanded={isMobilePanelOpen}
               aria-controls="storybook-mobile-addon-panel"
             >
               <BottomBarToggleIcon />
-            </IconButton>
+            </BottomBarIconButton>
           )}
-        </Nav>
+        </MobileBottomBar>
       )}
     </Container>
   );
@@ -127,7 +132,7 @@ const Container = styled.div(({ theme }) => ({
   borderTop: `1px solid ${theme.appBorderColor}`,
 }));
 
-const Nav = styled.div({
+const MobileBottomBar = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -136,28 +141,9 @@ const Nav = styled.div({
   padding: '0 6px',
 });
 
-const Button = styled.button(({ theme }) => ({
-  all: 'unset',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  color: theme.barTextColor,
-  fontSize: `${theme.typography.size.s2 - 1}px`,
-  padding: '0 7px',
-  fontWeight: theme.typography.weight.bold,
+const BottomBarIconButton = styled(IconButton)({
   WebkitLineClamp: 1,
-
-  '> svg': {
-    width: 14,
-    height: 14,
-    flexShrink: 0,
-  },
-
-  '&:focus-visible': {
-    outline: `2px solid ${theme.color.secondary}`,
-    outlineOffset: 2,
-  },
-}));
+});
 
 const Text = styled.p({
   display: '-webkit-box',

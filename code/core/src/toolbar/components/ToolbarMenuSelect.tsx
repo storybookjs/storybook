@@ -87,14 +87,18 @@ export const ToolbarMenuSelect: FC<ToolbarMenuSelectProps> = withKeyboardCycle(
         }
       });
 
+    // FIXME: for SB 10 we would want description to become an aria-description, and to add an
+    // ariaLabel prop to tools with an automigration switching current description to ariaLabel
+    const ariaLabel = description || title || name || id;
+
     return (
-      // FIXME find how to map title/description/isOverridden to a label
       <Select
         variant="ghost"
         defaultOptions={currentValue}
         options={options}
         disabled={isOverridden}
-        description={description || ''}
+        ariaLabel={ariaLabel}
+        tooltip={ariaLabel}
         resetLabel={resetLabel}
         onReset={() => updateGlobals({ [id]: '_reset' })}
         onSelect={(selected) => updateGlobals({ [id]: selected })}

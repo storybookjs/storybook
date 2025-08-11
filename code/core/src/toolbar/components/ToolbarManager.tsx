@@ -6,7 +6,6 @@ import { useGlobalTypes } from 'storybook/manager-api';
 
 import type { ToolbarArgType } from '../types';
 import { normalizeArgType } from '../utils/normalize-toolbar-arg-type';
-import { ToolbarMenuList } from './ToolbarMenuList';
 import { ToolbarMenuSelect } from './ToolbarMenuSelect';
 
 /** A smart component for handling manager-preview interactions. */
@@ -24,12 +23,7 @@ export const ToolbarManager: FC = () => {
       {globalIds.map((id) => {
         const normalizedArgType = normalizeArgType(id, globalTypes[id] as ToolbarArgType);
 
-        return (
-          <>
-            <ToolbarMenuSelect key={id} id={id} {...normalizedArgType} />
-            <ToolbarMenuList key={id} id={id} {...normalizedArgType} />
-          </>
-        );
+        return <ToolbarMenuSelect key={id} id={id} {...normalizedArgType} />;
       })}
     </>
   );

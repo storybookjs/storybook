@@ -36,7 +36,6 @@ const Container = styled.div({
 const Bar = styled(BaseBar)(({ theme }) => ({
   '--highlight-bg-color': theme.base === 'dark' ? '#153B5B' : '#E0F0FF',
   display: 'flex',
-  // flexDirection: 'row-reverse', // hide Info rather than Actions on overflow
   alignItems: 'center',
   justifyContent: 'space-between',
   flexWrap: 'wrap',

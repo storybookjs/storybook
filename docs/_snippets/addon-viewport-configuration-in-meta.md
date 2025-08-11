@@ -15,7 +15,7 @@ export default {
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="Without globals API"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import { MyComponent } from './MyComponent';

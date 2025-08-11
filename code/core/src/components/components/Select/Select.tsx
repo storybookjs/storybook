@@ -407,6 +407,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           // FIXME We may want to switch to a select role for single select, especially if we don't do typeahead/autocomplete.
           role="combobox"
           aria-autocomplete="none"
+          aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-controls={listboxId}
         >

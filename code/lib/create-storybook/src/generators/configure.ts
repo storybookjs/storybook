@@ -14,6 +14,7 @@ interface ConfigureMainOptions {
   language: SupportedLanguage;
   prefixes: string[];
   frameworkPackage: string;
+  features: GeneratorFeature[];
   /**
    * Extra values for main.js
    *
@@ -49,12 +50,17 @@ export async function configureMain({
   language,
   frameworkPackage,
   prefixes = [],
+  features = [],
   ...custom
 }: ConfigureMainOptions) {
   const srcPath = resolve(storybookConfigFolder, '../src');
   const prefix = (await pathExists(srcPath)) ? '../src' : '../stories';
+  const stories = features.includes('docs') ? [`${prefix}/**/*.mdx`] : [];
+
+  stories.push(`${prefix}/**/*.stories.@(${extensions.join('|')})`);
+
   const config = {
-    stories: [`${prefix}/**/*.mdx`, `${prefix}/**/*.stories.@(${extensions.join('|')})`],
+    stories,
     addons,
     ...custom,
   };

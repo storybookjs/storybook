@@ -10,6 +10,7 @@ import {
   formatFileContent,
   getInterpretedFile,
   getProjectRoot,
+  isCI,
   loadMainConfig,
   scanAndTransformFiles,
   transformImportFiles,
@@ -94,7 +95,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const hasCustomWebpackConfig = !!config.getFieldNode(['webpackFinal']);
 
-  const isInteractive = process.stdout.isTTY && !process.env.CI;
+  const isInteractive = process.stdout.isTTY && !isCI();
 
   if (nameMatches(info.frameworkPackageName, '@storybook/nextjs') && !hasCustomWebpackConfig) {
     const out =

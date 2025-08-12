@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import * as os from 'node:os';
 import { join } from 'node:path';
 
+import { isCI } from 'storybook/internal/common';
+
 import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
@@ -48,7 +50,7 @@ const getOperatingSystem = (): 'Windows' | 'macOS' | 'Linux' | `Other: ${string}
 // by the app. currently:
 // - cliVersion
 const globalContext = {
-  inCI: Boolean(process.env.CI),
+  inCI: isCI(),
   isTTY: process.stdout.isTTY,
   platform: getOperatingSystem(),
   nodeVersion: process.versions.node,

@@ -7,6 +7,7 @@ import {
   ensureDir,
   ensureSymlink,
   existsSync,
+  mkdir,
   pathExists,
   readFile,
   readFileSync,
@@ -156,6 +157,13 @@ export const init: Task['run'] = async (
     extra = { type: 'server' };
   } else if (template.expected.framework === '@storybook/react-native-web-vite') {
     extra = { type: 'react_native_web' };
+  }
+
+  switch (template.expected.framework) {
+    case '@storybook/react-native-web-vite':
+      await prepareReactNativeWebSandbox(cwd);
+      break;
+    default:
   }
 
   await executeCLIStep(steps.init, {
@@ -801,6 +809,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
     "sb.mock(import('lodash-es'));",
     "sb.mock(import('lodash-es/add'));",
     "sb.mock(import('lodash-es/sum'));",
+    "sb.mock(import('uuid'));",
     '',
   ].join('\n');
 
@@ -838,6 +847,14 @@ export async function setImportMap(cwd: string) {
   };
 
   await writeJson(join(cwd, 'package.json'), packageJson, { spaces: 2 });
+}
+
+async function prepareReactNativeWebSandbox(cwd: string) {
+  // Make it so that RN sandboxes have stories in src/stories similar to
+  // other react sandboxes, for consistency.
+  if (!(await pathExists(join(cwd, 'src')))) {
+    await mkdir(join(cwd, 'src'));
+  }
 }
 
 async function prepareAngularSandbox(cwd: string, templateName: string) {

@@ -7,6 +7,7 @@ import compression from '@polka/compression';
 import polka from 'polka';
 import invariant from 'tiny-invariant';
 
+import { telemetry } from '../telemetry';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
@@ -19,6 +20,7 @@ import { openInBrowser } from './utils/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
+import { summarizeIndex } from './utils/summarizeIndex';
 
 export async function storybookDevServer(options: Options) {
   const [server, core] = await Promise.all([getServer(options), options.presets.apply('core')]);
@@ -130,6 +132,28 @@ export async function storybookDevServer(options: Options) {
 
   // Now the preview has successfully started, we can count this as a 'dev' event.
   doTelemetry(app, core, initializedStoryIndexGenerator, options);
+
+  async function cancelTelemetry() {
+    const payload = { eventType: 'dev' };
+    try {
+      const generator = await initializedStoryIndexGenerator;
+      const indexAndStats = await generator?.getIndexAndStats();
+      // compute stats so we can get more accurate story counts
+      if (indexAndStats) {
+        Object.assign(payload, {
+          storyIndex: summarizeIndex(indexAndStats.storyIndex),
+          storyStats: indexAndStats.stats,
+        });
+      }
+    } catch (err) {}
+    await telemetry('canceled', payload, { immediate: true });
+    process.exit(0);
+  }
+
+  if (!core?.disableTelemetry) {
+    process.on('SIGINT', cancelTelemetry);
+    process.on('SIGTERM', cancelTelemetry);
+  }
 
   return { previewResult, managerResult, address, networkAddress };
 }

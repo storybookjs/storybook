@@ -4,6 +4,7 @@ import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
+import { optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -142,7 +143,8 @@ export const previewHead = async (base: any, { configDir, presets }: Options) =>
 };
 
 export const env = async () => {
-  return loadEnvs({ production: true }).raw;
+  const { raw } = await loadEnvs({ production: true });
+  return raw;
 };
 
 export const previewBody = async (base: any, { configDir, presets }: Options) => {
@@ -162,22 +164,6 @@ export const typescript = () => ({
     savePropValueAsString: true,
   },
 });
-
-const optionalEnvToBoolean = (input: string | undefined): boolean | undefined => {
-  if (input === undefined) {
-    return undefined;
-  }
-  if (input.toUpperCase() === 'FALSE') {
-    return false;
-  }
-  if (input.toUpperCase() === 'TRUE') {
-    return true;
-  }
-  if (typeof input === 'string') {
-    return true;
-  }
-  return undefined;
-};
 
 /** This API is used by third-parties to access certain APIs in a Node environment */
 export const experimental_serverAPI = (extension: Record<string, Function>, options: Options) => {

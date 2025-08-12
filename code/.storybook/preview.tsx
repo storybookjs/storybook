@@ -41,6 +41,7 @@ sb.mock('../core/template/stories/test/ModuleAutoMocking.utils.ts');
 sb.mock(import('lodash-es'));
 sb.mock(import('lodash-es/add'));
 sb.mock(import('lodash-es/sum'));
+sb.mock(import('uuid'));
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';

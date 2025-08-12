@@ -21,6 +21,7 @@ import {
   commandLog,
   getProjectRoot,
   invalidateProjectRootCache,
+  isCI,
   paddedLog,
   versions,
 } from 'storybook/internal/common';

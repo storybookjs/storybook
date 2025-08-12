@@ -1,3 +1,4 @@
+import { isCI, optionalEnvToBoolean } from 'storybook/internal/common';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';

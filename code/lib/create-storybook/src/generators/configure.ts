@@ -6,6 +6,8 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
+import type { GeneratorFeature } from './types';
+
 interface ConfigureMainOptions {
   addons: string[];
   extensions?: string[];

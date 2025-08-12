@@ -162,7 +162,7 @@ command('build')
 
     await build({
       ...options,
-      packageJson: pkg,
+      packageJson,
       test: !!options.test || optionalEnvToBoolean(process.env.SB_TESTBUILD),
     }).catch(() => process.exit(1));
   });

@@ -17,6 +17,8 @@ import {
   type JsPackageManager,
   frameworkPackages,
   getPackageDetails,
+  isCI,
+  optionalEnvToBoolean,
   versions,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';

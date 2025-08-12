@@ -1,5 +1,5 @@
 ```ts filename="vitest.config.ts" renderer="react"
-import { defineConfig, mergeConfig } from 'vitest/config';
+import { defineConfig, defineProject, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,33 +13,35 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
-      extends: true,
       // Use `workspace` field in Vitest < 3.2
-      projects: [{
-        plugins: [
-          storybookTest({
-            // The location of your Storybook config, main.js|ts
-            configDir: path.join(dirname, '.storybook'),
-            // This should match your package.json script to run Storybook
-            // The --ci flag will skip prompts and not open a browser
-            storybookScript: 'yarn storybook --ci',
-          })
-        ],
-        test: {
-          name: 'storybook',
-          // Enable browser mode
-          browser: {
-            enabled: true,
-            // Make sure to install Playwright
-            provider: 'playwright',
-            headless: true,
-            instances: [{ browser: 'chromium' }],
+      projects: [
+        defineProject({
+          extends: true,
+          plugins: [
+            storybookTest({
+              // The location of your Storybook config, main.js|ts
+              configDir: path.join(dirname, '.storybook'),
+              // This should match your package.json script to run Storybook
+              // The --ci flag will skip prompts and not open a browser
+              storybookScript: 'yarn storybook --ci',
+            }),
+          ],
+          test: {
+            name: 'storybook',
+            // Enable browser mode
+            browser: {
+              enabled: true,
+              // Make sure to install Playwright
+              provider: 'playwright',
+              headless: true,
+              instances: [{ browser: 'chromium' }],
+            },
+            setupFiles: ['./.storybook/vitest.setup.ts'],
           },
-          setupFiles: ['./.storybook/vitest.setup.ts'],
-        },
-      }],
+        }),
+      ],
     },
-  }),
+  })
 );
 ```
 
@@ -58,33 +60,35 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
-      extends: true,
       // Use `workspace` field in Vitest < 3.2
-      projects: [{
-        plugins: [
-          storybookTest({
-            // The location of your Storybook config, main.js|ts
-            configDir: path.join(dirname, '.storybook'),
-            // This should match your package.json script to run Storybook
-            // The --ci flag will skip prompts and not open a browser
-            storybookScript: 'yarn storybook --ci',
-          })
-        ],
-        test: {
-          name: 'storybook',
-          // Enable browser mode
-          browser: {
-            enabled: true,
-            // Make sure to install Playwright
-            provider: 'playwright',
-            headless: true,
-            instances: [{ browser: 'chromium' }],
+      projects: [
+        defineProject({
+          extends: true,
+          plugins: [
+            storybookTest({
+              // The location of your Storybook config, main.js|ts
+              configDir: path.join(dirname, '.storybook'),
+              // This should match your package.json script to run Storybook
+              // The --ci flag will skip prompts and not open a browser
+              storybookScript: 'yarn storybook --ci',
+            }),
+          ],
+          test: {
+            name: 'storybook',
+            // Enable browser mode
+            browser: {
+              enabled: true,
+              // Make sure to install Playwright
+              provider: 'playwright',
+              headless: true,
+              instances: [{ browser: 'chromium' }],
+            },
+            setupFiles: ['./.storybook/vitest.setup.ts'],
           },
-          setupFiles: ['./.storybook/vitest.setup.ts'],
-        },
-      }],
+        }),
+      ],
     },
-  }),
+  })
 );
 ```
 
@@ -103,32 +107,34 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
-      extends: true,
       // Use `workspace` field in Vitest < 3.2
-      projects: [{
-        plugins: [
-          storybookTest({
-            // The location of your Storybook config, main.js|ts
-            configDir: path.join(dirname, '.storybook'),
-            // This should match your package.json script to run Storybook
-            // The --ci flag will skip prompts and not open a browser
-            storybookScript: 'yarn storybook --ci',
-          })
-        ],
-        test: {
-          name: 'storybook',
-          // Enable browser mode
-          browser: {
-            enabled: true,
-            // Make sure to install Playwright
-            provider: 'playwright',
-            headless: true,
-            instances: [{ browser: 'chromium' }],
+      projects: [
+        defineProject({
+          extends: true,
+          plugins: [
+            storybookTest({
+              // The location of your Storybook config, main.js|ts
+              configDir: path.join(dirname, '.storybook'),
+              // This should match your package.json script to run Storybook
+              // The --ci flag will skip prompts and not open a browser
+              storybookScript: 'yarn storybook --ci',
+            }),
+          ],
+          test: {
+            name: 'storybook',
+            // Enable browser mode
+            browser: {
+              enabled: true,
+              // Make sure to install Playwright
+              provider: 'playwright',
+              headless: true,
+              instances: [{ browser: 'chromium' }],
+            },
+            setupFiles: ['./.storybook/vitest.setup.ts'],
           },
-          setupFiles: ['./.storybook/vitest.setup.ts'],
-        },
-      }],
+        }),
+      ],
     },
-  }),
+  })
 );
 ```

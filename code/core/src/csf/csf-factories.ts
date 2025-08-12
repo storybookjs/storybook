@@ -108,8 +108,9 @@ function defineMeta<
     _tag: 'Meta',
     input,
     preview,
-    get composed(): never {
-      throw new Error('Not implemented');
+    get composed() {
+      // TODO: check this later
+      return composeConfigs([preview.input, input]);
     },
     // @ts-expect-error hard
     story(
@@ -119,6 +120,11 @@ function defineMeta<
     },
   };
 }
+
+type TestFunction<
+  TRenderer extends Renderer,
+  TArgs extends TRenderer['args'] = Args,
+> = PlayFunction<TRenderer, TArgs>;
 
 export interface Story<
   TRenderer extends Renderer,
@@ -139,11 +145,15 @@ export interface Story<
   meta: Meta<TRenderer>;
   __compose: () => ComposedStoryFn<TRenderer>;
   play: TInput['play'];
-  run: (context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>) => Promise<void>;
+  run: (
+    context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>,
+    testName?: string
+  ) => Promise<void>;
 
   extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input: TInput
   ): Story<TRenderer, TInput>;
+  test: (name: string, fn: TestFunction<TRenderer, TRenderer['args']>) => void;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -155,7 +165,7 @@ function defineStory<
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
 >(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
   let composed: ComposedStoryFn<TRenderer>;
-
+  input.__tests ??= {};
   const compose = () => {
     if (!composed) {
       composed = composeStory(
@@ -182,6 +192,11 @@ function defineStory<
     },
     get run() {
       return compose().run ?? (async () => {});
+    },
+    test(name: string, fn: TestFunction<TRenderer, TRenderer['args']>) {
+      // @ts-expect-error fix this later
+      input.__tests[name] = fn;
+      return this;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(

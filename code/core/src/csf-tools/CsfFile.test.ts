@@ -94,6 +94,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -109,6 +110,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -141,6 +143,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -174,6 +177,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -205,6 +209,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -234,6 +239,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -264,6 +270,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -277,6 +284,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -307,6 +315,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -320,6 +329,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -350,6 +360,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -363,6 +374,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -394,6 +406,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -407,6 +420,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -442,6 +456,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -458,6 +473,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -493,6 +509,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -509,6 +526,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -541,6 +559,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -554,6 +573,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -586,6 +606,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -599,6 +620,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -629,6 +651,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -642,6 +665,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -676,6 +700,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -709,6 +734,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -743,6 +769,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -782,6 +809,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -816,6 +844,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -832,6 +861,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -861,6 +891,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -874,6 +905,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -908,6 +940,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -924,6 +957,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -959,6 +993,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1041,6 +1076,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1054,6 +1090,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1109,6 +1146,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1122,6 +1160,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1201,6 +1240,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1235,6 +1275,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1267,6 +1308,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1301,6 +1343,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1384,6 +1427,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: true
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1419,6 +1463,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: true
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1461,6 +1506,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: true
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1498,6 +1544,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: true
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1560,6 +1607,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: true
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1597,6 +1645,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: true
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1630,6 +1679,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: true
               moduleMock: false
@@ -1662,6 +1712,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: true
               moduleMock: false
@@ -1697,6 +1748,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: true
               moduleMock: false
@@ -1732,6 +1784,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: true
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1766,6 +1819,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: true
+              test: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1818,6 +1872,7 @@ describe('CsfFile', () => {
             beforeEach: false
             globals: false
             tags: true
+            test: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1840,6 +1895,7 @@ describe('CsfFile', () => {
             beforeEach: false
             globals: false
             tags: true
+            test: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1880,6 +1936,7 @@ describe('CsfFile', () => {
             beforeEach: false
             globals: false
             tags: true
+            test: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1925,6 +1982,7 @@ describe('CsfFile', () => {
             beforeEach: false
             globals: false
             tags: true
+            test: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -1985,6 +2043,7 @@ describe('CsfFile', () => {
             beforeEach: false
             globals: false
             tags: false
+            test: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -2024,6 +2083,7 @@ describe('CsfFile', () => {
             beforeEach: false
             globals: false
             tags: false
+            test: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -2063,6 +2123,7 @@ describe('CsfFile', () => {
             beforeEach: false
             globals: false
             tags: false
+            test: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -2102,6 +2163,7 @@ describe('CsfFile', () => {
             beforeEach: false
             globals: false
             tags: false
+            test: false
             storyFn: false
             mount: false
             moduleMock: false
@@ -2134,6 +2196,7 @@ describe('CsfFile', () => {
               beforeEach: true
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -2166,6 +2229,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: true
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -2197,6 +2261,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: true
@@ -2225,6 +2290,7 @@ describe('CsfFile', () => {
               beforeEach: false
               globals: false
               tags: false
+              test: false
               storyFn: false
               mount: false
               moduleMock: true
@@ -2259,6 +2325,7 @@ describe('CsfFile', () => {
                 beforeEach: false
                 globals: false
                 tags: false
+                test: false
                 storyFn: false
                 mount: false
                 moduleMock: false
@@ -2272,6 +2339,7 @@ describe('CsfFile', () => {
                 beforeEach: false
                 globals: false
                 tags: false
+                test: false
                 storyFn: false
                 mount: false
                 moduleMock: false
@@ -2302,6 +2370,7 @@ describe('CsfFile', () => {
                 beforeEach: false
                 globals: false
                 tags: false
+                test: false
                 storyFn: false
                 mount: false
                 moduleMock: false
@@ -2334,6 +2403,7 @@ describe('CsfFile', () => {
                 beforeEach: false
                 globals: false
                 tags: false
+                test: false
                 storyFn: false
                 mount: false
                 moduleMock: false
@@ -2347,6 +2417,7 @@ describe('CsfFile', () => {
                 beforeEach: false
                 globals: false
                 tags: false
+                test: false
                 storyFn: false
                 mount: false
                 moduleMock: false
@@ -2422,6 +2493,7 @@ describe('CsfFile', () => {
                 beforeEach: false
                 globals: false
                 tags: false
+                test: false
                 storyFn: false
                 mount: false
                 moduleMock: false
@@ -2457,6 +2529,7 @@ describe('CsfFile', () => {
                 beforeEach: false
                 globals: false
                 tags: false
+                test: false
                 storyFn: false
                 mount: false
                 moduleMock: false
@@ -2492,6 +2565,7 @@ describe('CsfFile', () => {
                 beforeEach: false
                 globals: false
                 tags: false
+                test: false
                 storyFn: false
                 mount: false
                 moduleMock: false

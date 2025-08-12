@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "9.1.0-alpha.9",
+  "version": "9.2.0-alpha.3",
   "description": "Document component usage and properties in Markdown",
   "keywords": [
     "addon",
@@ -112,7 +112,7 @@
   "dependencies": {
     "@mdx-js/react": "^3.0.0",
     "@storybook/csf-plugin": "workspace:*",
-    "@storybook/icons": "^1.2.12",
+    "@storybook/icons": "^1.4.0",
     "@storybook/react-dom-shim": "workspace:*",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
@@ -162,7 +162,7 @@
       "./src/manager.tsx"
     ]
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
+  "gitHead": "ce6a1e4a8d5ad69c699021a0b183df89cfc7b684",
   "storybook": {
     "displayName": "Docs",
     "icon": "https://user-images.githubusercontent.com/263385/101991672-48355c80-3c7c-11eb-82d9-95fa12438f64.png",

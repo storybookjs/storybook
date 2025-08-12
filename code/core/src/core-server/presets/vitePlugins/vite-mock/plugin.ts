@@ -101,17 +101,28 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
         server.watcher.on('unlink', invalidateAffectedFiles);
       },
 
-      async load(id) {
-        for (const call of mockCalls) {
-          if (call.absolutePath !== id) {
-            continue;
-          }
+      load: {
+        order: 'pre',
+        handler(id) {
+          const preserveSymlinks = viteConfig.resolve.preserveSymlinks;
 
-          if (call.redirectPath) {
-            return readFileSync(call.redirectPath, 'utf-8');
+          const idNorm = normalizePathForComparison(id, preserveSymlinks);
+          const cleanId = getCleanId(idNorm);
+
+          for (const call of mockCalls) {
+            const callNorm = normalizePathForComparison(call.absolutePath, preserveSymlinks);
+
+            if (callNorm !== idNorm && call.path !== cleanId) {
+              continue;
+            }
+
+            if (call.redirectPath) {
+              this.addWatchFile(call.redirectPath);
+              return readFileSync(call.redirectPath, 'utf-8');
+            }
           }
-        }
-        return null;
+          return null;
+        },
       },
       transform: {
         order: 'pre',
@@ -122,14 +133,16 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             const idNorm = normalizePathForComparison(id, preserveSymlinks);
             const callNorm = normalizePathForComparison(call.absolutePath, preserveSymlinks);
 
-            if (callNorm !== idNorm && viteConfig.command !== 'serve') {
-              continue;
-            }
+            if (viteConfig.command !== 'serve') {
+              if (callNorm !== idNorm) {
+                continue;
+              }
+            } else {
+              const cleanId = getCleanId(idNorm);
 
-            const cleanId = getCleanId(idNorm);
-
-            if (viteConfig.command === 'serve' && call.path !== cleanId && callNorm !== idNorm) {
-              continue;
+              if (call.path !== cleanId && callNorm !== idNorm) {
+                continue;
+              }
             }
 
             try {
@@ -140,8 +153,6 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
                   code: automockedCode.toString(),
                   map: automockedCode.generateMap(),
                 };
-              } else {
-                return readFileSync(call.redirectPath, 'utf-8');
               }
             } catch (e) {
               logger.error(`Error automocking ${id}: ${e}`);
@@ -156,7 +167,12 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       name: 'storybook:mock-loader-preview',
       transform(code, id) {
         if (id === normalizedPreviewConfigPath) {
-          return rewriteSbMockImportCalls(code);
+          try {
+            return rewriteSbMockImportCalls(code);
+          } catch (e) {
+            logger.debug(`Could not transform sb.mock(import(...)) calls in ${id}: ${e}`);
+            return null;
+          }
         }
         return null;
       },

@@ -1,18 +1,18 @@
 {
   "name": "sb",
-  "version": "9.1.0-alpha.9",
+  "version": "9.2.0-alpha.3",
   "description": "Storybook CLI",
   "keywords": [
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-storybook",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-sb",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/lib/cli-storybook"
+    "directory": "code/lib/cli-sb"
   },
   "funding": {
     "type": "opencollective",
@@ -26,5 +26,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "ce6a1e4a8d5ad69c699021a0b183df89cfc7b684"
 }

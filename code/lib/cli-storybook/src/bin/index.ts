@@ -2,6 +2,8 @@ import { globalSettings } from 'storybook/internal/cli';
 import {
   HandledError,
   JsPackageManagerFactory,
+  isCI,
+  optionalEnvToBoolean,
   removeAddon as remove,
   versions,
 } from 'storybook/internal/common';
@@ -43,8 +45,7 @@ const command = (name: string) =>
     .option(
       '--disable-telemetry',
       'Disable sending telemetry data',
-      // default value is false, but if the user sets STORYBOOK_DISABLE_TELEMETRY, it can be true
-      process.env.STORYBOOK_DISABLE_TELEMETRY && process.env.STORYBOOK_DISABLE_TELEMETRY !== 'false'
+      optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
     )
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
@@ -88,7 +89,7 @@ command('init')
   .option(
     '--dev',
     'Launch the development server after completing initialization. Enabled by default (default: true)',
-    process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true'
+    !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)
   )
   .option(
     '--no-dev',
@@ -228,6 +229,7 @@ command('automigrate [fixId]')
   )
   .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
+    prompt.setPromptLibrary('clack');
     await doAutomigrate({ fixId, ...options }).catch(handleCommandFailure);
   });
 

@@ -2,9 +2,8 @@ import fs from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import { dedent } from 'ts-dedent';
 import { z } from 'zod';
-
-import { SavingGlobalSettingsFileError } from '../server-errors';
 
 const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
 
@@ -71,10 +70,9 @@ export class Settings {
       await fs.mkdir(dirname(this.filePath), { recursive: true });
       await fs.writeFile(this.filePath, JSON.stringify(this.value, null, 2));
     } catch (err) {
-      throw new SavingGlobalSettingsFileError({
-        filePath: this.filePath,
-        error: err,
-      });
+      console.warn(dedent`
+        Unable to save global settings file to ${this.filePath}
+        ${err && `Reason: ${(err as Error).message ?? err}`}`);
     }
   }
 }

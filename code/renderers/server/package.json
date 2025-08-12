@@ -1,6 +1,6 @@
 {
   "name": "@storybook/server",
-  "version": "9.1.0-alpha.9",
+  "version": "9.2.0-alpha.3",
   "description": "Storybook Server renderer",
   "keywords": [
     "storybook"
@@ -69,5 +69,5 @@
     ],
     "platform": "browser"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "ce6a1e4a8d5ad69c699021a0b183df89cfc7b684"
 }

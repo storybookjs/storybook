@@ -951,11 +951,11 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-production:
-                parallelism: 25
+                parallelism: 7
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 1
+                parallelism: 25
                 requires:
                     - create-sandboxes
             - test-runner-production:
@@ -1040,11 +1040,11 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-production:
-                parallelism: 12
+                parallelism: 6
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 1
+                parallelism: 12
                 requires:
                     - create-sandboxes
             - test-runner-production:
@@ -1110,11 +1110,11 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-production:
-                parallelism: 8
+                parallelism: 6
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 1
+                parallelism: 8
                 requires:
                     - create-sandboxes
             - test-runner-production:

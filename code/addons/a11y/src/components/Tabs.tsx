@@ -1,14 +1,8 @@
 import * as React from 'react';
 
-import {
-  Button,
-  IconButton,
-  ScrollArea,
-  TooltipNote,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { IconButton, ScrollArea, ToggleButton } from 'storybook/internal/components';
 
-import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
+import { CollapseIcon, ExpandAltIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
 import type { Result } from 'axe-core';
 import { useResizeDetector } from 'react-resize-detector';
@@ -79,7 +73,7 @@ const ActionsWrapper = styled.div({
   gap: 6,
 });
 
-const ButtonWithCollapsibleText = styled(Button)({
+const ToggleWithCollapsibleText = styled(ToggleButton)({
   // 193px is the total width of the action buttons when the label is visible
   '@container (max-width: 193px)': {
     span: {
@@ -122,10 +116,8 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
   );
 
   const highlightDescriptionId = React.useId();
-  const highlightDescription = highlighted
-    ? 'Hide accessibility highlights'
-    : 'Highlight accessibility results in preview';
-  const highlightLabel = highlighted ? 'Hide highlights' : 'Show highlights';
+  const highlightDescription = 'Highlight accessibility results in preview';
+  const highlightLabel = 'Show highlights';
 
   return (
     <Container ref={ref}>
@@ -146,33 +138,24 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
           ))}
         </TabsWrapper>
         <ActionsWrapper>
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            placement="top"
-            tooltip={<TooltipNote note={highlightDescription} />}
-            trigger="hover"
+          <ToggleWithCollapsibleText
+            ariaLabel={highlightLabel}
+            description={highlightDescription}
+            tooltip={highlightDescription}
+            onClick={toggleHighlight}
+            pressed={highlighted}
           >
-            <ButtonWithCollapsibleText
-              aria-label={highlightLabel}
-              aria-describedby={highlightDescriptionId}
-              onClick={toggleHighlight}
-              active={highlighted}
-            >
-              {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
-              <span>{highlightLabel}</span>
-            </ButtonWithCollapsibleText>
-            <span className="sb-sr-only" id={highlightDescriptionId}>
-              {highlightDescription}
-            </span>
-          </WithTooltip>
+            <EyeIcon />
+            <span>{highlightLabel}</span>
+          </ToggleWithCollapsibleText>
           <IconButton
             onClick={allExpanded ? handleCollapseAll : handleExpandAll}
-            label={allExpanded ? 'Collapse all results' : 'Expand all results'}
+            ariaLabel={allExpanded ? 'Collapse all results' : 'Expand all results'}
+            aria-expanded={allExpanded}
           >
             {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
           </IconButton>
-          <IconButton onClick={handleManual} label="Rerun accessibility scan">
+          <IconButton onClick={handleManual} ariaLabel="Rerun accessibility scan">
             <SyncIcon />
           </IconButton>
         </ActionsWrapper>

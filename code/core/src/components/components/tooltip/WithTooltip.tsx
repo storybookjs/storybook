@@ -5,6 +5,7 @@ import ReactDOM from 'react-dom';
 import { global } from '@storybook/global';
 
 import { useOverlay, useOverlayPosition } from '@react-aria/overlays';
+import type { Placement } from '@react-aria/overlays';
 import { useTooltipTrigger } from '@react-aria/tooltip';
 import { useTooltip } from '@react-aria/tooltip';
 import { useTooltipTriggerState } from '@react-stately/tooltip';
@@ -48,7 +49,7 @@ export interface WithTooltipPureProps
    */
   closeOnOutsideClick?: boolean;
   trigger?: TriggerConfig;
-  placement?: any;
+  placement?: Placement;
   offset?: number;
   defaultVisible?: boolean;
   delayHide?: number;
@@ -123,7 +124,7 @@ const WithTooltipPure = ({
       isOpen: isVisible,
       isDismissable: closeOnOutsideClick,
       shouldCloseOnBlur: false,
-      onClose: () => onVisibleChange(false),
+      onClose: () => onVisibleChange?.(false),
     },
     overlayRef
   );

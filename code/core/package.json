@@ -334,7 +334,7 @@
     "react-syntax-highlighter": "^15.4.5",
     "react-textarea-autosize": "^8.3.0",
     "react-transition-group": "^4.4.5",
-    "recast": "^0.23.5",
+    "recast": "^0.23.11",
     "require-from-string": "^2.0.2",
     "resolve-from": "^5.0.0",
     "resolve.exports": "^2.0.3",

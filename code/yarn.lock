@@ -22629,7 +22629,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"recast@npm:^0.23.1, recast@npm:^0.23.3, recast@npm:^0.23.5":
+"recast@npm:^0.23.1, recast@npm:^0.23.11, recast@npm:^0.23.3":
   version: 0.23.11
   resolution: "recast@npm:0.23.11"
   dependencies:
@@ -24527,7 +24527,7 @@ __metadata:
     react-syntax-highlighter: "npm:^15.4.5"
     react-textarea-autosize: "npm:^8.3.0"
     react-transition-group: "npm:^4.4.5"
-    recast: "npm:^0.23.5"
+    recast: "npm:^0.23.11"
     require-from-string: "npm:^2.0.2"
     resolve-from: "npm:^5.0.0"
     resolve.exports: "npm:^2.0.3"

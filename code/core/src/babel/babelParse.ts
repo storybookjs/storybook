@@ -1,7 +1,7 @@
 import * as parser from '@babel/parser';
 import type { ParserOptions } from '@babel/parser';
 import type * as t from '@babel/types';
-import * as recast from 'recast';
+import recast from 'recast';
 
 function parseWithFlowOrTypescript(source: string, parserOptions: parser.ParserOptions) {
   const flowCommentPattern = /^\s*\/\/\s*@flow/;

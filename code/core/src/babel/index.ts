@@ -11,7 +11,7 @@ import bg from '@babel/generator';
 import * as parser from '@babel/parser';
 import bt from '@babel/traverse';
 import * as types from '@babel/types';
-import * as recast from 'recast';
+import recast from 'recast';
 
 export * from './babelParse';
 

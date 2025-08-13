@@ -1,6 +1,7 @@
-import type { ComponentProps } from 'react';
-import React, { Children } from 'react';
+import type { ComponentProps, FC } from 'react';
+import React, { Children, useRef } from 'react';
 
+import { useToolbar } from '@react-aria/toolbar';
 import { styled } from 'storybook/theming';
 
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
@@ -38,24 +39,18 @@ export const Side = styled.div<SideProps>(
 );
 Side.displayName = 'Side';
 
-interface UnstyledBarProps extends ScrollAreaProps {
-  scrollable?: boolean;
-}
-
-const UnstyledBar = ({ children, className, scrollable }: UnstyledBarProps) =>
-  scrollable ? (
-    <ScrollArea vertical={false} className={className}>
-      {children}
-    </ScrollArea>
-  ) : (
-    <div className={className}>{children}</div>
-  );
-
-export interface BarProps extends UnstyledBarProps {
+export interface BarProps extends ScrollAreaProps {
   backgroundColor?: string;
   border?: boolean;
+  className?: string;
+  scrollable?: boolean;
+
+  /** Backwards compatibility: we ask callees to opt into aria toolbar semantics. */
+  isAriaToolbar?: boolean;
+  'aria-label'?: string;
+  'aria-labelledby'?: string;
 }
-export const Bar = styled(UnstyledBar)<BarProps>(
+const StyledBar = styled.div<BarProps>(
   ({ backgroundColor, theme, scrollable = true }) => ({
     color: theme.barTextColor,
     width: '100%',
@@ -74,6 +69,38 @@ export const Bar = styled(UnstyledBar)<BarProps>(
         }
       : {}
 );
+
+export const Bar: FC<BarProps> = ({ isAriaToolbar = false, scrollable, className, ...rest }) => {
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  const { toolbarProps } = useToolbar(
+    {
+      'aria-label': rest['aria-label'],
+      'aria-labelledby': rest['aria-labelledby'],
+      orientation: 'horizontal',
+    },
+    toolbarRef
+  );
+
+  const finalRestProps = isAriaToolbar
+    ? {
+        ...rest,
+        ...toolbarProps,
+        ref: toolbarRef,
+      }
+    : rest;
+
+  if (scrollable) {
+    return (
+      <ScrollArea vertical={false} className={className}>
+        <StyledBar {...finalRestProps} />
+      </ScrollArea>
+    );
+  }
+
+  return <StyledBar {...finalRestProps} className={className} />;
+};
+
 Bar.displayName = 'Bar';
 
 interface BarInnerProps {

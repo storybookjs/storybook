@@ -23,7 +23,7 @@ const compose = (entry) => {
 function getAllStoryFiles() {
   // Place the glob you want to match your stories files
   const storyFiles = glob.sync(
-    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}')
+    path.join(process.cwd(), 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}')
   );
 
   return storyFiles.map((filePath) => {
@@ -99,7 +99,7 @@ const compose = (
 function getAllStoryFiles() {
   // Place the glob you want to match your stories files
   const storyFiles = glob.sync(
-    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}'),
+    path.join(process.cwd(), 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}'),
   );
 
   return storyFiles.map((filePath) => {

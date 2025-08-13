@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
-import { isNotNil } from 'es-toolkit';
+import { isNotNil } from 'es-toolkit/predicate';
 import * as esbuild from 'esbuild';
 import * as prettier from 'prettier';
 import { dedent } from 'ts-dedent';

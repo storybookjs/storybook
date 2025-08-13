@@ -20,7 +20,7 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 

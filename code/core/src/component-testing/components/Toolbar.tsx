@@ -26,7 +26,7 @@ import { type ControlStates } from '../../instrumenter/types';
 import type { Controls } from './InteractionsPanel';
 import { type PlayStatus, StatusBadge } from './StatusBadge';
 
-const SubnavWrapper = styled.div(({ theme }) => ({
+const ToolbarWrapper = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
   background: theme.background.app,
   position: 'sticky',
@@ -34,7 +34,7 @@ const SubnavWrapper = styled.div(({ theme }) => ({
   zIndex: 1,
 }));
 
-const StyledSubnav = styled.nav({
+const GroupContainer = styled.div({
   height: 40,
   display: 'flex',
   alignItems: 'center',
@@ -42,7 +42,7 @@ const StyledSubnav = styled.nav({
   paddingLeft: 15,
 });
 
-interface SubnavProps {
+interface ToolbarProps {
   controls: Controls;
   controlStates: ControlStates;
   status: PlayStatus;
@@ -119,7 +119,7 @@ const RerunButton = styled(StyledIconButton)<
   },
 }));
 
-export const Subnav: React.FC<SubnavProps> = ({
+export const Toolbar: React.FC<ToolbarProps> = ({
   controls,
   controlStates,
   status,
@@ -133,9 +133,13 @@ export const Subnav: React.FC<SubnavProps> = ({
   const theme = useTheme();
 
   return (
-    <SubnavWrapper>
-      <Bar backgroundColor={theme.background.app}>
-        <StyledSubnav aria-label="Component tests toolbar">
+    <ToolbarWrapper>
+      <Bar
+        backgroundColor={theme.background.app}
+        isAriaToolbar
+        aria-label="Component test playback controls"
+      >
+        <GroupContainer>
           <Group>
             <StatusBadge status={status} />
 
@@ -215,8 +219,8 @@ export const Subnav: React.FC<SubnavProps> = ({
               )}
             </Group>
           )}
-        </StyledSubnav>
+        </GroupContainer>
       </Bar>
-    </SubnavWrapper>
+    </ToolbarWrapper>
   );
 };

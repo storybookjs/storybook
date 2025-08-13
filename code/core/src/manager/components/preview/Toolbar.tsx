@@ -1,10 +1,11 @@
-import React, { Fragment, useId } from 'react';
+import React, { Fragment, useId, useRef } from 'react';
 
 import { IconButton, Separator, TabBar, TabButton } from 'storybook/internal/components';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
+import { useToolbar } from '@react-aria/toolbar';
 import {
   type API,
   type Combo,
@@ -124,19 +125,24 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   tabId,
   api,
 }) {
-  const id = useId();
+  const headingId = useId();
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  const { toolbarProps } = useToolbar({ orientation: 'horizontal' }, toolbarRef);
+
   return tabs || tools || toolsExtra ? (
-    <Toolbar
+    <ToolbarSection
+      role="region"
       className="sb-bar"
       key="toolbar"
       shown={isShown}
       data-test-id="sb-preview-toolbar"
-      aria-labelledby={id}
+      aria-labelledby={headingId}
     >
-      <span className="sb-sr-only" id={id}>
+      <h2 id={headingId} className="sb-sr-only">
         Toolbar
-      </span>
-      <ToolbarInner>
+      </h2>
+      <ToolbarInner {...toolbarProps} ref={toolbarRef}>
         <ToolbarLeft>
           {tabs.length > 1 ? (
             <Fragment>
@@ -165,7 +171,7 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
           <Tools key="right" list={toolsExtra} />
         </ToolbarRight>
       </ToolbarInner>
-    </Toolbar>
+    </ToolbarSection>
   ) : null;
 });
 
@@ -219,7 +225,7 @@ export function filterToolsSide(
   return tools.filter(filter);
 }
 
-const Toolbar = styled.section<{ shown: boolean }>(({ theme, shown }) => ({
+const ToolbarSection = styled.section<{ shown: boolean }>(({ theme, shown }) => ({
   position: 'relative',
   color: theme.barTextColor,
   width: '100%',

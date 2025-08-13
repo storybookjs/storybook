@@ -1,7 +1,7 @@
 import type { FC, MouseEvent as ReactMouseEvent, SyntheticEvent } from 'react';
 import React from 'react';
 
-import { FlexBar, IconButton } from 'storybook/internal/components';
+import { Bar, IconButton } from 'storybook/internal/components';
 
 import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
@@ -27,18 +27,26 @@ interface LoadingProps {
 
 export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps;
 
-const Bar = styled(FlexBar)({
+const AbsoluteBar = styled(Bar)({
   position: 'absolute',
   left: 0,
   right: 0,
   top: 0,
   transition: 'transform .2s linear',
+  display: 'flex',
+  alignItems: 'center',
 });
 
 const Wrapper = styled.div({
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'flex-start',
   gap: 4,
+  // Matching what was done before through FlexBar: marginLeft: 3 + a marginLeft: 4 on the first child
+  // FlexBar actually had marginRight: 10 but that difference is not significant.
+  marginInline: 7,
+  whiteSpace: 'nowrap',
+  flexBasis: 'auto',
 });
 
 const IconPlaceholder = styled.div(({ theme }) => ({
@@ -50,16 +58,9 @@ const IconPlaceholder = styled.div(({ theme }) => ({
   animation: `${theme.animation.glow} 1.5s ease-in-out infinite`,
 }));
 
-export const Toolbar: FC<ToolbarProps> = ({
-  isLoading,
-  storyId,
-  baseUrl,
-  zoom,
-  resetZoom,
-  ...rest
-}) => (
-  <Bar {...rest}>
-    <Wrapper key="left">
+export const Toolbar: FC<ToolbarProps> = ({ isLoading, zoom, resetZoom, ...rest }) => (
+  <AbsoluteBar {...rest} isAriaToolbar>
+    <Wrapper>
       {isLoading ? (
         [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
       ) : (
@@ -97,5 +98,5 @@ export const Toolbar: FC<ToolbarProps> = ({
         </>
       )}
     </Wrapper>
-  </Bar>
+  </AbsoluteBar>
 );

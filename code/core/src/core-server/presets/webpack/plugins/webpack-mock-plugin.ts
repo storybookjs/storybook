@@ -5,7 +5,11 @@ import { fileURLToPath } from 'node:url';
 import type { Compiler } from 'webpack';
 
 import { babelParser, extractMockCalls } from '../../../mocking-utils/extract';
-import { getIsExternal, resolveExternalModule } from '../../../mocking-utils/resolve';
+import {
+  getIsExternal,
+  resolveExternalModule,
+  resolveWithExtensions,
+} from '../../../mocking-utils/resolve';
 
 const require = createRequire(import.meta.url);
 
@@ -88,16 +92,13 @@ export class WebpackMockPlugin {
         const isExternal = getIsExternal(path, importer);
         const absolutePath = isExternal
           ? resolveExternalModule(path, importer)
-          : require.resolve(path, { paths: [importer] });
+          : resolveWithExtensions(path, importer);
 
         if (this.mockMap.has(absolutePath)) {
-          if (!absolutePath) {
-            throw new Error(`[${PLUGIN_NAME}] Could not resolve mock for "${resource.request}".`);
-          }
           resource.request = this.mockMap.get(absolutePath)!.replacementResource;
         }
       } catch (e) {
-        // Ignore errors for virtual modules, built-ins, etc.
+        logger.debug(`Could not resolve mock for "${resource.request}".`);
       }
     }).apply(compiler);
 

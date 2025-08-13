@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 import { findMockRedirect } from '@vitest/mocker/redirect';
@@ -107,4 +107,38 @@ export function isExternal(path: string, from: string) {
   } catch (e) {
     return false;
   }
+}
+
+/**
+ * Normalizes a file path for comparison, resolving symlinks if possible. Falls back to the original
+ * path if resolution fails.
+ */
+export function getRealPath(path: string, preserveSymlinks: boolean): string {
+  try {
+    return preserveSymlinks ? realpathSync(path) : path;
+  } catch {
+    return path;
+  }
+}
+
+/**
+ * This is a wrapper around `require.resolve` that tries to resolve the path with different file
+ * extensions.
+ *
+ * @param path - The path to the mock file
+ * @param from - The root of the project, this should be an absolute path
+ * @returns The resolved path
+ */
+export function resolveWithExtensions(path: string, from: string) {
+  const extensions = ['.js', '.ts', '.tsx', '.mjs', '.cjs', '.svelte', '.vue'];
+
+  for (const extension of extensions) {
+    try {
+      return require.resolve(path + extension, { paths: [from] });
+    } catch (e) {
+      continue;
+    }
+  }
+
+  return require.resolve(path, { paths: [from] });
 }

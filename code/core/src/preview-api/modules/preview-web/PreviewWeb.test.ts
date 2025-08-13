@@ -31,7 +31,7 @@ import type { ModuleImportFn, ProjectAnnotations, Renderer } from 'storybook/int
 
 import { global } from '@storybook/global';
 
-import { toMerged } from 'es-toolkit';
+import { toMerged } from 'es-toolkit/object';
 
 import { addons } from '../addons';
 import type { StoryStore } from '../store';

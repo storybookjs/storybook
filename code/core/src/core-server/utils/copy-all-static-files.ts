@@ -62,7 +62,7 @@ export async function copyAllStaticFilesRelativeToMain(
     );
 
     const targetPath = join(outputDir, to);
-    const skipPaths = ['index.html', 'iframe.html'].map((f) => join(targetPath, f));
+    const skipPaths = ['index.html', 'iframe.html'].map((f) => join(outputDir, f));
     if (!from.includes('node_modules')) {
       logger.info(
         `=> Copying static files: ${picocolors.cyan(print(from))} at ${picocolors.cyan(print(targetPath))}`

@@ -24,7 +24,7 @@ export async function copyAllStaticFiles(staticDirs: any[] | undefined, outputDi
           }
 
           // Storybook's own files should not be overwritten, so we skip such files if we find them
-          const skipPaths = ['index.html', 'iframe.html'].map((f) => join(targetPath, f));
+          const skipPaths = ['index.html', 'iframe.html'].map((f) => join(outputDir, f));
           await cp(staticPath, targetPath, {
             dereference: true,
             preserveTimestamps: true,

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { logger } from 'storybook/internal/node-logger';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 const [majorNodeVersion, minorNodeVersion] = process.versions.node.split('.').map(Number);
 

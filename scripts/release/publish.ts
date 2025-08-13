@@ -8,7 +8,7 @@ import { readJson } from 'fs-extra';
 import pRetry from 'p-retry';
 import picocolors from 'picocolors';
 import semver from 'semver';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
 import { esMain } from '../utils/esmain';

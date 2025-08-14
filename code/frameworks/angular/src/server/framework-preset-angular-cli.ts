@@ -11,11 +11,10 @@ import type webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
 import type { PresetOptions } from './preset-options';
-import { moduleIsAvailable } from './utils/module-is-available';
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot, resolvePackageDir } from 'storybook/internal/common';
 
 export async function webpackFinal(baseConfig: webpack.Configuration, options: PresetOptions) {
-  if (!moduleIsAvailable('@angular-devkit/build-angular')) {
+  if (!resolvePackageDir('@angular-devkit/build-angular')) {
     logger.info('=> Using base config because "@angular-devkit/build-angular" is not installed');
     return baseConfig;
   }
@@ -54,11 +53,16 @@ export async function webpackFinal(baseConfig: webpack.Configuration, options: P
   );
 
   try {
-    require.resolve('@angular/animations');
+    resolvePackageDir('@angular/animations');
   } catch (e) {
     webpackConfig.plugins.push(
       new WebpackIgnorePlugin({
         resourceRegExp: /@angular\/platform-browser\/animations$/,
+      })
+    );
+    webpackConfig.plugins.push(
+      new WebpackIgnorePlugin({
+        resourceRegExp: /@angular\/animations\/browser$/,
       })
     );
   }

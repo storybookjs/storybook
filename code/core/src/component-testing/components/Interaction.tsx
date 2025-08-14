@@ -2,7 +2,7 @@ import * as React from 'react';
 
 import { IconButton, TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { ChevronDownIcon, ChevronUpIcon } from '@storybook/icons';
+import { ChevronDownIcon, ChevronUpIcon, LocationIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled, typography } from 'storybook/theming';
@@ -100,7 +100,6 @@ const RowActions = styled.div({
 });
 
 export const StyledIconButton = styled(IconButton as any)(({ theme }) => ({
-  color: theme.textMutedColor,
   margin: '0 3px',
 }));
 
@@ -186,6 +185,9 @@ export const Interaction = ({
   isCollapsed,
   toggleCollapsed,
   pausedAt,
+  onHighlightElements,
+  onSelectElements,
+  selectedElements,
 }: {
   call: Call;
   callsById: Map<Call['id'], Call>;
@@ -196,6 +198,9 @@ export const Interaction = ({
   isCollapsed: boolean;
   toggleCollapsed: () => void;
   pausedAt?: Call['id'];
+  onHighlightElements: (callId: Call['id'], highlight: boolean) => void;
+  onSelectElements: (callId: Call['id'], select: boolean) => void;
+  selectedElements: Call['id'][];
 }) => {
   const [isHovered, setIsHovered] = React.useState(false);
   const isInteractive = !controlStates.goto || !call.interceptable || !!call.ancestors?.length;
@@ -207,6 +212,11 @@ export const Interaction = ({
   if (call.id === INTERNAL_RENDER_CALL_ID) {
     return null;
   }
+
+  const getElementArgs = (call: Call) =>
+    call.args.filter((arg) => arg && Object.hasOwn(arg, '__element__'));
+  const elementCount = getElementArgs(call).length;
+  const isSelected = selectedElements?.includes(call.id);
 
   return (
     <RowContainer call={call} pausedAt={pausedAt}>
@@ -225,9 +235,28 @@ export const Interaction = ({
           </MethodCallWrapper>
         </RowLabel>
         <RowActions>
+          {elementCount > 0 && (
+            <WithTooltip
+              hasChrome={false}
+              trigger="hover"
+              tooltip={<Note note={`Highlight target element${elementCount === 1 ? '' : 's'}`} />}
+            >
+              <StyledIconButton
+                active={isSelected}
+                aria-label={`Highlight target element${elementCount === 1 ? '' : 's'}`}
+                onMouseEnter={() => onHighlightElements(call.id, true)}
+                onMouseLeave={() => onHighlightElements(call.id, false)}
+                onClick={() => onSelectElements(call.id, !isSelected)}
+                disabled={call.status === CallStates.WAITING}
+              >
+                <LocationIcon />
+              </StyledIconButton>
+            </WithTooltip>
+          )}
           {(childCallIds?.length ?? 0) > 0 && (
             <WithTooltip
               hasChrome={false}
+              trigger="hover"
               tooltip={<Note note={`${isCollapsed ? 'Show' : 'Hide'} interactions`} />}
             >
               <StyledIconButton

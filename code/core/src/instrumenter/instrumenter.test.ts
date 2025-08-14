@@ -55,6 +55,9 @@ class HTMLElement {
   constructor(props: any) {
     Object.assign(this, props);
   }
+  getAttribute(name: string) {
+    return this[name as keyof this];
+  }
 }
 
 // @ts-expect-error (global scope type conflicts)
@@ -220,11 +223,15 @@ describe('Instrumenter', () => {
     expect(mocks.callSpy.mock.calls[0][0].args).toMatchInlineSnapshot(`
       [
         {
-          "array": [
-            "[Circular]",
-          ],
-          "key": "value",
-          "obj": "[Circular]",
+          "__object__": {
+            "array": {
+              "__array__": [
+                Symbol([Circular]),
+              ],
+            },
+            "key": "value",
+            "obj": Symbol([Circular]),
+          },
         },
       ]
     `);
@@ -253,7 +260,13 @@ describe('Instrumenter', () => {
     expect(mocks.callSpy).toHaveBeenLastCalledWith(
       expect.objectContaining({
         method: 'fn2',
-        args: [{ __callId__: mocks.callSpy.mock.calls[0][0].id, retain: false }],
+        args: [
+          {
+            __object__: {},
+            __callId__: mocks.callSpy.mock.calls[0][0].id,
+            retain: false,
+          },
+        ],
       })
     );
   });
@@ -270,8 +283,8 @@ describe('Instrumenter', () => {
       fn1('foo'),
       fn1(1),
       fn1(BigInt(1)),
-      fn1({}),
-      fn1([]),
+      fn1({ foo: 'bar' }),
+      fn1(['foo']),
       fn1(() => {}),
       fn1(Symbol('hi')),
       fn1(new Error('Oops'))
@@ -286,11 +299,36 @@ describe('Instrumenter', () => {
           /* call 3 */ 'foo',
           /* call 4 */ 1,
           /* call 5 */ BigInt(1),
-          { __callId__: mocks.callSpy.mock.calls[6][0].id, retain: false },
-          { __callId__: mocks.callSpy.mock.calls[7][0].id, retain: false },
-          { __callId__: mocks.callSpy.mock.calls[8][0].id, retain: false },
-          { __callId__: mocks.callSpy.mock.calls[9][0].id, retain: false },
-          { __callId__: mocks.callSpy.mock.calls[10][0].id, retain: false },
+          {
+            __object__: { foo: 'bar' },
+            __callId__: mocks.callSpy.mock.calls[6][0].id,
+            retain: false,
+            promise: undefined,
+          },
+          {
+            __array__: ['foo'],
+            __callId__: mocks.callSpy.mock.calls[7][0].id,
+            retain: false,
+            promise: undefined,
+          },
+          {
+            __function__: { name: '' },
+            __callId__: mocks.callSpy.mock.calls[8][0].id,
+            retain: false,
+            promise: undefined,
+          },
+          {
+            __symbol__: { description: 'hi' },
+            __callId__: mocks.callSpy.mock.calls[9][0].id,
+            retain: false,
+            promise: undefined,
+          },
+          {
+            __error__: expect.objectContaining({ message: 'Oops' }),
+            __callId__: mocks.callSpy.mock.calls[10][0].id,
+            retain: false,
+            promise: undefined,
+          },
         ],
       })
     );

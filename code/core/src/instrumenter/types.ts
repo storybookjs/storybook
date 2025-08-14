@@ -11,7 +11,8 @@ export interface Call {
   ancestors: Call['id'][];
   path: Array<string | CallRef>;
   method: string;
-  args: any[];
+  args: unknown[];
+  actualArgs?: unknown[];
   interceptable: boolean;
   retain: boolean;
   status?: CallStates.DONE | CallStates.ERROR | CallStates.ACTIVE | CallStates.WAITING;
@@ -45,6 +46,7 @@ export interface ElementRef {
     id?: string;
     classNames?: string[];
     innerText?: string;
+    testId?: string;
   };
 }
 
@@ -77,11 +79,11 @@ export interface State {
   cursor: number;
   calls: Call[];
   shadowCalls: Call[];
-  callRefsByResult: Map<any, CallRef & { retain: boolean }>;
+  callRefsByResult: Map<unknown, CallRef & { retain: boolean; promise?: Promise<unknown> }>;
   chainedCallIds: Set<Call['id']>;
   ancestors: Call['id'][];
   playUntil?: Call['id'];
-  resolvers: Record<Call['id'], Function>;
+  resolvers: Record<Call['id'], (value?: unknown) => void>;
   syncTimeout?: ReturnType<typeof setTimeout>;
   forwardedException?: Error;
 }

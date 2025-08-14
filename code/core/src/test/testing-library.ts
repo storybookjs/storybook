@@ -118,5 +118,5 @@ export const uninstrumentedUserEvent = _userEvent.userEvent;
 
 export const { userEvent }: { userEvent: UserEvent['userEvent'] } = instrument(
   { userEvent: _userEvent.userEvent },
-  { intercept: true }
+  { intercept: (method) => method !== 'setup' }
 );

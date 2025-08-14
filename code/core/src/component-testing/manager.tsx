@@ -15,6 +15,7 @@ export default addons.register(ADDON_ID, () => {
       const { pathname, search = '' } = state.location;
       const path = pathname + (state.refId ? search.replace(`/${state.refId}_`, '/') : search);
       return {
+        active: state.selectedPanel === PANEL_ID,
         refId: state.refId,
         storyId: state.storyId,
         storyUrl: origin + path,

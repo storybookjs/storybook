@@ -8,7 +8,7 @@ import type {
   StoryContext,
 } from 'storybook/internal/types';
 
-import { isEqual as deepEqual, isPlainObject } from 'es-toolkit';
+import { isEqual as deepEqual, isPlainObject } from 'es-toolkit/predicate';
 import { dedent } from 'ts-dedent';
 
 const INCOMPATIBLE = Symbol('incompatible');

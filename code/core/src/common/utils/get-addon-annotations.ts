@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import { isCorePackage } from './cli';
 
 /**
@@ -23,6 +21,7 @@ export function getAnnotationsName(addonName: string): string {
   return cleanedUpName;
 }
 
+// TODO: test this
 export async function getAddonAnnotations(addon: string, configDir: string) {
   const data = {
     // core addons will have a function as default export in index entrypoint
@@ -38,7 +37,7 @@ export async function getAddonAnnotations(addon: string, configDir: string) {
 
   // If the preview endpoint doesn't exist, we don't need to add the addon to definePreview
   try {
-    require.resolve(path.join(addon, 'preview'), { paths: [configDir] });
+    import.meta.resolve(`${addon}/preview`, configDir);
   } catch (err) {
     return null;
   }

@@ -8,7 +8,8 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
+import { pick, toMerged } from 'es-toolkit/object';
+import { isEqual as deepEqual } from 'es-toolkit/predicate';
 import type { ThemeVars } from 'storybook/theming';
 import { create } from 'storybook/theming/create';
 

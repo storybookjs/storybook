@@ -20,7 +20,7 @@ import type {
   StoryIndex,
 } from 'storybook/internal/types';
 
-import { omitBy, pick } from 'es-toolkit';
+import { omitBy, pick } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 
 import { HooksContext } from '../addons';

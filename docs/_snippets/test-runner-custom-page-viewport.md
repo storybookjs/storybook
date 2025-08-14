@@ -18,7 +18,7 @@ module.exports = {
           // Converts the viewport size from percentages to numbers
           [screen]: parseInt(size),
         }),
-        {},
+        {}
       );
       // Configures the Playwright page to use the viewport size
       page.setViewportSize(viewportSize);
@@ -32,8 +32,7 @@ module.exports = {
 ```ts filename=".storybook/test-runner.ts" renderer="common" language="ts"
 import type { TestRunnerConfig } from '@storybook/test-runner';
 import { getStoryContext } from '@storybook/test-runner';
-
-const { MINIMAL_VIEWPORTS } = require('storybook/viewport');
+import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 
 const DEFAULT_VIEWPORT_SIZE = { width: 1280, height: 720 };
 
@@ -51,7 +50,7 @@ const config: TestRunnerConfig = {
           // Converts the viewport size from percentages to numbers
           [screen]: parseInt(size),
         }),
-        {},
+        {}
       );
       // Configures the Playwright page to use the viewport size
       page.setViewportSize(viewportSize);

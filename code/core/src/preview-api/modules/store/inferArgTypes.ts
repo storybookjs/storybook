@@ -1,7 +1,7 @@
 import { logger } from 'storybook/internal/client-logger';
 import type { ArgTypesEnhancer, Renderer, SBType } from 'storybook/internal/types';
 
-import { mapValues } from 'es-toolkit';
+import { mapValues } from 'es-toolkit/object';
 import { dedent } from 'ts-dedent';
 
 import { combineParameters } from './parameters';

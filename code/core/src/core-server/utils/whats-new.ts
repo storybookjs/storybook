@@ -56,7 +56,7 @@ export function initializeWhatsNew(
         throw response;
       })) as WhatsNewResponse;
 
-      const main = await loadMainConfig({ configDir: options.configDir, noCache: true });
+      const main = await loadMainConfig({ configDir: options.configDir });
       const disableWhatsNewNotifications =
         (main.core as CoreConfig)?.disableWhatsNewNotifications === true;
 

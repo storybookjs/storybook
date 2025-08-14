@@ -1,9 +1,18 @@
+import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 
 import type { PluginItem } from '@babel/core';
 
+import ampAttributesPlugin from './plugins/amp-attributes';
+// Static imports for relative requires
+import jsxPragmaPlugin from './plugins/jsx-pragma';
+import optimizeHookDestructuringPlugin from './plugins/optimize-hook-destructuring';
+import reactLoadablePlugin from './plugins/react-loadable-plugin';
+
 const isLoadIntentTest = process.env.NODE_ENV === 'test';
 const isLoadIntentDevelopment = process.env.NODE_ENV === 'development';
+
+const require = createRequire(import.meta.url);
 
 type StyledJsxPlugin = [string, any] | string;
 type StyledJsxBabelOptions =
@@ -129,7 +138,7 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
     plugins: [
       isDevelopment && require.resolve('react-refresh/babel'),
       !useJsxRuntime && [
-        require('./plugins/jsx-pragma'),
+        jsxPragmaPlugin,
         {
           // This produces the following injected import for modules containing JSX:
           //   import React from 'react';
@@ -141,7 +150,7 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
         },
       ],
       [
-        require('./plugins/optimize-hook-destructuring'),
+        optimizeHookDestructuringPlugin,
         {
           // only optimize hook functions imported from React/Preact
           lib: true,
@@ -149,7 +158,7 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
       ],
       require('@babel/plugin-syntax-dynamic-import'),
       require('@babel/plugin-syntax-import-assertions'),
-      require('./plugins/react-loadable-plugin'),
+      reactLoadablePlugin,
       [require('@babel/plugin-transform-class-properties'), options['class-properties'] || {}],
       [
         require('@babel/plugin-transform-object-rest-spread'),
@@ -176,7 +185,7 @@ export default (api: any, options: NextBabelPresetOptions = {}): BabelPreset => 
           : require('styled-jsx/babel'),
         styledJsxOptions(options['styled-jsx']),
       ],
-      require('./plugins/amp-attributes'),
+      ampAttributesPlugin,
       isServer && require('@babel/plugin-syntax-bigint'),
       // Always compile numeric separator because the resulting number is
       // smaller.

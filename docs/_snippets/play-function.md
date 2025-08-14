@@ -6,8 +6,8 @@ import { RegistrationForm } from './RegistrationForm.component';
 const meta: Meta<RegistrationForm> = {
   component: RegistrationForm,
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj<RegistrationForm>;
 
 /*
@@ -197,8 +197,8 @@ import RegistrationForm from './RegistrationForm.svelte';
 const meta = {
   component: RegistrationForm,
 } satisfies Meta<typeof RegistrationForm>;
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof meta>;
 
 /*
@@ -235,12 +235,12 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { RegistrationForm } from './RegistrationForm';
 
-const meta: Meta<typeof RegistrationForm> = {
+const meta = {
   component: RegistrationForm,
-};
-export default meta;
+} satisfies Meta<typeof RegistrationForm>;
 
-type Story = StoryObj<typeof RegistrationForm>;
+export default meta;
+type Story = StoryObj<typeof meta>;
 
 /*
  * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
@@ -309,8 +309,8 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 const meta: Meta = {
   component: 'demo-registration-form',
 };
-export default meta;
 
+export default meta;
 type Story = StoryObj;
 
 /*

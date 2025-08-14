@@ -1,10 +1,13 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
+import { createRequire } from 'node:module';
 
 import { findMockRedirect } from '@vitest/mocker/redirect';
 import { dirname, isAbsolute, join, resolve } from 'pathe';
 import { exports as resolveExports } from 'resolve.exports';
 
 import { isModuleDirectory } from './extract';
+
+const require = createRequire(import.meta.url);
 
 /**
  * Finds the package.json for a given module specifier.
@@ -85,4 +88,57 @@ export function resolveMock(path: string, root: string, importer: string) {
     absolutePath: normalizedAbsolutePath,
     redirectPath, // will be null if no __mocks__ file is found
   };
+}
+
+/**
+ * External mean not absolute, and not relative
+ *
+ * We use `require.resolve` here, because import.meta.resolve needs a experimental node flag
+ * (`--experimental-import-meta-resolve`) to be enabled to respect the context option.
+ *
+ * @param path - The path to the mock file
+ * @param from - The root of the project, this should be an absolute path
+ * @returns True if the mock path is external, false otherwise
+ * @link https://nodejs.org/api/cli.html#--experimental-import-meta-resolve
+ */
+export function isExternal(path: string, from: string) {
+  try {
+    return !isAbsolute(path) && isModuleDirectory(require.resolve(path, { paths: [from] }));
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Normalizes a file path for comparison, resolving symlinks if possible. Falls back to the original
+ * path if resolution fails.
+ */
+export function getRealPath(path: string, preserveSymlinks: boolean): string {
+  try {
+    return preserveSymlinks ? realpathSync(path) : path;
+  } catch {
+    return path;
+  }
+}
+
+/**
+ * This is a wrapper around `require.resolve` that tries to resolve the path with different file
+ * extensions.
+ *
+ * @param path - The path to the mock file
+ * @param from - The root of the project, this should be an absolute path
+ * @returns The resolved path
+ */
+export function resolveWithExtensions(path: string, from: string) {
+  const extensions = ['.js', '.ts', '.tsx', '.mjs', '.cjs', '.svelte', '.vue'];
+
+  for (const extension of extensions) {
+    try {
+      return require.resolve(path + extension, { paths: [from] });
+    } catch (e) {
+      continue;
+    }
+  }
+
+  return require.resolve(path, { paths: [from] });
 }

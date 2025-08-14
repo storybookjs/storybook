@@ -1,7 +1,7 @@
 import { once } from 'storybook/internal/client-logger';
 import type { Args } from 'storybook/internal/types';
 
-import { isPlainObject } from 'es-toolkit';
+import { isPlainObject } from 'es-toolkit/predicate';
 import { type Options, parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 

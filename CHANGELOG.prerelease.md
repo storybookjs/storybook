@@ -1,3 +1,9 @@
+## 9.2.0-alpha.4
+
+- Core: Fix staticCopy bug - [#32259](https://github.com/storybookjs/storybook/pull/32259), thanks @ndelangen!
+- Docs: Move button in ArgsTable heading to fix screenreader announcements - [#32238](https://github.com/storybookjs/storybook/pull/32238), thanks @Sidnioulz!
+- SB10: ESM-only - [#31819](https://github.com/storybookjs/storybook/pull/31819), thanks @ndelangen!
+
 ## 9.2.0-alpha.3
 
 - Addon Docs: Fix Symbol conversion issue in docs page and controls panel - [#32220](https://github.com/storybookjs/storybook/pull/32220), thanks @yannbf!

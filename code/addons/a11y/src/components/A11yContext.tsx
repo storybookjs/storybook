@@ -295,11 +295,13 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     setStatus(getInitialStatus(manual));
   }, [getInitialStatus, manual]);
 
+  const isInitial = status === 'initial';
+
   useEffect(() => {
     emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/selected`);
     emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/others`);
 
-    if (!highlighted) {
+    if (!highlighted || isInitial) {
       return;
     }
 
@@ -312,84 +314,88 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       const target = result?.nodes[Number(number) - 1]?.target;
       return target ? [String(target)] : [];
     });
-    emit(HIGHLIGHT, {
-      id: `${ADDON_ID}/selected`,
-      priority: 1,
-      selectors: selected,
-      styles: {
-        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
-        backgroundColor: 'transparent',
-      },
-      hoverStyles: {
-        outlineWidth: '2px',
-      },
-      focusStyles: {
-        backgroundColor: 'transparent',
-      },
-      menu: results?.[tab as RuleType].map<HighlightMenuItem[]>((result) => {
-        const selectors = result.nodes
-          .flatMap((n) => n.target)
-          .map(String)
-          .filter((e) => selected.includes(e));
-        return [
-          {
-            id: `${tab}.${result.id}:info`,
-            title: getTitleForAxeResult(result),
-            description: getFriendlySummaryForAxeResult(result),
-            selectors,
-          },
-          {
-            id: `${tab}.${result.id}`,
-            iconLeft: 'info',
-            iconRight: 'shareAlt',
-            title: 'Learn how to resolve this violation',
-            clickEvent: EVENTS.SELECT,
-            selectors,
-          },
-        ];
-      }),
-    });
+    if (selected.length) {
+      emit(HIGHLIGHT, {
+        id: `${ADDON_ID}/selected`,
+        priority: 1,
+        selectors: selected,
+        styles: {
+          outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
+          backgroundColor: 'transparent',
+        },
+        hoverStyles: {
+          outlineWidth: '2px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        menu: results?.[tab as RuleType].map<HighlightMenuItem[]>((result) => {
+          const selectors = result.nodes
+            .flatMap((n) => n.target)
+            .map(String)
+            .filter((e) => selected.includes(e));
+          return [
+            {
+              id: `${tab}.${result.id}:info`,
+              title: getTitleForAxeResult(result),
+              description: getFriendlySummaryForAxeResult(result),
+              selectors,
+            },
+            {
+              id: `${tab}.${result.id}`,
+              iconLeft: 'info',
+              iconRight: 'shareAlt',
+              title: 'Learn how to resolve this violation',
+              clickEvent: EVENTS.SELECT,
+              selectors,
+            },
+          ];
+        }),
+      });
+    }
 
     const others = results?.[tab as RuleType]
       .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
       .filter((e) => ![...unhighlightedSelectors, ...selected].includes(e));
-    emit(HIGHLIGHT, {
-      id: `${ADDON_ID}/others`,
-      selectors: others,
-      styles: {
-        outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
-        backgroundColor: `color-mix(in srgb, ${colorsByType[tab]}, transparent 60%)`,
-      },
-      hoverStyles: {
-        outlineWidth: '2px',
-      },
-      focusStyles: {
-        backgroundColor: 'transparent',
-      },
-      menu: results?.[tab as RuleType].map<HighlightMenuItem[]>((result) => {
-        const selectors = result.nodes
-          .flatMap((n) => n.target)
-          .map(String)
-          .filter((e) => !selected.includes(e));
-        return [
-          {
-            id: `${tab}.${result.id}:info`,
-            title: getTitleForAxeResult(result),
-            description: getFriendlySummaryForAxeResult(result),
-            selectors,
-          },
-          {
-            id: `${tab}.${result.id}`,
-            iconLeft: 'info',
-            iconRight: 'shareAlt',
-            title: 'Learn how to resolve this violation',
-            clickEvent: EVENTS.SELECT,
-            selectors,
-          },
-        ];
-      }),
-    });
-  }, [emit, highlighted, results, tab, selectedItems]);
+    if (others?.length) {
+      emit(HIGHLIGHT, {
+        id: `${ADDON_ID}/others`,
+        selectors: others,
+        styles: {
+          outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
+          backgroundColor: `color-mix(in srgb, ${colorsByType[tab]}, transparent 60%)`,
+        },
+        hoverStyles: {
+          outlineWidth: '2px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        menu: results?.[tab as RuleType].map<HighlightMenuItem[]>((result) => {
+          const selectors = result.nodes
+            .flatMap((n) => n.target)
+            .map(String)
+            .filter((e) => !selected.includes(e));
+          return [
+            {
+              id: `${tab}.${result.id}:info`,
+              title: getTitleForAxeResult(result),
+              description: getFriendlySummaryForAxeResult(result),
+              selectors,
+            },
+            {
+              id: `${tab}.${result.id}`,
+              iconLeft: 'info',
+              iconRight: 'shareAlt',
+              title: 'Learn how to resolve this violation',
+              clickEvent: EVENTS.SELECT,
+              selectors,
+            },
+          ];
+        }),
+      });
+    }
+  }, [isInitial, emit, highlighted, results, tab, selectedItems]);
 
   const discrepancy: TestDiscrepancy = useMemo(() => {
     if (!currentStoryA11yStatusValue) {

@@ -10,8 +10,8 @@ import { DetachedDebuggerMessage } from './DetachedDebuggerMessage';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';
 import type { PlayStatus } from './StatusBadge';
-import { Subnav } from './Subnav';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
+import { Toolbar } from './Toolbar';
 
 export interface Controls {
   start: (args?: any) => void;
@@ -114,7 +114,7 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
         {controlStates.detached && (hasRealInteractions || hasException) && (
           <DetachedDebuggerMessage storyUrl={storyUrl} />
         )}
-        <Subnav
+        <Toolbar
           controls={controls}
           controlStates={controlStates}
           status={status}

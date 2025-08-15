@@ -1,12 +1,17 @@
 import * as React from 'react';
 
-import { IconButton, ScrollArea, TooltipNote, WithTooltip } from 'storybook/internal/components';
+import {
+  AriaTabs,
+  IconButton,
+  ScrollArea,
+  TooltipNote,
+  WithTooltip,
+} from 'storybook/internal/components';
 
 import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
 import type { Result } from 'axe-core';
-import { useResizeDetector } from 'react-resize-detector';
-import { styled } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 
 import type { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
@@ -46,23 +51,20 @@ const Item = styled.button<{ active?: boolean }>(
       : {}
 );
 
-const Subnav = styled.div(({ theme }) => ({
+const StickyContainer = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
-  background: theme.background.app,
+  // background: theme.background.app,
   position: 'sticky',
   top: 0,
   zIndex: 1,
-  display: 'flex',
-  alignItems: 'center',
-  whiteSpace: 'nowrap',
+  // display: 'flex',
+  // alignItems: 'center',
+  // whiteSpace: 'nowrap',
   overflow: 'auto',
-  paddingRight: 10,
-  gap: 6,
   scrollbarColor: `${theme.barTextColor} ${theme.background.app}`,
   scrollbarWidth: 'thin',
 }));
 
-const TabsWrapper = styled.div({});
 const ActionsWrapper = styled.div({
   display: 'flex',
   flexBasis: '100%',
@@ -92,13 +94,8 @@ interface TabsProps {
 }
 
 export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
-  const { ref } = useResizeDetector({
-    refreshMode: 'debounce',
-    handleHeight: false,
-    handleWidth: true,
-  });
   const {
-    tab: activeTab,
+    tab,
     setTab,
     toggleHighlight,
     highlighted,
@@ -108,74 +105,71 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
     handleExpandAll,
   } = useA11yContext();
 
-  const handleToggle = React.useCallback(
-    (event: React.SyntheticEvent) => {
-      setTab(event.currentTarget.getAttribute('data-type') as RuleType);
-    },
-    [setTab]
-  );
+  const theme = useTheme();
+
+  // TODO validate scroll behaviour on tabs
+  // TODO fix reload on rerun
 
   return (
-    <Container ref={ref}>
-      <Subnav>
-        <TabsWrapper role="tablist">
-          {tabs.map((tab, index) => (
-            <Item
-              role="tab"
-              key={index}
-              data-type={tab.type}
-              data-active={activeTab === tab.type}
-              aria-selected={activeTab === tab.type}
-              active={activeTab === tab.type}
-              onClick={handleToggle}
-            >
-              {tab.label}
-            </Item>
-          ))}
-        </TabsWrapper>
-        <ActionsWrapper>
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            placement="top"
-            tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
-            trigger="hover"
-          >
-            <ToggleButton onClick={toggleHighlight} active={highlighted}>
-              {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
-              <span>{highlighted ? 'Hide highlights' : 'Show highlights'}</span>
-            </ToggleButton>
-          </WithTooltip>
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            placement="top"
-            tooltip={<TooltipNote note={allExpanded ? 'Collapse all' : 'Expand all'} />}
-            trigger="hover"
-          >
-            <IconButton
-              onClick={allExpanded ? handleCollapseAll : handleExpandAll}
-              aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
-            >
-              {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
-            </IconButton>
-          </WithTooltip>
-          <WithTooltip
-            as="div"
-            hasChrome={false}
-            placement="top"
-            tooltip={<TooltipNote note="Rerun the accessibility scan" />}
-            trigger="hover"
-          >
-            <IconButton onClick={handleManual} aria-label="Rerun accessibility scan">
-              <SyncIcon />
-            </IconButton>
-          </WithTooltip>
-        </ActionsWrapper>
-      </Subnav>
-      <ScrollArea vertical horizontal>
-        {tabs.find((t) => t.type === activeTab)?.panel}
-      </ScrollArea>
+    <Container>
+      <StickyContainer>
+        <AriaTabs
+          backgroundColor={theme.background.app}
+          tabs={tabs.map((tab) => ({
+            id: tab.type,
+            title: tab.label,
+            children: (
+              <ScrollArea vertical horizontal>
+                {tab.panel}
+              </ScrollArea>
+            ),
+          }))}
+          selected={tab}
+          // Safe to cast key to RuleType because we use RuleTypes as IDs above.
+          onSelectionChange={(key) => setTab(key as RuleType)}
+          tools={
+            <ActionsWrapper>
+              <WithTooltip
+                as="div"
+                hasChrome={false}
+                placement="top"
+                tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
+                trigger="hover"
+              >
+                <ToggleButton onClick={toggleHighlight} active={highlighted}>
+                  {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
+                  <span>{highlighted ? 'Hide highlights' : 'Show highlights'}</span>
+                </ToggleButton>
+              </WithTooltip>
+              <WithTooltip
+                as="div"
+                hasChrome={false}
+                placement="top"
+                tooltip={<TooltipNote note={allExpanded ? 'Collapse all' : 'Expand all'} />}
+                trigger="hover"
+              >
+                <IconButton
+                  onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+                  aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+                >
+                  {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+                </IconButton>
+              </WithTooltip>
+              <WithTooltip
+                as="div"
+                hasChrome={false}
+                placement="top"
+                tooltip={<TooltipNote note="Rerun the accessibility scan" />}
+                trigger="hover"
+              >
+                <IconButton onClick={handleManual} aria-label="Rerun accessibility scan">
+                  <SyncIcon />
+                </IconButton>
+              </WithTooltip>
+            </ActionsWrapper>
+          }
+        />
+      </StickyContainer>
     </Container>
   );
 };

@@ -30,7 +30,7 @@ const StyledBar = styled.div<BarProps>(
     ...(border
       ? {
           boxShadow: `${theme.appBorderColor}  0 -1px 0 0 inset`,
-          background: theme.barBg,
+          background: backgroundColor || theme.barBg,
         }
       : {}),
     ...innerStyle,

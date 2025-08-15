@@ -40,6 +40,8 @@ export type RenderPhase =
   | 'rendering'
   | 'playing'
   | 'played'
+  | 'testing'
+  | 'tested'
   | 'completing'
   | 'completed'
   | 'afterEach'
@@ -349,7 +351,20 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
             await this.runPhase(abortSignal, 'errored');
           } else {
-            await this.runPhase(abortSignal, 'played');
+            try {
+              // Played phase
+              await this.runPhase(abortSignal, 'played');
+
+              // Testing phase
+              await this.runPhase(abortSignal, 'testing');
+
+              // Tested phase
+              await this.runPhase(abortSignal, 'tested');
+            } catch (error) {
+              // Handle errors gracefully and propagate to Instrumenter
+              console.error('Error during render phases:', error);
+              throw error;
+            }
           }
         } catch (error) {
           // Remove the loading screen, even if there was an error before rendering

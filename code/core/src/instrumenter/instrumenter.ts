@@ -228,7 +228,7 @@ export class Instrumenter {
         return resetState({ storyId, renderPhase: newPhase, isDebugging });
       }
 
-      if (newPhase === 'played') {
+      if (newPhase === 'played' || newPhase === 'testing' || newPhase === 'tested') {
         this.setState(storyId, {
           renderPhase: newPhase,
           isLocked: false,
@@ -599,7 +599,10 @@ export class Instrumenter {
     };
 
     try {
-      if (renderPhase === 'played' && !call.retain) {
+      if (
+        (renderPhase === 'played' || renderPhase === 'testing' || renderPhase === 'tested') &&
+        !call.retain
+      ) {
         throw alreadyCompletedException;
       }
 

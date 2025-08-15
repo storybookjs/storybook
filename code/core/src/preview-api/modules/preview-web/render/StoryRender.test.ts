@@ -83,6 +83,7 @@ describe('StoryRender', () => {
 
     await render.renderToElement({} as any);
     expect(story.playFunction).toHaveBeenCalled();
+    expect(render.phase).toBe('played');
   });
 
   it('does not run play function if passed autoplay=false', async () => {
@@ -143,6 +144,7 @@ describe('StoryRender', () => {
       expect(story.applyLoaders).toHaveBeenCalledTimes(2);
       expect(renderToScreen).toHaveBeenCalledTimes(2);
       expect(story.playFunction).toHaveBeenCalledOnce();
+      expect(render.phase).toBe('played');
     });
   });
 
@@ -245,6 +247,7 @@ describe('StoryRender', () => {
         expect(render.phase).toBe('loading');
         await mount();
         expect(render.phase).toBe('playing');
+        expect(render.phase).toBe('played');
       },
     });
     const render = new StoryRender(
@@ -262,6 +265,7 @@ describe('StoryRender', () => {
 
     await render.renderToElement({} as any);
     expect(actualMount).toHaveBeenCalled();
+    expect(render.phase).toBe('played');
   });
 
   it('should handle the "finished" phase correctly when the story finishes successfully', async () => {
@@ -469,6 +473,7 @@ describe('StoryRender', () => {
 
       // Assert - window is reloaded
       await vi.waitFor(() => {
+        expect(render.phase).toBe('played');
         expect(window.location.reload).toHaveBeenCalledOnce();
         expect(store.cleanupStory).toHaveBeenCalledOnce();
       });

@@ -318,7 +318,7 @@ By default, Storybook uses the name of the story export as the basis for the sto
 
 <If renderer="svelte">
 
-If you're using Svelte CSF, the `name` property is usually fairly descriptive and user-friendly already, so there is little need for renaming. However, the `name` is used as the basis for the export name, which must be unique within a file. In rare cases, this can lead to naming conflicts. For example, stories with the names "Primary" and "Primary!" would both be transformed to the "Primary" export name. To avoid this, you can use the `exportName` property to specify a unique export name for your story.
+If you're using Svelte CSF, the `name` property is usually fairly descriptive and user-friendly already, so there is little need for renaming. However, the `name` is used as the basis for the export name, which must be unique within a file. In rare cases, this can lead to naming conflicts. For example, stories with the names "Primary" and "Primary!" would both be transformed to the "Primary" export name. To avoid this, you can use the `exportName` property to specify a unique export name for your story. `exportName` is also helpful to provide a more useful named export when re-using stories, e.g. as [portable stories](../api/portable-stories/portable-stories-vitest.mdx).
 
 </If>
 

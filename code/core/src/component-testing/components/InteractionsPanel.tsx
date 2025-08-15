@@ -9,6 +9,7 @@ import { isTestAssertionError, useAnsiToHtmlFilter } from '../utils';
 import { DetachedDebuggerMessage } from './DetachedDebuggerMessage';
 import { Empty } from './EmptyState';
 import { Interaction } from './Interaction';
+import type { PlayStatus } from './StatusBadge';
 import { Subnav } from './Subnav';
 import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
 
@@ -23,11 +24,12 @@ export interface Controls {
 
 interface InteractionsPanelProps {
   storyUrl: string;
+  status: PlayStatus;
   controls: Controls;
   controlStates: ControlStates;
   interactions: (Call & {
     status?: CallStates;
-    childCallIds: Call['id'][];
+    childCallIds?: Call['id'][];
     isHidden: boolean;
     isCollapsed: boolean;
     toggleCollapsed: () => void;
@@ -36,7 +38,6 @@ interface InteractionsPanelProps {
   hasException?: boolean;
   caughtException?: Error;
   unhandledErrors?: SerializedError[];
-  isPlaying?: boolean;
   pausedAt?: Call['id'];
   calls: Map<string, any>;
   endRef?: React.Ref<HTMLDivElement>;
@@ -89,6 +90,7 @@ const CaughtExceptionStack = styled.pre(({ theme }) => ({
 export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
   function InteractionsPanel({
     storyUrl,
+    status,
     calls,
     controls,
     controlStates,
@@ -97,7 +99,6 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     hasException,
     caughtException,
     unhandledErrors,
-    isPlaying,
     pausedAt,
     onScrollToEnd,
     endRef,
@@ -113,15 +114,13 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
         {controlStates.detached && (hasRealInteractions || hasException) && (
           <DetachedDebuggerMessage storyUrl={storyUrl} />
         )}
-        {(interactions.length > 0 || hasException) && (
-          <Subnav
-            controls={controls}
-            controlStates={controlStates}
-            status={browserTestStatus}
-            storyFileName={fileName}
-            onScrollToEnd={onScrollToEnd}
-          />
-        )}
+        <Subnav
+          controls={controls}
+          controlStates={controlStates}
+          status={status}
+          storyFileName={fileName}
+          onScrollToEnd={onScrollToEnd}
+        />
         <div aria-label="Interactions list">
           {interactions.map((call) => (
             <Interaction
@@ -170,13 +169,13 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           </CaughtException>
         )}
         <div ref={endRef} />
-        {!isPlaying && !caughtException && !hasRealInteractions && <Empty />}
+        {status === 'completed' && !caughtException && !hasRealInteractions && <Empty />}
       </Container>
     );
   }
 );
 
-interface SerializedError {
+export interface SerializedError {
   name: string;
   stack?: string;
   message: string;

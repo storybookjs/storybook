@@ -25,7 +25,7 @@ export default async function postinstall(options: PostinstallOptions) {
   }
 
   if (options.configDir) {
-    command.push('--config-dir', options.configDir);
+    command.push('--config-dir', `"${options.configDir}"`);
   }
 
   await $`${command.join(' ')}`;

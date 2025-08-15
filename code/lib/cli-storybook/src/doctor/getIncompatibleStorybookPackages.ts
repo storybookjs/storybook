@@ -31,7 +31,7 @@ export const checkPackageCompatibility = async (
 ): Promise<AnalysedPackage> => {
   const { currentStorybookVersion, skipErrors, packageManager } = context;
   try {
-    const dependencyPackageJson = packageManager.getModulePackageJSON(dependency);
+    const dependencyPackageJson = await packageManager.getModulePackageJSON(dependency);
     if (dependencyPackageJson === null) {
       return { packageName: dependency };
     }
@@ -58,6 +58,8 @@ export const checkPackageCompatibility = async (
         // prevent issues with "tag" based versions e.g. "latest" or "next" instead of actual numbers
         return (
           versionRange &&
+          // We can't check compatibility for 0.x packages, so we skip them
+          !/^[~^]?0\./.test(versionRange) &&
           semver.validRange(versionRange) &&
           !semver.satisfies(currentStorybookVersion, versionRange)
         );
@@ -101,6 +103,11 @@ export const checkPackageCompatibility = async (
 export const getIncompatibleStorybookPackages = async (
   context: Context
 ): Promise<AnalysedPackage[]> => {
+  if (context.currentStorybookVersion.includes('0.0.0')) {
+    // We can't know if a Storybook canary version is compatible with other packages, so we skip it
+    return [];
+  }
+
   const allDeps = context.packageManager.getAllDependencies();
   const storybookLikeDeps = Object.keys(allDeps).filter((dep) => dep.includes('storybook'));
   if (storybookLikeDeps.length === 0 && !context.skipErrors) {

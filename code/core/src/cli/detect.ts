@@ -183,17 +183,23 @@ export async function detectLanguage(packageManager: JsPackageManager) {
 
   const isTypescriptDirectDependency = !!packageManager.getAllDependencies().typescript;
 
-  const getModulePackageJSONVersion = (pkg: string) => {
-    return packageManager.getModulePackageJSON(pkg)?.version ?? null;
+  const getModulePackageJSONVersion = async (pkg: string) => {
+    return (await packageManager.getModulePackageJSON(pkg))?.version ?? null;
   };
 
-  const typescriptVersion = getModulePackageJSONVersion('typescript');
-  const prettierVersion = getModulePackageJSONVersion('prettier');
-  const babelPluginTransformTypescriptVersion = getModulePackageJSONVersion(
-    '@babel/plugin-transform-typescript'
-  );
-  const typescriptEslintParserVersion = getModulePackageJSONVersion('@typescript-eslint/parser');
-  const eslintPluginStorybookVersion = getModulePackageJSONVersion('eslint-plugin-storybook');
+  const [
+    typescriptVersion,
+    prettierVersion,
+    babelPluginTransformTypescriptVersion,
+    typescriptEslintParserVersion,
+    eslintPluginStorybookVersion,
+  ] = await Promise.all([
+    getModulePackageJSONVersion('typescript'),
+    getModulePackageJSONVersion('prettier'),
+    getModulePackageJSONVersion('@babel/plugin-transform-typescript'),
+    getModulePackageJSONVersion('@typescript-eslint/parser'),
+    getModulePackageJSONVersion('eslint-plugin-storybook'),
+  ]);
 
   if (isTypescriptDirectDependency && typescriptVersion) {
     if (
@@ -236,7 +242,6 @@ export async function detect(
     }
 
     const { packageJson } = packageManager.primaryPackageJson;
-
     return detectFrameworkPreset(packageJson);
   } catch (e) {
     return ProjectType.UNDETECTED;

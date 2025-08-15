@@ -247,6 +247,7 @@ describe('StoryRender', () => {
         expect(render.phase).toBe('loading');
         await mount();
         expect(render.phase).toBe('playing');
+        await tick();
         expect(render.phase).toBe('played');
       },
     });

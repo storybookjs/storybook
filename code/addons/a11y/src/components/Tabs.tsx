@@ -1,12 +1,11 @@
 import * as React from 'react';
 
-import { Button, ScrollArea } from 'storybook/internal/components';
+import { AriaTabs, Button, ScrollArea } from 'storybook/internal/components';
 
 import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
 import type { Result } from 'axe-core';
-import { useResizeDetector } from 'react-resize-detector';
-import { styled } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 
 import type { RuleType } from '../types';
 import { useA11yContext } from './A11yContext';
@@ -46,23 +45,20 @@ const Item = styled.button<{ active?: boolean }>(
       : {}
 );
 
-const Subnav = styled.div(({ theme }) => ({
+const StickyContainer = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
-  background: theme.background.app,
+  // background: theme.background.app,
   position: 'sticky',
   top: 0,
   zIndex: 1,
-  display: 'flex',
-  alignItems: 'center',
-  whiteSpace: 'nowrap',
+  // display: 'flex',
+  // alignItems: 'center',
+  // whiteSpace: 'nowrap',
   overflow: 'auto',
-  paddingRight: 10,
-  gap: 6,
   scrollbarColor: `${theme.barTextColor} ${theme.background.app}`,
   scrollbarWidth: 'thin',
 }));
 
-const TabsWrapper = styled.div({});
 const ActionsWrapper = styled.div({
   display: 'flex',
   flexBasis: '100%',
@@ -92,13 +88,8 @@ interface TabsProps {
 }
 
 export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
-  const { ref } = useResizeDetector({
-    refreshMode: 'debounce',
-    handleHeight: false,
-    handleWidth: true,
-  });
   const {
-    tab: activeTab,
+    tab,
     setTab,
     toggleHighlight,
     highlighted,
@@ -108,74 +99,71 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
     handleExpandAll,
   } = useA11yContext();
 
-  const handleToggle = React.useCallback(
-    (event: React.SyntheticEvent) => {
-      setTab(event.currentTarget.getAttribute('data-type') as RuleType);
-    },
-    [setTab]
-  );
+  const theme = useTheme();
+
+  // TODO validate scroll behaviour on tabs
+  // TODO fix reload on rerun
 
   return (
-    <Container ref={ref}>
-      <Subnav>
-        <TabsWrapper role="tablist">
-          {tabs.map((tab, index) => (
-            <Item
-              role="tab"
-              key={index}
-              data-type={tab.type}
-              data-active={activeTab === tab.type}
-              aria-selected={activeTab === tab.type}
-              active={activeTab === tab.type}
-              onClick={handleToggle}
-            >
-              {tab.label}
-            </Item>
-          ))}
-        </TabsWrapper>
-        <ActionsWrapper>
-          {highlighted ? (
-            <CollapsibleButton
-              onClick={toggleHighlight}
-              ariaLabel="Hide accessibility test result highlights"
-              tooltip="Hide accessibility test result highlights"
-            >
-              <EyeCloseIcon />
-              <span>Hide highlights</span>
-            </CollapsibleButton>
-          ) : (
-            <CollapsibleButton
-              onClick={toggleHighlight}
-              variant="ghost"
-              ariaLabel="Highlight elements with accessibility test results"
-              tooltip="Highlight elements with accessibility test results"
-            >
-              <EyeIcon />
-              <span>Show highlights</span>
-            </CollapsibleButton>
-          )}
-          <Button
-            variant="ghost"
-            padding="small"
-            onClick={allExpanded ? handleCollapseAll : handleExpandAll}
-            ariaLabel={allExpanded ? 'Collapse all results' : 'Expand all results'}
-            aria-expanded={allExpanded}
-          >
-            {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
-          </Button>
-          <Button
-            variant="ghost"
-            padding="small"
-            onClick={handleManual}
-            ariaLabel="Rerun accessibility scan"
-          >
-            <SyncIcon />
-          </Button>
-        </ActionsWrapper>
-      </Subnav>
-      <ScrollArea vertical horizontal>
-        {tabs.find((t) => t.type === activeTab)?.panel}
-      </ScrollArea>
+    <Container>
+      <StickyContainer>
+        <AriaTabs
+          backgroundColor={theme.background.app}
+          tabs={tabs.map((tab) => ({
+            id: tab.type,
+            title: tab.label,
+            children: (
+              <ScrollArea vertical horizontal>
+                {tab.panel}
+              </ScrollArea>
+            ),
+          }))}
+          selected={tab}
+          // Safe to cast key to RuleType because we use RuleTypes as IDs above.
+          onSelectionChange={(key) => setTab(key as RuleType)}
+          tools={
+            <ActionsWrapper>
+              {highlighted ? (
+                <CollapsibleButton
+                  onClick={toggleHighlight}
+                  ariaLabel="Hide accessibility test result highlights"
+                  tooltip="Hide accessibility test result highlights"
+                >
+                  <EyeCloseIcon />
+                  <span>Hide highlights</span>
+                </CollapsibleButton>
+              ) : (
+                <CollapsibleButton
+                  onClick={toggleHighlight}
+                  variant="ghost"
+                  ariaLabel="Highlight elements with accessibility test results"
+                  tooltip="Highlight elements with accessibility test results"
+                >
+                  <EyeIcon />
+                  <span>Show highlights</span>
+                </CollapsibleButton>
+              )}
+              <Button
+                variant="ghost"
+                padding="small"
+                onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+                ariaLabel={allExpanded ? 'Collapse all results' : 'Expand all results'}
+                aria-expanded={allExpanded}
+              >
+                {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+              </Button>
+              <Button
+                variant="ghost"
+                padding="small"
+                onClick={handleManual}
+                ariaLabel="Rerun accessibility scan"
+              >
+                <SyncIcon />
+              </Button>
+            </ActionsWrapper>
+          }
+        />
+      </StickyContainer>
     </Container>
   );
 };

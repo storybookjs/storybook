@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { Bar, Button, P, Separator } from 'storybook/internal/components';
+import { AriaToolbar, Button, P, Separator } from 'storybook/internal/components';
 
 import {
   FastForwardIcon,
@@ -25,14 +25,6 @@ const ToolbarWrapper = styled.div(({ theme }) => ({
   top: 0,
   zIndex: 1,
 }));
-
-const GroupContainer = styled.div({
-  height: 40,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingLeft: 15,
-});
 
 interface ToolbarProps {
   controls: Controls;
@@ -58,12 +50,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
 
 const StyledIconButton = styled(Button)(({ theme }) => ({
   color: theme.textMutedColor,
-  margin: '0 3px',
 }));
-
-const StyledSeparator = styled(Separator)({
-  marginTop: 0,
-});
 
 const OpenInEditorButton = styled(Button)(({ theme }) => ({
   color: theme.color.secondary,
@@ -86,25 +73,23 @@ const StyledLocation = styled(P)(({ theme }) => ({
   justifyContent: 'flex-end',
   textAlign: 'right',
   whiteSpace: 'nowrap',
-  marginTop: 'auto',
-  marginBottom: 1,
-  paddingRight: 15,
+  margin: 0,
   fontSize: 13,
 }));
 
-const Group = styled.div({
+const ControlsGroup = styled.div({
   display: 'flex',
   alignItems: 'center',
+  flex: 1,
+  gap: 6,
 });
 
 const RewindButton = styled(StyledIconButton)({
-  marginLeft: 9,
+  marginInlineStart: 3,
 });
 
 const JumpToEndButton = styled(StyledButton)({
-  marginLeft: 9,
-  marginRight: 9,
-  marginBottom: 1,
+  marginInline: 3,
   lineHeight: '12px',
 });
 
@@ -136,88 +121,83 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <ToolbarWrapper>
-      <Bar
+      <AriaToolbar
         backgroundColor={theme.background.app}
-        isAriaToolbar
+        innerStyle={{ gap: 6, paddingInline: 15 }}
         aria-label="Component test playback controls"
       >
-        <GroupContainer>
-          <Group>
-            <StatusBadge status={status} />
+        <ControlsGroup>
+          <StatusBadge status={status} />
 
-            <JumpToEndButton ariaLabel={false} onClick={onScrollToEnd} disabled={!onScrollToEnd}>
-              {buttonText}
-            </JumpToEndButton>
+          <JumpToEndButton ariaLabel={false} onClick={onScrollToEnd} disabled={!onScrollToEnd}>
+            {buttonText}
+          </JumpToEndButton>
 
-            <StyledSeparator />
+          <Separator />
 
-            <RewindButton
+          <RewindButton
+            padding="small"
+            variant="ghost"
+            ariaLabel="Go to start"
+            onClick={controls.start}
+            disabled={!controlStates.start}
+          >
+            <RewindIcon />
+          </RewindButton>
+
+          <StyledIconButton
+            padding="small"
+            variant="ghost"
+            ariaLabel="Go back"
+            onClick={controls.back}
+            disabled={!controlStates.back}
+          >
+            <PlayBackIcon />
+          </StyledIconButton>
+
+          <StyledIconButton
+            padding="small"
+            variant="ghost"
+            ariaLabel="Go forward"
+            onClick={controls.next}
+            disabled={!controlStates.next}
+          >
+            <PlayNextIcon />
+          </StyledIconButton>
+
+          <StyledIconButton
+            padding="small"
+            variant="ghost"
+            ariaLabel="Go to end"
+            onClick={controls.end}
+            disabled={!controlStates.end}
+          >
+            <FastForwardIcon />
+          </StyledIconButton>
+
+          <RerunButton padding="small" variant="ghost" ariaLabel="Rerun" onClick={controls.rerun}>
+            <SyncIcon />
+          </RerunButton>
+        </ControlsGroup>
+        {(importPath || storyFileName) &&
+          (canOpenInEditor ? (
+            <OpenInEditorButton
               padding="small"
+              size="small"
               variant="ghost"
-              ariaLabel="Go to start"
-              onClick={controls.start}
-              disabled={!controlStates.start}
+              ariaLabel="Open in editor"
+              onClick={() => {
+                api.openInEditor({
+                  file: importPath as string,
+                });
+              }}
             >
-              <RewindIcon />
-            </RewindButton>
-
-            <StyledIconButton
-              padding="small"
-              variant="ghost"
-              ariaLabel="Go back"
-              onClick={controls.back}
-              disabled={!controlStates.back}
-            >
-              <PlayBackIcon />
-            </StyledIconButton>
-
-            <StyledIconButton
-              padding="small"
-              variant="ghost"
-              ariaLabel="Go forward"
-              onClick={controls.next}
-              disabled={!controlStates.next}
-            >
-              <PlayNextIcon />
-            </StyledIconButton>
-
-            <StyledIconButton
-              padding="small"
-              variant="ghost"
-              ariaLabel="Go to end"
-              onClick={controls.end}
-              disabled={!controlStates.end}
-            >
-              <FastForwardIcon />
-            </StyledIconButton>
-
-            <RerunButton padding="small" variant="ghost" ariaLabel="Rerun" onClick={controls.rerun}>
-              <SyncIcon />
-            </RerunButton>
-          </Group>
-          {(importPath || storyFileName) && (
-            <Group>
-              {canOpenInEditor ? (
-                <OpenInEditorButton
-                  padding="small"
-                  size="small"
-                  variant="ghost"
-                  ariaLabel="Open in editor"
-                  onClick={() => {
-                    api.openInEditor({
-                      file: importPath as string,
-                    });
-                  }}
-                >
-                  {storyFileName}
-                </OpenInEditorButton>
-              ) : (
-                <StyledLocation>{storyFileName}</StyledLocation>
-              )}
-            </Group>
-          )}
-        </GroupContainer>
-      </Bar>
+              {storyFileName}
+            </OpenInEditorButton>
+          ) : (
+            <StyledLocation>{storyFileName}</StyledLocation>
+          ))}
+      </AriaToolbar>
     </ToolbarWrapper>
   );
 };

@@ -1,11 +1,17 @@
-import React, { Fragment, useId, useRef } from 'react';
+import React, { Fragment, useId } from 'react';
 
-import { Button, Separator, TabBar, TabButton } from 'storybook/internal/components';
+import { deprecate } from 'storybook/internal/client-logger';
+import {
+  AbstractAriaToolbar,
+  Button,
+  Separator,
+  TabBar,
+  TabButton,
+} from 'storybook/internal/components';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
-import { useToolbar } from '@react-aria/toolbar';
 import {
   type API,
   type Combo,
@@ -127,13 +133,13 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
   api,
 }) {
   const headingId = useId();
-  const toolbarRef = useRef<HTMLDivElement>(null);
 
-  const { toolbarProps } = useToolbar({ orientation: 'horizontal' }, toolbarRef);
+  if (tabs.length > 1) {
+    deprecate('Addon tabs are deprecated and will be removed in Storybook 11.');
+  }
 
   return tabs || tools || toolsExtra ? (
-    <ToolbarSection
-      role="region"
+    <StyledSection
       className="sb-bar"
       key="toolbar"
       shown={isShown}
@@ -143,7 +149,7 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
       <h2 id={headingId} className="sb-sr-only">
         Toolbar
       </h2>
-      <ToolbarInner {...toolbarProps} ref={toolbarRef}>
+      <StyledAriaToolbar>
         <ToolbarLeft>
           {tabs.length > 1 ? (
             <Fragment>
@@ -171,8 +177,8 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
         <ToolbarRight>
           <Tools key="right" list={toolsExtra} />
         </ToolbarRight>
-      </ToolbarInner>
-    </ToolbarSection>
+      </StyledAriaToolbar>
+    </StyledSection>
   ) : null;
 });
 
@@ -226,7 +232,7 @@ export function filterToolsSide(
   return tools.filter(filter);
 }
 
-const ToolbarSection = styled.section<{ shown: boolean }>(({ theme, shown }) => ({
+const StyledSection = styled.section<{ shown: boolean }>(({ theme, shown }) => ({
   position: 'relative',
   color: theme.barTextColor,
   width: '100%',
@@ -241,7 +247,7 @@ const ToolbarSection = styled.section<{ shown: boolean }>(({ theme, shown }) => 
   zIndex: 4,
 }));
 
-const ToolbarInner = styled.div({
+const StyledAriaToolbar = styled(AbstractAriaToolbar)({
   width: 'calc(100% - 20px)',
   display: 'flex',
   justifyContent: 'space-between',

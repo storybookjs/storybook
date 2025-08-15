@@ -16,7 +16,7 @@ type TDefaultOptions = {
   storybookJestPath?: string;
 }[];
 
-export = createStorybookRule<TDefaultOptions, string>({
+export default createStorybookRule<TDefaultOptions, string>({
   name: 'use-storybook-expect',
   defaultOptions: [],
   meta: {

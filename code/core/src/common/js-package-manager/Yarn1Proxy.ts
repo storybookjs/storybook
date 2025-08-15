@@ -81,7 +81,7 @@ export class Yarn1Proxy extends JsPackageManager {
     return this.executeCommand({ command: `yarn`, args: [command, ...args], cwd, stdio });
   }
 
-  public getModulePackageJSON(packageName: string): PackageJson | null {
+  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const packageJsonPath = findUpSync(
       (dir) => {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');

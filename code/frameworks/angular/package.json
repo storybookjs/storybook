@@ -58,6 +58,7 @@
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
+    "@nx/devkit": "^21.1.2",
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/global": "^5.0.0",
     "telejson": "8.0.0",

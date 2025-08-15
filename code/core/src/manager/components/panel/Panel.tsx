@@ -1,6 +1,7 @@
+import type { ReactNode } from 'react';
 import React, { Component } from 'react';
 
-import { EmptyTabContent, IconButton, Link, Tabs } from 'storybook/internal/components';
+import { AriaTabs, EmptyTabContent, IconButton, Link } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
@@ -17,28 +18,47 @@ export interface SafeTabProps {
   children: Addon_BaseType['render'];
 }
 
-class SafeTab extends Component<SafeTabProps, { hasError: boolean }> {
-  constructor(props: SafeTabProps) {
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+class TabErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean }> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
   }
 
-  componentDidCatch(error: Error, info: any) {
-    this.setState({ hasError: true });
-
-    console.error(error, info);
+  static getDerivedStateFromError() {
+    return { hasError: true };
   }
 
-  // @ts-expect-error (we know this is broken)
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('Error rendering addon panel');
+    console.error(error);
+    console.error(info.componentStack);
+  }
+
   render() {
     const { hasError } = this.state;
-    const { children } = this.props;
     if (hasError) {
-      return <h1>Something went wrong.</h1>;
+      return (
+        <EmptyTabContent
+          title="This addon has errors"
+          description="Check your browser logs and addon code to pinpoint what went wrong. This issue was not caused by Storybook."
+        />
+      );
     }
+
+    const { children } = this.props;
     return children;
   }
 }
+
+const Section = styled.section({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+});
 
 export const AddonPanel = React.memo<{
   selectedPanel?: string;
@@ -47,84 +67,77 @@ export const AddonPanel = React.memo<{
   shortcuts: State['shortcuts'];
   panelPosition?: 'bottom' | 'right';
   absolute?: boolean;
-}>(
-  ({
-    panels,
-    shortcuts,
-    actions,
-    selectedPanel = null,
-    panelPosition = 'right',
-    absolute = true,
-  }) => {
-    const { isDesktop, setMobilePanelOpen } = useLayout();
+}>(({ panels, shortcuts, actions, selectedPanel = null, panelPosition = 'right' }) => {
+  const { isDesktop, setMobilePanelOpen } = useLayout();
 
-    return (
-      <Tabs
-        absolute={absolute}
-        {...(selectedPanel && panels[selectedPanel] ? { selected: selectedPanel } : {})}
-        menuName="Addons"
-        actions={actions}
-        showToolsWhenEmpty
-        emptyState={
-          <EmptyTabContent
-            title="Storybook add-ons"
-            description={
-              <>
-                Integrate your tools with Storybook to connect workflows and unlock advanced
-                features.
-              </>
-            }
-            footer={
-              <Link href={'https://storybook.js.org/addons?ref=ui'} target="_blank" withArrow>
-                <DocumentIcon /> Explore integrations catalog
-              </Link>
-            }
-          />
-        }
-        tools={
-          <Actions>
-            {isDesktop ? (
-              <>
-                <IconButton
-                  key="position"
-                  onClick={actions.togglePosition}
-                  title={`Change addon orientation [${shortcutToHumanString(
-                    shortcuts.panelPosition
-                  )}]`}
-                >
-                  {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
-                </IconButton>
-                <IconButton
-                  key="visibility"
-                  onClick={actions.toggleVisibility}
-                  title={`Hide addons [${shortcutToHumanString(shortcuts.togglePanel)}]`}
-                >
-                  <CloseIcon />
-                </IconButton>
-              </>
-            ) : (
-              <IconButton onClick={() => setMobilePanelOpen(false)} aria-label="Close addon panel">
-                <CloseIcon />
-              </IconButton>
-            )}
-          </Actions>
-        }
+  const tabs = Object.entries(panels).map(([id, panel]) => ({
+    id,
+    title: typeof panel.title === 'function' ? <panel.title /> : panel.title,
+    children: () => <TabErrorBoundary key={id}>{panel.render({ active: true })}</TabErrorBoundary>,
+  }));
+
+  const emptyState = (
+    <EmptyTabContent
+      title="Storybook add-ons"
+      description={
+        <>Integrate your tools with Storybook to connect workflows and unlock advanced features.</>
+      }
+      footer={
+        <Link href={'https://storybook.js.org/addons?ref=ui'} target="_blank" withArrow>
+          <DocumentIcon /> Explore integrations catalog
+        </Link>
+      }
+    />
+  );
+
+  const tools = (
+    <ActionsWrapper>
+      {isDesktop ? (
+        <>
+          <IconButton
+            key="position"
+            onClick={actions.togglePosition}
+            title={`Change addon orientation [${shortcutToHumanString(shortcuts.panelPosition)}]`}
+          >
+            {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
+          </IconButton>
+          <IconButton
+            key="visibility"
+            onClick={actions.toggleVisibility}
+            title={`Hide addons [${shortcutToHumanString(shortcuts.togglePanel)}]`}
+          >
+            <CloseIcon />
+          </IconButton>
+        </>
+      ) : (
+        <IconButton onClick={() => setMobilePanelOpen(false)} aria-label="Close addon panel">
+          <CloseIcon />
+        </IconButton>
+      )}
+    </ActionsWrapper>
+  );
+
+  return (
+    <Section aria-labelledby="storybook-panel-heading">
+      <h2 id="storybook-panel-heading" className="sb-sr-only">
+        Addon panel
+      </h2>
+      <AriaTabs
         id="storybook-panel-root"
-      >
-        {Object.entries(panels).map(([k, v]) => (
-          // @ts-expect-error (we know this is broken)
-          <SafeTab key={k} id={k} title={typeof v.title === 'function' ? <v.title /> : v.title}>
-            {v.render}
-          </SafeTab>
-        ))}
-      </Tabs>
-    );
-  }
-);
+        showToolsWhenEmpty
+        emptyState={emptyState}
+        selected={selectedPanel ?? undefined}
+        onSelectionChange={(id) => actions.onSelect(id)}
+        tabs={tabs}
+        tools={tools}
+      />
+    </Section>
+  );
+});
 
 AddonPanel.displayName = 'AddonPanel';
 
-const Actions = styled.div({
+const ActionsWrapper = styled.div({
   display: 'flex',
   alignItems: 'center',
   gap: 6,

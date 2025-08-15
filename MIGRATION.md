@@ -15,6 +15,8 @@
       - [Added: tooltip](#added-tooltip)
       - [Removed: active](#removed-active)
     - [IconButton is deprecated](#iconbutton-is-deprecated)
+    - [Bar Component API Changes](#bar-component-api-changes)
+    - [FlexBar is removed](#flexbar-is-removed)
     - [Modal Component API Changes](#modal-component-api-changes)
       - [Removed: container and portalSelector](#removed-container-and-portalselector)
       - [Removed: onInteractOutside](#removed-oninteractoutside)
@@ -515,6 +517,7 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+
 ## From version 9.x to 10.0.0
 
 ### Core Changes
@@ -647,6 +650,14 @@ Use Select if the active state denotes that the Button is open while a selection
 The IconButton component is deprecated, as it overlaps with Button. Instead, use Button with the `'ghost'` variant and `'small'` padding, and add an `ariaLabel` prop for screenreaders to announce.
 
 IconButton will be removed in future versions.
+#### Bar Component API Changes
+
+The `Bar` component's internal layout has changed. It now applies flex positioning and applies a default item gap, that can be controlled with the `itemGap` prop.
+
+#### FlexBar is removed
+
+The `FlexBar` component is removed. Instead, use the `Bar` component and apply `justifyContent: 'space-between'` through the `innerStyle` prop.
+
 
 #### Modal Component API Changes
 
@@ -1358,7 +1369,7 @@ Key changes:
 
 #### Angular: Introduce `features.angularFilterNonInputControls`
 
-Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular components in Storybook's controls panel.
 
 To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 

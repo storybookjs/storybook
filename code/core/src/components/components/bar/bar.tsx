@@ -1,11 +1,73 @@
-import type { ComponentProps, FC } from 'react';
-import React, { Children, useRef } from 'react';
+import React, { Children, forwardRef } from 'react';
 
-import { useToolbar } from '@react-aria/toolbar';
-import { styled } from 'storybook/theming';
+import { deprecate } from 'storybook/internal/client-logger';
 
-import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
-import { ScrollArea } from '../ScrollArea/ScrollArea';
+import { type CSSObject, styled } from 'storybook/theming';
+
+export interface BarProps {
+  backgroundColor?: string;
+  border?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+  scrollable?: boolean;
+  innerStyle?: CSSObject;
+}
+
+const StyledBar = styled.div<BarProps>(
+  ({ backgroundColor, border = false, innerStyle = {}, scrollable, theme }) => ({
+    color: theme.barTextColor,
+    width: '100%',
+    minHeight: 40,
+    flexShrink: 0,
+    scrollbarColor: `${theme.barTextColor} ${backgroundColor || theme.barBg}`,
+    scrollbarWidth: 'thin',
+    overflow: scrollable ? 'auto' : 'hidden',
+    overflowY: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    gap: scrollable ? 0 : 6,
+    paddingInline: scrollable ? 0 : 6,
+    ...(border
+      ? {
+          boxShadow: `${theme.appBorderColor}  0 -1px 0 0 inset`,
+          background: theme.barBg,
+        }
+      : {}),
+    ...innerStyle,
+  })
+);
+
+const HeightPreserver = styled.div<Pick<BarProps, 'innerStyle'>>(({ innerStyle }) => ({
+  minHeight: 40,
+  display: 'flex',
+  alignItems: 'center',
+  width: '100%',
+  gap: 6,
+  paddingInline: 6,
+  ...innerStyle,
+}));
+
+export const Bar = forwardRef<HTMLDivElement, BarProps>(
+  ({ scrollable = true, className, children, innerStyle, ...rest }, ref) => {
+    return (
+      <StyledBar
+        {...rest}
+        ref={ref}
+        innerStyle={scrollable ? undefined : innerStyle}
+        scrollable={scrollable}
+        className={className}
+      >
+        {scrollable ? (
+          <HeightPreserver innerStyle={innerStyle}>{children}</HeightPreserver>
+        ) : (
+          children
+        )}
+      </StyledBar>
+    );
+  }
+);
+
+Bar.displayName = 'Bar';
 
 export interface SideProps {
   left?: boolean;
@@ -39,70 +101,6 @@ export const Side = styled.div<SideProps>(
 );
 Side.displayName = 'Side';
 
-export interface BarProps extends ScrollAreaProps {
-  backgroundColor?: string;
-  border?: boolean;
-  className?: string;
-  scrollable?: boolean;
-
-  /** Backwards compatibility: we ask callees to opt into aria toolbar semantics. */
-  isAriaToolbar?: boolean;
-  'aria-label'?: string;
-  'aria-labelledby'?: string;
-}
-const StyledBar = styled.div<BarProps>(
-  ({ backgroundColor, theme, scrollable = true }) => ({
-    color: theme.barTextColor,
-    width: '100%',
-    minHeight: 40,
-    flexShrink: 0,
-    scrollbarColor: `${theme.barTextColor} ${backgroundColor || theme.barBg}`,
-    scrollbarWidth: 'thin',
-    overflow: scrollable ? 'auto' : 'hidden',
-    overflowY: 'hidden',
-  }),
-  ({ theme, border = false }) =>
-    border
-      ? {
-          boxShadow: `${theme.appBorderColor}  0 -1px 0 0 inset`,
-          background: theme.barBg,
-        }
-      : {}
-);
-
-export const Bar: FC<BarProps> = ({ isAriaToolbar = false, scrollable, className, ...rest }) => {
-  const toolbarRef = useRef<HTMLDivElement>(null);
-
-  const { toolbarProps } = useToolbar(
-    {
-      'aria-label': rest['aria-label'],
-      'aria-labelledby': rest['aria-labelledby'],
-      orientation: 'horizontal',
-    },
-    toolbarRef
-  );
-
-  const finalRestProps = isAriaToolbar
-    ? {
-        ...rest,
-        ...toolbarProps,
-        ref: toolbarRef,
-      }
-    : rest;
-
-  if (scrollable) {
-    return (
-      <ScrollArea vertical={false} className={className}>
-        <StyledBar {...finalRestProps} />
-      </ScrollArea>
-    );
-  }
-
-  return <StyledBar {...finalRestProps} className={className} />;
-};
-
-Bar.displayName = 'Bar';
-
 interface BarInnerProps {
   bgColor?: string;
 }
@@ -116,12 +114,13 @@ const BarInner = styled.div<BarInnerProps>(({ bgColor }) => ({
   backgroundColor: bgColor || '',
 }));
 
-export interface FlexBarProps extends ComponentProps<typeof Bar> {
+export interface FlexBarProps extends BarProps {
   border?: boolean;
   backgroundColor?: string;
 }
 
 export const FlexBar = ({ children, backgroundColor, className, ...rest }: FlexBarProps) => {
+  deprecate('FlexBar is deprecated. Use Bar with justifyContent: "space-between" instead.');
   const [left, right] = Children.toArray(children);
   return (
     <Bar backgroundColor={backgroundColor} className={`sb-bar ${className}`} {...rest}>

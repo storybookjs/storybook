@@ -8,8 +8,8 @@ import type { Addon_RenderOptions } from 'storybook/internal/types';
 import { styled } from 'storybook/theming';
 
 import { FlexBar } from '../bar/bar';
-import { TabButton } from '../bar/button';
 import { EmptyTabContent } from './EmptyTabContent';
+import { TabButton } from './button';
 import { VisuallyHidden, childrenToList } from './tabs.helpers';
 import { useList } from './tabs.hooks';
 

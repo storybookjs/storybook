@@ -7,7 +7,7 @@ import { sanitize } from 'storybook/internal/csf';
 import { styled } from 'storybook/theming';
 import useResizeObserver from 'use-resize-observer';
 
-import { TabButton } from '../bar/button';
+import { TabButton } from './button';
 import type { ChildrenListComplete } from './tabs.helpers';
 
 const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({

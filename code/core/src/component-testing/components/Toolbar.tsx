@@ -2,7 +2,7 @@ import type { ComponentProps } from 'react';
 import React from 'react';
 
 import {
-  Bar,
+  AriaToolbar,
   Button,
   IconButton,
   P,
@@ -33,14 +33,6 @@ const ToolbarWrapper = styled.div(({ theme }) => ({
   zIndex: 1,
 }));
 
-const GroupContainer = styled.div({
-  height: 40,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingLeft: 15,
-});
-
 interface ToolbarProps {
   controls: Controls;
   controlStates: ControlStates;
@@ -66,37 +58,28 @@ const Note = styled(TooltipNote)(({ theme }) => ({
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
   color: theme.textMutedColor,
-  margin: '0 3px',
 }));
-
-const StyledSeparator = styled(Separator)({
-  marginTop: 0,
-});
 
 const StyledLocation = styled(P)(({ theme }) => ({
   color: theme.textMutedColor,
-  justifyContent: 'flex-end',
-  textAlign: 'right',
   whiteSpace: 'nowrap',
-  marginTop: 'auto',
-  marginBottom: 1,
-  paddingRight: 15,
+  margin: 0,
   fontSize: 13,
 }));
 
-const Group = styled.div({
+const ControlsGroup = styled.div({
   display: 'flex',
   alignItems: 'center',
+  flex: 1,
+  gap: 6,
 });
 
 const RewindButton = styled(StyledIconButton)({
-  marginLeft: 9,
+  marginInlineStart: 3,
 });
 
 const JumpToEndButton = styled(StyledButton)({
-  marginLeft: 9,
-  marginRight: 9,
-  marginBottom: 1,
+  marginInline: 3,
   lineHeight: '12px',
 });
 
@@ -125,74 +108,68 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <ToolbarWrapper>
-      <Bar
+      <AriaToolbar
         backgroundColor={theme.background.app}
-        isAriaToolbar
+        innerStyle={{ gap: 6, paddingInline: 15 }}
         aria-label="Component test playback controls"
       >
-        <GroupContainer>
-          <Group>
-            <StatusBadge status={status} />
+        <ControlsGroup>
+          <StatusBadge status={status} />
 
-            <JumpToEndButton onClick={onScrollToEnd} disabled={!onScrollToEnd}>
-              {buttonText}
-            </JumpToEndButton>
+          <JumpToEndButton onClick={onScrollToEnd} disabled={!onScrollToEnd}>
+            {buttonText}
+          </JumpToEndButton>
 
-            <StyledSeparator />
+          <Separator />
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to start" />}>
-              <RewindButton
-                aria-label="Go to start"
-                onClick={controls.start}
-                disabled={!controlStates.start}
-              >
-                <RewindIcon />
-              </RewindButton>
-            </WithTooltip>
+          <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to start" />}>
+            <RewindButton
+              aria-label="Go to start"
+              onClick={controls.start}
+              disabled={!controlStates.start}
+            >
+              <RewindIcon />
+            </RewindButton>
+          </WithTooltip>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go back" />}>
-              <StyledIconButton
-                aria-label="Go back"
-                onClick={controls.back}
-                disabled={!controlStates.back}
-              >
-                <PlayBackIcon />
-              </StyledIconButton>
-            </WithTooltip>
+          <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go back" />}>
+            <StyledIconButton
+              aria-label="Go back"
+              onClick={controls.back}
+              disabled={!controlStates.back}
+            >
+              <PlayBackIcon />
+            </StyledIconButton>
+          </WithTooltip>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go forward" />}>
-              <StyledIconButton
-                aria-label="Go forward"
-                onClick={controls.next}
-                disabled={!controlStates.next}
-              >
-                <PlayNextIcon />
-              </StyledIconButton>
-            </WithTooltip>
+          <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go forward" />}>
+            <StyledIconButton
+              aria-label="Go forward"
+              onClick={controls.next}
+              disabled={!controlStates.next}
+            >
+              <PlayNextIcon />
+            </StyledIconButton>
+          </WithTooltip>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to end" />}>
-              <StyledIconButton
-                aria-label="Go to end"
-                onClick={controls.end}
-                disabled={!controlStates.end}
-              >
-                <FastForwardIcon />
-              </StyledIconButton>
-            </WithTooltip>
+          <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to end" />}>
+            <StyledIconButton
+              aria-label="Go to end"
+              onClick={controls.end}
+              disabled={!controlStates.end}
+            >
+              <FastForwardIcon />
+            </StyledIconButton>
+          </WithTooltip>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Rerun" />}>
-              <RerunButton aria-label="Rerun" onClick={controls.rerun}>
-                <SyncIcon />
-              </RerunButton>
-            </WithTooltip>
-          </Group>
-          {storyFileName && (
-            <Group>
-              <StyledLocation>{storyFileName}</StyledLocation>
-            </Group>
-          )}
-        </GroupContainer>
-      </Bar>
+          <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Rerun" />}>
+            <RerunButton aria-label="Rerun" onClick={controls.rerun}>
+              <SyncIcon />
+            </RerunButton>
+          </WithTooltip>
+        </ControlsGroup>
+        {storyFileName && <StyledLocation>{storyFileName}</StyledLocation>}
+      </AriaToolbar>
     </ToolbarWrapper>
   );
 };

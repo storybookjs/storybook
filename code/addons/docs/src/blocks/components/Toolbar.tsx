@@ -1,7 +1,7 @@
 import type { FC, SyntheticEvent } from 'react';
 import React from 'react';
 
-import { Bar, IconButton } from 'storybook/internal/components';
+import { AriaToolbar, IconButton } from 'storybook/internal/components';
 
 import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
@@ -27,7 +27,7 @@ interface LoadingProps {
 
 export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps;
 
-const AbsoluteBar = styled(Bar)({
+const AbsoluteBar = styled(AriaToolbar)({
   position: 'absolute',
   left: 0,
   right: 0,
@@ -35,18 +35,6 @@ const AbsoluteBar = styled(Bar)({
   transition: 'transform .2s linear',
   display: 'flex',
   alignItems: 'center',
-});
-
-const Wrapper = styled.div({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'flex-start',
-  gap: 4,
-  // Matching what was done before through FlexBar: marginLeft: 3 + a marginLeft: 4 on the first child
-  // FlexBar actually had marginRight: 10 but that difference is not significant.
-  marginInline: 7,
-  whiteSpace: 'nowrap',
-  flexBasis: 'auto',
 });
 
 const IconPlaceholder = styled.div(({ theme }) => ({
@@ -59,44 +47,42 @@ const IconPlaceholder = styled.div(({ theme }) => ({
 }));
 
 export const Toolbar: FC<ToolbarProps> = ({ isLoading, zoom, resetZoom, ...rest }) => (
-  <AbsoluteBar {...rest} isAriaToolbar>
-    <Wrapper>
-      {isLoading ? (
-        [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
-      ) : (
-        <>
-          <IconButton
-            key="zoomin"
-            onClick={(e: SyntheticEvent) => {
-              e.preventDefault();
-              zoom(0.8);
-            }}
-            title="Zoom in"
-          >
-            <ZoomIcon />
-          </IconButton>
-          <IconButton
-            key="zoomout"
-            onClick={(e: SyntheticEvent) => {
-              e.preventDefault();
-              zoom(1.25);
-            }}
-            title="Zoom out"
-          >
-            <ZoomOutIcon />
-          </IconButton>
-          <IconButton
-            key="zoomreset"
-            onClick={(e: SyntheticEvent) => {
-              e.preventDefault();
-              resetZoom();
-            }}
-            title="Reset zoom"
-          >
-            <ZoomResetIcon />
-          </IconButton>
-        </>
-      )}
-    </Wrapper>
+  <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7 }} {...rest}>
+    {isLoading ? (
+      [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
+    ) : (
+      <>
+        <IconButton
+          key="zoomin"
+          onClick={(e: SyntheticEvent) => {
+            e.preventDefault();
+            zoom(0.8);
+          }}
+          title="Zoom in"
+        >
+          <ZoomIcon />
+        </IconButton>
+        <IconButton
+          key="zoomout"
+          onClick={(e: SyntheticEvent) => {
+            e.preventDefault();
+            zoom(1.25);
+          }}
+          title="Zoom out"
+        >
+          <ZoomOutIcon />
+        </IconButton>
+        <IconButton
+          key="zoomreset"
+          onClick={(e: SyntheticEvent) => {
+            e.preventDefault();
+            resetZoom();
+          }}
+          title="Reset zoom"
+        >
+          <ZoomResetIcon />
+        </IconButton>
+      </>
+    )}
   </AbsoluteBar>
 );

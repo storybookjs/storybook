@@ -9,7 +9,7 @@
     component: YourComponent,
     decorators: [
       ({ parameters }) => ({
-        component: MarginDecorator,
+        Component: MarginDecorator,
         // 👇 Pass props to the MarginDecorator component
         props: { size: parameters.smallMargin ? 'small' : 'medium' },
       })
@@ -26,7 +26,7 @@ export default {
   component: YourComponent,
   decorators: [
     ({ parameters }) => ({
-      component: MarginDecorator,
+      Component: MarginDecorator,
       // 👇 Pass props to the MarginDecorator component
       props: { size: parameters.smallMargin ? 'small' : 'medium' },
     }),
@@ -45,7 +45,7 @@ export default {
     component: YourComponent,
     decorators: [
       ({ parameters }) => ({
-        component: MarginDecorator,
+        Component: MarginDecorator,
         // 👇 Pass props to the MarginDecorator component
         props: { size: parameters.smallMargin ? 'small' : 'medium' },
       })
@@ -65,7 +65,7 @@ const meta = {
   component: YourComponent,
   decorators: [
     ({ parameters }) => ({
-      component: MarginDecorator,
+      Component: MarginDecorator,
       // 👇 Pass props to the MarginDecorator component
       props: { size: parameters.smallMargin ? 'small' : 'medium' },
     }),

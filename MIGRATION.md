@@ -7,6 +7,9 @@
     - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
+  - [API and Component Changes](#api-and-component-changes)
+    - [Bar Component API Changes](#bar-component-api-changes)
+    - [FlexBar is removed](#flexbar-is-removed)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -25,7 +28,7 @@
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
     - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
-  - [API and Component Changes](#api-and-component-changes)
+  - [API and Component Changes](#api-and-component-changes-1)
     - [Button Component API Changes](#button-component-api-changes)
     - [Icon System Updates](#icon-system-updates)
     - [Sidebar Component Changes](#sidebar-component-changes)
@@ -579,6 +582,16 @@ export const core = {
   renderer: getAbsolutePath('@storybook/react'),
 };
 ```
+
+### API and Component Changes
+#### Bar Component API Changes
+
+The `Bar` component's internal layout has changed. It now applies flex positioning and applies a default item gap, that can be controlled with the `itemGap` prop.
+
+#### FlexBar is removed
+
+The `FlexBar` component is deprecated. Instead, use the `Bar` component and apply `justifyContent: 'space-between'` through the `innerStyle` prop.
+
 
 ## From version 8.x to 9.0.0
 
@@ -1212,7 +1225,7 @@ Key changes:
 
 #### Angular: Introduce `features.angularFilterNonInputControls`
 
-Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular components in Storybook's controls panel.
 
 To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 

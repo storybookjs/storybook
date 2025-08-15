@@ -102,22 +102,57 @@ components/
 
 <If renderer="svelte">
 
-<details>
-<summary>Alternative story definitions</summary>
- 
-For most cases, we recommend Svelte CSF users define their stories as above, which uses the default rendering of the component. However, there are alternatives to this approach.
-
-Any `children` elements passed to the Story component will be passed along as `args.children` to the component:
+Unlike regular CSF, when using Svelte CSF, you cannot use [`args`](./args.mdx) for children. Instead, you pass children in-between the opening and closing `Story` tags and it will be passed to the component as the `children` snippet prop.
 
 ```svelte title="Alert.stories.svelte"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+ 
+  import Alert from './Alert.svelte';
+ 
+  const { Story } = defineMeta({
+    component: Alert,
+  });
+</script>
+
 {/* Renders <Alert>Alert text</Alert> */}
 <Story name="Alert with children">
   Alert text
 </Story>
 ```
 
-If you need to customize the rendering of your story, you can provide a snippet that accepts `args` and renders whatever you need.
+If you want to render the children as the entire story itself, you can use the `asChild` prop of the `Story` component, which will ignore the default component rendering and render the children directly.
 
+```svelte title="Button.stories.svelte"
+<Story
+  name="Default Button in alert"
+  asChild
+  <Alert>
+    Alert text
+    <Button />
+  </Alert>
+</Story>
+```
+
+<Callout variant="warning">
+
+Note that features which require `args`, like [Controls](../essentials/controls.mdx), will not work when using `asChild`. You can customize the rendering of a story and retain the ability to use `args` by using a [custom render function](#custom-rendering).
+
+</Callout>
+
+</If>
+
+#### Custom rendering
+
+<If renderer="svelte">
+ 
+By default, stories will render the component defined in the `defineMeta` call (for Svelte CSF) or in the default export (for CSF), with the `args` passed to it.
+
+If you need to customize the rendering of your story, you can provide a snippet (for Svelte CSF) or a `render` fuction (for CSF) that accepts `args` and renders whatever you need.
+
+For example, if you want to render a `Button` inside an `Alert`:
+
+{/* TODO: Snippetize */}
 ```svelte title="Button.stories.svelte"
 <Story
   name="Primary in alert"
@@ -134,23 +169,15 @@ If you need to customize the rendering of your story, you can provide a snippet 
 </Story>
 ```
 
-You can reuse this snippet in other stories, by defining it outside the Story component and referencing it in the `template` prop:
+<Callout variant="info">
 
-```svelte title="Button.stories.svelte"
-{#snippet template(args)}
-  <Alert>
-    Alert text
-    <Button {...args} />
-  </Alert>
-{/snippet}
+Note how the template snippet or `render` function spreads `args` onto the Button component. This ensures that features like [Controls](../essentials/controls.mdx) will work as expected, allowing you to dynamically change the Button's properties in the Storybook UI.
 
-<Story name="Default in alert" args={{ label: 'Button' }} {template} />
+</Callout>
 
-<Story name="Primary in alert" args={{ label: 'Button', primary: true }} {template} />
-```
+You can re-use the same render function across stories by applying it at the meta level. For Svelte CSF, this can be done by defining the template snippet outside of the story and assigning it to the `render` property of the `defineMeta` function. For CSF, you can define a `render` function in the default export.
 
-You can also apply a snippet to all stories by assigning it to `render` in the `defineMeta` function:
-
+{/* TODO: Snippetize */}
 ```svelte title="Button.stories.svelte"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -174,26 +201,89 @@ You can also apply a snippet to all stories by assigning it to `render` in the `
 <Story name="Primary in alert" args={{ label: 'Button', primary: true }} />
 ```
 
-If you do not need to pass `args` to a component in the story, you can use the `asChild` prop to render the passed children directly without the need for a snippet:
+Whatever you define at the meta level can be overridden at the story level, so you can still customize the rendering of individual stories if needed.
 
-```svelte title="Button.stories.svelte"
-<Story
-  name="Default in alert"
-  asChild
-  <Alert>
-    Alert text
-    <Button />
-  </Alert>
-</Story>
+Finally, `render` functions and template snippets receive a second `context` argument, which contains all other details for the story, including [`parameters`](./parameters.mdx), [`globals`](../essentials/toolbars-and-globals.mdx), and more.
+
+</If>
+
+<If notRenderer="svelte">
+
+By default, stories will render the component defined in the meta (default export), with the `args` passed to it. If you need to render something else, you can provide a function to the `render` property that returns the desired output.
+
+For example, if you want to render a `Button` inside an `Alert`, you can define a custom render function like this:
+
+{/* TODO: Snippetize */}
+```tsx title="Button.stories.tsx"
+import { Meta, StoryObj } from '@storybook/your-framework';
+
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+} satisfies Meta<typeof Button>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const PrimaryInAlert: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+};
 ```
 
-<Callout variant="warning">
+<Callout variant="info">
 
-Note that features that require `args` like [Controls](../essentials/controls.mdx) will not work when using `asChild`.
+Note how the `render` function spreads `args` onto the Button component. This ensures that features like [Controls](../essentials/controls.mdx) will work as expected, allowing you to dynamically change the Button's properties in the Storybook UI.
 
 </Callout>
 
-</details>
+You can re-use the same render function across stories by applying it at the meta level:
+
+{/* TODO: Snippetize */}
+```tsx title="Button.stories.tsx"
+import { Meta, StoryObj } from '@storybook/your-framework';
+
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+} satisfies Meta<typeof Button>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const DefaultInAlert: Story = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```
+
+Whatever you define at the meta level can be overridden at the story level, so you can still customize the rendering of individual stories if needed.
+
+Finally, `render` functions receive a second `context` argument, which contains all other details for the story, including [`parameters`](./parameters.mdx), [`globals`](../essentials/toolbars-and-globals.mdx), and more.
 
 </If>
 
@@ -367,7 +457,7 @@ Sometimes you may have two or more components created to work together. For inst
 
 {/* prettier-ignore-end */}
 
-In such cases, it makes sense to define a new snippet (for Svelte CSF) or use the [`render`](../api/csf/index.mdx#custom-render-functions) property (for CSF) to define a new function to render the `List` component with different numbers of `ListItem` children.
+In such cases, it makes sense to [customize the rendering](#custom-rendering) to output the `List` component with different numbers of `ListItem` children.
 
 {/* prettier-ignore-start */}
 

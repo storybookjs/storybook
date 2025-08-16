@@ -3,6 +3,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import detectIndent from 'detect-indent';
 // eslint-disable-next-line depend/ban-dependencies
 import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
 import { findUpMultipleSync, findUpSync } from 'find-up';
@@ -184,8 +185,10 @@ export abstract class JsPackageManager {
         delete packageJsonToWrite[type];
       }
     });
-
-    const content = `${JSON.stringify(packageJsonToWrite, null, 2)}\n`;
+    const filePath = join(directory, 'package.json');
+    const contentJson = readFileSync(filePath, 'utf-8');
+    const { indent } = detectIndent(contentJson);
+    const content = `${JSON.stringify(packageJsonToWrite, null, indent)}\n`;
     writeFileSync(resolve(directory, 'package.json'), content, 'utf8');
   }
 

@@ -1,6 +1,6 @@
 # @storybook/addon-themes
 
-Storybook Addon Themes can be used which between multiple themes for components inside the preview in [Storybook](https://storybook.js.org?utm_source=readme).
+Storybook Addon Themes can be used to switch between multiple themes for components inside the preview in [Storybook](https://storybook.js.org?utm_source=readme).
 
 ![React Storybook Screenshot](https://user-images.githubusercontent.com/18172605/274302488-77a39112-cdbe-4d16-9966-0d8e9e7e3399.gif)
 

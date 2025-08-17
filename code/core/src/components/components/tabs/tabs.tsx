@@ -2,6 +2,7 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
 import React, { Component, memo, useMemo } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
 import type { Addon_RenderOptions } from 'storybook/internal/types';
 
@@ -184,6 +185,8 @@ export const Tabs: FC<TabsProps> = memo(
     emptyState,
     showToolsWhenEmpty,
   }) => {
+    deprecate('The `Tabs` component is deprecated. Use `AriaTabs` instead.');
+
     const list = useMemo(
       () =>
         childrenToList(children).map((i, index) => ({

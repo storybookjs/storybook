@@ -1,11 +1,11 @@
+import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
+
 import * as ghActions from '@actions/core';
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import type { Options as ExecaOptions } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { copy, emptyDir, ensureDir, move, remove, writeFile } from 'fs-extra';
 import pLimit from 'p-limit';
 import { join, relative } from 'path';
 import prettyTime from 'pretty-hrtime';
@@ -83,6 +83,13 @@ const withLocalRegistry = async ({
   }
 };
 
+const emptyDir = async (dir: string): Promise<void> => {
+  await mkdir(dir, { recursive: true });
+
+  const names = await readdir(dir);
+  await Promise.all(names.map((name) => rm(join(dir, name), { recursive: true, force: true })));
+};
+
 const addStorybook = async ({
   baseDir,
   localRegistry,
@@ -102,7 +109,7 @@ const addStorybook = async ({
   const tmpDir = await temporaryDirectory();
 
   try {
-    await copy(beforeDir, tmpDir);
+    await cp(beforeDir, tmpDir, { recursive: true });
 
     const packageManager = JsPackageManagerFactory.getPackageManager({ force: 'yarn1' }, tmpDir);
     if (localRegistry) {
@@ -125,12 +132,12 @@ const addStorybook = async ({
       await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
     }
   } catch (e) {
-    await remove(tmpDir);
+    await rm(tmpDir, { recursive: true, force: true });
     throw e;
   }
 
-  await copy(tmpDir, afterDir);
-  await remove(tmpDir);
+  await cp(tmpDir, afterDir, { recursive: true });
+  await rm(tmpDir, { recursive: true, force: true });
 };
 
 export const runCommand = async (script: string, options: ExecaOptions, debug = false) => {
@@ -154,7 +161,7 @@ const addDocumentation = async (
   const stackblitzConfigPath = join(__dirname, 'templates', '.stackblitzrc');
   const readmePath = join(__dirname, 'templates', 'item.ejs');
 
-  await copy(stackblitzConfigPath, join(afterDir, '.stackblitzrc'));
+  await cp(stackblitzConfigPath, join(afterDir, '.stackblitzrc'), { recursive: true });
 
   const stackblitzUrl = getStackblitzUrl(dirName);
   const contents = await renderTemplate(readmePath, {
@@ -232,7 +239,7 @@ const runGenerators = async (
                 debug
               );
             } else {
-              await ensureDir(createBeforeDir);
+              await mkdir(createBeforeDir, { recursive: true });
               await runCommand(script, { cwd: createBeforeDir, timeout: SCRIPT_TIMEOUT }, debug);
             }
           } catch (error) {
@@ -250,10 +257,10 @@ const runGenerators = async (
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
           // Now move the created before dir into it's final location and add storybook
-          await move(createBeforeDir, beforeDir);
+          await rename(createBeforeDir, beforeDir);
 
           // Make sure there are no git projects in the folder
-          await remove(join(beforeDir, '.git'));
+          await rm(join(beforeDir, '.git'), { recursive: true, force: true });
 
           try {
             await addStorybook({ baseDir, localRegistry, flags, debug, env });
@@ -285,9 +292,12 @@ const runGenerators = async (
           // They're not uploaded to the git sandboxes repo anyway
           if (process.env.CLEANUP_SANDBOX_NODE_MODULES) {
             console.log(`🗑️ Removing ${join(beforeDir, 'node_modules')}`);
-            await remove(join(beforeDir, 'node_modules'));
+            await rm(join(beforeDir, 'node_modules'), { recursive: true, force: true });
             console.log(`🗑️ Removing ${join(baseDir, AFTER_DIR_NAME, 'node_modules')}`);
-            await remove(join(baseDir, AFTER_DIR_NAME, 'node_modules'));
+            await rm(join(baseDir, AFTER_DIR_NAME, 'node_modules'), {
+              recursive: true,
+              force: true,
+            });
           }
         }
       })

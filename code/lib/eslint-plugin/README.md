@@ -145,7 +145,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   somePlugin,
   storybook.configs["flat/recommended"] // notice that it is not destructured
-);"
+);
 ```
 
 #### Overriding/disabling rules

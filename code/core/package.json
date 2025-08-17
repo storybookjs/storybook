@@ -1,9 +1,18 @@
 {
   "name": "storybook",
   "version": "9.2.0-alpha.3",
-  "description": "Storybook framework-agnostic API",
+  "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "component",
+    "components",
+    "react",
+    "next",
+    "react-native",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://storybook.js.org",
   "bugs": {

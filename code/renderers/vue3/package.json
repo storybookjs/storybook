@@ -3,7 +3,11 @@
   "version": "9.2.0-alpha.3",
   "description": "Storybook Vue 3 renderer",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-renderer",
+    "vue",
+    "components",
+    "component"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/vue3",
   "bugs": {

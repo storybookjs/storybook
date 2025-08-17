@@ -20,19 +20,14 @@ const Container = styled.div({
   containerType: 'size',
   position: 'sticky',
   bottom: 0,
-  height: 39,
+  height: 41,
   overflow: 'hidden',
   zIndex: 1,
 });
 
 const Bar = styled(BaseBar)(({ theme }) => ({
   '--highlight-bg-color': theme.base === 'dark' ? '#153B5B' : '#E0F0FF',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  flexWrap: 'wrap',
-  gap: 6,
-  padding: '6px 10px',
+  paddingInline: 4,
   animation: `${slideIn} 300ms, ${highlight} 2s`,
   background: theme.background.bar,
   borderTop: `1px solid ${theme.appBorderColor}`,
@@ -142,13 +137,13 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
 
   return (
     <Container id="save-from-controls">
-      <Bar>
-        <Info>
-          <Label data-short-label="Unsaved changes">
-            You modified this story. Do you want to save your changes?
-          </Label>
-        </Info>
-
+      <Bar
+        innerStyle={{
+          flexDirection: 'row-reverse',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+        }}
+      >
         <Actions>
           <Button ariaLabel={saveLabel} tooltip={saveLabel} disabled={saving} onClick={onSaveStory}>
             <CheckIcon />
@@ -202,6 +197,11 @@ export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps)
           </Form>
           {errorMessage && <Modal.Error>{errorMessage}</Modal.Error>}
         </Modal>
+        <Info>
+          <Label data-short-label="Unsaved changes">
+            You modified this story. Do you want to save your changes?
+          </Label>
+        </Info>
       </Bar>
     </Container>
   );

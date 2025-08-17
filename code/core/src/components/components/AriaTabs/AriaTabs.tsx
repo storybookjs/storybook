@@ -1,10 +1,11 @@
-import type { FC, ReactElement, ReactNode } from 'react';
+import type { FC, HTMLAttributes, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
 import { AriaTabList, AriaTabPanel, Bar, EmptyTabContent } from 'storybook/internal/components';
 
 import type { TabListState } from 'react-stately';
 import { Item, useTabListState } from 'react-stately';
+import { styled } from 'storybook/theming';
 
 export interface TabProps {
   id: string;
@@ -40,7 +41,17 @@ export const useAriaTabListState = ({
   });
 };
 
-export interface AriaTabsProps {
+export const Container = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+});
+
+export const FlexTabPanel = styled(AriaTabPanel)(() => ({
+  flex: 1,
+}));
+
+export interface AriaTabsProps extends HTMLAttributes<HTMLDivElement> {
   /** List of tabs and their associated panel. */
   tabs: TabProps[];
 
@@ -77,6 +88,18 @@ export interface AriaTabsProps {
 
   /** Optional ID. */
   id?: string;
+
+  /**
+   * Whether the panel adds a vertical scrollbar. Disable if you want to use fixed or sticky
+   * positioning on part of the tab's content. True by default.
+   */
+  hasScrollbar?: boolean;
+
+  /**
+   * Whether to render only the active tab's content, or all tabs. When true, non-selected tabs are
+   * rendered with the hidden attribute and do not affect the accessibility object model.
+   */
+  renderAllChildren?: boolean;
 }
 
 export const AriaTabs: FC<AriaTabsProps> = ({
@@ -84,7 +107,9 @@ export const AriaTabs: FC<AriaTabsProps> = ({
   barInnerStyle,
   defaultSelected,
   emptyState,
+  hasScrollbar,
   onSelectionChange,
+  renderAllChildren,
   selected,
   showToolsWhenEmpty,
   tabs,
@@ -100,7 +125,7 @@ export const AriaTabs: FC<AriaTabsProps> = ({
   }
 
   return (
-    <>
+    <Container>
       <Bar
         {...props}
         scrollable={true}
@@ -123,7 +148,11 @@ export const AriaTabs: FC<AriaTabsProps> = ({
         {tools}
         <AriaTabList state={state} />
       </Bar>
-      <AriaTabPanel state={state} />
-    </>
+      <FlexTabPanel
+        state={state}
+        hasScrollbar={hasScrollbar}
+        renderAllChildren={renderAllChildren}
+      />
+    </Container>
   );
 };

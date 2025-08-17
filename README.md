@@ -45,11 +45,11 @@
 </p>
 
 <p align="center">
-Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. Find out more at https://storybook.js.org/?utm_source=readme!
+Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. Find out more at <a href="https://storybook.js.org/?utm_source=readme">storybook.js.org</a>!
 </p>
 
 <center>
-  <img src="https://raw.githubusercontent.com/storybookjs/storybook/main/media/storybook-intro.gif" width="100%" />
+  <img src="https://raw.githubusercontent.com/storybookjs/storybook/refs/heads/release-6-5/media/storybook-intro.gif" width="100%" />
 </center>
 
 <p align="center">
@@ -108,7 +108,7 @@ For additional help, share your issue in [the repo's GitHub Discussions](https:/
 | [Svelte](code/renderers/svelte)                                | [![Storybook demo](https://img.shields.io/npm/v/@storybook/svelte/latest?style=flat-square&color=blue&label)](https://next--630873996e4e3557791c069c.chromatic.com/)         | [![Svelte](https://img.shields.io/npm/dm/@storybook/svelte?style=flat-square&color=eee)](code/renderers/svelte)                                       |
 | [Preact](code/renderers/preact)                                | [![Storybook demo](https://img.shields.io/npm/v/@storybook/preact/latest?style=flat-square&color=blue&label)](https://next--63b588a512565bfaace15e7c.chromatic.com/)         | [![Preact](https://img.shields.io/npm/dm/@storybook/preact?style=flat-square&color=eee)](code/renderers/preact)                                       |
 | [Qwik](https://github.com/literalpie/storybook-framework-qwik) | [![](https://img.shields.io/npm/v/storybook-framework-qwik/latest?style=flat-square&color=blue&label)](/)                                                                    | [![Qwik](https://img.shields.io/npm/dm/storybook-framework-qwik?style=flat-square&color=eee)](https://github.com/literalpie/storybook-framework-qwik) |
-| [SolidJS](https://github.com/solidjs-community/storybook)              | [![](https://img.shields.io/npm/v/storybook-solidjs-vite/latest?style=flat-square&color=blue&label)](/)                                                                           | [![SolidJS](https://img.shields.io/npm/dm/storybook-solidjs-vite?style=flat-square&color=eee)](https://github.com/solidjs-community/storybook)                     |
+| [SolidJS](https://github.com/solidjs-community/storybook)      | [![](https://img.shields.io/npm/v/storybook-solidjs-vite/latest?style=flat-square&color=blue&label)](/)                                                                      | [![SolidJS](https://img.shields.io/npm/dm/storybook-solidjs-vite?style=flat-square&color=eee)](https://github.com/solidjs-community/storybook)        |
 | [Android, iOS, Flutter](https://github.com/storybookjs/native) | [![](https://img.shields.io/npm/v/@storybook/native/latest?style=flat-square&color=blue&label)](/)                                                                           | [![Native](https://img.shields.io/npm/dm/@storybook/native?style=flat-square&color=eee)](https://github.com/storybookjs/native)                       |
 
 ### Addons

@@ -19,51 +19,11 @@ import { useA11yContext } from './A11yContext';
 const Container = styled.div({
   width: '100%',
   position: 'relative',
-  minHeight: '100%',
+  height: '100%',
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
 });
-
-const Item = styled.button<{ active?: boolean }>(
-  ({ theme }) => ({
-    textDecoration: 'none',
-    padding: '10px 15px',
-    cursor: 'pointer',
-    color: theme.textMutedColor,
-    fontWeight: theme.typography.weight.bold,
-    fontSize: theme.typography.size.s2 - 1,
-    lineHeight: 1,
-    height: 40,
-    border: 'none',
-    borderBottom: '3px solid transparent',
-    background: 'transparent',
-
-    '&:focus': {
-      outline: '0 none',
-      borderColor: theme.color.secondary,
-    },
-  }),
-  ({ active, theme }) =>
-    active
-      ? {
-          opacity: 1,
-          color: theme.color.secondary,
-          borderColor: theme.color.secondary,
-        }
-      : {}
-);
-
-const StickyContainer = styled.div(({ theme }) => ({
-  boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
-  // background: theme.background.app,
-  position: 'sticky',
-  top: 0,
-  zIndex: 1,
-  // display: 'flex',
-  // alignItems: 'center',
-  // whiteSpace: 'nowrap',
-  overflow: 'auto',
-  scrollbarColor: `${theme.barTextColor} ${theme.background.app}`,
-  scrollbarWidth: 'thin',
-}));
 
 const ActionsWrapper = styled.div({
   display: 'flex',
@@ -107,69 +67,61 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
 
   const theme = useTheme();
 
-  // TODO validate scroll behaviour on tabs
-  // TODO fix reload on rerun
-
   return (
     <Container>
-      <StickyContainer>
-        <AriaTabs
-          backgroundColor={theme.background.app}
-          tabs={tabs.map((tab) => ({
-            id: tab.type,
-            title: tab.label,
-            children: (
-              <ScrollArea vertical horizontal>
-                {tab.panel}
-              </ScrollArea>
-            ),
-          }))}
-          selected={tab}
-          // Safe to cast key to RuleType because we use RuleTypes as IDs above.
-          onSelectionChange={(key) => setTab(key as RuleType)}
-          tools={
-            <ActionsWrapper>
-              <WithTooltip
-                as="div"
-                hasChrome={false}
-                placement="top"
-                tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
-                trigger="hover"
+      <AriaTabs
+        backgroundColor={theme.background.app}
+        hasScrollbar={true}
+        tabs={tabs.map((tab) => ({
+          id: tab.type,
+          title: tab.label,
+          children: tab.panel,
+        }))}
+        selected={tab}
+        // Safe to cast key to RuleType because we use RuleTypes as IDs above.
+        onSelectionChange={(key) => setTab(key as RuleType)}
+        tools={
+          <ActionsWrapper>
+            <WithTooltip
+              as="div"
+              hasChrome={false}
+              placement="top"
+              tooltip={<TooltipNote note="Highlight elements with accessibility violations" />}
+              trigger="hover"
+            >
+              <ToggleButton onClick={toggleHighlight} active={highlighted}>
+                {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
+                <span>{highlighted ? 'Hide highlights' : 'Show highlights'}</span>
+              </ToggleButton>
+            </WithTooltip>
+            <WithTooltip
+              as="div"
+              hasChrome={false}
+              placement="top"
+              tooltip={<TooltipNote note={allExpanded ? 'Collapse all' : 'Expand all'} />}
+              trigger="hover"
+            >
+              <IconButton
+                onClick={allExpanded ? handleCollapseAll : handleExpandAll}
+                aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
               >
-                <ToggleButton onClick={toggleHighlight} active={highlighted}>
-                  {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
-                  <span>{highlighted ? 'Hide highlights' : 'Show highlights'}</span>
-                </ToggleButton>
-              </WithTooltip>
-              <WithTooltip
-                as="div"
-                hasChrome={false}
-                placement="top"
-                tooltip={<TooltipNote note={allExpanded ? 'Collapse all' : 'Expand all'} />}
-                trigger="hover"
-              >
-                <IconButton
-                  onClick={allExpanded ? handleCollapseAll : handleExpandAll}
-                  aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
-                >
-                  {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
-                </IconButton>
-              </WithTooltip>
-              <WithTooltip
-                as="div"
-                hasChrome={false}
-                placement="top"
-                tooltip={<TooltipNote note="Rerun the accessibility scan" />}
-                trigger="hover"
-              >
-                <IconButton onClick={handleManual} aria-label="Rerun accessibility scan">
-                  <SyncIcon />
-                </IconButton>
-              </WithTooltip>
-            </ActionsWrapper>
-          }
-        />
-      </StickyContainer>
+                {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
+              </IconButton>
+            </WithTooltip>
+            <WithTooltip
+              as="div"
+              hasChrome={false}
+              placement="top"
+              tooltip={<TooltipNote note="Rerun the accessibility scan" />}
+              trigger="hover"
+            >
+              <IconButton onClick={handleManual} aria-label="Rerun accessibility scan">
+                <SyncIcon />
+              </IconButton>
+            </WithTooltip>
+          </ActionsWrapper>
+        }
+      />
     </Container>
   );
 };

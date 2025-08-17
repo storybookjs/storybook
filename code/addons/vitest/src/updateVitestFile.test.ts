@@ -1,8 +1,22 @@
-import { describe, expect, it } from 'vitest';
+import { join } from 'node:path';
+
+import { describe, expect, it, vi } from 'vitest';
 
 import * as babel from 'storybook/internal/babel';
 
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
+
+vi.mock('storybook/internal/node-logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock('../../../core/src/shared/utils/module', () => ({
+  resolvePackageDir: vi.fn().mockImplementation((a) => join(__dirname, '..')),
+}));
 
 describe('updateConfigFile', () => {
   it('updates vite config file', async () => {

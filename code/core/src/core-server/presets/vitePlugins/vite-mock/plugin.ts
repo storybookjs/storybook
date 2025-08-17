@@ -12,12 +12,8 @@ import {
   extractMockCalls,
   rewriteSbMockImportCalls,
 } from '../../../mocking-utils/extract';
-import {
-  type MockCall,
-  getCleanId,
-  invalidateAllRelatedModules,
-  normalizePathForComparison,
-} from './utils';
+import { getRealPath } from '../../../mocking-utils/resolve';
+import { type MockCall, getCleanId, invalidateAllRelatedModules } from './utils';
 
 export interface MockPluginOptions {
   /** The absolute path to the preview.tsx file where mocks are defined. */
@@ -106,11 +102,11 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
         handler(id) {
           const preserveSymlinks = viteConfig.resolve.preserveSymlinks;
 
-          const idNorm = normalizePathForComparison(id, preserveSymlinks);
+          const idNorm = getRealPath(id, preserveSymlinks);
           const cleanId = getCleanId(idNorm);
 
           for (const call of mockCalls) {
-            const callNorm = normalizePathForComparison(call.absolutePath, preserveSymlinks);
+            const callNorm = getRealPath(call.absolutePath, preserveSymlinks);
 
             if (callNorm !== idNorm && call.path !== cleanId) {
               continue;
@@ -130,8 +126,8 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
           for (const call of mockCalls) {
             const preserveSymlinks = viteConfig.resolve.preserveSymlinks;
 
-            const idNorm = normalizePathForComparison(id, preserveSymlinks);
-            const callNorm = normalizePathForComparison(call.absolutePath, preserveSymlinks);
+            const idNorm = getRealPath(id, preserveSymlinks);
+            const callNorm = getRealPath(call.absolutePath, preserveSymlinks);
 
             if (viteConfig.command !== 'serve') {
               if (callNorm !== idNorm) {

@@ -350,48 +350,6 @@ export class NoMatchingExportError extends StorybookError {
   }
 }
 
-export class MainFileESMOnlyImportError extends StorybookError {
-  constructor(
-    public data: { location: string; line: string | undefined; num: number | undefined }
-  ) {
-    const message = [
-      `Storybook failed to load ${data.location}`,
-      '',
-      `It looks like the file tried to load/import an ESM only module.`,
-      `Support for this is currently limited in ${data.location}`,
-      `You can import ESM modules in your main file, but only as dynamic import.`,
-      '',
-    ];
-    if (data.line) {
-      message.push(
-        picocolors.white(
-          `In your ${picocolors.yellow(data.location)} file, line ${picocolors.bold(
-            picocolors.cyan(data.num)
-          )} threw an error:`
-        ),
-        picocolors.gray(data.line)
-      );
-    }
-
-    message.push(
-      '',
-      picocolors.white(
-        `Convert the static import to a dynamic import ${picocolors.underline('where they are used')}.`
-      ),
-      picocolors.white(`Example:`) + ' ' + picocolors.gray(`await import(<your ESM only module>);`),
-      ''
-    );
-
-    super({
-      category: Category.CORE_SERVER,
-      code: 5,
-      documentation:
-        'https://github.com/storybookjs/storybook/issues/23972#issuecomment-1948534058',
-      message: message.join('\n'),
-    });
-  }
-}
-
 export class MainFileMissingError extends StorybookError {
   constructor(public data: { location: string; source?: 'storybook' | 'vitest' }) {
     const map = {
@@ -563,6 +521,34 @@ export class IncompatiblePostCssConfigError extends StorybookError {
         
         Original error: ${data.error.message}
       `,
+    });
+  }
+}
+
+export class SavingGlobalSettingsFileError extends StorybookError {
+  constructor(public data: { filePath: string; error: Error | unknown }) {
+    super({
+      category: Category.CORE_SERVER,
+      code: 1,
+      message: dedent`
+        Unable to save global settings file to ${data.filePath}
+        ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class CommonJsConfigNotSupportedError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.CLI_AUTOMIGRATE,
+      code: 1,
+      documentation: 'https://storybook.js.org/docs/configure/overview#es-modules',
+      message: dedent`
+        Support for CommonJS Storybook config files has been removed in Storybook 10.0.0.
+        Please migrate your config to a valid ESM file.
+        
+        CommonJS files (ending in .cjs, .cts, .cjsx, .ctsx) or files containing 'module.exports' are no longer supported.
+        Please convert your config to use ES modules (import/export syntax).`,
     });
   }
 }

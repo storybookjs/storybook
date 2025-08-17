@@ -1,10 +1,11 @@
 import { stat, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
+import { SupportedLanguage } from 'storybook/internal/cli';
+import { logger } from 'storybook/internal/node-logger';
+
 import { dedent } from 'ts-dedent';
 
-import { SupportedLanguage } from '../../../../core/src/cli/project_types';
-import { logger } from '../../../../core/src/node-logger';
 import type { GeneratorFeature } from './types';
 
 interface ConfigureMainOptions {

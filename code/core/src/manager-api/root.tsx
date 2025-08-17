@@ -42,7 +42,7 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 
 import { createContext } from './context';
 import getInitialState from './initial-state';

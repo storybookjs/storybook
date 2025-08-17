@@ -28,20 +28,14 @@ const Container = styled.div({
   containerType: 'size',
   position: 'sticky',
   bottom: 0,
-  height: 39,
+  height: 41,
   overflow: 'hidden',
   zIndex: 1,
 });
 
 const Bar = styled(BaseBar)(({ theme }) => ({
   '--highlight-bg-color': theme.base === 'dark' ? '#153B5B' : '#E0F0FF',
-  display: 'flex',
-  flexDirection: 'row-reverse', // hide Info rather than Actions on overflow
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  flexWrap: 'wrap',
-  gap: 6,
-  padding: '6px 10px',
+  paddingInline: 4,
   animation: `${slideIn} 300ms, ${highlight} 2s`,
   background: theme.background.bar,
   borderTop: `1px solid ${theme.appBorderColor}`,
@@ -152,7 +146,13 @@ export const SaveStory = ({
 
   return (
     <Container id="save-from-controls">
-      <Bar>
+      <Bar
+        innerStyle={{
+          flexDirection: 'row-reverse',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+        }}
+      >
         <Actions>
           <WithTooltip
             as="div"
@@ -196,43 +196,37 @@ export const SaveStory = ({
             You modified this story. Do you want to save your changes?
           </Label>
         </Info>
-
-        <Modal
-          width={350}
-          open={creating}
-          onOpenChange={setCreating}
-          portalSelector={portalSelector}
-        >
-          <Form onSubmit={onSubmitForm} id="create-new-story-form">
-            <Modal.Content>
-              <Modal.Header>
-                <Modal.Title>Create new story</Modal.Title>
-                <Modal.Description>
-                  This will add a new story to your existing stories file.
-                </Modal.Description>
-              </Modal.Header>
-              <ModalInput
-                onChange={onChange}
-                placeholder="Story export name"
-                readOnly={saving}
-                ref={inputRef}
-                value={storyName}
-              />
-              <Modal.Actions>
-                <Button disabled={saving || !storyName} size="medium" type="submit" variant="solid">
-                  Create
-                </Button>
-                <Modal.Dialog.Close asChild>
-                  <Button disabled={saving} size="medium" type="reset">
-                    Cancel
-                  </Button>
-                </Modal.Dialog.Close>
-              </Modal.Actions>
-            </Modal.Content>
-          </Form>
-          {errorMessage && <Modal.Error>{errorMessage}</Modal.Error>}
-        </Modal>
       </Bar>
+      <Modal width={350} open={creating} onOpenChange={setCreating} portalSelector={portalSelector}>
+        <Form onSubmit={onSubmitForm} id="create-new-story-form">
+          <Modal.Content>
+            <Modal.Header>
+              <Modal.Title>Create new story</Modal.Title>
+              <Modal.Description>
+                This will add a new story to your existing stories file.
+              </Modal.Description>
+            </Modal.Header>
+            <ModalInput
+              onChange={onChange}
+              placeholder="Story export name"
+              readOnly={saving}
+              ref={inputRef}
+              value={storyName}
+            />
+            <Modal.Actions>
+              <Button disabled={saving || !storyName} size="medium" type="submit" variant="solid">
+                Create
+              </Button>
+              <Modal.Dialog.Close asChild>
+                <Button disabled={saving} size="medium" type="reset">
+                  Cancel
+                </Button>
+              </Modal.Dialog.Close>
+            </Modal.Actions>
+          </Modal.Content>
+        </Form>
+        {errorMessage && <Modal.Error>{errorMessage}</Modal.Error>}
+      </Modal>
     </Container>
   );
 };

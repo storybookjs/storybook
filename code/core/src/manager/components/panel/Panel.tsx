@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import React, { Component } from 'react';
+import React, { Component, useMemo } from 'react';
 
 import { AriaTabs, EmptyTabContent, IconButton, Link } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
@@ -70,11 +70,21 @@ export const AddonPanel = React.memo<{
 }>(({ panels, shortcuts, actions, selectedPanel = null, panelPosition = 'right' }) => {
   const { isDesktop, setMobilePanelOpen } = useLayout();
 
-  const tabs = Object.entries(panels).map(([id, panel]) => ({
-    id,
-    title: typeof panel.title === 'function' ? <panel.title /> : panel.title,
-    children: () => <TabErrorBoundary key={id}>{panel.render({ active: true })}</TabErrorBoundary>,
-  }));
+  const tabs = useMemo(
+    () =>
+      Object.entries(panels).map(([id, panel]) => ({
+        id,
+        title: typeof panel.title === 'function' ? <panel.title /> : panel.title,
+        children: () => (
+          <TabErrorBoundary key={id}>
+            {/* FIXME: the original code seemed to always render as active: true.
+            Changing this now breaks state management in addons like a11y. */}
+            {panel.render({ active: true })}
+          </TabErrorBoundary>
+        ),
+      })),
+    [panels]
+  );
 
   const emptyState = (
     <EmptyTabContent
@@ -125,11 +135,13 @@ export const AddonPanel = React.memo<{
       <AriaTabs
         id="storybook-panel-root"
         showToolsWhenEmpty
+        renderAllChildren
         emptyState={emptyState}
         selected={selectedPanel ?? undefined}
         onSelectionChange={(id) => actions.onSelect(id)}
         tabs={tabs}
         tools={tools}
+        hasScrollbar={false}
       />
     </Section>
   );

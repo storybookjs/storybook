@@ -5,4 +5,4 @@ It's an internal package that's not intended to be used directly by users.
 
 - More info on [Storybook for React](https://storybook.js.org/docs/get-started/install?renderer=react&utm_source=readme)
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme)
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).

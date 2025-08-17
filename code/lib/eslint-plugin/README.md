@@ -210,4 +210,4 @@ This plugin does not support MDX files.
 Looking into improving this plugin? That would be awesome!
 Please refer to [the contributing guidelines](./CONTRIBUTING.md) for steps to contributing.
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme)
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).

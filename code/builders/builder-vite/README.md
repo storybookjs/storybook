@@ -168,4 +168,4 @@ feel free to create an issue or send a pull request!
 
 Please read the [How to contribute](/CONTRIBUTING.md) guide.
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme)
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).

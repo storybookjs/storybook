@@ -129,4 +129,4 @@ concerning the conditions.
 - [Walkthrough to set up Storybook Docs with CRA & typescript](https://gist.github.com/shilman/bc9cbedb2a7efb5ec6710337cbd20c0c)
 - [Example projects (used for testing this preset)](https://github.com/storybookjs/presets/tree/master/examples)
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme)
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).

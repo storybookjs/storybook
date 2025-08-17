@@ -258,4 +258,4 @@ All ideas and contributions are welcome.
 
 MIT © 2017-present Renaud Tertrais
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme)
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).

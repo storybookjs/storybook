@@ -316,4 +316,4 @@ type FetchStoryHtmlType = (
 - params: Merged story params `parameters.server.params`and story args
 - context: The context of the story
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme)
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).

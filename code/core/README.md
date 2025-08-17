@@ -50,4 +50,4 @@ The sole exception is the `storybook` package itself.
 
 Obviously, the `storybook` package cannot depend on itself, so it must import from `@storybook/core`.
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme)
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).

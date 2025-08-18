@@ -52,7 +52,7 @@ This will bind a standard HTML event handler to the outermost HTML element rende
 
 ## Non-story function calls
 
-It's possible to log any function call to the actions panel, not just story args. This can be useful for debugging or logging purposes. For simple cases, you can create a function spy. For more fine-grained control, you can use the `action` function directly.
+You can still use the actions panel if you need to log function calls that are unrelated to any story. This can be helpful for debugging or logging purposes. There are two main ways to do this: `spyOn` from `storybook/test` or the `action` function from `storybook/actions`. For basic logging, we recommend creating a function spy, and for more complex scenarios, you can use the `action` function directly.
 
 ### Via storybook/test spyOn
 

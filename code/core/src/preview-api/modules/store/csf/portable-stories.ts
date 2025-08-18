@@ -339,7 +339,7 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
               do:
               await mount(<MyComponent foo="bar"/>)
 
-              More info: https://storybook.js.org/docs/api/portable-stories-playwright
+              More info: https://storybook.js.org/docs/api/portable-stories-playwright?utm_source=error
             `);
         }
 

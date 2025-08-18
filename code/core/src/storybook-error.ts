@@ -65,11 +65,13 @@ export abstract class StorybookError extends Error {
     let page: string | undefined;
 
     if (documentation === true) {
-      page = `https://storybook.js.org/error/${parseErrorCode({ code, category })}`;
+      page = `https://storybook.js.org/error/${parseErrorCode({ code, category })}?utm_source=error`;
     } else if (typeof documentation === 'string') {
-      page = documentation;
+      page = documentation.includes('storybook.js.org')
+        ? `${documentation}${documentation.includes('?') ? '&' : '?'}utm_source=error`
+        : documentation;
     } else if (Array.isArray(documentation)) {
-      page = `\n${documentation.map((doc) => `\t- ${doc}`).join('\n')}`;
+      page = `\n${documentation.map((doc) => `\t- ${doc.includes('storybook.js.org') ? `${doc}${doc.includes('?') ? '&' : '?'}utm_source=error` : doc}`).join('\n')}`;
     }
 
     return `${message}${page != null ? `\n\nMore info: ${page}\n` : ''}`;

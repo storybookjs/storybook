@@ -135,7 +135,7 @@ function resolveImportPath(importPath: string, baseFilePath: string): string | n
     }
   }
 
-  // Try index files
+  // Try index files in directory
   for (const ext of extensions) {
     const indexPath = join(resolvedPath, `index${ext}`);
     if (existsSync(indexPath)) {
@@ -307,7 +307,9 @@ export async function svelteDocgen(): Promise<PluginOption> {
   const baseFilter = createFilter(include, exclude);
   const sourceFileCache = createDocgenCache();
   
-  // Collect referenced components on first run
+  // Collect referenced components on first run to optimize docgen processing.
+  // Only components that are actually referenced in story files will have docgen generated.
+  // This significantly improves performance by avoiding expensive docgen on unused components.
   let referencedComponents: Set<string> | null = null;
   
   const getReferencedComponents = async () => {

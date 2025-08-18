@@ -1,6 +1,7 @@
 import { logger } from 'storybook/internal/client-logger';
 
-import { isEqual, mergeWith, omitBy, pick } from 'es-toolkit';
+import { mergeWith } from 'es-toolkit/object';
+import { isEqual } from 'es-toolkit/predicate';
 
 export default <TObj = any>(a: TObj, ...b: Partial<TObj>[]): TObj => {
   // start with empty object

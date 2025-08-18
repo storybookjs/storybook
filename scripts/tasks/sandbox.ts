@@ -77,6 +77,7 @@ export const sandbox: Task = {
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
       'lodash-es',
+      'uuid',
     ];
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
@@ -154,7 +155,9 @@ export const sandbox: Task = {
 
     await setImportMap(details.sandboxDir);
 
-    const { JsPackageManagerFactory } = await import('../../code/core/src/common');
+    const { JsPackageManagerFactory } = await import(
+      '../../code/core/src/common/js-package-manager/JsPackageManagerFactory'
+    );
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 

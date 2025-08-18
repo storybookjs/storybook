@@ -13,7 +13,7 @@ import { createStorybookRule } from '../utils/create-storybook-rule';
 // Rule Definition
 //------------------------------------------------------------------------------
 
-export = createStorybookRule({
+export default createStorybookRule({
   name: 'hierarchy-separator',
   defaultOptions: [],
   meta: {

@@ -111,7 +111,7 @@ export const IntentSurvey = ({
       },
     },
     referrer: {
-      label: 'How did you learn about Storybook?',
+      label: 'How did you discover Storybook?',
       type: 'select',
       required: true,
       options: shuffleObject({

@@ -1,6 +1,7 @@
+import { fileURLToPath } from 'node:url';
+
 import type { Configuration } from 'webpack';
 
-import { requirer } from './requirer';
 import type { StorybookConfig } from './types';
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (
@@ -26,9 +27,8 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
           {
             test: /\.(cjs|mjs|tsx?|jsx?)$/,
             enforce: 'pre',
-            loader: requirer(
-              require.resolve,
-              '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader'
+            loader: fileURLToPath(
+              import.meta.resolve('@storybook/preset-react-webpack/react-docgen-loader')
             ),
             options: {
               debug,
@@ -51,9 +51,8 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
         {
           test: /\.(cjs|mjs|jsx?)$/,
           enforce: 'pre',
-          loader: requirer(
-            require.resolve,
-            '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader'
+          loader: fileURLToPath(
+            import.meta.resolve('@storybook/preset-react-webpack/react-docgen-loader')
           ),
           options: {
             debug,

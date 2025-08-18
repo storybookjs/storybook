@@ -1,10 +1,11 @@
 ```js filename="example-addon/src/webpack/webpackFinal.js" renderer="common" language="js"
+import { fileURLtoPath } from 'node:url';
 export function webpackFinal(config, options = {}) {
   const rules = [
     ...(config.module?.rules || []),
     {
       test: /\.custom-file-extension$/,
-      loader: require.resolve(`custom-loader`),
+      loader: fileURLToPath(import.meta.resolve(`custom-loader`)),
     },
   ];
   config.module.rules = rules;
@@ -14,6 +15,7 @@ export function webpackFinal(config, options = {}) {
 ```
 
 ```ts filename="example-addon/src/webpack/webpackFinal.ts" renderer="common" language="ts"
+import { fileURLtoPath } from 'node:url';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 export function webpackFinal(config: WebpackConfig, options: any = {}) {
@@ -21,7 +23,7 @@ export function webpackFinal(config: WebpackConfig, options: any = {}) {
     ...(config.module?.rules || []),
     {
       test: /\.custom-file$/,
-      loader: require.resolve(`custom-loader`),
+      loader: fileURLToPath(import.meta.resolve(`custom-loader`)),
     },
   ];
   config.module.rules = rules;

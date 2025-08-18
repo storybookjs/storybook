@@ -11,6 +11,8 @@ import type { Polka } from 'polka';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
+import { resolvePackageDir } from '../../shared/utils/module';
+
 const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-sub')[0];
 
 const files = new Map<string, { data: string; mtime: number }>();
@@ -26,7 +28,7 @@ const readFileOnce = async (path: string) => {
 };
 
 const faviconWrapperPath = join(
-  dirname(require.resolve('storybook/internal/package.json')),
+  resolvePackageDir('storybook'),
   '/assets/browser/favicon-wrapper.svg'
 );
 

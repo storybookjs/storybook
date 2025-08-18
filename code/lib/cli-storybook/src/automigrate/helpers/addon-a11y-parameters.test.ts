@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { printConfig, printCsf } from 'storybook/internal/csf-tools';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import {
   transformPreviewA11yParameters,

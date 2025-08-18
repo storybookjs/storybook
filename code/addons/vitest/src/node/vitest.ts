@@ -1,7 +1,11 @@
-import { createRequire } from 'node:module';
 import process from 'node:process';
 
 import { Channel } from 'storybook/internal/channels';
+import {
+  experimental_UniversalStore,
+  experimental_getStatusStore,
+  experimental_getTestProviderStore,
+} from 'storybook/internal/core-server';
 
 import {
   ADDON_ID,
@@ -12,18 +16,10 @@ import {
 import type { ErrorLike, FatalErrorEvent, StoreEvent, StoreState } from '../types';
 import { TestManager } from './test-manager';
 
-const require = createRequire(import.meta.url);
-
-// we need to require core-server here, because its ESM output is not valid
-const {
-  experimental_UniversalStore: UniversalStore,
-  experimental_getStatusStore: getStatusStore,
-  experimental_getTestProviderStore: getTestProviderStore,
-} = require('storybook/internal/core-server') as {
-  experimental_UniversalStore: typeof import('storybook/internal/core-server').experimental_UniversalStore;
-  experimental_getStatusStore: typeof import('storybook/internal/core-server').experimental_getStatusStore;
-  experimental_getTestProviderStore: typeof import('storybook/internal/core-server').experimental_getTestProviderStore;
-};
+// Destructure the imported functions for easier access
+const UniversalStore = experimental_UniversalStore;
+const getStatusStore = experimental_getStatusStore;
+const getTestProviderStore = experimental_getTestProviderStore;
 
 const channel: Channel = new Channel({
   async: true,

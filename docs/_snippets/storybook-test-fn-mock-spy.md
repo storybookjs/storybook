@@ -3,9 +3,9 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 import { expect } from 'storybook/test';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { saveNote } from '#app/actions.mock';
-import { createNotes } from '#mocks/notes';
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
 
 import NoteUI from './note-ui';
 
@@ -37,9 +37,9 @@ export const SaveFlow: Story = {
 
   import { expect } from 'storybook/test';
 
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { saveNote } from '#app/actions.mock';
-  import { createNotes } from '#mocks/notes';
+  // 👇 Automocked module resolves to '../app/__mocks__/actions'
+  import { saveNote } from '../app/actions';
+  import { createNotes } from '../app/mocks/notes';
 
   import NoteUI from './note-ui.svelte';
 
@@ -66,8 +66,9 @@ export const SaveFlow: Story = {
 ```js filename="NoteUI.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import { expect } from 'storybook/test';
 
-import { saveNote } from '#app/actions.mock';
-import { createNotes } from '#mocks/notes';
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
 
 import NoteUI from './note-ui.svelte';
 
@@ -96,8 +97,9 @@ export const SaveFlow = {
 ```js filename="NoteUI.stories.js" renderer="common" language="js"
 import { expect } from 'storybook/test';
 
-import { saveNote } from '#app/actions.mock';
-import { createNotes } from '#mocks/notes';
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
 
 import NoteUI from './note-ui';
 
@@ -126,9 +128,9 @@ export const SaveFlow = {
 
   import { expect } from 'storybook/test';
 
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { saveNote } from '#app/actions.mock';
-  import { createNotes } from '#mocks/notes';
+  // 👇 Automocked module resolves to '../app/__mocks__/actions'
+  import { saveNote } from '../app/actions';
+  import { createNotes } from '../app/mocks/notes';
 
   import NoteUI from './note-ui.svelte';
 
@@ -158,9 +160,9 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { expect } from 'storybook/test';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { saveNote } from '#app/actions.mock';
-import { createNotes } from '#mocks/notes';
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
 
 import NoteUI from './note-ui.svelte';
 
@@ -195,9 +197,9 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { expect } from 'storybook/test';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { saveNote } from '#app/actions.mock';
-import { createNotes } from '#mocks/notes';
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
 
 import NoteUI from './note-ui';
 
@@ -226,8 +228,9 @@ export const SaveFlow: Story = {
 ```js filename="NoteUI.stories.js" renderer="web-components" language="js"
 import { expect } from 'storybook/test';
 
-import { saveNote } from '#app/actions.mock';
-import { createNotes } from '#mocks/notes';
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
 
 export default {
   component: 'note-ui',
@@ -255,9 +258,9 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { expect } from 'storybook/test';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { saveNote } from '#app/actions.mock';
-import { createNotes } from '#mocks/notes';
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
 
 const meta: Meta = {
   component: 'note-ui',

@@ -163,7 +163,7 @@ export const Default = {
 ```
 
 ```ts filename="Histogram.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Histogram } from './Histogram';
 

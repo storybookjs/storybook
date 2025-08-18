@@ -30,18 +30,6 @@ export function invalidateAllRelatedModules(
   }
 }
 
-/**
- * Normalizes a file path for comparison, resolving symlinks if possible. Falls back to the original
- * path if resolution fails.
- */
-export function normalizePathForComparison(path: string, preserveSymlinks: boolean): string {
-  try {
-    return preserveSymlinks ? realpathSync(path) : path;
-  } catch {
-    return path;
-  }
-}
-
 export type MockCall = {
   path: string;
   absolutePath: string;

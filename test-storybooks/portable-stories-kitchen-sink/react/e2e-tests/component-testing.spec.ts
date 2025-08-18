@@ -211,9 +211,12 @@ test.describe("component testing", () => {
     await expect(watchModeButton).toBeEnabled();
 
     await runTestsButton.click();
+
+    // Wait for both the watch mode button to be disabled and the testing text to appear
     await Promise.all([
       expect(watchModeButton).toBeDisabled(),
       expect(page.locator("#testing-module-description")).toHaveText(/Testing/),
+
     ]);
 
     // Wait for test results to appear

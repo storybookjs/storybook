@@ -1,5 +1,5 @@
-import { copyTemplateFiles, getBabelDependencies } from '../../../../../core/src/cli/helpers';
-import { SupportedLanguage } from '../../../../../core/src/cli/project_types';
+import { SupportedLanguage, copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
+
 import type { Generator } from '../types';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {

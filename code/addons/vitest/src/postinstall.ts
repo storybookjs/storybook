@@ -1,27 +1,28 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
+import { isAbsolute, posix, sep } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
   JsPackageManagerFactory,
-  extractProperFrameworkName,
   formatFileContent,
+  getInterpretedFile,
   getProjectRoot,
-  loadAllPresets,
+  isCI,
   loadMainConfig,
   scanAndTransformFiles,
-  serverResolve,
   transformImportFiles,
-  validateFrameworkName,
 } from 'storybook/internal/common';
+import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
 import { findUp } from 'find-up';
-import { dirname, join, relative, resolve } from 'pathe';
+import { dirname, relative, resolve } from 'pathe';
 import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -38,6 +39,21 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 const addonA11yName = '@storybook/addon-a11y';
 
 let hasErrors = false;
+
+function nameMatches(name: string, pattern: string) {
+  if (name === pattern) {
+    return true;
+  }
+
+  if (name.includes(`${pattern}${sep}`)) {
+    return true;
+  }
+  if (name.includes(`${pattern}${posix.sep}`)) {
+    return true;
+  }
+
+  return false;
+}
 
 const logErrors = (...args: Parameters<typeof printError>) => {
   hasErrors = true;
@@ -74,14 +90,14 @@ export default async function postInstall(options: PostinstallOptions) {
     ? satisfies(vitestVersionSpecifier, '>=3.2.0')
     : true;
 
-  const mainJsPath = serverResolve(resolve(options.configDir, 'main')) as string;
+  const mainJsPath = getInterpretedFile(resolve(options.configDir, 'main')) as string;
   const config = await readConfig(mainJsPath);
 
   const hasCustomWebpackConfig = !!config.getFieldNode(['webpackFinal']);
 
-  const isInteractive = process.stdout.isTTY && !process.env.CI;
+  const isInteractive = process.stdout.isTTY && !isCI();
 
-  if (info.frameworkPackageName === '@storybook/nextjs' && !hasCustomWebpackConfig) {
+  if (nameMatches(info.frameworkPackageName, '@storybook/nextjs') && !hasCustomWebpackConfig) {
     const out =
       options.yes || !isInteractive
         ? { migrateToNextjsVite: !!options.yes }
@@ -130,7 +146,9 @@ export default async function postInstall(options: PostinstallOptions) {
     }
   }
 
-  const annotationsImport = SUPPORTED_FRAMEWORKS.includes(info.frameworkPackageName)
+  const annotationsImport = SUPPORTED_FRAMEWORKS.find((f) =>
+    nameMatches(info.frameworkPackageName, f)
+  )
     ? info.frameworkPackageName === '@storybook/nextjs'
       ? '@storybook/nextjs-vite'
       : info.frameworkPackageName
@@ -146,8 +164,8 @@ export default async function postInstall(options: PostinstallOptions) {
     }
 
     if (
-      info.frameworkPackageName !== '@storybook/nextjs' &&
-      info.builderPackageName !== '@storybook/builder-vite'
+      !nameMatches(info.frameworkPackageName, '@storybook/nextjs') &&
+      !nameMatches(info.builderPackageName, '@storybook/builder-vite')
     ) {
       reasons.push(
         '• The addon can only be used with a Vite-based Storybook framework or Next.js.'
@@ -177,7 +195,7 @@ export default async function postInstall(options: PostinstallOptions) {
       `);
     }
 
-    if (info.frameworkPackageName === '@storybook/nextjs') {
+    if (nameMatches(info.frameworkPackageName, '@storybook/nextjs')) {
       const nextVersion = await packageManager.getInstalledVersion('next');
       if (!nextVersion) {
         reasons.push(dedent`
@@ -496,7 +514,7 @@ export default async function postInstall(options: PostinstallOptions) {
       }
 
       if (options.configDir !== '.storybook') {
-        command.push('--config-dir', options.configDir);
+        command.push('--config-dir', `"${options.configDir}"`);
       }
 
       await execa('storybook', command, {
@@ -548,48 +566,57 @@ export default async function postInstall(options: PostinstallOptions) {
   logger.line(1);
 }
 
+async function getPackageNameFromPath(input: string): Promise<string> {
+  const path = input.startsWith('file://') ? fileURLToPath(input) : input;
+  if (!isAbsolute(path)) {
+    return path;
+  }
+
+  const packageJsonPath = await findUp('package.json', {
+    cwd: path,
+  });
+
+  if (!packageJsonPath) {
+    throw new Error(`Could not find package.json in path: ${path}`);
+  }
+
+  const { default: packageJson } = await import(pathToFileURL(packageJsonPath).href, {
+    with: { type: 'json' },
+  });
+  return packageJson.name;
+}
+
 async function getStorybookInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {
   const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr, configDir });
   const { packageJson } = packageManager.primaryPackageJson;
 
-  const config = await loadMainConfig({ configDir, noCache: true });
-  const { framework } = config;
+  const config = await loadMainConfig({ configDir });
 
-  const frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  validateFrameworkName(frameworkName);
-  const frameworkPackageName = extractProperFrameworkName(frameworkName);
-
-  const presets = await loadAllPresets({
-    corePresets: [join(frameworkName, 'preset')],
-    overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
-    ],
-    packageJson,
+  const { presets } = await experimental_loadStorybook({
     configDir,
-    isCritical: true,
+    packageJson,
   });
 
+  const framework = await presets.apply('framework', {});
   const core = await presets.apply('core', {});
 
   const { builder, renderer } = core;
-
   if (!builder) {
     throw new Error('Could not detect your Storybook builder.');
   }
 
-  const builderPackageJson = await fs.readFile(
-    require.resolve(join(typeof builder === 'string' ? builder : builder.name, 'package.json')),
-    'utf8'
+  const frameworkPackageName = await getPackageNameFromPath(
+    typeof framework === 'string' ? framework : framework.name
   );
-  const builderPackageName = JSON.parse(builderPackageJson).name;
+
+  const builderPackageName = await getPackageNameFromPath(
+    typeof builder === 'string' ? builder : builder.name
+  );
 
   let rendererPackageName: string | undefined;
+
   if (renderer) {
-    const rendererPackageJson = await fs.readFile(
-      require.resolve(join(renderer, 'package.json')),
-      'utf8'
-    );
-    rendererPackageName = JSON.parse(rendererPackageJson).name;
+    rendererPackageName = await getPackageNameFromPath(renderer);
   }
 
   return {

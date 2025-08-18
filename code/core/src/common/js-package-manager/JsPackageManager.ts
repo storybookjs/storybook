@@ -106,7 +106,7 @@ export abstract class JsPackageManager {
   abstract getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string;
 
   /** Get the package.json file for a given module. */
-  abstract getModulePackageJSON(packageName: string): PackageJson | null;
+  abstract getModulePackageJSON(packageName: string): Promise<PackageJson | null>;
 
   isStorybookInMonorepo() {
     const turboJsonPath = findUpSync(`turbo.json`, { stopAt: getProjectRoot() });

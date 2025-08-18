@@ -21,7 +21,8 @@ import type {
   Tag,
 } from 'storybook/internal/types';
 
-import { countBy, mapValues } from 'es-toolkit';
+import { countBy } from 'es-toolkit/array';
+import { mapValues } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 

@@ -2,8 +2,8 @@
 // Replace your-framework with the framework you are using, e.g., react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import db from '#lib/db.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
 import { Page } from './Page';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
@@ -33,8 +33,8 @@ export const Default: Story = {
 ```
 
 ```jsx filename="Page.stories.jsx" renderer="react" language="js"
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import db from '#lib/db.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
 import { Page } from './Page';
 
 export default { component: Page };
@@ -64,8 +64,8 @@ export const Default = {
 // Replace your-framework with the framework you are using, e.g., svelte-vite, sveltekit, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import db from '#lib/db.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
 import { Page } from './Page';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
@@ -96,8 +96,8 @@ export const Default: Story = {
 ```
 
 ```js filename="Page.stories.js" renderer="svelte" language="js"
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import db from '#lib/db.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
 import { Page } from './Page';
 
 export default { component: Page };
@@ -127,8 +127,8 @@ export const Default = {
 ```ts filename="Page.stories.ts" renderer="vue3" language="ts"
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import db from '#lib/db.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
 import { Page } from './Page';
 
 const meta = { component: Page } satisfies Meta<typeof Page>;
@@ -159,8 +159,8 @@ export const Default: Story = {
 ```
 
 ```js filename="Page.stories.js" renderer="vue3" language="js"
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import db from '#lib/db.mock';
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
 import { Page } from './Page';
 
 export default { component: Page };

@@ -29,8 +29,8 @@ DEALINGS IN THE SOFTWARE.
 import { isAbsolute, relative } from 'node:path';
 
 import type { NextConfig } from 'next';
-import { isWasm, transform } from 'next/dist/build/swc';
-import { getLoaderSWCOptions } from 'next/dist/build/swc/options';
+import { isWasm, transform } from 'next/dist/build/swc/index.js';
+import { getLoaderSWCOptions } from 'next/dist/build/swc/options.js';
 
 export interface SWCLoaderOptions {
   rootDir: string;

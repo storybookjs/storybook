@@ -21,22 +21,31 @@ export const getFaviconUrl = (
 };
 
 export const useDynamicFavicon = (status?: (typeof STATUSES)[number]) => {
-  const link = useRef(document.head.querySelector<HTMLLinkElement>("link[rel*='icon']"));
+  const links = useRef(document.head.querySelectorAll<HTMLLinkElement>("link[rel*='icon']"));
   useEffect(() => {
-    const element = link.current;
-    if (element) {
+    let isMounted = true;
+    const [element, ...others] = links.current;
+    // Custom filenames are not supported, so if there's other icon links, we don't do anything
+    if (element && !others.length) {
       getFaviconUrl(element.href, status).then(
         (result) => {
-          if (result.status === status) {
+          if (isMounted && result.status === status && element.dataset.status !== status) {
             element.href = result.href;
-            element.dataset.status = result.status;
+            if (result.status) {
+              element.dataset.status = result.status;
+            } else {
+              delete element.dataset.status;
+            }
           }
         },
         () => {
-          element.href = initialIcon!;
+          if (isMounted) {
+            element.href = initialIcon!;
+          }
         }
       );
       return () => {
+        isMounted = false;
         element.href = initialIcon!;
       };
     }

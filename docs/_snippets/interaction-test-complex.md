@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 import { fn, expect } from 'storybook/test';
 
-import { users } from '#mocks';
+import { users } from '../mocks/users';
 import { EventForm } from './EventForm.component';
 
 const meta: Meta<EventForm> = {
@@ -48,7 +48,7 @@ export const Submits: Story = {
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { fn, expect } from 'storybook/test';
 
-import { users } from '#mocks';
+import { users } from '../mocks/users';
 import { EventForm } from './EventForm';
 
 const meta = {
@@ -92,7 +92,7 @@ export const Submits: Story = {
 ```js filename="EventForm.stories.js" renderer="common" language="js"
 import { fn, expect } from 'storybook/test';
 
-import { users } from '#mocks';
+import { users } from '../mocks/users';
 import { EventForm } from './EventForm';
 
 export default {
@@ -135,7 +135,7 @@ export const Submits = {
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import { fn, expect } from 'storybook/test';
 
-  import { users } from '#mocks';
+  import { users } from '../mocks/users';
   import { EventForm } from './EventForm.svelte';
 
   const { Story } = defineMeta({
@@ -180,7 +180,7 @@ export const Submits = {
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { fn, expect } from 'storybook/test';
 
-import { users } from '#mocks';
+import { users } from '../mocks/users';
 import { EventForm } from './EventForm.svelte';
 
 const meta = {
@@ -226,7 +226,7 @@ export const Submits: Story = {
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import { fn, expect } from 'storybook/test';
 
-  import { users } from '#mocks';
+  import { users } from '../mocks/users';
   import { EventForm } from './EventForm.svelte';
 
   const { Story } = defineMeta({
@@ -269,7 +269,7 @@ export const Submits: Story = {
 ```js filename="EventForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import { fn, expect } from 'storybook/test';
 
-import { users } from '#mocks';
+import { users } from '../mocks/users';
 import { EventForm } from './EventForm.svelte';
 
 export default {
@@ -311,7 +311,7 @@ export const Submits = {
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { fn, expect } from 'storybook/test';
 
-import { users } from '#mocks';
+import { users } from '../mocks/users';
 
 const meta: Meta = {
   component: 'demo-event-form',
@@ -354,7 +354,7 @@ export const Submits: Story = {
 ```js filename="EventForm.stories.js" renderer="web-components" language="js"
 import { fn, expect } from 'storybook/test';
 
-import { users } from '#mocks';
+import { users } from '../mocks/users';
 
 export default {
   component: 'demo-event-form',

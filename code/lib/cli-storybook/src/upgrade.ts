@@ -265,7 +265,7 @@ function logUpgradeResults(
   }
 
   logger.log(
-    `For a full list of changes, please check our migration guide: ${CLI_COLORS.cta('https://storybook.js.org/docs/releases/migration-guide')}`
+    `For a full list of changes, please check our migration guide: ${CLI_COLORS.cta('https://storybook.js.org/docs/releases/migration-guide?utm_source=upgrade')}`
   );
 }
 

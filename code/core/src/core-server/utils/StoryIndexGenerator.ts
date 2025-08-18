@@ -593,7 +593,7 @@ export class StoryIndexGenerator {
       if (err && (err as { source: any }).source?.match(/mdast-util-mdx-jsx/g)) {
         logger.warn(
           `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${picocolors.yellow(
-            'https://storybook.js.org/migration-guides/7.0'
+            'https://storybook.js.org/migration-guides/7.0?utm_source=error'
           )}`
         );
       }

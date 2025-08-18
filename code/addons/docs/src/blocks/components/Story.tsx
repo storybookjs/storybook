@@ -126,7 +126,7 @@ const Story: FunctionComponent<StoryProps> = (props) => {
     return (
       <ErrorMessage>
         This story mounts inside of play. Set{' '}
-        <a href="https://storybook.js.org/docs/api/doc-blocks/doc-block-story#autoplay">autoplay</a>{' '}
+        <a href="https://storybook.js.org/docs/api/doc-blocks/doc-block-story#autoplay?utm_source=ui">autoplay</a>{' '}
         to true to view this story.
       </ErrorMessage>
     );

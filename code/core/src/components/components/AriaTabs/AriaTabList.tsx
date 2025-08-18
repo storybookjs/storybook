@@ -1,4 +1,4 @@
-import type { FC } from 'react';
+import type { FC, HTMLAttributes } from 'react';
 import React, { useRef } from 'react';
 
 import { useTab, useTabList } from 'react-aria';
@@ -93,7 +93,7 @@ const AriaTabButton: FC<AriaTabButtonProps> = ({ item, state }) => {
   );
 };
 
-export interface AriaTabListProps {
+export interface AriaTabListProps extends HTMLAttributes<HTMLDivElement> {
   state: TabListState<object>;
 }
 

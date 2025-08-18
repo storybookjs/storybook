@@ -16,9 +16,14 @@ const meta = preview.meta({
     tabs: DEFAULT_TABS,
     state: undefined,
   },
+  parameters: {
+    data: {
+      tabs: DEFAULT_TABS,
+    },
+  },
   decorators: [
-    (Story, { args }) => {
-      const state = useAriaTabListState({ tabs: args.tabs });
+    (Story, { args, parameters }) => {
+      const state = useAriaTabListState({ tabs: parameters.data.tabs });
       return <Story args={{ ...args, state }} />;
     },
   ],
@@ -27,24 +32,28 @@ const meta = preview.meta({
 export const Basic = meta.story({});
 
 export const WithAriaLabel = meta.story({
-  args: {
-    tabs: DEFAULT_TABS.map((tab) => ({
-      ...tab,
-      'aria-label': `Aria label for ${tab.title}`,
-    })),
+  parameters: {
+    data: {
+      tabs: DEFAULT_TABS.map((tab) => ({
+        ...tab,
+        'aria-label': `Aria label for ${tab.title}`,
+      })),
+    },
   },
 });
 
 export const WithDisabledTab = meta.story({
-  args: {
-    tabs: [
-      ...DEFAULT_TABS,
-      {
-        id: 'tab4',
-        title: 'Disabled Tab',
-        children: () => <div>Content for Disabled Tab</div>,
-        isDisabled: true,
-      },
-    ],
+  parameters: {
+    data: {
+      tabs: [
+        ...DEFAULT_TABS,
+        {
+          id: 'tab4',
+          title: 'Disabled Tab',
+          children: () => <div>Content for Disabled Tab</div>,
+          isDisabled: true,
+        },
+      ],
+    },
   },
 });

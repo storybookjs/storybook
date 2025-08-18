@@ -34,13 +34,17 @@ const DEFAULT_TABS: TabProps[] = [
 const meta = preview.meta({
   title: 'AriaTabPanel',
   component: AriaTabPanel,
+  parameters: {
+    data: {
+      tabs: DEFAULT_TABS,
+    },
+  },
   args: {
-    tabs: DEFAULT_TABS,
     state: undefined,
   },
   decorators: [
-    (Story, { args }) => {
-      const state = useAriaTabListState({ tabs: args.tabs });
+    (Story, { args, parameters }) => {
+      const state = useAriaTabListState({ tabs: parameters.data.tabs });
       return <Story args={{ ...args, state }} />;
     },
     (Story) => {

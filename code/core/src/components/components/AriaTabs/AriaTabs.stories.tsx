@@ -5,8 +5,6 @@ import { fn } from 'storybook/internal/test';
 
 import { CrossIcon, ExpandIcon } from '@storybook/icons';
 
-import type { Key } from 'react-aria';
-
 import preview from '../../../../../.storybook/preview';
 import { AriaTabs } from './AriaTabs';
 

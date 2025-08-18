@@ -48,4 +48,4 @@ This export contains the API that is available in the manager iframe.
 
 This export exposes a lot of TypeScript interfaces used throughout storybook, including for storybook configuration, addons etc.
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

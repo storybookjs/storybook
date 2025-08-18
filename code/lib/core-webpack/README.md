@@ -8,4 +8,4 @@ Supporting multiple version of webpack and this duplicating a large portion of c
 
 At some point we'll refactor this, it's likely a lot of this code is dead or barely used.
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

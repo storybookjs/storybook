@@ -25,4 +25,4 @@ Basic.parameters = {
 
 This allows `@storybook/addon-docs` to display the static source snippet.
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

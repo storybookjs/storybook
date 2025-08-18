@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://storybook.js.org/?utm_source=readme">
+  <a href="https://storybook.js.org/?ref=readme">
     <img src="https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png" alt="Storybook" width="400" />
   </a>
 </p>
@@ -12,7 +12,7 @@
   <a href="https://discord.gg/storybook">
     <img src="https://img.shields.io/badge/discord-join-7289DA.svg?logo=discord&longCache=true&style=flat" />
   </a>
-  <a href="https://storybook.js.org/community/?utm_source=readme">
+  <a href="https://storybook.js.org/community/?ref=readme">
     <img src="https://img.shields.io/badge/community-join-4BC424.svg" alt="Storybook Community" />
   </a>
   <a href="#backers">
@@ -138,13 +138,13 @@ export default [
 In case you are using utility functions from tools like `tseslint`, you might need to set the plugin a little differently:
 
 ```ts
-import storybook from "eslint-plugin-storybook";
-
+import storybook from 'eslint-plugin-storybook';
 import somePlugin from 'some-plugin';
 import tseslint from 'typescript-eslint';
+
 export default tseslint.config(
   somePlugin,
-  storybook.configs["flat/recommended"] // notice that it is not destructured
+  storybook.configs['flat/recommended'] // notice that it is not destructured
 );
 ```
 
@@ -210,4 +210,4 @@ This plugin does not support MDX files.
 Looking into improving this plugin? That would be awesome!
 Please refer to [the contributing guidelines](./CONTRIBUTING.md) for steps to contributing.
 
-Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?utm_source=readme).
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

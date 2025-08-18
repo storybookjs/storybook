@@ -175,6 +175,16 @@ export abstract class JsPackageManager {
     };
   }
 
+  #getIndent(filePath: string) {
+    try {
+      const content = readFileSync(filePath, 'utf-8');
+      const { indent } = detectIndent(content);
+      return indent;
+    } catch (e) {
+      return 2;
+    }
+  }
+
   writePackageJson(packageJson: PackageJson, directory = this.cwd) {
     const packageJsonToWrite = { ...packageJson };
     const dependencyTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
@@ -186,8 +196,7 @@ export abstract class JsPackageManager {
       }
     });
     const filePath = join(directory, 'package.json');
-    const contentJson = readFileSync(filePath, 'utf-8');
-    const { indent } = detectIndent(contentJson);
+    const indent = this.#getIndent(filePath);
     const content = `${JSON.stringify(packageJsonToWrite, null, indent)}\n`;
     writeFileSync(resolve(directory, 'package.json'), content, 'utf8');
   }

@@ -63,7 +63,7 @@ Mocks and spies from `storybook/test` are automatically logged as actions. The e
 
 ### Via the `action` function
 
-You may want to filter which function calls are logged as actions based on the received parameters. Since `spyOn` logs all function calls, it is not suitable. To disable that behavior, you'll need to disable the default mock name. Then, provide a mock implementation where you check the parameters and manually call `action` from the `storybook/actions` module when you want to log an action. 
+To filter which function calls are logged, you can override the `spyOn` function's behavior by providing a custom implementation that calls the  `action` function from `storybook/actions` only if it matches a specific condition to prevent it from logging all calls to the function it spies on.
 
 <CodeSnippets path="actions-filtering-example.md" />
 

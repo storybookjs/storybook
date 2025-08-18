@@ -150,13 +150,16 @@ export const AddonPanel = React.memo<{
       <AriaTabs
         id="storybook-panel-root"
         showToolsWhenEmpty
-        renderAllChildren
+        panelProps={{
+          id: 'panel-tab-content',
+          hasScrollbar: false,
+          renderAllChildren: true,
+        }}
         emptyState={emptyState}
         selected={selectedPanel ?? undefined}
         onSelectionChange={(id) => actions.onSelect(id)}
         tabs={tabs}
         tools={tools}
-        hasScrollbar={false}
       />
     </Section>
   );

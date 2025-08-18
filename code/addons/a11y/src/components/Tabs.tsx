@@ -65,7 +65,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
     <Container>
       <AriaTabs
         backgroundColor={theme.background.app}
-        hasScrollbar={true}
+        panelProps={{ hasScrollbar: true }}
         tabs={tabs.map((tab) => ({
           id: tab.type,
           title: tab.label,

@@ -1,4 +1,4 @@
-import type { FC, HTMLAttributes, ReactElement, ReactNode } from 'react';
+import type { ComponentProps, FC, HTMLAttributes, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
 import { AriaTabList, AriaTabPanel, Bar, EmptyTabContent } from 'storybook/internal/components';
@@ -89,17 +89,8 @@ export interface AriaTabsProps extends HTMLAttributes<HTMLDivElement> {
   /** Optional ID. */
   id?: string;
 
-  /**
-   * Whether the panel adds a vertical scrollbar. Disable if you want to use fixed or sticky
-   * positioning on part of the tab's content. True by default.
-   */
-  hasScrollbar?: boolean;
-
-  /**
-   * Whether to render only the active tab's content, or all tabs. When true, non-selected tabs are
-   * rendered with the hidden attribute and do not affect the accessibility object model.
-   */
-  renderAllChildren?: boolean;
+  /** Props to pass to the AriaTabPanel component. */
+  panelProps?: Omit<ComponentProps<typeof AriaTabPanel>, 'state'>;
 }
 
 export const AriaTabs: FC<AriaTabsProps> = ({
@@ -107,9 +98,8 @@ export const AriaTabs: FC<AriaTabsProps> = ({
   barInnerStyle,
   defaultSelected,
   emptyState,
-  hasScrollbar,
   onSelectionChange,
-  renderAllChildren,
+  panelProps = {},
   selected,
   showToolsWhenEmpty,
   tabs,
@@ -148,11 +138,7 @@ export const AriaTabs: FC<AriaTabsProps> = ({
         {tools}
         <AriaTabList state={state} />
       </Bar>
-      <FlexTabPanel
-        state={state}
-        hasScrollbar={hasScrollbar}
-        renderAllChildren={renderAllChildren}
-      />
+      <FlexTabPanel state={state} {...panelProps} />
     </Container>
   );
 };

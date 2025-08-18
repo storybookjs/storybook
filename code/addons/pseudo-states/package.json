@@ -1,6 +1,6 @@
 {
   "name": "storybook-addon-pseudo-states",
-  "version": "9.2.0-alpha.2",
+  "version": "9.2.0-alpha.3",
   "description": "CSS pseudo states for Storybook",
   "keywords": [
     "storybook",
@@ -22,24 +22,19 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "import": "./dist/preview.mjs",
-      "require": "./dist/preview.js"
+      "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./register": "./dist/manager.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    }
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "*.js",
     "*.d.ts",
@@ -47,8 +42,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "devDependencies": {
     "@storybook/icons": "^1.4.0",
@@ -61,17 +56,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.ts"
-    ],
-    "previewEntries": [
-      "./src/preview.ts"
-    ]
   },
   "storybook": {
     "displayName": "Pseudo States",

@@ -2,9 +2,10 @@ import * as fs from 'node:fs/promises';
 
 import { describe, expect, it } from 'vitest';
 
+import * as babel from 'storybook/internal/babel';
+
 import { findUp } from 'find-up';
 
-import * as babel from '../../../../../../core/src/babel';
 import { vitestConfigFiles } from './vitestConfigFiles';
 
 const liveContext: any = { babel, findUp, fs };

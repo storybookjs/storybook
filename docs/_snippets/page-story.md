@@ -90,7 +90,7 @@ export const LoggedIn = {
 ```
 
 ```tsx filename="Page.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Page } from './Page';
 

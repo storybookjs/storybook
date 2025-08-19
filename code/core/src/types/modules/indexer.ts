@@ -133,6 +133,11 @@ export type StoryIndexInput = BaseIndexInput & {
   type: 'story';
 };
 
+export type TestIndexInput = BaseIndexInput & {
+  type: 'test';
+  parentId: StoryId;
+};
+
 /** The input for indexing a docs entry. */
 export type DocsIndexInput = BaseIndexInput & {
   type: 'docs';
@@ -140,7 +145,7 @@ export type DocsIndexInput = BaseIndexInput & {
   storiesImports?: Path[];
 };
 
-export type IndexInput = StoryIndexInput | DocsIndexInput;
+export type IndexInput = StoryIndexInput | DocsIndexInput | TestIndexInput;
 
 export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags'> {
   kind: ComponentTitle;

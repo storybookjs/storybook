@@ -198,7 +198,6 @@ export class StoryStore<TRenderer extends Renderer> {
   }): PreparedStory<TRenderer> {
     const storyAnnotations = csfFile.stories[storyId];
 
-    console.log('storyFromCSFFile: initial annotations', storyAnnotations);
     if (!storyAnnotations) {
       throw new MissingStoryFromCsfFileError({ storyId });
     }
@@ -210,9 +209,9 @@ export class StoryStore<TRenderer extends Renderer> {
       componentAnnotations,
       csfFile.projectAnnotations ?? this.projectAnnotations
     );
+    // TODO: check type error later
     this.args.setInitial(story);
     this.hooks[story.id] = this.hooks[story.id] || new HooksContext();
-    console.log('storyFromCSFFile: prepared story', story);
     return story;
   }
 
@@ -228,7 +227,6 @@ export class StoryStore<TRenderer extends Renderer> {
   }
 
   async loadEntry(id: StoryId) {
-    console.log('loadEntry: loading id', id);
     const entry = await this.storyIdToEntry(id);
 
     const storyImports = entry.type === 'docs' ? entry.storiesImports : [];
@@ -250,7 +248,6 @@ export class StoryStore<TRenderer extends Renderer> {
     const userGlobals = this.userGlobals.get();
     const { initialGlobals } = this.userGlobals;
     const reporting = new ReporterAPI();
-    console.log('getStoryContext: for story', story);
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),

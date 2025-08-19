@@ -2,6 +2,7 @@ import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-f
 
 import type { SBScalarType, SBType } from './SBType';
 import type { CoreTypes } from './core-annotations';
+import type { Story } from './csf-factories';
 
 export * from './SBType';
 export type StoryId = string;
@@ -535,7 +536,7 @@ export type StoryAnnotations<
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;
 
   /** @private */
-  __tests?: Record<string, StoryAnnotations<TRenderer, TRenderer['args']>>;
+  __tests?: Record<string, Story<TRenderer>>;
   __testFunction?: (context: StoryContext<TRenderer>) => Promise<void>;
 } & ({} extends TRequiredArgs ? { args?: TRequiredArgs } : { args: TRequiredArgs });
 

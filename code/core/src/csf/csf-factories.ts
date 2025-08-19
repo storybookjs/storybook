@@ -208,10 +208,9 @@ function defineStory<
       >;
       const testFunction = (hasOverrides ? testFn : overridesOrTestFn) as TestFunction<TRenderer>;
 
-      // Build the story for this test (clone if annotations present)
-      const testStory = this.extend(annotations);
+      // A test is a clone of the story + the test function
+      const testStory = this.extend({ ...annotations, tags: ['test-fn'] });
       testStory.input.__testFunction = testFunction;
-      // Store in registry
       this.input.__tests![name] = testStory;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
@@ -219,8 +218,7 @@ function defineStory<
         {
           ...this.input,
           ...input,
-          // TODO: Discuss
-          args: { ...(this.composed.args || {}), ...input.args },
+          args: { ...(this.input.args || {}), ...input.args },
           argTypes: combineParameters(this.input.argTypes, input.argTypes),
           afterEach: [
             ...normalizeArrays(this.input?.afterEach ?? []),

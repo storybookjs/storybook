@@ -1,5 +1,5 @@
 import { logger } from 'storybook/internal/client-logger';
-import { isExportStory, isStory, sanitize } from 'storybook/internal/csf';
+import { isExportStory, isStory, toTestId } from 'storybook/internal/csf';
 import type { ComponentTitle, Parameters, Path, Renderer } from 'storybook/internal/types';
 import type {
   CSFFile,
@@ -49,7 +49,6 @@ export function processCSFFile<TRenderer extends Renderer>(
   const { default: defaultExport, __namedExportsOrder, ...namedExports } = moduleExports;
 
   const firstStory = Object.values(namedExports)[0];
-  console.log('processing CSF file');
   if (isStory<TRenderer>(firstStory)) {
     const meta: NormalizedComponentAnnotations<TRenderer> =
       normalizeComponentAnnotations<TRenderer>(firstStory.meta.input, title, importPath);
@@ -67,13 +66,10 @@ export function processCSFFile<TRenderer extends Renderer>(
         // if the story has tests, we need to add those to the csfFile
         if (storyMeta.__tests) {
           Object.entries(storyMeta.__tests).forEach(([testName, test]) => {
-            const testId = storyMeta.id + ':' + sanitize(testName);
-            test.parameters ??= {};
-            // @ts-expect-error TODO discuss later
-            test.parameters.__id = testId;
-            // @ts-expect-error TODO discuss later
-            console.log('Adding story test', testId, test.input);
-            // @ts-expect-error TODO discuss later
+            const testId = toTestId(storyMeta.id, testName);
+            // @ts-expect-error We provide the __id parameter because we don't want normalizeStory to calculate the id
+            test.input.parameters.__id = testId;
+            // @ts-expect-error Check type error later
             csfFile.stories[testId] = normalizeStory(testName, test.input, meta);
           });
         }

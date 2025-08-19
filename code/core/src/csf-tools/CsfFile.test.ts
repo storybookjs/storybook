@@ -1799,10 +1799,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -1821,10 +1819,10 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
-        - type: story
-          importPath: foo/bar.stories.js
+          type: story
+          name: A
+        - importPath: foo/bar.stories.js
           exportName: B
-          name: B
           title: custom foo title
           metaId: component-id
           tags:
@@ -1843,6 +1841,8 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          name: B
       `);
     });
 
@@ -1863,10 +1863,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -1883,6 +1881,8 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          name: A
       `);
     });
 
@@ -1902,10 +1902,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           tags:
             - component-tag
@@ -1928,6 +1926,8 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          name: A
       `);
     });
 
@@ -1970,10 +1970,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -1988,6 +1986,8 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          name: A
       `);
     });
 
@@ -2009,10 +2009,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2027,6 +2025,8 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          name: A
       `);
     });
 
@@ -2047,11 +2047,9 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           rawComponentPath: ../src/Component.js
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2066,6 +2064,8 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          name: A
       `);
     });
 
@@ -2086,11 +2086,9 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           rawComponentPath: some-library
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2105,6 +2103,8 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          name: A
       `);
     });
   });
@@ -2428,8 +2428,6 @@ describe('CsfFile', () => {
                 storyFn: false
                 mount: false
                 moduleMock: false
-              tags:
-                - test-fn
         `);
       });
 

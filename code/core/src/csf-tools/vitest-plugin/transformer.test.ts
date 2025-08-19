@@ -814,7 +814,6 @@ describe('transformer', () => {
           if (_isRunningFromThisFile) {
             _describe("A", () => {
               _test("base story", _testStory("A", A, meta, []));
-              _test("foo", _testStory("A", A, meta, [], "foo"));
               _test("bar", _testStory("A", A, meta, [], "bar"));
             });
           }

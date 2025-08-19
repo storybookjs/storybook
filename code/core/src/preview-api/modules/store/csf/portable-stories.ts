@@ -428,7 +428,7 @@ async function runStory<TRenderer extends Renderer>(
   }
 
   if (testName) {
-    await story.__tests?.[testName](context);
+    await story.__tests?.[testName].__testFunction?.(context);
   }
 
   let cleanUp: CleanupCallback | undefined;

@@ -11,7 +11,7 @@ import {
   types as t,
   traverse,
 } from 'storybook/internal/babel';
-import { isExportStory, storyNameFromExport, toId } from 'storybook/internal/csf';
+import { isExportStory, sanitize, storyNameFromExport, toId } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentAnnotations,
@@ -682,7 +682,8 @@ export class CsfFile {
               story.name = storyName;
             }
           }
-          // B.test('foo', () => {}, options)
+          // B.test('foo', () => {})
+          // B.test('foo', context, () => {})
           if (
             t.isCallExpression(expression) &&
             t.isMemberExpression(expression.callee) &&
@@ -690,30 +691,31 @@ export class CsfFile {
             t.isIdentifier(expression.callee.property) &&
             expression.callee.property.name === 'test' &&
             expression.arguments.length >= 2 &&
-            t.isStringLiteral(expression.arguments[0]) &&
-            (t.isFunctionExpression(expression.arguments[1]) ||
-              t.isArrowFunctionExpression(expression.arguments[1]))
+            t.isStringLiteral(expression.arguments[0])
           ) {
             const exportName = expression.callee.object.name;
             const testName = expression.arguments[0].value;
-            const testFunction = expression.arguments[1];
-            const testOptions = expression.arguments[2] || null;
+            const testFunction =
+              expression.arguments.length === 2 ? expression.arguments[1] : expression.arguments[2];
+            const testOptions = expression.arguments.length === 2 ? null : expression.arguments[1];
 
             if (!self._storyTests[exportName]) {
               self._storyTests[exportName] = [];
             }
 
-            self._storyTests[exportName].push({
-              function: testFunction,
-              name: testName,
-              options: testOptions,
-              node: expression,
-              // can't set id because meta title isn't available yet
-              // so it's set later on
-              id: '',
-            });
+            if (t.isArrowFunctionExpression(testFunction) || t.isFunctionExpression(testFunction)) {
+              self._storyTests[exportName].push({
+                function: testFunction,
+                name: testName,
+                options: testOptions,
+                node: expression,
+                // can't set id because meta title isn't available yet
+                // so it's set later on
+                id: 'FIXME',
+              });
 
-            self._stories[exportName].__stats.tests = true;
+              self._stories[exportName].__stats.tests = true;
+            }
           }
         },
       },
@@ -830,8 +832,7 @@ export class CsfFile {
 
         if (self._storyTests[key]) {
           self._storyTests[key].forEach((test) => {
-            const testStoryName = `${story.name}: ${test.name}`;
-            test.id = toId((self._meta?.id || self._meta?.title) as string, testStoryName);
+            test.id = id + ':' + sanitize(test.name);
           });
         }
 

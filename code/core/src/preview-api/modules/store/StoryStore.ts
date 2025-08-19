@@ -198,6 +198,7 @@ export class StoryStore<TRenderer extends Renderer> {
   }): PreparedStory<TRenderer> {
     const storyAnnotations = csfFile.stories[storyId];
 
+    console.log('storyFromCSFFile: initial annotations', storyAnnotations);
     if (!storyAnnotations) {
       throw new MissingStoryFromCsfFileError({ storyId });
     }
@@ -211,6 +212,7 @@ export class StoryStore<TRenderer extends Renderer> {
     );
     this.args.setInitial(story);
     this.hooks[story.id] = this.hooks[story.id] || new HooksContext();
+    console.log('storyFromCSFFile: prepared story', story);
     return story;
   }
 
@@ -226,6 +228,7 @@ export class StoryStore<TRenderer extends Renderer> {
   }
 
   async loadEntry(id: StoryId) {
+    console.log('loadEntry: loading id', id);
     const entry = await this.storyIdToEntry(id);
 
     const storyImports = entry.type === 'docs' ? entry.storiesImports : [];
@@ -242,11 +245,12 @@ export class StoryStore<TRenderer extends Renderer> {
   }
 
   // A prepared story does not include args, globals or hooks. These are stored in the story store
-  // and updated separtely to the (immutable) story.
+  // and updated separately to the (immutable) story.
   getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
     const userGlobals = this.userGlobals.get();
     const { initialGlobals } = this.userGlobals;
     const reporting = new ReporterAPI();
+    console.log('getStoryContext: for story', story);
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
@@ -285,11 +289,13 @@ export class StoryStore<TRenderer extends Renderer> {
   ): Record<StoryId, StoryContextForEnhancers<TRenderer>> {
     const { cachedCSFFiles } = this;
 
+    console.log('extract: extracting stories', cachedCSFFiles);
+
     if (!cachedCSFFiles) {
       throw new CalledExtractOnStoreError();
     }
 
-    return Object.entries(this.storyIndex.entries).reduce(
+    const stories = Object.entries(this.storyIndex.entries).reduce(
       (acc, [storyId, { type, importPath }]) => {
         if (type === 'docs') {
           return acc;
@@ -329,5 +335,9 @@ export class StoryStore<TRenderer extends Renderer> {
       },
       {} as Record<string, any>
     );
+
+    console.log('extract: stories', stories);
+
+    return stories;
   }
 }

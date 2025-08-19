@@ -15,11 +15,27 @@ const meta = preview.meta({
   tags: ['some-tag'],
 });
 
-export const Default = meta.story({});
-Default.test('Exists in the dom', async ({ canvas }) => {
-  const button = canvas.getByText('Default');
-  await expect(button).toBeInTheDocument();
+export const Default = meta.story({
+  args: {
+    children: 'From story',
+  },
+  play: async ({ canvas }) => {
+    const button = canvas.getByText('From test');
+    await expect(button).toBeInTheDocument();
+  },
 });
+Default.test(
+  'Exists in the dom',
+  {
+    args: {
+      children: 'From test',
+    },
+  },
+  async ({ canvas }) => {
+    const button = canvas.getByText('From test');
+    await expect(button).toBeInTheDocument();
+  }
+);
 Default.test('onClick is called', async ({ canvas, userEvent, args }) => {
   const button = canvas.getByText('Default');
   await userEvent.click(button);

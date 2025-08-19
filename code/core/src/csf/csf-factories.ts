@@ -1,4 +1,4 @@
-import type { AddonTypes, PlayFunction, StoryContext } from 'storybook/internal/csf';
+import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
 import { combineTags } from 'storybook/internal/csf';
 import type {
   Args,
@@ -121,10 +121,7 @@ function defineMeta<
   };
 }
 
-type TestFunction<
-  TRenderer extends Renderer,
-  TArgs extends TRenderer['args'] = Args,
-> = PlayFunction<TRenderer, TArgs>;
+type TestFunction<TRenderer extends Renderer> = (context: StoryContext<TRenderer>) => Promise<void>;
 
 export interface Story<
   TRenderer extends Renderer,
@@ -153,7 +150,13 @@ export interface Story<
   extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input: TInput
   ): Story<TRenderer, TInput>;
-  test: (name: string, fn: TestFunction<TRenderer, TRenderer['args']>) => void;
+  test(name: string, fn: TestFunction<TRenderer>): void;
+  test(
+    name: string,
+    annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
+    fn: TestFunction<TRenderer>
+  ): void;
+  __testFunction?: TestFunction<TRenderer>;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -193,17 +196,31 @@ function defineStory<
     get run() {
       return compose().run ?? (async () => {});
     },
-    test(name: string, fn: TestFunction<TRenderer, TRenderer['args']>) {
-      // @ts-expect-error fix this later
-      input.__tests[name] = fn;
-      return this;
+    test(
+      name: string,
+      overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
+      testFn?: TestFunction<TRenderer>
+    ): void {
+      const hasOverrides = typeof overridesOrTestFn !== 'function';
+      const annotations = (hasOverrides ? overridesOrTestFn : {}) as StoryAnnotations<
+        TRenderer,
+        TRenderer['args']
+      >;
+      const testFunction = (hasOverrides ? testFn : overridesOrTestFn) as TestFunction<TRenderer>;
+
+      // Build the story for this test (clone if annotations present)
+      const testStory = this.extend(annotations);
+      testStory.input.__testFunction = testFunction;
+      // Store in registry
+      this.input.__tests![name] = testStory;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(
         {
           ...this.input,
           ...input,
-          args: { ...this.input.args, ...input.args },
+          // TODO: Discuss
+          args: { ...(this.composed.args || {}), ...input.args },
           argTypes: combineParameters(this.input.argTypes, input.argTypes),
           afterEach: [
             ...normalizeArrays(this.input?.afterEach ?? []),

@@ -62,7 +62,9 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.afterEach),
     ...normalizeArrays(story?.afterEach),
   ];
+  console.log('normalizeStory', storyAnnotations);
   const __tests = storyAnnotations.__tests;
+  const __testFunction = storyAnnotations.__testFunction;
   const { render, play, tags = [], globals = {} } = storyObject;
 
   const id = parameters.__id || toId(meta.id, exportName);
@@ -81,6 +83,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     globals,
     ...(render && { render }),
     ...(__tests && { __tests }),
+    ...(__testFunction && { __testFunction }),
     ...(userStoryFn && { userStoryFn }),
     ...(play && { play }),
   };

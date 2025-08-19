@@ -204,7 +204,7 @@ async function pathExists(path: string) {
 }
 
 async function outputFile(file: string, data: string) {
-  await mkdir(dirname(file));
+  await mkdir(dirname(file), { recursive: true });
   await writeFile(file, data);
 }
 

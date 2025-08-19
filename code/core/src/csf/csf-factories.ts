@@ -8,6 +8,7 @@ import type {
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
+  TestFunction,
 } from 'storybook/internal/types';
 
 import {
@@ -120,8 +121,6 @@ function defineMeta<
     },
   };
 }
-
-type TestFunction<TRenderer extends Renderer> = (context: StoryContext<TRenderer>) => Promise<void>;
 
 export interface Story<
   TRenderer extends Renderer,

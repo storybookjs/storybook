@@ -1,5 +1,7 @@
 import React from 'react';
 
+import type { TestFunction } from 'storybook/internal/types';
+
 import { expect, fn } from 'storybook/test';
 
 import preview from '../../../../.storybook/preview';
@@ -25,6 +27,15 @@ Default.test('simple', async ({ canvas, userEvent, args }) => {
   await userEvent.click(button);
   await expect(args.onClick).toHaveBeenCalled();
 });
+
+const doTest: TestFunction = async ({ canvas, userEvent, args }) => {
+  const button = canvas.getByText('Arg from story');
+  await userEvent.click(button);
+  // TODO: fix type error later
+  await expect(args.onClick).toHaveBeenCalled();
+};
+Default.test('referring to function in file', doTest);
+
 Default.test(
   'with overrides',
   {

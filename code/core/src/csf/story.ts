@@ -285,6 +285,10 @@ export type PlayFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = 
   context: PlayFunctionContext<TRenderer, TArgs>
 ) => Promise<void> | void;
 
+export type TestFunction<TRenderer extends Renderer = Renderer, TArgs = TRenderer['args']> = (
+  context: StoryContext<TRenderer, TArgs>
+) => Promise<void> | void;
+
 // This is the type of story function passed to a decorator -- does not rely on being passed any context
 export type PartialStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   update?: StoryContextUpdate<Partial<TArgs>>
@@ -537,7 +541,7 @@ export type StoryAnnotations<
 
   /** @private */
   __tests?: Record<string, Story<TRenderer>>;
-  __testFunction?: (context: StoryContext<TRenderer>) => Promise<void>;
+  __testFunction?: TestFunction<TRenderer, TArgs>;
 } & ({} extends TRequiredArgs ? { args?: TRequiredArgs } : { args: TRequiredArgs });
 
 export type LegacyAnnotatedStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = StoryFn<

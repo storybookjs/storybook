@@ -309,7 +309,7 @@ const ReadDocsMessage: FC = () => {
 
   return (
     <Message
-      href="https://storybook.js.org/docs/sharing/storybook-composition?utm_source=ui"
+      href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui"
       target="_blank"
     >
       <DocumentIcon color={theme.color.green} />
@@ -355,7 +355,7 @@ const PerformanceDegradedMessage: FC = () => {
 
   return (
     <Message
-      href="https://storybook.js.org/docs/sharing/storybook-composition?utm_source=ui"
+      href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui"
       target="_blank"
     >
       <LightningIcon color={theme.color.gold} />

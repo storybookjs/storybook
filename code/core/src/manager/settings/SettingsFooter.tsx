@@ -18,7 +18,7 @@ const Footer = styled.div(({ theme }) => ({
 }));
 const SettingsFooter: FC<any> = (props) => (
   <Footer {...props}>
-    <Link secondary href="https://storybook.js.org?utm_source=ui" cancel={false} target="_blank">
+    <Link secondary href="https://storybook.js.org?ref=ui" cancel={false} target="_blank">
       Docs
     </Link>
     <Link secondary href="https://github.com/storybookjs/storybook" cancel={false} target="_blank">
@@ -26,7 +26,7 @@ const SettingsFooter: FC<any> = (props) => (
     </Link>
     <Link
       secondary
-      href="https://storybook.js.org/community#support?utm_source=ui"
+      href="https://storybook.js.org/community#support?ref=ui"
       cancel={false}
       target="_blank"
     >

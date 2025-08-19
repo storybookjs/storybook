@@ -40,7 +40,7 @@ export const MobileAbout: FC = () => {
               <ShareAltIcon width={12} />
             </LinkLine>
             <LinkLine
-              href="https://storybook.js.org/docs/react/get-started/install/?utm_source=ui"
+              href="https://storybook.js.org/docs/react/get-started/install/?ref=ui"
               target="_blank"
             >
               <LinkLeft>

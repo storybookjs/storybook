@@ -41,19 +41,20 @@ describe('test fn', () => {
           import { config } from '#.storybook/preview'
           const meta = config.meta({ component: 'foo' });
           export const A = meta.story({})
-          A.test('first one', () => {})
-          A.test('Second one', () => {})
-          export const B = meta.story({})
-          B.test('first one', () => {})
+          A.test('async test function', async () => {})
+          A.test('sync test function', () => {})
+          A.test('with overrides', { args: { label: 'bar' } }, () => {})
+          const reference = () => {}
+          A.test('with function reference', reference)
         `
     );
     expect(entries).toMatchInlineSnapshot(`
       [
         "A",
-        "first one",
-        "Second one",
-        "B",
-        "first one",
+        "async test function",
+        "sync test function",
+        "with overrides",
+        "with function reference",
       ]
     `);
   });

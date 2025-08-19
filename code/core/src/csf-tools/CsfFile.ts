@@ -280,7 +280,7 @@ export class CsfFile {
     string,
     Array<{
       node: t.Node;
-      function: t.FunctionExpression | t.ArrowFunctionExpression;
+      function: t.Node;
       name: string;
       id: string;
       options: any;
@@ -703,7 +703,12 @@ export class CsfFile {
               self._storyTests[exportName] = [];
             }
 
-            if (t.isArrowFunctionExpression(testFunction) || t.isFunctionExpression(testFunction)) {
+            // TODO: Do we want to support function references?
+            if (
+              t.isArrowFunctionExpression(testFunction) ||
+              t.isFunctionExpression(testFunction) ||
+              t.isIdentifier(testFunction)
+            ) {
               self._storyTests[exportName].push({
                 function: testFunction,
                 name: testName,

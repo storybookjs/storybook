@@ -542,7 +542,7 @@ export class CommonJsConfigNotSupportedError extends StorybookError {
     super({
       category: Category.CLI_AUTOMIGRATE,
       code: 1,
-      documentation: 'https://storybook.js.org/docs/configure/overview#es-modules?ref=error',
+      documentation: 'https://storybook.js.org/docs/configure/overview?ref=error#es-modules',
       message: dedent`
         Support for CommonJS Storybook config files has been removed in Storybook 10.0.0.
         Please migrate your config to a valid ESM file.

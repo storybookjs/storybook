@@ -1,4 +1,4 @@
-import type { AddonTypes, PlayFunction, StoryContext } from 'storybook/internal/csf';
+import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
 import { combineTags } from 'storybook/internal/csf';
 import type {
   Args,
@@ -108,8 +108,9 @@ function defineMeta<
     _tag: 'Meta',
     input,
     preview,
-    get composed(): never {
-      throw new Error('Not implemented');
+    get composed() {
+      // TODO: check this later
+      return composeConfigs([preview.input, input]);
     },
     // @ts-expect-error hard
     story(
@@ -119,6 +120,8 @@ function defineMeta<
     },
   };
 }
+
+type TestFunction<TRenderer extends Renderer> = (context: StoryContext<TRenderer>) => Promise<void>;
 
 export interface Story<
   TRenderer extends Renderer,
@@ -139,11 +142,21 @@ export interface Story<
   meta: Meta<TRenderer>;
   __compose: () => ComposedStoryFn<TRenderer>;
   play: TInput['play'];
-  run: (context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>) => Promise<void>;
+  run: (
+    context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>,
+    testName?: string
+  ) => Promise<void>;
 
   extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input: TInput
   ): Story<TRenderer, TInput>;
+  test(name: string, fn: TestFunction<TRenderer>): void;
+  test(
+    name: string,
+    annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
+    fn: TestFunction<TRenderer>
+  ): void;
+  __testFunction?: TestFunction<TRenderer>;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -155,7 +168,7 @@ function defineStory<
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
 >(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
   let composed: ComposedStoryFn<TRenderer>;
-
+  input.__tests ??= {};
   const compose = () => {
     if (!composed) {
       composed = composeStory(
@@ -183,12 +196,29 @@ function defineStory<
     get run() {
       return compose().run ?? (async () => {});
     },
+    test(
+      name: string,
+      overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
+      testFn?: TestFunction<TRenderer>
+    ): void {
+      const hasOverrides = typeof overridesOrTestFn !== 'function';
+      const annotations = (hasOverrides ? overridesOrTestFn : {}) as StoryAnnotations<
+        TRenderer,
+        TRenderer['args']
+      >;
+      const testFunction = (hasOverrides ? testFn : overridesOrTestFn) as TestFunction<TRenderer>;
+
+      const testStory = this.extend(annotations);
+      testStory.input.__testFunction = testFunction;
+      this.input.__tests![name] = testStory;
+    },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(
         {
           ...this.input,
           ...input,
-          args: { ...this.input.args, ...input.args },
+          // TODO: Discuss
+          args: { ...(this.composed.args || {}), ...input.args },
           argTypes: combineParameters(this.input.argTypes, input.argTypes),
           afterEach: [
             ...normalizeArrays(this.input?.afterEach ?? []),

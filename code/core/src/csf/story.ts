@@ -533,6 +533,10 @@ export type StoryAnnotations<
 
   /** @deprecated */
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;
+
+  /** @private */
+  __tests?: Record<string, StoryAnnotations<TRenderer, TRenderer['args']>>;
+  __testFunction?: (context: StoryContext<TRenderer>) => Promise<void>;
 } & ({} extends TRequiredArgs ? { args?: TRequiredArgs } : { args: TRequiredArgs });
 
 export type LegacyAnnotatedStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = StoryFn<

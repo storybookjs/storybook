@@ -22,7 +22,7 @@ export const saveBench = async (
   await mkdir(dirName, { recursive: true });
 
   const filePath = join(dirName, fileName);
-  const existing = await readFile(join(dirName, fileName), 'utf8')
+  const existing = await readFile(filePath, 'utf8')
     .then((txt) => JSON.parse(txt))
     .catch(() => ({}));
 

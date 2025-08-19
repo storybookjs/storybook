@@ -1,15 +1,23 @@
 {
   "name": "@storybook/addon-a11y",
   "version": "9.2.0-alpha.3",
-  "description": "Test component compliance with web accessibility standards",
+  "description": "Storybook Addon A11y: Test UI component compliance with WCAG web accessibility standards",
   "keywords": [
     "a11y",
     "accessibility",
-    "addon",
     "storybook",
-    "valid",
-    "verify",
-    "test"
+    "storybook-addon",
+    "test",
+    "axe",
+    "WCAG",
+    "ARIA",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/a11y",
   "bugs": {

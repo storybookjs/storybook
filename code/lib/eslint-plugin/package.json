@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-storybook",
   "version": "9.2.0-alpha.3",
-  "description": "Best practice rules for Storybook",
+  "description": "Storybook ESLint Plugin: Best practice rules for writing stories",
   "keywords": [
     "eslint",
     "eslintplugin",

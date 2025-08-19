@@ -1953,7 +1953,7 @@ describe('CsfFile', () => {
     });
   });
 
-  describe('componenent paths', () => {
+  describe('component paths', () => {
     it('no component', () => {
       const { indexInputs } = loadCsf(
         dedent`
@@ -2398,7 +2398,7 @@ describe('CsfFile', () => {
         `);
       });
 
-      it('story test', () => {
+      it('story test - index snapshot', () => {
         expect(
           parse(
             dedent`
@@ -2406,7 +2406,7 @@ describe('CsfFile', () => {
               const meta = config.meta({ component: 'foo' });
               export default meta;
               export const A = meta.story({ args: { label: 'foo' } })
-              A.test('test name', { args: { label: 'bar' } }, async () => {})
+              A.test('simple test', async () => {})
             `
           )
         ).toMatchInlineSnapshot(`
@@ -2429,6 +2429,33 @@ describe('CsfFile', () => {
                 mount: false
                 moduleMock: false
         `);
+      });
+
+      it('story test - parsing', () => {
+        const data = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export default meta;
+            export const A = meta.story({ args: { label: 'foo' } })
+            A.test('simple test', async () => {})
+            A.test('with overrides', { args: { label: 'bar' } }, async () => {})
+            const runTest = () => {}
+            A.test('with function reference', runTest, async () => {})
+          `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+
+        const storyTests = data._storyTests['A'];
+        expect(storyTests).toHaveLength(3);
+        expect(storyTests[0].name).toBe('simple test');
+        expect(storyTests[1].name).toBe('with overrides');
+        expect(storyTests[2].name).toBe('with function reference');
+        expect(storyTests[0].function).toBeDefined();
+        expect(storyTests[1].function).toBeDefined();
+        expect(storyTests[2].function).toBeDefined();
       });
 
       it('story name', () => {

@@ -119,7 +119,7 @@ export const validateOptions = (args: Args, argTypes: ArgTypes): Args => {
       once.error(dedent`
         Invalid argType: '${key}.options' should be an array.
 
-        More info: https://storybook.js.org/docs/api/arg-types?utm_source=error
+        More info: https://storybook.js.org/docs/api/arg-types?ref=error
       `);
       return allowArg();
     }
@@ -128,7 +128,7 @@ export const validateOptions = (args: Args, argTypes: ArgTypes): Args => {
       once.error(dedent`
         Invalid argType: '${key}.options' should only contain primitives. Use a 'mapping' for complex values.
 
-        More info: https://storybook.js.org/docs/writing-stories/args#mapping-to-complex-arg-values?utm_source=error
+        More info: https://storybook.js.org/docs/writing-stories/args#mapping-to-complex-arg-values?ref=error
       `);
       return allowArg();
     }

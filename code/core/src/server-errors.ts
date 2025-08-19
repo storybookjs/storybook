@@ -218,8 +218,7 @@ export class MissingAngularJsonError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 2,
-      documentation:
-        'https://storybook.js.org/docs/faq#error-no-angularjson-file-found?utm_source=error',
+      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found?ref=error',
       message: dedent`
         An angular.json file was not found in the current working directory: ${data.path}
         Storybook needs it to work properly, so please rerun the command at the root of your project, where the angular.json file is located.`,
@@ -357,13 +356,13 @@ export class MainFileMissingError extends StorybookError {
       storybook: {
         helperMessage:
           'You can pass a --config-dir flag to tell Storybook, where your main.js file is located at.',
-        documentation: 'https://storybook.js.org/docs/configure?utm_source=error',
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
       vitest: {
         helperMessage:
           'You can pass a configDir plugin option to tell where your main.js file is located at.',
         // TODO: add proper docs once available
-        documentation: 'https://storybook.js.org/docs/configure?utm_source=error',
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
     };
     const { documentation, helperMessage } = map[data.source || 'storybook'];
@@ -543,7 +542,7 @@ export class CommonJsConfigNotSupportedError extends StorybookError {
     super({
       category: Category.CLI_AUTOMIGRATE,
       code: 1,
-      documentation: 'https://storybook.js.org/docs/configure/overview#es-modules?utm_source=error',
+      documentation: 'https://storybook.js.org/docs/configure/overview#es-modules?ref=error',
       message: dedent`
         Support for CommonJS Storybook config files has been removed in Storybook 10.0.0.
         Please migrate your config to a valid ESM file.

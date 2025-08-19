@@ -197,7 +197,7 @@ export const buildArgsParam = (initialArgs: Args | undefined, args: Args): strin
     once.warn(dedent`
       Omitted potentially unsafe URL args.
 
-      More info: https://storybook.js.org/docs/writing-stories/args#setting-args-through-the-url?utm_source=error
+      More info: https://storybook.js.org/docs/writing-stories/args#setting-args-through-the-url?ref=error
     `);
     return acc;
   }, {} as Args);

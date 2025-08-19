@@ -28,7 +28,7 @@ describe('StorybookError', () => {
   it('should generate the correct message with internal documentation link', () => {
     const error = new TestError(true);
     const expectedMessage =
-      'This is a test error.\n\nMore info: https://storybook.js.org/error/SB_TEST_CATEGORY_0123?utm_source=error\n';
+      'This is a test error.\n\nMore info: https://storybook.js.org/error/SB_TEST_CATEGORY_0123?ref=error\n';
     expect(error.message).toBe(expectedMessage);
   });
 

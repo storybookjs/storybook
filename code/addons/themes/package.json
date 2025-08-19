@@ -1,15 +1,22 @@
 {
   "name": "@storybook/addon-themes",
   "version": "9.2.0-alpha.3",
-  "description": "Switch between multiple themes for you components in Storybook",
+  "description": "Storybook Themes addon: Switch between themes from the toolbar",
   "keywords": [
     "css",
     "essentials",
+    "storybook",
     "storybook-addon",
-    "storybook-addons",
     "style",
     "themes",
-    "toggle"
+    "toggle",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/themes",
   "bugs": {

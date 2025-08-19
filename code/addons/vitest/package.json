@@ -1,13 +1,20 @@
 {
   "name": "@storybook/addon-vitest",
   "version": "9.2.0-alpha.3",
-  "description": "Storybook addon for testing components",
+  "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
-    "storybook-addons",
-    "addon-vitest",
+    "storybook",
+    "storybook-addon",
     "vitest",
     "testing",
-    "test"
+    "test",
+    "component",
+    "components",
+    "component-testing",
+    "react",
+    "vue",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/vitest",
   "bugs": {

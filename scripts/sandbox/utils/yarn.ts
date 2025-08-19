@@ -17,7 +17,7 @@ export async function setupYarn({ cwd, pnp = false, version = 'classic' }: Setup
   if (version === 'berry' && !pnp) {
     await runCommand('yarn config set nodeLinker node-modules', { cwd });
   }
-  await rm(join(cwd, 'package.json'), { recursive: true, force: true });
+  await rm(join(cwd, 'package.json'), { force: true });
 }
 
 export async function localizeYarnConfigFiles(baseDir: string, beforeDir: string) {

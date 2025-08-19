@@ -161,7 +161,7 @@ const addDocumentation = async (
   const stackblitzConfigPath = join(__dirname, 'templates', '.stackblitzrc');
   const readmePath = join(__dirname, 'templates', 'item.ejs');
 
-  await cp(stackblitzConfigPath, join(afterDir, '.stackblitzrc'), { recursive: true });
+  await cp(stackblitzConfigPath, join(afterDir, '.stackblitzrc'));
 
   const stackblitzUrl = getStackblitzUrl(dirName);
   const contents = await renderTemplate(readmePath, {

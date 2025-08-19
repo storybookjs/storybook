@@ -19,6 +19,7 @@ import type {
   StoryIndexEntry,
   StorybookConfigRaw,
   Tag,
+  TestIndexEntry,
 } from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
@@ -35,7 +36,7 @@ import { autoName } from './autoName';
 import { type IndexStatsSummary, addStats } from './summarizeStats';
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
-type StoryIndexEntryWithExtra = StoryIndexEntry & {
+type StoryIndexEntryWithExtra = (StoryIndexEntry | TestIndexEntry) & {
   extra: { metaId?: string; stats: IndexInputStats };
 };
 /** A .mdx file will produce a docs entry */
@@ -439,8 +440,7 @@ export class StoryIndexGenerator {
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));
         const tags = combineTags(...projectTags, ...(input.tags ?? []));
 
-        return {
-          type: 'story',
+        const commonMetadata = {
           id,
           extra: {
             metaId: input.metaId,
@@ -451,6 +451,20 @@ export class StoryIndexGenerator {
           importPath,
           componentPath,
           tags,
+        };
+
+        if (input.type === 'test') {
+          return {
+            // TODO: change this to 'test' once we start working on UI.
+            type: 'story',
+            parentId: input.parentId,
+            ...commonMetadata,
+          };
+        }
+
+        return {
+          type: 'story',
+          ...commonMetadata,
         };
       });
 

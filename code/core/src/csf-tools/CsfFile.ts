@@ -11,7 +11,7 @@ import {
   types as t,
   traverse,
 } from 'storybook/internal/babel';
-import { isExportStory, sanitize, storyNameFromExport, toId } from 'storybook/internal/csf';
+import { isExportStory, storyNameFromExport, toId, toTestId } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentAnnotations,
@@ -817,12 +817,10 @@ export class CsfFile {
           acc[key].tags = [...(acc[key].tags || []), 'play-fn'];
         }
         const stats = acc[key].__stats;
-        ['play', 'render', 'loaders', 'beforeEach', 'globals', 'tags', 'test'].forEach(
-          (annotation) => {
-            stats[annotation as keyof IndexInputStats] =
-              !!storyAnnotations[annotation] || !!self._metaAnnotations[annotation];
-          }
-        );
+        ['play', 'render', 'loaders', 'beforeEach', 'globals', 'tags'].forEach((annotation) => {
+          stats[annotation as keyof IndexInputStats] =
+            !!storyAnnotations[annotation] || !!self._metaAnnotations[annotation];
+        });
         const storyExport = self.getStoryExport(key);
         stats.storyFn = !!(
           t.isArrowFunctionExpression(storyExport) || t.isFunctionDeclaration(storyExport)
@@ -831,8 +829,12 @@ export class CsfFile {
         stats.moduleMock = !!self.imports.find((fname) => isModuleMock(fname));
 
         if (self._storyTests[key]) {
+          // TODO: if we want to add a tag for the story that contains tests, this is the place for it
+          // acc[key].tags = [...(acc[key].tags || []), 'story-with-tests'];
+
+          stats.tests = true;
           self._storyTests[key].forEach((test) => {
-            test.id = id + ':' + sanitize(test.name);
+            test.id = toTestId(id, test.name);
           });
         }
 
@@ -889,32 +891,32 @@ export class CsfFile {
     Object.entries(this._stories).map(([exportName, story]) => {
       // don't remove any duplicates or negations -- tags will be combined in the index
       const tags = [...(this._meta?.tags ?? []), ...(story.tags ?? [])];
-      index.push({
-        type: 'story',
+      const storyInput = {
         importPath: fileName,
         rawComponentPath: this._rawComponentPath,
         exportName,
-        name: story.name,
         title: this.meta?.title,
         metaId: this.meta?.id,
         tags,
         __id: story.id,
         __stats: story.__stats,
+      };
+
+      index.push({
+        ...storyInput,
+        type: 'story',
+        name: story.name,
       });
 
       if (this._storyTests[exportName]) {
         this._storyTests[exportName].forEach((test) => {
           index.push({
-            type: 'story', // perhaps this becomes type 'test'?
-            importPath: fileName,
-            rawComponentPath: this._rawComponentPath,
-            exportName,
+            ...storyInput,
+            type: 'test',
+            parentId: story.id,
             name: test.name,
-            title: this.meta?.title,
-            metaId: this.meta?.id,
-            tags: [...tags, 'test-fn'],
+            tags: [...storyInput.tags, 'test-fn'],
             __id: test.id,
-            __stats: story.__stats,
           });
         });
       }

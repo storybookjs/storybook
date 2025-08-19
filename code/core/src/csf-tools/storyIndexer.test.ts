@@ -50,10 +50,10 @@ describe('test fn', () => {
     expect(entries).toMatchInlineSnapshot(`
       [
         "A",
-        "A: first one",
-        "A: Second one",
+        "first one",
+        "Second one",
         "B",
-        "B: first one",
+        "first one",
       ]
     `);
   });

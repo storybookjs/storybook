@@ -75,12 +75,17 @@ export type StoryIndexEntry = BaseIndexEntry & {
   type: 'story';
 };
 
+export type TestIndexEntry = BaseIndexEntry & {
+  type: 'test';
+  parentId: StoryId;
+};
+
 export type DocsIndexEntry = BaseIndexEntry & {
   storiesImports: Path[];
   type: 'docs';
 };
 
-export type IndexEntry = StoryIndexEntry | DocsIndexEntry;
+export type IndexEntry = StoryIndexEntry | DocsIndexEntry | TestIndexEntry;
 
 export interface IndexInputStats {
   loaders?: boolean;

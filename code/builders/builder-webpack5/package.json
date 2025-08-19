@@ -41,11 +41,6 @@
       "node": "./dist/loaders/export-order-loader.js",
       "require": "./dist/loaders/export-order-loader.js"
     },
-    "./loaders/test-fn-loader": {
-      "types": "./dist/loaders/test-fn-loader.d.ts",
-      "node": "./dist/loaders/test-fn-loader.js",
-      "require": "./dist/loaders/test-fn-loader.js"
-    },
     "./templates/virtualModuleModernEntry.js": "./templates/virtualModuleModernEntry.js",
     "./templates/preview.ejs": "./templates/preview.ejs",
     "./templates/virtualModuleEntry.template.js": "./templates/virtualModuleEntry.template.js",
@@ -109,8 +104,7 @@
       "./src/index.ts",
       "./src/presets/custom-webpack-preset.ts",
       "./src/presets/preview-preset.ts",
-      "./src/loaders/export-order-loader.ts",
-      "./src/loaders/test-fn-loader.ts"
+      "./src/loaders/export-order-loader.ts"
     ],
     "platform": "node"
   },

@@ -10,34 +10,10 @@ globalPackages.forEach((key) => {
   globalThis[globalsNameReferenceMap[key]] = globalsNameValueMap[key];
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const errorQueue: any[] = [];
-
-const flushErrorQueue = () => {
-  const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
-  if (channel) {
-    errorQueue.forEach((error) => {
-      channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
-    });
-    errorQueue.length = 0;
-    clearInterval(interval);
-  }
-};
-
-const interval: NodeJS.Timeout = setInterval(flushErrorQueue, 1000);
-
-globalThis.sendTelemetryError = (error: any) => {
-  if (shouldSkipError(error)) {
-    return;
-  }
-
-  const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
-
-  if (channel) {
+globalThis.sendTelemetryError = (error) => {
+  if (!shouldSkipError(error)) {
+    const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
     channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
-  } else {
-    // if the channel is not available, we queue the error to be sent later
-    errorQueue.push(error);
   }
 };
 

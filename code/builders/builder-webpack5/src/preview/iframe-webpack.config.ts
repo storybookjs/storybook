@@ -219,16 +219,6 @@ export default async (
           ],
         },
         {
-          test: /\.stories\.(tsx?|jsx?)$/,
-          exclude: /node_modules/,
-          enforce: 'post',
-          use: [
-            {
-              loader: require.resolve('@storybook/builder-webpack5/loaders/test-fn-loader'),
-            },
-          ],
-        },
-        {
           test: /\.m?js$/,
           type: 'javascript/auto',
         },

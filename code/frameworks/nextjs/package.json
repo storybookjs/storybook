@@ -4,7 +4,8 @@
   "description": "Storybook for Next.js: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
-    "nextjs",
+    "next",
+    "next.js",
     "webpack",
     "component",
     "components"

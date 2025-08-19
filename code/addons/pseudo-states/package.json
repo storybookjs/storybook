@@ -1,7 +1,7 @@
 {
   "name": "storybook-addon-pseudo-states",
   "version": "9.2.0-alpha.3",
-  "description": "Manipulate CSS pseudo states in Storybook",
+  "description": "Storybook Pseudo-states addon: Manipulate CSS pseudo states",
   "keywords": [
     "storybook",
     "storybook-addon",

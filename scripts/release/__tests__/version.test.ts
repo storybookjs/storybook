@@ -193,7 +193,6 @@ describe('Version', () => {
     );
 
     expect(fspExtra.writeFile).not.toHaveBeenCalled();
-    expect(fspExtra.writeFile).not.toHaveBeenCalled();
     expect(execaCommand).not.toHaveBeenCalled();
   });
 

@@ -1,9 +1,14 @@
 {
   "name": "@storybook/preact-vite",
   "version": "9.1.2",
-  "description": "Storybook for Preact and Vite: Develop Preact components in isolation with Hot Reloading.",
+  "description": "Storybook for Preact and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-framework",
+    "preact",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/preact-vite",
   "bugs": {

@@ -1,9 +1,15 @@
 {
   "name": "@storybook/builder-webpack5",
   "version": "9.1.2",
-  "description": "Storybook framework-agnostic API",
+  "description": "A Storybook builder to dev and build with Webpack",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-builder",
+    "webpack",
+    "builder",
+    "bundler",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/builders/builder-webpack5",
   "bugs": {

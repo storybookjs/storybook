@@ -1,9 +1,14 @@
 {
   "name": "@storybook/vue3-vite",
   "version": "9.1.2",
-  "description": "Storybook for Vue3 and Vite: Develop Vue3 components in isolation with Hot Reloading.",
+  "description": "Storybook for Vue3 and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-framework",
+    "vue3",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/vue3-vite",
   "bugs": {

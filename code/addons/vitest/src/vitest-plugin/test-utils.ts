@@ -1,6 +1,6 @@
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import { sanitize } from 'storybook/internal/csf';
+import { type Story, isStory, sanitize } from 'storybook/internal/csf';
 import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
@@ -33,7 +33,7 @@ export const convertToFilePath = (url: string): string => {
 
 export const testStory = (
   exportName: string,
-  story: ComposedStoryFn,
+  story: ComposedStoryFn | Story<any>,
   meta: ComponentAnnotations,
   skipTags: string[],
   testName?: string
@@ -67,7 +67,10 @@ export const testStory = (
 
     await setViewport(composedStory.parameters, composedStory.globals);
 
-    await composedStory.run(undefined, testName);
+    if (isStory(story) && testName) {
+      await composedStory.run(undefined, story.getAllTests()[testName].test);
+    }
+    await composedStory.run(undefined);
 
     _task.meta.reports = composedStory.reporting.reports;
   };

@@ -90,11 +90,15 @@ export type NormalizedStoryAnnotations<TRenderer extends Renderer = Renderer> = 
   userStoryFn?: ArgsStoryFn<TRenderer>;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
+  testFunction?: TestFunction<TRenderer, TRenderer['args']>;
 };
 
 export type CSFFile<TRenderer extends Renderer = Renderer> = {
   meta: NormalizedComponentAnnotations<TRenderer>;
-  stories: Record<StoryId, NormalizedStoryAnnotations<TRenderer>>;
+  stories: Record<
+    StoryId,
+    NormalizedStoryAnnotations<TRenderer> & { testFunction?: TestFunction<TRenderer> }
+  >;
   projectAnnotations?: NormalizedProjectAnnotations<TRenderer>;
   moduleExports: ModuleExports;
 };
@@ -115,10 +119,7 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     renderToCanvas?: ProjectAnnotations<TRenderer>['renderToCanvas'];
     usesMount: boolean;
     storyGlobals: Globals;
-    __testFunction?: TestFunction<TRenderer, TRenderer['args']>;
-    /** @private */
-    // TODO: fix the type issue later
-    __tests?: Record<string, StoryAnnotations<any>>;
+    testFunction?: TestFunction<TRenderer, TRenderer['args']>;
   };
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<

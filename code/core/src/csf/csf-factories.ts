@@ -154,6 +154,7 @@ export interface Story<
     annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
     fn: TestFunction<TRenderer>
   ): void;
+  getAllTests(): Record<string, { story: Story<TRenderer>; test: TestFunction<TRenderer> }>;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -165,7 +166,6 @@ function defineStory<
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
 >(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
   let composed: ComposedStoryFn<TRenderer>;
-  input.__tests ??= {};
   const compose = () => {
     if (!composed) {
       composed = composeStory(
@@ -177,6 +177,9 @@ function defineStory<
     }
     return composed;
   };
+
+  const tests: Record<string, { story: Story<TRenderer>; test: TestFunction<TRenderer> }> = {};
+
   return {
     _tag: 'Story',
     input,
@@ -191,27 +194,22 @@ function defineStory<
     get play() {
       return input.play ?? meta.input?.play ?? (async () => {});
     },
-    get run() {
-      return compose().run ?? (async () => {});
+    async run(context, testName?: string) {
+      const composedRun = compose().run;
+      await composedRun(context, tests[testName!]?.test);
     },
     test(
       name: string,
       overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
       testFn?: TestFunction<TRenderer>
     ): void {
-      const hasOverrides = typeof overridesOrTestFn !== 'function';
-      const annotations = (hasOverrides ? overridesOrTestFn : {}) as StoryAnnotations<
-        TRenderer,
-        TRenderer['args']
-      >;
-      const testFunction = (hasOverrides ? testFn : overridesOrTestFn) as TestFunction<TRenderer>;
+      const annotations = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
+      const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
 
-      // A test is a clone of the story + the test function
-      const testStory = this.extend({ ...annotations, tags: ['test-fn'] });
-      testStory.input.__testFunction = testFunction;
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore TODO: Kasper to figure out later
-      this.input.__tests![name] = testStory;
+      tests[name] = {
+        story: this.extend({ ...annotations, tags: [...(annotations.tags ?? []), 'test-fn'] }),
+        test: testFunction,
+      };
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(
@@ -242,6 +240,9 @@ function defineStory<
         },
         this.meta
       );
+    },
+    getAllTests() {
+      return tests;
     },
   };
 }

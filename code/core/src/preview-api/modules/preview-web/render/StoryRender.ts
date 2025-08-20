@@ -209,7 +209,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       unboundStoryFn,
       playFunction,
       runStep,
-      __testFunction,
+      testFunction,
     } = story;
 
     if (forceRemount && !initial) {
@@ -382,9 +382,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         }
       }
 
-      if (__testFunction) {
+      if (testFunction) {
         await this.runPhase(abortSignal, 'testing', async () => {
-          await __testFunction(context);
+          await testFunction(context);
         });
 
         await this.runPhase(abortSignal, 'tested');

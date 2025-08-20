@@ -32,6 +32,7 @@ export type {
   LoaderFunction,
   Parameters,
   PartialStoryFn,
+  TestFunction,
   PlayFunction,
   PlayFunctionContext,
   ProjectAnnotations as BaseProjectAnnotations,

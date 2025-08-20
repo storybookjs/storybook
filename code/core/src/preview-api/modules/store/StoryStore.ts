@@ -209,6 +209,7 @@ export class StoryStore<TRenderer extends Renderer> {
       componentAnnotations,
       csfFile.projectAnnotations ?? this.projectAnnotations
     );
+    // TODO: check type error later
     this.args.setInitial(story);
     this.hooks[story.id] = this.hooks[story.id] || new HooksContext();
     return story;
@@ -242,7 +243,7 @@ export class StoryStore<TRenderer extends Renderer> {
   }
 
   // A prepared story does not include args, globals or hooks. These are stored in the story store
-  // and updated separtely to the (immutable) story.
+  // and updated separately to the (immutable) story.
   getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
     const userGlobals = this.userGlobals.get();
     const { initialGlobals } = this.userGlobals;
@@ -285,11 +286,13 @@ export class StoryStore<TRenderer extends Renderer> {
   ): Record<StoryId, StoryContextForEnhancers<TRenderer>> {
     const { cachedCSFFiles } = this;
 
+    console.log('extract: extracting stories', cachedCSFFiles);
+
     if (!cachedCSFFiles) {
       throw new CalledExtractOnStoreError();
     }
 
-    return Object.entries(this.storyIndex.entries).reduce(
+    const stories = Object.entries(this.storyIndex.entries).reduce(
       (acc, [storyId, { type, importPath }]) => {
         if (type === 'docs') {
           return acc;
@@ -329,5 +332,9 @@ export class StoryStore<TRenderer extends Renderer> {
       },
       {} as Record<string, any>
     );
+
+    console.log('extract: stories', stories);
+
+    return stories;
   }
 }

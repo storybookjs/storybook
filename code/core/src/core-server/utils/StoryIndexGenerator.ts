@@ -19,6 +19,7 @@ import type {
   StoryIndexEntry,
   StorybookConfigRaw,
   Tag,
+  TestIndexEntry,
 } from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
@@ -33,6 +34,9 @@ import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
 import { autoName } from './autoName';
 import { type IndexStatsSummary, addStats } from './summarizeStats';
+
+// TODO: replace line 42 with this once we start working on UI for tests
+// type StoryIndexEntryWithExtra = (StoryIndexEntry | TestIndexEntry) & {
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
 type StoryIndexEntryWithExtra = StoryIndexEntry & {
@@ -439,8 +443,7 @@ export class StoryIndexGenerator {
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));
         const tags = combineTags(...projectTags, ...(input.tags ?? []));
 
-        return {
-          type: 'story',
+        const commonMetadata = {
           id,
           extra: {
             metaId: input.metaId,
@@ -451,6 +454,20 @@ export class StoryIndexGenerator {
           importPath,
           componentPath,
           tags,
+        };
+
+        // TODO: Enable this once we start working on UI for tests
+        // if (input.type === 'test') {
+        //   return {
+        //     type: 'test',
+        //     parentId: input.parentId,
+        //     ...commonMetadata,
+        //   };
+        // }
+
+        return {
+          type: 'story',
+          ...commonMetadata,
         };
       });
 

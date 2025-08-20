@@ -2,6 +2,7 @@ import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-f
 
 import type { SBScalarType, SBType } from './SBType';
 import type { CoreTypes } from './core-annotations';
+import type { Story } from './csf-factories';
 
 export * from './SBType';
 export type StoryId = string;
@@ -284,6 +285,10 @@ export type PlayFunction<TRenderer extends Renderer = Renderer, TArgs = Args> = 
   context: PlayFunctionContext<TRenderer, TArgs>
 ) => Promise<void> | void;
 
+export type TestFunction<TRenderer extends Renderer = Renderer, TArgs = TRenderer['args']> = (
+  context: StoryContext<TRenderer, TArgs>
+) => Promise<void> | void;
+
 // This is the type of story function passed to a decorator -- does not rely on being passed any context
 export type PartialStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   update?: StoryContextUpdate<Partial<TArgs>>
@@ -533,6 +538,11 @@ export type StoryAnnotations<
 
   /** @deprecated */
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;
+
+  /** @private */
+  // TODO: fix the type issue later
+  __tests?: Record<string, Story<any>>;
+  __testFunction?: TestFunction<TRenderer, TRenderer['args']>;
 } & ({} extends TRequiredArgs ? { args?: TRequiredArgs } : { args: TRequiredArgs });
 
 export type LegacyAnnotatedStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = StoryFn<

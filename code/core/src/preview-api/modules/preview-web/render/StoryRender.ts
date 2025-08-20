@@ -40,6 +40,8 @@ export type RenderPhase =
   | 'rendering'
   | 'playing'
   | 'played'
+  | 'testing'
+  | 'tested'
   | 'completing'
   | 'completed'
   | 'afterEach'
@@ -207,6 +209,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       unboundStoryFn,
       playFunction,
       runStep,
+      __testFunction,
     } = story;
 
     if (forceRemount && !initial) {
@@ -377,6 +380,14 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         if (abortSignal.aborted) {
           return;
         }
+      }
+
+      if (__testFunction) {
+        await this.runPhase(abortSignal, 'testing', async () => {
+          await __testFunction(context);
+        });
+
+        await this.runPhase(abortSignal, 'tested');
       }
 
       await this.runPhase(abortSignal, 'completing', async () => {

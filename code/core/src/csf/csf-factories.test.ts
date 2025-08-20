@@ -1,4 +1,4 @@
-import { test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 
 import { definePreview, definePreviewAddon } from './csf-factories';
 
@@ -16,7 +16,9 @@ const addon2 = definePreviewAddon<Addon2Types>({});
 
 const preview = definePreview({ addons: [addon, addon2] });
 
-const meta = preview.meta({});
+const meta = preview.meta({
+  render: () => 'hello',
+});
 
 test('addon parameters are inferred', () => {
   const MyStory = meta.story({
@@ -39,5 +41,36 @@ test('addon parameters are inferred', () => {
         value: 1,
       },
     },
+  });
+});
+
+describe('test function', () => {
+  test('without overrides', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testFn = vi.fn();
+    const testName = 'should run test';
+
+    // register test
+    MyStory.test(testName, testFn);
+    const storyTest = MyStory.input.__tests![testName];
+    expect(storyTest.input.args).toEqual({ label: 'foo' });
+
+    // execute test
+    await storyTest.input.__testFunction?.();
+    expect(testFn).toHaveBeenCalled();
+  });
+  test('with overrides', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testFn = vi.fn();
+    const testName = 'should run test';
+
+    // register test
+    MyStory.test(testName, { args: { label: 'bar' } }, testFn);
+    const storyTest = MyStory.input.__tests![testName];
+    expect(storyTest.input.args).toEqual({ label: 'bar' });
+
+    // execute test
+    await storyTest.input.__testFunction?.();
+    expect(testFn).toHaveBeenCalled();
   });
 });

@@ -1,4 +1,4 @@
-import { sanitize } from 'storybook/internal/csf';
+import { sanitize } from '@storybook/csf';
 
 /**
  * @example storyIdToExportName('some-story') => 'SomeStory'
@@ -19,7 +19,7 @@ export const exportNameToStoryId = (exportName: string) =>
  * @example storyNameToId('Some Long Story Name!') => 'some-long-story-name'
  */
 export const storyNameToId = (name: string) =>
-  // add a space before all caps and use utility from storybook/internal/csf to sanitize the resulting string
+  // add a space before all caps and use utility from @storybook/csf to sanitize the resulting string
   sanitize(name.replace(/([A-Z])/g, ' $1').trim());
 
 /**

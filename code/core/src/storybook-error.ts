@@ -6,6 +6,22 @@ function parseErrorCode({
   return `SB_${category}_${paddedCode}`;
 }
 
+export function appendErrorRef(url: string): string {
+  // Skip if not storybook.js.org OR already has ref=error
+  if (/^(?!.*storybook\.js\.org)|[?&]ref=error\b/.test(url)) {
+    return url;
+  }
+
+  try {
+    const urlObj = new URL(url);
+    urlObj.searchParams.set('ref', 'error');
+    return urlObj.toString();
+  } catch {
+    // Fallback for invalid URLs - return as-is
+    return url;
+  }
+}
+
 export abstract class StorybookError extends Error {
   /** Category of the error. Used to classify the type of error, e.g., 'PREVIEW_API'. */
   public readonly category: string;
@@ -67,11 +83,9 @@ export abstract class StorybookError extends Error {
     if (documentation === true) {
       page = `https://storybook.js.org/error/${parseErrorCode({ code, category })}?ref=error`;
     } else if (typeof documentation === 'string') {
-      page = documentation.includes('storybook.js.org')
-        ? `${documentation}${documentation.includes('?') ? '&' : '?'}ref=error`
-        : documentation;
+      page = appendErrorRef(documentation);
     } else if (Array.isArray(documentation)) {
-      page = `\n${documentation.map((doc) => `\t- ${doc.includes('storybook.js.org') ? `${doc}${doc.includes('?') ? '&' : '?'}ref=error` : doc}`).join('\n')}`;
+      page = `\n${documentation.map((doc) => `\t- ${appendErrorRef(doc)}`).join('\n')}`;
     }
 
     return `${message}${page != null ? `\n\nMore info: ${page}\n` : ''}`;

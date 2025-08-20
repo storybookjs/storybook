@@ -1,3 +1,15 @@
+# v2.0.6 (Wed Aug 20 2025)
+
+#### 🐛 Bug Fix
+
+- docs: Update links to actions docs page [#55](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/55) ([@Sidnioulz](https://github.com/Sidnioulz))
+
+#### Authors: 1
+
+- Steve Dodier-Lazaro ([@Sidnioulz](https://github.com/Sidnioulz))
+
+---
+
 # v2.0.5 (Mon Jun 30 2025)
 
 #### 🐛 Bug Fix

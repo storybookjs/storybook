@@ -102,7 +102,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@chromatic-com/storybook": "^4.0.0",
+    "@chromatic-com/storybook": "^4.1.1",
     "@nx/vite": "20.2.2",
     "@nx/workspace": "20.2.2",
     "@playwright/test": "1.52.0",

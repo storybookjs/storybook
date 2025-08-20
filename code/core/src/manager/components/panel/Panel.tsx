@@ -75,7 +75,7 @@ export const AddonPanel = React.memo<{
               </>
             }
             footer={
-              <Link href={'https://storybook.js.org/integrations?ref=ui'} target="_blank" withArrow>
+              <Link href={'https://storybook.js.org/addons?ref=ui'} target="_blank" withArrow>
                 <DocumentIcon /> Explore integrations catalog
               </Link>
             }

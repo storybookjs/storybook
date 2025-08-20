@@ -67,9 +67,11 @@ export function processCSFFile<TRenderer extends Renderer>(
         if (storyMeta.__tests) {
           Object.entries(storyMeta.__tests).forEach(([testName, test]) => {
             const testId = toTestId(storyMeta.id, testName);
-            // @ts-expect-error We provide the __id parameter because we don't want normalizeStory to calculate the id
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore We provide the __id parameter because we don't want normalizeStory to calculate the id
             test.input.parameters.__id = testId;
-            // @ts-expect-error Check type error later
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore Check type error later
             csfFile.stories[testId] = normalizeStory(testName, test.input, meta);
           });
         }

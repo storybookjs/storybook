@@ -181,7 +181,7 @@ function defineStory<
     _tag: 'Story',
     input,
     meta,
-    // @ts-expect-error this is a privat property used only once in renderers/react/src/preview
+    // @ts-expect-error this is a private property used only once in renderers/react/src/preview
     __compose: compose,
     get composed() {
       const composed = compose();
@@ -209,6 +209,8 @@ function defineStory<
       // A test is a clone of the story + the test function
       const testStory = this.extend({ ...annotations, tags: ['test-fn'] });
       testStory.input.__testFunction = testFunction;
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore TODO: Kasper to figure out later
       this.input.__tests![name] = testStory;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {

@@ -52,6 +52,8 @@ describe('test function', () => {
 
     // register test
     MyStory.test(testName, testFn);
+
+    // @ts-expect-error this is a private property not present in the types
     const storyTest = MyStory.input.__tests![testName];
     expect(storyTest.input.args).toEqual({ label: 'foo' });
 
@@ -66,6 +68,7 @@ describe('test function', () => {
 
     // register test
     MyStory.test(testName, { args: { label: 'bar' } }, testFn);
+    // @ts-expect-error this is a private property not present in the types
     const storyTest = MyStory.input.__tests![testName];
     expect(storyTest.input.args).toEqual({ label: 'bar' });
 

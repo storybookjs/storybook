@@ -158,7 +158,7 @@ export const DocumentNode: FC<ComponentProps<typeof LeafNode> & { docsMode: bool
 );
 
 // TODO: hack stuff, should be done in a new component
-export const StoryNode: FC<ComponentProps<typeof LeafNode> & { type: 'story' | 'test' }> =
+export const StoryNode: FC<ComponentProps<typeof LeafNode> & { type?: 'story' | 'test' }> =
   React.memo(function StoryNode({ theme, children, type = 'story', ...props }) {
     return (
       <LeafNode tabIndex={-1} type={type} {...props}>

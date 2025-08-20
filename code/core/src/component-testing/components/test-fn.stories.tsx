@@ -31,7 +31,7 @@ Default.test('simple', async ({ canvas, userEvent, args }) => {
 const doTest: TestFunction = async ({ canvas, userEvent, args }) => {
   const button = canvas.getByText('Arg from story');
   await userEvent.click(button);
-  // TODO: fix type error later
+  // @ts-expect-error TODO: Fix later with Kasper
   await expect(args.onClick).toHaveBeenCalled();
 };
 Default.test('referring to function in file', doTest);

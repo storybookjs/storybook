@@ -25,6 +25,7 @@ export const Types = () => (
     <ComponentNode>Component</ComponentNode>
     <GroupNode>Group</GroupNode>
     <StoryNode>Story</StoryNode>
+    <StoryNode type="test">Story test</StoryNode>
     <DocumentNode docsMode={false}>Document</DocumentNode>
   </>
 );

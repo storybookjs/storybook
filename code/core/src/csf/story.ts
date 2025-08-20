@@ -540,8 +540,9 @@ export type StoryAnnotations<
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;
 
   /** @private */
-  __tests?: Record<string, Story<TRenderer>>;
-  __testFunction?: TestFunction<TRenderer, TArgs>;
+  // TODO: fix the type issue later
+  __tests?: Record<string, Story<any>>;
+  __testFunction?: TestFunction<TRenderer, TRenderer['args']>;
 } & ({} extends TRequiredArgs ? { args?: TRequiredArgs } : { args: TRequiredArgs });
 
 export type LegacyAnnotatedStoryFn<TRenderer extends Renderer = Renderer, TArgs = Args> = StoryFn<

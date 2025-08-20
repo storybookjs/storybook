@@ -59,15 +59,15 @@ export interface API_TestEntry extends Omit<API_StoryEntry, 'type'> {
   type: 'test';
   parentId: StoryId;
 }
-
-export type API_LeafEntry = API_DocsEntry | API_StoryEntry | API_TestEntry;
+// TODO: enable TestEntry once we start working on UI for tests
+export type API_LeafEntry = API_DocsEntry | API_StoryEntry; // | API_TestEntry;
 export type API_HashEntry =
   | API_RootEntry
   | API_GroupEntry
   | API_ComponentEntry
   | API_DocsEntry
-  | API_StoryEntry
-  | API_TestEntry;
+  | API_StoryEntry;
+// | API_TestEntry;
 
 /**
  * The `IndexHash` is our manager-side representation of the `StoryIndex`. We create entries in the

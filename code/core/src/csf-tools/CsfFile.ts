@@ -917,8 +917,10 @@ export class CsfFile {
         this._storyTests[exportName].forEach((test) => {
           index.push({
             ...storyInput,
-            type: 'test',
-            parentId: story.id,
+            type: 'story',
+            // TODO: enable this once we start working on UI for tests
+            // type: 'test',
+            // parentId: story.id,
             name: test.name,
             tags: [...storyInput.tags, 'test-fn'],
             __id: test.id,

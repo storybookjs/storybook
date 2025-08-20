@@ -35,8 +35,11 @@ import { IndexingError, MultipleIndexingError } from './IndexingError';
 import { autoName } from './autoName';
 import { type IndexStatsSummary, addStats } from './summarizeStats';
 
+// TODO: replace line 42 with this once we start working on UI for tests
+// type StoryIndexEntryWithExtra = (StoryIndexEntry | TestIndexEntry) & {
+
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
-type StoryIndexEntryWithExtra = (StoryIndexEntry | TestIndexEntry) & {
+type StoryIndexEntryWithExtra = StoryIndexEntry & {
   extra: { metaId?: string; stats: IndexInputStats };
 };
 /** A .mdx file will produce a docs entry */
@@ -453,14 +456,14 @@ export class StoryIndexGenerator {
           tags,
         };
 
-        if (input.type === 'test') {
-          return {
-            // TODO: change this to 'test' once we start working on UI.
-            type: 'story',
-            parentId: input.parentId,
-            ...commonMetadata,
-          };
-        }
+        // TODO: Enable this once we start working on UI for tests
+        // if (input.type === 'test') {
+        //   return {
+        //     type: 'test',
+        //     parentId: input.parentId,
+        //     ...commonMetadata,
+        //   };
+        // }
 
         return {
           type: 'story',

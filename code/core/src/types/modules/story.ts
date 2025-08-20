@@ -24,6 +24,7 @@ import type {
   StoryName,
   StrictArgTypes,
   StrictGlobalTypes,
+  TestFunction,
 } from './csf';
 
 // Store Types
@@ -114,9 +115,10 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     renderToCanvas?: ProjectAnnotations<TRenderer>['renderToCanvas'];
     usesMount: boolean;
     storyGlobals: Globals;
-    __testFunction?: (context: StoryContext<TRenderer>) => Promise<void>;
+    __testFunction?: TestFunction<TRenderer, TRenderer['args']>;
     /** @private */
-    __tests?: Record<string, StoryAnnotations<TRenderer, TRenderer['args']>>;
+    // TODO: fix the type issue later
+    __tests?: Record<string, StoryAnnotations<any>>;
   };
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<

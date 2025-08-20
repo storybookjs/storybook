@@ -42,6 +42,8 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
       const story = defineStory(__input);
       // TODO: Are we sure we want this? the Component construct was for
       // compatibility with raw portable stories. We don't actually use this in vitest.
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore this is a private property used only here
       story.Component = story.__compose();
       return story;
     };

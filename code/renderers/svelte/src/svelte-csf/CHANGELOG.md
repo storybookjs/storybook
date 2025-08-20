@@ -1,3 +1,15 @@
+# v5.0.8 (Wed Aug 20 2025)
+
+#### 🐛 Bug Fix
+
+- Expand version range storybook to be compatible with SB10 [#326](https://github.com/storybookjs/addon-svelte-csf/pull/326) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
 # v5.0.7 (Mon Jul 14 2025)
 
 #### 🐛 Bug Fix

@@ -1,13 +1,15 @@
 /* eslint import/prefer-default-export: "off" */
 import { readdirSync } from 'node:fs';
 import { rename as renameAsync } from 'node:fs/promises';
-import { extname } from 'node:path';
+import { extname, join } from 'node:path';
+
+import { resolvePackageDir } from 'storybook/internal/common';
 
 import { sync as spawnSync } from 'cross-spawn';
 
 import { jscodeshiftToPrettierParser } from './lib/utils';
 
-const TRANSFORM_DIR = `${__dirname}/transforms`;
+const TRANSFORM_DIR = join(resolvePackageDir('@storybook/codemod'), 'dist', 'transforms');
 
 export function listCodemods() {
   return readdirSync(TRANSFORM_DIR)
@@ -77,7 +79,7 @@ export async function runCodemod(
     const result = spawnSync(
       'node',
       [
-        require.resolve('jscodeshift/bin/jscodeshift'),
+        join(resolvePackageDir('jscodeshift'), 'bin', 'jscodeshift'),
         // this makes sure codeshift doesn't transform our own source code with babel
         // which is faster, and also makes sure the user won't see babel messages such as:
         // [BABEL] Note: The code generator has deoptimised the styling of repo/node_modules/prettier/index.js as it exceeds the max of 500KB.

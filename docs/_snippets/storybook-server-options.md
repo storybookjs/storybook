@@ -2,8 +2,8 @@
 import { sync } from 'read-pkg-up';
 
 export default {
-  packageJson: sync({ cwd: __dirname }).packageJson,
+  packageJson: sync({ cwd: process.cwd() }).packageJson,
   framework: 'vue',
-  frameworkPresets: [require.resolve('./framework-preset-vue.js')],
+  frameworkPresets: [import.meta.resolve('./framework-preset-vue.js')],
 };
 ```

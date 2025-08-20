@@ -1,3 +1,12 @@
+## 9.1.2
+
+- Addon Docs: Fix Symbol conversion issue in docs page and controls panel - [#32220](https://github.com/storybookjs/storybook/pull/32220), thanks @yannbf!
+- Angular: Fix `entry.polyfills` undefined error - [#32230](https://github.com/storybookjs/storybook/pull/32230), thanks @sk-pub!
+- Angular: Inherit options from browserTarget - [#32108](https://github.com/storybookjs/storybook/pull/32108), thanks @gingeekrishna!
+- Core: Improve addon detection in automigrations on windows - [#31937](https://github.com/storybookjs/storybook/pull/31937), thanks @mrginglymus!
+- Next.js: Return mocked router instead of actual router in useRouter - [#32131](https://github.com/storybookjs/storybook/pull/32131), thanks @JulioJ11!
+- Telemetry: Improve dev cancellation handling - [#32218](https://github.com/storybookjs/storybook/pull/32218), thanks @shilman!
+
 ## 9.1.1
 
 - CLI: Fix throwing in readonly environments - [#31785](https://github.com/storybookjs/storybook/pull/31785), thanks @JReinhold!
@@ -203,7 +212,7 @@ This is a huge release focused on testing and bundle size.
 - 🌐 Story globals
 - 🏗️ Major upgrades: Svelte, Next, React Native, Angular
 
-Please checkout our [Migration guide](https://storybook.js.org/docs/releases/migration-guide) to upgrade from earlier versions of Storybook. To see a comprehensive list of changes that went into 9.0, you can refer to the [9.0 prerelease changelogs](./CHANGELOG.prerelease.md)
+Please checkout our [Migration guide](https://storybook.js.org/docs/9/migration-guide) to upgrade from earlier versions of Storybook. To see a comprehensive list of changes that went into 9.0, you can refer to the [9.0 prerelease changelogs](./CHANGELOG.prerelease.md)
 
 <details>
 <summary>List of all updates</summary>

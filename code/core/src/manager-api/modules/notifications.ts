@@ -1,6 +1,6 @@
 import type { API_Notification } from 'storybook/internal/types';
 
-import { partition } from 'es-toolkit';
+import { partition } from 'es-toolkit/array';
 
 import type { ModuleFn } from '../lib/types';
 

@@ -2,10 +2,11 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { CoreBuilder } from 'storybook/internal/cli';
+
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { CoreBuilder } from '../../../../../core/src/cli/project_types';
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
@@ -26,7 +27,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
       }
     : {};
 
-  const craVersion = packageManager.getModulePackageJSON('react-scripts')?.version ?? null;
+  const craVersion = (await packageManager.getModulePackageJSON('react-scripts'))?.version ?? null;
 
   if (craVersion === null) {
     throw new Error(dedent`

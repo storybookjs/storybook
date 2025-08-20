@@ -7,7 +7,7 @@ const mapping: Record<string, Record<string, string | boolean>> = {
   '<15.0.0': {
     'next/dist/server/request/headers': 'next/dist/client/components/headers',
     // this path only exists from Next 15 onwards
-    'next/dist/server/request/draft-mode': '@storybook/nextjs/dist/compatibility/draft-mode.compat',
+    'next/dist/server/request/draft-mode': '@storybook/nextjs/compatibility/draft-mode.compat',
   },
 };
 

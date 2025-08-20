@@ -1,6 +1,6 @@
 import type { SBType } from 'storybook/internal/types';
 
-import { mapValues } from 'es-toolkit';
+import { mapValues } from 'es-toolkit/object';
 
 import { parseLiteral } from '../utils';
 import type { PTType } from './types';

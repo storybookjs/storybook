@@ -83,7 +83,14 @@ export const useSelectedLayoutSegment = fn(actual.useSelectedLayoutSegment).mock
 export const useSelectedLayoutSegments = fn(actual.useSelectedLayoutSegments).mockName(
   'next/navigation::useSelectedLayoutSegments'
 );
-export const useRouter = fn(actual.useRouter).mockName('next/navigation::useRouter');
+export const useRouter = fn(() => {
+  if (!navigationAPI) {
+    throw new NextjsRouterMocksNotAvailable({
+      importType: 'next/navigation',
+    });
+  }
+  return navigationAPI;
+}).mockName('next/navigation::useRouter');
 export const useServerInsertedHTML = fn(actual.useServerInsertedHTML).mockName(
   'next/navigation::useServerInsertedHTML'
 );

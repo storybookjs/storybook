@@ -1,10 +1,10 @@
 ```js filename=".storybook/my-addon/preset.js" renderer="common" language="js"
-export function config(entry = []) {
-  return [...entry, require.resolve('./defaultParameters')];
+export function previewAnnotations(entry = []) {
+  return [...entry, import.meta.resolve('./defaultParameters')];
 }
 
 export function managerEntries(entries) {
-  return [...entries, require.resolve('./register')];
+  return [...entries, import.meta.resolve('./register')];
 }
 
 export default {

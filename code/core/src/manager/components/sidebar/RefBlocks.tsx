@@ -120,7 +120,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => (
             View error <ChevronDownIcon />
           </Link>
         </WithTooltip>{' '}
-        <Link withArrow href="https://storybook.js.org/docs" cancel={false} target="_blank">
+        <Link withArrow href="https://storybook.js.org/docs?ref=ui" cancel={false} target="_blank">
           View docs
         </Link>
       </TextStyle>

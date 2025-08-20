@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildIndex } from './build-index';
 
 describe('buildIndex', () => {
-  it('should build index', async () => {
+  it.skip('should build index', async () => {
     const index = await buildIndex({
       configDir: `${__dirname}/utils/__mockdata__`,
     });

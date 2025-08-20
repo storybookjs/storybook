@@ -29,7 +29,7 @@ export const parameters = {
 
 The URL you connect to should have the ability to render a story, see [server rendering](#server-rendering) below.
 
-For more information visit: [storybook.js.org](https://storybook.js.org)
+For more information visit: [storybook.js.org](https://storybook.js.org?ref=readme)
 
 ## Writing Stories
 
@@ -230,7 +230,7 @@ Just like CSF stories we can define `argTypes` to specify the controls used in t
 
 ## Addon compatibility
 
-Storybook also comes with a lot of [addons](https://storybook.js.org/addons) and a great API to customize as you wish. As some addons assume the story is rendered in JS, they may not work with `@storybook/server` (yet!).
+Storybook also comes with a lot of [addons](https://storybook.js.org/addons?ref=readme) and a great API to customize as you wish. As some addons assume the story is rendered in JS, they may not work with `@storybook/server` (yet!).
 
 Many addons that act on the manager side (such as `backgrounds` and `viewport`) will work out of the box with `@storybook/server` -- you can configure them with parameters written on the server as usual.
 
@@ -315,3 +315,5 @@ type FetchStoryHtmlType = (
 - id: Id of the story being rendered given by `parameters.server.id`
 - params: Merged story params `parameters.server.params`and story args
 - context: The context of the story
+
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

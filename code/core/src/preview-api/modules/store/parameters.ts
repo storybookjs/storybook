@@ -1,7 +1,7 @@
 // Utilities for handling parameters
 import type { Parameters } from 'storybook/internal/types';
 
-import { isPlainObject } from 'es-toolkit';
+import { isPlainObject } from 'es-toolkit/predicate';
 
 /**
  * Safely combine parameters recursively. Only copy objects when needed. Algorithm = always

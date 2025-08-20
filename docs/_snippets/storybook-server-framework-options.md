@@ -2,9 +2,9 @@
 import { sync } from 'read-pkg-up';
 
 export default {
-  packageJson: sync({ cwd: __dirname }).packageJson,
+  packageJson: sync({ cwd: process.cwd() }).packageJson,
   framework: 'my-framework',
   frameworkPath: '@my-framework/storybook',
-  frameworkPresets: [require.resolve('./framework-preset-my-framework.js')],
+  frameworkPresets: [import.meta.resolve('./framework-preset-my-framework.js')],
 };
 ```

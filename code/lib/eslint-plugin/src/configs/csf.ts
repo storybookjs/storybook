@@ -3,7 +3,7 @@
  * This file has been automatically generated,
  * in order to update its content, execute "yarn update-rules" or rebuild this package.
  */
-export = {
+export default {
   plugins: ['storybook'],
   overrides: [
     {

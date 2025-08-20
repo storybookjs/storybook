@@ -1,12 +1,13 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
-import { isFunction } from 'es-toolkit';
+import { isFunction } from 'es-toolkit/predicate';
 // eslint-disable-next-line depend/ban-dependencies
 import {
   copy,
   ensureDir,
   ensureSymlink,
   existsSync,
+  mkdir,
   pathExists,
   readFile,
   readFileSync,
@@ -18,12 +19,13 @@ import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { babelParse, types as t } from '../../code/core/src/babel';
 import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
-import { JsPackageManagerFactory, versions as storybookPackages } from '../../code/core/src/common';
+import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
+import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
 import { formatConfig, writeConfig } from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
@@ -98,7 +100,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
 
   if (link) {
     await executeCLIStep(steps.link, {
-      argument: sandboxDir,
+      argument: `"${sandboxDir}"`,
       cwd: CODE_DIRECTORY,
       optionValues: { local: true, start: false },
       dryRun,
@@ -155,6 +157,13 @@ export const init: Task['run'] = async (
     extra = { type: 'server' };
   } else if (template.expected.framework === '@storybook/react-native-web-vite') {
     extra = { type: 'react_native_web' };
+  }
+
+  switch (template.expected.framework) {
+    case '@storybook/react-native-web-vite':
+      await prepareReactNativeWebSandbox(cwd);
+      break;
+    default:
   }
 
   await executeCLIStep(steps.init, {
@@ -235,7 +244,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           exclude: /\\.stories\\.mdx$/,
           use: [
             {
-              loader: require.resolve('@storybook/addon-docs/mdx-loader'),
+              loader: '@storybook/addon-docs/mdx-loader',
             },
           ],
         },
@@ -436,7 +445,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       setupFilePath,
       dedent`import { beforeAll } from 'vitest'
       import { setProjectAnnotations } from '${storybookPackage}'
-      import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
+      import * as rendererDocsAnnotations from '${template.expected.renderer}/entry-preview-docs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
       import '../src/stories/components'
       import * as templateAnnotations from '../template-stories/core/preview'
@@ -504,8 +513,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  // FIXME: revert back to `next` once https://github.com/storybookjs/test-runner/pull/560 is merged
-  const extraDevDeps = ['@storybook/test-runner@0.22.1--canary.d4862d0.0'];
+  const extraDevDeps = ['@storybook/test-runner@0.23.1--canary.db60cb3.0'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);
@@ -795,9 +803,9 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   let config = formatConfig(previewConfig);
 
   const mockBlock = [
-    "sb.mock(import('../template-stories/core/test/ModuleMocking.utils'));",
-    "sb.mock(import('../template-stories/core/test/ModuleSpyMocking.utils'), { spy: true });",
-    "sb.mock(import('../template-stories/core/test/ModuleAutoMocking.utils'));",
+    "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
+    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
+    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
     "sb.mock(import('lodash-es'));",
     "sb.mock(import('lodash-es/add'));",
     "sb.mock(import('lodash-es/sum'));",
@@ -839,6 +847,14 @@ export async function setImportMap(cwd: string) {
   };
 
   await writeJson(join(cwd, 'package.json'), packageJson, { spaces: 2 });
+}
+
+async function prepareReactNativeWebSandbox(cwd: string) {
+  // Make it so that RN sandboxes have stories in src/stories similar to
+  // other react sandboxes, for consistency.
+  if (!(await pathExists(join(cwd, 'src')))) {
+    await mkdir(join(cwd, 'src'));
+  }
 }
 
 async function prepareAngularSandbox(cwd: string, templateName: string) {

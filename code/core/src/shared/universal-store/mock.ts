@@ -1,6 +1,6 @@
 import { Channel } from 'storybook/internal/channels';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { UniversalStore } from '.';
 import type { StoreOptions } from './types';

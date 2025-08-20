@@ -4,7 +4,7 @@ import {
   getVariableMetasBySpecifier,
   isDefined,
   removeTransformedVariableDeclarations,
-  replaceImportWithParamterImport,
+  replaceImportWithParameterImport,
 } from './helpers';
 
 type Babel = typeof BabelCoreNamespace;
@@ -53,7 +53,7 @@ export default function TransformFontImports({ types }: Babel): BabelCoreNamespa
           const variableMetas = getVariableMetasBySpecifier(program, types, specifier);
 
           removeTransformedVariableDeclarations(path, types, variableMetas);
-          replaceImportWithParamterImport(path, types, source, variableMetas, filename);
+          replaceImportWithParameterImport(path, types, source, variableMetas, filename);
         }
 
         if (source.value === 'next/font/google' || source.value === '@next/font/google') {
@@ -72,7 +72,7 @@ export default function TransformFontImports({ types }: Babel): BabelCoreNamespa
             .filter(isDefined);
 
           removeTransformedVariableDeclarations(path, types, variableMetas);
-          replaceImportWithParamterImport(path, types, source, variableMetas, filename);
+          replaceImportWithParameterImport(path, types, source, variableMetas, filename);
         }
       },
     },

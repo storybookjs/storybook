@@ -213,7 +213,7 @@ export const computeStorybookMetadata = async ({
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
-  const storybookInfo = getStorybookInfo(configDir);
+  const storybookInfo = await getStorybookInfo(configDir);
 
   try {
     const { previewConfigPath: previewConfig } = storybookInfo;

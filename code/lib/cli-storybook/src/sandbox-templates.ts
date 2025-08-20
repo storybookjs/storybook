@@ -378,11 +378,9 @@ export const baseTemplates = {
     script: 'npx degit solidjs/templates/js {{beforeDir}}',
     expected: {
       framework: 'storybook-solidjs-vite',
-      renderer: 'storybook-solidjs',
+      renderer: 'storybook-solidjs-vite',
       builder: '@storybook/builder-vite',
     },
-    // TODO: remove this once solid-vite framework is released
-    inDevelopment: true,
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
   'solid-vite/default-ts': {
@@ -390,11 +388,9 @@ export const baseTemplates = {
     script: 'npx degit solidjs/templates/ts {{beforeDir}}',
     expected: {
       framework: 'storybook-solidjs-vite',
-      renderer: 'storybook-solidjs',
+      renderer: 'storybook-solidjs-vite',
       builder: '@storybook/builder-vite',
     },
-    // TODO: remove this once solid-vite framework is released
-    inDevelopment: true,
     skipTasks: ['e2e-tests', 'bench'],
   },
   'vue3-vite/default-js': {
@@ -786,7 +782,7 @@ export const normal: TemplateKey[] = [
   'react-vite/default-ts',
   'angular-cli/default-ts',
   'vue3-vite/default-ts',
-  // 'nuxt-vite/default-ts',
+  // 'nuxt-vite/default-ts', // temporarily disabled because it's broken
   'lit-vite/default-ts',
   'svelte-vite/default-ts',
   'svelte-kit/skeleton-ts',

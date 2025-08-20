@@ -1,51 +1,38 @@
-# Storybook Core
+<p align="center">
+  <a href="https://storybook.js.org/?ref=readme">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/263385/199832481-bbbf5961-6a26-481d-8224-51258cce9b33.png">
+      <img src="https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png" alt="Storybook" width="400" />
+    </picture>
+    
+  </a>
+  
+</p>
 
-The `@storybook/core` package is the core of Storybook. It is responsible for the following:
+<p align="center">Build bulletproof UI components faster</p>
 
-- the main UI of storybook
-- the UI used by addons
-- the API used by addons
-- the API used by the CLI
-- the API used by the server
-- prebundled code used by the browser
-- static assets used by the browser
-- utilities for CSF, MDX & Docs
+<br/>
 
-## Private package
+<p align="center">
+Storybook is a frontend workshop for building UI components and pages in isolation. Thousands of teams use it for UI development, testing, and documentation. Find out more at <a href="https://storybook.js.org/?ref=readme">storybook.js.org</a>!
+</p>
 
-This package is not intended to be used by anyone but storybook internally.
+<center>
+  <img src="https://raw.githubusercontent.com/storybookjs/storybook/refs/heads/release-6-5/media/storybook-intro.gif" width="100%" />
+</center>
 
-Even though this is where all of the code is located, it is NOT to be the entry point when using functionality within!
+---
 
-Consumers of the code should import like so:
+# Storybook
 
-```ts
-import { addons } from 'storybook/manager-api';
-```
+The `storybook` package contains Storybook's core. It includes:
 
-Importing from `@storybook/core` is explicitly NOT supported; it WILL break in a future version of storybook, very likely in a non-major version bump.
+- Storybook's CLI and development server
+- Storybook's main UI (aka "the manager")
+- Core functionality including component controls, toolbar controls, action logging, viewport control, and interaction debugger
+- User-facing utility libraries such as `storybook/test`, `theming`, and `viewport`
+- Libraries used by Storybook's ecosystem of frameworks, addons, and builders
 
-# For maintainers
+It also contains a variety of other libraries and utilities under the `stroybook/internal` namespace, such as utilities for CSF, MDX & Docs.
 
-## When to use `@storybook/core`
-
-In the following packages you should import from `@storybook/core` (and ONLY from `@storybook/core`):
-
-- `@storybook/core`
-- `@storybook/codemod`
-
-To prevent cyclical dependencies, these packages cannot depend on the `storybook` package.
-
-## When to use `storybook/internal`
-
-In every other package you should import from `storybook/internal` (and ONLY from `storybook/internal`).
-
-The heuristic is simple:
-
-> If you see a peerDependency on `storybook` in the `package.json` of the package you are working on, you should import from `storybook/internal`.
-
-## The 1 exception: the `storybook` package itself
-
-The sole exception is the `storybook` package itself.
-
-Obviously, the `storybook` package cannot depend on itself, so it must import from `@storybook/core`.
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

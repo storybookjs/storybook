@@ -139,7 +139,6 @@ export interface Story<
     name: string;
   };
   meta: Meta<TRenderer>;
-  __compose: () => ComposedStoryFn<TRenderer>;
   play: TInput['play'];
   run: (
     context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>,
@@ -155,7 +154,6 @@ export interface Story<
     annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
     fn: TestFunction<TRenderer>
   ): void;
-  __testFunction?: TestFunction<TRenderer>;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -183,6 +181,7 @@ function defineStory<
     _tag: 'Story',
     input,
     meta,
+    // @ts-expect-error this is a privat property used only once in renderers/react/src/preview
     __compose: compose,
     get composed() {
       const composed = compose();

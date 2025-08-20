@@ -40,6 +40,8 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
     const defineStory = meta.story.bind(meta);
     meta.story = (__input: any) => {
       const story = defineStory(__input);
+      // TODO: Are we sure we want this? the Component construct was for
+      // compatibility with raw portable stories. We don't actually use this in vitest.
       story.Component = story.__compose();
       return story;
     };

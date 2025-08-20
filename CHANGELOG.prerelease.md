@@ -1,3 +1,8 @@
+## 10.0.0-beta.1
+
+- Next.js: Fix version mismatch error in Webpack - [#32306](https://github.com/storybookjs/storybook/pull/32306), thanks @valentinpalkovic!
+- Update: Satellite repos after major version bump - [#32303](https://github.com/storybookjs/storybook/pull/32303), thanks @ndelangen!
+
 ## 10.0.0-beta.0
 
 - Core: Fix staticCopy not copying `index.html` to sub directory - [#32259](https://github.com/storybookjs/storybook/pull/32259), thanks @ndelangen!

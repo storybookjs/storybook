@@ -1,7 +1,7 @@
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import { type Story, isStory, sanitize } from 'storybook/internal/csf';
-import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
+import { type Meta, type Story, isStory, sanitize } from 'storybook/internal/csf';
+import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
@@ -33,8 +33,8 @@ export const convertToFilePath = (url: string): string => {
 
 export const testStory = (
   exportName: string,
-  story: ComposedStoryFn | Story<any>,
-  meta: ComponentAnnotations,
+  story: ComposedStoryFn | Story<Renderer>,
+  meta: ComponentAnnotations | Meta<Renderer>,
   skipTags: string[],
   testName?: string
 ) => {

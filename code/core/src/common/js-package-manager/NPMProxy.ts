@@ -76,7 +76,7 @@ export class NPMProxy extends JsPackageManager {
     return `npx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
-  getModulePackageJSON(packageName: string): PackageJson | null {
+  async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const packageJsonPath = findUpSync(
       (dir) => {
         const possiblePath = join(dir, 'node_modules', packageName, 'package.json');

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
@@ -141,7 +142,7 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  public getModulePackageJSON(packageName: string): PackageJson | null {
+  public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
       cwd: this.primaryPackageJson.operationDir,
       stopAt: getProjectRoot(),
@@ -149,7 +150,7 @@ export class PNPMProxy extends JsPackageManager {
 
     if (pnpapiPath) {
       try {
-        const pnpApi = require(pnpapiPath);
+        const pnpApi = await import(pathToFileURL(pnpapiPath).href);
 
         const resolvedPath = pnpApi.resolveToUnqualified(packageName, this.cwd, {
           considerBuiltins: false,

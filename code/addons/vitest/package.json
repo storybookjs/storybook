@@ -1,13 +1,20 @@
 {
   "name": "@storybook/addon-vitest",
   "version": "9.2.0-alpha.3",
-  "description": "Storybook addon for testing components",
+  "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
-    "storybook-addons",
-    "addon-vitest",
+    "storybook",
+    "storybook-addon",
     "vitest",
     "testing",
-    "test"
+    "test",
+    "component",
+    "components",
+    "component-testing",
+    "react",
+    "vue",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/vitest",
   "bugs": {
@@ -23,6 +30,7 @@
     "url": "https://opencollective.com/storybook"
   },
   "license": "MIT",
+  "type": "module",
   "imports": {
     "#manager-store": {
       "storybook": "./src/manager-store.mock.ts",
@@ -32,46 +40,20 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
+    "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
+    "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
+    "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
+    "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json",
+    "./postinstall": "./dist/postinstall.js",
+    "./preset": "./dist/preset.js",
+    "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",
-      "import": "./dist/vitest-plugin/index.mjs",
-      "require": "./dist/vitest-plugin/index.js"
-    },
-    "./internal/global-setup": {
-      "types": "./dist/vitest-plugin/global-setup.d.ts",
-      "import": "./dist/vitest-plugin/global-setup.mjs",
-      "require": "./dist/vitest-plugin/global-setup.js"
-    },
-    "./internal/setup-file": {
-      "types": "./dist/vitest-plugin/setup-file.d.ts",
-      "import": "./dist/vitest-plugin/setup-file.mjs"
-    },
-    "./internal/test-utils": {
-      "types": "./dist/vitest-plugin/test-utils.d.ts",
-      "import": "./dist/vitest-plugin/test-utils.mjs",
-      "require": "./dist/vitest-plugin/test-utils.js"
-    },
-    "./internal/coverage-reporter": {
-      "types": "./dist/node/coverage-reporter.d.ts",
-      "import": "./dist/node/coverage-reporter.mjs",
-      "require": "./dist/node/coverage-reporter.js"
-    },
-    "./manager": "./dist/manager.js",
-    "./preset": "./dist/preset.js",
-    "./postinstall": "./dist/postinstall.js",
-    "./package.json": "./package.json"
-  },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "dist/index.d.ts"
-      ]
+      "default": "./dist/vitest-plugin/index.js"
     }
   },
   "files": [
@@ -86,8 +68,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
@@ -140,54 +122,6 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts",
-      "./src/vitest-plugin/test-utils.ts",
-      "./src/vitest-plugin/setup-file.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ],
-    "nodeEntries": [
-      "./src/preset.ts",
-      "./src/postinstall.ts",
-      {
-        "file": "./src/dummy.ts",
-        "formats": [
-          "esm"
-        ]
-      },
-      {
-        "file": "./src/node/vitest.ts",
-        "formats": [
-          "esm",
-          "cjs"
-        ]
-      },
-      {
-        "file": "./src/node/coverage-reporter.ts",
-        "formats": [
-          "esm",
-          "cjs"
-        ]
-      },
-      {
-        "file": "./src/vitest-plugin/index.ts",
-        "formats": [
-          "cjs",
-          "esm"
-        ]
-      },
-      {
-        "file": "./src/vitest-plugin/global-setup.ts",
-        "formats": [
-          "cjs",
-          "esm"
-        ]
-      }
-    ]
   },
   "storybook": {
     "displayName": "Test",

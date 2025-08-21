@@ -13,13 +13,13 @@ import type { Link } from '../../../components/components/tooltip/TooltipLinkLis
 const BUILT_IN_TAGS_SHOW = new Set(['play-fn']);
 
 const Wrapper = styled.div({
-  minWidth: 180,
-  maxWidth: 220,
+  minWidth: 200,
+  maxWidth: 300,
 });
 
 interface TagsFilterPanelProps {
   api: API;
-  allTags: Tag[];
+  allTags: Map<Tag, number>;
   selectedTags: Tag[];
   toggleTag: (tag: Tag) => void;
   setAllTags: (selected: boolean) => void;
@@ -34,7 +34,7 @@ export const TagsFilterPanel = ({
   setAllTags,
   isDevelopment,
 }: TagsFilterPanelProps) => {
-  const userTags = allTags.filter((tag) => !BUILT_IN_TAGS_SHOW.has(tag));
+  const userTags = Array.from(allTags.keys()).filter((tag) => !BUILT_IN_TAGS_SHOW.has(tag));
   const docsUrl = api.getDocsUrl({ subpath: 'writing-stories/tags#filtering-by-custom-tags' });
 
   const selectAllTags = {
@@ -56,16 +56,19 @@ export const TagsFilterPanel = ({
   };
 
   const groups = [
-    [allTags.length ? (selectedTags.length ? unselectAllTags : selectAllTags) : noTags],
-    allTags.map((tag) => {
-      const checked = selectedTags.includes(tag);
-      const id = `tag-${tag}`;
-      return {
-        id,
-        title: tag,
-        input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} />,
-      };
-    }),
+    [allTags.size ? (selectedTags.length ? unselectAllTags : selectAllTags) : noTags],
+    Array.from(allTags.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([tag, count]) => {
+        const checked = selectedTags.includes(tag);
+        const id = `tag-${tag}`;
+        return {
+          id,
+          title: tag,
+          right: count,
+          input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} />,
+        };
+      }),
   ] as Link[][];
 
   if (userTags.length === 0 && isDevelopment) {

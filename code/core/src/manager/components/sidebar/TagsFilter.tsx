@@ -74,11 +74,11 @@ export const TagsFilter = ({
   const allTags = Object.values(indexJson.entries).reduce((acc, entry) => {
     entry.tags?.forEach((tag: Tag) => {
       if (!BUILT_IN_TAGS_HIDE.has(tag)) {
-        acc.add(tag);
+        acc.set(tag, (acc.get(tag) || 0) + 1);
       }
     });
     return acc;
-  }, new Set<Tag>());
+  }, new Map<Tag, number>());
 
   const toggleTag = useCallback(
     (tag: string) => {
@@ -93,7 +93,7 @@ export const TagsFilter = ({
   const setAllTags = useCallback(
     (selected: boolean) => {
       if (selected) {
-        setSelectedTags(Array.from(allTags));
+        setSelectedTags(Array.from(allTags.keys()));
       } else {
         setSelectedTags([]);
       }
@@ -114,9 +114,6 @@ export const TagsFilter = ({
     return null;
   }
 
-  const tags = Array.from(allTags);
-  tags.sort();
-
   return (
     <WithTooltip
       placement="bottom"
@@ -125,7 +122,7 @@ export const TagsFilter = ({
       tooltip={() => (
         <TagsFilterPanel
           api={api}
-          allTags={tags}
+          allTags={allTags}
           selectedTags={selectedTags}
           toggleTag={toggleTag}
           setAllTags={setAllTags}

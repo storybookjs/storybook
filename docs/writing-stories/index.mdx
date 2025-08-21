@@ -153,7 +153,6 @@ If you need to customize the rendering of your story, you can provide a snippet 
 
 For example, if you want to render a `Button` inside an `Alert`:
 
-{/* TODO: Snippetize */}
 ```svelte title="Button.stories.svelte"
 <Story
   name="Primary in alert"
@@ -178,7 +177,6 @@ Note how the template snippet or `render` function spreads `args` onto the Butto
 
 You can re-use the same render function across stories by applying it at the meta level. For Svelte CSF, this can be done by defining the template snippet outside of the story and assigning it to the `render` property of the `defineMeta` function. For CSF, you can define a `render` function in the default export.
 
-{/* TODO: Snippetize */}
 ```svelte title="Button.stories.svelte"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -214,32 +212,7 @@ By default, stories will render the component defined in the meta (default expor
 
 For example, if you want to render a `Button` inside an `Alert`, you can define a custom render function like this:
 
-{/* TODO: Snippetize */}
-```tsx title="Button.stories.tsx"
-import { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const PrimaryInAlert: Story = {
-  args: {
-    primary: true,
-    label: 'Button',
-  },
-  render: (args) => (
-    <Alert>
-      Alert text
-      <Button {...args} />
-    </Alert>
-  ),
-};
-```
+<CodeSnippets path="render-custom-in-story.md" />
 
 <Callout variant="info">
 
@@ -249,38 +222,7 @@ Note how the `render` function spreads `args` onto the Button component. This en
 
 You can re-use the same render function across stories by applying it at the meta level:
 
-{/* TODO: Snippetize */}
-```tsx title="Button.stories.tsx"
-import { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-  render: (args) => (
-    <Alert>
-      Alert text
-      <Button {...args} />
-    </Alert>
-  ),
-} satisfies Meta<typeof Button>;
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const DefaultInAlert: Story = {
-  args: {
-    label: 'Button',
-  },
-};
-
-export const PrimaryInAlert: Story = {
-  args: {
-    primary: true,
-    label: 'Button',
-  },
-};
-```
+<CodeSnippets path="render-custom-in-meta.md" />
 
 Whatever you define at the meta level can be overridden at the story level, so you can still customize the rendering of individual stories if needed.
 

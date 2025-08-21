@@ -9,6 +9,7 @@ const meta = {
   title: 'Sidebar/TagsFilterPanel',
   args: {
     toggleTag: fn(),
+    setAllTags: fn(),
     api: {
       getDocsUrl: () => 'https://storybook.js.org/docs/',
     } as any,

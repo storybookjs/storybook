@@ -1,12 +1,12 @@
 import React from 'react';
 
-import { TooltipLinkList } from 'storybook/internal/components';
+import { Form, TooltipLinkList } from 'storybook/internal/components';
 import type { Tag } from 'storybook/internal/types';
 
-import { ShareAltIcon } from '@storybook/icons';
+import { BatchAcceptIcon, CloseIcon, DocumentIcon, ShareAltIcon } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
+import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 
@@ -22,6 +22,7 @@ interface TagsFilterPanelProps {
   allTags: Tag[];
   selectedTags: Tag[];
   toggleTag: (tag: Tag) => void;
+  setAllTags: (selected: boolean) => void;
   isDevelopment: boolean;
 }
 
@@ -30,54 +31,50 @@ export const TagsFilterPanel = ({
   allTags,
   selectedTags,
   toggleTag,
+  setAllTags,
   isDevelopment,
 }: TagsFilterPanelProps) => {
   const userTags = allTags.filter((tag) => !BUILT_IN_TAGS_SHOW.has(tag));
   const docsUrl = api.getDocsUrl({ subpath: 'writing-stories/tags#filtering-by-custom-tags' });
 
+  const selectAllTags = {
+    id: 'select-all',
+    title: 'Select all tags',
+    icon: <BatchAcceptIcon />,
+    onClick: () => setAllTags(true),
+  };
+  const unselectAllTags = {
+    id: 'unselect-all',
+    title: 'Clear selection',
+    icon: <CloseIcon />,
+    onClick: () => setAllTags(false),
+  };
+  const noTags = {
+    id: 'no-tags',
+    title: 'There are no tags. Use tags to organize and filter your Storybook.',
+    isIndented: false,
+  };
+
   const groups = [
+    [allTags.length ? (selectedTags.length ? unselectAllTags : selectAllTags) : noTags],
     allTags.map((tag) => {
       const checked = selectedTags.includes(tag);
       const id = `tag-${tag}`;
       return {
         id,
         title: tag,
-        right: (
-          <input
-            type="checkbox"
-            id={id}
-            name={id}
-            value={tag}
-            checked={checked}
-            onChange={() => {
-              // The onClick handler higher up the tree will handle the toggle
-              // For controlled inputs, a onClick handler is needed, though
-              // Accessibility-wise this isn't optimal, but I guess that's a limitation
-              // of the current design of TooltipLinkList
-            }}
-          />
-        ),
-        onClick: () => toggleTag(tag),
+        input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} />,
       };
     }),
   ] as Link[][];
-
-  if (allTags.length === 0) {
-    groups.push([
-      {
-        id: 'no-tags',
-        title: 'There are no tags. Use tags to organize and filter your Storybook.',
-        isIndented: false,
-      },
-    ]);
-  }
 
   if (userTags.length === 0 && isDevelopment) {
     groups.push([
       {
         id: 'tags-docs',
         title: 'Learn how to add tags',
-        icon: <ShareAltIcon />,
+        icon: <DocumentIcon />,
+        right: <ShareAltIcon />,
         href: docsUrl,
       },
     ]);

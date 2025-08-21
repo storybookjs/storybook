@@ -90,6 +90,16 @@ export const TagsFilter = ({
     },
     [selectedTags, setSelectedTags]
   );
+  const setAllTags = useCallback(
+    (selected: boolean) => {
+      if (selected) {
+        setSelectedTags(Array.from(allTags));
+      } else {
+        setSelectedTags([]);
+      }
+    },
+    [allTags, setSelectedTags]
+  );
 
   const handleToggleExpand = useCallback(
     (event: React.SyntheticEvent<Element, Event>): void => {
@@ -118,6 +128,7 @@ export const TagsFilter = ({
           allTags={tags}
           selectedTags={selectedTags}
           toggleTag={toggleTag}
+          setAllTags={setAllTags}
           isDevelopment={isDevelopment}
         />
       )}

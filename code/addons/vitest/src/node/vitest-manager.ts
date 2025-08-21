@@ -269,8 +269,22 @@ export class VitestManager {
 
     const isSingleStoryRun = runPayload.storyIds?.length === 1;
     if (isSingleStoryRun) {
-      const storyName = stories[0].name;
-      const regex = new RegExp(`^${storyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+      const selectedStory = stories[0];
+      const storyName = selectedStory.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Use case 1: Single story run on a story without tests
+      let regex: RegExp = new RegExp(`^${storyName}$`);
+
+      if (selectedStory.tags?.includes('test-fn')) {
+        // in this case the regex pattern should be the story parentName + story.name
+        // @ts-expect-error TODO: fix this
+        const parentName = selectedStory.parentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Use case 2: Single story run on a specific story test
+        regex = new RegExp(`^${parentName} ${storyName}$`);
+      } else if (selectedStory.tags?.includes('has-tests')) {
+        // Use case 3: "Single" story run on a story with tests
+        // -> run all tests of that story, as storyName is a describe block
+        regex = new RegExp(`^${storyName} `);
+      }
       this.vitest!.setGlobalTestNamePattern(regex);
     }
 

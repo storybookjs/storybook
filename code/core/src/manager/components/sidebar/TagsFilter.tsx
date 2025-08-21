@@ -26,6 +26,15 @@ const Wrapper = styled.div({
   position: 'relative',
 });
 
+// Temporary to prevent regressions until TagFilterPanel can be refactored.
+const StyledIconButton = styled(IconButton)<{ active: boolean }>(({ active, variant, theme }) => ({
+  ...(active &&
+    variant === 'ghost' && {
+      background: theme.background.hoverable,
+      color: theme.color.secondary,
+    }),
+}));
+
 const TagSelected = styled(Badge)(({ theme }) => ({
   position: 'absolute',
   top: 7,
@@ -104,30 +113,11 @@ export const TagsFilter = ({
     return null;
   }
 
-  const tagOptions = useMemo(() => {
-    return Array.from(allTags)
-      .sort()
-      .map((tag) => ({
-        title: tag,
-        value: tag,
-      }));
-  }, [allTags]);
-
   const tags = Array.from(allTags);
   tags.sort();
 
   return (
     <>
-      <Select
-        key="tags-select"
-        ariaLabel="Tag filters"
-        description="Filter the items shown in a sidebar based on the tags applied to them."
-        options={tagOptions}
-        defaultOptions={selectedTags}
-        multiSelect
-      >
-        <FilterIcon />
-      </Select>
       <WithTooltip
         placement="bottom"
         trigger="click"
@@ -144,7 +134,7 @@ export const TagsFilter = ({
         closeOnOutsideClick
       >
         <Wrapper>
-          <IconButton
+          <StyledIconButton
             key="tags"
             ariaLabel="Tag filters"
             description="Filter the items shown in a sidebar based on the tags applied to them."
@@ -152,7 +142,7 @@ export const TagsFilter = ({
             onClick={handleToggleExpand}
           >
             <FilterIcon />
-          </IconButton>
+          </StyledIconButton>
           {selectedTags.length > 0 && <TagSelected />}
         </Wrapper>
       </WithTooltip>

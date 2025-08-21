@@ -56,9 +56,7 @@ export const remountTool: Addon_BaseType = {
         return (
           <StyledAnimatedIconButton
             key="remount"
-            // FIXME: copy check, "reload story" / "reload preview area" / "reload content"
-            // NOTE: both story and component are technically incorrect as this can also contain docs.
-            ariaLabel="Remount component"
+            ariaLabel="Reload story"
             onClick={remountComponent}
             onAnimationEnd={() => setIsAnimating(false)}
             animating={isAnimating}

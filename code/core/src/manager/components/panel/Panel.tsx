@@ -87,7 +87,12 @@ export const AddonPanel = React.memo<{
                 <IconButton
                   key="position"
                   onClick={actions.togglePosition}
-                  ariaLabel="Change addon orientation"
+                  ariaLabel={
+                    panelPosition === 'bottom'
+                      ? 'Move addon panel to right'
+                      : 'Move addon panel to bottom'
+                  }
+                  description="Changes the location of the addon panel to the bottom or right of the screen, but does not have any effect on its content."
                   shortcut={shortcuts.panelPosition}
                 >
                   {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
@@ -95,7 +100,7 @@ export const AddonPanel = React.memo<{
                 <IconButton
                   key="visibility"
                   onClick={actions.toggleVisibility}
-                  ariaLabel="Hide addons"
+                  ariaLabel="Hide addon panel"
                   shortcut={shortcuts.togglePanel}
                 >
                   <CloseIcon />

@@ -1,14 +1,6 @@
 import React from 'react';
 
-import {
-  Bar as BaseBar,
-  Button,
-  Form,
-  IconButton,
-  Modal,
-  TooltipNote,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { Bar as BaseBar, Button, Form, Modal } from 'storybook/internal/components';
 
 import { AddIcon, CheckIcon, UndoIcon } from '@storybook/icons';
 
@@ -153,6 +145,9 @@ export const SaveStory = ({
     }
   };
 
+  const saveLabel = saving ? 'Saving changes to story' : 'Save changes to story';
+  const createLabel = 'Create new story with these settings';
+
   return (
     <Container id="save-from-controls">
       <Bar>
@@ -163,21 +158,12 @@ export const SaveStory = ({
         </Info>
 
         <Actions>
-          <Button
-            ariaLabel={saving ? 'Saving changes to story' : 'Save changes to story'}
-            tooltip="Save changes to story"
-            disabled={saving}
-            onClick={onSaveStory}
-          >
+          <Button ariaLabel={saveLabel} tooltip={saveLabel} disabled={saving} onClick={onSaveStory}>
             <CheckIcon />
             <Label data-short-label="Save">Update story</Label>
           </Button>
 
-          <Button
-            ariaLabel="Create new story with these settings"
-            tooltip="Create new story with these settings"
-            onClick={onShowForm}
-          >
+          <Button ariaLabel={createLabel} tooltip={createLabel} onClick={onShowForm}>
             <AddIcon />
             <Label data-short-label="New">Create new story</Label>
           </Button>

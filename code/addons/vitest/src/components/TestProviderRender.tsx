@@ -6,8 +6,6 @@ import {
   ListItem,
   ProgressSpinner,
   ToggleIconButton,
-  TooltipNote,
-  WithTooltip,
 } from 'storybook/internal/components';
 import type { API_HashEntry, TestProviderState } from 'storybook/internal/types';
 

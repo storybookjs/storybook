@@ -228,7 +228,7 @@ export const Interaction = ({
           {(childCallIds?.length ?? 0) > 0 && (
             <StyledIconButton
               onClick={toggleCollapsed}
-              ariaLabel={`${isCollapsed ? 'Show' : 'Hide'} step interactions`}
+              ariaLabel={`${isCollapsed ? 'Show' : 'Hide'} steps`}
             >
               {/* FIXME: accordion pattern */}
               {isCollapsed ? <ChevronDownIcon /> : <ChevronUpIcon />}

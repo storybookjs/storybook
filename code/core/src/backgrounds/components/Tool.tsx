@@ -84,12 +84,8 @@ const Pure = memo(function PureTool(props: PureProps) {
         key="grid"
         pressed={isGrid}
         disabled={isLocked}
-        ariaLabel={
-          // TODO: consider shorter labels ("Show preview grid")
-          isLocked
-            ? 'Grid visibility (overridden by story parameters)'
-            : 'Apply a grid to the preview'
-        }
+        ariaLabel={isLocked ? 'Grid set by story parameters' : 'Grid visibility'}
+        tooltip={isLocked ? 'Grid set by story parameters' : 'Toggle grid visibility'}
         onClick={() => update({ value: backgroundName, grid: !isGrid })}
       >
         <GridIcon />
@@ -101,12 +97,8 @@ const Pure = memo(function PureTool(props: PureProps) {
           onReset={() => update(undefined)}
           disabled={isLocked}
           key="background"
-          ariaLabel={isLocked ? 'Background (overridden by story parameters)' : 'Background'}
-          tooltip={
-            isLocked
-              ? 'Background (overridden by story parameters)'
-              : 'Change the background of the preview'
-          }
+          ariaLabel={isLocked ? 'Background set by story parameters' : 'Preview background'}
+          tooltip={isLocked ? 'Background set by story parameters' : 'Change background'}
           variant="ghost"
           defaultOptions={backgroundName}
           options={options}

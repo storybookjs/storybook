@@ -1,8 +1,8 @@
 import * as React from 'react';
 
-import { IconButton, ScrollArea, ToggleButton } from 'storybook/internal/components';
+import { Button, IconButton, ScrollArea } from 'storybook/internal/components';
 
-import { CollapseIcon, ExpandAltIcon, EyeIcon, SyncIcon } from '@storybook/icons';
+import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
 import type { Result } from 'axe-core';
 import { useResizeDetector } from 'react-resize-detector';
@@ -73,7 +73,7 @@ const ActionsWrapper = styled.div({
   gap: 6,
 });
 
-const ToggleWithCollapsibleText = styled(ToggleButton)({
+const CollapsibleButton = styled(Button)({
   // 193px is the total width of the action buttons when the label is visible
   '@container (max-width: 193px)': {
     span: {
@@ -115,10 +115,6 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
     [setTab]
   );
 
-  const highlightDescriptionId = React.useId();
-  const highlightDescription = 'Highlight accessibility results in preview';
-  const highlightLabel = 'Show highlights';
-
   return (
     <Container ref={ref}>
       <Subnav>
@@ -138,16 +134,25 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
           ))}
         </TabsWrapper>
         <ActionsWrapper>
-          <ToggleWithCollapsibleText
-            ariaLabel={highlightLabel}
-            description={highlightDescription}
-            tooltip={highlightDescription}
-            onClick={toggleHighlight}
-            pressed={highlighted}
-          >
-            <EyeIcon />
-            <span>{highlightLabel}</span>
-          </ToggleWithCollapsibleText>
+          {highlighted ? (
+            <CollapsibleButton
+              onClick={toggleHighlight}
+              ariaLabel="Hide accessibility test result highlights"
+              tooltip="Hide accessibility test result highlights"
+            >
+              <EyeCloseIcon />
+              <span>Hide highlights</span>
+            </CollapsibleButton>
+          ) : (
+            <CollapsibleButton
+              onClick={toggleHighlight}
+              ariaLabel="Highlight elements with accessibility test results"
+              tooltip="Highlight elements with accessibility test results"
+            >
+              <EyeIcon />
+              <span>Show highlights</span>
+            </CollapsibleButton>
+          )}
           <IconButton
             onClick={allExpanded ? handleCollapseAll : handleExpandAll}
             ariaLabel={allExpanded ? 'Collapse all results' : 'Expand all results'}

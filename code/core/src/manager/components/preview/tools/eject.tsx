@@ -33,8 +33,7 @@ export const ejectTool: Addon_BaseType = {
     <Consumer filter={ejectMapper}>
       {({ baseUrl, storyId, queryParams }) =>
         storyId ? (
-          // FIXME: copy check, canvas vs preview area vs content
-          <IconButton key="opener" ariaLabel="Open canvas in new tab" asChild>
+          <IconButton key="opener" ariaLabel="Open preview in new tab" asChild>
             <a
               // @ts-expect-error (non strict)
               href={getStoryHref(baseUrl, storyId, queryParams)}

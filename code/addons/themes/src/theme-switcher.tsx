@@ -55,14 +55,15 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
   const currentTheme = selected || themeDefault;
   let ariaLabel = '';
   let label = '';
+  let tooltip = '';
   if (isLocked) {
     label = 'Story override';
-    ariaLabel = 'Theme (overridden by story parameters)';
+    ariaLabel = 'Theme set by story parameters';
+    tooltip = 'Theme set by story parameters';
   } else if (currentTheme) {
     label = `${currentTheme} theme`;
     ariaLabel = 'Theme'; // it's Select's job to announce the current value.
-    // FIXME: double check that use case once we're done building the full
-    // accessible name in Select.tsx.
+    tooltip = 'Change theme';
   }
 
   if (disable) {
@@ -74,6 +75,7 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
     return (
       <Button
         ariaLabel={ariaLabel}
+        tooltip={tooltip}
         variant="ghost"
         disabled={isLocked}
         key={THEME_SWITCHER_ID}

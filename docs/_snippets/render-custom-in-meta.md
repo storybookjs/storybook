@@ -1,0 +1,217 @@
+```ts filename="Button.stories.ts" renderer="angular" language="ts"
+import type { Meta, StoryObj } from '@storybook/angular/';
+
+import { Button } from './button.component';
+
+const meta: Meta<Button> = {
+  component: Button,
+  render: (args) => ({
+    props: args,
+    template: `
+      <demo-alert>
+        Alert text
+        <demo-button ${argsToTemplate(args)}></demo-button>
+      </demo-alert>
+    `,
+  }),
+};
+
+export default meta;
+type Story = StoryObj<Button>;
+
+export const DefaultInAlert: Story = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```
+
+```jsx filename="Button.stories.jsx" renderer="react" language="js"
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+export default {
+  component: Button,
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+};
+
+export const DefaultInAlert = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```
+
+```tsx filename="Button.stories.tsx" renderer="react" language="ts"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { Meta, StoryObj } from '@storybook/your-framework';
+
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+} satisfies Meta<typeof Button>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const DefaultInAlert: Story = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```
+
+```js filename="Button.stories.js" renderer="vue" language="js"
+import Alert from './Alert.vue';
+import Button from './Button.vue';
+
+export default {
+  component: Button,
+  render: (args) => ({
+    components: { Alert, Button },
+    setup() {
+      return { args };
+    },
+    template: '<Alert><Button v-bind="args" /></Alert>',
+  }),
+};
+
+export const DefaultInAlert = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
+
+import Alert from './Alert.vue';
+import Button from './Button.vue';
+
+const meta = {
+  component: Button,
+  render: (args) => ({
+    components: { Alert, Button },
+    setup() {
+      return { args };
+    },
+    template: '<Alert><Button v-bind="args" /></Alert>',
+  }),
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const DefaultInAlert: Story = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```
+
+```js filename="Button.stories.js" renderer="web-components" language="js"
+import html from 'lit';
+
+export default {
+  component: 'demo-button',
+  render: (args) => html`
+    <demo-alert>
+      Alert text
+      <demo-button ?primary="${args.primary}" label="${args.label}"></demo-button>
+    </demo-alert>
+  `,
+};
+
+export const DefaultInAlert = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="web-components" language="ts"
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
+import html from 'lit';
+
+const meta: Meta = {
+  component: 'demo-button',
+  render: (args) => html`
+    <demo-alert>
+      Alert text
+      <demo-button ?primary="${args.primary}" label="${args.label}"></demo-button>
+    </demo-alert>
+  `,
+};
+
+export default meta;
+type Story = StoryObj;
+
+export const DefaultInAlert: Story = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```

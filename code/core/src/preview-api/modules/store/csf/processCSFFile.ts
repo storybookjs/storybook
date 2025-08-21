@@ -68,21 +68,22 @@ export function processCSFFile<TRenderer extends Renderer>(
 
         // if the story has tests, we need to add those to the csfFile
 
-        Object.entries(story.getAllTests()).forEach(([testName, test]) => {
-          const testId = toTestId(storyMeta.id, testName);
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore We provide the __id parameter because we don't want normalizeStory to calculate the id
-          test.input.parameters.__id = testId;
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore Check type error later
-          csfFile.stories[testId] = {
-            ...normalizeStory<TRenderer>(
-              testName,
-              { ...(test.story.input as any), testFunction: test.test },
-              meta
-            ),
-          };
-        });
+        Object.entries(story.getAllTests()).forEach(
+          ([testName, { story: storyTest, test: testFunction }]) => {
+            const testId = toTestId(storyMeta.id, testName);
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore We provide the __id parameter because we don't want normalizeStory to calculate the id
+            storyTest.input.parameters.__id = testId;
+
+            csfFile.stories[testId] = {
+              ...normalizeStory<TRenderer>(
+                testName,
+                { ...(storyTest.input as any), testFunction },
+                meta
+              ),
+            };
+          }
+        );
       }
     });
 

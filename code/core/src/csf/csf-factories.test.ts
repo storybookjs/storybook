@@ -1,3 +1,4 @@
+//* @vitest-environment happy-dom */
 import { describe, expect, test, vi } from 'vitest';
 
 import { definePreview, definePreviewAddon } from './csf-factories';
@@ -14,7 +15,7 @@ interface Addon2Types {
 
 const addon2 = definePreviewAddon<Addon2Types>({});
 
-const preview = definePreview({ addons: [addon, addon2] });
+const preview = definePreview({ addons: [addon, addon2], renderToCanvas: () => {} });
 
 const meta = preview.meta({
   render: () => 'hello',
@@ -47,18 +48,16 @@ test('addon parameters are inferred', () => {
 describe('test function', () => {
   test('without overrides', async () => {
     const MyStory = meta.story({ args: { label: 'foo' } });
-    const testFn = vi.fn();
+    const testFn = vi.fn(() => console.log('testFn'));
     const testName = 'should run test';
 
     // register test
     MyStory.test(testName, testFn);
-
-    // @ts-expect-error this is a private property not present in the types
-    const storyTest = MyStory.input.__tests![testName];
-    expect(storyTest.input.args).toEqual({ label: 'foo' });
+    const { story: storyTestAnnotations } = MyStory.getAllTests()[testName];
+    expect(storyTestAnnotations.input.args).toEqual({ label: 'foo' });
 
     // execute test
-    await storyTest.input.__testFunction?.();
+    await MyStory.run(undefined, testName);
     expect(testFn).toHaveBeenCalled();
   });
   test('with overrides', async () => {
@@ -68,12 +67,11 @@ describe('test function', () => {
 
     // register test
     MyStory.test(testName, { args: { label: 'bar' } }, testFn);
-    // @ts-expect-error this is a private property not present in the types
-    const storyTest = MyStory.input.__tests![testName];
-    expect(storyTest.input.args).toEqual({ label: 'bar' });
+    const { story: storyTestAnnotations } = MyStory.getAllTests()[testName];
+    expect(storyTestAnnotations.input.args).toEqual({ label: 'bar' });
 
     // execute test
-    await storyTest.input.__testFunction?.();
+    await MyStory.run(undefined, testName);
     expect(testFn).toHaveBeenCalled();
   });
 });

@@ -40,12 +40,28 @@ Default.test(
   'with overrides',
   {
     args: {
-      children: 'Arg from test',
+      children: 'Arg from test override',
     },
+    parameters: {
+      viewport: {
+        options: {
+          sized: {
+            name: 'Sized',
+            styles: {
+              width: '380px',
+              height: '500px',
+            },
+          },
+        },
+      },
+      chromatic: { viewports: [380] },
+    },
+    globals: { sb_theme: 'dark', viewport: { value: 'sized' } },
   },
   async ({ canvas }) => {
-    const button = canvas.getByText('Arg from test');
+    const button = canvas.getByText('Arg from test override');
     await expect(button).toBeInTheDocument();
+    expect(document.body.clientWidth).toBe(380);
   }
 );
 Default.test(

@@ -1,6 +1,6 @@
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import { type Meta, type Story, isStory, sanitize } from 'storybook/internal/csf';
+import { type Meta, type Story, isStory, toTestId } from 'storybook/internal/csf';
 import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
@@ -63,8 +63,7 @@ export const testStory = (
     };
 
     if (testName) {
-      // TODO: this should be reworked
-      _task.meta.storyId = `${composedStory.id}-${sanitize(testName)}`;
+      _task.meta.storyId = toTestId(composedStory.id, testName);
     } else {
       _task.meta.storyId = composedStory.id;
     }
@@ -73,8 +72,9 @@ export const testStory = (
 
     if (isStory(story) && testName) {
       await composedStory.run(undefined, story.getAllTests()[testName].test);
+    } else {
+      await composedStory.run(undefined);
     }
-    await composedStory.run(undefined);
 
     _task.meta.reports = composedStory.reporting.reports;
   };

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { TestFunction } from 'storybook/internal/types';
+import type { StoryContext } from '@storybook/react-vite';
 
 import { expect, fn } from 'storybook/test';
 
@@ -28,10 +28,13 @@ Default.test('simple', async ({ canvas, userEvent, args }) => {
   await expect(args.onClick).toHaveBeenCalled();
 });
 
-const doTest: TestFunction = async ({ canvas, userEvent, args }) => {
+const doTest = async ({
+  canvas,
+  userEvent,
+  args,
+}: StoryContext<React.ComponentProps<'button'>>) => {
   const button = canvas.getByText('Arg from story');
   await userEvent.click(button);
-  // @ts-expect-error TODO: Fix later with Kasper
   await expect(args.onClick).toHaveBeenCalled();
 };
 Default.test('referring to function in file', doTest);

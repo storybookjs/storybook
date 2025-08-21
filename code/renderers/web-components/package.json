@@ -1,12 +1,15 @@
 {
   "name": "@storybook/web-components",
-  "version": "9.2.0-alpha.3",
-  "description": "Storybook web-components renderer",
+  "version": "10.0.0-beta.0",
+  "description": "Storybook Web Components renderer: Develop, document, and test UI components in isolation",
   "keywords": [
+    "storybook",
+    "storybook-renderer",
     "lit",
     "lit-html",
-    "storybook",
-    "web-components"
+    "web-components",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/web-components",
   "bugs": {

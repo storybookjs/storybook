@@ -1,9 +1,14 @@
 {
   "name": "sb",
-  "version": "9.2.0-alpha.3",
-  "description": "Storybook CLI",
+  "version": "10.0.0-beta.0",
+  "description": "Storybook CLI: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "cli",
+    "dev",
+    "build",
+    "upgrade",
+    "init"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-sb",
   "bugs": {

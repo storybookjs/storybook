@@ -166,6 +166,7 @@ export abstract class JsPackageManager {
   static getPackageJson(packageJsonPath: string): PackageJsonWithDepsAndDevDeps {
     const jsonContent = readFileSync(packageJsonPath, 'utf8');
     const packageJSON = JSON.parse(jsonContent);
+    packageJSON[Symbol.for('indent')] = detectIndent(jsonContent).indent ?? 2;
 
     return {
       ...packageJSON,
@@ -175,11 +176,10 @@ export abstract class JsPackageManager {
     };
   }
 
-  #getIndent(filePath: string) {
+  #getIndent(filePath: string): string | number {
     try {
-      const content = readFileSync(filePath, 'utf-8');
-      const { indent } = detectIndent(content);
-      return indent;
+      const packageJson = JsPackageManager.getPackageJson(filePath);
+      return packageJson[Symbol.for('indent')];
     } catch (e) {
       return 2;
     }

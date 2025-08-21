@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
@@ -93,7 +93,9 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
 
       {!isMobilePanelOpen && (
         <MobileBottomBar className="sb-bar" aria-label="Mobile navigation controls">
-          <BottomBarIconButton
+          <BottomBarButton
+            padding="small"
+            variant="ghost"
             onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
             ariaLabel="Open navigation menu"
             aria-expanded={isMobileMenuOpen}
@@ -101,21 +103,23 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
           >
             <MenuIcon />
             <Text>{fullStoryName}</Text>
-          </BottomBarIconButton>
+          </BottomBarButton>
           {/* TODO: test this with AssistivLabs */}
           {/* TODO: check use of aria-current, it may not be applicable here. */}
           <span className="sb-sr-only" aria-current="page">
             {fullStoryName}
           </span>
           {showPanel && (
-            <BottomBarIconButton
+            <BottomBarButton
+              padding="small"
+              variant="ghost"
               onClick={() => setMobilePanelOpen(true)}
               ariaLabel="Open addon panel"
               aria-expanded={isMobilePanelOpen}
               aria-controls="storybook-mobile-addon-panel"
             >
               <BottomBarToggleIcon />
-            </BottomBarIconButton>
+            </BottomBarButton>
           )}
         </MobileBottomBar>
       )}
@@ -141,7 +145,7 @@ const MobileBottomBar = styled.div({
   padding: '0 6px',
 });
 
-const BottomBarIconButton = styled(IconButton)({
+const BottomBarButton = styled(Button)({
   WebkitLineClamp: 1,
 });
 

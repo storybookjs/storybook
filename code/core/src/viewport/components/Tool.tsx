@@ -1,6 +1,6 @@
 import React, { type FC, Fragment, useCallback, useEffect } from 'react';
 
-import { IconButton, Select } from 'storybook/internal/components';
+import { Button, Select } from 'storybook/internal/components';
 
 import { GrowIcon, TransferIcon } from '@storybook/icons';
 
@@ -147,15 +147,17 @@ const Pure = React.memo(function PureTool(props: PureProps) {
           </LastDimension>
           {!isLocked && (
             <DimensionSeparator>
-              <IconButton
+              <Button
                 key="viewport-rotate"
+                padding="small"
+                variant="ghost"
                 ariaLabel="Rotate viewport"
                 onClick={() => {
                   update({ value: viewportName, isRotated: !isRotated });
                 }}
               >
                 <TransferIcon />
-              </IconButton>
+              </Button>
             </DimensionSeparator>
           )}
         </ActiveViewportSize>

@@ -1,7 +1,7 @@
 import type { FC, SyntheticEvent } from 'react';
 import React, { Fragment } from 'react';
 
-import { IconButton, ScrollArea, TabBar, TabButton } from 'storybook/internal/components';
+import { Button, ScrollArea, TabBar, TabButton } from 'storybook/internal/components';
 import { Location, Route } from 'storybook/internal/router';
 import type { Addon_PageType } from 'storybook/internal/types';
 
@@ -93,7 +93,9 @@ const Pages: FC<{
           )}
           <TabBarButton id="shortcuts" title="Keyboard shortcuts" changeTab={changeTab} />
         </TabBar>
-        <IconButton
+        <Button
+          padding="small"
+          variant="ghost"
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             return onClose();
@@ -101,7 +103,7 @@ const Pages: FC<{
           ariaLabel="Close settings page"
         >
           <CloseIcon />
-        </IconButton>
+        </Button>
       </Header>
       <Content vertical horizontal={false}>
         <Route path="about">

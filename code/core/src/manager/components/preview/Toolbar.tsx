@@ -1,6 +1,6 @@
 import React, { Fragment, useId } from 'react';
 
-import { IconButton, Separator, TabBar, TabButton } from 'storybook/internal/components';
+import { Button, Separator, TabBar, TabButton } from 'storybook/internal/components';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
@@ -56,14 +56,16 @@ export const fullScreenTool: Addon_BaseType = {
       <Consumer filter={fullScreenMapper}>
         {({ toggle, isFullscreen, shortcut, hasPanel, singleStory }) =>
           (!singleStory || (singleStory && hasPanel)) && (
-            <IconButton
+            <Button
               key="full"
+              padding="small"
+              variant="ghost"
               onClick={() => toggle()}
               ariaLabel={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
               shortcut={[shortcut]}
             >
               {isFullscreen ? <CloseIcon /> : <ExpandIcon />}
-            </IconButton>
+            </Button>
           )
         }
       </Consumer>

@@ -388,15 +388,9 @@ const parameters = {
       'slategray',
     ],
   },
-  // FIXME: re-enabled to test the UI on the IconButton rework PR.
-  // FIXME: can be disabled again before merging.
-  // themes: {
-  //   disable: true,
-  // },
   themes: {
-    disable: false,
+    disable: true,
   },
-
   backgrounds: {
     options: {
       light: { name: 'light', value: '#edecec' },

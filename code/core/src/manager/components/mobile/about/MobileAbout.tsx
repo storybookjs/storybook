@@ -154,6 +154,6 @@ const BottomText = styled.div(({ theme }) => ({
 }));
 
 const CloseButton = styled(Button)({
-  // NOTE: matching isMobile class dimensions on SidebarIconButton
+  // NOTE: matching isMobile class dimensions on SidebarButton
   minHeight: 36,
 });

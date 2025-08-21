@@ -1,11 +1,11 @@
 import React, { type ComponentProps, type FC } from 'react';
 
 import {
+  Button,
   Form,
-  IconButton,
   ListItem,
   ProgressSpinner,
-  ToggleIconButton,
+  ToggleButton,
 } from 'storybook/internal/components';
 import type { API_HashEntry, TestProviderState } from 'storybook/internal/types';
 
@@ -181,14 +181,16 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
 
         <Actions>
           {!entry && (
-            <ToggleIconButton
+            <ToggleButton
               ariaLabel={isRunning ? 'Watch mode (cannot toggle while running)' : 'Watch mode'}
               tooltip={
                 isRunning
                   ? 'Watch mode unavailable while running'
                   : `Watch mode is ${watching ? 'enabled' : 'disabled'}`
               }
+              padding="small"
               size="medium"
+              variant="ghost"
               pressed={watching}
               onClick={() =>
                 store.send({
@@ -201,10 +203,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               disabled={isRunning}
             >
               <EyeIcon />
-            </ToggleIconButton>
+            </ToggleButton>
           )}
           {isRunning ? (
-            <IconButton
+            <Button
               // FIXME: we must clarify why isStarting has any impact here.
               // TODO: if technical reasons explain why we must wait for tests to finish
               // initialising, we'll want to have an ARIA Live region to announce when
@@ -212,6 +214,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               ariaLabel={cancelling ? 'Stop test run (already stopping...)' : 'Stop test run'}
               padding="none"
               size="medium"
+              variant="ghost"
               onClick={() =>
                 store.send({
                   type: 'CANCEL_RUN',
@@ -228,11 +231,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               >
                 <StopIcon />
               </Progress>
-            </IconButton>
+            </Button>
           ) : (
-            <IconButton
+            <Button
               ariaLabel="Start test run"
+              padding="small"
               size="medium"
+              variant="ghost"
               onClick={() =>
                 store.send({
                   type: 'TRIGGER_RUN',
@@ -244,7 +249,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               }
             >
               <PlayHollowIcon />
-            </IconButton>
+            </Button>
           )}
         </Actions>
       </Heading>
@@ -257,7 +262,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             title="Interactions"
             icon={entry ? null : <Form.Checkbox checked disabled />}
           />
-          <IconButton
+          <Button
             ariaLabel={`${componentTestStatusLabel}${
               componentTestStatusValueToStoryIds['status-value:error'].length +
                 componentTestStatusValueToStoryIds['status-value:warning'].length >
@@ -269,7 +274,9 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 : ''
             }`}
             tooltip={componentTestStatusLabel}
+            padding="small"
             size="medium"
+            variant="ghost"
             disabled={
               componentTestStatusValueToStoryIds['status-value:error'].length === 0 &&
               componentTestStatusValueToStoryIds['status-value:warning'].length === 0 &&
@@ -290,7 +297,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             <TestStatusIcon status={componentTestStatusIcon} isRunning={isRunning} />
             {componentTestStatusValueToStoryIds['status-value:error'].length +
               componentTestStatusValueToStoryIds['status-value:warning'].length || null}
-          </IconButton>
+          </Button>
         </Row>
 
         {!entry && (
@@ -315,8 +322,10 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
             {/* FIXME: aria labels were not 100% consistent with the tooltip logic. Double check this logic during review please! */}
             {watching ||
             (currentRun.triggeredBy && !FULL_RUN_TRIGGERS.includes(currentRun.triggeredBy)) ? (
-              <IconButton
+              <Button
+                padding="small"
                 size="medium"
+                variant="ghost"
                 disabled
                 ariaLabel={
                   watching
@@ -325,11 +334,13 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 }
               >
                 <InfoIcon />
-              </IconButton>
+              </Button>
             ) : currentRun.coverageSummary ? (
-              <IconButton
+              <Button
                 asChild
+                padding="small"
                 size="medium"
+                variant="ghost"
                 ariaLabel={
                   // FIXME: I can't deduce from the original tooltip logic whether this use case
                   // is logically possible or not. It is a reachable conditional branch in the original code.
@@ -346,10 +357,12 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   />
                   {currentRun.coverageSummary.percentage}%
                 </a>
-              </IconButton>
+              </Button>
             ) : (
-              <IconButton
+              <Button
+                padding="small"
                 size="medium"
+                variant="ghost"
                 disabled
                 ariaLabel={
                   isRunning
@@ -363,7 +376,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   isRunning={isRunning}
                   status={fatalError ? 'critical' : 'unknown'}
                 />
-              </IconButton>
+              </Button>
             )}
           </Row>
         )}
@@ -388,9 +401,11 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                 )
               }
             />
-            <IconButton
+            <Button
               ariaLabel={a11yStatusLabel}
+              padding="small"
               size="medium"
+              variant="ghost"
               disabled={
                 a11yStatusValueToStoryIds['status-value:error'].length === 0 &&
                 a11yStatusValueToStoryIds['status-value:warning'].length === 0 &&
@@ -411,7 +426,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               <TestStatusIcon status={a11yStatusIcon} isRunning={isRunning} />
               {a11yStatusValueToStoryIds['status-value:error'].length +
                 a11yStatusValueToStoryIds['status-value:warning'].length || null}
-            </IconButton>
+            </Button>
           </Row>
         )}
       </Extras>

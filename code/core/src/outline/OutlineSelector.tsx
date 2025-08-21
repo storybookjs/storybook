@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useEffect } from 'react';
 
-import { ToggleIconButton } from 'storybook/internal/components';
+import { ToggleButton } from 'storybook/internal/components';
 
 import { OutlineIcon } from '@storybook/icons';
 
@@ -33,8 +33,10 @@ export const OutlineSelector = memo(function OutlineSelector() {
   }, [toggleOutline, api]);
 
   return (
-    <ToggleIconButton
+    <ToggleButton
       key="outline"
+      padding="small"
+      variant="ghost"
       pressed={isActive}
       ariaLabel="Outline tool"
       tooltip="Toggle outline"
@@ -42,6 +44,6 @@ export const OutlineSelector = memo(function OutlineSelector() {
       onClick={toggleOutline}
     >
       <OutlineIcon />
-    </ToggleIconButton>
+    </ToggleButton>
   );
 });

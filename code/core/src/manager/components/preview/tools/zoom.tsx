@@ -1,7 +1,7 @@
 import type { EventHandler, PropsWithChildren, SyntheticEvent } from 'react';
 import React, { Component, createContext, memo, useCallback } from 'react';
 
-import { IconButton, Separator } from 'storybook/internal/components';
+import { Button, Separator } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
@@ -43,15 +43,21 @@ const Zoom = memo<{
 }>(function Zoom({ zoomIn, zoomOut, reset }) {
   return (
     <>
-      <IconButton key="zoomin" onClick={zoomIn} ariaLabel="Zoom in">
+      <Button key="zoomin" padding="small" variant="ghost" onClick={zoomIn} ariaLabel="Zoom in">
         <ZoomIcon />
-      </IconButton>
-      <IconButton key="zoomout" onClick={zoomOut} ariaLabel="Zoom out">
+      </Button>
+      <Button key="zoomout" padding="small" variant="ghost" onClick={zoomOut} ariaLabel="Zoom out">
         <ZoomOutIcon />
-      </IconButton>
-      <IconButton key="zoomreset" onClick={reset} ariaLabel="Reset zoom">
+      </Button>
+      <Button
+        key="zoomreset"
+        padding="small"
+        variant="ghost"
+        onClick={reset}
+        ariaLabel="Reset zoom"
+      >
         <ZoomResetIcon />
-      </IconButton>
+      </Button>
     </>
   );
 });

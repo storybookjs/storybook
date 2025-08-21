@@ -50,10 +50,8 @@ export type { ActionItem } from './components/ActionBar/ActionBar';
 export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
 
 // Buttons
-export { Button } from './components/Button/Button';
-export { IconButton } from './components/IconButton/IconButton';
+export { Button, IconButton } from './components/Button/Button';
 export { ToggleButton } from './components/ToggleButton/ToggleButton';
-export { ToggleIconButton } from './components/ToggleIconButton/ToggleIconButton';
 export { Select } from './components/Select/Select';
 
 // Forms

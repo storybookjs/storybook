@@ -1,7 +1,7 @@
 import type { ComponentProps, FC, MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import { Button, IconButton, ListItem } from 'storybook/internal/components';
+import { Button, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 import type { StatusValue } from 'storybook/internal/types';
 import {
@@ -336,7 +336,7 @@ const Node = React.memo<NodeProps>(function Node({
             item.name}
         </LeafNode>
         {isSelected && (
-          <SkipToContentLink asChild>
+          <SkipToContentLink asChild ariaLabel={false}>
             <a href="#storybook-preview-wrapper">Skip to canvas</a>
           </SkipToContentLink>
         )}
@@ -385,7 +385,9 @@ const Node = React.memo<NodeProps>(function Node({
           {item.renderLabel?.(item, api) || item.name}
         </CollapseButton>
         {isExpanded && (
-          <IconButton
+          <Button
+            padding="small"
+            variant="ghost"
             className="sidebar-subheading-action"
             ariaLabel={isFullyExpanded ? 'Expand' : 'Collapse'}
             data-action="expand-all"
@@ -397,7 +399,7 @@ const Node = React.memo<NodeProps>(function Node({
             }}
           >
             {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
-          </IconButton>
+          </Button>
         )}
       </RootNode>
     );

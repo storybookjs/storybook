@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { Button, IconButton, ScrollArea } from 'storybook/internal/components';
+import { Button, ScrollArea } from 'storybook/internal/components';
 
 import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
@@ -153,16 +153,23 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
               <span>Show highlights</span>
             </CollapsibleButton>
           )}
-          <IconButton
+          <Button
+            variant="ghost"
+            padding="small"
             onClick={allExpanded ? handleCollapseAll : handleExpandAll}
             ariaLabel={allExpanded ? 'Collapse all results' : 'Expand all results'}
             aria-expanded={allExpanded}
           >
             {allExpanded ? <CollapseIcon /> : <ExpandAltIcon />}
-          </IconButton>
-          <IconButton onClick={handleManual} ariaLabel="Rerun accessibility scan">
+          </Button>
+          <Button
+            variant="ghost"
+            padding="small"
+            onClick={handleManual}
+            ariaLabel="Rerun accessibility scan"
+          >
             <SyncIcon />
-          </IconButton>
+          </Button>
         </ActionsWrapper>
       </Subnav>
       <ScrollArea vertical horizontal>

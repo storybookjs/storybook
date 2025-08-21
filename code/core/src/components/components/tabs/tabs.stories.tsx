@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { Button } from 'storybook/internal/components';
+
 import { BottomBarIcon, CloseIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -8,7 +10,6 @@ import { action } from 'storybook/actions';
 import { expect, spyOn } from 'storybook/test';
 import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 
-import { IconButton } from '../IconButton/IconButton';
 import { TabWrapper, Tabs, TabsState } from './tabs';
 import type { ChildrenList } from './tabs.helpers';
 
@@ -290,12 +291,12 @@ const AddonTools = () => (
       gap: 6,
     }}
   >
-    <IconButton ariaLabel="Tool 1">
+    <Button padding="small" variant="ghost" ariaLabel="Tool 1">
       <BottomBarIcon />
-    </IconButton>
-    <IconButton ariaLabel="Tool 2">
+    </Button>
+    <Button padding="small" variant="ghost" ariaLabel="Tool 2">
       <CloseIcon />
-    </IconButton>
+    </Button>
   </div>
 );
 

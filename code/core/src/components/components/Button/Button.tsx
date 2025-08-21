@@ -1,5 +1,7 @@
-import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
+import type { ButtonHTMLAttributes, FC, SyntheticEvent } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
+
+import { deprecate } from 'storybook/internal/client-logger';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
@@ -20,10 +22,12 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
 
   /**
-   * An aria-label for the Button. Use it to provide a concise action label for the button when the
-   * Button's content relies on visual context to be understandable.
+   * A concise action label for the button announced by screen readers. Needed for buttons without
+   * text or with text that relies on visual cues to be understood. Pass false to indicate that the
+   * Button's content is already accessible to all. When a string is passed, it is also used as the
+   * default tooltip text.
    */
-  ariaLabel?: string;
+  ariaLabel: string | false;
 
   /**
    * An optional tooltip to display when the Button is hovered. If the Button has no text content,
@@ -55,7 +59,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       padding = 'medium',
       disabled = false,
       onClick,
-      ariaLabel = undefined,
+      ariaLabel,
       description = undefined,
       tooltip = undefined,
       shortcut = undefined,
@@ -69,6 +73,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       Comp = Slot;
     }
     const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(description);
+
+    if (ariaLabel === '') {
+      throw new Error(
+        'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
+      );
+    }
 
     const shortcutAttribute = useMemo(() => {
       return shortcut ? shortcutToAriaKeyshortcuts(shortcut) : undefined;
@@ -96,8 +106,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       return () => clearTimeout(timer);
     }, [isAnimating]);
 
+    const finalTooltip = tooltip || (ariaLabel !== false ? ariaLabel : undefined);
+
     return (
-      <InteractiveTooltipWrapper shortcut={shortcut} tooltip={tooltip}>
+      <InteractiveTooltipWrapper shortcut={shortcut} tooltip={finalTooltip}>
         <StyledButton
           as={Comp}
           ref={ref}
@@ -108,7 +120,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           animating={isAnimating}
           animation={animation}
           onClick={handleClick}
-          aria-label={ariaLabel}
+          aria-label={ariaLabel !== false ? ariaLabel : undefined}
           aria-keyshortcuts={shortcutAttribute}
           {...ariaDescriptionAttrs}
           {...props}
@@ -124,7 +136,7 @@ Button.displayName = 'Button';
 const StyledButton = styled('button', {
   shouldForwardProp: (prop) => isPropValid(prop),
 })<
-  ButtonProps & {
+  Omit<ButtonProps, 'ariaLabel'> & {
     animating: boolean;
     animation: ButtonProps['animation'];
   }
@@ -273,3 +285,12 @@ const StyledButton = styled('button', {
       animating && animation !== 'none' ? `${theme.animation[animation]} 1000ms ease-out` : '',
   },
 }));
+
+export const IconButton = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
+  deprecate(
+    '`IconButton` is deprecated and will be removed in Storybook 10, use `Button` instead.'
+  );
+
+  return <Button ref={ref} {...props} />;
+});
+IconButton.displayName = 'IconButton';

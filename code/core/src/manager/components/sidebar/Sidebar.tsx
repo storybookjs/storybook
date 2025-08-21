@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import { IconButton, ScrollArea, Spaced } from 'storybook/internal/components';
+import { Button, ScrollArea, Spaced } from 'storybook/internal/components';
 import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
@@ -51,7 +51,7 @@ const Top = styled(Spaced)({
   flex: 1,
 });
 
-const CreateNewStoryButton = styled(IconButton)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
+const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
   color: theme.color.mediumdark,
   width: isMobile ? 36 : 32,
   height: isMobile ? 36 : 32,
@@ -167,6 +167,7 @@ export const Sidebar = React.memo(function Sidebar({
                     }}
                     ariaLabel="Create a new story"
                     variant="outline"
+                    padding="small"
                   >
                     <PlusIcon />
                   </CreateNewStoryButton>

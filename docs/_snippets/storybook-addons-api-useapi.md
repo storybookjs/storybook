@@ -2,7 +2,7 @@
 import React, { useEffect, useCallback } from 'react';
 
 import { useStorybookApi } from 'storybook/manager-api';
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import { ChevronDownIcon } from '@storybook/icons';
 
 export const Panel = () => {
@@ -23,9 +23,15 @@ export const Panel = () => {
   }, [api]);
 
   return (
-    <IconButton key="custom-toolbar" active="true" title="Show a toolbar addon">
+    <Button
+      padding="small"
+      variant="ghost"
+      key="custom-toolbar"
+      active="true"
+      ariaLabel="Show a toolbar addon"
+    >
       <ChevronDownIcon />
-    </IconButton>
+    </Button>
   );
 };
 ```

@@ -127,8 +127,3 @@ export const TabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid }
         }
 );
 TabButton.displayName = 'TabButton';
-
-export interface IconButtonProps {
-  active?: boolean;
-  disabled?: boolean;
-}

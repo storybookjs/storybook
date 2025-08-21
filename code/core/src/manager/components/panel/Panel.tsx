@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-import { EmptyTabContent, IconButton, Link, Tabs } from 'storybook/internal/components';
+import { Button, EmptyTabContent, Link, Tabs } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
@@ -84,8 +84,10 @@ export const AddonPanel = React.memo<{
           <Actions>
             {isDesktop ? (
               <>
-                <IconButton
+                <Button
                   key="position"
+                  padding="small"
+                  variant="ghost"
                   onClick={actions.togglePosition}
                   ariaLabel={
                     panelPosition === 'bottom'
@@ -96,20 +98,27 @@ export const AddonPanel = React.memo<{
                   shortcut={shortcuts.panelPosition}
                 >
                   {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
-                </IconButton>
-                <IconButton
+                </Button>
+                <Button
                   key="visibility"
+                  padding="small"
+                  variant="ghost"
                   onClick={actions.toggleVisibility}
                   ariaLabel="Hide addon panel"
                   shortcut={shortcuts.togglePanel}
                 >
                   <CloseIcon />
-                </IconButton>
+                </Button>
               </>
             ) : (
-              <IconButton onClick={() => setMobilePanelOpen(false)} ariaLabel="Close addon panel">
+              <Button
+                padding="small"
+                variant="ghost"
+                onClick={() => setMobilePanelOpen(false)}
+                ariaLabel="Close addon panel"
+              >
                 <CloseIcon />
-              </IconButton>
+              </Button>
             )}
           </Actions>
         }

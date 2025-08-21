@@ -1,7 +1,7 @@
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
-import { Button, IconButton, ToggleButton } from 'storybook/internal/components';
+import { Button, ToggleButton } from 'storybook/internal/components';
 import type {
   Addon_Collection,
   Addon_TestProviderType,
@@ -111,7 +111,7 @@ const Filters = styled.div({
   gap: 4,
 });
 
-const CollapseToggle = styled(IconButton)({
+const CollapseToggle = styled(Button)({
   opacity: 0,
   transition: 'opacity 250ms',
   willChange: 'auto',
@@ -297,6 +297,7 @@ export const TestingModule = ({
                 // FIXME: MA, copy, how about 'Run all tests' to align with other action verbs?
                 // Also if tooltip doesn't explicate there are several categories of tests that
                 // can be controlled from the popover, is there a point in having a tooltip?
+                ariaLabel={false}
                 tooltip={isRunning ? 'Running tests...' : 'Start all tests'}
                 onClick={(e: SyntheticEvent) => {
                   e.stopPropagation();
@@ -374,8 +375,10 @@ export const TestingModule = ({
               </StatusButton>
             )}
             {hasStatuses && (
-              <IconButton
+              <Button
                 id="clear-statuses"
+                padding="small"
+                variant="ghost"
                 size="medium"
                 onClick={(e: SyntheticEvent) => {
                   e.stopPropagation();
@@ -389,7 +392,7 @@ export const TestingModule = ({
                 }
               >
                 <SweepIcon />
-              </IconButton>
+              </Button>
             )}
           </Filters>
         </Bar>

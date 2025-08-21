@@ -1,6 +1,6 @@
 import React, { Fragment, memo, useCallback } from 'react';
 
-import { Select, ToggleIconButton } from 'storybook/internal/components';
+import { Select, ToggleButton } from 'storybook/internal/components';
 
 import { CircleIcon, GridIcon, PhotoIcon } from '@storybook/icons';
 
@@ -80,7 +80,9 @@ const Pure = memo(function PureTool(props: PureProps) {
 
   return (
     <Fragment>
-      <ToggleIconButton
+      <ToggleButton
+        padding="small"
+        variant="ghost"
         key="grid"
         pressed={isGrid}
         disabled={isLocked}
@@ -89,7 +91,7 @@ const Pure = memo(function PureTool(props: PureProps) {
         onClick={() => update({ value: backgroundName, grid: !isGrid })}
       >
         <GridIcon />
-      </ToggleIconButton>
+      </ToggleButton>
 
       {length > 0 ? (
         <Select

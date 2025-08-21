@@ -1,12 +1,12 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
+import { Button } from 'storybook/internal/components';
+
 import { CrossIcon } from '@storybook/icons';
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { keyframes, styled } from 'storybook/theming';
-
-import { IconButton } from '../IconButton/IconButton';
 
 const fadeIn = keyframes({
   from: { opacity: 0 },
@@ -64,10 +64,9 @@ export const Container = styled.div<{ width?: number; height?: number }>(
 
 export const CloseButton = () => (
   <Dialog.Close asChild>
-    {/* TODO: test if Esc always closes modal, in which case, add `shortcut` prop. */}
-    <IconButton ariaLabel="Close modal" shortcut={['Escape']}>
+    <Button ariaLabel="Close modal" shortcut={['Escape']}>
       <CrossIcon />
-    </IconButton>
+    </Button>
   </Dialog.Close>
 );
 

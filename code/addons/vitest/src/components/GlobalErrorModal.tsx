@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 
-import { Button, IconButton, Modal } from 'storybook/internal/components';
+import { Button, Modal } from 'storybook/internal/components';
 
 import { CloseIcon, SyncIcon } from '@storybook/icons';
 
@@ -152,18 +152,18 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
       <ModalBar>
         <ModalTitle>Storybook Tests error details</ModalTitle>
         <ModalActionBar>
-          <Button onClick={onRerun} variant="ghost">
+          <Button onClick={onRerun} variant="ghost" ariaLabel={false}>
             <SyncIcon />
             Rerun
           </Button>
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" ariaLabel={false} asChild>
             <a target="_blank" href={troubleshootURL} rel="noreferrer">
               Troubleshoot
             </a>
           </Button>
-          <IconButton onClick={handleClose} ariaLabel="Close modal">
+          <Button variant="ghost" padding="small" onClick={handleClose} ariaLabel="Close modal">
             <CloseIcon />
-          </IconButton>
+          </Button>
         </ModalActionBar>
       </ModalBar>
       <ModalStackTrace>

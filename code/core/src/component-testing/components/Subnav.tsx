@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { Bar, Button, IconButton, P, Separator } from 'storybook/internal/components';
+import { Bar, Button, P, Separator } from 'storybook/internal/components';
 
 import {
   FastForwardIcon,
@@ -52,7 +52,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
+const StyledIconButton = styled(Button)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 3px',
 }));
@@ -118,13 +118,15 @@ export const Subnav: React.FC<SubnavProps> = ({
           <Group>
             <StatusBadge status={status} />
 
-            <JumpToEndButton onClick={onScrollToEnd} disabled={!onScrollToEnd}>
+            <JumpToEndButton ariaLabel={false} onClick={onScrollToEnd} disabled={!onScrollToEnd}>
               {buttonText}
             </JumpToEndButton>
 
             <StyledSeparator />
 
             <RewindButton
+              padding="small"
+              variant="ghost"
               ariaLabel="Go to start"
               onClick={controls.start}
               disabled={!controlStates.start}
@@ -133,6 +135,8 @@ export const Subnav: React.FC<SubnavProps> = ({
             </RewindButton>
 
             <StyledIconButton
+              padding="small"
+              variant="ghost"
               ariaLabel="Go back"
               onClick={controls.back}
               disabled={!controlStates.back}
@@ -141,6 +145,8 @@ export const Subnav: React.FC<SubnavProps> = ({
             </StyledIconButton>
 
             <StyledIconButton
+              padding="small"
+              variant="ghost"
               ariaLabel="Go forward"
               onClick={controls.next}
               disabled={!controlStates.next}
@@ -149,6 +155,8 @@ export const Subnav: React.FC<SubnavProps> = ({
             </StyledIconButton>
 
             <StyledIconButton
+              padding="small"
+              variant="ghost"
               ariaLabel="Go to end"
               onClick={controls.end}
               disabled={!controlStates.end}
@@ -156,7 +164,7 @@ export const Subnav: React.FC<SubnavProps> = ({
               <FastForwardIcon />
             </StyledIconButton>
 
-            <RerunButton ariaLabel="Rerun" onClick={controls.rerun}>
+            <RerunButton padding="small" variant="ghost" ariaLabel="Rerun" onClick={controls.rerun}>
               <SyncIcon />
             </RerunButton>
           </Group>

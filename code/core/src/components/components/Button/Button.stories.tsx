@@ -4,7 +4,9 @@ import { styled } from 'storybook/internal/theming';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { fn } from 'storybook/test';
+import { userEvent } from '@storybook/testing-library';
+
+import { expect, fn, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';
@@ -13,48 +15,51 @@ const meta = preview.meta({
   id: 'button-component',
   title: 'Button',
   component: Button,
-  args: { children: 'Button', onClick: fn() },
+  args: { onClick: fn() },
 });
 
 const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
 
 const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
 
-export const Base = meta.story({});
+export const Base = meta.story({
+  args: { ariaLabel: false, children: 'Button' },
+});
 
 export const Variants = meta.story({
+  args: { ariaLabel: false, children: 'Button' },
   render: (args) => (
     <Stack>
       <Row>
-        <Button variant="solid" {...args}>
+        <Button {...args} variant="solid" ariaLabel={false}>
           Solid
         </Button>
-        <Button variant="outline" {...args}>
+        <Button {...args} variant="outline" ariaLabel={false}>
           Outline
         </Button>
-        <Button variant="ghost" {...args}>
+        <Button {...args} variant="ghost" ariaLabel={false}>
           Ghost
         </Button>
       </Row>
       <Row>
-        <Button variant="solid" {...args}>
+        <Button {...args} variant="solid" ariaLabel={false}>
           <FaceHappyIcon /> Solid
         </Button>
-        <Button variant="outline" {...args}>
+        <Button {...args} variant="outline" ariaLabel={false}>
           <FaceHappyIcon /> Outline
         </Button>
-        <Button variant="ghost" {...args}>
+        <Button {...args} variant="ghost" ariaLabel={false}>
           <FaceHappyIcon /> Ghost
         </Button>
       </Row>
       <Row>
-        <Button variant="solid" padding="small" ariaLabel="Button" {...args}>
+        <Button {...args} variant="solid" padding="small" ariaLabel="Button">
           <FaceHappyIcon />
         </Button>
-        <Button variant="outline" padding="small" ariaLabel="Button" {...args}>
+        <Button {...args} variant="outline" padding="small" ariaLabel="Button">
           <FaceHappyIcon />
         </Button>
-        <Button variant="ghost" padding="small" ariaLabel="Button" {...args}>
+        <Button {...args} variant="ghost" padding="small" ariaLabel="Button">
           <FaceHappyIcon />
         </Button>
       </Row>
@@ -66,24 +71,48 @@ export const PseudoStates = meta.story({
   render: () => (
     <Stack>
       <Row>
-        <Button variant="solid">Button</Button>
-        <Button variant="outline">Button</Button>
-        <Button variant="ghost">Button</Button>
+        <Button ariaLabel={false} variant="solid">
+          Button
+        </Button>
+        <Button ariaLabel={false} variant="outline">
+          Button
+        </Button>
+        <Button ariaLabel={false} variant="ghost">
+          Button
+        </Button>
       </Row>
       <Row id="hover">
-        <Button variant="solid">Hover</Button>
-        <Button variant="outline">Hover</Button>
-        <Button variant="ghost">Hover</Button>
+        <Button ariaLabel={false} variant="solid">
+          Hover
+        </Button>
+        <Button ariaLabel={false} variant="outline">
+          Hover
+        </Button>
+        <Button ariaLabel={false} variant="ghost">
+          Hover
+        </Button>
       </Row>
       <Row id="focus">
-        <Button variant="solid">Focus</Button>
-        <Button variant="outline">Focus</Button>
-        <Button variant="ghost">Focus</Button>
+        <Button ariaLabel={false} variant="solid">
+          Focus
+        </Button>
+        <Button ariaLabel={false} variant="outline">
+          Focus
+        </Button>
+        <Button ariaLabel={false} variant="ghost">
+          Focus
+        </Button>
       </Row>
       <Row id="focus-visible">
-        <Button variant="solid">Focus Visible</Button>
-        <Button variant="outline">Focus Visible</Button>
-        <Button variant="ghost">Focus Visible</Button>
+        <Button ariaLabel={false} variant="solid">
+          Focus Visible
+        </Button>
+        <Button ariaLabel={false} variant="outline">
+          Focus Visible
+        </Button>
+        <Button ariaLabel={false} variant="ghost">
+          Focus Visible
+        </Button>
       </Row>
     </Stack>
   ),
@@ -98,6 +127,7 @@ export const PseudoStates = meta.story({
 
 export const WithIcon = meta.story({
   args: {
+    ariaLabel: false,
     children: (
       <>
         <FaceHappyIcon />
@@ -132,8 +162,12 @@ export const IconOnly = meta.story({
 export const Sizes = meta.story({
   render: () => (
     <Row>
-      <Button size="small">Small Button</Button>
-      <Button size="medium">Medium Button</Button>
+      <Button ariaLabel={false} size="small">
+        Small Button
+      </Button>
+      <Button ariaLabel={false} size="medium">
+        Medium Button
+      </Button>
     </Row>
   ),
 });
@@ -142,18 +176,18 @@ export const Paddings = meta.story({
   render: () => (
     <Stack>
       <Row>
-        <Button size="small" padding="small">
+        <Button ariaLabel={false} size="small" padding="small">
           Small Padding
         </Button>
-        <Button size="small" padding="medium">
+        <Button ariaLabel={false} size="small" padding="medium">
           Medium Padding
         </Button>
       </Row>
       <Row>
-        <Button size="medium" padding="small">
+        <Button ariaLabel={false} size="medium" padding="small">
           Small Padding
         </Button>
-        <Button size="medium" padding="medium">
+        <Button ariaLabel={false} size="medium" padding="medium">
           Medium Padding
         </Button>
       </Row>
@@ -163,6 +197,7 @@ export const Paddings = meta.story({
 
 export const Disabled = meta.story({
   args: {
+    ariaLabel: false,
     disabled: true,
     children: 'Disabled Button',
   },
@@ -171,8 +206,10 @@ export const Disabled = meta.story({
 export const WithHref = meta.story({
   render: () => (
     <Row>
-      <Button onClick={() => console.log('Hello')}>I am a button using onClick</Button>
-      <Button asChild>
+      <Button ariaLabel={false} onClick={() => console.log('Hello')}>
+        I am a button using onClick
+      </Button>
+      <Button ariaLabel={false} asChild>
         <a href="https://storybook.js.org/">I am an anchor using Href</a>
       </Button>
     </Row>
@@ -181,40 +218,41 @@ export const WithHref = meta.story({
 
 export const Animated = meta.story({
   args: {
+    ariaLabel: false,
     variant: 'outline',
   },
   render: (args) => (
     <Stack>
       <Row>
-        <Button animation="glow" {...args}>
+        <Button {...args} animation="glow">
           Button
         </Button>
-        <Button animation="jiggle" {...args}>
+        <Button {...args} animation="jiggle">
           Button
         </Button>
-        <Button animation="rotate360" {...args}>
+        <Button {...args} animation="rotate360">
           Button
         </Button>
       </Row>
       <Row>
-        <Button animation="glow" {...args}>
+        <Button {...args} animation="glow">
           <FaceHappyIcon /> Button
         </Button>
-        <Button animation="jiggle" {...args}>
+        <Button {...args} animation="jiggle">
           <FaceHappyIcon /> Button
         </Button>
-        <Button animation="rotate360" {...args}>
+        <Button {...args} animation="rotate360">
           <FaceHappyIcon /> Button
         </Button>
       </Row>
       <Row>
-        <Button animation="glow" padding="small" {...args}>
+        <Button {...args} animation="glow" padding="small">
           <FaceHappyIcon />
         </Button>
-        <Button animation="jiggle" padding="small" {...args}>
+        <Button {...args} animation="jiggle" padding="small">
           <FaceHappyIcon />
         </Button>
-        <Button animation="rotate360" padding="small" {...args}>
+        <Button {...args} animation="rotate360" padding="small">
           <FaceHappyIcon />
         </Button>
       </Row>
@@ -231,6 +269,7 @@ export const AriaLabel = meta.story({
 
 export const Tooltip = meta.story({
   args: {
+    ariaLabel: false,
     children: 'Button',
     tooltip: 'A button can be pressed to perform an action',
   },
@@ -246,6 +285,7 @@ export const Description = meta.story({
 
 export const Shortcut = meta.story({
   args: {
+    ariaLabel: false,
     children: 'Button',
     shortcut: ['Control', 'Shift', 'H'],
   },
@@ -253,8 +293,27 @@ export const Shortcut = meta.story({
 
 export const ShortcutAndTooltip = meta.story({
   args: {
+    ariaLabel: false,
     children: 'Button',
     tooltip: 'A button can be pressed to perform an action',
     shortcut: ['Control', 'Shift', 'H'],
+  },
+});
+
+export const ShortcutAndDefaultTooltip = meta.story({
+  args: {
+    ariaLabel: 'Button',
+    children: <FaceHappyIcon />,
+    shortcut: ['Control', 'Shift', 'H'],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByRole('button');
+
+    expect(button.getAttribute('aria-keyshortcuts')).toBe('Control+Shift+H');
+    expect(button.getAttribute('aria-label')).toBe('Button');
+
+    await userEvent.hover(button);
+    expect(canvas.getByText('Button [Ctrl+Shift+H]')).toBeInTheDocument();
   },
 });

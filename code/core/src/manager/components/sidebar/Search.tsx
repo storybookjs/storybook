@@ -1,6 +1,6 @@
 import React, { type ReactNode, useCallback, useRef, useState } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import { CloseIcon, SearchIcon } from '@storybook/icons';
@@ -409,9 +409,14 @@ export const Search = React.memo<SearchProps>(function Search({
                 )}
                 <Actions>
                   {isOpen && (
-                    <IconButton ariaLabel="Clear search" onClick={() => clearSelection()}>
+                    <Button
+                      padding="small"
+                      variant="ghost"
+                      ariaLabel="Clear search"
+                      onClick={() => clearSelection()}
+                    >
                       <CloseIcon />
-                    </IconButton>
+                    </Button>
                   )}
                   {searchFieldContent}
                 </Actions>

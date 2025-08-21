@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { IconButton, Separator } from 'storybook/internal/components';
+import { Button, Separator } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { MenuIcon } from '@storybook/icons';
@@ -26,9 +26,15 @@ export const menuTool: Addon_BaseType = {
         !singleStory &&
         !isVisible && (
           <>
-            <IconButton ariaLabel="Show sidebar" key="menu" onClick={toggle}>
+            <Button
+              padding="small"
+              variant="ghost"
+              ariaLabel="Show sidebar"
+              key="menu"
+              onClick={toggle}
+            >
               <MenuIcon />
-            </IconButton>
+            </Button>
             <Separator />
           </>
         )

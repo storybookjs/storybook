@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { Badge, EmptyTabContent, IconButton } from 'storybook/internal/components';
+import { Badge, Button, EmptyTabContent } from 'storybook/internal/components';
 
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
@@ -121,15 +121,16 @@ export const Report: FC<ReportProps> = ({
                 </Badge>
               )}
               <Count>{item.nodes.length}</Count>
-              {/* TODO: try to use a details/summary with asChild */}
-              <IconButton
+              <Button
                 onClick={(event) => toggleOpen(event, type, item)}
-                label={`${selection ? 'Collapse' : 'Expand'} details for: ${title}`}
+                ariaLabel={`${selection ? 'Collapse' : 'Expand'} details for: ${title}`}
                 aria-expanded={!!selection}
                 aria-controls={detailsId}
+                variant="ghost"
+                padding="small"
               >
                 <Icon style={{ transform: `rotate(${selection ? -180 : 0}deg)` }} />
-              </IconButton>
+              </Button>
             </HeaderBar>
             {selection ? (
               <Details

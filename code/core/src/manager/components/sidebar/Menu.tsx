@@ -1,12 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React, { useState } from 'react';
 
-import {
-  IconButton,
-  ToggleIconButton,
-  TooltipLinkList,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { Button, ToggleButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 
 import { CloseIcon, CogIcon, InfoIcon } from '@storybook/icons';
 
@@ -67,15 +62,15 @@ const buttonStyleAdditions = ({
   `}
 `;
 
-export const SidebarIconButton = styled(IconButton)<
-  ComponentProps<typeof IconButton> & {
+export const SidebarButton = styled(Button)<
+  ComponentProps<typeof Button> & {
     highlighted: boolean;
     isMobile: boolean;
   }
 >(buttonStyleAdditions);
 
-export const SidebarToggleIconButton = styled(ToggleIconButton)<
-  ComponentProps<typeof ToggleIconButton> & {
+export const SidebarToggleButton = styled(ToggleButton)<
+  ComponentProps<typeof ToggleButton> & {
     highlighted: boolean;
     isMobile: boolean;
   }
@@ -106,7 +101,9 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
   if (isMobile) {
     return (
       <MenuButtonGroup>
-        <SidebarIconButton
+        <SidebarButton
+          padding="small"
+          variant="ghost"
           ariaLabel="About Storybook"
           highlighted={!!isHighlighted}
           // @ts-expect-error (non strict)
@@ -114,15 +111,17 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
           isMobile={true}
         >
           <InfoIcon />
-        </SidebarIconButton>
-        <SidebarIconButton
+        </SidebarButton>
+        <SidebarButton
+          padding="small"
+          variant="ghost"
           ariaLabel="Close menu"
           highlighted={false}
           onClick={() => setMobileMenuOpen(false)}
           isMobile={true}
         >
           <CloseIcon />
-        </SidebarIconButton>
+        </SidebarButton>
       </MenuButtonGroup>
     );
   }
@@ -135,15 +134,17 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
       tooltip={({ onHide }) => <SidebarMenuList onClick={onHide} menu={menu} />}
       onVisibleChange={setIsTooltipVisible}
     >
-      <SidebarToggleIconButton
+      <SidebarToggleButton
         ariaLabel="Shortcuts"
         pressed={isTooltipVisible}
         highlighted={!!isHighlighted}
+        padding="small"
+        variant="ghost"
         size="medium"
         isMobile={false}
       >
         <CogIcon />
-      </SidebarToggleIconButton>
+      </SidebarToggleButton>
     </WithTooltip>
   );
 };

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Badge, IconButton, Select, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button, WithTooltip } from 'storybook/internal/components';
 import type { StoryIndex, Tag } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
@@ -27,12 +27,11 @@ const Wrapper = styled.div({
 });
 
 // Temporary to prevent regressions until TagFilterPanel can be refactored.
-const StyledIconButton = styled(IconButton)<{ active: boolean }>(({ active, variant, theme }) => ({
-  ...(active &&
-    variant === 'ghost' && {
-      background: theme.background.hoverable,
-      color: theme.color.secondary,
-    }),
+const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
+  ...(active && {
+    background: theme.background.hoverable,
+    color: theme.color.secondary,
+  }),
 }));
 
 const TagSelected = styled(Badge)(({ theme }) => ({
@@ -137,6 +136,8 @@ export const TagsFilter = ({
           <StyledIconButton
             key="tags"
             ariaLabel="Tag filters"
+            variant="ghost"
+            padding="small"
             description="Filter the items shown in a sidebar based on the tags applied to them."
             active={tagsActive}
             onClick={handleToggleExpand}

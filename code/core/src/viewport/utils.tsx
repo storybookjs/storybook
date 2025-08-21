@@ -1,6 +1,6 @@
 import React, { Fragment } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import { BrowserIcon, MobileIcon, TabletIcon } from '@storybook/icons';
 
@@ -27,10 +27,10 @@ export const ActiveViewportLabel = styled.div(({ theme }) => ({
   background: 'transparent',
 }));
 
-export const IconButtonWithLabel = styled(IconButton)(() => ({
+export const IconButtonWithLabel = styled(Button)({
   display: 'inline-flex',
   alignItems: 'center',
-}));
+});
 
 export const IconButtonLabel = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2 - 1,

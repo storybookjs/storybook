@@ -2,7 +2,7 @@
 import React, { memo, useCallback, useEffect } from 'react';
 
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import { LightningIcon } from '@storybook/icons';
 
 import { ADDON_ID, PARAM_KEY, TOOL_ID } from './constants';
@@ -30,9 +30,16 @@ export const Tool = memo(function MyAddonSelector() {
   }, [toggleMyTool, api]);
 
   return (
-    <IconButton key={TOOL_ID} active={isActive} title="Enable my addon" onClick={toggleMyTool}>
+    <Button
+      padding="small"
+      variant="ghost"
+      key={TOOL_ID}
+      active={isActive}
+      ariaLabel="Enable my addon"
+      onClick={toggleMyTool}
+    >
       <LightningIcon />
-    </IconButton>
+    </Button>
   );
 });
 ```

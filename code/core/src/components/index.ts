@@ -79,6 +79,7 @@ export { AriaTabList } from './components/AriaTabs/AriaTabList';
 export { AriaTabPanel } from './components/AriaTabs/AriaTabPanel';
 export { AriaTabs, useAriaTabListState } from './components/AriaTabs/AriaTabs';
 export { AriaToolbar, AbstractAriaToolbar } from './components/AriaToolbar/AriaToolbar';
+export type { TabProps } from './components/AriaTabs/AriaTabs';
 
 // Graphics
 export { StorybookLogo } from './brand/StorybookLogo';

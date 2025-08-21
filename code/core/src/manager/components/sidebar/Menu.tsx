@@ -26,9 +26,6 @@ const buttonStyleAdditions = ({
   overflow: visible;
   margin-top: 0;
   z-index: 1;
-  // TODO/FIXME: questionable, should be an option of the component if relevant.
-  // Or could be handled through dedicated design tokens.
-  // AA: 24px AAA: 44px
   ${isMobile &&
   `
     width: 36px;
@@ -126,7 +123,6 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
     );
   }
 
-  // TODO: should be a menu button. menubutton and select must share behaviour code.
   return (
     <WithTooltip
       placement="top"

@@ -25,7 +25,7 @@ export type KeyboardEventLike = Pick<
 // NOTE: if we change the fields on the event that we need, we'll need to update the serialization in core/preview/start.js
 export const eventToShortcut = (e: KeyboardEventLike): (string | string[])[] | null => {
   // Meta key only doesn't map to a shortcut
-  if (['Meta', 'Alt', 'Control', 'Shift'].includes(e.key)) {
+  if (['Meta', 'Alt', 'Control', 'Shift', 'Tab'].includes(e.key)) {
     return null;
   }
 

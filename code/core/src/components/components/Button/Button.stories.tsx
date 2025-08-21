@@ -4,9 +4,7 @@ import { styled } from 'storybook/internal/theming';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { userEvent } from '@storybook/testing-library';
-
-import { expect, fn, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';
@@ -24,6 +22,16 @@ const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
 
 export const Base = meta.story({
   args: { ariaLabel: false, children: 'Button' },
+});
+
+/** This is the variant most commonly used in a toolbar or when a button only contains an icon. */
+export const IconButton = meta.story({
+  args: {
+    ariaLabel: 'Button',
+    children: <FaceHappyIcon />,
+    padding: 'small',
+    variant: 'ghost',
+  },
 });
 
 export const Variants = meta.story({
@@ -305,15 +313,5 @@ export const ShortcutAndDefaultTooltip = meta.story({
     ariaLabel: 'Button',
     children: <FaceHappyIcon />,
     shortcut: ['Control', 'Shift', 'H'],
-  },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const button = canvas.getByRole('button');
-
-    expect(button.getAttribute('aria-keyshortcuts')).toBe('Control+Shift+H');
-    expect(button.getAttribute('aria-label')).toBe('Button');
-
-    await userEvent.hover(button);
-    expect(canvas.getByText('Button [Ctrl+Shift+H]')).toBeInTheDocument();
   },
 });

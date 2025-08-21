@@ -121,25 +121,12 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButton = styled(ToggleButton)(({ theme }) => ({
+const RawButton = styled(ToggleButton)({
   position: 'absolute',
   zIndex: 2,
   top: 2,
   right: 2,
-  // height: 21,
-  // padding: '0 3px',
-  // background: theme.background.bar,
-  // border: `1px solid ${theme.appBorderColor}`,
-  // borderRadius: 3,
-  // color: theme.textMutedColor,
-  // fontSize: '9px',
-  // fontWeight: 'bold',
-  // textDecoration: 'none',
-  // span: {
-  //   marginLeft: 3,
-  //   marginTop: 1,
-  // },
-}));
+});
 
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
   flex: 1,
@@ -226,7 +213,12 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
 
   if (!hasData) {
     return (
-      <Button disabled={readonly} id={getControlSetterButtonId(name)} onClick={onForceVisible}>
+      <Button
+        ariaLabel={false}
+        disabled={readonly}
+        id={getControlSetterButtonId(name)}
+        onClick={onForceVisible}
+      >
         Set object
       </Button>
     );

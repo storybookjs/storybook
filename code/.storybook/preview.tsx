@@ -191,16 +191,6 @@ const loaders = [
 ] as Loader[];
 
 const decorators = [
-  withThemeByClassName({
-    themes: {
-      light: 'debug',
-      dark: 'also-debug',
-      darker: 'still-debug',
-      darkest: 'forever-debug',
-    },
-    defaultTheme: 'light',
-  }),
-
   // This decorator adds the DocsContext created in the loader above
   (Story, { loaded: { docsContext } }) =>
     docsContext ? (

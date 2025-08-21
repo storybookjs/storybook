@@ -394,7 +394,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
               onClick={() => resetArgs()}
               ariaLabel="Reset controls"
             >
-              <UndoIcon aria-hidden />
+              <UndoIcon />
             </StyledButton>
           </ButtonPositionWrapper>
         )}

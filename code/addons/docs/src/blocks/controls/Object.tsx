@@ -254,13 +254,13 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
       {isObjectOrArray && (
         <RawButton
           pressed={showRaw}
-          ariaLabel={`Edit the ${name} properties in text format`}
+          ariaLabel={`Edit the ${name} properties in JSON format`}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);
           }}
         >
-          <span>Raw JSON</span>
+          Edit JSON
         </RawButton>
       )}
       {!showRaw ? (

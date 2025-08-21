@@ -3849,8 +3849,6 @@ describe('PreviewWeb', () => {
       expect(await preview.extract()).toMatchInlineSnapshot(`
         {
           "component-one--a": {
-            "__testFunction": undefined,
-            "__tests": undefined,
             "argTypes": {
               "foo": {
                 "name": "foo",
@@ -3919,13 +3917,12 @@ describe('PreviewWeb', () => {
               "dev",
               "test",
             ],
+            "testFunction": undefined,
             "testingLibraryRender": undefined,
             "title": "Component One",
             "usesMount": false,
           },
           "component-one--b": {
-            "__testFunction": undefined,
-            "__tests": undefined,
             "argTypes": {
               "foo": {
                 "name": "foo",
@@ -3994,13 +3991,12 @@ describe('PreviewWeb', () => {
               "dev",
               "test",
             ],
+            "testFunction": undefined,
             "testingLibraryRender": undefined,
             "title": "Component One",
             "usesMount": false,
           },
           "component-one--e": {
-            "__testFunction": undefined,
-            "__tests": undefined,
             "argTypes": {},
             "args": {},
             "component": undefined,
@@ -4047,13 +4043,12 @@ describe('PreviewWeb', () => {
               "dev",
               "test",
             ],
+            "testFunction": undefined,
             "testingLibraryRender": undefined,
             "title": "Component One",
             "usesMount": false,
           },
           "component-two--c": {
-            "__testFunction": undefined,
-            "__tests": undefined,
             "argTypes": {
               "foo": {
                 "name": "foo",
@@ -4110,6 +4105,7 @@ describe('PreviewWeb', () => {
               "dev",
               "test",
             ],
+            "testFunction": undefined,
             "testingLibraryRender": undefined,
             "title": "Component Two",
             "usesMount": false,

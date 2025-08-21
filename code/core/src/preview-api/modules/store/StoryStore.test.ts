@@ -282,8 +282,6 @@ describe('StoryStore', () => {
       expect(store.extract()).toMatchInlineSnapshot(`
         {
           "component-one--a": {
-            "__testFunction": undefined,
-            "__tests": undefined,
             "argTypes": {
               "a": {
                 "name": "a",
@@ -344,6 +342,7 @@ describe('StoryStore', () => {
               "dev",
               "test",
             ],
+            "testFunction": undefined,
             "testingLibraryRender": undefined,
             "title": "Component One",
             "usesMount": false,
@@ -476,8 +475,6 @@ describe('StoryStore', () => {
       expect(store.extract()).toMatchInlineSnapshot(`
         {
           "component-one--a": {
-            "__testFunction": undefined,
-            "__tests": undefined,
             "argTypes": {
               "a": {
                 "name": "a",
@@ -538,13 +535,12 @@ describe('StoryStore', () => {
               "dev",
               "test",
             ],
+            "testFunction": undefined,
             "testingLibraryRender": undefined,
             "title": "Component One",
             "usesMount": false,
           },
           "component-one--b": {
-            "__testFunction": undefined,
-            "__tests": undefined,
             "argTypes": {
               "a": {
                 "name": "a",
@@ -605,13 +601,12 @@ describe('StoryStore', () => {
               "dev",
               "test",
             ],
+            "testFunction": undefined,
             "testingLibraryRender": undefined,
             "title": "Component One",
             "usesMount": false,
           },
           "component-two--c": {
-            "__testFunction": undefined,
-            "__tests": undefined,
             "argTypes": {
               "a": {
                 "name": "a",
@@ -672,6 +667,7 @@ describe('StoryStore', () => {
               "dev",
               "test",
             ],
+            "testFunction": undefined,
             "testingLibraryRender": undefined,
             "title": "Component Two",
             "usesMount": false,

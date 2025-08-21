@@ -331,7 +331,7 @@ const Node = React.memo<NodeProps>(function Node({
             }
           }}
           // TODO: hack stuff, should be fixed later
-          {...(item.tags.includes('test-fn') && { type: 'test' })}
+          {...(item.tags?.includes('test-fn') && { type: 'test' })}
           {...(item.type === 'docs' && { docsMode })}
         >
           {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||

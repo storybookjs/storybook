@@ -1,7 +1,7 @@
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import { sanitize } from 'storybook/internal/csf';
-import type { ComponentAnnotations, ComposedStoryFn } from 'storybook/internal/types';
+import { type Meta, type Story, isStory, toTestId } from 'storybook/internal/csf';
+import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
@@ -33,15 +33,19 @@ export const convertToFilePath = (url: string): string => {
 
 export const testStory = (
   exportName: string,
-  story: ComposedStoryFn,
-  meta: ComponentAnnotations,
+  story: ComposedStoryFn | Story<Renderer>,
+  meta: ComponentAnnotations | Meta<Renderer>,
   skipTags: string[],
   testName?: string
 ) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
     const annotations = getCsfFactoryAnnotations(story, meta);
+
+    const storyAnnotations =
+      isStory(story) && testName ? story.getAllTests()[testName].story.input : annotations.story;
+
     const composedStory = composeStory(
-      annotations.story,
+      storyAnnotations,
       annotations.meta!,
       { initialGlobals: (await getInitialGlobals?.()) ?? {} },
       annotations.preview ?? globalThis.globalProjectAnnotations,
@@ -59,15 +63,18 @@ export const testStory = (
     };
 
     if (testName) {
-      // TODO: this should be reworked
-      _task.meta.storyId = `${composedStory.id}-${sanitize(testName)}`;
+      _task.meta.storyId = toTestId(composedStory.id, testName);
     } else {
       _task.meta.storyId = composedStory.id;
     }
 
     await setViewport(composedStory.parameters, composedStory.globals);
 
-    await composedStory.run(undefined, testName);
+    if (isStory(story) && testName) {
+      await composedStory.run(undefined, story.getAllTests()[testName].test);
+    } else {
+      await composedStory.run(undefined);
+    }
 
     _task.meta.reports = composedStory.reporting.reports;
   };

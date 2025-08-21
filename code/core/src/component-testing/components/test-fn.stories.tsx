@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { TestFunction } from 'storybook/internal/types';
+import type { StoryContext } from '@storybook/react-vite';
 
 import { expect, fn } from 'storybook/test';
 
@@ -28,10 +28,13 @@ Default.test('simple', async ({ canvas, userEvent, args }) => {
   await expect(args.onClick).toHaveBeenCalled();
 });
 
-const doTest: TestFunction = async ({ canvas, userEvent, args }) => {
+const doTest = async ({
+  canvas,
+  userEvent,
+  args,
+}: StoryContext<React.ComponentProps<'button'>>) => {
   const button = canvas.getByText('Arg from story');
   await userEvent.click(button);
-  // @ts-expect-error TODO: Fix later with Kasper
   await expect(args.onClick).toHaveBeenCalled();
 };
 Default.test('referring to function in file', doTest);
@@ -40,12 +43,28 @@ Default.test(
   'with overrides',
   {
     args: {
-      children: 'Arg from test',
+      children: 'Arg from test override',
     },
+    parameters: {
+      viewport: {
+        options: {
+          sized: {
+            name: 'Sized',
+            styles: {
+              width: '380px',
+              height: '500px',
+            },
+          },
+        },
+      },
+      chromatic: { viewports: [380] },
+    },
+    globals: { sb_theme: 'dark', viewport: { value: 'sized' } },
   },
   async ({ canvas }) => {
-    const button = canvas.getByText('Arg from test');
+    const button = canvas.getByText('Arg from test override');
     await expect(button).toBeInTheDocument();
+    expect(document.body.clientWidth).toBe(380);
   }
 );
 Default.test(

@@ -6,7 +6,6 @@ import type {
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
   Renderer,
-  StoryAnnotations,
   StoryAnnotationsOrFn,
   StoryId,
 } from 'storybook/internal/types';
@@ -25,10 +24,10 @@ See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#hoisted-csf-
 
 export function normalizeStory<TRenderer extends Renderer>(
   key: StoryId,
-  storyAnnotations: StoryAnnotationsOrFn<TRenderer>,
+  storyAnnotations: StoryAnnotationsOrFn<TRenderer> & { testFunction?: any },
   meta: NormalizedComponentAnnotations<TRenderer>
 ): NormalizedStoryAnnotations<TRenderer> {
-  const storyObject: StoryAnnotations<TRenderer> = storyAnnotations;
+  const storyObject = storyAnnotations;
   const userStoryFn: ArgsStoryFn<TRenderer> | null =
     typeof storyAnnotations === 'function' ? storyAnnotations : null;
 
@@ -62,9 +61,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.afterEach),
     ...normalizeArrays(story?.afterEach),
   ];
-  const __tests = storyAnnotations.__tests;
-  const __testFunction = storyAnnotations.__testFunction;
-  const { render, play, tags = [], globals = {} } = storyObject;
+  const { render, play, tags = [], globals = {}, testFunction } = storyObject;
 
   const id = parameters.__id || toId(meta.id, exportName);
   return {
@@ -80,9 +77,8 @@ export function normalizeStory<TRenderer extends Renderer>(
     beforeEach,
     afterEach,
     globals,
+    testFunction,
     ...(render && { render }),
-    ...(__tests && { __tests }),
-    ...(__testFunction && { __testFunction }),
     ...(userStoryFn && { userStoryFn }),
     ...(play && { play }),
   };

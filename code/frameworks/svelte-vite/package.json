@@ -1,9 +1,14 @@
 {
   "name": "@storybook/svelte-vite",
   "version": "9.1.2",
-  "description": "Storybook for Svelte and Vite: Develop Svelte components in isolation with Hot Reloading.",
+  "description": "Storybook for Svelte and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-framework",
+    "svelte",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/svelte-vite",
   "bugs": {

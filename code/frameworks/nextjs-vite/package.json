@@ -1,11 +1,15 @@
 {
   "name": "@storybook/nextjs-vite",
   "version": "9.1.2",
-  "description": "Storybook for Next.js and Vite",
+  "description": "Storybook for Next.js and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
-    "nextjs",
-    "vite"
+    "storybook-framework",
+    "next",
+    "next.js",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/nextjs-vite",
   "bugs": {

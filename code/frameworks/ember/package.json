@@ -1,7 +1,14 @@
 {
   "name": "@storybook/ember",
   "version": "9.1.2",
-  "description": "Storybook for Ember: Develop, document, and test Ember components in isolation",
+  "description": "Storybook for Ember: Develop, document, and test UI components in isolation",
+  "keywords": [
+    "storybook",
+    "storybook-framework",
+    "ember",
+    "component",
+    "components"
+  ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"

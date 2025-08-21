@@ -1,12 +1,16 @@
 {
   "name": "@storybook/sveltekit",
   "version": "9.1.2",
-  "description": "Storybook for SvelteKit",
+  "description": "Storybook for SvelteKit: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
+    "storybook-framework",
     "svelte",
     "sveltekit",
-    "svelte-kit"
+    "svelte-kit",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/sveltekit",
   "bugs": {

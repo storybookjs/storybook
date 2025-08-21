@@ -2,15 +2,16 @@ import { dirname, sep } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 
+import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
+
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 import loadConfig from 'next/dist/server/config';
-import { DefinePlugin } from 'webpack';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfig): void => {
   baseConfig.plugins?.push(
-    new DefinePlugin({
+    new WebpackDefinePlugin({
       'process.env.__NEXT_VERSION': JSON.stringify(getNextjsVersion()),
     })
   );

@@ -29,7 +29,7 @@ export const IconSymbols: FC = () => {
   return (
     <Svg data-chromatic="ignore">
       <symbol id={GROUP_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/Folder.tsx */}
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/FolderIcon.tsx */}
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -38,7 +38,7 @@ export const IconSymbols: FC = () => {
         />
       </symbol>
       <symbol id={COMPONENT_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/Component.tsx */}
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/ComponentIcon.tsx */}
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -47,7 +47,7 @@ export const IconSymbols: FC = () => {
         />
       </symbol>
       <symbol id={DOCUMENT_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/Document.tsx */}
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/DocumentIcon.tsx */}
         <path
           d="M4 5.5a.5.5 0 01.5-.5h5a.5.5 0 010 1h-5a.5.5 0 01-.5-.5zM4.5 7.5a.5.5 0 000 1h5a.5.5 0 000-1h-5zM4 10.5a.5.5 0 01.5-.5h5a.5.5 0 010 1h-5a.5.5 0 01-.5-.5z"
           fill="currentColor"
@@ -60,7 +60,7 @@ export const IconSymbols: FC = () => {
         />
       </symbol>
       <symbol id={STORY_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/BookmarkHollow.tsx */}
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/BookmarkHollowIcon.tsx */}
         <path
           fillRule="evenodd"
           clipRule="evenodd"

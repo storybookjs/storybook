@@ -80,12 +80,13 @@ Default.test(
     await expect(button).toBeEnabled();
   }
 );
-export const Extended = Default.extend({
+
+export const DefaultExtended = Default.extend({
   args: {
     children: 'Arg from extended story',
   },
 });
-Extended.test('should have extended args', async ({ canvas }) => {
+DefaultExtended.test('should have extended args', async ({ canvas }) => {
   const button = canvas.getByText('Arg from extended story');
   await expect(button).toBeEnabled();
 });

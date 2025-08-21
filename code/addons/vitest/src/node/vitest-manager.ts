@@ -283,7 +283,16 @@ export class VitestManager {
       } else if (selectedStory.tags?.includes('has-tests')) {
         // Use case 3: "Single" story run on a story with tests
         // -> run all tests of that story, as storyName is a describe block
-        regex = new RegExp(`^${storyName} `);
+        /**
+         * TODO: [test-syntax] discuss. The vitest transformation keeps the export name as is, e.g.
+         * "PrimaryButton", while the storybook sidebar changes the name to "Primary Button". That's
+         * why we need to remove spaces from the story name, to match the test name. If we were to
+         * also beautify the test name, doing a regex wouldn't be precise because there could be two
+         * describes, for instance: "Primary Button" and "Primary Button Mobile" and both would
+         * match. The fact that there are no spaces in the test name is what makes "PrimaryButton"
+         * and "PrimaryButtonMobile" worth well in the regex.
+         */
+        regex = new RegExp(`^${storyName.replace(/\s+/g, '')} `);
       }
       this.vitest!.setGlobalTestNamePattern(regex);
     }

@@ -1,13 +1,8 @@
-import { global } from '@storybook/global';
-
 import type { API_KeyCollection } from '../modules/shortcuts';
+import { isMacLike } from './platform';
 
 export type { API_KeyCollection } from '../modules/shortcuts';
 
-const { navigator } = global;
-
-export const isMacLike = () =>
-  navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
 export const controlOrMetaSymbol = () => (isMacLike() ? '⌘' : 'ctrl');
 export const controlOrMetaKey = () => (isMacLike() ? 'meta' : 'control');
 export const optionOrAltSymbol = () => (isMacLike() ? '⌥' : 'alt');

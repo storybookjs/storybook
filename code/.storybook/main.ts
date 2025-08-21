@@ -16,89 +16,89 @@ const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-co
 
 const config = defineMain({
   stories: [
-    // './*.stories.@(js|jsx|ts|tsx)',
-    // {
-    //   directory: '../core/template/stories',
-    //   titlePrefix: 'core',
-    // },
-    // {
-    //   directory: '../core/src/manager',
-    //   titlePrefix: 'manager',
-    // },
-    // {
-    //   directory: '../core/src/preview-api',
-    //   titlePrefix: 'preview',
-    // },
-    // {
-    //   directory: '../core/src/preview',
-    //   titlePrefix: 'preview',
-    // },
-    // {
-    //   directory: '../core/src/components/brand',
-    //   titlePrefix: 'brand',
-    // },
-    // {
-    //   directory: '../core/src/components/components',
-    //   titlePrefix: 'components',
-    // },
+    './*.stories.@(js|jsx|ts|tsx)',
+    {
+      directory: '../core/template/stories',
+      titlePrefix: 'core',
+    },
+    {
+      directory: '../core/src/manager',
+      titlePrefix: 'manager',
+    },
+    {
+      directory: '../core/src/preview-api',
+      titlePrefix: 'preview',
+    },
+    {
+      directory: '../core/src/preview',
+      titlePrefix: 'preview',
+    },
+    {
+      directory: '../core/src/components/brand',
+      titlePrefix: 'brand',
+    },
+    {
+      directory: '../core/src/components/components',
+      titlePrefix: 'components',
+    },
     {
       directory: '../core/src/component-testing/components',
       titlePrefix: 'component-testing',
       files: 'test-fn.stories.tsx',
     },
-    // {
-    //   directory: '../core/src/controls/components',
-    //   titlePrefix: 'controls',
-    // },
-    // {
-    //   directory: '../core/src/highlight',
-    //   titlePrefix: 'highlight',
-    // },
-    // {
-    //   directory: '../addons/docs/src/blocks',
-    //   titlePrefix: 'addons/docs/blocks',
-    // },
-    // {
-    //   directory: '../addons/a11y/src',
-    //   titlePrefix: 'addons/accessibility',
-    // },
-    // {
-    //   directory: '../addons/a11y/template/stories',
-    //   titlePrefix: 'addons/accessibility',
-    // },
-    // {
-    //   directory: '../addons/docs/template/stories',
-    //   titlePrefix: 'addons/docs',
-    // },
-    // {
-    //   directory: '../addons/links/template/stories',
-    //   titlePrefix: 'addons/links',
-    // },
-    // {
-    //   directory: '../addons/themes/template/stories',
-    //   titlePrefix: 'addons/themes',
-    // },
-    // {
-    //   directory: '../addons/onboarding/src',
-    //   titlePrefix: 'addons/onboarding',
-    // },
-    // {
-    //   directory: '../addons/pseudo-states/src',
-    //   titlePrefix: 'addons/pseudo-states',
-    // },
-    // {
-    //   directory: '../addons/vitest/src/components',
-    //   titlePrefix: 'addons/vitest',
-    // },
-    // {
-    //   directory: '../addons/vitest/template/stories',
-    //   titlePrefix: 'addons/vitest',
-    // },
-    // {
-    //   directory: '../addons/vitest/src',
-    //   titlePrefix: 'addons/vitest',
-    //   files: 'stories.tsx',
-    // },
+    {
+      directory: '../core/src/controls/components',
+      titlePrefix: 'controls',
+    },
+    {
+      directory: '../core/src/highlight',
+      titlePrefix: 'highlight',
+    },
+    {
+      directory: '../addons/docs/src/blocks',
+      titlePrefix: 'addons/docs/blocks',
+    },
+    {
+      directory: '../addons/a11y/src',
+      titlePrefix: 'addons/accessibility',
+    },
+    {
+      directory: '../addons/a11y/template/stories',
+      titlePrefix: 'addons/accessibility',
+    },
+    {
+      directory: '../addons/docs/template/stories',
+      titlePrefix: 'addons/docs',
+    },
+    {
+      directory: '../addons/links/template/stories',
+      titlePrefix: 'addons/links',
+    },
+    {
+      directory: '../addons/themes/template/stories',
+      titlePrefix: 'addons/themes',
+    },
+    {
+      directory: '../addons/onboarding/src',
+      titlePrefix: 'addons/onboarding',
+    },
+    {
+      directory: '../addons/pseudo-states/src',
+      titlePrefix: 'addons/pseudo-states',
+    },
+    {
+      directory: '../addons/vitest/src/components',
+      titlePrefix: 'addons/vitest',
+    },
+    {
+      directory: '../addons/vitest/template/stories',
+      titlePrefix: 'addons/vitest',
+    },
+    {
+      directory: '../addons/vitest/src',
+      titlePrefix: 'addons/vitest',
+      files: 'stories.tsx',
+    },
   ],
   addons: [
     '@storybook/addon-themes',

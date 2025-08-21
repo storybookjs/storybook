@@ -40,8 +40,12 @@ export const testStory = (
 ) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
     const annotations = getCsfFactoryAnnotations(story, meta);
+
+    const storyAnnotations =
+      isStory(story) && testName ? story.getAllTests()[testName].story.input : annotations.story;
+
     const composedStory = composeStory(
-      annotations.story,
+      storyAnnotations,
       annotations.meta!,
       { initialGlobals: (await getInitialGlobals?.()) ?? {} },
       annotations.preview ?? globalThis.globalProjectAnnotations,

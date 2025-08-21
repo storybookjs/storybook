@@ -330,7 +330,7 @@ const Node = React.memo<NodeProps>(function Node({
               setMobileMenuOpen(false);
             }
           }}
-          // TODO: hack stuff, should be fixed later
+          // TODO: [test-syntax] Gert hack stuff, should be fixed later
           {...(item.tags?.includes('test-fn') && { type: 'test' })}
           {...(item.type === 'docs' && { docsMode })}
         >

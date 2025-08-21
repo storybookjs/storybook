@@ -59,7 +59,7 @@ export interface API_TestEntry extends Omit<API_StoryEntry, 'type'> {
   type: 'test';
   parentId: StoryId;
 }
-// TODO: enable TestEntry once we start working on UI for tests
+// TODO: [test-syntax] enable TestEntry once we start working on UI for tests
 export type API_LeafEntry = API_DocsEntry | API_StoryEntry; // | API_TestEntry;
 export type API_HashEntry =
   | API_RootEntry

@@ -70,7 +70,7 @@ const LeafNode = styled.a<{ depth?: number; type?: 'story' | 'test' }>(
     gap: 6,
     flex: 1,
     alignItems: 'start',
-    // TODO: hack stuff, should be fixed later
+    // TODO: [test-syntax] Gert hack stuff, should be fixed later
     paddingLeft: type === 'test' ? `${32 + depth * 18}px` : `${22 + depth * 18}px`,
     paddingTop: 5,
     paddingBottom: 4,

@@ -110,7 +110,7 @@ function defineMeta<
     input,
     preview,
     get composed() {
-      // TODO: check this later
+      // TODO: [test-syntax] Kasper check this later
       return composeConfigs([preview.input, input]);
     },
     // @ts-expect-error hard

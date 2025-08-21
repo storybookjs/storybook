@@ -703,7 +703,6 @@ export class CsfFile {
               self._storyTests[exportName] = [];
             }
 
-            // TODO: Do we want to support function references?
             if (
               t.isArrowFunctionExpression(testFunction) ||
               t.isFunctionExpression(testFunction) ||
@@ -834,7 +833,7 @@ export class CsfFile {
         stats.moduleMock = !!self.imports.find((fname) => isModuleMock(fname));
 
         if (self._storyTests[key]) {
-          // TODO: if we want to add a tag for the story that contains tests, this is the place for it
+          // TODO: [test-syntax] if we want to add a tag for the story that contains tests, this is the place for it
           // acc[key].tags = [...(acc[key].tags || []), 'story-with-tests'];
 
           stats.tests = true;
@@ -907,6 +906,11 @@ export class CsfFile {
         __stats: story.__stats,
       };
 
+      if (this._storyTests[exportName]) {
+        // TODO: discuss this later
+        storyInput.tags = [...(storyInput.tags || []), 'has-tests'];
+      }
+
       index.push({
         ...storyInput,
         type: 'story',
@@ -918,9 +922,11 @@ export class CsfFile {
           index.push({
             ...storyInput,
             type: 'story',
-            // TODO: enable this once we start working on UI for tests
+            // TODO: [test-syntax] enable this once we start working on UI for tests
             // type: 'test',
-            // parentId: story.id,
+            // @ts-expect-error TODO: discuss this later
+            parentId: story.id,
+            parentName: story.name,
             name: test.name,
             tags: [...storyInput.tags, 'test-fn'],
             __id: test.id,

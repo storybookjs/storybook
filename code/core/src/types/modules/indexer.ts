@@ -85,7 +85,7 @@ export type DocsIndexEntry = BaseIndexEntry & {
   type: 'docs';
 };
 
-// TODO: add this once we start working on UI for tests
+// TODO: [test-syntax] add this once we start working on UI for tests
 export type IndexEntry = StoryIndexEntry | DocsIndexEntry; //| TestIndexEntry;
 
 export interface IndexInputStats {
@@ -151,7 +151,7 @@ export type DocsIndexInput = BaseIndexInput & {
   storiesImports?: Path[];
 };
 
-// TODO: add this once we start working on UI for tests
+// TODO: [test-syntax] add this once we start working on UI for tests
 export type IndexInput = StoryIndexInput | DocsIndexInput; // | TestIndexInput;
 
 export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags'> {

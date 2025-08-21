@@ -35,7 +35,7 @@ import { IndexingError, MultipleIndexingError } from './IndexingError';
 import { autoName } from './autoName';
 import { type IndexStatsSummary, addStats } from './summarizeStats';
 
-// TODO: replace line 42 with this once we start working on UI for tests
+// TODO: [test-syntax] replace line 42 with this once we start working on UI for tests
 // type StoryIndexEntryWithExtra = (StoryIndexEntry | TestIndexEntry) & {
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
@@ -456,14 +456,19 @@ export class StoryIndexGenerator {
           tags,
         };
 
-        // TODO: Enable this once we start working on UI for tests
-        // if (input.type === 'test') {
-        //   return {
-        //     type: 'test',
-        //     parentId: input.parentId,
-        //     ...commonMetadata,
-        //   };
-        // }
+        // TODO: [test-syntax] Enable this once we start working on UI for tests
+        if (input.tags?.includes('has-tests')) {
+          // if (input.type === 'test') {
+          return {
+            // type: 'test',
+            type: 'story',
+            // @ts-expect-error TODO: discuss this
+            parentId: input.parentId,
+            // @ts-expect-error TODO: discuss this
+            parentName: input.parentName,
+            ...commonMetadata,
+          };
+        }
 
         return {
           type: 'story',

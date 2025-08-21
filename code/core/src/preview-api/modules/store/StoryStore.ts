@@ -209,7 +209,6 @@ export class StoryStore<TRenderer extends Renderer> {
       componentAnnotations,
       csfFile.projectAnnotations ?? this.projectAnnotations
     );
-    // TODO: check type error later
     this.args.setInitial(story);
     this.hooks[story.id] = this.hooks[story.id] || new HooksContext();
     return story;

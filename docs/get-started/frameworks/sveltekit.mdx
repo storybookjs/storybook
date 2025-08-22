@@ -369,6 +369,46 @@ Type: `Record<string, any>`
 
 Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For Sveltekit, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
 
+#### `docgen`
+
+Type: `boolean`
+
+Default: `true`
+
+Enables or disables automatic documentation generation for component properties, events, and slots. When disabled, Storybook will skip the docgen processing step during build, which can improve build performance.
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/sveltekit';
+
+const config: StorybookConfig = {
+  framework: {
+    name: '@storybook/sveltekit',
+    options: {
+      docgen: false, // Disable docgen for better performance
+    },
+  },
+};
+
+export default config;
+```
+
+##### When to disable docgen
+
+You might want to disable docgen in the following scenarios:
+
+- **Performance**: Docgen processing can be slow for large projects with many components
+- **Not using docs or controls**: If you're not using Storybook's auto-generated documentation features
+- **Custom documentation**: If you prefer to manually document your components
+- **Build optimization**: To reduce build time in CI/CD pipelines
+
+##### Impact of disabling docgen
+
+When `docgen` is set to `false`:
+
+- Component properties, events, and slots will not be automatically extracted
+- Auto-generated controls and documentation will not be available
+- Manual documentation and controls can still be used via `argTypes` and `parameters`
+
 ## Troubleshooting
 
 ### Error when starting Storybook

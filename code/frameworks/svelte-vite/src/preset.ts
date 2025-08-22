@@ -1,7 +1,7 @@
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { svelteDocgen } from './plugins/svelte-docgen';
-import type { StorybookConfig } from './types';
+import type { FrameworkOptions, StorybookConfig } from './types';
 import { handleSvelteKit } from './utils';
 
 export const core: PresetProperty<'core'> = {
@@ -12,9 +12,13 @@ export const core: PresetProperty<'core'> = {
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const { plugins = [] } = config;
 
-  // Check if docgen is disabled in main config
-  const docgenEnabled = await options.presets.apply('docgen');
-  if (docgenEnabled !== false) {
+  // Get framework options to check if docgen is disabled
+  const framework = await options.presets.apply('framework');
+  const frameworkOptions: FrameworkOptions = 
+    typeof framework === 'string' ? {} : (framework.options ?? {});
+  
+  // Check if docgen is disabled in framework options (default is true/enabled)
+  if (frameworkOptions.docgen !== false) {
     plugins.push(await svelteDocgen());
   }
 

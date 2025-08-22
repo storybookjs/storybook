@@ -19,17 +19,13 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const frameworkOptions: FrameworkOptions =
     typeof framework === 'string' ? {} : (framework.options ?? {});
 
-  // Check if docgen is disabled in main config
-  const docgenEnabled = await options.presets.apply('docgen');
-  if (docgenEnabled !== false) {
-    const docgen = resolveDocgenOptions(frameworkOptions.docgen);
+  const docgen = resolveDocgenOptions(frameworkOptions.docgen);
 
-    // add docgen plugin depending on framework option
-    if (docgen.plugin === 'vue-component-meta') {
-      plugins.push(await vueComponentMeta(docgen.tsconfig));
-    } else {
-      plugins.push(await vueDocgen());
-    }
+  // add docgen plugin depending on framework option
+  if (docgen.plugin === 'vue-component-meta') {
+    plugins.push(await vueComponentMeta(docgen.tsconfig));
+  } else {
+    plugins.push(await vueDocgen());
   }
 
   const { mergeConfig } = await import('vite');

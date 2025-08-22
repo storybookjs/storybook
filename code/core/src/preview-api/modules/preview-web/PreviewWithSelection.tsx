@@ -304,7 +304,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     const viewModeChanged = this.currentRender?.type !== entry.type;
 
     // Show a spinner while we load the next story
-    if (entry.type === 'story') {
+    if (entry.type === 'story' || entry.type === 'test') {
       this.view.showPreparingStory({ immediate: viewModeChanged });
     } else {
       this.view.showPreparingDocs({ immediate: viewModeChanged });
@@ -321,7 +321,7 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
 
     let render: PossibleRender<TRenderer>;
-    if (entry.type === 'story') {
+    if (entry.type === 'story' || entry.type === 'test') {
       render = new StoryRender<TRenderer>(
         this.channel,
         this.storyStoreValue,

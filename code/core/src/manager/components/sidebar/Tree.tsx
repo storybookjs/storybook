@@ -237,7 +237,7 @@ const Node = React.memo<NodeProps>(function Node({
   }
 
   const statusLinks = useMemo<Link[]>(() => {
-    if (item.type === 'story' || item.type === 'docs') {
+    if (item.type === 'story' || item.type === 'test' || item.type === 'docs') {
       return Object.entries(statuses)
         .filter(([, status]) => status.sidebarContextMenu !== false)
         .sort((a, b) => statusOrder.indexOf(a[1].value) - statusOrder.indexOf(b[1].value))
@@ -296,7 +296,7 @@ const Node = React.memo<NodeProps>(function Node({
       ? useContextMenu(item, statusLinks, api)
       : { node: null, onMouseEnter: () => {} };
 
-  if (item.type === 'story' || item.type === 'docs') {
+  if (item.type === 'story' || item.type === 'test' || item.type === 'docs') {
     const LeafNode = item.type === 'docs' ? DocumentNode : StoryNode;
 
     const statusValue = getMostCriticalStatusValue(
@@ -330,8 +330,7 @@ const Node = React.memo<NodeProps>(function Node({
               setMobileMenuOpen(false);
             }
           }}
-          // TODO: [test-syntax] Gert hack stuff, should be fixed later
-          {...(item.tags?.includes('test-fn') && { type: 'test' })}
+          {...(item.type === 'test' && { type: 'test' })}
           {...(item.type === 'docs' && { docsMode })}
         >
           {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
@@ -569,6 +568,7 @@ export const Tree = React.memo<{
       if (onlyChild.type === 'story') {
         return isStoryHoistable(onlyChild.name, name);
       }
+      // TODO: [test-syntax] What to do with tests?
       return false;
     });
   }, [data]);

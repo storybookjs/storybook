@@ -40,13 +40,22 @@ export const getDescendantIds = memoize(1000)((
   skipLeafs: boolean
 ): string[] => {
   const entry = data[id];
-  if (!entry || entry.type === 'story' || entry.type === 'docs' || !entry.children) {
+  if (
+    !entry ||
+    entry.type === 'story' ||
+    entry.type === 'test' ||
+    entry.type === 'docs' ||
+    !entry.children
+  ) {
     return [];
   }
   return entry.children.reduce((acc, childId) => {
     const child = data[childId];
 
-    if (!child || (skipLeafs && (child.type === 'story' || child.type === 'docs'))) {
+    if (
+      !child ||
+      (skipLeafs && (child.type === 'story' || child.type === 'test' || child.type === 'docs'))
+    ) {
       return acc;
     }
     acc.push(childId, ...getDescendantIds(data, childId, skipLeafs));

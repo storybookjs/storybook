@@ -35,11 +35,8 @@ import { IndexingError, MultipleIndexingError } from './IndexingError';
 import { autoName } from './autoName';
 import { type IndexStatsSummary, addStats } from './summarizeStats';
 
-// TODO: [test-syntax] replace line 42 with this once we start working on UI for tests
-// type StoryIndexEntryWithExtra = (StoryIndexEntry | TestIndexEntry) & {
-
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
-type StoryIndexEntryWithExtra = StoryIndexEntry & {
+type StoryIndexEntryWithExtra = (StoryIndexEntry | TestIndexEntry) & {
   extra: { metaId?: string; stats: IndexInputStats };
 };
 /** A .mdx file will produce a docs entry */
@@ -456,13 +453,9 @@ export class StoryIndexGenerator {
           tags,
         };
 
-        // TODO: [test-syntax] Enable this once we start working on UI for tests
-        if (input.tags?.includes('has-tests')) {
-          // if (input.type === 'test') {
+        if (input.type === 'test') {
           return {
-            // type: 'test',
-            type: 'story',
-            // @ts-expect-error TODO: discuss this
+            type: 'test',
             parentId: input.parentId,
             // @ts-expect-error TODO: discuss this
             parentName: input.parentName,
@@ -630,7 +623,7 @@ export class StoryIndexGenerator {
     }
 
     let firstIsBetter = true;
-    if (secondEntry.type === 'story') {
+    if (secondEntry.type === 'story' || secondEntry.type === 'test') {
       firstIsBetter = false;
     } else if (isMdxEntry(secondEntry) && firstEntry.type === 'docs' && !isMdxEntry(firstEntry)) {
       firstIsBetter = false;
@@ -641,14 +634,14 @@ export class StoryIndexGenerator {
     const changeDocsName = 'Use `<Meta of={} name="Other Name">` to distinguish them.';
 
     // This shouldn't be possible, but double check and use for typing
-    if (worseEntry.type === 'story') {
+    if (worseEntry.type === 'story' || worseEntry.type === 'test') {
       throw new IndexingError(`Duplicate stories with id: ${firstEntry.id}`, [
         firstEntry.importPath,
         secondEntry.importPath,
       ]);
     }
 
-    if (betterEntry.type === 'story') {
+    if (betterEntry.type === 'story' || betterEntry.type === 'test') {
       const worseDescriptor = isMdxEntry(worseEntry)
         ? `component docs page`
         : `automatically generated docs page`;

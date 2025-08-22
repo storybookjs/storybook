@@ -213,7 +213,12 @@ export const Search = React.memo<SearchProps>(function Search({
       const resultIds: Set<string> = new Set();
       const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
         if (
-          !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
+          !(
+            item.type === 'component' ||
+            item.type === 'docs' ||
+            item.type === 'story' ||
+            item.type === 'test'
+          ) ||
           // @ts-expect-error (non strict)
           resultIds.has(item.parent)
         ) {

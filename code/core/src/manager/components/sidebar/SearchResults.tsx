@@ -203,6 +203,7 @@ const Result: FC<
             <UseSymbol type="story" />
           </TypeIcon>
         )}
+        {/*// TODO: [test-syntax] What to do with tests?*/}
         {!(item.type === 'component' || item.type === 'story') && (
           <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="document">
             <UseSymbol type="document" />

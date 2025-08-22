@@ -351,6 +351,7 @@ export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHa
   return Object.fromEntries(
     Object.entries(newHash).map(([id, newEntry]) => {
       const oldEntry = oldHash[id];
+      // TODO: [test-syntax] What to do with tests?
       if (newEntry.type === 'story' && oldEntry?.type === 'story' && oldEntry.prepared) {
         return [id, { ...oldEntry, ...newEntry, prepared: true }];
       }

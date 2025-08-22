@@ -109,9 +109,8 @@ function defineMeta<
     _tag: 'Meta',
     input,
     preview,
-    get composed() {
-      // TODO: [test-syntax] Kasper check this later
-      return composeConfigs([preview.input, input]);
+    get composed(): never {
+      throw new Error('Not implemented');
     },
     // @ts-expect-error hard
     story(

@@ -1,8 +1,7 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
-import { readFile, writeFile, writeJson } from 'fs-extra';
 import picocolors from 'picocolors';
 import semver from 'semver';
 import { z } from 'zod';
@@ -106,7 +105,7 @@ const writeToDocsVersionFile = async ({
     },
   };
 
-  await writeJson(filepath, content);
+  await writeFile(filepath, JSON.stringify(content));
 };
 
 export const run = async (args: unknown[], options: unknown) => {

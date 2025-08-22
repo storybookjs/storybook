@@ -1,7 +1,6 @@
+import { access, readFile, readdir } from 'node:fs/promises';
+
 import { program } from 'commander';
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, readFile } from 'fs-extra';
-import { readdir } from 'fs/promises';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 import yaml from 'yaml';
@@ -26,6 +25,15 @@ async function getDirectories(source: string) {
   return (await readdir(source, { withFileTypes: true }))
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name);
+}
+
+async function pathExists(path: string) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function getTemplate(
@@ -62,12 +70,12 @@ export async function getTemplate(
 
   if (potentialTemplateKeys.length !== total) {
     throw new Error(dedent`Circle parallelism set incorrectly.
-    
+
       Parallelism is set to ${total}, but there are ${
         potentialTemplateKeys.length
       } templates to run for the "${scriptName}" task:
       ${potentialTemplateKeys.map((v) => `- ${v}`).join('\n')}
-    
+
       ${await checkParallelism(cadence)}
     `);
   }
@@ -176,7 +184,7 @@ async function run({ cadence, task, check }: RunOptions) {
   if (check) {
     if (task && !tasks.includes(task)) {
       throw new Error(
-        dedent`The "${task}" task you provided is not valid. Valid tasks (found in .circleci/config.yml) are: 
+        dedent`The "${task}" task you provided is not valid. Valid tasks (found in .circleci/config.yml) are:
         ${tasks.map((v) => `- ${v}`).join('\n')}`
       );
     }

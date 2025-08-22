@@ -25,7 +25,8 @@ import type { JsonObject } from '@angular-devkit/core';
 import { findPackageSync } from 'fd-package-json';
 import { findUpSync } from 'find-up';
 import { from, of, throwError } from 'rxjs';
-import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
+import { joinPathFragments } from '@nx/devkit';
 
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
@@ -72,18 +73,19 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
 ): BuilderOutputLike => {
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
+      const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
       const docTSConfig = findUpSync('tsconfig.doc.json', {
-        cwd: options.configDir,
+        cwd: pathToConfigDir,
         stopAt: getProjectRoot(),
       });
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
             { compodocArgs: options.compodocArgs, tsconfig: docTSConfig ?? tsConfig },
             context
-          ).pipe(mapTo({ tsConfig }))
+          ).pipe(map(() => ({ tsConfig })))
         : of({});
 
-      return runCompodoc$.pipe(mapTo({ tsConfig }));
+      return runCompodoc$.pipe(map(() => ({ tsConfig })));
     }),
     map(({ tsConfig }) => {
       getEnvConfig(options, {
@@ -114,9 +116,11 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         experimentalZoneless = false,
       } = options;
 
+      const pathToConfigDir = joinPathFragments(context.workspaceRoot, configDir);
+
       const standaloneOptions: StandaloneBuildOptions = {
         packageJson: findPackageSync(__dirname),
-        configDir,
+        configDir: pathToConfigDir,
         ...(docs ? { docs } : {}),
         loglevel,
         outputDir,
@@ -166,10 +170,11 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
     );
   }
 
+  const pathToConfigDir = joinPathFragments(context.workspaceRoot, options.configDir);
   return {
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() }) ??
+      findUpSync('tsconfig.json', { cwd: pathToConfigDir, stopAt: getProjectRoot() }) ??
       browserOptions.tsConfig,
   };
 }
@@ -185,5 +190,5 @@ function runInstance(options: StandaloneBuildOptions) {
       },
       () => buildStaticStandalone(options)
     )
-  ).pipe(catchError((error: any) => throwError(errorSummary(error))));
+  ).pipe(catchError((error: any) => throwError(() => errorSummary(error))));
 }

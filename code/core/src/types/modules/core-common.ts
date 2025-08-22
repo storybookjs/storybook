@@ -487,6 +487,13 @@ export interface StorybookConfigRaw {
   managerHead?: string;
 
   tags?: TagsOptions;
+
+  /**
+   * Disable docgen processing
+   *
+   * @default undefined (docgen is enabled)
+   */
+  docgen?: boolean;
 }
 
 /**
@@ -592,6 +599,9 @@ export interface StorybookConfig {
 
   /** Configure non-standard tag behaviors */
   tags?: PresetValue<StorybookConfigRaw['tags']>;
+
+  /** Disable docgen processing */
+  docgen?: PresetValue<StorybookConfigRaw['docgen']>;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

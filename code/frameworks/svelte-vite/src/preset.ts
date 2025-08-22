@@ -12,7 +12,11 @@ export const core: PresetProperty<'core'> = {
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const { plugins = [] } = config;
 
-  plugins.push(await svelteDocgen());
+  // Check if docgen is disabled in main config
+  const docgenEnabled = await options.presets.apply('docgen');
+  if (docgenEnabled !== false) {
+    plugins.push(await svelteDocgen());
+  }
 
   await handleSvelteKit(plugins, options);
 

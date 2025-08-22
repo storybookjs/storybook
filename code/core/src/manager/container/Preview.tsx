@@ -69,7 +69,7 @@ const splitTitleAddExtraSpace = (input: string) =>
   input.split('/').join(' / ').replace(/\s\s/, ' ');
 
 const getDescription = (item: Item) => {
-  if (item?.type === 'story' || item?.type === 'docs') {
+  if (item?.type === 'story' || item?.type === 'test' || item?.type === 'docs') {
     const { title, name } = item;
     return title && name ? splitTitleAddExtraSpace(`${title} - ${name} ⋅ Storybook`) : 'Storybook';
   }

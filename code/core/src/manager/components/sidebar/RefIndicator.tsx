@@ -171,6 +171,7 @@ export const RefIndicator = React.memo(
         () => list.filter((v) => v.type === 'component').length,
         [list]
       );
+      // TODO: [test-syntax] What to do with tests?
       const leafCount = useMemo(
         () => list.filter((v) => v.type === 'docs' || v.type === 'story').length,
         [list]

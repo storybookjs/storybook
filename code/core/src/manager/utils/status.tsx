@@ -73,7 +73,7 @@ export function getGroupStatus(
       // @ts-expect-error (non strict)
       const leafs = getDescendantIds(collapsedData as any, item.id, false)
         .map((id) => collapsedData[id])
-        .filter((i) => i.type === 'story');
+        .filter((i) => i.type === 'story' || i.type === 'test');
 
       const combinedStatus = getMostCriticalStatusValue(
         // @ts-expect-error (non strict)

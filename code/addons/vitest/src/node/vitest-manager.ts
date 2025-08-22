@@ -10,7 +10,12 @@ import type {
 } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
-import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
+import type {
+  StoryId,
+  StoryIndex,
+  StoryIndexEntry,
+  TestIndexEntry,
+} from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
 import path, { dirname, join, normalize } from 'pathe';
@@ -182,7 +187,9 @@ export class VitestManager {
         new Promise((_, reject) => setTimeout(reject, 3000, new Error('Request took too long'))),
       ])) as StoryIndex;
       const storyIds = requestStoryIds || Object.keys(index.entries);
-      return storyIds.map((id) => index.entries[id]).filter((story) => story.type === 'story');
+      return storyIds
+        .map((id) => index.entries[id])
+        .filter((story) => story.type === 'story' || story.type === 'test');
     } catch (e: any) {
       log('Failed to fetch story index: ' + e.message);
       return [];
@@ -191,12 +198,15 @@ export class VitestManager {
 
   private filterTestSpecifications(
     testSpecifications: TestSpecification[],
-    stories: StoryIndexEntry[]
+    stories: (StoryIndexEntry | TestIndexEntry)[]
   ) {
     const filteredTestSpecifications: TestSpecification[] = [];
     const filteredStoryIds: StoryId[] = [];
 
-    const storiesByImportPath: Record<StoryIndexEntry['importPath'], StoryIndexEntry[]> = {};
+    const storiesByImportPath: Record<
+      StoryIndexEntry['importPath'],
+      (StoryIndexEntry | TestIndexEntry)[]
+    > = {};
 
     for (const story of stories) {
       const absoluteImportPath = path.join(process.cwd(), story.importPath);

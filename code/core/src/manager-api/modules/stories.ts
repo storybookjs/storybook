@@ -315,6 +315,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     storyId: toId,
     getData: (storyId, refId): any => {
       const result = api.resolveStory(storyId, refId);
+      // TODO: [test-syntax] What to do with tests?
       if (result?.type === 'story' || result?.type === 'docs') {
         return result;
       }
@@ -325,7 +326,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       if (!data) {
         return false;
       }
-      return data.type === 'story' ? data.prepared : true;
+      return data.type === 'story' || data.type === 'test' ? data.prepared : true;
     },
     resolveStory: (storyId, refId) => {
       const { refs, index } = store.getState();
@@ -413,6 +414,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       if (!index) {
         return;
       }
+      // TODO: [test-syntax] What to do with tests?
       const firstStory = Object.keys(index).find((id) => index[id].type === 'story');
 
       if (firstStory) {
@@ -473,7 +475,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
     findLeafEntry(index, storyId) {
       const entry = index[storyId];
-      if (entry.type === 'docs' || entry.type === 'story') {
+      if (entry.type === 'docs' || entry.type === 'story' || entry.type === 'test') {
         return entry;
       }
 
@@ -493,7 +495,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         if (!node) {
           return results;
         }
-        if (node.type === 'story') {
+        if (node.type === 'story' || node.type === 'test') {
           results.push(node.id);
         } else if ('children' in node) {
           node.children.forEach((childId) => findChildEntriesRecursively(childId, results));

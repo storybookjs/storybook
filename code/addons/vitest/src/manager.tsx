@@ -84,10 +84,7 @@ addons.register(ADDON_ID, (api) => {
       },
 
       sidebarContextMenu: ({ context }) => {
-        if (context.type === 'docs') {
-          return null;
-        }
-        if (context.type === 'story' && !context.tags.includes('test')) {
+        if (context.type === 'docs' || context.type === 'story') {
           return null;
         }
         return <SidebarContextMenu context={context} api={api} />;

@@ -35,6 +35,7 @@ import type {
   API_RootEntry,
   API_StateMerger,
   API_StoryEntry,
+  API_TestEntry,
   ArgTypes,
   Args,
   Globals,
@@ -458,8 +459,8 @@ export function useArgs(): [Args, (newArgs: Args) => void, (argNames?: string[])
   const { getCurrentStoryData, updateStoryArgs, resetStoryArgs } = useStorybookApi();
 
   const data = getCurrentStoryData();
-  const args = data?.type === 'story' ? data.args : {};
-  const initialArgs = data?.type === 'story' ? data.initialArgs : {};
+  const args = data?.type === 'story' || data?.type === 'test' ? data.args : {};
+  const initialArgs = data?.type === 'story' || data?.type === 'test' ? data.initialArgs : {};
 
   const updateArgs = useCallback(
     (newArgs: Args) => updateStoryArgs(data as API_StoryEntry, newArgs),
@@ -487,7 +488,7 @@ export function useGlobalTypes(): ArgTypes {
   return useStorybookApi().getGlobalTypes();
 }
 
-function useCurrentStory(): API_StoryEntry | API_DocsEntry {
+function useCurrentStory(): API_StoryEntry | API_TestEntry | API_DocsEntry {
   const { getCurrentStoryData } = useStorybookApi();
 
   return getCurrentStoryData();
@@ -495,7 +496,7 @@ function useCurrentStory(): API_StoryEntry | API_DocsEntry {
 
 export function useArgTypes(): ArgTypes {
   const current = useCurrentStory();
-  return (current?.type === 'story' && current.argTypes) || {};
+  return ((current?.type === 'story' || current?.type === 'test') && current.argTypes) || {};
 }
 
 export { addons } from './lib/addons';

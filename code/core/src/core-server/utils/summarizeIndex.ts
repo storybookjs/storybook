@@ -44,6 +44,8 @@ export function summarizeIndex(storyIndex: StoryIndex) {
         exampleStoryCount += 1;
       }
 
+      // TODO: [test-syntax] what to do with tests?
+
       if (entry.type === 'docs') {
         exampleDocsCount += 1;
       }
@@ -52,10 +54,13 @@ export function summarizeIndex(storyIndex: StoryIndex) {
         onboardingStoryCount += 1;
       }
 
+      // TODO: [test-syntax] what to do with tests?
+
       if (entry.type === 'docs') {
         onboardingDocsCount += 1;
       }
     } else if (entry.type === 'story') {
+      // TODO: [test-syntax] What to do with tests?
       storyCount += 1;
       componentTitles.add(entry.title);
       if (isPageStory(entry.title)) {

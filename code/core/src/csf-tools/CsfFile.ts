@@ -921,11 +921,9 @@ export class CsfFile {
         this._storyTests[exportName].forEach((test) => {
           index.push({
             ...storyInput,
-            type: 'story',
-            // TODO: [test-syntax] enable this once we start working on UI for tests
-            // type: 'test',
-            // @ts-expect-error TODO: discuss this later
+            type: 'test',
             parentId: story.id,
+            // @ts-expect-error TODO: discuss this later
             parentName: story.name,
             name: test.name,
             tags: [...storyInput.tags, 'test-fn'],

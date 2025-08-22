@@ -155,6 +155,7 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
     isDragging,
   } = useLayoutSyncingState({ api, managerLayoutState, setManagerLayoutState, isDesktop, hasTab });
 
+  console.log(slots);
   return (
     <LayoutContainer
       navSize={navSize}

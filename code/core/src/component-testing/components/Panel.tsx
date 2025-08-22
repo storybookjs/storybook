@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import React, { Fragment, memo, useEffect, useMemo, useRef, useState } from 'react';
+import React, { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   FORCE_REMOUNT,
@@ -23,6 +23,7 @@ import {
   STATUS_TYPE_ID_COMPONENT_TEST,
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from '../../../../addons/vitest/src/constants';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from '../../highlight';
 import { EVENTS } from '../../instrumenter/EVENTS';
 import {
   type Call,
@@ -180,8 +181,8 @@ const getInternalRenderLogItem = (status: CallStates): LogItem => ({
   ancestors: [],
 });
 
-export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>(
-  function PanelMemoized({ refId, storyId, storyUrl }) {
+export const Panel = memo<{ active: boolean; refId?: string; storyId: string; storyUrl: string }>(
+  function PanelMemoized({ refId, storyId, storyUrl, active }) {
     const { statusValue, testRunId } = experimental_useStatusStore((state) => {
       const storyStatus = refId ? undefined : state[storyId]?.[STATUS_TYPE_ID_COMPONENT_TEST];
       return {
@@ -341,7 +342,54 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
 
     const storyFilePath = useParameter('fileName', '');
     const [fileName] = storyFilePath.toString().split('/').slice(-1);
-    const scrollToTarget = () => scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    const scrollToTarget = useCallback(
+      () => scrollTarget?.scrollIntoView({ behavior: 'smooth', block: 'end' }),
+      [scrollTarget]
+    );
+
+    const [highlightedElements, setHighlightedElements] = useState<Call['id'][]>([]);
+    const [selectedElements, setSelectedElements] = useState<Call['id'][]>([]);
+    const onHighlightElements = useCallback(
+      (callId: Call['id'], highlight: boolean) => setHighlightedElements(highlight ? [callId] : []),
+      [setHighlightedElements]
+    );
+    const onSelectElements = useCallback(
+      (callId: Call['id'], select: boolean) => setSelectedElements(select ? [callId] : []),
+      [setSelectedElements]
+    );
+
+    useEffect(() => {
+      if (!active) {
+        return;
+      }
+
+      const selectedCallRefs = selectedElements.map((id) => ({ __callId__: id }));
+      const highlightedCallRefs = highlightedElements
+        .filter((id) => !selectedElements.includes(id))
+        .map((id) => ({ __callId__: id }));
+
+      emit(SCROLL_INTO_VIEW, selectedCallRefs, { highlight: false });
+      emit(HIGHLIGHT, {
+        id: `${ADDON_ID}/highlight/selected`,
+        selectors: selectedCallRefs,
+        styles: {
+          outline: `2px solid color-mix(in srgb, #1EA7FD, transparent 30%)`,
+          backgroundColor: `transparent`,
+        },
+      });
+      emit(HIGHLIGHT, {
+        id: `${ADDON_ID}/highlight/highlighted`,
+        selectors: highlightedCallRefs,
+        styles: {
+          outline: `1px solid color-mix(in srgb, #1EA7FD, transparent 30%)`,
+          backgroundColor: `color-mix(in srgb, #1EA7FD, transparent 60%)`,
+        },
+      });
+      return () => {
+        emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/highlight/selected`);
+        emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/highlight/highlighted`);
+      };
+    }, [active, emit, highlightedElements, selectedElements]);
 
     const hasException =
       !!caughtException ||
@@ -406,6 +454,9 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           // @ts-expect-error TODO
           endRef={endRef}
           onScrollToEnd={scrollTarget && scrollToTarget}
+          onHighlightElements={onHighlightElements}
+          onSelectElements={onSelectElements}
+          selectedElements={selectedElements}
         />
       </Fragment>
     );

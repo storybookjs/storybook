@@ -50,7 +50,7 @@ export default config;
 You might want to disable docgen in the following scenarios:
 
 - **Performance**: Docgen processing can be slow for large projects with many components
-- **Not using docs**: If you're not using Storybook's auto-generated documentation features
+- **Not using docs or controls**: If you're not using Storybook's auto-generated documentation features
 - **Custom documentation**: If you prefer to manually document your components
 - **Build optimization**: To reduce build time in CI/CD pipelines
 
@@ -72,14 +72,5 @@ React frameworks already have their own docgen configuration via the [`typescrip
 When `docgen` is set to `false`:
 
 - Component properties, events, and slots will not be automatically extracted
-- The `__docgen` and `__docgenInfo` properties will not be added to components
 - Auto-generated controls and documentation will not be available
 - Manual documentation and controls can still be used via `argTypes` and `parameters`
-
-### Backward compatibility
-
-- `docgen: undefined` (default) - docgen is enabled
-- `docgen: true` - docgen is enabled  
-- `docgen: false` - docgen is disabled
-
-This ensures that existing projects continue to work without any changes.

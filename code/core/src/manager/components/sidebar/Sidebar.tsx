@@ -1,12 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import {
-  IconButton,
-  ScrollArea,
-  Spaced,
-  TooltipNote,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { Button, ScrollArea, Spaced } from 'storybook/internal/components';
 import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
@@ -57,11 +51,7 @@ const Top = styled(Spaced)({
   flex: 1,
 });
 
-const TooltipNoteWrapper = styled(TooltipNote)({
-  margin: 0,
-});
-
-const CreateNewStoryButton = styled(IconButton)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
+const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
   color: theme.color.mediumdark,
   width: isMobile ? 36 : 32,
   height: isMobile ? 36 : 32,
@@ -170,22 +160,17 @@ export const Sidebar = React.memo(function Sidebar({
             searchBarContent={
               showCreateStoryButton && (
                 <>
-                  <WithTooltip
-                    trigger="hover"
-                    hasChrome={false}
-                    tooltip={<TooltipNoteWrapper note="Create a new story" />}
+                  <CreateNewStoryButton
+                    isMobile={isMobile}
+                    onClick={() => {
+                      setIsFileSearchModalOpen(true);
+                    }}
+                    ariaLabel="Create a new story"
+                    variant="outline"
+                    padding="small"
                   >
-                    <CreateNewStoryButton
-                      aria-label="Create a new story"
-                      isMobile={isMobile}
-                      onClick={() => {
-                        setIsFileSearchModalOpen(true);
-                      }}
-                      variant="outline"
-                    >
-                      <PlusIcon />
-                    </CreateNewStoryButton>
-                  </WithTooltip>
+                    <PlusIcon />
+                  </CreateNewStoryButton>
                   <CreateNewStoryFileModal
                     open={isFileSearchModalOpen}
                     onOpenChange={setIsFileSearchModalOpen}

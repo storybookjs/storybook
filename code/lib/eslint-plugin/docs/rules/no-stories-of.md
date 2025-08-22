@@ -14,7 +14,6 @@ Examples of **incorrect** code for this rule:
 
 ```js
 import { storiesOf } from '@storybook/react';
-
 import Button from '../components/Button';
 
 storiesOf('Button', module).add('primary', () => <Button primary />);

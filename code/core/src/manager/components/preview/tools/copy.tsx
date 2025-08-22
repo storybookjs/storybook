@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { IconButton, getStoryHref } from 'storybook/internal/components';
+import { Button, getStoryHref } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -40,14 +40,16 @@ export const copyTool: Addon_BaseType = {
     <Consumer filter={copyMapper}>
       {({ baseUrl, storyId, queryParams }) =>
         storyId ? (
-          <IconButton
+          <Button
+            padding="small"
+            variant="ghost"
             key="copy"
             // @ts-expect-error (non strict)
             onClick={() => copy(getStoryHref(baseUrl, storyId, queryParams))}
-            title="Copy canvas link"
+            ariaLabel="Copy preview link"
           >
             <LinkIcon />
-          </IconButton>
+          </Button>
         ) : null
       }
     </Consumer>

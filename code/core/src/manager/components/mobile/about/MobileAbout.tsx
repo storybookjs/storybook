@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
-import { Link } from 'storybook/internal/components';
+import { Button, Link, ScrollArea } from 'storybook/internal/components';
 
 import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybook/icons';
 
@@ -27,40 +27,49 @@ export const MobileAbout: FC = () => {
     >
       {(state) => (
         <Container ref={aboutRef} state={state} transitionDuration={MOBILE_TRANSITION_DURATION}>
-          <Button onClick={() => setMobileAboutOpen(false)} title="Close about section">
-            <ArrowLeftIcon />
-            Back
-          </Button>
-          <LinkContainer>
-            <LinkLine href="https://github.com/storybookjs/storybook" target="_blank">
-              <LinkLeft>
-                <GithubIcon />
-                <span>Github</span>
-              </LinkLeft>
-              <ShareAltIcon width={12} />
-            </LinkLine>
-            <LinkLine
-              href="https://storybook.js.org/docs/get-started/install/?ref=ui"
-              target="_blank"
-            >
-              <LinkLeft>
-                <StorybookIcon />
-                <span>Documentation</span>
-              </LinkLeft>
-              <ShareAltIcon width={12} />
-            </LinkLine>
-          </LinkContainer>
-          <UpgradeBlock />
-          <BottomText>
-            Open source software maintained by{' '}
-            <Link href="https://chromatic.com" target="_blank">
-              Chromatic
-            </Link>{' '}
-            and the{' '}
-            <Link href="https://github.com/storybookjs/storybook/graphs/contributors">
-              Storybook Community
-            </Link>
-          </BottomText>
+          <ScrollArea vertical offset={3} scrollbarSize={6}>
+            <InnerArea>
+              <CloseButton
+                onClick={() => setMobileAboutOpen(false)}
+                ariaLabel="Close about section"
+                tooltip="Close about section"
+                variant="ghost"
+              >
+                <ArrowLeftIcon />
+                Back
+              </CloseButton>
+              <LinkContainer>
+                <LinkLine href="https://github.com/storybookjs/storybook" target="_blank">
+                  <LinkLeft>
+                    <GithubIcon />
+                    <span>Github</span>
+                  </LinkLeft>
+                  <ShareAltIcon width={12} />
+                </LinkLine>
+                <LinkLine
+                  href="https://storybook.js.org/docs/react/get-started/install/?ref=ui"
+                  target="_blank"
+                >
+                  <LinkLeft>
+                    <StorybookIcon />
+                    <span>Documentation</span>
+                  </LinkLeft>
+                  <ShareAltIcon width={12} />
+                </LinkLine>
+              </LinkContainer>
+              <UpgradeBlock />
+              <BottomText>
+                Open source software maintained by{' '}
+                <Link href="https://chromatic.com" target="_blank">
+                  Chromatic
+                </Link>{' '}
+                and the{' '}
+                <Link href="https://github.com/storybookjs/storybook/graphs/contributors">
+                  Storybook Community
+                </Link>
+              </BottomText>
+            </InnerArea>
+          </ScrollArea>
         </Container>
       )}
     </Transition>
@@ -76,8 +85,7 @@ const Container = styled.div<{ state: TransitionStatus; transitionDuration: numb
     left: 0,
     zIndex: 11,
     transition: `all ${transitionDuration}ms ease-in-out`,
-    overflow: 'scroll',
-    padding: '25px 10px 10px',
+    overflow: 'auto',
     color: theme.color.defaultText,
     background: theme.background.content,
     opacity: `${(() => {
@@ -107,10 +115,14 @@ const Container = styled.div<{ state: TransitionStatus; transitionDuration: numb
   })
 );
 
-const LinkContainer = styled.div({
-  marginTop: 20,
-  marginBottom: 20,
+const InnerArea = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 20,
+  padding: '25px 12px 20px',
 });
+
+const LinkContainer = styled.div({});
 
 const LinkLine = styled.a(({ theme }) => ({
   all: 'unset',
@@ -141,12 +153,7 @@ const BottomText = styled.div(({ theme }) => ({
   marginTop: 30,
 }));
 
-const Button = styled.button(({ theme }) => ({
-  all: 'unset',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  color: 'currentColor',
-  fontSize: theme.typography.size.s2 - 1,
-  padding: '0 10px',
-}));
+const CloseButton = styled(Button)({
+  // NOTE: matching isMobile class dimensions on SidebarButton
+  minHeight: 36,
+});

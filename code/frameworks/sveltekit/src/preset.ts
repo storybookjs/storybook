@@ -7,7 +7,7 @@ import { viteFinal as svelteViteFinal } from '@storybook/svelte-vite/preset';
 
 import { configOverrides } from './plugins/config-overrides';
 import { mockSveltekitStores } from './plugins/mock-sveltekit-stores';
-import { type StorybookConfig } from './types';
+import { type FrameworkOptions, type StorybookConfig } from './types';
 
 export const core: PresetProperty<'core'> = {
   builder: import.meta.resolve('@storybook/builder-vite'),

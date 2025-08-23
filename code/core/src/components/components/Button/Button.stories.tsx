@@ -156,7 +156,7 @@ export const Sizes = meta.story({
 
 export const Disabled = meta.story({
   args: {
-    disabled: true,
+    isDisabled: true,
     children: 'Disabled Button',
   },
 });

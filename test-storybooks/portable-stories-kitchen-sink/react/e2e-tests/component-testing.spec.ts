@@ -238,7 +238,8 @@ test.describe("component testing", () => {
 
     await runTestsButton.click();
 
-    await expect(watchModeButton).toBeDisabled();
+    // The test button will be disabled as tests are running
+    expect(watchModeButton).toHaveAttribute("aria-disabled", "true"),
 
     // Wait for test results to appear
     await expect(page.locator("#testing-module-description")).toHaveText(

@@ -31,7 +31,7 @@ test.describe('addon-toolbars', () => {
     await sbPage.navigateToStory('core/toolbars/globals', 'override-locale');
     await expect(sbPage.previewRoot()).toContainText('안녕하세요');
 
-    const button = sbPage.page.getByLabel('Internationalization locale');
-    await expect(button).toBeDisabled();
+    const button = sbPage.page.getByTitle('Internationalization locale');
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
   });
 });

@@ -5,13 +5,13 @@ import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
 import { isPropValid, styled } from 'storybook/theming';
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'disabled'> {
   asChild?: boolean;
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
   variant?: 'outline' | 'solid' | 'ghost';
   onClick?: (event: SyntheticEvent) => void;
-  isDisabled?: boolean;
+  disabled?: boolean;
   active?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
 }
@@ -24,10 +24,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       size = 'small',
       variant = 'outline',
       padding = 'medium',
-      isDisabled = false,
+      disabled = false,
       active = false,
       onClick,
-      ...props
+      ...restProps
     },
     ref
   ) => {
@@ -40,7 +40,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const [isAnimating, setIsAnimating] = useState(false);
 
     const handleClick = (event: SyntheticEvent) => {
-      if (isDisabled) {
+      if (disabled) {
         event.preventDefault();
         event.stopPropagation();
         return;
@@ -71,12 +71,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         variant={variant}
         size={size}
         padding={padding}
-        aria-disabled={isDisabled}
+        aria-disabled={disabled}
         active={active}
         animating={isAnimating}
         animation={animation}
         onClick={handleClick}
-        {...props}
+        {...restProps}
       />
     );
   }
@@ -91,9 +91,9 @@ const StyledButton = styled('button', {
     animating: boolean;
     animation: ButtonProps['animation'];
   }
->(({ theme, variant, size, isDisabled, active, animating, animation = 'none', padding }) => ({
+>(({ theme, variant, size, active, disabled, animating, animation = 'none', padding }) => ({
   border: 0,
-  cursor: isDisabled ? 'not-allowed' : 'pointer',
+  cursor: disabled ? 'not-allowed' : 'pointer',
   display: 'inline-flex',
   gap: '6px',
   alignItems: 'center',
@@ -127,7 +127,7 @@ const StyledButton = styled('button', {
   verticalAlign: 'top',
   whiteSpace: 'nowrap',
   userSelect: 'none',
-  opacity: isDisabled ? 0.5 : 1,
+  opacity: disabled ? 0.5 : 1,
   margin: 0,
   fontSize: `${theme.typography.size.s1}px`,
   fontWeight: theme.typography.weight.bold,

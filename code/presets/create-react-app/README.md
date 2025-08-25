@@ -117,7 +117,7 @@ config directory. If you have changed the conditions to utilize an `exclude`, th
 be true (which isn't likely going to work as expected).
 
 The steps to remedy this would be to follow the steps for customizing the webpack config within the storybook
-side of things. [Details for storybook custom webpack config](https://storybook.js.org/docs/configurations/custom-webpack-config/)
+side of things. [Details for storybook custom webpack config](https://storybook.js.org/docs/configurations/custom-webpack-config/?ref=readme)
 You'll have access to all of the rules in `config.module.rules`. You'll need to find the offending rule,
 and customize it how you need it to be to be compatible with your fork.
 
@@ -128,3 +128,5 @@ concerning the conditions.
 
 - [Walkthrough to set up Storybook Docs with CRA & typescript](https://gist.github.com/shilman/bc9cbedb2a7efb5ec6710337cbd20c0c)
 - [Example projects (used for testing this preset)](https://github.com/storybookjs/presets/tree/master/examples)
+
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

@@ -331,7 +331,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     return (
       <EmptyBlock>
         {error}&nbsp;
-        <Link href="http://storybook.js.org/docs/" target="_blank" withArrow>
+        <Link href="http://storybook.js.org/docs/?ref=ui" target="_blank" withArrow>
           <DocumentIcon /> Read the docs
         </Link>
       </EmptyBlock>

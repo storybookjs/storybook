@@ -1,3 +1,11 @@
+## 10.0.0-beta.0
+
+- Core: Fix staticCopy not copying `index.html` to sub directory - [#32259](https://github.com/storybookjs/storybook/pull/32259), thanks @ndelangen!
+- Core: Remove CJS bundles, only ship ESM - [#31819](https://github.com/storybookjs/storybook/pull/31819), thanks @ndelangen!
+- Docs: Move button in ArgsTable heading to fix screenreader announcements - [#32238](https://github.com/storybookjs/storybook/pull/32238), thanks @Sidnioulz!
+- Telemetry: Disambiguate traffic coming from error/upgrade links - [#32287](https://github.com/storybookjs/storybook/pull/32287), thanks @shilman!
+- Telemetry: Disambiguate unattributed traffic from Onboarding - [#32286](https://github.com/storybookjs/storybook/pull/32286), thanks @shilman!
+
 ## 9.2.0-alpha.3
 
 - Addon Docs: Fix Symbol conversion issue in docs page and controls panel - [#32220](https://github.com/storybookjs/storybook/pull/32220), thanks @yannbf!

@@ -1,9 +1,13 @@
 {
   "name": "@storybook/preact",
-  "version": "9.2.0-alpha.3",
-  "description": "Storybook Preact renderer",
+  "version": "10.0.0-beta.0",
+  "description": "Storybook Preact renderer: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-renderer",
+    "preact",
+    "components",
+    "component"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/preact",
   "bugs": {

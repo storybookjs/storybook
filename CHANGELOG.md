@@ -1,3 +1,11 @@
+## 9.1.3
+
+- Docs: Move button in ArgsTable heading to fix screenreader announcements - [#32238](https://github.com/storybookjs/storybook/pull/32238), thanks @Sidnioulz!
+- Mock: Catch errors when transforming preview files - [#32216](https://github.com/storybookjs/storybook/pull/32216), thanks @valentinpalkovic!
+- Next.js: Fix version mismatch error in Webpack - [#32306](https://github.com/storybookjs/storybook/pull/32306), thanks @valentinpalkovic!
+- Telemetry: Disambiguate traffic coming from error/upgrade links - [#32287](https://github.com/storybookjs/storybook/pull/32287), thanks @shilman!
+- Telemetry: Disambiguate unattributed traffic from Onboarding - [#32286](https://github.com/storybookjs/storybook/pull/32286), thanks @shilman!
+
 ## 9.1.2
 
 - Addon Docs: Fix Symbol conversion issue in docs page and controls panel - [#32220](https://github.com/storybookjs/storybook/pull/32220), thanks @yannbf!

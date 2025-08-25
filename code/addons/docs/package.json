@@ -1,14 +1,26 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "9.2.0-alpha.3",
-  "description": "Document component usage and properties in Markdown",
+  "version": "10.0.0-beta.0",
+  "description": "Storybook Docs: Document UI components automatically with stories and MDX",
   "keywords": [
-    "addon",
-    "notes",
+    "docs",
     "documentation",
     "storybook",
+    "storybook-addon",
     "essentials",
-    "organize"
+    "organize",
+    "MDX",
+    "markdown",
+    "autodocs",
+    "styleguide",
+    "style guide",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/docs",
   "bugs": {

@@ -70,7 +70,7 @@ export const csfFactories: CommandFix = {
       
         However, please note that this might not work if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
       
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports')}
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports?ref=upgrade')}
 
         As we modify your story files, we can create two types of imports:
       
@@ -127,7 +127,7 @@ export const csfFactories: CommandFix = {
           You can now run Storybook with the new CSF factories format.
           
           For more info, check out the docs:
-          ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories')}
+          ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories?ref=upgrade')}
         `
     );
   },

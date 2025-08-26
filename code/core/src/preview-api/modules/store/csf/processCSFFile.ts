@@ -1,6 +1,6 @@
 import { logger } from 'storybook/internal/client-logger';
 import type { Story } from 'storybook/internal/csf';
-import { isExportStory, isStory, toTestId } from 'storybook/internal/csf';
+import { getStoryChildren, isExportStory, isStory, toTestId } from 'storybook/internal/csf';
 import type { ComponentTitle, Parameters, Path, Renderer } from 'storybook/internal/types';
 import type {
   CSFFile,
@@ -68,22 +68,15 @@ export function processCSFFile<TRenderer extends Renderer>(
 
         // if the story has tests, we need to add those to the csfFile
 
-        Object.entries(story.getAllTests()).forEach(
-          ([testName, { story: storyTest, test: testFunction }]) => {
-            const testId = toTestId(storyMeta.id, testName);
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore We provide the __id parameter because we don't want normalizeStory to calculate the id
-            storyTest.input.parameters.__id = testId;
+        getStoryChildren(story).forEach((story) => {
+          const testName = story.input.name!;
+          const testId = toTestId(storyMeta.id, testName);
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore We provide the __id parameter because we don't want normalizeStory to calculate the id
+          storyTest.input.parameters.__id = testId;
 
-            csfFile.stories[testId] = {
-              ...normalizeStory<TRenderer>(
-                testName,
-                { ...(storyTest.input as any), testFunction },
-                meta
-              ),
-            };
-          }
-        );
+          csfFile.stories[testId] = normalizeStory(testName, story.input as any, meta);
+        });
       }
     });
 

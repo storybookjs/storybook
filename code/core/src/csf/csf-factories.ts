@@ -11,6 +11,8 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
+import { mountDestructured } from 'core/src/preview-api/modules/preview-web/render/mount-utils';
+
 import {
   combineParameters,
   composeConfigs,
@@ -154,7 +156,6 @@ export interface Story<
     annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
     fn: TestFunction<TRenderer>
   ): void;
-  getAllTests(): Record<string, { story: Story<TRenderer>; test: TestFunction<TRenderer> }>;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -178,7 +179,7 @@ function defineStory<
     return composed;
   };
 
-  const tests: Record<string, { story: Story<TRenderer>; test: TestFunction<TRenderer> }> = {};
+  const __children: Story<TRenderer>[] = [];
 
   return {
     _tag: 'Story',
@@ -186,6 +187,7 @@ function defineStory<
     meta,
     // @ts-expect-error this is a private property used only once in renderers/react/src/preview
     __compose: compose,
+    __children,
     get composed() {
       const composed = compose();
       const { args, argTypes, parameters, id, tags, globals, storyName: name } = composed;
@@ -194,9 +196,8 @@ function defineStory<
     get play() {
       return input.play ?? meta.input?.play ?? (async () => {});
     },
-    async run(context, testName?: string) {
-      const composedRun = compose().run;
-      await composedRun(context, tests[testName!]?.test);
+    async run(context) {
+      await compose().run(context);
     },
     test(
       name: string,
@@ -206,10 +207,26 @@ function defineStory<
       const annotations = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
       const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
 
-      tests[name] = {
-        story: this.extend({ ...annotations, tags: [...(annotations.tags ?? []), 'test-fn'] }),
-        test: testFunction,
-      };
+      const play =
+        mountDestructured(this.play) || mountDestructured(testFn)
+          ? async ({ mount, context }: StoryContext<TRenderer>) => {
+              await this.play?.(context);
+              await testFunction(context);
+            }
+          : async (context: StoryContext<TRenderer>) => {
+              await this.play?.(context);
+              await testFunction(context);
+            };
+
+      const test = this.extend({
+        ...annotations,
+        name,
+        tags: ['test-fn', '!autodocs', ...(annotations.tags ?? [])],
+        play,
+      });
+      __children.push(test);
+
+      return test as unknown as void;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(
@@ -241,8 +258,14 @@ function defineStory<
         this.meta
       );
     },
-    getAllTests() {
-      return tests;
-    },
   };
+}
+
+export function getStoryChildren<TRenderer extends Renderer>(
+  story: Story<TRenderer>
+): Story<TRenderer>[] {
+  if ('__children' in story) {
+    return story.__children as Story<TRenderer>[];
+  }
+  return [];
 }

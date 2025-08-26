@@ -198,14 +198,14 @@ function defineStory<
     test(
       name: string,
       overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
-      testFn?: TestFunction<TRenderer>
+      testFn?: TestFunction<TRenderer, TRenderer['args']>
     ): void {
       const annotations = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
       const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
 
       const play =
-        mountDestructured(this.play) || mountDestructured(testFn)
-          ? async ({ mount, context }: StoryContext<TRenderer>) => {
+        mountDestructured(this.play) || mountDestructured(testFunction)
+          ? async ({ context }: StoryContext<TRenderer>) => {
               await this.play?.(context);
               await testFunction(context);
             }

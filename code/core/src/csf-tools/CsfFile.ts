@@ -922,8 +922,6 @@ export class CsfFile {
           index.push({
             ...storyInput,
             type: 'story',
-            // TODO: [test-syntax] enable this once we start working on UI for tests
-            // type: 'test',
             // @ts-expect-error TODO: discuss this later
             parentId: story.id,
             parentName: story.name,

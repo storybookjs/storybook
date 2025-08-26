@@ -19,7 +19,6 @@ import type {
   StoryIndexEntry,
   StorybookConfigRaw,
   Tag,
-  TestIndexEntry,
 } from 'storybook/internal/types';
 
 import { findUp } from 'find-up';
@@ -34,9 +33,6 @@ import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
 import { autoName } from './autoName';
 import { type IndexStatsSummary, addStats } from './summarizeStats';
-
-// TODO: [test-syntax] replace line 42 with this once we start working on UI for tests
-// type StoryIndexEntryWithExtra = (StoryIndexEntry | TestIndexEntry) & {
 
 // Extended type to keep track of the csf meta id so we know the component id when referencing docs in `extractDocs`
 type StoryIndexEntryWithExtra = StoryIndexEntry & {

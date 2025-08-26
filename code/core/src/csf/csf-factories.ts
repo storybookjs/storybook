@@ -111,10 +111,6 @@ function defineMeta<
     _tag: 'Meta',
     input,
     preview,
-    get composed() {
-      // TODO: [test-syntax] Kasper check this later
-      return composeConfigs([preview.input, input]);
-    },
     // @ts-expect-error hard
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}

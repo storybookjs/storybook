@@ -1,3 +1,16 @@
+# v2.0.7 (Tue Aug 26 2025)
+
+#### 🐛 Bug Fix
+
+- Fix: Resolve dynamic require issues when using with Vitest [#50](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/50) ([@elecdeer](https://github.com/elecdeer) [@ghengeveld](https://github.com/ghengeveld))
+
+#### Authors: 2
+
+- [@elecdeer](https://github.com/elecdeer)
+- Gert Hengeveld ([@ghengeveld](https://github.com/ghengeveld))
+
+---
+
 # v2.0.6 (Wed Aug 20 2025)
 
 #### 🐛 Bug Fix

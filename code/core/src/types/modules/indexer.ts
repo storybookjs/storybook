@@ -70,10 +70,11 @@ export interface BaseIndexEntry {
   title: ComponentTitle;
   tags?: Tag[];
   importPath: Path;
-  parentId?: StoryId;
 }
 export type StoryIndexEntry = BaseIndexEntry & {
   type: 'story';
+  // currently used by story tests
+  parent?: StoryId;
 };
 
 export type DocsIndexEntry = BaseIndexEntry & {
@@ -132,6 +133,8 @@ export type BaseIndexInput = {
 /** The input for indexing a story entry. */
 export type StoryIndexInput = BaseIndexInput & {
   type: 'story';
+  // currently used by story tests
+  parent?: StoryId;
 };
 
 /** The input for indexing a docs entry. */

@@ -116,6 +116,23 @@ global.fetch = vi.fn().mockResolvedValue({
             importPath: 'path/to/another/file',
             tags: ['test'],
           },
+          'parent--story': {
+            type: 'story',
+            id: 'parent--story',
+            name: 'Parent story',
+            title: 'parent/story',
+            importPath: 'path/to/parent/file',
+            tags: ['test'],
+          },
+          'parent--story:test': {
+            type: 'story',
+            id: 'parent--story:test',
+            name: 'Test name',
+            title: 'parent/story',
+            parent: 'parent--story',
+            importPath: 'path/to/parent/file',
+            tags: ['test', 'test-fn'],
+          },
         },
       } as StoryIndex)
     ),
@@ -185,6 +202,51 @@ describe('TestManager', () => {
     });
     expect(setTestNamePattern).toHaveBeenCalledWith(/^One$/);
     expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+  });
+
+  it('should trigger a single story render test', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['another--one'],
+        triggeredBy: 'global',
+      },
+    });
+    // regex should be exact match of the story name
+    expect(setTestNamePattern).toHaveBeenCalledWith(/^One$/);
+  });
+
+  it('should trigger a single story test', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['parent--story:test'],
+        triggeredBy: 'global',
+      },
+    });
+    // regex should be Parent Story Name + Test Name
+    expect(setTestNamePattern).toHaveBeenCalledWith(/^Parent story Test name$/);
+  });
+
+  it('should trigger all tests of a story', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['parent--story'],
+        triggeredBy: 'global',
+      },
+    });
+    // regex should be parent story name with no spaces in between plus a space at the end
+    expect(setTestNamePattern).toHaveBeenCalledWith(/^Parentstory /);
   });
 
   it('should restart Vitest before a test run if coverage is enabled', async () => {

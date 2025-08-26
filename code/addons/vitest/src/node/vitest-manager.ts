@@ -169,7 +169,7 @@ export class VitestManager {
     });
   }
 
-  private async fetchStories(requestStoryIds?: string[]) {
+  private async fetchStories(requestStoryIds?: string[]): Promise<StoryIndexEntry[]> {
     const indexUrl = this.testManager.store.getState().indexUrl;
     if (!indexUrl) {
       throw new Error(
@@ -265,41 +265,60 @@ export class VitestManager {
     await this.cancelCurrentRun();
 
     const testSpecifications = await this.getStorybookTestSpecifications();
-    const stories = await this.fetchStories(runPayload?.storyIds);
+    const allStories = await this.fetchStories();
+
+    const filteredStories = runPayload.storyIds
+      ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
+      : allStories;
 
     const isSingleStoryRun = runPayload.storyIds?.length === 1;
     if (isSingleStoryRun) {
-      const selectedStory = stories[0];
-      const storyName = selectedStory.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // Use case 1: Single story run on a story without tests
-      let regex: RegExp = new RegExp(`^${storyName}$`);
+      const selectedStory = filteredStories.find((story) => story.id === runPayload.storyIds?.[0]);
+      if (!selectedStory) {
+        throw new Error(`Story ${runPayload.storyIds?.[0]} not found`);
+      }
 
-      if (selectedStory.tags?.includes('test-fn')) {
-        // in this case the regex pattern should be the story parentName + story.name
-        // @ts-expect-error TODO: fix this
-        const parentName = selectedStory.parentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        // Use case 2: Single story run on a specific story test
-        regex = new RegExp(`^${parentName} ${storyName}$`);
-      } else if (selectedStory.tags?.includes('has-tests')) {
-        // Use case 3: "Single" story run on a story with tests
+      const storyName = selectedStory.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      let regex: RegExp;
+
+      const isParentStory = allStories.some((story) => selectedStory.id === story.parent);
+      const hasParentStory = allStories.some((story) => selectedStory.parent === story.id);
+
+      if (isParentStory) {
+        // Use case 1: "Single" story run on a story with tests
         // -> run all tests of that story, as storyName is a describe block
         /**
-         * TODO: [test-syntax] discuss. The vitest transformation keeps the export name as is, e.g.
-         * "PrimaryButton", while the storybook sidebar changes the name to "Primary Button". That's
-         * why we need to remove spaces from the story name, to match the test name. If we were to
-         * also beautify the test name, doing a regex wouldn't be precise because there could be two
-         * describes, for instance: "Primary Button" and "Primary Button Mobile" and both would
-         * match. The fact that there are no spaces in the test name is what makes "PrimaryButton"
-         * and "PrimaryButtonMobile" worth well in the regex.
+         * The vitest transformation keeps the export name as is, e.g. "PrimaryButton", while the
+         * storybook sidebar changes the name to "Primary Button". That's why we need to remove
+         * spaces from the story name, to match the test name. If we were to also beautify the test
+         * name, doing a regex wouldn't be precise because there could be two describes, for
+         * instance: "Primary Button" and "Primary Button Mobile" and both would match. The fact
+         * that there are no spaces in the test name is what makes "PrimaryButton" and
+         * "PrimaryButtonMobile" work well in the regex. As it turns out, this limitation is also
+         * present in the Vitest VSCode extension and the issue would occur with normal vitest tests
+         * as well.
          */
-        regex = new RegExp(`^${storyName.replace(/\s+/g, '')} `);
+        regex = new RegExp(`^${storyName.replace(/\s+/g, '')} `); // the extra space is intentional!
+      } else if (hasParentStory) {
+        // Use case 2: Single story run on a specific story test
+        // in this case the regex pattern should be the story parentName + story.name
+        const parentStory = allStories.find((story) => story.id === selectedStory.parent);
+        if (!parentStory) {
+          throw new Error(`Parent story not found for story ${selectedStory.id}`);
+        }
+
+        const parentName = parentStory.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        regex = new RegExp(`^${parentName} ${storyName}$`);
+      } else {
+        // Use case 3: Single story run on a story without tests
+        regex = new RegExp(`^${storyName}$`);
       }
       this.vitest!.setGlobalTestNamePattern(regex);
     }
 
     const { filteredTestSpecifications, filteredStoryIds } = this.filterTestSpecifications(
       testSpecifications,
-      stories
+      filteredStories
     );
 
     this.testManager.store.setState((s) => ({

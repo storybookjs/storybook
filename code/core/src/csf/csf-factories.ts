@@ -11,8 +11,6 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
-import { mountDestructured } from 'core/src/preview-api/modules/preview-web/render/mount-utils';
-
 import {
   combineParameters,
   composeConfigs,
@@ -20,6 +18,7 @@ import {
   normalizeArrays,
   normalizeProjectAnnotations,
 } from '../preview-api/index';
+import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
 import { getCoreAnnotations } from './core-annotations';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {

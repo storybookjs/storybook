@@ -439,7 +439,8 @@ export class StoryIndexGenerator {
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));
         const tags = combineTags(...projectTags, ...(input.tags ?? []));
 
-        const commonMetadata = {
+        return {
+          type: 'story',
           id,
           extra: {
             metaId: input.metaId,
@@ -450,25 +451,7 @@ export class StoryIndexGenerator {
           importPath,
           componentPath,
           tags,
-        };
-
-        // TODO: [test-syntax] Enable this once we start working on UI for tests
-        if (input.tags?.includes('has-tests')) {
-          // if (input.type === 'test') {
-          return {
-            // type: 'test',
-            type: 'story',
-            // @ts-expect-error TODO: discuss this
-            parentId: input.parentId,
-            // @ts-expect-error TODO: discuss this
-            parentName: input.parentName,
-            ...commonMetadata,
-          };
-        }
-
-        return {
-          type: 'story',
-          ...commonMetadata,
+          ...(input.type === 'story' && input.parent ? { parent: input.parent } : {}),
         };
       });
 

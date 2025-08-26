@@ -906,11 +906,6 @@ export class CsfFile {
         __stats: story.__stats,
       };
 
-      if (this._storyTests[exportName]) {
-        // TODO: discuss this later
-        storyInput.tags = [...(storyInput.tags || []), 'has-tests'];
-      }
-
       index.push({
         ...storyInput,
         type: 'story',
@@ -922,9 +917,7 @@ export class CsfFile {
           index.push({
             ...storyInput,
             type: 'story',
-            // @ts-expect-error TODO: discuss this later
-            parentId: story.id,
-            parentName: story.name,
+            parent: story.id,
             name: test.name,
             tags: [...storyInput.tags, 'test-fn'],
             __id: test.id,

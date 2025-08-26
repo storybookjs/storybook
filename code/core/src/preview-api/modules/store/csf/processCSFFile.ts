@@ -71,9 +71,11 @@ export function processCSFFile<TRenderer extends Renderer>(
         getStoryChildren(story).forEach((child) => {
           const name = child.input.name!;
           const childId = toTestId(storyMeta.id, name);
+
+          child.input.parameters ??= {};
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore We provide the __id parameter because we don't want normalizeStory to calculate the id
-          storyTest.input.parameters.__id = childId;
+          child.input.parameters.__id = childId;
 
           csfFile.stories[childId] = normalizeStory(name, child.input as any, meta);
         });

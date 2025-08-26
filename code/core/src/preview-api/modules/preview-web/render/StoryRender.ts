@@ -40,8 +40,6 @@ export type RenderPhase =
   | 'rendering'
   | 'playing'
   | 'played'
-  | 'testing'
-  | 'tested'
   | 'completing'
   | 'completed'
   | 'afterEach'
@@ -113,8 +111,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     });
     if (phaseFn) {
       await phaseFn();
+      this.checkIfAborted(signal);
     }
-    this.checkIfAborted(signal);
   }
 
   private checkIfAborted(signal: AbortSignal): boolean {
@@ -209,7 +207,6 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       unboundStoryFn,
       playFunction,
       runStep,
-      testFunction,
     } = story;
 
     if (forceRemount && !initial) {
@@ -329,46 +326,30 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       };
 
       // The phase should be 'rendering' but it might be set to 'aborted' by another render cycle
-      const shouldHandleUnhandledErrors = !ignoreUnhandledErrors && unhandledErrors.size > 0;
-      if (
-        this.renderOptions.autoplay &&
-        forceRemount &&
-        (playFunction || testFunction) &&
-        this.phase !== 'errored'
-      ) {
+      if (this.renderOptions.autoplay && forceRemount && playFunction && this.phase !== 'errored') {
         window?.addEventListener?.('error', onError);
         window?.addEventListener?.('unhandledrejection', onUnhandledRejection);
         this.disableKeyListeners = true;
         try {
-          if (playFunction) {
-            if (!isMountDestructured) {
-              context.mount = async () => {
-                throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
-              };
-              await this.runPhase(abortSignal, 'playing', async () => playFunction(context));
-            } else {
-              // when mount is used the playing phase will start later, right after mount is called in the play function
-              await playFunction(context);
-            }
-
-            if (!mounted) {
-              throw new NoStoryMountedError();
-            }
-
-            if (shouldHandleUnhandledErrors) {
-              await this.runPhase(abortSignal, 'errored');
-              return;
-            }
-            await this.runPhase(abortSignal, 'played');
+          if (!isMountDestructured) {
+            context.mount = async () => {
+              throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
+            };
+            await this.runPhase(abortSignal, 'playing', async () => playFunction(context));
+          } else {
+            // when mount is used the playing phase will start later, right after mount is called in the play function
+            await playFunction(context);
           }
 
-          if (testFunction) {
-            await this.runPhase(abortSignal, 'testing', async () => testFunction(context));
-            if (shouldHandleUnhandledErrors) {
-              await this.runPhase(abortSignal, 'errored');
-              return;
-            }
-            await this.runPhase(abortSignal, 'tested');
+          if (!mounted) {
+            throw new NoStoryMountedError();
+          }
+          this.checkIfAborted(abortSignal);
+
+          if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
+            await this.runPhase(abortSignal, 'errored');
+          } else {
+            await this.runPhase(abortSignal, 'played');
           }
         } catch (error) {
           // Remove the loading screen, even if there was an error before rendering
@@ -383,7 +364,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           }
           console.error(error);
         }
-        if (shouldHandleUnhandledErrors) {
+        if (!ignoreUnhandledErrors && unhandledErrors.size > 0) {
           this.channel.emit(
             UNHANDLED_ERRORS_WHILE_PLAYING,
             Array.from(unhandledErrors).map(serializeError)
@@ -416,11 +397,13 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         });
       }
 
+      const hasUnhandledErrors = !ignoreUnhandledErrors && unhandledErrors.size > 0;
+
       const hasSomeReportsFailed = context.reporting.reports.some(
         (report) => report.status === 'failed'
       );
 
-      const hasStoryErrored = shouldHandleUnhandledErrors || hasSomeReportsFailed;
+      const hasStoryErrored = hasUnhandledErrors || hasSomeReportsFailed;
 
       await this.runPhase(abortSignal, 'finished', async () =>
         this.channel.emit(STORY_FINISHED, {

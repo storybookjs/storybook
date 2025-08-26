@@ -30,7 +30,6 @@ export const experimental_indexers: PresetProperty<'experimental_indexers'> = (
           name: story.name,
           title: content.title,
           tags,
-          // TODO: [test-syntax] Does this need change now with story tests?
           type: 'story',
         };
       });

@@ -214,13 +214,10 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
     return story.playFunction!(context);
   };
 
-  const run = (
-    extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>,
-    test?: (context: StoryContext<TRenderer>) => void | Promise<void>
-  ) => {
+  const run = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
     const context = initializeContext();
     Object.assign(context, extraContext);
-    return runStory(story, context, test);
+    return runStory(story, context);
   };
 
   const playFunction = story.playFunction ? play : undefined;
@@ -379,8 +376,7 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
 // Will make a follow up PR for that
 async function runStory<TRenderer extends Renderer>(
   story: PreparedStory<TRenderer>,
-  context: StoryContext<TRenderer>,
-  testFunction?: (context: StoryContext<TRenderer>) => void | Promise<void>
+  context: StoryContext<TRenderer>
 ) {
   for (const callback of [...cleanups].reverse()) {
     await callback();
@@ -426,8 +422,6 @@ async function runStory<TRenderer extends Renderer>(
     }
     await playFunction(context);
   }
-
-  await testFunction?.(context);
 
   let cleanUp: CleanupCallback | undefined;
   if (isTestEnvironment()) {

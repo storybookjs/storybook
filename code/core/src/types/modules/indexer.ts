@@ -73,11 +73,8 @@ export interface BaseIndexEntry {
 }
 export type StoryIndexEntry = BaseIndexEntry & {
   type: 'story';
-};
-
-export type TestIndexEntry = BaseIndexEntry & {
-  type: 'test';
-  parentId: StoryId;
+  // currently used by story tests
+  parent?: StoryId;
 };
 
 export type DocsIndexEntry = BaseIndexEntry & {
@@ -85,8 +82,7 @@ export type DocsIndexEntry = BaseIndexEntry & {
   type: 'docs';
 };
 
-// TODO: [test-syntax] add this once we start working on UI for tests
-export type IndexEntry = StoryIndexEntry | DocsIndexEntry; //| TestIndexEntry;
+export type IndexEntry = StoryIndexEntry | DocsIndexEntry;
 
 export interface IndexInputStats {
   loaders?: boolean;
@@ -137,11 +133,8 @@ export type BaseIndexInput = {
 /** The input for indexing a story entry. */
 export type StoryIndexInput = BaseIndexInput & {
   type: 'story';
-};
-
-export type TestIndexInput = BaseIndexInput & {
-  type: 'test';
-  parentId: StoryId;
+  // currently used by story tests
+  parent?: StoryId;
 };
 
 /** The input for indexing a docs entry. */
@@ -151,8 +144,7 @@ export type DocsIndexInput = BaseIndexInput & {
   storiesImports?: Path[];
 };
 
-// TODO: [test-syntax] add this once we start working on UI for tests
-export type IndexInput = StoryIndexInput | DocsIndexInput; // | TestIndexInput;
+export type IndexInput = StoryIndexInput | DocsIndexInput;
 
 export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags'> {
   kind: ComponentTitle;

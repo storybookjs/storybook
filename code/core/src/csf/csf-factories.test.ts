@@ -1,7 +1,7 @@
 //* @vitest-environment happy-dom */
 import { describe, expect, test, vi } from 'vitest';
 
-import { definePreview, definePreviewAddon } from './csf-factories';
+import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories';
 
 interface Addon1Types {
   parameters: { foo?: { value: string } };
@@ -53,11 +53,11 @@ describe('test function', () => {
 
     // register test
     MyStory.test(testName, testFn);
-    const { story: storyTestAnnotations } = MyStory.getAllTests()[testName];
-    expect(storyTestAnnotations.input.args).toEqual({ label: 'foo' });
+    const test = getStoryChildren(MyStory).find(({ input }) => input.name === testName)!;
+    expect(test.input.args).toEqual({ label: 'foo' });
 
     // execute test
-    await MyStory.run(undefined, testName);
+    await test.run(undefined, testName);
     expect(testFn).toHaveBeenCalled();
   });
   test('with overrides', async () => {
@@ -67,11 +67,11 @@ describe('test function', () => {
 
     // register test
     MyStory.test(testName, { args: { label: 'bar' } }, testFn);
-    const { story: storyTestAnnotations } = MyStory.getAllTests()[testName];
-    expect(storyTestAnnotations.input.args).toEqual({ label: 'bar' });
+    const test = getStoryChildren(MyStory).find(({ input }) => input.name === testName)!;
+    expect(test.input.args).toEqual({ label: 'bar' });
 
     // execute test
-    await MyStory.run(undefined, testName);
+    await test.run();
     expect(testFn).toHaveBeenCalled();
   });
 });

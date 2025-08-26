@@ -1,6 +1,6 @@
 import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 
-import { type Meta, type Story, isStory, toTestId } from 'storybook/internal/csf';
+import { type Meta, type Story, getStoryChildren, isStory, toTestId } from 'storybook/internal/csf';
 import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
 import { server } from '@vitest/browser/context';
@@ -41,8 +41,12 @@ export const testStory = (
   return async (context: TestContext & { story: ComposedStoryFn }) => {
     const annotations = getCsfFactoryAnnotations(story, meta);
 
-    const storyAnnotations =
-      isStory(story) && testName ? story.getAllTests()[testName].story.input : annotations.story;
+    const test =
+      isStory(story) && testName
+        ? getStoryChildren(story).find((child) => child.input.name === testName)
+        : undefined;
+
+    const storyAnnotations = test ? test.input : annotations.story;
 
     const composedStory = composeStory(
       storyAnnotations,
@@ -63,6 +67,7 @@ export const testStory = (
     };
 
     if (testName) {
+      // TODO: [test-syntax] isn't this done by the csf plugin somehow?
       _task.meta.storyId = toTestId(composedStory.id, testName);
     } else {
       _task.meta.storyId = composedStory.id;
@@ -70,11 +75,7 @@ export const testStory = (
 
     await setViewport(composedStory.parameters, composedStory.globals);
 
-    if (isStory(story) && testName) {
-      await composedStory.run(undefined, story.getAllTests()[testName].test);
-    } else {
-      await composedStory.run(undefined);
-    }
+    await composedStory.run(undefined);
 
     _task.meta.reports = composedStory.reporting.reports;
   };

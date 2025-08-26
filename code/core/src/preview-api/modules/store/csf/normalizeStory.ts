@@ -24,7 +24,7 @@ See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#hoisted-csf-
 
 export function normalizeStory<TRenderer extends Renderer>(
   key: StoryId,
-  storyAnnotations: StoryAnnotationsOrFn<TRenderer> & { testFunction?: any },
+  storyAnnotations: StoryAnnotationsOrFn<TRenderer>,
   meta: NormalizedComponentAnnotations<TRenderer>
 ): NormalizedStoryAnnotations<TRenderer> {
   const storyObject = storyAnnotations;
@@ -61,7 +61,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.afterEach),
     ...normalizeArrays(story?.afterEach),
   ];
-  const { render, play, tags = [], globals = {}, testFunction } = storyObject;
+  const { render, play, tags = [], globals = {} } = storyObject;
 
   const id = parameters.__id || toId(meta.id, exportName);
   return {
@@ -77,7 +77,6 @@ export function normalizeStory<TRenderer extends Renderer>(
     beforeEach,
     afterEach,
     globals,
-    testFunction,
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),
     ...(play && { play }),

@@ -64,7 +64,6 @@ describe('normalizeStory', () => {
           "name": "Story Export",
           "parameters": {},
           "tags": [],
-          "testFunction": undefined,
           "userStoryFn": [Function],
         }
       `);
@@ -137,7 +136,6 @@ describe('normalizeStory', () => {
             "name": "Story Export",
             "parameters": {},
             "tags": [],
-            "testFunction": undefined,
           }
         `);
         expect(normalized.moduleExport).toBe(storyObj);
@@ -182,7 +180,6 @@ describe('normalizeStory', () => {
               "storyParam": "val",
             },
             "tags": [],
-            "testFunction": undefined,
           }
         `);
         expect(moduleExport).toBe(storyObj);
@@ -244,7 +241,6 @@ describe('normalizeStory', () => {
               "storyParam2": "legacy",
             },
             "tags": [],
-            "testFunction": undefined,
           }
         `);
         expect(moduleExport).toBe(storyObj);

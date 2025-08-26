@@ -18,13 +18,11 @@ import type {
   StoryAnnotations,
   StoryContext,
   StoryContextForEnhancers,
-  StoryFn,
   StoryId,
   StoryIdentifier,
   StoryName,
   StrictArgTypes,
   StrictGlobalTypes,
-  TestFunction,
 } from './csf';
 
 // Store Types
@@ -90,15 +88,11 @@ export type NormalizedStoryAnnotations<TRenderer extends Renderer = Renderer> = 
   userStoryFn?: ArgsStoryFn<TRenderer>;
   decorators?: DecoratorFunction<TRenderer>[];
   loaders?: LoaderFunction<TRenderer>[];
-  testFunction?: TestFunction<TRenderer, TRenderer['args']>;
 };
 
 export type CSFFile<TRenderer extends Renderer = Renderer> = {
   meta: NormalizedComponentAnnotations<TRenderer>;
-  stories: Record<
-    StoryId,
-    NormalizedStoryAnnotations<TRenderer> & { testFunction?: TestFunction<TRenderer> }
-  >;
+  stories: Record<StoryId, NormalizedStoryAnnotations<TRenderer>>;
   projectAnnotations?: NormalizedProjectAnnotations<TRenderer>;
   moduleExports: ModuleExports;
 };
@@ -119,7 +113,6 @@ export type PreparedStory<TRenderer extends Renderer = Renderer> =
     renderToCanvas?: ProjectAnnotations<TRenderer>['renderToCanvas'];
     usesMount: boolean;
     storyGlobals: Globals;
-    testFunction?: TestFunction<TRenderer, TRenderer['args']>;
   };
 
 export type PreparedMeta<TRenderer extends Renderer = Renderer> = Omit<

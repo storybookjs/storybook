@@ -13,8 +13,6 @@ import pLimit from 'p-limit';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
-import type { JsPackageManager } from '../../code/core/src/common/js-package-manager';
-import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/JsPackageManagerFactory';
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
 import storybookVersions from '../../code/core/src/common/versions';
 import { allTemplates as sandboxTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';

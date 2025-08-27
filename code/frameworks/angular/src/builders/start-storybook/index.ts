@@ -161,7 +161,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         open,
         debugWebpack,
         webpackStatsJson,
-        statsJson,
+        statsJson: statsJson ?? (options['stats-json'] as string | boolean),
         loglevel,
         previewUrl,
       };

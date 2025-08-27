@@ -24,9 +24,12 @@ export type FrameworkOptions = {
    * "vue-component-meta" will become the new default in the future and "vue-docgen-api" will be
    * removed.
    *
+   * Set to `false` to disable docgen processing entirely for improved build performance.
+   *
    * @default 'vue-docgen-api'
    */
   docgen?:
+    | boolean
     | VueDocgenPlugin
     | {
         plugin: 'vue-component-meta';

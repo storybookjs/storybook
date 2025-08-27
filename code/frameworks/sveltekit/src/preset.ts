@@ -7,7 +7,7 @@ import { viteFinal as svelteViteFinal } from '@storybook/svelte-vite/preset';
 
 import { configOverrides } from './plugins/config-overrides';
 import { mockSveltekitStores } from './plugins/mock-sveltekit-stores';
-import { type StorybookConfig } from './types';
+import { type FrameworkOptions, type StorybookConfig } from './types';
 
 const getAbsolutePath = <I extends string>(input: I): I =>
   dirname(require.resolve(join(input, 'package.json'))) as any;

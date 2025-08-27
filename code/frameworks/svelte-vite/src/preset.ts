@@ -14,9 +14,9 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
 
   // Get framework options to check if docgen is disabled
   const framework = await options.presets.apply('framework');
-  const frameworkOptions: FrameworkOptions = 
+  const frameworkOptions: FrameworkOptions =
     typeof framework === 'string' ? {} : (framework.options ?? {});
-  
+
   // Check if docgen is disabled in framework options (default is true/enabled)
   if (frameworkOptions.docgen !== false) {
     plugins.push(await svelteDocgen());

@@ -51,6 +51,6 @@ const resolveDocgenOptions = (
   if (typeof docgen === 'string') {
     return { plugin: docgen };
   }
-  
+
   return docgen;
 };

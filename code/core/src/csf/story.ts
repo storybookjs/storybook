@@ -2,7 +2,6 @@ import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-f
 
 import type { SBScalarType, SBType } from './SBType';
 import type { CoreTypes } from './core-annotations';
-import type { Story } from './csf-factories';
 
 export * from './SBType';
 export type StoryId = string;

@@ -9,12 +9,14 @@ import { Yarn1Proxy } from './Yarn1Proxy';
 
 vi.mock('node:process', async (importOriginal) => {
   const original: any = await importOriginal();
-  original.env.CI = 'false';
   return {
     ...original,
-    env: {
-      ...original.env,
-      CI: 'false',
+    default: {
+      ...original.default,
+      env: {
+        ...original.default.env,
+        CI: false,
+      },
     },
   };
 });

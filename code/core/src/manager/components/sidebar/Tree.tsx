@@ -60,7 +60,7 @@ const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
   marginBottom: 20,
 }));
 
-const CollapseButton = styled.button(({ theme }) => ({
+const CollapseButton = styled.button({
   all: 'unset',
   display: 'flex',
   padding: '0px 8px',
@@ -75,7 +75,7 @@ const CollapseButton = styled.button(({ theme }) => ({
     outline: 'none',
     background: 'var(--tree-node-background-hover)',
   },
-}));
+});
 
 export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   position: 'relative',
@@ -576,7 +576,7 @@ export const Tree = React.memo<{
   // Omit single-story components from the list of nodes.
   const collapsedItems = useMemo(
     () => Object.keys(data).filter((id) => !singleStoryComponentIds.includes(id)),
-    [singleStoryComponentIds]
+    [data, singleStoryComponentIds]
   );
 
   // Rewrite the dataset to place the child story in place of the component.
@@ -600,7 +600,7 @@ export const Tree = React.memo<{
       },
       { ...data }
     );
-  }, [data]);
+  }, [data, singleStoryComponentIds]);
 
   const ancestry = useMemo(() => {
     return collapsedItems.reduce(

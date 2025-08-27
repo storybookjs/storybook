@@ -117,7 +117,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
 
   const setHighlightedItemId = useCallback(
     (itemId: string) => setHighlighted({ itemId, refId }),
-    [setHighlighted]
+    [setHighlighted, refId]
   );
 
   const onSelectStoryId = useCallback(

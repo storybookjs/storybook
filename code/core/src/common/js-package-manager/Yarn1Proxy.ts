@@ -36,7 +36,7 @@ export class Yarn1Proxy extends JsPackageManager {
 
   getInstallArgs(): string[] {
     if (!this.installArgs) {
-      this.installArgs = ['--ignore-workspace-root-check'];
+      this.installArgs = process.env.CI ? [] : ['--ignore-workspace-root-check'];
     }
     return this.installArgs;
   }

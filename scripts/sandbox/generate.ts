@@ -1,3 +1,6 @@
+import { readFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
+
 import * as ghActions from '@actions/core';
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
@@ -7,7 +10,6 @@ import { execaCommand } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { copy, emptyDir, ensureDir, move, remove, writeFile } from 'fs-extra';
 import pLimit from 'p-limit';
-import { join, relative } from 'path';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
@@ -77,6 +79,7 @@ const withLocalRegistry = async ({ action, cwd, env, debug }: LocalRegistryProps
 };
 
 const addStorybook = async ({
+  localRegistry,
   baseDir,
   flags = [],
   debug,
@@ -91,15 +94,15 @@ const addStorybook = async ({
   const beforeDir = join(baseDir, BEFORE_DIR_NAME);
   const afterDir = join(baseDir, AFTER_DIR_NAME);
 
-  console.log('temp dir');
   const tmpDir = await temporaryDirectory();
 
   try {
-    console.log('copying before dir');
     await copy(beforeDir, tmpDir);
-    console.log('copying before dir done');
 
-    console.log('init');
+    if (localRegistry) {
+      await addResolutions(tmpDir);
+    }
+
     await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
   } catch (e) {
     console.log('error', e);
@@ -199,7 +202,6 @@ const runGenerators = async (
           // where as others are very picky about what directories can be called. So we need to
           // handle different modes of operation.
           try {
-            console.log('running before script:', script);
             if (script.includes('{{beforeDir}}')) {
               const scriptWithBeforeDir = script.replaceAll('{{beforeDir}}', BEFORE_DIR_NAME);
               await runCommand(
@@ -230,19 +232,15 @@ const runGenerators = async (
             throw new BeforeScriptExecutionError(message, { cause: error });
           }
 
-          console.log('localizing yarn config files');
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
           // Now move the created before dir into it's final location and add storybook
-          console.log('moving');
           await move(createBeforeDir, beforeDir);
 
           // Make sure there are no git projects in the folder
-          console.log('removing');
           await remove(join(beforeDir, '.git'));
 
           try {
-            console.log('adding storybook');
             await addStorybook({ baseDir, localRegistry, flags, debug, env });
           } catch (error) {
             const message = `❌ Failed to initialize Storybook in template: ${name} (${dirName})`;
@@ -258,7 +256,6 @@ const runGenerators = async (
             });
           }
 
-          console.log('adding documentation');
           await addDocumentation(baseDir, { name, dirName });
 
           console.log(
@@ -287,6 +284,12 @@ const runGenerators = async (
 
   if (!isCI) {
     if (hasGenerationErrors) {
+      console.log('failed:');
+      console.log(
+        generationResults
+          .filter((result) => result.status === 'rejected')
+          .map((_, index) => generators[index].name)
+      );
       throw new Error(`Some sandboxes failed to generate`);
     }
     return;
@@ -374,6 +377,18 @@ export const generate = async ({
 
   await runGenerators(generatorConfigs, localRegistry, debug);
 };
+
+async function addResolutions(beforeDir: string) {
+  const packageJson = await readFile(join(beforeDir, 'package.json')).then((c) => c.json());
+
+  packageJson.resolutions = {
+    ...storybookVersions,
+    // Yarn1 Issue: https://github.com/storybookjs/storybook/issues/22431
+    jackspeak: '2.1.1',
+  };
+
+  await writeFile(join(beforeDir, 'package.json'), JSON.stringify(packageJson, null, 2));
+}
 
 if (esMain(import.meta.url)) {
   program

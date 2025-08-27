@@ -295,12 +295,12 @@ export const transformStoryIndexToStoriesHash = (
       }
     });
 
-    // Finally add an entry for the docs/story itself
+    // Finally add an entry for the docs/story/test itself
     acc[item.id] = {
       tags: [],
       ...item,
       depth: paths.length,
-      parent: paths[paths.length - 1],
+      parent: 'parent' in item ? item.parent : paths[paths.length - 1],
       renderLabel,
       prepared: !!item.parameters,
     } as API_DocsEntry | API_StoryEntry;
@@ -338,9 +338,55 @@ export const transformStoryIndexToStoriesHash = (
     .filter((i) => i.type !== 'root' && !i.parent)
     .reduce((acc, item) => addItem(acc, item), {} as API_IndexHash);
 
-  return Object.values(storiesHashOutOfOrder)
+  const storiesHash = Object.values(storiesHashOutOfOrder)
     .filter((i) => i.type === 'root')
     .reduce(addItem, orphanHash);
+
+  // Add "wrapper" nodes for stories with tests
+  // Because the order of entries matters, we need to insert the wrapper before the story and test
+  return Object.values(storiesHash).reduce((acc, item) => {
+    if (item.type === 'story' && item.tags.includes('test-fn')) {
+      const wrapperId = `${item.parent}__wrapper`;
+      const parentStory = storiesHash[item.parent] as API_StoryEntry;
+      const componentNode = storiesHash[parentStory.parent] as API_ComponentEntry;
+
+      // Update component children to point to wrapper rather than story and tests
+      (acc[componentNode.id] as API_ComponentEntry).children = componentNode.children
+        .filter((id) => id !== item.id && id !== item.parent)
+        .concat(wrapperId);
+
+      // Create the wrapper, but first delete the story and test so that the wrapper is inserted before them
+      if (!acc[wrapperId]) {
+        delete acc[item.id];
+        delete acc[item.parent];
+        acc[wrapperId] = {
+          ...parentStory,
+          type: 'wrapper',
+          id: wrapperId,
+          parent: parentStory.parent,
+          children: [parentStory.id].concat(item.id),
+          depth: parentStory.depth,
+        };
+      }
+
+      // Create or update parent to point to wrapper rather than story
+      acc[item.parent] = {
+        ...parentStory,
+        parent: wrapperId,
+        depth: parentStory.depth + 1,
+      };
+
+      // Create or update the test to point to wrapper rather than story
+      acc[item.id] = {
+        ...item,
+        parent: wrapperId,
+        depth: item.depth + 1,
+      };
+    } else {
+      acc[item.id] = item;
+    }
+    return acc;
+  }, {} as API_IndexHash);
 };
 
 /** Now we need to patch in the existing prepared stories */

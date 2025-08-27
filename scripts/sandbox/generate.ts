@@ -399,15 +399,22 @@ if (esMain(import.meta.url)) {
     .option('--debug', 'Print all the logs to the console')
     .option('--local-registry', 'Use local registry', false)
     .action((optionValues) => {
-      withLocalRegistry({
-        debug: optionValues.debug,
+      let result;
+      if (optionValues.localRegistry) {
+        result = withLocalRegistry({
+          debug: optionValues.debug,
 
-        action: async () => {
-          await generate(optionValues);
-        },
-        cwd: process.cwd(),
-        env: {},
-      })
+          action: async () => {
+            await generate(optionValues);
+          },
+          cwd: process.cwd(),
+          env: {},
+        });
+      } else {
+        result = generate(optionValues);
+      }
+
+      result
         .catch((e) => {
           console.error(e);
           process.exit(1);

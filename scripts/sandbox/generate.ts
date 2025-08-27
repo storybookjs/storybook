@@ -385,8 +385,6 @@ async function addResolutions(beforeDir: string) {
 
   packageJson.resolutions = {
     ...storybookVersions,
-    // Yarn1 Issue: https://github.com/storybookjs/storybook/issues/22431
-    jackspeak: '2.1.1',
   };
 
   await writeFile(join(beforeDir, 'package.json'), JSON.stringify(packageJson, null, 2));

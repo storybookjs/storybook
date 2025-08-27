@@ -44,7 +44,7 @@ const resolveDocgenOptions = (
     return false;
   }
 
-  if (!docgen) {
+  if (docgen === undefined) {
     return { plugin: 'vue-docgen-api' };
   }
 
@@ -52,7 +52,7 @@ const resolveDocgenOptions = (
     return { plugin: docgen };
   }
   
-  if (typeof docgen === 'boolean') {
+  if (docgen === true) {
     return { plugin: 'vue-docgen-api' };
   }
   

@@ -10,6 +10,7 @@ import type {
   API_Provider,
   API_RootEntry,
   API_StoryEntry,
+  API_WrapperEntry,
   DocsOptions,
   IndexEntry,
   Parameters,
@@ -364,10 +365,14 @@ export const transformStoryIndexToStoriesHash = (
           type: 'wrapper',
           id: wrapperId,
           parent: parentStory.parent,
-          children: [parentStory.id].concat(item.id),
+          children: [parentStory.id],
           depth: parentStory.depth,
         };
       }
+
+      const wrapperNode = acc[wrapperId] as API_WrapperEntry;
+      wrapperNode.children.push(item.id);
+      wrapperNode.tags = intersect(wrapperNode.tags, item.tags);
 
       // Create or update parent to point to wrapper rather than story
       acc[item.parent] = {

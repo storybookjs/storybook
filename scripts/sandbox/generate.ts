@@ -30,7 +30,7 @@ import { getStackblitzUrl, renderTemplate } from './utils/template';
 import type { GeneratorConfig } from './utils/types';
 import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
 
-const isCI = process.env.GITHUB_ACTIONS === 'true';
+const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
 
 class BeforeScriptExecutionError extends Error {}
 class StorybookInitError extends Error {}
@@ -43,27 +43,20 @@ const sbInit = async (
 ) => {
   const sbCliBinaryPath = join(__dirname, `../../code/lib/create-storybook/dist/bin/index.js`);
   console.log(`🎁 Installing Storybook`);
-  const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars };
+  const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars, CI: 'true' };
   const fullFlags = ['--yes', ...(flags || [])];
   await runCommand(`${sbCliBinaryPath} ${fullFlags.join(' ')}`, { cwd, env }, debug);
 };
 
 type LocalRegistryProps = {
-  packageManager: JsPackageManager;
   action: () => Promise<void>;
   cwd: string;
   env: Record<string, any>;
   debug: boolean;
 };
 
-const withLocalRegistry = async ({
-  packageManager,
-  action,
-  cwd,
-  env,
-  debug,
-}: LocalRegistryProps) => {
-  const prevUrl = await packageManager.getRegistryURL();
+const withLocalRegistry = async ({ action, cwd, env, debug }: LocalRegistryProps) => {
+  const prevUrl = 'https://registry.npmjs.org/';
   let error;
   try {
     console.log(`📦 Configuring local registry: ${LOCAL_REGISTRY_URL}`);
@@ -85,7 +78,6 @@ const withLocalRegistry = async ({
 
 const addStorybook = async ({
   baseDir,
-  localRegistry,
   flags = [],
   debug,
   env = {},
@@ -99,32 +91,18 @@ const addStorybook = async ({
   const beforeDir = join(baseDir, BEFORE_DIR_NAME);
   const afterDir = join(baseDir, AFTER_DIR_NAME);
 
+  console.log('temp dir');
   const tmpDir = await temporaryDirectory();
 
   try {
+    console.log('copying before dir');
     await copy(beforeDir, tmpDir);
+    console.log('copying before dir done');
 
-    const packageManager = JsPackageManagerFactory.getPackageManager({ force: 'yarn1' }, tmpDir);
-    if (localRegistry) {
-      await withLocalRegistry({
-        packageManager,
-        action: async () => {
-          await packageManager.addPackageResolutions({
-            ...storybookVersions,
-            // Yarn1 Issue: https://github.com/storybookjs/storybook/issues/22431
-            jackspeak: '2.1.1',
-          });
-
-          await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
-        },
-        cwd: tmpDir,
-        env,
-        debug,
-      });
-    } else {
-      await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
-    }
+    console.log('init');
+    await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
   } catch (e) {
+    console.log('error', e);
     await remove(tmpDir);
     throw e;
   }
@@ -221,12 +199,17 @@ const runGenerators = async (
           // where as others are very picky about what directories can be called. So we need to
           // handle different modes of operation.
           try {
+            console.log('running before script:', script);
             if (script.includes('{{beforeDir}}')) {
               const scriptWithBeforeDir = script.replaceAll('{{beforeDir}}', BEFORE_DIR_NAME);
               await runCommand(
                 scriptWithBeforeDir,
                 {
                   cwd: createBaseDir,
+                  env: {
+                    ...env,
+                    CI: 'true',
+                  },
                   timeout: SCRIPT_TIMEOUT,
                 },
                 debug
@@ -247,15 +230,19 @@ const runGenerators = async (
             throw new BeforeScriptExecutionError(message, { cause: error });
           }
 
+          console.log('localizing yarn config files');
           await localizeYarnConfigFiles(createBaseDir, createBeforeDir);
 
           // Now move the created before dir into it's final location and add storybook
+          console.log('moving');
           await move(createBeforeDir, beforeDir);
 
           // Make sure there are no git projects in the folder
+          console.log('removing');
           await remove(join(beforeDir, '.git'));
 
           try {
+            console.log('adding storybook');
             await addStorybook({ baseDir, localRegistry, flags, debug, env });
           } catch (error) {
             const message = `❌ Failed to initialize Storybook in template: ${name} (${dirName})`;
@@ -270,6 +257,8 @@ const runGenerators = async (
               cause: error,
             });
           }
+
+          console.log('adding documentation');
           await addDocumentation(baseDir, { name, dirName });
 
           console.log(
@@ -397,7 +386,15 @@ if (esMain(import.meta.url)) {
     .option('--debug', 'Print all the logs to the console')
     .option('--local-registry', 'Use local registry', false)
     .action((optionValues) => {
-      generate(optionValues)
+      withLocalRegistry({
+        debug: optionValues.debug,
+
+        action: async () => {
+          await generate(optionValues);
+        },
+        cwd: process.cwd(),
+        env: {},
+      })
         .catch((e) => {
           console.error(e);
           process.exit(1);

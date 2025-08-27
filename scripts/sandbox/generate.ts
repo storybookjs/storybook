@@ -379,7 +379,9 @@ export const generate = async ({
 };
 
 async function addResolutions(beforeDir: string) {
-  const packageJson = await readFile(join(beforeDir, 'package.json')).then((c) => c.json());
+  const packageJson = await readFile(join(beforeDir, 'package.json'), 'utf-8').then((c) =>
+    JSON.parse(c)
+  );
 
   packageJson.resolutions = {
     ...storybookVersions,

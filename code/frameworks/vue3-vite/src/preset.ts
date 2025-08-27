@@ -22,10 +22,12 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
   const docgen = resolveDocgenOptions(frameworkOptions.docgen);
 
   // add docgen plugin depending on framework option
-  if (docgen.plugin === 'vue-component-meta') {
-    plugins.push(await vueComponentMeta(docgen.tsconfig));
-  } else {
-    plugins.push(await vueDocgen());
+  if (docgen !== false) {
+    if (docgen.plugin === 'vue-component-meta') {
+      plugins.push(await vueComponentMeta(docgen.tsconfig));
+    } else {
+      plugins.push(await vueDocgen());
+    }
   }
 
   const { mergeConfig } = await import('vite');
@@ -37,7 +39,11 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 /** Resolves the docgen framework option. */
 const resolveDocgenOptions = (
   docgen?: FrameworkOptions['docgen']
-): { plugin: VueDocgenPlugin; tsconfig?: string } => {
+): false | { plugin: VueDocgenPlugin; tsconfig?: string } => {
+  if (docgen === false) {
+    return false;
+  }
+
   if (!docgen) {
     return { plugin: 'vue-docgen-api' };
   }
@@ -45,5 +51,10 @@ const resolveDocgenOptions = (
   if (typeof docgen === 'string') {
     return { plugin: docgen };
   }
+  
+  if (typeof docgen === 'boolean') {
+    return { plugin: 'vue-docgen-api' };
+  }
+  
   return docgen;
 };

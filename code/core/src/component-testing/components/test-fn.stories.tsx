@@ -22,6 +22,14 @@ export const Default = meta.story({
     children: 'Arg from story',
   },
 });
+
+export const PlayFunction = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByText('Default');
+    await userEvent.click(button);
+  },
+});
+
 Default.test('simple', async ({ canvas, userEvent, args }) => {
   const button = canvas.getByText('Arg from story');
   await userEvent.click(button);
@@ -67,6 +75,7 @@ Default.test(
     expect(document.body.clientWidth).toBe(380);
   }
 );
+
 Default.test(
   'with play function',
   {
@@ -81,12 +90,18 @@ Default.test(
   }
 );
 
-export const DefaultExtended = Default.extend({
+export const ExtendedStory = Default.extend({
   args: {
     children: 'Arg from extended story',
   },
 });
-DefaultExtended.test('should have extended args', async ({ canvas }) => {
+
+ExtendedStory.test('should have extended args', async ({ canvas }) => {
   const button = canvas.getByText('Arg from extended story');
   await expect(button).toBeEnabled();
+});
+
+// This is intentionally defined out-of-order
+PlayFunction.test('should be clicked by play function', async ({ args }) => {
+  await expect(args.onClick).toHaveBeenCalled();
 });

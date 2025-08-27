@@ -5,6 +5,7 @@ import type {
   API_GroupEntry,
   API_HashEntry,
   API_IndexHash,
+  API_PreparedIndexEntry,
   API_PreparedStoryIndex,
   API_Provider,
   API_RootEntry,
@@ -70,7 +71,7 @@ export const transformSetStoriesStoryDataToPreparedStoryIndex = (
           ...base,
         };
       } else {
-        const { argTypes, args, initialArgs }: any = story;
+        const { argTypes, args, initialArgs } = story;
         acc[id] = {
           type: 'story',
           ...base,
@@ -112,7 +113,7 @@ export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStor
   return {
     v: 4,
     entries: Object.values(index.stories).reduce(
-      (acc, entry: any) => {
+      (acc, entry) => {
         let type: IndexEntry['type'] = 'story';
         if (
           entry.parameters?.docsOnly ||
@@ -124,7 +125,7 @@ export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStor
           type,
           ...(type === 'docs' && { tags: ['stories-mdx'], storiesImports: [] }),
           ...entry,
-        };
+        } as API_PreparedIndexEntry;
 
         // @ts-expect-error (we're removing something that should not be there)
         delete acc[entry.id].story;
@@ -172,7 +173,7 @@ type ToStoriesHashOptions = {
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
   { provider, docsOptions, filters, allStatuses }: ToStoriesHashOptions
-): API_IndexHash | any => {
+): API_IndexHash => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
   }
@@ -183,7 +184,7 @@ export const transformStoryIndexToStoriesHash = (
   index = index.v === 4 ? transformStoryIndexV4toV5(index as any) : index;
   index = index as API_PreparedStoryIndex;
 
-  const entryValues = Object.values(index.entries).filter((entry: any) => {
+  const entryValues = Object.values(index.entries).filter((entry) => {
     let result = true;
 
     // All stories with a failing status should always show up, regardless of the applied filters
@@ -203,11 +204,11 @@ export const transformStoryIndexToStoriesHash = (
   });
 
   const { sidebar = {} } = provider.getConfig();
-  const { showRoots, collapsedRoots = [], renderLabel }: any = sidebar;
+  const { showRoots, collapsedRoots = [], renderLabel } = sidebar;
 
   const setShowRoots = typeof showRoots !== 'undefined';
 
-  const storiesHashOutOfOrder = entryValues.reduce((acc: any, item: any) => {
+  const storiesHashOutOfOrder = entryValues.reduce((acc, item) => {
     if (docsOptions.docsMode && item.type !== 'docs') {
       return acc;
     }
@@ -223,7 +224,7 @@ export const transformStoryIndexToStoriesHash = (
       const parent = idx > 0 && list[idx - 1];
       const id = sanitize(parent ? `${parent}-${name}` : name!);
 
-      if (name.trim() === '') {
+      if (name!.trim() === '') {
         throw new Error(dedent`Invalid title ${title} ending in slash.`);
       }
 
@@ -231,7 +232,7 @@ export const transformStoryIndexToStoriesHash = (
         throw new Error(
           dedent`
           Invalid part '${name}', leading to id === parentId ('${id}'), inside title '${title}'
-          
+
           Did you create a path that uses the separator char accidentally, such as 'Vue <docs/>' where '/' is a separator char? See https://github.com/storybookjs/storybook/issues/6128
           `
         );
@@ -241,7 +242,7 @@ export const transformStoryIndexToStoriesHash = (
     }, [] as string[]);
 
     // Now, let's add an entry to the hash for each path/name pair
-    paths.forEach((id: any, idx: any) => {
+    paths.forEach((id, idx) => {
       // The child is the next path, OR the story/docs entry itself
       const childId = paths[idx + 1] || item.id;
 
@@ -296,7 +297,6 @@ export const transformStoryIndexToStoriesHash = (
 
     // Finally add an entry for the docs/story itself
     acc[item.id] = {
-      type: 'story',
       tags: [],
       ...item,
       depth: paths.length,
@@ -309,7 +309,7 @@ export const transformStoryIndexToStoriesHash = (
   }, {} as API_IndexHash);
 
   // This function adds a "root" or "orphan" and all of its descendents to the hash.
-  function addItem(acc: API_IndexHash | any, item: API_HashEntry | any) {
+  function addItem(acc: API_IndexHash, item: API_HashEntry) {
     // If we were already inserted as part of a group, that's great.
     if (acc[item.id]) {
       return acc;
@@ -320,25 +320,26 @@ export const transformStoryIndexToStoriesHash = (
     // and compute tags from the children put in the accumulator afterwards, once
     // they're all known and we can compute a sound intersection.
     if (item.type === 'root' || item.type === 'group' || item.type === 'component') {
-      item.children.forEach((childId: any) => addItem(acc, storiesHashOutOfOrder[childId]));
+      item.children.forEach((childId) => addItem(acc, storiesHashOutOfOrder[childId]));
 
-      item.tags = item.children.reduce((currentTags: Tag[] | null, childId: any): Tag[] => {
-        const child = acc[childId];
-
-        // On the first child, we have nothing to intersect against so we use it as a source of data.
-        return currentTags === null ? child.tags : intersect(currentTags, child.tags);
-      }, null);
+      item.tags =
+        item.children.reduce((currentTags: Tag[] | null, childId): Tag[] => {
+          // On the first child, we have nothing to intersect against so we use it as a source of data.
+          return currentTags === null
+            ? acc[childId].tags
+            : intersect(currentTags, acc[childId].tags);
+        }, null) || [];
     }
     return acc;
   }
 
   // We'll do two passes over the data, adding all the orphans, then all the roots
   const orphanHash = Object.values(storiesHashOutOfOrder)
-    .filter((i: any) => i.type !== 'root' && !i.parent)
-    .reduce(addItem, {});
+    .filter((i) => i.type !== 'root' && !i.parent)
+    .reduce((acc, item) => addItem(acc, item), {} as API_IndexHash);
 
   return Object.values(storiesHashOutOfOrder)
-    .filter((i: any) => i.type === 'root')
+    .filter((i) => i.type === 'root')
     .reduce(addItem, orphanHash);
 };
 

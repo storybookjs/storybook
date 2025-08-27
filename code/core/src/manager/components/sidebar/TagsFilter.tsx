@@ -63,11 +63,14 @@ export const TagsFilter = ({
 
   useEffect(() => {
     api.experimental_setFilter(TAGS_FILTER, (item) => {
-      if (selectedTags.length === 0) {
-        return true;
-      }
-
-      return selectedTags.some((tag) => item.tags?.includes(tag));
+      return (
+        selectedTags.length === 0 ||
+        selectedTags.some((tag) =>
+          tag === 'test-fn'
+            ? item.tags?.includes(tag) || item.tags?.includes('has-tests')
+            : item.tags?.includes(tag)
+        )
+      );
     });
   }, [api, selectedTags]);
 

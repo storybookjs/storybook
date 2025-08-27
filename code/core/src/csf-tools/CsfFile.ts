@@ -905,14 +905,16 @@ export class CsfFile {
         __id: story.id,
         __stats: story.__stats,
       };
+      const hasTests = this._storyTests[exportName];
 
       index.push({
         ...storyInput,
         type: 'story',
         name: story.name,
+        tags: [...storyInput.tags, ...(hasTests ? ['has-tests'] : [])],
       });
 
-      if (this._storyTests[exportName]) {
+      if (hasTests) {
         this._storyTests[exportName].forEach((test) => {
           index.push({
             ...storyInput,

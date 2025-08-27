@@ -44,16 +44,12 @@ const resolveDocgenOptions = (
     return false;
   }
 
-  if (docgen === undefined) {
+  if (docgen === undefined || docgen === true) {
     return { plugin: 'vue-docgen-api' };
   }
 
   if (typeof docgen === 'string') {
     return { plugin: docgen };
-  }
-  
-  if (docgen === true) {
-    return { plugin: 'vue-docgen-api' };
   }
   
   return docgen;

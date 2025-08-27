@@ -9,6 +9,7 @@ import { Yarn1Proxy } from './Yarn1Proxy';
 
 vi.mock('node:process', async (importOriginal) => {
   const original: any = await importOriginal();
+  original.env.CI = 'false';
   return {
     ...original,
     env: {

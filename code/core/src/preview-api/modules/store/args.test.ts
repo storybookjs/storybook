@@ -130,6 +130,9 @@ describe('mapArgsToTypes', () => {
     });
     expect(mapArgsToTypes({ a: 1.2 }, { a: { type: reactNodeType } })).toStrictEqual({ a: 1.2 });
     expect(mapArgsToTypes({ a: true }, { a: { type: reactNodeType } })).toStrictEqual({ a: true });
+    expect(mapArgsToTypes({ a: new Date() }, { a: { type: reactNodeType } })).toStrictEqual({});
+    expect(mapArgsToTypes({ a: { foo: 'bar' } }, { a: { type: reactNodeType } })).toStrictEqual({});
+    expect(mapArgsToTypes({ a: Symbol('foo') }, { a: { type: reactNodeType } })).toStrictEqual({});
   });
 
   it('deeply maps objects', () => {

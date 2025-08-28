@@ -124,7 +124,7 @@ describe('mapArgsToTypes', () => {
     expect(mapArgsToTypes({ a: 1.2 }, { a: { type: boolObjectType } })).toStrictEqual({ a: 1.2 });
   });
 
-  it('passes primitives for ReactNode type', () => {
+  it('passes only primitives for ReactNode type', () => {
     expect(mapArgsToTypes({ a: 'foo bar' }, { a: { type: reactNodeType } })).toStrictEqual({
       a: 'foo bar',
     });

@@ -75,6 +75,7 @@ export const transformSetStoriesStoryDataToPreparedStoryIndex = (
         const { argTypes, args, initialArgs } = story;
         acc[id] = {
           type: 'story',
+          subtype,
           ...base,
           parameters,
           argTypes,
@@ -346,7 +347,7 @@ export const transformStoryIndexToStoriesHash = (
   // Add "wrapper" nodes for stories with tests
   // Because the order of entries matters, we need to insert the wrapper before the story and test
   return Object.values(storiesHash).reduce((acc, item) => {
-    if (item.type === 'story' && item.tags.includes('test-fn')) {
+    if (item.type === 'story' && item.subtype === 'test') {
       const wrapperId = `${item.parent}__wrapper`;
       const parentStory = storiesHash[item.parent] as API_StoryEntry;
       const componentNode = storiesHash[parentStory.parent] as API_ComponentEntry;
@@ -375,10 +376,12 @@ export const transformStoryIndexToStoriesHash = (
       wrapperNode.tags = intersect(wrapperNode.tags, item.tags);
 
       // Create or update parent to point to wrapper rather than story
+      // Remove test-fn tag from story, as it should only exist on the wrapper
       acc[item.parent] = {
         ...parentStory,
         parent: wrapperId,
         depth: parentStory.depth + 1,
+        tags: parentStory.tags.filter((tag) => tag !== 'test-fn'),
       };
 
       // Create or update the test to point to wrapper rather than story

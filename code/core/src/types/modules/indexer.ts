@@ -73,8 +73,8 @@ export interface BaseIndexEntry {
 }
 export type StoryIndexEntry = BaseIndexEntry & {
   type: 'story';
-  // currently used by story tests
-  parent?: StoryId;
+  subtype: 'story' | 'test';
+  parent?: StoryId; // exists only on tests
 };
 
 export type DocsIndexEntry = BaseIndexEntry & {
@@ -133,8 +133,8 @@ export type BaseIndexInput = {
 /** The input for indexing a story entry. */
 export type StoryIndexInput = BaseIndexInput & {
   type: 'story';
-  // currently used by story tests
-  parent?: StoryId;
+  subtype: 'story' | 'test';
+  parent?: StoryId; // exists only on tests
 };
 
 /** The input for indexing a docs entry. */

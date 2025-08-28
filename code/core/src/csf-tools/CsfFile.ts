@@ -905,20 +905,24 @@ export class CsfFile {
         __id: story.id,
         __stats: story.__stats,
       };
-      const hasTests = this._storyTests[exportName];
+
+      const tests = this._storyTests[exportName];
+      const hasTests = tests?.length;
 
       index.push({
         ...storyInput,
         type: 'story',
+        subtype: 'story',
         name: story.name,
-        tags: [...storyInput.tags, ...(hasTests ? ['has-tests'] : [])],
+        tags: hasTests ? [...storyInput.tags, 'test-fn'] : storyInput.tags,
       });
 
       if (hasTests) {
-        this._storyTests[exportName].forEach((test) => {
+        tests.forEach((test) => {
           index.push({
             ...storyInput,
             type: 'story',
+            subtype: 'test',
             parent: story.id,
             name: test.name,
             tags: [...storyInput.tags, 'test-fn'],

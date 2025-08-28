@@ -400,7 +400,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     );
   }
 
-  const isTest = item.tags?.includes('test-fn');
+  const isTest = item.type === 'story' && item.subtype === 'test';
   const LeafNode = isTest ? TestNode : { docs: DocumentNode, story: StoryNode }[item.type];
   const nodeType = isTest ? 'test' : { docs: 'document', story: 'story' }[item.type];
 

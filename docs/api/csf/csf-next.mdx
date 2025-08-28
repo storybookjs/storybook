@@ -22,7 +22,8 @@ tab:
 
 CSF Next is the next evolution of Storybook's Component Story Format (CSF). This new API uses a pattern called factory functions to provide full type safety to your Storybook stories, making it easier to configure addons correctly and unlocking the full potential of Storybook's features.
 
-This reference will provide an overview of the API and a migration guide to upgrade from CSF 3.
+- This reference will provide an overview of the API and a migration guide to upgrade from CSF 3.
++ This reference provides an overview of the API and a migration guide to upgrade from CSF 3.
 
 ## Overview
 
@@ -153,7 +154,8 @@ export const Primary = meta.story({
 });
 ```
 
-#### `<StoryName>.extend`
+- #### `<StoryName>.extend`
++ #### `<Story>.extend`
 
 You can use the `.extend` method to create a new story based on an existing one, with the option to override or add new properties. Objects will be deep-merged; arrays and other primitives will be replaced.
 
@@ -309,7 +311,7 @@ Note that importing or manually applying any type to the meta or stories is no l
 
 <Callout variant="info" icon="💡">
 
-If you are reusing story properties to create a new story based on another, the [`<StoryName>.extend`](#storynameextend) method is the recommended way to do so.
+If you are reusing story properties to create a new story based on another, the [`<Story>.extend`](#storyextend) method is the recommended way to do so.
 
 </Callout>
 

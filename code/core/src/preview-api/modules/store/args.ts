@@ -58,7 +58,8 @@ const map = (arg: unknown, argType: InputType): any => {
       const isPrimitiveArg =
         typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean';
 
-      // Only allow primitives for `ReactNode` among all `other` cases
+      // Only proceed if `argType.value` appeared to be a `ReactNode`.
+      // Only permit primitives as they are included in `ReactNode` type, hence easily applicable.
       if (type.value === 'ReactNode' && isPrimitiveArg) {
         return arg;
       }

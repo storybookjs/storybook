@@ -119,6 +119,8 @@ export const TagsFilter = ({
       placement="bottom"
       trigger="click"
       onVisibleChange={setExpanded}
+      // render the tooltip in the mobile menu (so that the stacking context is correct) and fallback to document.body on desktop
+      portalContainer="#storybook-mobile-menu"
       tooltip={() => (
         <TagsFilterPanel
           api={api}

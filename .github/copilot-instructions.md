@@ -22,7 +22,8 @@ storybook/
 │   ├── frameworks/    # Framework integrations
 │   ├── lib/           # Core libraries
 │   ├── builders/      # Build tools
-│   └── sandbox/       # Pre-built sandbox environments
+│   └── sandbox/       # Internal build artifacts (not for testing)
+├── sandbox/           # Generated sandbox environments (created by yarn task --task sandbox)
 ├── scripts/           # Build and development scripts
 ├── docs/              # Documentation
 └── test-storybooks/   # Test configurations
@@ -61,6 +62,12 @@ cd code && yarn storybook:ui
 # Time: ~2.26 seconds startup time
 # Serves on: http://localhost:6006/
 # Note: This runs indefinitely - use timeout or async mode
+
+# Build Storybook UI for production (run from code/ directory)
+cd code && yarn storybook:ui:build
+# Time: ~1m 46s
+# Output: code/storybook-static/
+# Note: This does NOT run indefinitely
 ```
 
 ### Testing
@@ -113,7 +120,7 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 - `vitest-test` - Vitest integration tests
 
 ### Known Issues
-1. **GitHub API Rate Limiting**: Sandbox creation fails with 403 Forbidden errors due to GitHub API limits
+1. **GitHub API Rate Limiting**: Sandbox creation fails with 403 Forbidden errors due to GitHub API limits in CI environments
    ```bash
    # This will fail in CI environments:
    yarn task --task sandbox --template react-vite/default-ts
@@ -122,6 +129,8 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 2. **Dependency Warnings**: The build process shows many peer dependency warnings, but these are expected and don't prevent successful builds
 
 3. **Large Build Times**: Most build operations take several minutes - always use appropriate timeouts
+
+4. **Sandbox Generation**: Currently unreliable in CI environments - use Storybook UI for testing changes instead
 
 ## Recommended Development Workflow
 
@@ -134,8 +143,8 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 6. Run relevant tests: `cd code && yarn test`
 
 ### For Testing UI Changes
-1. Use existing sandbox environments in `code/sandbox/`
-2. Start Storybook UI server: `cd code && yarn storybook:ui`
+1. Generate a sandbox with: `yarn task --task sandbox --template [framework-template]` (may fail due to API limits)
+2. If sandbox generation fails, use Storybook UI: `cd code && yarn storybook:ui`
 3. Access at http://localhost:6006/
 
 ### For Addon/Framework Development
@@ -167,24 +176,50 @@ bash(command="cd /path/to/storybook/code && yarn storybook:ui", async=true)
 
 ## Sandbox Environments
 
-### Available Templates
-The `code/sandbox/` directory contains pre-built sandbox environments:
-- `react-vite-default-ts` - React with Vite and TypeScript
-- `angular-cli-default-ts` - Angular CLI with TypeScript
-- `svelte-vite-default-ts` - Svelte with Vite and TypeScript
-- `vue3-vite-default-ts` - Vue 3 with Vite and TypeScript
+### Generating New Sandboxes
+Sandboxes are test environments that allow you to test Storybook changes with different framework combinations. **Note**: Sandbox creation currently fails in CI environments due to GitHub API rate limits.
+
+```bash
+# Generate a new sandbox (run from repository root)
+yarn task --task sandbox --template react-vite/default-ts
+# Creates: sandbox/react-vite-default-ts/
+# Note: This will fail in CI with 403 Forbidden due to GitHub API limits
+```
+
+### Available Framework/Builder Templates
+Common templates include:
+- `react-vite/default-ts` - React with Vite and TypeScript
+- `react-webpack/default-ts` - React with Webpack and TypeScript  
+- `angular-cli/default-ts` - Angular CLI with TypeScript
+- `svelte-vite/default-ts` - Svelte with Vite and TypeScript
+- `vue3-vite/default-ts` - Vue 3 with Vite and TypeScript
+- `nextjs/default-ts` - Next.js with TypeScript
 - And many more...
 
-### Using Existing Sandboxes
-Since sandbox creation fails due to API limits, use existing sandbox directories for testing:
+### Working with Generated Sandboxes
+Once a sandbox is successfully generated, you can work with it:
 ```bash
-# Navigate to an existing sandbox
-cd code/sandbox/react-vite-default-ts
+# Navigate to the generated sandbox (in root sandbox/ directory)
+cd sandbox/react-vite-default-ts
+
 # Install dependencies if needed
 yarn install
-# Start the sandbox
+
+# Start the sandbox Storybook
 yarn storybook
 ```
+
+### Current Limitations
+- **GitHub API Rate Limiting**: Sandbox creation fails with 403 Forbidden errors due to GitHub API limits in CI environments
+- **Workaround**: For testing changes, you may need to work directly with the Storybook UI instead of generating new sandboxes
+- The `code/sandbox/` directory contains internal build artifacts and should not be used for testing
+
+### Testing Changes Without Sandboxes
+When sandbox generation is not available:
+1. Make your changes to the relevant packages in `code/`
+2. Compile: `yarn task --task compile`
+3. Test with Storybook UI: `cd code && yarn storybook:ui`
+4. Access at http://localhost:6006/ to test your changes
 
 ## Package Management
 
@@ -239,7 +274,8 @@ cd code && yarn storybook:vitest
 1. **Build Failures**: Often resolved by running `yarn i` followed by `yarn task --task compile`
 2. **Port Conflicts**: Storybook UI uses port 6006 by default
 3. **Memory Issues**: Large compilation tasks may require increased Node.js memory limits
-4. **API Rate Limits**: Use existing sandbox environments instead of creating new ones
+4. **API Rate Limits**: Sandbox generation fails in CI - use Storybook UI for testing instead
+5. **Sandbox Directory Confusion**: Use root `sandbox/` directory for generated sandboxes, not `code/sandbox/`
 
 ### Debug Information
 - Storybook logs available in generated sandbox directories

@@ -703,23 +703,18 @@ export class CsfFile {
               self._storyTests[exportName] = [];
             }
 
-            if (
-              t.isArrowFunctionExpression(testFunction) ||
-              t.isFunctionExpression(testFunction) ||
-              t.isIdentifier(testFunction)
-            ) {
-              self._storyTests[exportName].push({
-                function: testFunction,
-                name: testName,
-                options: testOptions,
-                node: expression,
-                // can't set id because meta title isn't available yet
-                // so it's set later on
-                id: 'FIXME',
-              });
+            self._storyTests[exportName].push({
+              function: testFunction,
+              name: testName,
+              options: testOptions,
+              node: expression,
+              // can't set id because meta title isn't available yet
+              // so it's set later on
+              id: 'FIXME',
+            });
 
-              self._stories[exportName].__stats.tests = true;
-            }
+            // TODO: fix this when stories fail
+            self._stories[exportName].__stats.tests = true;
           }
         },
       },

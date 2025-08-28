@@ -22,8 +22,7 @@ tab:
 
 CSF Next is the next evolution of Storybook's Component Story Format (CSF). This new API uses a pattern called factory functions to provide full type safety to your Storybook stories, making it easier to configure addons correctly and unlocking the full potential of Storybook's features.
 
-- This reference will provide an overview of the API and a migration guide to upgrade from CSF 3.
-+ This reference provides an overview of the API and a migration guide to upgrade from CSF 3.
+This reference provides an overview of the API and a migration guide to upgrade from prior CSF versions.
 
 ## Overview
 
@@ -70,7 +69,7 @@ export default definePreview({
 ```
 
 <Callout variant="info">
-  The preview configuration will be automatically updated to reference the necessary addons when installing an addon via `npx storybook add <addon-name>` or running `storybook dev`.
+  The preview configuration will be automatically updated to reference the [necessary addons](#preview-addons) when installing an addon via `npx storybook add <addon-name>` or running `storybook dev`.
 </Callout>
 
 ### `preview.meta`
@@ -93,7 +92,7 @@ const meta = preview.meta({
 
 <Callout variant="info" icon="💡">
 
-<a name="subpath-imports"></a>
+<a name="subpath-imports" />
 
 If you would like to use absolute imports instead of relative imports for your preview config, you can configure that using one of these methods:
 
@@ -154,10 +153,68 @@ export const Primary = meta.story({
 });
 ```
 
-- #### `<StoryName>.extend`
-+ #### `<Story>.extend`
+#### `<Story>.extend`
 
-You can use the `.extend` method to create a new story based on an existing one, with the option to override or add new properties. Objects will be deep-merged; arrays and other primitives will be replaced.
+You can use the `.extend` method to create a new story based on an existing one, with the option to override or add new properties.
+
+<details>
+<summary>Property merging details</summary>
+
+Properties are merged intelligently:
+
+- [`args`](../../writing-stories/args.mdx) are shallow merged
+- [`parameters`](../../writing-stories/parameters.mdx) are deep merged, except for arrays, which are replaced
+- [`decorators`](../../writing-stories/decorators.mdx) and [`tags`](../../writing-stories/tags.mdx) are concatenated
+
+```ts title="Button.stories.js|ts"
+// ...from above
+const meta = preview.meta({ /* ... */ });
+
+export const Example = meta.story({
+  args: {
+    primary: true,
+    exampleArray: ['a', 'b'],
+    exampleObject: { a: 'a', b: 'b' },
+  },
+  parameters: {
+    exampleArray: ['a', 'b'],
+    exampleObject: { a: 'a', b: 'b' },
+  },
+  tags: ['a'],
+});
+
+/* 
+ * 👇 Final values applied:
+ *    {
+ *      args: {
+ *        primary: true,
+ *        disabled: true,
+ *        exampleArray: ['c'],
+ *        exampleObject: { a: 'c' }
+ *      },
+ *      parameters: {
+ *        exampleArray: ['c'],
+ *        exampleObject: { a: 'c', b: 'b' }
+ *      },
+ *      tags: ['a', 'b']
+ *    }
+ */
+export const ExtendedExample = Example.extend({
+  args: {
+    disabled: true,
+    exampleArray: ['c'],
+    exampleObject: { a: 'c' },
+  },
+  parameters: {
+    disabled: true,
+    exampleArray: ['c'],
+    exampleObject: { a: 'c' },
+  },
+  tags: ['b'],
+});
+```
+
+</details>
 
 ```ts title="Button.stories.js|ts"
 // ...from above
@@ -166,32 +223,19 @@ const meta = preview.meta({ /* ... */ });
 export const Primary = meta.story({
   args: {
     primary: true,
-    exampleArray: ['a', 'b'],
-    exampleObject: { a: 'a' },
   },
 });
 
-/* 
- * 👇 Final args applied:
- *    {
- *      primary: true,
- *      disabled: true,
- *      exampleArray: ['c'],
- *      exampleObject: { a: 'c', b: 'b' }
- *    }
- */
 export const PrimaryDisabled = Primary.extend({
   args: {
     disabled: true,
-    exampleArray: ['c'],
-    exampleObject: { a: 'c', b: 'b' },
   },
 });
 ```
 
 ## Upgrade to CSF Next
 
-You can upgrade your stories to CSF Next either automatically (from CSF 3) or manually (from CSF 1, 2, or 3).
+You can upgrade your stories to CSF Next either automatically (from CSF 3) or manually (from CSF 1, 2, or 3). CSF Next is designed to be usable incrementally; you do not have to upgrade all of your story files at once. However, you cannot mix story formats within the same file.
 
 Before proceeding, be sure you're using the latest version of Storybook. You can upgrade your Storybook automatically with this command:
 
@@ -216,7 +260,7 @@ You must be using CSF 3 to automatically upgrade to CSF Next. If you are using C
 
 ### Manual
 
-You can also upgrade your project's story files to CSF Next manually, which allows you to do so incrementally. However, before using CSF Next in a story file, you must upgrade your `.storybook/main.js|ts` and `.storybook/preview.js|ts` files.
+You can also upgrade your project's story files to CSF Next manually. Before using CSF Next in a story file, you must upgrade your `.storybook/main.js|ts` and `.storybook/preview.js|ts` files.
 
 **1. Update your main Storybook config file**
 
@@ -236,6 +280,7 @@ Update your `.storybook/main.js|ts` file to use the new [`defineMain`](#definema
 ```
 
 **2. Update your preview config file**
+<a name="preview-addons" />
 
 Update your `.storybook/preview.js|ts` file to use the new [`definePreview`](#definepreview) function.
 
@@ -347,7 +392,7 @@ All of the story properties are now contained within a new property called `comp
 
 **4. Update your Vitest setup file**
 
-If you're using [Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon.mdx), you can remove your Vitest setup file.
+If you're using [Storybook's Vitest addon](../../writing-tests/integrations/vitest-addon.mdx), you can remove your Vitest setup file (`.storybook/vitest.setup.ts`).
 
 If you are using [portable stories in Vitest](../portable-stories/portable-stories-vitest.mdx), you may use a Vitest setup file to configure your stories. This file must be updated to use the new CSF Next format.
 

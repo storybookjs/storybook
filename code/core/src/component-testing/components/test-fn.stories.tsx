@@ -17,7 +17,9 @@ const meta = preview.meta({
   tags: ['some-tag'],
 });
 
-export const Default = meta.story({
+export const WithNoTests = meta.story();
+
+export const TestFunctionTypes = meta.story({
   args: {
     children: 'Arg from story',
   },
@@ -30,7 +32,7 @@ export const PlayFunction = meta.story({
   },
 });
 
-Default.test('simple', async ({ canvas, userEvent, args }) => {
+TestFunctionTypes.test('simple', async ({ canvas, userEvent, args }) => {
   const button = canvas.getByText('Arg from story');
   await userEvent.click(button);
   await expect(args.onClick).toHaveBeenCalled();
@@ -45,9 +47,9 @@ const doTest = async ({
   await userEvent.click(button);
   await expect(args.onClick).toHaveBeenCalled();
 };
-Default.test('referring to function in file', doTest);
+TestFunctionTypes.test('referring to function in file', doTest);
 
-Default.test(
+TestFunctionTypes.test(
   'with overrides',
   {
     args: {
@@ -76,7 +78,7 @@ Default.test(
   }
 );
 
-Default.test(
+TestFunctionTypes.test(
   'with play function',
   {
     play: async ({ canvas }) => {
@@ -90,18 +92,78 @@ Default.test(
   }
 );
 
-export const ExtendedStory = Default.extend({
+export const ExtendedStorySinglePlayExample = TestFunctionTypes.extend({
+  args: {
+    children: 'Arg from extended story',
+  },
+  play: async ({ canvas }) => {
+    const button = canvas.getByText('Arg from extended story');
+    await expect(button).toBeEnabled();
+  },
+});
+
+export const ExtendedStorySingleTestExample = TestFunctionTypes.extend({
   args: {
     children: 'Arg from extended story',
   },
 });
 
-ExtendedStory.test('should have extended args', async ({ canvas }) => {
-  const button = canvas.getByText('Arg from extended story');
-  await expect(button).toBeEnabled();
-});
+ExtendedStorySingleTestExample.test(
+  'this is a very long test name to explain that this story test should guarantee that the args have been extended correctly',
+  async ({ canvas }) => {
+    const button = canvas.getByText('Arg from extended story');
+    await expect(button).toBeEnabled();
+  }
+);
 
 // This is intentionally defined out-of-order
 PlayFunction.test('should be clicked by play function', async ({ args }) => {
   await expect(args.onClick).toHaveBeenCalled();
 });
+
+export const TestNames = meta.story({
+  args: {
+    children: 'This story is no-op, just focus on the test names',
+  },
+});
+TestNames.test(
+  'should display an error when login is attempted with an expired session token',
+  () => {}
+);
+
+TestNames.test(
+  'should display an error when login is attempted with multiple invalid password attempts',
+  () => {}
+);
+
+TestNames.test('should display an error when login is attempted with a revoked API key', () => {});
+
+TestNames.test(
+  'should display an error when login is attempted after exceeding the maximum session limit',
+  () => {}
+);
+
+TestNames.test(
+  'should display an error when login is attempted with a disabled user account',
+  () => {}
+);
+
+TestNames.test(
+  'should display an error when login is attempted with an unsupported authentication provider',
+  () => {}
+);
+
+TestNames.test(
+  'should display an error when login is attempted after the password reset process is incomplete',
+  () => {}
+);
+
+TestNames.test(
+  'should display an error when login is attempted with a malformed authentication request',
+  () => {}
+);
+
+TestNames.test(
+  'should display an error when login is attempted with an unverified email address',
+  () => {}
+);

@@ -2,12 +2,12 @@
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
+import { core as babelCore } from 'storybook/internal/babel';
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
-import { loadPartialConfig } from '@babel/core';
 import semver from 'semver';
 
 import nextBabelPreset from './babel/preset';
@@ -55,7 +55,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 };
 
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
-  const configPartial = loadPartialConfig({
+  const configPartial = babelCore.loadPartialConfig({
     ...baseConfig,
     filename: `${getProjectRoot()}/__fake__.js`,
   });

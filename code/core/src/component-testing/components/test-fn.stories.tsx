@@ -14,7 +14,7 @@ const meta = preview.meta({
     children: 'Default',
     onClick: fn(),
   },
-  tags: ['some-tag'],
+  tags: ['some-tag', 'autodocs'],
 });
 
 export const WithNoTests = meta.story();

@@ -75,7 +75,7 @@ export const transformSetStoriesStoryDataToPreparedStoryIndex = (
         const { argTypes, args, initialArgs } = story;
         acc[id] = {
           type: 'story',
-          subtype,
+          subtype: 'story',
           ...base,
           parameters,
           argTypes,

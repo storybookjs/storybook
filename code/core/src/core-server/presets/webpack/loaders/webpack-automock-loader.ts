@@ -1,7 +1,8 @@
+import { babelParse } from 'storybook/internal/babel';
+
 import type { LoaderContext } from 'webpack';
 
 import { getAutomockCode } from '../../../mocking-utils/automock';
-import { babelParser } from '../../../mocking-utils/extract';
 
 /** Defines the options that can be passed to the webpack-automock-loader. */
 interface AutomockLoaderOptions {
@@ -32,7 +33,7 @@ export default function webpackAutomockLoader(
   const isSpy = options.spy === 'true';
 
   // Generate the mocked source code using the utility from @vitest/mocker.
-  const mocked = getAutomockCode(source, isSpy, babelParser as any);
+  const mocked = getAutomockCode(source, isSpy, babelParse as any);
 
   // Return the transformed code to Webpack for further processing.
   return mocked.toString();

@@ -21,7 +21,7 @@ function parseWithFlowOrTypescript(source: string, parserOptions: parser.ParserO
 export const parserOptions: ParserOptions = {
   sourceType: 'module',
   // FIXME: we should get this from the project config somehow?
-  plugins: ['jsx', 'decorators-legacy', 'classProperties'],
+  plugins: ['typescript', 'jsx', 'classProperties', 'objectRestSpread', 'decorators-legacy'],
   tokens: true,
 };
 

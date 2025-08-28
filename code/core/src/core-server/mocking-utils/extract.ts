@@ -1,12 +1,8 @@
+import { type Node, babelParse, generate, types as t } from 'storybook/internal/babel';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
 
-import { generate } from '@babel/generator';
-import { parse } from '@babel/parser';
-import type { ParserOptions } from '@babel/parser';
-import type { Node } from '@babel/types';
-import * as t from '@babel/types';
 import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
 import { readFileSync } from 'fs';
@@ -37,26 +33,9 @@ interface ExtractMockCallsOptions {
   configDir: string;
 }
 
-/**
- * A wrapper around the babel parser that enables the necessary plugins to handle modern JavaScript
- * features, including TSX.
- *
- * @param code - The code to parse.
- * @returns The parsed code.
- */
-export const babelParser = (code: string) => {
-  const parserOptions: ParserOptions = {
-    sourceType: 'module',
-    // Enable plugins to handle modern JavaScript features, including TSX.
-    plugins: ['typescript', 'jsx', 'classProperties', 'objectRestSpread'],
-    errorRecovery: true,
-  };
-  return parse(code, parserOptions).program;
-};
-
 /** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
 export function rewriteSbMockImportCalls(code: string) {
-  const ast = babelParser(code);
+  const ast = babelParse(code).program;
 
   walk(ast as any, {
     enter(node: any) {
@@ -88,19 +67,13 @@ export function rewriteSbMockImportCalls(code: string) {
  */
 export function extractMockCalls(
   options: ExtractMockCallsOptions,
-  parse: (
-    input: string,
-    options?: {
-      allowReturnOutsideFunction?: boolean;
-      jsx?: boolean;
-    }
-  ) => Node,
+  parse: typeof babelParse,
   root: string
 ): MockCall[] {
   try {
     const previewConfigCode = readFileSync(options.previewConfigPath, 'utf-8');
     const { code: jsCode } = transformSync(previewConfigCode, { loader: 'tsx', format: 'esm' });
-    const ast = parse(jsCode);
+    const ast = parse(jsCode).program;
     const mocks: MockCall[] = [];
 
     /** Helper to check if an ObjectExpression node has spy: true */

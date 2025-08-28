@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 
+import { babelParse } from 'storybook/internal/babel';
 import { logger } from 'storybook/internal/node-logger';
 import type { CoreConfig } from 'storybook/internal/types';
 
@@ -7,11 +8,7 @@ import { normalize } from 'pathe';
 import type { Plugin, ResolvedConfig } from 'vite';
 
 import { getAutomockCode } from '../../../mocking-utils/automock';
-import {
-  babelParser,
-  extractMockCalls,
-  rewriteSbMockImportCalls,
-} from '../../../mocking-utils/extract';
+import { extractMockCalls, rewriteSbMockImportCalls } from '../../../mocking-utils/extract';
 import {
   type MockCall,
   getCleanId,
@@ -59,7 +56,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       },
 
       buildStart() {
-        mockCalls = extractMockCalls(options, babelParser, viteConfig.root);
+        mockCalls = extractMockCalls(options, babelParse, viteConfig.root);
       },
 
       configureServer(server) {
@@ -68,7 +65,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             // Store the old mocks before updating
             const oldMockCalls = mockCalls;
             // Re-extract mocks to get the latest list
-            mockCalls = extractMockCalls(options, babelParser, viteConfig.root);
+            mockCalls = extractMockCalls(options, babelParse, viteConfig.root);
 
             // Invalidate the preview file
             const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);
@@ -147,7 +144,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
 
             try {
               if (!call.redirectPath) {
-                const automockedCode = getAutomockCode(code, call.spy, babelParser as any);
+                const automockedCode = getAutomockCode(code, call.spy, babelParse);
 
                 return {
                   code: automockedCode.toString(),

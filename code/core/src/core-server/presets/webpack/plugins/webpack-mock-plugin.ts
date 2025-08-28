@@ -1,8 +1,10 @@
 import { dirname, isAbsolute } from 'node:path';
 
+import { babelParse } from 'storybook/internal/babel';
+
 import type { Compiler } from 'webpack';
 
-import { babelParser, extractMockCalls } from '../../../mocking-utils/extract';
+import { extractMockCalls } from '../../../mocking-utils/extract';
 import { getIsExternal, resolveExternalModule, resolveMock } from '../../../mocking-utils/resolve';
 
 // --- Type Definitions ---
@@ -118,7 +120,7 @@ export class WebpackMockPlugin {
     // Use extractMockCalls to get all mocks from the transformed preview file
     const mocks = extractMockCalls(
       { previewConfigPath, configDir: dirname(previewConfigPath) },
-      babelParser,
+      babelParse,
       compiler.context
     );
 

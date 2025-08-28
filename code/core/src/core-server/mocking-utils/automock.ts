@@ -1,3 +1,5 @@
+import type { babelParse } from 'storybook/internal/babel';
+
 import type {
   Declaration,
   ExportDefaultDeclaration,
@@ -11,9 +13,7 @@ import MagicString from 'magic-string';
 import { __STORYBOOK_GLOBAL_THIS_ACCESSOR__ } from '../presets/vitePlugins/vite-inject-mocker/constants';
 import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker';
 
-type ParseFn = (code: string) => Program;
-
-export function getAutomockCode(originalCode: string, isSpy: boolean, parse: ParseFn) {
+export function getAutomockCode(originalCode: string, isSpy: boolean, parse: typeof babelParse) {
   const mocked = automockModule(originalCode, isSpy ? 'autospy' : 'automock', parse, {
     globalThisAccessor: JSON.stringify(__STORYBOOK_GLOBAL_THIS_ACCESSOR__),
   });
@@ -46,11 +46,11 @@ export function getAutomockCode(originalCode: string, isSpy: boolean, parse: Par
 export function automockModule(
   code: string,
   mockType: 'automock' | 'autospy',
-  parse: (code: string) => any,
+  parse: typeof babelParse,
   options: any = {}
 ): MagicString {
   const globalThisAccessor = options.globalThisAccessor || '"__vitest_mocker__"';
-  const ast = parse(code) as Program;
+  const ast = parse(code).program;
 
   const m = new MagicString(code);
 
@@ -64,7 +64,7 @@ export function automockModule(
     }
 
     if (_node.type === 'ExportNamedDeclaration') {
-      const node = _node as Positioned<ExportNamedDeclaration>;
+      const node = _node as unknown as Positioned<ExportNamedDeclaration>;
       const declaration = node.declaration; // export const name
 
       function traversePattern(expression: Pattern) {

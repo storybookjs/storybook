@@ -98,6 +98,7 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       fsCache.set('state', selectCachedState(state));
     }
   });
+  globalThis.__STORYBOOK_ADDON_VITEST_STORE__ = store;
   const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {

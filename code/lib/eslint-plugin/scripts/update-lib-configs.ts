@@ -50,7 +50,10 @@ function formatCategory(category: TCategory) {
       // This file is bundled in an index.js file at the root
       // so the reference is relative to the src directory
       extends: './configs/${extendsCategoryId}',
-      rules: ${formatRules(category.rules)}
+      overrides: [{
+        files: [${STORIES_GLOBS.join(', ')}],
+        rules: ${formatRules(category.rules)}
+      },]
     }
   `;
 }

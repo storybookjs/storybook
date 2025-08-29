@@ -16,7 +16,9 @@
       - [Removed: active](#removed-active)
     - [IconButton is deprecated](#iconbutton-is-deprecated)
     - [Bar Component API Changes](#bar-component-api-changes)
-    - [FlexBar is removed](#flexbar-is-removed)
+    - [FlexBar is deprecated](#flexbar-is-deprecated)
+    - [Tabs is deprecated](#tabs-is-deprecated)
+    - [Tabs Component API Changes](#tabs-component-api-changes)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -631,10 +633,17 @@ IconButton will be removed in future versions.
 
 The `Bar` component's internal layout has changed. It now applies flex positioning and applies a default item gap, that can be controlled with the `itemGap` prop.
 
-#### FlexBar is removed
+#### FlexBar is deprecated
 
 The `FlexBar` component is removed. Instead, use the `Bar` component and apply `justifyContent: 'space-between'` through the `innerStyle` prop.
 
+#### Tabs is deprecated
+
+The `Tabs` component is deprecated. Instead, use the new `AriaTabs` (name TBC) component which has a more constrained API and is accessible. In particular, `AriaTabs` (name TBC) does not support mixing HTML links and tabs.
+
+#### Tabs Component API Changes
+
+* [ ] Tabs no longer accepts link components?
 
 ## From version 8.x to 9.0.0
 

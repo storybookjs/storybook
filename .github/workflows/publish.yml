@@ -190,6 +190,7 @@ jobs:
           git push origin main
 
       - name: Create Sentry release
+        if: steps.publish-needed.outputs.published == 'false'
         uses: sentry/action-release@v2
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}

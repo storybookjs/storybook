@@ -89,7 +89,7 @@ export const Primary: StoryObj = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="preact" language="js"
+```jsx filename="Button.stories.js|jsx" renderer="preact" language="js"
 /** @jsx h */
 import { h } from 'preact';
 
@@ -109,7 +109,7 @@ export const Primary = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js"
 import { Button } from './Button';
 
 export default {
@@ -126,7 +126,7 @@ export const Primary = {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -149,7 +149,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="with-hooks"
+```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="with-hooks"
 import React, { useState } from 'react';
 
 import { Button } from './Button';
@@ -221,7 +221,7 @@ export const Primary = {
 } satisfies Story;
 ```
 
-```js filename="Button.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js"
 import { Button } from './Button';
 
 export default {
@@ -260,7 +260,7 @@ export const Primary: Story = {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="with-hooks"
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="with-hooks"
 import { createSignal } from 'solid-js';
 
 import { Button } from './Button';

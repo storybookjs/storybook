@@ -40,7 +40,7 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="preact" language="js"
+```jsx filename="MyComponent.stories.js|jsx" renderer="preact" language="js"
 /** @jsx h */
 import { h } from 'preact';
 
@@ -67,7 +67,7 @@ export const Example = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Layout } from './Layout';
 
 import { MyComponent } from './MyComponent';
@@ -91,7 +91,7 @@ export const Example = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -121,7 +121,7 @@ export const Example: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
 import { Layout } from './Layout';
 
 import { MyComponent } from './MyComponent';

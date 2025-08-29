@@ -189,6 +189,16 @@ jobs:
           git commit -m "Update $VERSION_FILE for v${{ steps.version.outputs.current-version }}"
           git push origin main
 
+      - name: Create Sentry release
+        uses: sentry/action-release@v2
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          release: ${{ steps.version.outputs.current-version }}
+          environment: ${{ contains(steps.version.outputs.current-version, '-alpha') && 'alpha' || contains(steps.version.outputs.current-version, '-beta') && 'beta' || contains(steps.version.outputs.current-version, '-rc') && 'rc' || 'latest' }}
+
       - name: Report job failure to Discord
         if: failure()
         env:

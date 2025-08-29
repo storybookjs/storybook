@@ -1,5 +1,8 @@
 import { cp, mkdir, readdir, rename, rm, writeFile } from 'node:fs/promises';
 
+import { readFile } from 'node:fs/promises';
+import { join, relative } from 'node:path';
+
 import * as ghActions from '@actions/core';
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
@@ -7,12 +10,9 @@ import type { Options as ExecaOptions } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import pLimit from 'p-limit';
-import { join, relative } from 'path';
 import prettyTime from 'pretty-hrtime';
 import { dedent } from 'ts-dedent';
 
-import type { JsPackageManager } from '../../code/core/src/common/js-package-manager';
-import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/JsPackageManagerFactory';
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli';
 import storybookVersions from '../../code/core/src/common/versions';
 import { allTemplates as sandboxTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates';
@@ -30,7 +30,7 @@ import { getStackblitzUrl, renderTemplate } from './utils/template';
 import type { GeneratorConfig } from './utils/types';
 import { localizeYarnConfigFiles, setupYarn } from './utils/yarn';
 
-const isCI = process.env.GITHUB_ACTIONS === 'true';
+const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
 
 class BeforeScriptExecutionError extends Error {}
 class StorybookInitError extends Error {}
@@ -43,27 +43,20 @@ const sbInit = async (
 ) => {
   const sbCliBinaryPath = join(__dirname, `../../code/lib/create-storybook/dist/bin/index.js`);
   console.log(`🎁 Installing Storybook`);
-  const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars };
+  const env = { STORYBOOK_DISABLE_TELEMETRY: 'true', ...envVars, CI: 'true' };
   const fullFlags = ['--yes', ...(flags || [])];
   await runCommand(`${sbCliBinaryPath} ${fullFlags.join(' ')}`, { cwd, env }, debug);
 };
 
 type LocalRegistryProps = {
-  packageManager: JsPackageManager;
   action: () => Promise<void>;
   cwd: string;
   env: Record<string, any>;
   debug: boolean;
 };
 
-const withLocalRegistry = async ({
-  packageManager,
-  action,
-  cwd,
-  env,
-  debug,
-}: LocalRegistryProps) => {
-  const prevUrl = await packageManager.getRegistryURL();
+const withLocalRegistry = async ({ action, cwd, env, debug }: LocalRegistryProps) => {
+  const prevUrl = 'https://registry.npmjs.org/';
   let error;
   try {
     console.log(`📦 Configuring local registry: ${LOCAL_REGISTRY_URL}`);
@@ -91,8 +84,8 @@ const emptyDir = async (dir: string): Promise<void> => {
 };
 
 const addStorybook = async ({
-  baseDir,
   localRegistry,
+  baseDir,
   flags = [],
   debug,
   env = {},
@@ -111,27 +104,13 @@ const addStorybook = async ({
   try {
     await cp(beforeDir, tmpDir, { recursive: true });
 
-    const packageManager = JsPackageManagerFactory.getPackageManager({ force: 'yarn1' }, tmpDir);
     if (localRegistry) {
-      await withLocalRegistry({
-        packageManager,
-        action: async () => {
-          await packageManager.addPackageResolutions({
-            ...storybookVersions,
-            // Yarn1 Issue: https://github.com/storybookjs/storybook/issues/22431
-            jackspeak: '2.1.1',
-          });
-
-          await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
-        },
-        cwd: tmpDir,
-        env,
-        debug,
-      });
-    } else {
-      await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
+      await addResolutions(tmpDir);
     }
+
+    await sbInit(tmpDir, env, [...flags, '--package-manager=yarn1'], debug);
   } catch (e) {
+    console.log('error', e);
     await rm(tmpDir, { recursive: true, force: true });
     throw e;
   }
@@ -234,6 +213,10 @@ const runGenerators = async (
                 scriptWithBeforeDir,
                 {
                   cwd: createBaseDir,
+                  env: {
+                    ...env,
+                    CI: 'true',
+                  },
                   timeout: SCRIPT_TIMEOUT,
                 },
                 debug
@@ -277,6 +260,7 @@ const runGenerators = async (
               cause: error,
             });
           }
+
           await addDocumentation(baseDir, { name, dirName });
 
           console.log(
@@ -308,6 +292,12 @@ const runGenerators = async (
 
   if (!isCI) {
     if (hasGenerationErrors) {
+      console.log('failed:');
+      console.log(
+        generationResults
+          .filter((result) => result.status === 'rejected')
+          .map((_, index) => generators[index].name)
+      );
       throw new Error(`Some sandboxes failed to generate`);
     }
     return;
@@ -396,6 +386,18 @@ export const generate = async ({
   await runGenerators(generatorConfigs, localRegistry, debug);
 };
 
+async function addResolutions(beforeDir: string) {
+  const packageJson = await readFile(join(beforeDir, 'package.json'), 'utf-8').then((c) =>
+    JSON.parse(c)
+  );
+
+  packageJson.resolutions = {
+    ...storybookVersions,
+  };
+
+  await writeFile(join(beforeDir, 'package.json'), JSON.stringify(packageJson, null, 2));
+}
+
 if (esMain(import.meta.url)) {
   program
     .description('Generate sandboxes from a set of possible templates')
@@ -407,7 +409,22 @@ if (esMain(import.meta.url)) {
     .option('--debug', 'Print all the logs to the console')
     .option('--local-registry', 'Use local registry', false)
     .action((optionValues) => {
-      generate(optionValues)
+      let result;
+      if (optionValues.localRegistry) {
+        result = withLocalRegistry({
+          debug: optionValues.debug,
+
+          action: async () => {
+            await generate(optionValues);
+          },
+          cwd: process.cwd(),
+          env: {},
+        });
+      } else {
+        result = generate(optionValues);
+      }
+
+      result
         .catch((e) => {
           console.error(e);
           process.exit(1);

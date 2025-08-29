@@ -186,23 +186,22 @@ export const transformStoryIndexToStoriesHash = (
   index = index.v === 4 ? transformStoryIndexV4toV5(index as any) : index;
   index = index as API_PreparedStoryIndex;
 
-  const entryValues = Object.values(index.entries).filter((entry) => {
-    let result = true;
+  const indexEntries = Object.values(index.entries);
+  const filterFunctions = Object.values(filters);
 
-    // All stories with a failing status should always show up, regardless of the applied filters
-    const storyStatuses = allStatuses[entry.id] ?? {};
-    if (Object.values(storyStatuses).some(({ value }) => value === 'status-value:error')) {
-      return result;
+  const entryValues = indexEntries.filter((entry) => {
+    const statuses = allStatuses[entry.id] ?? {};
+    if (Object.values(statuses).some(({ value }) => value === 'status-value:error')) {
+      // All stories with a failing status should always show up, regardless of the applied filters
+      return true;
     }
 
-    Object.values(filters).forEach((filter) => {
-      if (result === false) {
-        return;
-      }
-      result = filter({ ...entry, statuses: storyStatuses });
-    });
+    if (filterFunctions.every((fn) => fn({ ...entry, statuses }))) {
+      return true;
+    }
 
-    return result;
+    const children = indexEntries.filter((item) => 'parent' in item && item.parent === entry.id);
+    return children.some((child) => filterFunctions.some((fn) => fn({ ...child, statuses })));
   });
 
   const { sidebar = {} } = provider.getConfig();
@@ -313,40 +312,37 @@ export const transformStoryIndexToStoriesHash = (
   // This function adds a "root" or "orphan" and all of its descendents to the hash.
   function addItem(acc: API_IndexHash, item: API_HashEntry) {
     // If we were already inserted as part of a group, that's great.
-    if (acc[item.id]) {
-      return acc;
-    }
+    if (!acc[item.id]) {
+      acc[item.id] = item;
 
-    acc[item.id] = item;
-    // Ensure we add the children depth-first *before* inserting any other entries,
-    // and compute tags from the children put in the accumulator afterwards, once
-    // they're all known and we can compute a sound intersection.
-    if (item.type === 'root' || item.type === 'group' || item.type === 'component') {
-      item.children.forEach((childId) => addItem(acc, storiesHashOutOfOrder[childId]));
+      // Ensure we add the children depth-first *before* inserting any other entries.
+      if ('children' in item) {
+        item.children.forEach((childId) => addItem(acc, storiesHashOutOfOrder[childId]));
 
-      item.tags =
-        item.children.reduce((currentTags: Tag[] | null, childId): Tag[] => {
-          // On the first child, we have nothing to intersect against so we use it as a source of data.
-          return currentTags === null
-            ? acc[childId].tags
-            : intersect(currentTags, acc[childId].tags);
-        }, null) || [];
+        item.tags =
+          item.children.reduce((currentTags: Tag[] | null, childId): Tag[] => {
+            // On the first child, we have nothing to intersect against so we use it as a source of data.
+            return currentTags === null
+              ? acc[childId].tags
+              : intersect(currentTags, acc[childId].tags);
+          }, null) || [];
+      }
     }
     return acc;
   }
 
   // We'll do two passes over the data, adding all the orphans, then all the roots
-  const orphanHash = Object.values(storiesHashOutOfOrder)
+  let storiesHash = Object.values(storiesHashOutOfOrder)
     .filter((i) => i.type !== 'root' && !i.parent)
     .reduce((acc, item) => addItem(acc, item), {} as API_IndexHash);
 
-  const storiesHash = Object.values(storiesHashOutOfOrder)
+  storiesHash = Object.values(storiesHashOutOfOrder)
     .filter((i) => i.type === 'root')
-    .reduce(addItem, orphanHash);
+    .reduce(addItem, storiesHash);
 
   // Add "wrapper" nodes for stories with tests
   // Because the order of entries matters, we need to insert the wrapper before the story and test
-  return Object.values(storiesHash).reduce((acc, item) => {
+  storiesHash = Object.values(storiesHash).reduce((acc, item) => {
     if (item.type === 'story' && item.subtype === 'test') {
       const wrapperId = `${item.parent}__wrapper`;
       const parentStory = storiesHash[item.parent] as API_StoryEntry;
@@ -354,12 +350,11 @@ export const transformStoryIndexToStoriesHash = (
 
       // Update component children to point to wrapper rather than story and tests
       (acc[componentNode.id] as API_ComponentEntry).children = componentNode.children
-        .filter((id) => id !== item.id && id !== item.parent)
-        .concat(wrapperId);
+        .filter((id) => id !== item.id)
+        .map((id) => (id === item.parent ? wrapperId : id));
 
-      // Create the wrapper, but first delete the story and test so that the wrapper is inserted before them
+      // Create the wrapper, but first delete the story so that the wrapper is inserted before it
       if (!acc[wrapperId]) {
-        delete acc[item.id];
         delete acc[item.parent];
         acc[wrapperId] = {
           ...parentStory,
@@ -395,6 +390,8 @@ export const transformStoryIndexToStoriesHash = (
     }
     return acc;
   }, {} as API_IndexHash);
+
+  return storiesHash;
 };
 
 /** Now we need to patch in the existing prepared stories */

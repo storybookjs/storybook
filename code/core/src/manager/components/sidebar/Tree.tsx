@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, IconButton, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import type { API_TestEntry, StatusValue } from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
 import {
   type API_HashEntry,
   type StatusByTypeId,

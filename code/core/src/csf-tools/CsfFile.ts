@@ -914,13 +914,14 @@ export class CsfFile {
         type: 'story',
         subtype: 'story',
         name: story.name,
-        tags: hasTests ? [...storyInput.tags, 'test-fn'] : storyInput.tags,
       });
 
       if (hasTests) {
         tests.forEach((test) => {
           index.push({
             ...storyInput,
+            // TODO implementent proper title => path behavior in `transformStoryIndexToStoriesHash`
+            // title: `${storyInput.title}/${story.name}`,
             type: 'story',
             subtype: 'test',
             parent: story.id,

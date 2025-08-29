@@ -11,7 +11,13 @@ import {
   types as t,
   traverse,
 } from 'storybook/internal/babel';
-import { isExportStory, storyNameFromExport, toId, toTestId } from 'storybook/internal/csf';
+import {
+  isExportStory,
+  sanitize,
+  storyNameFromExport,
+  toId,
+  toTestId,
+} from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentAnnotations,
@@ -286,6 +292,23 @@ export class CsfFile {
       options: any;
     }>
   > = {};
+
+  _metaTests: Array<{
+    node: t.Node;
+    function: t.Node;
+    name: string;
+    id: string;
+    options: any;
+  }> = [];
+
+  _tests: Array<{
+    node: t.Node;
+    function: t.Node;
+    name: string;
+    id: string;
+    options: any;
+    parent: { type: 'story'; exportName: string } | { type: 'meta' };
+  }> = [];
 
   constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
     this._ast = ast;
@@ -698,23 +721,38 @@ export class CsfFile {
             const testFunction =
               expression.arguments.length === 2 ? expression.arguments[1] : expression.arguments[2];
             const testOptions = expression.arguments.length === 2 ? null : expression.arguments[1];
+            if (exportName === self._metaVariableName) {
+              const testDef = {
+                function: testFunction,
+                name: testName,
+                options: testOptions,
+                node: expression,
+                id: 'FIXME',
+              };
+              self._metaTests.push(testDef);
+              self._tests.push({ ...testDef, parent: { type: 'meta' } });
+            } else {
+              if (!self._storyTests[exportName]) {
+                self._storyTests[exportName] = [];
+              }
 
-            if (!self._storyTests[exportName]) {
-              self._storyTests[exportName] = [];
+              const testDef = {
+                function: testFunction,
+                name: testName,
+                options: testOptions,
+                node: expression,
+                // can't set id because meta title isn't available yet
+                // so it's set later on
+                id: 'FIXME',
+              };
+              self._storyTests[exportName].push(testDef);
+              self._tests.push({ ...testDef, parent: { type: 'story', exportName } });
+
+              // TODO: fix this when stories fail
+              if (self._stories[exportName]) {
+                self._stories[exportName].__stats.tests = true;
+              }
             }
-
-            self._storyTests[exportName].push({
-              function: testFunction,
-              name: testName,
-              options: testOptions,
-              node: expression,
-              // can't set id because meta title isn't available yet
-              // so it's set later on
-              id: 'FIXME',
-            });
-
-            // TODO: fix this when stories fail
-            self._stories[exportName].__stats.tests = true;
           }
         },
       },
@@ -865,6 +903,20 @@ export class CsfFile {
       }
     }
 
+    // assign ids for meta-level tests once we know meta id/title
+    if (self._metaTests.length > 0) {
+      const parentId = sanitize(self._meta?.id || (self._meta?.title as string));
+      self._metaTests.forEach((test) => {
+        test.id = toTestId(parentId, test.name);
+      });
+      // reflect ids in flat _tests too
+      self._tests
+        .filter((t) => t.parent.type === 'meta')
+        .forEach((t) => {
+          t.id = toTestId(parentId, t.name);
+        });
+    }
+
     return self as CsfFile & IndexedCSFFile;
   }
 
@@ -922,6 +974,26 @@ export class CsfFile {
         });
       }
     });
+
+    // Add meta-level tests as component-level entries (parent is meta/component id)
+    if (this._metaTests.length > 0) {
+      const metaId = sanitize(this.meta?.id || (this.meta?.title as string));
+      this._metaTests.forEach((test) => {
+        index.push({
+          importPath: fileName,
+          rawComponentPath: this._rawComponentPath,
+          exportName: this._metaVariableName || 'default',
+          title: this.meta?.title,
+          metaId,
+          type: 'story',
+          parent: metaId,
+          name: test.name,
+          tags: [...(this._meta?.tags ?? []), 'test-fn'],
+          __id: test.id,
+          __stats: {},
+        });
+      });
+    }
 
     return index;
   }

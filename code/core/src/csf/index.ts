@@ -29,7 +29,7 @@ export const toId = (kind: string, name?: string) =>
 
 /** Generate a storybook test ID from a story ID and test name. */
 export const toTestId = (parentId: string, testName: string) =>
-  `${parentId}:${sanitizeSafe(testName, 'test')}`;
+  `${sanitize(parentId)}:${sanitizeSafe(testName, 'test')}`;
 
 /** Transform a CSF named export into a readable story name */
 export const storyNameFromExport = (key: string) => toStartCaseStr(key);

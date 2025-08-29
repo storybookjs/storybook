@@ -93,6 +93,13 @@ export interface Meta<
   story<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input?: TInput
   ): Story<TRenderer, TInput>;
+
+  test(name: string, fn: TestFunction<TRenderer>): Story<TRenderer>;
+  test(
+    name: string,
+    annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
+    fn: TestFunction<TRenderer>
+  ): Story<TRenderer>;
 }
 
 export function isMeta(input: unknown): input is Meta<Renderer> {
@@ -115,6 +122,39 @@ function defineMeta<
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
     ) {
       return defineStory(typeof story === 'function' ? { render: story } : story, this);
+    },
+    test(
+      name: string,
+      overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
+      testFn?: TestFunction<TRenderer>
+    ) {
+      const annotations: StoryAnnotations<TRenderer, TRenderer['args']> =
+        typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
+      const testFunction: TestFunction<TRenderer> =
+        typeof overridesOrTestFn !== 'function'
+          ? (testFn as TestFunction<TRenderer>)
+          : overridesOrTestFn;
+
+      const play =
+        mountDestructured(input.play as unknown as any) ||
+        mountDestructured(testFunction as unknown as any)
+          ? async ({ context }: StoryContext<TRenderer>) => {
+              await (input.play as unknown as (context: any) => any)?.(context);
+              await (testFunction as unknown as (context: any) => any)(context);
+            }
+          : async (context: StoryContext<TRenderer>) => {
+              await (input.play as unknown as (context: any) => any)?.(context);
+              await (testFunction as unknown as (context: any) => any)(context);
+            };
+
+      const mergedAnnotations: StoryAnnotations<TRenderer, TRenderer['args']> = {
+        ...annotations,
+        name,
+        tags: combineTags('test-fn', '!autodocs', ...(annotations.tags ?? [])),
+        play,
+      };
+
+      return defineStory(mergedAnnotations, this);
     },
   };
 }
@@ -203,14 +243,15 @@ function defineStory<
       const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
 
       const play =
-        mountDestructured(this.play) || mountDestructured(testFunction)
+        mountDestructured(this.play as unknown as any) ||
+        mountDestructured(testFunction as unknown as any)
           ? async ({ context }: StoryContext<TRenderer>) => {
-              await this.play?.(context);
-              await testFunction(context);
+              await (this.play as unknown as (context: any) => any)?.(context);
+              await (testFunction as unknown as (context: any) => any)(context);
             }
           : async (context: StoryContext<TRenderer>) => {
-              await this.play?.(context);
-              await testFunction(context);
+              await (this.play as unknown as (context: any) => any)?.(context);
+              await (testFunction as unknown as (context: any) => any)(context);
             };
 
       const test = this.extend({

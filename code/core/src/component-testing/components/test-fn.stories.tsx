@@ -49,6 +49,15 @@ const doTest = async ({
 };
 TestFunctionTypes.test('referring to function in file', doTest);
 
+const focus =
+  (role: any) =>
+  async ({ userEvent, canvas }: Pick<StoryContext, 'userEvent' | 'canvas'>): Promise<void> => {
+    await userEvent.tab();
+    await expect(canvas.getByRole(role)).toHaveFocus();
+  };
+
+TestFunctionTypes.test('should work', focus('button'));
+
 TestFunctionTypes.test(
   'with overrides',
   {
@@ -167,3 +176,9 @@ TestNames.test(
   'should display an error when login is attempted with an unverified email address',
   () => {}
 );
+
+meta.test('meta level testing stuff', async ({ canvas, userEvent, args }) => {
+  const button = canvas.getByText('Default');
+  await userEvent.click(button);
+  await expect(args.onClick).toHaveBeenCalled();
+});

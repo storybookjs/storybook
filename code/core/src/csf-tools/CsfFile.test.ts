@@ -1846,6 +1846,31 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('adds meta-level tests as separate entries', () => {
+      const { indexInputs } = loadCsf(
+        dedent`
+      import { config } from '#.storybook/preview'
+      const meta = config.meta({ component: 'foo' });
+      export default meta;
+      meta.test('simple meta test', async () => {})
+    `,
+        { makeTitle, fileName: 'foo/bar.stories.js' }
+      ).parse();
+
+      expect(indexInputs).toMatchInlineSnapshot(`
+        - importPath: foo/bar.stories.js
+          exportName: meta
+          title: Default Title
+          type: story
+          parent: Default Title
+          name: simple meta test
+          tags:
+            - test-fn
+          __id: Default Title:simple-meta-test
+          __stats: {}
+      `);
+    });
+
     it('supports custom parameters.__id', () => {
       const { indexInputs } = loadCsf(
         dedent`
@@ -2459,6 +2484,36 @@ describe('CsfFile', () => {
         expect(storyTests[1].function).toBeDefined();
         expect(storyTests[2].function).toBeDefined();
         expect(storyTests[3].function).toBeDefined();
+      });
+
+      it('meta test - parsing', () => {
+        const data = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export default meta;
+            meta.test('simple test', async () => {})
+            meta.test('with overrides', { tags: ['X'] }, async () => {})
+            const runTest = () => {}
+            meta.test('with function reference', runTest)
+            meta.test('with function call', runTest())
+          `,
+          { makeTitle }
+        ).parse();
+
+        const metaTests = data._metaTests;
+        expect(metaTests).toHaveLength(4);
+        expect(metaTests[0].id).toBe('default-title:simple test');
+        expect(metaTests[0].name).toBe('simple test');
+        expect(metaTests[1].name).toBe('with overrides');
+        expect(metaTests[2].name).toBe('with function reference');
+        expect(metaTests[3].name).toBe('with function call');
+        expect(metaTests[0].function).toBeDefined();
+        expect(metaTests[1].function).toBeDefined();
+        expect(metaTests[2].function).toBeDefined();
+        expect(metaTests[3].function).toBeDefined();
+        // ids should be assigned based on meta id/title and test name
+        expect(metaTests.every((t) => typeof t.id === 'string' && t.id.length > 0)).toBe(true);
       });
 
       it('story name', () => {

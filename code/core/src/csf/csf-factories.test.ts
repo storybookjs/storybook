@@ -75,3 +75,32 @@ describe('test function', () => {
     expect(testFn).toHaveBeenCalled();
   });
 });
+
+describe('meta.test function', () => {
+  test('without overrides', async () => {
+    const meta2 = preview.meta({ render: () => 'hello from meta' });
+    const testFn = vi.fn();
+    const testName = 'should run meta test';
+
+    const testStory = meta2.test(testName, testFn);
+
+    // execute test
+    await testStory.run(undefined, testName);
+    expect(testFn).toHaveBeenCalled();
+  });
+
+  test('with overrides', async () => {
+    const meta2 = preview.meta({ render: () => 'hello from meta' });
+    const testFn = vi.fn();
+    const testName = 'should run meta test with overrides';
+
+    const testStory = meta2.test(testName, { args: { foo: 'bar' } }, testFn);
+
+    // ensure overrides applied
+    expect(testStory.input.args).toEqual({ foo: 'bar' });
+
+    // execute test
+    await testStory.run(undefined, testName);
+    expect(testFn).toHaveBeenCalled();
+  });
+});

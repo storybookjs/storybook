@@ -233,6 +233,7 @@ describe('transformStoryIndexToStoriesHash', () => {
         '1': {
           id: '1',
           type: 'story',
+          subtype: 'story',
           title: 'Story 1',
           name: 'Story 1',
           importPath: './path/to/story-1.ts',
@@ -242,6 +243,7 @@ describe('transformStoryIndexToStoriesHash', () => {
         '2': {
           id: '2',
           type: 'story',
+          subtype: 'story',
           title: 'Story 2',
           name: 'Story 2',
           importPath: './path/to/story-2.ts',

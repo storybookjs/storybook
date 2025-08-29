@@ -146,6 +146,7 @@ describe('stories API', () => {
         entries: {
           'design-system-some-component--my-story': {
             type: 'story',
+            subtype: 'story',
             id: 'design-system-some-component--my-story',
             title: '  Design System  /  Some Component  ', // note the leading/trailing whitespace around each part of the path
             name: '  My Story  ', // we only trim the path, so this will be kept as-is (it may intentionally have whitespace)
@@ -184,6 +185,7 @@ describe('stories API', () => {
         entries: {
           'root-first--story-1': {
             type: 'story',
+            subtype: 'story',
             id: 'root-first--story-1',
             title: 'Root/First',
             name: 'Story 1',
@@ -223,6 +225,7 @@ describe('stories API', () => {
         entries: {
           'a-b--1': {
             type: 'story',
+            subtype: 'story',
             id: 'a-b--1',
             title: 'a/b',
             name: '1',
@@ -264,6 +267,7 @@ describe('stories API', () => {
         entries: {
           'a--1': {
             type: 'story',
+            subtype: 'story',
             id: 'a--1',
             title: 'a',
             name: '1',
@@ -296,6 +300,7 @@ describe('stories API', () => {
         entries: {
           'a--1': {
             type: 'story',
+            subtype: 'story',
             id: 'a--1',
             title: 'a',
             name: '1',
@@ -304,6 +309,7 @@ describe('stories API', () => {
           },
           'a--2': {
             type: 'story',
+            subtype: 'story',
             id: 'a--2',
             title: 'a',
             name: '2',
@@ -348,6 +354,7 @@ describe('stories API', () => {
         entries: {
           'a-sampleone': {
             type: 'story',
+            subtype: 'story',
             id: 'a-sampleone',
             title: 'A/SampleOne',
             name: '1',
@@ -356,6 +363,7 @@ describe('stories API', () => {
           },
           'a-sampletwo': {
             type: 'story',
+            subtype: 'story',
             id: 'a-sampletwo',
             title: 'A/SampleTwo',
             name: '2',
@@ -418,9 +426,30 @@ describe('stories API', () => {
       api.setIndex({
         v: 5,
         entries: {
-          'a--1': { type: 'story', title: 'a', name: '1', id: 'a--1', importPath: './a.ts' },
-          'b--1': { type: 'story', title: 'b', name: '1', id: 'b--1', importPath: './b.ts' },
-          'a--2': { type: 'story', title: 'a', name: '2', id: 'a--2', importPath: './a.ts' },
+          'a--1': {
+            type: 'story',
+            subtype: 'story',
+            title: 'a',
+            name: '1',
+            id: 'a--1',
+            importPath: './a.ts',
+          },
+          'b--1': {
+            type: 'story',
+            subtype: 'story',
+            title: 'b',
+            name: '1',
+            id: 'b--1',
+            importPath: './b.ts',
+          },
+          'a--2': {
+            type: 'story',
+            subtype: 'story',
+            title: 'a',
+            name: '2',
+            id: 'a--2',
+            importPath: './a.ts',
+          },
         },
       });
       const { index } = store.getState();
@@ -447,6 +476,7 @@ describe('stories API', () => {
         entries: {
           'prepared--story': {
             type: 'story',
+            subtype: 'story',
             id: 'prepared--story',
             title: 'Prepared',
             name: 'Story',

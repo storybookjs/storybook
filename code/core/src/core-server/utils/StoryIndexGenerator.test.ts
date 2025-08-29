@@ -1891,6 +1891,7 @@ describe('StoryIndexGenerator', () => {
           title: 'ComponentTitle',
           importPath: 'Path',
           type: 'story',
+          subtype: 'story',
         };
         expect(() => {
           generator.chooseDuplicate(mockEntry, { ...mockEntry, importPath: 'DifferentPath' }, []);

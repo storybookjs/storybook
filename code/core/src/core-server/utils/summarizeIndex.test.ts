@@ -66,6 +66,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Button.stories.ts',
             tags: ['autodocs', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-button--secondary': {
             id: 'example-button--secondary',
@@ -74,6 +75,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Button.stories.ts',
             tags: ['autodocs', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-button--large': {
             id: 'example-button--large',
@@ -82,6 +84,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Button.stories.ts',
             tags: ['autodocs', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-button--small': {
             id: 'example-button--small',
@@ -90,6 +93,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Button.stories.ts',
             tags: ['autodocs', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-header--docs': {
             id: 'example-header--docs',
@@ -107,6 +111,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Header.stories.ts',
             tags: ['autodocs', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-header--logged-out': {
             id: 'example-header--logged-out',
@@ -115,6 +120,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Header.stories.ts',
             tags: ['autodocs', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-page--logged-out': {
             id: 'example-page--logged-out',
@@ -123,6 +129,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Page.stories.ts',
             tags: ['story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-page--logged-in': {
             id: 'example-page--logged-in',
@@ -131,6 +138,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Page.stories.ts',
             tags: ['play-fn', 'story'],
             type: 'story',
+            subtype: 'story',
           },
         },
       })
@@ -182,6 +190,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Button.stories.ts',
             tags: ['autodocs', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-button--warning': {
             id: 'example-button--warning',
@@ -190,6 +199,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Button.stories.ts',
             tags: ['autodocs', 'story', 'svelte-csf-v4'],
             type: 'story',
+            subtype: 'story',
           },
         },
       })
@@ -223,6 +233,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/renderers/react/errors.stories.tsx',
             tags: ['story'],
             type: 'story',
+            subtype: 'story',
           },
           'stories-renderers-react-hooks--basic': {
             id: 'stories-renderers-react-hooks--basic',
@@ -231,6 +242,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/renderers/react/hooks.stories.tsx',
             tags: ['story'],
             type: 'story',
+            subtype: 'story',
           },
           'stories-renderers-react-js-argtypes--js-class-component': {
             id: 'stories-renderers-react-js-argtypes--js-class-component',
@@ -239,6 +251,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/renderers/react/js-argtypes.stories.jsx',
             tags: ['story', 'svelte-csf-v5'],
             type: 'story',
+            subtype: 'story',
           },
           'stories-renderers-react-js-argtypes--js-function-component': {
             id: 'stories-renderers-react-js-argtypes--js-function-component',
@@ -247,6 +260,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/renderers/react/js-argtypes.stories.jsx',
             tags: ['story', 'svelte-csf-v4'],
             type: 'story',
+            subtype: 'story',
           },
         },
       })
@@ -280,6 +294,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Page.stories.ts',
             tags: ['story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-page--logged-in': {
             id: 'example-page--logged-in',
@@ -288,6 +303,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Page.stories.ts',
             tags: ['play-fn', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'addons-docs-docspage-autoplay--docs': {
             id: 'addons-docs-docspage-autoplay--docs',
@@ -305,6 +321,7 @@ describe('summarizeIndex', () => {
             importPath: './template-stories/addons/docs/docspage/autoplay.stories.ts',
             tags: ['play-fn', 'story'],
             type: 'story',
+            subtype: 'story',
           },
         },
       })
@@ -347,6 +364,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Button.stories.ts',
             tags: ['autodocs', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'example-button--small': {
             id: 'example-button--small',
@@ -355,6 +373,7 @@ describe('summarizeIndex', () => {
             importPath: './src/stories/Button.stories.ts',
             tags: ['autodocs', 'story'],
             type: 'story',
+            subtype: 'story',
           },
           'lib-preview-api-shortcuts--docs': {
             id: 'lib-preview-api-shortcuts--docs',

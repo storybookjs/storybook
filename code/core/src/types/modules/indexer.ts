@@ -146,7 +146,7 @@ export type DocsIndexInput = BaseIndexInput & {
 
 export type IndexInput = StoryIndexInput | DocsIndexInput;
 
-export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags'> {
+export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags' | 'subtype'> {
   kind: ComponentTitle;
   story: StoryName;
   parameters: Parameters;

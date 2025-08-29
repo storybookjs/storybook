@@ -337,6 +337,7 @@ describe('PreviewWeb', () => {
               ...storyIndex.entries,
               'component-one--missing': {
                 type: 'story',
+                subtype: 'story',
                 id: 'component-one--missing',
                 title: 'Component One',
                 name: 'D',
@@ -392,6 +393,7 @@ describe('PreviewWeb', () => {
                 ...storyIndex.entries,
                 'component-one--missing': {
                   type: 'story',
+                  subtype: 'story',
                   id: 'component-one--missing',
                   title: 'Component One',
                   name: 'D',

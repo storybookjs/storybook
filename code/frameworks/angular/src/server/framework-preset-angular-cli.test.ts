@@ -107,7 +107,9 @@ describe('framework-preset-angular-cli', () => {
       const browserTargetOptions = { a: 1, nested: { x: 10 } };
       const storybookOptions = { b: 2, nested: { y: 20 } };
 
-      vi.mocked(mockBuilderContext.getTargetOptions).mockResolvedValue(browserTargetOptions);
+      vi.mocked(mockBuilderContext.getTargetOptions)
+        .mockResolvedValueOnce(browserTargetOptions)
+        .mockResolvedValueOnce(storybookOptions);
 
       const options: PresetOptions = {
         configType: 'DEVELOPMENT',
@@ -199,7 +201,7 @@ describe('framework-preset-angular-cli', () => {
       const result = await getBuilderOptions(options, mockBuilderContext);
 
       expect(mockedTargetFromTargetString).not.toHaveBeenCalled();
-      expect(mockBuilderContext.getTargetOptions).not.toHaveBeenCalled();
+      expect(mockBuilderContext.getTargetOptions).toHaveBeenCalledOnce();
       expect(result).toEqual({
         tsConfig: '/test/tsconfig.json',
       });

@@ -75,3 +75,4 @@ export const TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME = 'UNIVERSAL_STORE:storybook
 
 export const STATUS_TYPE_ID_COMPONENT_TEST = 'storybook/component-test';
 export const STATUS_TYPE_ID_A11Y = 'storybook/a11y';
+export const STATUS_TYPE_ID_SCREENSHOT = 'storybook/screenshot';

@@ -50,6 +50,10 @@
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js",
     "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    },
     "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
       "types": "./dist/vitest-plugin/index.d.ts",

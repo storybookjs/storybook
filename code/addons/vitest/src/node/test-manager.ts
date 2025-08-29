@@ -11,7 +11,12 @@ import type {
 import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
-import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
+import {
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  STATUS_TYPE_ID_SCREENSHOT,
+  storeOptions,
+} from '../constants';
 import type { RunTrigger, StoreEvent, StoreState, TriggerRunEvent, VitestError } from '../types';
 import { errorToErrorLike } from '../utils';
 import { VitestManager } from './vitest-manager';
@@ -21,6 +26,7 @@ export type TestManagerOptions = {
   store: experimental_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
+  screenshotStatusStore: StatusStoreByTypeId;
   testProviderStore: TestProviderStoreById;
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
@@ -43,6 +49,8 @@ export class TestManager {
 
   private a11yStatusStore: TestManagerOptions['a11yStatusStore'];
 
+  private screenshotStatusStore: TestManagerOptions['screenshotStatusStore'];
+
   private testProviderStore: TestManagerOptions['testProviderStore'];
 
   private onReady?: TestManagerOptions['onReady'];
@@ -59,6 +67,7 @@ export class TestManager {
     this.store = options.store;
     this.componentTestStatusStore = options.componentTestStatusStore;
     this.a11yStatusStore = options.a11yStatusStore;
+    this.screenshotStatusStore = options.screenshotStatusStore;
     this.testProviderStore = options.testProviderStore;
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;
@@ -255,6 +264,25 @@ export class TestManager {
 
     if (a11yStatuses.length > 0) {
       this.a11yStatusStore.set(a11yStatuses);
+    }
+
+    const screenshotStatuses = testCaseResultsToFlush
+      .flatMap(({ storyId, reports }) =>
+        reports
+          ?.filter((r) => r.type === 'screenshot')
+          .map((screenshotReport) => ({
+            storyId,
+            typeId: STATUS_TYPE_ID_SCREENSHOT,
+            value: testStateToStatusValueMap[screenshotReport.status],
+            title: 'Screenshot',
+            description: screenshotReport.result,
+            sidebarContextMenu: false,
+          }))
+      )
+      .filter((screenshotStatus) => screenshotStatus !== undefined);
+
+    if (screenshotStatuses.length > 0) {
+      this.screenshotStatusStore.set(screenshotStatuses);
     }
   }, 500);
 

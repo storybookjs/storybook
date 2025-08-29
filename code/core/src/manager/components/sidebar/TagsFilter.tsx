@@ -62,13 +62,10 @@ export const TagsFilter = ({
   const tagsActive = selectedTags.length > 0;
 
   useEffect(() => {
-    api.experimental_setFilter(TAGS_FILTER, (item) => {
-      if (selectedTags.length === 0) {
-        return true;
-      }
-
-      return selectedTags.some((tag) => item.tags?.includes(tag));
-    });
+    api.experimental_setFilter(
+      TAGS_FILTER,
+      (item) => selectedTags.length === 0 || selectedTags.some((tag) => item.tags?.includes(tag))
+    );
   }, [api, selectedTags]);
 
   const allTags = Object.values(indexJson.entries).reduce((acc, entry) => {

@@ -9,7 +9,7 @@ export interface API_BaseEntry {
   name: string;
   tags: Tag[];
   refId?: string;
-  renderLabel?: (item: API_BaseEntry, api: any) => any;
+  renderLabel?: (item: API_HashEntry, api: any) => any;
 }
 
 export interface API_RootEntry extends API_BaseEntry {
@@ -30,6 +30,12 @@ export interface API_ComponentEntry extends API_BaseEntry {
   children: StoryId[];
 }
 
+export interface API_WrapperEntry extends API_BaseEntry {
+  type: 'wrapper';
+  parent: StoryId;
+  children: StoryId[];
+}
+
 export interface API_DocsEntry extends API_BaseEntry {
   type: 'docs';
   parent: StoryId;
@@ -43,6 +49,7 @@ export interface API_DocsEntry extends API_BaseEntry {
 
 export interface API_StoryEntry extends API_BaseEntry {
   type: 'story';
+  subtype: 'story' | 'test';
   parent: StoryId;
   title: ComponentTitle;
   importPath: Path;
@@ -55,11 +62,12 @@ export interface API_StoryEntry extends API_BaseEntry {
   initialArgs?: Args;
 }
 
-export type API_LeafEntry = API_DocsEntry | API_StoryEntry; // | API_TestEntry;
+export type API_LeafEntry = API_DocsEntry | API_StoryEntry;
 export type API_HashEntry =
   | API_RootEntry
   | API_GroupEntry
   | API_ComponentEntry
+  | API_WrapperEntry
   | API_DocsEntry
   | API_StoryEntry;
 

@@ -180,7 +180,7 @@ export class NoMetaError extends Error {
     const msg = message.trim();
     super(dedent`
       CSF: ${msg} ${formatLocation(ast, fileName)}
-      
+
       More info: https://storybook.js.org/docs/writing-stories#default-export
     `);
     this.name = this.constructor.name;
@@ -192,7 +192,7 @@ export class MultipleMetaError extends Error {
     const msg = `${message} ${formatLocation(ast, fileName)}`.trim();
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
-      
+
       More info: https://storybook.js.org/docs/writing-stories#default-export
     `);
     this.name = this.constructor.name;
@@ -204,7 +204,7 @@ export class MixedFactoryError extends Error {
     const msg = `${message} ${formatLocation(ast, fileName)}`.trim();
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
-      
+
       More info: https://storybook.js.org/docs/writing-stories#default-export
     `);
     this.name = this.constructor.name;
@@ -216,7 +216,7 @@ export class BadMetaError extends Error {
     const msg = ``.trim();
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
-      
+
       More info: https://storybook.js.org/docs/writing-stories#default-export
     `);
     this.name = this.constructor.name;
@@ -703,23 +703,18 @@ export class CsfFile {
               self._storyTests[exportName] = [];
             }
 
-            if (
-              t.isArrowFunctionExpression(testFunction) ||
-              t.isFunctionExpression(testFunction) ||
-              t.isIdentifier(testFunction)
-            ) {
-              self._storyTests[exportName].push({
-                function: testFunction,
-                name: testName,
-                options: testOptions,
-                node: expression,
-                // can't set id because meta title isn't available yet
-                // so it's set later on
-                id: 'FIXME',
-              });
+            self._storyTests[exportName].push({
+              function: testFunction,
+              name: testName,
+              options: testOptions,
+              node: expression,
+              // can't set id because meta title isn't available yet
+              // so it's set later on
+              id: 'FIXME',
+            });
 
-              self._stories[exportName].__stats.tests = true;
-            }
+            // TODO: fix this when stories fail
+            self._stories[exportName].__stats.tests = true;
           }
         },
       },
@@ -731,7 +726,7 @@ export class CsfFile {
             throw new Error(dedent`
               Unexpected \`storiesOf\` usage: ${formatLocation(node, self._options.fileName)}.
 
-              SB8 does not support \`storiesOf\`. 
+              SB8 does not support \`storiesOf\`.
             `);
           }
           if (
@@ -906,17 +901,24 @@ export class CsfFile {
         __stats: story.__stats,
       };
 
+      const tests = this._storyTests[exportName];
+      const hasTests = tests?.length;
+
       index.push({
         ...storyInput,
         type: 'story',
+        subtype: 'story',
         name: story.name,
       });
 
-      if (this._storyTests[exportName]) {
-        this._storyTests[exportName].forEach((test) => {
+      if (hasTests) {
+        tests.forEach((test) => {
           index.push({
             ...storyInput,
+            // TODO implementent proper title => path behavior in `transformStoryIndexToStoriesHash`
+            // title: `${storyInput.title}/${story.name}`,
             type: 'story',
+            subtype: 'test',
             parent: story.id,
             name: test.name,
             tags: [...storyInput.tags, 'test-fn'],

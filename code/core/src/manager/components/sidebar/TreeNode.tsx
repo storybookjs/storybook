@@ -1,8 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { transparentize } from 'polished';
-import { styled } from 'storybook/theming';
+import { type FunctionInterpolation, type Theme, styled } from 'storybook/theming';
 
 import { UseSymbol } from './IconSymbols';
 import { CollapseIcon } from './components/CollapseIcon';
@@ -32,55 +31,48 @@ export const TypeIcon = styled.svg<{ type: 'component' | 'story' | 'test' | 'gro
       if (type === 'test') {
         return theme.color.green;
       }
+
       return 'currentColor';
     })(),
   })
 );
 
-const BranchNode = styled.button<{
-  depth?: number;
-  isExpandable?: boolean;
-  isExpanded?: boolean;
-  isComponent?: boolean;
-  isSelected?: boolean;
-}>(({ theme, depth = 0, isExpandable = false }) => ({
+const commonNodeStyles: FunctionInterpolation<{ depth?: number; isExpandable?: boolean }> = ({
+  theme,
+  depth = 0,
+  isExpandable = false,
+}) => ({
+  flex: 1,
   width: '100%',
-  border: 'none',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'start',
   textAlign: 'left',
-  paddingLeft: `${(isExpandable ? 8 : 22) + depth * 18}px`,
+  textDecoration: 'none',
+  border: 'none',
   color: 'inherit',
   fontSize: `${theme.typography.size.s2}px`,
+  fontWeight: 'inherit',
   background: 'transparent',
   minHeight: 28,
   borderRadius: 4,
   gap: 6,
+  paddingLeft: `${(isExpandable ? 8 : 22) + depth * 18}px`,
   paddingTop: 5,
   paddingBottom: 4,
-}));
+  overflowWrap: 'break-word',
+  wordWrap: 'break-word',
+  wordBreak: 'break-word',
+});
 
-const LeafNode = styled.a<{ depth?: number; type?: 'story' | 'test' }>(
-  ({ theme, depth = 0, type }) => ({
-    width: '100%',
-    cursor: 'pointer',
-    color: 'inherit',
-    display: 'flex',
-    gap: 6,
-    flex: 1,
-    alignItems: 'start',
-    // TODO: [test-syntax] Gert hack stuff, should be fixed later
-    paddingLeft: type === 'test' ? `${32 + depth * 18}px` : `${22 + depth * 18}px`,
-    paddingTop: 5,
-    paddingBottom: 4,
-    fontSize: `${theme.typography.size.s2}px`,
-    textDecoration: 'none',
-    overflowWrap: 'break-word',
-    wordWrap: 'break-word',
-    wordBreak: 'break-word',
-  })
-);
+const BranchNode = styled.button<{
+  depth?: number;
+  isExpandable?: boolean;
+  isExpanded?: boolean;
+  isSelected?: boolean;
+}>(commonNodeStyles);
+
+const LeafNode = styled.a<{ depth?: number }>(commonNodeStyles);
 
 export const RootNode = styled.div(({ theme }) => ({
   display: 'flex',
@@ -126,11 +118,17 @@ export const GroupNode: FC<
 });
 
 export const ComponentNode: FC<ComponentProps<typeof BranchNode>> = React.memo(
-  function ComponentNode({ theme, children, isExpanded, isExpandable, isSelected, ...props }) {
+  function ComponentNode({
+    theme,
+    children,
+    isExpanded = false,
+    isExpandable = false,
+    isSelected,
+    ...props
+  }) {
     return (
       <BranchNode isExpandable={isExpandable} tabIndex={-1} {...props}>
         <Wrapper>
-          {/* @ts-expect-error (non strict) */}
           {isExpandable && <CollapseIcon isExpanded={isExpanded} />}
           <TypeIcon viewBox="0 0 14 14" width="12" height="12" type="component">
             <UseSymbol type="component" />
@@ -157,17 +155,40 @@ export const DocumentNode: FC<ComponentProps<typeof LeafNode> & { docsMode: bool
   }
 );
 
-// TODO: hack stuff, should be done in a new component
-export const StoryNode: FC<ComponentProps<typeof LeafNode> & { type?: 'story' | 'test' }> =
-  React.memo(function StoryNode({ theme, children, type = 'story', ...props }) {
-    return (
-      <LeafNode tabIndex={-1} type={type} {...props}>
-        <Wrapper>
-          <TypeIcon viewBox="0 0 14 14" width="12" height="12" type={type}>
-            <UseSymbol type={type} />
-          </TypeIcon>
-        </Wrapper>
-        {children}
-      </LeafNode>
-    );
-  });
+export const StoryNode: FC<ComponentProps<typeof BranchNode>> = React.memo(function StoryNode({
+  theme,
+  children,
+  isExpandable = false,
+  isExpanded = false,
+  isSelected,
+  ...props
+}) {
+  return (
+    <BranchNode isExpandable={isExpandable} tabIndex={-1} {...props}>
+      <Wrapper>
+        {isExpandable && <CollapseIcon isExpanded={isExpanded} />}
+        <TypeIcon viewBox="0 0 14 14" width="12" height="12" type="story">
+          <UseSymbol type="story" />
+        </TypeIcon>
+      </Wrapper>
+      {children}
+    </BranchNode>
+  );
+});
+
+export const TestNode: FC<ComponentProps<typeof LeafNode>> = React.memo(function TestNode({
+  theme,
+  children,
+  ...props
+}) {
+  return (
+    <LeafNode tabIndex={-1} {...props}>
+      <Wrapper>
+        <TypeIcon viewBox="0 0 14 14" width="12" height="12" type="test">
+          <UseSymbol type="test" />
+        </TypeIcon>
+      </Wrapper>
+      {children}
+    </LeafNode>
+  );
+});

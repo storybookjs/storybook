@@ -5,10 +5,12 @@ import type {
   API_GroupEntry,
   API_HashEntry,
   API_IndexHash,
+  API_PreparedIndexEntry,
   API_PreparedStoryIndex,
   API_Provider,
   API_RootEntry,
   API_StoryEntry,
+  API_WrapperEntry,
   DocsOptions,
   IndexEntry,
   Parameters,
@@ -70,9 +72,10 @@ export const transformSetStoriesStoryDataToPreparedStoryIndex = (
           ...base,
         };
       } else {
-        const { argTypes, args, initialArgs }: any = story;
+        const { argTypes, args, initialArgs } = story;
         acc[id] = {
           type: 'story',
+          subtype: 'story',
           ...base,
           parameters,
           argTypes,
@@ -112,7 +115,7 @@ export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStor
   return {
     v: 4,
     entries: Object.values(index.stories).reduce(
-      (acc, entry: any) => {
+      (acc, entry) => {
         let type: IndexEntry['type'] = 'story';
         if (
           entry.parameters?.docsOnly ||
@@ -124,7 +127,7 @@ export const transformStoryIndexV3toV4 = (index: StoryIndexV3): API_PreparedStor
           type,
           ...(type === 'docs' && { tags: ['stories-mdx'], storiesImports: [] }),
           ...entry,
-        };
+        } as API_PreparedIndexEntry;
 
         // @ts-expect-error (we're removing something that should not be there)
         delete acc[entry.id].story;
@@ -172,7 +175,7 @@ type ToStoriesHashOptions = {
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
   { provider, docsOptions, filters, allStatuses }: ToStoriesHashOptions
-): API_IndexHash | any => {
+): API_IndexHash => {
   if (!input.v) {
     throw new Error('Composition: Missing stories.json version');
   }
@@ -183,31 +186,30 @@ export const transformStoryIndexToStoriesHash = (
   index = index.v === 4 ? transformStoryIndexV4toV5(index as any) : index;
   index = index as API_PreparedStoryIndex;
 
-  const entryValues = Object.values(index.entries).filter((entry: any) => {
-    let result = true;
+  const indexEntries = Object.values(index.entries);
+  const filterFunctions = Object.values(filters);
 
-    // All stories with a failing status should always show up, regardless of the applied filters
-    const storyStatuses = allStatuses[entry.id] ?? {};
-    if (Object.values(storyStatuses).some(({ value }) => value === 'status-value:error')) {
-      return result;
+  const entryValues = indexEntries.filter((entry) => {
+    const statuses = allStatuses[entry.id] ?? {};
+    if (Object.values(statuses).some(({ value }) => value === 'status-value:error')) {
+      // All stories with a failing status should always show up, regardless of the applied filters
+      return true;
     }
 
-    Object.values(filters).forEach((filter) => {
-      if (result === false) {
-        return;
-      }
-      result = filter({ ...entry, statuses: storyStatuses });
-    });
+    if (filterFunctions.every((fn) => fn({ ...entry, statuses }))) {
+      return true;
+    }
 
-    return result;
+    const children = indexEntries.filter((item) => 'parent' in item && item.parent === entry.id);
+    return children.some((child) => filterFunctions.some((fn) => fn({ ...child, statuses })));
   });
 
   const { sidebar = {} } = provider.getConfig();
-  const { showRoots, collapsedRoots = [], renderLabel }: any = sidebar;
+  const { showRoots, collapsedRoots = [], renderLabel } = sidebar;
 
   const setShowRoots = typeof showRoots !== 'undefined';
 
-  const storiesHashOutOfOrder = entryValues.reduce((acc: any, item: any) => {
+  const storiesHashOutOfOrder = entryValues.reduce((acc, item) => {
     if (docsOptions.docsMode && item.type !== 'docs') {
       return acc;
     }
@@ -223,7 +225,7 @@ export const transformStoryIndexToStoriesHash = (
       const parent = idx > 0 && list[idx - 1];
       const id = sanitize(parent ? `${parent}-${name}` : name!);
 
-      if (name.trim() === '') {
+      if (name!.trim() === '') {
         throw new Error(dedent`Invalid title ${title} ending in slash.`);
       }
 
@@ -231,7 +233,7 @@ export const transformStoryIndexToStoriesHash = (
         throw new Error(
           dedent`
           Invalid part '${name}', leading to id === parentId ('${id}'), inside title '${title}'
-          
+
           Did you create a path that uses the separator char accidentally, such as 'Vue <docs/>' where '/' is a separator char? See https://github.com/storybookjs/storybook/issues/6128
           `
         );
@@ -241,7 +243,7 @@ export const transformStoryIndexToStoriesHash = (
     }, [] as string[]);
 
     // Now, let's add an entry to the hash for each path/name pair
-    paths.forEach((id: any, idx: any) => {
+    paths.forEach((id, idx) => {
       // The child is the next path, OR the story/docs entry itself
       const childId = paths[idx + 1] || item.id;
 
@@ -294,13 +296,12 @@ export const transformStoryIndexToStoriesHash = (
       }
     });
 
-    // Finally add an entry for the docs/story itself
+    // Finally add an entry for the docs/story/test itself
     acc[item.id] = {
-      type: 'story',
       tags: [],
       ...item,
       depth: paths.length,
-      parent: paths[paths.length - 1],
+      parent: 'parent' in item ? item.parent : paths[paths.length - 1],
       renderLabel,
       prepared: !!item.parameters,
     } as API_DocsEntry | API_StoryEntry;
@@ -309,37 +310,88 @@ export const transformStoryIndexToStoriesHash = (
   }, {} as API_IndexHash);
 
   // This function adds a "root" or "orphan" and all of its descendents to the hash.
-  function addItem(acc: API_IndexHash | any, item: API_HashEntry | any) {
+  function addItem(acc: API_IndexHash, item: API_HashEntry) {
     // If we were already inserted as part of a group, that's great.
-    if (acc[item.id]) {
-      return acc;
-    }
+    if (!acc[item.id]) {
+      acc[item.id] = item;
 
-    acc[item.id] = item;
-    // Ensure we add the children depth-first *before* inserting any other entries,
-    // and compute tags from the children put in the accumulator afterwards, once
-    // they're all known and we can compute a sound intersection.
-    if (item.type === 'root' || item.type === 'group' || item.type === 'component') {
-      item.children.forEach((childId: any) => addItem(acc, storiesHashOutOfOrder[childId]));
+      // Ensure we add the children depth-first *before* inserting any other entries.
+      if ('children' in item) {
+        item.children.forEach((childId) => addItem(acc, storiesHashOutOfOrder[childId]));
 
-      item.tags = item.children.reduce((currentTags: Tag[] | null, childId: any): Tag[] => {
-        const child = acc[childId];
-
-        // On the first child, we have nothing to intersect against so we use it as a source of data.
-        return currentTags === null ? child.tags : intersect(currentTags, child.tags);
-      }, null);
+        item.tags =
+          item.children.reduce((currentTags: Tag[] | null, childId): Tag[] => {
+            // On the first child, we have nothing to intersect against so we use it as a source of data.
+            return currentTags === null
+              ? acc[childId].tags
+              : intersect(currentTags, acc[childId].tags);
+          }, null) || [];
+      }
     }
     return acc;
   }
 
   // We'll do two passes over the data, adding all the orphans, then all the roots
-  const orphanHash = Object.values(storiesHashOutOfOrder)
-    .filter((i: any) => i.type !== 'root' && !i.parent)
-    .reduce(addItem, {});
+  let storiesHash = Object.values(storiesHashOutOfOrder)
+    .filter((i) => i.type !== 'root' && !i.parent)
+    .reduce((acc, item) => addItem(acc, item), {} as API_IndexHash);
 
-  return Object.values(storiesHashOutOfOrder)
-    .filter((i: any) => i.type === 'root')
-    .reduce(addItem, orphanHash);
+  storiesHash = Object.values(storiesHashOutOfOrder)
+    .filter((i) => i.type === 'root')
+    .reduce(addItem, storiesHash);
+
+  // Add "wrapper" nodes for stories with tests
+  // Because the order of entries matters, we need to insert the wrapper before the story and test
+  storiesHash = Object.values(storiesHash).reduce((acc, item) => {
+    if (item.type === 'story' && item.subtype === 'test') {
+      const wrapperId = `${item.parent}__wrapper`;
+      const parentStory = storiesHash[item.parent] as API_StoryEntry;
+      const componentNode = storiesHash[parentStory.parent] as API_ComponentEntry;
+
+      // Update component children to point to wrapper rather than story and tests
+      (acc[componentNode.id] as API_ComponentEntry).children = componentNode.children
+        .filter((id) => id !== item.id)
+        .map((id) => (id === item.parent ? wrapperId : id));
+
+      // Create the wrapper, but first delete the story so that the wrapper is inserted before it
+      if (!acc[wrapperId]) {
+        delete acc[item.parent];
+        acc[wrapperId] = {
+          ...parentStory,
+          type: 'wrapper',
+          id: wrapperId,
+          parent: parentStory.parent,
+          children: [parentStory.id],
+          depth: parentStory.depth,
+        };
+      }
+
+      const wrapperNode = acc[wrapperId] as API_WrapperEntry;
+      wrapperNode.children.push(item.id);
+      wrapperNode.tags = intersect(wrapperNode.tags, item.tags);
+
+      // Create or update parent to point to wrapper rather than story
+      // Remove test-fn tag from story, as it should only exist on the wrapper
+      acc[item.parent] = {
+        ...parentStory,
+        parent: wrapperId,
+        depth: parentStory.depth + 1,
+        tags: parentStory.tags.filter((tag) => tag !== 'test-fn'),
+      };
+
+      // Create or update the test to point to wrapper rather than story
+      acc[item.id] = {
+        ...item,
+        parent: wrapperId,
+        depth: item.depth + 1,
+      };
+    } else {
+      acc[item.id] = item;
+    }
+    return acc;
+  }, {} as API_IndexHash);
+
+  return storiesHash;
 };
 
 /** Now we need to patch in the existing prepared stories */

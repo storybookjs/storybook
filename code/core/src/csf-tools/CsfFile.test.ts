@@ -1820,6 +1820,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
         - importPath: foo/bar.stories.js
           exportName: B
@@ -1842,6 +1843,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: B
       `);
     });
@@ -1882,6 +1884,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -1927,6 +1930,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -1987,6 +1991,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -2026,6 +2031,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -2065,6 +2071,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -2104,6 +2111,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -2441,7 +2449,8 @@ describe('CsfFile', () => {
             A.test('simple test', async () => {})
             A.test('with overrides', { args: { label: 'bar' } }, async () => {})
             const runTest = () => {}
-            A.test('with function reference', runTest, async () => {})
+            A.test('with function reference', runTest)
+            A.test('with function call', runTest())
           `,
           { makeTitle }
         ).parse();
@@ -2449,13 +2458,15 @@ describe('CsfFile', () => {
         expect(story.__stats.tests).toBe(true);
 
         const storyTests = data._storyTests['A'];
-        expect(storyTests).toHaveLength(3);
+        expect(storyTests).toHaveLength(4);
         expect(storyTests[0].name).toBe('simple test');
         expect(storyTests[1].name).toBe('with overrides');
         expect(storyTests[2].name).toBe('with function reference');
+        expect(storyTests[3].name).toBe('with function call');
         expect(storyTests[0].function).toBeDefined();
         expect(storyTests[1].function).toBeDefined();
         expect(storyTests[2].function).toBeDefined();
+        expect(storyTests[3].function).toBeDefined();
       });
 
       it('story name', () => {

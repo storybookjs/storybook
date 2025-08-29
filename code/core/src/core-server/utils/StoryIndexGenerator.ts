@@ -429,8 +429,8 @@ export class StoryIndexGenerator {
       ]);
     }
 
-    const entries: ((StoryIndexEntryWithExtra | DocsCacheEntry) & { tags: Tag[] })[] =
-      indexInputs.map((input) => {
+    const storyEntries: (StoryIndexEntryWithExtra & { tags: Tag[] })[] = indexInputs.map(
+      (input) => {
         const name = input.name ?? storyNameFromExport(input.exportName);
         const componentPath =
           input.rawComponentPath &&
@@ -442,6 +442,7 @@ export class StoryIndexGenerator {
 
         return {
           type: 'story',
+          subtype: input.type === 'story' ? input.subtype : 'story',
           id,
           extra: {
             metaId: input.metaId,
@@ -454,23 +455,24 @@ export class StoryIndexGenerator {
           tags,
           ...(input.type === 'story' && input.parent ? { parent: input.parent } : {}),
         };
-      });
+      }
+    );
 
     // We need a docs entry attached to the CSF file if either:
     //  a) autodocs is globally enabled
     //  b) we have autodocs enabled for this file
-    const hasAutodocsTag = entries.some((entry) => entry.tags.includes(AUTODOCS_TAG));
+    const hasAutodocsTag = storyEntries.some((entry) => entry.tags.includes(AUTODOCS_TAG));
     const createDocEntry = hasAutodocsTag && !!this.options.docs;
 
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
       const docsName = this.options.docs?.defaultName ?? 'Docs';
       const name = docsName;
       const { metaId } = indexInputs[0];
-      const { title } = entries[0];
+      const { title } = storyEntries[0];
       const id = toId(metaId ?? title, name);
       const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
 
-      entries.unshift({
+      const docsEntry: DocsCacheEntry & { tags: Tag[] } = {
         id,
         title,
         name,
@@ -478,11 +480,17 @@ export class StoryIndexGenerator {
         type: 'docs',
         tags,
         storiesImports: [],
-      });
+      };
+
+      return {
+        entries: [docsEntry, ...storyEntries],
+        dependents: [],
+        type: 'stories',
+      };
     }
 
     return {
-      entries,
+      entries: storyEntries,
       dependents: [],
       type: 'stories',
     };

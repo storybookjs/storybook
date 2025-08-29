@@ -72,7 +72,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -88,7 +88,7 @@ describe('story extraction', () => {
             "id": "some-fully-custom-id",
             "importPath": "./src/A.stories.js",
             "name": "Another Story Name",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -137,7 +137,7 @@ describe('story extraction', () => {
             "id": "f--story-one",
             "importPath": "./src/first-nested/deeply/F.stories.js",
             "name": "Story One",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [],
             "title": "F",
             "type": "story",
@@ -188,7 +188,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/first-nested/deeply/F.stories.js",
             "name": "Story One",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -241,7 +241,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -314,7 +314,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -330,7 +330,7 @@ describe('story extraction', () => {
             "id": "custom-title--story-two",
             "importPath": "./src/A.stories.js",
             "name": "Custom Name For Second Story",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -346,7 +346,7 @@ describe('story extraction', () => {
             "id": "custom-meta-id--story-three",
             "importPath": "./src/A.stories.js",
             "name": "Story Three",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -396,7 +396,7 @@ describe('story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [
               "story-tag-from-indexer",
             ],
@@ -463,7 +463,7 @@ describe('docs entries from story extraction', () => {
             "id": "a--story-one",
             "importPath": "./src/A.stories.js",
             "name": "Story One",
-            "subtype": undefined,
+            "subtype": "story",
             "tags": [
               "autodocs",
               "story-tag-from-indexer",

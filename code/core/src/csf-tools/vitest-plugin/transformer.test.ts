@@ -789,7 +789,7 @@ describe('transformer', () => {
         import { config } from '#.storybook/preview';
         const meta = config.meta({ component: Button });
         export const A = meta.story({});
-        A.test("foo", () => {}, { args: { primary: true }});
+        A.test("foo", { args: { primary: true }}, () => {});
         A.test("bar", () => {});
       `;
 
@@ -804,16 +804,17 @@ describe('transformer', () => {
             title: "automatic/calculated/title"
           });
           export const A = meta.story({});
-          A.test("foo", () => {}, {
+          A.test("foo", {
             args: {
               primary: true
             }
-          });
+          }, () => {});
           A.test("bar", () => {});
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
             _describe("A", () => {
               _test("base story", _testStory("A", A, meta, []));
+              _test("foo", _testStory("A", A, meta, [], "foo"));
               _test("bar", _testStory("A", A, meta, [], "bar"));
             });
           }

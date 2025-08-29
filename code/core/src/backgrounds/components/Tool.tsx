@@ -99,15 +99,13 @@ const Pure = memo(function PureTool(props: PureProps) {
           onReset={() => update(undefined)}
           disabled={isLocked}
           key="background"
+          icon={<PhotoIcon />}
           ariaLabel={isLocked ? 'Background set by story parameters' : 'Preview background'}
           tooltip={isLocked ? 'Background set by story parameters' : 'Change background'}
-          variant="ghost"
           defaultOptions={backgroundName}
           options={options}
           onSelect={(selected) => update({ value: selected, grid: isGrid })}
-        >
-          <PhotoIcon />
-        </Select>
+        />
       ) : null}
     </Fragment>
   );

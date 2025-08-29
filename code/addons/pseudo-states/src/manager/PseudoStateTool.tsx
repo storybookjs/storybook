@@ -28,9 +28,9 @@ export const PseudoStateTool = () => {
     <Select
       resetLabel="Reset pseudo states"
       onReset={() => updateGlobals({ [PARAM_KEY]: {} })}
+      icon={<ButtonIcon />}
       ariaLabel="CSS pseudo states"
       tooltip="Apply CSS pseudo states"
-      variant="ghost"
       defaultOptions={defaultOptions}
       options={options}
       multiSelect
@@ -39,8 +39,6 @@ export const PseudoStateTool = () => {
           [PARAM_KEY]: selected.reduce((acc, curr) => ({ ...acc, [curr]: true }), {}),
         });
       }}
-    >
-      <ButtonIcon />
-    </Select>
+    />
   );
 };

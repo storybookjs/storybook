@@ -59,13 +59,20 @@ const Item = styled('li')(({ theme }) => ({
   },
   ':focus-visible': {
     background: theme.background.hoverable,
-    boxShadow: `inset 0 0 0 2px ${theme.color.ultraviolet}`,
-    outline: 'none',
+    outline: `2px solid ${theme.barSelectedColor}`,
+    outlineOffset: 1,
   },
   display: 'flex',
   alignItems: 'flex-start',
   gap: 8,
 }));
+
+const Row = styled('div')({
+  display: 'flex',
+  flexDirection: 'row',
+  gap: 4,
+  alignItems: 'center',
+});
 
 const Col = styled('div')({
   display: 'flex',
@@ -113,13 +120,13 @@ export const SelectOption: React.FC<SelectOptionProps> = ({
       onKeyDown={onKeyDown}
     >
       {children ?? (
-        <>
+        <Row>
           {icon && <Icon>{icon}</Icon>}
           <Col>
             <Title>{title}</Title>
             {description && <Description>{description}</Description>}
           </Col>
-        </>
+        </Row>
       )}
     </Item>
   );

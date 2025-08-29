@@ -92,8 +92,8 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
   if (hasMultipleThemes(themesList)) {
     return (
       <Select
+        icon={<PaintBrushIcon />}
         ariaLabel={ariaLabel}
-        variant="ghost"
         disabled={isLocked}
         key={THEME_SWITCHER_ID}
         defaultOptions={currentTheme}
@@ -103,7 +103,6 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
         }))}
         onSelect={(selected) => updateGlobals({ theme: selected })}
       >
-        <PaintBrushIcon />
         {label}
       </Select>
     );

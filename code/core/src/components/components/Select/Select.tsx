@@ -1,8 +1,9 @@
 import type { KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import { ChevronDownIcon, ChevronUpIcon, RefreshIcon } from '@storybook/icons';
+import { RefreshIcon } from '@storybook/icons';
 
+import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
 import type { ButtonProps } from '../Button/Button';
@@ -10,39 +11,55 @@ import { Button } from '../Button/Button';
 import { ScrollArea } from '../ScrollArea/ScrollArea';
 import { WithTooltipPure } from '../tooltip/WithTooltip';
 import { SelectOption } from './SelectOption';
+import type { Option, ResetOption } from './helpers';
+import { Listbox, PAGE_STEP_SIZE } from './helpers';
 
-export interface SelectOption {
-  /** Optional rendering of the option. */
-  children?: React.ReactNode;
-  title: string;
-  description?: string;
-  icon?: React.ReactNode;
-  value: string;
-}
-
-interface ResetOption extends Omit<SelectOption, 'value'> {
-  value: undefined;
-}
-
-const PAGE_STEP_SIZE = 5;
-
-// TODO: @MichaelArestad, consider if we do want "reset on double click" as in some tools
-
-// TODO: add story that shows that when opening a Select with a selected option, the reference index for
-// all kb nav is the first selected option index, not 0.
-
-export interface SelectProps extends Omit<ButtonProps, 'onClick' | 'onChange' | 'onSelect'> {
+export interface SelectProps
+  extends Omit<ButtonProps, 'onClick' | 'onChange' | 'onSelect' | 'variant'> {
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
-  variant?: 'outline' | 'solid' | 'ghost';
-  disabled?: boolean;
+
+  /**
+   * Whether multiple options can be selected. In single select mode, this component acts like a
+   * HTML select element where the selected option follows focus. In multi select mode, it acts like
+   * a combobox and does not autoclose on select or autoselect the focused option.
+   */
   multiSelect?: boolean;
 
-  options: SelectOption[];
+  /**
+   * Mandatory label that explains what is being selected. Do not include "change", "toggle" or
+   * "select" verbs in the label. Instead, only describe the type of content with a noun.
+   */
+  ariaLabel: string;
+
+  /**
+   * Label for the Select component. In single-select mode, is replaced by the currently selected
+   * option's title.
+   */
+  children?: React.ReactNode;
+
+  /**
+   * Icon shown next to the Select's children, still displayed when a value is selected and Select
+   * shows that value instead of children.
+   */
+  icon?: React.ReactNode;
+
+  /** Whether the Select is currently disabled. */
+  disabled?: boolean;
+
+  /** Options available in the select. */
+  options: Option[];
+
+  /** IDs of the preselected options. */
   defaultOptions?: string | string[];
+
+  /** Whether the Select should render open. */
   defaultOpen?: boolean;
 
+  /** When set, a reset option is rendered in the Select listbox. */
   onReset?: () => void;
+
+  /** Custom text label for the reset option when it exists. */
   resetLabel?: string;
 
   onSelect?: (option: string) => void;
@@ -50,36 +67,22 @@ export interface SelectProps extends Omit<ButtonProps, 'onClick' | 'onChange' | 
   onChange?: (selected: string[]) => void;
 }
 
-function valueToId(parentId: string, { value }: ResetOption | SelectOption): string {
+function valueToId(parentId: string, { value }: ResetOption | Option): string {
   return `${parentId}-opt-${value ?? 'sb-reset'}`;
 }
 
-const SelectedOptionLabel = styled('span')({
-  appearance: 'none',
-});
-
-const SelectedOptionCount = styled('span')(({ theme }) => ({
+const SelectedOptionCount = styled('span')({
   appearance: 'none',
   borderRadius: 20,
   padding: '2px 4px',
   fontSize: 11,
-  background: theme.background.hoverable,
-}));
-
-const Listbox = styled('ul')({
-  minWidth: 180,
-  maxHeight: 504, // TODO: 60vh?
-  borderRadius: 6,
-  overflow: 'hidden auto',
-  listStyle: 'none',
-  margin: 0,
-  padding: 4,
+  backgroundColor: `color-mix(in srgb, currentColor 5%, transparent)`,
 });
 
 function setSelectedFromDefault(
   options: SelectProps['options'],
   defaultOptions: SelectProps['defaultOptions']
-): SelectOption[] {
+): Option[] {
   if (!defaultOptions) {
     return [];
   }
@@ -91,10 +94,30 @@ function setSelectedFromDefault(
   return options.filter((opt) => defaultOptions.some((def) => opt.value === def));
 }
 
+const StyledButton = styled(Button)<ButtonProps & { hasSelection?: boolean; isOpen?: boolean }>(
+  ({ isOpen, hasSelection, theme }) => ({
+    ...(isOpen || hasSelection
+      ? {
+          boxShadow: 'none',
+          background: theme.background.hoverable,
+          color: theme.color.secondary,
+
+          // This is a hack to apply bar styles to the button as soon as it is part of a bar
+          // It is a temporary solution until we have implemented Theming 2.0.
+          '.sb-bar &': {
+            background: transparentize(0.9, theme.barTextColor),
+            color: theme.barSelectedColor,
+          },
+        }
+      : {}),
+  })
+);
+
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
   (
     {
       children,
+      icon,
       disabled = false,
       options: calleeOptions,
       defaultOptions,
@@ -123,13 +146,13 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     }, [id]);
 
     // The last selected option(s), which will be used by the app.
-    const [selectedOptions, setSelectedOptions] = useState<SelectOption[]>(
+    const [selectedOptions, setSelectedOptions] = useState<Option[]>(
       setSelectedFromDefault(calleeOptions, defaultOptions)
     );
 
     // Selects an option (updating the selection state based on multiSelect).
     const handleSelectOption = useCallback(
-      (option: SelectOption | ResetOption) => {
+      (option: Option | ResetOption) => {
         // Reset option case. We check value === undefined for cleaner type handling in the other branch.
         if (option.value === undefined) {
           if (selectedOptions.length) {
@@ -139,7 +162,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           }
         } else if (multiSelect) {
           setSelectedOptions((previous) => {
-            let newSelected: SelectOption[] = [];
+            let newSelected: Option[] = [];
 
             const isSelected = previous?.some((opt) => opt.value === option.value);
             if (isSelected) {
@@ -199,7 +222,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     }, [defaultOptions, calleeOptions]);
 
     // The active option in the listbox, which will receive focus when the listbox is open.
-    const [activeOption, setActiveOptionState] = useState<SelectOption | ResetOption | undefined>(
+    const [activeOption, setActiveOptionState] = useState<Option | ResetOption | undefined>(
       undefined
     );
 
@@ -207,7 +230,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     // wrap setActiveOption to handle selection. We never close the listbox
     // in that scenario.
     const setActiveOption = useCallback(
-      (option: SelectOption | ResetOption) => {
+      (option: Option | ResetOption) => {
         setActiveOptionState(option);
         if (!multiSelect) {
           handleSelectOption(option);
@@ -396,13 +419,16 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           </ScrollArea>
         }
       >
-        <Button
+        <StyledButton
           {...props}
+          variant="ghost"
           ariaLabel={ariaLabel}
           tooltip={isOpen ? undefined : tooltip}
           id={id}
           ref={ref}
           padding={padding}
+          isOpen={isOpen}
+          hasSelection={!!selectedOptions.length}
           // Can be removed once #32325 is fixed (Button will then provide aria-disabled)
           aria-disabled={disabled}
           disabled={disabled}
@@ -421,51 +447,33 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           aria-expanded={isOpen}
           aria-controls={listboxId}
         >
-          {/* SINGLE SELECT LABEL:
-          TODO: decide if we want to:
-          - always show the selected option
-          - always show the original label
-          - or have this controlled by a prop
-          
-          Based on that, craft aria-label to always have label + name or count of selected options.
-          
-          NOTE: by showing children, we let callees customise output freely (e.g. the theme picker)
-          but that runs the risk of having a poor accessible name; ariaLabel could be made mandatory
-          to counter that.
-          */}
-
-          {/* Option A: always show selected option */}
-          {/*
-          {(!multiSelect && selectedOptions.length === 0) && children}
+          {!multiSelect && selectedOptions.length === 0 && (
+            <>
+              {icon}
+              {children}
+            </>
+          )}
           {!multiSelect && !!selectedOptions.length && (
-            <SelectedOptionLabel>{selectedOptions[0].label}</SelectedOptionLabel>
-          )}
-          */}
-
-          {/* Option B: always show label */}
-          {!multiSelect && children}
-          {!multiSelect && selectedOptions.length !== 0 && (
-            <span className="sb-sr-only">currently selected: {selectedOptions[0].title}</span>
+            <>
+              {icon}
+              {selectedOptions[0].title}
+            </>
           )}
 
-          {/* Option C needs to be coded if we go there. */}
-
-          {/* TODO: once a decision was made re: how to display children, we must apply
-           this select's `ariaLabel` prop TO THE CHILDREN and not to the component root,
-           so that the computed accessible name retains the part below on current selection. */}
-
-          {multiSelect && children}
-          {multiSelect && !!selectedOptions.length && (
-            <SelectedOptionCount
-              aria-label={`${selectedOptions.length} ${selectedOptions.length > 1 ? 'items' : 'item'} selected`}
-            >
-              {selectedOptions?.length}
-            </SelectedOptionCount>
+          {multiSelect && (
+            <>
+              {icon}
+              {children}
+              {!!selectedOptions.length && (
+                <SelectedOptionCount
+                  aria-label={`${selectedOptions.length} ${selectedOptions.length > 1 ? 'items' : 'item'} selected`}
+                >
+                  {selectedOptions?.length}
+                </SelectedOptionCount>
+              )}
+            </>
           )}
-
-          {/* TODO: decide if we want chevrons or not; it works poorly in the toolbar. */}
-          {/* {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />} */}
-        </Button>
+        </StyledButton>
       </WithTooltipPure>
     );
   }

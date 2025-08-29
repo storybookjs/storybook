@@ -115,12 +115,11 @@ const Pure = React.memo(function PureTool(props: PureProps) {
         ariaLabel={isLocked ? 'Viewport size set by story parameters' : 'Viewport size'}
         tooltip={isLocked ? 'Viewport size set by story parameters' : 'Resize viewport'}
         description="Select a viewport size among predefined options for the preview area, or reset to the default size."
-        variant="ghost"
         defaultOptions={viewportName}
         options={options}
         onSelect={(selected) => update({ value: selected, isRotated: false })}
+        icon={<GrowIcon />}
       >
-        <GrowIcon />
         {item !== responsiveViewport ? (
           <>
             {item.name} {isRotated ? `(L)` : `(P)`}

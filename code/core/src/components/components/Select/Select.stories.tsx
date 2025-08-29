@@ -2,7 +2,7 @@ import React from 'react';
 
 import { styled } from 'storybook/internal/theming';
 
-import { FaceHappyIcon } from '@storybook/icons';
+import { LinuxIcon } from '@storybook/icons';
 
 import type { StoryAnnotations } from 'core/src/types';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
@@ -18,6 +18,7 @@ const meta = preview.meta({
   args: {
     ariaLabel: 'Animal',
     children: 'Animal',
+    icon: <LinuxIcon />,
     onChange: fn(),
     onSelect: fn(),
     onDeselect: fn(),
@@ -34,46 +35,6 @@ const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem'
 const Row = styled.div({ display: 'flex', alignItems: 'center', gap: '1rem' });
 
 export const Base = meta.story({});
-
-export const Variants = meta.story({
-  render: (args) => (
-    <Stack>
-      <Row>
-        <Select variant="solid" {...args}>
-          Solid
-        </Select>
-        <Select variant="outline" {...args}>
-          Outline
-        </Select>
-        <Select variant="ghost" {...args}>
-          Ghost
-        </Select>
-      </Row>
-      <Row>
-        <Select variant="solid" {...args}>
-          <FaceHappyIcon /> Solid
-        </Select>
-        <Select variant="outline" {...args}>
-          <FaceHappyIcon /> Outline
-        </Select>
-        <Select variant="ghost" {...args}>
-          <FaceHappyIcon /> Ghost
-        </Select>
-      </Row>
-      <Row>
-        <Select variant="solid" padding="small" {...args}>
-          <FaceHappyIcon />
-        </Select>
-        <Select variant="outline" padding="small" {...args}>
-          <FaceHappyIcon />
-        </Select>
-        <Select variant="ghost" padding="small" {...args}>
-          <FaceHappyIcon />
-        </Select>
-      </Row>
-    </Stack>
-  ),
-});
 
 export const Sizes = meta.story({
   render: (args) => (
@@ -109,48 +70,58 @@ export const Paddings = meta.story({
 });
 
 export const PseudoStates = meta.story({
+  args: {
+    options: [{ title: 'Frog', value: 'frog' }],
+  },
   render: (args) => (
     <Stack>
-      <Row>
-        <Select variant="solid" {...args}>
-          Select
+      <Row style={{ marginBlock: '4rem' }}>
+        <h4>Inactive</h4>
+        <Select {...args}>Unset</Select>
+        <Select {...args} defaultOptions={['frog']}>
+          Set
         </Select>
-        <Select variant="outline" {...args}>
-          Select
+        <Select {...args} defaultOptions={['frog']} disabled>
+          Override
         </Select>
-        <Select variant="ghost" {...args}>
-          Select
-        </Select>
-      </Row>
-      <Row id="hover">
-        <Select variant="solid" {...args}>
-          Hover
-        </Select>
-        <Select variant="outline" {...args}>
-          Hover
-        </Select>
-        <Select variant="ghost" {...args}>
-          Hover
+        <Select {...args} defaultOpen>
+          Open
         </Select>
       </Row>
-      <Row id="focus">
-        <Select variant="solid" {...args}>
-          Focus
+      <Row className="hover" style={{ marginBlock: '4rem' }}>
+        <h4>Hover</h4>
+        <Select {...args}>Unset</Select>
+        <Select {...args} defaultOptions={['frog']}>
+          Set
         </Select>
-        <Select variant="outline" {...args}>
-          Focus
+        <Select {...args} defaultOptions={['frog']} disabled>
+          Override
         </Select>
-        <Select variant="ghost" {...args}>
-          Focus
+        <Select {...args} defaultOpen>
+          Open
+        </Select>
+      </Row>
+      <Row className="focus" style={{ marginBlock: '4rem' }}>
+        <h4>Focus</h4>
+        <Select {...args}>Unset</Select>
+        <Select {...args} defaultOptions={['frog']}>
+          Set
+        </Select>
+        <Select {...args} defaultOptions={['frog']} disabled>
+          Override
+        </Select>
+        <Select {...args} defaultOpen>
+          Open
         </Select>
       </Row>
     </Stack>
   ),
   parameters: {
     pseudo: {
-      hover: '#hover button',
-      focus: '#focus button',
-      active: '#active button',
+      hover: '.hover button',
+      focus: '.focus button',
+      focusVisible: '.focus button',
+      active: '.active button',
     },
   },
 });
@@ -182,10 +153,6 @@ export const LongOptionLabels = meta.story({
     ],
   },
 });
-
-export const WithAriaLabel = meta.story({ args: { ariaLabel: 'Favorite animal' } });
-
-export const WithoutAriaLabel = meta.story({ args: { ariaLabel: false } });
 
 export const CustomOptionRendering = meta.story({
   name: 'Custom Option Rendering',

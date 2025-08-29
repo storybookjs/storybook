@@ -93,14 +93,12 @@ export const VisionSimulator = () => {
       <Select
         resetLabel="Reset color filter"
         onReset={() => setFilter(null)}
+        icon={<AccessibilityIcon />}
         ariaLabel="Vision simulator"
-        variant="ghost"
         defaultOptions={filter?.name}
         options={options}
         onSelect={(selected) => setFilter(() => ({ name: selected }))}
-      >
-        <AccessibilityIcon />
-      </Select>
+      />
       <Hidden>
         <Filters />
       </Hidden>

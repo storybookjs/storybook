@@ -342,14 +342,8 @@ const Node = React.memo<NodeProps>(function Node({
         )}
         {contextMenu.node}
         {icon ? (
-          // FIXME: it seems this component is only used to display an icon. It doesn't have a click handler,
-          // yet it's gonna be advertised as a button to SRs. We need to replace it with a labelled decorative
-          // icon.
           <StatusButton
             ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
-            // FIXME: this means 100's of live aria announcements none of which is calling the name of the component/story
-            // Instead we likely want one summary notification + onboarding users on filtering features so they can
-            // go to the stories with errors/warnings themselves
             role="status"
             type="button"
             status={statusValue}

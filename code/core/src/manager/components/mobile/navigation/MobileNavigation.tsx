@@ -104,8 +104,6 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
             <MenuIcon />
             <Text>{fullStoryName}</Text>
           </BottomBarButton>
-          {/* TODO: test this with AssistivLabs */}
-          {/* TODO: check use of aria-current, it may not be applicable here. */}
           <span className="sb-sr-only" aria-current="page">
             {fullStoryName}
           </span>

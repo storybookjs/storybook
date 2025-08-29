@@ -1,37 +1,44 @@
 ```js filename="my-addon/manager.js|ts" renderer="common" language="js"
 import React, { useEffect, useCallback } from 'react';
 
-import { useStorybookApi } from 'storybook/manager-api';
-import { Button } from 'storybook/internal/components';
+import { useGlobals, useStorybookApi } from 'storybook/manager-api';
+import { ToggleButton } from 'storybook/internal/components';
 import { ChevronDownIcon } from '@storybook/icons';
 
 export const Panel = () => {
+  const [globals, updateGlobals] = useGlobals();
   const api = useStorybookApi();
 
+  const isActive = [true, 'true'].includes(globals[PARAM_KEY]);
+
   const toggleMyTool = useCallback(() => {
-    // Custom logic to toggle the addon here
-  }, []);
+    updateGlobals({
+      [PARAM_KEY]: !isActive,
+    });
+  }, [isActive]);
 
   useEffect(() => {
     api.setAddonShortcut('custom-toolbar-addon', {
-      label: 'Enable toolbar addon',
+      label: 'Enable my addon',
       defaultShortcut: ['G'],
       actionName: 'Toggle',
       showInMenu: false,
-      action: toggleAddon,
+      action: toggleMyTool,
     });
   }, [api]);
 
   return (
-    <Button
+    <ToggleButton
       padding="small"
       variant="ghost"
       key="custom-toolbar"
-      active="true"
-      ariaLabel="Show a toolbar addon"
+      pressed={isActive}
+      ariaLabel="My addon"
+      tooltip="Enable my addon"
+      onClick={toggleMyTool}
     >
       <ChevronDownIcon />
-    </Button>
+    </ToggleButton>
   );
 };
 ```

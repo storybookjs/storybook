@@ -28,7 +28,7 @@ const ExampleToolbar = () => {
       key="Example"
       padding="small"
       variant="ghost"
-      active={isActive}
+      pressed={isActive}
       onClick={toggleOutline}
       ariaLabel="Addon feature"
       tooltip="Toggle addon feature"

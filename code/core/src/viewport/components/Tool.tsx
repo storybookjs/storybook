@@ -1,4 +1,4 @@
-import React, { type FC, Fragment, useCallback, useEffect } from 'react';
+import React, { type FC, Fragment, useCallback, useEffect, useMemo } from 'react';
 
 import { Button, Select } from 'storybook/internal/components';
 
@@ -99,11 +99,15 @@ const Pure = React.memo(function PureTool(props: PureProps) {
     [updateGlobals]
   );
 
-  const options = Object.entries(viewportMap).map(([k, value]) => ({
-    value: k,
-    title: value.name,
-    icon: iconsMap[value.type!],
-  }));
+  const options = useMemo(
+    () =>
+      Object.entries(viewportMap).map(([k, value]) => ({
+        value: k,
+        title: value.name,
+        icon: iconsMap[value.type!],
+      })),
+    [viewportMap]
+  );
 
   return (
     <Fragment>
@@ -139,7 +143,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
             <span className="sb-sr-only">Viewport width: </span>
             {width.replace('px', '')}
           </FirstDimension>
-          {isLocked && <DimensionSeparator>'/'</DimensionSeparator>}
+          {isLocked && <DimensionSeparator>/</DimensionSeparator>}
           <LastDimension title="Viewport height">
             <span className="sb-sr-only">Viewport height: </span>
             {height.replace('px', '')}

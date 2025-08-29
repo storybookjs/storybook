@@ -1820,6 +1820,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
         - importPath: foo/bar.stories.js
           exportName: B
@@ -1842,6 +1843,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: B
       `);
     });
@@ -1882,6 +1884,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -1927,6 +1930,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -1987,6 +1991,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -2026,6 +2031,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -2065,6 +2071,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });
@@ -2104,6 +2111,7 @@ describe('CsfFile', () => {
             mount: false
             moduleMock: false
           type: story
+          subtype: story
           name: A
       `);
     });

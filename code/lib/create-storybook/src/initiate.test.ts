@@ -194,6 +194,15 @@ describe('getStorybookVersionFromAncestry', () => {
     expect(getStorybookVersionFromAncestry(ancestry as any)).toBe('latest');
   });
 
+  it('foo-storybook with latest', () => {
+    const ancestry = [
+      { command: 'node' },
+      { command: 'npx foo-storybook@latest' },
+      { command: 'npm' },
+    ];
+    expect(getStorybookVersionFromAncestry(ancestry as any)).toBeUndefined();
+  });
+
   it('multiple matches', () => {
     const ancestry = [
       { command: 'node' },
@@ -201,7 +210,7 @@ describe('getStorybookVersionFromAncestry', () => {
       { command: 'npm' },
       { command: 'npx create-storybook@bar' },
     ];
-    expect(getStorybookVersionFromAncestry(ancestry as any)).toBe('foo');
+    expect(getStorybookVersionFromAncestry(ancestry as any)).toBe('bar');
   });
 
   it('returns undefined if no storybook version found', () => {

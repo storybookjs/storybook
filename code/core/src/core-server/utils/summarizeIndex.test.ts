@@ -298,6 +298,7 @@ describe('summarizeIndex', () => {
         entries: {
           'component-testing-test-fn--default': {
             type: 'story',
+            subtype: 'story',
             id: 'component-testing-test-fn--default',
             name: 'Default',
             title: 'component-testing/test-fn',
@@ -306,6 +307,7 @@ describe('summarizeIndex', () => {
           },
           'component-testing-test-fn--default:simple': {
             type: 'story',
+            subtype: 'story',
             id: 'component-testing-test-fn--default:simple',
             name: 'simple',
             title: 'component-testing/test-fn',
@@ -315,6 +317,7 @@ describe('summarizeIndex', () => {
           },
           'component-testing-test-fn--default:referring-to-function-in-file': {
             type: 'story',
+            subtype: 'story',
             id: 'component-testing-test-fn--default:referring-to-function-in-file',
             name: 'referring to function in file',
             title: 'component-testing/test-fn',
@@ -324,6 +327,7 @@ describe('summarizeIndex', () => {
           },
           'component-testing-test-fn--default:with-overrides': {
             type: 'story',
+            subtype: 'story',
             id: 'component-testing-test-fn--default:with-overrides',
             name: 'with overrides',
             title: 'component-testing/test-fn',
@@ -333,6 +337,7 @@ describe('summarizeIndex', () => {
           },
           'component-testing-test-fn--default:with-play-function': {
             type: 'story',
+            subtype: 'story',
             id: 'component-testing-test-fn--default:with-play-function',
             name: 'with play function',
             title: 'component-testing/test-fn',
@@ -342,6 +347,7 @@ describe('summarizeIndex', () => {
           },
           'component-testing-test-fn--default-extended': {
             type: 'story',
+            subtype: 'story',
             id: 'component-testing-test-fn--default-extended',
             name: 'Default Extended',
             title: 'component-testing/test-fn',
@@ -350,6 +356,7 @@ describe('summarizeIndex', () => {
           },
           'component-testing-test-fn--default-extended:should-have-extended-args': {
             type: 'story',
+            subtype: 'story',
             id: 'component-testing-test-fn--default-extended:should-have-extended-args',
             name: 'should have extended args',
             title: 'component-testing/test-fn',

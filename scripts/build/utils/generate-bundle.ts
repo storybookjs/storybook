@@ -64,11 +64,13 @@ export async function generateBundle({
   cwd,
   entry,
   isWatch,
+  isProduction,
 }: {
   cwd: string;
   entry: BuildEntries;
   name: string;
   isWatch: boolean;
+  isProduction: boolean;
 }) {
   const DIR_CWD = cwd;
   const DIR_REL = relative(DIR_CODE, DIR_CWD);
@@ -88,6 +90,7 @@ export async function generateBundle({
     outdir: 'dist',
     treeShaking: true,
     color: true,
+    minify: isProduction,
     external,
     define: {
       /*

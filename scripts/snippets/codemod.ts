@@ -48,7 +48,7 @@ type Codemod = {
 };
 
 const previousTabTitle = 'CSF 3';
-const newTabTitle = 'CSF Factory 🧪';
+const newTabTitle = 'CSF Next 🧪';
 
 export async function runSnippetCodemod({
   glob,
@@ -171,8 +171,7 @@ export async function runSnippetCodemod({
             for (const snippet of allSnippets) {
               // warn us if there is already a tab title
               if (snippet !== targetSnippet) {
-                appendedContent +=
-                  '\n<!-- js & ts-4-9 (when applicable) still needed while providing both CSF 3 & 4 -->\n';
+                appendedContent += '\n<!-- js still needed while providing both CSF 3 & 4 -->\n';
               }
 
               const newSnippet = { ...snippet };
@@ -190,11 +189,7 @@ export async function runSnippetCodemod({
               if (newSnippet.path.includes('.stories')) {
                 transformedSource = transformedSource
                   .replace(/\/\/ Replace your-renderer with .*\n/, '')
-                  .replace(/\/\/ Replace your-framework with .*\n/, '')
-                  .replace(
-                    /(import preview from \"#\.storybook\/preview\";)/g,
-                    '// Learn about the # subpath import: https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports\n$1'
-                  );
+                  .replace(/\/\/ Replace your-framework with .*\n/, '');
               } else {
                 transformedSource = transformedSource.replace(
                   /Replace your-framework with .*\n/,

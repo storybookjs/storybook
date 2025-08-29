@@ -132,9 +132,11 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       (option: SelectOption | ResetOption) => {
         // Reset option case. We check value === undefined for cleaner type handling in the other branch.
         if (option.value === undefined) {
-          onChange?.([]);
-          onReset?.();
-          setSelectedOptions([]);
+          if (selectedOptions.length) {
+            onChange?.([]);
+            onReset?.();
+            setSelectedOptions([]);
+          }
         } else if (multiSelect) {
           setSelectedOptions((previous) => {
             let newSelected: SelectOption[] = [];
@@ -162,7 +164,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           });
         }
       },
-      [multiSelect, onChange, onSelect, onDeselect, onReset]
+      [multiSelect, onChange, onSelect, onDeselect, onReset, selectedOptions]
     );
 
     // Reset option appears if a handler is defined and there are selected options.
@@ -276,14 +278,16 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         // When the Select has a reset option, but nothing is selected, it
         // makes no sense to open on the Reset option. We start on the first
         // actual option.
-        const listStart = resetOption && hasSelection ? 0 : 1;
+        const listStart = resetOption && hasSelection ? 1 : 0;
         const listEnd = options.length - 1;
 
         // When we press ArrowUp/Down, we want to stay close to the edges rather than
         // initiate movement. When we press Home/End or PageUp/PageDown, we want to
         // move immediately because it's clearer the user intends to be in a specific
         // area of the list. This is why we don't always do +/- 1 but always do +/- PAGE_STEP_SIZE.
-        if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') {
+        if (e.key === 'Enter' || e.key === ' ') {
+          openAt(hasSelection ? Math.min(indexOfFirstSelected, listEnd) : listStart);
+        } else if (e.key === 'ArrowDown') {
           openAt(hasSelection ? Math.min(indexOfFirstSelected + 1, listEnd) : listStart);
         } else if (e.key === 'ArrowUp') {
           openAt(hasSelection ? Math.max(indexOfFirstSelected - 1, listStart) : listEnd);
@@ -356,7 +360,10 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                   icon={option.icon}
                   id={valueToId(id, option)}
                   isActive={isOpen && activeOption?.value === option.value}
-                  isSelected={selectedOptions?.some((sel) => sel.value === option.value)}
+                  isSelected={
+                    selectedOptions?.some((sel) => sel.value === option.value) ||
+                    (selectedOptions.length === 0 && option === resetOption)
+                  }
                   onClick={() => {
                     handleSelectOption(option);
                     if (!multiSelect) {
@@ -364,7 +371,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                     }
                   }}
                   onFocus={() => setActiveOption(option)}
-                  shouldLookDisabled={option === resetOption && selectedOptions.length === 0}
+                  shouldLookDisabled={
+                    option === resetOption && selectedOptions.length === 0 && multiSelect
+                  }
                   onKeyDown={(e: KeyboardEvent) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
@@ -390,10 +399,12 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         <Button
           {...props}
           ariaLabel={ariaLabel}
-          tooltip={isOpen ? undefined : (tooltip ?? ariaLabel)}
+          tooltip={isOpen ? undefined : tooltip}
           id={id}
           ref={ref}
           padding={padding}
+          // Can be removed once #32325 is fixed (Button will then provide aria-disabled)
+          aria-disabled={disabled}
           disabled={disabled}
           onClick={() => {
             if (isOpen) {
@@ -404,7 +415,6 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           }}
           tabIndex={isOpen ? -1 : 0}
           onKeyDown={handleButtonKeyDown}
-          // FIXME We may want to switch to a select role for single select, especially if we don't do typeahead/autocomplete.
           role="combobox"
           aria-autocomplete="none"
           aria-haspopup="listbox"

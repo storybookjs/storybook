@@ -1,4 +1,4 @@
-```js filename="List.stories.js|jsx" renderer="react" language="js"
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { List } from './List';
 
 //👇 Instead of importing ListItem, we import the stories
@@ -20,7 +20,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -48,7 +48,7 @@ export const OneItem: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
 import { List } from './List';
 
 //👇 Instead of importing ListItem, we import the stories
@@ -95,4 +95,54 @@ export const OneItem: Story = {
     children: <Unchecked {...Unchecked.args} />,
   },
 };
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+
+//👇 Instead of importing ListItem, we import the stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'List',
+  component: List,
+});
+
+export const OneItem = meta.story({
+  args: {
+    children: <Unchecked {...Unchecked.args} />,
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { List } from './List';
+
+//👇 Instead of importing ListItem, we import the stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'List',
+
+  component: List
+});
+
+export const OneItem = meta.story({
+  args: {
+    children: <Unchecked {...Unchecked.args} />,
+  },
+});
 ```

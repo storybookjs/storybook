@@ -49,6 +49,7 @@ export interface API_DocsEntry extends API_BaseEntry {
 
 export interface API_StoryEntry extends API_BaseEntry {
   type: 'story';
+  subtype: 'story' | 'test';
   parent: StoryId;
   title: ComponentTitle;
   importPath: Path;

@@ -102,6 +102,7 @@ global.fetch = vi.fn().mockResolvedValue({
         entries: {
           'story--one': {
             type: 'story',
+            subtype: 'story',
             id: 'story--one',
             name: 'One',
             title: 'story/one',
@@ -110,6 +111,7 @@ global.fetch = vi.fn().mockResolvedValue({
           },
           'another--one': {
             type: 'story',
+            subtype: 'story',
             id: 'another--one',
             name: 'One',
             title: 'another/one',
@@ -118,6 +120,7 @@ global.fetch = vi.fn().mockResolvedValue({
           },
           'parent--story': {
             type: 'story',
+            subtype: 'story',
             id: 'parent--story',
             name: 'Parent story',
             title: 'parent/story',
@@ -126,6 +129,7 @@ global.fetch = vi.fn().mockResolvedValue({
           },
           'parent--story:test': {
             type: 'story',
+            subtype: 'test',
             id: 'parent--story:test',
             name: 'Test name',
             title: 'parent/story',

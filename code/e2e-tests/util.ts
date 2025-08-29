@@ -30,10 +30,10 @@ export class SbPage {
   }
 
   /** Visit a story via the URL instead of selecting from the sidebar. */
-  async deepLinkToStory(baseURL: string, title: string, name: 'docs' | string) {
+  async deepLinkToStory(baseURL: string, title: string, name: 'docs' | string, testName?: string) {
     const titleId = toId(title);
     const storyId = toId(name);
-    const storyLinkId = `${titleId}--${storyId}`;
+    const storyLinkId = testName ? `${titleId}--${storyId}:${testName}` : `${titleId}--${storyId}`;
     const viewMode = name === 'docs' ? 'docs' : 'story';
     await this.page.goto(`${baseURL}/?path=/${viewMode}/${storyLinkId}`);
 
@@ -207,6 +207,16 @@ const templateName: keyof typeof allTemplates = process.env.STORYBOOK_TEMPLATE_N
 const templates = allTemplates;
 export const hasVitestIntegration =
   !templates[templateName]?.skipTasks?.includes('vitest-integration');
+
+export const checkTemplate = (
+  templateName: string,
+  predicate: (template: (typeof templates)[keyof typeof templates]) => boolean
+) => {
+  return (
+    templates[templateName as keyof typeof templates] &&
+    predicate(templates[templateName as keyof typeof templates])
+  );
+};
 
 export const hasOnboardingFeature = (templateName: string) =>
   ['@storybook/react', '@storybook/vue3', '@storybook/angular'].includes(

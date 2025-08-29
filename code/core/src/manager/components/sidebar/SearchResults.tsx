@@ -199,13 +199,8 @@ const Result: FC<
           </TypeIcon>
         )}
         {item.type === 'story' && (
-          <TypeIcon
-            viewBox="0 0 14 14"
-            width="14"
-            height="14"
-            type={item.tags?.includes('test-fn') ? 'test' : 'story'}
-          >
-            <UseSymbol type={item.tags?.includes('test-fn') ? 'test' : 'story'} />
+          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type={item.subtype}>
+            <UseSymbol type={item.subtype} />
           </TypeIcon>
         )}
         {!(item.type === 'component' || item.type === 'story') && (

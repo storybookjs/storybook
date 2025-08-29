@@ -952,20 +952,25 @@ export class CsfFile {
         __id: story.id,
         __stats: story.__stats,
       };
-      const hasTests = this._storyTests[exportName];
+
+      const tests = this._storyTests[exportName];
+      const hasTests = tests?.length;
 
       index.push({
         ...storyInput,
         type: 'story',
+        subtype: 'story',
         name: story.name,
-        tags: [...storyInput.tags, ...(hasTests ? ['has-tests'] : [])],
       });
 
       if (hasTests) {
-        this._storyTests[exportName].forEach((test) => {
+        tests.forEach((test) => {
           index.push({
             ...storyInput,
+            // TODO implementent proper title => path behavior in `transformStoryIndexToStoriesHash`
+            // title: `${storyInput.title}/${story.name}`,
             type: 'story',
+            subtype: 'test',
             parent: story.id,
             name: test.name,
             tags: [...storyInput.tags, 'test-fn'],
@@ -986,6 +991,7 @@ export class CsfFile {
           title: this.meta?.title,
           metaId,
           type: 'story',
+          subtype: 'test',
           parent: metaId,
           name: test.name,
           tags: [...(this._meta?.tags ?? []), 'test-fn'],

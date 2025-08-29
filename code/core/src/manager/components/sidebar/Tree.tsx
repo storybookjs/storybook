@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useRef } from 'react';
 
 import { Button, IconButton, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import type { API_TestEntry, StatusValue } from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
 import {
   type API_HashEntry,
   type StatusByTypeId,
@@ -400,7 +400,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     );
   }
 
-  const isTest = item.tags?.includes('test-fn');
+  const isTest = item.type === 'story' && item.subtype === 'test';
   const LeafNode = isTest ? TestNode : { docs: DocumentNode, story: StoryNode }[item.type];
   const nodeType = isTest ? 'test' : { docs: 'document', story: 'story' }[item.type];
 

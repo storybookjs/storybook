@@ -62,16 +62,10 @@ export const TagsFilter = ({
   const tagsActive = selectedTags.length > 0;
 
   useEffect(() => {
-    api.experimental_setFilter(TAGS_FILTER, (item) => {
-      return (
-        selectedTags.length === 0 ||
-        selectedTags.some((tag) =>
-          tag === 'test-fn'
-            ? item.tags?.includes(tag) || item.tags?.includes('has-tests')
-            : item.tags?.includes(tag)
-        )
-      );
-    });
+    api.experimental_setFilter(
+      TAGS_FILTER,
+      (item) => selectedTags.length === 0 || selectedTags.some((tag) => item.tags?.includes(tag))
+    );
   }, [api, selectedTags]);
 
   const allTags = Object.values(indexJson.entries).reduce((acc, entry) => {

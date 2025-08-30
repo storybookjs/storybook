@@ -54,9 +54,6 @@ const Right = styled.span<RightProps>({
     margin: '3px 0',
     verticalAlign: 'top',
   },
-  '& path': {
-    fill: 'inherit',
-  },
 });
 
 const Center = styled.span<{ isIndented: boolean }>(

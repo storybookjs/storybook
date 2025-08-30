@@ -97,6 +97,7 @@ export const TagsFilter = ({
         setSelectedTags(Array.from(allTags.keys()));
       } else {
         setSelectedTags([]);
+        setInverted(false);
       }
     },
     [allTags, setSelectedTags]

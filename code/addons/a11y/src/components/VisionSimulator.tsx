@@ -1,7 +1,6 @@
-import type { ReactNode } from 'react';
 import React, { useState } from 'react';
 
-import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { Select } from 'storybook/internal/components';
 
 import { AccessibilityIcon } from '@storybook/icons';
 
@@ -67,63 +66,19 @@ const ColorIcon = styled.span<{ filter: string }>(
   })
 );
 
-export interface Link {
-  id: string;
-  title: ReactNode;
-  right?: ReactNode;
-  active: boolean;
-  onClick: () => void;
-}
-
-const Column = styled.span({
-  display: 'flex',
-  flexDirection: 'column',
-});
-
-const Title = styled.span({
-  textTransform: 'capitalize',
-});
-
-const Description = styled.span(({ theme }) => ({
-  fontSize: 11,
-  color: theme.textMutedColor,
-}));
-
-const getColorList = (active: Filter, set: (i: Filter) => void): Link[] => [
-  ...(active !== null
-    ? [
-        {
-          id: 'reset',
-          title: 'Reset color filter',
-          onClick: () => {
-            set(null);
-          },
-          right: undefined,
-          active: false,
-        },
-      ]
-    : []),
-  ...baseList.map((i) => {
-    const description = i.percentage !== undefined ? `${i.percentage}% of users` : undefined;
-    return {
-      id: i.name,
-      title: (
-        <Column>
-          <Title>{i.name}</Title>
-          {description && <Description>{description}</Description>}
-        </Column>
-      ),
-      onClick: () => {
-        set(i);
-      },
-      right: <ColorIcon filter={i.name} />,
-      active: active === i,
-    };
-  }),
-];
-
 export const VisionSimulator = () => {
   const [filter, setFilter] = useState<Filter>(null);
+
+  const options = baseList.map(({ name, percentage }) => {
+    const description = percentage !== undefined ? `${percentage}% of users` : undefined;
+    return {
+      title: name,
+      description,
+      icon: <ColorIcon filter={name} />,
+      value: name,
+    };
+  });
+
   return (
     <>
       {filter && (
@@ -135,22 +90,15 @@ export const VisionSimulator = () => {
           }}
         />
       )}
-      <WithTooltip
-        placement="top"
-        tooltip={({ onHide }) => {
-          const colorList = getColorList(filter, (i) => {
-            setFilter(i);
-            onHide();
-          });
-          return <TooltipLinkList links={colorList} />;
-        }}
-        closeOnOutsideClick
-        onDoubleClick={() => setFilter(null)}
-      >
-        <IconButton key="filter" active={!!filter} title="Vision simulator">
-          <AccessibilityIcon />
-        </IconButton>
-      </WithTooltip>
+      <Select
+        resetLabel="Reset color filter"
+        onReset={() => setFilter(null)}
+        icon={<AccessibilityIcon />}
+        ariaLabel="Vision simulator"
+        defaultOptions={filter?.name}
+        options={options}
+        onSelect={(selected) => setFilter(() => ({ name: selected }))}
+      />
       <Hidden>
         <Filters />
       </Hidden>

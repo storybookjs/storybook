@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
@@ -92,27 +92,34 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
       </MobileAddonsDrawer>
 
       {!isMobilePanelOpen && (
-        <Nav className="sb-bar" role="toolbar" aria-label="Mobile navigation controls">
-          <Button
+        <MobileBottomBar className="sb-bar" aria-label="Mobile navigation controls">
+          <BottomBarButton
+            padding="small"
+            variant="ghost"
             onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label="Open navigation menu"
+            ariaLabel="Open navigation menu"
             aria-expanded={isMobileMenuOpen}
             aria-controls="storybook-mobile-menu"
           >
             <MenuIcon />
             <Text>{fullStoryName}</Text>
-          </Button>
+          </BottomBarButton>
+          <span className="sb-sr-only" aria-current="page">
+            {fullStoryName}
+          </span>
           {showPanel && (
-            <IconButton
+            <BottomBarButton
+              padding="small"
+              variant="ghost"
               onClick={() => setMobilePanelOpen(true)}
-              aria-label="Open addon panel"
+              ariaLabel="Open addon panel"
               aria-expanded={isMobilePanelOpen}
               aria-controls="storybook-mobile-addon-panel"
             >
               <BottomBarToggleIcon />
-            </IconButton>
+            </BottomBarButton>
           )}
-        </Nav>
+        </MobileBottomBar>
       )}
     </Container>
   );
@@ -127,7 +134,7 @@ const Container = styled.div(({ theme }) => ({
   borderTop: `1px solid ${theme.appBorderColor}`,
 }));
 
-const Nav = styled.div({
+const MobileBottomBar = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -136,28 +143,9 @@ const Nav = styled.div({
   padding: '0 6px',
 });
 
-const Button = styled.button(({ theme }) => ({
-  all: 'unset',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  color: theme.barTextColor,
-  fontSize: `${theme.typography.size.s2 - 1}px`,
-  padding: '0 7px',
-  fontWeight: theme.typography.weight.bold,
+const BottomBarButton = styled(Button)({
   WebkitLineClamp: 1,
-
-  '> svg': {
-    width: 14,
-    height: 14,
-    flexShrink: 0,
-  },
-
-  '&:focus-visible': {
-    outline: `2px solid ${theme.color.secondary}`,
-    outlineOffset: 2,
-  },
-}));
+});
 
 const Text = styled.p({
   display: '-webkit-box',

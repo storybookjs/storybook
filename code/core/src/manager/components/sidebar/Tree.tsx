@@ -1,7 +1,7 @@
 import type { ComponentProps, FC, MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import { Button, IconButton, ListItem } from 'storybook/internal/components';
+import { Button, ListItem } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 import type { StatusValue } from 'storybook/internal/types';
 import {
@@ -60,7 +60,7 @@ const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
   marginBottom: 20,
 }));
 
-const CollapseButton = styled.button(({ theme }) => ({
+const CollapseButton = styled.button({
   all: 'unset',
   display: 'flex',
   padding: '0px 8px',
@@ -75,7 +75,7 @@ const CollapseButton = styled.button(({ theme }) => ({
     outline: 'none',
     background: 'var(--tree-node-background-hover)',
   },
-}));
+});
 
 export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   position: 'relative',
@@ -336,14 +336,14 @@ const Node = React.memo<NodeProps>(function Node({
             item.name}
         </LeafNode>
         {isSelected && (
-          <SkipToContentLink asChild>
+          <SkipToContentLink asChild ariaLabel={false}>
             <a href="#storybook-preview-wrapper">Skip to canvas</a>
           </SkipToContentLink>
         )}
         {contextMenu.node}
         {icon ? (
           <StatusButton
-            aria-label={`Test status: ${statusValue.replace('status-value:', '')}`}
+            ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
             role="status"
             type="button"
             status={statusValue}
@@ -379,9 +379,11 @@ const Node = React.memo<NodeProps>(function Node({
           {item.renderLabel?.(item, api) || item.name}
         </CollapseButton>
         {isExpanded && (
-          <IconButton
+          <Button
+            padding="small"
+            variant="ghost"
             className="sidebar-subheading-action"
-            aria-label={isFullyExpanded ? 'Expand' : 'Collapse'}
+            ariaLabel={isFullyExpanded ? 'Expand' : 'Collapse'}
             data-action="expand-all"
             data-expanded={isFullyExpanded}
             onClick={(event) => {
@@ -391,7 +393,7 @@ const Node = React.memo<NodeProps>(function Node({
             }}
           >
             {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
-          </IconButton>
+          </Button>
         )}
       </RootNode>
     );
@@ -444,7 +446,14 @@ const Node = React.memo<NodeProps>(function Node({
         </BranchNode>
         {contextMenu.node}
         {(['status-value:error', 'status-value:warning'] as StatusValue[]).includes(itemStatus) && (
-          <StatusButton type="button" status={itemStatus}>
+          // FIXME: it seems this component is only used to display an icon. It doesn't have a click handler,
+          // yet it's gonna be advertised as a button to SRs. We need to replace it with a labelled decorative
+          // icon.
+          <StatusButton
+            type="button"
+            status={itemStatus}
+            ariaLabel={`Test status: ${itemStatus.replace('status-value:', '')}`}
+          >
             <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
               <UseSymbol type="dot" />
             </svg>

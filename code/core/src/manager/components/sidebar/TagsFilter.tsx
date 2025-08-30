@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button, WithTooltip } from 'storybook/internal/components';
 import type { StoryIndex, Tag } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
@@ -25,6 +25,14 @@ const BUILT_IN_TAGS_HIDE = new Set([
 const Wrapper = styled.div({
   position: 'relative',
 });
+
+// Temporary to prevent regressions until TagFilterPanel can be refactored.
+const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
+  ...(active && {
+    background: theme.background.hoverable,
+    color: theme.color.secondary,
+  }),
+}));
 
 const TagSelected = styled(Badge)(({ theme }) => ({
   position: 'absolute',
@@ -108,27 +116,37 @@ export const TagsFilter = ({
   tags.sort();
 
   return (
-    <WithTooltip
-      placement="bottom"
-      trigger="click"
-      onVisibleChange={setExpanded}
-      tooltip={() => (
-        <TagsFilterPanel
-          api={api}
-          allTags={tags}
-          selectedTags={selectedTags}
-          toggleTag={toggleTag}
-          isDevelopment={isDevelopment}
-        />
-      )}
-      closeOnOutsideClick
-    >
-      <Wrapper>
-        <IconButton key="tags" title="Tag filters" active={tagsActive} onClick={handleToggleExpand}>
-          <FilterIcon />
-        </IconButton>
-        {selectedTags.length > 0 && <TagSelected />}
-      </Wrapper>
-    </WithTooltip>
+    <>
+      <WithTooltip
+        placement="bottom"
+        trigger="click"
+        onVisibleChange={setExpanded}
+        tooltip={() => (
+          <TagsFilterPanel
+            api={api}
+            allTags={tags}
+            selectedTags={selectedTags}
+            toggleTag={toggleTag}
+            isDevelopment={isDevelopment}
+          />
+        )}
+        closeOnOutsideClick
+      >
+        <Wrapper>
+          <StyledIconButton
+            key="tags"
+            ariaLabel="Tag filters"
+            variant="ghost"
+            padding="small"
+            description="Filter the items shown in a sidebar based on the tags applied to them."
+            active={tagsActive}
+            onClick={handleToggleExpand}
+          >
+            <FilterIcon />
+          </StyledIconButton>
+          {selectedTags.length > 0 && <TagSelected />}
+        </Wrapper>
+      </WithTooltip>
+    </>
   );
 };

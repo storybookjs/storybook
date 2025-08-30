@@ -1,15 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import {
-  Bar,
-  Button,
-  IconButton,
-  P,
-  Separator,
-  TooltipNote,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { Bar, Button, P, Separator } from 'storybook/internal/components';
 
 import {
   FastForwardIcon,
@@ -60,11 +52,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const Note = styled(TooltipNote)(({ theme }) => ({
-  fontFamily: theme.typography.fonts.base,
-}));
-
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
+const StyledIconButton = styled(Button)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 3px',
 }));
@@ -130,57 +118,55 @@ export const Subnav: React.FC<SubnavProps> = ({
           <Group>
             <StatusBadge status={status} />
 
-            <JumpToEndButton onClick={onScrollToEnd} disabled={!onScrollToEnd}>
+            <JumpToEndButton ariaLabel={false} onClick={onScrollToEnd} disabled={!onScrollToEnd}>
               {buttonText}
             </JumpToEndButton>
 
             <StyledSeparator />
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to start" />}>
-              <RewindButton
-                aria-label="Go to start"
-                onClick={controls.start}
-                disabled={!controlStates.start}
-              >
-                <RewindIcon />
-              </RewindButton>
-            </WithTooltip>
+            <RewindButton
+              padding="small"
+              variant="ghost"
+              ariaLabel="Go to start"
+              onClick={controls.start}
+              disabled={!controlStates.start}
+            >
+              <RewindIcon />
+            </RewindButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go back" />}>
-              <StyledIconButton
-                aria-label="Go back"
-                onClick={controls.back}
-                disabled={!controlStates.back}
-              >
-                <PlayBackIcon />
-              </StyledIconButton>
-            </WithTooltip>
+            <StyledIconButton
+              padding="small"
+              variant="ghost"
+              ariaLabel="Go back"
+              onClick={controls.back}
+              disabled={!controlStates.back}
+            >
+              <PlayBackIcon />
+            </StyledIconButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go forward" />}>
-              <StyledIconButton
-                aria-label="Go forward"
-                onClick={controls.next}
-                disabled={!controlStates.next}
-              >
-                <PlayNextIcon />
-              </StyledIconButton>
-            </WithTooltip>
+            <StyledIconButton
+              padding="small"
+              variant="ghost"
+              ariaLabel="Go forward"
+              onClick={controls.next}
+              disabled={!controlStates.next}
+            >
+              <PlayNextIcon />
+            </StyledIconButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to end" />}>
-              <StyledIconButton
-                aria-label="Go to end"
-                onClick={controls.end}
-                disabled={!controlStates.end}
-              >
-                <FastForwardIcon />
-              </StyledIconButton>
-            </WithTooltip>
+            <StyledIconButton
+              padding="small"
+              variant="ghost"
+              ariaLabel="Go to end"
+              onClick={controls.end}
+              disabled={!controlStates.end}
+            >
+              <FastForwardIcon />
+            </StyledIconButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Rerun" />}>
-              <RerunButton aria-label="Rerun" onClick={controls.rerun}>
-                <SyncIcon />
-              </RerunButton>
-            </WithTooltip>
+            <RerunButton padding="small" variant="ghost" ariaLabel="Rerun" onClick={controls.rerun}>
+              <SyncIcon />
+            </RerunButton>
           </Group>
           {storyFileName && (
             <Group>

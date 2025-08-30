@@ -11,7 +11,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   padding?: 'small' | 'medium' | 'none';
   variant?: 'outline' | 'solid' | 'ghost';
   onClick?: (event: SyntheticEvent) => void;
-  disabled?: boolean;
+  isDisabled?: boolean;
   active?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
 }
@@ -24,7 +24,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       size = 'small',
       variant = 'outline',
       padding = 'medium',
-      disabled = false,
+      isDisabled = false,
       active = false,
       onClick,
       ...props
@@ -40,6 +40,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const [isAnimating, setIsAnimating] = useState(false);
 
     const handleClick = (event: SyntheticEvent) => {
+      if (isDisabled) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       if (onClick) {
         onClick(event);
       }
@@ -66,7 +71,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         variant={variant}
         size={size}
         padding={padding}
-        disabled={disabled}
+        aria-disabled={isDisabled}
         active={active}
         animating={isAnimating}
         animation={animation}
@@ -86,9 +91,9 @@ const StyledButton = styled('button', {
     animating: boolean;
     animation: ButtonProps['animation'];
   }
->(({ theme, variant, size, disabled, active, animating, animation = 'none', padding }) => ({
+>(({ theme, variant, size, isDisabled, active, animating, animation = 'none', padding }) => ({
   border: 0,
-  cursor: disabled ? 'not-allowed' : 'pointer',
+  cursor: isDisabled ? 'not-allowed' : 'pointer',
   display: 'inline-flex',
   gap: '6px',
   alignItems: 'center',
@@ -122,7 +127,7 @@ const StyledButton = styled('button', {
   verticalAlign: 'top',
   whiteSpace: 'nowrap',
   userSelect: 'none',
-  opacity: disabled ? 0.5 : 1,
+  opacity: isDisabled ? 0.5 : 1,
   margin: 0,
   fontSize: `${theme.typography.size.s1}px`,
   fontWeight: theme.typography.weight.bold,

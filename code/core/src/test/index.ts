@@ -3,11 +3,12 @@ import type { userEvent } from '@testing-library/user-event';
 
 import { instrument } from 'storybook/internal/instrumenter';
 
-import { Assertion } from 'chai';
+import { Assertion, util } from 'chai';
 
 import { expect as rawExpect } from './expect';
 import { type queries } from './testing-library';
 
+export { Assertion, util }
 export * from './spy';
 
 type Queries = BoundFunctions<typeof queries>;

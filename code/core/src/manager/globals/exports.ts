@@ -474,6 +474,12 @@ export default {
   'storybook/internal/client-logger': ['deprecate', 'logger', 'once', 'pretty'],
   'storybook/internal/components': [
     'A',
+    'AriaTabs',
+    'AriaTabList',
+    'AriaTabPanel',
+    'useAriaTabListState',
+    'AbstractAriaToolbar',
+    'AriaToolbar',
     'ActionBar',
     'AddonPanel',
     'Badge',

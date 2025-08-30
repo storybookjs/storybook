@@ -1,10 +1,10 @@
 import { action } from 'storybook/actions';
 
-import { Subnav } from './Subnav';
+import { Toolbar } from './Toolbar';
 
 export default {
-  title: 'Subnav',
-  component: Subnav,
+  title: 'Toolbar',
+  component: Toolbar,
   parameters: {
     layout: 'fullscreen',
   },
@@ -25,7 +25,7 @@ export default {
       next: false,
       end: false,
     },
-    storyFileName: 'Subnav.stories.tsx',
+    storyFileName: 'Toolbar.stories.tsx',
     hasNext: true,
     hasPrevious: true,
   },

@@ -59,6 +59,7 @@ export const TagsFilter = ({
 }: TagsFilterProps) => {
   const [selectedTags, setSelectedTags] = useState(initialSelectedTags);
   const [expanded, setExpanded] = useState(false);
+  const [inverted, setInverted] = useState(false);
   const tagsActive = selectedTags.length > 0;
 
   useEffect(() => {
@@ -66,10 +67,10 @@ export const TagsFilter = ({
       if (selectedTags.length === 0) {
         return true;
       }
-
-      return selectedTags.some((tag) => item.tags?.includes(tag));
+      const match = selectedTags.some((tag) => item.tags?.includes(tag));
+      return inverted ? !match : match;
     });
-  }, [api, selectedTags]);
+  }, [api, selectedTags, inverted]);
 
   const allTags = Object.values(indexJson.entries).reduce((acc, entry) => {
     entry.tags?.forEach((tag: Tag) => {
@@ -128,6 +129,8 @@ export const TagsFilter = ({
           selectedTags={selectedTags}
           toggleTag={toggleTag}
           setAllTags={setAllTags}
+          inverted={inverted}
+          setInverted={setInverted}
           isDevelopment={isDevelopment}
         />
       )}

@@ -8,7 +8,7 @@ module.exports = {
     'plugin:prettier/recommended',
     'plugin:react-hooks/recommended',
     'plugin:react/recommended',
-    'plugin:jsx-a11y/recommended'
+    'plugin:jsx-a11y/recommended',
   ],
   env: {
     es6: true,

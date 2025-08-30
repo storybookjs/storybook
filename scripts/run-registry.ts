@@ -1,5 +1,5 @@
 import { exec } from 'node:child_process';
-import { mkdir, rm } from 'node:fs/promises';
+import { access, mkdir, readFile, rm } from 'node:fs/promises';
 import http from 'node:http';
 import type { Server } from 'node:http';
 import { join, resolve as resolvePath } from 'node:path';
@@ -7,8 +7,6 @@ import { join, resolve as resolvePath } from 'node:path';
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, readJSON, remove } from 'fs-extra';
 import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
@@ -28,6 +26,15 @@ const logger = console;
 const root = resolvePath(__dirname, '..');
 
 const opts = program.opts();
+
+const pathExists = async (p: string) => {
+  try {
+    await access(p);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 const startVerdaccio = async () => {
   const ready = {
@@ -99,7 +106,8 @@ const startVerdaccio = async () => {
 };
 
 const currentVersion = async () => {
-  const { version } = await readJSON(join(__dirname, '..', 'code', 'package.json'));
+  const content = await readFile(join(__dirname, '..', 'code', 'package.json'), 'utf-8');
+  const { version } = JSON.parse(content);
   return version;
 };
 
@@ -163,7 +171,7 @@ const run = async () => {
     const verdaccioCache = resolvePath(__dirname, '..', '.verdaccio-cache');
     if (await pathExists(verdaccioCache)) {
       logger.log(`🗑 cleaning up cache`);
-      await remove(verdaccioCache);
+      await rm(verdaccioCache, { force: true, recursive: true });
     }
   }
 

@@ -1,11 +1,20 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, remove } from 'fs-extra';
+import { access, rm } from 'node:fs/promises';
+
 import { join } from 'path';
 
 import type { Task } from '../task';
 import { REPROS_DIRECTORY } from '../utils/constants';
 
 const logger = console;
+
+const pathExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const generate: Task = {
   description: 'Create the template repro',
@@ -24,7 +33,7 @@ export const generate: Task = {
     const reproDir = join(REPROS_DIRECTORY, details.key);
     if (await this.ready(details, options)) {
       logger.info('🗑  Removing old repro dir');
-      await remove(reproDir);
+      await rm(reproDir, { force: true, recursive: true });
     }
 
     // This uses an async import as it depends on `lib/cli` which requires `code` to be installed.

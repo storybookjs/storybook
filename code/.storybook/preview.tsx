@@ -1,4 +1,3 @@
-/* eslint-disable depend/ban-dependencies */
 import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -38,10 +37,12 @@ import { isChromatic } from './isChromatic';
 sb.mock('../core/template/stories/test/ModuleMocking.utils.ts');
 sb.mock('../core/template/stories/test/ModuleSpyMocking.utils.ts', { spy: true });
 sb.mock('../core/template/stories/test/ModuleAutoMocking.utils.ts');
+/* eslint-disable depend/ban-dependencies */
 sb.mock(import('lodash-es'));
 sb.mock(import('lodash-es/add'));
 sb.mock(import('lodash-es/sum'));
 sb.mock(import('uuid'));
+/* eslint-enable depend/ban-dependencies */
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';

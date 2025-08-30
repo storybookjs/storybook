@@ -8,7 +8,7 @@ module.exports = {
     'plugin:prettier/recommended',
     'plugin:react-hooks/recommended',
     'plugin:react/recommended',
-    'plugin:jsx-a11y/recommended'
+    'plugin:jsx-a11y/recommended',
   ],
   env: {
     es6: true,
@@ -67,7 +67,7 @@ module.exports = {
     'depend/ban-dependencies': [
       'error',
       {
-        modules: ['lodash', 'chalk', 'qs', 'handlebars', 'fs-extra'],
+        modules: ['lodash', 'lodash-es', 'chalk', 'qs', 'handlebars', 'fs-extra'],
       },
     ],
   },

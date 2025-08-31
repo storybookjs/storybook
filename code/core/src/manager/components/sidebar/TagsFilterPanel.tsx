@@ -7,8 +7,8 @@ import {
   BatchAcceptIcon,
   CloseIcon,
   DocumentIcon,
-  FaceHappyIcon,
-  FaceSadIcon,
+  EyeCloseIcon,
+  EyeIcon,
   ShareAltIcon,
 } from '@storybook/icons';
 
@@ -145,7 +145,7 @@ export const TagsFilterPanel = ({
             onClick={() => setInverted(!inverted)}
             active={inverted}
           >
-            {inverted ? <FaceSadIcon /> : <FaceHappyIcon />}
+            {inverted ? <EyeCloseIcon /> : <EyeIcon />}
             Invert
           </IconButton>
         </Actions>

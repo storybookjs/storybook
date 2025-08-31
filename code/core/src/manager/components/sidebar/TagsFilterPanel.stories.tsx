@@ -10,6 +10,8 @@ const meta = {
   args: {
     toggleTag: fn(),
     setAllTags: fn(),
+    inverted: false,
+    setInverted: fn(),
     api: {
       getDocsUrl: () => 'https://storybook.js.org/docs/',
     } as any,
@@ -51,6 +53,13 @@ export const Default: Story = {
       ['tag3', 1],
     ]),
     selectedTags: ['tag1', 'tag3'],
+  },
+};
+
+export const Inverted: Story = {
+  args: {
+    ...Default.args,
+    inverted: true,
   },
 };
 

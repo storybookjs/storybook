@@ -120,7 +120,19 @@ export interface TooltipProps {
   tooltipRef?: any;
   hasChrome?: boolean;
   arrowProps?: any;
-  placement?: string;
+  placement?:
+    | 'top'
+    | 'bottom'
+    | 'left'
+    | 'right'
+    | 'top-start'
+    | 'top-end'
+    | 'bottom-start'
+    | 'bottom-end'
+    | 'left-start'
+    | 'left-end'
+    | 'right-start'
+    | 'right-end';
   color?: keyof Color;
   withArrows?: boolean;
 }

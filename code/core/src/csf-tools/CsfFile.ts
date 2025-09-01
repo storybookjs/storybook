@@ -181,7 +181,7 @@ export class NoMetaError extends Error {
     super(dedent`
       CSF: ${msg} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -193,7 +193,7 @@ export class MultipleMetaError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -205,7 +205,7 @@ export class MixedFactoryError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export?ref=error
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -217,7 +217,7 @@ export class BadMetaError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export?ref=error
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }

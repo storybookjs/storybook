@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import {
   getStorybookConfiguration,
   getStorybookInfo,
+  isCI,
   loadMainConfig,
   versions,
 } from 'storybook/internal/common';
@@ -56,10 +57,10 @@ export const computeStorybookMetadata = async ({
   mainConfig?: StorybookConfig & Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
-  const settings = await globalSettings();
+  const settings = isCI() ? undefined : await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
-    userSince: settings.value.userSince,
+    userSince: settings?.value.userSince,
     hasCustomBabel: false,
     hasCustomWebpack: false,
     hasStaticDirs: false,
@@ -212,7 +213,7 @@ export const computeStorybookMetadata = async ({
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
-  const storybookInfo = getStorybookInfo(configDir);
+  const storybookInfo = await getStorybookInfo(configDir);
 
   try {
     const { previewConfigPath: previewConfig } = storybookInfo;

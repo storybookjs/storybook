@@ -1,9 +1,14 @@
 {
   "name": "@storybook/cli",
-  "version": "9.1.0-beta.1",
-  "description": "Storybook CLI",
+  "version": "10.0.0-beta.0",
+  "description": "Storybook CLI: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "cli",
+    "dev",
+    "build",
+    "upgrade",
+    "init"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-storybook",
   "bugs": {
@@ -22,14 +27,9 @@
   "author": "Storybook Team",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./bin/index.cjs": "./bin/index.cjs",
     "./package.json": "./package.json"
   },
-  "bin": "./bin/index.cjs",
+  "bin": "./dist/bin/index.js",
   "files": [
     "bin/**/*",
     "dist/**/*",
@@ -37,8 +37,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti  ../../../scripts/prepare/check.ts",
-    "prep": "jiti  ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "@storybook/codemod": "workspace:*",
@@ -72,15 +72,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/bin/index.ts"
-    ],
-    "formats": [
-      "cjs"
-    ],
-    "platform": "node"
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
 }

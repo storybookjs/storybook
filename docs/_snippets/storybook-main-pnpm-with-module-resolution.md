@@ -1,9 +1,9 @@
 ```js filename=".storybook/main.js" renderer="common" language="js"
-import path from 'path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const _require = typeof require === 'undefined' ? import.meta : require;
 const getAbsolutePath = (packageName) =>
-  path.dirname(_require.resolve(path.join(packageName, 'package.json'))).replace(/^file:\/\//, '');
+  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
 
 export default {
   framework: {
@@ -23,11 +23,11 @@ export default {
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
-import path from 'path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const _require = typeof require === 'undefined' ? import.meta : require;
-const getAbsolutePath = (packageName: string): any =>
-  path.dirname(_require.resolve(path.join(packageName, 'package.json'))).replace(/^file:\/\//, '');
+const getAbsolutePath = (packageName: string) =>
+  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
 
 const config: StorybookConfig = {
   framework: {

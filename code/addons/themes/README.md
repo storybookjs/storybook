@@ -1,6 +1,6 @@
 # @storybook/addon-themes
 
-Storybook Addon Themes can be used which between multiple themes for components inside the preview in [Storybook](https://storybook.js.org).
+Storybook Addon Themes can be used to switch between multiple themes for components inside the preview in [Storybook](https://storybook.js.org?ref=readme).
 
 ![React Storybook Screenshot](https://user-images.githubusercontent.com/18172605/274302488-77a39112-cdbe-4d16-9966-0d8e9e7e3399.gif)
 
@@ -12,7 +12,7 @@ Requires Storybook 7.0 or later. If you need to add it to your Storybook, you ca
 npm i -D @storybook/addon-themes
 ```
 
-Then, add following content to [`.storybook/main.js`](https://storybook.js.org/docs/configure#configure-your-storybook-project):
+Then, add following content to [`.storybook/main.js`](https://storybook.js.org/docs/configure#configure-your-storybook-project?ref=readme):
 
 ```js
 export default {
@@ -65,3 +65,5 @@ export const PrimaryDark = {
   globals: { theme: 'dark' },
 };
 ```
+
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

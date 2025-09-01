@@ -1,3 +1,43 @@
+## 10.0.0-beta.0
+
+- Core: Fix staticCopy not copying `index.html` to sub directory - [#32259](https://github.com/storybookjs/storybook/pull/32259), thanks @ndelangen!
+- Core: Remove CJS bundles, only ship ESM - [#31819](https://github.com/storybookjs/storybook/pull/31819), thanks @ndelangen!
+- Docs: Move button in ArgsTable heading to fix screenreader announcements - [#32238](https://github.com/storybookjs/storybook/pull/32238), thanks @Sidnioulz!
+- Telemetry: Disambiguate traffic coming from error/upgrade links - [#32287](https://github.com/storybookjs/storybook/pull/32287), thanks @shilman!
+- Telemetry: Disambiguate unattributed traffic from Onboarding - [#32286](https://github.com/storybookjs/storybook/pull/32286), thanks @shilman!
+
+## 9.2.0-alpha.3
+
+- Addon Docs: Fix Symbol conversion issue in docs page and controls panel - [#32220](https://github.com/storybookjs/storybook/pull/32220), thanks @yannbf!
+- Angular: Fix `entry.polyfills` undefined error - [#32230](https://github.com/storybookjs/storybook/pull/32230), thanks @sk-pub!
+- Angular: Inherit options from browserTarget - [#32108](https://github.com/storybookjs/storybook/pull/32108), thanks @gingeekrishna!
+- Core: Improve addon detection in automigrations on windows - [#31937](https://github.com/storybookjs/storybook/pull/31937), thanks @mrginglymus!
+- Mock: Catch errors when transforming preview files - [#32216](https://github.com/storybookjs/storybook/pull/32216), thanks @valentinpalkovic!
+- Next.js: Return mocked router instead of actual router in useRouter - [#32131](https://github.com/storybookjs/storybook/pull/32131), thanks @JulioJ11!
+- Telemetry: Improve dev cancellation handling - [#32218](https://github.com/storybookjs/storybook/pull/32218), thanks @shilman!
+
+## 9.2.0-alpha.2
+
+- Onboarding: Tweak referral wording in survey - [#32185](https://github.com/storybookjs/storybook/pull/32185), thanks @shilman!
+
+## 9.2.0-alpha.1
+
+- Addon Docs: Add `__STORYBOOK_UNSAFE_TOCBOT__` global - [#32176](https://github.com/storybookjs/storybook/pull/32176), thanks @yannbf!
+- CLI: Fix throwing in readonly environments - [#31785](https://github.com/storybookjs/storybook/pull/31785), thanks @JReinhold!
+- Telemetry: Send index stats on dev exit - [#32168](https://github.com/storybookjs/storybook/pull/32168), thanks @shilman!
+
+## 9.2.0-alpha.0
+
+
+## 9.1.0-beta.3
+
+- Core: Prevent interactions panel from flickering and showing incorrect state - [#32150](https://github.com/storybookjs/storybook/pull/32150), thanks @ghengeveld!
+
+## 9.1.0-beta.2
+
+- Test: Consider exports map - [#32157](https://github.com/storybookjs/storybook/pull/32157), thanks @valentinpalkovic!
+- Test: Invalidate vite cache for manual mocks - [#32152](https://github.com/storybookjs/storybook/pull/32152), thanks @valentinpalkovic!
+
 ## 9.1.0-beta.1
 
 - Automigration: Await updateMainConfig in removeEssentials - [#32140](https://github.com/storybookjs/storybook/pull/32140), thanks @valentinpalkovic!

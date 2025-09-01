@@ -31,7 +31,7 @@ export const checkPackageCompatibility = async (
 ): Promise<AnalysedPackage> => {
   const { currentStorybookVersion, skipErrors, packageManager } = context;
   try {
-    const dependencyPackageJson = packageManager.getModulePackageJSON(dependency);
+    const dependencyPackageJson = await packageManager.getModulePackageJSON(dependency);
     if (dependencyPackageJson === null) {
       return { packageName: dependency };
     }

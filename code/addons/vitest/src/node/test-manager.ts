@@ -8,7 +8,7 @@ import type {
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
-import { throttle } from 'es-toolkit';
+import { throttle } from 'es-toolkit/function';
 import type { Report } from 'storybook/preview-api';
 
 import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
@@ -67,12 +67,11 @@ export class TestManager {
 
     this.store.subscribe('TRIGGER_RUN', this.handleTriggerRunEvent.bind(this));
     this.store.subscribe('CANCEL_RUN', this.handleCancelEvent.bind(this));
-
     this.store
       .untilReady()
-      .then(() =>
-        this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage })
-      )
+      .then(() => {
+        return this.vitestManager.startVitest({ coverage: this.store.getState().config.coverage });
+      })
       .then(() => this.onReady?.())
       .catch((e) => {
         this.reportFatalError('Failed to start Vitest', e);

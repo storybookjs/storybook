@@ -73,7 +73,7 @@ test.describe('tags', () => {
       await expect(tooltip).toBeVisible();
 
       // No checkbox selected by default and "Select all tags" is shown
-      await expect(tooltip.locator('#list-item-select-all')).toBeVisible();
+      await expect(tooltip.locator('#select-all')).toBeVisible();
       await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
 
       // Select the dev-only tag
@@ -84,8 +84,8 @@ test.describe('tags', () => {
       await expect(stories).toHaveCount(1);
 
       // Clear selection
-      await expect(tooltip.locator('#list-item-unselect-all')).toBeVisible();
-      await tooltip.locator('#list-item-unselect-all').click();
+      await expect(tooltip.locator('#unselect-all')).toBeVisible();
+      await tooltip.locator('#unselect-all').click();
 
       // Checkboxes are not selected anymore
       await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
@@ -106,7 +106,7 @@ test.describe('tags', () => {
         await expect(tooltip).toBeVisible();
 
         // No checkbox selected by default and "Select all tags" is shown
-        await expect(tooltip.locator('#list-item-select-all')).toBeVisible();
+        await expect(tooltip.locator('#select-all')).toBeVisible();
         await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
 
         // Select the dev-only tag
@@ -117,8 +117,8 @@ test.describe('tags', () => {
         await expect(stories).toHaveCount(1);
 
         // Clear selection
-        await expect(tooltip.locator('#list-item-unselect-all')).toBeVisible();
-        await tooltip.locator('#list-item-unselect-all').click();
+        await expect(tooltip.locator('#unselect-all')).toBeVisible();
+        await tooltip.locator('#unselect-all').click();
 
         // Checkboxes are not selected anymore
         await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);

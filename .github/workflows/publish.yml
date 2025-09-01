@@ -197,7 +197,7 @@ jobs:
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
           release: ${{ steps.version.outputs.current-version }}
-          environment: ${{ contains(steps.version.outputs.current-version, '-alpha') && 'alpha' || contains(steps.version.outputs.current-version, '-beta') && 'beta' || contains(steps.version.outputs.current-version, '-rc') && 'rc' || 'latest' }}
+          environment: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'prerelease' || 'latest' }}
 
       - name: Report job failure to Discord
         if: failure()

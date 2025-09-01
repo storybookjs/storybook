@@ -252,9 +252,12 @@ export async function vitestTransform({
             testTitle: 'base story',
             overrideSourcemap: false,
           }),
-          ...tests.map(({ name: testName, node: testNode }) => {
+          ...tests.map(({ name: testName, node: testNode, modifier }) => {
+            const callee = modifier
+              ? t.memberExpression(vitestTestId, t.identifier(modifier))
+              : vitestTestId;
             const testStatement = t.expressionStatement(
-              t.callExpression(vitestTestId, [
+              t.callExpression(callee, [
                 t.stringLiteral(testName),
                 t.callExpression(testStoryId, [
                   t.stringLiteral(exportName),

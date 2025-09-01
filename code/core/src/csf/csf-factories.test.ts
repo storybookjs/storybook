@@ -74,4 +74,22 @@ describe('test function', () => {
     await test.run();
     expect(testFn).toHaveBeenCalled();
   });
+  test('test.only adds test-only tag to story', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testName = 'should only run this test';
+
+    MyStory.test.only(testName, () => {});
+    const test = getStoryChildren(MyStory).find(({ input }) => input.name === testName)!;
+
+    expect(test.input.tags).toEqual(expect.arrayContaining(['test-fn', 'test-only']));
+  });
+  test('test.skip adds test-skip tag to story', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testName = 'should skip this test';
+
+    MyStory.test.skip(testName, () => {});
+    const test = getStoryChildren(MyStory).find(({ input }) => input.name === testName)!;
+
+    expect(test.input.tags).toEqual(expect.arrayContaining(['test-fn', 'test-skip']));
+  });
 });

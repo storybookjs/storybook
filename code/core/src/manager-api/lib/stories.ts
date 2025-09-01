@@ -186,10 +186,30 @@ export const transformStoryIndexToStoriesHash = (
   index = index.v === 4 ? transformStoryIndexV4toV5(index as any) : index;
   index = index as API_PreparedStoryIndex;
 
-  const indexEntries = Object.values(index.entries);
+  const allEntries = Object.values(index.entries);
   const filterFunctions = Object.values(filters);
 
+  const testOnlyEntries = allEntries.filter((entry) => entry.tags?.includes('test-only'));
+
+  // if any test-only entries are present, we filter them and their parents
+  const indexEntries =
+    testOnlyEntries.length > 0
+      ? allEntries.filter((entry) =>
+          testOnlyEntries.some(
+            (testEntry) =>
+              // Match if entry is a test-only entry
+              entry.id === testEntry.id ||
+              // Match if entry is a parent of a test-only entry
+              ('parent' in testEntry && testEntry.parent === entry.id)
+          )
+        )
+      : allEntries;
+
   const entryValues = indexEntries.filter((entry) => {
+    if (entry.type === 'story' && entry.tags?.includes('test-skip')) {
+      return false;
+    }
+
     const statuses = allStatuses[entry.id] ?? {};
     if (Object.values(statuses).some(({ value }) => value === 'status-value:error')) {
       // All stories with a failing status should always show up, regardless of the applied filters

@@ -284,6 +284,7 @@ export class CsfFile {
       name: string;
       id: string;
       options: any;
+      modifier?: 'only' | 'skip';
     }>
   > = {};
 
@@ -643,7 +644,8 @@ export class CsfFile {
         },
       },
       ExpressionStatement: {
-        enter({ node, parent }) {
+        enter(path) {
+          const { node, parent } = path as unknown as NodePath<t.ExpressionStatement>;
           const { expression } = node;
           // B.storyName = 'some string';
           if (
@@ -684,37 +686,73 @@ export class CsfFile {
           }
           // B.test('foo', () => {})
           // B.test('foo', context, () => {})
-          if (
-            t.isCallExpression(expression) &&
-            t.isMemberExpression(expression.callee) &&
-            t.isIdentifier(expression.callee.object) &&
-            t.isIdentifier(expression.callee.property) &&
-            expression.callee.property.name === 'test' &&
-            expression.arguments.length >= 2 &&
-            t.isStringLiteral(expression.arguments[0])
-          ) {
-            const exportName = expression.callee.object.name;
-            const testName = expression.arguments[0].value;
-            const testFunction =
-              expression.arguments.length === 2 ? expression.arguments[1] : expression.arguments[2];
-            const testOptions = expression.arguments.length === 2 ? null : expression.arguments[1];
+          // B.test.only('foo', () => {})
+          // B.test.skip('foo', () => {})
+          if (t.isCallExpression(expression) && t.isMemberExpression(expression.callee)) {
+            const callee = expression.callee;
+            let exportName: string | undefined;
+            let modifier: 'only' | 'skip' | undefined;
+            let isStoryTestCall = false;
 
-            if (!self._storyTests[exportName]) {
-              self._storyTests[exportName] = [];
+            if (
+              t.isIdentifier(callee.property) &&
+              callee.property.name === 'test' &&
+              t.isIdentifier(callee.object)
+            ) {
+              // B.test(...)
+              isStoryTestCall = true;
+              exportName = callee.object.name;
+            } else if (
+              t.isIdentifier(callee.property) &&
+              (callee.property.name === 'only' || callee.property.name === 'skip') &&
+              t.isMemberExpression(callee.object) &&
+              t.isIdentifier(callee.object.property) &&
+              callee.object.property.name === 'test' &&
+              t.isIdentifier(callee.object.object)
+            ) {
+              // B.test.only(...) or B.test.skip(...)
+              isStoryTestCall = true;
+              exportName = callee.object.object.name;
+              modifier = callee.property.name as 'only' | 'skip';
             }
 
-            self._storyTests[exportName].push({
-              function: testFunction,
-              name: testName,
-              options: testOptions,
-              node: expression,
-              // can't set id because meta title isn't available yet
-              // so it's set later on
-              id: 'FIXME',
-            });
+            if (
+              isStoryTestCall &&
+              expression.arguments.length >= 2 &&
+              t.isStringLiteral(expression.arguments[0]) &&
+              exportName
+            ) {
+              const testName = expression.arguments[0].value;
+              const testFunction =
+                expression.arguments.length === 2
+                  ? expression.arguments[1]
+                  : expression.arguments[2];
+              const testOptions =
+                expression.arguments.length === 2 ? null : expression.arguments[1];
 
-            // TODO: fix this when stories fail
-            self._stories[exportName].__stats.tests = true;
+              if (!self._storyTests[exportName]) {
+                self._storyTests[exportName] = [];
+              }
+
+              self._storyTests[exportName].push({
+                function: testFunction,
+                name: testName,
+                options: testOptions,
+                node: expression,
+                modifier,
+                // can't set id because meta title isn't available yet
+                // so it's set later on
+                id: 'FIXME',
+              });
+
+              // TODO: fix this when stories fail
+              self._stories[exportName].__stats.tests = true;
+
+              // Remove original call from output for modifier variants to avoid duplication
+              if (modifier) {
+                path.remove();
+              }
+            }
           }
         },
       },
@@ -913,6 +951,8 @@ export class CsfFile {
 
       if (hasTests) {
         tests.forEach((test) => {
+          const modifierTag =
+            test.modifier === 'only' ? 'test-only' : test.modifier === 'skip' ? 'test-skip' : null;
           index.push({
             ...storyInput,
             // TODO implementent proper title => path behavior in `transformStoryIndexToStoriesHash`
@@ -921,7 +961,7 @@ export class CsfFile {
             subtype: 'test',
             parent: story.id,
             name: test.name,
-            tags: [...storyInput.tags, 'test-fn'],
+            tags: [...storyInput.tags, 'test-fn', ...(modifierTag ? [modifierTag] : [])],
             __id: test.id,
           });
         });

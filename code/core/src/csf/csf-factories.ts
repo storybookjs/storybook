@@ -5,6 +5,7 @@ import type {
   ComponentAnnotations,
   ComposedStoryFn,
   NormalizedProjectAnnotations,
+  PlayFunction,
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
@@ -145,12 +146,30 @@ export interface Story<
   extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input: TInput
   ): Story<TRenderer, TInput>;
-  test(name: string, fn: TestFunction<TRenderer>): void;
-  test(
-    name: string,
-    annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
-    fn: TestFunction<TRenderer>
-  ): void;
+  test: {
+    (name: string, fn: TestFunction<TRenderer>): void;
+    (
+      name: string,
+      annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
+      fn: TestFunction<TRenderer>
+    ): void;
+    only: {
+      (name: string, fn: TestFunction<TRenderer>): void;
+      (
+        name: string,
+        annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
+        fn: TestFunction<TRenderer>
+      ): void;
+    };
+    skip: {
+      (name: string, fn: TestFunction<TRenderer>): void;
+      (
+        name: string,
+        annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
+        fn: TestFunction<TRenderer>
+      ): void;
+    };
+  };
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -176,11 +195,11 @@ function defineStory<
 
   const __children: Story<TRenderer>[] = [];
 
-  return {
+  const story: Story<TRenderer, TInput> & { __children: Story<TRenderer>[] } = {
     _tag: 'Story',
     input,
     meta,
-    // @ts-expect-error this is a private property used only once in renderers/react/src/preview
+    // private property used only once in renderers/react/src/preview
     __compose: compose,
     __children,
     get composed() {
@@ -191,39 +210,16 @@ function defineStory<
     get play() {
       return input.play ?? meta.input?.play ?? (async () => {});
     },
-    async run(context) {
+    async run(
+      context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>,
+      _testName?: string
+    ) {
       await compose().run(context);
     },
-    test(
-      name: string,
-      overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
-      testFn?: TestFunction<TRenderer, TRenderer['args']>
-    ): void {
-      const annotations = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
-      const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
-
-      const play =
-        mountDestructured(this.play) || mountDestructured(testFunction)
-          ? async ({ context }: StoryContext<TRenderer>) => {
-              await this.play?.(context);
-              await testFunction(context);
-            }
-          : async (context: StoryContext<TRenderer>) => {
-              await this.play?.(context);
-              await testFunction(context);
-            };
-
-      const test = this.extend({
-        ...annotations,
-        name,
-        tags: ['test-fn', '!autodocs', ...(annotations.tags ?? [])],
-        play,
-      });
-      __children.push(test);
-
-      return test as unknown as void;
-    },
-    extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
+    extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
+      this: Story<TRenderer, any>,
+      input: TInput
+    ): Story<TRenderer, TInput> {
       return defineStory(
         {
           ...this.input,
@@ -253,7 +249,84 @@ function defineStory<
         this.meta
       );
     },
+    test: undefined as unknown as Story<TRenderer, TInput>['test'],
+  } as unknown as Story<TRenderer, TInput> & { __children: Story<TRenderer>[] };
+
+  // Attach the callable `test` with `.only` and `.skip` modifiers
+  const register = (
+    name: string,
+    overridesOrTestFn:
+      | StoryAnnotations<TRenderer, TRenderer['args']>
+      | TestFunction<TRenderer, TRenderer['args']>,
+    testFn?: TestFunction<TRenderer, TRenderer['args']>,
+    extraTag?: 'test-only' | 'test-skip'
+  ): void => {
+    const annotations: StoryAnnotations<TRenderer, TRenderer['args']> =
+      typeof overridesOrTestFn !== 'function'
+        ? (overridesOrTestFn as StoryAnnotations<TRenderer, TRenderer['args']>)
+        : ({} as StoryAnnotations<TRenderer, TRenderer['args']>);
+    const testFunction: TestFunction<TRenderer, TRenderer['args']> =
+      typeof overridesOrTestFn !== 'function'
+        ? (testFn as TestFunction<TRenderer, TRenderer['args']>)
+        : overridesOrTestFn;
+
+    const play =
+      mountDestructured(story.play) ||
+      mountDestructured(testFunction as PlayFunction<TRenderer, TRenderer['args']>)
+        ? async ({ context }: StoryContext<TRenderer>) => {
+            await story.play?.(context);
+            await testFunction(context);
+          }
+        : async (context: StoryContext<TRenderer>) => {
+            await story.play?.(context);
+            await testFunction(context);
+          };
+
+    const baseTags = ['test-fn', '!autodocs', ...(annotations.tags ?? [])];
+    const nextTags = extraTag ? [...baseTags, extraTag] : baseTags;
+
+    const child = story.extend({
+      ...annotations,
+      name,
+      tags: nextTags,
+      play,
+    });
+    __children.push(child as unknown as Story<TRenderer>);
   };
+
+  const testImpl = ((
+    name: string,
+    overridesOrTestFn:
+      | StoryAnnotations<TRenderer, TRenderer['args']>
+      | TestFunction<TRenderer, TRenderer['args']>,
+    testFn?: TestFunction<TRenderer, TRenderer['args']>
+  ) => {
+    register(name, overridesOrTestFn, testFn);
+  }) as Story<TRenderer, TInput>['test'];
+
+  testImpl.only = ((
+    name: string,
+    overridesOrTestFn:
+      | StoryAnnotations<TRenderer, TRenderer['args']>
+      | TestFunction<TRenderer, TRenderer['args']>,
+    testFn?: TestFunction<TRenderer, TRenderer['args']>
+  ) => {
+    register(name, overridesOrTestFn, testFn, 'test-only');
+  }) as Story<TRenderer, TInput>['test']['only'];
+
+  testImpl.skip = ((
+    name: string,
+    overridesOrTestFn:
+      | StoryAnnotations<TRenderer, TRenderer['args']>
+      | TestFunction<TRenderer, TRenderer['args']>,
+    testFn?: TestFunction<TRenderer, TRenderer['args']>
+  ) => {
+    register(name, overridesOrTestFn, testFn, 'test-skip');
+  }) as Story<TRenderer, TInput>['test']['skip'];
+
+  story.test = testImpl;
+
+  return story;
 }
 
 export function getStoryChildren<TRenderer extends Renderer>(

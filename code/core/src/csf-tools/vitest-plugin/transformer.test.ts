@@ -791,6 +791,8 @@ describe('transformer', () => {
         export const A = meta.story({});
         A.test("foo", { args: { primary: true }}, () => {});
         A.test("bar", () => {});
+        A.test.skip("baz", () => {});
+        A.test.only("qux", () => {});
       `;
 
         const result = await transform({ code });
@@ -816,6 +818,8 @@ describe('transformer', () => {
               _test("base story", _testStory("A", A, meta, []));
               _test("foo", _testStory("A", A, meta, [], "foo"));
               _test("bar", _testStory("A", A, meta, [], "bar"));
+              _test.skip("baz", _testStory("A", A, meta, [], "baz"));
+              _test.only("qux", _testStory("A", A, meta, [], "qux"));
             });
           }
         `);

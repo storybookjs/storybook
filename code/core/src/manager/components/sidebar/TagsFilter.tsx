@@ -12,15 +12,7 @@ import { TagsFilterPanel } from './TagsFilterPanel';
 
 const TAGS_FILTER = 'tags-filter';
 
-const BUILT_IN_TAGS_HIDE = new Set([
-  'dev',
-  'docs-only',
-  'test-only',
-  'autodocs',
-  'test',
-  'attached-mdx',
-  'unattached-mdx',
-]);
+const BUILT_IN_TAGS_HIDE = new Set(['dev', 'autodocs', 'test', 'attached-mdx', 'unattached-mdx']);
 
 const Wrapper = styled.div({
   position: 'relative',

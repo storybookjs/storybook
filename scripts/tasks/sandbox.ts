@@ -60,6 +60,7 @@ export const sandbox: Task = {
     const {
       create,
       install,
+      addGlobalMocks,
       addStories,
       extendMain,
       extendPreview,
@@ -75,6 +76,8 @@ export const sandbox: Task = {
       // The storybook package forwards some CLI commands to @storybook/cli with npx.
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
+      'lodash-es',
+      'uuid',
     ];
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
@@ -132,6 +135,11 @@ export const sandbox: Task = {
       await addStories(details, options);
     }
 
+    // not if sandbox is bench
+    if (!details.template.name.includes('Bench')) {
+      await addGlobalMocks(details, options);
+    }
+
     if (shouldAddVitestIntegration) {
       await setupVitest(details, options);
     }
@@ -147,7 +155,9 @@ export const sandbox: Task = {
 
     await setImportMap(details.sandboxDir);
 
-    const { JsPackageManagerFactory } = await import('../../code/core/src/common');
+    const { JsPackageManagerFactory } = await import(
+      '../../code/core/src/common/js-package-manager/JsPackageManagerFactory'
+    );
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 

@@ -1,5 +1,7 @@
 import { lstatSync, readFileSync, realpathSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
+
+import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 
 export const getReactScriptsPath = (): string => {
   const cwd = process.cwd();
@@ -49,7 +51,7 @@ export const getReactScriptsPath = (): string => {
    * Try to find the `react-scripts` package by name (won't catch forked scripts packages).
    */
   try {
-    const scriptsPath = dirname(require.resolve('react-scripts/package.json'));
+    const scriptsPath = resolvePackageDir('react-scripts');
     return scriptsPath;
   } catch (e) {
     // NOOP

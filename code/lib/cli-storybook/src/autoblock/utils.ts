@@ -31,7 +31,8 @@ export async function findOutdatedPackage<M extends Record<string, string>>(
   const list = await Promise.all(
     typedKeys(minimalVersionsMap).map(async (packageName) => ({
       packageName,
-      installedVersion: options.packageManager.getModulePackageJSON(packageName)?.version ?? null,
+      installedVersion:
+        (await options.packageManager.getModulePackageJSON(packageName))?.version ?? null,
       minimumVersion: minimalVersionsMap[packageName],
     }))
   );

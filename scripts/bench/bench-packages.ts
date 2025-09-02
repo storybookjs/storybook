@@ -1,16 +1,47 @@
+import path from 'node:path';
+
 import { BigQuery } from '@google-cloud/bigquery';
 import { InvalidArgumentError, program } from 'commander';
 import detectFreePort from 'detect-port';
 import { mkdir, readdir, rm, stat, writeFile } from 'fs/promises';
 import pLimit from 'p-limit';
-import { join } from 'path';
 import picocolors from 'picocolors';
 import { x } from 'tinyexec';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import versions from '../../code/core/src/common/versions';
 import { maxConcurrentTasks } from '../utils/concurrency';
 import { esMain } from '../utils/esmain';
+import { safeMetafileArg } from './safe-args';
+
+const METAFILES_DIR = path.join(__dirname, '..', '..', 'code', 'bench', 'esbuild-metafiles');
+/**
+ * Returns a map of package names to their metafile arguments, that will be used in the bench story.
+ *
+ * This is based on the metafiles and their paths in the metafile directory
+ */
+async function getMetafileArgsByPackage() {
+  const result: Record<string, string[]> = {};
+  async function walk(dir: string, rel: string) {
+    const entries = await readdir(dir, { withFileTypes: true });
+    const subdirs = entries.filter((e) => e.isDirectory());
+    if (subdirs.length === 0) {
+      // Leaf dir
+      const files = entries
+        .filter((e) => e.isFile() && e.name.endsWith('.json'))
+        .map((e) => e.name);
+      if (files.length > 0) {
+        result[rel] = files.map((file) => safeMetafileArg(path.join(dir, file)));
+      }
+    } else {
+      for (const sub of subdirs) {
+        await walk(path.join(dir, sub.name), path.join(rel, sub.name));
+      }
+    }
+  }
+  await walk(METAFILES_DIR, '');
+  return result;
+}
 
 const Thresholds = {
   SELF_SIZE_RATIO: 0.1,
@@ -20,7 +51,7 @@ const Thresholds = {
   DEPS_COUNT_ABSOLUTE: 1,
 } as const;
 
-const BENCH_PACKAGES_PATH = join(__dirname, '..', '..', 'bench', 'packages');
+const BENCH_PACKAGES_PATH = path.join(__dirname, '..', '..', 'bench', 'packages');
 const REGISTRY_PORT = 6001;
 const GCP_CREDENTIALS = JSON.parse(process.env.GCP_CREDENTIALS || '{}');
 const bigQueryBenchTable = new BigQuery({
@@ -71,13 +102,13 @@ type ComparisonResultMap = Record<PackageName, ComparisonResult>;
  */
 export const benchPackage = async (packageName: PackageName) => {
   console.log(`Benching ${picocolors.blue(packageName)}...`);
-  const tmpBenchPackagePath = join(BENCH_PACKAGES_PATH, packageName.replace('@storybook', ''));
+  const tmpBenchPackagePath = path.join(BENCH_PACKAGES_PATH, packageName.replace('@storybook', ''));
 
   await rm(tmpBenchPackagePath, { recursive: true }).catch(() => {});
   await mkdir(tmpBenchPackagePath, { recursive: true });
 
   await writeFile(
-    join(tmpBenchPackagePath, 'package.json'),
+    path.join(tmpBenchPackagePath, 'package.json'),
     JSON.stringify(
       {
         name: `${packageName}-bench`,
@@ -105,21 +136,21 @@ export const benchPackage = async (packageName: PackageName) => {
   // -1 of reported packages added because we shouldn't count the actual package as a dependency
   const dependencyCount = added - 1;
 
-  const getDirSize = async (path: string) => {
-    const entities = await readdir(path, {
+  const getDirSize = async (dirPath: string) => {
+    const entities = await readdir(dirPath, {
       recursive: true,
       withFileTypes: true,
     });
     const stats = await Promise.all(
       entities
         .filter((entity) => entity.isFile())
-        .map((entity) => stat(join(entity.parentPath, entity.name)))
+        .map((entity) => stat(path.join(entity.parentPath, entity.name)))
     );
     return stats.reduce((acc, { size }) => acc + size, 0);
   };
 
-  const nodeModulesSize = await getDirSize(join(tmpBenchPackagePath, 'node_modules'));
-  const selfSize = await getDirSize(join(tmpBenchPackagePath, 'node_modules', packageName));
+  const nodeModulesSize = await getDirSize(path.join(tmpBenchPackagePath, 'node_modules'));
+  const selfSize = await getDirSize(path.join(tmpBenchPackagePath, 'node_modules', packageName));
   const dependencySize = nodeModulesSize - selfSize;
 
   const result: Result = {
@@ -202,7 +233,7 @@ const saveLocally = async ({
   filename: string;
   diff?: boolean;
 }) => {
-  const resultPath = join(BENCH_PACKAGES_PATH, filename);
+  const resultPath = path.join(BENCH_PACKAGES_PATH, filename);
   console.log(`Saving results to ${picocolors.magenta(resultPath)}...`);
 
   const humanReadableResults = Object.entries(results).reduce(
@@ -344,6 +375,9 @@ const uploadToGithub = async ({
   pullRequest: number;
 }) => {
   console.log('Uploading results to GitHub...');
+
+  const metafilesArgsByPackage = await getMetafileArgsByPackage();
+
   const response = await fetch('https://storybook-benchmark-bot.netlify.app/package-bench', {
     method: 'POST',
     body: JSON.stringify({
@@ -355,6 +389,7 @@ const uploadToGithub = async ({
       commit,
       benchmarkedAt: benchmarkedAt.toISOString(),
       results,
+      metafilesArgsByPackage,
     }),
   });
   if (response.status < 200 || response.status >= 400) {
@@ -400,7 +435,11 @@ const run = async () => {
   program.parse(process.argv);
 
   const packageNames = (
-    program.args.length > 0 ? program.args : Object.keys(versions)
+    program.args.length > 0
+      ? program.args
+      : Object.keys(versions)
+          // the sb package is never built, it doesn't have metafiles, it's unnecessary to benchmark it
+          .filter((pkg) => pkg !== 'sb')
   ) as PackageName[];
   const options = program.opts<{ pullRequest?: number; baseBranch?: string; upload?: boolean }>();
 

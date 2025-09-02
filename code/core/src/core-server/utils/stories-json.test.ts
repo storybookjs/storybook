@@ -19,6 +19,13 @@ vi.mock('watchpack');
 vi.mock('es-toolkit/compat');
 vi.mock('storybook/internal/node-logger');
 
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: './favicon.svg',
+  };
+});
+
 const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
   normalizeStoriesEntry(
@@ -265,6 +272,21 @@ describe('useStoriesJson', () => {
                 "unattached-mdx",
               ],
               "title": "docs2/NoTitle",
+              "type": "docs",
+            },
+            "docs2-tags--docs": {
+              "id": "docs2-tags--docs",
+              "importPath": "./src/docs2/Tags.mdx",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "foo",
+                "bar",
+                "unattached-mdx",
+              ],
+              "title": "docs2/Tags",
               "type": "docs",
             },
             "docs2-yabbadabbadooo--docs": {

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
-import type { StoryIndex, Tag } from 'storybook/internal/types';
+import type { StoryIndex, Tag, TagsOptions } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
 
@@ -47,20 +47,27 @@ const TagSelected = styled(Badge)(({ theme }) => ({
 export interface TagsFilterProps {
   api: API;
   indexJson: StoryIndex;
-  initialSelectedTags?: Tag[];
   isDevelopment: boolean;
+  tagPresets: TagsOptions;
 }
 
-export const TagsFilter = ({
-  api,
-  indexJson,
-  initialSelectedTags = [],
-  isDevelopment,
-}: TagsFilterProps) => {
-  const [selectedTags, setSelectedTags] = useState(initialSelectedTags);
+export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
+  const allExcluded = Object.values(tagPresets).every(
+    (preset) => !('defaultSelection' in preset) || preset.defaultSelection === 'exclude'
+  );
+
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [expanded, setExpanded] = useState(false);
-  const [inverted, setInverted] = useState(false);
+  const [inverted, setInverted] = useState(allExcluded);
   const tagsActive = selectedTags.length > 0;
+
+  useEffect(() => {
+    const tags = Object.keys(tagPresets);
+    const defaultSelectedTags = tags.filter(
+      (tag) => tagPresets[tag].defaultSelection === (allExcluded ? 'exclude' : 'include')
+    );
+    setSelectedTags(defaultSelectedTags);
+  }, [tagPresets, allExcluded]);
 
   useEffect(() => {
     api.experimental_setFilter(TAGS_FILTER, (item) => {

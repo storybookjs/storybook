@@ -9,7 +9,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     npmOptions,
     { ...options, builder: CoreBuilder.Vite },
     'solid',
-    {},
+    { addComponents: false },
     'solid'
   );
 };

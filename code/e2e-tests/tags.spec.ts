@@ -64,4 +64,65 @@ test.describe('tags', () => {
     await expect(preview.locator('#anchor--core-tags-remove--no-autodocs')).toHaveCount(0);
     await expect(preview.locator('#anchor--core-tags-remove--no-test')).toHaveCount(1);
   });
+
+  test.describe('Tag filters tooltip', () => {
+    test('filters stories via Tag filters tooltip (desktop)', async ({ page }) => {
+      // Open Tag filters tooltip
+      await page.locator('[title="Tag filters"]').click();
+      const tooltip = page.locator('[data-testid="tooltip"]');
+      await expect(tooltip).toBeVisible();
+
+      // No checkbox selected by default and "Select all tags" is shown
+      await expect(tooltip.locator('#select-all')).toBeVisible();
+      await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+
+      // Select the dev-only tag
+      await tooltip.locator('#list-item-tag-dev-only').click();
+
+      // Assert that only one story is visible in the sidebar
+      const stories = page.locator('#storybook-explorer-menu .sidebar-item');
+      await expect(stories).toHaveCount(1);
+
+      // Clear selection
+      await expect(tooltip.locator('#unselect-all')).toBeVisible();
+      await tooltip.locator('#unselect-all').click();
+
+      // Checkboxes are not selected anymore
+      await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+    });
+
+    test.describe('mobile viewport', () => {
+      test.use({ viewport: { width: 390, height: 844 } });
+
+      test('filters stories via Tag filters tooltip (mobile)', async ({ page }) => {
+        // Open mobile navigation menu to ensure the tooltip is portaled inside it
+        const mobileNavigationHeading = page.locator('[aria-label="Open navigation menu"]');
+        await mobileNavigationHeading.click();
+        await expect(page.locator('#storybook-explorer-menu')).toBeVisible();
+
+        // Open Tag filters tooltip
+        await page.locator('[title="Tag filters"]').click();
+        const tooltip = page.locator('[data-testid="tooltip"]');
+        await expect(tooltip).toBeVisible();
+
+        // No checkbox selected by default and "Select all tags" is shown
+        await expect(tooltip.locator('#select-all')).toBeVisible();
+        await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+
+        // Select the dev-only tag
+        await tooltip.locator('#list-item-tag-dev-only').click();
+
+        // Assert that only one story is visible in the (mobile) sidebar
+        const stories = page.locator('#storybook-explorer-menu .sidebar-item');
+        await expect(stories).toHaveCount(1);
+
+        // Clear selection
+        await expect(tooltip.locator('#unselect-all')).toBeVisible();
+        await tooltip.locator('#unselect-all').click();
+
+        // Checkboxes are not selected anymore
+        await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+      });
+    });
+  });
 });

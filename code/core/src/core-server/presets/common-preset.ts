@@ -282,7 +282,6 @@ export const resolvedReact = async (existing: any) => {
 /** Set up `dev-only`, `docs-only`, `test-only` tags out of the box */
 export const tags = async (existing: any) => {
   return {
-    // If there should be any default selected tag, add them before ...existing so users can still override them
     ...existing,
     'dev-only': { excludeFromDocsStories: true },
     'docs-only': { excludeFromSidebar: true },

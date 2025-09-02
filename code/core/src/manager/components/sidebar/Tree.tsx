@@ -371,10 +371,16 @@ const Node = React.memo<NodeProps>(function Node(props) {
           isExpanded={isExpanded}
           onClick={(event) => {
             event.preventDefault();
-            setExpanded({ ids: [item.id], value: !isExpanded });
-
-            if ((item.type === 'component' || item.type === 'story') && !isExpanded && isDesktop) {
+            if (item.type === 'story') {
               onSelectStoryId(item.id);
+              if (!isExpanded || isSelected) {
+                setExpanded({ ids: [item.id], value: !isExpanded });
+              }
+            } else if (item.type === 'component') {
+              if (!isExpanded && isDesktop) {
+                onSelectStoryId(item.id);
+              }
+              setExpanded({ ids: [item.id], value: !isExpanded });
             }
           }}
           onMouseEnter={() => {

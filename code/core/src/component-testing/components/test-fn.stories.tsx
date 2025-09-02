@@ -10,6 +10,14 @@ const Button = (args: React.ComponentProps<'button'>) => <button {...args} />;
 
 const meta = preview.meta({
   component: Button,
+  render: (args, { name }) => (
+    <span>
+      {name}
+      <br />
+      <br />
+      <button {...args} />
+    </span>
+  ),
   args: {
     children: 'Default',
     onClick: fn(),

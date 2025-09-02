@@ -19,7 +19,7 @@
     "svelte",
     "web-components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/a11y",
+  "homepage": "https://storybook.js.org/docs/writing-tests/accessibility-testing?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

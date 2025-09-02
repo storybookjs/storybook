@@ -11,7 +11,7 @@
     "component",
     "components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/builders/builder-webpack5",
+  "homepage": "https://storybook.js.org/docs/builders/webpack?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

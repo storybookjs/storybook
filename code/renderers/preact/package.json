@@ -9,7 +9,7 @@
     "components",
     "component"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/preact",
+  "homepage": "https://storybook.js.org/docs/get-started/frameworks/preact-vite?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

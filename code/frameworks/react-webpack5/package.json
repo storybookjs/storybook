@@ -10,7 +10,7 @@
     "component",
     "components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/react-webpack5",
+  "homepage": "https://storybook.js.org/docs/get-started/frameworks/react-webpack5?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

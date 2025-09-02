@@ -5,7 +5,7 @@
   "keywords": [
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/react",
+  "homepage": "https://storybook.js.org/docs/get-started/frameworks/react-vite?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

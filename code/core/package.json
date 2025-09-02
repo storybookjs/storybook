@@ -19,7 +19,7 @@
     "sveltekit",
     "web-components"
   ],
-  "homepage": "https://storybook.js.org",
+  "homepage": "https://storybook.js.org?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

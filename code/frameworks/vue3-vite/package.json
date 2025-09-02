@@ -10,7 +10,7 @@
     "component",
     "components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/vue3-vite",
+  "homepage": "https://storybook.js.org/docs/get-started/frameworks/vue3-vite?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

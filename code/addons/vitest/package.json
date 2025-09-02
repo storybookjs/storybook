@@ -16,7 +16,7 @@
     "svelte",
     "web-components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/vitest",
+  "homepage": "https://storybook.js.org/docs/writing-tests/integrations/vitest-addon?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

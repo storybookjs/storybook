@@ -11,7 +11,7 @@
     "component",
     "components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/web-components",
+  "homepage": "https://storybook.js.org/docs/get-started/frameworks/web-components-vite?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

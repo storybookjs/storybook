@@ -11,7 +11,7 @@
     "component",
     "components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/links",
+  "homepage": "https://storybook.js.org/addons/@storybook/addon-links?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

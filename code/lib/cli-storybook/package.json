@@ -10,7 +10,7 @@
     "upgrade",
     "init"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/cli-storybook",
+  "homepage": "https://storybook.js.org/docs/api/cli-options?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

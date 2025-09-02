@@ -14,7 +14,7 @@
     "component",
     "components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/jest",
+  "homepage": "https://storybook.js.org/addons/@storybook/addon-jest?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

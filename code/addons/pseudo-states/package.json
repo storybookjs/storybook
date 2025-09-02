@@ -17,7 +17,7 @@
     "svelte",
     "web-components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/pseudo-states",
+  "homepage": "https://storybook.js.org/addons/storybook-addon-pseudo-states?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

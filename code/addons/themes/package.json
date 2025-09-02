@@ -18,7 +18,7 @@
     "svelte",
     "web-components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/themes",
+  "homepage": "https://storybook.js.org/docs/essentials/themes?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

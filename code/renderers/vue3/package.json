@@ -9,7 +9,7 @@
     "components",
     "component"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/vue3",
+  "homepage": "https://storybook.js.org/docs/get-started/frameworks/vue3-vite?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

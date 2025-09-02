@@ -22,7 +22,7 @@
     "svelte",
     "web-components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/docs",
+  "homepage": "https://storybook.js.org/docs/writing-docs?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

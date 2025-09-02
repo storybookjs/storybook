@@ -15,7 +15,7 @@
     "svelte",
     "web-components"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/onboarding",
+  "homepage": "https://storybook.js.org/docs?ref=npm",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

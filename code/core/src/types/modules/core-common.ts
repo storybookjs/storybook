@@ -330,6 +330,7 @@ export interface TestBuildConfig {
 type Tag = string;
 
 export interface TagOptions {
+  defaultSelected?: boolean;
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;
 }

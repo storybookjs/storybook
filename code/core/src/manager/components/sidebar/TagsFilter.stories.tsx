@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { findByRole, fn } from 'storybook/test';
+import { findByRole, fn, screen } from 'storybook/test';
 
 import { TagsFilter } from './TagsFilter';
 
@@ -21,6 +21,7 @@ const meta = {
       applyQueryParams: fn().mockName('api::applyQueryParams'),
     } as any,
     isDevelopment: true,
+    tagPresets: {},
   },
 } satisfies Meta<typeof TagsFilter>;
 
@@ -42,22 +43,34 @@ export const Closed: Story = {
 export const ClosedWithSelection: Story = {
   args: {
     ...Closed.args,
-    initialSelectedTags: ['A', 'B'],
+    tagPresets: {
+      A: { defaultSelected: true },
+      B: { defaultSelected: true },
+    },
   },
 };
 
-export const Open: Story = {
+export const Open = {
   ...Closed,
   play: async ({ canvasElement }) => {
     const button = await findByRole(canvasElement, 'button');
     await button.click();
   },
-};
+} satisfies Story;
 
-export const OpenWithSelection: Story = {
+export const OpenWithSelection = {
   ...ClosedWithSelection,
   play: Open.play,
-};
+} satisfies Story;
+
+export const OpenWithSelectionAndInverted = {
+  ...ClosedWithSelection,
+  play: async (context) => {
+    await Open.play(context);
+    const button = await screen.findByRole('button', { name: 'Invert' });
+    await button.click();
+  },
+} satisfies Story;
 
 export const OpenEmpty: Story = {
   args: {

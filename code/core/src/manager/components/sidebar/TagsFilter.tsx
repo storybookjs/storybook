@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
-import type { StoryIndex, Tag } from 'storybook/internal/types';
+import type { StoryIndex, Tag, TagsOptions } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
 
@@ -49,6 +49,7 @@ export interface TagsFilterProps {
   indexJson: StoryIndex;
   initialSelectedTags?: Tag[];
   isDevelopment: boolean;
+  tagPresets: TagsOptions;
 }
 
 export const TagsFilter = ({
@@ -56,11 +57,18 @@ export const TagsFilter = ({
   indexJson,
   initialSelectedTags = [],
   isDevelopment,
+  tagPresets,
 }: TagsFilterProps) => {
   const [selectedTags, setSelectedTags] = useState(initialSelectedTags);
   const [expanded, setExpanded] = useState(false);
   const [inverted, setInverted] = useState(false);
   const tagsActive = selectedTags.length > 0;
+
+  useEffect(() => {
+    const tags = Object.keys(tagPresets);
+    const selectedTags = tags.filter((tag) => tagPresets[tag].defaultSelected);
+    setSelectedTags(selectedTags);
+  }, [tagPresets]);
 
   useEffect(() => {
     api.experimental_setFilter(TAGS_FILTER, (item) => {

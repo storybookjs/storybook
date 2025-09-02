@@ -373,7 +373,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
             event.preventDefault();
             setExpanded({ ids: [item.id], value: !isExpanded });
 
-            console.log('onClick', item.id, item.type, !isExpanded && isDesktop);
             if ((item.type === 'component' || item.type === 'story') && !isExpanded && isDesktop) {
               onSelectStoryId(item.id);
             }

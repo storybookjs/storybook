@@ -59,16 +59,22 @@ export const TagsFilter = ({
   isDevelopment,
   tagPresets,
 }: TagsFilterProps) => {
+  const allExcluded = Object.values(tagPresets).every(
+    (preset) => !('defaultSelection' in preset) || preset.defaultSelection === 'exclude'
+  );
+
   const [selectedTags, setSelectedTags] = useState(initialSelectedTags);
   const [expanded, setExpanded] = useState(false);
-  const [inverted, setInverted] = useState(false);
+  const [inverted, setInverted] = useState(allExcluded);
   const tagsActive = selectedTags.length > 0;
 
   useEffect(() => {
     const tags = Object.keys(tagPresets);
-    const selectedTags = tags.filter((tag) => tagPresets[tag].defaultSelected);
+    const selectedTags = tags.filter(
+      (tag) => tagPresets[tag].defaultSelection === (allExcluded ? 'exclude' : 'include')
+    );
     setSelectedTags(selectedTags);
-  }, [tagPresets]);
+  }, [tagPresets, allExcluded]);
 
   useEffect(() => {
     api.experimental_setFilter(TAGS_FILTER, (item) => {

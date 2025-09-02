@@ -44,8 +44,8 @@ export const ClosedWithSelection: Story = {
   args: {
     ...Closed.args,
     tagPresets: {
-      A: { defaultSelected: true },
-      B: { defaultSelected: true },
+      A: { defaultSelection: 'include' },
+      B: { defaultSelection: 'include' },
     },
   },
 };
@@ -63,12 +63,14 @@ export const OpenWithSelection = {
   play: Open.play,
 } satisfies Story;
 
-export const OpenWithSelectionAndInverted = {
-  ...ClosedWithSelection,
-  play: async (context) => {
-    await Open.play(context);
-    const button = await screen.findByRole('button', { name: 'Invert' });
-    await button.click();
+export const OpenWithSelectionInverted = {
+  ...Open,
+  args: {
+    ...Open.args,
+    tagPresets: {
+      A: { defaultSelection: 'exclude' },
+      B: { defaultSelection: 'exclude' },
+    },
   },
 } satisfies Story;
 

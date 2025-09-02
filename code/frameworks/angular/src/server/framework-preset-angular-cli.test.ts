@@ -34,9 +34,7 @@ vi.mock('@angular-devkit/architect', () => ({
   targetFromTargetString: vi.fn(),
 }));
 
-vi.mock('find-up', () => ({
-  findUp: vi.fn(),
-}));
+vi.mock('empathic/find', () => ({ up: vi.fn() }));
 
 vi.mock('./utils/module-is-available', () => ({
   moduleIsAvailable: vi.fn(),
@@ -58,7 +56,7 @@ const mockedLogger = vi.mocked(logger);
 const mockedTargetFromTargetString = vi.mocked(
   await import('@angular-devkit/architect')
 ).targetFromTargetString;
-const mockedFindUp = vi.mocked(await import('find-up')).findUp;
+const mockedFindUp = vi.mocked(await import('empathic/find')).up;
 const mockedGetProjectRoot = vi.mocked(await import('storybook/internal/common')).getProjectRoot;
 
 describe('framework-preset-angular-cli', () => {

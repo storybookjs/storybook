@@ -30,6 +30,7 @@ import type {
   API_LoadedRefData,
   API_PreparedStoryIndex,
   API_StoryEntry,
+  API_TestEntry,
   API_ViewMode,
   Args,
   ComponentTitle,
@@ -188,20 +189,20 @@ export interface SubAPI {
   /**
    * Updates the arguments for the given story with the provided new arguments.
    *
-   * @param {API_StoryEntry} story - The story to update the arguments for.
+   * @param {API_StoryEntry | API_TestEntry} story - The story to update the arguments for.
    * @param {Args} newArgs - The new arguments to set for the story.
    * @returns {void}
    */
-  updateStoryArgs(story: API_StoryEntry, newArgs: Args): void;
+  updateStoryArgs(story: API_StoryEntry | API_TestEntry, newArgs: Args): void;
   /**
    * Resets the arguments for the given story to their initial values.
    *
-   * @param {API_StoryEntry} story - The story to reset the arguments for.
+   * @param {API_StoryEntry | API_TestEntry} story - The story to reset the arguments for.
    * @param {string[]} [argNames] - An optional array of argument names to reset. If not provided,
    *   all arguments will be reset.
    * @returns {void}
    */
-  resetStoryArgs: (story: API_StoryEntry, argNames?: string[]) => void;
+  resetStoryArgs: (story: API_StoryEntry | API_TestEntry, argNames?: string[]) => void;
   /**
    * Finds the leaf entry for the given story ID in the given story index.
    *

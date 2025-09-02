@@ -271,6 +271,10 @@ export class VitestManager {
       ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
       : allStories;
 
+    // When we run tests that involved a describe block (parent story + tests)
+    // we need to remove spaces from the parent story name, as the describe block does not have spaces
+    const getExportName = (name: string) => name.replace(/\s+/g, '');
+
     const isSingleStoryRun = runPayload.storyIds?.length === 1;
     if (isSingleStoryRun) {
       const selectedStory = filteredStories.find((story) => story.id === runPayload.storyIds?.[0]);
@@ -278,7 +282,7 @@ export class VitestManager {
         throw new Error(`Story ${runPayload.storyIds?.[0]} not found`);
       }
 
-      const storyName = selectedStory.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const storyName = selectedStory.name;
       let regex: RegExp;
 
       const isParentStory = allStories.some((story) => selectedStory.id === story.parent);
@@ -298,7 +302,8 @@ export class VitestManager {
          * present in the Vitest VSCode extension and the issue would occur with normal vitest tests
          * as well.
          */
-        regex = new RegExp(`^${storyName.replace(/\s+/g, '')} `); // the extra space is intentional!
+        const parentName = getExportName(selectedStory.name);
+        regex = new RegExp(`^${parentName} `); // the extra space is intentional!
       } else if (hasParentStory) {
         // Use case 2: Single story run on a specific story test
         // in this case the regex pattern should be the story parentName + story.name
@@ -307,7 +312,7 @@ export class VitestManager {
           throw new Error(`Parent story not found for story ${selectedStory.id}`);
         }
 
-        const parentName = parentStory.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const parentName = getExportName(parentStory.name);
         regex = new RegExp(`^${parentName} ${storyName}$`);
       } else {
         // Use case 3: Single story run on a story without tests

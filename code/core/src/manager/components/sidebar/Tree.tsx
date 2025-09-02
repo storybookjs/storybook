@@ -255,6 +255,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         }));
     }
 
+    // TODO should this be updated for stories with tests?
     if (item.type === 'component' || item.type === 'group') {
       const links: Link[] = [];
       const errorCount = counts['status-value:error'];
@@ -338,17 +339,21 @@ const Node = React.memo<NodeProps>(function Node(props) {
     );
   }
 
-  if (item.type === 'component' || item.type === 'group' || item.type === 'wrapper') {
+  if (
+    item.type === 'component' ||
+    item.type === 'group' ||
+    (item.type === 'story' && 'children' in item && item.children)
+  ) {
+    const { children = [] } = item;
     const itemStatus = groupStatus?.[item.id];
     const color = itemStatus ? statusMapping[itemStatus][1] : null;
-    const BranchNode = { component: ComponentNode, group: GroupNode, wrapper: StoryNode }[
-      item.type
-    ];
+    const BranchNode = { component: ComponentNode, group: GroupNode, story: StoryNode }[item.type];
 
     return (
       <LeafNodeStyleWrapper
         key={id}
         className="sidebar-item"
+        data-selected={isSelected}
         data-ref-id={refId}
         data-item-id={item.id}
         data-parent-id={item.parent}
@@ -358,28 +363,25 @@ const Node = React.memo<NodeProps>(function Node(props) {
       >
         <BranchNode
           id={id}
-          style={color ? { color } : {}}
-          aria-controls={item.children.join(' ')}
+          style={color && !isSelected ? { color } : {}}
+          aria-controls={children.join(' ')}
           aria-expanded={isExpanded}
           depth={isOrphan ? item.depth : item.depth - 1}
-          isExpandable={item.children.length > 0}
+          isExpandable={children.length > 0}
           isExpanded={isExpanded}
           onClick={(event) => {
             event.preventDefault();
             setExpanded({ ids: [item.id], value: !isExpanded });
 
-            if (
-              (item.type === 'component' || item.type === 'wrapper') &&
-              !isExpanded &&
-              isDesktop
-            ) {
+            console.log('onClick', item.id, item.type, !isExpanded && isDesktop);
+            if ((item.type === 'component' || item.type === 'story') && !isExpanded && isDesktop) {
               onSelectStoryId(item.id);
             }
           }}
           onMouseEnter={() => {
-            if (item.type === 'component' || item.type === 'wrapper') {
+            if (item.type === 'component' || item.type === 'story') {
               api.emit(PRELOAD_ENTRIES, {
-                ids: [item.children[0]],
+                ids: [children[0]],
                 options: { target: refId },
               });
             }
@@ -388,9 +390,14 @@ const Node = React.memo<NodeProps>(function Node(props) {
           {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
             item.name}
         </BranchNode>
+        {isSelected && (
+          <SkipToContentLink asChild>
+            <a href="#storybook-preview-wrapper">Skip to canvas</a>
+          </SkipToContentLink>
+        )}
         {contextMenu.node}
         {(['status-value:error', 'status-value:warning'] as StatusValue[]).includes(itemStatus) && (
-          <StatusButton type="button" status={itemStatus}>
+          <StatusButton type="button" status={itemStatus} selectedItem={isSelected}>
             <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
               <UseSymbol type="dot" />
             </svg>
@@ -405,7 +412,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const nodeType = isTest ? 'test' : { docs: 'document', story: 'story' }[item.type];
 
   const statusValue = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const [icon, textColor] = statusMapping[statusValue];
+  const [icon, color] = statusMapping[statusValue];
 
   return (
     <LeafNodeStyleWrapper
@@ -420,8 +427,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       onMouseEnter={contextMenu.onMouseEnter}
     >
       <LeafNode
-        // @ts-expect-error (non strict)
-        style={isSelected ? {} : { color: textColor }}
+        style={color && !isSelected ? { color } : {}}
         href={getLink(item, refId)}
         id={id}
         depth={isOrphan ? item.depth : item.depth - 1}
@@ -566,7 +572,7 @@ export const Tree = React.memo<{
         return true;
       }
 
-      if (onlyChild.type === 'story') {
+      if (onlyChild.type === 'story' && onlyChild.subtype === 'story') {
         return isStoryHoistable(onlyChild.name, name);
       }
       return false;

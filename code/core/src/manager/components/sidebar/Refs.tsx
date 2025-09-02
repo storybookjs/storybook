@@ -121,8 +121,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   );
 
   const onSelectStoryId = useCallback(
-    // @ts-expect-error (non strict)
-    (storyId: string) => api && api.selectStory(storyId, undefined, { ref: !isMain && refId }),
+    (storyId: string) => api?.selectStory(storyId, undefined, { ref: isMain ? undefined : refId }),
     [api, isMain, refId]
   );
 

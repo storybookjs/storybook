@@ -10,7 +10,6 @@ import type {
   API_Provider,
   API_RootEntry,
   API_StoryEntry,
-  API_WrapperEntry,
   DocsOptions,
   IndexEntry,
   Parameters,
@@ -316,7 +315,7 @@ export const transformStoryIndexToStoriesHash = (
       acc[item.id] = item;
 
       // Ensure we add the children depth-first *before* inserting any other entries.
-      if ('children' in item) {
+      if ('children' in item && item.children) {
         item.children.forEach((childId) => addItem(acc, storiesHashOutOfOrder[childId]));
 
         item.tags =
@@ -340,49 +339,16 @@ export const transformStoryIndexToStoriesHash = (
     .filter((i) => i.type === 'root')
     .reduce(addItem, storiesHash);
 
-  // Add "wrapper" nodes for stories with tests
-  // Because the order of entries matters, we need to insert the wrapper before the story and test
+  // Update stories to include tests as children, and increase depth for those tests
   storiesHash = Object.values(storiesHash).reduce((acc, item) => {
     if (item.type === 'story' && item.subtype === 'test') {
-      const wrapperId = `${item.parent}__wrapper`;
       const parentStory = storiesHash[item.parent] as API_StoryEntry;
-      const componentNode = storiesHash[parentStory.parent] as API_ComponentEntry;
-
-      // Update component children to point to wrapper rather than story and tests
-      (acc[componentNode.id] as API_ComponentEntry).children = componentNode.children
-        .filter((id) => id !== item.id)
-        .map((id) => (id === item.parent ? wrapperId : id));
-
-      // Create the wrapper, but first delete the story so that the wrapper is inserted before it
-      if (!acc[wrapperId]) {
-        delete acc[item.parent];
-        acc[wrapperId] = {
-          ...parentStory,
-          type: 'wrapper',
-          id: wrapperId,
-          parent: parentStory.parent,
-          children: [parentStory.id],
-          depth: parentStory.depth,
-        };
-      }
-
-      const wrapperNode = acc[wrapperId] as API_WrapperEntry;
-      wrapperNode.children.push(item.id);
-      wrapperNode.tags = intersect(wrapperNode.tags, item.tags);
-
-      // Create or update parent to point to wrapper rather than story
-      // Remove test-fn tag from story, as it should only exist on the wrapper
       acc[item.parent] = {
         ...parentStory,
-        parent: wrapperId,
-        depth: parentStory.depth + 1,
-        tags: parentStory.tags.filter((tag) => tag !== 'test-fn'),
+        children: (parentStory.children || []).concat(item.id).filter((id) => storiesHash[id]),
       };
-
-      // Create or update the test to point to wrapper rather than story
       acc[item.id] = {
         ...item,
-        parent: wrapperId,
         depth: item.depth + 1,
       };
     } else {
@@ -404,6 +370,10 @@ export const addPreparedStories = (newHash: API_IndexHash, oldHash?: API_IndexHa
     Object.entries(newHash).map(([id, newEntry]) => {
       const oldEntry = oldHash[id];
       if (newEntry.type === 'story' && oldEntry?.type === 'story' && oldEntry.prepared) {
+        if ('children' in oldEntry) {
+          // Prevent old entry from re-adding children if the story no longer has any (e.g. due to filters)
+          delete oldEntry.children;
+        }
         return [id, { ...oldEntry, ...newEntry, prepared: true }];
       }
 

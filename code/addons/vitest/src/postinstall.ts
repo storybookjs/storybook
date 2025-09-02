@@ -20,6 +20,7 @@ import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
+import * as pkg from 'empathic/package';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
 import { dirname, relative, resolve } from 'pathe';
@@ -576,10 +577,7 @@ async function getPackageNameFromPath(input: string): Promise<string> {
     return path;
   }
 
-  const packageJsonPath = await findUp('package.json', {
-    cwd: path,
-  });
-
+  const packageJsonPath = pkg.up({ cwd: path });
   if (!packageJsonPath) {
     throw new Error(`Could not find package.json in path: ${path}`);
   }

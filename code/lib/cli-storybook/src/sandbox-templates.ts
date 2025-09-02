@@ -292,15 +292,15 @@ export const baseTemplates = {
     /**
      * 1. Create a Vite project with the React template
      * 2. Add React beta versions
-     * 3. Add resolutions for @types/react and @types/react-dom, see
+     * 3. Add resolutions for react, react-dom,@types/react and @types/react-dom, see
      *    https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
      * 4. Add @types/react and @types/react-dom pointing to the beta packages
      */
     script: `
       npm create vite --yes {{beforeDir}} -- --template react-ts && \
       cd {{beforeDir}} && \
+      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta", "react": "npm:react@beta", "react-dom": "npm:react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
       yarn add react@beta react-dom@beta && \
-      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
       yarn add --dev @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
       `,
     expected: {

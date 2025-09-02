@@ -300,7 +300,7 @@ export const baseTemplates = {
       npm create vite --yes {{beforeDir}} -- --template react-ts && \
       cd {{beforeDir}} && \
       yarn add react@beta react-dom@beta && \
-      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
+      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta", "react": "npm:react@beta", "react-dom": "npm:react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
       yarn add --dev @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
       `,
     expected: {
@@ -308,6 +308,7 @@ export const baseTemplates = {
       renderer: '@storybook/react',
       builder: '@storybook/builder-vite',
     },
+    inDevelopment: true,
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],

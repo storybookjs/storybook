@@ -330,6 +330,7 @@ export interface TestBuildConfig {
 type Tag = string;
 
 export interface TagOptions {
+  /** Whether the tag should be selected by default in the tags filter in Storybook */
   defaultSelected?: boolean;
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;

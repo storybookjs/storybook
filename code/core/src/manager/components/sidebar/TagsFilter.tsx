@@ -47,33 +47,26 @@ const TagSelected = styled(Badge)(({ theme }) => ({
 export interface TagsFilterProps {
   api: API;
   indexJson: StoryIndex;
-  initialSelectedTags?: Tag[];
   isDevelopment: boolean;
   tagPresets: TagsOptions;
 }
 
-export const TagsFilter = ({
-  api,
-  indexJson,
-  initialSelectedTags = [],
-  isDevelopment,
-  tagPresets,
-}: TagsFilterProps) => {
+export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
   const allExcluded = Object.values(tagPresets).every(
     (preset) => !('defaultSelection' in preset) || preset.defaultSelection === 'exclude'
   );
 
-  const [selectedTags, setSelectedTags] = useState(initialSelectedTags);
+  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [inverted, setInverted] = useState(allExcluded);
   const tagsActive = selectedTags.length > 0;
 
   useEffect(() => {
     const tags = Object.keys(tagPresets);
-    const selectedTags = tags.filter(
+    const defaultSelectedTags = tags.filter(
       (tag) => tagPresets[tag].defaultSelection === (allExcluded ? 'exclude' : 'include')
     );
-    setSelectedTags(selectedTags);
+    setSelectedTags(defaultSelectedTags);
   }, [tagPresets, allExcluded]);
 
   useEffect(() => {

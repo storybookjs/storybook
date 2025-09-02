@@ -18,14 +18,20 @@ import { TestManager, type TestManagerOptions } from './test-manager';
 
 const setTestNamePattern = vi.hoisted(() => vi.fn());
 const vitest = vi.hoisted(() => ({
-  projects: [{}],
+  projects: [{
+    vite: {
+      moduleGraph: {
+        getModulesByFile: vi.fn(() => new Set()),
+        invalidateModule: vi.fn(),
+      },
+    },
+  }],
   init: vi.fn(),
   close: vi.fn(),
   onCancel: vi.fn(),
   runTestSpecifications: vi.fn(),
   cancelCurrentRun: vi.fn(),
   globTestSpecifications: vi.fn(),
-  getModuleProjects: vi.fn(() => []),
   setGlobalTestNamePattern: setTestNamePattern,
   vite: {
     watcher: {

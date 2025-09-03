@@ -253,7 +253,6 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           )}
         </Actions>
       </Heading>
-      {/* FIXME: aria labels and tooltips in this entire section need to be reviewed. We should state what we navigate to when clicking. */}
       <Extras>
         <Row>
           <ListItem

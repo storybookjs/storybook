@@ -94,10 +94,18 @@ const meta = preview.meta({
 
 <a name="subpath-imports" />
 
-If you would like to use absolute imports instead of relative imports for your preview config, you can configure that using one of these methods:
+If you would like to use absolute imports instead of relative imports for your preview config, like below, you can configure that using subpath imports or an alias.
+
+```ts
+// ✅ Absolute imports won't break if you move story files around
+import preview from '#.storybook/preview';
+
+// ❌ Relative imports can break if you move story files around
+import preview from '../../../.storybook/preview';
+```
 
 <details>
-<summary>Subpath imports</summary>
+<summary>Configuration</summary>
 
 Subpath imports are a Node.js standard that allows you to define custom import paths in your project, which you can then use throughout your codebase.
 
@@ -113,28 +121,11 @@ To configure subpath imports, add the following to your `package.json`:
 
 For more information, refer to the [subpath imports documentation](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#subpath-imports).
 
-</details>
-
-<details>
-<summary>Builder alias</summary>
-
-You can configure aliases for your builder (Vite or Webpack) in your main Storybook configuration, like so:
-
-<CodeSnippets path="csf-next-builder-aliases.md" />
-
-</details>
-
 ---
 
-In stories files, you can then import your preview configuration using the subpath import or alias:
+Alternatively, you can [configure an alias in your builder](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#builder-aliases) (Vite or Webpack).
 
-```ts
-// ✅ Subpath imports won't break if you move story files around
-import preview from '#.storybook/preview';
-
-// ❌ Relative imports will break if you move story files around
-import preview from '../../../.storybook/preview';
-```
+</details>
 
 </Callout>
 

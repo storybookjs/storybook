@@ -59,6 +59,7 @@ export default createStorybookRule({
             },
           },
         },
+        additionalProperties: false,
       },
     ],
   },

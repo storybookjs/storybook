@@ -13,7 +13,7 @@ import addonA11y from '@storybook/addon-a11y';
 // import * as designs from '@storybook/addon-designs/preview';
 import addonDocs from '@storybook/addon-docs';
 import { DocsContext } from '@storybook/addon-docs/blocks';
-import addonThemes, { withThemeByClassName } from '@storybook/addon-themes';
+import addonThemes from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
 
 import addonPseudoStates from 'storybook-addon-pseudo-states';

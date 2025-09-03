@@ -200,7 +200,7 @@ export const transformStoryIndexToStoriesHash = (
     }
 
     const children = indexEntries.filter((item) => 'parent' in item && item.parent === entry.id);
-    return children.some((child) => filterFunctions.some((fn) => fn({ ...child, statuses })));
+    return children.some((child) => filterFunctions.every((fn) => fn({ ...child, statuses })));
   });
 
   const { sidebar = {} } = provider.getConfig();

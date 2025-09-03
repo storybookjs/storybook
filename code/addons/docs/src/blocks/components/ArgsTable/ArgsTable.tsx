@@ -173,8 +173,8 @@ const TablePositionWrapper = styled.div({
 
 const ButtonPositionWrapper = styled.div({
   position: 'absolute',
-  right: 8,
-  top: 6,
+  right: 22,
+  top: 10,
 });
 
 const StyledButton = styled(Button)({

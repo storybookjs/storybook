@@ -292,12 +292,12 @@ export class StoryStore<TRenderer extends Renderer> {
     }
 
     const stories = Object.entries(this.storyIndex.entries).reduce(
-      (acc, [storyId, { type, importPath }]) => {
-        if (type === 'docs') {
+      (acc, [storyId, entry]) => {
+        if (entry.type === 'docs') {
           return acc;
         }
 
-        const csfFile = cachedCSFFiles[importPath];
+        const csfFile = cachedCSFFiles[entry.importPath];
         const story = this.storyFromCSFFile({ storyId, csfFile });
 
         if (!options.includeDocsOnly && story.parameters.docsOnly) {
@@ -306,6 +306,9 @@ export class StoryStore<TRenderer extends Renderer> {
 
         acc[storyId] = Object.entries(story).reduce(
           (storyAcc, [key, value]) => {
+            if (key === 'story' && entry.subtype === 'test') {
+              return { ...storyAcc, story: entry.parentName };
+            }
             if (key === 'moduleExport') {
               return storyAcc;
             }
@@ -318,13 +321,13 @@ export class StoryStore<TRenderer extends Renderer> {
             return Object.assign(storyAcc, { [key]: value });
           },
           {
-            //
             args: story.initialArgs,
             globals: {
               ...this.userGlobals.initialGlobals,
               ...this.userGlobals.globals,
               ...story.storyGlobals,
             },
+            storyId: entry.parent ? entry.parent : storyId,
           }
         );
         return acc;

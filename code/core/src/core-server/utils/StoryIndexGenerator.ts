@@ -453,7 +453,9 @@ export class StoryIndexGenerator {
           importPath,
           componentPath,
           tags,
-          ...(input.type === 'story' && input.parent ? { parent: input.parent } : {}),
+          ...(input.type === 'story' && input.subtype === 'test'
+            ? { parent: input.parent, parentName: input.parentName }
+            : {}),
         };
       }
     );

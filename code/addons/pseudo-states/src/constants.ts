@@ -41,5 +41,3 @@ export const PSEUDO_STATES = {
   link: 'link',
   target: 'target',
 } as const;
-
-export type PseudoState = keyof typeof PSEUDO_STATES;

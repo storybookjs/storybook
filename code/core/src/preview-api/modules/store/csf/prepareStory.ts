@@ -202,7 +202,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     ...extraTags,
     ...(projectAnnotations.tags ?? []),
     ...(componentAnnotations.tags ?? []),
-    ...(overrideTags ?? []),
+    ...overrideTags,
     ...(storyAnnotations?.tags ?? [])
   );
 

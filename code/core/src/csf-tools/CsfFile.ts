@@ -265,6 +265,15 @@ export interface StaticStory extends Pick<StoryAnnotations, 'name' | 'parameters
   __stats: IndexInputStats;
 }
 
+export interface StoryTest {
+  node: t.Node;
+  function: t.Node;
+  name: string;
+  id: string;
+  tags: string[];
+  parent: { node: t.Node };
+}
+
 export class CsfFile {
   _ast: t.File;
 
@@ -304,15 +313,7 @@ export class CsfFile {
 
   imports: string[];
 
-  _tests: Array<{
-    node: t.Node;
-    function: t.Node;
-    name: string;
-    id: string;
-    options: any;
-    tags: string[];
-    parent: { node: t.Node };
-  }> = [];
+  _tests: StoryTest[] = [];
 
   constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
     this._ast = ast;
@@ -724,13 +725,13 @@ export class CsfFile {
             const testName = expression.arguments[0].value;
             const testFunction =
               expression.arguments.length === 2 ? expression.arguments[1] : expression.arguments[2];
-            const testOptions = expression.arguments.length === 2 ? null : expression.arguments[1];
-            const tags = parseTestTags(testOptions as t.Node | null, self._ast.program);
+            const testArguments =
+              expression.arguments.length === 2 ? null : expression.arguments[1];
+            const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
 
             self._tests.push({
               function: testFunction,
               name: testName,
-              options: testOptions,
               node: expression,
               // can't set id because meta title isn't available yet
               // so it's set later on

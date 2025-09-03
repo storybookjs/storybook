@@ -801,7 +801,7 @@ export const WithResetSingle = meta.story({
     const selectButton = canvas.getByRole('combobox');
 
     await step('Check initial state', async () => {
-      expect(selectButton).toHaveTextContent('currently selected: Frog');
+      expect(selectButton).toHaveTextContent('Frog');
     });
 
     await step('Open select', async () => {
@@ -820,7 +820,9 @@ export const WithResetSingle = meta.story({
 
       expect(args.onReset).toHaveBeenCalledTimes(1);
       expect(args.onChange).toHaveBeenCalledWith([]);
-      expect(selectButton).not.toHaveTextContent('currently selected:');
+      expect(selectButton).not.toHaveTextContent('Frog');
+      expect(selectButton).not.toHaveTextContent('Tadpole');
+      expect(selectButton).not.toHaveTextContent('Pollywog');
     });
   },
 });
@@ -883,7 +885,9 @@ export const KeyboardResetSingle = meta.story({
     await step('Check Select is reset', async () => {
       expect(args.onReset).toHaveBeenCalledTimes(1);
       expect(args.onChange).toHaveBeenCalledWith([]);
-      expect(selectButton).not.toHaveTextContent('currently selected:');
+      expect(selectButton).not.toHaveTextContent('Frog');
+      expect(selectButton).not.toHaveTextContent('Tadpole');
+      expect(selectButton).not.toHaveTextContent('Pollywog');
     });
   },
 });

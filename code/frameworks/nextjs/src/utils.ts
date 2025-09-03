@@ -5,8 +5,8 @@ import { getProjectRoot } from 'storybook/internal/common';
 import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
 
 import type { NextConfig } from 'next';
-import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
-import loadConfig from 'next/dist/server/config';
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
+import nextJsLoadConfigModule from 'next/dist/server/config.js';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfig): void => {
@@ -25,7 +25,25 @@ export const resolveNextConfig = async ({
   nextConfigPath?: string;
 }): Promise<NextConfig> => {
   const dir = nextConfigPath ? dirname(nextConfigPath) : getProjectRoot();
-  return loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
+  const loadConfig = (nextJsLoadConfigModule as any).default ?? nextJsLoadConfigModule;
+
+  // This hack is necessary to prevent Next.js override Node.js' module resolution
+  // Next.js attempts to set aliases for webpack imports on the module resolution level
+  // which leads to two webpack versions used at the same time. It seems that Next.js doesn't
+  // forward/alias all possible webpack imports.
+  const nextPrivateRenderWorker = process.env.__NEXT_PRIVATE_RENDER_WORKER;
+
+  process.env.__NEXT_PRIVATE_RENDER_WORKER = 'defined';
+
+  const config = loadConfig(PHASE_DEVELOPMENT_SERVER, dir, undefined);
+
+  if (typeof nextPrivateRenderWorker === 'undefined') {
+    delete process.env.__NEXT_PRIVATE_RENDER_WORKER;
+  } else {
+    process.env.__NEXT_PRIVATE_RENDER_WORKER = nextPrivateRenderWorker;
+  }
+
+  return config;
 };
 
 export function setAlias(baseConfig: WebpackConfig, name: string, alias: string) {

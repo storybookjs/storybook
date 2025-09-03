@@ -95,7 +95,7 @@ export const CustomFooter = {
 ```tsx filename="Page.stories.ts|tsx" renderer="solid" language="ts"
 import type { ComponentProps } from 'solid-js';
 
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Page } from './Page';
 

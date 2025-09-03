@@ -1,12 +1,21 @@
 {
   "name": "storybook-addon-pseudo-states",
   "version": "9.2.0-alpha.1",
-  "description": "CSS pseudo states for Storybook",
+  "description": "Storybook Pseudo-states addon: Manipulate CSS pseudo states",
   "keywords": [
     "storybook",
+    "storybook-addon",
+    "css",
     "pseudo states",
     "style",
-    "test"
+    "test",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/pseudo-states",
   "bugs": {

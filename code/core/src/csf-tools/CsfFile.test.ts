@@ -2584,7 +2584,7 @@ describe('CsfFile', () => {
         ).toThrowErrorMatchingInlineSnapshot(`
           [MultipleMetaError: CSF: multiple meta objects (line 4, col 24)
 
-          More info: https://storybook.js.org/docs/writing-stories#default-export]
+          More info: https://storybook.js.org/docs/writing-stories#default-export?ref=error]
         `);
       });
 
@@ -2602,7 +2602,7 @@ describe('CsfFile', () => {
         ).toThrowErrorMatchingInlineSnapshot(`
           [MultipleMetaError: CSF: multiple meta objects (line 3, col 25)
 
-          More info: https://storybook.js.org/docs/writing-stories#default-export]
+          More info: https://storybook.js.org/docs/writing-stories#default-export?ref=error]
         `);
       });
 
@@ -2620,7 +2620,7 @@ describe('CsfFile', () => {
         ).toThrowErrorMatchingInlineSnapshot(`
           [MultipleMetaError: CSF: multiple meta objects 
 
-          More info: https://storybook.js.org/docs/writing-stories#default-export]
+          More info: https://storybook.js.org/docs/writing-stories#default-export?ref=error]
         `);
       });
 
@@ -2636,7 +2636,7 @@ describe('CsfFile', () => {
         ).toThrowErrorMatchingInlineSnapshot(`
           [BadMetaError: CSF: meta() factory must be imported from .storybook/preview configuration (line 1, col 0)
 
-          More info: https://storybook.js.org/docs/writing-stories#default-export]
+          More info: https://storybook.js.org/docs/writing-stories#default-export?ref=error]
         `);
       });
 
@@ -2653,7 +2653,7 @@ describe('CsfFile', () => {
         ).toThrowErrorMatchingInlineSnapshot(`
           [BadMetaError: CSF: meta() factory must be imported from .storybook/preview configuration (line 4, col 28)
 
-          More info: https://storybook.js.org/docs/writing-stories#default-export]
+          More info: https://storybook.js.org/docs/writing-stories#default-export?ref=error]
         `);
       });
 
@@ -2670,7 +2670,7 @@ describe('CsfFile', () => {
         ).toThrowErrorMatchingInlineSnapshot(`
           [MixedFactoryError: CSF: expected factory story (line 4, col 17)
 
-          More info: https://storybook.js.org/docs/writing-stories#default-export]
+          More info: https://storybook.js.org/docs/writing-stories#default-export?ref=error]
         `);
       });
 
@@ -2687,7 +2687,7 @@ describe('CsfFile', () => {
         ).toThrowErrorMatchingInlineSnapshot(`
           [MixedFactoryError: CSF: expected non-factory story (line 4, col 28)
 
-          More info: https://storybook.js.org/docs/writing-stories#default-export]
+          More info: https://storybook.js.org/docs/writing-stories#default-export?ref=error]
         `);
       });
     });

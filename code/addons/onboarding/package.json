@@ -1,10 +1,19 @@
 {
   "name": "@storybook/addon-onboarding",
   "version": "9.2.0-alpha.1",
-  "description": "Storybook Addon Onboarding - Introduces a new onboarding experience",
+  "description": "Storybook Onboarding: Help new users learn how to write stories",
   "keywords": [
-    "storybook-addons",
-    "addon-onboarding"
+    "storybook",
+    "storybook-addon",
+    "onboarding",
+    "getting started",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/onboarding",
   "bugs": {

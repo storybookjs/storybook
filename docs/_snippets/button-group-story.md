@@ -93,7 +93,7 @@ export const Pair = {
 ```
 
 ```tsx filename="ButtonGroup.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { ButtonGroup } from '../ButtonGroup';
 

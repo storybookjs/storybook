@@ -1,3 +1,27 @@
+## 9.1.4
+
+- Angular: Properly merge builder options and browserTarget options - [#32272](https://github.com/storybookjs/storybook/pull/32272), thanks @kroeder!
+- Core: Optimize bundlesize, by reusing internal/babel in mocking-utils - [#32350](https://github.com/storybookjs/storybook/pull/32350), thanks @ndelangen!
+- Svelte & Vue: Add framework-specific `docgen` option to disable docgen processing - [#32319](https://github.com/storybookjs/storybook/pull/32319), thanks @copilot-swe-agent!
+- Svelte: Support `@sveltejs/vite-plugin-svelte` v6 - [#32320](https://github.com/storybookjs/storybook/pull/32320), thanks @JReinhold!
+
+## 9.1.3
+
+- Docs: Move button in ArgsTable heading to fix screenreader announcements - [#32238](https://github.com/storybookjs/storybook/pull/32238), thanks @Sidnioulz!
+- Mock: Catch errors when transforming preview files - [#32216](https://github.com/storybookjs/storybook/pull/32216), thanks @valentinpalkovic!
+- Next.js: Fix version mismatch error in Webpack - [#32306](https://github.com/storybookjs/storybook/pull/32306), thanks @valentinpalkovic!
+- Telemetry: Disambiguate traffic coming from error/upgrade links - [#32287](https://github.com/storybookjs/storybook/pull/32287), thanks @shilman!
+- Telemetry: Disambiguate unattributed traffic from Onboarding - [#32286](https://github.com/storybookjs/storybook/pull/32286), thanks @shilman!
+
+## 9.1.2
+
+- Addon Docs: Fix Symbol conversion issue in docs page and controls panel - [#32220](https://github.com/storybookjs/storybook/pull/32220), thanks @yannbf!
+- Angular: Fix `entry.polyfills` undefined error - [#32230](https://github.com/storybookjs/storybook/pull/32230), thanks @sk-pub!
+- Angular: Inherit options from browserTarget - [#32108](https://github.com/storybookjs/storybook/pull/32108), thanks @gingeekrishna!
+- Core: Improve addon detection in automigrations on windows - [#31937](https://github.com/storybookjs/storybook/pull/31937), thanks @mrginglymus!
+- Next.js: Return mocked router instead of actual router in useRouter - [#32131](https://github.com/storybookjs/storybook/pull/32131), thanks @JulioJ11!
+- Telemetry: Improve dev cancellation handling - [#32218](https://github.com/storybookjs/storybook/pull/32218), thanks @shilman!
+
 ## 9.1.1
 
 - CLI: Fix throwing in readonly environments - [#31785](https://github.com/storybookjs/storybook/pull/31785), thanks @JReinhold!

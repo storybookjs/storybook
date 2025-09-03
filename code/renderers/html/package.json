@@ -1,9 +1,13 @@
 {
   "name": "@storybook/html",
   "version": "9.2.0-alpha.1",
-  "description": "Storybook HTML renderer",
+  "description": "Storybook HTML renderer: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-renderer",
+    "html",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/renderers/html",
   "bugs": {
@@ -70,5 +74,5 @@
     ],
     "platform": "browser"
   },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "ce6a1e4a8d5ad69c699021a0b183df89cfc7b684"
 }

@@ -385,8 +385,6 @@ export const TestingModule = ({
                   clearStatuses();
                 }}
                 disabled={isRunning}
-                // FIXME this clears statuses not filters. Should it say "Clear test results"?
-                // it's also a destructive action but it doesn't look that way next to the error filter.
                 ariaLabel={
                   isRunning ? "Can't clear statuses while tests are running" : 'Clear all statuses'
                 }

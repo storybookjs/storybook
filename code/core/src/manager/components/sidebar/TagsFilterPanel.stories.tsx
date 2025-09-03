@@ -14,7 +14,7 @@ const meta = {
     setInverted: fn(),
     indeterminateTags: [],
     resetTags: fn(),
-    isInitialSelection: false,
+    isInitialSelection: true,
     api: {
       getDocsUrl: () => 'https://storybook.js.org/docs/',
     } as any,
@@ -70,6 +70,13 @@ export const Indeterminate: Story = {
   args: {
     ...Default.args,
     indeterminateTags: ['tag1', 'tag3'],
+  },
+};
+
+export const Modified: Story = {
+  args: {
+    ...Default.args,
+    isInitialSelection: false,
   },
 };
 

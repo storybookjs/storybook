@@ -17,7 +17,9 @@ test.describe('addon-a11y', () => {
     await sbPage.viewAddonPanel('Accessibility');
 
     const panel = sbPage.panelContent();
-    await panel.getByRole('button', { name: 'Show highlights' }).click();
+    await panel
+      .getByRole('button', { name: 'Highlight elements with accessibility test results' })
+      .click();
 
     const highlightElement = sbPage
       .previewIframe()
@@ -28,7 +30,7 @@ test.describe('addon-a11y', () => {
       'color(srgb 1 0.266667 0 / 0.4)'
     );
 
-    await page.getByRole('button', { name: 'Hide highlights' }).click();
+    await page.getByRole('button', { name: 'Hide accessibility test result highlights' }).click();
     await expect(highlightElement).toBeHidden();
   });
 
@@ -59,7 +61,7 @@ test.describe('addon-a11y', () => {
 
     // test that clipboard contains the correct url
     const clipboard = await page.evaluate(() => navigator.clipboard.readText());
-    await expect(clipboard).toContain(
+    expect(clipboard).toContain(
       '?path=/story/addons-a11y-tests--violations&addonPanel=storybook/a11y/panel&a11ySelection=passes.aria-hidden-body.1'
     );
 

@@ -118,7 +118,7 @@ const shortcutLabels = {
   togglePanel: 'Toggle addons',
   panelPosition: 'Toggle addons orientation',
   toggleNav: 'Toggle sidebar',
-  toolbar: 'Toggle canvas toolbar',
+  toolbar: 'Toggle toolbar',
   search: 'Focus search',
   focusNav: 'Focus sidebar',
   focusIframe: 'Focus canvas',
@@ -131,7 +131,7 @@ const shortcutLabels = {
   aboutPage: 'Go to about page',
   collapseAll: 'Collapse all items on sidebar',
   expandAll: 'Expand all items on sidebar',
-  remount: 'Remount component',
+  remount: 'Reload story',
 };
 
 export type Feature = keyof typeof shortcutLabels;

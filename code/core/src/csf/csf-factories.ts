@@ -11,6 +11,8 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
+import { printf } from 'fast-printf';
+
 import {
   combineParameters,
   composeConfigs,
@@ -20,6 +22,7 @@ import {
 } from '../preview-api/index';
 import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
 import { getCoreAnnotations } from './core-annotations';
+import type { EachAnnotationsFunction, EachTestFunction } from './story';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
@@ -151,6 +154,19 @@ export interface Story<
     annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
     fn: TestFunction<TRenderer>
   ): void;
+  each<T extends any[]>(
+    name: string,
+    parameters: ReadonlyArray<T>,
+    fn: EachTestFunction<T, TRenderer>
+  ): void;
+  each<T extends any[]>(
+    name: string,
+    parameters: ReadonlyArray<T>,
+    annotations:
+      | StoryAnnotations<TRenderer, TRenderer['args']>
+      | EachAnnotationsFunction<T, TRenderer, TRenderer['args']>,
+    fn: EachTestFunction<T, TRenderer>
+  ): void;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -222,6 +238,30 @@ function defineStory<
       __children.push(test);
 
       return test as unknown as void;
+    },
+    each<T extends any[]>(
+      name: string,
+      parameters: ReadonlyArray<T>,
+      overridesOrTestFn:
+        | EachTestFunction<T, TRenderer>
+        | StoryAnnotations<TRenderer, TRenderer['args']>
+        | EachAnnotationsFunction<T, TRenderer, TRenderer['args']>,
+      testFn?: EachTestFunction<T, TRenderer>
+    ): void {
+      parameters.forEach((parameter) => {
+        const testFunction: TestFunction<TRenderer, TRenderer['args']> = (context) =>
+          (testFn ?? (overridesOrTestFn as EachTestFunction<T, TRenderer>))(context, ...parameter);
+        const annotations: StoryAnnotations<TRenderer, TRenderer['args']> =
+          testFn === undefined
+            ? {}
+            : typeof overridesOrTestFn === 'function'
+              ? (overridesOrTestFn as EachAnnotationsFunction<T, TRenderer, TRenderer['args']>)(
+                  ...parameter
+                )
+              : overridesOrTestFn;
+
+        this.test(printf(name, ...parameter), annotations, testFunction);
+      });
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(

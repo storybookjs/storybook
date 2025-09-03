@@ -75,3 +75,49 @@ describe('test function', () => {
     expect(testFn).toHaveBeenCalled();
   });
 });
+
+describe('each function', () => {
+  test('without overrides', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testFn = vi.fn();
+
+    MyStory.each('test each %s', [['one'], ['two']], testFn);
+
+    const tests = getStoryChildren(MyStory).filter(({ input }) => input.tags?.includes('test-fn'));
+    expect(tests.length).toEqual(2);
+
+    const test1 = tests.find(({ input }) => input.name === 'test each one');
+    await test1?.run();
+    expect(testFn).toHaveBeenLastCalledWith(expect.anything(), 'one');
+    const test2 = tests.find(({ input }) => input.name === 'test each two');
+    await test2?.run();
+    expect(testFn).toHaveBeenLastCalledWith(expect.anything(), 'two');
+  });
+  test('with static overrides', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testFn = vi.fn();
+
+    MyStory.each('test each %s', [['one'], ['two']], { args: { label: 'bar' } }, testFn);
+
+    const tests = getStoryChildren(MyStory).filter(({ input }) => input.tags?.includes('test-fn'));
+    expect(tests.length).toEqual(2);
+
+    for (const test of tests) {
+      expect(test.input.args).toEqual({ label: 'bar' });
+    }
+  });
+  test('with dynamic overrides', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testFn = vi.fn();
+
+    MyStory.each('test each %s', [['one'], ['two']], (num) => ({ args: { label: num } }), testFn);
+
+    const tests = getStoryChildren(MyStory).filter(({ input }) => input.tags?.includes('test-fn'));
+    expect(tests.length).toEqual(2);
+
+    const test1 = tests.find(({ input }) => input.name === 'test each one');
+    expect(test1!.input.args).toEqual({ label: 'one' });
+    const test2 = tests.find(({ input }) => input.name === 'test each two');
+    expect(test2!.input.args).toEqual({ label: 'two' });
+  });
+});

@@ -12,15 +12,7 @@ import { TagsFilterPanel } from './TagsFilterPanel';
 
 const TAGS_FILTER = 'tags-filter';
 
-const BUILT_IN_TAGS_HIDE = new Set([
-  'dev',
-  'docs-only',
-  'test-only',
-  'autodocs',
-  'test',
-  'attached-mdx',
-  'unattached-mdx',
-]);
+const BUILT_IN_TAGS_HIDE = new Set(['dev', 'autodocs', 'test', 'attached-mdx', 'unattached-mdx']);
 
 const Wrapper = styled.div({
   position: 'relative',
@@ -67,6 +59,7 @@ export const TagsFilter = ({
 }: TagsFilterProps) => {
   const [selectedTags, setSelectedTags] = useState(initialSelectedTags);
   const [expanded, setExpanded] = useState(false);
+  const [inverted, setInverted] = useState(false);
   const tagsActive = selectedTags.length > 0;
 
   useEffect(() => {
@@ -74,19 +67,19 @@ export const TagsFilter = ({
       if (selectedTags.length === 0) {
         return true;
       }
-
-      return selectedTags.some((tag) => item.tags?.includes(tag));
+      const match = selectedTags.some((tag) => item.tags?.includes(tag));
+      return inverted ? !match : match;
     });
-  }, [api, selectedTags]);
+  }, [api, selectedTags, inverted]);
 
   const allTags = Object.values(indexJson.entries).reduce((acc, entry) => {
     entry.tags?.forEach((tag: Tag) => {
       if (!BUILT_IN_TAGS_HIDE.has(tag)) {
-        acc.add(tag);
+        acc.set(tag, (acc.get(tag) || 0) + 1);
       }
     });
     return acc;
-  }, new Set<Tag>());
+  }, new Map<Tag, number>());
 
   const toggleTag = useCallback(
     (tag: string) => {
@@ -97,6 +90,17 @@ export const TagsFilter = ({
       }
     },
     [selectedTags, setSelectedTags]
+  );
+  const setAllTags = useCallback(
+    (selected: boolean) => {
+      if (selected) {
+        setSelectedTags(Array.from(allTags.keys()));
+      } else {
+        setSelectedTags([]);
+        setInverted(false);
+      }
+    },
+    [allTags, setSelectedTags]
   );
 
   const handleToggleExpand = useCallback(
@@ -112,21 +116,23 @@ export const TagsFilter = ({
     return null;
   }
 
-  const tags = Array.from(allTags);
-  tags.sort();
-
   return (
     <>
       <WithTooltip
         placement="bottom"
         trigger="click"
         onVisibleChange={setExpanded}
+        // render the tooltip in the mobile menu (so that the stacking context is correct) and fallback to document.body on desktop
+        portalContainer="#storybook-mobile-menu"
         tooltip={() => (
           <TagsFilterPanel
             api={api}
-            allTags={tags}
+            allTags={allTags}
             selectedTags={selectedTags}
             toggleTag={toggleTag}
+            setAllTags={setAllTags}
+            inverted={inverted}
+            setInverted={setInverted}
             isDevelopment={isDevelopment}
           />
         )}

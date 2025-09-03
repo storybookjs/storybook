@@ -335,6 +335,7 @@
     "pretty-hrtime": "^1.0.3",
     "prompts": "^2.4.0",
     "react": "^18.2.0",
+    "react-aria-components": "^1.12.1",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^1.3.0",
     "react-inspector": "^6.0.0",

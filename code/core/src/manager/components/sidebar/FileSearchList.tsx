@@ -6,7 +6,12 @@ import type {
   FileComponentSearchResponsePayload,
 } from 'storybook/internal/core-events';
 
-import { ChevronDownIcon, ChevronRightIcon, ComponentIcon } from '@storybook/icons';
+import {
+  BookmarkHollowIcon,
+  ChevronSmallDownIcon,
+  ChevronSmallRightIcon,
+  ComponentIcon,
+} from '@storybook/icons';
 
 import type { VirtualItem } from '@tanstack/react-virtual';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -24,6 +29,7 @@ import {
   FileListItemExport,
   FileListItemExportName,
   FileListItemExportNameContent,
+  FileListItemExportNameContentWithExport,
   FileListItemLabel,
   FileListItemPath,
   FileListLi,
@@ -40,16 +46,14 @@ export interface NewStoryPayload extends CreateNewStoryRequestPayload {
   selectedItemId: string | number;
 }
 
-const ChevronRightIconStyled = styled(ChevronRightIcon)(({ theme }) => ({
-  display: 'none',
-  alignSelf: 'center',
+const TreeExpandIconStyled = styled(ChevronSmallRightIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
+  marginTop: 2,
 }));
 
-const ChevronDownIconStyled = styled(ChevronDownIcon)(({ theme }) => ({
-  display: 'none',
-  alignSelf: 'center',
+const TreeCollapseIconStyled = styled(ChevronSmallDownIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
+  marginTop: 2,
 }));
 
 interface FileSearchListProps {
@@ -189,6 +193,11 @@ export const FileSearchList = memo(function FileSearchList({
               searchResult.exportedComponents?.length === 0
             }
           >
+            {itemSelected ? (
+              <TreeCollapseIconStyled size={14} />
+            ) : (
+              <TreeExpandIconStyled size={14} />
+            )}
             <FileListIconWrapper error={itemError}>
               <ComponentIcon />
             </FileListIconWrapper>
@@ -198,7 +207,6 @@ export const FileSearchList = memo(function FileSearchList({
               </FileListItemLabel>
               <FileListItemPath>{searchResult.filepath}</FileListItemPath>
             </FileListItemContent>
-            {itemSelected ? <ChevronDownIconStyled /> : <ChevronRightIconStyled />}
           </FileListItemContentWrapper>
           {/* @ts-expect-error (non strict) */}
           {searchResult?.exportedComponents?.length > 1 && itemSelected && (
@@ -249,19 +257,20 @@ export const FileSearchList = memo(function FileSearchList({
                     }}
                   >
                     <FileListItemExportName>
-                      <ComponentIcon />
+                      <BookmarkHollowIcon />
                       {component.default ? (
                         <>
-                          <FileListItemExportNameContent>
+                          <FileListItemExportNameContentWithExport>
                             {searchResult.filepath.split('/').at(-1)?.split('.')?.at(0)}
-                          </FileListItemExportNameContent>
+                          </FileListItemExportNameContentWithExport>
                           <DefaultExport>Default export</DefaultExport>
                         </>
                       ) : (
-                        component.name
+                        <FileListItemExportNameContent>
+                          {component.name}
+                        </FileListItemExportNameContent>
                       )}
                     </FileListItemExportName>
-                    <ChevronRightIconStyled />
                   </FileListItemExport>
                 );
               })}
@@ -340,15 +349,15 @@ export const FileSearchList = memo(function FileSearchList({
                     <WithTooltip
                       {...itemProps}
                       style={{ width: '100%' }}
+                      trigger="hover"
                       hasChrome={false}
-                      closeOnOutsideClick={true}
+                      delayHide={100}
+                      delayShow={200}
+                      placement="top-start"
                       tooltip={
                         <TooltipNote
-                          // @ts-expect-error (non strict)
                           note={
-                            noExports
-                              ? "We can't evaluate exports for this file. You can't create a story for it automatically"
-                              : null
+                            "We can't evaluate exports for this file. Automatic story creation is disabled."
                           }
                         />
                       }

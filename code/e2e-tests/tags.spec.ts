@@ -84,8 +84,8 @@ test.describe('tags', () => {
       await expect(stories).toHaveCount(1);
 
       // Clear selection
-      await expect(tooltip.locator('#unselect-all')).toBeVisible();
-      await tooltip.locator('#unselect-all').click();
+      await expect(tooltip.locator('#reset-filters')).toBeVisible();
+      await tooltip.locator('#reset-filters').click();
 
       // Checkboxes are not selected anymore
       await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
@@ -117,8 +117,8 @@ test.describe('tags', () => {
         await expect(stories).toHaveCount(1);
 
         // Clear selection
-        await expect(tooltip.locator('#unselect-all')).toBeVisible();
-        await tooltip.locator('#unselect-all').click();
+        await expect(tooltip.locator('#reset-filters')).toBeVisible();
+        await tooltip.locator('#reset-filters').click();
 
         // Checkboxes are not selected anymore
         await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);

@@ -381,6 +381,8 @@ const Node = React.memo<NodeProps>(function Node(props) {
                 onSelectStoryId(item.id);
               }
               setExpanded({ ids: [item.id], value: !isExpanded });
+            } else {
+              setExpanded({ ids: [item.id], value: !isExpanded });
             }
           }}
           onMouseEnter={() => {

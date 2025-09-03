@@ -61,9 +61,10 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
 
   const resetTags = useCallback(() => {
     const tags = Object.keys(tagPresets);
-    const invert = Object.values(tagPresets).every(
-      (preset) => !('defaultSelection' in preset) || preset.defaultSelection === 'exclude'
-    );
+    const presets = Object.values(tagPresets);
+    const invert =
+      presets.some((p) => 'defaultSelection' in p && p.defaultSelection === 'exclude') &&
+      !presets.some((p) => 'defaultSelection' in p && p.defaultSelection === 'include');
     setSelectedTags(
       tags.filter((tag) => tagPresets[tag].defaultSelection === (invert ? 'exclude' : 'include'))
     );

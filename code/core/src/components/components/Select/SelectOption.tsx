@@ -61,6 +61,7 @@ const Item = styled('li')(({ theme }) => ({
     background: theme.background.hoverable,
     outline: `2px solid ${theme.barSelectedColor}`,
     outlineOffset: 1,
+    borderRadius: 2,
   },
   display: 'flex',
   alignItems: 'flex-start',

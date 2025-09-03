@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { format } from 'node:util';
 
 import {
   BabelFileClass,
@@ -770,6 +771,74 @@ export class CsfFile {
 
             // TODO: fix this when stories fail
             self._stories[exportName].__stats.tests = true;
+          }
+
+          // B.each('foo %s %s', [['a', 'b'], ['c', 'd']], () => {})
+          // B.each('foo %s %s', [['a', 'b'], ['c', 'd']], {}, () => {})
+          // B.each('foo %s %s', [['a', 'b'], ['c', 'd']], () => ({}), () => {})
+          if (
+            t.isCallExpression(expression) &&
+            t.isMemberExpression(expression.callee) &&
+            expression.arguments.length >= 3 &&
+            t.isStringLiteral(expression.arguments[0]) &&
+            t.isArrayExpression(expression.arguments[1]) &&
+            t.isMemberExpression(expression.callee) &&
+            t.isIdentifier(expression.callee.object) &&
+            t.isIdentifier(expression.callee.property) &&
+            expression.callee.property.name === 'each'
+          ) {
+            const exportName = expression.callee.object.name;
+            const testName = expression.arguments[0].value;
+            const testFunction =
+              expression.arguments.length === 3 ? expression.arguments[2] : expression.arguments[3];
+
+            // Check the args to each are all arrays
+            const each = expression.arguments[1];
+            if (!t.isArrayExpression(each) || !each.elements.every((e) => t.isArrayExpression(e))) {
+              return;
+            }
+            // Check they are all the same length
+            const length = each.elements[0].elements.length;
+            if (!each.elements.every((e) => e.elements.length === length)) {
+              return;
+            }
+            each.elements.forEach((e) => {
+              // Everything must be a literal
+              if (!e.elements.every((p) => t.isExpression(p))) {
+                return;
+              }
+              if (!e.elements.every((p) => t.isLiteral(p))) {
+                return;
+              }
+
+              const args = e.elements.map((a) => {
+                switch (a.type) {
+                  case 'NullLiteral':
+                    return null;
+                  case 'TemplateLiteral':
+                    break;
+                  case 'RegExpLiteral':
+                    return a.pattern;
+                  default:
+                    return a.value;
+                }
+              });
+
+              self._tests.push({
+                function: testFunction,
+                name: format(testName, ...args),
+                node: expression,
+                // can't set id because meta title isn't available yet
+                // so it's set later on
+                id: 'FIXME',
+                // todo
+                tags: [],
+                parent: { node: self._storyStatements[exportName] },
+              });
+
+              // TODO: fix this when stories fail
+              self._stories[exportName].__stats.tests = true;
+            });
           }
         },
       },

@@ -42,11 +42,11 @@ export const FileListLi = styled('li')(({ theme }) => ({
   },
 }));
 
-export const FileListItem = styled('div')(({ theme }) => ({
+export const FileListItem = styled('div')({
   display: 'flex',
   flexDirection: 'column',
   position: 'relative',
-}));
+});
 
 export const FileListItemContentWrapper = styled.div<{
   selected: boolean;
@@ -141,8 +141,7 @@ export const FileListExport = styled('ul')(({ theme }) => ({
 }));
 
 export const FileListItemExport = styled('li')<{ error: boolean }>(({ theme, error }) => ({
-  padding: '8px 16px 8px 16px',
-  marginLeft: '30px',
+  padding: '8px 16px 8px 58px',
   display: 'flex',
   gap: '8px',
   alignItems: 'center',
@@ -188,9 +187,13 @@ export const FileListItemExportNameContent = styled('span')(({ theme }) => ({
   whiteSpace: 'nowrap',
   textOverflow: 'ellipsis',
   overflow: 'hidden',
-  maxWidth: 'calc(100% - 160px)',
   display: 'inline-block',
+  color: theme.base === 'dark' ? theme.color.lightest : theme.color.darkest,
 }));
+
+export const FileListItemExportNameContentWithExport = styled(FileListItemExportNameContent)({
+  maxWidth: 'calc(100% - 120px)',
+});
 
 export const DefaultExport = styled('span')(({ theme }) => ({
   display: 'inline-block',

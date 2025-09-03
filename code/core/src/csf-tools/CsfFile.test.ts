@@ -2457,7 +2457,7 @@ describe('CsfFile', () => {
         const story = data._stories['A'];
         expect(story.__stats.tests).toBe(true);
 
-        const storyTests = data._storyTests['A'];
+        const storyTests = data.getStoryTests('A');
         expect(storyTests).toHaveLength(4);
         expect(storyTests[0].name).toBe('simple test');
         expect(storyTests[1].name).toBe('with overrides');

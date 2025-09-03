@@ -238,7 +238,7 @@ export async function vitestTransform({
   const getDescribeStatementForStory = (options: {
     localName: string;
     exportName: string;
-    tests: (typeof parsed._storyTests)[string];
+    tests: Array<{ name: string; node: t.Node }>;
     node: t.Node;
   }): t.ExpressionStatement => {
     const { localName, exportName, tests, node } = options;
@@ -291,7 +291,7 @@ export async function vitestTransform({
       const localName = parsed._stories[exportName].localName ?? exportName;
       // use the story's name as the test title for vitest, and fallback to exportName
       const testTitle = parsed._stories[exportName].name ?? exportName;
-      const tests = parsed._storyTests[exportName];
+      const tests = parsed.getStoryTests(exportName);
 
       if (tests?.length > 0) {
         return getDescribeStatementForStory({ localName, exportName, tests, node });
@@ -306,7 +306,7 @@ export async function vitestTransform({
   ast.program.body.push(testBlock);
 
   const hasTests = Object.keys(validStories).some(
-    (exportName) => parsed._storyTests[exportName]?.length > 0
+    (exportName) => parsed.getStoryTests(exportName).length > 0
   );
 
   const imports = [

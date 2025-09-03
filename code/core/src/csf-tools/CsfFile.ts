@@ -76,6 +76,34 @@ function parseTags(prop: t.Node) {
   }) as Tag[];
 }
 
+function parseTestTags(optionsNode: t.Node | null | undefined, program: t.Program) {
+  if (!optionsNode) {
+    return [] as string[];
+  }
+
+  let node: t.Node = optionsNode;
+  if (t.isIdentifier(node)) {
+    node = findVarInitialization(node.name, program);
+  }
+
+  if (t.isObjectExpression(node)) {
+    const tagsProp = node.properties.find(
+      (property) =>
+        t.isObjectProperty(property) && t.isIdentifier(property.key) && property.key.name === 'tags'
+    ) as t.ObjectProperty | undefined;
+
+    if (tagsProp) {
+      let tagsNode: t.Node = tagsProp.value as t.Node;
+      if (t.isIdentifier(tagsNode)) {
+        tagsNode = findVarInitialization(tagsNode.name, program);
+      }
+      return parseTags(tagsNode);
+    }
+  }
+
+  return [] as string[];
+}
+
 const formatLocation = (node: t.Node, fileName?: string) => {
   let loc = '';
   if (node.loc) {
@@ -237,6 +265,15 @@ export interface StaticStory extends Pick<StoryAnnotations, 'name' | 'parameters
   __stats: IndexInputStats;
 }
 
+export interface StoryTest {
+  node: t.Node;
+  function: t.Node;
+  name: string;
+  id: string;
+  tags: string[];
+  parent: { node: t.Node };
+}
+
 export class CsfFile {
   _ast: t.File;
 
@@ -276,16 +313,7 @@ export class CsfFile {
 
   imports: string[];
 
-  _storyTests: Record<
-    string,
-    Array<{
-      node: t.Node;
-      function: t.Node;
-      name: string;
-      id: string;
-      options: any;
-    }>
-  > = {};
+  _tests: StoryTest[] = [];
 
   constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
     this._ast = ast;
@@ -697,20 +725,19 @@ export class CsfFile {
             const testName = expression.arguments[0].value;
             const testFunction =
               expression.arguments.length === 2 ? expression.arguments[1] : expression.arguments[2];
-            const testOptions = expression.arguments.length === 2 ? null : expression.arguments[1];
+            const testArguments =
+              expression.arguments.length === 2 ? null : expression.arguments[1];
+            const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
 
-            if (!self._storyTests[exportName]) {
-              self._storyTests[exportName] = [];
-            }
-
-            self._storyTests[exportName].push({
+            self._tests.push({
               function: testFunction,
               name: testName,
-              options: testOptions,
               node: expression,
               // can't set id because meta title isn't available yet
               // so it's set later on
               id: 'FIXME',
+              tags,
+              parent: { node: self._storyStatements[exportName] },
             });
 
             // TODO: fix this when stories fail
@@ -827,12 +854,14 @@ export class CsfFile {
         stats.mount = hasMount(storyAnnotations.play ?? self._metaAnnotations.play);
         stats.moduleMock = !!self.imports.find((fname) => isModuleMock(fname));
 
-        if (self._storyTests[key]) {
+        const storyNode = self._storyStatements[key];
+        const storyTests = self._tests.filter((t) => t.parent.node === storyNode);
+        if (storyTests.length > 0) {
           // TODO: [test-syntax] if we want to add a tag for the story that contains tests, this is the place for it
           // acc[key].tags = [...(acc[key].tags || []), 'story-with-tests'];
 
           stats.tests = true;
-          self._storyTests[key].forEach((test) => {
+          storyTests.forEach((test) => {
             test.id = toTestId(id, test.name);
           });
         }
@@ -876,6 +905,14 @@ export class CsfFile {
     return Object.values(this._stories);
   }
 
+  public getStoryTests(story: string | t.Node) {
+    const storyNode = typeof story === 'string' ? this._storyStatements[story] : story;
+    if (!storyNode) {
+      return [];
+    }
+    return this._tests.filter((t) => t.parent.node === storyNode);
+  }
+
   public get indexInputs(): IndexInput[] {
     const { fileName } = this._options;
     if (!fileName) {
@@ -901,8 +938,8 @@ export class CsfFile {
         __stats: story.__stats,
       };
 
-      const tests = this._storyTests[exportName];
-      const hasTests = tests?.length;
+      const tests = this.getStoryTests(exportName);
+      const hasTests = tests.length > 0;
 
       index.push({
         ...storyInput,
@@ -922,7 +959,14 @@ export class CsfFile {
             name: test.name,
             parent: story.id,
             parentName: story.name,
-            tags: [...storyInput.tags, 'test-fn'],
+            tags: [
+              ...storyInput.tags,
+              // this tag comes before test tags so users can invert if they like
+              '!autodocs',
+              ...test.tags,
+              // this tag comes after test tags so users can't change it
+              'test-fn',
+            ],
             __id: test.id,
           });
         });

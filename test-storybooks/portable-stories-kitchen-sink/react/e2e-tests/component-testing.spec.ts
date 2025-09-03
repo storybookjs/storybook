@@ -154,7 +154,7 @@ test.describe("component testing", () => {
       timeout: 60000,
     });
 
-    const errorFilter = page.getByLabel("Toggle errors");
+    const errorFilter = page.getByLabel(/Filter main navigation to show \d+ tests with errors/);
     await expect(errorFilter).toBeVisible();
 
     // Assert discrepancy: CLI pass + Browser fail
@@ -228,7 +228,7 @@ test.describe("component testing", () => {
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();
 
-    const errorFilter = page.getByLabel("Toggle errors");
+    const errorFilter = page.getByLabel(/Filter main navigation to show \d+ tests with errors/);
     await expect(errorFilter).toBeVisible();
 
     // Assert for expected success
@@ -285,7 +285,7 @@ test.describe("component testing", () => {
     );
 
     // Wait for test results to appear
-    const errorFilter = page.getByLabel("Toggle errors");
+    const errorFilter = page.getByLabel(/Filter main navigation to show \d+ tests with errors/);
     await expect(errorFilter).toBeVisible({ timeout: 30000 });
 
     // Assert for expected success

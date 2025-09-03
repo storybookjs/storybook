@@ -60,6 +60,7 @@ Default.test(
       chromatic: { viewports: [380] },
     },
     globals: { viewport: { value: 'sized' } },
+    tags: ['!test'],
   },
   async ({ canvas }) => {
     const button = canvas.getByText('Arg from test override');

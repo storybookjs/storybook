@@ -14482,6 +14482,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"exsolve@npm:^1.0.7":
+  version: 1.0.7
+  resolution: "exsolve@npm:1.0.7"
+  checksum: 10c0/4479369d0bd84bb7e0b4f5d9bc18d26a89b6dbbbccd73f9d383d14892ef78ddbe159e01781055342f83dc00ebe90044036daf17ddf55cc21e2cac6609aa15631
+  languageName: node
+  linkType: hard
+
 "extend@npm:^3.0.0, extend@npm:^3.0.2":
   version: 3.0.2
   resolution: "extend@npm:3.0.2"
@@ -24487,6 +24494,7 @@ __metadata:
     es-toolkit: "npm:^1.36.0"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0"
     execa: "npm:^8.0.1"
+    exsolve: "npm:^1.0.7"
     fd-package-json: "npm:^1.2.0"
     fetch-retry: "npm:^6.0.0"
     find-cache-dir: "npm:^5.0.0"
@@ -24504,7 +24512,6 @@ __metadata:
     lodash: "npm:^4.17.21"
     memfs: "npm:^4.11.1"
     memoizerific: "npm:^1.11.3"
-    mlly: "npm:^1.7.4"
     nanoid: "npm:^4.0.2"
     npmlog: "npm:^7.0.0"
     open: "npm:^8.4.0"

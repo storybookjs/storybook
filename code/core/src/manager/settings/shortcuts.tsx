@@ -323,6 +323,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
         {layout}
         <Button
+          ariaLabel={false}
           variant="outline"
           size="small"
           id="restoreDefaultsHotkeys"

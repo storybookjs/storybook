@@ -196,11 +196,17 @@ export const SaveStory = ({
                 value={storyName}
               />
               <Modal.Actions>
-                <Button disabled={saving || !storyName} size="medium" type="submit" variant="solid">
+                <Button
+                  ariaLabel={false}
+                  disabled={saving || !storyName}
+                  size="medium"
+                  type="submit"
+                  variant="solid"
+                >
                   Create
                 </Button>
                 <Modal.Dialog.Close asChild>
-                  <Button disabled={saving} size="medium" type="reset">
+                  <Button ariaLabel={false} disabled={saving} size="medium" type="reset">
                     Cancel
                   </Button>
                 </Modal.Dialog.Close>

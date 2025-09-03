@@ -39,7 +39,7 @@ export const Tool = () => {
       variant="ghost"
       ariaLabel="Measure tool"
       tooltip="Toggle measure"
-      description="When enabled, this tool shows dimensions and whitespace (margin, padding, border) for the currently hovered element in the preview area. Does not work with keyboard focus."
+      ariaDescription="When enabled, this tool shows dimensions and whitespace (margin, padding, border) for the currently hovered element in the preview area. Does not work with keyboard focus."
       onClick={toggleMeasure}
     >
       <RulerIcon />

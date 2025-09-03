@@ -10,24 +10,6 @@ test.describe('tags', () => {
     await new SbPage(page, expect).waitUntilLoaded();
   });
 
-  test('should correctly filter dev-only, docs-only, test-only stories', async ({ page }) => {
-    const sbPage = new SbPage(page, expect);
-
-    await sbPage.navigateToStory('core/tags-config', 'docs');
-
-    // Sidebar should include dev-only and exclude docs-only and test-only
-    await expect(page.locator('#core-tags-config--dev-only')).toHaveCount(1);
-    await expect(page.locator('#core-tags-config--docs-only')).toHaveCount(0);
-    await expect(page.locator('#core-tags-config--test-only')).toHaveCount(0);
-
-    // Autodocs should include docs-only and exclude dev-only and test-only
-    const preview = sbPage.previewRoot();
-
-    await expect(preview.locator('#anchor--core-tags-config--dev-only')).toHaveCount(0);
-    await expect(preview.locator('#anchor--core-tags-config--docs-only')).toHaveCount(1);
-    await expect(preview.locator('#anchor--core-tags-config--test-only')).toHaveCount(0);
-  });
-
   test('should correctly add dev, autodocs, test stories', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 

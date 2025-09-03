@@ -136,9 +136,9 @@ export const TagsFilter = ({
           <StyledIconButton
             key="tags"
             ariaLabel="Tag filters"
+            ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
             variant="ghost"
             padding="small"
-            description="Filter the items shown in a sidebar based on the tags applied to them."
             active={tagsActive}
             onClick={handleToggleExpand}
           >

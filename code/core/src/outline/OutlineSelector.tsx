@@ -39,8 +39,8 @@ export const OutlineSelector = memo(function OutlineSelector() {
       variant="ghost"
       pressed={isActive}
       ariaLabel="Outline tool"
+      ariaDescription="When enabled, this tool displays the outline of every element in the preview area, which helps understand their layout."
       tooltip="Toggle outline"
-      description="When enabled, this tool displays the outline of every element in the preview area, which helps understand their layout."
       onClick={toggleOutline}
     >
       <OutlineIcon />

@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, FC, SyntheticEvent } from 'react';
+import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
@@ -39,7 +39,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
    * A more thorough description of what the Button does, provided to non-sighted users through an
    * aria-describedby attribute. Use sparingly for buttons that trigger complex actions.
    */
-  description?: string;
+  ariaDescription?: string;
 
   /**
    * An optional keyboard shortcut to enable the button. Will be displayed in the tooltip and passed
@@ -60,7 +60,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled = false,
       onClick,
       ariaLabel,
-      description = undefined,
+      ariaDescription = undefined,
       tooltip = undefined,
       shortcut = undefined,
       ...props
@@ -72,7 +72,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) {
       Comp = Slot;
     }
-    const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(description);
+    const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(ariaDescription);
 
     if (ariaLabel === '') {
       throw new Error(

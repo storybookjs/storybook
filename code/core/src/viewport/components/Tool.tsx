@@ -117,8 +117,8 @@ const Pure = React.memo(function PureTool(props: PureProps) {
         key="viewport"
         disabled={isLocked}
         ariaLabel={isLocked ? 'Viewport size set by story parameters' : 'Viewport size'}
+        ariaDescription="Select a viewport size among predefined options for the preview area, or reset to the default size."
         tooltip={isLocked ? 'Viewport size set by story parameters' : 'Resize viewport'}
-        description="Select a viewport size among predefined options for the preview area, or reset to the default size."
         defaultOptions={viewportName}
         options={options}
         onSelect={(selected) => update({ value: selected, isRotated: false })}

@@ -94,7 +94,7 @@ export const AddonPanel = React.memo<{
                       ? 'Move addon panel to right'
                       : 'Move addon panel to bottom'
                   }
-                  description="Changes the location of the addon panel to the bottom or right of the screen, but does not have any effect on its content."
+                  ariaDescription="Changes the location of the addon panel to the bottom or right of the screen, but does not have any effect on its content."
                   shortcut={shortcuts.panelPosition}
                 >
                   {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}

@@ -343,6 +343,7 @@ describe('StoryStore', () => {
             "renderToCanvas": undefined,
             "story": "A",
             "storyGlobals": {},
+            "storyId": "component-one--a",
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -535,6 +536,7 @@ describe('StoryStore', () => {
             "renderToCanvas": undefined,
             "story": "A",
             "storyGlobals": {},
+            "storyId": "component-one--a",
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -600,6 +602,7 @@ describe('StoryStore', () => {
             "renderToCanvas": undefined,
             "story": "B",
             "storyGlobals": {},
+            "storyId": "component-one--b",
             "subcomponents": undefined,
             "tags": [
               "dev",
@@ -665,6 +668,7 @@ describe('StoryStore', () => {
             "renderToCanvas": undefined,
             "story": "C",
             "storyGlobals": {},
+            "storyId": "component-two--c",
             "subcomponents": undefined,
             "tags": [
               "dev",

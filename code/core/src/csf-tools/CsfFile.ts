@@ -956,8 +956,9 @@ export class CsfFile {
             // title: `${storyInput.title}/${story.name}`,
             type: 'story',
             subtype: 'test',
-            parent: story.id,
             name: test.name,
+            parent: story.id,
+            parentName: story.name,
             tags: [
               ...storyInput.tags,
               // this tag comes before test tags so users can invert if they like

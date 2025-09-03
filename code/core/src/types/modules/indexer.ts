@@ -75,6 +75,7 @@ export type StoryIndexEntry = BaseIndexEntry & {
   type: 'story';
   subtype: 'story' | 'test';
   parent?: StoryId; // exists only on tests
+  parentName?: StoryName; // exists only on tests
 };
 
 export type DocsIndexEntry = BaseIndexEntry & {
@@ -135,6 +136,7 @@ export type StoryIndexInput = BaseIndexInput & {
   type: 'story';
   subtype: 'story' | 'test';
   parent?: StoryId; // exists only on tests
+  parentName?: StoryName; // exists only on tests
 };
 
 /** The input for indexing a docs entry. */

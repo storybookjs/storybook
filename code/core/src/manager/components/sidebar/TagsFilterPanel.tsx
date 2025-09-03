@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { Form, IconButton, TooltipLinkList } from 'storybook/internal/components';
 import type { Tag } from 'storybook/internal/types';
@@ -51,23 +51,44 @@ interface TagsFilterPanelProps {
   api: API;
   allTags: Map<Tag, number>;
   selectedTags: Tag[];
+  indeterminateTags: Tag[];
   toggleTag: (tag: Tag) => void;
   setAllTags: (selected: boolean) => void;
+  resetTags: () => void;
   inverted: boolean;
   setInverted: (inverted: boolean) => void;
   isDevelopment: boolean;
+  isInitialSelection: boolean;
 }
 
 export const TagsFilterPanel = ({
   api,
   allTags,
   selectedTags,
+  indeterminateTags,
   toggleTag,
   setAllTags,
+  resetTags,
   inverted,
   setInverted,
   isDevelopment,
+  isInitialSelection,
 }: TagsFilterPanelProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const checkboxes = ref.current?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+    if (!checkboxes) {
+      return;
+    }
+    for (const checkbox of checkboxes) {
+      const tag = checkbox.getAttribute('data-tag');
+      if (tag && indeterminateTags.includes(tag)) {
+        checkbox.indeterminate = true;
+      }
+    }
+  }, [indeterminateTags]);
+
   const [builtInEntries, userEntries] = Array.from(allTags.entries()).reduce(
     (acc, [tag, count]) => {
       acc[BUILT_IN_TAGS.has(tag) ? 0 : 1].push([tag, count]);
@@ -95,7 +116,7 @@ export const TagsFilterPanel = ({
           id,
           title: tag,
           right: count,
-          input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} />,
+          input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} data-tag={tag} />,
         };
       }),
     builtInEntries
@@ -107,7 +128,7 @@ export const TagsFilterPanel = ({
           id,
           title: tag,
           right: count,
-          input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} />,
+          input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} data-tag={tag} />,
         };
       }),
   ] as Link[][];
@@ -125,18 +146,18 @@ export const TagsFilterPanel = ({
   }
 
   return (
-    <Wrapper>
+    <Wrapper ref={ref}>
       {allTags.size > 0 && (
         <Actions>
-          {selectedTags.length ? (
-            <IconButton id="unselect-all" onClick={() => setAllTags(false)}>
-              <CloseIcon />
-              Clear filters
-            </IconButton>
-          ) : (
-            <IconButton id="select-all" onClick={() => setAllTags(true)}>
+          {isInitialSelection ? (
+            <IconButton id="select-all" key="select-all" onClick={() => setAllTags(true)}>
               <BatchAcceptIcon />
               Select all
+            </IconButton>
+          ) : (
+            <IconButton id="reset-filters" key="reset-filters" onClick={resetTags}>
+              <CloseIcon />
+              Reset filters
             </IconButton>
           )}
           <IconButton

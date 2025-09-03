@@ -74,6 +74,17 @@ export const OpenWithSelectionInverted = {
   },
 } satisfies Story;
 
+export const OpenWithSelectionMixed = {
+  ...Open,
+  args: {
+    ...Open.args,
+    tagPresets: {
+      A: { defaultSelection: 'include' },
+      B: { defaultSelection: 'exclude' },
+    },
+  },
+} satisfies Story;
+
 export const OpenEmpty: Story = {
   args: {
     indexJson: {

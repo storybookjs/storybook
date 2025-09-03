@@ -52,22 +52,29 @@ export interface TagsFilterProps {
 }
 
 export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
-  const allExcluded = Object.values(tagPresets).every(
-    (preset) => !('defaultSelection' in preset) || preset.defaultSelection === 'exclude'
-  );
-
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [indeterminateTags, setIndeterminateTags] = useState<Tag[]>([]);
   const [expanded, setExpanded] = useState(false);
-  const [inverted, setInverted] = useState(allExcluded);
+  const [inverted, setInverted] = useState(false);
+  const [initial, setInitial] = useState(false);
   const tagsActive = selectedTags.length > 0;
 
-  useEffect(() => {
+  const resetTags = useCallback(() => {
     const tags = Object.keys(tagPresets);
-    const defaultSelectedTags = tags.filter(
-      (tag) => tagPresets[tag].defaultSelection === (allExcluded ? 'exclude' : 'include')
+    const invert = Object.values(tagPresets).every(
+      (preset) => !('defaultSelection' in preset) || preset.defaultSelection === 'exclude'
     );
-    setSelectedTags(defaultSelectedTags);
-  }, [tagPresets, allExcluded]);
+    setSelectedTags(
+      tags.filter((tag) => tagPresets[tag].defaultSelection === (invert ? 'exclude' : 'include'))
+    );
+    setIndeterminateTags(
+      invert ? [] : tags.filter((tag) => tagPresets[tag].defaultSelection === 'exclude')
+    );
+    setInverted(invert);
+    setInitial(true);
+  }, [tagPresets]);
+
+  useEffect(resetTags, [resetTags]);
 
   useEffect(() => {
     api.experimental_setFilter(TAGS_FILTER, (item) => {
@@ -95,6 +102,7 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
       } else {
         setSelectedTags([...selectedTags, tag]);
       }
+      setInitial(false);
     },
     [selectedTags, setSelectedTags]
   );
@@ -106,6 +114,7 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
         setSelectedTags([]);
         setInverted(false);
       }
+      setInitial(false);
     },
     [allTags, setSelectedTags]
   );
@@ -135,11 +144,14 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
           api={api}
           allTags={allTags}
           selectedTags={selectedTags}
+          indeterminateTags={indeterminateTags}
           toggleTag={toggleTag}
           setAllTags={setAllTags}
+          resetTags={resetTags}
           inverted={inverted}
           setInverted={setInverted}
           isDevelopment={isDevelopment}
+          isInitialSelection={initial}
         />
       )}
       closeOnOutsideClick

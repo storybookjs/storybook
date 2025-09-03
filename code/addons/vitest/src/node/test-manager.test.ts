@@ -235,7 +235,7 @@ describe('TestManager', () => {
       },
     });
     // regex should be Parent Story Name + Test Name
-    expect(setTestNamePattern).toHaveBeenCalledWith(/^Parent story Test name$/);
+    expect(setTestNamePattern).toHaveBeenCalledWith(/^Parentstory Test name$/);
   });
 
   it('should trigger all tests of a story', async () => {

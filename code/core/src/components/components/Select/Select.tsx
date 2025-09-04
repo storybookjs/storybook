@@ -376,7 +376,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             >
               {options.map((option) => (
                 <SelectOption
-                  key={option.value}
+                  key={option.value ?? 'sb-reset'}
                   title={option.title}
                   description={option.description}
                   icon={option.icon}

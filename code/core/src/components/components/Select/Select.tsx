@@ -394,6 +394,35 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       [options, resetOption, setActiveOption, selectedOptions]
     );
 
+    const handleListboxKeyDown = useCallback(
+      (e: KeyboardEvent<HTMLUListElement>) => {
+        // We don't prevent default on Tab, so that the Tab or Shift+Tab goes
+        // through after we've repositioned to the Button.
+        if (e.key !== 'Tab') {
+          e.preventDefault();
+        } else {
+          handleClose();
+        }
+
+        if (e.key === 'Escape') {
+          handleClose();
+        } else if (e.key === 'ArrowDown') {
+          moveActiveOptionDown();
+        } else if (e.key === 'ArrowUp') {
+          moveActiveOptionUp();
+        } else if (e.key === 'Home') {
+          setActiveOption(options[0]);
+        } else if (e.key === 'End') {
+          setActiveOption(options[options.length - 1]);
+        } else if (e.key === 'PageDown') {
+          moveActiveOptionDown(PAGE_STEP_SIZE);
+        } else if (e.key === 'PageUp') {
+          moveActiveOptionUp(PAGE_STEP_SIZE);
+        }
+      },
+      [handleClose, moveActiveOptionDown, moveActiveOptionUp, options, setActiveOption]
+    );
+
     // Transfer focus to the active option whenever we open the listbox.
     useEffect(() => {
       if (isOpen && activeOption) {
@@ -471,31 +500,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                 id={listboxId}
                 ref={listboxRef}
                 aria-multiselectable={multiSelect}
-                onKeyDown={(e) => {
-                  // We don't prevent default on Tab, so that the Tab or Shift+Tab goes
-                  // through after we've repositioned to the Button.
-                  if (e.key !== 'Tab') {
-                    e.preventDefault();
-                  } else {
-                    handleClose();
-                  }
-
-                  if (e.key === 'Escape') {
-                    handleClose();
-                  } else if (e.key === 'ArrowDown') {
-                    moveActiveOptionDown();
-                  } else if (e.key === 'ArrowUp') {
-                    moveActiveOptionUp();
-                  } else if (e.key === 'Home') {
-                    setActiveOption(options[0]);
-                  } else if (e.key === 'End') {
-                    setActiveOption(options[options.length - 1]);
-                  } else if (e.key === 'PageDown') {
-                    moveActiveOptionDown(PAGE_STEP_SIZE);
-                  } else if (e.key === 'PageUp') {
-                    moveActiveOptionUp(PAGE_STEP_SIZE);
-                  }
-                }}
+                onKeyDown={handleListboxKeyDown}
               >
                 {options.map((option) => (
                   <SelectOption

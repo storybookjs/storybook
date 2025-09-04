@@ -109,7 +109,7 @@ export const buildEntries = {
   '@storybook/html-vite': htmlViteFrameworkConfig,
   '@storybook/nextjs': nextjsFrameworkConfig,
   '@storybook/nextjs-vite': nextjsViteFrameworkConfig,
-  '@storybook/nextjs-vite-rsc': nextjsViteFrameworkConfig,
+  '@storybook/nextjs-vite-rsc': nextjsViteRSCFrameworkConfig,
   '@storybook/preact-vite': preactViteFrameworkConfig,
   '@storybook/react-native-web-vite': reactNativeWebViteFrameworkConfig,
   '@storybook/react-vite': reactViteFrameworkConfig,

@@ -1,14 +1,13 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 
-import { Form, IconButton, TooltipLinkList } from 'storybook/internal/components';
+import { Button, Form, IconButton, ListItem, TooltipLinkList } from 'storybook/internal/components';
 import type { Tag } from 'storybook/internal/types';
 
 import {
   BatchAcceptIcon,
   CloseIcon,
+  DeleteIcon,
   DocumentIcon,
-  EyeCloseIcon,
-  EyeIcon,
   ShareAltIcon,
 } from '@storybook/icons';
 
@@ -47,16 +46,37 @@ const Actions = styled.div(({ theme }) => ({
   borderBottom: `1px solid ${theme.appBorderColor}`,
 }));
 
+const TagRow = styled.div({
+  display: 'flex',
+
+  '& > button': {
+    width: 64,
+    maxWidth: 64,
+    marginLeft: 4,
+    paddingLeft: 0,
+    paddingRight: 0,
+    fontWeight: 'normal',
+    transition: 'all 150ms',
+  },
+  '&:not(:has(:hover, :focus-visible, *:focus-visible))': {
+    '& > button': {
+      maxWidth: 0,
+      opacity: 0,
+    },
+    '& svg + input': {
+      display: 'none',
+    },
+  },
+});
+
 interface TagsFilterPanelProps {
   api: API;
   allTags: Map<Tag, number>;
-  selectedTags: Tag[];
-  indeterminateTags: Tag[];
-  toggleTag: (tag: Tag) => void;
+  includedTags: Set<Tag>;
+  excludedTags: Set<Tag>;
+  toggleTag: (tag: Tag, excluded?: boolean) => void;
   setAllTags: (selected: boolean) => void;
   resetTags: () => void;
-  inverted: boolean;
-  setInverted: (inverted: boolean) => void;
   isDevelopment: boolean;
   isInitialSelection: boolean;
 }
@@ -64,32 +84,17 @@ interface TagsFilterPanelProps {
 export const TagsFilterPanel = ({
   api,
   allTags,
-  selectedTags,
-  indeterminateTags,
+  includedTags,
+  excludedTags,
   toggleTag,
   setAllTags,
   resetTags,
-  inverted,
-  setInverted,
   isDevelopment,
   isInitialSelection,
 }: TagsFilterPanelProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const checkboxes = ref.current?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
-    if (!checkboxes) {
-      return;
-    }
-    for (const checkbox of checkboxes) {
-      const tag = checkbox.getAttribute('data-tag');
-      if (tag && indeterminateTags.includes(tag)) {
-        checkbox.indeterminate = true;
-      }
-    }
-  }, [indeterminateTags]);
-
-  const [builtInEntries, userEntries] = Array.from(allTags.entries()).reduce(
+  const [builtInEntries, userEntries] = allTags.entries().reduce(
     (acc, [tag, count]) => {
       acc[BUILT_IN_TAGS.has(tag) ? 0 : 1].push([tag, count]);
       return acc;
@@ -105,32 +110,37 @@ export const TagsFilterPanel = ({
     isIndented: false,
   };
 
+  const renderTag = ([tag, count]: [Tag, number]) => {
+    const excluded = excludedTags.has(tag);
+    const checked = excluded || includedTags.has(tag);
+    const id = `tag-${tag}`;
+    return {
+      id,
+      content: (
+        <TagRow>
+          <ListItem
+            as="label"
+            icon={
+              <>
+                {excluded && <DeleteIcon />}
+                <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} data-tag={tag} />
+              </>
+            }
+            title={tag}
+            right={count}
+          />
+          <Button variant="ghost" size="medium" onClick={() => toggleTag(tag, !excluded)}>
+            {excluded ? 'Include' : 'Exclude'}
+          </Button>
+        </TagRow>
+      ),
+    };
+  };
+
   const groups = [
     allTags.size === 0 ? [noTags] : [],
-    userEntries
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([tag, count]) => {
-        const checked = selectedTags.includes(tag);
-        const id = `tag-${tag}`;
-        return {
-          id,
-          title: tag,
-          right: count,
-          input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} data-tag={tag} />,
-        };
-      }),
-    builtInEntries
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([tag, count]) => {
-        const checked = selectedTags.includes(tag);
-        const id = `tag-${tag}`;
-        return {
-          id,
-          title: tag,
-          right: count,
-          input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} data-tag={tag} />,
-        };
-      }),
+    userEntries.sort((a, b) => a[0].localeCompare(b[0])).map(renderTag),
+    builtInEntries.sort((a, b) => a[0].localeCompare(b[0])).map(renderTag),
   ] as Link[][];
 
   if (userEntries.length === 0 && isDevelopment) {
@@ -160,15 +170,6 @@ export const TagsFilterPanel = ({
               Reset filters
             </IconButton>
           )}
-          <IconButton
-            id="invert-selection"
-            disabled={selectedTags.length === 0}
-            onClick={() => setInverted(!inverted)}
-            active={inverted}
-          >
-            {inverted ? <EyeCloseIcon /> : <EyeIcon />}
-            Invert
-          </IconButton>
         </Actions>
       )}
       <TooltipLinkList links={groups} />

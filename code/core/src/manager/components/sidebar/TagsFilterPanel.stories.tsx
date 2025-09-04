@@ -10,9 +10,15 @@ const meta = {
   args: {
     toggleTag: fn(),
     setAllTags: fn(),
-    inverted: false,
-    setInverted: fn(),
-    indeterminateTags: [],
+    allTags: new Map([
+      ['play-fn', 1],
+      ['test-fn', 1],
+      ['tag1', 1],
+      ['tag2', 1],
+      ['tag3', 1],
+    ]),
+    includedTags: new Set(),
+    excludedTags: new Set(),
     resetTags: fn(),
     isInitialSelection: true,
     api: {
@@ -27,17 +33,20 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+export const Default: Story = {};
+
 export const Empty: Story = {
   args: {
     allTags: new Map(),
-    selectedTags: [],
   },
 };
 
 export const BuiltInTagsOnly: Story = {
   args: {
-    allTags: new Map([['play-fn', 1]]),
-    selectedTags: [],
+    allTags: new Map([
+      ['play-fn', 1],
+      ['test-fn', 1],
+    ]),
   },
 };
 
@@ -48,48 +57,28 @@ export const BuiltInTagsOnlyProduction: Story = {
   },
 };
 
-export const Default: Story = {
+export const Included: Story = {
   args: {
-    allTags: new Map([
-      ['tag1', 1],
-      ['tag2', 1],
-      ['tag3', 1],
-    ]),
-    selectedTags: ['tag1', 'tag3'],
+    includedTags: new Set(['tag1', 'play-fn']),
   },
 };
 
-export const Inverted: Story = {
+export const Excluded: Story = {
   args: {
-    ...Default.args,
-    inverted: true,
+    excludedTags: new Set(['tag1', 'play-fn']),
   },
 };
 
-export const Indeterminate: Story = {
+export const Mixed: Story = {
   args: {
-    ...Default.args,
-    indeterminateTags: ['tag1', 'tag3'],
+    includedTags: new Set(['tag1', 'play-fn']),
+    excludedTags: new Set(['tag2', 'test-fn']),
   },
 };
 
 export const Modified: Story = {
   args: {
-    ...Default.args,
+    ...Mixed.args,
     isInitialSelection: false,
-  },
-};
-
-export const BuiltInTags: Story = {
-  args: {
-    allTags: new Map([...Default.args.allTags, ['play-fn', 1]]),
-    selectedTags: ['tag1', 'tag3'],
-  },
-};
-
-export const ExtraBuiltInTagsSelected: Story = {
-  args: {
-    ...BuiltInTags.args,
-    selectedTags: ['tag1', 'tag3', 'autodocs', 'play-fn'],
   },
 };

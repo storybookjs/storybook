@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
 import type { StoryIndex, Tag, TagsOptions } from 'storybook/internal/types';
@@ -52,72 +52,85 @@ export interface TagsFilterProps {
 }
 
 export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
-  const [indeterminateTags, setIndeterminateTags] = useState<Tag[]>([]);
+  const allTags = useMemo(() => {
+    return Object.values(indexJson.entries).reduce((acc, entry) => {
+      entry.tags?.forEach((tag: Tag) => {
+        if (!BUILT_IN_TAGS_HIDE.has(tag)) {
+          acc.set(tag, (acc.get(tag) || 0) + 1);
+        }
+      });
+      return acc;
+    }, new Map<Tag, number>());
+  }, [indexJson.entries]);
+
+  const { defaultIncluded, defaultExcluded } = useMemo(() => {
+    return Object.entries(tagPresets).reduce(
+      (acc, [tag, { defaultSelection }]) => {
+        if (defaultSelection === 'include') {
+          acc.defaultIncluded.add(tag);
+        } else if (defaultSelection === 'exclude') {
+          acc.defaultExcluded.add(tag);
+        }
+        return acc;
+      },
+      { defaultIncluded: new Set<Tag>(), defaultExcluded: new Set<Tag>() }
+    );
+  }, [tagPresets]);
+
+  const [includedTags, setIncludedTags] = useState<Set<Tag>>(defaultIncluded);
+  const [excludedTags, setExcludedTags] = useState<Set<Tag>>(defaultExcluded);
   const [expanded, setExpanded] = useState(false);
-  const [inverted, setInverted] = useState(false);
-  const [initial, setInitial] = useState(false);
-  const tagsActive = selectedTags.length > 0;
+  const tagsActive = includedTags.size > 0 || excludedTags.size > 0;
 
   const resetTags = useCallback(() => {
-    const tags = Object.keys(tagPresets);
-    const presets = Object.values(tagPresets);
-    const invert =
-      presets.some((p) => 'defaultSelection' in p && p.defaultSelection === 'exclude') &&
-      !presets.some((p) => 'defaultSelection' in p && p.defaultSelection === 'include');
-    setSelectedTags(
-      tags.filter((tag) => tagPresets[tag].defaultSelection === (invert ? 'exclude' : 'include'))
-    );
-    setIndeterminateTags(
-      invert ? [] : tags.filter((tag) => tagPresets[tag].defaultSelection === 'exclude')
-    );
-    setInverted(invert);
-    setInitial(true);
-  }, [tagPresets]);
+    setIncludedTags(defaultIncluded);
+    setExcludedTags(defaultExcluded);
+  }, [defaultIncluded, defaultExcluded]);
 
   useEffect(resetTags, [resetTags]);
 
   useEffect(() => {
     api.experimental_setFilter(TAGS_FILTER, (item) => {
-      if (selectedTags.length === 0) {
+      if (includedTags.size + excludedTags.size === 0) {
         return true;
       }
-      const match = selectedTags.some((tag) => item.tags?.includes(tag));
-      return inverted ? !match : match;
+      return (
+        includedTags.values().some((tag) => item.tags?.includes(tag)) &&
+        excludedTags.values().every((tag) => !item.tags?.includes(tag))
+      );
     });
-  }, [api, selectedTags, inverted]);
-
-  const allTags = Object.values(indexJson.entries).reduce((acc, entry) => {
-    entry.tags?.forEach((tag: Tag) => {
-      if (!BUILT_IN_TAGS_HIDE.has(tag)) {
-        acc.set(tag, (acc.get(tag) || 0) + 1);
-      }
-    });
-    return acc;
-  }, new Map<Tag, number>());
+  }, [api, includedTags, excludedTags]);
 
   const toggleTag = useCallback(
-    (tag: string) => {
-      if (selectedTags.includes(tag)) {
-        setSelectedTags(selectedTags.filter((t) => t !== tag));
+    (tag: string, excluded?: boolean) => {
+      const set = new Set([tag]);
+      if (excluded === true) {
+        setExcludedTags(excludedTags.union(set));
+        setIncludedTags(includedTags.difference(set));
+      } else if (excluded === false) {
+        setIncludedTags(includedTags.union(set));
+        setExcludedTags(excludedTags.difference(set));
+      } else if (includedTags.has(tag)) {
+        setIncludedTags(includedTags.difference(set));
+      } else if (excludedTags.has(tag)) {
+        setExcludedTags(excludedTags.difference(set));
       } else {
-        setSelectedTags([...selectedTags, tag]);
+        setIncludedTags(includedTags.union(set));
       }
-      setInitial(false);
     },
-    [selectedTags, setSelectedTags]
+    [includedTags, excludedTags]
   );
+
   const setAllTags = useCallback(
     (selected: boolean) => {
       if (selected) {
-        setSelectedTags(Array.from(allTags.keys()));
+        setIncludedTags(new Set(allTags.keys()));
       } else {
-        setSelectedTags([]);
-        setInverted(false);
+        setIncludedTags(new Set());
       }
-      setInitial(false);
+      setExcludedTags(new Set());
     },
-    [allTags, setSelectedTags]
+    [allTags]
   );
 
   const handleToggleExpand = useCallback(
@@ -144,15 +157,16 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
         <TagsFilterPanel
           api={api}
           allTags={allTags}
-          selectedTags={selectedTags}
-          indeterminateTags={indeterminateTags}
+          includedTags={includedTags}
+          excludedTags={excludedTags}
           toggleTag={toggleTag}
           setAllTags={setAllTags}
           resetTags={resetTags}
-          inverted={inverted}
-          setInverted={setInverted}
           isDevelopment={isDevelopment}
-          isInitialSelection={initial}
+          isInitialSelection={
+            includedTags.symmetricDifference(defaultIncluded).size === 0 &&
+            excludedTags.symmetricDifference(defaultExcluded).size === 0
+          }
         />
       )}
       closeOnOutsideClick
@@ -161,7 +175,7 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
         <IconButton key="tags" title="Tag filters" active={tagsActive} onClick={handleToggleExpand}>
           <FilterIcon />
         </IconButton>
-        {selectedTags.length > 0 && <TagSelected />}
+        {includedTags.size + excludedTags.size > 0 && <TagSelected />}
       </Wrapper>
     </WithTooltip>
   );

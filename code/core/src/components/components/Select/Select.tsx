@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react';
+import type { FC, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import type { ButtonProps } from 'storybook/internal/components';
@@ -116,19 +116,24 @@ const StyledButton = styled(Button)<ButtonProps & { hasSelection?: boolean; isOp
   })
 );
 
+const Underlay = styled.div({
+  position: 'fixed',
+  inset: 0,
+  // This will do for now, our popovers use the max z-index of 2147483647. We'll want to
+  // inherit a base from a CSS variable and add preset values to it in the future (e.g.
+  // 100 for underlay, 200 for overlay) if we start using Select in dialogs.
+  zIndex: 1000,
+});
+
 /*
  * This popover does not do any keyboard handling or placement. It uses a portal to place
  * its children under its sibling's position. When clicking outside the popover, it closes.
  */
-function MinimalistPopover({
-  children,
-  handleClose,
-  triggerRef,
-}: {
+const MinimalistPopover: FC<{
   children: React.ReactNode;
   handleClose: () => void;
   triggerRef: React.RefObject<HTMLElement>;
-}) {
+}> = ({ children, handleClose, triggerRef }) => {
   const popoverRef = React.useRef(null);
 
   useInteractOutside({
@@ -159,13 +164,13 @@ function MinimalistPopover({
 
   return (
     <Overlay disableFocusManagement {...overlayProps}>
-      <div {...underlayProps} className="underlay" />
+      <Underlay {...underlayProps} />
       <Tooltip hasChrome ref={popoverRef} {...positionProps}>
         {children}
       </Tooltip>
     </Overlay>
   );
-}
+};
 
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
   (

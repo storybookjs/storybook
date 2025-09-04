@@ -25,17 +25,17 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: import.meta.resolve('@storybook/builder-vite'),
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-vite')),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: import.meta.resolve('@storybook/react/preset'),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const result = [...entry, import.meta.resolve('@storybook/nextjs-vite/preview')];
+  const result = [...entry, fileURLToPath(import.meta.resolve('@storybook/nextjs-vite/preview'))];
   return result;
 };
 

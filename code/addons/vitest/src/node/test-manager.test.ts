@@ -15,7 +15,7 @@ import path from 'pathe';
 import { STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST, storeOptions } from '../constants';
 import type { StoreEvent, StoreState } from '../types';
 import { TestManager, type TestManagerOptions } from './test-manager';
-import { ZERO_WIDTH_SPACE } from './vitest-manager';
+import { DOUBLE_SPACES } from './vitest-manager';
 
 const setTestNamePattern = vi.hoisted(() => vi.fn());
 const vitest = vi.hoisted(() => ({
@@ -205,7 +205,7 @@ describe('TestManager', () => {
         triggeredBy: 'global',
       },
     });
-    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One${ZERO_WIDTH_SPACE}$`));
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One${DOUBLE_SPACES}$`));
     expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
   });
 
@@ -221,7 +221,7 @@ describe('TestManager', () => {
       },
     });
     // regex should be exact match of the story name
-    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One${ZERO_WIDTH_SPACE}$`));
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One${DOUBLE_SPACES}$`));
   });
 
   it('should trigger a single story test', async () => {
@@ -237,7 +237,7 @@ describe('TestManager', () => {
     });
     // regex should be Parent Story Name + Test Name
     expect(setTestNamePattern).toHaveBeenCalledWith(
-      new RegExp(`^Parent story${ZERO_WIDTH_SPACE} Test name$`)
+      new RegExp(`^Parent story${DOUBLE_SPACES} Test name$`)
     );
   });
 
@@ -252,7 +252,7 @@ describe('TestManager', () => {
         triggeredBy: 'global',
       },
     });
-    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^Parent story${ZERO_WIDTH_SPACE}`));
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^Parent story${DOUBLE_SPACES}`));
   });
 
   it('should restart Vitest before a test run if coverage is enabled', async () => {

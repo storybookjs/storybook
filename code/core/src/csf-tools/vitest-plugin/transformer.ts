@@ -32,16 +32,16 @@ const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
  */
 
 /**
- * We add a special zero width space so that it's possible to do a regex for all test run use cases.
+ * We add double space characters so that it's possible to do a regex for all test run use cases.
  * Otherwise, if there were two unrelated stories like "Primary Button" and "Primary Button Mobile",
  * once you run tests for "Primary Button" and its children it would also match "Primary Button
  * Mobile". As it turns out, this limitation is also present in the Vitest VSCode extension and the
- * issue would occur with normal vitest tests as well, but because we use the zero width space, we
+ * issue would occur with normal vitest tests as well, but because we use double spaces, we
  * circumvent the issue.
  */
-const ZERO_WIDTH_SPACE = '​';
+const DOUBLE_SPACES = '  ';
 const getLiteralWithZeroWidthSpace = (testTitle: string) =>
-  t.stringLiteral(`${testTitle}${ZERO_WIDTH_SPACE}`);
+  t.stringLiteral(`${testTitle}${DOUBLE_SPACES}`);
 
 export async function vitestTransform({
   code,

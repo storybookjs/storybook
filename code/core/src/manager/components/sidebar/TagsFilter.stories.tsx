@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { findByRole, fn, screen } from 'storybook/test';
+import { findByRole, fn } from 'storybook/test';
 
 import { TagsFilter } from './TagsFilter';
 
 const meta = {
   component: TagsFilter,
   title: 'Sidebar/TagsFilter',
-  tags: ['haha'],
+  tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
   args: {
     api: {
       experimental_setFilter: fn(),

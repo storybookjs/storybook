@@ -1,14 +1,24 @@
 import React, { useRef } from 'react';
 
-import { Button, Form, IconButton, ListItem, TooltipLinkList } from 'storybook/internal/components';
+import {
+  Button,
+  Form,
+  IconButton,
+  ListItem,
+  TooltipLinkList,
+  TooltipNote,
+  WithTooltip,
+} from 'storybook/internal/components';
 import type { Tag } from 'storybook/internal/types';
 
 import {
   BatchAcceptIcon,
-  CloseIcon,
+  CheckIcon,
   DeleteIcon,
   DocumentIcon,
   ShareAltIcon,
+  SweepIcon,
+  UndoIcon,
 } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
@@ -49,7 +59,7 @@ const Actions = styled.div(({ theme }) => ({
 const TagRow = styled.div({
   display: 'flex',
 
-  '& > button': {
+  '& button': {
     width: 64,
     maxWidth: 64,
     marginLeft: 4,
@@ -58,8 +68,9 @@ const TagRow = styled.div({
     fontWeight: 'normal',
     transition: 'all 150ms',
   },
-  '&:not(:has(:hover, :focus-visible, *:focus-visible))': {
-    '& > button': {
+  '&:not(:hover)': {
+    '& button': {
+      marginLeft: 0,
       maxWidth: 0,
       opacity: 0,
     },
@@ -68,6 +79,16 @@ const TagRow = styled.div({
     },
   },
 });
+
+const Label = styled.div({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+});
+
+const MutedText = styled.span(({ theme }) => ({
+  color: theme.textMutedColor,
+}));
 
 interface TagsFilterPanelProps {
   api: API;
@@ -78,7 +99,8 @@ interface TagsFilterPanelProps {
   setAllTags: (selected: boolean) => void;
   resetTags: () => void;
   isDevelopment: boolean;
-  isInitialSelection: boolean;
+  isDefaultSelection: boolean;
+  hasDefaultSelection: boolean;
 }
 
 export const TagsFilterPanel = ({
@@ -90,7 +112,8 @@ export const TagsFilterPanel = ({
   setAllTags,
   resetTags,
   isDevelopment,
-  isInitialSelection,
+  isDefaultSelection,
+  hasDefaultSelection,
 }: TagsFilterPanelProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -118,20 +141,38 @@ export const TagsFilterPanel = ({
       id,
       content: (
         <TagRow>
-          <ListItem
-            as="label"
-            icon={
-              <>
-                {excluded && <DeleteIcon />}
-                <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} data-tag={tag} />
-              </>
-            }
-            title={tag}
-            right={count}
-          />
-          <Button variant="ghost" size="medium" onClick={() => toggleTag(tag, !excluded)}>
-            {excluded ? 'Include' : 'Exclude'}
-          </Button>
+          <WithTooltip
+            hasChrome={false}
+            style={{ minWidth: 0, flex: 1 }}
+            tooltip={<TooltipNote note={`${checked ? 'Remove' : 'Add'} tag filter: ${tag}`} />}
+            trigger="hover"
+          >
+            <ListItem
+              as="label"
+              icon={
+                <>
+                  {checked && (excluded ? <DeleteIcon /> : <CheckIcon />)}
+                  <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} data-tag={tag} />
+                </>
+              }
+              title={
+                <Label>
+                  {tag}
+                  {excluded && <MutedText> (excluded)</MutedText>}
+                </Label>
+              }
+              right={excluded ? <s>{count}</s> : <span>{count}</span>}
+            />
+          </WithTooltip>
+          <WithTooltip
+            hasChrome={false}
+            tooltip={<TooltipNote note={`${excluded ? 'Include' : 'Exclude'} tag: ${tag}`} />}
+            trigger="hover"
+          >
+            <Button variant="ghost" size="medium" onClick={() => toggleTag(tag, !excluded)}>
+              {excluded ? 'Include' : 'Exclude'}
+            </Button>
+          </WithTooltip>
         </TagRow>
       ),
     };
@@ -159,16 +200,33 @@ export const TagsFilterPanel = ({
     <Wrapper ref={ref}>
       {allTags.size > 0 && (
         <Actions>
-          {isInitialSelection ? (
+          {includedTags.size === 0 && excludedTags.size === 0 ? (
             <IconButton id="select-all" key="select-all" onClick={() => setAllTags(true)}>
               <BatchAcceptIcon />
               Select all
             </IconButton>
           ) : (
-            <IconButton id="reset-filters" key="reset-filters" onClick={resetTags}>
-              <CloseIcon />
-              Reset filters
+            <IconButton id="deselect-all" key="deselect-all" onClick={() => setAllTags(false)}>
+              <SweepIcon />
+              Clear filters
             </IconButton>
+          )}
+          {hasDefaultSelection && (
+            <WithTooltip
+              hasChrome={false}
+              tooltip={<TooltipNote note="Reset to default selection" />}
+              trigger="hover"
+            >
+              <IconButton
+                id="reset-filters"
+                key="reset-filters"
+                onClick={resetTags}
+                aria-label="Reset filters"
+                disabled={isDefaultSelection}
+              >
+                <UndoIcon />
+              </IconButton>
+            </WithTooltip>
           )}
         </Actions>
       )}

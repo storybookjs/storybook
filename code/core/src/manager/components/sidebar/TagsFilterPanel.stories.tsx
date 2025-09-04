@@ -15,12 +15,13 @@ const meta = {
       ['test-fn', 1],
       ['tag1', 1],
       ['tag2', 1],
-      ['tag3', 1],
+      ['tag3-which-is-very-long-and-will-be-truncated-after-a-while', 1],
     ]),
     includedTags: new Set(),
     excludedTags: new Set(),
     resetTags: fn(),
-    isInitialSelection: true,
+    isDefaultSelection: true,
+    hasDefaultSelection: false,
     api: {
       getDocsUrl: () => 'https://storybook.js.org/docs/',
     } as any,
@@ -33,7 +34,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+export const Basic: Story = {};
 
 export const Empty: Story = {
   args: {
@@ -60,12 +61,14 @@ export const BuiltInTagsOnlyProduction: Story = {
 export const Included: Story = {
   args: {
     includedTags: new Set(['tag1', 'play-fn']),
+    isDefaultSelection: false,
   },
 };
 
 export const Excluded: Story = {
   args: {
     excludedTags: new Set(['tag1', 'play-fn']),
+    isDefaultSelection: false,
   },
 };
 
@@ -73,12 +76,22 @@ export const Mixed: Story = {
   args: {
     includedTags: new Set(['tag1', 'play-fn']),
     excludedTags: new Set(['tag2', 'test-fn']),
+    isDefaultSelection: false,
   },
 };
 
-export const Modified: Story = {
+export const DefaultSelection: Story = {
   args: {
     ...Mixed.args,
-    isInitialSelection: false,
+    isDefaultSelection: true,
+    hasDefaultSelection: true,
+  },
+};
+
+export const DefaultSelectionModified: Story = {
+  args: {
+    ...Mixed.args,
+    isDefaultSelection: false,
+    hasDefaultSelection: true,
   },
 };

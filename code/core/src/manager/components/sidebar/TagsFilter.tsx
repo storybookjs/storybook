@@ -91,12 +91,12 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
 
   useEffect(() => {
     api.experimental_setFilter(TAGS_FILTER, (item) => {
-      if (includedTags.size + excludedTags.size === 0) {
+      if (!includedTags.size && !excludedTags.size) {
         return true;
       }
       return (
-        includedTags.values().some((tag) => item.tags?.includes(tag)) &&
-        excludedTags.values().every((tag) => !item.tags?.includes(tag))
+        (!includedTags.size || includedTags.values().some((tag) => item.tags?.includes(tag))) &&
+        (!excludedTags.size || excludedTags.values().every((tag) => !item.tags?.includes(tag)))
       );
     });
   }, [api, includedTags, excludedTags]);
@@ -163,10 +163,11 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
           setAllTags={setAllTags}
           resetTags={resetTags}
           isDevelopment={isDevelopment}
-          isInitialSelection={
+          isDefaultSelection={
             includedTags.symmetricDifference(defaultIncluded).size === 0 &&
             excludedTags.symmetricDifference(defaultExcluded).size === 0
           }
+          hasDefaultSelection={defaultIncluded.size > 0 || defaultExcluded.size > 0}
         />
       )}
       closeOnOutsideClick

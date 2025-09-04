@@ -141,6 +141,19 @@ const MobileBottomBar = styled.div({
   width: '100%',
   height: 40,
   padding: '0 6px',
+
+  /* Because Popper.js's tooltip is creating extra div layers, we have to
+   * punch through them to configure the button to ellipsize. */
+  '& > *:first-child': {
+    /* 6px padding * 2 + 28px for the orientation button */
+    maxWidth: 'calc(100% - 40px)',
+    '& > button': {
+      maxWidth: '100%',
+    },
+    '& > button p': {
+      textOverflow: 'ellipsis',
+    },
+  },
 });
 
 const BottomBarButton = styled(Button)({

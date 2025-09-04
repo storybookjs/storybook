@@ -64,7 +64,7 @@ export const Container = styled.div<{ width?: number; height?: number }>(
 
 export const CloseButton = () => (
   <Dialog.Close asChild>
-    <Button ariaLabel="Close modal" shortcut={['Escape']}>
+    <Button padding="small" ariaLabel="Close modal" variant="ghost" shortcut={['Escape']}>
       <CrossIcon />
     </Button>
   </Dialog.Close>

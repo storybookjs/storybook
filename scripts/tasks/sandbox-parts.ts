@@ -562,7 +562,9 @@ export async function addExtraDependencies({
 }
 
 export const addGlobalMocks: Task['run'] = async ({ sandboxDir }) => {
-  await cp(join(CODE_DIRECTORY, 'core', 'template', '__mocks__'), join(sandboxDir, '__mocks__'));
+  await cp(join(CODE_DIRECTORY, 'core', 'template', '__mocks__'), join(sandboxDir, '__mocks__'), {
+    recursive: true,
+  });
 };
 
 export const addStories: Task['run'] = async (

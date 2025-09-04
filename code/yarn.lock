@@ -22262,12 +22262,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-inspector@npm:^8.0.0":
-  version: 8.0.0
-  resolution: "react-inspector@npm:8.0.0"
+"react-inspector@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "react-inspector@npm:9.0.0"
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
-  checksum: 10c0/b8b973621d71636d0a447306939f5f11a070e4095607c5c7f362b2fc324a51619ac4620efe37345f194b0c0e201dd53c1d439d871f09611274b299eed836cd7a
+  checksum: 10c0/494787480206a787ed13ae774cae48e16f369e187c52e5897ab98f4701a18ab25fab98d78d86be91fac9218f505c7f7ab687d902baa887161138896f9150f5b6
   languageName: node
   linkType: hard
 
@@ -24522,7 +24522,7 @@ __metadata:
     react: "npm:^19.1.1"
     react-dom: "npm:^19.1.1"
     react-helmet-async: "npm:^2.0.5"
-    react-inspector: "npm:^8.0.0"
+    react-inspector: "npm:^9.0.0"
     react-popper-tooltip: "npm:^4.4.2"
     react-router-dom: "npm:6.15.0"
     react-syntax-highlighter: "npm:^15.6.6"

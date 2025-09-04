@@ -35,15 +35,15 @@ export const core: PresetProperty<'core'> = async (config, options) => {
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const result = [...entry, fileURLToPath(import.meta.resolve('@storybook/nextjs-vite/preview'))];
+  const result = [...entry, fileURLToPath(import.meta.resolve('@storybook/nextjs-vite-rsc/preview'))];
   return result;
 };
 
 export const optimizeViteDeps = [
-  '@storybook/nextjs-vite/navigation.mock',
-  '@storybook/nextjs-vite/router.mock',
-  '@storybook/nextjs-vite > styled-jsx',
-  '@storybook/nextjs-vite > styled-jsx/style',
+  '@storybook/nextjs-vite-rsc/navigation.mock',
+  '@storybook/nextjs-vite-rsc/router.mock',
+  '@storybook/nextjs-vite-rsc > styled-jsx',
+  '@storybook/nextjs-vite-rsc > styled-jsx/style',
 ];
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {

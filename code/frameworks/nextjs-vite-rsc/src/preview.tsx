@@ -6,10 +6,10 @@ import type { ReactRenderer, StoryFn } from '@storybook/react';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { createNavigation } from '@storybook/nextjs-vite/navigation.mock';
+import { createNavigation } from '@storybook/nextjs-vite-rsc/navigation.mock';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { createRouter } from '@storybook/nextjs-vite/router.mock';
+import { createRouter } from '@storybook/nextjs-vite-rsc/router.mock';
 
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
 

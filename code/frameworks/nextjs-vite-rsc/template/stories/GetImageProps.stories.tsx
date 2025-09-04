@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite-rsc';
 
 import { type ImageProps, getImageProps } from 'next/image';
 

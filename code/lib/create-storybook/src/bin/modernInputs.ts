@@ -7,6 +7,7 @@ export const supportedFrameworks = [
   'html-vite',
   'nextjs',
   'nextjs-vite',
+  'nextjs-vite-rsc',
   'nuxt',
   'preact-vite',
   'qwik',
@@ -41,6 +42,7 @@ export const supportedFrameworksPackages = {
   ember: '@storybook/ember',
   nextjs: '@storybook/nextjs',
   'nextjs-vite': '@storybook/nextjs-vite',
+  'nextjs-vite-rsc': '@storybook/nextjs-vite-rsc',
 
   nuxt: '@storybook/vue3-vite',
   qwik: 'storybook-framework-qwik',
@@ -65,6 +67,7 @@ export const supportedFrameworksNames = {
   ember: 'Ember',
   nextjs: 'NextJS',
   'nextjs-vite': 'NextJS with Vite',
+  'nextjs-vite-rsc': 'NextJS with Vite and RSC support',
   nuxt: 'Nuxt',
   qwik: 'Qwik',
   solid: 'Solid',

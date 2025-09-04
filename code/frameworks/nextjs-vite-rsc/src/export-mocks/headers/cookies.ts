@@ -3,7 +3,7 @@
 // is the only way to achieve it actually being a singleton
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { headers } from '@storybook/nextjs-vite/headers.mock';
+import { headers } from '@storybook/nextjs-vite-rsc/headers.mock';
 
 import { RequestCookies } from 'next/dist/compiled/@edge-runtime/cookies';
 import { fn } from 'storybook/test';

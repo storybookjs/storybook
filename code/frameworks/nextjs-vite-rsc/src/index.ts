@@ -17,7 +17,7 @@ export * from './types';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-declare module '@storybook/nextjs-vite/vite-plugin' {
+declare module '@storybook/nextjs-vite-rsc/vite-plugin' {
   export const storybookNextJsPlugin: typeof vitePluginStorybookNextJs;
 }
 

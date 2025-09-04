@@ -31,17 +31,6 @@ const packageDir = dirname(require.resolve('@storybook/addon-vitest/package.json
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
 
-/**
- * The Storybook vitest plugin adds a special zero width space so that it's possible to do a regex
- * for all test run use cases. Otherwise, if there were two unrelated stories like "Primary Button"
- * and "Primary Button Mobile", once you run tests for "Primary Button" and its children it would
- * also match "Primary Button Mobile". As it turns out, this limitation is also present in the
- * Vitest VSCode extension and the issue would occur with normal vitest tests as well, but because
- * we use the zero width space, we circumvent the issue.
- */
-export const ZERO_WIDTH_SPACE = '​';
-const getTestName = (name: string) => `${name}${ZERO_WIDTH_SPACE}`;
-
 export class VitestManager {
   vitest: Vitest | null = null;
 
@@ -282,6 +271,10 @@ export class VitestManager {
       ? allStories.filter((story) => runPayload.storyIds?.includes(story.id))
       : allStories;
 
+    // When we run tests that involved a describe block (parent story + tests)
+    // we need to remove spaces from the parent story name, as the describe block does not have spaces
+    const getExportName = (name: string) => name.replace(/\s+/g, '');
+
     const isSingleStoryRun = runPayload.storyIds?.length === 1;
     if (isSingleStoryRun) {
       const selectedStory = filteredStories.find((story) => story.id === runPayload.storyIds?.[0]);
@@ -298,21 +291,32 @@ export class VitestManager {
       if (isParentStory) {
         // Use case 1: "Single" story run on a story with tests
         // -> run all tests of that story, as storyName is a describe block
-        const parentName = getTestName(selectedStory.name);
-        regex = new RegExp(`^${parentName}`);
+        /**
+         * The vitest transformation keeps the export name as is, e.g. "PrimaryButton", while the
+         * storybook sidebar changes the name to "Primary Button". That's why we need to remove
+         * spaces from the story name, to match the test name. If we were to also beautify the test
+         * name, doing a regex wouldn't be precise because there could be two describes, for
+         * instance: "Primary Button" and "Primary Button Mobile" and both would match. The fact
+         * that there are no spaces in the test name is what makes "PrimaryButton" and
+         * "PrimaryButtonMobile" work well in the regex. As it turns out, this limitation is also
+         * present in the Vitest VSCode extension and the issue would occur with normal vitest tests
+         * as well.
+         */
+        const parentName = getExportName(selectedStory.name);
+        regex = new RegExp(`^${parentName} `); // the extra space is intentional!
       } else if (hasParentStory) {
         // Use case 2: Single story run on a specific story test
-        // in this case the regex pattern should be the story parentName + space + story.name
+        // in this case the regex pattern should be the story parentName + story.name
         const parentStory = allStories.find((story) => story.id === selectedStory.parent);
         if (!parentStory) {
           throw new Error(`Parent story not found for story ${selectedStory.id}`);
         }
 
-        const parentName = getTestName(parentStory.name);
+        const parentName = getExportName(parentStory.name);
         regex = new RegExp(`^${parentName} ${storyName}$`);
       } else {
-        // Use case 3: Single story run on a story without tests, should be exact match of story name
-        regex = new RegExp(`^${getTestName(storyName)}$`);
+        // Use case 3: Single story run on a story without tests
+        regex = new RegExp(`^${storyName}$`);
       }
       this.vitest!.setGlobalTestNamePattern(regex);
     }

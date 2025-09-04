@@ -7,7 +7,7 @@ import type { StoriesEntry, Tag } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { type StoryTest, formatCsf, loadCsf } from '../CsfFile';
+import { formatCsf, loadCsf } from '../CsfFile';
 
 type TagsFilter = {
   include: string[];
@@ -30,18 +30,6 @@ const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
  * `storybook/internal/babel` for all it's babel needs, without duplicating babel embedding in our
  * bundles.
  */
-
-/**
- * We add a special zero width space so that it's possible to do a regex for all test run use cases.
- * Otherwise, if there were two unrelated stories like "Primary Button" and "Primary Button Mobile",
- * once you run tests for "Primary Button" and its children it would also match "Primary Button
- * Mobile". As it turns out, this limitation is also present in the Vitest VSCode extension and the
- * issue would occur with normal vitest tests as well, but because we use the zero width space, we
- * circumvent the issue.
- */
-const ZERO_WIDTH_SPACE = '​';
-const getLiteralWithZeroWidthSpace = (testTitle: string) =>
-  t.stringLiteral(`${testTitle}${ZERO_WIDTH_SPACE}`);
 
 export async function vitestTransform({
   code,
@@ -218,25 +206,22 @@ export async function vitestTransform({
     testTitle,
     node,
     overrideSourcemap = true,
-    storyId,
   }: {
     localName: string;
     exportName: string;
     testTitle: string;
     node: t.Node;
     overrideSourcemap?: boolean;
-    storyId: string;
   }): t.ExpressionStatement => {
     // Create the _test expression directly using the exportName identifier
     const testStoryCall = t.expressionStatement(
       t.callExpression(vitestTestId, [
-        getLiteralWithZeroWidthSpace(testTitle),
+        t.stringLiteral(testTitle),
         t.callExpression(testStoryId, [
           t.stringLiteral(exportName),
           t.identifier(localName),
           t.identifier(metaExportName),
           skipTagsId,
-          t.stringLiteral(storyId),
         ]),
       ])
     );
@@ -252,15 +237,13 @@ export async function vitestTransform({
 
   const getDescribeStatementForStory = (options: {
     localName: string;
-    describeTitle: string;
     exportName: string;
-    tests: StoryTest[];
+    tests: Array<{ name: string; node: t.Node }>;
     node: t.Node;
-    parentStoryId: string;
   }): t.ExpressionStatement => {
-    const { localName, describeTitle, exportName, tests, node, parentStoryId } = options;
+    const { localName, exportName, tests, node } = options;
     const describeBlock = t.callExpression(vitestDescribeId, [
-      getLiteralWithZeroWidthSpace(describeTitle),
+      t.stringLiteral(exportName),
       t.arrowFunctionExpression(
         [],
         t.blockStatement([
@@ -268,9 +251,8 @@ export async function vitestTransform({
             ...options,
             testTitle: 'base story',
             overrideSourcemap: false,
-            storyId: parentStoryId,
           }),
-          ...tests.map(({ name: testName, node: testNode, id: storyId }) => {
+          ...tests.map(({ name: testName, node: testNode }) => {
             const testStatement = t.expressionStatement(
               t.callExpression(vitestTestId, [
                 t.stringLiteral(testName),
@@ -279,7 +261,6 @@ export async function vitestTransform({
                   t.identifier(localName),
                   t.identifier(metaExportName),
                   t.arrayExpression([]),
-                  t.stringLiteral(storyId),
                   t.stringLiteral(testName),
                 ]),
               ])
@@ -307,31 +288,16 @@ export async function vitestTransform({
         return;
       }
 
-      console.log({ parsed: parsed._stories[exportName] });
       const localName = parsed._stories[exportName].localName ?? exportName;
       // use the story's name as the test title for vitest, and fallback to exportName
       const testTitle = parsed._stories[exportName].name ?? exportName;
-      const storyId = parsed._stories[exportName].id;
       const tests = parsed.getStoryTests(exportName);
 
       if (tests?.length > 0) {
-        return getDescribeStatementForStory({
-          localName,
-          describeTitle: testTitle,
-          exportName,
-          tests,
-          node,
-          parentStoryId: storyId,
-        });
+        return getDescribeStatementForStory({ localName, exportName, tests, node });
       }
 
-      return getTestStatementForStory({
-        testTitle,
-        localName,
-        exportName,
-        node,
-        storyId,
-      });
+      return getTestStatementForStory({ testTitle, localName, exportName, node });
     })
     .filter((st) => !!st) as t.ExpressionStatement[];
 

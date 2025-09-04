@@ -294,9 +294,6 @@ export const TestingModule = ({
                 size="medium"
                 variant="ghost"
                 padding="small"
-                // FIXME: MA, copy, how about 'Run all tests' to align with other action verbs?
-                // Also if tooltip doesn't explicate there are several categories of tests that
-                // can be controlled from the popover, is there a point in having a tooltip?
                 ariaLabel={false}
                 tooltip={isRunning ? 'Running tests...' : 'Start all tests'}
                 onClick={(e: SyntheticEvent) => {

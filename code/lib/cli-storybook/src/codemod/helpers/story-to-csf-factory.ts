@@ -95,7 +95,7 @@ export async function storyToCsfFactory(
   // @TODO: Support unconventional formats:
   // `export function Story() { };` and `export { Story };
   // These are not part of csf._storyExports but rather csf._storyStatements and are tricky to support.
-  Object.entries(csf._storyExports).forEach(([_key, decl]) => {
+  Object.entries(csf._storyExports).forEach(([, decl]) => {
     const id = decl.id;
     const declarator = decl as t.VariableDeclarator;
     let init = t.isVariableDeclarator(declarator) ? declarator.init : undefined;
@@ -124,6 +124,34 @@ export async function storyToCsfFactory(
           t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
           [init]
         );
+      }
+    }
+  });
+
+  // Support function-declared stories
+  Object.entries(csf._storyExports).forEach(([exportName, decl]) => {
+    if (t.isFunctionDeclaration(decl) && decl.id) {
+      const arrowFn = t.arrowFunctionExpression(decl.params, decl.body);
+      arrowFn.async = !!decl.async;
+
+      const wrappedCall = t.callExpression(
+        t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
+        [arrowFn]
+      );
+
+      const replacement = t.exportNamedDeclaration(
+        t.variableDeclaration('const', [
+          t.variableDeclarator(t.identifier(exportName), wrappedCall),
+        ])
+      );
+
+      const pathForExport = (
+        csf as unknown as {
+          _storyPaths?: Record<string, { replaceWith?: (node: t.Node) => void }>;
+        }
+      )._storyPaths?.[exportName];
+      if (pathForExport && pathForExport.replaceWith) {
+        pathForExport.replaceWith(replacement);
       }
     }
   });

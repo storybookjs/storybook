@@ -56,8 +56,8 @@
   },
   "devDependencies": {
     "@storybook/icons": "^1.4.0",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {

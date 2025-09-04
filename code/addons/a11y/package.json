@@ -67,9 +67,9 @@
     "@storybook/icons": "^1.4.0",
     "@testing-library/react": "^14.0.0",
     "execa": "^9.5.2",
-    "react": "^19.1.1",
-    "react-dom": "^19.1.1",
-    "react-resize-detector": "^12.3.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-resize-detector": "^7.1.2",
     "typescript": "^5.8.3",
     "vitest-axe": "^0.1.0"
   },

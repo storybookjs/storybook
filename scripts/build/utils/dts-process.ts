@@ -23,7 +23,7 @@ async function run() {
     input: entryPoint,
     external: (id) => {
       return external.some(
-        (dep) => id.startsWith(dep) || id.includes(`${sep}node_modules${sep}${dep}${sep}`)
+        (dep) => id === dep || id.startsWith(`${dep}/`) || id.includes(`${sep}node_modules${sep}${dep}${sep}`)
       );
     },
     output: { file: outputFile, format: 'es' },

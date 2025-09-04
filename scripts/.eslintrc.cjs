@@ -67,7 +67,7 @@ module.exports = {
     'depend/ban-dependencies': [
       'error',
       {
-        modules: ['lodash', 'chalk', 'qs', 'handlebars', 'fs-extra'],
+        modules: ['lodash', 'lodash-es', 'chalk', 'qs', 'handlebars', 'fs-extra'],
       },
     ],
   },

@@ -6416,6 +6416,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@storybook/nextjs-vite-rsc@workspace:frameworks/nextjs-vite-rsc":
+  version: 0.0.0-use.local
+  resolution: "@storybook/nextjs-vite-rsc@workspace:frameworks/nextjs-vite-rsc"
+  dependencies:
+    "@storybook/builder-vite": "workspace:*"
+    "@storybook/react": "workspace:*"
+    "@storybook/react-vite": "workspace:*"
+    "@types/node": "npm:^22.0.0"
+    next: "npm:^15.2.3"
+    postcss-load-config: "npm:^6.0.1"
+    styled-jsx: "npm:5.1.6"
+    typescript: "npm:^5.8.3"
+    vite-plugin-storybook-nextjs: "npm:^2.0.5"
+  peerDependencies:
+    next: ^14.1.0 || ^15.0.0
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+    storybook: "workspace:^"
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
+  languageName: unknown
+  linkType: soft
+
 "@storybook/nextjs-vite@workspace:frameworks/nextjs-vite":
   version: 0.0.0-use.local
   resolution: "@storybook/nextjs-vite@workspace:frameworks/nextjs-vite"

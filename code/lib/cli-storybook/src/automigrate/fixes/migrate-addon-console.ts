@@ -70,7 +70,7 @@ export async function transformPreviewFile(source: string, filePath: string): Pr
   const previewConfig = loadConfig(source).parse();
 
   // We import spyOn so we can use it.
-  previewConfig.setImport(['spyOn'], '@storybook/test');
+  previewConfig.setImport(['spyOn'], 'storybook/test');
 
   // addon-console required its users to import it in preview instead of
   // the usual addon loading mechanism.

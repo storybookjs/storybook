@@ -101,7 +101,7 @@ export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRu
     if (!existsSync(srcDir)) {
       throw new Error(`Missing repro directory '${srcDir}', did the generate task run?`);
     }
-    await cp(srcDir, sandboxDir);
+    await cp(srcDir, sandboxDir, { recursive: true });
   } else {
     await executeCLIStep(steps.repro, {
       argument: key,

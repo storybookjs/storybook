@@ -121,3 +121,82 @@ describe('each function', () => {
     expect(test2!.input.args).toEqual({ label: 'two' });
   });
 });
+
+describe('matrix function', () => {
+  test('without overrides', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testFn = vi.fn();
+
+    MyStory.matrix(
+      'test matrix %s %d',
+      [
+        ['a', 'b'],
+        [1, 2],
+      ],
+      testFn
+    );
+
+    const tests = getStoryChildren(MyStory).filter(({ input }) => input.tags?.includes('test-fn'));
+    expect(tests.length).toEqual(4);
+
+    for (const [p1, p2] of [
+      ['a', 1],
+      ['a', 2],
+      ['b', 1],
+      ['b', 2],
+    ]) {
+      const test = tests.find(({ input }) => input.name === `test matrix ${p1} ${p2}`);
+      expect(test).not.toBeUndefined();
+      await test?.run();
+      expect(testFn).toHaveBeenLastCalledWith(expect.anything(), p1, p2);
+    }
+  });
+  test('with static overrides', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testFn = vi.fn();
+
+    MyStory.matrix(
+      'test matrix %s %d',
+      [
+        ['a', 'b'],
+        [1, 2],
+      ],
+      { args: { label: 'bar' } },
+      testFn
+    );
+
+    const tests = getStoryChildren(MyStory).filter(({ input }) => input.tags?.includes('test-fn'));
+    expect(tests.length).toEqual(4);
+
+    for (const test of tests) {
+      expect(test.input.args).toEqual({ label: 'bar' });
+    }
+  });
+  test('with dynamic overrides', async () => {
+    const MyStory = meta.story({ args: { label: 'foo' } });
+    const testFn = vi.fn();
+
+    MyStory.matrix(
+      'test matrix %s %d',
+      [
+        ['a', 'b'],
+        [1, 2],
+      ],
+      (p1, p2) => ({ args: { label: `${p1} ${p2}` } }),
+      testFn
+    );
+
+    const tests = getStoryChildren(MyStory).filter(({ input }) => input.tags?.includes('test-fn'));
+    expect(tests.length).toEqual(4);
+
+    for (const [p1, p2] of [
+      ['a', 1],
+      ['a', 2],
+      ['b', 1],
+      ['b', 2],
+    ]) {
+      const test = tests.find(({ input }) => input.name === `test matrix ${p1} ${p2}`);
+      expect(test?.input.args).toEqual({ label: `${p1} ${p2}` });
+    }
+  });
+});

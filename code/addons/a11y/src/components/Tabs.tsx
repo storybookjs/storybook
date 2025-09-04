@@ -146,6 +146,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
           ) : (
             <CollapsibleButton
               onClick={toggleHighlight}
+              variant="ghost"
               ariaLabel="Highlight elements with accessibility test results"
               tooltip="Highlight elements with accessibility test results"
             >

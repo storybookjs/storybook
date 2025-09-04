@@ -36,6 +36,7 @@ export const testStory = (
   story: ComposedStoryFn | Story<Renderer>,
   meta: ComponentAnnotations | Meta<Renderer>,
   skipTags: string[],
+  storyId: string,
   testName?: string
 ) => {
   return async (context: TestContext & { story: ComposedStoryFn }) => {
@@ -66,12 +67,9 @@ export const testStory = (
       meta: TaskMeta & { storyId: string; reports: Report[] };
     };
 
-    if (testName) {
-      // TODO: [test-syntax] isn't this done by the csf plugin somehow?
-      _task.meta.storyId = toTestId(composedStory.id, testName);
-    } else {
-      _task.meta.storyId = composedStory.id;
-    }
+    // The id will always be present, calculated by CsfFile
+    // and is needed so that we can add the test to the story in Storybook's UI for the status
+    _task.meta.storyId = storyId;
 
     await setViewport(composedStory.parameters, composedStory.globals);
 

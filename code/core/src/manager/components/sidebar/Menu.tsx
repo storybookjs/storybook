@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 
 import { Button, ToggleButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 
-import { CloseIcon, CogIcon, InfoIcon } from '@storybook/icons';
+import { CloseIcon, CogIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { type Theme, css, styled } from 'storybook/theming';
@@ -107,7 +107,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
           onClick={onClick}
           isMobile={true}
         >
-          <InfoIcon />
+          <CogIcon />
         </SidebarButton>
         <SidebarButton
           padding="small"

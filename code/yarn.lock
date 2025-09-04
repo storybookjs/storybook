@@ -5948,9 +5948,9 @@ __metadata:
     "@testing-library/react": "npm:^14.0.0"
     axe-core: "npm:^4.2.0"
     execa: "npm:^9.5.2"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    react-resize-detector: "npm:^7.1.2"
+    react: "npm:^19.1.1"
+    react-dom: "npm:^19.1.1"
+    react-resize-detector: "npm:^12.3.0"
     typescript: "npm:^5.8.3"
     vitest-axe: "npm:^0.1.0"
   peerDependencies:
@@ -5996,9 +5996,9 @@ __metadata:
     markdown-to-jsx: "npm:^7.7.2"
     memoizerific: "npm:^1.11.3"
     polished: "npm:^4.2.2"
-    react: "npm:^18.2.0"
+    react: "npm:^19.1.1"
     react-colorful: "npm:^5.1.2"
-    react-dom: "npm:^18.2.0"
+    react-dom: "npm:^19.1.1"
     rehype-external-links: "npm:^3.0.0"
     rehype-slug: "npm:^6.0.0"
     telejson: "npm:8.0.0"
@@ -6016,8 +6016,8 @@ __metadata:
   resolution: "@storybook/addon-jest@workspace:addons/jest"
   dependencies:
     "@storybook/icons": "npm:^1.4.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
+    react: "npm:^19.1.1"
+    react-dom: "npm:^19.1.1"
     react-resize-detector: "npm:^7.1.2"
     tiny-invariant: "npm:^1.3.1"
     typescript: "npm:^5.8.3"
@@ -6048,8 +6048,8 @@ __metadata:
   dependencies:
     "@neoconfetti/react": "npm:^1.0.0"
     "@storybook/icons": "npm:^1.4.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
+    react: "npm:^19.1.1"
+    react-dom: "npm:^19.1.1"
     react-joyride: "npm:^2.8.2"
     typescript: "npm:^5.8.3"
   peerDependencies:
@@ -6062,8 +6062,8 @@ __metadata:
   resolution: "@storybook/addon-themes@workspace:addons/themes"
   dependencies:
     "@storybook/icons": "npm:^1.4.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
+    react: "npm:^19.1.1"
+    react-dom: "npm:^19.1.1"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^5.8.3"
   peerDependencies:
@@ -6092,8 +6092,8 @@ __metadata:
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
     prompts: "npm:^2.4.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
+    react: "npm:^19.1.1"
+    react-dom: "npm:^19.1.1"
     semver: "npm:^7.6.3"
     sirv: "npm:^2.0.4"
     slash: "npm:^5.0.0"
@@ -6820,8 +6820,8 @@ __metadata:
     prettier-plugin-jsdoc: "npm:^1.3.0"
     prettier-plugin-merge: "npm:^0.7.0"
     process: "npm:^0.11.10"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
+    react: "npm:^19.1.1"
+    react-dom: "npm:^19.1.1"
     rimraf: "npm:^6.0.1"
     slash: "npm:^5.0.0"
     sort-package-json: "npm:^2.14.0"
@@ -7975,7 +7975,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-transition-group@npm:^4":
+"@types/react-transition-group@npm:^4.4.12":
   version: 4.4.12
   resolution: "@types/react-transition-group@npm:4.4.12"
   peerDependencies:
@@ -11823,7 +11823,7 @@ __metadata:
     ora: "npm:^5.4.1"
     picocolors: "npm:^1.1.0"
     prompts: "npm:^2.4.0"
-    react: "npm:^18.2.0"
+    react: "npm:^19.1.1"
     semver: "npm:^7.6.2"
     storybook: "workspace:*"
     tiny-invariant: "npm:^1.3.1"
@@ -13367,15 +13367,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-toolkit@npm:^1.36.0":
-  version: 1.36.0
-  resolution: "es-toolkit@npm:1.36.0"
+"es-toolkit@npm:^1.36.0, es-toolkit@npm:^1.39.6":
+  version: 1.39.10
+  resolution: "es-toolkit@npm:1.39.10"
   dependenciesMeta:
     "@trivago/prettier-plugin-sort-imports@4.3.0":
       unplugged: true
     prettier-plugin-sort-re-exports@0.0.1:
       unplugged: true
-  checksum: 10c0/ddc13b8b2dc935f517f0959b971b0a75488bb54a131368c3aec1682b8fd48467d39c4f1d46a7bcdc3d9424e9a4924d968487540ed77ec245c5a2d7b129f5ed62
+  checksum: 10c0/244dd6be25bc8c7af9f085f5b9aae08169eca760fc7d4735020f8f711b6a572e0bf205400326fa85a7924e20747d315756dba1b3a5f0d2887231374ec3651a98
   languageName: node
   linkType: hard
 
@@ -18434,7 +18434,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"loose-envify@npm:^1.0.0, loose-envify@npm:^1.1.0, loose-envify@npm:^1.4.0":
+"loose-envify@npm:^1.0.0, loose-envify@npm:^1.4.0":
   version: 1.4.0
   resolution: "loose-envify@npm:1.4.0"
   dependencies:
@@ -21690,7 +21690,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prismjs@npm:^1.27.0":
+"prismjs@npm:^1.30.0":
   version: 1.30.0
   resolution: "prismjs@npm:1.30.0"
   checksum: 10c0/f56205bfd58ef71ccfcbcb691fd0eb84adc96c6ff21b0b69fc6fdcf02be42d6ef972ba4aed60466310de3d67733f6a746f89f2fb79c00bf217406d465b3e8f23
@@ -22191,15 +22191,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:^18.2.0":
-  version: 18.3.1
-  resolution: "react-dom@npm:18.3.1"
+"react-dom@npm:^19.1.1":
+  version: 19.1.1
+  resolution: "react-dom@npm:19.1.1"
   dependencies:
-    loose-envify: "npm:^1.1.0"
-    scheduler: "npm:^0.23.2"
+    scheduler: "npm:^0.26.0"
   peerDependencies:
-    react: ^18.3.1
-  checksum: 10c0/a752496c1941f958f2e8ac56239172296fcddce1365ce45222d04a1947e0cc5547df3e8447f855a81d6d39f008d7c32eab43db3712077f09e3f67c4874973e85
+    react: ^19.1.1
+  checksum: 10c0/8c91198510521299c56e4e8d5e3a4508b2734fb5e52f29eeac33811de64e76fe586ad32c32182e2e84e070d98df67125da346c3360013357228172dbcd20bcdd
   languageName: node
   linkType: hard
 
@@ -22217,7 +22216,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-fast-compare@npm:^3.0.1, react-fast-compare@npm:^3.2.0":
+"react-fast-compare@npm:^3.0.1, react-fast-compare@npm:^3.2.2":
   version: 3.2.2
   resolution: "react-fast-compare@npm:3.2.2"
   checksum: 10c0/0bbd2f3eb41ab2ff7380daaa55105db698d965c396df73e6874831dbafec8c4b5b08ba36ff09df01526caa3c61595247e3269558c284e37646241cba2b90a367
@@ -22240,19 +22239,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-helmet-async@npm:^1.3.0":
-  version: 1.3.0
-  resolution: "react-helmet-async@npm:1.3.0"
+"react-helmet-async@npm:^2.0.5":
+  version: 2.0.5
+  resolution: "react-helmet-async@npm:2.0.5"
   dependencies:
-    "@babel/runtime": "npm:^7.12.5"
     invariant: "npm:^2.2.4"
-    prop-types: "npm:^15.7.2"
-    react-fast-compare: "npm:^3.2.0"
+    react-fast-compare: "npm:^3.2.2"
     shallowequal: "npm:^1.1.0"
   peerDependencies:
     react: ^16.6.0 || ^17.0.0 || ^18.0.0
-    react-dom: ^16.6.0 || ^17.0.0 || ^18.0.0
-  checksum: 10c0/8f3e6d26beff61d2ed18f7b41561df3e4d83a7582914c7196aa65158c7f3cce939276547d7a0b8987952d9d44131406df74efba02d1f8fa8a3940b49e6ced70b
+  checksum: 10c0/f390ea8bf13c2681850e5f8eb5b73d8613f407c245a5fd23e9db9b2cc14a3700dd1ce992d3966632886d1d613083294c2aeee009193f49dfa7d145d9f13ea2b0
   languageName: node
   linkType: hard
 
@@ -22266,12 +22262,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-inspector@npm:^6.0.0":
-  version: 6.0.2
-  resolution: "react-inspector@npm:6.0.2"
+"react-inspector@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "react-inspector@npm:8.0.0"
   peerDependencies:
-    react: ^16.8.4 || ^17.0.0 || ^18.0.0
-  checksum: 10c0/8f9b23c21b4d95722e28c9455c2bf00fd9437347714382594461f98e5b9954d60864d0f4e74e881639b065e752a97ba52a65e39930c234072e5bff291bb02b5e
+    react: ^18.0.0 || ^19.0.0
+  checksum: 10c0/b8b973621d71636d0a447306939f5f11a070e4095607c5c7f362b2fc324a51619ac4620efe37345f194b0c0e201dd53c1d439d871f09611274b299eed836cd7a
   languageName: node
   linkType: hard
 
@@ -22416,6 +22412,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-resize-detector@npm:^12.3.0":
+  version: 12.3.0
+  resolution: "react-resize-detector@npm:12.3.0"
+  dependencies:
+    es-toolkit: "npm:^1.39.6"
+  peerDependencies:
+    react: ^18.0.0 || ^19.0.0
+  checksum: 10c0/58075af4f7842debc97934bee15947d7ac1db1af8849832258fc986482487de97489d80b15edea6658260edbe826ac8f8acf6c2df2a28e527c8f63a4bff3436f
+  languageName: node
+  linkType: hard
+
 "react-resize-detector@npm:^7.1.2":
   version: 7.1.2
   resolution: "react-resize-detector@npm:7.1.2"
@@ -22468,23 +22475,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-syntax-highlighter@npm:^15.4.5":
-  version: 15.6.1
-  resolution: "react-syntax-highlighter@npm:15.6.1"
+"react-syntax-highlighter@npm:^15.6.6":
+  version: 15.6.6
+  resolution: "react-syntax-highlighter@npm:15.6.6"
   dependencies:
     "@babel/runtime": "npm:^7.3.1"
     highlight.js: "npm:^10.4.1"
     highlightjs-vue: "npm:^1.0.0"
     lowlight: "npm:^1.17.0"
-    prismjs: "npm:^1.27.0"
+    prismjs: "npm:^1.30.0"
     refractor: "npm:^3.6.0"
   peerDependencies:
     react: ">= 0.14.0"
-  checksum: 10c0/4a4cf4695c45d7a6b25078970fb79ae5a85edeba5be0a2508766ee18e8aee1c0c4cdd97bf54f5055e4af671fe7e5e71348e81cafe09a0eb07a763ae876b7f073
+  checksum: 10c0/894f8b7c79ed40866c0fc542ad0a2040128a8c7e6e6decfd06ef092d8af9c63788ecdd911ea9b2b433e361a4a33a14f721bcec81fd59f1e7394442ade4e7ea46
   languageName: node
   linkType: hard
 
-"react-textarea-autosize@npm:^8.3.0":
+"react-textarea-autosize@npm:^8.5.9":
   version: 8.5.9
   resolution: "react-textarea-autosize@npm:8.5.9"
   dependencies:
@@ -22512,12 +22519,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react@npm:^18.2.0":
-  version: 18.3.1
-  resolution: "react@npm:18.3.1"
-  dependencies:
-    loose-envify: "npm:^1.1.0"
-  checksum: 10c0/283e8c5efcf37802c9d1ce767f302dd569dd97a70d9bb8c7be79a789b9902451e0d16334b05d73299b20f048cbc3c7d288bbbde10b701fa194e2089c237dbea3
+"react@npm:^19.1.1":
+  version: 19.1.1
+  resolution: "react@npm:19.1.1"
+  checksum: 10c0/8c9769a2dfd02e603af6445058325e6c8a24b47b185d0e461f66a6454765ddcaecb3f0a90184836c68bb509f3c38248359edbc42f0d07c23eb500a5c30c87b4e
   languageName: node
   linkType: hard
 
@@ -23577,12 +23582,10 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"scheduler@npm:^0.23.2":
-  version: 0.23.2
-  resolution: "scheduler@npm:0.23.2"
-  dependencies:
-    loose-envify: "npm:^1.1.0"
-  checksum: 10c0/26383305e249651d4c58e6705d5f8425f153211aef95f15161c151f7b8de885f24751b377e4a0b3dd42cce09aad3f87a61dab7636859c0d89b7daf1a1e2a5c78
+"scheduler@npm:^0.26.0":
+  version: 0.26.0
+  resolution: "scheduler@npm:0.26.0"
+  checksum: 10c0/5b8d5bfddaae3513410eda54f2268e98a376a429931921a81b5c3a2873aab7ca4d775a8caac5498f8cbc7d0daeab947cf923dbd8e215d61671f9f4e392d34356
   languageName: node
   linkType: hard
 
@@ -24399,8 +24402,8 @@ __metadata:
   resolution: "storybook-addon-pseudo-states@workspace:addons/pseudo-states"
   dependencies:
     "@storybook/icons": "npm:^1.4.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
+    react: "npm:^19.1.1"
+    react-dom: "npm:^19.1.1"
     typescript: "npm:^5.8.3"
   peerDependencies:
     storybook: "workspace:^"
@@ -24454,7 +24457,7 @@ __metadata:
     "@types/pretty-hrtime": "npm:^1.0.0"
     "@types/prompts": "npm:^2.0.9"
     "@types/react-syntax-highlighter": "npm:11.0.5"
-    "@types/react-transition-group": "npm:^4"
+    "@types/react-transition-group": "npm:^4.4.12"
     "@types/semver": "npm:^7.5.8"
     "@types/ws": "npm:^8"
     "@vitest/expect": "npm:3.2.4"
@@ -24516,14 +24519,14 @@ __metadata:
     prettier: "npm:^3.5.3"
     pretty-hrtime: "npm:^1.0.3"
     prompts: "npm:^2.4.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    react-helmet-async: "npm:^1.3.0"
-    react-inspector: "npm:^6.0.0"
+    react: "npm:^19.1.1"
+    react-dom: "npm:^19.1.1"
+    react-helmet-async: "npm:^2.0.5"
+    react-inspector: "npm:^8.0.0"
     react-popper-tooltip: "npm:^4.4.2"
     react-router-dom: "npm:6.15.0"
-    react-syntax-highlighter: "npm:^15.4.5"
-    react-textarea-autosize: "npm:^8.3.0"
+    react-syntax-highlighter: "npm:^15.6.6"
+    react-textarea-autosize: "npm:^8.5.9"
     react-transition-group: "npm:^4.4.5"
     recast: "npm:^0.23.5"
     require-from-string: "npm:^2.0.2"

@@ -53,8 +53,8 @@
   "devDependencies": {
     "@neoconfetti/react": "^1.0.0",
     "@storybook/icons": "^1.4.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-joyride": "^2.8.2",
     "typescript": "^5.8.3"
   },

@@ -6771,8 +6771,8 @@ __metadata:
     "@types/lodash-es": "npm:^4.17.12"
     "@types/mock-require": "npm:^2.0.3"
     "@types/node": "npm:^22.0.0"
-    "@types/react": "npm:^18.0.37"
-    "@types/react-dom": "npm:^18.0.11"
+    "@types/react": "npm:^19.1.12"
+    "@types/react-dom": "npm:^19.1.9"
     "@typescript-eslint/eslint-plugin": "npm:^8.8.1"
     "@typescript-eslint/parser": "npm:^8.8.1"
     "@vitejs/plugin-react": "npm:^4.3.2"
@@ -7947,12 +7947,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react-dom@npm:^18.0.0, @types/react-dom@npm:^18.0.11":
+"@types/react-dom@npm:^18.0.0":
   version: 18.3.6
   resolution: "@types/react-dom@npm:18.3.6"
   peerDependencies:
     "@types/react": ^18.0.0
   checksum: 10c0/e77ac076096bd4b2e0a99130c47959762a927e536b83412e470ac5198d4b8d111cfd787ff2ab7c22bc39c114c0c5fef80046ea0cccb02a655e021a435859314a
+  languageName: node
+  linkType: hard
+
+"@types/react-dom@npm:^19.1.9":
+  version: 19.1.9
+  resolution: "@types/react-dom@npm:19.1.9"
+  peerDependencies:
+    "@types/react": ^19.0.0
+  checksum: 10c0/34c8dda86c1590b3ef0e7ecd38f9663a66ba2dd69113ba74fb0adc36b83bbfb8c94c1487a2505282a5f7e5e000d2ebf36f4c0fd41b3b672f5178fd1d4f1f8f58
   languageName: node
   linkType: hard
 

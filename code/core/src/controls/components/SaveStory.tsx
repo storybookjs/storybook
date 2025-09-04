@@ -45,18 +45,16 @@ const Bar = styled(BaseBar)(({ theme }) => ({
 }));
 
 const Info = styled.div({
-  order: 2,
   display: 'flex',
   flex: '99 0 auto',
   alignItems: 'center',
-  marginLeft: 10,
+  marginInlineEnd: 10,
   gap: 6,
 });
 
 const Actions = styled.div(({ theme }) => ({
   // We want actions to appear first and be hidden last on overflow,
   // but the screenreader reading order must start with Info.
-  order: 1,
   display: 'flex',
   flex: '1 0 0',
   alignItems: 'center',

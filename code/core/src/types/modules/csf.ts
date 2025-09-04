@@ -22,6 +22,8 @@ export type {
   Conditional,
   DecoratorApplicator,
   DecoratorFunction,
+  EachAnnotationsFunction,
+  EachTestFunction,
   Globals,
   GlobalTypes,
   IncludeExcludeOptions,

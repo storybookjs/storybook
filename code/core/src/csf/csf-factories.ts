@@ -4,6 +4,8 @@ import type {
   Args,
   ComponentAnnotations,
   ComposedStoryFn,
+  EachAnnotationsFunction,
+  EachTestFunction,
   NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
@@ -22,7 +24,6 @@ import {
 } from '../preview-api/index';
 import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
 import { getCoreAnnotations } from './core-annotations';
-import type { EachAnnotationsFunction, EachTestFunction } from './story';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';

@@ -14,7 +14,6 @@ export class ZoomIFrame extends Component<IZoomIFrameProps> {
 
   componentDidMount() {
     const { iFrameRef } = this.props;
-    // @ts-expect-error (non strict)
     this.iframe = iFrameRef.current;
   }
 

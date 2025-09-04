@@ -9,8 +9,8 @@
     "incremental": false,
     "isolatedModules": true,
     "jsx": "preserve",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "Preserve",
+    "lib": ["dom", "dom.iterable", "es2024"],
+    "module": "ESNext",
     "moduleResolution": "bundler",
     "noImplicitAny": true,
     "noUnusedLocals": false,
@@ -18,7 +18,7 @@
     "strict": true,
     "noEmit": true,
     "strictBindCallApply": true,
-    "target": "ES2020"
+    "target": "es2024"
   },
   "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"]
 }

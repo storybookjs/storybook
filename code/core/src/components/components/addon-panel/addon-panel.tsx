@@ -1,8 +1,8 @@
 import type { ReactElement } from 'react';
 import React, { useEffect, useRef } from 'react';
 
-const usePrevious = (value: any) => {
-  const ref = useRef();
+const usePrevious = (value: ReactElement) => {
+  const ref = useRef<ReactElement | undefined>(undefined);
 
   useEffect(() => {
     // happens after return
@@ -12,7 +12,7 @@ const usePrevious = (value: any) => {
   return ref.current;
 };
 
-const useUpdate = (update: boolean, value: any) => {
+const useUpdate = (update: boolean, value: ReactElement) => {
   const previousValue = usePrevious(value);
 
   return update ? value : previousValue;

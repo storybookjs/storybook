@@ -38,7 +38,7 @@ export const storyBlockIdFromId = ({ story, primary }: StoryProps) =>
   `story--${story.id}${primary ? '--primary' : ''}`;
 
 const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
-  const storyRef = useRef();
+  const storyRef = useRef<HTMLDivElement | null>(null);
   const [showLoader, setShowLoader] = useState(true);
   const [error, setError] = useState<Error>();
 

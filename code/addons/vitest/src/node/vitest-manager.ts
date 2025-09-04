@@ -312,7 +312,7 @@ export class VitestManager {
         regex = new RegExp(`^${parentName} ${storyName}$`);
       } else {
         // Use case 3: Single story run on a story without tests, should be exact match of story name
-        regex = new RegExp(`^${getTestName(storyName)}$`);
+        regex = new RegExp(`^${storyName}$`);
       }
       this.vitest!.setGlobalTestNamePattern(regex);
     }

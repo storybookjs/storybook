@@ -230,7 +230,7 @@ export async function vitestTransform({
     // Create the _test expression directly using the exportName identifier
     const testStoryCall = t.expressionStatement(
       t.callExpression(vitestTestId, [
-        getLiteralWithZeroWidthSpace(testTitle),
+        t.stringLiteral(testTitle),
         t.callExpression(testStoryId, [
           t.stringLiteral(exportName),
           t.identifier(localName),

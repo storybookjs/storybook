@@ -73,7 +73,7 @@ describe('transformer', () => {
           export const Story = {};
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, _meta, []));
+            _test("Story", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -102,7 +102,7 @@ describe('transformer', () => {
           export const Story = {};
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, _meta, []));
+            _test("Story", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -132,7 +132,7 @@ describe('transformer', () => {
           export const Story = {};
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, meta, []));
+            _test("Story", _testStory("Story", Story, meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -163,7 +163,7 @@ describe('transformer', () => {
           export const Story = {};
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, meta, []));
+            _test("Story", _testStory("Story", Story, meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -199,7 +199,7 @@ describe('transformer', () => {
           };
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, _meta, []));
+            _test("Primary", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -224,7 +224,7 @@ describe('transformer', () => {
             };
             const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
             if (_isRunningFromThisFile) {
-              _test("custom name", _testStory("Primary", Primary, _meta, []));
+              _test("custom name", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
             }
           `);
         });
@@ -247,7 +247,7 @@ describe('transformer', () => {
             Story.storyName = 'custom name';
             const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
             if (_isRunningFromThisFile) {
-              _test("custom name", _testStory("Story", Story, _meta, []));
+              _test("custom name", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
             }
           `);
         });
@@ -282,7 +282,7 @@ describe('transformer', () => {
           export { Primary };
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, _meta, []));
+            _test("Primary", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -316,7 +316,7 @@ describe('transformer', () => {
           export { Primary as PrimaryStory };
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("PrimaryStory", _testStory("PrimaryStory", Primary, _meta, []));
+            _test("PrimaryStory", _testStory("PrimaryStory", Primary, _meta, [], "automatic-calculated-title--primary-story"));
           }
         `);
       });
@@ -352,8 +352,8 @@ describe('transformer', () => {
           export { Primary };
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Secondary", _testStory("Secondary", Secondary, _meta, []));
-            _test("Primary", _testStory("Primary", Primary, _meta, []));
+            _test("Secondary", _testStory("Secondary", Secondary, _meta, [], "automatic-calculated-title--secondary"));
+            _test("Primary", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -384,7 +384,7 @@ describe('transformer', () => {
           export const nonStory = 123;
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, _meta, []));
+            _test("Story", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -441,7 +441,7 @@ describe('transformer', () => {
           export const NotIncluded = {};
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Included", _testStory("Included", Included, _meta, []));
+            _test("Included", _testStory("Included", Included, _meta, [], "automatic-calculated-title--included"));
           }
         `);
       });
@@ -472,7 +472,7 @@ describe('transformer', () => {
           };
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Included", _testStory("Included", Included, _meta, []));
+            _test("Included", _testStory("Included", Included, _meta, [], "automatic-calculated-title--included"));
           }
         `);
       });
@@ -500,7 +500,7 @@ describe('transformer', () => {
           };
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Skipped", _testStory("Skipped", Skipped, _meta, ["skip-me"]));
+            _test("Skipped", _testStory("Skipped", Skipped, _meta, ["skip-me"], "automatic-calculated-title--skipped"));
           }
         `);
       });
@@ -532,7 +532,7 @@ describe('transformer', () => {
           export const Primary = {};
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, meta, []));
+            _test("Primary", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
           }
         `);
 
@@ -589,7 +589,7 @@ describe('transformer', () => {
           export const Story = meta.story({});
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, meta, []));
+            _test("Story", _testStory("Story", Story, meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -616,7 +616,7 @@ describe('transformer', () => {
           });
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("custom name", _testStory("Primary", Primary, meta, []));
+            _test("custom name", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -652,7 +652,7 @@ describe('transformer', () => {
           export { Primary };
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, meta, []));
+            _test("Primary", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -688,7 +688,7 @@ describe('transformer', () => {
           export { Primary as PrimaryStory };
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("PrimaryStory", _testStory("PrimaryStory", Primary, meta, []));
+            _test("PrimaryStory", _testStory("PrimaryStory", Primary, meta, [], "automatic-calculated-title--primary-story"));
           }
         `);
       });
@@ -724,8 +724,8 @@ describe('transformer', () => {
           export { Primary };
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Secondary", _testStory("Secondary", Secondary, _meta, []));
-            _test("Primary", _testStory("Primary", Primary, _meta, []));
+            _test("Secondary", _testStory("Secondary", Secondary, _meta, [], "automatic-calculated-title--secondary"));
+            _test("Primary", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -756,7 +756,7 @@ describe('transformer', () => {
           export const nonStory = 123;
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, _meta, []));
+            _test("Story", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -812,10 +812,40 @@ describe('transformer', () => {
           A.test("bar", () => {});
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _describe("A", () => {
-              _test("base story", _testStory("A", A, meta, []));
-              _test("foo", _testStory("A", A, meta, [], "foo"));
-              _test("bar", _testStory("A", A, meta, [], "bar"));
+            _describe("A  ", () => {
+              _test("base story", _testStory("A", A, meta, [], "automatic-calculated-title--a"));
+              _test("foo", _testStory("A", A, meta, [], "automatic-calculated-title--a:foo", "foo"));
+              _test("bar", _testStory("A", A, meta, [], "automatic-calculated-title--a:bar", "bar"));
+            });
+          }
+        `);
+      });
+    });
+
+    describe('test syntax', () => {
+      it('should add test statement to story tests', async () => {
+        const code = `
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({});
+          export const Primary = meta.story({});
+          Primary.test("foo", () => {});
+        `;
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Primary = meta.story({});
+          Primary.test("foo", () => {});
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _describe("Primary  ", () => {
+              _test("base story", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
+              _test("foo", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary:foo", "foo"));
             });
           }
         `);
@@ -850,7 +880,7 @@ describe('transformer', () => {
           export const NotIncluded = meta.story({});
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Included", _testStory("Included", Included, meta, []));
+            _test("Included", _testStory("Included", Included, meta, [], "automatic-calculated-title--included"));
           }
         `);
       });
@@ -882,7 +912,7 @@ describe('transformer', () => {
           });
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Included", _testStory("Included", Included, meta, []));
+            _test("Included", _testStory("Included", Included, meta, [], "automatic-calculated-title--included"));
           }
         `);
       });
@@ -911,18 +941,19 @@ describe('transformer', () => {
           });
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Skipped", _testStory("Skipped", Skipped, meta, ["skip-me"]));
+            _test("Skipped", _testStory("Skipped", Skipped, meta, ["skip-me"], "automatic-calculated-title--skipped"));
           }
         `);
       });
     });
 
     describe('source map calculation', () => {
-      it.skip('should remap the location of an inline named export to its relative testStory function', async () => {
+      it('should remap the location of an inline named export to its relative testStory function', async () => {
         const originalCode = `
         import { config } from '#.storybook/preview';
         const meta = config.meta({});
         export const Primary = meta.story({});
+        Primary.test("foo", () => {});
       `;
 
         const { code: transformedCode, map } = await transform({
@@ -930,16 +961,20 @@ describe('transformer', () => {
         });
 
         expect(transformedCode).toMatchInlineSnapshot(`
-          import { test as _test, expect as _expect } from "vitest";
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
           import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           import { config } from '#.storybook/preview';
           const meta = config.meta({
             title: "automatic/calculated/title"
           });
           export const Primary = meta.story({});
+          Primary.test("foo", () => {});
           const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, meta, []));
+            _describe("Primary  ", () => {
+              _test("base story", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
+              _test("foo", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary:foo", "foo"));
+            });
           }
         `);
 

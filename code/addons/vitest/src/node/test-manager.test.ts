@@ -205,7 +205,7 @@ describe('TestManager', () => {
         triggeredBy: 'global',
       },
     });
-    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One${DOUBLE_SPACES}$`));
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One$`));
     expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
   });
 
@@ -221,7 +221,7 @@ describe('TestManager', () => {
       },
     });
     // regex should be exact match of the story name
-    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One${DOUBLE_SPACES}$`));
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One$`));
   });
 
   it('should trigger a single story test', async () => {

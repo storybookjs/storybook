@@ -4,11 +4,11 @@ import { describe, expect, it } from 'vitest';
 
 import * as babel from 'storybook/internal/babel';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 
 import { vitestConfigFiles } from './vitestConfigFiles';
 
-const liveContext: any = { babel, findUp, fs };
+const liveContext: any = { babel, empathic: find, fs };
 
 const fileMocks = {
   'vitest.config.ts': `
@@ -72,7 +72,7 @@ const fileMocks = {
 
 const mockContext: any = {
   ...liveContext,
-  findUp: async ([name]: string[]) => name,
+  empathic: { any: ([name]: string[]) => name },
   fs: {
     readFile: async (path: keyof typeof fileMocks) => fileMocks[path],
   },
@@ -103,14 +103,19 @@ describe.skip('these tests need to be updated', () => {
     const result = await vitestConfigFiles.condition({} as any, state);
     expect(result).toEqual({
       type: 'incompatible',
-      reasons: ['Missing babel on context', 'Missing findUp on context', 'Missing fs on context'],
+      reasons: ['Missing babel on context', 'Missing empathic on context', 'Missing fs on context'],
     });
   });
 
   describe('Check Vitest workspace files', () => {
     it('should disallow JSON workspace file', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('workspace', 'vitest.workspace.json') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('workspace', 'vitest.workspace.json'),
+          },
+        },
         state
       );
       expect(result).toEqual({
@@ -121,7 +126,12 @@ describe.skip('these tests need to be updated', () => {
 
     it('should disallow invalid workspace file', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('workspace', 'invalidWorkspace.ts') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('workspace', 'invalidWorkspace.ts'),
+          },
+        },
         state
       );
       expect(result).toEqual({
@@ -132,7 +142,12 @@ describe.skip('these tests need to be updated', () => {
 
     it('should allow defineWorkspace syntax', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('workspace', 'defineWorkspace.ts') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('workspace', 'defineWorkspace.ts'),
+          },
+        },
         state
       );
       expect(result).toEqual({
@@ -142,7 +157,12 @@ describe.skip('these tests need to be updated', () => {
 
     it('should disallow invalid defineWorkspace syntax', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('workspace', 'defineWorkspace-invalid.ts') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('workspace', 'defineWorkspace-invalid.ts'),
+          },
+        },
         state
       );
       expect(result).toEqual({
@@ -155,7 +175,12 @@ describe.skip('these tests need to be updated', () => {
   describe('Check Vitest config files', () => {
     it('should disallow CommonJS config file', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('config', 'vitest.config.cjs') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('config', 'vitest.config.cjs'),
+          },
+        },
         state
       );
       expect(result).toEqual({
@@ -166,7 +191,12 @@ describe.skip('these tests need to be updated', () => {
 
     it('should disallow invalid config file', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('config', 'invalidConfig.ts') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('config', 'invalidConfig.ts'),
+          },
+        },
         state
       );
       expect(result).toEqual({
@@ -177,7 +207,12 @@ describe.skip('these tests need to be updated', () => {
 
     it('should allow existing test config option', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('config', 'testConfig.ts') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('config', 'testConfig.ts'),
+          },
+        },
         state
       );
       expect(result).toEqual({
@@ -187,7 +222,12 @@ describe.skip('these tests need to be updated', () => {
 
     it('should disallow invalid test config option', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('config', 'testConfig-invalid.ts') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('config', 'testConfig-invalid.ts'),
+          },
+        },
         state
       );
       expect(result).toEqual({
@@ -198,7 +238,12 @@ describe.skip('these tests need to be updated', () => {
 
     it('should allow existing test.workspace config option', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('config', 'workspaceConfig.ts') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('config', 'workspaceConfig.ts'),
+          },
+        },
         state
       );
       expect(result).toEqual({
@@ -208,7 +253,12 @@ describe.skip('these tests need to be updated', () => {
 
     it('should disallow invalid test.workspace config option', async () => {
       const result = await vitestConfigFiles.condition(
-        { ...mockContext, findUp: coerce('config', 'workspaceConfig-invalid.ts') },
+        {
+          ...mockContext,
+          empathic: {
+            up: coerce('config', 'workspaceConfig-invalid.ts'),
+          },
+        },
         state
       );
       expect(result).toEqual({

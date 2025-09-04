@@ -52,10 +52,9 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@types/find-cache-dir": "^3.2.1",
     "@types/node": "^22.0.0",
+    "empathic": "^2.0.0",
     "es-module-lexer": "^1.5.0",
-    "find-cache-dir": "^3.0.0",
     "glob": "^10.0.0",
     "knitwork": "^1.1.0",
     "magic-string": "^0.30.0",

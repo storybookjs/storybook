@@ -34,9 +34,7 @@ vi.mock('@angular-devkit/architect', () => ({
   targetFromTargetString: vi.fn(),
 }));
 
-vi.mock('find-up', () => ({
-  findUp: vi.fn(),
-}));
+vi.mock('empathic/find', () => ({ up: vi.fn() }));
 
 vi.mock('./utils/module-is-available', () => ({
   moduleIsAvailable: vi.fn(),
@@ -58,7 +56,7 @@ const mockedLogger = vi.mocked(logger);
 const mockedTargetFromTargetString = vi.mocked(
   await import('@angular-devkit/architect')
 ).targetFromTargetString;
-const mockedFindUp = vi.mocked(await import('find-up')).findUp;
+const mockedFindUp = vi.mocked(await import('empathic/find')).up;
 const mockedGetProjectRoot = vi.mocked(await import('storybook/internal/common')).getProjectRoot;
 
 describe('framework-preset-angular-cli', () => {
@@ -77,7 +75,7 @@ describe('framework-preset-angular-cli', () => {
 
     beforeEach(() => {
       mockedGetProjectRoot.mockReturnValue('/test/project');
-      mockedFindUp.mockResolvedValue('/test/tsconfig.json');
+      mockedFindUp.mockReturnValue('/test/tsconfig.json');
     });
 
     it('should get browser target options when angularBrowserTarget is provided', async () => {
@@ -164,7 +162,7 @@ describe('framework-preset-angular-cli', () => {
 
       expect(mockedFindUp).toHaveBeenCalledWith('tsconfig.json', {
         cwd: '/test/config',
-        stopAt: '/test/project',
+        last: '/test/project',
       });
       expect(result.tsConfig).toBe('/test/tsconfig.json');
     });
@@ -172,7 +170,7 @@ describe('framework-preset-angular-cli', () => {
     it('should use browser target tsConfig when no other tsConfig is available', async () => {
       const mockTarget = { project: 'test-project', target: 'build' };
       mockedTargetFromTargetString.mockReturnValue(mockTarget);
-      mockedFindUp.mockResolvedValue(null);
+      mockedFindUp.mockReturnValue(null);
 
       const browserTargetOptions = { tsConfig: '/browser/tsconfig.json' };
       vi.mocked(mockBuilderContext.getTargetOptions).mockResolvedValue(browserTargetOptions);

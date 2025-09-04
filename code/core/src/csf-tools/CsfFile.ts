@@ -840,6 +840,75 @@ export class CsfFile {
               self._stories[exportName].__stats.tests = true;
             });
           }
+
+          // B.matrix('foo %s %d', [['a', 'b'], [1, 2]], () => {})
+          // B.matrix('foo %s %d', [['a', 'b'], [1, 2]], {}, () => {})
+          // B.matrix('foo %s %d', [['a', 'b'], [1, 2]], () => ({}), () => {})
+          if (
+            t.isCallExpression(expression) &&
+            t.isMemberExpression(expression.callee) &&
+            expression.arguments.length >= 3 &&
+            t.isStringLiteral(expression.arguments[0]) &&
+            t.isArrayExpression(expression.arguments[1]) &&
+            t.isMemberExpression(expression.callee) &&
+            t.isIdentifier(expression.callee.object) &&
+            t.isIdentifier(expression.callee.property) &&
+            expression.callee.property.name === 'matrix'
+          ) {
+            const exportName = expression.callee.object.name;
+            const testName = expression.arguments[0].value;
+            const testFunction =
+              expression.arguments.length === 3 ? expression.arguments[2] : expression.arguments[3];
+            // Check the args to each are all arrays
+            const matrix = expression.arguments[1];
+            if (
+              !t.isArrayExpression(matrix) ||
+              !matrix.elements.every((e) => t.isArrayExpression(e))
+            ) {
+              return;
+            }
+
+            const matrixValues = matrix.elements
+              .filter((e) => e.elements.every((p) => t.isLiteral(p)))
+              .map((e) =>
+                e.elements.map((a) => {
+                  if (!t.isLiteral(a)) {
+                    return undefined;
+                  }
+                  switch (a.type) {
+                    case 'NullLiteral':
+                      return null;
+                    case 'TemplateLiteral':
+                      break;
+                    case 'RegExpLiteral':
+                      return a.pattern;
+                    default:
+                      return a.value;
+                  }
+                })
+              );
+
+            const combinations = matrixValues.reduce<typeof matrixValues>(
+              (acc, param) => acc.flatMap((acc2) => param.map((p) => [...acc2, p])),
+              [[]]
+            );
+
+            combinations.forEach((args) => {
+              self._tests.push({
+                function: testFunction,
+                name: format(testName, ...args),
+                node: expression,
+                // can't set id because meta title isn't available yet
+                // so it's set later on
+                id: 'FIXME',
+                // todo
+                tags: [],
+                parent: { node: self._storyStatements[exportName] },
+              });
+              // TODO: fix this when stories fail
+              self._stories[exportName].__stats.tests = true;
+            });
+          }
         },
       },
       CallExpression: {

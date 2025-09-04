@@ -2743,6 +2743,77 @@ describe('CsfFile', () => {
         expect(storyTests[5].function).toBeDefined();
       });
 
+      it('story test matrix - index snapshot', () => {
+        expect(
+          parse(dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.matrix(
+            'simple test %s %d',
+            [
+              ['foo', 'bar'],
+              [1, 2],
+            ],
+            async () => {}
+          );
+        `)
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                tests: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('story test matrix - parsing', () => {
+        const data = loadCsf(
+          dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.matrix(
+            'simple test %s %d',
+            [
+              ['foo', 'bar'],
+              [1, 2],
+            ],
+            async () => {}
+          );
+        `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(4);
+
+        expect(storyTests[0].name).toBe('simple test foo 1');
+        expect(storyTests[1].name).toBe('simple test foo 2');
+        expect(storyTests[2].name).toBe('simple test bar 1');
+        expect(storyTests[3].name).toBe('simple test bar 2');
+        expect(storyTests[0].function).toBeDefined();
+        expect(storyTests[1].function).toBeDefined();
+        expect(storyTests[2].function).toBeDefined();
+        expect(storyTests[3].function).toBeDefined();
+      });
+
       it('story name', () => {
         expect(
           parse(

@@ -1,15 +1,14 @@
 import type { KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
+import type { ButtonProps } from 'storybook/internal/components';
+import { Button, ScrollArea, WithTooltipPure } from 'storybook/internal/components';
+
 import { RefreshIcon } from '@storybook/icons';
 
 import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
-import type { ButtonProps } from '../Button/Button';
-import { Button } from '../Button/Button';
-import { ScrollArea } from '../ScrollArea/ScrollArea';
-import { WithTooltipPure } from '../tooltip/WithTooltip';
 import { SelectOption } from './SelectOption';
 import type { Option, ResetOption } from './helpers';
 import { Listbox, PAGE_STEP_SIZE } from './helpers';

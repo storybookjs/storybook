@@ -51,6 +51,7 @@ export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
 
 // Buttons
 export { Button, IconButton } from './components/Button/Button';
+export type { ButtonProps } from './components/Button/Button';
 export { ToggleButton } from './components/ToggleButton/ToggleButton';
 export { Select } from './components/Select/Select';
 

@@ -4,7 +4,7 @@ import { styled } from 'storybook/internal/theming';
 
 import { FaceHappyIcon } from '@storybook/icons';
 
-import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { fn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
+import preview from '../../../../../../.storybook/preview';
 import { InteractiveTooltipWrapper } from './InteractiveTooltipWrapper';
 
 const meta = preview.meta({

@@ -2,15 +2,15 @@ import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
+import { shortcutToAriaKeyshortcuts } from 'storybook/internal/manager-api';
+import type { API_KeyCollection } from 'storybook/internal/manager-api';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
 import { isPropValid, styled } from 'storybook/theming';
 
-import { shortcutToAriaKeyshortcuts } from '../../../manager-api';
-import type { API_KeyCollection } from '../../../manager-api/modules/shortcuts';
-import { useAriaDescription } from '../../../manager/hooks/useAriaDescription';
-import { InteractiveTooltipWrapper } from '../tooltip/InteractiveTooltipWrapper';
+import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';
+import { useAriaDescription } from './helpers/useAriaDescription';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;

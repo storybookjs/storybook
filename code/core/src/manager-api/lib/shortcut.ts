@@ -2,6 +2,8 @@ import { global } from '@storybook/global';
 
 import type { API_KeyCollection } from '../modules/shortcuts';
 
+export type { API_KeyCollection } from '../modules/shortcuts';
+
 const { navigator } = global;
 
 export const isMacLike = () =>

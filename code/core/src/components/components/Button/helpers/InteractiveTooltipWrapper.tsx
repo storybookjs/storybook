@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
 
+import { shortcutToHumanString } from 'storybook/internal/manager-api';
+import type { API_KeyCollection } from 'storybook/internal/manager-api';
+
 import { styled } from 'storybook/theming';
 
-import { shortcutToHumanString } from '../../../manager-api';
-import type { API_KeyCollection } from '../../../manager-api/modules/shortcuts';
-import { TooltipNote } from './TooltipNote';
-import { WithTooltip } from './WithTooltip';
+import { TooltipNote } from '../../tooltip/TooltipNote';
+import { WithTooltip } from '../../tooltip/WithTooltip';
 
 const NoMarginNote = styled(TooltipNote)(() => ({
   margin: 0,

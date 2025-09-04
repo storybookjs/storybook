@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { Button } from 'storybook/internal/components';
 import { styled } from 'storybook/internal/theming';
 
 import { LinuxIcon } from '@storybook/icons';
@@ -8,7 +9,6 @@ import type { StoryAnnotations } from 'core/src/types';
 import { expect, fn, screen, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
-import { Button } from '../Button/Button';
 import { Select } from './Select';
 
 const meta = preview.meta({

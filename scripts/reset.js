@@ -42,7 +42,9 @@ cleaningProcess.stdout.on('data', (data) => {
               })
               .catch((e) => {
                 logger.log('failed to trash, will try permanent delete');
-                remove(uri);
+                rm(uri, { force: true, recursive: true }).then(() => {
+                  logger.log(`deleted ${uri}`);
+                });
               });
           }
         }

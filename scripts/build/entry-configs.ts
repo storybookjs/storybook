@@ -29,6 +29,8 @@ import htmlViteFrameworkConfig from '../../../code/frameworks/html-vite/build-co
 // @ts-ignore
 import nextjsViteFrameworkConfig from '../../../code/frameworks/nextjs-vite/build-config';
 // @ts-ignore
+import nextjsViteRSCFrameworkConfig from '../../../code/frameworks/nextjs-vite-rsc/build-config';
+// @ts-ignore
 import nextjsFrameworkConfig from '../../../code/frameworks/nextjs/build-config';
 // @ts-ignore
 import preactViteFrameworkConfig from '../../../code/frameworks/preact-vite/build-config';
@@ -107,6 +109,7 @@ export const buildEntries = {
   '@storybook/html-vite': htmlViteFrameworkConfig,
   '@storybook/nextjs': nextjsFrameworkConfig,
   '@storybook/nextjs-vite': nextjsViteFrameworkConfig,
+  '@storybook/nextjs-vite-rsc': nextjsViteFrameworkConfig,
   '@storybook/preact-vite': preactViteFrameworkConfig,
   '@storybook/react-native-web-vite': reactNativeWebViteFrameworkConfig,
   '@storybook/react-vite': reactViteFrameworkConfig,

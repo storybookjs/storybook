@@ -175,3 +175,18 @@ TestNames.test(
   'should display an error when login is attempted with an unverified email address',
   () => {}
 );
+
+export const TestEach = meta.story();
+
+TestEach.each(
+  'Test Each With %s',
+  [['One'], ['Two']],
+  (num) => ({
+    args: {
+      children: num,
+    },
+  }),
+  ({ canvas }, num) => {
+    expect(canvas.getByText(num)).toBeInTheDocument();
+  }
+);

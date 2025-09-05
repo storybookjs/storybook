@@ -65,10 +65,10 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
 
   const { defaultIncluded, defaultExcluded } = useMemo(() => {
     return Object.entries(tagPresets).reduce(
-      (acc, [tag, { defaultSelection }]) => {
-        if (defaultSelection === 'include') {
+      (acc, [tag, { defaultFilterSelection }]) => {
+        if (defaultFilterSelection === 'include') {
           acc.defaultIncluded.add(tag);
-        } else if (defaultSelection === 'exclude') {
+        } else if (defaultFilterSelection === 'exclude') {
           acc.defaultExcluded.add(tag);
         }
         return acc;

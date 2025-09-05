@@ -44,8 +44,8 @@ export const ClosedWithSelection: Story = {
   args: {
     ...Closed.args,
     tagPresets: {
-      A: { defaultSelection: 'include' },
-      B: { defaultSelection: 'include' },
+      A: { defaultFilterSelection: 'include' },
+      B: { defaultFilterSelection: 'include' },
     },
   },
 };
@@ -68,8 +68,8 @@ export const OpenWithSelectionInverted = {
   args: {
     ...Open.args,
     tagPresets: {
-      A: { defaultSelection: 'exclude' },
-      B: { defaultSelection: 'exclude' },
+      A: { defaultFilterSelection: 'exclude' },
+      B: { defaultFilterSelection: 'exclude' },
     },
   },
 } satisfies Story;
@@ -79,8 +79,8 @@ export const OpenWithSelectionMixed = {
   args: {
     ...Open.args,
     tagPresets: {
-      A: { defaultSelection: 'include' },
-      B: { defaultSelection: 'exclude' },
+      A: { defaultFilterSelection: 'include' },
+      B: { defaultFilterSelection: 'exclude' },
     },
   },
 } satisfies Story;

@@ -1,13 +1,8 @@
-import { global } from '@storybook/global';
-
 import type { API_KeyCollection } from '../modules/shortcuts';
+import { isMacLike } from './platform';
 
 export type { API_KeyCollection } from '../modules/shortcuts';
 
-const { navigator } = global;
-
-export const isMacLike = () =>
-  navigator && navigator.platform ? !!navigator.platform.match(/(Mac|iPhone|iPod|iPad)/i) : false;
 export const controlOrMetaSymbol = () => (isMacLike() ? '⌘' : 'ctrl');
 export const controlOrMetaKey = () => (isMacLike() ? 'meta' : 'control');
 export const optionOrAltSymbol = () => (isMacLike() ? '⌥' : 'alt');
@@ -25,7 +20,7 @@ export type KeyboardEventLike = Pick<
 // NOTE: if we change the fields on the event that we need, we'll need to update the serialization in core/preview/start.js
 export const eventToShortcut = (e: KeyboardEventLike): (string | string[])[] | null => {
   // Meta key only doesn't map to a shortcut
-  if (['Meta', 'Alt', 'Control', 'Shift'].includes(e.key)) {
+  if (['Meta', 'Alt', 'Control', 'Shift', 'Tab'].includes(e.key)) {
     return null;
   }
 

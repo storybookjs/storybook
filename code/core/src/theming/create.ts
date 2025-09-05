@@ -10,6 +10,8 @@ export const themes: { light: ThemeVars; dark: ThemeVars; normal: ThemeVars } = 
   normal: lightThemeVars,
 };
 
+export type { ThemeVars };
+
 interface Rest {
   [key: string]: any;
 }

@@ -66,13 +66,13 @@ const AboutScreen: FC<{ onNavigateToWhatsNew?: () => void }> = ({ onNavigateToWh
       <UpgradeBlock onNavigateToWhatsNew={onNavigateToWhatsNew} />
       <Footer>
         <Actions>
-          <Button asChild>
+          <Button ariaLabel={false} asChild>
             <a href="https://github.com/storybookjs/storybook">
               <GithubIcon />
               GitHub
             </a>
           </Button>
-          <Button asChild>
+          <Button ariaLabel={false} asChild>
             <a href="https://storybook.js.org/docs?ref=ui">
               <DocumentIcon style={{ display: 'inline', marginRight: 5 }} />
               Documentation

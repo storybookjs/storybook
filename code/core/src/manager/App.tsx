@@ -1,8 +1,9 @@
 import type { ComponentProps } from 'react';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import type { Addon_PageType } from 'storybook/internal/types';
 
+import { addons } from 'storybook/manager-api';
 import { Global, createGlobal } from 'storybook/theming';
 
 import { Layout } from './components/layout/Layout';
@@ -20,6 +21,11 @@ type Props = {
 
 export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }: Props) => {
   const { setMobileAboutOpen } = useLayout();
+
+  const { enableShortcuts = true } = addons.getConfig();
+  useEffect(() => {
+    document.body.setAttribute('data-shortcuts-enabled', enableShortcuts ? 'true' : 'false');
+  }, [enableShortcuts]);
 
   return (
     <>

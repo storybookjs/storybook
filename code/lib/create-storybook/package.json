@@ -54,6 +54,7 @@
     "find-up": "^7.0.0",
     "ora": "^5.4.1",
     "picocolors": "^1.1.0",
+    "process-ancestry": "^0.0.2",
     "prompts": "^2.4.0",
     "react": "^18.2.0",
     "tiny-invariant": "^1.3.1",

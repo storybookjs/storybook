@@ -3433,6 +3433,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@jridgewell/sourcemap-codec@npm:^1.5.5":
+  version: 1.5.5
+  resolution: "@jridgewell/sourcemap-codec@npm:1.5.5"
+  checksum: 10c0/f9e538f302b63c0ebc06eecb1dd9918dd4289ed36147a0ddce35d6ea4d7ebbda243cda7b2213b6a5e1d8087a298d5cf630fb2bd39329cdecb82017023f6081a0
+  languageName: node
+  linkType: hard
+
 "@jridgewell/trace-mapping@npm:0.3.9":
   version: 0.3.9
   resolution: "@jridgewell/trace-mapping@npm:0.3.9"
@@ -5570,6 +5577,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@remix-run/node-fetch-server@npm:^0.8.0":
+  version: 0.8.0
+  resolution: "@remix-run/node-fetch-server@npm:0.8.0"
+  checksum: 10c0/a90ce1d997755742f64f4cff204c5e903ffe89dae7152caa629bd7bce648c48451d4f652fe543df6d19232e87dd9636cb76fec75132fcdc73b3f3efa2df82cdd
+  languageName: node
+  linkType: hard
+
 "@remix-run/router@npm:1.8.0":
   version: 1.8.0
   resolution: "@remix-run/router@npm:1.8.0"
@@ -6424,6 +6438,7 @@ __metadata:
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.0.0"
+    "@vitejs/plugin-rsc": "https://pkg.pr.new/@vitejs/plugin-rsc@4672651"
     next: "npm:^15.2.3"
     postcss-load-config: "npm:^6.0.1"
     styled-jsx: "npm:5.1.6"
@@ -8477,6 +8492,25 @@ __metadata:
   peerDependencies:
     vite: ^4.2.0 || ^5.0.0 || ^6.0.0
   checksum: 10c0/0eda45f2026cdfff4b172b1b2148824e5ac41ce65f1f1ce108f3ce4de2f0024caf79c811c1305a782168a269b0b1bc58d4cf8eaf164e4ef19954f05428ba7077
+  languageName: node
+  linkType: hard
+
+"@vitejs/plugin-rsc@https://pkg.pr.new/@vitejs/plugin-rsc@4672651":
+  version: 0.4.27
+  resolution: "@vitejs/plugin-rsc@https://pkg.pr.new/@vitejs/plugin-rsc@4672651"
+  dependencies:
+    "@remix-run/node-fetch-server": "npm:^0.8.0"
+    es-module-lexer: "npm:^1.7.0"
+    estree-walker: "npm:^3.0.3"
+    magic-string: "npm:^0.30.18"
+    periscopic: "npm:^4.0.2"
+    turbo-stream: "npm:^3.1.0"
+    vitefu: "npm:^1.1.1"
+  peerDependencies:
+    react: "*"
+    react-dom: "*"
+    vite: "*"
+  checksum: 10c0/a09eb48e02c15fe05ad7d7329273f04da82630907e41e0b46975f8daed98ff03281b26e2e733e6c789115d007485183e4b9badb35bdd240bca4ffa12f79bda94
   languageName: node
   linkType: hard
 
@@ -17098,7 +17132,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-reference@npm:^3.0.3":
+"is-reference@npm:^3.0.2, is-reference@npm:^3.0.3":
   version: 3.0.3
   resolution: "is-reference@npm:3.0.3"
   dependencies:
@@ -18557,6 +18591,15 @@ __metadata:
   dependencies:
     "@jridgewell/sourcemap-codec": "npm:^1.5.0"
   checksum: 10c0/16826e415d04b88378f200fe022b53e638e3838b9e496edda6c0e086d7753a44a6ed187adc72d19f3623810589bf139af1a315541cd6a26ae0771a0193eaf7b8
+  languageName: node
+  linkType: hard
+
+"magic-string@npm:^0.30.18":
+  version: 0.30.18
+  resolution: "magic-string@npm:0.30.18"
+  dependencies:
+    "@jridgewell/sourcemap-codec": "npm:^1.5.5"
+  checksum: 10c0/80fba01e13ce1f5c474a0498a5aa462fa158eb56567310747089a0033e432d83a2021ee2c109ac116010cd9dcf90a5231d89fbe3858165f73c00a50a74dbefcd
   languageName: node
   linkType: hard
 
@@ -21166,6 +21209,17 @@ __metadata:
   version: 1.0.0
   resolution: "perfect-debounce@npm:1.0.0"
   checksum: 10c0/e2baac416cae046ef1b270812cf9ccfb0f91c04ea36ac7f5b00bc84cb7f41bdbba087c0ab21b4e02a7ef3a1f1f6db399f137cecec46868bd7d8d88c2a9ee431f
+  languageName: node
+  linkType: hard
+
+"periscopic@npm:^4.0.2":
+  version: 4.0.2
+  resolution: "periscopic@npm:4.0.2"
+  dependencies:
+    "@types/estree": "npm:*"
+    is-reference: "npm:^3.0.2"
+    zimmerframe: "npm:^1.0.0"
+  checksum: 10c0/841869f013513e9d28795dfcf2c7e0cba435d3e6b854c27cb00b0ac4bbd31e519264784354c30001158684a4a7ba98d67beda8e392b82a566f0e1fb7197bbb38
   languageName: node
   linkType: hard
 
@@ -25658,6 +25712,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"turbo-stream@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "turbo-stream@npm:3.1.0"
+  checksum: 10c0/08829863fdfe97026407e6a2137ebd8a744afef75f5af113d181cf29673784febd1797366e1b87362a46f3eca73b79b5d495b2310527c147bbf8c080bb7eeb5b
+  languageName: node
+  linkType: hard
+
 "type-check@npm:^0.4.0, type-check@npm:~0.4.0":
   version: 0.4.0
   resolution: "type-check@npm:0.4.0"
@@ -26585,6 +26646,18 @@ __metadata:
     vite:
       optional: true
   checksum: 10c0/d153966fbcc9375bb858a5f5a096466900b42b25d2a3b255e10d050672300a978cccbe249c1f2beb2e09caaa0c800261e9305c62df4f2b75aa32b32bb936799c
+  languageName: node
+  linkType: hard
+
+"vitefu@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "vitefu@npm:1.1.1"
+  peerDependencies:
+    vite: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0-beta.0
+  peerDependenciesMeta:
+    vite:
+      optional: true
+  checksum: 10c0/7e0d0dd6fb73bd80cb56a3f47ccc44159e0330c3e94b2951648079b35711226f9088dbe616d910b931740b92259230b874fbe351108b49f5c11b629b641292a5
   languageName: node
   linkType: hard
 
@@ -27657,7 +27730,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zimmerframe@npm:^1.1.2":
+"zimmerframe@npm:^1.0.0, zimmerframe@npm:^1.1.2":
   version: 1.1.2
   resolution: "zimmerframe@npm:1.1.2"
   checksum: 10c0/8f693609c31cbb4449db223acd61661bc93b73e615f9db6fb8c86d4ceea84ca54cbbeebcf53cf74c22a1f923b92abd18e97988a5e175c76b6ab17238e5593a9d

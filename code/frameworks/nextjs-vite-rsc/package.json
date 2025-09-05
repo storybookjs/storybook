@@ -53,9 +53,17 @@
       "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
     },
+    "./react-client": {
+      "types": "./dist/react-client.d.ts",
+      "default": "./dist/react-client.js"
+    },
     "./router.mock": {
       "types": "./dist/export-mocks/router/index.d.ts",
       "default": "./dist/export-mocks/router/index.js"
+    },
+    "./rsc/client": {
+      "types": "./dist/rsc/client.d.ts",
+      "default": "./dist/rsc/client.js"
     },
     "./vite-plugin": {
       "types": "./dist/vite-plugin/index.d.ts",
@@ -81,6 +89,7 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
+    "@vitejs/plugin-rsc": "https://pkg.pr.new/@vitejs/plugin-rsc@4672651",
     "styled-jsx": "5.1.6",
     "vite-plugin-storybook-nextjs": "^2.0.5"
   },

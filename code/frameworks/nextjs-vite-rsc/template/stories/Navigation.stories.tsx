@@ -1,7 +1,7 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { getRouter } from '@storybook/nextjs-vite/navigation.mock';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite-rsc';
+import { getRouter } from '@storybook/nextjs-vite-rsc/navigation.mock';
 
 import {
   useParams,

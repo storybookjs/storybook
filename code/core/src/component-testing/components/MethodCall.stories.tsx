@@ -63,6 +63,7 @@ export const Args = () => (
     <Node value={{ __element__: { localName: 'hr' } }} />
     <Node value={{ __element__: { localName: 'foo', prefix: 'x' } }} />
     <Node value={{ __element__: { localName: 'div', id: 'foo' } }} />
+    <Node value={{ __element__: { localName: 'div', testId: 'bar' } }} />
     <Node value={{ __element__: { localName: 'span', classNames: ['foo', 'bar'] } }} />
     <Node value={{ __element__: { localName: 'button', innerText: 'Click me' } }} />
     <Node
@@ -185,10 +186,12 @@ const calls: Call[] = [
     storyId: 'kind--story',
     args: [
       { __callId__: '7' },
-      [
-        { __error__: { name: 'Error', message: "Cannot read property 'foo' of undefined" } },
-        { __symbol__: { description: 'Hello world' } },
-      ],
+      {
+        __array__: [
+          { __error__: { name: 'Error', message: "Cannot read property 'foo' of undefined" } },
+          { __symbol__: { description: 'Hello world' } },
+        ],
+      },
     ],
     interceptable: false,
     retain: false,

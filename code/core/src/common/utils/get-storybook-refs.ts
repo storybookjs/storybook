@@ -7,8 +7,13 @@ import type { Options, Ref } from 'storybook/internal/types';
 import { findUp } from 'find-up';
 import resolveFrom from 'resolve-from';
 
+import { getProjectRoot } from './paths';
+
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
-  const location = await findUp('package.json', { cwd: options.configDir });
+  const location = await findUp('package.json', {
+    cwd: options.configDir,
+    stopAt: getProjectRoot(),
+  });
   if (!location) {
     return {};
   }
@@ -113,7 +118,7 @@ export async function getRefs(options: Options) {
     };
   });
 
-  // verify the refs are publicly reachable, if they are not we'll require stories.json at runtime, otherwise the ref won't work
+  // verify the refs are publicly reachable, if they are not we'll fetch stories.json at runtime, otherwise the ref won't work
   await Promise.all(
     Object.entries(refs).map(async ([k, value]) => {
       const ok = await checkRef(value.url);

@@ -4,6 +4,7 @@ import { createVitest as actualCreateVitest } from 'vitest/node';
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { experimental_MockUniversalStore } from 'storybook/internal/core-server';
 import type {
+  Options,
   StatusStoreByTypeId,
   StoryIndex,
   TestProviderStoreById,
@@ -45,6 +46,7 @@ vi.mock('vitest/node', async (importOriginal) => ({
   ...(await importOriginal()),
   createVitest: vi.fn(() => Promise.resolve(vitest)),
 }));
+
 const createVitest = vi.mocked(actualCreateVitest);
 
 const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
@@ -129,6 +131,9 @@ const options: TestManagerOptions = {
     throw error;
   },
   onReady: vi.fn(),
+  storybookOptions: {
+    configDir: '.storybook',
+  } as Options,
 };
 
 describe('TestManager', () => {

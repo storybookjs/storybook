@@ -39,8 +39,6 @@ This framework is designed to work with Storybook 7+. If you’re not already us
 
 #### Automatic migration
 
-{/* TK: Vet this for accuracy, the migration never prompted me to opt-in to the @storybook/sveltekit package, instead it updated the package version. Additionally the example refers to svelte-vite, not sveltekit */}
-
 When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/svelte-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
 
 #### Manual migration
@@ -97,7 +95,7 @@ Update your Storybook configuration file (i.e., `.storybook/main.js|ts`) to enab
 
 ### Configure
 
-By default, the Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) addon offers zero-config support for Storybook's Svelte framework. However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional addon options. Listed below are the available options and examples of how to use them.
+By default, the Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) offers zero-config support for Storybook's Svelte framework. However, you can extend your Storybook configuration file (i.e., `.storybook/main.js|ts`) and provide additional addon options. Listed below are the available options and examples of how to use them.
 
 {/* prettier-ignore-start */}
 
@@ -196,3 +194,30 @@ The available options are:
 Type: `Record<string, any>`
 
 Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).
+
+#### `docgen`
+
+Type: `boolean`
+
+Default: `true`
+
+Enables or disables automatic documentation generation for component properties. When disabled, Storybook will skip the docgen processing step during build, which can improve build performance.
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/svelte-vite';
+
+const config: StorybookConfig = {
+  framework: {
+    name: '@storybook/svelte-vite',
+    options: {
+      docgen: false, // Disable docgen for better performance
+    },
+  },
+};
+
+export default config;
+```
+
+##### When to disable docgen
+
+Disabling docgen can improve build performance for large projects, but [argTypes won't be inferred automatically](../../api/arg-types.mdx#automatic-argtype-inference), which will prevent features like [Controls](../../essentials/controls.mdx) and [docs](../../writing-docs/autodocs.mdx) from working as expected. To use those features, you will need to [define `argTypes` manually](../../api/arg-types.mdx#manually-specifying-argtypes).

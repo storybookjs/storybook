@@ -15,10 +15,10 @@ import {
 import { styled } from 'storybook/theming';
 
 import {
-  PureArgsTable as ArgsTable,
-  type PresetColor,
+  ArgsTable,
   type SortType,
-} from '../../../../addons/docs/src/blocks';
+} from '../../../../addons/docs/src/blocks/components/ArgsTable/ArgsTable';
+import type { PresetColor } from '../../../../addons/docs/src/blocks/controls/types';
 import { PARAM_KEY } from '../constants';
 import { SaveStory } from './SaveStory';
 

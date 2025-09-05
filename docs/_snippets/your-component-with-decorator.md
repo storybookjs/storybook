@@ -30,7 +30,8 @@ export default {
 ```
 
 ```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta } from '@storybook/your-framework';
 
 import { YourComponent } from './YourComponent';
 
@@ -66,7 +67,7 @@ export default {
 ```
 
 ```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta } from 'storybook-solidjs';
+import type { Meta } from 'storybook-solidjs-vite';
 
 import { YourComponent } from './YourComponent';
 
@@ -124,7 +125,8 @@ export default {
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
 
 import YourComponent from './YourComponent.svelte';
 import MarginDecorator from './MarginDecorator.svelte';

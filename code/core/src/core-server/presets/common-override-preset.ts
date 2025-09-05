@@ -29,13 +29,6 @@ export const typescript: PresetProperty<'typescript'> = async (input, options) =
   return input;
 };
 
-export const docs: PresetProperty<'docs'> = async (input, options) => {
-  if (options?.build?.test?.disableAutoDocs) {
-    return {};
-  }
-  return input;
-};
-
 const createTestBuildFeatures = (value: boolean): Required<TestBuildFlags> => ({
   disableBlocks: value,
   disabledAddons: value

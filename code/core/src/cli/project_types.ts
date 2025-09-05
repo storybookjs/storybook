@@ -20,7 +20,12 @@ export type ExternalFramework = {
 
 export const externalFrameworks: ExternalFramework[] = [
   { name: 'qwik', packageName: 'storybook-framework-qwik' },
-  { name: 'solid', frameworks: ['storybook-solidjs-vite'], renderer: 'storybook-solidjs' },
+  {
+    name: 'solid',
+    packageName: 'storybook-solidjs-vite',
+    frameworks: ['storybook-solidjs-vite'],
+    renderer: 'storybook-solidjs-vite',
+  },
   {
     name: 'nuxt',
     packageName: '@storybook-vue/nuxt',
@@ -48,6 +53,7 @@ export enum ProjectType {
   REACT_SCRIPTS = 'REACT_SCRIPTS',
   REACT_NATIVE = 'REACT_NATIVE',
   REACT_NATIVE_WEB = 'REACT_NATIVE_WEB',
+  REACT_NATIVE_AND_RNW = 'REACT_NATIVE_AND_RNW',
   REACT_PROJECT = 'REACT_PROJECT',
   WEBPACK_REACT = 'WEBPACK_REACT',
   NEXTJS = 'NEXTJS',

@@ -77,7 +77,8 @@ export const ExampleStory = {
 ```
 
 ```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { YourComponent } from './your-component';
 
@@ -159,7 +160,7 @@ export const ExampleStory = {
 ```
 
 ```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { createSignal, createEffect } from 'solid-js';
 
@@ -323,7 +324,8 @@ export const ExampleStory = {
 ```
 
 ```ts filename="YourComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import YourComponent from './YourComponent.svelte';
 

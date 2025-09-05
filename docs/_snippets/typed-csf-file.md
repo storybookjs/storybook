@@ -20,7 +20,7 @@ export const Primary: Story = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
@@ -50,10 +50,11 @@ const meta: Meta = {
 };
 
 export default meta;
+type Story = StoryObj;
 
-export const Basic: StoryObj = {};
+export const Basic: Story = {};
 
-export const Primary: StoryObj = {
+export const Primary: Story = {
   args: {
     primary: true,
   },

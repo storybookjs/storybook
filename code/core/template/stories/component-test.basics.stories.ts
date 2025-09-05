@@ -11,13 +11,14 @@ import {
 } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Form,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Form,
   args: {
     onSuccess: fn(),
   },
   globals: {
     sb_theme: 'light',
   },
+  tags: ['!vitest'],
 };
 
 export const Validation = {

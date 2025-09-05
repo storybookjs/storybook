@@ -7,15 +7,18 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
 import { deprecate } from 'storybook/internal/client-logger';
 import {
+  DOCS_PREPARED,
   SET_STORIES,
   SHARED_STATE_CHANGED,
   SHARED_STATE_SET,
   STORY_CHANGED,
+  STORY_PREPARED,
 } from 'storybook/internal/core-events';
 import type { RouterData } from 'storybook/internal/router';
 import type {
@@ -39,7 +42,7 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 
 import { createContext } from './context';
 import getInitialState from './initial-state';
@@ -337,9 +340,22 @@ export function useStoryPrepared(storyId?: StoryId) {
 
 export function useParameter<S>(parameterKey: string, defaultValue?: S) {
   const api = useStorybookApi();
+  const [parameter, setParameter] = useState(api.getCurrentParameter<S>(parameterKey));
 
-  const result = api.getCurrentParameter<S>(parameterKey);
-  return orDefault<S>(result, defaultValue!);
+  const handleParameterChange = useCallback(() => {
+    const newParameter = api.getCurrentParameter<S>(parameterKey);
+    setParameter(newParameter);
+  }, [api, parameterKey]);
+
+  useChannel(
+    {
+      [STORY_PREPARED]: handleParameterChange,
+      [DOCS_PREPARED]: handleParameterChange,
+    },
+    [handleParameterChange]
+  );
+
+  return orDefault<S>(parameter, defaultValue!);
 }
 
 // cache for taking care of HMR

@@ -59,7 +59,8 @@ export const ComplexStory = {
 ```
 
 ```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { MyComponent } from './MyComponent';
 
@@ -118,7 +119,7 @@ export const ComplexStory = {
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { MyComponent } from './MyComponent';
 
@@ -149,7 +150,31 @@ export const ComplexStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js" renderer="svelte" language="js"
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  import someData from './data.json';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+    excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+  });
+
+  export const simpleData = { foo: 1, bar: 'baz' };
+
+  export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+</script>
+
+<Story name="SimpleStory" args={{ data: simpleData }} />
+
+<Story name="ComplexStory" args={{ data: complexData }} />
+```
+
+```js filename="MyComponent.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import MyComponent from './MyComponent.svelte';
 
 import someData from './data.json';
@@ -176,8 +201,33 @@ export const ComplexStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryObj } from '@storybook/svelte-vite';
+```svelte filename="MyComponent.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import MyComponent from './MyComponent.svelte';
+
+  import someData from './data.json';
+
+  const { Story } = defineMeta({
+    component: MyComponent,
+    includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+    excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+  });
+
+  export const simpleData = { foo: 1, bar: 'baz' };
+
+  export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+</script>
+
+<Story name="SimpleStory" args={{ data: simpleData }} />
+
+<Story name="ComplexStory" args={{ data: complexData }} />
+```
+
+```ts filename="MyComponent.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MyComponent from './MyComponent.svelte';
 

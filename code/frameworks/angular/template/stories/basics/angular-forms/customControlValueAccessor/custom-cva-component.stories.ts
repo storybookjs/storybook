@@ -1,4 +1,5 @@
-import { Meta, StoryFn, StoryObj, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { StoryFn, moduleMetadata } from '@storybook/angular';
 
 import { FormsModule } from '@angular/forms';
 

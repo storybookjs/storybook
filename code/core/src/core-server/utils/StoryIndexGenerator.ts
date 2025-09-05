@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
-import { commonGlobOptions, normalizeStoryPath } from 'storybook/internal/common';
+import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
 import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
@@ -103,6 +103,9 @@ export class StoryIndexGenerator {
   // Later, we'll combine each of these subsets together to form the full index
   private specifierToCache: Map<NormalizedStoriesSpecifier, SpecifierStoriesCache>;
 
+  /** Cache for findMatchingFiles results */
+  private static findMatchingFilesCache = new Map<string, SpecifierStoriesCache>();
+
   // Cache the last value of `getStoryIndex`. We invalidate (by unsetting) when:
   //  - any file changes, including deletions
   //  - the preview changes [not yet implemented]
@@ -121,45 +124,97 @@ export class StoryIndexGenerator {
     this.specifierToCache = new Map();
   }
 
-  async initialize() {
-    // Find all matching paths for each specifier
-    const specifiersAndCaches = await Promise.all(
-      this.specifiers.map(async (specifier) => {
-        const pathToSubIndex = {} as SpecifierStoriesCache;
+  /** Generate a cache key for findMatchingFiles */
+  private static getFindMatchingFilesCacheKey(
+    specifier: NormalizedStoriesSpecifier,
+    workingDir: Path,
+    ignoreWarnings: boolean
+  ): string {
+    return JSON.stringify({
+      directory: specifier.directory,
+      files: specifier.files,
+      workingDir,
+      ignoreWarnings,
+    });
+  }
 
-        const fullGlob = slash(join(specifier.directory, specifier.files));
+  /** Clear the findMatchingFiles cache */
+  public static clearFindMatchingFilesCache(): void {
+    this.findMatchingFilesCache.clear();
+  }
 
-        // Dynamically import globby because it is a pure ESM module
-        // eslint-disable-next-line depend/ban-dependencies
-        const { globby } = await import('globby');
+  static async findMatchingFiles(
+    specifier: NormalizedStoriesSpecifier,
+    workingDir: Path,
+    ignoreWarnings = false
+  ): Promise<SpecifierStoriesCache> {
+    // Check cache first
+    const cacheKey = this.getFindMatchingFilesCacheKey(specifier, workingDir, ignoreWarnings);
+    const cached = this.findMatchingFilesCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
-        const files = await globby(fullGlob, {
-          absolute: true,
-          cwd: this.options.workingDir,
-          ...commonGlobOptions(fullGlob),
-        });
+    const pathToSubIndex = {} as SpecifierStoriesCache;
 
-        if (files.length === 0) {
-          once.warn(
-            `No story files found for the specified pattern: ${picocolors.blue(
-              join(specifier.directory, specifier.files)
-            )}`
-          );
-        }
+    const fullGlob = slash(join(specifier.directory, specifier.files));
 
-        files.sort().forEach((absolutePath: Path) => {
-          const ext = extname(absolutePath);
-          if (ext === '.storyshot') {
-            const relativePath = relative(this.options.workingDir, absolutePath);
-            logger.info(`Skipping ${ext} file ${relativePath}`);
-            return;
-          }
+    // Dynamically import globby because it is a pure ESM module
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
 
-          pathToSubIndex[absolutePath] = false;
-        });
+    const files = await globby(fullGlob, {
+      absolute: true,
+      cwd: workingDir,
+      ...commonGlobOptions(fullGlob),
+    });
 
+    if (files.length === 0 && !ignoreWarnings) {
+      once.warn(
+        `No story files found for the specified pattern: ${picocolors.blue(
+          join(specifier.directory, specifier.files)
+        )}`
+      );
+    }
+
+    files.sort().forEach((absolutePath: Path) => {
+      const ext = extname(absolutePath);
+      if (ext === '.storyshot') {
+        const relativePath = relative(workingDir, absolutePath);
+        logger.info(`Skipping ${ext} file ${relativePath}`);
+        return;
+      }
+
+      pathToSubIndex[absolutePath] = false;
+    });
+
+    // Store in cache before returning
+    this.findMatchingFilesCache.set(cacheKey, pathToSubIndex);
+    return pathToSubIndex;
+  }
+
+  static async findMatchingFilesForSpecifiers(
+    specifiers: NormalizedStoriesSpecifier[],
+    workingDir: Path,
+    ignoreWarnings = false
+  ): Promise<Array<readonly [NormalizedStoriesSpecifier, SpecifierStoriesCache]>> {
+    return Promise.all(
+      specifiers.map(async (specifier) => {
+        const pathToSubIndex = await StoryIndexGenerator.findMatchingFiles(
+          specifier,
+          workingDir,
+          ignoreWarnings
+        );
         return [specifier, pathToSubIndex] as const;
       })
+    );
+  }
+
+  async initialize() {
+    // Find all matching paths for each specifier
+    const specifiersAndCaches = await StoryIndexGenerator.findMatchingFilesForSpecifiers(
+      this.specifiers,
+      this.options.workingDir
     );
 
     // We do this in a second step to avoid timing issues with the Promise.all above -- to ensure
@@ -359,7 +414,10 @@ export class StoryIndexGenerator {
     invariant(indexer, `No matching indexer found for ${absolutePath}`);
 
     const indexInputs = await indexer.createIndex(absolutePath, { makeTitle: defaultMakeTitle });
-    const tsconfigPath = await findUp('tsconfig.json', { cwd: this.options.workingDir });
+    const tsconfigPath = await findUp('tsconfig.json', {
+      cwd: this.options.workingDir,
+      stopAt: getProjectRoot(),
+    });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
     let matchPath: TsconfigPaths.MatchPath | undefined;
     if (tsconfig.resultType === 'success') {
@@ -400,10 +458,11 @@ export class StoryIndexGenerator {
     //  a) autodocs is globally enabled
     //  b) we have autodocs enabled for this file
     const hasAutodocsTag = entries.some((entry) => entry.tags.includes(AUTODOCS_TAG));
-    const createDocEntry = hasAutodocsTag;
+    const createDocEntry = hasAutodocsTag && !!this.options.docs;
 
     if (createDocEntry && this.options.build?.test?.disableAutoDocs !== true) {
-      const name = this.options.docs.defaultName ?? 'Docs';
+      const docsName = this.options.docs?.defaultName ?? 'Docs';
+      const name = docsName;
       const { metaId } = indexInputs[0];
       const { title } = entries[0];
       const id = toId(metaId ?? title, name);
@@ -505,7 +564,7 @@ export class StoryIndexGenerator {
         title,
         "makeTitle created an undefined title. This happens when a specifier's doesn't have any matches in its fileName"
       );
-      const defaultName = this.options.docs.defaultName ?? 'Docs';
+      const defaultName = this.options.docs?.defaultName ?? 'Docs';
 
       const name =
         result.name ||
@@ -534,7 +593,7 @@ export class StoryIndexGenerator {
       if (err && (err as { source: any }).source?.match(/mdast-util-mdx-jsx/g)) {
         logger.warn(
           `💡 This seems to be an MDX2 syntax error. Please refer to the MDX section in the following resource for assistance on how to fix this: ${picocolors.yellow(
-            'https://storybook.js.org/migration-guides/7.0'
+            'https://storybook.js.org/docs/7/migration-guide?ref=error'
           )}`
         );
       }
@@ -571,7 +630,8 @@ export class StoryIndexGenerator {
       const worseDescriptor = isMdxEntry(worseEntry)
         ? `component docs page`
         : `automatically generated docs page`;
-      if (betterEntry.name === this.options.docs.defaultName) {
+      const docsName = this.options.docs?.defaultName ?? 'Docs';
+      if (betterEntry.name === docsName) {
         throw new IndexingError(
           `You have a story for ${betterEntry.title} with the same name as your default docs entry name (${betterEntry.name}), so the docs page is being dropped. Consider changing the story name.`,
           [firstEntry.importPath, secondEntry.importPath]
@@ -620,7 +680,7 @@ export class StoryIndexGenerator {
 
   async sortStories(entries: StoryIndex['entries'], storySortParameter: any) {
     const sortableStories = Object.values(entries);
-    const fileNameOrder = this.storyFileNames();
+    const fileNameOrder = StoryIndexGenerator.storyFileNames(this.specifierToCache);
     sortStoriesV7(sortableStories, storySortParameter, fileNameOrder);
 
     return sortableStories.reduce(
@@ -789,7 +849,7 @@ export class StoryIndexGenerator {
   }
 
   // Get the story file names in "imported order"
-  storyFileNames() {
-    return Array.from(this.specifierToCache.values()).flatMap((r) => Object.keys(r));
+  static storyFileNames(specifierToCache: Map<NormalizedStoriesSpecifier, SpecifierStoriesCache>) {
+    return Array.from(specifierToCache.values()).flatMap((r) => Object.keys(r));
   }
 }

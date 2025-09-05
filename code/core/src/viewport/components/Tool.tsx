@@ -106,7 +106,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
   } = props;
 
   const update = useCallback(
-    (input: GlobalStateUpdate) => updateGlobals({ [PARAM_KEY]: input }),
+    (input: GlobalStateUpdate | undefined) => updateGlobals({ [PARAM_KEY]: input }),
     [updateGlobals]
   );
 
@@ -124,7 +124,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
                       title: 'Reset viewport',
                       icon: <RefreshIcon />,
                       onClick: () => {
-                        update({ value: undefined, isRotated: false });
+                        update(undefined);
                         onHide();
                       },
                     },
@@ -133,7 +133,7 @@ const Pure = React.memo(function PureTool(props: PureProps) {
               ...Object.entries(viewportMap).map<Link>(([k, value]) => ({
                 id: k,
                 title: value.name,
-                icon: iconsMap[value.type],
+                icon: iconsMap[value.type!],
                 active: k === viewportName,
                 onClick: () => {
                   update({ value: k, isRotated: false });

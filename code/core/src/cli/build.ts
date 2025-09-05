@@ -1,12 +1,10 @@
 import { cache } from 'storybook/internal/common';
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 
-import { findPackage } from 'fd-package-json';
-import invariant from 'tiny-invariant';
-
 export const build = async (cliOptions: any) => {
-  const packageJson = await findPackage(__dirname);
-  invariant(packageJson, 'Failed to find the closest package.json file.');
+  const { default: packageJson } = await import('storybook/package.json', {
+    with: { type: 'json' },
+  });
   const options = {
     ...cliOptions,
     configDir: cliOptions.configDir || './.storybook',

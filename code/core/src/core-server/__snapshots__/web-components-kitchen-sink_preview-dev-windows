@@ -428,27 +428,6 @@ Object {
         ],
       },
       Object {
-        "enforce": "pre",
-        "loader": "ROOT\\\\lib\\\\source-loader\\\\dist\\\\cjs\\\\index.js",
-        "options": Object {
-          "injectStoryParameters": true,
-          "inspectLocalDependencies": true,
-        },
-        "test": "/\\\\.(stories|story)\\\\.[tj]sx?$/",
-      },
-      Object {
-        "enforce": "pre",
-        "test": Array [
-          "/\\\\.stories\\\\.(jsx?$|tsx?$)/",
-        ],
-        "use": Array [
-          Object {
-            "loader": "ROOT\\\\lib\\\\source-loader\\\\dist\\\\cjs\\\\index.js",
-            "options": undefined,
-          },
-        ],
-      },
-      Object {
         "sideEffects": true,
         "test": "/\\\\.css$/",
         "use": Array [

@@ -183,7 +183,7 @@ describe('stories codemod', () => {
 
         const someData = {};
 
-        export const A = meta.story({});
+        export const A = meta.story();
 
         export const B = meta.story({
           ...A.input,
@@ -280,7 +280,7 @@ describe('stories codemod', () => {
           title: 'Component',
         });
 
-        export const A = meta.story({});
+        export const A = meta.story();
         export const B = meta.story({
           play: async () => {
             await A.play();
@@ -375,9 +375,7 @@ describe('stories codemod', () => {
         import preview from '#.storybook/preview';
 
         const meta = preview.meta({ title: 'Component' });
-        export const CSF1Story = meta.story({
-          render: () => <div>Hello</div>,
-        });
+        export const CSF1Story = meta.story(() => <div>Hello</div>);
       `);
     });
   });
@@ -588,7 +586,7 @@ describe('stories codemod', () => {
 
         const meta = preview.meta({});
 
-        export const A = meta.story({});
+        export const A = meta.story();
       `);
     });
   });

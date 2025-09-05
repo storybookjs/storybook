@@ -214,9 +214,8 @@ test.describe("component testing", () => {
 
     // Wait for both the watch mode button to be disabled and the testing text to appear
     await Promise.all([
-      expect(watchModeButton).toBeDisabled(),
+      expect(watchModeButton).toHaveAttribute("aria-disabled", true),
       expect(page.locator("#testing-module-description")).toHaveText(/Testing/),
-
     ]);
 
     // Wait for test results to appear

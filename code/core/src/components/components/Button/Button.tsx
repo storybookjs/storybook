@@ -5,7 +5,7 @@ import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
 import { isPropValid, styled } from 'storybook/theming';
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'disabled'> {
   asChild?: boolean;
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
@@ -27,7 +27,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled = false,
       active = false,
       onClick,
-      ...props
+      ...restProps
     },
     ref
   ) => {
@@ -40,6 +40,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const [isAnimating, setIsAnimating] = useState(false);
 
     const handleClick = (event: SyntheticEvent) => {
+      if (disabled) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
       if (onClick) {
         onClick(event);
       }
@@ -66,12 +71,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         variant={variant}
         size={size}
         padding={padding}
-        disabled={disabled}
+        aria-disabled={disabled}
         active={active}
         animating={isAnimating}
         animation={animation}
         onClick={handleClick}
-        {...props}
+        {...restProps}
       />
     );
   }
@@ -86,7 +91,7 @@ const StyledButton = styled('button', {
     animating: boolean;
     animation: ButtonProps['animation'];
   }
->(({ theme, variant, size, disabled, active, animating, animation = 'none', padding }) => ({
+>(({ theme, variant, size, active, disabled, animating, animation = 'none', padding }) => ({
   border: 0,
   cursor: disabled ? 'not-allowed' : 'pointer',
   display: 'inline-flex',

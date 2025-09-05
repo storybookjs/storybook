@@ -1,14 +1,17 @@
-import type { ComponentProps, ReactNode } from 'react';
-import React, { useCallback, useEffect, useState } from 'react';
+import type { ComponentProps, DOMAttributes, ReactElement, ReactNode } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import ReactDOM from 'react-dom';
 
 import { global } from '@storybook/global';
 
+import type { Tooltip as TooltipUpstream } from 'react-aria-components';
+import { Focusable, TooltipTrigger } from 'react-aria-components';
 import type { PopperOptions, Config as ReactPopperTooltipConfig } from 'react-popper-tooltip';
 import { usePopperTooltip } from 'react-popper-tooltip';
 import { styled } from 'storybook/theming';
 
-import { Tooltip } from './Tooltip';
+import type { TooltipDbgProps } from './Tooltip';
+import { Tooltip as OldTooltip, TooltipDbg } from './Tooltip';
 
 const { document } = global;
 
@@ -77,7 +80,7 @@ const WithTooltipPure = ({
       },
     },
   ],
-  hasChrome = true,
+  hasChrome,
   defaultVisible = false,
   withArrows,
   offset,
@@ -131,7 +134,7 @@ const WithTooltipPure = ({
       : portalContainer) || document.body;
 
   const tooltipComponent = isVisible ? (
-    <Tooltip
+    <OldTooltip
       placement={state?.placement}
       ref={setTooltipRef}
       hasChrome={hasChrome}
@@ -141,7 +144,7 @@ const WithTooltipPure = ({
     >
       {/* @ts-expect-error (non strict) */}
       {typeof tooltip === 'function' ? tooltip({ onHide: () => onVisibleChange(false) }) : tooltip}
-    </Tooltip>
+    </OldTooltip>
   ) : null;
 
   return (
@@ -221,4 +224,115 @@ const WithToolTipState = ({
   return <WithTooltipPure {...rest} visible={tooltipShown} onVisibleChange={onVisibilityChange} />;
 };
 
-export { WithTooltipPure, WithToolTipState, WithToolTipState as WithTooltip };
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// TODO: create file
+export interface WithPopoverProps {
+  // not actually needed
+  trigger: 'click';
+  placement: TooltipDbgProps['placement'];
+}
+
+// TODO: filter out aria-describedby from Tooltip trigger attrs
+// TODO: migrate all uses of Tooltip trigger="click" to WithPopover
+// TODO: migrate core/src/manager/components/sidebar/RefBlocks.tsx ErrorBlock to a dialog or popover (does not close on outside click)
+
+// BREAKING: WithTooltipState and WithTooltipPure were removed. Use WithTooltip instead.
+// BREAKING: The trigger prop now only accepts "focus" and "hover-and-focus". Tooltips now always show on focus for accessibility reasons. Use WithPopover for click-triggered popovers.
+// BREAKING: The `svg` prop was removed because it was unused.
+// BREAKING: The `startOpen` prop was removed because it was unused.
+// BREAKING: The `defaultVisible` prop was removed because it was unused.
+// BREAKING: The `withArrows` prop was removed because it was unused.
+// BREAKING: The `closeOnTriggerHidden` prop was removed because it was unused.
+// BREAKING: The `mutationObserverOptions` prop was removed because it was unused.
+// BREAKING: The `interactive` prop was removed because it was unused.
+// BREAKING: The `strategy` prop was removed because it was unused.
+// BREAKING: The `followCursor` prop was removed because it was unused.
+// BREAKING: The `closeOnOutsideClick` prop was removed. It is now always enabled. Use a Dialog if you need a popover that does not close automatically.
+
+export interface WithTooltipProps {
+  /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */
+  triggerOnFocusOnly?: boolean;
+
+  /** Whether to display the tooltip in a prestyled container. True by default. */
+  hasChrome?: boolean;
+
+  /** Distance between the trigger and tooltip. Customize only if you have a good reason to. */
+  offset?: number;
+
+  /**
+   * Placement of the tooltip. Start and End variants involve additional JS dimension calculations
+   * and should be used sparingly. Left and Right get inverted in RTL.
+   */
+  placement?: TooltipDbgProps['placement'];
+
+  /** Tooltip content */
+  tooltip: ReactNode;
+
+  /** Tooltip trigger, must be a single child that can receive focus and click/key events. */
+  children: ReactElement<DOMAttributes<Element>, string>;
+
+  /** Delay before showing the tooltip, defaults to 200ms. Always instant on focus. */
+  delayShow?: number;
+
+  /** Delay before hiding the tooltip, defaults to 400ms. */
+  delayHide?: number;
+
+  /** Controlled state: whether the tooltip is visible. */
+  visible?: boolean;
+
+  /** Controlled state: fires when user interaction causes the tooltip to change visibility. */
+  onVisibleChange?: (isVisible: boolean) => void;
+}
+
+const WithTooltip = ({
+  triggerOnFocusOnly = false,
+  placement,
+  hasChrome = true,
+  offset = 0,
+  tooltip,
+  children,
+  delayShow = 400,
+  delayHide = 200,
+  visible,
+  onVisibleChange,
+  ...props
+}: WithTooltipProps) => {
+  return (
+    <TooltipTrigger
+      delay={delayShow}
+      closeDelay={delayHide}
+      isOpen={visible}
+      trigger={triggerOnFocusOnly ? 'focus' : undefined}
+      {...props}
+    >
+      <Focusable>{children}</Focusable>
+      <TooltipDbg
+        hasChrome={hasChrome}
+        offset={offset}
+        placement={placement}
+        onOpenChange={onVisibleChange}
+      >
+        {tooltip}
+      </TooltipDbg>
+    </TooltipTrigger>
+  );
+};
+
+export {
+  WithTooltipPure,
+  WithToolTipState,
+  WithToolTipState as WithTooltip,
+  WithTooltip as WithTooltipDBG,
+};

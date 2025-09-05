@@ -1,6 +1,9 @@
+import type { ComponentProps } from 'react';
 import React from 'react';
 
 import memoize from 'memoizerific';
+import { Tooltip as TooltipUpstream } from 'react-aria-components';
+import type { TooltipProps as TooltipPropsUpstream } from 'react-aria-components';
 import { type Color, lighten, styled } from 'storybook/theming';
 
 const match = memoize(1000)((requests, actual, value, fallback = 0) =>
@@ -10,7 +13,7 @@ const match = memoize(1000)((requests, actual, value, fallback = 0) =>
 const ArrowSpacing = 8;
 
 export interface ArrowProps {
-  color: keyof Color;
+  color?: keyof Color;
   placement: string;
 }
 
@@ -54,7 +57,7 @@ const Arrow = styled.div<ArrowProps>(
     borderTopColor: match(
       'top',
       placement,
-      theme.color[color] || color || theme.base === 'light'
+      (color && theme.color[color]) || color || theme.base === 'light'
         ? lighten(theme.background.app)
         : theme.background.app,
       'transparent'
@@ -62,7 +65,7 @@ const Arrow = styled.div<ArrowProps>(
     borderBottomColor: match(
       'bottom',
       placement,
-      theme.color[color] || color || theme.base === 'light'
+      (color && theme.color[color]) || color || theme.base === 'light'
         ? lighten(theme.background.app)
         : theme.background.app,
       'transparent'
@@ -70,7 +73,7 @@ const Arrow = styled.div<ArrowProps>(
     borderLeftColor: match(
       'left',
       placement,
-      theme.color[color] || color || theme.base === 'light'
+      (color && theme.color[color]) || color || theme.base === 'light'
         ? lighten(theme.background.app)
         : theme.background.app,
       'transparent'
@@ -78,7 +81,7 @@ const Arrow = styled.div<ArrowProps>(
     borderRightColor: match(
       'right',
       placement,
-      theme.color[color] || color || theme.base === 'light'
+      (color && theme.color[color]) || color || theme.base === 'light'
         ? lighten(theme.background.app)
         : theme.background.app,
       'transparent'
@@ -149,3 +152,57 @@ export const Tooltip = React.forwardRef<HTMLDivElement, TooltipProps>(
 );
 
 Tooltip.displayName = 'Tooltip';
+
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////
+
+type PlacementWithModifier =
+  | 'top-start'
+  | 'top-end'
+  | 'bottom-start'
+  | 'bottom-end'
+  | 'left-start'
+  | 'left-end'
+  | 'right-start'
+  | 'right-end';
+
+type BasicPlacement = 'top' | 'bottom' | 'left' | 'right';
+
+export interface TooltipDbgProps extends Omit<TooltipPropsUpstream, 'children' | 'placement'> {
+  children: React.ReactNode;
+  hasChrome?: boolean;
+  placement?: BasicPlacement | PlacementWithModifier;
+}
+
+function convertToReactAriaPlacement(
+  p: BasicPlacement | PlacementWithModifier
+): NonNullable<ComponentProps<typeof TooltipUpstream>['placement']> {
+  return p.replace('-', ' ') as NonNullable<ComponentProps<typeof TooltipUpstream>['placement']>;
+}
+
+export const TooltipDbg = React.forwardRef<HTMLDivElement, TooltipDbgProps>(
+  (
+    { children, hasChrome = true, placement: placementProp = 'top', ...props }: TooltipDbgProps,
+    ref
+  ) => {
+    // Map Popper.js placement to react-aria placement best we can.
+    const placement = convertToReactAriaPlacement(placementProp);
+
+    return (
+      <TooltipUpstream data-testid="tooltip" ref={ref} placement={placement} {...props}>
+        <Wrapper hasChrome={hasChrome} color={undefined}>
+          {children}
+        </Wrapper>
+      </TooltipUpstream>
+    );
+  }
+);
+
+TooltipDbg.displayName = 'Tooltip';

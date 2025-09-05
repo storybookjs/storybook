@@ -13,7 +13,6 @@ import type { Tag } from 'storybook/internal/types';
 
 import {
   BatchAcceptIcon,
-  CheckIcon,
   DeleteIcon,
   DocumentIcon,
   ShareAltIcon,
@@ -147,7 +146,7 @@ export const TagsFilterPanel = ({
               as="label"
               icon={
                 <>
-                  {checked && (excluded ? <DeleteIcon /> : <CheckIcon />)}
+                  {excluded && <DeleteIcon />}
                   <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} data-tag={tag} />
                 </>
               }

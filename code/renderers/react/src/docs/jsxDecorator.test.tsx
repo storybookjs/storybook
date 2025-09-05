@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FC, PropsWithChildren } from 'react';
 import React, { Profiler, StrictMode, createElement } from 'react';
 
+// @ts-expect-error (Converted from ts-ignore)
 import PropTypes from 'prop-types';
 import { addons, emitTransformCode, useState } from 'storybook/preview-api';
 

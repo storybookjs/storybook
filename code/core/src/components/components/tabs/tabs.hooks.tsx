@@ -39,8 +39,8 @@ const AddonButton = styled(TabButton)<{ preActive: boolean }>(({ active, theme, 
 });
 
 export function useList(list: ChildrenListComplete) {
-  const tabBarRef = useRef<HTMLDivElement>();
-  const addonsRef = useRef<HTMLButtonElement>();
+  const tabBarRef = useRef<HTMLDivElement | null>(null);
+  const addonsRef = useRef<HTMLButtonElement | null>(null);
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());
   const { width: tabBarWidth = 1 } = useResizeObserver<HTMLDivElement>({
     // @ts-expect-error (non strict)
@@ -91,7 +91,6 @@ export function useList(list: ChildrenListComplete) {
           >
             <AddonButton
               id="addons-menu-button"
-              // @ts-expect-error (non strict)
               ref={addonsRef}
               active={isAddonsActive}
               preActive={isTooltipVisible}
@@ -125,7 +124,6 @@ export function useList(list: ChildrenListComplete) {
                 textColor={color}
                 role="tab"
               >
-                {/* @ts-expect-error (we know this is broken) */}
                 {title}
               </TabButton>
             );

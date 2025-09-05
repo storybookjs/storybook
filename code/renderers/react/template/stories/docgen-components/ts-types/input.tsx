@@ -93,6 +93,7 @@ interface TypeScriptPropsProps {
 }
 
 export const TypeScriptProps: FC<TypeScriptPropsProps> = () => <div>TypeScript!</div>;
+// @ts-expect-error (Converted from ts-ignore)
 TypeScriptProps.defaultProps = {
   any: 'Any value',
   string: 'A string value',

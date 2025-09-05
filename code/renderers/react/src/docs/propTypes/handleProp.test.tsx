@@ -9,6 +9,7 @@ import {
   extractComponentProps,
 } from 'storybook/internal/docs-tools';
 
+// @ts-expect-error (Converted from ts-ignore)
 import PropTypes from 'prop-types';
 
 import { enhancePropTypesProp, enhancePropTypesProps } from './handleProp';

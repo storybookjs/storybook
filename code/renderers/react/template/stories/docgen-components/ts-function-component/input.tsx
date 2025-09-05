@@ -37,6 +37,7 @@ export const PropsWriter: React.FC<PropsWriterProps> = (props: PropsWriterProps)
   <pre>{JSON.stringify(props)}</pre>
 );
 
+// @ts-expect-error (Converted from ts-ignore)
 PropsWriter.defaultProps = {
   numberOptional: 1,
   stringOptional: 'stringOptional',

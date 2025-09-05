@@ -4,7 +4,7 @@ import React, { Component } from 'react';
 export type IZoomIFrameProps = {
   scale: number;
   children: ReactElement<HTMLIFrameElement>;
-  iFrameRef: RefObject<HTMLIFrameElement>;
+  iFrameRef: RefObject<HTMLIFrameElement | null>;
   active?: boolean;
 };
 
@@ -14,7 +14,7 @@ export class ZoomIFrame extends Component<IZoomIFrameProps> {
 
   componentDidMount() {
     const { iFrameRef } = this.props;
-    this.iframe = iFrameRef.current;
+    this.iframe = iFrameRef.current as HTMLIFrameElement;
   }
 
   shouldComponentUpdate(nextProps: IZoomIFrameProps) {

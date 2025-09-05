@@ -223,7 +223,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     );
     const setCall = ({ status, ...call }: Call) => calls.current.set(call.id, call);
 
-    const endRef = useRef<HTMLDivElement>();
+    const endRef = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
       let observer: IntersectionObserver;
       if (global.IntersectionObserver) {
@@ -403,7 +403,6 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           caughtException={caughtException}
           unhandledErrors={unhandledErrors}
           pausedAt={pausedAt}
-          // @ts-expect-error TODO
           endRef={endRef}
           onScrollToEnd={scrollTarget && scrollToTarget}
         />

@@ -1,4 +1,4 @@
-import type { FC, PropsWithChildren, ReactChild, ReactElement, ReactNode } from 'react';
+import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 import React, { Children } from 'react';
 
 import type { Addon_RenderOptions } from 'storybook/internal/types';
@@ -21,8 +21,8 @@ export const childrenToList = (children: TabsProps['children']) =>
     ({
       props: { title, id, color, children: childrenOfChild },
     }: ReactElement<{
-      children: FC<Addon_RenderOptions & PropsWithChildren> | ReactChild | null;
-      title: ReactChild | null | FC;
+      children: FC<Addon_RenderOptions & PropsWithChildren> | ReactElement | null;
+      title: ReactElement | null | FC;
       id: string;
       color?: string;
     }>) => {

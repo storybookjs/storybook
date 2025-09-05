@@ -16,8 +16,6 @@ export const render: ArgsStoryFn<PreactRenderer> = (args, context) => {
     );
   }
 
-  // @ts-expect-error I think the type of Component should be Preact.ComponentType, but even that
-  // doesn't make TS happy, I suspect because TS wants "react" components.
   return <Component {...args} />;
 };
 

@@ -9,7 +9,7 @@
     "incremental": false,
     "isolatedModules": true,
     "jsx": "preserve",
-    "lib": ["dom", "dom.iterable", "es2024"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "noImplicitAny": true,
@@ -18,7 +18,7 @@
     "strict": true,
     "noEmit": true,
     "strictBindCallApply": true,
-    "target": "es2024"
+    "target": "esnext"
   },
   "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"]
 }

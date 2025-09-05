@@ -247,6 +247,8 @@ export const ObjectNode = ({
     return (
       <>
         <ObjectInspector
+          expandLevel={0}
+          sortKeys={false}
           id="interactions-object-inspector"
           data={value}
           includePrototypes={false}

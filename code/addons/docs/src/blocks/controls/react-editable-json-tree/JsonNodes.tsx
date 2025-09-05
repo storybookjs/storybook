@@ -104,12 +104,12 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
       addButtonElement &&
       cloneElement(addButtonElement, {
         onClick: this.onSubmit,
-      });
+      } as any);
     const cancelButtonElementLayout =
       cancelButtonElement &&
       cloneElement(cancelButtonElement, {
         onClick: handleCancel,
-      });
+      } as any);
     const inputElementValue = inputElementGenerator(inputUsageTypes.VALUE, keyPath, deep);
     const inputElementValueLayout = cloneElement(inputElementValue, {
       placeholder: 'Value',
@@ -336,7 +336,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         className: 'rejt-minus-menu',
         style: minus,
         'aria-label': `remove the array '${String(name)}'`,
-      });
+      } as any);
 
     return (
       <>
@@ -380,7 +380,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         className: 'rejt-plus-menu',
         style: plus,
         'aria-label': `add a new item to the '${String(name)}' array`,
-      });
+      } as any);
     const removeItemButton =
       minusMenuElement &&
       cloneElement(minusMenuElement, {
@@ -388,7 +388,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         className: 'rejt-minus-menu',
         style: minus,
         'aria-label': `remove the array '${String(name)}'`,
-      });
+      } as any);
 
     const onlyValue = true;
     const startObject = '[';
@@ -673,7 +673,7 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
           'aria-label': `remove the function '${String(name)}'${
             String(parentPropertyName) ? ` from '${String(parentPropertyName)}'` : ''
           }`,
-        });
+        } as any);
       minusElement = resultOnlyResult ? null : minusMenuLayout;
     }
 
@@ -1223,7 +1223,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         className: 'rejt-minus-menu',
         style: minus,
         'aria-label': `remove the object '${String(name)}'`,
-      });
+      } as any);
 
     return (
       <>
@@ -1269,7 +1269,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         className: 'rejt-plus-menu',
         style: plus,
         'aria-label': `add a new property to the object '${String(name)}'`,
-      });
+      } as any);
     const removeItemButton =
       minusMenuElement &&
       cloneElement(minusMenuElement, {
@@ -1277,7 +1277,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         className: 'rejt-minus-menu',
         style: minus,
         'aria-label': `remove the object '${String(name)}'`,
-      });
+      } as any);
 
     const list = keyList.map((key) => (
       <JsonNode
@@ -1543,7 +1543,7 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
         'aria-label': `remove the property '${String(name)}' with value '${String(originalValue)}'${
           String(parentPropertyName) ? ` from '${String(parentPropertyName)}'` : ''
         }`,
-      });
+      } as any);
 
     return (
       <li className="rejt-value-node" style={style.li}>

@@ -1,5 +1,5 @@
 /* eslint-disable react/destructuring-assignment */
-import React from 'react';
+import React, { type JSX } from 'react';
 
 interface IAProps {
   aProperty: any;

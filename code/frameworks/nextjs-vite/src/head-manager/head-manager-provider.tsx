@@ -1,4 +1,4 @@
-import type { PropsWithChildren } from 'react';
+import type { JSX, PropsWithChildren } from 'react';
 import React, { useMemo } from 'react';
 
 import initHeadManager from 'next/dist/client/head-manager';

@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 
 import { STORY_SPECIFIED } from 'storybook/internal/core-events';
 
@@ -45,12 +45,11 @@ addons.register('@storybook/addon-onboarding', async (api) => {
     document.body.appendChild(domNode);
 
     // Render the React app
-    // eslint-disable-next-line react/no-deprecated
-    ReactDOM.render(
+    const root = createRoot(domNode);
+    root.render(
       <Suspense fallback={<div />}>
         <Onboarding api={api} />
-      </Suspense>,
-      domNode
+      </Suspense>
     );
   });
 });

@@ -2,7 +2,7 @@
 // this file tests Typescript types that's why there are no assertions
 import { describe, it } from 'vitest';
 
-import type { KeyboardEventHandler, ReactElement, ReactNode } from 'react';
+import type { JSX, KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
 import { satisfies } from 'storybook/internal/common';

@@ -27913,6 +27913,7 @@ __metadata:
     typescript: "npm:^5.8.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
+    use-sync-external-store: "npm:^1.5.0"
     watchpack: "npm:^2.2.0"
     ws: "npm:^8.18.0"
     zod: "npm:^3.24.1"
@@ -29508,7 +29509,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"use-sync-external-store@npm:^1.4.0":
+"use-sync-external-store@npm:^1.4.0, use-sync-external-store@npm:^1.5.0":
   version: 1.5.0
   resolution: "use-sync-external-store@npm:1.5.0"
   peerDependencies:

@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import { pnpPlugin } from '@yarnpkg/esbuild-plugin-pnp';
-import { resolvePathSync } from 'mlly';
+import { resolveModulePath } from 'exsolve';
 import { join, parse } from 'pathe';
 import sirv from 'sirv';
 
@@ -42,8 +42,8 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
   const tsconfigPath = getTemplatePath('addon.tsconfig.json');
   let configDirManagerEntry;
   try {
-    configDirManagerEntry = resolvePathSync('./manager', {
-      url: options.configDir,
+    configDirManagerEntry = resolveModulePath('./manager', {
+      from: options.configDir,
       extensions: ['.js', '.mjs', '.jsx', '.ts', '.mts', '.tsx'],
     });
   } catch (e) {

@@ -6,7 +6,7 @@ import {
   MissingFrameworkFieldError,
 } from 'storybook/internal/server-errors';
 
-import { resolvePathSync } from 'mlly';
+import { resolveModulePath } from 'exsolve';
 
 import { frameworkPackages } from './get-storybook-info';
 
@@ -35,7 +35,7 @@ export function validateFrameworkName(
 
   // If it's not a known framework, we need to validate that it's a valid package at least
   try {
-    resolvePathSync(join(frameworkName, 'preset'), {
+    resolveModulePath(join(frameworkName, 'preset'), {
       extensions: ['.mjs', '.js', '.cjs'],
       conditions: ['node', 'import', 'require'],
     });

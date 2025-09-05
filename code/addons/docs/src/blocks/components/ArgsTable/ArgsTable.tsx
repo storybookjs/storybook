@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { once } from 'storybook/internal/client-logger';
-import { IconButton, Link, ResetWrapper } from 'storybook/internal/components';
+import { Button, Link, ResetWrapper } from 'storybook/internal/components';
 import { includeConditionalArg } from 'storybook/internal/csf';
 
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
@@ -173,8 +173,12 @@ const TablePositionWrapper = styled.div({
 
 const ButtonPositionWrapper = styled.div({
   position: 'absolute',
-  right: 8,
-  top: 6,
+  right: 22,
+  top: 10,
+});
+
+const StyledButton = styled(Button)({
+  margin: '-4px -12px -4px 0',
 });
 
 export enum ArgsTableError {
@@ -384,13 +388,14 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
       <TablePositionWrapper>
         {updateArgs && !isLoading && resetArgs && (
           <ButtonPositionWrapper>
-            <IconButton
+            <StyledButton
+              variant="ghost"
+              padding="small"
               onClick={() => resetArgs()}
-              aria-label="Reset controls"
-              title="Reset controls"
+              ariaLabel="Reset controls"
             >
               <UndoIcon />
-            </IconButton>
+            </StyledButton>
           </ButtonPositionWrapper>
         )}
 

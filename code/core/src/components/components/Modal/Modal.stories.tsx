@@ -169,9 +169,11 @@ export const StyledComponents: Story = {
             </Modal.Row>
             <Modal.Col>Another section</Modal.Col>
             <Modal.Actions>
-              <Button variant="solid">Save</Button>
+              <Button ariaLabel={false} variant="solid">
+                Save
+              </Button>
               <Modal.Dialog.Close asChild>
-                <Button>Cancel</Button>
+                <Button ariaLabel={false}>Cancel</Button>
               </Modal.Dialog.Close>
             </Modal.Actions>
           </Modal.Content>

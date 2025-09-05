@@ -45,7 +45,7 @@ const StyledBadge = styled.div<StatusBadgeProps>(({ theme, status }) => {
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const badgeText = StatusTextMapping[status];
   return (
-    <StyledBadge aria-label="Status of the test run" status={status}>
+    <StyledBadge aria-label={`Test status: ${status}`} role="status" status={status}>
       {badgeText}
     </StyledBadge>
   );

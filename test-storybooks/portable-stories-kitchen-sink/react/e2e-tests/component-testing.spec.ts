@@ -95,9 +95,9 @@ test.describe("component testing", () => {
       await clearStatusesButton.click();
     }
 
-    const disableWatch = page.getByLabel("Disable watch mode");
-    if (await disableWatch.isVisible()) {
-      await disableWatch.click();
+    const watchModeToggle = page.getByLabel("Watch mode", { exact: true });
+    if (await watchModeToggle.isVisible() && await watchModeToggle.getAttribute("aria-checked") === "true") {
+      await watchModeToggle.click();
     }
 
     const configs = [
@@ -154,7 +154,7 @@ test.describe("component testing", () => {
       timeout: 60000,
     });
 
-    const errorFilter = page.getByLabel("Toggle errors");
+    const errorFilter = page.getByLabel(/Filter main navigation to show \d+ tests with errors/);
     await expect(errorFilter).toBeVisible();
 
     // Assert discrepancy: CLI pass + Browser fail
@@ -206,7 +206,7 @@ test.describe("component testing", () => {
     );
 
     const runTestsButton = await page.getByLabel("Start test run");
-    const watchModeButton = await page.getByLabel("Enable watch mode");
+    const watchModeButton = await page.getByLabel("Watch mode");
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();
 
@@ -228,7 +228,7 @@ test.describe("component testing", () => {
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();
 
-    const errorFilter = page.getByLabel("Toggle errors");
+    const errorFilter = page.getByLabel(/Filter main navigation to show \d+ tests with errors/);
     await expect(errorFilter).toBeVisible();
 
     // Assert for expected success
@@ -276,7 +276,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByLabel("Enable watch mode").click();
+    await page.getByLabel("Watch mode", { exact: true }).click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(8000);
@@ -285,7 +285,7 @@ test.describe("component testing", () => {
     );
 
     // Wait for test results to appear
-    const errorFilter = page.getByLabel("Toggle errors");
+    const errorFilter = page.getByLabel(/Filter main navigation to show \d+ tests with errors/);
     await expect(errorFilter).toBeVisible({ timeout: 30000 });
 
     // Assert for expected success
@@ -330,7 +330,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByLabel("Enable watch mode").click();
+    await page.getByLabel("Watch mode").click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(3000);
@@ -369,7 +369,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByLabel("Enable watch mode").click();
+    await page.getByLabel("Watch mode").click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(3000);
@@ -409,7 +409,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByLabel("Enable watch mode").click();
+    await page.getByLabel("Watch mode").click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(3000);
@@ -457,7 +457,7 @@ test.describe("component testing", () => {
       timeout: 30000,
     });
     const sbPercentageText = await page
-      .getByLabel(/percent coverage$/)
+      .getByLabel(/% coverage\)$/)
       .textContent();
     expect(sbPercentageText).toMatch(/^\d+%$/);
     const sbPercentage = Number.parseInt(
@@ -737,7 +737,7 @@ test.describe("component testing", () => {
       timeout: 30000,
     });
     const sbPercentageText = await page
-      .getByLabel(/percent coverage$/)
+      .getByLabel(/% coverage\)$/)
       .textContent();
     expect(sbPercentageText).toMatch(/^\d+%$/);
     const sbPercentage = Number.parseInt(

@@ -21,15 +21,18 @@ import { FaceHappyIcon, HeartIcon } from '@storybook/icons'
 `} />
 
 ## Usage
+
+To ensure Buttons are accessible, the `ariaLabel` prop must contain a label to be read by screen readers. When your Button's content already contains text, this prop is not necessary. You can set `ariaLabel` to `false` to declare that the Button's children is already readable by screen readers.
+
 <Source
   language="tsx"
   dark={true}
   code={`
 // Using the onClick event handler
-<Button onClick={}>Hello world!</Button>
+<Button ariaLabel={false} onClick={() => {}}>Hello world!</Button>
 
   // Using the asChild prop to render a custom child
-  <Button asChild>
+  <Button ariaLabel={false} asChild>
     <a href="https://storybook.js.org">Hello world!</a>
   </Button>
 `} />
@@ -45,8 +48,8 @@ Use the `size` prop to change the size of the button. You can set the value to `
   language="tsx"
   dark={true}
   code={`
-<Button size="small">Small Button</Button>
-<Button size="medium">Medium Button</Button>
+<Button ariaLabel={false} size="small">Small Button</Button>
+<Button ariaLabel={false} size="medium">Medium Button</Button>
 `} />
 
 ### Button variants
@@ -65,28 +68,28 @@ Use the `variant` prop to change the visual style of the button. You can set the
 
 ### Button with icon
 
-You can add an icon to the button by adding the icon on the left of the text. Please use any icon from the icon library `@storybook/icons`.
+You can add an icon to the button by adding the icon on the left of the text. Please use any icon from the icon library `@storybook/icons`. You can still set `ariaLabel` to `false` if the button's text fully conveys the meaning of the button. If the icon is necessary to understand the button's purpose, you should pass a more meaningful text to `ariaLabel`.
 
 <Canvas of={ButtonStories.WithIcon} />
 <Source
   language="tsx"
   dark={true}
   code={`
-<Button>
-  <FaceHappyIcon />Button
+<Button ariaLabel={false}>
+  <FaceHappyIcon /> Button
 </Button>
 `} />
 
 ### Icon only buttons
 
-You can also use the button as an icon only button by removing the text. to make sure the button is square, please set the padding prop to `small`
+You can also use the button as an icon only button by removing the text. To make sure the button is square, please set the padding prop to `small`. You must pass an `ariaLabel` prop to ensure the button is accessible. The `ariaLabel` should describe the action that will be performed when the button is clicked, such as "Like" or "Delete". The Button will automatically display a tooltip based on the `ariaLabel`'s content when hovered.
 
 <Canvas of={ButtonStories.IconOnly} />
 <Source
   language="tsx"
   dark={true}
   code={`
-<Button padding="small">
+<Button ariaLabel="Button" padding="small">
   <FaceHappyIcon />
 </Button>
 `} />
@@ -100,10 +103,10 @@ If you want to use a custom wrapper to set the button as an external link or to 
   language="tsx"
   dark={true}
   code={`
-<Button asChild>
+<Button ariaLabel={false} asChild>
   <a href="https://storybook.js.org">Hello world!</a>
 </Button>
-<Button asChild>
+<Button ariaLabel={false} asChild>
   <Link href='/home'>Hello world!</Link>
 </Button>
 `} />
@@ -117,31 +120,16 @@ You can use the `animate` prop to add animations to the button. You can set the 
   language="tsx"
   dark={true}
   code={`
-<Button animation="glow">
+<Button ariaLabel={false} animation="glow">
   <FaceHappyIcon />Button
 </Button>
-<Button animation="jiggle">
+<Button ariaLabel={false} animation="jiggle">
   <FaceHappyIcon />Button
 </Button>
-<Button animation="rotate360">
+<Button ariaLabel={false} animation="rotate360">
   <FaceHappyIcon />Button
 </Button>
 `} />
-
-### Active button
-
-You can use the `active` prop to set the button as active. This will change the background color of the button.
-
-<Canvas of={ButtonStories.Active} />
-<Source
-  language="tsx"
-  dark={true}
-  code={`
-<Button active>
-  <FaceHappyIcon />Button
-</Button>
- `}
-/>
 
 ### Disabled button
 
@@ -152,7 +140,7 @@ You can use the `disabled` prop to set the button as disabled.
   language="tsx"
   dark={true}
   code={`
-<Button disabled>
+<Button ariaLabel={false} disabled>
   <FaceHappyIcon />Button
 </Button>
  `}

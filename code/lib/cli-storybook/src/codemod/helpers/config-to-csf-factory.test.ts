@@ -73,15 +73,13 @@ describe('main/preview codemod: general parsing functionality', () => {
     ).resolves.toMatchInlineSnapshot(`
       import { defineMain } from '@storybook/react-vite/node';
 
-      const config = {
-        framework: '@storybook/react-vite',
+      export default defineMain({
         tags: [],
         viteFinal: () => {
           return config;
         },
-      };
-
-      export default config;
+        framework: '@storybook/react-vite',
+      });
     `);
   });
   it('should wrap defineMain call from named exports format', async () => {
@@ -241,6 +239,23 @@ describe('preview specific functionality', () => {
 
       export default definePreview({
         tags: [],
+      });
+    `);
+  });
+  it('should work', async () => {
+    await expect(
+      transform(dedent`
+        export const decorators = [1]
+        export default {
+          parameters: {},
+        }
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { definePreview } from '@storybook/react-vite';
+
+      export default definePreview({
+        decorators: [1],
+        parameters: {},
       });
     `);
   });

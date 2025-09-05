@@ -19,6 +19,7 @@ const GROUP_ID = 'icon--group';
 const COMPONENT_ID = 'icon--component';
 const DOCUMENT_ID = 'icon--document';
 const STORY_ID = 'icon--story';
+const TEST_ID = 'icon--test';
 const SUCCESS_ID = 'icon--success';
 const ERROR_ID = 'icon--error';
 const WARNING_ID = 'icon--warning';
@@ -28,7 +29,7 @@ export const IconSymbols: FC = () => {
   return (
     <Svg data-chromatic="ignore">
       <symbol id={GROUP_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/Folder.tsx */}
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/FolderIcon.tsx */}
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -37,7 +38,7 @@ export const IconSymbols: FC = () => {
         />
       </symbol>
       <symbol id={COMPONENT_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/Component.tsx */}
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/ComponentIcon.tsx */}
         <path
           fillRule="evenodd"
           clipRule="evenodd"
@@ -46,7 +47,7 @@ export const IconSymbols: FC = () => {
         />
       </symbol>
       <symbol id={DOCUMENT_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/Document.tsx */}
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/DocumentIcon.tsx */}
         <path
           d="M4 5.5a.5.5 0 01.5-.5h5a.5.5 0 010 1h-5a.5.5 0 01-.5-.5zM4.5 7.5a.5.5 0 000 1h5a.5.5 0 000-1h-5zM4 10.5a.5.5 0 01.5-.5h5a.5.5 0 010 1h-5a.5.5 0 01-.5-.5z"
           fill="currentColor"
@@ -59,11 +60,20 @@ export const IconSymbols: FC = () => {
         />
       </symbol>
       <symbol id={STORY_ID}>
-        {/* https://github.com/storybookjs/icons/blob/main/src/icons/BookmarkHollow.tsx */}
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/BookmarkHollowIcon.tsx */}
         <path
           fillRule="evenodd"
           clipRule="evenodd"
           d="M3.5 0h7a.5.5 0 01.5.5v13a.5.5 0 01-.454.498.462.462 0 01-.371-.118L7 11.159l-3.175 2.72a.46.46 0 01-.379.118A.5.5 0 013 13.5V.5a.5.5 0 01.5-.5zM4 12.413l2.664-2.284a.454.454 0 01.377-.128.498.498 0 01.284.12L10 12.412V1H4v11.413z"
+          fill="currentColor"
+        />
+      </symbol>
+      <symbol id={TEST_ID}>
+        {/* https://github.com/storybookjs/icons/blob/main/src/icons/BeakerIcon.tsx */}
+        <path
+          fillRule="evenodd"
+          clipRule="evenodd"
+          d="M4.5 2h.75v3.866l-3.034 5.26A1.25 1.25 0 003.299 13H10.7a1.25 1.25 0 001.083-1.875L8.75 5.866V2h.75a.5.5 0 100-1h-5a.5.5 0 000 1zm1.75 4V2h1.5v4.134l.067.116L8.827 8H5.173l1.01-1.75.067-.116V6zM4.597 9l-1.515 2.625A.25.25 0 003.3 12H10.7a.25.25 0 00.217-.375L9.404 9H4.597z"
           fill="currentColor"
         />
       </symbol>
@@ -99,7 +109,16 @@ export const IconSymbols: FC = () => {
 };
 
 export const UseSymbol: FC<{
-  type: 'group' | 'component' | 'document' | 'story' | 'success' | 'error' | 'warning' | 'dot';
+  type:
+    | 'group'
+    | 'component'
+    | 'document'
+    | 'story'
+    | 'test'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'dot';
 }> = ({ type }) => {
   if (type === 'group') {
     return <use xlinkHref={`#${GROUP_ID}`} />;
@@ -115,6 +134,10 @@ export const UseSymbol: FC<{
 
   if (type === 'story') {
     return <use xlinkHref={`#${STORY_ID}`} />;
+  }
+
+  if (type === 'test') {
+    return <use xlinkHref={`#${TEST_ID}`} />;
   }
 
   if (type === 'success') {

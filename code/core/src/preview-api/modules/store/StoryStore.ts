@@ -242,7 +242,7 @@ export class StoryStore<TRenderer extends Renderer> {
   }
 
   // A prepared story does not include args, globals or hooks. These are stored in the story store
-  // and updated separtely to the (immutable) story.
+  // and updated separately to the (immutable) story.
   getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
     const userGlobals = this.userGlobals.get();
     const { initialGlobals } = this.userGlobals;
@@ -285,17 +285,19 @@ export class StoryStore<TRenderer extends Renderer> {
   ): Record<StoryId, StoryContextForEnhancers<TRenderer>> {
     const { cachedCSFFiles } = this;
 
+    console.log('extract: extracting stories', cachedCSFFiles);
+
     if (!cachedCSFFiles) {
       throw new CalledExtractOnStoreError();
     }
 
-    return Object.entries(this.storyIndex.entries).reduce(
-      (acc, [storyId, { type, importPath }]) => {
-        if (type === 'docs') {
+    const stories = Object.entries(this.storyIndex.entries).reduce(
+      (acc, [storyId, entry]) => {
+        if (entry.type === 'docs') {
           return acc;
         }
 
-        const csfFile = cachedCSFFiles[importPath];
+        const csfFile = cachedCSFFiles[entry.importPath];
         const story = this.storyFromCSFFile({ storyId, csfFile });
 
         if (!options.includeDocsOnly && story.parameters.docsOnly) {
@@ -304,6 +306,9 @@ export class StoryStore<TRenderer extends Renderer> {
 
         acc[storyId] = Object.entries(story).reduce(
           (storyAcc, [key, value]) => {
+            if (key === 'story' && entry.subtype === 'test') {
+              return { ...storyAcc, story: entry.parentName };
+            }
             if (key === 'moduleExport') {
               return storyAcc;
             }
@@ -316,18 +321,22 @@ export class StoryStore<TRenderer extends Renderer> {
             return Object.assign(storyAcc, { [key]: value });
           },
           {
-            //
             args: story.initialArgs,
             globals: {
               ...this.userGlobals.initialGlobals,
               ...this.userGlobals.globals,
               ...story.storyGlobals,
             },
+            storyId: entry.parent ? entry.parent : storyId,
           }
         );
         return acc;
       },
       {} as Record<string, any>
     );
+
+    console.log('extract: stories', stories);
+
+    return stories;
   }
 }

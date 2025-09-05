@@ -9,6 +9,19 @@ const meta = {
   title: 'Sidebar/TagsFilterPanel',
   args: {
     toggleTag: fn(),
+    setAllTags: fn(),
+    allTags: new Map([
+      ['play-fn', 1],
+      ['test-fn', 1],
+      ['tag1', 1],
+      ['tag2', 1],
+      ['tag3-which-is-very-long-and-will-be-truncated-after-a-while', 1],
+    ]),
+    includedTags: new Set(),
+    excludedTags: new Set(),
+    resetTags: fn(),
+    isDefaultSelection: true,
+    hasDefaultSelection: false,
     api: {
       getDocsUrl: () => 'https://storybook.js.org/docs/',
     } as any,
@@ -21,17 +34,20 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+export const Basic: Story = {};
+
 export const Empty: Story = {
   args: {
-    allTags: [],
-    selectedTags: [],
+    allTags: new Map(),
   },
 };
 
 export const BuiltInTagsOnly: Story = {
   args: {
-    allTags: ['play-fn'],
-    selectedTags: [],
+    allTags: new Map([
+      ['play-fn', 1],
+      ['test-fn', 1],
+    ]),
   },
 };
 
@@ -42,23 +58,40 @@ export const BuiltInTagsOnlyProduction: Story = {
   },
 };
 
-export const Default: Story = {
+export const Included: Story = {
   args: {
-    allTags: ['tag1', 'tag2', 'tag3'],
-    selectedTags: ['tag1', 'tag3'],
+    includedTags: new Set(['tag1', 'play-fn']),
+    isDefaultSelection: false,
   },
 };
 
-export const BuiltInTags: Story = {
+export const Excluded: Story = {
   args: {
-    allTags: [...Default.args.allTags, 'play-fn'],
-    selectedTags: ['tag1', 'tag3'],
+    excludedTags: new Set(['tag1', 'play-fn']),
+    isDefaultSelection: false,
   },
 };
 
-export const ExtraBuiltInTagsSelected: Story = {
+export const Mixed: Story = {
   args: {
-    ...BuiltInTags.args,
-    selectedTags: ['tag1', 'tag3', 'autodocs', 'play-fn'],
+    includedTags: new Set(['tag1', 'play-fn']),
+    excludedTags: new Set(['tag2', 'test-fn']),
+    isDefaultSelection: false,
+  },
+};
+
+export const DefaultSelection: Story = {
+  args: {
+    ...Mixed.args,
+    isDefaultSelection: true,
+    hasDefaultSelection: true,
+  },
+};
+
+export const DefaultSelectionModified: Story = {
+  args: {
+    ...Mixed.args,
+    isDefaultSelection: false,
+    hasDefaultSelection: true,
   },
 };

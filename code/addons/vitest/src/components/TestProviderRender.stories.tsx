@@ -310,6 +310,7 @@ export const InSidebarContextMenu: Story = {
     entry: {
       id: 'story-id-1',
       type: 'story',
+      subtype: 'story',
       name: 'Example Story',
       tags: [],
       title: 'Example Story',

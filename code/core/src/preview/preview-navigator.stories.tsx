@@ -28,6 +28,7 @@ const mockIndex: StoryIndex = {
       title: 'Button',
       name: 'Primary',
       type: 'story',
+      subtype: 'story',
       importPath: './button/Button.stories.ts',
     },
     'button--secondary': {
@@ -35,6 +36,7 @@ const mockIndex: StoryIndex = {
       title: 'Button',
       name: 'Secondary',
       type: 'story',
+      subtype: 'story',
       importPath: './button/Button.stories.ts',
     },
     'input--text': {
@@ -42,6 +44,7 @@ const mockIndex: StoryIndex = {
       title: 'Forms/Input',
       name: 'Text',
       type: 'story',
+      subtype: 'story',
       importPath: './components/input/Input.stories.ts',
     },
     'input--number': {
@@ -49,6 +52,7 @@ const mockIndex: StoryIndex = {
       title: 'Forms/Input',
       name: 'Number',
       type: 'story',
+      subtype: 'story',
       importPath: './components/input/Input.stories.ts',
     },
     'checkbox--default': {
@@ -56,6 +60,7 @@ const mockIndex: StoryIndex = {
       title: 'Forms/Checkbox',
       name: 'Default',
       type: 'story',
+      subtype: 'story',
       importPath: './components/checkbox/Checkbox.stories.ts',
     },
     'select--basic': {
@@ -63,6 +68,7 @@ const mockIndex: StoryIndex = {
       title: 'Forms/Select',
       name: 'Basic',
       type: 'story',
+      subtype: 'story',
       importPath: './components/select/Select.stories.ts',
     },
   },

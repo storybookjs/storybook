@@ -7,6 +7,7 @@
     - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
+    - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -579,6 +580,10 @@ export const core = {
   renderer: getAbsolutePath('@storybook/react'),
 };
 ```
+
+#### Removed x-only builtin tags
+During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
 
 ## From version 8.x to 9.0.0
 
@@ -1806,7 +1811,7 @@ These sections explain the rationale, and the required changes you might have to
 
 ### Deprecated `@storybook/testing-library` package
 
- The `@storybook/testing-library` package has been deprecated with the release of Storybook 8.0, and we recommend using the `@storybook/test` package instead. If you're migrating manually, you'll need to install the new package and update your imports as follows:
+The `@storybook/testing-library` package has been deprecated with the release of Storybook 8.0, and we recommend using the `@storybook/test` package instead. If you're migrating manually, you'll need to install the new package and update your imports as follows:
 
 ```diff
 - import { userEvent } from '@storybook/testing-library';

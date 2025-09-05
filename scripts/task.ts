@@ -1,8 +1,8 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { outputFile, pathExists, readFile } from 'fs-extra';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
-import { join, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
 import picocolors from 'picocolors';
 import { prompt } from 'prompts';
 import invariant from 'tiny-invariant';
@@ -192,6 +192,20 @@ const logger = console;
 
 function getJunitFilename(taskKey: TaskKey) {
   return join(JUNIT_DIRECTORY, `${taskKey}.xml`);
+}
+
+async function pathExists(path: string) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function outputFile(file: string, data: string) {
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(file, data);
 }
 
 async function writeJunitXml(
@@ -521,7 +535,7 @@ async function run() {
                 startFrom: 'auto',
               })
             )}
-            
+
             Note this uses locally linking which in rare cases behaves differently to CI.
             For a closer match, add ${picocolors.bold('--no-link')} to the command above.
           `;

@@ -30,19 +30,6 @@ test.describe("save-from-controls", () => {
 
     await sbPage.viewAddonPanel("Controls");
 
-
-    console.log('here is the tabpanel', await sbPage.page.locator('#storybook-panel-root #panel-tab-content').elementHandle())
-
-
-    // console.log(
-    //   'tabpanel',
-    //   this.page.locator('#storybook-panel-root #panel-tab-content').elementHandle()
-    // );
-    // console.log(
-    //   'all divs',
-    //   this.page.locator('#storybook-panel-root #panel-tab-content > div').elementHandle()
-    // );
-
     // Update an arg
     const label = sbPage.panelContent().locator("textarea[name=children]");
     await label.fill(`"Updated ${id}"`);

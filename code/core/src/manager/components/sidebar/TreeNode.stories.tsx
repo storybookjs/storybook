@@ -24,7 +24,9 @@ export const Types = () => (
   <>
     <ComponentNode>Component</ComponentNode>
     <GroupNode>Group</GroupNode>
-    <StoryNode>Story</StoryNode>
+    <StoryNode>Story with no tests</StoryNode>
+    <StoryNode numberBadge={5}>Story with tests</StoryNode>
+    <StoryNode numberBadge={25}>Story with many tests</StoryNode>
     <TestNode>Test</TestNode>
     <DocumentNode docsMode={false}>Document</DocumentNode>
   </>

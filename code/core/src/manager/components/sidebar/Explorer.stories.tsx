@@ -85,6 +85,18 @@ export const Simple = () => (
   />
 );
 
+export const StoryTestSelected = () => (
+  <Explorer
+    dataset={{ hash: simple, entries: Object.entries(simple) }}
+    selected={{
+      refId: 'storybook_internal',
+      storyId: 'root-1-child-a2--grandchild-a1-1',
+    }}
+    isLoading={false}
+    isBrowsing
+  />
+);
+
 export const WithRefs = () => (
   <Explorer
     dataset={{ hash: withRefs, entries: Object.entries(withRefs) }}

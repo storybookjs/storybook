@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { type FunctionInterpolation, type Theme, styled } from 'storybook/theming';
+import { type FunctionInterpolation, styled } from 'storybook/theming';
 
 import { UseSymbol } from './IconSymbols';
 import { CollapseIcon } from './components/CollapseIcon';
@@ -96,6 +96,34 @@ const Wrapper = styled.div({
   marginTop: 2,
 });
 
+const IconWithBadge = styled.div({
+  position: 'relative',
+  display: 'inline-flex',
+  width: 14,
+  height: 14,
+  alignItems: 'center',
+  justifyContent: 'center',
+});
+
+const NumberBadge = styled.div<{ isSelected?: boolean }>(({ theme, isSelected }) => ({
+  position: 'absolute',
+  top: -4,
+  right: -4,
+  minWidth: 12,
+  height: 12,
+  padding: '0 2px',
+  borderRadius: 999,
+  background: isSelected
+    ? theme.color.secondary
+    : `var(--tree-node-background-hover, ${theme.background.app})`,
+  color: isSelected ? theme.color.lightest : theme.color.defaultText,
+  fontSize: `${theme.typography.size.s1 - 5}px`,
+  lineHeight: '12px',
+  textAlign: 'center',
+  fontWeight: theme.typography.weight.bold,
+  pointerEvents: 'none',
+}));
+
 export const GroupNode: FC<
   ComponentProps<typeof BranchNode> & { isExpanded?: boolean; isExpandable?: boolean }
 > = React.memo(function GroupNode({
@@ -154,26 +182,35 @@ export const DocumentNode: FC<ComponentProps<typeof LeafNode> & { docsMode?: boo
     );
   });
 
-export const StoryNode: FC<ComponentProps<typeof BranchNode>> = React.memo(function StoryNode({
-  theme,
-  children,
-  isExpandable = false,
-  isExpanded = false,
-  isSelected,
-  ...props
-}) {
-  return (
-    <BranchNode isExpandable={isExpandable} tabIndex={-1} {...props}>
-      <Wrapper>
-        {isExpandable && <CollapseIcon isExpanded={isExpanded} />}
-        <TypeIcon viewBox="0 0 14 14" width="12" height="12" type="story">
-          <UseSymbol type="story" />
-        </TypeIcon>
-      </Wrapper>
-      {children}
-    </BranchNode>
-  );
-});
+export const StoryNode: FC<ComponentProps<typeof BranchNode> & { numberBadge?: number }> =
+  React.memo(function StoryNode({
+    theme,
+    children,
+    isExpandable = false,
+    isExpanded = false,
+    isSelected,
+    numberBadge,
+    ...props
+  }) {
+    return (
+      <BranchNode isExpandable={isExpandable} tabIndex={-1} {...props}>
+        <Wrapper>
+          {isExpandable && <CollapseIcon isExpanded={isExpanded} />}
+          <IconWithBadge>
+            <TypeIcon viewBox="0 0 14 14" width="12" height="12" type="story">
+              <UseSymbol type="story" />
+            </TypeIcon>
+            {typeof numberBadge === 'number' && numberBadge > 0 ? (
+              <NumberBadge isSelected={isSelected} aria-label={`Story count ${numberBadge}`}>
+                {numberBadge > 9 ? '9+' : numberBadge}
+              </NumberBadge>
+            ) : null}
+          </IconWithBadge>
+        </Wrapper>
+        {children}
+      </BranchNode>
+    );
+  });
 
 export const TestNode: FC<ComponentProps<typeof LeafNode>> = React.memo(function TestNode({
   theme,

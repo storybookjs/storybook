@@ -22,7 +22,7 @@ const meta = preview.meta({
     children: 'Default',
     onClick: fn(),
   },
-  tags: ['some-tag', 'autodocs'],
+  tags: ['autodocs'],
 });
 
 export const WithNoTests = meta.story();
@@ -40,11 +40,15 @@ export const PlayFunction = meta.story({
   },
 });
 
-TestFunctionTypes.test('simple', async ({ canvas, userEvent, args }) => {
-  const button = canvas.getByText('Arg from story');
-  await userEvent.click(button);
-  await expect(args.onClick).toHaveBeenCalled();
-});
+TestFunctionTypes.test(
+  'simple',
+  { tags: ['some-test-fn-tag'] },
+  async ({ canvas, userEvent, args }) => {
+    const button = canvas.getByText('Arg from story');
+    await userEvent.click(button);
+    await expect(args.onClick).toHaveBeenCalled();
+  }
+);
 
 const doTest = async ({
   canvas,
@@ -129,49 +133,54 @@ PlayFunction.test('should be clicked by play function', async ({ args }) => {
   await expect(args.onClick).toHaveBeenCalled();
 });
 
-export const TestNames = meta.story({
+export const ManyTests = meta.story({
   args: {
     children: 'This story is no-op, just focus on the test names',
   },
 });
-TestNames.test(
+ManyTests.test(
   'should display an error when login is attempted with an expired session token',
   () => {}
 );
 
-TestNames.test(
+ManyTests.test(
   'should display an error when login is attempted with multiple invalid password attempts',
   () => {}
 );
 
-TestNames.test('should display an error when login is attempted with a revoked API key', () => {});
+ManyTests.test('should display an error when login is attempted with a revoked API key', () => {});
 
-TestNames.test(
+ManyTests.test(
   'should display an error when login is attempted after exceeding the maximum session limit',
   () => {}
 );
 
-TestNames.test(
+ManyTests.test(
   'should display an error when login is attempted with a disabled user account',
   () => {}
 );
 
-TestNames.test(
+ManyTests.test(
   'should display an error when login is attempted with an unsupported authentication provider',
   () => {}
 );
 
-TestNames.test(
+ManyTests.test(
   'should display an error when login is attempted after the password reset process is incomplete',
   () => {}
 );
 
-TestNames.test(
+ManyTests.test(
   'should display an error when login is attempted with a malformed authentication request',
   () => {}
 );
 
-TestNames.test(
+ManyTests.test(
   'should display an error when login is attempted with an unverified email address',
+  () => {}
+);
+
+ManyTests.test(
+  'should display an special error when login is attempted with an unverified email address',
   () => {}
 );

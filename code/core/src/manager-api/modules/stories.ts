@@ -494,10 +494,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         if (!node) {
           return results;
         }
-        if (node.type === 'story') {
+        if ('children' in node) {
+          node.children?.forEach((childId) => findChildEntriesRecursively(childId, results));
+        } else if (node.type === 'story') {
           results.push(node.id);
-        } else if ('children' in node) {
-          node.children.forEach((childId) => findChildEntriesRecursively(childId, results));
         }
         return results;
       };
@@ -575,6 +575,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     // The story index we receive on fetchStoryIndex is not, but all the prepared fields are optional
     // so we can cast one to the other easily enough
     setIndex: async (input) => {
+      console.log('setIndex', input);
       const { filteredIndex: oldFilteredHash, index: oldHash, filters } = store.getState();
       const allStatuses = fullStatusStore.getAll();
       const newFilteredHash = transformStoryIndexToStoriesHash(input, {
@@ -590,6 +591,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         allStatuses,
       });
 
+      console.log({ oldHash, filteredIndex: addPreparedStories(newFilteredHash, oldFilteredHash) });
       await store.setState({
         internal_index: input,
         filteredIndex: addPreparedStories(newFilteredHash, oldFilteredHash),

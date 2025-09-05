@@ -97,17 +97,23 @@ export const Toolbar: FC<ToolbarProps> = ({
         </>
       )}
     </Wrapper>
-    <Wrapper key="right">
-      <IconButton key="opener" asChild>
-        <a
-          href={getStoryHref(baseUrl, storyId)}
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Open canvas in new tab"
-        >
-          <ShareAltIcon />
-        </a>
-      </IconButton>
-    </Wrapper>
+    {baseUrl && storyId && (
+      <Wrapper key="right">
+        {isLoading ? (
+          <IconPlaceholder />
+        ) : (
+          <IconButton key="opener" asChild>
+            <a
+              href={getStoryHref(baseUrl, storyId)}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open canvas in new tab"
+            >
+              <ShareAltIcon />
+            </a>
+          </IconButton>
+        )}
+      </Wrapper>
+    )}
   </Bar>
 );

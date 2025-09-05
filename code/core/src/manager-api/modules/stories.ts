@@ -494,10 +494,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         if (!node) {
           return results;
         }
-        if (node.type === 'story') {
+        if ('children' in node) {
+          node.children?.forEach((childId) => findChildEntriesRecursively(childId, results));
+        } else if (node.type === 'story') {
           results.push(node.id);
-        } else if ('children' in node) {
-          node.children.forEach((childId) => findChildEntriesRecursively(childId, results));
         }
         return results;
       };

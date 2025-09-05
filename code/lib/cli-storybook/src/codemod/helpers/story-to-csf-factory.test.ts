@@ -303,16 +303,39 @@ describe('stories codemod', () => {
         };
         const data = {};
         export const A = () => {};
-        // not supported yet (story as function)
         export function B() { };
         // not supported yet (story redeclared)
         const C = { ...A, args: data, };
-        export { C };
+        const D = { args: data };
+        export { C, D as E };
         `);
 
+      expect(transformed).toMatchInlineSnapshot(`
+        import preview from '#.storybook/preview';
+
+        import { A as Component } from './Button';
+        import * as Stories from './Other.stories';
+        import someData from './fixtures';
+
+        const meta = preview.meta({
+          component: Component,
+
+          // not supported yet (story coming from another file)
+          args: Stories.A.args,
+        });
+
+        const data = {};
+        export const A = meta.story(() => {});
+        export const B = meta.story(() => {});
+        // not supported yet (story redeclared)
+        const C = { ...A.input, args: data };
+        const D = { args: data };
+        export { C, D as E };
+      `);
+
       expect(transformed).toContain('A = meta.story');
-      // @TODO: when we support these, uncomment these lines
-      // expect(transformed).toContain('B = meta.story');
+      expect(transformed).toContain('B = meta.story');
+      // @TODO: when we support these, uncomment this line
       // expect(transformed).toContain('C = meta.story');
     });
 
@@ -588,6 +611,59 @@ describe('stories codemod', () => {
 
         export const A = meta.story();
       `);
+    });
+
+    it('should support non-conventional formats', async () => {
+      const transformed = await transform(dedent`
+        import { Meta, StoryObj as CSF3 } from '@storybook/react';
+        import { ComponentProps } from './Component';
+        import { A as Component } from './Button';
+        import * as Stories from './Other.stories';
+        import someData from './fixtures'
+        export default {
+          title: 'Component',
+          component: Component, 
+          // not supported yet (story coming from another file)
+          args: Stories.A.args
+        };
+        const data = {};
+        export const A: StoryObj = () => {};
+        export function B() { };
+        // not supported yet (story redeclared)
+        const C = { ...A, args: data, } satisfies CSF3<ComponentProps>;
+        const D = { args: data };
+        export { C, D as E };
+        `);
+
+      expect(transformed).toMatchInlineSnapshot(`
+        import preview from '#.storybook/preview';
+
+        import { A as Component } from './Button';
+        import { ComponentProps } from './Component';
+        import * as Stories from './Other.stories';
+        import someData from './fixtures';
+
+        const meta = preview.meta({
+          title: 'Component',
+          component: Component,
+
+          // not supported yet (story coming from another file)
+          args: Stories.A.args,
+        });
+
+        const data = {};
+        export const A = meta.story(() => {});
+        export const B = meta.story(() => {});
+        // not supported yet (story redeclared)
+        const C = { ...A.input, args: data } satisfies CSF3<ComponentProps>;
+        const D = { args: data };
+        export { C, D as E };
+      `);
+
+      expect(transformed).toContain('A = meta.story');
+      expect(transformed).toContain('B = meta.story');
+      // @TODO: when we support these, uncomment this line
+      // expect(transformed).toContain('C = meta.story');
     });
   });
 });

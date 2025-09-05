@@ -77,14 +77,14 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
     );
   }, [tagPresets]);
 
-  const [includedTags, setIncludedTags] = useState<Set<Tag>>(defaultIncluded);
-  const [excludedTags, setExcludedTags] = useState<Set<Tag>>(defaultExcluded);
+  const [includedTags, setIncludedTags] = useState<Set<Tag>>(new Set(defaultIncluded));
+  const [excludedTags, setExcludedTags] = useState<Set<Tag>>(new Set(defaultExcluded));
   const [expanded, setExpanded] = useState(false);
   const tagsActive = includedTags.size > 0 || excludedTags.size > 0;
 
   const resetTags = useCallback(() => {
-    setIncludedTags(defaultIncluded);
-    setExcludedTags(defaultExcluded);
+    setIncludedTags(new Set(defaultIncluded));
+    setExcludedTags(new Set(defaultExcluded));
   }, [defaultIncluded, defaultExcluded]);
 
   useEffect(resetTags, [resetTags]);

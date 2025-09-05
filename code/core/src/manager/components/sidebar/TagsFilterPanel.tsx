@@ -137,6 +137,7 @@ export const TagsFilterPanel = ({
       content: (
         <TagRow>
           <WithTooltip
+            delayShow={1000}
             hasChrome={false}
             style={{ minWidth: 0, flex: 1 }}
             tooltip={<TooltipNote note={`${checked ? 'Remove' : 'Add'} tag filter: ${tag}`} />}
@@ -160,6 +161,7 @@ export const TagsFilterPanel = ({
             />
           </WithTooltip>
           <WithTooltip
+            delayShow={1000}
             hasChrome={false}
             tooltip={<TooltipNote note={`${excluded ? 'Include' : 'Exclude'} tag: ${tag}`} />}
             trigger="hover"
@@ -208,6 +210,7 @@ export const TagsFilterPanel = ({
           )}
           {hasDefaultSelection && (
             <WithTooltip
+              delayShow={1000}
               hasChrome={false}
               tooltip={<TooltipNote note="Reset to default selection" />}
               trigger="hover"

@@ -2650,6 +2650,25 @@ describe('CsfFile', () => {
         expect(storyTests[3].function).toBeDefined();
       });
 
+      it('story test - tags', () => {
+        const data = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export default meta;
+            export const A = meta.story({ args: { label: 'foo' }})
+            A.test('simple test', { tags: ['test-me'] }, async () => {})
+          `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(1);
+        expect(storyTests[0].tags).toEqual(['test-me']);
+      });
+
       it('story test each - index snapshot', () => {
         expect(
           parse(dedent`
@@ -2743,6 +2762,70 @@ describe('CsfFile', () => {
         expect(storyTests[5].function).toBeDefined();
       });
 
+      it('story test each - tags', () => {
+        const data = loadCsf(
+          dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.each(
+            'simple test %s',
+            [
+              ['static'],
+            ],
+            {
+              tags: ['test-me'],
+            },
+            async () => {}
+          );
+          A.each(
+            'simple test %s',
+            [
+              ['arrow-direct'],
+            ],
+            () => ({
+              tags: ['test-me'],
+            }),
+            async () => {}
+          );
+          A.each(
+            'simple test %s',
+            [
+              ['arrow-indirect'],
+            ],
+            () => {
+              return {
+                tags: ['test-me'],
+              }
+            },
+            async () => {}
+          );
+          A.each(
+            'simple test %s',
+            [
+              ['function'],
+            ],
+            function () {
+              return {
+                tags: ['test-me'],
+              }
+            },
+            async () => {}
+          );
+        `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(4);
+
+        for (const test of storyTests) {
+          expect(test.tags, test.name).toEqual(['test-me']);
+        }
+      });
+
       it('story test matrix - index snapshot', () => {
         expect(
           parse(dedent`
@@ -2812,6 +2895,70 @@ describe('CsfFile', () => {
         expect(storyTests[1].function).toBeDefined();
         expect(storyTests[2].function).toBeDefined();
         expect(storyTests[3].function).toBeDefined();
+      });
+
+      it('story test matrix - tags', () => {
+        const data = loadCsf(
+          dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.matrix(
+            'simple test %s',
+            [
+              ['static'],
+            ],
+            {
+              tags: ['test-me'],
+            },
+            async () => {}
+          );
+          A.matrix(
+            'simple test %s',
+            [
+              ['arrow-direct'],
+            ],
+            () => ({
+              tags: ['test-me'],
+            }),
+            async () => {}
+          );
+          A.matrix(
+            'simple test %s',
+            [
+              ['arrow-indirect'],
+            ],
+            () => {
+              return {
+                tags: ['test-me'],
+              }
+            },
+            async () => {}
+          );
+          A.matrix(
+            'simple test %s',
+            [
+              ['function'],
+            ],
+            function () {
+              return {
+                tags: ['test-me'],
+              }
+            },
+            async () => {}
+          );
+        `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(4);
+
+        for (const test of storyTests) {
+          expect(test.tags, test.name).toEqual(['test-me']);
+        }
       });
 
       it('story name', () => {

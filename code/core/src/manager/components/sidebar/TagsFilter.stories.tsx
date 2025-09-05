@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { findByRole, fn, screen } from 'storybook/test';
+import { findByRole, fn } from 'storybook/test';
 
 import { TagsFilter } from './TagsFilter';
 
 const meta = {
   component: TagsFilter,
   title: 'Sidebar/TagsFilter',
-  tags: ['haha'],
+  tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
   args: {
     api: {
       experimental_setFilter: fn(),
@@ -44,8 +44,8 @@ export const ClosedWithSelection: Story = {
   args: {
     ...Closed.args,
     tagPresets: {
-      A: { defaultSelection: 'include' },
-      B: { defaultSelection: 'include' },
+      A: { defaultFilterSelection: 'include' },
+      B: { defaultFilterSelection: 'include' },
     },
   },
 };
@@ -68,8 +68,8 @@ export const OpenWithSelectionInverted = {
   args: {
     ...Open.args,
     tagPresets: {
-      A: { defaultSelection: 'exclude' },
-      B: { defaultSelection: 'exclude' },
+      A: { defaultFilterSelection: 'exclude' },
+      B: { defaultFilterSelection: 'exclude' },
     },
   },
 } satisfies Story;
@@ -79,8 +79,8 @@ export const OpenWithSelectionMixed = {
   args: {
     ...Open.args,
     tagPresets: {
-      A: { defaultSelection: 'include' },
-      B: { defaultSelection: 'exclude' },
+      A: { defaultFilterSelection: 'include' },
+      B: { defaultFilterSelection: 'exclude' },
     },
   },
 } satisfies Story;

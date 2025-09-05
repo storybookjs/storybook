@@ -331,7 +331,7 @@ type Tag = string;
 
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
-  defaultSelection?: 'include' | 'exclude';
+  defaultFilterSelection?: 'include' | 'exclude';
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;
 }

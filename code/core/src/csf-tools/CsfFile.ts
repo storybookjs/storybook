@@ -87,6 +87,13 @@ function parseTestTags(optionsNode: t.Node | null | undefined, program: t.Progra
     node = findVarInitialization(node.name, program);
   }
 
+  if (t.isArrowFunctionExpression(node) || t.isFunctionExpression(node)) {
+    if (t.isBlock(node.body)) {
+      return parseTestTags(node.body.body.find((s) => t.isReturnStatement(s))?.argument, program);
+    }
+    return parseTestTags(node.body, program);
+  }
+
   if (t.isObjectExpression(node)) {
     const tagsProp = node.properties.find(
       (property) =>
@@ -791,6 +798,9 @@ export class CsfFile {
             const testName = expression.arguments[0].value;
             const testFunction =
               expression.arguments.length === 3 ? expression.arguments[2] : expression.arguments[3];
+            const testArguments =
+              expression.arguments.length === 3 ? null : expression.arguments[2];
+            const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
 
             // Check the args to each are all arrays
             const each = expression.arguments[1];
@@ -831,8 +841,7 @@ export class CsfFile {
                 // can't set id because meta title isn't available yet
                 // so it's set later on
                 id: 'FIXME',
-                // todo
-                tags: [],
+                tags,
                 parent: { node: self._storyStatements[exportName] },
               });
 
@@ -859,6 +868,10 @@ export class CsfFile {
             const testName = expression.arguments[0].value;
             const testFunction =
               expression.arguments.length === 3 ? expression.arguments[2] : expression.arguments[3];
+            const testArguments =
+              expression.arguments.length === 3 ? null : expression.arguments[2];
+            const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
+
             // Check the args to each are all arrays
             const matrix = expression.arguments[1];
             if (
@@ -901,8 +914,7 @@ export class CsfFile {
                 // can't set id because meta title isn't available yet
                 // so it's set later on
                 id: 'FIXME',
-                // todo
-                tags: [],
+                tags,
                 parent: { node: self._storyStatements[exportName] },
               });
               // TODO: fix this when stories fail

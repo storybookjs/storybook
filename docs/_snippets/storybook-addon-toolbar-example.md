@@ -2,7 +2,7 @@
 import React from 'react';
 
 import { addons, types } from 'storybook/manager-api';
-import { IconButton } from 'storybook/internal/components';
+import { ToggleButton } from 'storybook/internal/components';
 import { OutlineIcon } from '@storybook/icons';
 
 addons.register('my-addon', () => {
@@ -13,9 +13,16 @@ addons.register('my-addon', () => {
     //👇 Shows the Toolbar UI element if the story canvas is being viewed
     match: ({ tabId, viewMode }) => !tabId && viewMode === 'story',
     render: ({ active }) => (
-      <IconButton active={active} title="Show a Storybook toolbar">
+      <ToggleButton
+        key="Example"
+        padding="small"
+        variant="ghost"
+        pressed={active}
+        ariaLabel="Addon feature"
+        tooltip="Toggle addon feature"
+      >
         <OutlineIcon />
-      </IconButton>
+      </ToggleButton>
     ),
   });
 });

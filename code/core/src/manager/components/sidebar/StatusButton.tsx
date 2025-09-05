@@ -1,4 +1,7 @@
-import { IconButton } from 'storybook/internal/components';
+import type { ComponentProps, FC } from 'react';
+import React from 'react';
+
+import { Button } from 'storybook/internal/components';
 import type { StatusValue } from 'storybook/internal/types';
 
 import type { Theme } from '@emotion/react';
@@ -26,7 +29,14 @@ export const StatusLabel = styled.div<{ status: StatusValue }>(withStatusColor, 
   margin: 3,
 });
 
-export const StatusButton = styled(IconButton)<{
+export interface StatusButtonProps extends ComponentProps<typeof Button> {
+  height?: number;
+  width?: number;
+  status: StatusValue;
+  selectedItem?: boolean;
+}
+
+const StyledButton = styled(Button)<{
   height?: number;
   width?: number;
   status: StatusValue;
@@ -75,3 +85,7 @@ export const StatusButton = styled(IconButton)<{
       },
     }
 );
+
+export const StatusButton: FC<StatusButtonProps> = (props) => {
+  return <StyledButton variant="ghost" padding="small" {...props} />;
+};

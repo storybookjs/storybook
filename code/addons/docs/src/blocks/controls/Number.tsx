@@ -79,6 +79,7 @@ export const NumberControl: FC<NumberProps> = ({
   if (value === undefined) {
     return (
       <Button
+        ariaLabel={false}
         variant="outline"
         size="medium"
         id={getControlSetterButtonId(name)}

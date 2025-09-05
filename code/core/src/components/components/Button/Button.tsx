@@ -1,9 +1,16 @@
 import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
-import React, { forwardRef, useEffect, useState } from 'react';
+import React, { forwardRef, useEffect, useMemo, useState } from 'react';
+
+import { deprecate } from 'storybook/internal/client-logger';
+import { shortcutToAriaKeyshortcuts } from 'storybook/internal/manager-api';
+import type { API_KeyCollection } from 'storybook/internal/manager-api';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
 import { isPropValid, styled } from 'storybook/theming';
+
+import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';
+import { useAriaDescription } from './helpers/useAriaDescription';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
@@ -12,8 +19,34 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'outline' | 'solid' | 'ghost';
   onClick?: (event: SyntheticEvent) => void;
   disabled?: boolean;
-  active?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
+
+  /**
+   * A concise action label for the button announced by screen readers. Needed for buttons without
+   * text or with text that relies on visual cues to be understood. Pass false to indicate that the
+   * Button's content is already accessible to all. When a string is passed, it is also used as the
+   * default tooltip text.
+   */
+  ariaLabel: string | false;
+
+  /**
+   * An optional tooltip to display when the Button is hovered. If the Button has no text content,
+   * consider making this the same as the aria-label.
+   */
+  tooltip?: string;
+
+  /**
+   * A more thorough description of what the Button does, provided to non-sighted users through an
+   * aria-describedby attribute. Use sparingly for buttons that trigger complex actions.
+   */
+  ariaDescription?: string;
+
+  /**
+   * An optional keyboard shortcut to enable the button. Will be displayed in the tooltip and passed
+   * to aria-keyshortcuts for assistive technologies. The binding of the shortcut and action is
+   * managed globally in the manager's shortcuts module.
+   */
+  shortcut?: API_KeyCollection;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -25,8 +58,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'outline',
       padding = 'medium',
       disabled = false,
-      active = false,
       onClick,
+      ariaLabel,
+      ariaDescription = undefined,
+      tooltip = undefined,
+      shortcut = undefined,
       ...props
     },
     ref
@@ -36,6 +72,17 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) {
       Comp = Slot;
     }
+    const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(ariaDescription);
+
+    if (ariaLabel === '') {
+      throw new Error(
+        'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
+      );
+    }
+
+    const shortcutAttribute = useMemo(() => {
+      return shortcut ? shortcutToAriaKeyshortcuts(shortcut) : undefined;
+    }, [shortcut]);
 
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -59,20 +106,27 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       return () => clearTimeout(timer);
     }, [isAnimating]);
 
+    const finalTooltip = tooltip || (ariaLabel !== false ? ariaLabel : undefined);
+
     return (
-      <StyledButton
-        as={Comp}
-        ref={ref}
-        variant={variant}
-        size={size}
-        padding={padding}
-        disabled={disabled}
-        active={active}
-        animating={isAnimating}
-        animation={animation}
-        onClick={handleClick}
-        {...props}
-      />
+      <InteractiveTooltipWrapper shortcut={shortcut} tooltip={finalTooltip}>
+        <StyledButton
+          as={Comp}
+          ref={ref}
+          variant={variant}
+          size={size}
+          padding={padding}
+          disabled={disabled}
+          animating={isAnimating}
+          animation={animation}
+          onClick={handleClick}
+          aria-label={ariaLabel !== false ? ariaLabel : undefined}
+          aria-keyshortcuts={shortcutAttribute}
+          {...ariaDescriptionAttrs}
+          {...props}
+        />
+        <AriaDescription />
+      </InteractiveTooltipWrapper>
     );
   }
 );
@@ -82,11 +136,11 @@ Button.displayName = 'Button';
 const StyledButton = styled('button', {
   shouldForwardProp: (prop) => isPropValid(prop),
 })<
-  ButtonProps & {
+  Omit<ButtonProps, 'ariaLabel'> & {
     animating: boolean;
     animation: ButtonProps['animation'];
   }
->(({ theme, variant, size, disabled, active, animating, animation = 'none', padding }) => ({
+>(({ theme, variant, size, disabled, animating, animation = 'none', padding }) => ({
   border: 0,
   cursor: disabled ? 'not-allowed' : 'pointer',
   display: 'inline-flex',
@@ -136,9 +190,6 @@ const StyledButton = styled('button', {
       return theme.button.background;
     }
 
-    if (variant === 'ghost' && active) {
-      return theme.background.hoverable;
-    }
     return 'transparent';
   })(),
   ...(variant === 'ghost'
@@ -146,18 +197,8 @@ const StyledButton = styled('button', {
         // This is a hack to apply bar styles to the button as soon as it is part of a bar
         // It is a temporary solution until we have implemented Theming 2.0.
         '.sb-bar &': {
-          background: (() => {
-            if (active) {
-              return transparentize(0.9, theme.barTextColor);
-            }
-            return 'transparent';
-          })(),
-          color: (() => {
-            if (active) {
-              return theme.barSelectedColor;
-            }
-            return theme.barTextColor;
-          })(),
+          background: 'transparent',
+          color: theme.barTextColor,
           '&:hover': {
             color: theme.barHoverColor,
             background: transparentize(0.86, theme.barHoverColor),
@@ -182,10 +223,6 @@ const StyledButton = styled('button', {
 
     if (variant === 'outline') {
       return theme.input.color;
-    }
-
-    if (variant === 'ghost' && active) {
-      return theme.color.secondary;
     }
 
     if (variant === 'ghost') {
@@ -248,3 +285,12 @@ const StyledButton = styled('button', {
       animating && animation !== 'none' ? `${theme.animation[animation]} 1000ms ease-out` : '',
   },
 }));
+
+export const IconButton = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
+  deprecate(
+    '`IconButton` is deprecated and will be removed in Storybook 10, use `Button` instead.'
+  );
+
+  return <Button ref={ref} {...props} />;
+});
+IconButton.displayName = 'IconButton';

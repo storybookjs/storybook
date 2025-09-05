@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { BottomBarIcon, SidebarAltIcon } from '@storybook/icons';
@@ -26,9 +26,15 @@ export const addonsTool: Addon_BaseType = {
         !singleStory &&
         !isVisible && (
           <>
-            <IconButton aria-label="Show addons" key="addons" onClick={toggle} title="Show addons">
+            <Button
+              padding="small"
+              variant="ghost"
+              ariaLabel="Show addon panel"
+              key="addons"
+              onClick={toggle}
+            >
               {panelPosition === 'bottom' ? <BottomBarIcon /> : <SidebarAltIcon />}
-            </IconButton>
+            </Button>
           </>
         )
       }

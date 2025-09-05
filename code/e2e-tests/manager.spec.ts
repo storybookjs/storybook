@@ -101,8 +101,8 @@ test.describe('Manager UI', () => {
         await sbPage.page.locator('#list-item-A').click();
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
-        // toggle with "show addons" button
-        await sbPage.page.locator('[aria-label="Show addons"]').click();
+        // toggle with "Show addon panel" button
+        await sbPage.page.locator('[aria-label="Show addon panel"]').click();
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
       });
 
@@ -158,19 +158,19 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
-      await sbPage.page.locator('[aria-label="Go full screen"]').click();
+      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       // go fullscreen when sidebar is shown but panel is hidden
       await sbPage.page.locator('[aria-label="Show sidebar"]').click();
-      await sbPage.page.locator('[aria-label="Go full screen"]').click();
+      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
       // go fullscreen when panel is shown but sidebar is hidden
-      await sbPage.page.locator('[aria-label="Show addons"]').click();
-      await sbPage.page.locator('[aria-label="Go full screen"]').click();
+      await sbPage.page.locator('[aria-label="Show addon panel"]').click();
+      await sbPage.page.locator('[aria-label="Enter full screen"]').click();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
     });
@@ -184,7 +184,7 @@ test.describe('Manager UI', () => {
 
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
-      await sbPage.page.locator('[title="Close settings page"]').click();
+      await sbPage.page.locator('[aria-label="Close settings page"]').click();
       expect(sbPage.page.url()).not.toContain('/settings/about');
     });
   });

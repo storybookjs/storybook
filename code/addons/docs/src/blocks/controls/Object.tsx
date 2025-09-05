@@ -1,9 +1,9 @@
 import type { ComponentProps, FC, FocusEvent, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, Form, IconButton } from 'storybook/internal/components';
+import { Button, Form, ToggleButton } from 'storybook/internal/components';
 
-import { AddIcon, EyeCloseIcon, EyeIcon, SubtractIcon } from '@storybook/icons';
+import { AddIcon, SubtractIcon } from '@storybook/icons';
 
 import { cloneDeep } from 'es-toolkit/compat';
 import { type Theme, styled, useTheme } from 'storybook/theming';
@@ -19,6 +19,7 @@ type JsonTreeProps = ComponentProps<typeof JsonTree>;
 const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
+  isolation: 'isolate',
 
   '&[aria-readonly="true"]': {
     opacity: 0.5,
@@ -120,25 +121,12 @@ const Input = styled.input(({ theme, placeholder }) => ({
   },
 }));
 
-const RawButton = styled(IconButton)(({ theme }) => ({
+const RawButton = styled(ToggleButton)({
   position: 'absolute',
   zIndex: 2,
   top: 2,
   right: 2,
-  height: 21,
-  padding: '0 3px',
-  background: theme.background.bar,
-  border: `1px solid ${theme.appBorderColor}`,
-  borderRadius: 3,
-  color: theme.textMutedColor,
-  fontSize: '9px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  span: {
-    marginLeft: 3,
-    marginTop: 1,
-  },
-}));
+});
 
 const RawInput = styled(Form.Textarea)(({ theme }) => ({
   flex: 1,
@@ -225,7 +213,12 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
 
   if (!hasData) {
     return (
-      <Button disabled={readonly} id={getControlSetterButtonId(name)} onClick={onForceVisible}>
+      <Button
+        ariaLabel={false}
+        disabled={readonly}
+        id={getControlSetterButtonId(name)}
+        onClick={onForceVisible}
+      >
         Set object
       </Button>
     );
@@ -252,16 +245,14 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     <Wrapper aria-readonly={readonly}>
       {isObjectOrArray && (
         <RawButton
-          role="switch"
-          aria-checked={showRaw}
-          aria-label={`Edit the ${name} properties in text format`}
+          pressed={showRaw}
+          ariaLabel={`Edit the ${name} properties in JSON format`}
           onClick={(e: SyntheticEvent) => {
             e.preventDefault();
             setShowRaw((isRaw) => !isRaw);
           }}
         >
-          {showRaw ? <EyeCloseIcon /> : <EyeIcon />}
-          <span>RAW</span>
+          Edit JSON
         </RawButton>
       )}
       {!showRaw ? (

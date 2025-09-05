@@ -1,12 +1,12 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
+import { Button } from 'storybook/internal/components';
+
 import { CrossIcon } from '@storybook/icons';
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { keyframes, styled } from 'storybook/theming';
-
-import { IconButton } from '../IconButton/IconButton';
 
 const fadeIn = keyframes({
   from: { opacity: 0 },
@@ -62,11 +62,11 @@ export const Container = styled.div<{ width?: number; height?: number }>(
   })
 );
 
-export const CloseButton = (props: React.ComponentProps<typeof IconButton>) => (
+export const CloseButton = () => (
   <Dialog.Close asChild>
-    <IconButton aria-label="Close" {...props}>
+    <Button padding="small" ariaLabel="Close modal" variant="ghost" shortcut={['Escape']}>
       <CrossIcon />
-    </IconButton>
+    </Button>
   </Dialog.Close>
 );
 

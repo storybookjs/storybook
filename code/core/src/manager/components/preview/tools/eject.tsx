@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { IconButton, getStoryHref } from 'storybook/internal/components';
+import { Button, getStoryHref } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -33,17 +33,22 @@ export const ejectTool: Addon_BaseType = {
     <Consumer filter={ejectMapper}>
       {({ baseUrl, storyId, queryParams }) =>
         storyId ? (
-          <IconButton key="opener" asChild>
+          <Button
+            key="opener"
+            padding="small"
+            variant="ghost"
+            ariaLabel="Open preview in new tab"
+            asChild
+          >
             <a
               // @ts-expect-error (non strict)
               href={getStoryHref(baseUrl, storyId, queryParams)}
               target="_blank"
               rel="noopener noreferrer"
-              title="Open canvas in new tab"
             >
               <ShareAltIcon />
             </a>
-          </IconButton>
+          </Button>
         ) : null
       }
     </Consumer>

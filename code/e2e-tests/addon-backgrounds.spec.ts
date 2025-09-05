@@ -12,14 +12,14 @@ test.describe('addon-backgrounds', () => {
     await new SbPage(page, expect).waitUntilLoaded();
   });
 
-  const backgroundToolbarSelector = '[title="Change the background of the preview"]';
-  const gridToolbarSelector = '[title="Apply a grid to the preview"]';
+  const backgroundToolbarSelector = '[aria-label="Preview background"]';
+  const gridToolbarSelector = '[aria-label="Grid visibility"]';
 
   test('should have a dark background', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
     await sbPage.navigateToStory('example/button', 'primary');
-    await sbPage.selectToolbar(backgroundToolbarSelector, '#list-item-dark');
+    await sbPage.selectToolbar(backgroundToolbarSelector, 'text=/dark/');
 
     await expect(sbPage.getCanvasBodyElement()).toHaveCSS('background-color', 'rgb(51, 51, 51)');
   });

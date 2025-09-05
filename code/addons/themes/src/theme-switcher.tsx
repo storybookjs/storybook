@@ -1,11 +1,10 @@
 import React from 'react';
 
-import { IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { Button, Select } from 'storybook/internal/components';
 
 import { PaintBrushIcon } from '@storybook/icons';
 
 import { addons, useAddonState, useChannel, useGlobals, useParameter } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
 
 import {
   DEFAULT_ADDON_STATE,
@@ -18,10 +17,6 @@ import {
 import type { ThemesParameters as Parameters, ThemeAddonState } from './types';
 
 type ThemesParameters = NonNullable<Parameters['themes']>;
-
-const IconButtonLabel = styled.div(({ theme }) => ({
-  fontSize: theme.typography.size.s2 - 1,
-}));
 
 const hasMultipleThemes = (themesList: ThemeAddonState['themesList']) => themesList.length > 1;
 const hasTwoThemes = (themesList: ThemeAddonState['themesList']) => themesList.length === 2;
@@ -57,12 +52,18 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
     },
   });
 
-  const themeName = selected || themeDefault;
+  const currentTheme = selected || themeDefault;
+  let ariaLabel = '';
   let label = '';
+  let tooltip = '';
   if (isLocked) {
     label = 'Story override';
-  } else if (themeName) {
-    label = `${themeName} theme`;
+    ariaLabel = 'Theme set by story parameters';
+    tooltip = 'Theme set by story parameters';
+  } else if (currentTheme) {
+    label = `${currentTheme} theme`;
+    ariaLabel = 'Theme'; // it's Select's job to announce the current value.
+    tooltip = 'Change theme';
   }
 
   if (disable) {
@@ -70,56 +71,40 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
   }
 
   if (hasTwoThemes(themesList)) {
-    const currentTheme = selected || themeDefault;
     const alternateTheme = themesList.find((theme) => theme !== currentTheme);
     return (
-      <IconButton
+      <Button
+        ariaLabel={ariaLabel}
+        tooltip={tooltip}
+        variant="ghost"
         disabled={isLocked}
         key={THEME_SWITCHER_ID}
-        active={!themeOverride}
-        title="Theme"
         onClick={() => {
           updateGlobals({ theme: alternateTheme });
         }}
       >
         <PaintBrushIcon />
-        {label ? <IconButtonLabel>{label}</IconButtonLabel> : null}
-      </IconButton>
+        {label}
+      </Button>
     );
   }
 
   if (hasMultipleThemes(themesList)) {
     return (
-      <WithTooltip
-        placement="top"
-        trigger="click"
-        closeOnOutsideClick
-        tooltip={({ onHide }) => {
-          return (
-            <TooltipLinkList
-              links={themesList.map((theme) => ({
-                id: theme,
-                title: theme,
-                active: selected === theme,
-                onClick: () => {
-                  updateGlobals({ theme });
-                  onHide();
-                },
-              }))}
-            />
-          );
-        }}
+      <Select
+        icon={<PaintBrushIcon />}
+        ariaLabel={ariaLabel}
+        disabled={isLocked}
+        key={THEME_SWITCHER_ID}
+        defaultOptions={currentTheme}
+        options={themesList.map((theme) => ({
+          title: theme,
+          value: theme,
+        }))}
+        onSelect={(selected) => updateGlobals({ theme: selected })}
       >
-        <IconButton
-          key={THEME_SWITCHER_ID}
-          active={!themeOverride}
-          title="Theme"
-          disabled={isLocked}
-        >
-          <PaintBrushIcon />
-          {label && <IconButtonLabel>{label}</IconButtonLabel>}
-        </IconButton>
-      </WithTooltip>
+        {label}
+      </Select>
     );
   }
 

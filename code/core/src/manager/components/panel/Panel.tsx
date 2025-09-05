@@ -1,12 +1,11 @@
 import React, { Component } from 'react';
 
-import { EmptyTabContent, IconButton, Link, Tabs } from 'storybook/internal/components';
+import { Button, EmptyTabContent, Link, Tabs } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
 
 import type { State } from 'storybook/manager-api';
-import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { useLayout } from '../layout/LayoutProvider';
@@ -85,27 +84,41 @@ export const AddonPanel = React.memo<{
           <Actions>
             {isDesktop ? (
               <>
-                <IconButton
+                <Button
                   key="position"
+                  padding="small"
+                  variant="ghost"
                   onClick={actions.togglePosition}
-                  title={`Change addon orientation [${shortcutToHumanString(
-                    shortcuts.panelPosition
-                  )}]`}
+                  ariaLabel={
+                    panelPosition === 'bottom'
+                      ? 'Move addon panel to right'
+                      : 'Move addon panel to bottom'
+                  }
+                  ariaDescription="Changes the location of the addon panel to the bottom or right of the screen, but does not have any effect on its content."
+                  shortcut={shortcuts.panelPosition}
                 >
                   {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
-                </IconButton>
-                <IconButton
+                </Button>
+                <Button
                   key="visibility"
+                  padding="small"
+                  variant="ghost"
                   onClick={actions.toggleVisibility}
-                  title={`Hide addons [${shortcutToHumanString(shortcuts.togglePanel)}]`}
+                  ariaLabel="Hide addon panel"
+                  shortcut={shortcuts.togglePanel}
                 >
                   <CloseIcon />
-                </IconButton>
+                </Button>
               </>
             ) : (
-              <IconButton onClick={() => setMobilePanelOpen(false)} aria-label="Close addon panel">
+              <Button
+                padding="small"
+                variant="ghost"
+                onClick={() => setMobilePanelOpen(false)}
+                ariaLabel="Close addon panel"
+              >
                 <CloseIcon />
-              </IconButton>
+              </Button>
             )}
           </Actions>
         }

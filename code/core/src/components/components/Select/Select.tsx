@@ -1,14 +1,18 @@
-import type { KeyboardEvent } from 'react';
+import type { FC, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import type { ButtonProps } from 'storybook/internal/components';
-import { Button, ScrollArea, WithTooltipPure } from 'storybook/internal/components';
+import { Button, ScrollArea } from 'storybook/internal/components';
 
 import { RefreshIcon } from '@storybook/icons';
 
+import { useObjectRef } from '@react-aria/utils';
 import { transparentize } from 'polished';
+import { Overlay, useInteractOutside, useOverlay, useOverlayPosition } from 'react-aria';
+import { useOverlayTriggerState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
+import { Tooltip } from '../tooltip/Tooltip';
 import { SelectOption } from './SelectOption';
 import type { Option, ResetOption } from './helpers';
 import { Listbox, PAGE_STEP_SIZE } from './helpers';
@@ -112,6 +116,62 @@ const StyledButton = styled(Button)<ButtonProps & { hasSelection?: boolean; isOp
   })
 );
 
+const Underlay = styled.div({
+  position: 'fixed',
+  inset: 0,
+  // This will do for now, our popovers use the max z-index of 2147483647. We'll want to
+  // inherit a base from a CSS variable and add preset values to it in the future (e.g.
+  // 100 for underlay, 200 for overlay) if we start using Select in dialogs.
+  zIndex: 1000,
+});
+
+/*
+ * This popover does not do any keyboard handling or placement. It uses a portal to place
+ * its children under its sibling's position. When clicking outside the popover, it closes.
+ */
+const MinimalistPopover: FC<{
+  children: React.ReactNode;
+  handleClose: () => void;
+  triggerRef: React.RefObject<HTMLElement>;
+}> = ({ children, handleClose, triggerRef }) => {
+  const popoverRef = React.useRef(null);
+
+  useInteractOutside({
+    ref: popoverRef,
+    onInteractOutside: handleClose,
+  });
+
+  const { overlayProps: positionProps } = useOverlayPosition({
+    targetRef: triggerRef,
+    overlayRef: popoverRef,
+    placement: 'bottom start',
+    offset: 8,
+    isOpen: true,
+  });
+
+  const { overlayProps, underlayProps } = useOverlay(
+    {
+      isOpen: true,
+      onClose: handleClose,
+      isDismissable: true,
+      /* We do this ourselves. */
+      shouldCloseOnBlur: false,
+      /* We also do this ourselves. */
+      isKeyboardDismissDisabled: true,
+    },
+    popoverRef
+  );
+
+  return (
+    <Overlay disableFocusManagement {...overlayProps}>
+      <Underlay {...underlayProps} />
+      <Tooltip hasChrome ref={popoverRef} {...positionProps}>
+        {children}
+      </Tooltip>
+    </Overlay>
+  );
+};
+
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
   (
     {
@@ -134,15 +194,21 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     ref
   ) => {
     const [isOpen, setIsOpen] = useState(props.defaultOpen || false);
+    const triggerRef = useObjectRef(ref);
 
     const id = useId();
     const listboxId = `${id}-listbox`;
     const listboxRef = useRef<HTMLUListElement>(null);
 
+    const otState = useOverlayTriggerState({
+      isOpen: isOpen && !disabled,
+      onOpenChange: setIsOpen,
+    });
+
     const handleClose = useCallback(() => {
       setIsOpen(false);
-      document.getElementById(id)?.focus();
-    }, [id]);
+      triggerRef.current?.focus();
+    }, [triggerRef]);
 
     // The last selected option(s), which will be used by the app.
     const [selectedOptions, setSelectedOptions] = useState<Option[]>(
@@ -328,6 +394,35 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
       [options, resetOption, setActiveOption, selectedOptions]
     );
 
+    const handleListboxKeyDown = useCallback(
+      (e: KeyboardEvent<HTMLUListElement>) => {
+        // We don't prevent default on Tab, so that the Tab or Shift+Tab goes
+        // through after we've repositioned to the Button.
+        if (e.key !== 'Tab') {
+          e.preventDefault();
+        } else {
+          handleClose();
+        }
+
+        if (e.key === 'Escape') {
+          handleClose();
+        } else if (e.key === 'ArrowDown') {
+          moveActiveOptionDown();
+        } else if (e.key === 'ArrowUp') {
+          moveActiveOptionUp();
+        } else if (e.key === 'Home') {
+          setActiveOption(options[0]);
+        } else if (e.key === 'End') {
+          setActiveOption(options[options.length - 1]);
+        } else if (e.key === 'PageDown') {
+          moveActiveOptionDown(PAGE_STEP_SIZE);
+        } else if (e.key === 'PageUp') {
+          moveActiveOptionUp(PAGE_STEP_SIZE);
+        }
+      },
+      [handleClose, moveActiveOptionDown, moveActiveOptionUp, options, setActiveOption]
+    );
+
     // Transfer focus to the active option whenever we open the listbox.
     useEffect(() => {
       if (isOpen && activeOption) {
@@ -341,90 +436,14 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     }, [isOpen, activeOption, id]);
 
     return (
-      <WithTooltipPure
-        closeOnOutsideClick={true}
-        visible={isOpen && !disabled}
-        tooltip={
-          <ScrollArea vertical>
-            <Listbox
-              role="listbox"
-              id={listboxId}
-              ref={listboxRef}
-              aria-multiselectable={multiSelect}
-              onKeyDown={(e) => {
-                // We don't prevent default on Tab, so that the Tab or Shift+Tab goes
-                // through after we've repositioned to the Button.
-                if (e.key !== 'Tab') {
-                  e.preventDefault();
-                }
-                if (e.key === 'Escape') {
-                  handleClose();
-                } else if (e.key === 'ArrowDown') {
-                  moveActiveOptionDown();
-                } else if (e.key === 'ArrowUp') {
-                  moveActiveOptionUp();
-                } else if (e.key === 'Home') {
-                  setActiveOption(options[0]);
-                } else if (e.key === 'End') {
-                  setActiveOption(options[options.length - 1]);
-                } else if (e.key === 'PageDown') {
-                  moveActiveOptionDown(PAGE_STEP_SIZE);
-                } else if (e.key === 'PageUp') {
-                  moveActiveOptionUp(PAGE_STEP_SIZE);
-                }
-              }}
-            >
-              {options.map((option) => (
-                <SelectOption
-                  key={option.value ?? 'sb-reset'}
-                  title={option.title}
-                  description={option.description}
-                  icon={option.icon}
-                  id={valueToId(id, option)}
-                  isActive={isOpen && activeOption?.value === option.value}
-                  isSelected={
-                    selectedOptions?.some((sel) => sel.value === option.value) ||
-                    (selectedOptions.length === 0 && option === resetOption)
-                  }
-                  onClick={() => {
-                    handleSelectOption(option);
-                    if (!multiSelect) {
-                      handleClose();
-                    }
-                  }}
-                  onFocus={() => setActiveOption(option)}
-                  shouldLookDisabled={
-                    option === resetOption && selectedOptions.length === 0 && multiSelect
-                  }
-                  onKeyDown={(e: KeyboardEvent) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      handleSelectOption(option);
-                      if (!multiSelect) {
-                        handleClose();
-                      }
-                    } else if (e.key === 'Tab') {
-                      if (!multiSelect) {
-                        handleSelectOption(option);
-                      }
-                      handleClose();
-                    }
-                  }}
-                >
-                  {option.children}
-                </SelectOption>
-              ))}
-            </Listbox>
-          </ScrollArea>
-        }
-      >
+      <>
         <StyledButton
           {...props}
           variant="ghost"
           ariaLabel={ariaLabel}
           tooltip={isOpen ? undefined : tooltip}
           id={id}
-          ref={ref}
+          ref={triggerRef}
           padding={padding}
           isOpen={isOpen}
           hasSelection={!!selectedOptions.length}
@@ -440,11 +459,11 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           }}
           tabIndex={isOpen ? -1 : 0}
           onKeyDown={handleButtonKeyDown}
-          role="combobox"
+          role={multiSelect ? 'combobox' : 'button'}
           aria-autocomplete="none"
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
           aria-controls={listboxId}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
         >
           {!multiSelect && selectedOptions.length === 0 && (
             <>
@@ -473,7 +492,61 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
             </>
           )}
         </StyledButton>
-      </WithTooltipPure>
+        {otState.isOpen && (
+          <MinimalistPopover handleClose={handleClose} triggerRef={triggerRef}>
+            <ScrollArea vertical>
+              <Listbox
+                role="listbox"
+                id={listboxId}
+                ref={listboxRef}
+                aria-multiselectable={multiSelect}
+                onKeyDown={handleListboxKeyDown}
+              >
+                {options.map((option) => (
+                  <SelectOption
+                    key={option.value ?? 'sb-reset'}
+                    title={option.title}
+                    description={option.description}
+                    icon={option.icon}
+                    id={valueToId(id, option)}
+                    isActive={isOpen && activeOption?.value === option.value}
+                    isSelected={
+                      selectedOptions?.some((sel) => sel.value === option.value) ||
+                      (selectedOptions.length === 0 && option === resetOption)
+                    }
+                    onClick={() => {
+                      handleSelectOption(option);
+                      if (!multiSelect) {
+                        handleClose();
+                      }
+                    }}
+                    onFocus={() => setActiveOption(option)}
+                    shouldLookDisabled={
+                      option === resetOption && selectedOptions.length === 0 && multiSelect
+                    }
+                    onKeyDown={(e: KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSelectOption(option);
+                        if (!multiSelect) {
+                          handleClose();
+                        }
+                      } else if (e.key === 'Tab') {
+                        if (!multiSelect) {
+                          handleSelectOption(option);
+                        }
+                        handleClose();
+                      }
+                    }}
+                  >
+                    {option.children}
+                  </SelectOption>
+                ))}
+              </Listbox>
+            </ScrollArea>
+          </MinimalistPopover>
+        )}
+      </>
     );
   }
 );

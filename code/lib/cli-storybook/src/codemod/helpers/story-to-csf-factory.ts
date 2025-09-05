@@ -35,6 +35,11 @@ export async function storyToCsfFactory(
     return info.source;
   }
 
+  // Track detected stories and which ones we actually transform
+  const detectedStories = csf.stories;
+  const detectedStoryNames = detectedStories.map((story) => story.name);
+  const transformedStoryExports = new Set<string>();
+
   const metaVariableName = csf._metaVariableName ?? 'meta';
 
   /**
@@ -95,7 +100,7 @@ export async function storyToCsfFactory(
   // @TODO: Support unconventional formats:
   // `export function Story() { };` and `export { Story };
   // These are not part of csf._storyExports but rather csf._storyStatements and are tricky to support.
-  Object.entries(csf._storyExports).forEach(([, decl]) => {
+  Object.entries(csf._storyExports).forEach(([exportName, decl]) => {
     const id = decl.id;
     const declarator = decl as t.VariableDeclarator;
     let init = t.isVariableDeclarator(declarator) ? declarator.init : undefined;
@@ -118,12 +123,18 @@ export async function storyToCsfFactory(
           t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
           init.properties.length === 0 ? [] : [init]
         );
+        if (t.isIdentifier(id)) {
+          transformedStoryExports.add(exportName);
+        }
       } else if (t.isArrowFunctionExpression(init)) {
         // Transform CSF1 to meta.story({ render: <originalFn> })
         declarator.init = t.callExpression(
           t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
           [init]
         );
+        if (t.isIdentifier(id)) {
+          transformedStoryExports.add(exportName);
+        }
       }
     }
   });
@@ -152,6 +163,7 @@ export async function storyToCsfFactory(
       )._storyPaths?.[exportName];
       if (pathForExport && pathForExport.replaceWith) {
         pathForExport.replaceWith(replacement);
+        transformedStoryExports.add(exportName);
       }
     }
   });
@@ -226,6 +238,16 @@ export async function storyToCsfFactory(
       }
     },
   });
+
+  // If some stories were detected but not all could be transformed, we skip the codemod to avoid mixed csf syntax and therefore a broken indexer.
+  if (detectedStoryNames.length > 0 && transformedStoryExports.size !== detectedStoryNames.length) {
+    logger.warn(
+      `Skipping codemod for ${info.path}:\nDetected stories [${detectedStoryNames
+        .map((name) => `"${name}"`)
+        .join(', ')}] were not fully transformed because some use an unsupported format.`
+    );
+    return info.source;
+  }
 
   // modify meta
   if (csf._metaPath) {

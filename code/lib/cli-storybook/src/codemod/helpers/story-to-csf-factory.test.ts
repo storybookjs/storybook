@@ -1,11 +1,18 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { formatFileContent } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import path from 'path';
 import { dedent } from 'ts-dedent';
 
 import { storyToCsfFactory } from './story-to-csf-factory';
+
+vi.mock('storybook/internal/node-logger', () => ({
+  logger: {
+    warn: vi.fn(),
+  },
+}));
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -629,10 +636,12 @@ describe('stories codemod', () => {
         const data = {};
         export const A: StoryObj = () => {};
         export function B() { };
+        export const C = () => <Component />;
+        export const D = C;
         // not supported yet (story redeclared)
-        const C = { ...A, args: data, } satisfies CSF3<ComponentProps>;
-        const D = { args: data };
-        export { C, D as E };
+        const E = { ...A, args: data, } satisfies CSF3<ComponentProps>;
+        const F = { args: data };
+        export { E, F as G };
         `);
 
       expect(transformed).toMatchInlineSnapshot(`
@@ -654,16 +663,39 @@ describe('stories codemod', () => {
         const data = {};
         export const A = meta.story(() => {});
         export const B = meta.story(() => {});
+        export const C = meta.story(() => <Component />);
+        export const D = C.input;
         // not supported yet (story redeclared)
-        const C = { ...A.input, args: data } satisfies CSF3<ComponentProps>;
-        const D = { args: data };
-        export { C, D as E };
+        const E = { ...A.input, args: data } satisfies CSF3<ComponentProps>;
+        const F = { args: data };
+        export { E, F as G };
       `);
 
       expect(transformed).toContain('A = meta.story');
       expect(transformed).toContain('B = meta.story');
       // @TODO: when we support these, uncomment this line
       // expect(transformed).toContain('C = meta.story');
+    });
+    it('should not complete transformation if no stories are not transformed', async () => {
+      const source = dedent`
+        export default {
+          title: 'Component',
+        };
+        export const A = {};
+        // not supported yet (story redeclared)
+        const B = { args: data };
+        const C = { args: data };
+        export { B, C as D };
+      `;
+      const transformed = await transform(source);
+      expect(transformed).toEqual(source);
+
+      expect(transformed).not.toContain('preview.meta');
+      expect(transformed).not.toContain('meta.story');
+
+      expect(logger.warn).toHaveBeenCalledWith(
+        'Skipping codemod for Component.stories.tsx:\nDetected stories ["A", "B", "D"] were not fully transformed because some use an unsupported format.'
+      );
     });
   });
 });

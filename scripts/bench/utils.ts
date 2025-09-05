@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
-// eslint-disable-next-line depend/ban-dependencies
-import { ensureDir, readJSON, readdir, writeJSON } from 'fs-extra';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+
 import { join } from 'path';
 import type { Page } from 'playwright-core';
 
@@ -19,17 +19,23 @@ export const saveBench = async (
 ) => {
   const dirName = join(options.rootDir || process.cwd(), 'bench');
   const fileName = `${key}.json`;
-  const existing = await ensureDir(dirName).then(() => {
-    return readJSON(join(dirName, fileName)).catch(() => ({}));
-  });
-  await writeJSON(join(dirName, fileName), { ...existing, ...data }, { spaces: 2 });
+  await mkdir(dirName, { recursive: true });
+
+  const filePath = join(dirName, fileName);
+  const existing = await readFile(filePath, 'utf8')
+    .then((txt) => JSON.parse(txt))
+    .catch(() => ({}));
+
+  const merged = { ...existing, ...data };
+  await writeFile(filePath, JSON.stringify(merged, null, 2), 'utf8');
 };
 
 export const loadBench = async (options: SaveBenchOptions): Promise<Partial<BenchResults>> => {
   const dirName = join(options.rootDir || process.cwd(), 'bench');
   const files = await readdir(dirName);
   return files.reduce(async (acc, fileName) => {
-    const data = await readJSON(join(dirName, fileName));
+    const content = await readFile(join(dirName, fileName), 'utf8');
+    const data = JSON.parse(content);
     return { ...(await acc), ...data };
   }, Promise.resolve({}));
   // return readJSON(join(dirname, `bench.json`));

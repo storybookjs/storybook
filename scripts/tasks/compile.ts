@@ -1,8 +1,5 @@
-import { rm } from 'node:fs/promises';
+import { readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-
-// eslint-disable-next-line depend/ban-dependencies
-import { readFile } from 'fs-extra';
 
 import type { Task } from '../task';
 import { exec } from '../utils/exec';

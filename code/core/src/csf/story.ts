@@ -288,14 +288,16 @@ export type TestFunction<TRenderer extends Renderer = Renderer, TArgs = TRendere
   context: StoryContext<TRenderer, TArgs>
 ) => Promise<void> | void;
 
+export type EachTestParam = string | number | boolean | null;
+
 export type EachTestFunction<
-  Parameters extends any[],
+  Parameters extends EachTestParam[],
   TRenderer extends Renderer = Renderer,
   TArgs = TRenderer['args'],
 > = (context: StoryContext<TRenderer, TArgs>, ...parameters: Parameters) => Promise<void> | void;
 
 export type EachAnnotationsFunction<
-  Parameters extends any[],
+  Parameters extends EachTestParam[],
   TRenderer extends Renderer = Renderer,
   TArgs = TRenderer['args'],
 > = (...parameters: Parameters) => StoryAnnotations<TRenderer, TArgs>;

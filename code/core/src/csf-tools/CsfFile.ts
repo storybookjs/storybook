@@ -112,6 +112,34 @@ function parseTestTags(optionsNode: t.Node | null | undefined, program: t.Progra
   return [] as string[];
 }
 
+function parseParameters(parametersNode: t.Node): (string | boolean | number | null)[][] {
+  if (!t.isArrayExpression(parametersNode)) {
+    throw new Error('CSF: Expected test parameters array');
+  }
+
+  if (!parametersNode.elements.every((e) => t.isArrayExpression(e))) {
+    throw new Error('CSF: Expected test parameters array of arrays');
+  }
+
+  return parametersNode.elements.map((e) =>
+    e.elements.map((a) => {
+      if (!t.isLiteral(a)) {
+        throw new Error('CSF: Unsupported non-literal test parameter');
+      }
+      switch (a.type) {
+        case 'NullLiteral':
+          return null;
+        case 'TemplateLiteral':
+          throw new Error('CSF: Unsupported template literal test parameter');
+        case 'RegExpLiteral':
+          return a.pattern;
+        default:
+          return a.value;
+      }
+    })
+  );
+}
+
 const formatLocation = (node: t.Node, fileName?: string) => {
   let loc = '';
   if (node.loc) {
@@ -802,38 +830,7 @@ export class CsfFile {
               expression.arguments.length === 3 ? null : expression.arguments[2];
             const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
 
-            // Check the args to each are all arrays
-            const each = expression.arguments[1];
-            if (!t.isArrayExpression(each) || !each.elements.every((e) => t.isArrayExpression(e))) {
-              return;
-            }
-            // Check they are all the same length
-            const length = each.elements[0].elements.length;
-            if (!each.elements.every((e) => e.elements.length === length)) {
-              return;
-            }
-            each.elements.forEach((e) => {
-              // Everything must be a literal
-              if (!e.elements.every((p) => t.isExpression(p))) {
-                return;
-              }
-              if (!e.elements.every((p) => t.isLiteral(p))) {
-                return;
-              }
-
-              const args = e.elements.map((a) => {
-                switch (a.type) {
-                  case 'NullLiteral':
-                    return null;
-                  case 'TemplateLiteral':
-                    break;
-                  case 'RegExpLiteral':
-                    return a.pattern;
-                  default:
-                    return a.value;
-                }
-              });
-
+            parseParameters(expression.arguments[1]).forEach((args) => {
               self._tests.push({
                 function: testFunction,
                 name: format(testName, ...args),
@@ -873,35 +870,9 @@ export class CsfFile {
             const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
 
             // Check the args to each are all arrays
-            const matrix = expression.arguments[1];
-            if (
-              !t.isArrayExpression(matrix) ||
-              !matrix.elements.every((e) => t.isArrayExpression(e))
-            ) {
-              return;
-            }
+            const matrix = parseParameters(expression.arguments[1]);
 
-            const matrixValues = matrix.elements
-              .filter((e) => e.elements.every((p) => t.isLiteral(p)))
-              .map((e) =>
-                e.elements.map((a) => {
-                  if (!t.isLiteral(a)) {
-                    return undefined;
-                  }
-                  switch (a.type) {
-                    case 'NullLiteral':
-                      return null;
-                    case 'TemplateLiteral':
-                      break;
-                    case 'RegExpLiteral':
-                      return a.pattern;
-                    default:
-                      return a.value;
-                  }
-                })
-              );
-
-            const combinations = matrixValues.reduce<typeof matrixValues>(
+            const combinations = matrix.reduce<typeof matrix>(
               (acc, param) => acc.flatMap((acc2) => param.map((p) => [...acc2, p])),
               [[]]
             );

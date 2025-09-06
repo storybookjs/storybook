@@ -6,6 +6,7 @@ import type {
   ComposedStoryFn,
   EachAnnotationsFunction,
   EachTestFunction,
+  EachTestParam,
   NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
@@ -25,7 +26,7 @@ import {
 import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
 import { getCoreAnnotations } from './core-annotations';
 
-type MatrixParams<T extends unknown[]> = {
+type MatrixParams<T extends EachTestParam[]> = {
   [K in keyof T]: T[K][];
 };
 
@@ -257,7 +258,7 @@ function defineStory<
 
       return test as unknown as void;
     },
-    each<T extends any[]>(
+    each<T extends EachTestParam[]>(
       name: string,
       parameters: ReadonlyArray<T>,
       overridesOrTestFn:
@@ -281,7 +282,7 @@ function defineStory<
         this.test(printf(name, ...parameter), annotations, testFunction);
       });
     },
-    matrix<T extends any[]>(
+    matrix<T extends EachTestParam[]>(
       name: string,
       parameters: MatrixParams<T>,
       overridesOrTestFn:
@@ -291,7 +292,7 @@ function defineStory<
       testFn?: EachTestFunction<T, TRenderer>
     ): void {
       const combinations = parameters.reduce<T[]>(
-        (acc, param) => acc.flatMap((acc2) => param.map((p) => [...acc2, p])) as T,
+        (acc, param) => acc.flatMap((acc2) => param.map((p) => [...acc2, p] as T)),
         [[]] as unknown as T[]
       );
 

@@ -24,6 +24,7 @@ export type {
   DecoratorFunction,
   EachAnnotationsFunction,
   EachTestFunction,
+  EachTestParam,
   Globals,
   GlobalTypes,
   IncludeExcludeOptions,

@@ -8,6 +8,11 @@
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
     - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
+  - [API and Component Changes](#api-and-component-changes)
+    - [Bar Component API Changes](#bar-component-api-changes)
+    - [FlexBar is removed](#flexbar-is-removed)
+    - [Tabs, TabsState and TabButton are removed](#tabs-tabsstate-and-tabbutton-are-removed)
+    - [Tabs Component API Changes](#tabs-component-api-changes)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -26,7 +31,7 @@
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
     - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
-  - [API and Component Changes](#api-and-component-changes)
+  - [API and Component Changes](#api-and-component-changes-1)
     - [Button Component API Changes](#button-component-api-changes)
     - [Icon System Updates](#icon-system-updates)
     - [Sidebar Component Changes](#sidebar-component-changes)
@@ -485,6 +490,7 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+
 ## From version 9.x to 10.0.0
 
 ### Core Changes
@@ -584,6 +590,23 @@ export const core = {
 #### Removed x-only builtin tags
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+
+### API and Component Changes
+#### Bar Component API Changes
+
+The `Bar` component's internal layout has changed. It now applies flex positioning and applies a default item gap, that can be controlled with the `itemGap` prop.
+
+#### FlexBar is removed
+
+The `FlexBar` component is removed. Instead, use the `Bar` component and apply `justifyContent: 'space-between'` through the `innerStyle` prop.
+
+#### Tabs, TabsState and TabButton are removed
+
+The `Tabs` component and its helpers are removed. Instead, use the new `AriaTabs` (name TBC) component which has a more constrained API and is accessible. In particular, `AriaTabs` (name TBC) does not support mixing HTML links and tabs.
+
+#### Tabs Component API Changes
+
+* [ ] Tabs no longer accepts link components?
 
 ## From version 8.x to 9.0.0
 
@@ -1217,7 +1240,7 @@ Key changes:
 
 #### Angular: Introduce `features.angularFilterNonInputControls`
 
-Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular components in Storybook's controls panel.
 
 To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 

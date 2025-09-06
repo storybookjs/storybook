@@ -8,7 +8,7 @@ import type { API } from 'storybook/manager-api';
 import { ADD_TESTS } from '../shared';
 
 // TODO: import type from @types/jest
-interface AssertionResult {
+export interface AssertionResult {
   status: string;
   fullName: string;
   title: string;

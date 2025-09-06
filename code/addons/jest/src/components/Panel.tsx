@@ -1,12 +1,12 @@
 import type { FC } from 'react';
-import React, { Fragment } from 'react';
+import React, { Fragment, useMemo } from 'react';
 
-import { Link, Placeholder, ScrollArea, TabsState } from 'storybook/internal/components';
+import { AriaTabs, Badge, Link, Placeholder, ScrollArea } from 'storybook/internal/components';
 
 import { useResizeDetector } from 'react-resize-detector';
 import { convert, styled, themes } from 'storybook/theming';
 
-import type { Test } from '../hoc/provideJestResult';
+import type { AssertionResult, Test } from '../hoc/provideJestResult';
 import { provideTests as provideJestResult } from '../hoc/provideJestResult';
 import { Result } from './Result';
 
@@ -92,14 +92,14 @@ interface ContentProps {
   className?: string;
 }
 
-const getTestsByTypeMap = (result: any) => {
-  const testsByType: Map<string, any> = new Map();
-  result.assertionResults.forEach((assertion: any) => {
+const getTestsByTypeMap = (result: Test['result']) => {
+  const testsByType: Map<string, AssertionResult[]> = new Map();
+  result.assertionResults.forEach((assertion) => {
+    const existingTestsForType = testsByType.get(assertion.status);
+
     testsByType.set(
       assertion.status,
-      testsByType.get(assertion.status)
-        ? testsByType.get(assertion.status).concat(assertion)
-        : [assertion]
+      existingTestsForType ? existingTestsForType.concat(assertion) : [assertion]
     );
   });
   return testsByType;
@@ -121,6 +121,38 @@ const getColorByType = (type: string) => {
   }
 };
 
+const TabItemWrapper = styled.div({
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+});
+
+const TabItem: FC<{ count: number; title: string }> = ({ count, title }) => (
+  <TabItemWrapper>
+    {title}
+    <Badge compact status="neutral">
+      {count}
+    </Badge>
+  </TabItemWrapper>
+);
+
+const TabPanel: FC<{
+  emptyMessage: string;
+  tests: AssertionResult[];
+}> = ({ emptyMessage, tests }) => (
+  <List>
+    {tests.length ? (
+      tests?.map((res: AssertionResult) => (
+        <Item key={res.fullName || res.title}>
+          <Result {...res} />
+        </Item>
+      ))
+    ) : (
+      <Placeholder>{emptyMessage}</Placeholder>
+    )}
+  </List>
+);
+
 const TestPanel: FC<{ test: Test }> = ({ test }) => {
   const { ref, width } = useResizeDetector();
   const { result } = test;
@@ -128,8 +160,65 @@ const TestPanel: FC<{ test: Test }> = ({ test }) => {
     return <Placeholder>This story has tests configured, but no file was found</Placeholder>;
   }
 
-  const testsByType: Map<string, any> = getTestsByTypeMap(result);
-  const entries: any = testsByType.entries();
+  const testsByType: Map<string, AssertionResult[]> = useMemo(
+    () => getTestsByTypeMap(result),
+    [result]
+  );
+  const tabs = useMemo(
+    () => [
+      {
+        id: 'failing-tests',
+        title: (
+          <TabItem count={testsByType.get(StatusTypes.FAILED_TYPE)?.length ?? 0} title="Failing" />
+        ),
+        children: () => (
+          <TabPanel
+            emptyMessage="This story has no failing tests."
+            tests={testsByType.get(StatusTypes.FAILED_TYPE) ?? []}
+          />
+        ),
+      },
+      {
+        id: 'passing-tests',
+        title: (
+          <TabItem count={testsByType.get(StatusTypes.PASSED_TYPE)?.length ?? 0} title="Passing" />
+        ),
+        children: () => (
+          <TabPanel
+            emptyMessage="This story has no passing tests."
+            tests={testsByType.get(StatusTypes.PASSED_TYPE) ?? []}
+          />
+        ),
+      },
+      {
+        id: 'pending-tests',
+        title: (
+          <TabItem count={testsByType.get(StatusTypes.PENDING_TYPE)?.length ?? 0} title="Pending" />
+        ),
+        children: () => (
+          <TabPanel
+            emptyMessage="This story has no pending tests."
+            tests={testsByType.get(StatusTypes.PENDING_TYPE) ?? []}
+          />
+        ),
+      },
+      {
+        id: 'todo-tests',
+        title: (
+          <TabItem count={testsByType.get(StatusTypes.TODO_TYPE)?.length ?? 0} title="To Do" />
+        ),
+        children: () => (
+          <TabPanel
+            emptyMessage="This story has no tests to do."
+            tests={testsByType.get(StatusTypes.TODO_TYPE) ?? []}
+          />
+        ),
+      },
+    ],
+    [testsByType]
+  );
+
+  const entries = testsByType.entries();
   const sortedTestsByCount = [...entries].sort((a, b) => a[1].length - b[1].length);
 
   return (
@@ -138,7 +227,7 @@ const TestPanel: FC<{ test: Test }> = ({ test }) => {
         <SuiteTotals {...{ result, width: width ?? 0 }} />
         {width != null && width > 240 ? (
           <ProgressWrapper>
-            {sortedTestsByCount.map((entry: any) => {
+            {sortedTestsByCount.map((entry) => {
               return (
                 <SuiteProgressPortion
                   key={`progress-portion-${entry[0]}`}
@@ -152,103 +241,11 @@ const TestPanel: FC<{ test: Test }> = ({ test }) => {
           </ProgressWrapper>
         ) : null}
       </SuiteHead>
-      <TabsState
-        initial="failing-tests"
+      <AriaTabs
+        defaultSelected="failing-tests"
         backgroundColor={convert(themes.light).background.hoverable}
-      >
-        <div
-          id="failing-tests"
-          title={`${
-            testsByType.get(StatusTypes.FAILED_TYPE)
-              ? testsByType.get(StatusTypes.FAILED_TYPE).length
-              : 0
-          } Failed`}
-          color={getColorByType(StatusTypes.FAILED_TYPE)}
-        >
-          <List>
-            {testsByType.get(StatusTypes.FAILED_TYPE) ? (
-              testsByType.get(StatusTypes.FAILED_TYPE).map((res: any) => (
-                <Item key={res.fullName || res.title}>
-                  <Result {...res} />
-                </Item>
-              ))
-            ) : (
-              <Placeholder key={`no-tests-${StatusTypes.FAILED_TYPE}`}>
-                This story has no failing tests.
-              </Placeholder>
-            )}
-          </List>
-        </div>
-        <div
-          id="passing-tests"
-          title={`${
-            testsByType.get(StatusTypes.PASSED_TYPE)
-              ? testsByType.get(StatusTypes.PASSED_TYPE).length
-              : 0
-          } Passed`}
-          color={getColorByType(StatusTypes.PASSED_TYPE)}
-        >
-          <List>
-            {testsByType.get(StatusTypes.PASSED_TYPE) ? (
-              testsByType.get(StatusTypes.PASSED_TYPE).map((res: any) => (
-                <Item key={res.fullName || res.title}>
-                  <Result {...res} />
-                </Item>
-              ))
-            ) : (
-              <Placeholder key={`no-tests-${StatusTypes.PASSED_TYPE}`}>
-                This story has no passing tests.
-              </Placeholder>
-            )}
-          </List>
-        </div>
-        <div
-          id="pending-tests"
-          title={`${
-            testsByType.get(StatusTypes.PENDING_TYPE)
-              ? testsByType.get(StatusTypes.PENDING_TYPE).length
-              : 0
-          } Pending`}
-          color={getColorByType(StatusTypes.PENDING_TYPE)}
-        >
-          <List>
-            {testsByType.get(StatusTypes.PENDING_TYPE) ? (
-              testsByType.get(StatusTypes.PENDING_TYPE).map((res: any) => (
-                <Item key={res.fullName || res.title}>
-                  <Result {...res} />
-                </Item>
-              ))
-            ) : (
-              <Placeholder key={`no-tests-${StatusTypes.PENDING_TYPE}`}>
-                This story has no pending tests.
-              </Placeholder>
-            )}
-          </List>
-        </div>
-        <div
-          id="todo-tests"
-          title={`${
-            testsByType.get(StatusTypes.TODO_TYPE)
-              ? testsByType.get(StatusTypes.TODO_TYPE).length
-              : 0
-          } Todo`}
-          color={getColorByType(StatusTypes.TODO_TYPE)}
-        >
-          <List>
-            {testsByType.get(StatusTypes.TODO_TYPE) ? (
-              testsByType.get(StatusTypes.TODO_TYPE).map((res: any) => (
-                <Item key={res.fullName || res.title}>
-                  <Result {...res} />
-                </Item>
-              ))
-            ) : (
-              <Placeholder key={`no-tests-${StatusTypes.TODO_TYPE}`}>
-                This story has no tests todo.
-              </Placeholder>
-            )}
-          </List>
-        </div>
-      </TabsState>
+        tabs={tabs}
+      />
     </section>
   );
 };
@@ -267,12 +264,20 @@ interface PanelProps {
   tests?: Test[];
 }
 
+const TallPlaceholder = styled(Placeholder)({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
+});
+
 const Panel = ({ tests }: PanelProps) => (
   <ScrollArea vertical>
     {tests ? (
       <Content tests={tests} />
     ) : (
-      <Placeholder>
+      <TallPlaceholder>
         <Fragment>No tests found</Fragment>
         <Fragment>
           Learn how to&nbsp;
@@ -284,7 +289,7 @@ const Panel = ({ tests }: PanelProps) => (
             add Jest test results to your story
           </Link>
         </Fragment>
-      </Placeholder>
+      </TallPlaceholder>
     )}
   </ScrollArea>
 );

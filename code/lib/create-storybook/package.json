@@ -1,7 +1,13 @@
 {
   "name": "create-storybook",
-  "version": "9.2.0-alpha.3",
-  "description": "Initialize Storybook into your project",
+  "version": "10.0.0-beta.2",
+  "description": "Storybook installer: Develop, document, and test UI components in isolation",
+  "keywords": [
+    "storybook",
+    "cli",
+    "create",
+    "init"
+  ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/create-storybook",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"

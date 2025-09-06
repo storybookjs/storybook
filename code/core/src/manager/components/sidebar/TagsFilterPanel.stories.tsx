@@ -9,6 +9,9 @@ const meta = {
   title: 'Sidebar/TagsFilterPanel',
   args: {
     toggleTag: fn(),
+    setAllTags: fn(),
+    inverted: false,
+    setInverted: fn(),
     api: {
       getDocsUrl: () => 'https://storybook.js.org/docs/',
     } as any,
@@ -23,14 +26,14 @@ type Story = StoryObj<typeof meta>;
 
 export const Empty: Story = {
   args: {
-    allTags: [],
+    allTags: new Map(),
     selectedTags: [],
   },
 };
 
 export const BuiltInTagsOnly: Story = {
   args: {
-    allTags: ['play-fn'],
+    allTags: new Map([['play-fn', 1]]),
     selectedTags: [],
   },
 };
@@ -44,14 +47,25 @@ export const BuiltInTagsOnlyProduction: Story = {
 
 export const Default: Story = {
   args: {
-    allTags: ['tag1', 'tag2', 'tag3'],
+    allTags: new Map([
+      ['tag1', 1],
+      ['tag2', 1],
+      ['tag3', 1],
+    ]),
     selectedTags: ['tag1', 'tag3'],
+  },
+};
+
+export const Inverted: Story = {
+  args: {
+    ...Default.args,
+    inverted: true,
   },
 };
 
 export const BuiltInTags: Story = {
   args: {
-    allTags: [...Default.args.allTags, 'play-fn'],
+    allTags: new Map([...Default.args.allTags, ['play-fn', 1]]),
     selectedTags: ['tag1', 'tag3'],
   },
 };

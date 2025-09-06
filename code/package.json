@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "9.2.0-alpha.3",
+  "version": "10.0.0-beta.2",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -102,7 +102,7 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@chromatic-com/storybook": "^4.0.0",
+    "@chromatic-com/storybook": "^4.1.1",
     "@nx/vite": "20.2.2",
     "@nx/workspace": "20.2.2",
     "@playwright/test": "1.52.0",

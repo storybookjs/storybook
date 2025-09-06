@@ -1,5 +1,5 @@
 ```ts filename="vitest.config.ts" renderer="react"
-import { defineConfig, mergeConfig } from 'vitest/config';
+import { defineConfig, defineProject, mergeConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,10 +12,10 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
-      extends: true,
       // Use `workspace` field in Vitest < 3.2
       projects: [
-        {
+        defineProject({
+          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -37,7 +37,7 @@ export default mergeConfig(
             },
             setupFiles: ['./.storybook/vitest.setup.ts'],
           },
-        },
+        }),
       ],
     },
   })
@@ -58,10 +58,10 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
-      extends: true,
       // Use `workspace` field in Vitest < 3.2
       projects: [
-        {
+        defineProject({
+          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -83,7 +83,7 @@ export default mergeConfig(
             },
             setupFiles: ['./.storybook/vitest.setup.ts'],
           },
-        },
+        }),
       ],
     },
   })
@@ -104,10 +104,10 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
-      extends: true,
       // Use `workspace` field in Vitest < 3.2
       projects: [
-        {
+        defineProject({
+          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -129,7 +129,7 @@ export default mergeConfig(
             },
             setupFiles: ['./.storybook/vitest.setup.ts'],
           },
-        },
+        }),
       ],
     },
   })

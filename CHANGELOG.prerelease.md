@@ -1,3 +1,31 @@
+## 10.0.0-beta.2
+
+- Build: Fix dts bundling external detection - [#32366](https://github.com/storybookjs/storybook/pull/32366), thanks @mrginglymus!
+- Codemod: Replace `globby` with `tinyglobby` - [#31407](https://github.com/storybookjs/storybook/pull/31407), thanks @benmccann!
+- Next.js-vite: Use `fileURLToPath` for module resolution in preset - [#32386](https://github.com/storybookjs/storybook/pull/32386), thanks @ndelangen!
+- Tags: Remove undocumented x-only tags - [#32360](https://github.com/storybookjs/storybook/pull/32360), thanks @shilman!
+- Vitest addon: Handle Playwright installation errors gracefully - [#32329](https://github.com/storybookjs/storybook/pull/32329), thanks @ndelangen!
+
+## 10.0.0-beta.1
+
+- AddonA11Y: Fix postinstall - [#32309](https://github.com/storybookjs/storybook/pull/32309), thanks @ndelangen!
+- Angular: Properly merge builder options and browserTarget options - [#32272](https://github.com/storybookjs/storybook/pull/32272), thanks @kroeder!
+- Core: Optimize bundlesize, by reusing internal/babel in mocking-utils - [#32350](https://github.com/storybookjs/storybook/pull/32350), thanks @ndelangen!
+- Core: Update tags filter UI - [#32343](https://github.com/storybookjs/storybook/pull/32343), thanks @ghengeveld!
+- Next.js: Avoid multiple webpack versions at runtime - [#32313](https://github.com/storybookjs/storybook/pull/32313), thanks @valentinpalkovic!
+- Next.js: Fix version mismatch error in Webpack - [#32306](https://github.com/storybookjs/storybook/pull/32306), thanks @valentinpalkovic!
+- Svelte & Vue: Add framework-specific `docgen` option to disable docgen processing - [#32319](https://github.com/storybookjs/storybook/pull/32319), thanks @copilot-swe-agent!
+- Svelte: Support `@sveltejs/vite-plugin-svelte` v6 - [#32320](https://github.com/storybookjs/storybook/pull/32320), thanks @JReinhold!
+- Update: Satellite repos after major version bump - [#32303](https://github.com/storybookjs/storybook/pull/32303), thanks @ndelangen!
+
+## 10.0.0-beta.0
+
+- Core: Fix staticCopy not copying `index.html` to sub directory - [#32259](https://github.com/storybookjs/storybook/pull/32259), thanks @ndelangen!
+- Core: Remove CJS bundles, only ship ESM - [#31819](https://github.com/storybookjs/storybook/pull/31819), thanks @ndelangen!
+- Docs: Move button in ArgsTable heading to fix screenreader announcements - [#32238](https://github.com/storybookjs/storybook/pull/32238), thanks @Sidnioulz!
+- Telemetry: Disambiguate traffic coming from error/upgrade links - [#32287](https://github.com/storybookjs/storybook/pull/32287), thanks @shilman!
+- Telemetry: Disambiguate unattributed traffic from Onboarding - [#32286](https://github.com/storybookjs/storybook/pull/32286), thanks @shilman!
+
 ## 9.2.0-alpha.3
 
 - Addon Docs: Fix Symbol conversion issue in docs page and controls panel - [#32220](https://github.com/storybookjs/storybook/pull/32220), thanks @yannbf!

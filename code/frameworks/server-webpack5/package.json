@@ -1,9 +1,12 @@
 {
   "name": "@storybook/server-webpack5",
-  "version": "9.2.0-alpha.3",
+  "version": "10.0.0-beta.2",
   "description": "Storybook for Server: View HTML snippets from a server in isolation with Hot Reloading.",
   "keywords": [
-    "storybook"
+    "storybook",
+    "server",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/server-webpack5",
   "bugs": {

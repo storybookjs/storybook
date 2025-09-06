@@ -1,9 +1,23 @@
 {
   "name": "storybook",
-  "version": "9.2.0-alpha.3",
-  "description": "Storybook framework-agnostic API",
+  "version": "10.0.0-beta.2",
+  "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "component",
+    "components",
+    "design-systems",
+    "component-testing",
+    "react",
+    "next",
+    "next.js",
+    "react-native",
+    "react-native-web",
+    "vue",
+    "angular",
+    "svelte",
+    "sveltekit",
+    "web-components"
   ],
   "homepage": "https://storybook.js.org",
   "bugs": {
@@ -259,7 +273,6 @@
     "@types/ejs": "^3.1.1",
     "@types/find-cache-dir": "^5.0.0",
     "@types/js-yaml": "^4.0.5",
-    "@types/lodash": "^4.17.13",
     "@types/node": "^22.0.0",
     "@types/npmlog": "^7.0.0",
     "@types/picomatch": "^2.3.0",
@@ -309,7 +322,6 @@
     "jsdoc-type-pratt-parser": "^4.0.0",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
-    "lodash": "^4.17.21",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
     "mlly": "^1.7.4",

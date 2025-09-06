@@ -292,10 +292,14 @@ export default async function postInstall(options: PostinstallOptions) {
   } else {
     logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
     logger.plain('  npx playwright install chromium --with-deps');
-    await packageManager.executeCommand({
-      command: 'npx',
-      args: ['playwright', 'install', 'chromium', '--with-deps'],
-    });
+    try {
+      await packageManager.executeCommand({
+        command: 'npx',
+        args: ['playwright', 'install', 'chromium', '--with-deps'],
+      });
+    } catch (e) {
+      console.error('Failed to install Playwright. Please install it manually');
+    }
   }
 
   const fileExtension =

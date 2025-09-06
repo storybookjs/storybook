@@ -46,6 +46,8 @@ describe('test fn', () => {
           A.test('with overrides', { args: { label: 'bar' } }, () => {})
           const reference = () => {}
           A.test('with function reference', reference)
+          A.each('with each %s', [['one'], ['two']], () => {})
+          A.matrix('with matrix %s %d', [['a', 'b'], [1, 2]], () => {})
         `
     );
     expect(entries).toMatchInlineSnapshot(`
@@ -55,6 +57,12 @@ describe('test fn', () => {
         "sync test function",
         "with overrides",
         "with function reference",
+        "with each one",
+        "with each two",
+        "with matrix a 1",
+        "with matrix a 2",
+        "with matrix b 1",
+        "with matrix b 2",
       ]
     `);
   });

@@ -1,7 +1,7 @@
 import { camelCase, upperFirst } from 'es-toolkit/compat';
 
 export const sanitizeName = (name: string) => {
-  let key = upperFirst(camelCase(name));
+  let key: string = upperFirst(camelCase(name)) as string;
   // prepend _ if name starts with a digit
   if (/^\d/.test(key)) {
     key = `_${key}`;

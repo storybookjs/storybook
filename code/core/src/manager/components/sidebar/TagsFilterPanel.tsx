@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { Form, IconButton, TooltipLinkList } from 'storybook/internal/components';
 import type { Tag } from 'storybook/internal/types';
@@ -65,61 +65,81 @@ export const TagsFilterPanel = ({
   setInverted,
   isDevelopment,
 }: TagsFilterPanelProps) => {
-  const [builtInEntries, userEntries] = Array.from(allTags.entries()).reduce(
-    (acc, [tag, count]) => {
-      acc[BUILT_IN_TAGS.has(tag) ? 0 : 1].push([tag, count]);
-      return acc;
-    },
-    [[], []] as [[Tag, number][], [Tag, number][]]
-  );
-
   const docsUrl = api.getDocsUrl({ subpath: 'writing-stories/tags#filtering-by-custom-tags' });
 
-  const noTags = {
-    id: 'no-tags',
-    title: 'There are no tags. Use tags to organize and filter your Storybook.',
-    isIndented: false,
-  };
+  const noTags = useMemo(
+    () => ({
+      id: 'no-tags',
+      title: 'There are no tags. Use tags to organize and filter your Storybook.',
+      isIndented: false,
+    }),
+    []
+  );
 
-  const groups = [
-    allTags.size === 0 ? [noTags] : [],
-    userEntries
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([tag, count]) => {
-        const checked = selectedTags.includes(tag);
-        const id = `tag-${tag}`;
-        return {
-          id,
-          title: tag,
-          right: count,
-          input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} />,
-        };
-      }),
-    builtInEntries
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([tag, count]) => {
-        const checked = selectedTags.includes(tag);
-        const id = `tag-${tag}`;
-        return {
-          id,
-          title: tag,
-          right: count,
-          input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} />,
-        };
-      }),
-  ] as Link[][];
+  const [builtInEntries, userEntries] = useMemo(
+    () =>
+      Array.from(allTags.entries()).reduce(
+        (acc, [tag, count]) => {
+          acc[BUILT_IN_TAGS.has(tag) ? 0 : 1].push([tag, count]);
+          return acc;
+        },
+        [[], []] as [[Tag, number][], [Tag, number][]]
+      ),
+    [allTags]
+  );
 
-  if (userEntries.length === 0 && isDevelopment) {
-    groups.push([
-      {
-        id: 'tags-docs',
-        title: 'Learn how to add tags',
-        icon: <DocumentIcon />,
-        right: <ShareAltIcon />,
-        href: docsUrl,
-      },
-    ]);
-  }
+  const groups = useMemo(() => {
+    const baseGroups = [
+      allTags.size === 0 ? [noTags] : [],
+      userEntries
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([tag, count]) => {
+          const checked = selectedTags.includes(tag);
+          const id = `tag-${tag}`;
+          return {
+            id,
+            title: tag,
+            right: count,
+            input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} />,
+          };
+        }),
+      builtInEntries
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([tag, count]) => {
+          const checked = selectedTags.includes(tag);
+          const id = `tag-${tag}`;
+          return {
+            id,
+            title: tag,
+            right: count,
+            input: <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} />,
+          };
+        }),
+    ] as Link[][];
+
+    if (userEntries.length === 0 && isDevelopment) {
+      baseGroups.push([
+        {
+          id: 'tags-docs',
+          title: 'Learn how to add tags',
+          icon: <DocumentIcon />,
+          right: <ShareAltIcon />,
+          href: docsUrl,
+        },
+      ]);
+    }
+
+    return baseGroups;
+  }, [
+    allTags.size,
+    userEntries,
+    builtInEntries,
+    selectedTags,
+    toggleTag,
+    isDevelopment,
+    docsUrl,
+    noTags,
+  ]);
 
   return (
     <Wrapper>

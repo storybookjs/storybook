@@ -154,7 +154,7 @@ const getSource = (
 function getStoryId(children: ReactNode) {
   if (Children.count(children) === 1) {
     const elt = children as ReactElement;
-    if (elt.props) {
+    if (elt.props && typeof elt.props === 'object' && 'id' in elt.props) {
       return elt.props.id;
     }
   }
@@ -221,7 +221,7 @@ export const Preview: FC<PreviewProps> = ({
 
     e.preventDefault();
     if (additionalActionItems.filter((item) => item.title === 'Copied').length === 0) {
-      copyToClipboard(source?.props.code ?? '').then(() => {
+      copyToClipboard((source?.props as { code?: string })?.code ?? '').then(() => {
         setAdditionalActionItems([
           ...additionalActionItems,
           {
@@ -252,7 +252,7 @@ export const Preview: FC<PreviewProps> = ({
           border
           zoom={(z: number) => setScale(scale * z)}
           resetZoom={() => setScale(1)}
-          storyId={getStoryId(children)}
+          storyId={getStoryId(children) as string}
           baseUrl="./iframe.html"
         />
       )}

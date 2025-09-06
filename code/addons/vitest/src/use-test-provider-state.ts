@@ -65,21 +65,25 @@ export const useTestProvider = (
 
   // this follows the same behavior for the green border around the whole testing module in TestingModule.tsx
   const [isSettingsUpdated, setIsSettingsUpdated] = useState(false);
-  const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const unsubscribe = store.onStateChange((state, previousState) => {
       if (!isEqual(state.config, previousState.config)) {
         testProviderStore.settingsChanged();
         setIsSettingsUpdated(true);
-        clearTimeout(settingsUpdatedTimeoutRef.current);
-        settingsUpdatedTimeoutRef.current = setTimeout(() => {
-          setIsSettingsUpdated(false);
-        }, 1000);
+        if (settingsUpdatedTimeoutRef.current) {
+          clearTimeout(settingsUpdatedTimeoutRef.current);
+          settingsUpdatedTimeoutRef.current = setTimeout(() => {
+            setIsSettingsUpdated(false);
+          }, 1000);
+        }
       }
     });
     return () => {
       unsubscribe();
-      clearTimeout(settingsUpdatedTimeoutRef.current);
+      if (settingsUpdatedTimeoutRef.current) {
+        clearTimeout(settingsUpdatedTimeoutRef.current);
+      }
     };
   }, []);
 

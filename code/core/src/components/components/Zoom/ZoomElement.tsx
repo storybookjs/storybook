@@ -39,7 +39,7 @@ export function ZoomElement({ centered, scale, children }: ZoomProps) {
   }, [scale]);
 
   useResizeObserver({
-    ref: componentWrapperRef,
+    ref: componentWrapperRef as React.RefObject<HTMLDivElement>,
     onResize,
   });
 

@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from 'react';
+import type { ComponentProps, ComponentType, ReactElement, ReactNode } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 
@@ -35,7 +35,7 @@ export interface WithTooltipPureProps
   svg?: boolean;
   withArrows?: boolean;
   hasChrome?: boolean;
-  tooltip: ReactNode | ((p: WithHideFn) => ReactNode);
+  tooltip: ReactElement | ComponentType | ((p: WithHideFn) => ReactElement);
   children: ReactNode;
   onDoubleClick?: () => void;
   /**

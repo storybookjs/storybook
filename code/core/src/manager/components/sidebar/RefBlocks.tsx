@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import React, { Fragment, useCallback, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { Button, ErrorFormatter, Link, Spaced, WithTooltip } from 'storybook/internal/components';
+import { Button, ErrorFormatter, Link, Spaced, WithPopover } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
@@ -34,14 +34,22 @@ const Text = styled.div(({ theme }) => ({
   },
 }));
 
-const ErrorDisplay = styled.pre(
+const ErrorDisplay = styled.pre<{ isMobile: boolean }>(
   {
-    width: 420,
     boxSizing: 'border-box',
     borderRadius: 8,
     overflow: 'auto',
     whiteSpace: 'pre',
   },
+  ({ isMobile }) =>
+    isMobile
+      ? {
+          maxWidth: 'calc(100vw - 40px)',
+        }
+      : {
+          minWidth: 420,
+          maxWidth: 640,
+        },
   ({ theme }) => ({
     color: theme.color.dark,
   })
@@ -103,15 +111,18 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
   );
 };
 
-export const ErrorBlock: FC<{ error: Error }> = ({ error }) => (
+export const ErrorBlock: FC<{ error: Error; isMobile: boolean }> = ({ error, isMobile }) => (
   <Contained>
     <Spaced>
       <TextStyle>
         Oh no! Something went wrong loading this Storybook.
         <br />
-        <WithTooltip
-          tooltip={
-            <ErrorDisplay>
+        <WithPopover
+          hasCloseButton
+          offset={isMobile ? 0 : 8}
+          placement={isMobile ? 'bottom' : 'bottom-start'}
+          popover={
+            <ErrorDisplay isMobile={isMobile}>
               <ErrorFormatter error={error} />
             </ErrorDisplay>
           }
@@ -119,7 +130,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => (
           <Link isButton>
             View error <ChevronDownIcon />
           </Link>
-        </WithTooltip>{' '}
+        </WithPopover>{' '}
         <Link withArrow href="https://storybook.js.org/docs?ref=ui" cancel={false} target="_blank">
           View docs
         </Link>

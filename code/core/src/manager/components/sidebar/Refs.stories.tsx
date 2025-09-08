@@ -1,7 +1,9 @@
 import React from 'react';
 
+import type { StoryAnnotations } from 'storybook/internal/csf';
+
 import { ManagerContext } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { fn, within } from 'storybook/test';
 
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -171,6 +173,7 @@ export const Optimized = () => (
   <Ref
     {...refs.optimized}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
@@ -181,6 +184,7 @@ export const IsEmpty = () => (
   <Ref
     {...refs.empty}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
@@ -191,6 +195,7 @@ export const StartInjectedUnknown = () => (
   <Ref
     {...refs.startInjected_unknown}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
@@ -201,6 +206,7 @@ export const StartInjectedLoading = () => (
   <Ref
     {...refs.startInjected_loading}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
@@ -211,6 +217,7 @@ export const StartInjectedReady = () => (
   <Ref
     {...refs.startInjected_ready}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
@@ -221,6 +228,7 @@ export const Versions = () => (
   <Ref
     {...refs.versions}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
@@ -231,6 +239,7 @@ export const VersionsMissingCurrent = () => (
   <Ref
     {...refs.versionsMissingCurrent}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
@@ -241,16 +250,64 @@ export const Errored = () => (
   <Ref
     {...refs.error}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
     setHighlighted={() => {}}
   />
 );
+export const ErroredMobile = () => (
+  <Ref
+    {...refs.error}
+    isLoading={false}
+    isMobile={true}
+    isBrowsing
+    selectedStoryId=""
+    highlightedRef={{ current: null }}
+    setHighlighted={() => {}}
+  />
+);
+ErroredMobile.globals = { sb_theme: 'stacked', viewport: { value: 'mobile1' } };
+export const ErroredWithErrorOpen: StoryAnnotations = {
+  render: () => Errored(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByText('View error');
+    button.click();
+  },
+};
+export const ErroredMobileWithErrorOpen: StoryAnnotations = {
+  render: () => ErroredMobile(),
+  globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByText('View error');
+    button.click();
+  },
+};
+export const ErroredWithIndicatorOpen: StoryAnnotations = {
+  render: () => Errored(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByText('Extra actions');
+    button.click();
+  },
+};
+export const ErroredMobileWithIndicatorOpen: StoryAnnotations = {
+  render: () => ErroredMobile(),
+  globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = canvas.getByText('Extra actions');
+    button.click();
+  },
+};
 export const Auth = () => (
   <Ref
     {...refs.auth}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
@@ -261,6 +318,7 @@ export const Long = () => (
   <Ref
     {...refs.long}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}
@@ -272,6 +330,7 @@ export const WithSourceCode = () => (
   <Ref
     {...refs.withSourceCode}
     isLoading={false}
+    isMobile={false}
     isBrowsing
     selectedStoryId=""
     highlightedRef={{ current: null }}

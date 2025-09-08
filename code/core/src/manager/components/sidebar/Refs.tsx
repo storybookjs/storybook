@@ -15,6 +15,7 @@ import type { Highlight, RefType } from './types';
 
 export interface RefProps {
   isLoading: boolean;
+  isMobile: boolean;
   isBrowsing: boolean;
   selectedStoryId: string | null;
   highlightedRef: MutableRefObject<Highlight>;
@@ -81,6 +82,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
     id: refId,
     title = refId,
     isLoading: isLoadingMain,
+    isMobile,
     isBrowsing,
     selectedStoryId,
     highlightedRef,
@@ -137,7 +139,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
             <CollapseIcon isExpanded={isExpanded} />
             <RefTitle title={title}>{title}</RefTitle>
           </CollapseButton>
-          <RefIndicator {...props} state={state} ref={indicatorRef} />
+          <RefIndicator {...props} isMobile={isMobile} state={state} ref={indicatorRef} />
         </RefHead>
       )}
       {isExpanded && (
@@ -145,7 +147,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
           {/* @ts-expect-error (non strict) */}
           {state === 'auth' && <AuthBlock id={refId} loginUrl={loginUrl} />}
           {/* @ts-expect-error (non strict) */}
-          {state === 'error' && <ErrorBlock error={indexError} />}
+          {state === 'error' && <ErrorBlock error={indexError} isMobile={isMobile} />}
           {state === 'loading' && <LoaderBlock isMain={isMain} />}
           {state === 'empty' && <EmptyBlock isMain={isMain} />}
           {state === 'ready' && (

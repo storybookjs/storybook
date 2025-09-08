@@ -199,6 +199,7 @@ export const Sidebar = React.memo(function Sidebar({
                   dataset={dataset}
                   selected={selected}
                   isLoading={isLoading}
+                  isMobile={isMobile}
                   isBrowsing={isBrowsing}
                 />
                 <SearchResults

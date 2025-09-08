@@ -261,6 +261,8 @@ export interface WithPopoverProps {
 // BREAKING: The `followCursor` prop was removed because it was unused.
 // BREAKING: The `closeOnOutsideClick` prop was removed. It is now always enabled. Use a Dialog if you need a popover that does not close automatically.
 
+// BREAKING: popper to aria placement -> top-start becomes top start (hyphen to space), etc. left-start becomes "left top", left-end "left bottom", right-start "right top", right-end "right bottom"
+
 export interface WithTooltipProps {
   /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */
   triggerOnFocusOnly?: boolean;

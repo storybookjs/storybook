@@ -37,7 +37,12 @@ export const InteractiveTooltipWrapper: React.FC<{
   }, [shortcut, tooltip]);
 
   return tooltipLabel ? (
-    <WithTooltip trigger="hover" hasChrome={false} tooltip={<NoMarginNote note={tooltipLabel} />}>
+    <WithTooltip
+      trigger="hover"
+      hasChrome={false}
+      placement="top"
+      tooltip={<NoMarginNote note={tooltipLabel} />}
+    >
       {children}
     </WithTooltip>
   ) : (

@@ -58,7 +58,15 @@ export { Select } from './components/Select/Select';
 // Forms
 export { Form } from './components/Form/Form';
 
-// Tooltips
+// Overlays
+export { MenuItem } from './components/overlay/MenuItem';
+export type { MenuItemProps } from './components/overlay/MenuItem';
+export { Overlay } from './components/overlay/Overlay';
+export type { OverlayProps } from './components/overlay/Overlay';
+export { WithMenu } from './components/overlay/WithMenu';
+export { WithPopover } from './components/overlay/WithPopover';
+export { convertToReactAriaPlacement } from './components/overlay/helpers';
+export type { PopperPlacement } from './components/overlay/helpers';
 export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip';
 export { TooltipMessage } from './components/tooltip/TooltipMessage';
 export { TooltipNote } from './components/tooltip/TooltipNote';

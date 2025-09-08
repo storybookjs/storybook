@@ -811,42 +811,6 @@ export class CsfFile {
           // B.each('foo %s %s', [['a', 'b'], ['c', 'd']], () => {})
           // B.each('foo %s %s', [['a', 'b'], ['c', 'd']], {}, () => {})
           // B.each('foo %s %s', [['a', 'b'], ['c', 'd']], () => ({}), () => {})
-          if (
-            t.isCallExpression(expression) &&
-            t.isMemberExpression(expression.callee) &&
-            expression.arguments.length >= 3 &&
-            t.isStringLiteral(expression.arguments[0]) &&
-            t.isArrayExpression(expression.arguments[1]) &&
-            t.isMemberExpression(expression.callee) &&
-            t.isIdentifier(expression.callee.object) &&
-            t.isIdentifier(expression.callee.property) &&
-            expression.callee.property.name === 'each'
-          ) {
-            const exportName = expression.callee.object.name;
-            const testName = expression.arguments[0].value;
-            const testFunction =
-              expression.arguments.length === 3 ? expression.arguments[2] : expression.arguments[3];
-            const testArguments =
-              expression.arguments.length === 3 ? null : expression.arguments[2];
-            const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
-
-            parseParameters(expression.arguments[1]).forEach((args) => {
-              self._tests.push({
-                function: testFunction,
-                name: format(testName, ...args),
-                node: expression,
-                // can't set id because meta title isn't available yet
-                // so it's set later on
-                id: 'FIXME',
-                tags,
-                parent: { node: self._storyStatements[exportName] },
-              });
-
-              // TODO: fix this when stories fail
-              self._stories[exportName].__stats.tests = true;
-            });
-          }
-
           // B.matrix('foo %s %d', [['a', 'b'], [1, 2]], () => {})
           // B.matrix('foo %s %d', [['a', 'b'], [1, 2]], {}, () => {})
           // B.matrix('foo %s %d', [['a', 'b'], [1, 2]], () => ({}), () => {})
@@ -859,7 +823,7 @@ export class CsfFile {
             t.isMemberExpression(expression.callee) &&
             t.isIdentifier(expression.callee.object) &&
             t.isIdentifier(expression.callee.property) &&
-            expression.callee.property.name === 'matrix'
+            ['each', 'matrix'].includes(expression.callee.property.name)
           ) {
             const exportName = expression.callee.object.name;
             const testName = expression.arguments[0].value;
@@ -869,15 +833,18 @@ export class CsfFile {
               expression.arguments.length === 3 ? null : expression.arguments[2];
             const tags = parseTestTags(testArguments as t.Node | null, self._ast.program);
 
-            // Check the args to each are all arrays
-            const matrix = parseParameters(expression.arguments[1]);
+            const parameters = parseParameters(expression.arguments[1]);
 
-            const combinations = matrix.reduce<typeof matrix>(
-              (acc, param) => acc.flatMap((acc2) => param.map((p) => [...acc2, p])),
-              [[]]
-            );
+            const combinate = (args: typeof parameters) =>
+              args.reduce<typeof args>(
+                (acc, param) => acc.flatMap((acc2) => param.map((p) => [...acc2, p])),
+                [[]]
+              );
 
-            combinations.forEach((args) => {
+            (expression.callee.property.name === 'matrix'
+              ? combinate(parameters)
+              : parameters
+            ).forEach((args) => {
               self._tests.push({
                 function: testFunction,
                 name: format(testName, ...args),

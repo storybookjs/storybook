@@ -1,3 +1,11 @@
+## 10.0.0-beta.2
+
+- Build: Fix dts bundling external detection - [#32366](https://github.com/storybookjs/storybook/pull/32366), thanks @mrginglymus!
+- Codemod: Replace `globby` with `tinyglobby` - [#31407](https://github.com/storybookjs/storybook/pull/31407), thanks @benmccann!
+- Next.js-vite: Use `fileURLToPath` for module resolution in preset - [#32386](https://github.com/storybookjs/storybook/pull/32386), thanks @ndelangen!
+- Tags: Remove undocumented x-only tags - [#32360](https://github.com/storybookjs/storybook/pull/32360), thanks @shilman!
+- Vitest addon: Handle Playwright installation errors gracefully - [#32329](https://github.com/storybookjs/storybook/pull/32329), thanks @ndelangen!
+
 ## 10.0.0-beta.1
 
 - AddonA11Y: Fix postinstall - [#32309](https://github.com/storybookjs/storybook/pull/32309), thanks @ndelangen!

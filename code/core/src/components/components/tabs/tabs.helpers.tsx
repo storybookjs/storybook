@@ -22,7 +22,7 @@ export const childrenToList = (children: TabsProps['children']) =>
       props: { title, id, color, children: childrenOfChild },
     }: ReactElement<{
       children: FC<Addon_RenderOptions & PropsWithChildren> | ReactElement | null;
-      title: ReactElement | null | FC;
+      title: ReactElement | FC | string | number | null | boolean | undefined;
       id: string;
       color?: string;
     }>) => {

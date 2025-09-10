@@ -22,7 +22,6 @@ export const StoryContent = ({
         <>
           {/* @ts-expect-error popover is not yet supported by React */}
           <button popovertarget="my-popover">Open Popover 1</button>
-          {/* @ts-expect-error popover is not yet supported by React */}
           <div popover="manual" id="my-popover" style={{ padding: 20 }}>
             Greetings, one and all!
           </div>

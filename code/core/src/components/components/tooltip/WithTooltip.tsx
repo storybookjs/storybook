@@ -35,7 +35,7 @@ export interface WithTooltipPureProps
   svg?: boolean;
   withArrows?: boolean;
   hasChrome?: boolean;
-  tooltip: ReactElement | ComponentType | ((p: WithHideFn) => ReactElement);
+  tooltip: ReactElement | ComponentType<WithHideFn>;
   children: ReactNode;
   onDoubleClick?: () => void;
   /**

@@ -201,19 +201,23 @@ export const TestingModule = ({
   const [isCollapsed, setCollapsed] = useState(true);
   const [isChangingCollapse, setChangingCollapse] = useState(false);
   const [isUpdated, setIsUpdated] = useState(false);
-  const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     const unsubscribe = internal_fullTestProviderStore.onSettingsChanged(() => {
       setIsUpdated(true);
-      clearTimeout(settingsUpdatedTimeoutRef.current);
+      if (settingsUpdatedTimeoutRef.current) {
+        clearTimeout(settingsUpdatedTimeoutRef.current);
+      }
       settingsUpdatedTimeoutRef.current = setTimeout(() => {
         setIsUpdated(false);
       }, 1000);
     });
     return () => {
       unsubscribe();
-      clearTimeout(settingsUpdatedTimeoutRef.current);
+      if (settingsUpdatedTimeoutRef.current) {
+        clearTimeout(settingsUpdatedTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -427,7 +431,7 @@ export const TestingModule = ({
         {hasTestProviders && (
           <Collapsible
             data-testid="collapse"
-            {...(isCollapsed && { inert: '' })}
+            {...(isCollapsed && { inert: true })}
             style={{
               transition: isChangingCollapse ? 'max-height 250ms' : 'max-height 0ms',
               display: hasTestProviders ? 'block' : 'none',

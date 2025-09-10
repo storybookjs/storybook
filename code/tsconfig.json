@@ -10,7 +10,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "lib": ["dom", "dom.iterable", "esnext"],
-    "module": "ESNext",
+    "module": "Preserve",
     "moduleResolution": "bundler",
     "noImplicitAny": true,
     "noUnusedLocals": false,
@@ -18,7 +18,7 @@
     "strict": true,
     "noEmit": true,
     "strictBindCallApply": true,
-    "target": "esnext"
+    "target": "es2020"
   },
   "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"]
 }

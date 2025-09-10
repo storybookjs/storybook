@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join, normalize } from 'node:path';
+import { dirname, join, normalize, relative } from 'node:path';
 
 import type { OutputFile } from 'esbuild';
 import slash from 'slash';
@@ -31,9 +31,9 @@ export async function readOrderedFiles(
 }
 
 export function sanitizePath(file: OutputFile, addonsDir: string) {
-  const filePath = file.path.replace(addonsDir, '');
+  const filePath = relative(addonsDir, file.path);
   const location = normalize(join(addonsDir, filePath));
-  const url = `./sb-addons${slash(filePath).split('/').map(encodeURIComponent).join('/')}`;
+  const url = `./sb-addons/${slash(filePath).split('/').map(encodeURIComponent).join('/')}`;
 
   return { location, url };
 }

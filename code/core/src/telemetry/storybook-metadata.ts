@@ -1,9 +1,9 @@
 import { dirname } from 'node:path';
 
 import {
-  getProjectRoot,
   getStorybookConfiguration,
   getStorybookInfo,
+  isCI,
   loadMainConfig,
   versions,
 } from 'storybook/internal/common';
@@ -11,7 +11,6 @@ import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import { findPackage, findPackagePath } from 'fd-package-json';
-import { detect } from 'package-manager-detector';
 
 import { version } from '../../package.json';
 import { globalSettings } from '../cli/globalSettings';
@@ -20,6 +19,7 @@ import { getChromaticVersionSpecifier } from './get-chromatic-version';
 import { getFrameworkInfo } from './get-framework-info';
 import { getHasRouterPackage } from './get-has-router-package';
 import { getMonorepoType } from './get-monorepo-type';
+import { getPackageManagerInfo } from './get-package-manager-info';
 import { getPortableStoriesFileCount } from './get-portable-stories-usage';
 import { getActualPackageVersion, getActualPackageVersions } from './package-json';
 import { cleanPaths } from './sanitize';
@@ -57,10 +57,10 @@ export const computeStorybookMetadata = async ({
   mainConfig?: StorybookConfig & Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
-  const settings = await globalSettings();
+  const settings = isCI() ? undefined : await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
-    userSince: settings.value.userSince,
+    userSince: settings?.value.userSince,
     hasCustomBabel: false,
     hasCustomWebpack: false,
     hasStaticDirs: false,
@@ -120,19 +120,7 @@ export const computeStorybookMetadata = async ({
     metadata.monorepo = monorepoType;
   }
 
-  try {
-    const packageManagerType = await detect({ cwd: getProjectRoot() });
-    if (packageManagerType) {
-      metadata.packageManager = {
-        type: packageManagerType.name,
-        version: packageManagerType.version,
-        agent: packageManagerType.agent,
-      };
-    }
-
-    // Better be safe than sorry, some codebases/paths might end up breaking with something like "spawn pnpm ENOENT"
-    // so we just set the package manager if the detection is successful
-  } catch (err) {}
+  metadata.packageManager = await getPackageManagerInfo();
 
   const language = allDependencies.typescript ? 'typescript' : 'javascript';
 
@@ -225,7 +213,7 @@ export const computeStorybookMetadata = async ({
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
-  const storybookInfo = getStorybookInfo(configDir);
+  const storybookInfo = await getStorybookInfo(configDir);
 
   try {
     const { previewConfigPath: previewConfig } = storybookInfo;

@@ -1,7 +1,8 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { findUp } from 'find-up';
+import { join } from 'pathe';
 import type { PackageJson } from 'type-fest';
 
 import type { Dependency } from './types';
@@ -30,16 +31,19 @@ export const getActualPackageJson = async (
   packageName: string
 ): Promise<PackageJson | undefined> => {
   try {
-    let resolvedPackageJson = await findUp('package.json', { cwd: require.resolve(packageName) });
-
-    if (!resolvedPackageJson) {
-      // fallback to require.resolve
-      resolvedPackageJson = require.resolve(join(packageName, 'package.json'), {
-        paths: [process.cwd()],
-      });
+    let resolvedPackageJsonPath = await findUp('package.json', {
+      cwd: fileURLToPath(import.meta.resolve(packageName, process.cwd())),
+    });
+    if (!resolvedPackageJsonPath) {
+      resolvedPackageJsonPath = import.meta.resolve(
+        join(packageName, 'package.json'),
+        process.cwd()
+      );
     }
 
-    const packageJson = JSON.parse(await readFile(resolvedPackageJson, { encoding: 'utf8' }));
+    const { default: packageJson } = await import(pathToFileURL(resolvedPackageJsonPath).href, {
+      with: { type: 'json' },
+    });
     return packageJson;
   } catch (err) {
     return undefined;

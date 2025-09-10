@@ -1,7 +1,7 @@
+import { isCI } from 'storybook/internal/common';
 import { colors, logger } from 'storybook/internal/node-logger';
 
-const fancy =
-  process.platform !== 'win32' || process.env.CI || process.env.TERM === 'xterm-256color';
+const fancy = process.platform !== 'win32' || isCI() || process.env.TERM === 'xterm-256color';
 
 export const step = colors.gray('›');
 export const info = colors.blue(fancy ? 'ℹ' : 'i');

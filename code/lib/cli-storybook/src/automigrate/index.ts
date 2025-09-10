@@ -33,6 +33,12 @@ const logAvailableMigrations = () => {
   `);
 };
 
+const hasFailures = (fixResults: Record<string, FixStatus> | undefined): boolean => {
+  return Object.values(fixResults || {}).some(
+    (r) => r === FixStatus.FAILED || r === FixStatus.CHECK_FAILED
+  );
+};
+
 export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   logger.debug('Extracting storybook data...');
   const {
@@ -81,6 +87,10 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
 
   if (outcome && !options.skipDoctor) {
     await doctor({ configDir, packageManager: options.packageManager });
+  }
+
+  if (hasFailures(outcome?.fixResults)) {
+    throw new Error('Some migrations failed');
   }
 };
 
@@ -173,12 +183,8 @@ export const automigrate = async ({
     storiesPaths,
   });
 
-  const hasFailures = Object.values(fixResults).some(
-    (r) => r === FixStatus.FAILED || r === FixStatus.CHECK_FAILED
-  );
-
   // if migration failed, display a log file in the users cwd
-  if (hasFailures) {
+  if (hasFailures(fixResults)) {
     logTracker.enableLogWriting();
   }
 
@@ -321,7 +327,7 @@ export async function runFixes({
           const shouldRun = await prompt.confirm(
             {
               message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
-              initialValue: f.promptDefaultValue ?? true,
+              initialValue: f.defaultSelected ?? true,
             },
             {
               onCancel: () => {

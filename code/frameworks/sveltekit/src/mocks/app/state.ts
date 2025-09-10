@@ -1,8 +1,7 @@
 import { getContext, setContext } from 'svelte';
-import { state } from 'svelte/reactivity';
 
 function createMockedStateValue<T>(contextName: string, defaultValue?: T) {
-  let value = state.raw(getContext(contextName) ?? defaultValue);
+  let value = $state.raw(getContext(contextName) ?? defaultValue);
    
   return {
     get current() {
@@ -29,12 +28,12 @@ function createPageState() {
     state: {}
   };
 
-  return state.raw(contextValue);
+  return $state.raw(contextValue);
 }
 
 function createNavigatingState() {
   const contextValue = getContext('navigating-state-ctx') ?? null;
-  return state.raw(contextValue);
+  return $state.raw(contextValue);
 }
 
 function createUpdatedState() {

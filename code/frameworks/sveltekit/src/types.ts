@@ -61,6 +61,11 @@ export type SvelteKitParameters = Partial<{
     navigating: Record<string, any>;
     updated: boolean;
   };
+  state: {
+    page: Record<string, any>;
+    navigating: Record<string, any> | null;
+    updated: boolean;
+  };
   navigation: {
     goto: typeof goto;
     invalidate: typeof invalidate;

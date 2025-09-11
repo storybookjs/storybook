@@ -195,7 +195,7 @@ export class JsPackageManagerFactory {
 }
 
 function hasNPM(cwd?: string) {
-  const npmVersionCommand = spawnSync('npm', ['--version'], {
+  const npmVersionCommand = spawnSync('npm --version', {
     cwd,
     shell: true,
     env: {
@@ -207,7 +207,7 @@ function hasNPM(cwd?: string) {
 }
 
 function hasBun(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('bun', ['--version'], {
+  const pnpmVersionCommand = spawnSync('bun --version', {
     cwd,
     shell: true,
     env: {
@@ -219,7 +219,7 @@ function hasBun(cwd?: string) {
 }
 
 function hasPNPM(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('pnpm', ['--version'], {
+  const pnpmVersionCommand = spawnSync('pnpm --version', {
     cwd,
     shell: true,
     env: {
@@ -231,7 +231,7 @@ function hasPNPM(cwd?: string) {
 }
 
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
-  const yarnVersionCommand = spawnSync('yarn', ['--version'], {
+  const yarnVersionCommand = spawnSync('yarn --version', {
     cwd,
     shell: true,
     env: {

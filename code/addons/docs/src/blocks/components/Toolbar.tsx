@@ -97,11 +97,14 @@ export const Toolbar: FC<ToolbarProps> = ({
         </>
       )}
     </Wrapper>
-    {baseUrl && storyId && (
+    {isLoading ? (
       <Wrapper key="right">
-        {isLoading ? (
-          <IconPlaceholder />
-        ) : (
+        <IconPlaceholder />
+      </Wrapper>
+    ) : (
+      baseUrl &&
+      storyId && (
+        <Wrapper key="right">
           <IconButton key="opener" asChild>
             <a
               href={getStoryHref(baseUrl, storyId)}
@@ -112,8 +115,8 @@ export const Toolbar: FC<ToolbarProps> = ({
               <ShareAltIcon />
             </a>
           </IconButton>
-        )}
-      </Wrapper>
+        </Wrapper>
+      )
     )}
   </Bar>
 );

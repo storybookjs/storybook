@@ -259,7 +259,7 @@ export const Preview: FC<PreviewProps> = ({
           border
           zoom={(z: number) => setScale(scale * z)}
           resetZoom={() => setScale(1)}
-          storyId={isLoading || !childProps ? undefined : getStoryId(childProps, context)}
+          storyId={!isLoading && childProps ? getStoryId(childProps, context) : undefined}
           baseUrl="./iframe.html"
         />
       )}

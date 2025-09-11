@@ -71,7 +71,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
 
         // There is only a package-lock.json
         findUpSyncMock.mockImplementation((filename) => {
-          if (filename === 'package-lock.json') {
+          if (typeof filename === 'string' && filename === 'package-lock.json') {
             return '/Users/johndoe/Documents/package-lock.json';
           }
           return undefined;
@@ -124,7 +124,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
 
         // There is only a pnpm-lock.yaml
         findUpSyncMock.mockImplementation((filename) => {
-          if (filename === 'pnpm-lock.yaml') {
+          if (typeof filename === 'string' && filename === 'pnpm-lock.yaml') {
             return '/Users/johndoe/Documents/pnpm-lock.yaml';
           }
           return undefined;
@@ -212,7 +212,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
 
         // there is a yarn.lock file
         findUpSyncMock.mockImplementation((filename) => {
-          if (filename === 'yarn.lock') {
+          if (typeof filename === 'string' && filename === 'yarn.lock') {
             return '/Users/johndoe/Documents/yarn.lock';
           }
           return undefined;
@@ -252,7 +252,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
 
         // There is a yarn.lock
         findUpSyncMock.mockImplementation((filename) => {
-          if (filename === 'yarn.lock') {
+          if (typeof filename === 'string' && filename === 'yarn.lock') {
             return '/Users/johndoe/Documents/yarn.lock';
           }
           return undefined;
@@ -339,7 +339,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         findUpSyncMock.mockImplementation((filename) => {
-          if (filename === 'yarn.lock') {
+          if (typeof filename === 'string' && filename === 'yarn.lock') {
             return '/Users/johndoe/Documents/yarn.lock';
           }
           return undefined;
@@ -386,7 +386,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
 
         // There is a bun.lockb
         findUpSyncMock.mockImplementation((filename) => {
-          if (filename === 'bun.lockb') {
+          if (typeof filename === 'string' && filename === 'bun.lockb') {
             return '/Users/johndoe/Documents/bun.lockb';
           }
           return undefined;

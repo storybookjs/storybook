@@ -4,6 +4,7 @@
 import type { Channel } from 'storybook/internal/channels';
 import { STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 
+import type { CallRef } from '../instrumenter';
 import {
   HIGHLIGHT,
   MAX_Z_INDEX,
@@ -24,6 +25,7 @@ import {
   mapBoxes,
   mapElements,
   normalizeOptions,
+  selectElements,
   showPopover,
   useStore,
 } from './utils';
@@ -42,7 +44,7 @@ export const useHighlights = (channel: Channel) => {
   const { document } = globalThis;
 
   const highlights = useStore<HighlightOptions[]>([]);
-  const elements = useStore<Map<HTMLElement, Highlight>>(new Map());
+  const elements = useStore<Map<Element, Highlight>>(new Map());
   const boxes = useStore<Box[]>([]);
 
   const clickCoords = useStore<{ x: number; y: number } | undefined>();
@@ -100,7 +102,9 @@ export const useHighlights = (channel: Channel) => {
 
   // Update highlight boxes for sticky elements when scrolling the window
   elements.subscribe((value) => {
-    const sticky = Array.from(value.keys()).filter(({ style }) => style.position === 'sticky');
+    const sticky = Array.from(value.keys()).filter(
+      (element) => getComputedStyle(element).position === 'sticky'
+    );
     const updateBoxes = () =>
       requestAnimationFrame(() => {
         boxes.set((current) =>
@@ -165,7 +169,7 @@ export const useHighlights = (channel: Channel) => {
     });
   });
 
-  const boxElementByTargetElement = new Map<HTMLElement, HTMLDivElement>(new Map());
+  const boxElementByTargetElement = new Map<Element, HTMLDivElement>(new Map());
 
   // Create an element for every highlight box
   boxes.subscribe((value) => {
@@ -560,41 +564,53 @@ export const useHighlights = (channel: Channel) => {
   };
 
   let removeTimeout: NodeJS.Timeout;
-  const scrollIntoView = (target: string, options?: ScrollIntoViewOptions) => {
+  const scrollIntoView = (
+    targets: string | string[] | CallRef[],
+    options: { highlight?: boolean } & ScrollIntoViewOptions = {}
+  ) => {
     const id = 'scrollIntoView-highlight';
     clearTimeout(removeTimeout);
     removeHighlight(id);
 
-    const element = document.querySelector(target);
-    if (!element) {
-      console.warn(`Cannot scroll into view: ${target} not found`);
+    const selectors = Array.isArray(targets) ? targets : [targets];
+    if (!selectors.length) {
+      return;
+    }
+    const root = document.getElementById('storybook-root');
+    const elements = selectors.flatMap((target) => selectElements(root, target));
+    if (elements.length === 0) {
+      console.warn(`No elements found for (${targets})`);
       return;
     }
 
-    element.scrollIntoView({ behavior: 'smooth', block: 'center', ...options });
-    const keyframeName = `kf-${Math.random().toString(36).substring(2, 15)}`;
-    highlights.set((value) => [
-      ...value,
-      {
-        id,
-        priority: 1000,
-        selectors: [target],
-        styles: {
-          outline: '2px solid #1EA7FD',
-          outlineOffset: '-1px',
-          animation: `${keyframeName} 3s linear forwards`,
+    const { highlight = true, ...scrollOptions } = options;
+    elements[0].scrollIntoView({ behavior: 'smooth', block: 'center', ...scrollOptions });
+
+    if (highlight) {
+      const keyframeName = `kf-${Math.random().toString(36).substring(2, 15)}`;
+      highlights.set((value) => [
+        ...value,
+        {
+          id,
+          priority: 1000,
+          selectors,
+          styles: {
+            outline: '2px solid #1EA7FD',
+            outlineOffset: '-1px',
+            animation: `${keyframeName} 3s linear forwards`,
+          },
+          keyframes: `@keyframes ${keyframeName} {
+            0% { outline: 2px solid #1EA7FD; }
+            20% { outline: 2px solid #1EA7FD00; }
+            40% { outline: 2px solid #1EA7FD; }
+            60% { outline: 2px solid #1EA7FD00; }
+            80% { outline: 2px solid #1EA7FD; }
+            100% { outline: 2px solid #1EA7FD00; }
+          }`,
         },
-        keyframes: `@keyframes ${keyframeName} {
-          0% { outline: 2px solid #1EA7FD; }
-          20% { outline: 2px solid #1EA7FD00; }
-          40% { outline: 2px solid #1EA7FD; }
-          60% { outline: 2px solid #1EA7FD00; }
-          80% { outline: 2px solid #1EA7FD; }
-          100% { outline: 2px solid #1EA7FD00; }
-        }`,
-      },
-    ]);
-    removeTimeout = setTimeout(() => removeHighlight(id), 3500);
+      ]);
+      removeTimeout = setTimeout(() => removeHighlight(id), 3500);
+    }
   };
 
   const onMouseMove = (event: MouseEvent): void => {

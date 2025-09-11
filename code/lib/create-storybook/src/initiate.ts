@@ -386,7 +386,7 @@ export const promptInstallType = async ({
 export function getStorybookVersionFromAncestry(
   ancestry: ReturnType<typeof getProcessAncestry>
 ): string | undefined {
-  for (const ancestor of ancestry.slice().reverse()) {
+  for (const ancestor of ancestry.toReversed()) {
     const match = ancestor.command?.match(/\s(?:create-storybook|storybook)@([^\s]+)/);
     if (match) {
       return match[1];

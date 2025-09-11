@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import boxen from 'boxen';
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
+import { getProcessAncestry } from 'process-ancestry';
 import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -375,6 +376,18 @@ export const promptInstallType = async ({
   return installType;
 };
 
+export function getStorybookVersionFromAncestry(
+  ancestry: ReturnType<typeof getProcessAncestry>
+): string | undefined {
+  for (const ancestor of ancestry.toReversed()) {
+    const match = ancestor.command?.match(/\s(?:create-storybook|storybook)@([^\s]+)/);
+    if (match) {
+      return match[1];
+    }
+  }
+  return undefined;
+}
+
 export async function doInitiate(options: CommandOptions): Promise<
   | {
       shouldRunDev: true;
@@ -418,6 +431,13 @@ export async function doInitiate(options: CommandOptions): Promise<
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, latestVersion);
   const borderColor = isOutdated ? '#FC521F' : '#F1618C';
+  let versionSpecifier = undefined;
+  try {
+    const ancestry = getProcessAncestry();
+    versionSpecifier = getStorybookVersionFromAncestry(ancestry);
+  } catch (err) {
+    //
+  }
 
   const messages = {
     welcome: `Adding Storybook version ${picocolors.bold(currentVersion)} to your project..`,
@@ -628,7 +648,12 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   if (!options.disableTelemetry) {
-    await telemetry('init', { projectType, features: telemetryFeatures, newUser });
+    await telemetry('init', {
+      projectType,
+      features: telemetryFeatures,
+      newUser,
+      versionSpecifier,
+    });
   }
 
   if ([ProjectType.REACT_NATIVE, ProjectType.REACT_NATIVE_AND_RNW].includes(projectType)) {

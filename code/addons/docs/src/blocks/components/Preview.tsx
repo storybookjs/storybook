@@ -245,6 +245,8 @@ export const Preview: FC<PreviewProps> = ({
     }
   };
 
+  const childProps = getChildProps(children);
+
   return (
     <PreviewContainer
       {...{ withSource, withToolbar }}
@@ -257,7 +259,7 @@ export const Preview: FC<PreviewProps> = ({
           border
           zoom={(z: number) => setScale(scale * z)}
           resetZoom={() => setScale(1)}
-          storyId={getStoryId(getChildProps(children), context)}
+          storyId={isLoading || !childProps ? undefined : getStoryId(childProps, context)}
           baseUrl="./iframe.html"
         />
       )}

@@ -900,6 +900,8 @@ async function prepareViteSandbox(cwd: string) {
   tsConfigJson.compilerOptions.erasableSyntaxOnly = false;
   // Lots of unnecessary imports of react that need fixing
   tsConfigJson.compilerOptions.noUnusedLocals = false;
+  // Means we can check our own public types
+  tsConfigJson.compilerOptions.skipLibCheck = false;
   await writeFile(tsConfigPath, JSON.stringify(tsConfigJson, null, 2));
 }
 

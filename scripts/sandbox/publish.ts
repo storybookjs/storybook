@@ -1,9 +1,9 @@
+import { cp, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import { existsSync } from 'fs';
-// eslint-disable-next-line depend/ban-dependencies
-import { copy, emptyDir, remove, writeFile } from 'fs-extra';
 // eslint-disable-next-line depend/ban-dependencies
 import { glob } from 'glob';
 import { dirname, join, relative } from 'path';
@@ -14,6 +14,13 @@ import { commitAllToGit } from './utils/git';
 import { getTemplatesData, renderTemplate } from './utils/template';
 
 export const logger = console;
+
+const emptyDir = async (dir: string): Promise<void> => {
+  await mkdir(dir, { recursive: true });
+
+  const names = await readdir(dir);
+  await Promise.all(names.map((name) => rm(join(dir, name), { recursive: true, force: true })));
+};
 
 interface PublishOptions {
   remote?: string;
@@ -61,7 +68,7 @@ const publish = async (options: PublishOptions & { tmpFolder: string }) => {
   await writeFile(join(tmpFolder, 'README.md'), output);
 
   logger.log(`🚛 Moving all the repros into the repository`);
-  await copy(REPROS_DIRECTORY, tmpFolder);
+  await cp(REPROS_DIRECTORY, tmpFolder, { recursive: true });
 
   await commitAllToGit({ cwd: tmpFolder, branch });
 
@@ -112,7 +119,7 @@ async function main() {
 
     if (existsSync(tmpFolder)) {
       logger.log('🚮 Removing the temporary folder..');
-      await remove(tmpFolder);
+      await rm(tmpFolder, { force: true, recursive: true });
     }
     process.exit(1);
   });

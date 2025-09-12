@@ -6635,7 +6635,7 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-native: ">=0.74.5"
-    react-native-web: ^0.19.12 || ^0.20.0
+    react-native-web: ^0.19.12 || ^0.20.0 || ^0.21.0
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
   languageName: unknown
@@ -11822,6 +11822,7 @@ __metadata:
     find-up: "npm:^7.0.0"
     ora: "npm:^5.4.1"
     picocolors: "npm:^1.1.0"
+    process-ancestry: "npm:^0.0.2"
     prompts: "npm:^2.4.0"
     react: "npm:^18.2.0"
     semver: "npm:^7.6.2"
@@ -21722,6 +21723,13 @@ __metadata:
   version: 5.0.0
   resolution: "proc-log@npm:5.0.0"
   checksum: 10c0/bbe5edb944b0ad63387a1d5b1911ae93e05ce8d0f60de1035b218cdcceedfe39dbd2c697853355b70f1a090f8f58fe90da487c85216bf9671f9499d1a897e9e3
+  languageName: node
+  linkType: hard
+
+"process-ancestry@npm:^0.0.2":
+  version: 0.0.2
+  resolution: "process-ancestry@npm:0.0.2"
+  checksum: 10c0/bca0290b7d3bd35da3a30bb958b2b0f2724f468b80d1b41e58d9a6a49fc42ff466faf49c2d085e94b7b660fee654be26e047b43f6b6065613ca123432bd409a9
   languageName: node
   linkType: hard
 

@@ -217,6 +217,9 @@ export const init: Task['run'] = async (
     case '@storybook/angular':
       await prepareAngularSandbox(cwd, template.name);
       break;
+    case '@storybook/react-vite':
+      await prepareViteSandbox(cwd);
+      break;
     default:
   }
 
@@ -876,6 +879,28 @@ async function prepareReactNativeWebSandbox(cwd: string) {
   if (!(await pathExists(join(cwd, 'src')))) {
     await mkdir(join(cwd, 'src'));
   }
+}
+
+async function prepareViteSandbox(cwd: string) {
+  const packageJsonPath = join(cwd, 'package.json');
+  const packageJson = await readJson(packageJsonPath);
+
+  packageJson.scripts = {
+    ...packageJson.scripts,
+    typecheck: 'yarn tsc -p tsconfig.app.json',
+  };
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+
+  const tsConfigPath = join(cwd, 'tsconfig.app.json');
+  const tsConfigContent = await readFile(tsConfigPath, { encoding: 'utf-8' });
+  // This does not preserve comments, but that shouldn't be an issue for sandboxes
+  const tsConfigJson = JSON5.parse(tsConfigContent);
+
+  // We use enums
+  tsConfigJson.compilerOptions.erasableSyntaxOnly = false;
+  // Lots of unnecessary imports of react that need fixing
+  tsConfigJson.compilerOptions.noUnusedLocals = false;
+  await writeFile(tsConfigPath, JSON.stringify(tsConfigJson, null, 2));
 }
 
 async function prepareAngularSandbox(cwd: string, templateName: string) {

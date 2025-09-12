@@ -93,6 +93,8 @@ interface TypeScriptPropsProps {
 }
 
 export const TypeScriptProps: FC<TypeScriptPropsProps> = () => <div>TypeScript!</div>;
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we can't expect error as it isn't an error in 18 (development) but it is in 19 (sandbox)
+// @ts-ignore not present on react 19
 TypeScriptProps.defaultProps = {
   any: 'Any value',
   string: 'A string value',

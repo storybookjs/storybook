@@ -278,7 +278,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDependencies: ['prop-types'],
+      extraDependencies: ['prop-types', '@types/prop-types'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,

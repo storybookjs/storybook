@@ -19,6 +19,6 @@ export const checkSandbox: Task = {
     return pathExists(builtSandboxDir);
   },
   async run({ sandboxDir }, { dryRun, debug }) {
-    await exec(`yarn tsc -p tsconfig.app.json`, { cwd: sandboxDir }, { dryRun, debug });
+    await exec(`yarn typecheck`, { cwd: sandboxDir }, { dryRun, debug });
   },
 };

@@ -15,21 +15,21 @@ export const WithPageData = {
           url: new URL('https://example.com/test?query=value'),
           params: {
             id: '123',
-            slug: 'test-slug'
+            slug: 'test-slug',
           },
           data: {
             user: {
               name: 'Test User',
-              email: 'test@example.com'
+              email: 'test@example.com',
             },
-            posts: ['Post 1', 'Post 2']
+            posts: ['Post 1', 'Post 2'],
           },
           status: 200,
           error: null,
           form: null,
           state: {
-            counter: 42
-          }
+            counter: 42,
+          },
         },
       },
     },
@@ -44,17 +44,17 @@ export const WithNavigating = {
           from: {
             params: {},
             route: { id: '/' },
-            url: new URL('https://example.com/')
+            url: new URL('https://example.com/'),
           },
           to: {
             params: { id: '456' },
             route: { id: '/posts/[id]' },
-            url: new URL('https://example.com/posts/456')
+            url: new URL('https://example.com/posts/456'),
           },
           type: 'link',
           willUnload: false,
           delta: 1,
-          complete: Promise.resolve()
+          complete: Promise.resolve(),
         },
       },
     },
@@ -82,10 +82,10 @@ export const WithPageError = {
           status: 404,
           error: {
             message: 'Page not found',
-            status: 404
+            status: 404,
           },
           form: null,
-          state: {}
+          state: {},
         },
       },
     },
@@ -104,9 +104,9 @@ export const WithFormData = {
           error: null,
           form: {
             success: true,
-            message: 'Form submitted successfully'
+            message: 'Form submitted successfully',
           },
-          state: {}
+          state: {},
         },
       },
     },
@@ -121,33 +121,33 @@ export const CompleteState = {
           url: new URL('https://example.com/complete?test=true'),
           params: {
             id: '789',
-            category: 'tech'
+            category: 'tech',
           },
           data: {
             title: 'Complete Test',
-            content: 'This is a complete state test'
+            content: 'This is a complete state test',
           },
           status: 200,
           error: null,
           form: {
-            submitted: true
+            submitted: true,
           },
           state: {
             theme: 'dark',
-            sidebarOpen: true
-          }
+            sidebarOpen: true,
+          },
         },
         navigating: {
           from: null,
           to: {
             params: { id: '789' },
             route: { id: '/posts/[id]' },
-            url: new URL('https://example.com/posts/789')
+            url: new URL('https://example.com/posts/789'),
           },
           type: 'goto',
           willUnload: false,
           delta: null,
-          complete: Promise.resolve()
+          complete: Promise.resolve(),
         },
         updated: false,
       },

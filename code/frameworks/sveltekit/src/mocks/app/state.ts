@@ -2,15 +2,15 @@ import { getContext, setContext } from 'svelte';
 
 function createMockedStateValue<T>(contextName: string, defaultValue?: T) {
   let value = $state.raw(getContext(contextName) ?? defaultValue);
-   
+
   return {
     get current() {
-      return value;
+      return value as T;
     },
     set current(newValue: T) {
       value = newValue;
       setContext(contextName, newValue);
-    }
+    },
   };
 }
 
@@ -19,13 +19,13 @@ function createPageState() {
     url: new URL('http://localhost:6006'),
     params: {},
     route: {
-      id: '/'
+      id: '/',
     },
     status: 200,
     error: null,
     data: {},
     form: undefined,
-    state: {}
+    state: {},
   };
 
   return $state.raw(contextValue);
@@ -38,7 +38,7 @@ function createNavigatingState() {
 
 function createUpdatedState() {
   const updatedValue = createMockedStateValue('updated-state-ctx', false);
-  
+
   return {
     get current() {
       return updatedValue.current;
@@ -47,7 +47,7 @@ function createUpdatedState() {
       const event = new CustomEvent('storybook:updated-check');
       window.dispatchEvent(event);
       return false;
-    }
+    },
   };
 }
 

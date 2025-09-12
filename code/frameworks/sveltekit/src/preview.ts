@@ -4,7 +4,7 @@ import { action } from 'storybook/actions';
 import { onMount } from 'svelte';
 
 import { setAfterNavigateArgument } from './mocks/app/navigation';
-import { setPageState, setNavigatingState, setUpdatedState } from './mocks/app/state';
+import { setNavigatingState, setPageState, setUpdatedState } from './mocks/app/state';
 import { setNavigating, setPage, setUpdated } from './mocks/app/stores';
 import type { HrefConfig, NormalizedHrefConfig, SvelteKitParameters } from './types';
 
@@ -24,7 +24,7 @@ const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
   // Support for $app/state (Svelte 5 runes)
   setPageState(svelteKitParameters?.state?.page);
   setNavigatingState(svelteKitParameters?.state?.navigating);
-  setUpdatedState(svelteKitParameters?.state?.updated);
+  setUpdatedState(!!svelteKitParameters?.state?.updated);
   setAfterNavigateArgument(svelteKitParameters?.navigation?.afterNavigate);
 
   onMount(() => {

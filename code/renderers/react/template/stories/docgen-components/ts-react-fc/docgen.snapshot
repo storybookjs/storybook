@@ -17,7 +17,7 @@ var StringEnum = /*#__PURE__*/function (StringEnum) {
   StringEnum["TopCenter"] = "top-center";
   return StringEnum;
 }(StringEnum || {});
-export const TypeScriptProps = props => /*#__PURE__*/React.createElement("div", null, "TypeScript!");
+export const TypeScriptProps = () => /*#__PURE__*/React.createElement("div", null, "TypeScript!");
 export const component = TypeScriptProps;
 TypeScriptProps.__docgenInfo = {
   "description": "",

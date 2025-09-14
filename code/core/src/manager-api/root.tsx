@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, ReactElement, ReactNode } from 'react';
 import React, {
   Component,
@@ -8,15 +7,18 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
 import { deprecate } from 'storybook/internal/client-logger';
 import {
+  DOCS_PREPARED,
   SET_STORIES,
   SHARED_STATE_CHANGED,
   SHARED_STATE_SET,
   STORY_CHANGED,
+  STORY_PREPARED,
 } from 'storybook/internal/core-events';
 import type { RouterData } from 'storybook/internal/router';
 import type {
@@ -40,7 +42,7 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 
 import { createContext } from './context';
 import getInitialState from './initial-state';
@@ -49,7 +51,6 @@ import { noArrayMerge } from './lib/merge';
 import type { ModuleFn } from './lib/types';
 import * as addons from './modules/addons';
 import * as channel from './modules/channel';
-import * as testProviders from './modules/experimental_testmodule';
 import * as globals from './modules/globals';
 import * as layout from './modules/layout';
 import * as notifications from './modules/notifications';
@@ -79,7 +80,6 @@ export type State = layout.SubState &
   stories.SubState &
   refs.SubState &
   notifications.SubState &
-  testProviders.SubState &
   version.SubState &
   url.SubState &
   shortcuts.SubState &
@@ -88,7 +88,6 @@ export type State = layout.SubState &
   whatsnew.SubState &
   RouterData &
   API_OptionsData &
-  DeprecatedState &
   Other;
 
 export type API = addons.SubAPI &
@@ -99,22 +98,12 @@ export type API = addons.SubAPI &
   globals.SubAPI &
   layout.SubAPI &
   notifications.SubAPI &
-  testProviders.SubAPI &
   shortcuts.SubAPI &
   settings.SubAPI &
   version.SubAPI &
   url.SubAPI &
   whatsnew.SubAPI &
   Other;
-
-interface DeprecatedState {
-  /** @deprecated Use index */
-  storiesHash: API_IndexHash;
-  /** @deprecated Use previewInitialized */
-  storiesConfigured: boolean;
-  /** @deprecated Use indexError */
-  storiesFailed?: Error;
-}
 
 interface Other {
   [key: string]: any;
@@ -180,7 +169,6 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
       addons,
       layout,
       notifications,
-      testProviders,
       settings,
       shortcuts,
       stories,
@@ -299,23 +287,7 @@ function ManagerConsumer<P = Combo>({
 
 export function useStorybookState(): State {
   const { state } = useContext(ManagerContext);
-  return {
-    ...state,
-
-    // deprecated fields for back-compat
-    get storiesHash() {
-      deprecate('state.storiesHash is deprecated, please use state.index');
-      return this.index || {};
-    },
-    get storiesConfigured() {
-      deprecate('state.storiesConfigured is deprecated, please use state.previewInitialized');
-      return this.previewInitialized;
-    },
-    get storiesFailed() {
-      deprecate('state.storiesFailed is deprecated, please use state.indexError');
-      return this.indexError;
-    },
-  };
+  return state;
 }
 export function useStorybookApi(): API {
   const { api } = useContext(ManagerContext);
@@ -368,9 +340,22 @@ export function useStoryPrepared(storyId?: StoryId) {
 
 export function useParameter<S>(parameterKey: string, defaultValue?: S) {
   const api = useStorybookApi();
+  const [parameter, setParameter] = useState(api.getCurrentParameter<S>(parameterKey));
 
-  const result = api.getCurrentParameter<S>(parameterKey);
-  return orDefault<S>(result, defaultValue!);
+  const handleParameterChange = useCallback(() => {
+    const newParameter = api.getCurrentParameter<S>(parameterKey);
+    setParameter(newParameter);
+  }, [api, parameterKey]);
+
+  useChannel(
+    {
+      [STORY_PREPARED]: handleParameterChange,
+      [DOCS_PREPARED]: handleParameterChange,
+    },
+    [handleParameterChange]
+  );
+
+  return orDefault<S>(parameter, defaultValue!);
 }
 
 // cache for taking care of HMR
@@ -513,10 +498,6 @@ export function useArgTypes(): ArgTypes {
   return (current?.type === 'story' && current.argTypes) || {};
 }
 
-export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
-export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-manager';
-export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
-
 export { addons } from './lib/addons';
 
 // We need to rename this so it's not compiled to a straight re-export
@@ -527,9 +508,3 @@ export { typesX as types };
 
 /* deprecated */
 export { mockChannel, type Addon, type AddonStore } from './lib/addons';
-
-export {
-  getStatusStoreByTypeId as experimental_getStatusStore,
-  useStatusStore as experimental_useStatusStore,
-  fullStatusStore as internal_fullStatusStore,
-} from './stores/status';

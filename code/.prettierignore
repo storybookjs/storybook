@@ -1,5 +1,9 @@
 *.mdx
 
+.yarn
+.vscode
+dist
+bench
 /.nx/cache
 core/report
 

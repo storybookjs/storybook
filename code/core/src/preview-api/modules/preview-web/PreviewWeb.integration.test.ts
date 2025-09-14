@@ -31,8 +31,8 @@ vi.mock('storybook/internal/channels', async (importOriginal) => {
     createBrowserChannel: () => mockChannel,
   };
 });
-vi.mock('@storybook/blocks', async () => {
-  const { CodeOrSourceMdx } = await import('../../../../../lib/blocks/src/blocks/mdx');
+vi.mock('@storybook/addon-docs/blocks', async () => {
+  const { CodeOrSourceMdx } = await import('../../../../../addons/docs/src/blocks/blocks/mdx');
   return {
     Docs: vi.fn(() => 'Docs'),
     CodeOrSourceMdx: CodeOrSourceMdx,

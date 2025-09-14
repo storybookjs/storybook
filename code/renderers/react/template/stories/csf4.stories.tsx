@@ -2,8 +2,8 @@
 import preview from '#.storybook/preview';
 
 const meta = preview.meta({
-  // @ts-expect-error fix globalThis.Components type not existing later
-  component: globalThis.Components.Button,
+  // @ts-expect-error fix globalThis.__TEMPLATE_COMPONENTS__ type not existing later
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   args: {
     label: 'Hello world!',
   },

@@ -7,7 +7,7 @@ import {
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
-import type { API_LoadedRefData, Addon_SidebarTopType, StoryIndex } from 'storybook/internal/types';
+import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -61,10 +61,10 @@ const TooltipNoteWrapper = styled(TooltipNote)({
   margin: 0,
 });
 
-const CreateNewStoryButton = styled(IconButton)(({ theme }) => ({
+const CreateNewStoryButton = styled(IconButton)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
   color: theme.color.mediumdark,
-  width: 32,
-  height: 32,
+  width: isMobile ? 36 : 32,
+  height: isMobile ? 36 : 32,
   borderRadius: theme.appBorderRadius + 2,
 }));
 
@@ -117,7 +117,6 @@ export interface SidebarProps extends API_LoadedRefData {
   refs: State['refs'];
   allStatuses: StatusesByStoryIdAndTypeId;
   menu: any[];
-  extra: Addon_SidebarTopType[];
   storyId?: string;
   refId?: string;
   menuHighlighted?: boolean;
@@ -137,7 +136,6 @@ export const Sidebar = React.memo(function Sidebar({
   allStatuses,
   previewInitialized,
   menu,
-  extra,
   menuHighlighted = false,
   enableShortcuts = true,
   isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
@@ -155,14 +153,13 @@ export const Sidebar = React.memo(function Sidebar({
   const api = useStorybookApi();
 
   return (
-    <Container className="container sidebar-container">
+    <Container className="container sidebar-container" aria-label="Global">
       <ScrollArea vertical offset={3} scrollbarSize={6}>
         <Top row={1.6}>
           <Heading
             className="sidebar-header"
             menuHighlighted={menuHighlighted}
             menu={menu}
-            extra={extra}
             skipLinkHref="#storybook-preview-wrapper"
             isLoading={isLoading}
             onMenuClick={onMenuClick}
@@ -179,6 +176,8 @@ export const Sidebar = React.memo(function Sidebar({
                     tooltip={<TooltipNoteWrapper note="Create a new story" />}
                   >
                     <CreateNewStoryButton
+                      aria-label="Create a new story"
+                      isMobile={isMobile}
                       onClick={() => {
                         setIsFileSearchModalOpen(true);
                       }}

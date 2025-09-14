@@ -1,22 +1,16 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage } from './util';
+import { SbPage, hasOnboardingFeature } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
 
-const supportsOnboarding =
-  templateName.includes('react') ||
-  templateName.includes('vue3') ||
-  templateName.includes('angular') ||
-  templateName.includes('next');
-
 test.describe('addon-onboarding', () => {
   test.skip(type === 'build', `Skipping addon tests for production Storybooks`);
   test.skip(
-    !supportsOnboarding,
+    !hasOnboardingFeature(templateName),
     `Skipping ${templateName}, which does not have addon-onboarding set up.`
   );
   test('the onboarding flow', async ({ page }) => {
@@ -45,6 +39,11 @@ test.describe('addon-onboarding', () => {
 
     await expect(page.getByText('You just added your first')).toBeVisible();
     await page.getByLabel('Last').click();
+
+    await page.getByRole('checkbox', { name: 'Application UI' }).check();
+    await page.getByRole('checkbox', { name: 'Functional testing' }).check();
+    await page.getByRole('combobox').selectOption('Web Search');
+    await page.getByRole('button', { name: 'Submit' }).click();
 
     await expect(
       sbPage.previewIframe().getByRole('heading', { name: 'Configure your project' })

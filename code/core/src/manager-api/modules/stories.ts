@@ -41,7 +41,6 @@ import type {
   StoryName,
   StoryPreparedPayload,
 } from 'storybook/internal/types';
-import type { StatusByTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -220,6 +219,14 @@ export interface SubAPI {
    * @returns {StoryId} The ID of the leaf story, or null if no leaf story was found.
    */
   findLeafStoryId(index: API_IndexHash, storyId: StoryId): StoryId;
+  /**
+   * Finds all the leaf story IDs for the given entry ID in the given index.
+   *
+   * @param {StoryId} entryId - The ID of the entry to find the leaf story IDs for.
+   * @returns {StoryId[]} The IDs of all the leaf stories, or an empty array if no leaf stories were
+   *   found.
+   */
+  findAllLeafStoryIds(entryId: string): StoryId[];
   /**
    * Finds the ID of the sibling story in the given direction for the given story ID in the given
    * story index.
@@ -475,6 +482,25 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
     findLeafStoryId(index, storyId) {
       return api.findLeafEntry(index, storyId)?.id;
+    },
+    findAllLeafStoryIds(entryId) {
+      const { index } = store.getState();
+      if (!index) {
+        return [];
+      }
+      const findChildEntriesRecursively = (currentEntryId: StoryId, results: StoryId[] = []) => {
+        const node = index[currentEntryId];
+        if (!node) {
+          return results;
+        }
+        if (node.type === 'story') {
+          results.push(node.id);
+        } else if ('children' in node) {
+          node.children.forEach((childId) => findChildEntriesRecursively(childId, results));
+        }
+        return results;
+      };
+      return findChildEntriesRecursively(entryId, []);
     },
     findSiblingStoryId(storyId, index, direction, toSiblingGroup): any {
       if (toSiblingGroup) {

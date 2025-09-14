@@ -19,6 +19,13 @@ vi.mock('watchpack');
 vi.mock('es-toolkit/compat');
 vi.mock('storybook/internal/node-logger');
 
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: './favicon.svg',
+  };
+});
+
 const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
   normalizeStoriesEntry(
@@ -47,7 +54,7 @@ const getInitializedStoryIndexGenerator = async (
     indexers: [csfIndexer],
     configDir: workingDir,
     workingDir,
-    docs: { defaultName: 'docs', autodocs: false },
+    docs: { defaultName: 'docs' },
     ...overrides,
   };
   const generator = new StoryIndexGenerator(inputNormalizedStories, options);
@@ -155,6 +162,19 @@ describe('useStoriesJson', () => {
               "title": "A",
               "type": "story",
             },
+            "b--docs": {
+              "id": "b--docs",
+              "importPath": "./src/B.stories.ts",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "B",
+              "type": "docs",
+            },
             "b--story-one": {
               "id": "b--story-one",
               "importPath": "./src/B.stories.ts",
@@ -203,6 +223,19 @@ describe('useStoriesJson', () => {
               "title": "componentPath/package",
               "type": "story",
             },
+            "d--docs": {
+              "id": "d--docs",
+              "importPath": "./src/D.stories.jsx",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "D",
+              "type": "docs",
+            },
             "d--story-one": {
               "id": "d--story-one",
               "importPath": "./src/D.stories.jsx",
@@ -239,6 +272,21 @@ describe('useStoriesJson', () => {
                 "unattached-mdx",
               ],
               "title": "docs2/NoTitle",
+              "type": "docs",
+            },
+            "docs2-tags--docs": {
+              "id": "docs2-tags--docs",
+              "importPath": "./src/docs2/Tags.mdx",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "foo",
+                "bar",
+                "unattached-mdx",
+              ],
+              "title": "docs2/Tags",
               "type": "docs",
             },
             "docs2-yabbadabbadooo--docs": {
@@ -333,6 +381,19 @@ describe('useStoriesJson', () => {
               ],
               "title": "first-nested/deeply/Features",
               "type": "story",
+            },
+            "h--docs": {
+              "id": "h--docs",
+              "importPath": "./src/H.stories.mjs",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "H",
+              "type": "docs",
             },
             "h--story-one": {
               "id": "h--story-one",

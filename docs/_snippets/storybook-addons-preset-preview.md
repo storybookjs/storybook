@@ -14,7 +14,7 @@ export default preview;
 ```
 
 ```ts filename="example-addon/src/preview.ts" renderer="common" language="ts"
-import type { Renderer, ProjectAnnotations } from '@storybook/types';
+import type { Renderer, ProjectAnnotations } from 'storybook/internal/types';
 import { PARAM_KEY } from './constants';
 import { CustomDecorator } from './decorators';
 

@@ -2,7 +2,7 @@ name: Generate and publish sandboxes
 
 on:
   schedule:
-    - cron: "2 2 */1 * *"
+    - cron: '2 2 */1 * *'
   workflow_dispatch:
   # To test fixes on push rather than wait for the scheduling, do the following:
   # 1. Uncomment the lines below and add your branch.
@@ -14,8 +14,8 @@ on:
   # 4. 👉 DON'T FORGET TO UNDO THE STEPS BEFORE YOU MERGE YOUR CHANGES!
 
 env:
-  YARN_ENABLE_IMMUTABLE_INSTALLS: "false"
-  CLEANUP_SANDBOX_NODE_MODULES: "true"
+  YARN_ENABLE_IMMUTABLE_INSTALLS: 'false'
+  CLEANUP_SANDBOX_NODE_MODULES: 'true'
 
 defaults:
   run:
@@ -32,7 +32,7 @@ jobs:
 
       - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
 
       - name: Setup git user
         run: |
@@ -84,7 +84,7 @@ jobs:
 
       - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
 
       - name: Setup git user
         run: |

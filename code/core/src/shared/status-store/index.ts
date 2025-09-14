@@ -1,8 +1,7 @@
-import type { StoryId } from 'storybook/internal/csf';
-
 import { StatusTypeIdMismatchError as ManagerStatusTypeIdMismatchError } from '../../manager-errors';
 import { StatusTypeIdMismatchError as PreviewStatusTypeIdMismatchError } from '../../preview-errors';
 import { StatusTypeIdMismatchError as ServerStatusTypeIdMismatchError } from '../../server-errors';
+import type { StoryId } from '../../types';
 import type { UniversalStore } from '../universal-store';
 import type { StoreOptions } from '../universal-store/types';
 import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager';
@@ -76,6 +75,7 @@ export function createStatusStore(params: {
 }): {
   getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
   fullStatusStore: FullStatusStore;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
 };
 export function createStatusStore(params: {
   universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
@@ -85,6 +85,7 @@ export function createStatusStore(params: {
   getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
   fullStatusStore: FullStatusStore;
   useStatusStore: UseStatusStore;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
 };
 export function createStatusStore({
   universalStatusStore,
@@ -98,6 +99,7 @@ export function createStatusStore({
   getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
   fullStatusStore: FullStatusStore;
   useStatusStore?: UseStatusStore;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
 } {
   const fullStatusStore: FullStatusStore = {
     getAll() {
@@ -214,12 +216,13 @@ export function createStatusStore({
   });
 
   if (!useUniversalStore) {
-    return { getStatusStoreByTypeId, fullStatusStore };
+    return { getStatusStoreByTypeId, fullStatusStore, universalStatusStore };
   }
 
   return {
     getStatusStoreByTypeId,
     fullStatusStore,
+    universalStatusStore,
     useStatusStore: <T = StatusesByStoryIdAndTypeId>(
       selector?: (statuses: StatusesByStoryIdAndTypeId) => T
     ) => useUniversalStore(universalStatusStore, selector as any)[0] as T,

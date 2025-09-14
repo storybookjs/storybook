@@ -2,21 +2,16 @@
   import './header.css';
   import Button from './Button.svelte';
 
-  import { createEventDispatcher } from 'svelte';
+  /**
+   * @typedef {Object} Props
+   * @property {{name: string}} [user] The user object
+   * @property {() => void} [onLogin] The login event handler
+   * @property {() => void} [onLogout] The logout event handler
+   * @property {() => void} [onCreateAccount] The account creation event handler
+   */
 
-  export let user = null;
-
-  const dispatch = createEventDispatcher();
-
-  function onLogin(event) {
-    dispatch('login', event);
-  }
-  function onLogout(event) {
-    dispatch('logout', event);
-  }
-  function onCreateAccount(event) {
-    dispatch('createAccount', event);
-  }
+  /** @type {Props} */
+  const { user, onLogin, onLogout, onCreateAccount } = $props();
 </script>
 
 <header>
@@ -42,10 +37,10 @@
         <span class="welcome">
           Welcome, <b>{user.name}</b>!
         </span>
-        <Button size="small" on:click={onLogout} label="Log out" />
+        <Button size="small" onclick={onLogout} label="Log out" />
       {:else}
-        <Button size="small" on:click={onLogin} label="Log in" />
-        <Button primary size="small" on:click={onCreateAccount} label="Sign up" />
+        <Button size="small" onclick={onLogin} label="Log in" />
+        <Button primary size="small" onclick={onCreateAccount} label="Sign up" />
       {/if}
     </div>
   </div>

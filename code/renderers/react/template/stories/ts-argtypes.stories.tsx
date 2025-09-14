@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 
 import type { Args, Parameters, StoryContext } from 'storybook/internal/types';
 
-import { PureArgsTable as ArgsTable } from '@storybook/blocks';
 import type { StoryObj } from '@storybook/react';
+
+import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 
 import { mapValues } from 'es-toolkit/compat';
 import { inferControls } from 'storybook/preview-api';

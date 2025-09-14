@@ -5,19 +5,11 @@ sidebar:
   title: MDX
 ---
 
-<YouTubeCallout id="YeIvFke5_5Y" title="MDX Storybook Quick Tips" />
-
 [MDX](https://mdxjs.com/) files mix Markdown and Javascript/JSX to create rich interactive documentation. You can use Markdown’s readable syntax (such as `# heading`) for your documentation, include stories defined in [Component Story Format (CSF)](../api/csf.mdx), and freely embed JSX component blocks at any point in the file. All at once.
 
 In addition, you can write pure documentation pages in MDX and add them to Storybook alongside your stories.
 
 ![MDX simple example result](../_assets/writing-docs/mdx-hero.png)
-
-<Callout variant="info">
-
-  Writing stories directly in MDX was removed in Storybook 8, and we're no longer supporting it. Please reference the [previous documentation](../../../release-6-5/docs/writing-docs/mdx.mdx) for guidance on that feature or [migrate](../migration-guide/index.mdx#storiesmdx-to-mdxcsf) to the new format.
-  
-</Callout>
 
 ## Basic example
 
@@ -247,7 +239,9 @@ However, cross-linking documentation isn't restricted to documentation pages. Yo
 {/*You can also use anchors to target a specific section of a page: */}
 
 <Callout variant="info" icon="💡">
-  By applying this pattern with the Controls addon, all anchors will be ignored in Canvas based on how Storybook handles URLs to track the args values.
+
+Applying this pattern with the [Controls](../essentials/controls.mdx) feature, all anchors will be ignored in Canvas based on how Storybook handles URLs to track the args values.
+
 </Callout>
 
 ## Troubleshooting
@@ -276,7 +270,7 @@ If you run into a situation where Storybook is not able to detect and render the
 
 ### The migration seems flaky and keeps failing
 
-By default, running the [migration](../configure/upgrading.mdx) command will prompt you to update the existing MDX files in your project according to the MDX version supported by Storybook. However, this might be a disruptive process, specifically if you're upgrading from a previous version of Storybook where you were using the legacy MDX format. To help you troubleshoot those issues, we've prepared some recommendations that might help you.
+By default, running the [migration](../releases/upgrading.mdx) command will prompt you to update the existing MDX files in your project according to the MDX version supported by Storybook. However, this might be a disruptive process, specifically if you're upgrading from a previous version of Storybook where you were using the legacy MDX format. To help you troubleshoot those issues, we've prepared some recommendations that might help you.
 
 Start by running the following command inside your project directory:
 
@@ -294,7 +288,7 @@ Additionally, if you're working with VSCode, you can add the [MDX extension](htt
 
 ```json
 {
-  "mdx.experimentalLanguageServer": true
+  "mdx.server.enable": true
 }
 ```
 

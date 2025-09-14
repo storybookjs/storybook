@@ -48,16 +48,6 @@ describe('renders', () => {
     expect(buttonElement.textContent).toMatch(Secondary.args.label);
   });
 
-  // TODO TypeError: component.$on is not a function - Potentially only works in Svelte 4
-  it.skip('onclick handler is called', async () => {
-    const onClickSpy = vi.fn();
-    const { component } = render(Secondary.Component, { ...Secondary.props, onClick: onClickSpy });
-    component.$on('click', onClickSpy);
-    const buttonElement = screen.getByRole('button');
-    buttonElement.click();
-    expect(onClickSpy).toHaveBeenCalled();
-  });
-
   it('reuses args from composeStories', () => {
     const { getByText } = render(CSF3Primary.Component, CSF3Primary.props);
     const buttonElement = getByText(/foo/i);

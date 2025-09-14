@@ -1,24 +1,24 @@
-import * as React from 'react';
-import { Fragment, useEffect } from 'react';
+import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 
-import { DocsContext } from '@storybook/blocks';
 import { global } from '@storybook/global';
 
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
-// TODO add empty preview
-// import * as storysource from '@storybook/addon-storysource';
-// import * as designs from '@storybook/addon-designs/preview';
 import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
-import addonEssentials from '@storybook/addon-essentials';
-import addonTest from '@storybook/addon-test';
+// TODO add empty preview
+// import * as designs from '@storybook/addon-designs/preview';
+import addonDocs from '@storybook/addon-docs';
+import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
+import addonTest from '@storybook/addon-vitest';
 
+import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
+import { sb } from 'storybook/test';
 import {
   Global,
   ThemeProvider,
@@ -29,11 +29,20 @@ import {
   useTheme,
 } from 'storybook/theming';
 
-import * as addonsPreview from '../addons/toolbars/template/stories/preview';
+import { DocsPageWrapper } from '../addons/docs/src/blocks/components';
 import * as templatePreview from '../core/template/stories/preview';
-import { DocsPageWrapper } from '../lib/blocks/src/components';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
+
+sb.mock('../core/template/stories/test/ModuleMocking.utils.ts');
+sb.mock('../core/template/stories/test/ModuleSpyMocking.utils.ts', { spy: true });
+sb.mock('../core/template/stories/test/ModuleAutoMocking.utils.ts');
+/* eslint-disable depend/ban-dependencies */
+sb.mock(import('lodash-es'));
+sb.mock(import('lodash-es/add'));
+sb.mock(import('lodash-es/sum'));
+sb.mock(import('uuid'));
+/* eslint-enable depend/ban-dependencies */
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';
@@ -102,7 +111,7 @@ const PlayFnNotice = styled.div(
   })
 );
 
-const StackContainer = ({ children, layout }) => (
+const StackContainer: FC<React.PropsWithChildren<{ layout: string }>> = ({ children, layout }) => (
   <div
     style={{
       height: '100%',
@@ -145,7 +154,6 @@ const loaders = [
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
-    // eslint-disable-next-line no-underscore-dangle
     const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
     const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
     // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
@@ -155,7 +163,7 @@ const loaders = [
     }
     const csfFiles = await Promise.all(
       (relativeCsfPaths as string[]).map(async (blocksRelativePath) => {
-        const projectRelativePath = `./lib/blocks/src/${blocksRelativePath.replace(
+        const projectRelativePath = `./addons/docs/src/blocks/${blocksRelativePath.replace(
           /^..\//,
           ''
         )}.tsx`;
@@ -324,6 +332,24 @@ const decorators = [
 const parameters = {
   docs: {
     theme: themes.light,
+    codePanel: true,
+    source: {
+      transform: async (source) => {
+        try {
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = (await import('prettier/plugins/estree')).default;
+
+          return await prettier.format(source, {
+            parser: 'babel',
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        } catch (error) {
+          console.error(error);
+          return source;
+        }
+      },
+    },
     toc: {},
   },
   controls: {
@@ -332,7 +358,7 @@ const parameters = {
       { color: '#1EA7FD', title: 'Ocean' },
       { color: 'rgb(252, 82, 31)', title: 'Orange' },
       { color: 'rgba(255, 174, 0, 0.5)', title: 'Gold' },
-      { color: 'hsl(101, 52%, 49%)', title: 'Green' },
+      { color: 'hsl(102, 30.20%, 74.70%)', title: 'Green' },
       { color: 'hsla(179,65%,53%,0.5)', title: 'Seafoam' },
       { color: '#6F2CAC', title: 'Purple' },
       { color: '#2A0481', title: 'Ultraviolet' },
@@ -372,11 +398,11 @@ const parameters = {
 
 export default definePreview({
   addons: [
+    addonDocs(),
     addonThemes(),
-    addonEssentials(),
     addonA11y(),
     addonTest(),
-    addonsPreview,
+    addonPseudoStates(),
     templatePreview,
   ],
   decorators,

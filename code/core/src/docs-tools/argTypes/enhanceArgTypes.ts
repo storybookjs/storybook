@@ -1,6 +1,6 @@
 import type { Renderer, StoryContextForEnhancers } from 'storybook/internal/types';
 
-import { combineParameters } from 'storybook/preview-api';
+import { combineParameters } from '../../preview-api/modules/store/parameters';
 
 export const enhanceArgTypes = <TRenderer extends Renderer>(
   context: StoryContextForEnhancers<TRenderer>
@@ -12,10 +12,10 @@ export const enhanceArgTypes = <TRenderer extends Renderer>(
   } = context;
   const { extractArgTypes } = docs;
 
-  const extractedArgTypes = extractArgTypes && component ? extractArgTypes(component) : {};
-  const withExtractedTypes = extractedArgTypes
-    ? (combineParameters(extractedArgTypes, userArgTypes) as typeof userArgTypes)
-    : userArgTypes;
+  if (!extractArgTypes || !component) {
+    return userArgTypes;
+  }
 
-  return withExtractedTypes;
+  const extractedArgTypes = extractArgTypes(component);
+  return extractedArgTypes ? combineParameters(extractedArgTypes, userArgTypes) : userArgTypes;
 };

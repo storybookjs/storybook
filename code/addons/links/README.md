@@ -1,8 +1,8 @@
 # Story Links Addon
 
-The Storybook Links addon can be used to create links that navigate between stories in [Storybook](https://storybook.js.org).
+The Storybook Links addon can be used to create links that navigate between stories in [Storybook](https://storybook.js.org?ref=readme).
 
-[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support)
+[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support?ref=readme)
 
 ## Getting Started
 
@@ -80,8 +80,8 @@ export const third = () => <LinkTo story="index">Go back</LinkTo>;
 If you want to get an URL for a particular story, you may use `hrefTo` function. It returns a promise, which resolves to string containing a relative URL:
 
 ```js
-import { action } from 'storybook/actions';
 import { hrefTo } from '@storybook/addon-links';
+import { action } from 'storybook/actions';
 
 export default {
   title: 'Href',
@@ -132,7 +132,7 @@ export const second = () => <LinkTo story="first">Go to First</LinkTo>;
 
 It accepts all the props the `a` element does, plus `story` and `kind`. It the `kind` prop is omitted, the current kind will be preserved.
 
-```js
+```mdx
 <LinkTo
   kind="Toggle"
   story="off"
@@ -145,3 +145,5 @@ It accepts all the props the `a` element does, plus `story` and `kind`. It the `
 ```
 
 To implement such a component for another framework, you need to add special handling for `click` event on native `a` element. See [`RoutedLink` sources](https://github.com/storybookjs/storybook/blob/next/code/addons/links/src/react/components/RoutedLink.tsx) for reference.
+
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

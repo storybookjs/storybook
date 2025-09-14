@@ -3,24 +3,24 @@ import { cp, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import {
-  frameworkToRenderer as CoreFrameworkToRenderer,
   type JsPackageManager,
   type PackageJson,
   type PackageJsonWithDepsAndDevDeps,
+  frameworkToRenderer,
+  getProjectRoot,
 } from 'storybook/internal/common';
 import { versions as storybookMonorepoPackages } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
 import { findUpSync } from 'find-up';
 import picocolors from 'picocolors';
-import { coerce, major, satisfies } from 'semver';
+import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs';
 import { CommunityBuilder, CoreBuilder, SupportedLanguage } from './project_types';
-
-const logger = console;
 
 export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   const filePath = resolve(jsonPath);
@@ -67,21 +67,17 @@ export const writeFileAsJson = (jsonPath: string, content: unknown) => {
  * ]);
  * ```
  *
- * @param {Object} packageJson The current package.json so we can inspect its contents
- * @returns {Array} Contains the packages and versions that need to be installed
+ * @param packageJson The current package.json so we can inspect its contents
+ * @returns Contains the packages and versions that need to be installed
  */
-export async function getBabelDependencies(
-  packageManager: JsPackageManager,
-  packageJson: PackageJsonWithDepsAndDevDeps
-) {
+export async function getBabelDependencies(packageManager: JsPackageManager) {
   const dependenciesToAdd = [];
   let babelLoaderVersion = '^8.0.0-0';
 
-  const babelCoreVersion =
-    packageJson.dependencies['babel-core'] || packageJson.devDependencies['babel-core'];
+  const babelCoreVersion = packageManager.getDependencyVersion('babel-core');
 
   if (!babelCoreVersion) {
-    if (!packageJson.dependencies['@babel/core'] && !packageJson.devDependencies['@babel/core']) {
+    if (!packageManager.getDependencyVersion('@babel/core')) {
       const babelCoreInstallVersion = await packageManager.getVersion('@babel/core');
       dependenciesToAdd.push(`@babel/core@${babelCoreInstallVersion}`);
     }
@@ -91,12 +87,12 @@ export async function getBabelDependencies(
       babelCoreVersion
     );
     // Babel 6
-    if (satisfies(latestCompatibleBabelVersion, '^6.0.0')) {
+    if (latestCompatibleBabelVersion && satisfies(latestCompatibleBabelVersion, '^6.0.0')) {
       babelLoaderVersion = '^7.0.0';
     }
   }
 
-  if (!packageJson.dependencies['babel-loader'] && !packageJson.devDependencies['babel-loader']) {
+  if (!packageManager.getDependencyVersion('babel-loader')) {
     const babelLoaderInstallVersion = await packageManager.getVersion(
       'babel-loader',
       babelLoaderVersion
@@ -142,9 +138,6 @@ type CopyTemplateFilesOptions = {
   features: string[];
 };
 
-/** @deprecated Please use `frameworkToRenderer` from `storybook/internal/common` instead */
-export const frameworkToRenderer = CoreFrameworkToRenderer;
-
 export const frameworkToDefaultBuilder: Record<
   SupportedFrameworks,
   CoreBuilder | CommunityBuilder
@@ -152,12 +145,10 @@ export const frameworkToDefaultBuilder: Record<
   angular: CoreBuilder.Webpack5,
   ember: CoreBuilder.Webpack5,
   'html-vite': CoreBuilder.Vite,
-  'html-webpack5': CoreBuilder.Webpack5,
   nextjs: CoreBuilder.Webpack5,
   nuxt: CoreBuilder.Vite,
-  'experimental-nextjs-vite': CoreBuilder.Vite,
+  'nextjs-vite': CoreBuilder.Vite,
   'preact-vite': CoreBuilder.Vite,
-  'preact-webpack5': CoreBuilder.Webpack5,
   qwik: CoreBuilder.Vite,
   'react-native-web-vite': CoreBuilder.Vite,
   'react-vite': CoreBuilder.Vite,
@@ -165,12 +156,9 @@ export const frameworkToDefaultBuilder: Record<
   'server-webpack5': CoreBuilder.Webpack5,
   solid: CoreBuilder.Vite,
   'svelte-vite': CoreBuilder.Vite,
-  'svelte-webpack5': CoreBuilder.Webpack5,
   sveltekit: CoreBuilder.Vite,
   'vue3-vite': CoreBuilder.Vite,
-  'vue3-webpack5': CoreBuilder.Webpack5,
   'web-components-vite': CoreBuilder.Vite,
-  'web-components-webpack5': CoreBuilder.Webpack5,
   // Only to pass type checking, will never be used
   'react-rsbuild': CommunityBuilder.Rsbuild,
   'vue3-rsbuild': CommunityBuilder.Rsbuild,
@@ -184,7 +172,7 @@ export async function getVersionSafe(packageManager: JsPackageManager, packageNa
   try {
     let version = await packageManager.getInstalledVersion(packageName);
     if (!version) {
-      const deps = await packageManager.getAllDependencies();
+      const deps = packageManager.getAllDependencies();
       const versionSpecifier = deps[packageName];
       version = versionSpecifier ?? '';
     }
@@ -211,24 +199,10 @@ export async function copyTemplateFiles({
   commonAssetsDir,
   features,
 }: CopyTemplateFilesOptions) {
-  let languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
-    // keeping this for backwards compatibility in case community packages are using it
-    typescript: 'ts',
+  const languageFolderMapping: Record<SupportedLanguage | 'typescript', string> = {
     [SupportedLanguage.JAVASCRIPT]: 'js',
-    [SupportedLanguage.TYPESCRIPT_4_9]: 'ts-4-9',
+    [SupportedLanguage.TYPESCRIPT]: 'ts',
   };
-  // FIXME: remove after 9.0
-  if (templateLocation === 'svelte') {
-    const svelteVersion = await getVersionSafe(packageManager, 'svelte');
-    if (svelteVersion && major(svelteVersion) >= 5) {
-      languageFolderMapping = {
-        // keeping this for backwards compatibility in case community packages are using it
-        typescript: 'ts',
-        [SupportedLanguage.JAVASCRIPT]: 'svelte-5-js',
-        [SupportedLanguage.TYPESCRIPT_4_9]: 'svelte-5-ts-4-9',
-      };
-    }
-  }
   const templatePath = async () => {
     const baseDir = await getRendererDir(packageManager, templateLocation);
     const assetsDir = join(baseDir, 'template', 'cli');
@@ -286,27 +260,8 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
   await writeFile(templatePath, template);
 }
 
-// Given a package.json, finds any official storybook package within it
-// and if it exists, returns the version of that package from the specified package.json
-export function getStorybookVersionSpecifier(packageJson: PackageJsonWithDepsAndDevDeps) {
-  const allDeps = {
-    ...packageJson.dependencies,
-    ...packageJson.devDependencies,
-    ...packageJson.optionalDependencies,
-  };
-  const storybookPackage = Object.keys(allDeps).find((name: string) => {
-    return storybookMonorepoPackages[name as keyof typeof storybookMonorepoPackages];
-  });
-
-  if (!storybookPackage) {
-    throw new Error(`Couldn't find any official storybook packages in package.json`);
-  }
-
-  return allDeps[storybookPackage];
-}
-
 export async function isNxProject() {
-  return findUpSync('nx.json');
+  return findUpSync('nx.json', { stopAt: getProjectRoot() });
 }
 
 export function coerceSemver(version: string) {
@@ -315,8 +270,8 @@ export function coerceSemver(version: string) {
   return coercedSemver;
 }
 
-export async function hasStorybookDependencies(packageManager: JsPackageManager) {
-  const currentPackageDeps = await packageManager.getAllDependencies();
+export function hasStorybookDependencies(packageManager: JsPackageManager) {
+  const currentPackageDeps = packageManager.getAllDependencies();
 
   return Object.keys(currentPackageDeps).some((dep) => dep.includes('storybook'));
 }

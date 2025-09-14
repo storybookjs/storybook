@@ -1,6 +1,6 @@
 import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/types';
 
-import type { PM } from 'detect-package-manager';
+import type { DetectResult } from 'package-manager-detector';
 
 import type { MonorepoType } from './get-monorepo-type';
 
@@ -10,7 +10,9 @@ export type EventType =
   | 'build'
   | 'index'
   | 'upgrade'
+  | 'multi-upgrade'
   | 'init'
+  | 'init-step'
   | 'scaffolded-empty'
   | 'browser'
   | 'canceled'
@@ -24,7 +26,12 @@ export type EventType =
   | 'create-new-story-file-search'
   | 'testing-module-watch-mode'
   | 'testing-module-completed-report'
-  | 'testing-module-crash-report';
+  | 'testing-module-crash-report'
+  | 'addon-test'
+  | 'test-run'
+  | 'addon-onboarding'
+  | 'onboarding-survey'
+  | 'mocking';
 
 export interface Dependency {
   version: string | undefined;
@@ -39,6 +46,7 @@ export type StorybookMetadata = {
   storybookVersion?: string;
   storybookVersionSpecifier: string;
   generatedAt?: number;
+  userSince?: number;
   language: 'typescript' | 'javascript';
   framework?: {
     name: string;
@@ -48,8 +56,10 @@ export type StorybookMetadata = {
   renderer?: string;
   monorepo?: MonorepoType;
   packageManager?: {
-    type: PM;
-    version: string;
+    type: DetectResult['name'];
+    version: DetectResult['version'];
+    agent: DetectResult['agent'];
+    nodeLinker: 'node_modules' | 'pnp' | 'pnpm' | 'isolated' | 'hoisted';
   };
   typescriptOptions?: Partial<TypescriptOptions>;
   addons?: Record<string, StorybookAddon>;

@@ -20,11 +20,9 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
+import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
 import { darken, lighten } from 'polished';
-import {
-  internal_fullStatusStore as fullStatusStore,
-  useStorybookApi,
-} from 'storybook/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 import type {
   API,
   ComponentEntry,
@@ -418,7 +416,7 @@ const Node = React.memo<NodeProps>(function Node({
         <BranchNode
           id={id}
           style={color ? { color } : {}}
-          aria-controls={item.children && item.children[0]}
+          aria-controls={item.children && item.children.join(' ')}
           aria-expanded={isExpanded}
           depth={isOrphan ? item.depth : item.depth - 1}
           isComponent={item.type === 'component'}
@@ -445,7 +443,7 @@ const Node = React.memo<NodeProps>(function Node({
             item.name}
         </BranchNode>
         {contextMenu.node}
-        {['error', 'warn'].includes(itemStatus) && (
+        {(['status-value:error', 'status-value:warning'] as StatusValue[]).includes(itemStatus) && (
           <StatusButton type="button" status={itemStatus}>
             <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
               <UseSymbol type="dot" />

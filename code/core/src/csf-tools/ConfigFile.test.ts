@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { describe, expect, it } from 'vitest';
 
 import { babelPrint } from 'storybook/internal/babel';
@@ -517,6 +516,55 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           const core = { builder: 'webpack5' };
           export { core };
+        `);
+      });
+
+      it('sets nested field in parameters variable', () => {
+        expect(
+          setField(
+            ['parameters', 'a11y'],
+            'todo',
+            dedent`
+              const parameters = { foo: 'bar' };
+              const preview = {
+                parameters,
+              }
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const parameters = {
+            foo: 'bar',
+            a11y: 'todo'
+          };
+          const preview = {
+            parameters,
+          }
+          export default preview;
+        `);
+      });
+
+      it('sets nested field when parameters exists as both variable and direct object', () => {
+        expect(
+          setField(
+            ['parameters', 'a11y'],
+            'todo',
+            dedent`
+              const parameters = { foo: 'bar' };
+              const preview = {
+                parameters: {},
+              }
+              export default preview;
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          const parameters = { foo: 'bar' };
+          const preview = {
+            parameters: {
+              a11y: 'todo'
+            },
+          }
+          export default preview;
         `);
       });
     });
@@ -1211,6 +1259,25 @@ describe('ConfigFile', () => {
       `);
     });
 
+    it(`uses the existing node import when using node:xyz paths but the package xyz is already imported`, () => {
+      const source = dedent`
+        import { join } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setImport(['dirname'], 'node:path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        import { join, dirname } from 'path';
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
     it(`supports setting a default import for a field that does exist`, () => {
       const source = dedent`
         const config: StorybookConfig = { };
@@ -1356,6 +1423,30 @@ describe('ConfigFile', () => {
 
       const config = loadConfig(source).parse();
       config.setRequireImport(['dirname', 'basename'], 'path');
+
+      const parsed = babelPrint(config._ast);
+
+      expect(parsed).toMatchInlineSnapshot(`
+        const {
+          dirname,
+          basename,
+        } = require('path');
+
+        const config: StorybookConfig = { };
+        export default config;
+      `);
+    });
+
+    it(`supports setting a named import for a field where the source already exists without "node:" prefix`, () => {
+      const source = dedent`
+        const { dirname } = require('path');
+
+        const config: StorybookConfig = { };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setRequireImport(['dirname', 'basename'], 'node:path');
 
       const parsed = babelPrint(config._ast);
 

@@ -33,6 +33,7 @@ export enum Category {
   RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
   FRAMEWORK_NEXTJS = 'FRAMEWORK_NEXTJS',
   ADDON_VITEST = 'ADDON_VITEST',
+  ADDON_A11Y = 'ADDON_A11Y',
 }
 
 export class MissingStoryAfterHmrError extends StorybookError {
@@ -230,7 +231,7 @@ export class MountMustBeDestructuredError extends StorybookError {
       
       Note that Angular is not supported. As async/await is transpiled to support the zone.js polyfill. 
       
-      More info: https://storybook.js.org/docs/writing-tests/interaction-testing#run-code-before-the-component-gets-rendered
+      More info: https://storybook.js.org/docs/writing-tests/interaction-testing?ref=error#run-code-before-the-component-gets-rendered
       
       Received the following play function:
       ${data.playFunction}`,
@@ -355,6 +356,19 @@ export class UnsupportedViewportDimensionError extends StorybookError {
         
         You can either change the viewport for this story to use one of the supported units or skip the test by adding '!test' to the story's tags per https://storybook.js.org/docs/writing-stories/tags
       `,
+    });
+  }
+}
+
+export class ElementA11yParameterError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.ADDON_A11Y,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#a11y-addon-replace-element-parameter-with-context-parameter',
+      message:
+        'The "element" parameter in parameters.a11y has been removed. Use "context" instead.',
     });
   }
 }

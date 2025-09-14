@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { types as t, traverse } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 

@@ -6,7 +6,11 @@ exports[`Renders CSF2Secondary story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <button
         class="storybook-button storybook-button--medium storybook-button--secondary"
@@ -25,7 +29,11 @@ exports[`Renders CSF2StoryWithLocale story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <p>
         locale: 
@@ -48,7 +56,11 @@ exports[`Renders CSF2StoryWithParamsAndDecorator story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <button
         class="storybook-button storybook-button--medium storybook-button--secondary"
@@ -67,7 +79,11 @@ exports[`Renders CSF3Button story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <button
         class="storybook-button storybook-button--medium storybook-button--secondary"
@@ -86,7 +102,11 @@ exports[`Renders CSF3ButtonWithRender story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <div>
         <p
@@ -112,7 +132,11 @@ exports[`Renders CSF3Primary story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <button
         class="storybook-button storybook-button--large storybook-button--primary"
@@ -131,7 +155,11 @@ exports[`Renders WithLoader story 1`] = `
     <div
       data-testid="global-decorator"
     >
-      Global Decorator
+      <div
+        data-testid="decorator-string"
+      >
+        Global Decorator
+      </div>
       <br />
       <div>
         <div

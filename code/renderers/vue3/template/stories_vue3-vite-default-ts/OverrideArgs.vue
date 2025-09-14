@@ -18,10 +18,9 @@ export default {
     },
 
     backgroundColor: {
-      type: String
+      type: String,
     },
   },
-
 
   setup(props, { emit }) {
     const classes = {
@@ -34,7 +33,7 @@ export default {
     }));
 
     // Notice that `icon` prop component is still passed through even though it isn't mapped
-    return { classes, style, }
+    return { classes, style };
   },
 };
 </script>

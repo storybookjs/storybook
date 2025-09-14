@@ -1,22 +1,20 @@
 import { CommonModule } from '@angular/common';
+import type { NgModule, Provider, importProvidersFrom } from '@angular/core';
 import {
   Component,
   Directive,
   Injectable,
   InjectionToken,
   Input,
-  NgModule,
   Output,
   Pipe,
-  Provider,
   ɵReflectionCapabilities as ReflectionCapabilities,
-  importProvidersFrom,
   VERSION,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { dedent } from 'ts-dedent';
 
-import { NgModuleMetadata } from '../../types';
+import type { NgModuleMetadata } from '../../types';
 import { isComponentAlreadyDeclared } from './NgModulesAnalyzer';
 
 export const reflectionCapabilities = new ReflectionCapabilities();
@@ -29,12 +27,10 @@ export const uniqueArray = (arr: any[]) => {
 };
 
 export class PropertyExtractor implements NgModuleMetadata {
-  /* eslint-disable @typescript-eslint/lines-between-class-members */
   declarations?: any[] = [];
   imports?: any[];
   providers?: Provider[];
   applicationProviders?: Array<Provider | ReturnType<typeof importProvidersFrom>>;
-  /* eslint-enable @typescript-eslint/lines-between-class-members */
 
   constructor(
     private metadata: NgModuleMetadata,

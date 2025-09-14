@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
@@ -13,6 +12,7 @@ import {
   traverse,
 } from 'storybook/internal/babel';
 import { isExportStory, storyNameFromExport, toId } from 'storybook/internal/csf';
+import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentAnnotations,
   IndexInput,
@@ -26,8 +26,6 @@ import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType';
 import { findVarInitialization } from './findVarInitialization';
-
-const logger = console;
 
 // We add this BabelFile as a temporary workaround to deal with a BabelFileClass "ImportEquals should have a literal source" issue in no link mode with tsup
 interface BabelFile {
@@ -179,11 +177,11 @@ export interface CsfOptions {
 
 export class NoMetaError extends Error {
   constructor(message: string, ast: t.Node, fileName?: string) {
-    const msg = ``.trim();
+    const msg = message.trim();
     super(dedent`
-      CSF: ${message} ${formatLocation(ast, fileName)}
+      CSF: ${msg} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -195,7 +193,7 @@ export class MultipleMetaError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -207,7 +205,7 @@ export class MixedFactoryError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -219,7 +217,7 @@ export class BadMetaError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -277,16 +275,6 @@ export class CsfFile {
   _namedExportsOrder?: string[];
 
   imports: string[];
-
-  /** @deprecated Use `_options.fileName` instead */
-  get _fileName() {
-    return this._options.fileName;
-  }
-
-  /** @deprecated Use `_options.makeTitle` instead */
-  get _makeTitle() {
-    return this._options.makeTitle;
-  }
 
   constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
     this._ast = ast;
@@ -454,10 +442,18 @@ export class CsfFile {
             metaNode = decl;
           } else if (
             // export default { ... } as Meta<...>
+            // export default { ... } satisfies Meta<...>
             (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) &&
             t.isObjectExpression(decl.expression)
           ) {
             metaNode = decl.expression;
+          } else if (
+            // export default { ... } satisfies Meta as Meta<...>
+            t.isTSAsExpression(decl) &&
+            t.isTSSatisfiesExpression(decl.expression) &&
+            t.isObjectExpression(decl.expression.expression)
+          ) {
+            metaNode = decl.expression.expression;
           }
 
           if (metaNode && t.isProgram(parent)) {
@@ -507,10 +503,22 @@ export class CsfFile {
                 }
                 let storyNode;
                 if (t.isVariableDeclarator(decl)) {
-                  storyNode =
-                    t.isTSAsExpression(decl.init) || t.isTSSatisfiesExpression(decl.init)
-                      ? decl.init.expression
-                      : decl.init;
+                  if (
+                    t.isTSAsExpression(decl.init) &&
+                    t.isTSSatisfiesExpression(decl.init.expression)
+                  ) {
+                    // { ... } satisfies Meta<...> as Meta<...>
+                    storyNode = decl.init.expression.expression;
+                  } else if (
+                    t.isTSAsExpression(decl.init) ||
+                    t.isTSSatisfiesExpression(decl.init)
+                  ) {
+                    // { ... } as Meta<...>
+                    // { ... } satisfies Meta<...>
+                    storyNode = decl.init.expression;
+                  } else {
+                    storyNode = decl.init;
+                  }
                 } else {
                   storyNode = decl;
                 }
@@ -518,7 +526,8 @@ export class CsfFile {
                   t.isCallExpression(storyNode) &&
                   t.isMemberExpression(storyNode.callee) &&
                   t.isIdentifier(storyNode.callee.property) &&
-                  storyNode.callee.property.name === 'story'
+                  (storyNode.callee.property.name === 'story' ||
+                    storyNode.callee.property.name === 'extend')
                 ) {
                   storyIsFactory = true;
                   storyNode = storyNode.arguments[0];
@@ -573,7 +582,6 @@ export class CsfFile {
                           parameters.__id = (idProperty.value as t.StringLiteral).value;
                         }
                       }
-
                       self._storyAnnotations[exportName][p.key.name] = p.value;
                     }
                   });
@@ -597,7 +605,7 @@ export class CsfFile {
                 const { name: exportName } = specifier.exported;
                 const { name: localName } = specifier.local;
                 const decl = t.isProgram(parent)
-                  ? findVarInitialization(specifier.local.name, parent)
+                  ? findVarInitialization(localName, parent)
                   : specifier.local;
 
                 if (exportName === 'default') {
@@ -608,17 +616,34 @@ export class CsfFile {
                     metaNode = decl;
                   } else if (
                     // export default { ... } as Meta<...>
-                    t.isTSAsExpression(decl) &&
+                    // export default { ... } satisfies Meta<...>
+                    (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) &&
                     t.isObjectExpression(decl.expression)
                   ) {
                     metaNode = decl.expression;
+                  } else if (
+                    // export default { ... } satisfies Meta as Meta<...>
+                    t.isTSAsExpression(decl) &&
+                    t.isTSSatisfiesExpression(decl.expression) &&
+                    t.isObjectExpression(decl.expression.expression)
+                  ) {
+                    metaNode = decl.expression.expression;
                   }
 
                   if (metaNode && t.isProgram(parent)) {
                     self._parseMeta(metaNode, parent);
                   }
                 } else {
-                  self._storyAnnotations[exportName] = {};
+                  const annotations = {} as Record<string, t.Node>;
+                  const storyNode = decl;
+                  if (t.isObjectExpression(storyNode)) {
+                    (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
+                      if (t.isIdentifier(p.key)) {
+                        annotations[p.key.name] = p.value;
+                      }
+                    });
+                  }
+                  self._storyAnnotations[exportName] = annotations;
                   self._storyStatements[exportName] = decl;
                   self._storyPaths[exportName] = path;
                   self._stories[exportName] = {
@@ -684,7 +709,7 @@ export class CsfFile {
             throw new Error(dedent`
               Unexpected \`storiesOf\` usage: ${formatLocation(node, self._options.fileName)}.
 
-              SB8 does not support \`storiesOf\`. 
+              SB8 does not support \`storiesOf\`.
             `);
           }
           if (

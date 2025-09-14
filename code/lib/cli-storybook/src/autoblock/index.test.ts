@@ -1,19 +1,11 @@
-import { expect, test, vi } from 'vitest';
-
-import { JsPackageManagerFactory } from 'storybook/internal/common';
-import { logger as loggerRaw } from 'storybook/internal/node-logger';
-
-import stripAnsi from 'strip-ansi';
+import { beforeEach, expect, test, vi } from 'vitest';
 
 import { autoblock } from './index';
-import { createBlocker } from './types';
+import { type BlockerModule, createBlocker } from './types';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<any>()),
   writeFile: vi.fn(),
-}));
-vi.mock('boxen', () => ({
-  default: vi.fn((x) => x),
 }));
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
@@ -21,27 +13,33 @@ vi.mock('storybook/internal/node-logger', () => ({
     line: vi.fn(),
     plain: vi.fn(),
   },
+  prompt: {
+    logBox: vi.fn((x) => x),
+  },
 }));
-
-const logger = vi.mocked(loggerRaw);
 
 const blockers = {
   alwaysPass: createBlocker({
     id: 'alwaysPass',
     check: async () => false,
-    log: () => 'Always pass',
+    log: () => ({ title: 'Always pass', message: 'Always pass' }),
   }),
   alwaysFail: createBlocker({
     id: 'alwaysFail',
     check: async () => ({ bad: true }),
-    log: () => 'Always fail',
+    log: () => ({ title: 'Always fail', message: 'Always fail' }),
   }),
   alwaysFail2: createBlocker({
     id: 'alwaysFail2',
     check: async () => ({ disaster: true }),
-    log: () => 'Always fail 2',
+    log: () => ({ title: 'Always fail 2', message: 'Always fail 2' }),
   }),
 } as const;
+
+const mockPackageManager = {
+  getInstalledVersion: vi.fn(),
+  isPackageInstalled: vi.fn(),
+} as any;
 
 const baseOptions: Parameters<typeof autoblock>[0] = {
   configDir: '.storybook',
@@ -49,65 +47,36 @@ const baseOptions: Parameters<typeof autoblock>[0] = {
     stories: [],
   },
   mainConfigPath: '.storybook/main.ts',
-  packageJson: {
-    dependencies: {},
-    devDependencies: {},
-  },
-  packageManager: JsPackageManagerFactory.getPackageManager({ force: 'npm' }),
+  packageManager: mockPackageManager,
 };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  // Default mock behavior: package not installed
+  mockPackageManager.getInstalledVersion.mockResolvedValue(null);
+  mockPackageManager.isPackageInstalled.mockResolvedValue(false);
+});
 
 test('with empty list', async () => {
   const result = await autoblock({ ...baseOptions }, []);
   expect(result).toBe(null);
-  expect(logger.plain).not.toHaveBeenCalledWith(expect.stringContaining('No blockers found'));
 });
 
 test('all passing', async () => {
   const result = await autoblock({ ...baseOptions }, [
     Promise.resolve({ blocker: blockers.alwaysPass }),
     Promise.resolve({ blocker: blockers.alwaysPass }),
-  ]);
-  expect(result).toBe(null);
-  expect(logger.plain).toHaveBeenCalledWith(expect.stringContaining('No blockers found'));
+  ] as BlockerModule<any>[]);
+  expect(result?.[0].result).toEqual(false);
+  expect(result?.[1].result).toEqual(false);
 });
 
 test('1 fail', async () => {
   const result = await autoblock({ ...baseOptions }, [
     Promise.resolve({ blocker: blockers.alwaysPass }),
     Promise.resolve({ blocker: blockers.alwaysFail }),
-  ]);
+  ] as BlockerModule<any>[]);
 
-  expect(result).toBe('alwaysFail');
-  expect(stripAnsi(logger.plain.mock.calls[0][0])).toMatchInlineSnapshot(`
-    "Storybook has found potential blockers in your project that need to be resolved before upgrading:
-
-    Always fail
-
-    ─────────────────────────────────────────────────
-
-    Fix the above issues and try running the upgrade command again."
-  `);
-});
-
-test('multiple fails', async () => {
-  const result = await autoblock({ ...baseOptions }, [
-    Promise.resolve({ blocker: blockers.alwaysPass }),
-    Promise.resolve({ blocker: blockers.alwaysFail }),
-    Promise.resolve({ blocker: blockers.alwaysFail2 }),
-  ]);
-  expect(stripAnsi(logger.plain.mock.calls[0][0])).toMatchInlineSnapshot(`
-    "Storybook has found potential blockers in your project that need to be resolved before upgrading:
-
-    Always fail
-
-    ─────────────────────────────────────────────────
-
-    Always fail 2
-
-    ─────────────────────────────────────────────────
-
-    Fix the above issues and try running the upgrade command again."
-  `);
-
-  expect(result).toBe('alwaysFail');
+  expect(result?.[0].result).toEqual(false);
+  expect(result?.[1].result).toEqual({ bad: true });
 });

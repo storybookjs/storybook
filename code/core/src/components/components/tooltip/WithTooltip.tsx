@@ -16,14 +16,12 @@ const { document } = global;
 const TargetContainer = styled.div<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
   display: inline-block;
   cursor: ${(props) =>
-    // @ts-expect-error (non strict)
-    props.trigger === 'hover' || props.trigger.includes('hover') ? 'default' : 'pointer'};
+    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;
 
 const TargetSvgContainer = styled.g<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
   cursor: ${(props) =>
-    // @ts-expect-error (non strict)
-    props.trigger === 'hover' || props.trigger.includes('hover') ? 'default' : 'pointer'};
+    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
 `;
 
 interface WithHideFn {
@@ -46,6 +44,11 @@ export interface WithTooltipPureProps
    * @default false
    */
   closeOnOutsideClick?: boolean;
+  /**
+   * Optional container to portal the tooltip into. Can be a CSS selector string or a DOM Element.
+   * Falls back to document.body.
+   */
+  portalContainer?: Element | string | null;
 }
 
 // Pure, does not bind to the body
@@ -89,6 +92,7 @@ const WithTooltipPure = ({
   strategy,
   followCursor,
   onVisibleChange,
+  portalContainer,
   ...props
 }: WithTooltipPureProps) => {
   const Container = svg ? TargetSvgContainer : TargetContainer;
@@ -121,6 +125,11 @@ const WithTooltipPure = ({
     }
   );
 
+  const portalTarget: Element =
+    (typeof portalContainer === 'string'
+      ? document.querySelector(portalContainer)
+      : portalContainer) || document.body;
+
   const tooltipComponent = isVisible ? (
     <Tooltip
       placement={state?.placement}
@@ -140,7 +149,7 @@ const WithTooltipPure = ({
       <Container trigger={trigger} ref={setTriggerRef as any} {...(props as any)}>
         {children}
       </Container>
-      {isVisible && ReactDOM.createPortal(tooltipComponent, document.body)}
+      {isVisible && ReactDOM.createPortal(tooltipComponent, portalTarget)}
     </>
   );
 };

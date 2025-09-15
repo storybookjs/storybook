@@ -6297,11 +6297,11 @@ __metadata:
     ansi-regex: "npm:^6.0.1"
     cross-spawn: "npm:^7.0.6"
     es-toolkit: "npm:^1.36.0"
-    globby: "npm:^14.0.1"
     jscodeshift: "npm:^0.15.1"
     prettier: "npm:^3.5.3"
     storybook: "workspace:*"
     tiny-invariant: "npm:^1.3.1"
+    tinyglobby: "npm:^0.2.13"
     ts-dedent: "npm:^2.2.0"
     typescript: "npm:^5.8.3"
   languageName: unknown
@@ -6635,7 +6635,7 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-native: ">=0.74.5"
-    react-native-web: ^0.19.12 || ^0.20.0
+    react-native-web: ^0.19.12 || ^0.20.0 || ^0.21.0
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
   languageName: unknown
@@ -7790,7 +7790,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/lodash@npm:*, @types/lodash@npm:^4.17.13":
+"@types/lodash@npm:*":
   version: 4.17.20
   resolution: "@types/lodash@npm:4.17.20"
   checksum: 10c0/98cdd0faae22cbb8079a01a3bb65aa8f8c41143367486c1cbf5adc83f16c9272a2a5d2c1f541f61d0d73da543c16ee1d21cf2ef86cb93cd0cc0ac3bced6dd88f
@@ -11822,6 +11822,7 @@ __metadata:
     find-up: "npm:^7.0.0"
     ora: "npm:^5.4.1"
     picocolors: "npm:^1.1.0"
+    process-ancestry: "npm:^0.0.2"
     prompts: "npm:^2.4.0"
     react: "npm:^18.2.0"
     semver: "npm:^7.6.2"
@@ -21725,6 +21726,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"process-ancestry@npm:^0.0.2":
+  version: 0.0.2
+  resolution: "process-ancestry@npm:0.0.2"
+  checksum: 10c0/bca0290b7d3bd35da3a30bb958b2b0f2724f468b80d1b41e58d9a6a49fc42ff466faf49c2d085e94b7b660fee654be26e047b43f6b6065613ca123432bd409a9
+  languageName: node
+  linkType: hard
+
 "process-nextick-args@npm:~2.0.0":
   version: 2.0.1
   resolution: "process-nextick-args@npm:2.0.1"
@@ -24447,7 +24455,6 @@ __metadata:
     "@types/ejs": "npm:^3.1.1"
     "@types/find-cache-dir": "npm:^5.0.0"
     "@types/js-yaml": "npm:^4.0.5"
-    "@types/lodash": "npm:^4.17.13"
     "@types/node": "npm:^22.0.0"
     "@types/npmlog": "npm:^7.0.0"
     "@types/picomatch": "npm:^2.3.0"
@@ -24501,7 +24508,6 @@ __metadata:
     jsdoc-type-pratt-parser: "npm:^4.0.0"
     lazy-universal-dotenv: "npm:^4.0.0"
     leven: "npm:^4.0.0"
-    lodash: "npm:^4.17.21"
     memfs: "npm:^4.11.1"
     memoizerific: "npm:^1.11.3"
     mlly: "npm:^1.7.4"

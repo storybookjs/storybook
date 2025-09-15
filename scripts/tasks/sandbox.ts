@@ -46,6 +46,7 @@ export const sandbox: Task = {
       'serve',
       'chromatic',
       'bench',
+      'check-sandbox',
     ];
     const isSelectedTaskAfterSandboxCreation = tasksAfterSandbox.includes(selectedTask);
     return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);

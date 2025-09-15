@@ -54,6 +54,10 @@ jobs:
       parallelism: 5
       requires:
         - create-sandboxes
+  - check-sandboxes:
+      parallelism: 1
+      requires:
+        - create-sandboxes
   - test-portable-stories:
       requires:
         - build

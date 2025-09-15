@@ -17,7 +17,7 @@ import { esMain } from './utils/esmain';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
-type Template = Pick<TTemplate, 'inDevelopment' | 'skipTasks'>;
+type Template = Pick<TTemplate, 'inDevelopment' | 'skipTasks' | 'typeCheck'>;
 export type TemplateKey = keyof typeof allTemplates;
 export type Templates = Record<TemplateKey, Template>;
 
@@ -34,6 +34,14 @@ async function pathExists(path: string) {
   } catch {
     return false;
   }
+}
+
+function isTaskSkipped(template: Template, script: string): boolean {
+  return (
+    template.inDevelopment !== true &&
+    !template.skipTasks?.includes(script as SkippableTask) &&
+    (script !== 'check-sandbox' || template.typeCheck)
+  );
 }
 
 export async function getTemplate(
@@ -62,10 +70,7 @@ export async function getTemplate(
 
   potentialTemplateKeys = potentialTemplateKeys.filter((t) => {
     const currentTemplate = allTemplates[t] as Template;
-    return (
-      currentTemplate.inDevelopment !== true &&
-      !currentTemplate.skipTasks?.includes(scriptName as SkippableTask)
-    );
+    return isTaskSkipped(currentTemplate, scriptName);
   });
 
   if (potentialTemplateKeys.length !== total) {
@@ -86,6 +91,7 @@ export async function getTemplate(
 const tasksMap = {
   sandbox: 'create-sandboxes',
   build: 'build-sandboxes',
+  'check-sandbox': 'check-sandboxes',
   chromatic: 'chromatic-sandboxes',
   'e2e-tests': 'e2e-production',
   'e2e-tests-dev': 'e2e-dev',
@@ -122,10 +128,7 @@ async function checkParallelism(cadence?: Cadence, scriptName?: TaskKey) {
       const templateKeysPerScript = potentialTemplateKeys.filter((t) => {
         const currentTemplate = allTemplates[t] as Template;
 
-        return (
-          currentTemplate.inDevelopment !== true &&
-          !currentTemplate.skipTasks?.includes(script as SkippableTask)
-        );
+        return isTaskSkipped(currentTemplate, script);
       });
       const workflowJobsRaw: (string | { [key: string]: any })[] = data.workflows[cad].jobs;
       const workflowJobs = workflowJobsRaw

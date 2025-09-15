@@ -5,7 +5,7 @@ import * as _userEvent from '@testing-library/user-event';
 import { once } from 'storybook/internal/client-logger';
 import { instrument } from 'storybook/internal/instrumenter';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import type { Writable } from 'type-fest';
 
 import type { Promisify, PromisifyObject } from './utils';

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-jest",
-  "version": "9.1.6",
+  "version": "10.0.0-beta.2",
   "description": "Storybook Jest addon: Show Jest report in Storybook's addon panel",
   "keywords": [
     "jest",
@@ -29,19 +29,15 @@
   },
   "license": "MIT",
   "author": "Renaud Tertrais <renaud.tertrais@gmail.com> (https://github.com/renaudtertrais)",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./register": "./dist/manager.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -50,8 +46,8 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
     "tiny-invariant": "^1.3.1",
@@ -70,15 +66,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ]
-  },
-  "gitHead": "ce6a1e4a8d5ad69c699021a0b183df89cfc7b684",
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16",
   "storybook": {
     "displayName": "Jest",
     "icon": "https://pbs.twimg.com/profile_images/821713465245102080/mMtKIMax_400x400.jpg",

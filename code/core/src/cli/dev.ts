@@ -1,10 +1,8 @@
 import { cache } from 'storybook/internal/common';
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { logger, instance as npmLog } from 'storybook/internal/node-logger';
-import type { CLIOptions } from 'storybook/internal/types';
+import type { CLIOptions, PackageJson } from 'storybook/internal/types';
 
-import { findPackage } from 'fd-package-json';
-import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 function printError(error: any) {
@@ -42,8 +40,9 @@ export const dev = async (cliOptions: CLIOptions) => {
   const { env } = process;
   env.NODE_ENV = env.NODE_ENV || 'development';
 
-  const packageJson = await findPackage(__dirname);
-  invariant(packageJson, 'Failed to find the closest package.json file.');
+  const { default: packageJson } = await import('storybook/package.json', {
+    with: { type: 'json' },
+  });
   type Options = Parameters<typeof buildDevStandalone>[0];
 
   const options = {
@@ -52,7 +51,7 @@ export const dev = async (cliOptions: CLIOptions) => {
     configType: 'DEVELOPMENT',
     ignorePreview: !!cliOptions.previewUrl && !cliOptions.forceBuildPreview,
     cache: cache as any,
-    packageJson,
+    packageJson: packageJson as unknown as PackageJson, // type-fest types are wrong here because we're on an outdated version of the package
   } as Options;
 
   await withTelemetry(

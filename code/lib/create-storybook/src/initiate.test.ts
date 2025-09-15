@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ProjectType, type Settings } from 'storybook/internal/cli';
+import { telemetry } from 'storybook/internal/telemetry';
+
 import prompts from 'prompts';
 
-import type { Settings } from '../../../core/src/cli/globalSettings';
-import { ProjectType } from '../../../core/src/cli/project_types';
-import { telemetry } from '../../../core/src/telemetry';
 import {
   getCliIntegrationFromAncestry,
   getStorybookVersionFromAncestry,
@@ -13,7 +13,7 @@ import {
 } from './initiate';
 
 vi.mock('prompts', { spy: true });
-vi.mock('../../../core/src/telemetry');
+vi.mock('storybook/internal/telemetry');
 
 describe('promptNewUser', () => {
   let settings: Settings;

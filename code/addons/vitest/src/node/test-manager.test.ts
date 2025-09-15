@@ -47,6 +47,7 @@ vi.mock('vitest/node', async (importOriginal) => ({
   ...(await importOriginal()),
   createVitest: vi.fn(() => Promise.resolve(vitest)),
 }));
+
 const createVitest = vi.mocked(actualCreateVitest);
 
 const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;

@@ -28,6 +28,8 @@ vi.mock('storybook/internal/common', () => ({
   getProjectRoot: vi.fn(),
 }));
 
+vi.mock('@storybook/builder-webpack5', () => ({}));
+
 vi.mock('@angular-devkit/architect', () => ({
   targetFromTargetString: vi.fn(),
 }));

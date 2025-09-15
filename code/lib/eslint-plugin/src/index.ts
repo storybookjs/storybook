@@ -30,37 +30,40 @@ import storyExports from './rules/story-exports';
 import useStorybookExpect from './rules/use-storybook-expect';
 import useStorybookTestingLibrary from './rules/use-storybook-testing-library';
 
-// export plugin
-export = {
-  configs: {
-    // eslintrc configs
-    csf: csf,
-    'csf-strict': csfStrict,
-    'addon-interactions': addonInteractions,
-    recommended: recommended,
+export const configs = {
+  // eslintrc configs
+  csf: csf,
+  'csf-strict': csfStrict,
+  'addon-interactions': addonInteractions,
+  recommended: recommended,
 
-    // flat configs
-    'flat/csf': flatCsf,
-    'flat/csf-strict': flatCsfStrict,
-    'flat/addon-interactions': flatAddonInteractions,
-    'flat/recommended': flatRecommended,
-  },
-  rules: {
-    'await-interactions': awaitInteractions,
-    'context-in-play-function': contextInPlayFunction,
-    'csf-component': csfComponent,
-    'default-exports': defaultExports,
-    'hierarchy-separator': hierarchySeparator,
-    'meta-inline-properties': metaInlineProperties,
-    'meta-satisfies-type': metaSatisfiesType,
-    'no-redundant-story-name': noRedundantStoryName,
-    'no-renderer-packages': noRendererPackages,
-    'no-stories-of': noStoriesOf,
-    'no-title-property-in-meta': noTitlePropertyInMeta,
-    'no-uninstalled-addons': noUninstalledAddons,
-    'prefer-pascal-case': preferPascalCase,
-    'story-exports': storyExports,
-    'use-storybook-expect': useStorybookExpect,
-    'use-storybook-testing-library': useStorybookTestingLibrary,
-  },
+  // flat configs
+  'flat/csf': flatCsf,
+  'flat/csf-strict': flatCsfStrict,
+  'flat/addon-interactions': flatAddonInteractions,
+  'flat/recommended': flatRecommended,
+};
+
+export const rules = {
+  'await-interactions': awaitInteractions,
+  'context-in-play-function': contextInPlayFunction,
+  'csf-component': csfComponent,
+  'default-exports': defaultExports,
+  'hierarchy-separator': hierarchySeparator,
+  'meta-inline-properties': metaInlineProperties,
+  'meta-satisfies-type': metaSatisfiesType,
+  'no-redundant-story-name': noRedundantStoryName,
+  'no-renderer-packages': noRendererPackages,
+  'no-stories-of': noStoriesOf,
+  'no-title-property-in-meta': noTitlePropertyInMeta,
+  'no-uninstalled-addons': noUninstalledAddons,
+  'prefer-pascal-case': preferPascalCase,
+  'story-exports': storyExports,
+  'use-storybook-expect': useStorybookExpect,
+  'use-storybook-testing-library': useStorybookTestingLibrary,
+};
+
+export default {
+  configs,
+  rules,
 };

@@ -1,6 +1,35 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 
+import * as babel from 'storybook/internal/babel';
+import {
+  type Builder,
+  type NpmOptions,
+  ProjectType,
+  type Settings,
+  detect,
+  detectLanguage,
+  detectPnp,
+  globalSettings,
+  installableProjectTypes,
+  isStorybookInstantiated,
+} from 'storybook/internal/cli';
+import {
+  HandledError,
+  type JsPackageManager,
+  JsPackageManagerFactory,
+  commandLog,
+  getProjectRoot,
+  invalidateProjectRootCache,
+  isCI,
+  paddedLog,
+  versions,
+} from 'storybook/internal/common';
+import { withTelemetry } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
+import { NxProjectDetectedError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
+
 import boxen from 'boxen';
 import { findUp } from 'find-up';
 import picocolors from 'picocolors';
@@ -9,28 +38,6 @@ import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import * as babel from '../../../core/src/babel';
-import type { NpmOptions } from '../../../core/src/cli/NpmOptions';
-import {
-  detect,
-  detectLanguage,
-  detectPnp,
-  isStorybookInstantiated,
-} from '../../../core/src/cli/detect';
-import { type Settings, globalSettings } from '../../../core/src/cli/globalSettings';
-import type { Builder } from '../../../core/src/cli/project_types';
-import { ProjectType, installableProjectTypes } from '../../../core/src/cli/project_types';
-import type { JsPackageManager } from '../../../core/src/common/js-package-manager/JsPackageManager';
-import { JsPackageManagerFactory } from '../../../core/src/common/js-package-manager/JsPackageManagerFactory';
-import { HandledError } from '../../../core/src/common/utils/HandledError';
-import { isCI } from '../../../core/src/common/utils/envs';
-import { commandLog, paddedLog } from '../../../core/src/common/utils/log';
-import { getProjectRoot, invalidateProjectRootCache } from '../../../core/src/common/utils/paths';
-import versions from '../../../core/src/common/versions';
-import { withTelemetry } from '../../../core/src/core-server/withTelemetry';
-import { logger } from '../../../core/src/node-logger';
-import { NxProjectDetectedError } from '../../../core/src/server-errors';
-import { telemetry } from '../../../core/src/telemetry';
 import angularGenerator from './generators/ANGULAR';
 import emberGenerator from './generators/EMBER';
 import htmlGenerator from './generators/HTML';

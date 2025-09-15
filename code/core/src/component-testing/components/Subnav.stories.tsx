@@ -1,6 +1,16 @@
+import React from 'react';
+
 import { action } from 'storybook/actions';
+import { ManagerContext } from 'storybook/manager-api';
 
 import { Subnav } from './Subnav';
+
+const managerContext: any = {
+  state: {},
+  api: {
+    getData: () => ({ importPath: 'core/src/component-testing/components/Subnav.stories.tsx' }),
+  },
+};
 
 export default {
   title: 'Subnav',
@@ -8,6 +18,13 @@ export default {
   parameters: {
     layout: 'fullscreen',
   },
+  decorators: [
+    (Story: any) => (
+      <ManagerContext.Provider value={managerContext}>
+        <Story />
+      </ManagerContext.Provider>
+    ),
+  ],
   args: {
     controls: {
       start: action('start'),

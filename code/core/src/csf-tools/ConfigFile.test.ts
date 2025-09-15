@@ -1769,9 +1769,6 @@ describe('ConfigFile', () => {
         export default config;
       `);
     });
-
-    // TODO: dual default import+require
-    // TODO: preserve existing non-matching imports for all use cases
   });
 
   describe('removeEntryFromArray', () => {

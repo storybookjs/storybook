@@ -4021,6 +4021,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@nx/devkit@npm:^21.1.2":
+  version: 21.1.2
+  resolution: "@nx/devkit@npm:21.1.2"
+  dependencies:
+    ejs: "npm:^3.1.7"
+    enquirer: "npm:~2.3.6"
+    ignore: "npm:^5.0.4"
+    minimatch: "npm:9.0.3"
+    semver: "npm:^7.5.3"
+    tmp: "npm:~0.2.1"
+    tslib: "npm:^2.3.0"
+    yargs-parser: "npm:21.1.1"
+  peerDependencies:
+    nx: 21.1.2
+  checksum: 10c0/7bc8ea83e7024a925740bca0f24305363eeca483e9153d51ccce3eff2decbc23e0cbf23a9ee55d9c98d08bdb6dc9b4ee9987c2f134839397e46b4d98b0fcec9a
+  languageName: node
+  linkType: hard
+
 "@nx/js@npm:20.2.2":
   version: 20.2.2
   resolution: "@nx/js@npm:20.2.2"
@@ -6133,6 +6151,7 @@ __metadata:
     "@angular/forms": "npm:^19.1.1"
     "@angular/platform-browser": "npm:^19.1.1"
     "@angular/platform-browser-dynamic": "npm:^19.1.1"
+    "@nx/devkit": "npm:^21.1.2"
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"

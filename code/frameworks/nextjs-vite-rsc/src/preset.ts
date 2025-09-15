@@ -1,5 +1,3 @@
-// https://storybook.js.org/docs/react/addons/writing-presets
-import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -12,12 +10,7 @@ import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import postCssLoadConfig from 'postcss-load-config';
 
-import type { FrameworkOptions } from './types';
-
-const require = createRequire(import.meta.url);
-
-// the ESM output of this package is broken, so I had to force it to use the CJS version it's shipping.
-const vitePluginStorybookNextjs = require('vite-plugin-storybook-nextjs');
+import { rscBrowserModePlugin, vitestPluginNext } from './rsc-plugin';
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -30,20 +23,24 @@ export const core: PresetProperty<'core'> = async (config, options) => {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
+    renderer: undefined,
   };
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const result = [...entry, fileURLToPath(import.meta.resolve('@storybook/nextjs-vite/preview'))];
+  const result = [
+    ...entry,
+    fileURLToPath(import.meta.resolve('@storybook/nextjs-vite-rsc/preview')),
+  ];
   return result;
 };
 
 export const optimizeViteDeps = [
-  '@storybook/nextjs-vite/navigation.mock',
-  '@storybook/nextjs-vite/router.mock',
-  '@storybook/nextjs-vite > styled-jsx',
-  '@storybook/nextjs-vite > styled-jsx/style',
+  'next/dist/client/components/is-next-router-error',
+  '@storybook/nextjs-vite-rsc/navigation.mock',
+  '@storybook/nextjs-vite-rsc/router.mock',
+  '@storybook/nextjs-vite-rsc > styled-jsx',
+  '@storybook/nextjs-vite-rsc > styled-jsx/style',
 ];
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
@@ -62,10 +59,6 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
     }
   }
 
-  const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');
-
-  const nextDir = nextConfigPath ? dirname(nextConfigPath) : undefined;
-
   return {
     ...reactConfig,
     resolve: {
@@ -77,6 +70,6 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
         'styled-jsx/style.js': fileURLToPath(import.meta.resolve('styled-jsx/style')),
       },
     },
-    plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs({ dir: nextDir })],
+    plugins: [...(reactConfig?.plugins ?? []), rscBrowserModePlugin(), vitestPluginNext()],
   };
 };

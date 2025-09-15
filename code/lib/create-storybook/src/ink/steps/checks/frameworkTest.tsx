@@ -14,6 +14,7 @@ export const SUPPORTED_FRAMEWORKS: Framework[] = [
   'web-components-vite',
   'nextjs',
   'nextjs-vite',
+  'nextjs-vite-rsc',
   'sveltekit',
 ];
 

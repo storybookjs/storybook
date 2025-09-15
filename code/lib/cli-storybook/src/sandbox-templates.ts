@@ -249,6 +249,29 @@ export const baseTemplates = {
     },
     skipTasks: ['bench'],
   },
+  'nextjs-vite-rsc/default-ts': {
+    name: 'Next.js Latest (Vite | TypeScript)',
+    script:
+      'npx create-next-app {{beforeDir}} --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
+    expected: {
+      framework: '@storybook/nextjs-vite-rsc',
+      renderer: '@storybook/nextjs-vite-rsc',
+      builder: '@storybook/builder-vite',
+    },
+    inDevelopment: true,
+    modifications: {
+      useCsfFactory: true,
+      mainConfig: {
+        framework: '@storybook/nextjs-vite-rsc',
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+        },
+      },
+      extraDependencies: ['server-only', '@storybook/nextjs-vite-rsc', 'vite', 'prop-types'],
+    },
+    skipTasks: ['bench'],
+  },
   'react-vite/default-js': {
     name: 'React Latest (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template react',

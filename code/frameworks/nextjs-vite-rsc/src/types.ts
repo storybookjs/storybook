@@ -5,7 +5,7 @@ import type { StorybookConfig as StorybookConfigReactVite } from '@storybook/rea
 
 import type { NextRouter } from 'next/router';
 
-type FrameworkName = CompatibleString<'@storybook/nextjs-vite'>;
+type FrameworkName = CompatibleString<'@storybook/nextjs-vite-rsc'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {

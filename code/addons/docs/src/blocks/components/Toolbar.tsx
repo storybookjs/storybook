@@ -110,7 +110,7 @@ export const Toolbar: FC<ToolbarProps> = ({
               href={getStoryHref(baseUrl, storyId)}
               target="_blank"
               rel="noopener noreferrer"
-              title="Open canvas in new tab"
+              aria-label="Open canvas in new tab"
             >
               <ShareAltIcon />
             </a>

@@ -75,7 +75,7 @@ export const NextRouter = ({
     last: null,
     onRouterTransitionStart: null,
   };
-  return <AppRouter actionQueue={actionQueue}></AppRouter>;
+  return <AppRouter actionQueue={actionQueue}>{children}</AppRouter>;
 };
 
 function createFlightData(props: {
@@ -87,7 +87,13 @@ function createFlightData(props: {
   return [[props.initialTree, props.seedData, props.initialHead, props.isPossiblyPartialHead]];
 }
 
-export function AppRouter({ actionQueue }: { actionQueue: AppRouterActionQueue }) {
+export function AppRouter({
+  actionQueue,
+  children,
+}: {
+  actionQueue: AppRouterActionQueue;
+  children?: ReactNode;
+}) {
   const { canonicalUrl, cache, tree, nextUrl, focusAndScrollRef } = useActionQueue(actionQueue);
 
   const { searchParams, pathname } = useMemo(() => {
@@ -118,7 +124,8 @@ export function AppRouter({ actionQueue }: { actionQueue: AppRouterActionQueue }
                     parentSegmentPath: null,
                   }}
                 >
-                  <RedirectBoundary>{cache.rsc}</RedirectBoundary>
+                  {/*<RedirectBoundary>{cache.rsc}</RedirectBoundary>*/}
+                  <RedirectBoundary>{children}</RedirectBoundary>
                 </LayoutRouterContext.Provider>
               </AppRouterContext.Provider>
             </GlobalLayoutRouterContext.Provider>

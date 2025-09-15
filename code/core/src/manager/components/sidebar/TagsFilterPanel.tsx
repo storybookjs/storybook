@@ -20,9 +20,6 @@ import type { Link } from '../../../components/components/tooltip/TooltipLinkLis
 const BUILT_IN_TAGS = new Set([
   'dev',
   'test',
-  'dev-only',
-  'test-only',
-  'docs-only',
   'autodocs',
   'attached-mdx',
   'unattached-mdx',

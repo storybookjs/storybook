@@ -59,15 +59,15 @@ test.describe('tags', () => {
       await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
 
       // Select the dev-only tag
-      await tooltip.locator('#list-item-tag-dev-only').click();
+      await page.getByText('dev-only', { exact: true }).click();
 
       // Assert that only one story is visible in the sidebar
       const stories = page.locator('#storybook-explorer-menu .sidebar-item');
       await expect(stories).toHaveCount(1);
 
       // Clear selection
-      await expect(tooltip.locator('#reset-filters')).toBeVisible();
-      await tooltip.locator('#reset-filters').click();
+      await expect(tooltip.locator('#deselect-all')).toBeVisible();
+      await tooltip.locator('#deselect-all').click();
 
       // Checkboxes are not selected anymore
       await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
@@ -92,15 +92,15 @@ test.describe('tags', () => {
         await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
 
         // Select the dev-only tag
-        await tooltip.locator('#list-item-tag-dev-only').click();
+        await page.getByText('dev-only', { exact: true }).click();
 
         // Assert that only one story is visible in the (mobile) sidebar
         const stories = page.locator('#storybook-explorer-menu .sidebar-item');
         await expect(stories).toHaveCount(1);
 
         // Clear selection
-        await expect(tooltip.locator('#reset-filters')).toBeVisible();
-        await tooltip.locator('#reset-filters').click();
+        await expect(tooltip.locator('#deselect-all')).toBeVisible();
+        await tooltip.locator('#deselect-all').click();
 
         // Checkboxes are not selected anymore
         await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);

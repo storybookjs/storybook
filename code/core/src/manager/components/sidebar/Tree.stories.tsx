@@ -28,6 +28,8 @@ const managerContext: any = {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
     emit: fn().mockName('api::emit'),
+    getShortcutKeys: fn().mockName('api::getShortcutKeys'),
+    getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
     getElements: fn(
       () =>
         ({

@@ -3,9 +3,9 @@ import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
 
-import { initiate } from '..';
 import { version } from '../../package.json';
 import type { CommandOptions } from '../generators/types';
+import { initiate } from '../initiate';
 
 addToGlobalContext('cliVersion', version);
 

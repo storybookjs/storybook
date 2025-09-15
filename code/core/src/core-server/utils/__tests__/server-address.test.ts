@@ -13,12 +13,12 @@ const mockedNetworkAddress: NetworkInterfaceInfoIPv4 = {
   cidr: '192.168.0.5/24',
 };
 
-// We have to mock both the default export and named exports here for whatever reason
 vi.mock(
   'node:os',
-  async (importOriginal): Promise<typeof os> => ({
+  async (importOriginal): Promise<typeof os & { default: typeof os }> => ({
     ...(await importOriginal()),
-    default: {
+    // We have to mock both the default export and named exports here for whatever reason
+    ['default' as never]: {
       networkInterfaces: vi.fn(() => ({
         eth0: [mockedNetworkAddress],
       })),

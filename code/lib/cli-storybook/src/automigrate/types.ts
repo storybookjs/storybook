@@ -10,6 +10,7 @@ export interface CheckOptions {
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
+  csf4: boolean;
 }
 
 export interface RunOptions<ResultType> {

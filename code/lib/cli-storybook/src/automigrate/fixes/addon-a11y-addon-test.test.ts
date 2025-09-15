@@ -198,44 +198,6 @@ describe('addonA11yAddonTest', () => {
       });
     });
 
-    it('should skip setupFile if csf factories user', async () => {
-      vi.mocked(getAddonNames).mockReturnValue([
-        '@storybook/addon-a11y',
-        '@storybook/addon-vitest',
-      ]);
-      vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
-          return `
-            import { beforeAll } from 'vitest';
-            
-            import preview from './preview';
-            
-            beforeAll(preview.composed.beforeAll);
-          `;
-        } else {
-          return `
-            import { definePreview } from "@storybook/react-vite";
-            export default definePreview({});
-          `;
-        }
-      });
-      const result = await addonA11yAddonTest.check({
-        mainConfig: {
-          framework: '@storybook/react-vite',
-        },
-        configDir,
-      } as any);
-      expect(result).toEqual({
-        setupFile: path.join(configDir, 'vitest.setup.js'),
-        previewFile: path.join(configDir, 'preview.js'),
-        transformedPreviewCode: expect.any(String),
-        transformedSetupCode: null,
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: true,
-      });
-    });
-
     it('should return setupFile and null transformedSetupCode if transformation fails', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',

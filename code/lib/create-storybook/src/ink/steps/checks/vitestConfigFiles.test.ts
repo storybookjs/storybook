@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import * as babel from 'storybook/internal/babel';
-
 import { findUp } from 'find-up';
 
 import { vitestConfigFiles } from './vitestConfigFiles';
@@ -71,9 +69,15 @@ const fileMocks = {
   `,
 };
 
-vi.mock('node:fs/promises', () => ({
-  readFile: vi.fn().mockImplementation((filePath) => fileMocks[filePath as keyof typeof fileMocks]),
-}));
+vi.mock(import('node:fs/promises'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    readFile: vi
+      .fn()
+      .mockImplementation((filePath) => fileMocks[filePath as keyof typeof fileMocks]),
+  };
+});
 
 const mockContext: any = {};
 

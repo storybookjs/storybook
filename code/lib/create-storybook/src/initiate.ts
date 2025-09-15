@@ -388,6 +388,18 @@ export function getStorybookVersionFromAncestry(
   return undefined;
 }
 
+export function getCliIntegrationFromAncestry(
+  ancestry: ReturnType<typeof getProcessAncestry>
+): string | undefined {
+  for (const ancestor of ancestry.toReversed()) {
+    const match = ancestor.command?.match(/\s(sv(@[^ ]+)? create|sv(@[^ ]+)? add)/i);
+    if (match) {
+      return match[1].includes('add') ? 'sv add' : 'sv create';
+    }
+  }
+  return undefined;
+}
+
 export async function doInitiate(options: CommandOptions): Promise<
   | {
       shouldRunDev: true;
@@ -432,9 +444,11 @@ export async function doInitiate(options: CommandOptions): Promise<
   const isOutdated = lt(currentVersion, latestVersion);
   const borderColor = isOutdated ? '#FC521F' : '#F1618C';
   let versionSpecifier = undefined;
+  let cliIntegration = undefined;
   try {
     const ancestry = getProcessAncestry();
     versionSpecifier = getStorybookVersionFromAncestry(ancestry);
+    cliIntegration = getCliIntegrationFromAncestry(ancestry);
   } catch (err) {
     //
   }
@@ -653,6 +667,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       features: telemetryFeatures,
       newUser,
       versionSpecifier,
+      cliIntegration,
     });
   }
 

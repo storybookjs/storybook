@@ -5,7 +5,12 @@ import prompts from 'prompts';
 import type { Settings } from '../../../core/src/cli/globalSettings';
 import { ProjectType } from '../../../core/src/cli/project_types';
 import { telemetry } from '../../../core/src/telemetry';
-import { getStorybookVersionFromAncestry, promptInstallType, promptNewUser } from './initiate';
+import {
+  getCliIntegrationFromAncestry,
+  getStorybookVersionFromAncestry,
+  promptInstallType,
+  promptNewUser,
+} from './initiate';
 
 vi.mock('prompts', { spy: true });
 vi.mock('../../../core/src/telemetry');
@@ -216,5 +221,27 @@ describe('getStorybookVersionFromAncestry', () => {
   it('returns undefined if no storybook version found', () => {
     const ancestry = [{ command: 'node' }, { command: 'npm' }];
     expect(getStorybookVersionFromAncestry(ancestry as any)).toBeUndefined();
+  });
+});
+
+describe('getCliIntegrationFromAncestry', () => {
+  it('returns the CLI integration if nested calls', () => {
+    const ancestry = [{ command: 'node' }, { command: 'npx sv add' }, { command: 'npx sv create' }];
+    expect(getCliIntegrationFromAncestry(ancestry as any)).toBe('sv create');
+  });
+
+  it('returns the CLI integration if found', () => {
+    const ancestry = [{ command: 'node' }, { command: 'npx sv add' }];
+    expect(getCliIntegrationFromAncestry(ancestry as any)).toBe('sv add');
+  });
+
+  it('returns the CLI integration if found', () => {
+    const ancestry = [{ command: 'node' }, { command: 'npx sv@latest add' }];
+    expect(getCliIntegrationFromAncestry(ancestry as any)).toBe('sv add');
+  });
+
+  it('returns undefined if no CLI integration found', () => {
+    const ancestry = [{ command: 'node' }, { command: 'npm' }];
+    expect(getCliIntegrationFromAncestry(ancestry as any)).toBeUndefined();
   });
 });

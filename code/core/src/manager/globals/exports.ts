@@ -307,6 +307,7 @@ export default {
   'storybook/manager-api': [
     'ActiveTabs',
     'Consumer',
+    'openInEditor',
     'ManagerContext',
     'Provider',
     'RequestResponseError',
@@ -683,6 +684,7 @@ export default {
   'storybook/internal/manager-api': [
     'ActiveTabs',
     'Consumer',
+    'openInEditor',
     'ManagerContext',
     'Provider',
     'RequestResponseError',

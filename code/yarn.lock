@@ -6234,6 +6234,7 @@ __metadata:
     es-module-lexer: "npm:^1.5.0"
     fork-ts-checker-webpack-plugin: "npm:^9.1.0"
     html-webpack-plugin: "npm:^5.5.0"
+    launch-editor-middleware: "npm:^2.11.1"
     magic-string: "npm:^0.30.5"
     pretty-hrtime: "npm:^1.0.3"
     sirv: "npm:^2.0.4"
@@ -17912,6 +17913,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"launch-editor-middleware@npm:^2.11.1":
+  version: 2.11.1
+  resolution: "launch-editor-middleware@npm:2.11.1"
+  dependencies:
+    launch-editor: "npm:^2.11.1"
+  checksum: 10c0/d78a3cf0e166ebf9023f81a2f4b3f570422a7bd9edd505e85018247f3a75b7705f4973f3f3c3db0ec7aa118159fa85affc6d885f72ef0a267d1155ff3f5c2d19
+  languageName: node
+  linkType: hard
+
+"launch-editor@npm:^2.11.1":
+  version: 2.11.1
+  resolution: "launch-editor@npm:2.11.1"
+  dependencies:
+    picocolors: "npm:^1.1.1"
+    shell-quote: "npm:^1.8.3"
+  checksum: 10c0/b1aad04eef3a675aa35e82498bedaaeb790b9a02834a9cff79987dd7c6f5d92fd8f79ff7a8a4cd61681e0d462069de30d0bc65b41a936a7e3d700a4fdac1090e
+  languageName: node
+  linkType: hard
+
 "launch-editor@npm:^2.6.1":
   version: 2.10.0
   resolution: "launch-editor@npm:2.10.0"
@@ -23963,6 +23983,13 @@ __metadata:
   version: 1.8.2
   resolution: "shell-quote@npm:1.8.2"
   checksum: 10c0/85fdd44f2ad76e723d34eb72c753f04d847ab64e9f1f10677e3f518d0e5b0752a176fd805297b30bb8c3a1556ebe6e77d2288dbd7b7b0110c7e941e9e9c20ce1
+  languageName: node
+  linkType: hard
+
+"shell-quote@npm:^1.8.3":
+  version: 1.8.3
+  resolution: "shell-quote@npm:1.8.3"
+  checksum: 10c0/bee87c34e1e986cfb4c30846b8e6327d18874f10b535699866f368ade11ea4ee45433d97bf5eada22c4320c27df79c3a6a7eb1bf3ecfc47f2c997d9e5e2672fd
   languageName: node
   linkType: hard
 

@@ -1,0 +1,13 @@
+on:
+  workflow_dispatch:
+
+jobs:
+  fail:
+    name: Fail
+    runs-on: ubuntu-latest
+    if: boom()
+    steps:
+      - name: Fail
+        run: |
+          echo "Failing the workflow"
+          exit 1

@@ -26,6 +26,18 @@ export async function createViteServer(options: Options, devServer: Server) {
       fs: {
         strict: true,
       },
+      // @ts-expect-error Vite's types for server.open don't strictly match the 'open' package options it uses internally.
+      open:
+        process.env.BROWSER === 'none'
+          ? false
+          : process.env.BROWSER
+            ? {
+                app: {
+                  name: process.env.BROWSER,
+                  arguments: process.env.BROWSER_ARGS?.split(' '),
+                },
+              }
+            : undefined,
     },
     appType: 'custom' as const,
     optimizeDeps: await getOptimizeDeps(commonCfg, options),

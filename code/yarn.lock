@@ -6635,7 +6635,7 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-native: ">=0.74.5"
-    react-native-web: ^0.19.12 || ^0.20.0
+    react-native-web: ^0.19.12 || ^0.20.0 || ^0.21.0
     storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
   languageName: unknown
@@ -11822,6 +11822,7 @@ __metadata:
     find-up: "npm:^7.0.0"
     ora: "npm:^5.4.1"
     picocolors: "npm:^1.1.0"
+    process-ancestry: "npm:^0.0.2"
     prompts: "npm:^2.4.0"
     react: "npm:^18.2.0"
     semver: "npm:^7.6.2"
@@ -14479,6 +14480,13 @@ __metadata:
     utils-merge: "npm:1.0.1"
     vary: "npm:~1.1.2"
   checksum: 10c0/38168fd0a32756600b56e6214afecf4fc79ec28eca7f7a91c2ab8d50df4f47562ca3f9dee412da7f5cea6b1a1544b33b40f9f8586dbacfbdada0fe90dbb10a1f
+  languageName: node
+  linkType: hard
+
+"exsolve@npm:^1.0.7":
+  version: 1.0.7
+  resolution: "exsolve@npm:1.0.7"
+  checksum: 10c0/4479369d0bd84bb7e0b4f5d9bc18d26a89b6dbbbccd73f9d383d14892ef78ddbe159e01781055342f83dc00ebe90044036daf17ddf55cc21e2cac6609aa15631
   languageName: node
   linkType: hard
 
@@ -21725,6 +21733,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"process-ancestry@npm:^0.0.2":
+  version: 0.0.2
+  resolution: "process-ancestry@npm:0.0.2"
+  checksum: 10c0/bca0290b7d3bd35da3a30bb958b2b0f2724f468b80d1b41e58d9a6a49fc42ff466faf49c2d085e94b7b660fee654be26e047b43f6b6065613ca123432bd409a9
+  languageName: node
+  linkType: hard
+
 "process-nextick-args@npm:~2.0.0":
   version: 2.0.1
   resolution: "process-nextick-args@npm:2.0.1"
@@ -24486,6 +24501,7 @@ __metadata:
     es-toolkit: "npm:^1.36.0"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0"
     execa: "npm:^8.0.1"
+    exsolve: "npm:^1.0.7"
     fd-package-json: "npm:^1.2.0"
     fetch-retry: "npm:^6.0.0"
     find-cache-dir: "npm:^5.0.0"
@@ -24502,7 +24518,6 @@ __metadata:
     leven: "npm:^4.0.0"
     memfs: "npm:^4.11.1"
     memoizerific: "npm:^1.11.3"
-    mlly: "npm:^1.7.4"
     nanoid: "npm:^4.0.2"
     npmlog: "npm:^7.0.0"
     open: "npm:^8.4.0"

@@ -204,6 +204,9 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  /** Server addresses computed at runtime. Available in development to surface in the manager UI. */
+  address?: string;
+  networkAddress?: string;
 }
 
 export interface StorybookConfigOptions {

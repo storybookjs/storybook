@@ -200,6 +200,9 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
+  // Surface server addresses to the manager for UI usage (e.g., share tool)
+  globals.STORYBOOK_ADDRESS = options.address;
+  globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
 
   yield;
 

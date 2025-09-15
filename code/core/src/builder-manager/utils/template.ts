@@ -56,6 +56,15 @@ export const renderHTML = async (
       // These two need to be double stringified because the UI expects a string
       VERSIONCHECK: JSON.stringify(JSON.stringify(versionCheck), null, 2),
       PREVIEW_URL: JSON.stringify(previewUrl, null, 2), // global preview URL
+      // Server addresses available in development for sharing over network
+      STORYBOOK_ADDRESS: JSON.stringify(
+        (globals as any).STORYBOOK_ADDRESS ?? (globalThis as any).STORYBOOK_ADDRESS ?? undefined
+      ),
+      STORYBOOK_NETWORK_ADDRESS: JSON.stringify(
+        (globals as any).STORYBOOK_NETWORK_ADDRESS ??
+          (globalThis as any).STORYBOOK_NETWORK_ADDRESS ??
+          undefined
+      ),
       TAGS_OPTIONS: JSON.stringify(await tagsOptions, null, 2),
       ...stringifiedGlobals,
     },

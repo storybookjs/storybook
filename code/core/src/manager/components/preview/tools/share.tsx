@@ -9,7 +9,7 @@ import {
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { LinkIcon, ShareAltIcon } from '@storybook/icons';
+import { ShareAltIcon as BugIcon, LinkIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
 // @ts-expect-error see https://github.com/rosskhanas/react-qr-code/issues/251
@@ -18,7 +18,7 @@ import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-const { PREVIEW_URL, document } = global;
+const { PREVIEW_URL, document, STORYBOOK_NETWORK_ADDRESS } = global as any;
 
 const mapper = ({ state }: Combo) => {
   const { storyId, refId, refs } = state;
@@ -82,7 +82,7 @@ function ShareMenu({
   baseUrl,
   storyId,
   queryParams,
-  qrUrl = 'http://192.168.68.112:6006',
+  qrUrl,
 }: {
   baseUrl: string;
   storyId: string;
@@ -112,7 +112,7 @@ function ShareMenu({
         {
           id: 'open-new-tab',
           title: 'Open in isolation mode',
-          icon: <ShareAltIcon />,
+          icon: <BugIcon />,
           onClick: () => {
             const href = getStoryHref(baseUrl, storyId, queryParams);
             window.open(href, '_blank', 'noopener,noreferrer');
@@ -151,8 +151,7 @@ export const shareTool: Addon_BaseType = {
   type: types.TOOL,
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
   render: () => {
-    // todo: figure things out, this will have to be retrieved from server later
-    const externalUrl = 'http://192.168.68.112:6006';
+    const externalUrl = (STORYBOOK_NETWORK_ADDRESS as string | undefined) ?? undefined;
     return (
       <Consumer filter={mapper}>
         {({ baseUrl, storyId, queryParams }) =>
@@ -163,7 +162,7 @@ export const shareTool: Addon_BaseType = {
               tooltip={<ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: externalUrl }} />}
             >
               <IconButton title="Share">
-                <ShareAltIcon />
+                <BugIcon />
               </IconButton>
             </WithTooltip>
           ) : null

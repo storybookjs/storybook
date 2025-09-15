@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { global } from '@storybook/global';
+
 import type { StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
@@ -7,7 +9,7 @@ import { expect, screen } from 'storybook/test';
 
 import { shareTool } from './share';
 
-const managerContext: any = {
+const managerContext = {
   state: {
     storyId: 'manager-preview-tools-share--default',
     refId: undefined,
@@ -17,7 +19,7 @@ const managerContext: any = {
   api: {
     getShortcutKeys: () => ({ copyStoryLink: ['meta', 'shift', 'c'] }),
   },
-};
+} as any;
 
 const ManagerDecorator = (Story: any) => (
   <ManagerContext.Provider value={managerContext}>
@@ -37,6 +39,9 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  beforeEach: () => {
+    global.STORYBOOK_NETWORK_ADDRESS = 'http://127.0.0.1:6006';
+  },
   play: async ({ userEvent, canvas }) => {
     await userEvent.click(canvas.getByRole('button'));
     await expect(await screen.findByText('Scan me')).toBeVisible();

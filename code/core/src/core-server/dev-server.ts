@@ -55,6 +55,11 @@ export async function storybookDevServer(options: Options) {
   const proto = options.https ? 'https' : 'http';
   const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
 
+  // Expose addresses on options for the manager builder to surface in globals
+  // This is safe because options is only used within the current dev server lifecycle
+  options.address = address;
+  options.networkAddress = networkAddress;
+
   if (!core?.builder) {
     throw new MissingBuilderError();
   }

@@ -132,6 +132,8 @@ const shortcutLabels = {
   collapseAll: 'Collapse all items on sidebar',
   expandAll: 'Expand all items on sidebar',
   remount: 'Remount component',
+  openInEditor: 'Open story in editor',
+  copyStoryName: 'Copy story name to clipboard',
 };
 
 export type Feature = keyof typeof shortcutLabels;

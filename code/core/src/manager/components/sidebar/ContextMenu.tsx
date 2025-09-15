@@ -9,13 +9,16 @@ import {
   Addon_TypesEnum,
 } from 'storybook/internal/types';
 
-import { EllipsisIcon } from '@storybook/icons';
+import { global } from '@storybook/global';
+import { CopyIcon, EllipsisIcon, MarkupIcon } from '@storybook/icons';
 
-import { useStorybookApi } from 'storybook/manager-api';
+import copy from 'copy-to-clipboard';
+import { openInEditor, useStorybookApi } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
+import { Shortcut } from '../../container/Menu';
 import { StatusButton } from './StatusButton';
 import type { ExcludesNull } from './Tree';
 
@@ -111,12 +114,56 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
   links,
   ...rest
 }) => {
-  const registeredTestProviders = useStorybookApi().getElements(
-    Addon_TypesEnum.experimental_TEST_PROVIDER
-  );
+  const api = useStorybookApi();
+  const entry = api.getData(context.id, context.refId);
+  const importPath = entry?.importPath;
+  const storyName = (entry && 'exportName' in entry && entry.exportName) || context?.name;
+  const [copyText, setCopyText] = React.useState('Copy story name');
+
+  const shortcutKeys = api.getShortcutKeys();
+  const enableShortcuts = !!shortcutKeys;
+
+  const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
+
+  const topLinks: Link[] = [];
+
+  if (importPath) {
+    if (global.CONFIG_TYPE === 'DEVELOPMENT') {
+      topLinks.push({
+        id: 'open-in-editor',
+        title: 'Open in editor',
+        icon: <MarkupIcon />,
+        right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
+        onClick: (e) => {
+          e.preventDefault();
+          if (importPath && !context.refId) {
+            openInEditor(importPath);
+          }
+        },
+      });
+    }
+
+    topLinks.push({
+      id: 'copy-story-name',
+      title: copyText,
+      icon: <CopyIcon />,
+      right: enableShortcuts ? <Shortcut keys={shortcutKeys.copyStoryName} /> : null,
+      onClick: () => {
+        if (storyName) {
+          copy(String(storyName));
+          setCopyText('Copied!');
+          setTimeout(() => {
+            setCopyText('Copy story name');
+          }, 2000);
+        }
+      },
+    });
+  }
+
   const groups = Array.isArray(links[0]) ? (links as Link[][]) : [links as Link[]];
-  const all = groups.concat([providerLinks]);
+  const all =
+    topLinks.length > 0 ? [topLinks, ...groups, providerLinks] : [...groups, providerLinks];
 
   return <TooltipLinkList {...rest} links={all} />;
 };

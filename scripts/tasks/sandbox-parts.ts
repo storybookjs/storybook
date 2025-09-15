@@ -878,14 +878,6 @@ async function prepareReactNativeWebSandbox(cwd: string) {
   }
 }
 
-async function prepareReactNativeWebSandbox(cwd: string) {
-  // Make it so that RN sandboxes have stories in src/stories similar to
-  // other react sandboxes, for consistency.
-  if (!(await pathExists(join(cwd, 'src')))) {
-    await mkdir(join(cwd, 'src'));
-  }
-}
-
 async function prepareAngularSandbox(cwd: string, templateName: string) {
   const angularJson = await readJson(join(cwd, 'angular.json'));
 

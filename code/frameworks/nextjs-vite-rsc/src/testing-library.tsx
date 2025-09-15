@@ -1,3 +1,4 @@
+import * as React from 'react';
 import type { JSXElementConstructor, ReactNode } from 'react';
 import type { Container, RootOptions } from 'react-dom/client';
 

@@ -151,7 +151,7 @@ export const shareTool: Addon_BaseType = {
   type: types.TOOL,
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
   render: () => {
-    const externalUrl = (STORYBOOK_NETWORK_ADDRESS as string | undefined) ?? undefined;
+    const externalUrl = (global.STORYBOOK_NETWORK_ADDRESS as string | undefined) ?? undefined;
     return (
       <Consumer filter={mapper}>
         {({ baseUrl, storyId, queryParams }) =>

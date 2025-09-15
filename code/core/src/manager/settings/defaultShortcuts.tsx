@@ -20,4 +20,6 @@ export const defaultShortcuts: State['shortcuts'] = {
   collapseAll: ['ctrl', 'shift', 'ArrowUp'],
   expandAll: ['ctrl', 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
+  openInEditor: ['alt', 'shift', 'E'],
+  copyStoryName: ['alt', 'shift', 'C'],
 };

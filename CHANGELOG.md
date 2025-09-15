@@ -1,3 +1,10 @@
+## 9.1.6
+
+- CLI: Capture the version specifier used in `create-storybook` - [#32344](https://github.com/storybookjs/storybook/pull/32344), thanks @shilman!
+- Instrumenter: Fix userEvent.type performance regression - [#32439](https://github.com/storybookjs/storybook/pull/32439), thanks @ndelangen!
+- React Native Web: Fix RNW peer dependency version - [#32438](https://github.com/storybookjs/storybook/pull/32438), thanks @dannyhw!
+- Telemetry: Record known CLI integrations - [#32448](https://github.com/storybookjs/storybook/pull/32448), thanks @shilman!
+
 ## 9.1.5
 
 - CSF: Support `satisfies x as y` syntax - [#32169](https://github.com/storybookjs/storybook/pull/32169), thanks @diagramatics!

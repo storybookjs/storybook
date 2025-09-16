@@ -114,7 +114,7 @@ export async function executeCLIStep<TOptions extends OptionSpecifier>(
   const prefix = ['dev', 'build'].includes(cliCommand)
     ? `node "${cliExecutable}" ${cliCommand}`
     : cliCommand === 'init'
-      ? `node "${createStorybookExecutable}" ${cliCommand}`
+      ? `node "${createStorybookExecutable}"`
       : `node "${toolboxExecutable}" ${cliCommand}`;
   const command = getCommand(
     cliStep.hasArgument ? `${prefix} ${options.argument}` : prefix,

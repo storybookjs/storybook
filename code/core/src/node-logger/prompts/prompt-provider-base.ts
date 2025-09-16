@@ -19,7 +19,7 @@ export interface BasePromptOptions {
 export interface TextPromptOptions extends BasePromptOptions {
   placeholder?: string;
   initialValue?: string;
-  validate?: (value: string) => string | Error | undefined;
+  validate?: (value: string | undefined) => string | Error | undefined;
 }
 
 export interface ConfirmPromptOptions extends BasePromptOptions {

@@ -114,8 +114,9 @@ export interface API_Shortcuts {
   expandAll: API_KeyCollection;
   remount: API_KeyCollection;
   openInEditor: API_KeyCollection;
-  copyStoryName: API_KeyCollection;
   copyStoryLink: API_KeyCollection;
+  // TODO: bring this back once we want to add shortcuts for this
+  // copyStoryName: API_KeyCollection;
 }
 
 export type API_Action = keyof API_Shortcuts;

@@ -152,8 +152,9 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   expandAll: [controlOrMetaKey(), 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
   openInEditor: ['alt', 'shift', 'E'],
-  copyStoryName: ['alt', 'shift', 'C'],
   copyStoryLink: ['alt', 'shift', 'L'],
+  // TODO: bring this back once we want to add shortcuts for this
+  // copyStoryName: ['alt', 'shift', 'C'],
 });
 
 const addonsShortcuts: API_AddonShortcuts = {};

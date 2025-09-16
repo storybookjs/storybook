@@ -148,7 +148,11 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
       id: 'copy-story-name',
       title: copyText,
       icon: <CopyIcon />,
-      right: enableShortcuts ? <Shortcut keys={shortcutKeys.copyStoryName} /> : null,
+      // TODO: bring this back once we want to add shortcuts for this
+      // right:
+      //   enableShortcuts && shortcutKeys.copyStoryName ? (
+      //     <Shortcut keys={shortcutKeys.copyStoryName} />
+      //   ) : null,
       onClick: () => {
         if (storyName) {
           copy(String(storyName));

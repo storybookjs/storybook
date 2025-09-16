@@ -5,7 +5,7 @@ import { global } from '@storybook/global';
 import type { StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, screen } from 'storybook/test';
+import { expect, screen, waitFor } from 'storybook/test';
 
 import { shareTool } from './share';
 
@@ -43,7 +43,9 @@ export const Default: Story = {
     global.STORYBOOK_NETWORK_ADDRESS = 'http://127.0.0.1:6006';
   },
   play: async ({ userEvent, canvas }) => {
-    await userEvent.click(canvas.getByRole('button'));
-    await expect(await screen.findByText('Scan me')).toBeVisible();
+    await waitFor(async () => {
+      await userEvent.click(canvas.getByRole('button'));
+      await expect(await screen.findByText('Scan me')).toBeVisible();
+    });
   },
 };

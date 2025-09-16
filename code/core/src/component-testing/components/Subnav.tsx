@@ -20,8 +20,7 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
-import { Consumer, openInEditor } from 'storybook/manager-api';
-import type { Combo } from 'storybook/manager-api';
+import { openInEditor, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import { type ControlStates } from '../../instrumenter/types';
@@ -76,10 +75,10 @@ const StyledSeparator = styled(Separator)({
   marginTop: 0,
 });
 
-const StyledLocation = styled(P)(({ theme }) => ({
-  color: theme.color.secondary,
-  cursor: 'pointer',
-  fontWeight: theme.typography.weight.bold,
+const StyledLocation = styled(P)<{ isText?: boolean }>(({ theme, isText }) => ({
+  color: isText ? theme.textMutedColor : theme.color.secondary,
+  cursor: isText ? 'default' : 'pointer',
+  fontWeight: isText ? theme.typography.weight.regular : theme.typography.weight.bold,
   justifyContent: 'flex-end',
   textAlign: 'right',
   whiteSpace: 'nowrap',
@@ -127,6 +126,11 @@ export const Subnav: React.FC<SubnavProps> = ({
 }) => {
   const buttonText = status === 'errored' ? 'Scroll to error' : 'Scroll to end';
   const theme = useTheme();
+  const state = useStorybookState();
+  const api = useStorybookApi();
+  const data = api.getData(state.storyId, state.refId);
+  const importPath = data?.importPath as string | undefined;
+  const isLocal = !state.refId;
 
   return (
     <SubnavWrapper>
@@ -187,33 +191,28 @@ export const Subnav: React.FC<SubnavProps> = ({
               </RerunButton>
             </WithTooltip>
           </Group>
-          <Group>
-            <Consumer
-              filter={({ state, api }: Combo) => ({
-                importPath: api.getData(state.storyId, state.refId)?.importPath as
-                  | string
-                  | undefined,
-                isLocal: !state.refId,
-              })}
-            >
-              {({ importPath, isLocal }) =>
-                global.CONFIG_TYPE === 'DEVELOPMENT' && isLocal && (importPath || storyFileName) ? (
-                  <WithTooltip
-                    trigger="hover"
-                    hasChrome={false}
-                    tooltip={<Note note="Open in editor" />}
+          {(importPath || storyFileName) && (
+            <Group>
+              {global.CONFIG_TYPE === 'DEVELOPMENT' && isLocal ? (
+                <WithTooltip
+                  trigger="hover"
+                  hasChrome={false}
+                  tooltip={<Note note="Open in editor" />}
+                >
+                  <StyledLocation
+                    aria-label="Open in editor"
+                    onClick={() => {
+                      openInEditor(importPath as string);
+                    }}
                   >
-                    <StyledLocation
-                      aria-label="Open in editor"
-                      onClick={() => openInEditor((importPath || storyFileName) as string)}
-                    >
-                      {storyFileName}
-                    </StyledLocation>
-                  </WithTooltip>
-                ) : null
-              }
-            </Consumer>
-          </Group>
+                    {storyFileName}
+                  </StyledLocation>
+                </WithTooltip>
+              ) : (
+                <StyledLocation isText={true}>{storyFileName}</StyledLocation>
+              )}
+            </Group>
+          )}
         </StyledSubnav>
       </Bar>
     </SubnavWrapper>

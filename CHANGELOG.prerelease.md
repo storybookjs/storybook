@@ -10,7 +10,6 @@
 - Modernize: Replace `fs-extra` with native APIs - [#32296](https://github.com/storybookjs/storybook/pull/32296), thanks @y-hsgw!
 - React Native Web: Fix RNW peer dependency version - [#32438](https://github.com/storybookjs/storybook/pull/32438), thanks @dannyhw!
 - React: Preserve `@ts-expect-error` in preview - [#32442](https://github.com/storybookjs/storybook/pull/32442), thanks @mrginglymus!
-- Replace: Use `empathic` over `find-up` - [#31338](https://github.com/storybookjs/storybook/pull/31338), thanks @beeequeue!
 - Telemetry: Record known CLI integrations - [#32448](https://github.com/storybookjs/storybook/pull/32448), thanks @shilman!
 
 ## 10.0.0-beta.2
@@ -62,7 +61,6 @@
 - Telemetry: Send index stats on dev exit - [#32168](https://github.com/storybookjs/storybook/pull/32168), thanks @shilman!
 
 ## 9.2.0-alpha.0
-
 
 ## 9.1.0-beta.3
 
@@ -128,7 +126,7 @@
 - CSF: Improve controls parameters - [#31745](https://github.com/storybookjs/storybook/pull/31745), thanks @kasperpeulen!
 - CSF: Story ComponentAnnotations['subcomponents'] to correctly use its own type for subcomponents rather than attempt to inherit from the component - [#31723](https://github.com/storybookjs/storybook/pull/31723), thanks @mihkeleidast!
 - Controls: Improve the accessibility of the object control - [#31581](https://github.com/storybookjs/storybook/pull/31581), thanks @Sidnioulz!
-- Core: Cleanup of type following up v9 and small verbatimModuleSyntax type fix  - [#31823](https://github.com/storybookjs/storybook/pull/31823), thanks @alcpereira!
+- Core: Cleanup of type following up v9 and small verbatimModuleSyntax type fix - [#31823](https://github.com/storybookjs/storybook/pull/31823), thanks @alcpereira!
 - Core: Disable interactions debugger on composed stories to avoid cross-origin error - [#31685](https://github.com/storybookjs/storybook/pull/31685), thanks @ghengeveld!
 - Core: Enhance package manager install methods to support optional force flag - [#31796](https://github.com/storybookjs/storybook/pull/31796), thanks @valentinpalkovic!
 - Core: Fix FIPS compliance - [#31806](https://github.com/storybookjs/storybook/pull/31806), thanks @JReinhold!
@@ -216,7 +214,6 @@
 - Telemetry: Fix storybook version and add test run events - [#31473](https://github.com/storybookjs/storybook/pull/31473), thanks @tmeasday!
 
 ## 9.1.0-alpha.0
-
 
 ## 9.0.0-rc.5
 

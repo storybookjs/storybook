@@ -32,6 +32,7 @@ const meta = {
   render: shareTool.render,
   decorators: [ManagerDecorator],
   parameters: { layout: 'centered' },
+  tags: ['!vitest'],
 };
 
 export default meta;

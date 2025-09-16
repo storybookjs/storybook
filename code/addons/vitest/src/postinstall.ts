@@ -19,10 +19,9 @@ import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import * as find from 'empathic/find';
-import * as pkg from 'empathic/package';
 // eslint-disable-next-line depend/ban-dependencies
 import { execa } from 'execa';
+import { findUp } from 'find-up';
 import { dirname, relative, resolve } from 'pathe';
 import prompts from 'prompts';
 import { coerce, satisfies } from 'semver';
@@ -61,10 +60,10 @@ const logErrors = (...args: Parameters<typeof printError>) => {
   printError(...args);
 };
 
-const findFile = (basename: string, extensions = EXTENSIONS) =>
-  find.any(
+const findFile = async (basename: string, extensions = EXTENSIONS) =>
+  findUp(
     extensions.map((ext) => basename + ext),
-    { last: getProjectRoot() }
+    { stopAt: getProjectRoot() }
   );
 
 export default async function postInstall(options: PostinstallOptions) {
@@ -321,7 +320,7 @@ export default async function postInstall(options: PostinstallOptions) {
   }
 
   const fileExtension =
-    allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
+    allDeps.typescript || (await findFile('tsconfig', [...EXTENSIONS, '.json'])) ? 'ts' : 'js';
 
   const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
   if (existsSync(vitestSetupFile)) {
@@ -368,11 +367,11 @@ export default async function postInstall(options: PostinstallOptions) {
   );
 
   const vitestWorkspaceFile =
-    findFile('vitest.workspace', ['.ts', '.js', '.json']) ||
-    findFile('vitest.projects', ['.ts', '.js', '.json']);
-  const viteConfigFile = findFile('vite.config');
-  const vitestConfigFile = findFile('vitest.config');
-  const vitestShimFile = findFile('vitest.shims.d');
+    (await findFile('vitest.workspace', ['.ts', '.js', '.json'])) ||
+    (await findFile('vitest.projects', ['.ts', '.js', '.json']));
+  const viteConfigFile = await findFile('vite.config');
+  const vitestConfigFile = await findFile('vitest.config');
+  const vitestShimFile = await findFile('vitest.shims.d');
   const rootConfig = vitestConfigFile || viteConfigFile;
 
   const browserConfig = `{
@@ -577,7 +576,10 @@ async function getPackageNameFromPath(input: string): Promise<string> {
     return path;
   }
 
-  const packageJsonPath = pkg.up({ cwd: path });
+  const packageJsonPath = await findUp('package.json', {
+    cwd: path,
+  });
+
   if (!packageJsonPath) {
     throw new Error(`Could not find package.json in path: ${path}`);
   }

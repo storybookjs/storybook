@@ -6,7 +6,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import commentJson from 'comment-json';
 import detectIndent from 'detect-indent';
-import * as find from 'empathic/find';
+import { findUp } from 'find-up';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -15,13 +15,13 @@ import { babelParse, recast, types as t, traverse } from '../babel';
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
 
-export const findEslintFile = (instanceDir: string) => {
+export const findEslintFile = async (instanceDir: string) => {
   const filePrefixes = ['eslint.config', '.eslintrc'];
 
   // Check for unsupported files
   for (const prefix of filePrefixes) {
     for (const ext of UNSUPPORTED_ESLINT_EXTENSIONS) {
-      const file = find.up(`${prefix}.${ext}`, { cwd: instanceDir, last: getProjectRoot() });
+      const file = await findUp(`${prefix}.${ext}`, { cwd: instanceDir, stopAt: getProjectRoot() });
       if (file) {
         throw new Error(`Unsupported ESLint config extension: .${ext}`);
       }
@@ -31,7 +31,7 @@ export const findEslintFile = (instanceDir: string) => {
   // Find supported ESLint config files
   for (const prefix of filePrefixes) {
     for (const ext of SUPPORTED_ESLINT_EXTENSIONS) {
-      const file = find.up(`${prefix}.${ext}`, { cwd: instanceDir, last: getProjectRoot() });
+      const file = await findUp(`${prefix}.${ext}`, { cwd: instanceDir, stopAt: getProjectRoot() });
       if (file) {
         return file;
       }
@@ -157,7 +157,7 @@ export async function extractEslintInfo(packageManager: JsPackageManager): Promi
   let eslintConfigFile: string | undefined = undefined;
 
   try {
-    eslintConfigFile = findEslintFile(packageManager.instanceDir);
+    eslintConfigFile = await findEslintFile(packageManager.instanceDir);
   } catch (err) {
     if (err instanceof Error && err.message.includes('Unsupported ESLint')) {
       unsupportedExtension = String(err);

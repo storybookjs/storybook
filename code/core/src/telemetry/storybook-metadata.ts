@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import {
@@ -11,7 +10,7 @@ import {
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
-import * as pkg from 'empathic/package';
+import { findPackage, findPackagePath } from 'fd-package-json';
 
 import { version } from '../../package.json';
 import { globalSettings } from '../cli/globalSettings';
@@ -247,11 +246,11 @@ export const computeStorybookMetadata = async ({
 };
 
 async function getPackageJsonDetails() {
-  const packageJsonPath = pkg.up();
+  const packageJsonPath = await findPackagePath(process.cwd());
   if (packageJsonPath) {
     return {
       packageJsonPath,
-      packageJson: JSON.parse(await readFile(packageJsonPath, 'utf8')),
+      packageJson: (await findPackage(packageJsonPath)) || {},
     };
   }
 

@@ -10,7 +10,7 @@ import {
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import boxen, { type Options } from 'boxen';
-import * as walk from 'empathic/walk';
+import { findUpMultipleSync } from 'find-up';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
@@ -755,15 +755,21 @@ export const getProjects = async (
 /** Finds files in the directory tree up to the project root */
 export const findFilesUp = (matchers: string[], cwd: string) => {
   const matchingFiles: string[] = [];
-  for (const directory of walk.up(cwd, { last: getProjectRoot() })) {
-    matchingFiles.push(
-      ...globbySync(matchers, {
-        gitignore: true,
-        absolute: true,
-        cwd: directory,
-      })
-    );
-  }
+  findUpMultipleSync(
+    (directory) => {
+      matchingFiles.push(
+        ...globbySync(matchers, {
+          gitignore: true,
+          cwd: directory,
+        })
+      );
+      return undefined;
+    },
+    {
+      cwd,
+      stopAt: getProjectRoot(),
+    }
+  );
 
   return matchingFiles;
 };

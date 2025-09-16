@@ -5997,9 +5997,9 @@ __metadata:
     "@vitest/browser": "npm:^3.2.4"
     "@vitest/runner": "npm:^3.2.4"
     boxen: "npm:^8.0.1"
-    empathic: "npm:^2.0.0"
     es-toolkit: "npm:^1.36.0"
     execa: "npm:^8.0.1"
+    find-up: "npm:^7.0.0"
     istanbul-lib-report: "npm:^3.0.1"
     micromatch: "npm:^4.0.8"
     pathe: "npm:^1.1.2"
@@ -6050,7 +6050,8 @@ __metadata:
     "@storybook/core-webpack": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@types/node": "npm:^22.0.0"
-    empathic: "npm:^2.0.0"
+    fd-package-json: "npm:^1.2.0"
+    find-up: "npm:^7.0.0"
     rimraf: "npm:^6.0.1"
     telejson: "npm:8.0.0"
     ts-dedent: "npm:^2.0.0"
@@ -6115,9 +6116,10 @@ __metadata:
   resolution: "@storybook/builder-vite@workspace:builders/builder-vite"
   dependencies:
     "@storybook/csf-plugin": "workspace:*"
+    "@types/find-cache-dir": "npm:^3.2.1"
     "@types/node": "npm:^22.0.0"
-    empathic: "npm:^2.0.0"
     es-module-lexer: "npm:^1.5.0"
+    find-cache-dir: "npm:^3.0.0"
     glob: "npm:^10.0.0"
     knitwork: "npm:^1.1.0"
     magic-string: "npm:^0.30.0"
@@ -6178,9 +6180,9 @@ __metadata:
     comment-json: "npm:^4.2.5"
     create-storybook: "workspace:*"
     cross-spawn: "npm:^7.0.6"
-    empathic: "npm:^2.0.0"
     envinfo: "npm:^7.14.0"
     execa: "npm:^9.6.0"
+    find-up: "npm:^7.0.0"
     giget: "npm:^1.0.0"
     globby: "npm:^14.0.1"
     jscodeshift: "npm:^0.15.1"
@@ -6272,7 +6274,7 @@ __metadata:
     "@storybook/global": "npm:^5.0.0"
     babel-loader: "npm:9.1.3"
     ember-source: "npm:~3.28.1"
-    empathic: "npm:2.0.0"
+    find-up: "npm:^7.0.0"
     typescript: "npm:^5.8.3"
   peerDependencies:
     "@babel/core": "*"
@@ -6467,7 +6469,7 @@ __metadata:
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7.3.4"
-    empathic: "npm:^2.0.0"
+    find-up: "npm:^7.0.0"
     magic-string: "npm:^0.30.5"
     react-docgen: "npm:^7.1.1"
     resolve: "npm:^1.22.8"
@@ -6561,7 +6563,7 @@ __metadata:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    empathic: "npm:^2.0.0"
+    find-up: "npm:^7.0.0"
     magic-string: "npm:^0.30.0"
     react-docgen: "npm:^8.0.0"
     resolve: "npm:^1.22.8"
@@ -6857,7 +6859,9 @@ __metadata:
   dependencies:
     "@storybook/builder-vite": "workspace:*"
     "@storybook/vue3": "workspace:*"
+    "@types/find-package-json": "npm:^1.2.6"
     "@types/node": "npm:^22.0.0"
+    find-package-json: "npm:^1.2.0"
     magic-string: "npm:^0.30.0"
     typescript: "npm:^5.8.3"
     vite: "npm:^7.0.4"
@@ -7498,6 +7502,31 @@ __metadata:
     "@types/qs": "npm:*"
     "@types/serve-static": "npm:*"
   checksum: 10c0/12e562c4571da50c7d239e117e688dc434db1bac8be55613294762f84fd77fbd0658ccd553c7d3ab02408f385bc93980992369dd30e2ecd2c68c358e6af8fabf
+  languageName: node
+  linkType: hard
+
+"@types/find-cache-dir@npm:^3.2.1":
+  version: 3.2.1
+  resolution: "@types/find-cache-dir@npm:3.2.1"
+  checksum: 10c0/68059aec88ef776a689c1711a881fd91a9ce1b03dd5898ea1d2ac5d77d7b0235f21fdf210f380c13deca8b45e4499841a63aaf31fd2123af687f2c6b472f41ce
+  languageName: node
+  linkType: hard
+
+"@types/find-cache-dir@npm:^5.0.0":
+  version: 5.0.2
+  resolution: "@types/find-cache-dir@npm:5.0.2"
+  dependencies:
+    find-cache-dir: "npm:*"
+  checksum: 10c0/684efb5961dcc5c8813a5ab14645c692ce036bebbc0258443dc4a154c63f9c87c0287ef32ca792110b82c2b96d590dfdf7d1bf59b61717a8109ee619e489f3b5
+  languageName: node
+  linkType: hard
+
+"@types/find-package-json@npm:^1.2.6":
+  version: 1.2.6
+  resolution: "@types/find-package-json@npm:1.2.6"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/e9ec7d10f9c919b14cf391e710f41ff6684a6e6d87afc6322e7f7e3afe30b5f046b806767cb1509af6265e3f4ceb11fac9da279757839269a4c849359d7f5f18
   languageName: node
   linkType: hard
 
@@ -11627,8 +11656,8 @@ __metadata:
     "@types/semver": "npm:^7.3.4"
     boxen: "npm:^7.1.1"
     commander: "npm:^12.1.0"
-    empathic: "npm:^2.0.0"
     execa: "npm:^5.0.0"
+    find-up: "npm:^7.0.0"
     ora: "npm:^5.4.1"
     picocolors: "npm:^1.1.0"
     process-ancestry: "npm:^0.0.2"
@@ -12820,13 +12849,6 @@ __metadata:
   version: 3.0.0
   resolution: "emojis-list@npm:3.0.0"
   checksum: 10c0/7dc4394b7b910444910ad64b812392159a21e1a7ecc637c775a440227dcb4f80eff7fe61f4453a7d7603fa23d23d30cc93fe9e4b5ed985b88d6441cd4a35117b
-  languageName: node
-  linkType: hard
-
-"empathic@npm:2.0.0, empathic@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "empathic@npm:2.0.0"
-  checksum: 10c0/7d3b14b04a93b35c47bcc950467ec914fd241cd9acc0269b0ea160f13026ec110f520c90fae64720fde72cc1757b57f3f292fb606617b7fccac1f4d008a76506
   languageName: node
   linkType: hard
 
@@ -14552,6 +14574,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"find-cache-dir@npm:*, find-cache-dir@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "find-cache-dir@npm:5.0.0"
+  dependencies:
+    common-path-prefix: "npm:^3.0.0"
+    pkg-dir: "npm:^7.0.0"
+  checksum: 10c0/e6403b35aaf862898aefadbe3ee27246583a69adcef21cd79b9262be407d1ac85b21a7e1c1d41712eae39c6d8a8ac297fd78123b5b7aea13f0f046744aa02453
+  languageName: node
+  linkType: hard
+
 "find-cache-dir@npm:^2.0.0":
   version: 2.1.0
   resolution: "find-cache-dir@npm:2.1.0"
@@ -14563,7 +14595,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"find-cache-dir@npm:^3.3.1":
+"find-cache-dir@npm:^3.0.0, find-cache-dir@npm:^3.3.1":
   version: 3.3.2
   resolution: "find-cache-dir@npm:3.3.2"
   dependencies:
@@ -14588,6 +14620,13 @@ __metadata:
   version: 1.1.1
   resolution: "find-index@npm:1.1.1"
   checksum: 10c0/9e5b73714b5b4e5af71872f25e1b97e23a9db58529350543f7dba11f109fc7f4047d69abbf76fe3dba25f638fda8ebe4df3d6a12ad7da93014d15ce28dbc564e
+  languageName: node
+  linkType: hard
+
+"find-package-json@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "find-package-json@npm:1.2.0"
+  checksum: 10c0/85d6c97afb9f8f0deb0d344a1c4eb8027347cf4d61666c28d3ac3f913e916684441218682b3dd6f8ad570e5d43c96a7db521f70183d70df559d07e1f99cdc635
   languageName: node
   linkType: hard
 
@@ -14643,6 +14682,17 @@ __metadata:
     locate-path: "npm:^7.1.0"
     path-exists: "npm:^5.0.0"
   checksum: 10c0/07e0314362d316b2b13f7f11ea4692d5191e718ca3f7264110127520f3347996349bf9e16805abae3e196805814bc66ef4bff2b8904dc4a6476085fc9b0eba07
+  languageName: node
+  linkType: hard
+
+"find-up@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "find-up@npm:7.0.0"
+  dependencies:
+    locate-path: "npm:^7.2.0"
+    path-exists: "npm:^5.0.0"
+    unicorn-magic: "npm:^0.1.0"
+  checksum: 10c0/e6ee3e6154560bc0ab3bc3b7d1348b31513f9bdf49a5dd2e952495427d559fa48cdf33953e85a309a323898b43fa1bfbc8b80c880dfc16068384783034030008
   languageName: node
   linkType: hard
 
@@ -18045,7 +18095,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"locate-path@npm:^7.1.0":
+"locate-path@npm:^7.1.0, locate-path@npm:^7.2.0":
   version: 7.2.0
   resolution: "locate-path@npm:7.2.0"
   dependencies:
@@ -22702,6 +22752,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"resolve-from@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "resolve-from@npm:5.0.0"
+  checksum: 10c0/b21cb7f1fb746de8107b9febab60095187781137fd803e6a59a76d421444b1531b641bba5857f5dc011974d8a5c635d61cec49e6bd3b7fc20e01f0fafc4efbf2
+  languageName: node
+  linkType: hard
+
 "resolve-package-path@npm:^1.0.11":
   version: 1.2.7
   resolution: "resolve-package-path@npm:1.2.7"
@@ -24144,6 +24201,7 @@ __metadata:
     "@types/detect-port": "npm:^1.3.0"
     "@types/diff": "npm:^5.0.9"
     "@types/ejs": "npm:^3.1.1"
+    "@types/find-cache-dir": "npm:^5.0.0"
     "@types/js-yaml": "npm:^4.0.5"
     "@types/node": "npm:^22.0.0"
     "@types/npmlog": "npm:^7.0.0"
@@ -24181,12 +24239,14 @@ __metadata:
     diff: "npm:^5.2.0"
     downshift: "npm:^9.0.4"
     ejs: "npm:^3.1.10"
-    empathic: "npm:^2.0.0"
     es-toolkit: "npm:^1.36.0"
     esbuild: "npm:^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0 || ^0.23.0 || ^0.24.0 || ^0.25.0"
     execa: "npm:^8.0.1"
     exsolve: "npm:^1.0.7"
+    fd-package-json: "npm:^1.2.0"
     fetch-retry: "npm:^6.0.0"
+    find-cache-dir: "npm:^5.0.0"
+    find-up: "npm:^7.0.0"
     flush-promises: "npm:^1.0.2"
     fuse.js: "npm:^3.6.1"
     get-npm-tarball-url: "npm:^2.0.3"
@@ -24223,6 +24283,7 @@ __metadata:
     react-transition-group: "npm:^4.4.5"
     recast: "npm:^0.23.5"
     require-from-string: "npm:^2.0.2"
+    resolve-from: "npm:^5.0.0"
     resolve.exports: "npm:^2.0.3"
     semver: "npm:^7.6.2"
     sirv: "npm:^2.0.4"
@@ -25460,6 +25521,13 @@ __metadata:
   version: 2.1.0
   resolution: "unicode-property-aliases-ecmascript@npm:2.1.0"
   checksum: 10c0/50ded3f8c963c7785e48c510a3b7c6bc4e08a579551489aa0349680a35b1ceceec122e33b2b6c1b579d0be2250f34bb163ac35f5f8695fe10bbc67fb757f0af8
+  languageName: node
+  linkType: hard
+
+"unicorn-magic@npm:^0.1.0":
+  version: 0.1.0
+  resolution: "unicorn-magic@npm:0.1.0"
+  checksum: 10c0/e4ed0de05b0a05e735c7d8a2930881e5efcfc3ec897204d5d33e7e6247f4c31eac92e383a15d9a6bccb7319b4271ee4bea946e211bf14951fec6ff2cbbb66a92
   languageName: node
   linkType: hard
 

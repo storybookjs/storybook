@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -7,7 +7,7 @@ import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
 import { getLibzipSync } from '@yarnpkg/libzip';
-import * as find from 'empathic/find';
+import { findUpSync } from 'find-up';
 
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
@@ -150,9 +150,9 @@ export class Yarn2Proxy extends JsPackageManager {
   }
 
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
+    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
       cwd: this.cwd,
-      last: getProjectRoot(),
+      stopAt: getProjectRoot(),
     });
 
     if (pnpapiPath) {
@@ -161,7 +161,7 @@ export class Yarn2Proxy extends JsPackageManager {
           This is a rather fragile way to access Yarn's PnP API, essentially manually loading it.
           The proper way to do this would be to just do await import('pnpapi'),
           as documented at https://yarnpkg.com/advanced/pnpapi#requirepnpapi
-
+          
           However the 'pnpapi' module is only injected when the Node process is started via Yarn,
           which is not always the case for us, because we spawn child processes directly with Node,
           eg. when running automigrations.
@@ -197,11 +197,13 @@ export class Yarn2Proxy extends JsPackageManager {
       }
     }
 
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
+    const packageJsonPath = findUpSync(
+      (dir) => {
+        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
+        return existsSync(possiblePath) ? possiblePath : undefined;
+      },
+      { cwd: this.primaryPackageJson.operationDir, stopAt: getProjectRoot() }
+    );
 
     if (!packageJsonPath) {
       return null;

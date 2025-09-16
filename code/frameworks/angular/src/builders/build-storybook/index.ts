@@ -1,5 +1,3 @@
-import { readFileSync } from 'node:fs';
-
 import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
@@ -24,8 +22,8 @@ import type {
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
 import type { JsonObject } from '@angular-devkit/core';
-import * as find from 'empathic/find';
-import * as pkg from 'empathic/package';
+import { findPackageSync } from 'fd-package-json';
+import { findUpSync } from 'find-up';
 import { from, of, throwError } from 'rxjs';
 import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
 
@@ -74,9 +72,9 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
 ): BuilderOutputLike => {
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
-      const docTSConfig = find.up('tsconfig.doc.json', {
+      const docTSConfig = findUpSync('tsconfig.doc.json', {
         cwd: options.configDir,
-        last: getProjectRoot(),
+        stopAt: getProjectRoot(),
       });
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
@@ -116,12 +114,8 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         experimentalZoneless = false,
       } = options;
 
-      const packageJsonPath = pkg.up({ cwd: __dirname });
-      const packageJson =
-        packageJsonPath != null ? JSON.parse(readFileSync(packageJsonPath, 'utf8')) : null;
-
       const standaloneOptions: StandaloneBuildOptions = {
-        packageJson,
+        packageJson: findPackageSync(__dirname),
         configDir,
         ...(docs ? { docs } : {}),
         loglevel,
@@ -175,7 +169,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   return {
     tsConfig:
       options.tsConfig ??
-      find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
+      findUpSync('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() }) ??
       browserOptions.tsConfig,
   };
 }

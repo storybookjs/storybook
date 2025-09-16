@@ -1,7 +1,7 @@
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import * as find from 'empathic/find';
+import { findUp } from 'find-up';
 import MagicString from 'magic-string';
 import {
   ERROR_CODES,
@@ -81,7 +81,10 @@ export default async function reactDocgenLoader(
   const { debug = false } = options;
 
   if (!tsconfigPathsInitialized) {
-    const tsconfigPath = find.up('tsconfig.json', { cwd: process.cwd(), last: getProjectRoot() });
+    const tsconfigPath = await findUp('tsconfig.json', {
+      cwd: process.cwd(),
+      stopAt: getProjectRoot(),
+    });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
 
     if (tsconfig.resultType === 'success') {

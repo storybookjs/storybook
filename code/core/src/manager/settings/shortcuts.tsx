@@ -133,8 +133,9 @@ const shortcutLabels = {
   expandAll: 'Expand all items on sidebar',
   remount: 'Remount component',
   openInEditor: 'Open story in editor',
-  copyStoryName: 'Copy story name to clipboard',
   copyStoryLink: 'Copy story link to clipboard',
+  // TODO: bring this back once we want to add shortcuts for this
+  // copyStoryName: 'Copy story name to clipboard',
 };
 
 export type Feature = keyof typeof shortcutLabels;

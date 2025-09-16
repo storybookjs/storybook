@@ -396,13 +396,14 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           }
           break;
         }
-        case 'copyStoryName': {
-          const storyData = fullAPI.getCurrentStoryData();
-          if (storyData.type === 'story') {
-            copy(storyData.exportName);
-          }
-          break;
-        }
+        // TODO: bring this back once we want to add shortcuts for this
+        // case 'copyStoryName': {
+        //   const storyData = fullAPI.getCurrentStoryData();
+        //   if (storyData.type === 'story') {
+        //     copy(storyData.exportName);
+        //   }
+        //   break;
+        // }
         case 'copyStoryLink': {
           copy(window.location.href);
           break;

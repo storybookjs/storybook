@@ -80,10 +80,7 @@ vi.mock(import('node:fs/promises'), async (importOriginal) => {
 
 const mockContext: any = {};
 
-const coerce =
-  (from: string, to: string) =>
-  (name: string) =>
-    name.includes(from) ? to : name;
+const coerce = (from: string, to: string) => (name: string) => (name.includes(from) ? to : name);
 
 const state: any = {
   directory: '.',
@@ -106,10 +103,7 @@ describe('vitestConfigFiles', () => {
   describe('Check Vitest workspace files', () => {
     it('should disallow JSON workspace file', async () => {
       vi.mocked(find.up).mockImplementation(coerce('workspace', 'vitest.workspace.json'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'incompatible',
         reasons: ['Cannot auto-update JSON workspace file: vitest.workspace.json'],
@@ -118,10 +112,7 @@ describe('vitestConfigFiles', () => {
 
     it('should disallow invalid workspace file', async () => {
       vi.mocked(find.up).mockImplementation(coerce('workspace', 'invalidWorkspace.ts'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'incompatible',
         reasons: ['Found an invalid workspace config file: invalidWorkspace.ts'],
@@ -130,10 +121,7 @@ describe('vitestConfigFiles', () => {
 
     it('should allow defineWorkspace syntax', async () => {
       vi.mocked(find.up).mockImplementation(coerce('workspace', 'defineWorkspace.ts'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'compatible',
       });
@@ -141,10 +129,7 @@ describe('vitestConfigFiles', () => {
 
     it('should disallow invalid defineWorkspace syntax', async () => {
       vi.mocked(find.up).mockImplementation(coerce('workspace', 'defineWorkspace-invalid.ts'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'incompatible',
         reasons: ['Found an invalid workspace config file: defineWorkspace-invalid.ts'],
@@ -155,10 +140,7 @@ describe('vitestConfigFiles', () => {
   describe('Check Vitest config files', () => {
     it('should disallow CommonJS config file', async () => {
       vi.mocked(find.up).mockImplementation(coerce('config', 'vitest.config.cjs'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'incompatible',
         reasons: ['Cannot auto-update CommonJS config file: vitest.config.cjs'],
@@ -167,10 +149,7 @@ describe('vitestConfigFiles', () => {
 
     it('should disallow invalid config file', async () => {
       vi.mocked(find.up).mockImplementation(coerce('config', 'invalidConfig.ts'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'incompatible',
         reasons: ['Found an invalid Vitest config file: invalidConfig.ts'],
@@ -179,10 +158,7 @@ describe('vitestConfigFiles', () => {
 
     it('should allow existing test config option', async () => {
       vi.mocked(find.up).mockImplementation(coerce('config', 'testConfig.ts'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'compatible',
       });
@@ -190,10 +166,7 @@ describe('vitestConfigFiles', () => {
 
     it('should disallow invalid test config option', async () => {
       vi.mocked(find.up).mockImplementation(coerce('config', 'testConfig-invalid.ts'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'incompatible',
         reasons: ['Found an invalid Vitest config file: testConfig-invalid.ts'],
@@ -202,10 +175,7 @@ describe('vitestConfigFiles', () => {
 
     it('should allow existing test.workspace config option', async () => {
       vi.mocked(find.up).mockImplementation(coerce('config', 'workspaceConfig.ts'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'compatible',
       });
@@ -213,10 +183,7 @@ describe('vitestConfigFiles', () => {
 
     it('should disallow invalid test.workspace config option', async () => {
       vi.mocked(find.up).mockImplementation(coerce('config', 'workspaceConfig-invalid.ts'));
-      const result = await vitestConfigFiles.condition(
-        mockContext,
-        state
-      );
+      const result = await vitestConfigFiles.condition(mockContext, state);
       expect(result).toEqual({
         type: 'incompatible',
         reasons: ['Found an invalid Vitest config file: workspaceConfig-invalid.ts'],

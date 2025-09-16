@@ -1,6 +1,6 @@
 ## 10.0.0-beta.4
 
-- Replace: Use `empathic` over `find-up` - [#32472](https://github.com/storybookjs/storybook/pull/32472), thanks @ndelangen!
+- Replace: Use `empathic` over `find-up` - [#31338](https://github.com/storybookjs/storybook/pull/31338), thanks @beeequeue!
 
 ## 10.0.0-beta.3
 

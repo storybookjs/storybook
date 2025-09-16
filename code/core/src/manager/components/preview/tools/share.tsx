@@ -14,9 +14,11 @@ import { BugIcon, LinkIcon, ShareIcon } from '@storybook/icons';
 import copy from 'copy-to-clipboard';
 // @ts-expect-error see https://github.com/rosskhanas/react-qr-code/issues/251
 import { QRCode } from 'react-qr-code';
-import { Consumer, types } from 'storybook/manager-api';
+import { Consumer, types, useStorybookApi } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
+
+import { Shortcut } from '../../../container/Menu';
 
 const { PREVIEW_URL, document } = global as any;
 
@@ -89,9 +91,9 @@ function ShareMenu({
   queryParams: Record<string, any>;
   qrUrl?: string;
 }) {
-  // const api = useStorybookApi();
-  // const shortcutKeys = api.getShortcutKeys();
-  // const enableShortcuts = !!shortcutKeys;
+  const api = useStorybookApi();
+  const shortcutKeys = api.getShortcutKeys();
+  const enableShortcuts = !!shortcutKeys;
   const [copied, setCopied] = useState(false);
 
   const links = useMemo(() => {
@@ -102,9 +104,9 @@ function ShareMenu({
           id: 'copy-link',
           title: copyTitle,
           icon: <LinkIcon />,
-          // right: enableShortcuts ? <Shortcut keys={['meta', 'shift', 'c']} /> : null,
+          right: enableShortcuts ? <Shortcut keys={shortcutKeys.copyStoryLink} /> : null,
           onClick: () => {
-            copy(getStoryHref(baseUrl, storyId, queryParams));
+            copy(window.location.href);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           },
@@ -140,7 +142,7 @@ function ShareMenu({
     }
 
     return baseLinks;
-  }, [baseUrl, storyId, queryParams, copied, qrUrl]);
+  }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, shortcutKeys.copyStoryLink]);
 
   return <TooltipLinkList links={links} />;
 }

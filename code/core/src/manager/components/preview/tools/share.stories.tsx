@@ -17,7 +17,7 @@ const managerContext = {
     customQueryParams: {},
   },
   api: {
-    getShortcutKeys: () => ({ copyStoryLink: ['meta', 'shift', 'c'] }),
+    getShortcutKeys: () => ({ copyStoryLink: ['alt', 'shift', 'k'] }),
   },
 } as any;
 

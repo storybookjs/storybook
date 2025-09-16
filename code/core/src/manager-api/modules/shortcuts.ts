@@ -115,6 +115,7 @@ export interface API_Shortcuts {
   remount: API_KeyCollection;
   openInEditor: API_KeyCollection;
   copyStoryName: API_KeyCollection;
+  copyStoryLink: API_KeyCollection;
 }
 
 export type API_Action = keyof API_Shortcuts;
@@ -152,6 +153,7 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   remount: ['alt', 'R'],
   openInEditor: ['alt', 'shift', 'E'],
   copyStoryName: ['alt', 'shift', 'C'],
+  copyStoryLink: ['alt', 'shift', 'L'],
 });
 
 const addonsShortcuts: API_AddonShortcuts = {};
@@ -397,6 +399,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           if (storyData.type === 'story') {
             copy(storyData.exportName);
           }
+          break;
+        }
+        case 'copyStoryLink': {
+          copy(window.location.href);
           break;
         }
         default:

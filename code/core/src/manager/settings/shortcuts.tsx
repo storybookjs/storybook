@@ -134,6 +134,7 @@ const shortcutLabels = {
   remount: 'Remount component',
   openInEditor: 'Open story in editor',
   copyStoryName: 'Copy story name to clipboard',
+  copyStoryLink: 'Copy story link to clipboard',
 };
 
 export type Feature = keyof typeof shortcutLabels;

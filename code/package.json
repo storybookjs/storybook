@@ -243,6 +243,7 @@
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
   },
+  "deferredNextVersion": "10.0.0-beta.3",
   "nx": {
     "name": "root",
     "includedScripts": []
@@ -281,6 +282,5 @@
         "Dependency Upgrades"
       ]
     ]
-  },
-  "deferredNextVersion": "10.0.0-beta.3"
+  }
 }

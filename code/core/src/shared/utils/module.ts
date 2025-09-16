@@ -3,6 +3,7 @@ import { createRequire, register } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { resolveModulePath } from 'exsolve';
 import { dirname, join } from 'pathe';
 
 /**
@@ -112,13 +113,17 @@ export const safeResolveModule = ({
   parent?: string;
   extensions?: string[];
 }) => {
-  for (const extension of [''].concat(extensions)) {
-    try {
-      const resolvedPath = fileURLToPath(importMetaResolve(specifier + extension, parent));
-      if (statSync(resolvedPath).isFile()) {
-        return resolvedPath;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {}
+  try {
+    const resolvedPath = resolveModulePath(specifier, {
+      from: parent,
+      extensions: [''].concat(extensions),
+    });
+    if (statSync(resolvedPath).isFile()) {
+      return resolvedPath;
+    }
+  } catch (e: any) {
+    if (e.code !== 'ERR_MODULE_NOT_FOUND') {
+      throw e;
+    }
   }
 };

@@ -13,29 +13,29 @@ import type { Tag } from 'storybook/internal/types';
 
 import {
   BatchAcceptIcon,
+  BeakerIcon,
   DeleteIcon,
   DocumentIcon,
+  PlayIcon,
   ShareAltIcon,
   SweepIcon,
   UndoIcon,
 } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { color, styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 
-const BUILT_IN_TAGS = new Set([
-  'dev',
-  'test',
+export const HIDDEN_TAGS = new Set(['dev', 'test']);
+
+export const BUILT_IN_TAGS = new Set([
+  ...HIDDEN_TAGS,
   'autodocs',
   'attached-mdx',
   'unattached-mdx',
   'play-fn',
   'test-fn',
-  'svelte-csf',
-  'svelte-csf-v4',
-  'svelte-csf-v5',
 ]);
 
 const Wrapper = styled.div({
@@ -112,13 +112,16 @@ export const TagsFilterPanel = ({
 }: TagsFilterPanelProps) => {
   const ref = useRef<HTMLDivElement>(null);
 
-  const [builtInEntries, userEntries] = allTags.entries().reduce(
-    (acc, [tag, count]) => {
-      acc[BUILT_IN_TAGS.has(tag) ? 0 : 1].push([tag, count]);
-      return acc;
-    },
-    [[], []] as [[Tag, number][], [Tag, number][]]
-  );
+  const userEntries = Array.from(allTags.entries())
+    .filter(([tag]) => !BUILT_IN_TAGS.has(tag))
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([tag, count]) => ({
+      title: tag,
+      count,
+      onToggle: (excluded?: boolean) => toggleTag(tag, excluded),
+      isIncluded: includedTags.has(tag),
+      isExcluded: excludedTags.has(tag),
+    }));
 
   const docsUrl = api.getDocsUrl({ subpath: 'writing-stories/tags#filtering-by-custom-tags' });
 
@@ -128,46 +131,58 @@ export const TagsFilterPanel = ({
     isIndented: false,
   };
 
-  const renderTag = ([tag, count]: [Tag, number]) => {
-    const excluded = excludedTags.has(tag);
-    const checked = excluded || includedTags.has(tag);
-    const id = `tag-${tag}`;
+  const renderTag = ({
+    icon,
+    title,
+    count,
+    onToggle,
+    isIncluded,
+    isExcluded,
+  }: {
+    icon?: React.ReactNode;
+    title: string;
+    count: number;
+    onToggle: (excluded?: boolean) => void;
+    isIncluded: boolean;
+    isExcluded: boolean;
+  }) => {
+    const isChecked = isIncluded || isExcluded;
     return {
-      id,
+      id: `tag-${title}`,
       content: (
         <TagRow>
           <WithTooltip
             delayShow={1000}
             hasChrome={false}
             style={{ minWidth: 0, flex: 1 }}
-            tooltip={<TooltipNote note={`${checked ? 'Remove' : 'Add'} tag filter: ${tag}`} />}
+            tooltip={<TooltipNote note={`${isChecked ? 'Remove' : 'Add'} tag filter: ${title}`} />}
             trigger="hover"
           >
             <ListItem
               as="label"
               icon={
                 <>
-                  {excluded && <DeleteIcon />}
-                  <Form.Checkbox checked={checked} onChange={() => toggleTag(tag)} data-tag={tag} />
+                  {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
+                  <Form.Checkbox checked={isChecked} onChange={() => onToggle()} data-tag={title} />
                 </>
               }
               title={
                 <Label>
-                  {tag}
-                  {excluded && <MutedText> (excluded)</MutedText>}
+                  {title}
+                  {isExcluded && <MutedText> (excluded)</MutedText>}
                 </Label>
               }
-              right={excluded ? <s>{count}</s> : <span>{count}</span>}
+              right={isExcluded ? <s>{count}</s> : <span>{count}</span>}
             />
           </WithTooltip>
           <WithTooltip
             delayShow={1000}
             hasChrome={false}
-            tooltip={<TooltipNote note={`${excluded ? 'Include' : 'Exclude'} tag: ${tag}`} />}
+            tooltip={<TooltipNote note={`${isExcluded ? 'Include' : 'Exclude'} tag: ${title}`} />}
             trigger="hover"
           >
-            <Button variant="ghost" size="medium" onClick={() => toggleTag(tag, !excluded)}>
-              {excluded ? 'Include' : 'Exclude'}
+            <Button variant="ghost" size="medium" onClick={() => onToggle(!isExcluded)}>
+              {isExcluded ? 'Include' : 'Exclude'}
             </Button>
           </WithTooltip>
         </TagRow>
@@ -177,8 +192,46 @@ export const TagsFilterPanel = ({
 
   const groups = [
     allTags.size === 0 ? [noTags] : [],
-    userEntries.sort((a, b) => a[0].localeCompare(b[0])).map(renderTag),
-    builtInEntries.sort((a, b) => a[0].localeCompare(b[0])).map(renderTag),
+    userEntries.map(renderTag),
+    [
+      renderTag({
+        icon: <DocumentIcon color={color.gold} />,
+        title: 'Documentation',
+        count:
+          (allTags.get('autodocs') || 0) +
+            (allTags.get('attached-mdx') || 0) +
+            (allTags.get('unattached-mdx') || 0) || 0,
+        onToggle: (excluded?: boolean) => {
+          toggleTag('autodocs', excluded);
+          toggleTag('attached-mdx', excluded);
+          toggleTag('unattached-mdx', excluded);
+        },
+        isIncluded:
+          includedTags.has('autodocs') ||
+          includedTags.has('attached-mdx') ||
+          includedTags.has('unattached-mdx'),
+        isExcluded:
+          excludedTags.has('autodocs') ||
+          excludedTags.has('attached-mdx') ||
+          excludedTags.has('unattached-mdx'),
+      }),
+      renderTag({
+        icon: <PlayIcon color={color.seafoam} />,
+        title: 'Play',
+        count: allTags.get('play-fn') || 0,
+        onToggle: (excluded?: boolean) => toggleTag('play-fn', excluded),
+        isIncluded: includedTags.has('play-fn'),
+        isExcluded: excludedTags.has('play-fn'),
+      }),
+      renderTag({
+        icon: <BeakerIcon color={color.green} />,
+        title: 'Testing',
+        count: allTags.get('test-fn') || 0,
+        onToggle: (excluded?: boolean) => toggleTag('test-fn', excluded),
+        isIncluded: includedTags.has('test-fn'),
+        isExcluded: excludedTags.has('test-fn'),
+      }),
+    ],
   ] as Link[][];
 
   if (userEntries.length === 0 && isDevelopment) {

@@ -6,7 +6,7 @@ import type { BuilderContext } from '@angular-devkit/architect';
 import { targetFromTargetString } from '@angular-devkit/architect';
 import type { JsonObject } from '@angular-devkit/core';
 import { logging } from '@angular-devkit/core';
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import type webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
@@ -146,9 +146,8 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
   // Handle tsConfig separately to maintain existing logic
   builderOptions.tsConfig =
     options.tsConfig ??
-    (await findUp('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() })) ??
+    find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
     browserTargetOptions.tsConfig;
-
   logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);
 
   return builderOptions;

@@ -5,7 +5,7 @@ import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/inter
 import { HandledError, commandLog, getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 import prompts from 'prompts';
 import semver from 'semver';
 
@@ -112,8 +112,8 @@ export function detectFrameworkPreset(
  * @returns CoreBuilder
  */
 export async function detectBuilder(packageManager: JsPackageManager, projectType: ProjectType) {
-  const viteConfig = findUpSync(viteConfigFiles, { stopAt: getProjectRoot() });
-  const webpackConfig = findUpSync(webpackConfigFiles, { stopAt: getProjectRoot() });
+  const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
+  const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
@@ -171,7 +171,7 @@ export function isStorybookInstantiated(configDir = resolve(process.cwd(), '.sto
 }
 
 export async function detectPnp() {
-  return !!findUpSync(['.pnp.js', '.pnp.cjs']);
+  return !!find.any(['.pnp.js', '.pnp.cjs']);
 }
 
 export async function detectLanguage(packageManager: JsPackageManager) {

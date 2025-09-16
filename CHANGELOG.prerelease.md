@@ -1,3 +1,18 @@
+## 10.0.0-beta.3
+
+- CLI: Add addon-console automigration - [#32083](https://github.com/storybookjs/storybook/pull/32083), thanks @Sidnioulz!
+- CLI: Capture the version specifier used in `create-storybook` - [#32344](https://github.com/storybookjs/storybook/pull/32344), thanks @shilman!
+- CLI: Init not running `dev` when it should fixed - [#32457](https://github.com/storybookjs/storybook/pull/32457), thanks @ndelangen!
+- CSF: Support `satisfies x as y` syntax - [#32169](https://github.com/storybookjs/storybook/pull/32169), thanks @diagramatics!
+- Core: Fix Node 24 deprecation warning - [#32382](https://github.com/storybookjs/storybook/pull/32382), thanks @JReinhold!
+- Core: Switch from `mlly` to `exsolve` - [#32383](https://github.com/storybookjs/storybook/pull/32383), thanks @mrginglymus!
+- Instrumenter: Fix userEvent.type performance regression - [#32439](https://github.com/storybookjs/storybook/pull/32439), thanks @ndelangen!
+- Modernize: Replace `fs-extra` with native APIs - [#32296](https://github.com/storybookjs/storybook/pull/32296), thanks @y-hsgw!
+- React Native Web: Fix RNW peer dependency version - [#32438](https://github.com/storybookjs/storybook/pull/32438), thanks @dannyhw!
+- React: Preserve `@ts-expect-error` in preview - [#32442](https://github.com/storybookjs/storybook/pull/32442), thanks @mrginglymus!
+- Replace: Use `empathic` over `find-up` - [#31338](https://github.com/storybookjs/storybook/pull/31338), thanks @beeequeue!
+- Telemetry: Record known CLI integrations - [#32448](https://github.com/storybookjs/storybook/pull/32448), thanks @shilman!
+
 ## 10.0.0-beta.2
 
 - Build: Fix dts bundling external detection - [#32366](https://github.com/storybookjs/storybook/pull/32366), thanks @mrginglymus!

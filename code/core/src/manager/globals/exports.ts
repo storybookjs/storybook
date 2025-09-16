@@ -97,6 +97,7 @@ export default {
     'BranchIcon',
     'BrowserIcon',
     'ButtonIcon',
+    'BugIcon',
     'CPUIcon',
     'CalendarIcon',
     'CameraIcon',

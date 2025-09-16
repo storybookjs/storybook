@@ -9,7 +9,7 @@ import {
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { ShareAltIcon as BugIcon, LinkIcon } from '@storybook/icons';
+import { BugIcon, LinkIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
 // @ts-expect-error see https://github.com/rosskhanas/react-qr-code/issues/251

@@ -8,11 +8,9 @@ import { FilterIcon } from '@storybook/icons';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { TagsFilterPanel } from './TagsFilterPanel';
+import { HIDDEN_TAGS, TagsFilterPanel } from './TagsFilterPanel';
 
 const TAGS_FILTER = 'tags-filter';
-
-const BUILT_IN_TAGS_HIDE = new Set(['dev', 'autodocs', 'test', 'attached-mdx', 'unattached-mdx']);
 
 const Wrapper = styled.div({
   position: 'relative',
@@ -47,7 +45,7 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
   const allTags = useMemo(() => {
     return Object.values(indexJson.entries).reduce((acc, entry) => {
       entry.tags?.forEach((tag: Tag) => {
-        if (!BUILT_IN_TAGS_HIDE.has(tag)) {
+        if (!HIDDEN_TAGS.has(tag)) {
           acc.set(tag, (acc.get(tag) || 0) + 1);
         }
       });

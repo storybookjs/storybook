@@ -1,7 +1,7 @@
 import { basename, parse, relative } from 'node:path';
 
 import { sync as spawnSync } from 'cross-spawn';
-import * as find from 'empathic/find';
+import { findUpSync } from 'find-up';
 
 import { getProjectRoot } from '../utils/paths';
 import { BUNProxy } from './BUNProxy';
@@ -56,11 +56,11 @@ export class JsPackageManagerFactory {
     const root = getProjectRoot();
 
     const lockFiles = [
-      find.up(YARN_LOCKFILE, { cwd, last: root }),
-      find.up(PNPM_LOCKFILE, { cwd, last: root }),
-      find.up(NPM_LOCKFILE, { cwd, last: root }),
-      find.up(BUN_LOCKFILE, { cwd, last: root }),
-      find.up(BUN_LOCKFILE_BINARY, { cwd, last: root }),
+      findUpSync(YARN_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(PNPM_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(NPM_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(BUN_LOCKFILE, { cwd, stopAt: root }),
+      findUpSync(BUN_LOCKFILE_BINARY, { cwd, stopAt: root }),
     ]
       .filter(Boolean)
       .sort((a, b) => {

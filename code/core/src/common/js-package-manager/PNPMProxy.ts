@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import * as find from 'empathic/find';
+import { findUpSync } from 'find-up';
 
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
@@ -143,9 +143,9 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
+    const pnpapiPath = findUpSync(['.pnp.js', '.pnp.cjs'], {
       cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
+      stopAt: getProjectRoot(),
     });
 
     if (pnpapiPath) {
@@ -172,8 +172,13 @@ export class PNPMProxy extends JsPackageManager {
       }
     }
 
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = findUpSync(
+      (dir) => {
+        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
+        return existsSync(possiblePath) ? possiblePath : undefined;
+      },
+      { cwd: this.cwd, stopAt: getProjectRoot() }
+    );
 
     if (!packageJsonPath) {
       return null;

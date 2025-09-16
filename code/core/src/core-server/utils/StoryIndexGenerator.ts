@@ -21,7 +21,7 @@ import type {
   Tag,
 } from 'storybook/internal/types';
 
-import * as find from 'empathic/find';
+import { findUp } from 'find-up';
 import picocolors from 'picocolors';
 import slash from 'slash';
 import invariant from 'tiny-invariant';
@@ -414,9 +414,9 @@ export class StoryIndexGenerator {
     invariant(indexer, `No matching indexer found for ${absolutePath}`);
 
     const indexInputs = await indexer.createIndex(absolutePath, { makeTitle: defaultMakeTitle });
-    const tsconfigPath = find.up('tsconfig.json', {
+    const tsconfigPath = await findUp('tsconfig.json', {
       cwd: this.options.workingDir,
-      last: getProjectRoot(),
+      stopAt: getProjectRoot(),
     });
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
     let matchPath: TsconfigPaths.MatchPath | undefined;

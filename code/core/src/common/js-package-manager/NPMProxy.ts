@@ -1,11 +1,11 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { join } from 'node:path';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import * as find from 'empathic/find';
+import { findUpSync } from 'find-up';
 import sort from 'semver/functions/sort.js';
 
 import { getProjectRoot } from '../utils/paths';
@@ -77,8 +77,13 @@ export class NPMProxy extends JsPackageManager {
   }
 
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const wantedPath = join('node_modules', packageName, 'package.json');
-    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
+    const packageJsonPath = findUpSync(
+      (dir) => {
+        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
+        return existsSync(possiblePath) ? possiblePath : undefined;
+      },
+      { cwd: this.primaryPackageJson.operationDir, stopAt: getProjectRoot() }
+    );
 
     if (!packageJsonPath) {
       return null;

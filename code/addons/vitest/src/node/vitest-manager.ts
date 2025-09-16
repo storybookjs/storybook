@@ -12,7 +12,7 @@ import type {
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
-import * as find from 'empathic/find';
+import { findUp } from 'find-up';
 import path, { dirname, join, normalize } from 'pathe';
 import slash from 'slash';
 
@@ -64,12 +64,12 @@ export class VitestManager {
         : { enabled: false }
     ) as CoverageOptions;
 
-    const vitestWorkspaceConfig = find.any(
+    const vitestWorkspaceConfig = await findUp(
       [
         ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
         ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
       ],
-      { last: getProjectRoot() }
+      { stopAt: getProjectRoot() }
     );
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;

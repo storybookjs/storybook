@@ -1,8 +1,6 @@
 import { join, relative, resolve, sep } from 'node:path';
 
-import * as find from 'empathic/find';
-import * as walk from 'empathic/walk';
-import { globSync } from 'tinyglobby';
+import { findUpSync } from 'find-up';
 
 import { LOCK_FILES } from '../js-package-manager/constants';
 
@@ -19,7 +17,10 @@ export const getProjectRoot = () => {
   }
 
   try {
-    const found = find.up('.git') || find.up('.svn') || find.up('.hg');
+    const found =
+      findUpSync('.git', { type: 'directory' }) ||
+      findUpSync('.svn', { type: 'directory' }) ||
+      findUpSync('.hg', { type: 'directory' });
     if (found) {
       projectRoot = join(found, '..');
       return projectRoot;
@@ -29,7 +30,7 @@ export const getProjectRoot = () => {
   }
 
   try {
-    const found = find.any(LOCK_FILES);
+    const found = findUpSync(LOCK_FILES, { type: 'file' });
     if (found) {
       projectRoot = join(found, '..');
       return projectRoot;
@@ -58,16 +59,6 @@ export const getProjectRoot = () => {
 
 export const invalidateProjectRootCache = () => {
   projectRoot = undefined;
-};
-
-/** Finds files in the directory tree up to the project root */
-export const findFilesUp = (matchers: string[], baseDir = process.cwd()) => {
-  const matchingFiles: string[] = [];
-  for (const directory of walk.up(baseDir, { last: getProjectRoot() })) {
-    matchingFiles.push(...globSync(matchers, { cwd: directory, absolute: true }));
-  }
-
-  return matchingFiles;
 };
 
 export const nodePathsToArray = (nodePath: string) =>

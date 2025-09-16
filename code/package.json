@@ -243,6 +243,7 @@
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
   },
+  "deferredNextVersion": "10.0.0-beta.4",
   "nx": {
     "name": "root",
     "includedScripts": []

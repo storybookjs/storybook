@@ -196,16 +196,21 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       return false;
     }
 
+    // Normalize special characters produced by Option/Alt on macOS (e.g. ['Ø','O'] -> 'O')
+    const normalizedShortcut = shortcut.map((key) =>
+      Array.isArray(key) ? key[key.length - 1] : key
+    );
+
     // Check we don't match any other shortcuts
     const error = !!Object.entries(shortcutKeys).find(
       ([feature, { shortcut: existingShortcut }]) =>
         feature !== activeFeature &&
         existingShortcut &&
-        shortcutMatchesShortcut(shortcut, existingShortcut)
+        shortcutMatchesShortcut(normalizedShortcut, existingShortcut)
     );
 
     return this.setState({
-      shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut, error } },
+      shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut: normalizedShortcut, error } },
     });
   };
 

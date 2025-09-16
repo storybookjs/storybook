@@ -45,7 +45,7 @@
     "lint:prettier": "prettier --write",
     "local-registry": "yarn --cwd ../scripts local-registry",
     "publish-sandboxes": "yarn --cwd ../scripts publish",
-    "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
+    "storybook:ui": "NODE_OPTIONS=\"--max_old_space_size=4096 --trace-deprecation\" core/dist/bin/dispatcher.js dev --port 6006 --config-dir ./.storybook",
     "storybook:ui:build": "NODE_OPTIONS=\"--max_old_space_size=4096\" core/dist/bin/dispatcher.js build --config-dir ./.storybook --webpack-stats-json",
     "storybook:ui:chromatic": "../scripts/node_modules/.bin/chromatic --build-script-name storybook:ui:build --storybook-base-dir ./ --exit-zero-on-changes --exit-once-uploaded",
     "storybook:vitest": "yarn test:watch --project storybook-ui",
@@ -103,8 +103,8 @@
   },
   "dependencies": {
     "@chromatic-com/storybook": "^4.1.1",
-    "@nx/vite": "20.2.2",
-    "@nx/workspace": "20.2.2",
+    "@nx/vite": "20.8.2",
+    "@nx/workspace": "20.8.2",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "9.0.0-next.1",
@@ -190,7 +190,7 @@
     "jiti": "^2.4.2",
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
-    "nx": "^20.4.0",
+    "nx": "20.8.2",
     "prettier": "^3.5.3",
     "prettier-plugin-brace-style": "^0.6.2",
     "prettier-plugin-css-order": "^2.1.2",
@@ -243,6 +243,7 @@
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
   },
+  "deferredNextVersion": "10.0.0-beta.3",
   "nx": {
     "name": "root",
     "includedScripts": []

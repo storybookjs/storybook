@@ -8,7 +8,7 @@
     "eslint-plugin",
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/code/lib/eslint-plugin#readme",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/eslint-plugin#readme",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

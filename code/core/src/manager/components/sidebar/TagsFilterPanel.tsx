@@ -16,7 +16,7 @@ import {
   BeakerIcon,
   DeleteIcon,
   DocumentIcon,
-  PlayIcon,
+  PlayHollowIcon,
   ShareAltIcon,
   SweepIcon,
   UndoIcon,
@@ -216,7 +216,7 @@ export const TagsFilterPanel = ({
           excludedTags.has('unattached-mdx'),
       }),
       renderTag({
-        icon: <PlayIcon color={color.seafoam} />,
+        icon: <PlayHollowIcon color={color.seafoam} />,
         title: 'Play',
         count: allTags.get('play-fn') || 0,
         onToggle: (excluded?: boolean) => toggleTag('play-fn', excluded),

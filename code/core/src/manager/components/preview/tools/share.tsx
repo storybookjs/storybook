@@ -9,7 +9,7 @@ import {
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { BugIcon, LinkIcon } from '@storybook/icons';
+import { BugIcon, LinkIcon, ShareIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
 // @ts-expect-error see https://github.com/rosskhanas/react-qr-code/issues/251
@@ -18,7 +18,7 @@ import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-const { PREVIEW_URL, document, STORYBOOK_NETWORK_ADDRESS } = global as any;
+const { PREVIEW_URL, document } = global as any;
 
 const mapper = ({ state }: Combo) => {
   const { storyId, refId, refs } = state;
@@ -151,7 +151,7 @@ export const shareTool: Addon_BaseType = {
   type: types.TOOL,
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
   render: () => {
-    const externalUrl = (global.STORYBOOK_NETWORK_ADDRESS as string | undefined) ?? undefined;
+    const externalUrl = global.STORYBOOK_NETWORK_ADDRESS ?? undefined;
     return (
       <Consumer filter={mapper}>
         {({ baseUrl, storyId, queryParams }) =>
@@ -162,7 +162,7 @@ export const shareTool: Addon_BaseType = {
               tooltip={<ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: externalUrl }} />}
             >
               <IconButton title="Share">
-                <BugIcon />
+                <ShareIcon />
               </IconButton>
             </WithTooltip>
           ) : null

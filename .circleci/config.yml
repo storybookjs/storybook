@@ -277,6 +277,11 @@ jobs:
       - attach_workspace:
           at: .
       - run:
+          command: |
+            TEMPLATE=$(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox)
+            cd sandbox/$(yarn get-sandbox-dir --template $TEMPLATE) && yarn
+          name: Install sandbox dependencies
+      - run:
           command: yarn task --task check-sandbox --template $(yarn get-template --cadence << pipeline.parameters.workflow >> --task check-sandbox) --no-link --start-from=never --junit
           name: Type check Sandboxes
       - report-workflow-on-failure:

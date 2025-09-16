@@ -1,3 +1,7 @@
+## 10.0.0-beta.4
+
+- Replace: Use `empathic` over `find-up` - [#32472](https://github.com/storybookjs/storybook/pull/32472), thanks @ndelangen!
+
 ## 10.0.0-beta.3
 
 - CLI: Add addon-console automigration - [#32083](https://github.com/storybookjs/storybook/pull/32083), thanks @Sidnioulz!

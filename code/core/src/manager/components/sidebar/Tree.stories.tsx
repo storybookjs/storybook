@@ -47,6 +47,7 @@ const managerContext: any = {
           },
         }) satisfies Addon_Collection<Addon_TestProviderType>
     ),
+    getData: fn().mockName('api::getData'),
   },
 };
 

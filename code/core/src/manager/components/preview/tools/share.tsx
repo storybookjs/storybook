@@ -153,7 +153,8 @@ export const shareTool: Addon_BaseType = {
   type: types.TOOL,
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
   render: () => {
-    const externalUrl = global.STORYBOOK_NETWORK_ADDRESS ?? undefined;
+    const externalBaseUrl = global.STORYBOOK_NETWORK_ADDRESS ?? '';
+    const storyUrl = `${externalBaseUrl}${window.location.search}`;
     return (
       <Consumer filter={mapper}>
         {({ baseUrl, storyId, queryParams }) =>
@@ -161,7 +162,7 @@ export const shareTool: Addon_BaseType = {
             <WithTooltip
               hasChrome
               placement="bottom"
-              tooltip={<ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: externalUrl }} />}
+              tooltip={<ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl }} />}
             >
               <IconButton title="Share">
                 <ShareIcon />

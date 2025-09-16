@@ -153,12 +153,14 @@ export const shareTool: Addon_BaseType = {
   type: types.TOOL,
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
   render: () => {
-    const externalBaseUrl = global.STORYBOOK_NETWORK_ADDRESS ?? window.location.href;
-    const storyUrl = `${externalBaseUrl}${window.location.search}`;
     return (
       <Consumer filter={mapper}>
-        {({ baseUrl, storyId, queryParams }) =>
-          storyId ? (
+        {({ baseUrl, storyId, queryParams }) => {
+          const storyUrl = global.STORYBOOK_NETWORK_ADDRESS
+            ? `${global.STORYBOOK_NETWORK_ADDRESS}${window.location.search}`
+            : window.location.href;
+
+          return storyId ? (
             <WithTooltip
               hasChrome
               placement="bottom"
@@ -168,8 +170,8 @@ export const shareTool: Addon_BaseType = {
                 <ShareIcon />
               </IconButton>
             </WithTooltip>
-          ) : null
-        }
+          ) : null;
+        }}
       </Consumer>
     );
   },

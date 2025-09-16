@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.0.0-beta.2",
+  "version": "10.0.0-beta.4",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -85,9 +85,9 @@
     "@vitest/browser": "^3.2.4",
     "@vitest/runner": "^3.2.4",
     "boxen": "^8.0.1",
+    "empathic": "^2.0.0",
     "es-toolkit": "^1.36.0",
     "execa": "^8.0.1",
-    "find-up": "^7.0.0",
     "istanbul-lib-report": "^3.0.1",
     "micromatch": "^4.0.8",
     "pathe": "^1.1.2",

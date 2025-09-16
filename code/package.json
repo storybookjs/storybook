@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "10.0.0-beta.2",
+  "version": "10.0.0-beta.4",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -103,8 +103,8 @@
   },
   "dependencies": {
     "@chromatic-com/storybook": "^4.1.1",
-    "@nx/vite": "20.2.2",
-    "@nx/workspace": "20.2.2",
+    "@nx/vite": "20.8.2",
+    "@nx/workspace": "20.8.2",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-designs": "9.0.0-next.1",
@@ -190,7 +190,7 @@
     "jiti": "^2.4.2",
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
-    "nx": "^20.4.0",
+    "nx": "20.8.2",
     "prettier": "^3.5.3",
     "prettier-plugin-brace-style": "^0.6.2",
     "prettier-plugin-css-order": "^2.1.2",

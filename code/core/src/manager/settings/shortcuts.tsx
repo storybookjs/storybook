@@ -200,8 +200,8 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
     // Normalize special characters produced by Option/Alt on macOS (e.g. ['Ø','O'] -> 'O')
     const normalizedShortcut = shortcut.map((key) =>
-      Array.isArray(key) ? key[key.length - 1] : key
-    );
+      Array.isArray(key) ? key.at(-1) : key
+    ) as string[];
 
     // Check we don't match any other shortcuts
     const error = !!Object.entries(shortcutKeys).find(

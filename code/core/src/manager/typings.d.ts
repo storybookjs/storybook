@@ -1,7 +1,10 @@
 declare var DOCS_OPTIONS: any;
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';
 declare var PREVIEW_URL: any;
-declare var STORYBOOK_ADDRESS: string | undefined;
+/**
+ * The network address of the Storybook instance. Used by Storybook to generate a QR code so users
+ * can access the story on mobile devices.
+ */
 declare var STORYBOOK_NETWORK_ADDRESS: string | undefined;
 
 declare var __STORYBOOK_ADDONS_MANAGER: any;

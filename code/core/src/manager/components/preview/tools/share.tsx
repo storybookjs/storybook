@@ -95,6 +95,7 @@ function ShareMenu({
   const shortcutKeys = api.getShortcutKeys();
   const enableShortcuts = !!shortcutKeys;
   const [copied, setCopied] = useState(false);
+  const copyStoryLink = shortcutKeys?.copyStoryLink;
 
   const links = useMemo(() => {
     const copyTitle = copied ? 'Copied!' : 'Copy story link';
@@ -104,7 +105,7 @@ function ShareMenu({
           id: 'copy-link',
           title: copyTitle,
           icon: <LinkIcon />,
-          right: enableShortcuts ? <Shortcut keys={shortcutKeys.copyStoryLink} /> : null,
+          right: enableShortcuts ? <Shortcut keys={copyStoryLink} /> : null,
           onClick: () => {
             copy(window.location.href);
             setCopied(true);
@@ -142,7 +143,7 @@ function ShareMenu({
     }
 
     return baseLinks;
-  }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, shortcutKeys.copyStoryLink]);
+  }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, copyStoryLink]);
 
   return <TooltipLinkList links={links} />;
 }

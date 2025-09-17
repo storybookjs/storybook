@@ -200,7 +200,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   // Build additional global values
   const globals: Record<string, any> = await buildFrameworkGlobalsFromOptions(options);
-  globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
 
   yield;
 

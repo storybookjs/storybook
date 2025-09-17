@@ -1,3 +1,9 @@
+## 10.0.0-beta.5
+
+- Dependencies: Update `vite-plugin-storybook-nextjs` to 2.0.7 - [#32331](https://github.com/storybookjs/storybook/pull/32331), thanks @k35o!
+- Fix: ESLint plugin homepage URL updates - [#32445](https://github.com/storybookjs/storybook/pull/32445), thanks @VivekKavala!
+- Upgrades: Packages `boxen` `commander` `giget` - [#32469](https://github.com/storybookjs/storybook/pull/32469), thanks @ndelangen!
+
 ## 10.0.0-beta.4
 
 - Replace: Use `empathic` over `find-up` - [#31338](https://github.com/storybookjs/storybook/pull/31338), thanks @beeequeue!

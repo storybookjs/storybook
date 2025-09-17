@@ -138,6 +138,7 @@ export const SingleStoryComponents: Story = {
             },
             'single--single': {
               type: 'story',
+              subtype: 'story',
               id: 'single--single',
               title: 'Single',
               name: 'Single',

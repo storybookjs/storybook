@@ -127,6 +127,7 @@ describe('stories API', () => {
       });
       expect(index!['component-a--story-1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'component-a--story-1',
         parent: 'component-a',
         title: 'Component A',
@@ -172,6 +173,7 @@ describe('stories API', () => {
       });
       expect(index!['design-system-some-component--my-story']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         title: '  Design System  /  Some Component  ', // title is kept as-is, because it may be used as identifier
         name: '  My Story  ', // story name is kept as-is, because it's set directly on the story
       });
@@ -251,6 +253,7 @@ describe('stories API', () => {
       });
       expect(index!['a-b--1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a-b--1',
         parent: 'a-b',
         name: '1',
@@ -285,6 +288,7 @@ describe('stories API', () => {
       });
       expect(index!['a--1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a--1',
         parent: 'a',
         title: 'a',
@@ -329,6 +333,7 @@ describe('stories API', () => {
       });
       expect(index!['a--1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a--1',
         parent: 'a',
         title: 'a',
@@ -337,6 +342,7 @@ describe('stories API', () => {
       });
       expect(index!['a--2']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a--2',
         parent: 'a',
         title: 'a',
@@ -489,6 +495,7 @@ describe('stories API', () => {
       const { index } = store.getState();
       expect(index!['prepared--story']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'prepared--story',
         parent: 'prepared',
         title: 'Prepared',
@@ -624,6 +631,7 @@ describe('stories API', () => {
             entries: {
               'component-a--story-1': {
                 type: 'story',
+                subtype: 'story',
                 id: 'component-a--story-1',
                 title: 'Component A',
                 name: 'Story 1',
@@ -675,6 +683,7 @@ describe('stories API', () => {
             entries: {
               'component-a--story-1': {
                 type: 'story',
+                subtype: 'story',
                 id: 'component-a--story-1',
                 title: 'Component A',
                 name: 'Story 1',
@@ -1220,6 +1229,7 @@ describe('stories API', () => {
       const { index } = store.getState();
       expect(index!['component-a--story-1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'component-a--story-1',
         parent: 'component-a',
         title: 'Component A',

@@ -540,7 +540,6 @@ export default {
     'UL',
     'WithPopover',
     'WithTooltip',
-    'WithTooltipPure',
     'Zoom',
     'codeCommon',
     'components',

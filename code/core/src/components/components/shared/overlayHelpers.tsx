@@ -1,4 +1,6 @@
-import type { Decorator } from '@storybook/react';
+import React from 'react';
+
+import type { DecoratorFunction } from 'storybook/internal/csf';
 
 import type { PositionProps } from '@react-types/overlays';
 import memoize from 'memoizerific';
@@ -62,4 +64,6 @@ export const Trigger = styled.button({
 });
 
 // Story helper
-export const OverlayTriggerDecorator: Decorator = (storyFn) => <Container>{storyFn()}</Container>;
+export const OverlayTriggerDecorator: DecoratorFunction = (storyFn) => (
+  <Container>{storyFn()}</Container>
+);

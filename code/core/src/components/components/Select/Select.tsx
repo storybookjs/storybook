@@ -2,7 +2,7 @@ import type { FC, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import type { ButtonProps } from 'storybook/internal/components';
-import { Button, ScrollArea } from 'storybook/internal/components';
+import { Button, Popover, ScrollArea } from 'storybook/internal/components';
 
 import { RefreshIcon } from '@storybook/icons';
 
@@ -12,7 +12,6 @@ import { Overlay, useInteractOutside, useOverlay, useOverlayPosition } from 'rea
 import { useOverlayTriggerState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
-import { Tooltip } from '../tooltip/Tooltip';
 import { SelectOption } from './SelectOption';
 import type { Option, ResetOption } from './helpers';
 import { Listbox, PAGE_STEP_SIZE } from './helpers';
@@ -162,9 +161,9 @@ const MinimalistPopover: FC<{
   return (
     <Overlay disableFocusManagement {...overlayProps}>
       <Underlay {...underlayProps} />
-      <Tooltip hasChrome ref={popoverRef} {...positionProps}>
+      <Popover hasChrome ref={popoverRef} padding={0} {...positionProps}>
         {children}
-      </Tooltip>
+      </Popover>
     </Overlay>
   );
 };

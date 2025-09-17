@@ -152,6 +152,7 @@ export default {
     'DownloadIcon',
     'DragIcon',
     'EditIcon',
+    'EditorIcon',
     'EllipsisIcon',
     'EmailIcon',
     'ExpandAltIcon',

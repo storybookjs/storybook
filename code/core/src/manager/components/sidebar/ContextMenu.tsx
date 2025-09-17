@@ -10,7 +10,7 @@ import {
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { CopyIcon, EllipsisIcon, MarkupIcon } from '@storybook/icons';
+import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
 import { openInEditor, useStorybookApi } from 'storybook/manager-api';
@@ -133,7 +133,7 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
       topLinks.push({
         id: 'open-in-editor',
         title: 'Open in editor',
-        icon: <MarkupIcon />,
+        icon: <EditorIcon />,
         right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
         onClick: (e) => {
           e.preventDefault();

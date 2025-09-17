@@ -4,7 +4,7 @@ import { IconButton } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
-import { MarkupIcon } from '@storybook/icons';
+import { EditorIcon } from '@storybook/icons';
 
 import { Consumer, openInEditor, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
@@ -41,7 +41,7 @@ export const openInEditorTool: Addon_BaseType = {
             title="Open in editor"
             aria-label="Open in editor"
           >
-            <MarkupIcon />
+            <EditorIcon />
           </IconButton>
         );
       }}

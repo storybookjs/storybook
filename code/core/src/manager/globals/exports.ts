@@ -530,6 +530,7 @@ export default {
     'TooltipMessage',
     'TooltipNote',
     'UL',
+    'WithMenu',
     'WithPopover',
     'WithTooltip',
     'Zoom',

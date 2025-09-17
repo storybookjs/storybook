@@ -68,6 +68,12 @@ export type { PopoverProps } from './components/Popover/Popover';
 export { WithPopover } from './components/Popover/lazy-WithPopover';
 export type { WithPopoverProps } from './components/Popover/WithPopover';
 
+// Menus
+export { MenuItem } from './components/Menu/MenuItem';
+export type { MenuItemProps } from './components/Menu/MenuItem';
+export { WithMenu } from './components/Menu/lazy-WithMenu';
+export type { WithMenuProps } from './components/Menu/WithMenu';
+
 // Tooltips
 export { Tooltip } from './components/tooltip/Tooltip';
 export type { TooltipProps } from './components/tooltip/Tooltip';

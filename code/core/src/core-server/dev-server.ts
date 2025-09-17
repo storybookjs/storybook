@@ -16,7 +16,7 @@ import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
 import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 import { getMiddleware } from './utils/middleware';
-import { openInBrowser } from './utils/open-in-browser';
+import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
@@ -121,7 +121,9 @@ export async function storybookDevServer(options: Options) {
   await Promise.all([initializedStoryIndexGenerator, listening]).then(async ([indexGenerator]) => {
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
       const url = host ? networkAddress : address;
-      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url);
+      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url).catch(() => {
+        // the browser window could not be opened, this is non-critical, we just ignore the error
+      });
     }
   });
   if (indexError) {

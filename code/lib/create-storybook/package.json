@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "10.0.0-beta.3",
+  "version": "10.0.0-beta.5",
   "description": "Storybook installer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -48,8 +48,8 @@
   "devDependencies": {
     "@types/prompts": "^2.0.9",
     "@types/semver": "^7.3.4",
-    "boxen": "^7.1.1",
-    "commander": "^12.1.0",
+    "boxen": "^8.0.1",
+    "commander": "^14.0.1",
     "empathic": "^2.0.0",
     "execa": "^5.0.0",
     "ora": "^5.4.1",

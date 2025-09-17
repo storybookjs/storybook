@@ -6099,9 +6099,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-designs@npm:10.0.3--canary.20142ee.0":
-  version: 10.0.3--canary.20142ee.0
-  resolution: "@storybook/addon-designs@npm:10.0.3--canary.20142ee.0"
+"@storybook/addon-designs@npm:10.0.3--canary.67522d1.0":
+  version: 10.0.3--canary.67522d1.0
+  resolution: "@storybook/addon-designs@npm:10.0.3--canary.67522d1.0"
   dependencies:
     "@figspec/react": "npm:^1.0.0"
   peerDependencies:
@@ -6116,7 +6116,7 @@ __metadata:
       optional: true
     react-dom:
       optional: true
-  checksum: 10c0/0ff49a2863fdce70a6633874c0f1313db2b364b2159859585663a134a905e28315c6b3cc5d04ceab4622c0aa311f0aa285981ea78ad64cc39e3910f52c9f2978
+  checksum: 10c0/050fa029304f998904944300c19a9fa85393e7177b0a84a2125fbccce55c21c4edd2be58a94ca27d1164d67bee07a5b4b09ca1e933c794987b2426857875e542
   languageName: node
   linkType: hard
 
@@ -6869,7 +6869,7 @@ __metadata:
     "@nx/workspace": "npm:20.8.2"
     "@playwright/test": "npm:1.52.0"
     "@storybook/addon-a11y": "workspace:*"
-    "@storybook/addon-designs": "npm:10.0.3--canary.20142ee.0"
+    "@storybook/addon-designs": "npm:10.0.3--canary.67522d1.0"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-jest": "workspace:*"
     "@storybook/addon-links": "workspace:*"

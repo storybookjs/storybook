@@ -110,7 +110,7 @@
     "@nx/workspace": "20.8.2",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
-    "@storybook/addon-designs": "10.0.3--canary.20142ee.0",
+    "@storybook/addon-designs": "10.0.3--canary.67522d1.0",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-jest": "workspace:*",
     "@storybook/addon-links": "workspace:*",

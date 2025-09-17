@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
-import { Badge, Button, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button, WithPopover } from 'storybook/internal/components';
 import type { StoryIndex, Tag } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
@@ -117,42 +117,35 @@ export const TagsFilter = ({
   }
 
   return (
-    <>
-      <WithTooltip
-        placement="bottom"
-        trigger="click"
-        onVisibleChange={setExpanded}
-        // render the tooltip in the mobile menu (so that the stacking context is correct) and fallback to document.body on desktop
-        portalContainer="#storybook-mobile-menu"
-        tooltip={() => (
-          <TagsFilterPanel
-            api={api}
-            allTags={allTags}
-            selectedTags={selectedTags}
-            toggleTag={toggleTag}
-            setAllTags={setAllTags}
-            inverted={inverted}
-            setInverted={setInverted}
-            isDevelopment={isDevelopment}
-          />
-        )}
-        closeOnOutsideClick
+    <WithPopover
+      placement="bottom"
+      onVisibleChange={setExpanded}
+      offset={8}
+      popover={() => (
+        <TagsFilterPanel
+          api={api}
+          allTags={allTags}
+          selectedTags={selectedTags}
+          toggleTag={toggleTag}
+          setAllTags={setAllTags}
+          inverted={inverted}
+          setInverted={setInverted}
+          isDevelopment={isDevelopment}
+        />
+      )}
+    >
+      <StyledIconButton
+        key="tags"
+        ariaLabel="Tag filters"
+        ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
+        variant="ghost"
+        padding="small"
+        active={tagsActive}
+        onClick={handleToggleExpand}
       >
-        <Wrapper>
-          <StyledIconButton
-            key="tags"
-            ariaLabel="Tag filters"
-            ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
-            variant="ghost"
-            padding="small"
-            active={tagsActive}
-            onClick={handleToggleExpand}
-          >
-            <FilterIcon />
-          </StyledIconButton>
-          {selectedTags.length > 0 && <TagSelected />}
-        </Wrapper>
-      </WithTooltip>
-    </>
+        <FilterIcon />
+        {selectedTags.length > 0 && <TagSelected />}
+      </StyledIconButton>
+    </WithPopover>
   );
 };

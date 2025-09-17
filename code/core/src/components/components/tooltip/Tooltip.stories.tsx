@@ -1,84 +1,83 @@
-import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { styled } from 'storybook/theming';
-
+import preview from '../../../../../.storybook/preview';
 import { Tooltip } from './Tooltip';
 
-// Popper would position the tooltip absolutely. We just need to make sure we are pos:rel
-const mockPopperProps = {
-  style: {
-    position: 'relative',
-    top: 20,
-    left: 20,
+const SampleTooltip = () => (
+  <div>
+    <h3>Lorem ipsum dolor sit amet</h3>
+    <p>Consectatur vestibulum concet durum politu coret weirom</p>
+  </div>
+);
+
+const meta = preview.meta({
+  id: 'overlay-Tooltip',
+  title: 'Overlay/Tooltip',
+  component: Tooltip,
+  args: {
+    children: <SampleTooltip />,
+    color: undefined,
+    hasChrome: true,
   },
-};
-const Content = styled.div({
-  width: '100px',
-  height: '100px',
-  fontSize: '16px',
-  textAlign: 'center',
-  lineHeight: '100px',
+  argTypes: {
+    color: {
+      type: 'string',
+      control: 'select',
+      options: ['default', 'inverse', 'positive', 'negative', 'warning', 'none'],
+    },
+  },
 });
 
-export default {
-  component: Tooltip,
-  args: mockPopperProps,
-};
-
-export const BasicDefault = {
-  // args: mockPopperProps,
-  render: (args: ComponentProps<typeof Tooltip>) => (
-    <Tooltip {...args}>
-      <Content>Text</Content>
-    </Tooltip>
-  ),
-};
-
-export const BasicDefaultBottom = {
+export const Base = meta.story({
   args: {
-    // ...mockPopperProps,
-    placement: 'bottom',
+    children: <SampleTooltip />,
   },
-  render: (args: ComponentProps<typeof Tooltip>) => (
-    <Tooltip {...args}>
-      <Content>Text</Content>
-    </Tooltip>
-  ),
-};
+});
 
-export const BasicDefaultLeft = {
+export const WithChrome = meta.story({
   args: {
-    // ...mockPopperProps,
-    placement: 'left',
+    hasChrome: true,
   },
-  render: (args: ComponentProps<typeof Tooltip>) => (
-    <Tooltip {...args}>
-      <Content>Text</Content>
-    </Tooltip>
-  ),
-};
+});
 
-export const BasicDefaultRight = {
+export const WithoutChrome = meta.story({
   args: {
-    // ...mockPopperProps,
-    placement: 'right',
-  },
-  render: (args: ComponentProps<typeof Tooltip>) => (
-    <Tooltip {...args}>
-      <Content>Text</Content>
-    </Tooltip>
-  ),
-};
-
-export const WithoutChrome = {
-  args: {
-    // ...mockPopperProps,
     hasChrome: false,
   },
-  render: (args: ComponentProps<typeof Tooltip>) => (
-    <Tooltip {...args}>
-      <Content>Text</Content>
-    </Tooltip>
-  ),
-};
+});
+
+export const ColorDefault = meta.story({
+  args: {
+    color: 'default',
+  },
+});
+
+export const ColorInverse = meta.story({
+  args: {
+    color: 'inverse',
+  },
+});
+
+export const ColorPositive = meta.story({
+  args: {
+    color: 'positive',
+  },
+});
+
+export const ColorNegative = meta.story({
+  args: {
+    color: 'negative',
+  },
+});
+
+export const ColorWarning = meta.story({
+  args: {
+    color: 'warning',
+  },
+});
+
+export const WithoutColor = meta.story({
+  args: {
+    color: 'none',
+  },
+});

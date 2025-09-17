@@ -1,5 +1,5 @@
 import type { AnchorHTMLAttributes, MouseEvent } from 'react';
-import React from 'react';
+import React, { forwardRef } from 'react';
 
 import { ChevronRightIcon } from '@storybook/icons';
 
@@ -185,24 +185,31 @@ export interface LinkProps extends LinkInnerProps, LinkStylesProps, AProps {
   href?: string;
 }
 
-export const Link = ({
-  cancel = true,
-  children,
-  onClick = undefined,
-  withArrow = false,
-  containsIcon = false,
-  className = undefined,
-  style = undefined,
-  ...rest
-}: LinkProps) => (
-  <A
-    {...rest}
-    onClick={onClick && cancel ? (e) => cancelled(e, onClick) : onClick}
-    className={className}
-  >
-    <LinkInner withArrow={withArrow} containsIcon={containsIcon}>
-      {children}
-      {withArrow && <ChevronRightIcon />}
-    </LinkInner>
-  </A>
+export const Link = forwardRef<HTMLAnchorElement, LinkProps>(
+  (
+    {
+      cancel = true,
+      children,
+      onClick = undefined,
+      withArrow = false,
+      containsIcon = false,
+      className = undefined,
+      style = undefined,
+      ...rest
+    },
+    ref
+  ) => (
+    <A
+      {...rest}
+      ref={ref}
+      onClick={onClick && cancel ? (e) => cancelled(e, onClick) : onClick}
+      className={className}
+    >
+      <LinkInner withArrow={withArrow} containsIcon={containsIcon}>
+        {children}
+        {withArrow && <ChevronRightIcon />}
+      </LinkInner>
+    </A>
+  )
 );
+Link.displayName = 'Link';

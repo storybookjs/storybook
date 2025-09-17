@@ -174,9 +174,17 @@ export const FileSearchList = memo(function FileSearchList({
   );
 
   const ListItem = useCallback(
-    ({ virtualItem, selected, searchResult }: FileItemContentProps) => {
+    ({
+      virtualItem,
+      selected,
+      searchResult,
+      noExports,
+    }: FileItemContentProps & { noExports: boolean }) => {
       const itemError = errorItemId === searchResult.filepath;
       const itemSelected = selected === virtualItem.index;
+      const tooltip = noExports
+        ? "We can't evaluate exports for this file. Automatic story creation is disabled."
+        : undefined;
 
       return (
         <FileListItem
@@ -184,30 +192,34 @@ export const FileSearchList = memo(function FileSearchList({
           aria-controls={`file-list-export-${virtualItem.index}`}
           id={`file-list-item-wrapper-${virtualItem.index}`}
         >
-          <FileListItemContentWrapper
-            className="file-list-item"
-            selected={itemSelected}
-            error={itemError}
-            disabled={
-              searchResult.exportedComponents === null ||
-              searchResult.exportedComponents?.length === 0
-            }
+          <WithTooltip
+            tooltip={tooltip ? <TooltipNote note={tooltip} /> : undefined}
+            placement="top-start"
+            delayHide={100}
+            delayShow={200}
           >
-            {itemSelected ? (
-              <TreeCollapseIconStyled size={14} />
-            ) : (
-              <TreeExpandIconStyled size={14} />
-            )}
-            <FileListIconWrapper error={itemError}>
-              <ComponentIcon />
-            </FileListIconWrapper>
-            <FileListItemContent>
-              <FileListItemLabel error={itemError}>
-                {searchResult.filepath.split('/').at(-1)}
-              </FileListItemLabel>
-              <FileListItemPath>{searchResult.filepath}</FileListItemPath>
-            </FileListItemContent>
-          </FileListItemContentWrapper>
+            <FileListItemContentWrapper
+              className="file-list-item"
+              selected={itemSelected}
+              error={itemError}
+              disabled={noExports}
+            >
+              {itemSelected ? (
+                <TreeCollapseIconStyled size={14} />
+              ) : (
+                <TreeExpandIconStyled size={14} />
+              )}
+              <FileListIconWrapper error={itemError}>
+                <ComponentIcon />
+              </FileListIconWrapper>
+              <FileListItemContent>
+                <FileListItemLabel error={itemError}>
+                  {searchResult.filepath.split('/').at(-1)}
+                </FileListItemLabel>
+                <FileListItemPath>{searchResult.filepath}</FileListItemPath>
+              </FileListItemContent>
+            </FileListItemContentWrapper>
+          </WithTooltip>
           {/* @ts-expect-error (non strict) */}
           {searchResult?.exportedComponents?.length > 1 && itemSelected && (
             <FileListExport
@@ -345,38 +357,14 @@ export const FileSearchList = memo(function FileSearchList({
                   }}
                   tabIndex={0}
                 >
-                  {noExports ? (
-                    <WithTooltip
-                      {...itemProps}
-                      style={{ width: '100%' }}
-                      trigger="hover"
-                      hasChrome={false}
-                      delayHide={100}
-                      delayShow={200}
-                      placement="top-start"
-                      tooltip={
-                        <TooltipNote
-                          note={
-                            "We can't evaluate exports for this file. Automatic story creation is disabled."
-                          }
-                        />
-                      }
-                    >
-                      <ListItem
-                        searchResult={searchResult}
-                        selected={selectedItem}
-                        virtualItem={virtualItem}
-                      />
-                    </WithTooltip>
-                  ) : (
-                    <ListItem
-                      {...itemProps}
-                      key={virtualItem.index}
-                      searchResult={searchResult}
-                      selected={selectedItem}
-                      virtualItem={virtualItem}
-                    />
-                  )}
+                  <ListItem
+                    {...itemProps}
+                    key={virtualItem.index}
+                    searchResult={searchResult}
+                    selected={selectedItem}
+                    virtualItem={virtualItem}
+                    noExports={noExports}
+                  />
                 </FileListLi>
               );
             })}

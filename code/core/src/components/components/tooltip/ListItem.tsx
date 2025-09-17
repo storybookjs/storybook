@@ -1,5 +1,7 @@
 import React, { type ComponentProps, type ReactNode, type SyntheticEvent } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
+
 import memoize from 'memoizerific';
 import { styled } from 'storybook/theming';
 
@@ -209,6 +211,10 @@ const ListItem = (props: ListItemProps) => {
   const commonProps = { active, disabled };
   const itemProps = getItemProps(props);
   const left = icon || input;
+
+  deprecate(
+    '`ListItem` is deprecated and will be removed in Storybook 11, use `MenuItem` instead.'
+  );
 
   return (
     <Item {...rest} {...commonProps} {...itemProps}>

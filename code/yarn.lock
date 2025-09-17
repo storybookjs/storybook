@@ -3526,22 +3526,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@isaacs/balanced-match@npm:^4.0.1":
-  version: 4.0.1
-  resolution: "@isaacs/balanced-match@npm:4.0.1"
-  checksum: 10c0/7da011805b259ec5c955f01cee903da72ad97c5e6f01ca96197267d3f33103d5b2f8a1af192140f3aa64526c593c8d098ae366c2b11f7f17645d12387c2fd420
-  languageName: node
-  linkType: hard
-
-"@isaacs/brace-expansion@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "@isaacs/brace-expansion@npm:5.0.0"
-  dependencies:
-    "@isaacs/balanced-match": "npm:^4.0.1"
-  checksum: 10c0/b4d4812f4be53afc2c5b6c545001ff7a4659af68d4484804e9d514e183d20269bb81def8682c01a22b17c4d6aed14292c8494f7d2ac664e547101c1a905aa977
-  languageName: node
-  linkType: hard
-
 "@internationalized/date@npm:^3.9.0":
   version: 3.9.0
   resolution: "@internationalized/date@npm:3.9.0"
@@ -3576,6 +3560,22 @@ __metadata:
   dependencies:
     "@swc/helpers": "npm:^0.5.0"
   checksum: 10c0/8f7bea379ce047026ef20d535aa1bd7612a5e5a5108d1e514965696a46bce34e38111411943b688d00dae2c81eae7779ae18343961310696d32ebb463a19b94a
+  languageName: node
+  linkType: hard
+
+"@isaacs/balanced-match@npm:^4.0.1":
+  version: 4.0.1
+  resolution: "@isaacs/balanced-match@npm:4.0.1"
+  checksum: 10c0/7da011805b259ec5c955f01cee903da72ad97c5e6f01ca96197267d3f33103d5b2f8a1af192140f3aa64526c593c8d098ae366c2b11f7f17645d12387c2fd420
+  languageName: node
+  linkType: hard
+
+"@isaacs/brace-expansion@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "@isaacs/brace-expansion@npm:5.0.0"
+  dependencies:
+    "@isaacs/balanced-match": "npm:^4.0.1"
+  checksum: 10c0/b4d4812f4be53afc2c5b6c545001ff7a4659af68d4484804e9d514e183d20269bb81def8682c01a22b17c4d6aed14292c8494f7d2ac664e547101c1a905aa977
   languageName: node
   linkType: hard
 
@@ -3833,6 +3833,30 @@ __metadata:
   version: 3.2.6
   resolution: "@lmdb/lmdb-win32-x64@npm:3.2.6"
   conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@lynx-js/react@npm:^0.113.0":
+  version: 0.113.0
+  resolution: "@lynx-js/react@npm:0.113.0"
+  dependencies:
+    preact: "npm:@hongzhiyuan/preact@10.24.0-00213bad"
+  peerDependencies:
+    "@lynx-js/types": "*"
+    "@types/react": ^18
+  peerDependenciesMeta:
+    "@lynx-js/types":
+      optional: true
+  checksum: 10c0/6cc8e4c25312b5f8f5f9bbeceaafe3ac6e4fac2a8daf10e686d70bc22ca4a480f368a9f60f35eaf77323371a977249f9edf60d3df5245ce4ef14671113cdf7e7
+  languageName: node
+  linkType: hard
+
+"@lynx-js/use-sync-external-store@npm:^1.5.0":
+  version: 1.5.0
+  resolution: "@lynx-js/use-sync-external-store@npm:1.5.0"
+  peerDependencies:
+    "@lynx-js/react": "*"
+  checksum: 10c0/266e5eb95e60d643b38ed8d39e20f4a93fa28198e053e43d15be22afe434c519e820b8bf068d7db20f7ab05beb33a207c7d70126077d2deda60f793a774ed4dc
   languageName: node
   linkType: hard
 
@@ -8639,6 +8663,7 @@ __metadata:
   resolution: "@storybook/root@workspace:."
   dependencies:
     "@chromatic-com/storybook": "npm:^4.1.1"
+    "@lynx-js/react": "npm:^0.113.0"
     "@nx/vite": "npm:20.8.2"
     "@nx/workspace": "npm:20.8.2"
     "@playwright/test": "npm:1.52.0"
@@ -23352,6 +23377,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"preact@npm:@hongzhiyuan/preact@10.24.0-00213bad":
+  version: 10.24.0-00213bad
+  resolution: "@hongzhiyuan/preact@npm:10.24.0-00213bad"
+  checksum: 10c0/ec2c7eadc7ac5e957b61346c31458f09d7ec440bf5396fd9437cfa20dc3093310ef2437fbaf827123945eb90a19147a926df939eb7290a89b001e93300d9b6c3
+  languageName: node
+  linkType: hard
+
 "preact@npm:^10.5.13":
   version: 10.27.2
   resolution: "preact@npm:10.27.2"
@@ -24037,6 +24069,59 @@ __metadata:
     react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
     react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
   checksum: 10c0/cf4e8cc615c687ecd16fdc1a80dba70d5e8e6fa98fde22467b949b4815a03e93600da1157e6aa7658d852000944d965806edc507fd02e7e40dfd1eb62443b3ba
+  languageName: node
+  linkType: hard
+
+"react-aria@npm:^3.43.2":
+  version: 3.43.2
+  resolution: "react-aria@npm:3.43.2"
+  dependencies:
+    "@internationalized/string": "npm:^3.2.7"
+    "@react-aria/breadcrumbs": "npm:^3.5.28"
+    "@react-aria/button": "npm:^3.14.1"
+    "@react-aria/calendar": "npm:^3.9.1"
+    "@react-aria/checkbox": "npm:^3.16.1"
+    "@react-aria/color": "npm:^3.1.1"
+    "@react-aria/combobox": "npm:^3.13.2"
+    "@react-aria/datepicker": "npm:^3.15.1"
+    "@react-aria/dialog": "npm:^3.5.30"
+    "@react-aria/disclosure": "npm:^3.0.8"
+    "@react-aria/dnd": "npm:^3.11.2"
+    "@react-aria/focus": "npm:^3.21.1"
+    "@react-aria/gridlist": "npm:^3.14.0"
+    "@react-aria/i18n": "npm:^3.12.12"
+    "@react-aria/interactions": "npm:^3.25.5"
+    "@react-aria/label": "npm:^3.7.21"
+    "@react-aria/landmark": "npm:^3.0.6"
+    "@react-aria/link": "npm:^3.8.5"
+    "@react-aria/listbox": "npm:^3.14.8"
+    "@react-aria/menu": "npm:^3.19.2"
+    "@react-aria/meter": "npm:^3.4.26"
+    "@react-aria/numberfield": "npm:^3.12.1"
+    "@react-aria/overlays": "npm:^3.29.1"
+    "@react-aria/progress": "npm:^3.4.26"
+    "@react-aria/radio": "npm:^3.12.1"
+    "@react-aria/searchfield": "npm:^3.8.8"
+    "@react-aria/select": "npm:^3.16.2"
+    "@react-aria/selection": "npm:^3.25.1"
+    "@react-aria/separator": "npm:^3.4.12"
+    "@react-aria/slider": "npm:^3.8.1"
+    "@react-aria/ssr": "npm:^3.9.10"
+    "@react-aria/switch": "npm:^3.7.7"
+    "@react-aria/table": "npm:^3.17.7"
+    "@react-aria/tabs": "npm:^3.10.7"
+    "@react-aria/tag": "npm:^3.7.1"
+    "@react-aria/textfield": "npm:^3.18.1"
+    "@react-aria/toast": "npm:^3.0.7"
+    "@react-aria/tooltip": "npm:^3.8.7"
+    "@react-aria/tree": "npm:^3.1.3"
+    "@react-aria/utils": "npm:^3.30.1"
+    "@react-aria/visually-hidden": "npm:^3.8.27"
+    "@react-types/shared": "npm:^3.32.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+    react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+  checksum: 10c0/4ae525bf805c5192758ee9ba93c0949a257d406d5d4ab04f01ba9a9ae8ce40ec1726b77603e00e4ad2a5503435037dfb67b1dfa1033cba545a122d0b4fc18599
   languageName: node
   linkType: hard
 
@@ -26392,12 +26477,15 @@ __metadata:
     "@emotion/styled": "npm:^11.14.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@happy-dom/global-registrator": "npm:^18.0.1"
+    "@lynx-js/react": "npm:^0.113.0"
+    "@lynx-js/use-sync-external-store": "npm:^1.5.0"
     "@ndelangen/get-tarball": "npm:^3.0.7"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"
     "@radix-ui/react-dialog": "npm:^1.1.2"
     "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
     "@radix-ui/react-slot": "npm:^1.0.2"
+    "@react-aria/utils": "npm:^3.30.1"
     "@rolldown/pluginutils": "npm:1.0.0-beta.18"
     "@storybook/docs-mdx": "npm:4.0.0-next.1"
     "@storybook/global": "npm:^5.0.0"
@@ -26479,12 +26567,14 @@ __metadata:
     pretty-hrtime: "npm:^1.0.3"
     prompts: "npm:^2.4.0"
     react: "npm:^18.2.0"
+    react-aria: "npm:^3.43.2"
     react-aria-components: "npm:^1.12.1"
     react-dom: "npm:^18.2.0"
     react-helmet-async: "npm:^1.3.0"
     react-inspector: "npm:^6.0.0"
     react-popper-tooltip: "npm:^4.4.2"
     react-router-dom: "npm:6.15.0"
+    react-stately: "npm:^3.41.0"
     react-syntax-highlighter: "npm:^15.4.5"
     react-textarea-autosize: "npm:^8.3.0"
     react-transition-group: "npm:^4.4.5"

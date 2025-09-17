@@ -1,21 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { type DOMAttributes, type ReactElement, useMemo } from 'react';
 
+import { TooltipNote, WithTooltip } from 'storybook/internal/components';
 import { shortcutToHumanString } from 'storybook/internal/manager-api';
 import type { API_KeyCollection } from 'storybook/internal/manager-api';
 
-import { styled } from 'storybook/theming';
-
-import { TooltipNote } from '../../tooltip/TooltipNote';
-import { WithTooltip } from '../../tooltip/WithTooltip';
-
-const NoMarginNote = styled(TooltipNote)(() => ({
-  margin: 0,
-}));
-
-// TODO: Improve delay management; make the delay near-instantaneous if any instance of this component has been recently shown.
-// TODO: Find way to trigger the tooltip when the child component is focused too. Will need this for general a11y but particularly for Sidebar nav secondary actions.
 export const InteractiveTooltipWrapper: React.FC<{
-  children: React.ReactNode;
+  children: ReactElement<DOMAttributes<Element>, string>;
   shortcut?: API_KeyCollection;
   tooltip?: string;
 }> = ({ children, shortcut, tooltip }) => {
@@ -25,7 +15,7 @@ export const InteractiveTooltipWrapper: React.FC<{
     // addons singleton. This component is used in Buttons, etc., which are
     // public API and can be imported in MDX. So We rely on a declarative
     // DOM attribute instead of relying on the manager API.
-    const hasShortcuts = document.body.getAttribute('data-shortcuts-enabled') === 'true';
+    const hasShortcuts = document.body.getAttribute('data-shortcuts-enabled') !== 'false';
 
     if (!tooltip && (!shortcut || !hasShortcuts)) {
       return undefined;
@@ -37,7 +27,7 @@ export const InteractiveTooltipWrapper: React.FC<{
   }, [shortcut, tooltip]);
 
   return tooltipLabel ? (
-    <WithTooltip trigger="hover" hasChrome={false} tooltip={<NoMarginNote note={tooltipLabel} />}>
+    <WithTooltip placement="top" tooltip={<TooltipNote note={tooltipLabel} />}>
       {children}
     </WithTooltip>
   ) : (

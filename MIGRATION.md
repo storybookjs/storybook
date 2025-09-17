@@ -15,6 +15,23 @@
       - [Added: tooltip](#added-tooltip)
       - [Removed: active](#removed-active)
     - [IconButton is deprecated](#iconbutton-is-deprecated)
+    - [ListItem, TooltipLinkList and TooltipMessage are deprecated](#listitem-tooltiplinklist-and-tooltipmessage-are-deprecated)
+    - [Tooltip Component API Changes](#tooltip-component-api-changes)
+      - [Renamed: tooltipRef](#renamed-tooltipref)
+      - [Removed: arrowProps and withArrows](#removed-arrowprops-and-witharrows)
+      - [Removed: placement](#removed-placement)
+      - [Changed type: color](#changed-type-color)
+    - [WithPopover Component Added](#withpopover-component-added)
+    - [WithTooltip Component API Changes](#withtooltip-component-api-changes)
+      - [Removed: trigger](#removed-trigger)
+    - [Added: triggerOnFocusOnly](#added-triggeronfocusonly)
+    - [Renamed: startOpen](#renamed-startopen)
+    - [Removed: svg, strategy, withArrows, mutationObserverOptions](#removed-svg-strategy-witharrows-mutationobserveroptions)
+    - [Removed: hasChrome](#removed-haschrome)
+    - [Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick](#removed-closeontriggerhidden-followcursor-closeonoutsideclick)
+    - [Removed: interactive](#removed-interactive)
+      - [Other changes](#other-changes)
+    - [WithTooltipPure and WithTooltipState are removed](#withtooltippure-and-withtooltipstate-are-removed)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -624,6 +641,66 @@ Use Select if the active state denotes that the Button is open while a selection
 The IconButton component is deprecated, as it overlaps with Button. Instead, use Button with the `'ghost'` variant and `'small'` padding, and add an `ariaLabel` prop for screenreaders to announce.
 
 IconButton will be removed in future versions.
+
+#### ListItem, TooltipLinkList and TooltipMessage are deprecated
+
+The ListItem and TooltipLinkList components were used in Storybook to make menus, and TooltipMessage to make message popovers. However, WithTooltip does not support keyboard interactions, so these components were not accessible.
+
+These components are now deprecated and will be removed in future versions. To replace TooltipMessage, replace WithTooltip with WithPopover, and use Popover as a base component for your popovers. To replace ListItem and TooltipLinkList, a dedicated menu component will be introduced in a future version, and Popover can be used in the meantime.
+
+#### Tooltip Component API Changes
+
+##### Renamed: tooltipRef
+Tooltip's `ref` prop is now named `ref` for consistency.
+
+##### Removed: arrowProps and withArrows
+The `arrowProps` and `withArrows` props were not used in Storybook, so they have been removed.
+
+We recommend you do not use arrows in your addon tooltips for better consistency with the Storybook UI.
+
+##### Removed: placement
+The `placement` prop was passed to help position the arrow. It has also been removed. WithToolip now entirely handles the placement of its tooltip on its own.
+
+##### Changed type: color
+The `color` prop used to accept arbitrary colors and theme background color names. This made it difficult to use.
+
+The prop was to the background color of the tooltip, and it was not possible to set the text color in a consistent fashion. To ensure Tooltip uses accessible colors, the prop has been limited to the following values: `'default'`, `'inverse'`, `'positive'`, `'negative'`, `'warning'` and `'none'`. The prop now controls both background and foreground colors.
+
+#### WithPopover Component Added
+
+The WithPopover component acts as a counterpoint to WithTooltip. When you want an interactive overlay with buttons or inputs, use WithPopover and Popover. When you want a static overlay that shows on focus or hover, use WithTooltip with TooltipNote or Tooltip.
+
+WithPopover is based on react-aria. It must have a single child that acts as a trigger. This child must have a pressable role (can be clicked or pressed) and must be able to receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your popover.
+
+#### WithTooltip Component API Changes
+
+##### Removed: trigger
+The `trigger` prop was removed to enforce better accessibility compliance. WithTooltip must not be triggered on click, as it is not reachable by keyboard. Buttons that open a popover, menu or select must use appropriate components instead.
+
+#### Added: triggerOnFocusOnly
+The `triggerOnFocusOnly` prop was added. When set, tooltips will only show on focus. Use this to provide keyboard navigation hints to keyboard users. Do not use it for other purposes.
+
+#### Renamed: startOpen
+The `startOpen` prop was renamed `defaultVisible` to match naming in other components that expose both controlled and uncontrolled visibility.
+
+#### Removed: svg, strategy, withArrows, mutationObserverOptions
+These prop were not used inside Storybook and have been removed.
+
+#### Removed: hasChrome
+The `hasChrome` prop was removed because it should be handled by the tooltip being shown instead. Popover and Tooltip both have a `hasChrome` prop. TooltipNote never needs this prop and does not have it.
+
+#### Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick
+The `closeOnTriggerHidden`, `followCursor` and `closeOnOutsideClick` prop has been removed. WithTooltip will now authoritatively decide when and where to show or hide its tooltip. It will always close on clicks outside the tooltip, because tooltips should never be modal.
+
+#### Removed: interactive
+Thed `interactive` prop has been removed as it does not align with our vision for accessible components with a well-defined role. Use WithPopover instead of WithTooltip to show interactive overlays.
+
+##### Other changes
+The underlying implementation was switched from Popper.js to react-aria. Due to these changes, WithTooltip must now have a single child that has a focusable role and that can receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your tooltip.
+
+#### WithTooltipPure and WithTooltipState are removed
+
+Instead, use WithTooltip. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
 
 ## From version 8.x to 9.0.0
 

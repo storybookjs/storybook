@@ -58,10 +58,32 @@ export { Select } from './components/Select/Select';
 // Forms
 export { Form } from './components/Form/Form';
 
+// Overlay helpers for popovers, menus, tooltips
+export { convertToReactAriaPlacement } from './components/shared/overlayHelpers';
+export type { PopperPlacement } from './components/shared/overlayHelpers';
+
+// Popovers
+export { Popover } from './components/Popover/Popover';
+export type { PopoverProps } from './components/Popover/Popover';
+export { WithPopover } from './components/Popover/lazy-WithPopover';
+export type { WithPopoverProps } from './components/Popover/WithPopover';
+
+// Menus
+export { MenuItem } from './components/Menu/MenuItem';
+export type { MenuItemProps } from './components/Menu/MenuItem';
+export { WithMenu } from './components/Menu/lazy-WithMenu';
+export type { WithMenuProps } from './components/Menu/WithMenu';
+
 // Tooltips
-export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip';
-export { TooltipMessage } from './components/tooltip/TooltipMessage';
+export { Tooltip } from './components/tooltip/Tooltip';
+export type { TooltipProps } from './components/tooltip/Tooltip';
 export { TooltipNote } from './components/tooltip/TooltipNote';
+export type { TooltipNoteProps } from './components/tooltip/TooltipNote';
+export { WithTooltip } from './components/tooltip/lazy-WithTooltip';
+export type { WithTooltipProps } from './components/tooltip/WithTooltip';
+
+// Old tooltips - deprecated and to remove in Storybook 11
+export { TooltipMessage } from './components/tooltip/TooltipMessage';
 export {
   TooltipLinkList,
   type Link as TooltipLinkListLink,

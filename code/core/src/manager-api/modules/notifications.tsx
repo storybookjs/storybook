@@ -1,6 +1,15 @@
+import React from 'react';
+
+import {
+  OPEN_IN_EDITOR_RESPONSE,
+  type OpenInEditorResponsePayload,
+} from 'storybook/internal/core-events';
 import type { API_Notification } from 'storybook/internal/types';
 
+import { FailedIcon } from '@storybook/icons';
+
 import { partition } from 'es-toolkit/array';
+import { color } from 'storybook/theming';
 
 import type { ModuleFn } from '../lib/types';
 
@@ -26,7 +35,7 @@ export interface SubAPI {
   clearNotification: (id: string) => void;
 }
 
-export const init: ModuleFn = ({ store }) => {
+export const init: ModuleFn = ({ store, provider }) => {
   const api: SubAPI = {
     addNotification: (newNotification) => {
       store.setState(({ notifications }) => {
@@ -55,5 +64,26 @@ export const init: ModuleFn = ({ store }) => {
 
   const state: SubState = { notifications: [] };
 
-  return { api, state };
+  return {
+    api,
+    state,
+    init: async () => {
+      provider.channel?.on(OPEN_IN_EDITOR_RESPONSE, (payload: OpenInEditorResponsePayload) => {
+        if (payload.error !== null) {
+          api.addNotification({
+            id: 'open-in-editor-error',
+            content: {
+              headline: 'Failed to open in editor',
+              subHeadline:
+                payload.error ||
+                'Check the Storybook process on the command line for more details.',
+            },
+            icon: <FailedIcon color={color.negative} />,
+            duration: 8_000,
+          });
+          throw new Error(payload.error);
+        }
+      });
+    },
+  };
 };

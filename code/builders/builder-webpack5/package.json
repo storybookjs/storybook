@@ -60,7 +60,6 @@
     "es-module-lexer": "^1.5.0",
     "fork-ts-checker-webpack-plugin": "^9.1.0",
     "html-webpack-plugin": "^5.5.0",
-    "launch-editor-middleware": "^2.11.1",
     "magic-string": "^0.30.5",
     "style-loader": "^4.0.0",
     "terser-webpack-plugin": "^5.3.14",

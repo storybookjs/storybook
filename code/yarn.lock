@@ -6373,7 +6373,6 @@ __metadata:
     es-module-lexer: "npm:^1.5.0"
     fork-ts-checker-webpack-plugin: "npm:^9.1.0"
     html-webpack-plugin: "npm:^5.5.0"
-    launch-editor-middleware: "npm:^2.11.1"
     magic-string: "npm:^0.30.5"
     pretty-hrtime: "npm:^1.0.3"
     sirv: "npm:^2.0.4"
@@ -18027,15 +18026,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"launch-editor-middleware@npm:^2.11.1":
-  version: 2.11.1
-  resolution: "launch-editor-middleware@npm:2.11.1"
-  dependencies:
-    launch-editor: "npm:^2.11.1"
-  checksum: 10c0/d78a3cf0e166ebf9023f81a2f4b3f570422a7bd9edd505e85018247f3a75b7705f4973f3f3c3db0ec7aa118159fa85affc6d885f72ef0a267d1155ff3f5c2d19
-  languageName: node
-  linkType: hard
-
 "launch-editor@npm:^2.11.1, launch-editor@npm:^2.6.1":
   version: 2.11.1
   resolution: "launch-editor@npm:2.11.1"
@@ -24567,6 +24557,7 @@ __metadata:
     jiti: "npm:^2.4.2"
     js-yaml: "npm:^4.1.0"
     jsdoc-type-pratt-parser: "npm:^4.0.0"
+    launch-editor: "npm:^2.11.1"
     lazy-universal-dotenv: "npm:^4.0.0"
     leven: "npm:^4.0.0"
     memfs: "npm:^4.11.1"

@@ -196,10 +196,6 @@ const starter: StarterFunction = async function* starterGeneratorFn({
     })
   );
 
-  // @ts-expect-error no types available, see https://github.com/yyx990803/launch-editor/issues/84
-  const { default: launchMiddleware } = await import('launch-editor-middleware');
-  router.use('/__open-in-editor', launchMiddleware());
-
   router.use(compilation);
   router.use(webpackHotMiddleware(compiler, { log: false }));
 

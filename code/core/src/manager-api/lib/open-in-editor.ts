@@ -1,31 +1,25 @@
-/**
- * Open the file in the editor
- *
- * Available for builders which support https://github.com/yyx990803/launch-editor
- *
- * Known builders: Webpack5, Vite
- *
- * @param filePath - The path to the file to open in the editor
- * @returns Void
- */
+import {
+  OPEN_IN_EDITOR_REQUEST,
+  OPEN_IN_EDITOR_RESPONSE,
+  type OpenInEditorResponsePayload,
+} from 'storybook/internal/core-events';
+
+import { addons } from './addons';
+
 export async function openInEditor(
-  filePath: string,
+  file: string,
   line?: number,
   column?: number
-): Promise<void> {
-  let fileLocation = filePath;
-  if (typeof line === 'number') {
-    fileLocation += `:${line}`;
-    if (typeof column === 'number') {
-      fileLocation += `:${column}`;
-    }
-  }
+): Promise<OpenInEditorResponsePayload> {
+  return new Promise((resolve) => {
+    const channel = addons.getChannel();
+    const payload = { file, line, column };
 
-  try {
-    await fetch(`/__open-in-editor?file=${encodeURIComponent(fileLocation)}`, {
-      method: 'POST',
+    channel.on(OPEN_IN_EDITOR_RESPONSE, (payload: OpenInEditorResponsePayload) => {
+      resolve(payload);
     });
-  } catch {
-    // no-op
-  }
+
+    console.log('sending request');
+    channel.emit(OPEN_IN_EDITOR_REQUEST, payload);
+  });
 }

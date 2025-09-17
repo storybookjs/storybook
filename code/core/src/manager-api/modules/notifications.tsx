@@ -81,7 +81,6 @@ export const init: ModuleFn = ({ store, provider }) => {
             icon: <FailedIcon color={color.negative} />,
             duration: 8_000,
           });
-          throw new Error(payload.error);
         }
       });
     },

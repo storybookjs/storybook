@@ -14,12 +14,13 @@ export async function openInEditor(
   return new Promise((resolve) => {
     const channel = addons.getChannel();
     const payload = { file, line, column };
-
-    channel.on(OPEN_IN_EDITOR_RESPONSE, (payload: OpenInEditorResponsePayload) => {
-      resolve(payload);
-    });
-
-    console.log('sending request');
+    const handler = (res: OpenInEditorResponsePayload) => {
+      if (res.file === file && res.line === line && res.column === column) {
+        channel.off(OPEN_IN_EDITOR_RESPONSE, handler);
+        resolve(res);
+      }
+    };
+    channel.on(OPEN_IN_EDITOR_RESPONSE, handler);
     channel.emit(OPEN_IN_EDITOR_REQUEST, payload);
   });
 }

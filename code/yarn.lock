@@ -6099,23 +6099,24 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-designs@npm:9.0.0-next.1":
-  version: 9.0.0-next.1
-  resolution: "@storybook/addon-designs@npm:9.0.0-next.1"
+"@storybook/addon-designs@npm:10.0.3--canary.20142ee.0":
+  version: 10.0.3--canary.20142ee.0
+  resolution: "@storybook/addon-designs@npm:10.0.3--canary.20142ee.0"
   dependencies:
     "@figspec/react": "npm:^1.0.0"
   peerDependencies:
+    "@storybook/addon-docs": ^10.0.0 || ^10.0.0-0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    storybook: ^0.0.0-0 || ^9.0.0 || ^9.0.0-0
+    storybook: ^10.0.0 || ^10.0.0-0
   peerDependenciesMeta:
-    "@storybook/blocks":
+    "@storybook/addon-docs":
       optional: true
     react:
       optional: true
     react-dom:
       optional: true
-  checksum: 10c0/6989444d6caeb7abbb1a763e0a29d0749c529216d03d690618575378845e4259ddcf1935f7990fb05667a373940086dbacdcc6c97ff3f11eaa76f132bb11a1d5
+  checksum: 10c0/0ff49a2863fdce70a6633874c0f1313db2b364b2159859585663a134a905e28315c6b3cc5d04ceab4622c0aa311f0aa285981ea78ad64cc39e3910f52c9f2978
   languageName: node
   linkType: hard
 
@@ -6868,7 +6869,7 @@ __metadata:
     "@nx/workspace": "npm:20.8.2"
     "@playwright/test": "npm:1.52.0"
     "@storybook/addon-a11y": "workspace:*"
-    "@storybook/addon-designs": "npm:9.0.0-next.1"
+    "@storybook/addon-designs": "npm:10.0.3--canary.20142ee.0"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-jest": "workspace:*"
     "@storybook/addon-links": "workspace:*"

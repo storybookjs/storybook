@@ -18,9 +18,9 @@ test.describe('JSON files', () => {
           id: 'example-button--primary',
           importPath: expect.stringMatching(/button\.stories/i),
           name: 'Primary',
+          subtype: 'story',
           title: 'Example/Button',
           type: 'story',
-          subtype: 'story',
         }),
       }),
     });

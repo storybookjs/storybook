@@ -5,26 +5,12 @@ import { ManagerContext } from 'storybook/manager-api';
 
 import { Subnav } from './Subnav';
 
-const managerContext: any = {
-  state: {},
-  api: {
-    getData: () => ({ importPath: 'core/src/component-testing/components/Subnav.stories.tsx' }),
-  },
-};
-
 export default {
   title: 'Subnav',
   component: Subnav,
   parameters: {
     layout: 'fullscreen',
   },
-  decorators: [
-    (Story: any) => (
-      <ManagerContext.Provider value={managerContext}>
-        <Story />
-      </ManagerContext.Provider>
-    ),
-  ],
   args: {
     controls: {
       start: action('start'),
@@ -147,5 +133,20 @@ export const Detached = {
       next: false,
       end: false,
     },
+  },
+};
+
+export const WithOpenInEditorLink = {
+  args: {
+    status: 'completed',
+    controlStates: {
+      detached: true,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
+    canOpenInEditor: true,
   },
 };

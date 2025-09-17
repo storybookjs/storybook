@@ -17,6 +17,8 @@ import {
   useAddonState,
   useChannel,
   useParameter,
+  useStorybookApi,
+  useStorybookState,
 } from 'storybook/manager-api';
 
 import {
@@ -191,6 +193,12 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     });
 
     // shared state
+    const state = useStorybookState();
+    const api = useStorybookApi();
+    const data = api.getData(state.storyId, state.refId);
+    const importPath = data?.importPath as string | undefined;
+    const canOpenInEditor = global.CONFIG_TYPE === 'DEVELOPMENT' && !state.refId;
+
     const [panelState, set] = useAddonState<PanelState>(ADDON_ID, {
       status: 'rendering' as PlayStatus,
       controlStates: INITIAL_CONTROL_STATES,
@@ -406,6 +414,8 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           // @ts-expect-error TODO
           endRef={endRef}
           onScrollToEnd={scrollTarget && scrollToTarget}
+          importPath={importPath}
+          canOpenInEditor={canOpenInEditor}
         />
       </Fragment>
     );

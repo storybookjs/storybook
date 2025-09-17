@@ -49,6 +49,8 @@ interface SubnavProps {
   status: PlayStatus;
   storyFileName?: string;
   onScrollToEnd?: () => void;
+  importPath?: string;
+  canOpenInEditor?: boolean;
 }
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -123,14 +125,11 @@ export const Subnav: React.FC<SubnavProps> = ({
   status,
   storyFileName,
   onScrollToEnd,
+  importPath,
+  canOpenInEditor,
 }) => {
   const buttonText = status === 'errored' ? 'Scroll to error' : 'Scroll to end';
   const theme = useTheme();
-  const state = useStorybookState();
-  const api = useStorybookApi();
-  const data = api.getData(state.storyId, state.refId);
-  const importPath = data?.importPath as string | undefined;
-  const isLocal = !state.refId;
 
   return (
     <SubnavWrapper>
@@ -193,7 +192,7 @@ export const Subnav: React.FC<SubnavProps> = ({
           </Group>
           {(importPath || storyFileName) && (
             <Group>
-              {global.CONFIG_TYPE === 'DEVELOPMENT' && isLocal ? (
+              {canOpenInEditor ? (
                 <WithTooltip
                   trigger="hover"
                   hasChrome={false}

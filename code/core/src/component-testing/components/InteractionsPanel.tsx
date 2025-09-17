@@ -44,6 +44,8 @@ interface InteractionsPanelProps {
   onScrollToEnd?: () => void;
   hasResultMismatch?: boolean;
   browserTestStatus?: CallStates;
+  importPath?: string;
+  canOpenInEditor?: boolean;
 }
 
 const Container = styled.div(({ theme }) => ({
@@ -104,6 +106,8 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     endRef,
     hasResultMismatch,
     browserTestStatus,
+    importPath,
+    canOpenInEditor,
   }) {
     const filter = useAnsiToHtmlFilter();
     const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
@@ -120,6 +124,8 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           status={status}
           storyFileName={fileName}
           onScrollToEnd={onScrollToEnd}
+          importPath={importPath}
+          canOpenInEditor={canOpenInEditor}
         />
         <div aria-label="Interactions list">
           {interactions.map((call) => (

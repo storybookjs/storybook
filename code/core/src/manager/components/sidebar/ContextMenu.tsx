@@ -9,7 +9,6 @@ import {
   Addon_TypesEnum,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
@@ -41,6 +40,49 @@ const FloatingStatusButton = styled(StatusButton)({
 export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
   const [hoverCount, setHoverCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [copyText, setCopyText] = React.useState('Copy story name');
+
+  const shortcutKeys = api.getShortcutKeys();
+  const enableShortcuts = !!shortcutKeys;
+
+  const topLinks = useMemo<Link[]>(() => {
+    const defaultLinks = [];
+    if (context.type === 'docs' || context.type === 'story') {
+      defaultLinks.push({
+        id: 'open-in-editor',
+        title: 'Open in editor',
+        icon: <EditorIcon />,
+        right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
+        onClick: (e: SyntheticEvent) => {
+          e.preventDefault();
+          openInEditor(context.importPath);
+        },
+      });
+    }
+
+    if (context.type === 'story') {
+      defaultLinks.push({
+        id: 'copy-story-name',
+        title: copyText,
+        icon: <CopyIcon />,
+        // TODO: bring this back once we want to add shortcuts for this
+        // right:
+        //   enableShortcuts && shortcutKeys.copyStoryName ? (
+        //     <Shortcut keys={shortcutKeys.copyStoryName} />
+        //   ) : null,
+        onClick: (e: SyntheticEvent) => {
+          e.preventDefault();
+          copy(context.exportName);
+          setCopyText('Copied!');
+          setTimeout(() => {
+            setCopyText('Copy story name');
+          }, 2000);
+        },
+      });
+    }
+
+    return defaultLinks;
+  }, [context, copyText, enableShortcuts, shortcutKeys]);
 
   const handlers = useMemo(() => {
     return {
@@ -56,7 +98,6 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
       },
     };
   }, []);
-
   /**
    * Calculate the providerLinks whenever the user mouses over the container. We use an incrementor,
    * instead of a simple boolean to ensure that the links are recalculated
@@ -70,7 +111,9 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
     return [];
   }, [api, context, hoverCount]);
 
-  const isRendered = providerLinks.length > 0 || links.length > 0;
+  // We just don't want to render the context menu for composed storybook stories
+  const shouldRender =
+    !context.refId && (providerLinks.length > 0 || links.length > 0 || topLinks.length > 0);
 
   return useMemo(() => {
     // Never show the SidebarContextMenu in production
@@ -80,7 +123,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
 
     return {
       onMouseEnter: handlers.onMouseEnter,
-      node: isRendered ? (
+      node: shouldRender ? (
         <PositionedWithTooltip
           data-displayed={isOpen ? 'on' : 'off'}
           closeOnOutsideClick
@@ -93,7 +136,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
               setIsOpen(true);
             }
           }}
-          tooltip={<LiveContextMenu context={context} links={links} />}
+          tooltip={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
         >
           <FloatingStatusButton type="button" status="status-value:pending">
             <EllipsisIcon />
@@ -101,7 +144,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         </PositionedWithTooltip>
       ) : null,
     };
-  }, [context, handlers, isOpen, isRendered, links]);
+  }, [context, handlers, isOpen, shouldRender, links, topLinks]);
 };
 
 /**
@@ -114,60 +157,15 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
   links,
   ...rest
 }) => {
-  const api = useStorybookApi();
-  const entry = api.getData(context.id, context.refId);
-  const importPath = entry?.importPath;
-  const storyName = (entry && 'exportName' in entry && entry.exportName) || context?.name;
-  const [copyText, setCopyText] = React.useState('Copy story name');
-
-  const shortcutKeys = api.getShortcutKeys();
-  const enableShortcuts = !!shortcutKeys;
-
-  const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
+  const registeredTestProviders = useStorybookApi().getElements(
+    Addon_TypesEnum.experimental_TEST_PROVIDER
+  );
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
 
-  const topLinks: Link[] = [];
+  const groups: Link[][] =
+    Array.isArray(links[0]) || links.length === 0 ? (links as Link[][]) : [links as Link[]];
 
-  if (importPath) {
-    if (global.CONFIG_TYPE === 'DEVELOPMENT') {
-      topLinks.push({
-        id: 'open-in-editor',
-        title: 'Open in editor',
-        icon: <EditorIcon />,
-        right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
-        onClick: (e) => {
-          e.preventDefault();
-          if (importPath && !context.refId) {
-            openInEditor(importPath);
-          }
-        },
-      });
-    }
-
-    topLinks.push({
-      id: 'copy-story-name',
-      title: copyText,
-      icon: <CopyIcon />,
-      // TODO: bring this back once we want to add shortcuts for this
-      // right:
-      //   enableShortcuts && shortcutKeys.copyStoryName ? (
-      //     <Shortcut keys={shortcutKeys.copyStoryName} />
-      //   ) : null,
-      onClick: () => {
-        if (storyName) {
-          copy(String(storyName));
-          setCopyText('Copied!');
-          setTimeout(() => {
-            setCopyText('Copy story name');
-          }, 2000);
-        }
-      },
-    });
-  }
-
-  const groups = Array.isArray(links[0]) ? (links as Link[][]) : [links as Link[]];
-  const all =
-    topLinks.length > 0 ? [topLinks, ...groups, providerLinks] : [...groups, providerLinks];
+  const all = groups.concat([providerLinks]);
 
   return <TooltipLinkList {...rest} links={all} />;
 };

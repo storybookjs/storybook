@@ -34,6 +34,7 @@ type TSObjectSigType = TSBaseType & {
 
 type TSScalarType = TSBaseType & {
   name: 'any' | 'boolean' | 'number' | 'void' | 'string' | 'symbol' | 'literal';
+  value?: string; // For literal types, contains the literal value
 };
 
 type TSArrayType = TSBaseType & {

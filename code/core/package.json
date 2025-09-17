@@ -341,7 +341,6 @@
     "react-dom": "^18.2.0",
     "react-helmet-async": "^1.3.0",
     "react-inspector": "^6.0.0",
-    "react-popper-tooltip": "^4.4.2",
     "react-router-dom": "6.15.0",
     "react-stately": "^3.41.0",
     "react-syntax-highlighter": "^15.4.5",

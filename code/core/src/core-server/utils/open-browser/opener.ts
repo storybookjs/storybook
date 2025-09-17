@@ -113,7 +113,6 @@ function startBrowserProcess(
 
         return true;
       } catch (err) {
-        // console.log('err', err);
         // Ignore errors.
       }
     }

@@ -80,7 +80,10 @@ vi.mock(import('node:fs/promises'), async (importOriginal) => {
 
 const mockContext: any = {};
 
-const coerce = (from: string, to: string) => ([name]: string[]) => (name.includes(from) ? to : name);
+const coerce =
+  (from: string, to: string) =>
+  ([name]: string[]) =>
+    name.includes(from) ? to : name;
 
 const state: any = {
   directory: '.',

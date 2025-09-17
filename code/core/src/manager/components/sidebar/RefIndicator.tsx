@@ -108,10 +108,11 @@ const StyledMessage = styled.a(({ theme }) => ({
 const Message: FC<{
   blank?: boolean;
   children: ReactNode;
-  href: string;
-}> = ({ href, blank = true, children }) => {
+  href?: string;
+  onClick?: MouseEventHandler;
+}> = ({ href, blank = true, children, onClick }) => {
   return (
-    <StyledMessage href={href} target={blank ? '_blank' : undefined}>
+    <StyledMessage href={href} target={blank ? '_blank' : undefined} onClick={onClick}>
       {children}
     </StyledMessage>
   );

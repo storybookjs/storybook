@@ -80,6 +80,7 @@ function startBrowserProcess(
       'Google Chrome',
       'Microsoft Edge',
       'Brave Browser',
+      'Arc',
       'Vivaldi',
       'Chromium',
     ];
@@ -95,12 +96,24 @@ function startBrowserProcess(
           'server',
           'openBrowser.applescript'
         );
-        execSync(`osascript "${pathToApplescript}" "${encodeURI(url)}" "${chromiumBrowser}"`, {
+
+        const command = `osascript "${pathToApplescript}" \"`
+          .concat(encodeURI(url), '" "')
+          .concat(
+            process.env.OPEN_MATCH_HOST_ONLY === 'true'
+              ? encodeURI(new URL(url).origin)
+              : encodeURI(url),
+            '" "'
+          )
+          .concat(chromiumBrowser, '"');
+
+        execSync(command, {
           cwd: __dirname,
-          stdio: 'ignore',
         });
+
         return true;
       } catch (err) {
+        // console.log('err', err);
         // Ignore errors.
       }
     }

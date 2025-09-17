@@ -11,13 +11,18 @@ export async function openInBrowser(address: string) {
   try {
     await openBrowser(address);
   } catch (error) {
+    console.error('A', error);
     errorOccured = true;
   }
 
   try {
-    await open(address);
-    errorOccured = false;
+    if (errorOccured) {
+      await open(address);
+      console.info(`Opened ${address} in browser`);
+      errorOccured = false;
+    }
   } catch (error) {
+    console.error('B', error);
     errorOccured = true;
   }
 

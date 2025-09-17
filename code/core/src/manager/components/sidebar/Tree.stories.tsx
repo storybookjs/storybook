@@ -304,8 +304,8 @@ export const WithContextContent: Story = {
     const link = await screen.findByText('TooltipBuildList');
     await userEvent.hover(link);
 
-    const contextButton = await screen.findByTestId('context-menu');
-    await userEvent.click(contextButton);
+    const contextButton = await screen.findAllByTestId('context-menu');
+    await userEvent.click(contextButton[0]);
 
     const body = await within(document.body);
 

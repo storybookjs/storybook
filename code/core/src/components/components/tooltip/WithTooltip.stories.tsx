@@ -183,7 +183,6 @@ export const Instantaneous = meta.story({
   },
 });
 
-// TODO: check behaviour
 export const AlwaysOpen = meta.story({
   args: {
     visible: true,

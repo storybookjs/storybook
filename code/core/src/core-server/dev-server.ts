@@ -124,7 +124,9 @@ export async function storybookDevServer(options: Options) {
   await Promise.all([initializedStoryIndexGenerator, listening]).then(async ([indexGenerator]) => {
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
       const url = host ? networkAddress : address;
-      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url);
+      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url).catch(() => {
+        // the browser window could not be opened, this is non-critical, we just ignore the error
+      });
     }
   });
   if (indexError) {

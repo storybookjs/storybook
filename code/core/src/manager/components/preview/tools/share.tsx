@@ -12,8 +12,7 @@ import { global } from '@storybook/global';
 import { BugIcon, LinkIcon, ShareIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
-// @ts-expect-error see https://github.com/rosskhanas/react-qr-code/issues/251
-import { QRCode } from 'react-qr-code';
+import { QRCodeSVG as QRCode } from 'qrcode.react';
 import { Consumer, types, useStorybookApi } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
@@ -61,7 +60,7 @@ const QRImage = ({ value }: { value: string }) => {
   return (
     value && (
       <QRImageContainer>
-        <QRCode value={value} size={58} fgColor={theme.color.darkest} />
+        <QRCode value={value} marginSize={0} size={60} fgColor={theme.color.darkest} />
       </QRImageContainer>
     )
   );

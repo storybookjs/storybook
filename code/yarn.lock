@@ -22072,10 +22072,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"qr.js@npm:0.0.0":
-  version: 0.0.0
-  resolution: "qr.js@npm:0.0.0"
-  checksum: 10c0/1c6a4c7a58d04e52ec2fee99e39b680fdc5b2a510a981df42c36b716a8eac6634d130fc4d65af8f030f2a07dbf5fa046b97cdfa7456c250ebb50a73916efdcb5
+"qrcode.react@npm:^4.2.0":
+  version: 4.2.0
+  resolution: "qrcode.react@npm:4.2.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+  checksum: 10c0/68c691d130e5fda2f57cee505ed7aea840e7d02033100687b764601f9595e1116e34c13876628a93e1a5c2b85e4efc27d30b2fda72e2050c02f3e1c4e998d248
   languageName: node
   linkType: hard
 
@@ -22408,18 +22410,6 @@ __metadata:
     react: ^16.8.0 || ^17 || ^18
     react-dom: ^16.8.0 || ^17 || ^18
   checksum: 10c0/23f93540537ca4c035425bb8d5e51b11131fbc921d7ac1d041d0ae557feac8c877f3a012d36b94df8787803f52ed81e6df9257ac9e58719875f7805518d6db3f
-  languageName: node
-  linkType: hard
-
-"react-qr-code@npm:^2.0.12":
-  version: 2.0.18
-  resolution: "react-qr-code@npm:2.0.18"
-  dependencies:
-    prop-types: "npm:^15.8.1"
-    qr.js: "npm:0.0.0"
-  peerDependencies:
-    react: "*"
-  checksum: 10c0/4e13b795cbb10f1dcf0e39d682bb59851e4c84010ba2be7225b2ad9d5c1ffea52d2d38f884ee26235b7002b8ca99e83b805f55e877663c39d67496764d975cf1
   languageName: node
   linkType: hard
 
@@ -24575,12 +24565,12 @@ __metadata:
     prettier: "npm:^3.5.3"
     pretty-hrtime: "npm:^1.0.3"
     prompts: "npm:^2.4.0"
+    qrcode.react: "npm:^4.2.0"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     react-helmet-async: "npm:^1.3.0"
     react-inspector: "npm:^6.0.0"
     react-popper-tooltip: "npm:^4.4.2"
-    react-qr-code: "npm:^2.0.12"
     react-router-dom: "npm:6.15.0"
     react-syntax-highlighter: "npm:^15.4.5"
     react-textarea-autosize: "npm:^8.3.0"

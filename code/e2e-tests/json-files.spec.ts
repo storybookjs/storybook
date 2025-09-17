@@ -20,6 +20,7 @@ test.describe('JSON files', () => {
           name: 'Primary',
           title: 'Example/Button',
           type: 'story',
+          subtype: 'story',
         }),
       }),
     });

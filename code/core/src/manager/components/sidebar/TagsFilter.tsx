@@ -14,10 +14,6 @@ const TAGS_FILTER = 'tags-filter';
 
 const BUILT_IN_TAGS_HIDE = new Set(['dev', 'autodocs', 'test', 'attached-mdx', 'unattached-mdx']);
 
-const Wrapper = styled.div({
-  position: 'relative',
-});
-
 // Temporary to prevent regressions until TagFilterPanel can be refactored.
 const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
   ...(active && {
@@ -121,6 +117,7 @@ export const TagsFilter = ({
       placement="bottom"
       onVisibleChange={setExpanded}
       offset={8}
+      padding={0}
       popover={() => (
         <TagsFilterPanel
           api={api}

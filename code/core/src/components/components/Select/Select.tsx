@@ -366,7 +366,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         // When the Select has a reset option, but nothing is selected, it
         // makes no sense to open on the Reset option. We start on the first
         // actual option.
-        const listStart = resetOption && hasSelection ? 1 : 0;
+        const listStart = resetOption && !hasSelection ? 1 : 0;
         const listEnd = options.length - 1;
 
         // When we press ArrowUp/Down, we want to stay close to the edges rather than

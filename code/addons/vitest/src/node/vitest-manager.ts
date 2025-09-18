@@ -12,10 +12,11 @@ import type {
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { StoryId, StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
 import slash from 'slash';
 
+import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 import { COVERAGE_DIRECTORY } from '../constants';
 import { log } from '../logger';
 import type { TriggerRunEvent } from '../types';
@@ -25,8 +26,6 @@ import type { TestManager } from './test-manager';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
 const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
-
-const packageDir = dirname(require.resolve('@storybook/addon-vitest/package.json'));
 
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
@@ -46,7 +45,7 @@ export class VitestManager {
     const { createVitest } = await import('vitest/node');
 
     const storybookCoverageReporter: [string, StorybookCoverageReporterOptions] = [
-      join(packageDir, 'dist/node/coverage-reporter.js'),
+      '@storybook/addon-vitest/internal/coverage-reporter',
       {
         testManager: this.testManager,
         coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'> | undefined,
@@ -65,12 +64,12 @@ export class VitestManager {
         : { enabled: false }
     ) as CoverageOptions;
 
-    const vitestWorkspaceConfig = await findUp(
+    const vitestWorkspaceConfig = find.any(
       [
         ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
         ...VITEST_CONFIG_FILE_EXTENSIONS.map((ext) => `vitest.config.${ext}`),
       ],
-      { stopAt: getProjectRoot() }
+      { last: getProjectRoot() }
     );
 
     const projectName = 'storybook:' + process.env.STORYBOOK_CONFIG_DIR;

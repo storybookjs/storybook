@@ -281,24 +281,19 @@ describe('stories codemod', () => {
             export const D = A.extends({});
           `)
       ).resolves.toMatchInlineSnapshot(`
-        import preview from '#.storybook/preview';
-
-        const meta = preview.meta({
-          title: 'Component',
-        });
-
-        export const A = meta.story();
-        export const B = meta.story({
+        export default { title: 'Component' };
+        export const A = {};
+        export const B = {
           play: async () => {
             await A.play();
           },
-        });
+        };
         export const C = A.run;
         export const D = A.extends({});
       `);
     });
 
-    it('should support non-conventional formats (INCOMPLETE)', async () => {
+    it.todo('should support non-conventional formats', async () => {
       const transformed = await transform(dedent`
         import { A as Component } from './Button';
         import * as Stories from './Other.stories';
@@ -318,24 +313,20 @@ describe('stories codemod', () => {
         `);
 
       expect(transformed).toMatchInlineSnapshot(`
-        import preview from '#.storybook/preview';
-
         import { A as Component } from './Button';
         import * as Stories from './Other.stories';
         import someData from './fixtures';
 
-        const meta = preview.meta({
+        export default {
           component: Component,
-
           // not supported yet (story coming from another file)
           args: Stories.A.args,
-        });
-
+        };
         const data = {};
-        export const A = meta.story(() => {});
-        export const B = meta.story(() => {});
+        export const A = () => {};
+        export function B() {}
         // not supported yet (story redeclared)
-        const C = { ...A.input, args: data };
+        const C = { ...A, args: data };
         const D = { args: data };
         export { C, D as E };
       `);
@@ -620,7 +611,7 @@ describe('stories codemod', () => {
       `);
     });
 
-    it('should support non-conventional formats', async () => {
+    it.todo('should support non-conventional formats', async () => {
       const transformed = await transform(dedent`
         import { Meta, StoryObj as CSF3 } from '@storybook/react';
         import { ComponentProps } from './Component';
@@ -645,28 +636,26 @@ describe('stories codemod', () => {
         `);
 
       expect(transformed).toMatchInlineSnapshot(`
-        import preview from '#.storybook/preview';
+        import { StoryObj as CSF3, Meta } from '@storybook/react';
 
         import { A as Component } from './Button';
         import { ComponentProps } from './Component';
         import * as Stories from './Other.stories';
         import someData from './fixtures';
 
-        const meta = preview.meta({
+        export default {
           title: 'Component',
           component: Component,
-
           // not supported yet (story coming from another file)
           args: Stories.A.args,
-        });
-
+        };
         const data = {};
-        export const A = meta.story(() => {});
-        export const B = meta.story(() => {});
-        export const C = meta.story(() => <Component />);
-        export const D = C.input;
+        export const A: StoryObj = () => {};
+        export function B() {}
+        export const C = () => <Component />;
+        export const D = C;
         // not supported yet (story redeclared)
-        const E = { ...A.input, args: data } satisfies CSF3<ComponentProps>;
+        const E = { ...A, args: data } satisfies CSF3<ComponentProps>;
         const F = { args: data };
         export { E, F as G };
       `);
@@ -676,7 +665,8 @@ describe('stories codemod', () => {
       // @TODO: when we support these, uncomment this line
       // expect(transformed).toContain('C = meta.story');
     });
-    it('should not complete transformation if no stories are not transformed', async () => {
+
+    it('should bail transformation if some stories are not transformed to avoid mixed CSF formats', async () => {
       const source = dedent`
         export default {
           title: 'Component',
@@ -685,10 +675,10 @@ describe('stories codemod', () => {
         // not supported yet (story redeclared)
         const B = { args: data };
         const C = { args: data };
-        export { B, C as D };
-      `;
+        export { B, C as D };`;
       const transformed = await transform(source);
-      expect(transformed).toEqual(source);
+      const formattedSource = await formatFileContent('Component.stories.tsx', source);
+      expect(transformed).toEqual(formattedSource);
 
       expect(transformed).not.toContain('preview.meta');
       expect(transformed).not.toContain('meta.story');

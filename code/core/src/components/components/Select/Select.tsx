@@ -460,8 +460,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           tabIndex={isOpen ? -1 : 0}
           onKeyDown={handleButtonKeyDown}
           role={multiSelect ? 'combobox' : 'button'}
-          aria-autocomplete="none"
-          aria-controls={listboxId}
+          aria-controls={isOpen ? listboxId : undefined}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
         >
@@ -496,6 +495,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           <MinimalistPopover handleClose={handleClose} triggerRef={triggerRef}>
             <ScrollArea vertical>
               <Listbox
+                aria-label={ariaLabel}
                 role="listbox"
                 id={listboxId}
                 ref={listboxRef}

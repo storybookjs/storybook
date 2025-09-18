@@ -19,7 +19,7 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
-import { type API, openInEditor } from 'storybook/manager-api';
+import { type API } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import { type ControlStates } from '../../instrumenter/types';

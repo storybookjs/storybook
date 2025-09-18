@@ -5,6 +5,7 @@ import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME;
+const isStorybookDev = (process.env.STORYBOOK_TYPE || 'dev') === 'dev';
 
 test.describe('Manager UI', () => {
   test.beforeEach(async ({ page }) => {
@@ -55,6 +56,7 @@ test.describe('Manager UI', () => {
     });
 
     test('Story context menu actions', async ({ page }) => {
+      test.skip(!isStorybookDev, 'These actions are only applicable in dev mode');
       const sbPage = new SbPage(page, expect);
       await sbPage.navigateToStory('example/button', 'docs');
 
@@ -67,6 +69,7 @@ test.describe('Manager UI', () => {
       await expect(
         sidebarContextMenu.getByRole('button', { name: /open in editor/i })
       ).toBeVisible();
+      await page.click('body');
 
       // Context menu should contain open in editor for docs node
       await page.locator('[data-item-id="example-button--docs"]').hover();
@@ -76,6 +79,7 @@ test.describe('Manager UI', () => {
       await expect(
         page.getByTestId('tooltip').getByRole('button', { name: /open in editor/i })
       ).toBeVisible();
+      await page.click('body');
 
       // Context menu should contain open in editor and copy story name for story node
       await page.locator('[data-item-id="example-button--primary"]').hover();

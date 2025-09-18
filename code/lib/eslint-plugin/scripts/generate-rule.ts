@@ -2,6 +2,7 @@ import cp from 'node:child_process';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import { format, resolveConfig } from 'prettier';
 import type { PromptObject } from 'prompts';
 import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
@@ -154,82 +155,94 @@ const generateRule = async () => {
   logger.log(`creating tests/rules/${ruleId}.test.ts`);
   await fs.writeFile(
     testFile,
-    dedent(`/**
-         * @fileoverview ${ruleDescription}
-         * @author ${authorName}
+    await format(
+      dedent(
+        `/**
+        * @fileoverview ${ruleDescription}
+        * @author ${authorName}
+        */
+
+      //------------------------------------------------------------------------------
+      // Requirements
+      //------------------------------------------------------------------------------
+
+      import rule from '../../src/rules/${ruleId}'
+      import ruleTester from '../utils/rule-tester'
+
+      //------------------------------------------------------------------------------
+      // Tests
+      //------------------------------------------------------------------------------
+
+      ruleTester.run('${ruleId}', rule, {
+        /**
+         * 👉 Please read this and delete this entire comment block.
+         * This is an example test for a rule that reports an error in case a named export is called 'wrong'
+         * Use https://eslint.org/docs/developer-guide/working-with-rules for Eslint API reference
          */
-
-        //------------------------------------------------------------------------------
-        // Requirements
-        //------------------------------------------------------------------------------
-
-        import rule from '../../src/rules/${ruleId}'
-        import ruleTester from '../utils/rule-tester'
-
-        //------------------------------------------------------------------------------
-        // Tests
-        //------------------------------------------------------------------------------
-
-        ruleTester.run('${ruleId}', rule, {
-          /**
-           * 👉 Please read this and delete this entire comment block.
-           * This is an example test for a rule that reports an error in case a named export is called 'wrong'
-           * Use https://eslint.org/docs/developer-guide/working-with-rules for Eslint API reference
-           */
-          valid: ['export const correct = {}'],
-          invalid: [
-            {
-              code: 'export const wrong = {}',
-              errors: [
-                {
-                  messageId: 'anyMessageIdHere', // comes from the rule file
-                },
-              ],
-            },
-          ],
-        })
-
-`)
+        valid: ['export const correct = {}'],
+        invalid: [
+          {
+            code: 'export const wrong = {}',
+            errors: [
+              {
+                messageId: 'anyMessageIdHere', // comes from the rule file
+              },
+            ],
+          },
+        ],
+      })
+    `
+      ),
+      {
+        parser: 'typescript',
+        ...(await resolveConfig(__dirname)),
+      }
+    )
   );
 
   logger.log(`creating docs/rules/${ruleId}.md`);
   await fs.writeFile(
     docFile,
-    dedent(`
-      # ${ruleId}
+    await format(
+      dedent(`
+        # ${ruleId}
 
-      <!-- RULE-CATEGORIES:START -->
-      <!-- RULE-CATEGORIES:END -->
+        <!-- RULE-CATEGORIES:START -->
+        <!-- RULE-CATEGORIES:END -->
 
-      ## Rule Details
+        ## Rule Details
 
-      ${ruleDescription}.
+        ${ruleDescription}.
 
-      Examples of **incorrect** code for this rule:
+        Examples of **incorrect** code for this rule:
 
-      \`\`\`js
-      // fill me in
-      \`\`\`
+        \`\`\`js
+        // fill me in
+        \`\`\`
 
-      Examples of **correct** code for this rule:
+        Examples of **correct** code for this rule:
 
-      \`\`\`js
-      // fill me in
-      \`\`\`
+        \`\`\`js
+        // fill me in
+        \`\`\`
 
-      ### Options
+        ### Options
 
-      If there are any options, describe them here. Otherwise, delete this section.
+        If there are any options, describe them here. Otherwise, delete this section.
 
-      ## When Not To Use It
+        ## When Not To Use It
 
-      Give a short description of when it would be appropriate to turn off this rule. If not applicable, delete this section.
+        Give a short description of when it would be appropriate to turn off this rule. If not applicable, delete this section.
 
-      ## Further Reading
+        ## Further Reading
 
-      If there are other links that describe the issue this rule addresses, please include them here in a bulleted list. Otherwise, delete this section.
-
-`)
+        If there are other links that describe the issue this rule addresses, please include them here in a bulleted list. Otherwise, delete this section.
+      `),
+      {
+        parser: 'markdown',
+        ...(await resolveConfig(__dirname)),
+      }
+    )
   );
 
   const { shouldOpenInVSCode } = await prompts({

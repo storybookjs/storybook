@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
   imports: [FormsModule],
   selector: 'storybook-form',
   template: `
-    <form id="interaction-test-form" (submit)="handleSubmit($event)">
+    <form id="interaction-test-form" ngNativeValidate (submit)="handleSubmit($event)">
   <label>
     Enter Value
     <input type="text" data-testid="value" name="value" [(ngModel)]="value" required />

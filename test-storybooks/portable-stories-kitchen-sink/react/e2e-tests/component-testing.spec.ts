@@ -159,7 +159,7 @@ test.describe("component testing", () => {
 
     // Assert discrepancy: CLI pass + Browser fail
     const failingStoryElement = page.locator(
-      '[data-item-id="addons-group-test--mismatch-failure"] [role="status"]'
+      '[data-item-id="addons-group-test--mismatch-failure"] [data-testid="tree-status-button"]'
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
@@ -172,7 +172,7 @@ test.describe("component testing", () => {
     // Assert discrepancy: CLI fail + Browser pass
     await sbPage.navigateToStory("addons/group/test", "Mismatch Success");
     const successfulStoryElement = page.locator(
-      '[data-item-id="addons-group-test--mismatch-success"] [role="status"]'
+      '[data-item-id="addons-group-test--mismatch-success"] [data-testid="tree-status-button"]'
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
@@ -233,7 +233,7 @@ test.describe("component testing", () => {
 
     // Assert for expected success
     const successfulStoryElement = page.locator(
-      '[data-item-id="addons-group-test--expected-success"] [role="status"]'
+      '[data-item-id="addons-group-test--expected-success"] [data-testid="tree-status-button"]'
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
@@ -242,7 +242,7 @@ test.describe("component testing", () => {
 
     // Assert for expected failure
     const failingStoryElement = page.locator(
-      '[data-item-id="addons-group-test--expected-failure"] [role="status"]'
+      '[data-item-id="addons-group-test--expected-failure"] [data-testid="tree-status-button"]'
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
@@ -290,7 +290,7 @@ test.describe("component testing", () => {
 
     // Assert for expected success
     const successfulStoryElement = page.locator(
-      '[data-item-id="addons-group-test--expected-success"] [role="status"]'
+      '[data-item-id="addons-group-test--expected-success"] [data-testid="tree-status-button"]'
     );
     await expect(successfulStoryElement).toHaveAttribute(
       "aria-label",
@@ -299,7 +299,7 @@ test.describe("component testing", () => {
 
     // Assert for expected failure
     const failingStoryElement = page.locator(
-      '[data-item-id="addons-group-test--expected-failure"] [role="status"]'
+      '[data-item-id="addons-group-test--expected-failure"] [data-testid="tree-status-button"]'
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
@@ -346,7 +346,7 @@ test.describe("component testing", () => {
 
     // Assert for expected failure
     const failingStoryElement = page.locator(
-      '[data-item-id="addons-group-test--expected-content"] [role="status"]'
+      '[data-item-id="addons-group-test--expected-content"] [data-testid="tree-status-button"]'
     );
     await expect(failingStoryElement).toHaveAttribute(
       "aria-label",
@@ -385,7 +385,7 @@ test.describe("component testing", () => {
 
     // Assert for expected failure
     const failingStoryElement = page.locator(
-      '[data-item-id="addons-group-test--expected-content"] [role="status"]'
+      '[data-item-id="addons-group-test--expected-content"] [data-testid="tree-status-button"]'
     );
 
     await expect(failingStoryElement).toHaveAttribute(
@@ -527,7 +527,7 @@ test.describe("component testing", () => {
     await expect(
       page
         .locator("#storybook-explorer-menu")
-        .getByRole("status", { name: "Test status: success" })
+        .getByTestId("tree-status-button", { name: "Test status: success" })
     ).toHaveCount(1);
   });
 
@@ -620,12 +620,12 @@ test.describe("component testing", () => {
     await expect(
       page
         .locator("#storybook-explorer-menu")
-        .getByRole("status", { name: "Test status: success" })
+        .getByTestId("tree-status-button", { name: "Test status: success" })
     ).toHaveCount(8);
     await expect(
       page
         .locator("#storybook-explorer-menu")
-        .getByRole("status", { name: "Test status: error" })
+        .getByTestId("tree-status-button", { name: "Test status: error" })
     ).toHaveCount(1);
   });
 
@@ -670,12 +670,12 @@ test.describe("component testing", () => {
     await expect(
       page
         .locator("#storybook-explorer-menu")
-        .getByRole("status", { name: "Test status: success" })
+        .getByTestId("tree-status-button", { name: "Test status: success" })
     ).toHaveCount(8);
     await expect(
       page
         .locator("#storybook-explorer-menu")
-        .getByRole("status", { name: "Test status: error" })
+        .getByTestId("tree-status-button", { name: "Test status: error" })
     ).toHaveCount(1);
   });
 

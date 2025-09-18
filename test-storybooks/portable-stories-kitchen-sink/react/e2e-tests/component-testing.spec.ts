@@ -619,13 +619,11 @@ test.describe("component testing", () => {
     await page.click("body");
     await expect(
       page
-        .locator("#storybook-explorer-menu")
-        .getByTestId("tree-status-button", { name: "Test status: success" })
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: success\"]")
     ).toHaveCount(8);
     await expect(
       page
-        .locator("#storybook-explorer-menu")
-        .getByTestId("tree-status-button", { name: "Test status: error" })
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
     ).toHaveCount(1);
   });
 

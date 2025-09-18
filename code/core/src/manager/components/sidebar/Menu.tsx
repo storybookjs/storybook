@@ -131,7 +131,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
       onVisibleChange={setIsTooltipVisible}
     >
       <SidebarToggleButton
-        ariaLabel="Shortcuts"
+        ariaLabel="Settings"
         pressed={isTooltipVisible}
         highlighted={!!isHighlighted}
         padding="small"

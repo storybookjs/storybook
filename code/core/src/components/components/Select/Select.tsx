@@ -7,7 +7,7 @@ import { Button, ScrollArea } from 'storybook/internal/components';
 import { RefreshIcon } from '@storybook/icons';
 
 import { useObjectRef } from '@react-aria/utils';
-import { lighten, transparentize } from 'polished';
+import { transparentize } from 'polished';
 import { Overlay, useInteractOutside, useOverlay, useOverlayPosition } from 'react-aria';
 import { useOverlayTriggerState } from 'react-stately';
 import { styled } from 'storybook/theming';

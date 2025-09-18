@@ -18,11 +18,6 @@ import {
 import { styled } from 'storybook/theming';
 
 import { useLayout } from '../layout/LayoutProvider';
-import { addonsTool } from './tools/addons';
-import { copyTool } from './tools/copy';
-import { ejectTool } from './tools/eject';
-import { remountTool } from './tools/remount';
-import { zoomTool } from './tools/zoom';
 import type { PreviewProps } from './utils/types';
 
 export const getTools = (getFn: API['getElements']) => Object.values(getFn(types.TOOL));
@@ -112,14 +107,6 @@ export const createTabsTool = (tabs: Addon_BaseType[]): Addon_BaseType => ({
     </Consumer>
   ),
 });
-
-export const defaultTools: Addon_BaseType[] = [remountTool, zoomTool];
-export const defaultToolsExtra: Addon_BaseType[] = [
-  addonsTool,
-  fullScreenTool,
-  ejectTool,
-  copyTool,
-];
 
 export interface ToolData {
   isShown: boolean;

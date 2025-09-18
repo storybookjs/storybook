@@ -18,12 +18,12 @@ export const Tool = memo(function MyAddonSelector() {
       [PARAM_KEY]: !isActive,
     });
   }, [isActive]);
-
+  
   useEffect(() => {
     api.setAddonShortcut(ADDON_ID, {
-      label: 'Toggle Addon [O]',
-      defaultShortcut: ['O'],
-      actionName: 'myaddon',
+      label: 'Toggle Outline',
+      defaultShortcut: ['alt', 'O'],
+      actionName: 'outline',
       showInMenu: false,
       action: toggleMyTool,
     });

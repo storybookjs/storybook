@@ -11,6 +11,7 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
+import { type API } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import { type ControlStates } from '../../instrumenter/types';
@@ -39,6 +40,9 @@ interface SubnavProps {
   status: PlayStatus;
   storyFileName?: string;
   onScrollToEnd?: () => void;
+  importPath?: string;
+  canOpenInEditor?: boolean;
+  api: API;
 }
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -61,8 +65,24 @@ const StyledSeparator = styled(Separator)({
   marginTop: 0,
 });
 
+const OpenInEditorButton = styled(Button)(({ theme }) => ({
+  color: theme.color.secondary,
+  fontWeight: theme.typography.weight.bold,
+  justifyContent: 'flex-end',
+  textAlign: 'right',
+  whiteSpace: 'nowrap',
+  marginTop: 'auto',
+  marginBottom: 1,
+  // 15 to align on screen edge - 7 from button padding
+  marginRight: 8,
+  fontSize: 13,
+  lineHeight: 24,
+}));
+
 const StyledLocation = styled(P)(({ theme }) => ({
   color: theme.textMutedColor,
+  cursor: 'default',
+  fontWeight: theme.typography.weight.regular,
   justifyContent: 'flex-end',
   textAlign: 'right',
   whiteSpace: 'nowrap',
@@ -107,6 +127,9 @@ export const Subnav: React.FC<SubnavProps> = ({
   status,
   storyFileName,
   onScrollToEnd,
+  importPath,
+  canOpenInEditor,
+  api,
 }) => {
   const buttonText = status === 'errored' ? 'Scroll to error' : 'Scroll to end';
   const theme = useTheme();
@@ -168,9 +191,25 @@ export const Subnav: React.FC<SubnavProps> = ({
               <SyncIcon />
             </RerunButton>
           </Group>
-          {storyFileName && (
+          {(importPath || storyFileName) && (
             <Group>
-              <StyledLocation>{storyFileName}</StyledLocation>
+              {canOpenInEditor ? (
+                <OpenInEditorButton
+                  padding="small"
+                  size="small"
+                  variant="ghost"
+                  ariaLabel="Open in editor"
+                  onClick={() => {
+                    api.openInEditor({
+                      file: importPath as string,
+                    });
+                  }}
+                >
+                  {storyFileName}
+                </OpenInEditorButton>
+              ) : (
+                <StyledLocation>{storyFileName}</StyledLocation>
+              )}
             </Group>
           )}
         </StyledSubnav>

@@ -456,6 +456,7 @@ export class StoryIndexGenerator {
           ...(input.type === 'story' && input.subtype === 'test'
             ? { parent: input.parent, parentName: input.parentName }
             : {}),
+          ...(input.exportName ? { exportName: input.exportName } : {}),
         };
       }
     );

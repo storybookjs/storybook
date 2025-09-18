@@ -47,7 +47,8 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
 
   const topLinks = useMemo<Link[]>(() => {
     const defaultLinks = [];
-    if (context.type === 'docs' || context.type === 'story') {
+
+    if (context && 'importPath' in context) {
       defaultLinks.push({
         id: 'open-in-editor',
         title: 'Open in editor',

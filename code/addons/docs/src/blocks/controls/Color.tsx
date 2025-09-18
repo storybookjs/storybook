@@ -13,22 +13,17 @@ import { styled } from 'storybook/theming';
 import { getControlId } from './helpers';
 import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types';
 
-const Wrapper = styled.div({
+const Wrapper = styled.div<{ readOnly: boolean }>(({ readOnly }) => ({
   position: 'relative',
   maxWidth: 250,
-  '&[aria-readonly="true"]': {
-    opacity: 0.5,
-  },
-});
+  opacity: readOnly ? 0.5 : 1,
+}));
 
 const PickerTooltip = styled(WithTooltip)({
   position: 'absolute',
   zIndex: 1,
   top: 4,
   left: 4,
-  '[aria-readonly=true] &': {
-    cursor: 'not-allowed',
-  },
 });
 
 const TooltipContent = styled.div({
@@ -82,6 +77,7 @@ const Input = styled(Form.Input)(({ theme, readOnly }) => ({
   paddingRight: 30,
   boxSizing: 'border-box',
   fontFamily: theme.typography.fonts.base,
+  cursor: readOnly ? 'not-allowed' : 'text',
 }));
 
 const ToggleIcon = styled(MarkupIcon)(({ theme }) => ({
@@ -378,13 +374,17 @@ export const ColorControl: FC<ColorControlProps> = ({
   const { presets, addPreset } = usePresets(presetColors ?? [], color, colorSpace);
   const Picker = ColorPicker[colorSpace];
 
-  const readonly = !!argType?.table?.readonly;
+  const readOnly = !!argType?.table?.readonly;
+  const controlId = getControlId(name);
 
   return (
-    <Wrapper aria-readonly={readonly}>
+    <Wrapper readOnly={readOnly}>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
       <PickerTooltip
         startOpen={startOpen}
-        trigger={readonly ? null : undefined}
+        trigger={readOnly ? null : undefined}
         closeOnOutsideClick
         onVisibleChange={() => color && addPreset(color)}
         tooltip={
@@ -423,11 +423,11 @@ export const ColorControl: FC<ColorControlProps> = ({
         <Swatch value={realValue} style={{ margin: 4 }} />
       </PickerTooltip>
       <Input
-        id={getControlId(name)}
+        id={controlId}
         value={value}
         onChange={(e: ChangeEvent<HTMLInputElement>) => updateValue(e.target.value)}
         onFocus={(e: FocusEvent<HTMLInputElement>) => e.target.select()}
-        readOnly={readonly}
+        readOnly={readOnly}
         placeholder="Choose color..."
       />
       {value ? <ToggleIcon onClick={cycleColorSpace} /> : null}

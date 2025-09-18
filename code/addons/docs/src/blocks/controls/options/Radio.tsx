@@ -9,33 +9,30 @@ import { getControlId } from '../helpers';
 import type { ControlProps, NormalizedOptionsConfig, OptionsSingleSelection } from '../types';
 import { selectedKey } from './helpers';
 
-const Wrapper = styled.div<{ isInline: boolean }>(
+const Wrapper = styled.fieldset<{ isInline: boolean }>(
+  {
+    border: 'none',
+    marginInline: 0,
+    padding: 0,
+    display: 'flex',
+    alignItems: 'flex-start',
+  },
   ({ isInline }) =>
     isInline
       ? {
-          display: 'flex',
           flexWrap: 'wrap',
-          alignItems: 'flex-start',
-
+          gap: 15,
           label: {
             display: 'inline-flex',
-            marginRight: 15,
           },
         }
       : {
+          flexDirection: 'column',
+          gap: 8,
           label: {
             display: 'flex',
           },
-        },
-  (props) => {
-    if (props['aria-readonly'] === 'true') {
-      return {
-        input: {
-          cursor: 'not-allowed',
-        },
-      };
-    }
-  }
+        }
 );
 
 const Text = styled.span({
@@ -47,13 +44,15 @@ const Text = styled.span({
 const Label = styled.label({
   lineHeight: '20px',
   alignItems: 'center',
-  marginBottom: 8,
 
-  '&:last-child': {
-    marginBottom: 0,
+  '[aria-readonly=true] &': {
+    cursor: 'not-allowed',
   },
 
   input: {
+    '[aria-readonly=true] &': {
+      cursor: 'not-allowed',
+    },
     margin: 0,
     marginRight: 6,
   },
@@ -79,7 +78,8 @@ export const RadioControl: FC<RadioProps> = ({
   const readonly = !!argType?.table?.readonly;
 
   return (
-    <Wrapper aria-readonly={readonly} isInline={isInline}>
+    <Wrapper aria-readonly={readonly || undefined} isInline={isInline}>
+      <legend className="sb-sr-only">{name}</legend>
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;
         return (

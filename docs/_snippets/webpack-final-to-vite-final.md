@@ -66,7 +66,7 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="With Vite"
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="With Vite (CSF 3)"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 import graphql from 'vite-plugin-graphql-loader';
@@ -86,7 +86,7 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="With Webpack (CSF Next 🧪)"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-webpack5, nextjs)
 import { defineMain } from '@storybook/your-framework/node';
 
 export default defineMain({
@@ -114,7 +114,7 @@ export default defineMain({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="With Webpack (CSF Next 🧪)"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-webpack5, nextjs)
 import { defineMain } from '@storybook/your-framework/node';
 
 export default defineMain({
@@ -139,10 +139,28 @@ export default defineMain({
 });
 ```
 
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="With Vite (CSF Next 🧪)"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+import graphql from 'vite-plugin-graphql-loader';
+
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async viteFinal(config) {
+    return {
+      ...config,
+      plugins: [...(config.plugins ?? []), graphql()],
+    };
+  },
+});
+```
+
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="With Vite (CSF Next 🧪)"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
 import graphql from 'vite-plugin-graphql-loader';

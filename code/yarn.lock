@@ -3836,30 +3836,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lynx-js/react@npm:^0.113.0":
-  version: 0.113.0
-  resolution: "@lynx-js/react@npm:0.113.0"
-  dependencies:
-    preact: "npm:@hongzhiyuan/preact@10.24.0-00213bad"
-  peerDependencies:
-    "@lynx-js/types": "*"
-    "@types/react": ^18
-  peerDependenciesMeta:
-    "@lynx-js/types":
-      optional: true
-  checksum: 10c0/6cc8e4c25312b5f8f5f9bbeceaafe3ac6e4fac2a8daf10e686d70bc22ca4a480f368a9f60f35eaf77323371a977249f9edf60d3df5245ce4ef14671113cdf7e7
-  languageName: node
-  linkType: hard
-
-"@lynx-js/use-sync-external-store@npm:^1.5.0":
-  version: 1.5.0
-  resolution: "@lynx-js/use-sync-external-store@npm:1.5.0"
-  peerDependencies:
-    "@lynx-js/react": "*"
-  checksum: 10c0/266e5eb95e60d643b38ed8d39e20f4a93fa28198e053e43d15be22afe434c519e820b8bf068d7db20f7ab05beb33a207c7d70126077d2deda60f793a774ed4dc
-  languageName: node
-  linkType: hard
-
 "@mdn/browser-compat-data@npm:^5.5.35, @mdn/browser-compat-data@npm:^5.6.19":
   version: 5.7.6
   resolution: "@mdn/browser-compat-data@npm:5.7.6"
@@ -8663,7 +8639,6 @@ __metadata:
   resolution: "@storybook/root@workspace:."
   dependencies:
     "@chromatic-com/storybook": "npm:^4.1.1"
-    "@lynx-js/react": "npm:^0.113.0"
     "@nx/vite": "npm:20.8.2"
     "@nx/workspace": "npm:20.8.2"
     "@playwright/test": "npm:1.52.0"
@@ -23377,13 +23352,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"preact@npm:@hongzhiyuan/preact@10.24.0-00213bad":
-  version: 10.24.0-00213bad
-  resolution: "@hongzhiyuan/preact@npm:10.24.0-00213bad"
-  checksum: 10c0/ec2c7eadc7ac5e957b61346c31458f09d7ec440bf5396fd9437cfa20dc3093310ef2437fbaf827123945eb90a19147a926df939eb7290a89b001e93300d9b6c3
-  languageName: node
-  linkType: hard
-
 "preact@npm:^10.5.13":
   version: 10.27.2
   resolution: "preact@npm:10.27.2"
@@ -26477,8 +26445,6 @@ __metadata:
     "@emotion/styled": "npm:^11.14.0"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@happy-dom/global-registrator": "npm:^18.0.1"
-    "@lynx-js/react": "npm:^0.113.0"
-    "@lynx-js/use-sync-external-store": "npm:^1.5.0"
     "@ndelangen/get-tarball": "npm:^3.0.7"
     "@ngard/tiny-isequal": "npm:^1.1.0"
     "@polka/compression": "npm:^1.0.0-next.28"

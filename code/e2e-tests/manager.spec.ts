@@ -16,6 +16,23 @@ test.describe('Manager UI', () => {
   test.describe('Desktop', () => {
     // TODO: test dragging and resizing
 
+    test('Settings tooltip', async ({ page }) => {
+      await page.locator('[aria-label="Settings"]').click();
+
+      // should only hide if pressing Escape, and not other keyboard inputs
+      await expect(page.getByTestId('tooltip')).toBeVisible();
+      await page.keyboard.press('A');
+      await expect(page.getByTestId('tooltip')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId('tooltip')).toBeHidden();
+
+      // should also hide if clicking anywhere outside the tooltip
+      await page.locator('[aria-label="Settings"]').click();
+      await expect(page.getByTestId('tooltip')).toBeVisible();
+      await page.click('body');
+      await expect(page.getByTestId('tooltip')).toBeHidden();
+    });
+
     test('Sidebar toggling', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 
@@ -35,6 +52,60 @@ test.describe('Manager UI', () => {
       // toggle with "show sidebar" button
       await sbPage.page.locator('[aria-label="Show sidebar"]').click();
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
+    });
+
+    test('Story context menu actions', async ({ page }) => {
+      const sbPage = new SbPage(page, expect);
+      await sbPage.navigateToStory('example/button', 'docs');
+
+      // Context menu should contain open in editor for component node
+      await page.locator('[data-item-id="example-button"]').hover();
+      await page
+        .locator('[data-item-id="example-button"] div[data-testid="context-menu"] button')
+        .click();
+      const sidebarContextMenu = page.getByTestId('tooltip');
+      await expect(
+        sidebarContextMenu.getByRole('button', { name: /open in editor/i })
+      ).toBeVisible();
+
+      // Context menu should contain open in editor for docs node
+      await page.locator('[data-item-id="example-button--docs"]').hover();
+      await page
+        .locator('[data-item-id="example-button--docs"] div[data-testid="context-menu"] button')
+        .click();
+      await expect(
+        page.getByTestId('tooltip').getByRole('button', { name: /open in editor/i })
+      ).toBeVisible();
+
+      // Context menu should contain open in editor and copy story name for story node
+      await page.locator('[data-item-id="example-button--primary"]').hover();
+      await page
+        .locator('[data-item-id="example-button--primary"] div[data-testid="context-menu"] button')
+        .click();
+      await expect(
+        page.getByTestId('tooltip').getByRole('button', { name: /open in editor/i })
+      ).toBeVisible();
+      await page
+        .getByTestId('tooltip')
+        .getByRole('button', { name: /copy story name/i })
+        .click();
+
+      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
+        'Primary'
+      );
+    });
+
+    test('Story share actions', async ({ page }) => {
+      const sbPage = new SbPage(page, expect);
+      await sbPage.navigateToStory('example/button', 'primary');
+      await expect(page.getByRole('button', { name: 'Open in editor' })).toBeVisible();
+      await page.getByRole('button', { name: 'Share' }).click();
+      await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
+      await page.getByRole('button', { name: /copy story link/i }).click();
+
+      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
+        `${storybookUrl}/?path=/story/example-button--primary`
+      );
     });
 
     test('Toolbar toggling', async ({ page }) => {

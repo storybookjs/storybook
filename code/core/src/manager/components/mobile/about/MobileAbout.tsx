@@ -39,7 +39,11 @@ export const MobileAbout: FC = () => {
                 Back
               </CloseButton>
               <LinkContainer>
-                <LinkLine href="https://github.com/storybookjs/storybook" target="_blank">
+                <LinkLine
+                  href="https://github.com/storybookjs/storybook"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <LinkLeft>
                     <GithubIcon />
                     <span>Github</span>
@@ -49,6 +53,7 @@ export const MobileAbout: FC = () => {
                 <LinkLine
                   href="https://storybook.js.org/docs/react/get-started/install/?ref=ui"
                   target="_blank"
+                  rel="noopener noreferrer"
                 >
                   <LinkLeft>
                     <StorybookIcon />
@@ -60,11 +65,14 @@ export const MobileAbout: FC = () => {
               <UpgradeBlock />
               <BottomText>
                 Open source software maintained by{' '}
-                <Link href="https://chromatic.com" target="_blank">
+                <Link href="https://chromatic.com" target="_blank" rel="noopener noreferrer">
                   Chromatic
                 </Link>{' '}
                 and the{' '}
-                <Link href="https://github.com/storybookjs/storybook/graphs/contributors">
+                <Link
+                  href="https://github.com/storybookjs/storybook/graphs/contributors"
+                  rel="noopener noreferrer"
+                >
                   Storybook Community
                 </Link>
               </BottomText>

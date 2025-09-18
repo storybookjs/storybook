@@ -45,7 +45,7 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
       // toggle with menu item
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-S').click();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
 
@@ -129,10 +129,10 @@ test.describe('Manager UI', () => {
       await expectToolbarVisibility(true);
 
       // toggle with menu item
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-T').click();
       await expectToolbarVisibility(false);
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-T').click();
       await expectToolbarVisibility(true);
     });
@@ -168,7 +168,7 @@ test.describe('Manager UI', () => {
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeVisible();
 
         // toggle with menu item
-        await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+        await sbPage.page.locator('[aria-label="Settings"]').click();
         await sbPage.page.locator('#list-item-A').click();
         await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
 
@@ -219,7 +219,7 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.locator('.sidebar-container')).toBeVisible();
 
       // toggle with menu item
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-F').click();
       await expect(sbPage.page.locator('.sidebar-container')).toBeHidden();
       await expect(sbPage.page.locator('#storybook-panel-root')).toBeHidden();
@@ -248,7 +248,7 @@ test.describe('Manager UI', () => {
 
     test('Settings page', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
-      await sbPage.page.locator('[aria-label="Shortcuts"]').click();
+      await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-about').click();
 
       expect(sbPage.page.url()).toContain('/settings/about');

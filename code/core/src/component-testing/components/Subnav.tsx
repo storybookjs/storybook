@@ -11,7 +11,6 @@ import {
   WithTooltip,
 } from 'storybook/internal/components';
 
-import { global } from '@storybook/global';
 import {
   FastForwardIcon,
   PlayBackIcon,
@@ -20,7 +19,7 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
-import { openInEditor, useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { openInEditor } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import { type ControlStates } from '../../instrumenter/types';
@@ -201,7 +200,9 @@ export const Subnav: React.FC<SubnavProps> = ({
                   <StyledLocation
                     aria-label="Open in editor"
                     onClick={() => {
-                      openInEditor(importPath as string);
+                      openInEditor({
+                        file: importPath as string,
+                      });
                     }}
                   >
                     {storyFileName}

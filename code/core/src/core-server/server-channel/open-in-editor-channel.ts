@@ -26,9 +26,7 @@ export async function initOpenInEditorChannel(
       }
     };
     try {
-      const targetFile = payload.file;
-      const line = payload.line;
-      const column = payload.column;
+      const { file: targetFile, line, column } = payload;
 
       if (!targetFile) {
         throw new Error('No file was provided to open');
@@ -58,7 +56,6 @@ export async function initOpenInEditorChannel(
 
       sendTelemetry({ success: true });
     } catch (e: any) {
-      console.log(e);
       const error = e?.message || 'Failed to open in editor';
       channel.emit(OPEN_IN_EDITOR_RESPONSE, {
         error,

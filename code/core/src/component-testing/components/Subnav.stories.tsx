@@ -1,7 +1,6 @@
 import React from 'react';
 
 import { action } from 'storybook/actions';
-import { ManagerContext } from 'storybook/manager-api';
 
 import { Subnav } from './Subnav';
 

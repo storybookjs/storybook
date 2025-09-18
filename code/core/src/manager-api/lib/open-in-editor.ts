@@ -6,14 +6,14 @@ import {
 
 import { addons } from './addons';
 
-export async function openInEditor(
-  file: string,
-  line?: number,
-  column?: number
-): Promise<OpenInEditorResponsePayload> {
+export async function openInEditor(payload: {
+  file: string;
+  line?: number;
+  column?: number;
+}): Promise<OpenInEditorResponsePayload> {
   return new Promise((resolve) => {
     const channel = addons.getChannel();
-    const payload = { file, line, column };
+    const { file, line, column } = payload;
     const handler = (res: OpenInEditorResponsePayload) => {
       if (res.file === file && res.line === line && res.column === column) {
         channel.off(OPEN_IN_EDITOR_RESPONSE, handler);

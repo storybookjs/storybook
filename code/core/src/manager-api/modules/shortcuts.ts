@@ -392,7 +392,9 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
         case 'openInEditor': {
           if (global.CONFIG_TYPE === 'DEVELOPMENT') {
-            openInEditor(fullAPI.getCurrentStoryData().importPath);
+            openInEditor({
+              file: fullAPI.getCurrentStoryData().importPath,
+            });
           }
           break;
         }

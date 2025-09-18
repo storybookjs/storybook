@@ -56,7 +56,9 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
         onClick: (e: SyntheticEvent) => {
           e.preventDefault();
-          openInEditor(context.importPath);
+          openInEditor({
+            file: context.importPath,
+          });
         },
       });
     }
@@ -163,6 +165,11 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
   );
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
 
+  /**
+   * The context menu can take a list of lists of links, so that the links are grouped and separated
+   * by a line separator, so we need to make sure that links are contained within arrays (but not
+   * more than one level deep)
+   */
   const groups: Link[][] =
     Array.isArray(links[0]) || links.length === 0 ? (links as Link[][]) : [links as Link[]];
 

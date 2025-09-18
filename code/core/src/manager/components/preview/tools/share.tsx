@@ -58,11 +58,9 @@ const QRImageContainer = styled.div(() => ({
 const QRImage = ({ value }: { value: string }) => {
   const theme = useTheme();
   return (
-    value && (
-      <QRImageContainer>
-        <QRCode value={value} marginSize={0} size={60} fgColor={theme.color.darkest} />
-      </QRImageContainer>
-    )
+    <QRImageContainer>
+      <QRCode value={value} marginSize={0} size={60} fgColor={theme.color.darkest} />
+    </QRImageContainer>
   );
 };
 
@@ -88,7 +86,7 @@ function ShareMenu({
   baseUrl: string;
   storyId: string;
   queryParams: Record<string, any>;
-  qrUrl?: string;
+  qrUrl: string;
 }) {
   const api = useStorybookApi();
   const shortcutKeys = api.getShortcutKeys();
@@ -123,23 +121,21 @@ function ShareMenu({
       ],
     ];
 
-    if (qrUrl) {
-      baseLinks.push([
-        {
-          id: 'qr-section',
-          // @ts-expect-error (non strict)
-          content: (
-            <QRContainer>
-              <QRImage value={qrUrl} />
-              <QRContent>
-                <QRTitle>Scan me</QRTitle>
-                <QRDescription>Must be on the same network as this device.</QRDescription>
-              </QRContent>
-            </QRContainer>
-          ),
-        },
-      ]);
-    }
+    baseLinks.push([
+      {
+        id: 'qr-section',
+        // @ts-expect-error (non strict)
+        content: (
+          <QRContainer>
+            <QRImage value={qrUrl} />
+            <QRContent>
+              <QRTitle>Scan me</QRTitle>
+              <QRDescription>Must be on the same network as this device.</QRDescription>
+            </QRContent>
+          </QRContainer>
+        ),
+      },
+    ]);
 
     return baseLinks;
   }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, copyStoryLink]);

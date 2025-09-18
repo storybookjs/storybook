@@ -37,7 +37,11 @@ export const openInEditorTool: Addon_BaseType = {
         return (
           <IconButton
             key="open-in-editor"
-            onClick={() => openInEditor(importPath)}
+            onClick={() =>
+              openInEditor({
+                file: importPath,
+              })
+            }
             title="Open in editor"
             aria-label="Open in editor"
           >

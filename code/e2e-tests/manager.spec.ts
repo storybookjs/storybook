@@ -5,7 +5,7 @@ import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME;
-const isStorybookDev = (process.env.STORYBOOK_TYPE || 'dev') === 'dev';
+const type = process.env.STORYBOOK_TYPE || 'dev';
 
 test.describe('Manager UI', () => {
   test.beforeEach(async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe('Manager UI', () => {
     });
 
     test('Story context menu actions', async ({ page }) => {
-      test.skip(!isStorybookDev, 'These actions are only applicable in dev mode');
+      test.skip(type !== 'dev', 'These actions are only applicable in dev mode');
       const sbPage = new SbPage(page, expect);
       await sbPage.navigateToStory('example/button', 'docs');
 
@@ -99,10 +99,24 @@ test.describe('Manager UI', () => {
       );
     });
 
-    test('Story share actions', async ({ page }) => {
+    test('Story share actions (dev)', async ({ page }) => {
+      test.skip(type !== 'dev', 'These actions are only applicable in dev mode');
       const sbPage = new SbPage(page, expect);
       await sbPage.navigateToStory('example/button', 'primary');
       await expect(page.getByRole('button', { name: 'Open in editor' })).toBeVisible();
+      await page.getByRole('button', { name: 'Share' }).click();
+      await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
+      await page.getByRole('button', { name: /copy story link/i }).click();
+
+      await expect(page.evaluate(() => navigator.clipboard.readText())).resolves.toContain(
+        `${storybookUrl}/?path=/story/example-button--primary`
+      );
+    });
+
+    test('Story share actions (build)', async ({ page }) => {
+      test.skip(type !== 'build', 'These actions are only applicable in build mode');
+      const sbPage = new SbPage(page, expect);
+      await sbPage.navigateToStory('example/button', 'primary');
       await page.getByRole('button', { name: 'Share' }).click();
       await expect(page.getByRole('button', { name: /copy story link/i })).toBeVisible();
       await page.getByRole('button', { name: /copy story link/i }).click();

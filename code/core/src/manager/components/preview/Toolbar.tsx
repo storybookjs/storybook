@@ -89,7 +89,7 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
     <StyledSection
       className="sb-bar"
       key="toolbar"
-      data-test-id="sb-preview-toolbar"
+      data-testid="sb-preview-toolbar"
       aria-labelledby={headingId}
     >
       <h2 id={headingId} className="sb-sr-only">

@@ -115,7 +115,7 @@ export const AriaTabs: FC<AriaTabsProps> = ({
   }
 
   return (
-    <Container>
+    <Container {...props}>
       <Bar
         {...props}
         scrollable={true}

@@ -27,7 +27,7 @@ test.describe('preview-api', () => {
 
     // wait for the play function to complete
     await sbPage.viewAddonPanel('Interactions');
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();
     const runStatusBadge = panel.locator('[aria-label^="Test status:"]');

@@ -128,31 +128,31 @@ test.describe('Manager UI', () => {
 
     test('Toolbar toggling', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
-      const expectToolbarVisibility = async (visible: boolean) => {
-        await expect(async () => {
-          const toolbar = sbPage.page.locator(`[data-test-id="sb-preview-toolbar"]`);
-          const marginTop = await toolbar.evaluate(
-            (element) => window.getComputedStyle(element).marginTop
-          );
-          expect(marginTop).toBe(visible ? '0px' : '-40px');
-        }).toPass({ intervals: [400] });
+      const expectToolbarToBeVisible = async () => {
+        const toolbar = page.getByTestId('sb-preview-toolbar').getByRole('toolbar');
+        await expect(toolbar).toBeVisible();
       };
 
-      await expectToolbarVisibility(true);
+      const expectToolbarToNotExist = async () => {
+        const toolbar = page.getByTestId('sb-preview-toolbar').getByRole('toolbar');
+        await expect(toolbar).toBeHidden();
+      };
+
+      await expectToolbarToBeVisible();
 
       // toggle with keyboard shortcut
       await sbPage.page.locator('html').press('Alt+t');
-      await expectToolbarVisibility(false);
+      await expectToolbarToNotExist();
       await sbPage.page.locator('html').press('Alt+t');
-      await expectToolbarVisibility(true);
+      await expectToolbarToBeVisible();
 
       // toggle with menu item
       await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-T').click();
-      await expectToolbarVisibility(false);
+      await expectToolbarToNotExist();
       await sbPage.page.locator('[aria-label="Settings"]').click();
       await sbPage.page.locator('#list-item-T').click();
-      await expectToolbarVisibility(true);
+      await expectToolbarToBeVisible();
     });
 
     test.describe('Panel', () => {
@@ -326,20 +326,20 @@ test.describe('Manager UI', () => {
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
+      await expect(sbPage.page.getByRole('tab', { name: 'Controls' })).toBeHidden();
 
       // open panel
       await sbPage.page.locator('[aria-label="Open addon panel"]').click();
 
       // panel is open
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeVisible();
+      await expect(sbPage.page.getByRole('tab', { name: 'Controls' })).toBeVisible();
 
       // close panel
       await sbPage.page.locator('[aria-label="Close addon panel"]').click();
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');
-      await expect(sbPage.page.locator('#tabbutton-addon-controls')).toBeHidden();
+      await expect(sbPage.page.getByRole('tab', { name: 'Controls' })).toBeHidden();
     });
   });
 });

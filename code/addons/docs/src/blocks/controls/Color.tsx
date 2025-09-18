@@ -72,7 +72,7 @@ const swatchBackground = `url('data:image/svg+xml;charset=utf-8,<svg xmlns="http
 
 type SwatchProps = { value: string } & React.ComponentProps<typeof SwatchColor>;
 const Swatch = ({ value, style, ...props }: SwatchProps) => {
-  const backgroundImage = `linear-gradient(${value}, ${value}), ${swatchBackground}, linear-gradient(#fff, #fff)`;
+  const backgroundImage = `linear-gradient(${value}, ${value}), ${swatchBackground}, linear-gradient(hsl(0 0 100 / .4), hsl(0 0 100 / .4))`;
   return <SwatchColor {...props} style={{ ...style, backgroundImage }} />;
 };
 

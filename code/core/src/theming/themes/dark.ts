@@ -33,11 +33,11 @@ const theme: ThemeVars = {
   // Form colors
   buttonBg: '#222425',
   buttonBorder: 'rgba(255,255,255,.1)',
-  booleanBg: '#222425',
-  booleanSelectedBg: '#2E3438',
+  booleanBg: '#1B1C1D',
+  booleanSelectedBg: '#292B2E',
   inputBg: '#1B1C1D',
   inputBorder: 'rgba(255,255,255,.1)',
-  inputTextColor: color.lightest,
+  inputTextColor: '#C9CCCF',
   inputBorderRadius: 4,
 };
 

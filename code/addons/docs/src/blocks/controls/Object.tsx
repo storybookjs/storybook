@@ -228,6 +228,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     <RawInput
       ref={htmlElRef}
       id={getControlId(name)}
+      minRows={3}
       name={name}
       defaultValue={value === null ? '' : JSON.stringify(value, null, 2)}
       onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}

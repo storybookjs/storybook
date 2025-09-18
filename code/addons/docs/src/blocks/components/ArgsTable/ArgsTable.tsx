@@ -83,10 +83,7 @@ export const TableWrapper = styled.table<{
     },
 
     th: {
-      color:
-        theme.base === 'light'
-          ? transparentize(0.25, theme.color.defaultText)
-          : transparentize(0.45, theme.color.defaultText),
+      color: theme.textMutedColor,
       paddingTop: 10,
       paddingBottom: 10,
       paddingLeft: 15,

@@ -383,7 +383,7 @@ const Node = React.memo<NodeProps>(function Node({
             padding="small"
             variant="ghost"
             className="sidebar-subheading-action"
-            ariaLabel={isFullyExpanded ? 'Expand' : 'Collapse'}
+            ariaLabel={isFullyExpanded ? 'Collapse' : 'Expand'}
             data-action="expand-all"
             data-expanded={isFullyExpanded}
             onClick={(event) => {

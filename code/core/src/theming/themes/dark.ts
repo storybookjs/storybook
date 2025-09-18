@@ -6,11 +6,11 @@ const theme: ThemeVars = {
 
   // Storybook-specific color palette
   colorPrimary: '#FF4785', // coral
-  colorSecondary: '#029CFD', // ocean
+  colorSecondary: '#479DFF',
 
   // UI
-  appBg: '#222425',
-  appContentBg: '#1B1C1D',
+  appBg: '#1B1C1D',
+  appContentBg: '#222325',
   appPreviewBg: color.lightest,
   appBorderColor: 'rgba(255,255,255,.1)',
   appBorderRadius: 4,
@@ -20,15 +20,15 @@ const theme: ThemeVars = {
   fontCode: typography.fonts.mono,
 
   // Text colors
-  textColor: '#C9CDCF',
-  textInverseColor: '#222425',
-  textMutedColor: '#798186',
+  textColor: '#C9CCCF',
+  textInverseColor: '#1B1C1D',
+  textMutedColor: '#95999D',
 
   // Toolbar default and active colors
-  barTextColor: color.mediumdark,
-  barHoverColor: color.secondary,
-  barSelectedColor: color.secondary,
-  barBg: '#292C2E',
+  barTextColor: '#95999D',
+  barHoverColor: '#70B3FF',
+  barSelectedColor: '#479DFF',
+  barBg: '#222325',
 
   // Form colors
   buttonBg: '#222425',

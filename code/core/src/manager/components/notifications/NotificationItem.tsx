@@ -107,7 +107,7 @@ const NotificationTextWrapper = styled.div(({ theme }) => ({
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
-  color: theme.base === 'dark' ? theme.color.mediumdark : theme.color.mediumlight,
+  color: theme.textInverseColor,
 }));
 
 const Headline = styled.div(({ theme }) => ({

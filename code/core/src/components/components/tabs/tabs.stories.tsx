@@ -166,13 +166,13 @@ export const StatefulStaticWithSetBackgroundColor = {
         initial={args.initial || 'test2'}
         backgroundColor={args.backgroundColor ?? 'rgba(0,0,0,.05)'}
       >
-        <div id="test1" title="With a function" color="#e00000">
+        <div id="test1" title="With a function" color="#C23400">
           {
             (({ active, selected }: { active: boolean; selected: string }) =>
               active ? <div>{selected} is selected</div> : null) as any
           }
         </div>
-        <div id="test2" title="With markup" color="green">
+        <div id="test2" title="With markup" color="#427C27">
           <div>test2 is always active (but visually hidden)</div>
         </div>
       </TabsState>

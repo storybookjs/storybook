@@ -30,7 +30,7 @@ const ModalChild = styled.div<{ height?: number }>(({ theme, height }) => ({
 
 const ModalContent = styled(Modal.Content)(({ theme }) => ({
   margin: 0,
-  color: theme.base === 'dark' ? theme.color.lighter : theme.color.mediumdark,
+  color: theme.textColor,
 }));
 
 const ModalInput = styled(Form.Input)(({ theme }) => ({

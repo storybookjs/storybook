@@ -47,12 +47,12 @@ export interface NewStoryPayload extends CreateNewStoryRequestPayload {
 }
 
 const TreeExpandIconStyled = styled(ChevronSmallRightIcon)(({ theme }) => ({
-  color: theme.color.mediumdark,
+  color: theme.textMutedColor,
   marginTop: 2,
 }));
 
 const TreeCollapseIconStyled = styled(ChevronSmallDownIcon)(({ theme }) => ({
-  color: theme.color.mediumdark,
+  color: theme.textMutedColor,
   marginTop: 2,
 }));
 

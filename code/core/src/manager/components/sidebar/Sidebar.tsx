@@ -52,7 +52,7 @@ const Top = styled(Spaced)({
 });
 
 const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
-  color: theme.color.mediumdark,
+  color: theme.textMutedColor,
   width: isMobile ? 36 : 32,
   height: isMobile ? 36 : 32,
   borderRadius: theme.appBorderRadius + 2,

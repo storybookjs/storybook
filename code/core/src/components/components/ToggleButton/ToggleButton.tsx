@@ -3,7 +3,7 @@ import React, { forwardRef } from 'react';
 import { Button } from 'storybook/internal/components';
 import type { ButtonProps } from 'storybook/internal/components';
 
-import { transparentize } from 'polished';
+import { darken, transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
 export interface ToggleButtonProps extends ButtonProps {
@@ -27,18 +27,26 @@ ToggleButton.displayName = 'ToggleButton';
 const StyledToggle = styled(Button)<ToggleButtonProps>(({ theme, variant, pressed }) => ({
   ...(pressed
     ? {
-        background: theme.background.hoverable,
-        color: theme.color.secondary,
-        boxShadow: 'none',
+        ...(variant === 'solid'
+          ? {
+              background: darken(0.1, theme.color.secondary),
+            }
+          : {}),
+        ...(variant === 'outline'
+          ? {
+              background: transparentize(0.94, theme.barSelectedColor),
+              boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
+              color: theme.barSelectedColor,
+            }
+          : {}),
         ...(variant === 'ghost'
           ? {
-              background: theme.background.hoverable,
-              color: theme.color.secondary,
-
+              background: transparentize(0.94, theme.barSelectedColor),
+              color: theme.barSelectedColor,
               // This is a hack to apply bar styles to the button as soon as it is part of a bar
               // It is a temporary solution until we have implemented Theming 2.0.
               '.sb-bar &': {
-                background: transparentize(0.9, theme.barTextColor),
+                background: transparentize(0.94, theme.barSelectedColor),
                 color: theme.barSelectedColor,
               },
             }

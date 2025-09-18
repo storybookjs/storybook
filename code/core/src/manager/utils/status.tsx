@@ -19,10 +19,10 @@ const SmallIcons = styled(CircleIcon)({
   },
 });
 
-const LoadingIcons = styled(SmallIcons)(({ theme: { animation, color, base } }) => ({
+const LoadingIcons = styled(SmallIcons)(({ theme: { animation, theme, base } }) => ({
   // specificity hack
   animation: `${animation.glow} 1.5s ease-in-out infinite`,
-  color: base === 'light' ? color.mediumdark : color.darker,
+  color: base === 'light' ? theme.textMutedColor : theme.textMutedColor,
 }));
 
 export const statusPriority: StatusValue[] = [

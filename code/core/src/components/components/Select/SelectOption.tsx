@@ -1,5 +1,6 @@
 import React from 'react';
 
+import { darken, transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
 export interface SelectOptionProps {
@@ -51,11 +52,11 @@ const Item = styled('li')(({ theme }) => ({
     cursor: 'not-allowed',
   },
   '&[aria-selected="true"]': {
-    color: theme.color.secondary,
+    color: darken(0.18, theme.color.secondary),
     fontWeight: theme.typography.weight.bold,
   },
   ':hover': {
-    background: theme.background.hoverable,
+    background: transparentize(0.93, theme.color.secondary),
   },
   ':focus-visible': {
     background: theme.background.hoverable,

@@ -206,7 +206,7 @@ const StyledButton = styled('button', {
 
           '&:active': {
             color: theme.barSelectedColor,
-            background: transparentize(0.9, theme.barSelectedColor),
+            background: transparentize(0.93, theme.barSelectedColor),
           },
 
           '&:focus': {

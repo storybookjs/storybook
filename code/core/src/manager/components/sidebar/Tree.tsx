@@ -120,7 +120,7 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
 
   '&[data-selected="true"]': {
     color: theme.color.lightest,
-    background: theme.color.secondary,
+    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
     fontWeight: theme.typography.weight.bold,
 
     '&&:hover, &&:focus': {

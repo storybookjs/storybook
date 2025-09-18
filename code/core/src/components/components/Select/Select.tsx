@@ -7,7 +7,7 @@ import { Button, ScrollArea } from 'storybook/internal/components';
 import { RefreshIcon } from '@storybook/icons';
 
 import { useObjectRef } from '@react-aria/utils';
-import { transparentize } from 'polished';
+import { lighten, transparentize } from 'polished';
 import { Overlay, useInteractOutside, useOverlay, useOverlayPosition } from 'react-aria';
 import { useOverlayTriggerState } from 'react-stately';
 import { styled } from 'storybook/theming';
@@ -74,13 +74,11 @@ function valueToId(parentId: string, { value }: ResetOption | Option): string {
   return `${parentId}-opt-${value ?? 'sb-reset'}`;
 }
 
-const SelectedOptionCount = styled('span')({
+const SelectedOptionCount = styled.span(({ theme }) => ({
   appearance: 'none',
-  borderRadius: 20,
-  padding: '2px 4px',
-  fontSize: 11,
-  backgroundColor: `color-mix(in srgb, currentColor 5%, transparent)`,
-});
+  color: theme.textMutedColor,
+  fontSize: 12,
+}));
 
 function setSelectedFromDefault(
   options: SelectProps['options'],
@@ -102,13 +100,13 @@ const StyledButton = styled(Button)<ButtonProps & { hasSelection?: boolean; isOp
     ...(isOpen || hasSelection
       ? {
           boxShadow: 'none',
-          background: transparentize(0.93, theme.color.secondary),
-          color: theme.color.secondary,
+          background: transparentize(0.93, theme.barSelectedColor),
+          color: theme.barSelectedColor,
 
           // This is a hack to apply bar styles to the button as soon as it is part of a bar
           // It is a temporary solution until we have implemented Theming 2.0.
           '.sb-bar &': {
-            background: transparentize(0.9, theme.barTextColor),
+            background: transparentize(0.93, theme.barSelectedColor),
             color: theme.barSelectedColor,
           },
         }

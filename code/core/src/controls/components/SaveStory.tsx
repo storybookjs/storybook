@@ -59,7 +59,7 @@ const Actions = styled.div(({ theme }) => ({
   flex: '1 0 0',
   alignItems: 'center',
   gap: 2,
-  color: theme.color.mediumdark,
+  color: theme.textMutedColor,
   fontSize: theme.typography.size.s2,
 }));
 

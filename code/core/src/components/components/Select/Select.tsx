@@ -102,7 +102,7 @@ const StyledButton = styled(Button)<ButtonProps & { hasSelection?: boolean; isOp
     ...(isOpen || hasSelection
       ? {
           boxShadow: 'none',
-          background: theme.background.hoverable,
+          background: transparentize(0.93, theme.color.secondary),
           color: theme.color.secondary,
 
           // This is a hack to apply bar styles to the button as soon as it is part of a bar

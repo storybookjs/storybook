@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { log } from 'console';
 import process from 'process';
 
 import { SbPage } from './util';
@@ -18,8 +19,14 @@ test.describe('module-mocking', () => {
     await sbPage.navigateToStory('core/order-of-hooks', 'order-of-hooks');
 
     await sbPage.viewAddonPanel('Actions');
-    const logItem = page.locator('#storybook-panel-root #panel-tab-content');
-    await expect(logItem).toBeVisible();
+    const panel = sbPage.panelContent();
+    await expect(panel).toBeVisible();
+
+    // Ensure we have fresh logs as the panel may mount too late to catch the first events in Playwright
+    await page.getByRole('button', { name: 'Clear' }).click();
+    await expect(panel.locator('li')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Remount component' }).click();
+    await expect(panel.locator('li')).toHaveCount(9);
 
     const expectedTexts = [
       '1 - [from loaders]',
@@ -35,13 +42,15 @@ test.describe('module-mocking', () => {
 
     // Collect all logs in the panel but only check the order of the logs
     // we care about, disregarding any other logs that could appear in between
-    const logItemsCount = await logItem.locator('li').count();
+    const logItemsCount = await panel.locator('li').count();
     const actualTexts = [];
     for (let i = 0; i < logItemsCount; i++) {
-      actualTexts.push(await logItem.locator(`li >> nth=${i}`).innerText());
+      actualTexts.push(await panel.locator(`li >> nth=${i}`).innerText());
     }
 
     let lastMatchIndex = -1;
+
+    console.log(actualTexts);
 
     for (const expected of expectedTexts) {
       const foundIndex = actualTexts.findIndex(
@@ -60,7 +69,7 @@ test.describe('module-mocking', () => {
     await sbPage.navigateToStory('core/module-mocking', 'basic');
 
     await sbPage.viewAddonPanel('Actions');
-    const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
+    const logItem = sbPage.panelContent().locator('span', {
       hasText: 'foo: []',
     });
     await expect(logItem).toBeVisible();

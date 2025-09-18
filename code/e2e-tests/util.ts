@@ -167,7 +167,7 @@ export class SbPage {
   }
 
   panelContent() {
-    return this.page.locator('#storybook-panel-root #panel-tab-content > div:not([hidden])');
+    return this.page.locator('#storybook-panel-root').getByRole('tabpanel');
   }
 
   async viewAddonPanel(name: string) {

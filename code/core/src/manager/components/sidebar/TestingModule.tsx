@@ -222,20 +222,32 @@ export const TestingModule = ({
   }, []);
 
   useEffect(() => {
+    let rf: number | null = null;
     if (contentRef.current) {
-      setMaxHeight(contentRef.current?.getBoundingClientRect().height || DEFAULT_HEIGHT);
+      rf = requestAnimationFrame(() => {
+        if (contentRef.current && !isCollapsed) {
+          const height = contentRef.current.getBoundingClientRect().height || DEFAULT_HEIGHT;
+
+          setMaxHeight(height);
+        }
+      });
 
       const resizeObserver = new ResizeObserver(() => {
-        requestAnimationFrame(() => {
+        rf = requestAnimationFrame(() => {
           if (contentRef.current && !isCollapsed) {
-            const height = contentRef.current?.getBoundingClientRect().height || DEFAULT_HEIGHT;
+            const height = contentRef.current.getBoundingClientRect().height || DEFAULT_HEIGHT;
 
             setMaxHeight(height);
           }
         });
       });
       resizeObserver.observe(contentRef.current);
-      return () => resizeObserver.disconnect();
+      return () => {
+        resizeObserver.disconnect();
+        if (rf) {
+          cancelAnimationFrame(rf);
+        }
+      };
     }
   }, [isCollapsed]);
 

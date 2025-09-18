@@ -65,10 +65,24 @@ const StyledSeparator = styled(Separator)({
   marginTop: 0,
 });
 
-const StyledLocation = styled(P)<{ isText?: boolean }>(({ theme, isText }) => ({
-  color: isText ? theme.textMutedColor : theme.color.secondary,
-  cursor: isText ? 'default' : 'pointer',
-  fontWeight: isText ? theme.typography.weight.regular : theme.typography.weight.bold,
+const OpenInEditorButton = styled(Button)(({ theme }) => ({
+  color: theme.color.secondary,
+  fontWeight: theme.typography.weight.bold,
+  justifyContent: 'flex-end',
+  textAlign: 'right',
+  whiteSpace: 'nowrap',
+  marginTop: 'auto',
+  marginBottom: 1,
+  // 15 to align on screen edge - 7 from button padding
+  marginRight: 8,
+  fontSize: 13,
+  lineHeight: 24,
+}));
+
+const StyledLocation = styled(P)(({ theme }) => ({
+  color: theme.textMutedColor,
+  cursor: 'default',
+  fontWeight: theme.typography.weight.regular,
   justifyContent: 'flex-end',
   textAlign: 'right',
   whiteSpace: 'nowrap',
@@ -180,24 +194,21 @@ export const Subnav: React.FC<SubnavProps> = ({
           {(importPath || storyFileName) && (
             <Group>
               {canOpenInEditor ? (
-                <WithTooltip
-                  trigger="hover"
-                  hasChrome={false}
-                  tooltip={<Note note="Open in editor" />}
+                <OpenInEditorButton
+                  padding="small"
+                  size="small"
+                  variant="ghost"
+                  ariaLabel="Open in editor"
+                  onClick={() => {
+                    api.openInEditor({
+                      file: importPath as string,
+                    });
+                  }}
                 >
-                  <StyledLocation
-                    aria-label="Open in editor"
-                    onClick={() => {
-                      api.openInEditor({
-                        file: importPath as string,
-                      });
-                    }}
-                  >
-                    {storyFileName}
-                  </StyledLocation>
-                </WithTooltip>
+                  {storyFileName}
+                </OpenInEditorButton>
               ) : (
-                <StyledLocation isText={true}>{storyFileName}</StyledLocation>
+                <StyledLocation>{storyFileName}</StyledLocation>
               )}
             </Group>
           )}

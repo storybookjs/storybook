@@ -50,7 +50,7 @@ const Hidden = styled.div({
   },
 });
 
-const ColorIcon = styled.span<{ filter: string }>(
+const ColorIcon = styled.span<{ $filter: string }>(
   {
     background: 'linear-gradient(to right, #F44336, #FF9800, #FFEB3B, #8BC34A, #2196F3, #9C27B0)',
     borderRadius: '1rem',
@@ -58,8 +58,8 @@ const ColorIcon = styled.span<{ filter: string }>(
     height: '1rem',
     width: '1rem',
   },
-  ({ filter }) => ({
-    filter: getFilter(filter),
+  ({ $filter }) => ({
+    filter: getFilter($filter),
   }),
   ({ theme }) => ({
     boxShadow: `${theme.appBorderColor} 0 0 0 1px inset`,
@@ -74,7 +74,7 @@ export const VisionSimulator = () => {
     return {
       title: name,
       description,
-      icon: <ColorIcon filter={name} />,
+      icon: <ColorIcon $filter={name} />,
       value: name,
     };
   });

@@ -416,6 +416,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           onScrollToEnd={scrollTarget && scrollToTarget}
           importPath={importPath}
           canOpenInEditor={canOpenInEditor}
+          api={api}
         />
       </Fragment>
     );

@@ -12,7 +12,7 @@ import {
 import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 
 import copy from 'copy-to-clipboard';
-import { openInEditor, useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
@@ -56,7 +56,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
         onClick: (e: SyntheticEvent) => {
           e.preventDefault();
-          openInEditor({
+          api.openInEditor({
             file: context.importPath,
           });
         },

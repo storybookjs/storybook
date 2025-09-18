@@ -9,7 +9,6 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
-import { openInEditor } from '../lib/open-in-editor';
 import type { KeyboardEventLike } from '../lib/shortcut';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut';
 import type { ModuleFn } from '../lib/types';
@@ -392,7 +391,7 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         }
         case 'openInEditor': {
           if (global.CONFIG_TYPE === 'DEVELOPMENT') {
-            openInEditor({
+            fullAPI.openInEditor({
               file: fullAPI.getCurrentStoryData().importPath,
             });
           }

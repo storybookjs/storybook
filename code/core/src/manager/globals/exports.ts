@@ -339,7 +339,6 @@ export default {
     'keyToSymbol',
     'merge',
     'mockChannel',
-    'openInEditor',
     'optionOrAltSymbol',
     'shortcutMatchesShortcut',
     'shortcutToHumanString',

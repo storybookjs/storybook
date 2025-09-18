@@ -19,7 +19,7 @@ import {
   SyncIcon,
 } from '@storybook/icons';
 
-import { openInEditor } from 'storybook/manager-api';
+import { type API, openInEditor } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import { type ControlStates } from '../../instrumenter/types';
@@ -50,6 +50,7 @@ interface SubnavProps {
   onScrollToEnd?: () => void;
   importPath?: string;
   canOpenInEditor?: boolean;
+  api: API;
 }
 
 const StyledButton = styled(Button)(({ theme }) => ({
@@ -126,6 +127,7 @@ export const Subnav: React.FC<SubnavProps> = ({
   onScrollToEnd,
   importPath,
   canOpenInEditor,
+  api,
 }) => {
   const buttonText = status === 'errored' ? 'Scroll to error' : 'Scroll to end';
   const theme = useTheme();
@@ -200,7 +202,7 @@ export const Subnav: React.FC<SubnavProps> = ({
                   <StyledLocation
                     aria-label="Open in editor"
                     onClick={() => {
-                      openInEditor({
+                      api.openInEditor({
                         file: importPath as string,
                       });
                     }}

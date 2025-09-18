@@ -6,7 +6,7 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 import { global } from '@storybook/global';
 import { EditorIcon } from '@storybook/icons';
 
-import { Consumer, openInEditor, types } from 'storybook/manager-api';
+import { Consumer, types, useStorybookApi } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 
 const mapper = ({ state, api }: Combo) => {
@@ -31,6 +31,7 @@ export const openInEditorTool: Addon_BaseType = {
   render: () => (
     <Consumer filter={mapper}>
       {({ importPath, isCompositionStory }) => {
+        const api = useStorybookApi();
         if (isCompositionStory || !importPath) {
           return null;
         }
@@ -38,7 +39,7 @@ export const openInEditorTool: Addon_BaseType = {
           <IconButton
             key="open-in-editor"
             onClick={() =>
-              openInEditor({
+              api.openInEditor({
                 file: importPath,
               })
             }

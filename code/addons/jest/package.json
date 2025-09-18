@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-jest",
-  "version": "10.0.0-beta.2",
+  "version": "10.0.0-beta.5",
   "description": "Storybook Jest addon: Show Jest report in Storybook's addon panel",
   "keywords": [
     "jest",
@@ -54,7 +54,7 @@
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.4.0",
+    "@storybook/icons": "^1.6.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-resize-detector": "^7.1.2",

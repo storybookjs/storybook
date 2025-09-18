@@ -172,7 +172,7 @@ export const sandbox = async ({
         message: 'Enter the output directory',
         initialValue: outputDirectoryName ?? undefined,
         validate: (directoryName) =>
-          existsSync(directoryName)
+          directoryName && existsSync(directoryName)
             ? `${directoryName} already exists. Please choose another name.`
             : undefined,
       },

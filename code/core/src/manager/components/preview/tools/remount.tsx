@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import { FORCE_REMOUNT } from 'storybook/internal/core-events';
@@ -49,9 +49,11 @@ export const remountTool: Addon_BaseType = {
           remount();
         };
 
-        api.on(FORCE_REMOUNT, () => {
-          setIsAnimating(true);
-        });
+        useEffect(() => {
+          const handler = () => setIsAnimating(true);
+          api.on(FORCE_REMOUNT, handler);
+          return () => api.off?.(FORCE_REMOUNT, handler);
+        }, [api]);
 
         return (
           <StyledAnimatedButton

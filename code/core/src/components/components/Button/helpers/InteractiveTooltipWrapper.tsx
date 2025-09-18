@@ -25,7 +25,7 @@ export const InteractiveTooltipWrapper: React.FC<{
     // addons singleton. This component is used in Buttons, etc., which are
     // public API and can be imported in MDX. So We rely on a declarative
     // DOM attribute instead of relying on the manager API.
-    const hasShortcuts = document.body.getAttribute('data-shortcuts-enabled') === 'true';
+    const hasShortcuts = document?.body?.getAttribute('data-shortcuts-enabled') !== 'false';
 
     if (!tooltip && (!shortcut || !hasShortcuts)) {
       return undefined;

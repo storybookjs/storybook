@@ -344,6 +344,7 @@ const Node = React.memo<NodeProps>(function Node({
         {icon ? (
           <StatusButton
             ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
+            data-testid="tree-status-button"
             type="button"
             status={statusValue}
             selectedItem={isSelected}
@@ -382,7 +383,7 @@ const Node = React.memo<NodeProps>(function Node({
             padding="small"
             variant="ghost"
             className="sidebar-subheading-action"
-            ariaLabel={isFullyExpanded ? 'Expand' : 'Collapse'}
+            ariaLabel={isFullyExpanded ? 'Collapse' : 'Expand'}
             data-action="expand-all"
             data-expanded={isFullyExpanded}
             onClick={(event) => {

@@ -13,7 +13,6 @@ import {
   type State,
   addons,
   merge,
-  shortcutToHumanString,
   types,
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -33,7 +32,7 @@ const fullScreenMapper = ({ api, state }: Combo) => {
   return {
     toggle: api.toggleFullscreen,
     isFullscreen: api.getIsFullscreen(),
-    shortcut: shortcutToHumanString(api.getShortcutKeys().fullScreen),
+    shortcut: api.getShortcutKeys().fullScreen,
     hasPanel: Object.keys(api.getElements(Addon_TypesEnum.PANEL)).length > 0,
     singleStory: state.singleStory,
   };
@@ -62,7 +61,7 @@ export const fullScreenTool: Addon_BaseType = {
               variant="ghost"
               onClick={() => toggle()}
               ariaLabel={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
-              shortcut={[shortcut]}
+              shortcut={shortcut}
             >
               {isFullscreen ? <CloseIcon /> : <ExpandIcon />}
             </Button>

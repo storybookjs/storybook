@@ -344,7 +344,6 @@ const Node = React.memo<NodeProps>(function Node({
         {icon ? (
           <StatusButton
             ariaLabel={`Test status: ${statusValue.replace('status-value:', '')}`}
-            role="status"
             type="button"
             status={statusValue}
             selectedItem={isSelected}

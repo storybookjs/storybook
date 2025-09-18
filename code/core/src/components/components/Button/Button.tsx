@@ -226,7 +226,7 @@ const StyledButton = styled('button', {
     }
 
     if (variant === 'ghost') {
-      return theme.color.mediumdark;
+      return theme.textMutedColor;
     }
     return theme.input.color;
   })(),

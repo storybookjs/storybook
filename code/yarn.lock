@@ -6167,7 +6167,7 @@ __metadata:
     "@storybook/icons": "npm:^1.6.0"
     react: "npm:^19.1.1"
     react-dom: "npm:^19.1.1"
-    react-resize-detector: "npm:^7.1.2"
+    react-resize-detector: "npm:^12.3.0"
     tiny-invariant: "npm:^1.3.1"
     typescript: "npm:^5.8.3"
     upath: "npm:^2.0.1"
@@ -22448,18 +22448,6 @@ __metadata:
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
   checksum: 10c0/58075af4f7842debc97934bee15947d7ac1db1af8849832258fc986482487de97489d80b15edea6658260edbe826ac8f8acf6c2df2a28e527c8f63a4bff3436f
-  languageName: node
-  linkType: hard
-
-"react-resize-detector@npm:^7.1.2":
-  version: 7.1.2
-  resolution: "react-resize-detector@npm:7.1.2"
-  dependencies:
-    lodash: "npm:^4.17.21"
-  peerDependencies:
-    react: ^16.0.0 || ^17.0.0 || ^18.0.0
-    react-dom: ^16.0.0 || ^17.0.0 || ^18.0.0
-  checksum: 10c0/2285b0024bcc736c7d5e80279e819835a5e8bef0899778100d2434b1c4b10971e6ae253df073ca96a20cacc47b3c249bc675479e5fc4ec1f6652fcca7f48ec22
   languageName: node
   linkType: hard
 

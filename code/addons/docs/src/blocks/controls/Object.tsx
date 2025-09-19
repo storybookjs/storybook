@@ -16,7 +16,7 @@ const { window: globalWindow } = globalThis;
 
 type JsonTreeProps = ComponentProps<typeof JsonTree>;
 
-const Wrapper = styled.div(({ theme }) => ({
+const Wrapper = styled.div<{ readOnly: boolean }>(({ theme, readOnly }) => ({
   position: 'relative',
   display: 'flex',
   isolation: 'isolate',
@@ -239,9 +239,10 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
   return (
-    <Wrapper aria-readonly={readonly}>
+    <Wrapper readOnly={readonly}>
       {isObjectOrArray && (
         <RawButton
+          disabled={readonly}
           pressed={showRaw}
           ariaLabel={`Edit the ${name} properties in JSON format`}
           onClick={(e: SyntheticEvent) => {

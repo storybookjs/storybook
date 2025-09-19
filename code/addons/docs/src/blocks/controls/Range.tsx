@@ -175,11 +175,12 @@ const RangeCurrentAndMaxLabel = styled(RangeLabel)<{
   flexShrink: 0,
 }));
 
-const RangeWrapper = styled.div({
+const RangeWrapper = styled.div<{ readOnly: boolean }>(({ readOnly }) => ({
   display: 'flex',
   alignItems: 'center',
   width: '100%',
-});
+  opacity: readOnly ? 0.5 : 1,
+}));
 
 function getNumberOfDecimalPlaces(number: number) {
   const match = number.toString().match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
@@ -213,12 +214,16 @@ export const RangeControl: FC<RangeProps> = ({
   const numberOFDecimalsPlaces = useMemo(() => getNumberOfDecimalPlaces(step), [step]);
 
   const readonly = !!argType?.table?.readonly;
+  const controlId = getControlId(name);
 
   return (
-    <RangeWrapper aria-readonly={readonly}>
+    <RangeWrapper readOnly={readonly}>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
       <RangeLabel>{min}</RangeLabel>
       <RangeInput
-        id={getControlId(name)}
+        id={controlId}
         type="range"
         disabled={readonly}
         onChange={handleChange}

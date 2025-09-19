@@ -53,7 +53,7 @@ const Item = styled('li')(({ theme }) => ({
     cursor: 'not-allowed',
   },
   '&[aria-selected="true"]': {
-    color: theme.base === 'light' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
+    color: theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
     fontWeight: theme.typography.weight.bold,
   },
   ':hover': {
@@ -89,9 +89,7 @@ const Icon = styled('span')(() => ({
   width: '1rem',
 }));
 
-const Title = styled('span')(({ theme }) => ({
-  color: theme.color.defaultText,
-}));
+const Title = styled('span')(({}) => ({}));
 
 const Description = styled('span')(({ theme }) => ({
   fontSize: 11,

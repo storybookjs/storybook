@@ -21,8 +21,8 @@ export const parse = (value: string) => {
 
 export const format = (value: NumberValue) => (value != null ? String(value) : '');
 
-const FormInput = styled(Form.Input)(({ readOnly }) => ({
-  opacity: readOnly ? 0.5 : 1,
+const FormInput = styled(Form.Input)(({ theme, readOnly }) => ({
+  background: theme.base === 'light' ? theme.color.lighter : 'transparent',
 }));
 
 export const NumberControl: FC<NumberProps> = ({

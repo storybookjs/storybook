@@ -16,9 +16,6 @@ import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types
 const Wrapper = styled.div({
   position: 'relative',
   maxWidth: 250,
-  '&[aria-readonly="true"]': {
-    opacity: 0.5,
-  },
 });
 
 const PickerTooltip = styled(WithTooltip)({
@@ -76,12 +73,16 @@ const Swatch = ({ value, style, ...props }: SwatchProps) => {
   return <SwatchColor {...props} style={{ ...style, backgroundImage }} />;
 };
 
-const Input = styled(Form.Input)(({ theme, readOnly }) => ({
+const Input = styled(Form.Input)(({ theme }) => ({
   width: '100%',
   paddingLeft: 30,
   paddingRight: 30,
   boxSizing: 'border-box',
   fontFamily: theme.typography.fonts.base,
+
+  '[aria-readonly="true"] > &': {
+    background: theme.base === 'light' ? theme.color.lighter : 'transparent',
+  },
 }));
 
 const ToggleIcon = styled(MarkupIcon)(({ theme }) => ({

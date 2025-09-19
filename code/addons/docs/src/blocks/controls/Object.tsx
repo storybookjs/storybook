@@ -21,10 +21,6 @@ const Wrapper = styled.div(({ theme }) => ({
   display: 'flex',
   isolation: 'isolate',
 
-  '&[aria-readonly="true"]': {
-    opacity: 0.5,
-  },
-
   '.rejt-tree': {
     marginLeft: '1rem',
     fontSize: '13px',
@@ -58,7 +54,7 @@ const Wrapper = styled.div(({ theme }) => ({
     color: theme.color.defaultText,
   },
   '.rejt-value-node:hover > .rejt-value': {
-    background: theme.color.lighter,
+    background: theme.base === 'light' ? theme.color.lighter : 'hsl(0 0 100 / 0.02)',
     borderColor: theme.appBorderColor,
   },
 }));

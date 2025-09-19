@@ -30,7 +30,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
             ${theme.color.green} 0%, ${theme.color.green} ${((value - min) / (max - min)) * 100}%, 
             ${lighten(0.02, theme.input.background)} ${((value - min) / (max - min)) * 100}%, 
             ${lighten(0.02, theme.input.background)} 100%)`,
-      boxShadow: `${theme.appBorderColor} 0 0 0 1px inset`,
+      boxShadow: theme.base === 'light' ? `${theme.appBorderColor} 0 0 0 1px inset` : 'unset',
       borderRadius: 6,
       width: '100%',
       height: 6,
@@ -44,7 +44,8 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
 
       border: `1px solid ${rgba(theme.appBorderColor, 0.2)}`,
       borderRadius: '50px',
-      boxShadow: `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}`,
+      boxShadow:
+        theme.base === 'light' ? `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}` : 'unset',
       cursor: disabled ? 'not-allowed' : 'grab',
       appearance: 'none',
       background: `${theme.input.background}`,
@@ -72,7 +73,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
 
       '&::-webkit-slider-thumb': {
         borderColor: theme.color.secondary,
-        boxShadow: `0 0px 5px 0px ${theme.color.secondary}`,
+        boxShadow: theme.base === 'light' ? `0 0px 5px 0px ${theme.color.secondary}` : 'unset',
       },
     },
 
@@ -87,7 +88,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
             ${theme.color.green} 0%, ${theme.color.green} ${((value - min) / (max - min)) * 100}%, 
             ${lighten(0.02, theme.input.background)} ${((value - min) / (max - min)) * 100}%, 
             ${lighten(0.02, theme.input.background)} 100%)`,
-      boxShadow: `${theme.appBorderColor} 0 0 0 1px inset`,
+      boxShadow: theme.base === 'light' ? `${theme.appBorderColor} 0 0 0 1px inset` : 'unset',
       borderRadius: 6,
       width: '100%',
       height: 6,
@@ -100,7 +101,8 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
       height: 16,
       border: `1px solid ${rgba(theme.appBorderColor, 0.2)}`,
       borderRadius: '50px',
-      boxShadow: `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}`,
+      boxShadow:
+        theme.base === 'light' ? `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}` : 'unset',
       cursor: disabled ? 'not-allowed' : 'grap',
       background: `${theme.input.background}`,
       transition: 'all 150ms ease-out',
@@ -128,7 +130,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
             ${theme.color.green} 0%, ${theme.color.green} ${((value - min) / (max - min)) * 100}%, 
             ${lighten(0.02, theme.input.background)} ${((value - min) / (max - min)) * 100}%, 
             ${lighten(0.02, theme.input.background)} 100%)`,
-      boxShadow: `${theme.appBorderColor} 0 0 0 1px inset`,
+      boxShadow: theme.base === 'light' ? `${theme.appBorderColor} 0 0 0 1px inset` : 'unset',
       color: 'transparent',
       width: '100%',
       height: '6px',
@@ -153,17 +155,14 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
   })
 );
 
-const RangeLabel = styled.span({
+const RangeLabel = styled.span(({ theme }) => ({
   paddingLeft: 5,
   paddingRight: 5,
   fontSize: 12,
   whiteSpace: 'nowrap',
   fontFeatureSettings: 'tnum',
   fontVariantNumeric: 'tabular-nums',
-  '[aria-readonly=true] &': {
-    opacity: 0.5,
-  },
-});
+}));
 
 const RangeCurrentAndMaxLabel = styled(RangeLabel)<{
   numberOFDecimalsPlaces: number;

@@ -349,10 +349,17 @@ export const transformStoryIndexToStoriesHash = (
   // Update stories to include tests as children, and increase depth for those tests
   storiesHash = Object.values(storiesHash).reduce((acc, item) => {
     if (item.type === 'story' && item.subtype === 'test') {
-      const parentStory = acc[item.parent] as API_StoryEntry;
-      acc[item.parent] = {
-        ...parentStory,
-        children: (parentStory.children || []).concat(item.id).filter((id) => storiesHash[id]),
+      const story = acc[item.parent] as API_StoryEntry;
+      const component = acc[story.parent] as API_ComponentEntry;
+      acc[component.id] = {
+        ...component,
+        // Remove test from the component node as it will be attached to the story node instead
+        children: component.children && component.children.filter((id) => id !== item.id),
+      };
+      acc[story.id] = {
+        ...story,
+        // Add test to the story node
+        children: (story.children || []).concat(item.id),
       };
       acc[item.id] = {
         ...item,

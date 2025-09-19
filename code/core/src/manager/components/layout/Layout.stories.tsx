@@ -1,12 +1,12 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { useState } from 'react';
 
-import { ManagerContext } from 'storybook/internal/manager-api';
 import { LocationProvider } from 'storybook/internal/router';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
+import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 

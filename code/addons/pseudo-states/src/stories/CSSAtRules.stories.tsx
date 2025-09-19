@@ -1,9 +1,10 @@
 import React, { type ComponentProps } from 'react';
 
 import { FORCE_REMOUNT } from 'storybook/internal/core-events';
-import { useChannel, useStoryContext } from 'storybook/internal/preview-api';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { useChannel, useStoryContext } from 'storybook/preview-api';
 
 import { Button } from './CSSAtRules';
 import './grid.css';

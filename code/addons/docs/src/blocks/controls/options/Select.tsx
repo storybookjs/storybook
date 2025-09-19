@@ -62,6 +62,15 @@ const OptionsSelect = styled.select(styleResets, ({ theme }) => ({
       padding: '6px 10px',
       marginLeft: 1,
       marginRight: 1,
+
+      '&:hover': {
+        background: theme.background.hoverable,
+      },
+      '&:checked': {
+        background: 'transparent',
+        color: theme.color.secondary,
+        fontWeight: theme.typography.weight.bold,
+      },
     },
   },
 }));

@@ -16,7 +16,7 @@ import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types
 const Wrapper = styled.div<{ readOnly: boolean }>(({ readOnly }) => ({
   position: 'relative',
   maxWidth: 250,
-});
+}));
 
 const PickerTooltip = styled(WithTooltip)({
   position: 'absolute',

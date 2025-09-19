@@ -25,7 +25,7 @@ test.describe('module-mocking', () => {
     // Ensure we have fresh logs as the panel may mount too late to catch the first events in Playwright
     await page.getByRole('button', { name: 'Clear' }).click();
     await expect(panel.locator('li')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Remount component' }).click();
+    await page.getByRole('button', { name: 'Reload story' }).click();
     await expect(panel.locator('li')).toHaveCount(9);
 
     const expectedTexts = [

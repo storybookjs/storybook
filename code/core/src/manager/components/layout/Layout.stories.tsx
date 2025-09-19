@@ -63,6 +63,15 @@ const managerContext: any = {
   state: {},
   api: {
     foo: 'bar',
+    getCurrentStoryData: fn()
+      .mockName('api::getCurrentStoryData')
+      .mockImplementation(() => ({
+        id: '123',
+        name: 'Test Story',
+        renderLabel: fn()
+          .mockName('api::getCurrentStoryData::renderLabel')
+          .mockImplementation(() => 'Test Story'),
+      })),
     getNavSizeWithCustomisations: fn()
       .mockName('api::getNavSizeWithCustomisations')
       .mockImplementation((size: number) => size),

@@ -1,4 +1,4 @@
-```js filename="Page.stories.js" renderer="common" language="js"
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -13,7 +13,7 @@ export const ChristmasUI = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts"
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 import MockDate from 'mockdate';
 
 // ...rest of story file
@@ -88,6 +88,38 @@ export const ChristmasUI: Story = {
 ```
 
 ```js filename="LoginForm.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import MockDate from 'mockdate';
+
+// ...rest of story file
+
+export const ChristmasUI = {
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+};
+```
+
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+// ...rest of story file
+
+export const ChristmasUI: Story = {
+  async play({ mount }) {
+    MockDate.set('2024-12-25');
+    // 👇 Render the component with the mocked date
+    await mount();
+    // ...rest of test
+  },
+};
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import MockDate from 'mockdate';
 
 // ...rest of story file

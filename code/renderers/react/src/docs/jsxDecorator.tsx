@@ -54,10 +54,13 @@ export const getReactSymbolName = (elementType: any): string => {
 // Note: It may be better to use this function only in development environment.
 function simplifyNodeForStringify(node: ReactNode): ReactNode {
   if (isValidElement(node)) {
-    const props = Object.keys(node.props).reduce<{ [key: string]: any }>((acc, cur) => {
-      acc[cur] = simplifyNodeForStringify(node.props[cur]);
-      return acc;
-    }, {});
+    const props = Object.keys(node.props as Record<string, any>).reduce<{ [key: string]: any }>(
+      (acc, cur) => {
+        acc[cur] = simplifyNodeForStringify((node.props as Record<string, any>)[cur]);
+        return acc;
+      },
+      {}
+    );
     return {
       ...node,
       props,
@@ -104,16 +107,18 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
       return null;
     }
 
-    if (typeof renderedJSX.props.children === 'undefined') {
+    const props = renderedJSX.props as Record<string, any>;
+
+    if (typeof props.children === 'undefined') {
       logger.warn('Not enough children to skip elements.');
 
       if (typeof renderedJSX.type === 'function' && renderedJSX.type.name === '') {
-        renderedJSX = <Type {...renderedJSX.props} />;
+        renderedJSX = <Type {...props} />;
       }
-    } else if (typeof renderedJSX.props.children === 'function') {
-      renderedJSX = renderedJSX.props.children();
+    } else if (typeof props.children === 'function') {
+      renderedJSX = props.children();
     } else {
-      renderedJSX = renderedJSX.props.children;
+      renderedJSX = props.children;
     }
   }
 

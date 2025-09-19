@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import React from 'react';
 
+// @ts-expect-error (Converted from ts-ignore)
 import PropTypes from 'prop-types';
 
 export interface IProps {
@@ -17,6 +18,7 @@ iconButton.propTypes = {
   color: PropTypes.string,
 };
 
+// @ts-expect-error (Converted from ts-ignore)
 iconButton.defaultProps = {
   color: 'primary',
 };

@@ -339,15 +339,30 @@ const Node = React.memo<NodeProps>(function Node(props) {
     );
   }
 
+  const itemStatus = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
+  const [itemIcon, itemColor] = statusMapping[itemStatus];
+  const itemStatusButton = itemIcon ? (
+    <StatusButton
+      aria-label={`Test status: ${itemStatus.replace('status-value:', '')}`}
+      role="status"
+      type="button"
+      status={itemStatus}
+      selectedItem={isSelected}
+    >
+      {itemIcon}
+    </StatusButton>
+  ) : null;
+
   if (
     item.type === 'component' ||
     item.type === 'group' ||
     (item.type === 'story' && 'children' in item && item.children)
   ) {
     const { children = [] } = item;
-    const itemStatus = groupStatus?.[item.id];
-    const color = itemStatus ? statusMapping[itemStatus][1] : null;
     const BranchNode = { component: ComponentNode, group: GroupNode, story: StoryNode }[item.type];
+    const status = getMostCriticalStatusValue([itemStatus, groupStatus?.[item.id]]);
+    const color = status ? statusMapping[status][1] : null;
+    const showBranchStatus = status === 'status-value:error' || status === 'status-value:warning';
 
     return (
       <LeafNodeStyleWrapper
@@ -403,12 +418,14 @@ const Node = React.memo<NodeProps>(function Node(props) {
           </SkipToContentLink>
         )}
         {contextMenu.node}
-        {(['status-value:error', 'status-value:warning'] as StatusValue[]).includes(itemStatus) && (
-          <StatusButton type="button" status={itemStatus} selectedItem={isSelected}>
+        {showBranchStatus ? (
+          <StatusButton type="button" status={status} selectedItem={isSelected}>
             <svg key="icon" viewBox="0 0 6 6" width="6" height="6" type="dot">
               <UseSymbol type="dot" />
             </svg>
           </StatusButton>
+        ) : (
+          itemStatusButton
         )}
       </LeafNodeStyleWrapper>
     );
@@ -417,9 +434,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const isTest = item.type === 'story' && item.subtype === 'test';
   const LeafNode = isTest ? TestNode : { docs: DocumentNode, story: StoryNode }[item.type];
   const nodeType = isTest ? 'test' : { docs: 'document', story: 'story' }[item.type];
-
-  const statusValue = getMostCriticalStatusValue(Object.values(statuses || {}).map((s) => s.value));
-  const [icon, color] = statusMapping[statusValue];
 
   return (
     <LeafNodeStyleWrapper
@@ -434,7 +448,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
       onMouseEnter={contextMenu.onMouseEnter}
     >
       <LeafNode
-        style={color && !isSelected ? { color } : {}}
+        style={itemColor && !isSelected ? { color: itemColor } : {}}
         href={getLink(item, refId)}
         id={id}
         depth={isOrphan ? item.depth : item.depth - 1}
@@ -457,17 +471,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
         </SkipToContentLink>
       )}
       {contextMenu.node}
-      {icon ? (
-        <StatusButton
-          aria-label={`Test status: ${statusValue.replace('status-value:', '')}`}
-          role="status"
-          type="button"
-          status={statusValue}
-          selectedItem={isSelected}
-        >
-          {icon}
-        </StatusButton>
-      ) : null}
+      {itemStatusButton}
     </LeafNodeStyleWrapper>
   );
 });

@@ -30,20 +30,15 @@ const Item = styled.li({
 });
 
 const ProgressWrapper = styled.div({
-  position: 'relative',
-  height: 10,
   width: 30,
   display: 'flex',
-  top: -2,
 });
 
 const SuiteHead = styled.div({
   display: 'flex',
-  alignItems: 'baseline',
-  position: 'absolute',
-  zIndex: 2,
-  right: 20,
-  marginTop: 15,
+  alignItems: 'center',
+  marginInlineEnd: 5,
+  gap: 15,
 });
 
 const UnstyledSuiteTotals: FC<{
@@ -72,10 +67,7 @@ const SuiteTotals = styled(UnstyledSuiteTotals)(({ theme }) => ({
   alignItems: 'center',
   color: theme.color.dark,
   fontSize: '14px',
-  marginTop: -5,
-  '& > *': {
-    marginRight: 10,
-  },
+  flexShrink: 0,
 }));
 
 const SuiteProgressPortion = styled.div<{ color?: string; progressPercent: number }>(
@@ -223,28 +215,30 @@ const TestPanel: FC<{ test: Test }> = ({ test }) => {
 
   return (
     <section ref={ref}>
-      <SuiteHead>
-        <SuiteTotals {...{ result, width: width ?? 0 }} />
-        {width != null && width > 240 ? (
-          <ProgressWrapper>
-            {sortedTestsByCount.map((entry) => {
-              return (
-                <SuiteProgressPortion
-                  key={`progress-portion-${entry[0]}`}
-                  color={getColorByType(entry[0])}
-                  progressPercent={
-                    entry[1] ? (entry[1].length / result.assertionResults.length) * 100 : 0
-                  }
-                />
-              );
-            })}
-          </ProgressWrapper>
-        ) : null}
-      </SuiteHead>
       <AriaTabs
         defaultSelected="failing-tests"
         backgroundColor={convert(themes.light).background.hoverable}
         tabs={tabs}
+        tools={
+          <SuiteHead>
+            <SuiteTotals {...{ result, width: width ?? 0 }} />
+            {width != null && width > 240 ? (
+              <ProgressWrapper>
+                {sortedTestsByCount.map((entry) => {
+                  return (
+                    <SuiteProgressPortion
+                      key={`progress-portion-${entry[0]}`}
+                      color={getColorByType(entry[0])}
+                      progressPercent={
+                        entry[1] ? (entry[1].length / result.assertionResults.length) * 100 : 0
+                      }
+                    />
+                  );
+                })}
+              </ProgressWrapper>
+            ) : null}
+          </SuiteHead>
+        }
       />
     </section>
   );

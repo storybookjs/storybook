@@ -93,10 +93,10 @@ const Message = styled.a(({ theme }) => ({
   },
   '&:hover': {
     background: theme.background.hoverable,
-    color: theme.base === 'light' ? theme.color.darkest : theme.color.lighter,
+    color: theme.color.defaultText,
   },
   '&:link, &:active, &:focus': {
-    color: theme.base === 'light' ? theme.color.darkest : theme.color.lighter,
+    color: theme.color.defaultText,
   },
   '& > *': {
     flex: 1,

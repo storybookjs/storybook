@@ -107,7 +107,7 @@ const NotificationTextWrapper = styled.div(({ theme }) => ({
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
-  color: theme.textInverseColor,
+  color: theme.color.inverseText,
 }));
 
 const Headline = styled.div(({ theme }) => ({

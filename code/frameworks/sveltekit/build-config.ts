@@ -23,6 +23,11 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./internal/mocks/app/state'],
+        entryPoint: './src/mocks/app/state.ts',
+        dts: false,
+      },
+      {
         exportEntries: ['./internal/mocks/app/stores'],
         entryPoint: './src/mocks/app/stores.ts',
         dts: false,

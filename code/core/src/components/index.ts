@@ -71,7 +71,8 @@ export { default as ListItem } from './components/tooltip/ListItem';
 // Toolbar and subcomponents
 export { EmptyTabContent } from './components/tabs/EmptyTabContent';
 export { Separator, interleaveSeparators } from './components/bar/separator';
-export { Bar, type BarProps } from './components/bar/bar';
+export { Bar, FlexBar, type BarProps } from './components/bar/bar';
+export { Tabs } from './components/tabs/tabs';
 export { AddonPanel } from './components/addon-panel/addon-panel';
 export { AriaTabList } from './components/AriaTabs/AriaTabList';
 export { AriaTabPanel } from './components/AriaTabs/AriaTabPanel';

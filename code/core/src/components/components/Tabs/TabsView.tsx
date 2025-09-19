@@ -97,7 +97,9 @@ export interface TabsViewProps extends HTMLAttributes<HTMLDivElement> {
   id?: string;
 
   /** Props to pass to the TabPanel component. */
-  panelProps?: Omit<ComponentProps<typeof TabPanel>, 'id' | 'state'>;
+  panelProps?: Omit<ComponentProps<typeof TabPanel>, 'id' | 'state'> & {
+    id?: string;
+  };
 }
 
 export const TabsView: FC<TabsViewProps> = ({

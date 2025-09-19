@@ -5,6 +5,7 @@ import type {
   ForwardRefExoticComponent,
   ForwardedRef,
   ReactElement,
+  ReactNode,
   RefAttributes,
 } from 'react';
 import React, { forwardRef } from 'react';
@@ -73,8 +74,10 @@ const ButtonOrLink: ButtonLike | LinkLike = forwardRef(ForwardRefFunction);
 
 ButtonOrLink.displayName = 'ButtonOrLink';
 
-export interface TabButtonProps {
+export interface TabButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
+  children: ReactNode;
+  id?: string;
   textColor?: string;
 }
 
@@ -129,10 +132,8 @@ const StyledTabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid })
         }
 );
 
-export const TabButton = forwardRef<HTMLButtonElement & HTMLAnchorElement, TabButtonProps>(
-  (props, ref) => {
-    deprecate('The `TabButton` component is deprecated. Use `TabList` instead.');
-    return <StyledTabButton ref={ref} {...props} />;
-  }
-);
+export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
+  deprecate('The `TabButton` component is deprecated. Use `TabList` instead.');
+  return <StyledTabButton ref={ref} {...props} />;
+});
 TabButton.displayName = 'TabButton';

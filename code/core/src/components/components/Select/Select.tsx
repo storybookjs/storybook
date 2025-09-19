@@ -509,8 +509,8 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                     id={valueToId(id, option)}
                     isActive={isOpen && activeOption?.value === option.value}
                     isSelected={
-                      selectedOptions?.some((sel) => sel.value === option.value) ||
-                      (selectedOptions.length === 0 && option === resetOption)
+                      selectedOptions?.some((sel) => sel.value === option.value) &&
+                      option !== resetOption
                     }
                     onClick={() => {
                       handleSelectOption(option);
@@ -519,9 +519,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                       }
                     }}
                     onFocus={() => setActiveOption(option)}
-                    shouldLookDisabled={
-                      option === resetOption && selectedOptions.length === 0 && multiSelect
-                    }
+                    shouldLookDisabled={option === resetOption && selectedOptions.length === 0}
                     onKeyDown={(e: KeyboardEvent) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();

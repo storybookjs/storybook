@@ -338,7 +338,7 @@ test.describe('Manager UI', () => {
       await expect(sbPage.page.getByRole('tab', { name: 'Controls' })).toBeVisible();
 
       // close panel
-      await sbPage.page.locator('[aria-label="Close addon panel"]').click();
+      await sbPage.page.getByRole('button', { name: 'Close addon panel' }).click();
 
       // panel is closed
       await expect(mobileNavigationHeading).toHaveText('Example/Button/Secondary');

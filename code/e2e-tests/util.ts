@@ -171,7 +171,7 @@ export class SbPage {
   }
 
   async viewAddonPanel(name: string) {
-    const tabs = this.page.locator('[role=tablist] button[role=tab]');
+    const tabs = this.page.locator('[role=tablist] div[role=tab]');
     const tab = tabs.locator(`text=/^${name}/`);
     await tab.click();
   }

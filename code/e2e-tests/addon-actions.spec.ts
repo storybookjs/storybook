@@ -55,6 +55,7 @@ test.describe('addon-actions', () => {
     const logItem = sbPage.panelContent().locator('span', {
       hasText: 'console.log:',
     });
-    await expect(logItem).toBeVisible();
+    await expect(logItem).toHaveCount(3);
+    await expect(logItem.first()).toBeVisible();
   });
 });

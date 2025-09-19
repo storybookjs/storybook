@@ -86,8 +86,7 @@ const Message = styled.a(({ theme }) => ({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'flex-start',
-  // Todo: Figure out why theme.textColor did not work here
-  color: theme.base === 'light' ? theme.color.darkest : theme.color.lighter,
+  color: theme.color.defaultText,
 
   '&:not(:last-child)': {
     borderBottom: `1px solid ${theme.appBorderColor}`,
@@ -123,7 +122,7 @@ const Version = styled.div(({ theme }) => ({
   alignItems: 'center',
   fontSize: theme.typography.size.s1,
   fontWeight: theme.typography.weight.regular,
-  color: theme.textColor,
+  color: theme.color.defaultText,
 
   '& > * + *': {
     marginLeft: 4,

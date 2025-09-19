@@ -29,7 +29,7 @@ export const codeCommon: FunctionInterpolation = ({ theme }) => ({
   fontSize: theme.typography.size.s2 - 1,
 
   border: theme.base === 'light' ? '1px solid hsl(0 0 0 / 0.05)' : '1px solid hsl(0 0 100 / 0.05)',
-  color: theme.textColor,
+  color: theme.color.defaultText,
   backgroundColor: theme.base === 'light' ? 'hsl(0 0 0 / 0.01)' : 'hsl(0 0 100 / 0.02)',
 });
 

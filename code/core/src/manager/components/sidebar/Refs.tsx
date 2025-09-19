@@ -44,7 +44,7 @@ const RefHead = styled.div(({ theme }) => ({
   paddingBottom: 12,
   borderTop: `1px solid ${theme.appBorderColor}`,
 
-  color: theme.textColor,
+  color: theme.color.defaultText,
 }));
 
 const RefTitle = styled.div({

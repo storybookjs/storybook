@@ -200,7 +200,7 @@ export const DefaultExport = styled('span')(({ theme }) => ({
   padding: `1px ${theme.appBorderRadius}px`,
   borderRadius: '2px',
   fontSize: '10px',
-  color: theme.textColor,
+  color: theme.color.defaultText,
   backgroundColor: theme.base === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#F2F4F5',
 }));
 

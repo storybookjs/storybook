@@ -45,7 +45,7 @@ const Item = styled('li')(({ theme }) => ({
   fontSize: 12,
   lineHeight: 1.5,
   background: 'transparent',
-  color: theme.textColor,
+  color: theme.color.defaultText,
   cursor: 'pointer',
   borderRadius: 4,
   '&[aria-disabled="true"]': {
@@ -89,7 +89,9 @@ const Icon = styled('span')(() => ({
   width: '1rem',
 }));
 
-const Title = styled('span')(() => ({}));
+const Title = styled('span')(({ theme }) => ({
+  color: theme.color.defaultText,
+}));
 
 const Description = styled('span')(({ theme }) => ({
   fontSize: 11,

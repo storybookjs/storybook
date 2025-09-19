@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { Fragment, useMemo } from 'react';
 
-import { AriaTabs, Badge, Link, Placeholder, ScrollArea } from 'storybook/internal/components';
+import { Badge, Link, Placeholder, ScrollArea, TabsView } from 'storybook/internal/components';
 
 import { useResizeDetector } from 'react-resize-detector';
 import { convert, styled, themes } from 'storybook/theming';
@@ -215,7 +215,7 @@ const TestPanel: FC<{ test: Test }> = ({ test }) => {
 
   return (
     <section ref={ref}>
-      <AriaTabs
+      <TabsView
         defaultSelected="failing-tests"
         backgroundColor={convert(themes.light).background.hoverable}
         tabs={tabs}

@@ -68,18 +68,18 @@ export {
 } from './components/tooltip/TooltipLinkList';
 export { default as ListItem } from './components/tooltip/ListItem';
 
-// Toolbar and subcomponents
-export { Tabs, TabsState, TabBar, TabWrapper } from './components/tabs/tabs';
-export { EmptyTabContent } from './components/tabs/EmptyTabContent';
+// Bar, Toolbar and Tabs
+export { Tabs, TabsState, TabWrapper } from './components/tabs/tabs';
 export { TabButton } from './components/tabs/button';
 export { Separator, interleaveSeparators } from './components/bar/separator';
 export { Bar, FlexBar, type BarProps } from './components/bar/bar';
+export { EmptyTabContent } from './components/Tabs/EmptyTabContent';
 export { AddonPanel } from './components/addon-panel/addon-panel';
-export { AriaTabList } from './components/AriaTabs/AriaTabList';
-export { AriaTabPanel } from './components/AriaTabs/AriaTabPanel';
-export { AriaTabs, useAriaTabListState } from './components/AriaTabs/AriaTabs';
-export { AriaToolbar, AbstractAriaToolbar } from './components/AriaToolbar/AriaToolbar';
-export type { TabProps } from './components/AriaTabs/AriaTabs';
+export { Toolbar, AbstractToolbar } from './components/Toolbar/Toolbar';
+export { TabList } from './components/Tabs/TabList';
+export { TabPanel } from './components/Tabs/TabPanel';
+export { TabsView, useTabsState } from './components/Tabs/TabsView';
+export type { TabProps } from './components/Tabs/TabsView';
 
 // Graphics
 export { StorybookLogo } from './brand/StorybookLogo';

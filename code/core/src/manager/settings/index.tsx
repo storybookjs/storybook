@@ -1,7 +1,7 @@
 import type { FC, ReactNode, SyntheticEvent } from 'react';
 import React, { useMemo } from 'react';
 
-import { AriaTabs, Button, ScrollArea } from 'storybook/internal/components';
+import { Button, ScrollArea, TabsView } from 'storybook/internal/components';
 import { Location, Route } from 'storybook/internal/router';
 import type { Addon_PageType } from 'storybook/internal/types';
 
@@ -93,7 +93,7 @@ const Pages: FC<{
       {({ path }) => {
         const selected = tabs.find((tab) => path.includes(`settings/${tab.id}`))?.id;
         return (
-          <AriaTabs
+          <TabsView
             tabs={tabs}
             tools={
               <Button

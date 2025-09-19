@@ -1,7 +1,7 @@
 import type { ComponentProps, FC, HTMLAttributes, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
-import { AriaTabList, AriaTabPanel, Bar, EmptyTabContent } from 'storybook/internal/components';
+import { Bar, EmptyTabContent, TabList, TabPanel } from 'storybook/internal/components';
 
 import type { TabListState } from 'react-stately';
 import { Item, useTabListState } from 'react-stately';
@@ -15,19 +15,19 @@ export interface TabProps {
   isDisabled?: boolean;
 }
 
-export interface useAriaTabListStateProps {
+export interface useTabsStateProps {
   defaultSelected?: string;
   selected?: string;
   onSelectionChange?: (key: string) => void;
   tabs: TabProps[];
 }
 
-export const useAriaTabListState = ({
+export const useTabsState = ({
   defaultSelected,
   onSelectionChange,
   selected,
   tabs,
-}: useAriaTabListStateProps): TabListState<object> => {
+}: useTabsStateProps): TabListState<object> => {
   return useTabListState({
     children: tabs.map(({ children: Children, id, 'aria-label': ariaLabel, title: Title }) => (
       <Item key={id} aria-label={ariaLabel} title={typeof Title === 'function' ? <Title /> : Title}>
@@ -47,18 +47,18 @@ export const Container = styled.div({
   height: '100%',
 });
 
-export const FlexTabPanel = styled(AriaTabPanel)(() => ({
+export const FlexTabPanel = styled(TabPanel)(() => ({
   flex: 1,
 }));
 
-const FlexAriaTabList = styled(AriaTabList)<{ $simulatedGap: string | number }>(
+const FlexTabList = styled(TabList)<{ $simulatedGap: string | number }>(
   ({ $simulatedGap = 6 }) => ({
     flex: '1 1 100%',
     '&[data-show-scroll-buttons="true"]': { marginInlineEnd: $simulatedGap },
   })
 );
 
-export interface AriaTabsProps extends HTMLAttributes<HTMLDivElement> {
+export interface TabsViewProps extends HTMLAttributes<HTMLDivElement> {
   /** List of tabs and their associated panel. */
   tabs: TabProps[];
 
@@ -96,11 +96,11 @@ export interface AriaTabsProps extends HTMLAttributes<HTMLDivElement> {
   /** Optional ID. */
   id?: string;
 
-  /** Props to pass to the AriaTabPanel component. */
-  panelProps?: Omit<ComponentProps<typeof AriaTabPanel>, 'state'>;
+  /** Props to pass to the TabPanel component. */
+  panelProps?: Omit<ComponentProps<typeof TabPanel>, 'id' | 'state'>;
 }
 
-export const AriaTabs: FC<AriaTabsProps> = ({
+export const TabsView: FC<TabsViewProps> = ({
   backgroundColor,
   barInnerStyle,
   defaultSelected,
@@ -113,7 +113,7 @@ export const AriaTabs: FC<AriaTabsProps> = ({
   tools,
   ...props
 }) => {
-  const state = useAriaTabListState({ defaultSelected, onSelectionChange, selected, tabs });
+  const state = useTabsState({ defaultSelected, onSelectionChange, selected, tabs });
 
   const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
 
@@ -146,9 +146,13 @@ export const AriaTabs: FC<AriaTabsProps> = ({
         }}
       >
         {tools}
-        <FlexAriaTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 0} />
+        <FlexTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 0} />
       </Bar>
-      <FlexTabPanel state={state} {...panelProps} id={state.selectedItem?.key} />
+      <FlexTabPanel
+        state={state}
+        {...panelProps}
+        id={state.selectedItem?.key ? `${state.selectedItem?.key}` : undefined}
+      />
     </Container>
   );
 };

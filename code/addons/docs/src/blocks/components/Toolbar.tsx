@@ -1,7 +1,7 @@
 import type { FC, SyntheticEvent } from 'react';
 import React from 'react';
 
-import { AriaToolbar, Button } from 'storybook/internal/components';
+import { Button, Toolbar as SharedToolbar } from 'storybook/internal/components';
 
 import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
@@ -27,7 +27,7 @@ interface LoadingProps {
 
 export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps;
 
-const AbsoluteBar = styled(AriaToolbar)({
+const AbsoluteBar = styled(SharedToolbar)({
   position: 'absolute',
   left: 0,
   right: 0,

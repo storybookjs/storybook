@@ -9,11 +9,11 @@ import { useTab, useTabList } from 'react-aria';
 import type { Node, TabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
-export interface AriaTabListProps {
+export interface TabListProps {
   state: TabListState<object>;
 }
 
-export const TabButton = styled.button<{
+export const StyledTabButton = styled.button<{
   isDisabled: boolean;
   isPressed: boolean;
   isSelected: boolean;
@@ -92,7 +92,7 @@ const ScrollContainer = styled.div({
   },
 });
 
-const TabList = styled.div({
+const StyledTabList = styled.div({
   display: 'flex',
   flexShrink: 0,
 });
@@ -121,18 +121,18 @@ const ScrollButton = styled(Button)({
   width: 16,
 });
 
-interface AriaTabButtonProps {
+interface TabButtonProps {
   item: Node<object>;
   state: TabListState<object>;
 }
 
-const AriaTabButton: FC<AriaTabButtonProps> = ({ item, state }) => {
+const TabButton: FC<TabButtonProps> = ({ item, state }) => {
   const { key, rendered } = item;
   const tabRef = React.useRef(null);
   const { tabProps, isDisabled, isPressed, isSelected } = useTab({ key }, state, tabRef);
 
   return (
-    <TabButton
+    <StyledTabButton
       {...tabProps}
       isDisabled={isDisabled}
       isPressed={isPressed}
@@ -141,15 +141,15 @@ const AriaTabButton: FC<AriaTabButtonProps> = ({ item, state }) => {
       ref={tabRef}
     >
       {rendered}
-    </TabButton>
+    </StyledTabButton>
   );
 };
 
-export interface AriaTabListProps extends HTMLAttributes<HTMLDivElement> {
+export interface TabListProps extends HTMLAttributes<HTMLDivElement> {
   state: TabListState<object>;
 }
 
-export const AriaTabList: FC<AriaTabListProps> = ({ state, ...rest }) => {
+export const TabList: FC<TabListProps> = ({ state, ...rest }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tabListRef = useRef<HTMLDivElement>(null);
@@ -255,11 +255,11 @@ export const AriaTabList: FC<AriaTabListProps> = ({ state, ...rest }) => {
         </ScrollButtonContainer>
       )}
       <ScrollContainer ref={scrollContainerRef}>
-        <TabList ref={tabListRef} {...tabListProps}>
+        <StyledTabList ref={tabListRef} {...tabListProps}>
           {[...state.collection].map((item) => (
-            <AriaTabButton key={item.key} item={item} state={state} />
+            <TabButton key={item.key} item={item} state={state} />
           ))}
-        </TabList>
+        </StyledTabList>
       </ScrollContainer>
       {showScrollButtons && (
         <ScrollButtonContainer $showStartBorder={canScrollRight}>

@@ -1,9 +1,9 @@
 import { Bar } from 'storybook/internal/components';
 
 import preview from '../../../../../.storybook/preview';
-import { AriaTabList } from './AriaTabList';
-import type { TabProps } from './AriaTabs';
-import { useAriaTabListState } from './AriaTabs';
+import { TabList } from './TabList';
+import type { TabProps } from './TabsView';
+import { useTabsState } from './TabsView';
 
 const DEFAULT_TABS: TabProps[] = [
   { id: 'tab1', title: 'Tab 1', children: () => <div>Content for Tab 1</div> },
@@ -38,8 +38,8 @@ const LONG_TITLE_TABS: TabProps[] = [
 ];
 
 const meta = preview.meta({
-  title: 'AriaTabList',
-  component: AriaTabList,
+  title: 'Tabs/TabList',
+  component: TabList,
   args: {
     tabs: DEFAULT_TABS,
     state: undefined,
@@ -51,7 +51,7 @@ const meta = preview.meta({
   },
   decorators: [
     (Story, { args, parameters }) => {
-      const state = useAriaTabListState({ tabs: parameters.data.tabs });
+      const state = useTabsState({ tabs: parameters.data.tabs });
       return <Story args={{ ...args, state }} />;
     },
   ],
@@ -113,7 +113,7 @@ export const WithFixedWidth = meta.story({
   },
   decorators: [
     (Story, { args, parameters }) => {
-      const state = useAriaTabListState({ tabs: parameters.data.tabs });
+      const state = useTabsState({ tabs: parameters.data.tabs });
       return (
         <Bar
           border

@@ -1,6 +1,6 @@
 import React, { useId } from 'react';
 
-import { AbstractAriaToolbar, AriaTabList, Button, Separator } from 'storybook/internal/components';
+import { AbstractToolbar, Button, Separator, TabList } from 'storybook/internal/components';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
@@ -97,14 +97,14 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
       </h2>
       {tabs.length > 1 ? (
         <>
-          <AriaTabList state={tabState} />
+          <TabList state={tabState} />
           <Separator />
         </>
       ) : null}
-      <StyledAriaToolbar>
+      <StyledToolbar>
         <Tools key="left" list={tools} />
         <Tools key="right" list={toolsExtra} />
-      </StyledAriaToolbar>
+      </StyledToolbar>
     </StyledSection>
   ) : null;
 });
@@ -175,7 +175,7 @@ const StyledSection = styled.section(({ theme }) => ({
   zIndex: 4,
 }));
 
-const StyledAriaToolbar = styled(AbstractAriaToolbar)({
+const StyledToolbar = styled(AbstractToolbar)({
   flex: 1,
   display: 'flex',
   justifyContent: 'space-between',

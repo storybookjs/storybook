@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { AriaTabs, Button } from 'storybook/internal/components';
+import { Button, TabsView } from 'storybook/internal/components';
 
 import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@storybook/icons';
 
@@ -50,7 +50,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
 
   return (
     <Container>
-      <AriaTabs
+      <TabsView
         backgroundColor={theme.background.app}
         panelProps={{ hasScrollbar: true }}
         tabs={tabs.map((tab) => ({

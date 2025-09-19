@@ -9,7 +9,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { EmptyTabContent } from './EmptyTabContent';
 
 export default {
-  title: 'TabContentEmpty',
+  title: 'Tabs/TabContentEmpty',
   component: EmptyTabContent,
   parameters: {
     layout: 'centered',

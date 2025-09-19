@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { AriaTabs } from 'storybook/internal/components';
+import { TabsView } from 'storybook/internal/components';
 
 import type { ArgsTableProps } from './ArgsTable';
 import { ArgsTable } from './ArgsTable';
@@ -34,5 +34,5 @@ export const TabbedArgsTable: FC<TabbedArgsTableProps> = ({ tabs, ...props }) =>
     },
   }));
 
-  return <AriaTabs tabs={tabsFromEntries} />;
+  return <TabsView tabs={tabsFromEntries} />;
 };

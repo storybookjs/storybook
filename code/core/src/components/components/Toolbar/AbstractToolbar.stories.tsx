@@ -1,7 +1,7 @@
 import { Button } from 'storybook/internal/components';
 
 import preview from '../../../../../.storybook/preview';
-import { AbstractAriaToolbar } from './AriaToolbar';
+import { AbstractToolbar } from './Toolbar';
 
 const Children = () => (
   <>
@@ -33,8 +33,8 @@ const Children = () => (
 );
 
 const meta = preview.meta({
-  title: 'AbstractAriaToolbar',
-  component: AbstractAriaToolbar,
+  title: 'AbstractToolbar',
+  component: AbstractToolbar,
   args: {
     children: <Children />,
   },

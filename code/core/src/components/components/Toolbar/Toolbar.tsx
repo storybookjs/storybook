@@ -5,14 +5,14 @@ import { Bar, type BarProps } from 'storybook/internal/components';
 
 import { useToolbar } from '@react-aria/toolbar';
 
-export interface AbstractAriaToolbarProps {
+export interface AbstractToolbarProps {
   className?: string;
   children?: React.ReactNode;
   'aria-label'?: string;
   'aria-labelledby'?: string;
 }
 
-export const AbstractAriaToolbar: FC<AbstractAriaToolbarProps> = ({
+export const AbstractToolbar: FC<AbstractToolbarProps> = ({
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledby,
   ...rest
@@ -31,9 +31,9 @@ export const AbstractAriaToolbar: FC<AbstractAriaToolbarProps> = ({
   return <div ref={ref} {...toolbarProps} {...rest} />;
 };
 
-export interface AriaToolbarProps extends AbstractAriaToolbarProps, BarProps {}
+export interface ToolbarProps extends AbstractToolbarProps, BarProps {}
 
-export const AriaToolbar: FC<AriaToolbarProps> = ({
+export const Toolbar: FC<ToolbarProps> = ({
   'aria-label': ariaLabel,
   'aria-labelledby': ariaLabelledby,
   ...rest

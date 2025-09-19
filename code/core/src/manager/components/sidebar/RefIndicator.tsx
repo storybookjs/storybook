@@ -1,7 +1,6 @@
 import type { FC, MouseEventHandler } from 'react';
 import React, { forwardRef, useCallback, useMemo } from 'react';
 
-import type { TooltipLinkListLink } from 'storybook/internal/components';
 import { Spaced, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
@@ -17,7 +16,6 @@ import {
   TimeIcon,
 } from '@storybook/icons';
 
-import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
@@ -60,17 +58,14 @@ const IndicatorClickTarget = styled.button(({ theme }) => ({
   border: '1px solid transparent',
   borderRadius: '100%',
   cursor: 'pointer',
-  color:
-    theme.base === 'light'
-      ? transparentize(0.3, theme.color.defaultText)
-      : transparentize(0.6, theme.color.defaultText),
+  color: theme.textMutedColor,
 
   '&:hover': {
     color: theme.barSelectedColor,
   },
   '&:focus': {
     color: theme.barSelectedColor,
-    borderColor: theme.color.secondary,
+    borderColor: theme.barSelectedColor,
   },
   svg: {
     height: 10,
@@ -91,22 +86,18 @@ const Message = styled.a(({ theme }) => ({
   display: 'flex',
   flexDirection: 'row',
   alignItems: 'flex-start',
-  color: theme.color.defaultText,
+  // Todo: Figure out why theme.textColor did not work here
+  color: theme.base === 'light' ? theme.color.darkest : theme.color.lighter,
+
   '&:not(:last-child)': {
     borderBottom: `1px solid ${theme.appBorderColor}`,
   },
   '&:hover': {
     background: theme.background.hoverable,
-    color: theme.color.darker,
+    color: theme.base === 'light' ? theme.color.darkest : theme.color.lighter,
   },
-  '&:link': {
-    color: theme.color.darker,
-  },
-  '&:active': {
-    color: theme.color.darker,
-  },
-  '&:focus': {
-    color: theme.color.darker,
+  '&:link, &:active, &:focus': {
+    color: theme.base === 'light' ? theme.color.darkest : theme.color.lighter,
   },
   '& > *': {
     flex: 1,
@@ -132,10 +123,7 @@ const Version = styled.div(({ theme }) => ({
   alignItems: 'center',
   fontSize: theme.typography.size.s1,
   fontWeight: theme.typography.weight.regular,
-  color:
-    theme.base === 'light'
-      ? transparentize(0.3, theme.color.defaultText)
-      : transparentize(0.6, theme.color.defaultText),
+  color: theme.textColor,
 
   '& > * + *': {
     marginLeft: 4,
@@ -312,7 +300,7 @@ const ReadDocsMessage: FC = () => {
       href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui"
       target="_blank"
     >
-      <DocumentIcon color={theme.color.green} />
+      <DocumentIcon color={theme.color.gold} />
       <div>
         <MessageTitle>Read Composition docs</MessageTitle>
         <div>Learn how to combine multiple Storybooks into one.</div>

@@ -204,6 +204,7 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  networkAddress?: string;
 }
 
 export interface StorybookConfigOptions {

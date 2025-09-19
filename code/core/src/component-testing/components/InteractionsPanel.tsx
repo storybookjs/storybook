@@ -1,6 +1,7 @@
 import * as React from 'react';
 
 import { transparentize } from 'polished';
+import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { type Call, type CallStates, type ControlStates } from '../../instrumenter/types';
@@ -44,6 +45,9 @@ interface InteractionsPanelProps {
   onScrollToEnd?: () => void;
   hasResultMismatch?: boolean;
   browserTestStatus?: CallStates;
+  importPath?: string;
+  canOpenInEditor?: boolean;
+  api: API;
 }
 
 const Container = styled.div(({ theme }) => ({
@@ -104,6 +108,9 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
     endRef,
     hasResultMismatch,
     browserTestStatus,
+    importPath,
+    canOpenInEditor,
+    api,
   }) {
     const filter = useAnsiToHtmlFilter();
     const hasRealInteractions = interactions.some((i) => i.id !== INTERNAL_RENDER_CALL_ID);
@@ -120,6 +127,9 @@ export const InteractionsPanel: React.FC<InteractionsPanelProps> = React.memo(
           status={status}
           storyFileName={fileName}
           onScrollToEnd={onScrollToEnd}
+          importPath={importPath}
+          canOpenInEditor={canOpenInEditor}
+          api={api}
         />
         <div aria-label="Interactions list">
           {interactions.map((call) => (

@@ -63,6 +63,7 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "exportName": "StoryOne",
             "extra": {
               "metaId": "a",
               "stats": {},
@@ -78,6 +79,7 @@ describe('story extraction', () => {
           },
           {
             "componentPath": undefined,
+            "exportName": "StoryOne",
             "extra": {
               "metaId": "custom-id",
               "stats": {},
@@ -125,6 +127,7 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "exportName": "StoryOne",
             "extra": {
               "metaId": undefined,
               "stats": {},
@@ -174,6 +177,7 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "exportName": "StoryOne",
             "extra": {
               "metaId": "a",
               "stats": {},
@@ -225,6 +229,7 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "exportName": "StoryOne",
             "extra": {
               "metaId": "a",
               "stats": {},
@@ -294,6 +299,7 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "exportName": "StoryOne",
             "extra": {
               "metaId": undefined,
               "stats": {},
@@ -309,6 +315,7 @@ describe('story extraction', () => {
           },
           {
             "componentPath": undefined,
+            "exportName": "StoryTwo",
             "extra": {
               "metaId": undefined,
               "stats": {},
@@ -324,6 +331,7 @@ describe('story extraction', () => {
           },
           {
             "componentPath": undefined,
+            "exportName": "StoryThree",
             "extra": {
               "metaId": "custom-meta-id",
               "stats": {},
@@ -372,6 +380,7 @@ describe('story extraction', () => {
         "entries": [
           {
             "componentPath": undefined,
+            "exportName": "StoryOne",
             "extra": {
               "metaId": undefined,
               "stats": {},
@@ -437,6 +446,7 @@ describe('docs entries from story extraction', () => {
           },
           {
             "componentPath": undefined,
+            "exportName": "StoryOne",
             "extra": {
               "metaId": undefined,
               "stats": {},

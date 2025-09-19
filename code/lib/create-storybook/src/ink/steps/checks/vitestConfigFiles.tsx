@@ -88,60 +88,51 @@ export const isValidWorkspaceConfigFile: (fileContents: string, babel: any) => b
  * - No -> exit
  */
 export const vitestConfigFiles: Check = {
-  condition: async (context, state) => {
-    const deps = ['babel', 'empathic', 'fs'];
-    if (babel && find && fs) {
-      const reasons = [];
+  condition: async (_context, state) => {
+    const reasons = [];
 
-      const projectRoot = getProjectRoot();
+    const projectRoot = getProjectRoot();
 
-      const vitestWorkspaceFile = find.any(
-        ['ts', 'js', 'json'].flatMap((ex) => [`vitest.workspace.${ex}`, `vitest.projects.${ex}`]),
-        { cwd: state.directory, last: projectRoot }
-      );
-      if (vitestWorkspaceFile?.endsWith('.json')) {
-        reasons.push(`Cannot auto-update JSON workspace file: ${vitestWorkspaceFile}`);
-      } else if (vitestWorkspaceFile) {
-        const fileContents = await fs.readFile(vitestWorkspaceFile, 'utf8');
-        if (!isValidWorkspaceConfigFile(fileContents, babel)) {
-          reasons.push(`Found an invalid workspace config file: ${vitestWorkspaceFile}`);
-        }
+    const vitestWorkspaceFile = find.any(
+      ['ts', 'js', 'json'].flatMap((ex) => [`vitest.workspace.${ex}`, `vitest.projects.${ex}`]),
+      { cwd: state.directory, last: projectRoot }
+    );
+    if (vitestWorkspaceFile?.endsWith('.json')) {
+      reasons.push(`Cannot auto-update JSON workspace file: ${vitestWorkspaceFile}`);
+    } else if (vitestWorkspaceFile) {
+      const fileContents = await fs.readFile(vitestWorkspaceFile, 'utf8');
+      if (!isValidWorkspaceConfigFile(fileContents, babel)) {
+        reasons.push(`Found an invalid workspace config file: ${vitestWorkspaceFile}`);
       }
-
-      const vitestConfigFile = find.any(
-        ['ts', 'js', 'tsx', 'jsx', 'cts', 'cjs', 'mts', 'mjs'].map((ex) => `vitest.config.${ex}`),
-        { cwd: state.directory, last: projectRoot }
-      );
-      if (vitestConfigFile?.endsWith('.cts') || vitestConfigFile?.endsWith('.cjs')) {
-        reasons.push(`Cannot auto-update CommonJS config file: ${vitestConfigFile}`);
-      } else if (vitestConfigFile) {
-        let isValidVitestConfig = false;
-        const configContent = await fs.readFile(vitestConfigFile, 'utf8');
-        const parsedConfig = babel.babelParse(configContent);
-        babel.traverse(parsedConfig, {
-          ExportDefaultDeclaration(path) {
-            if (
-              isDefineConfigExpression(path.node.declaration) &&
-              isSafeToExtendWorkspace(path.node.declaration as CallExpression)
-            ) {
-              isValidVitestConfig = true;
-            }
-          },
-        });
-        if (!isValidVitestConfig) {
-          reasons.push(`Found an invalid Vitest config file: ${vitestConfigFile}`);
-        }
-      }
-
-      return reasons.length
-        ? { type: CompatibilityType.INCOMPATIBLE, reasons }
-        : { type: CompatibilityType.COMPATIBLE };
     }
-    return {
-      type: CompatibilityType.INCOMPATIBLE,
-      reasons: deps
-        .filter((p) => !context[p as keyof typeof context])
-        .map((p) => `Missing ${p} on context`),
-    };
+
+    const vitestConfigFile = find.any(
+      ['ts', 'js', 'tsx', 'jsx', 'cts', 'cjs', 'mts', 'mjs'].map((ex) => `vitest.config.${ex}`),
+      { cwd: state.directory, last: projectRoot }
+    );
+    if (vitestConfigFile?.endsWith('.cts') || vitestConfigFile?.endsWith('.cjs')) {
+      reasons.push(`Cannot auto-update CommonJS config file: ${vitestConfigFile}`);
+    } else if (vitestConfigFile) {
+      let isValidVitestConfig = false;
+      const configContent = await fs.readFile(vitestConfigFile, 'utf8');
+      const parsedConfig = babel.babelParse(configContent);
+      babel.traverse(parsedConfig, {
+        ExportDefaultDeclaration(path) {
+          if (
+            isDefineConfigExpression(path.node.declaration) &&
+            isSafeToExtendWorkspace(path.node.declaration as CallExpression)
+          ) {
+            isValidVitestConfig = true;
+          }
+        },
+      });
+      if (!isValidVitestConfig) {
+        reasons.push(`Found an invalid Vitest config file: ${vitestConfigFile}`);
+      }
+    }
+
+    return reasons.length
+      ? { type: CompatibilityType.INCOMPATIBLE, reasons }
+      : { type: CompatibilityType.COMPATIBLE };
   },
 };

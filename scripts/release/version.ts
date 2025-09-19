@@ -127,7 +127,7 @@ const bumpCodeVersion = async (nextVersion: string) => {
   const codePkgJson = await readJson(CODE_PACKAGE_JSON_PATH);
 
   codePkgJson.version = nextVersion;
-  await writeFile(CODE_PACKAGE_JSON_PATH, JSON.stringify(codePkgJson, null, 2));
+  await writeFile(CODE_PACKAGE_JSON_PATH, JSON.stringify(codePkgJson, null, 2) + '\n');
 
   console.log(`✅ Bumped version of ${picocolors.cyan('code')}'s package.json`);
 };
@@ -202,7 +202,7 @@ const bumpDeferred = async (nextVersion: string) => {
   }
 
   codePkgJson.deferredNextVersion = nextVersion;
-  await writeFile(CODE_PACKAGE_JSON_PATH, JSON.stringify(codePkgJson, null, 2));
+  await writeFile(CODE_PACKAGE_JSON_PATH, JSON.stringify(codePkgJson, null, 2) + '\n');
 
   console.log(`✅ Set a ${picocolors.cyan('deferred')} version bump. Not bumping any packages.`);
 };
@@ -224,7 +224,7 @@ const applyDeferredVersionBump = async () => {
   }
 
   delete codePkgJson.deferredNextVersion;
-  await writeFile(CODE_PACKAGE_JSON_PATH, JSON.stringify(codePkgJson, null, 2));
+  await writeFile(CODE_PACKAGE_JSON_PATH, JSON.stringify(codePkgJson, null, 2) + '\n');
 
   console.log(
     `✅ Extracted and removed deferred version ${picocolors.green(

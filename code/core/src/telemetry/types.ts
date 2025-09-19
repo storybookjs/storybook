@@ -24,6 +24,7 @@ export type EventType =
   | 'save-story'
   | 'create-new-story-file'
   | 'create-new-story-file-search'
+  | 'open-in-editor'
   | 'testing-module-watch-mode'
   | 'testing-module-completed-report'
   | 'testing-module-crash-report'

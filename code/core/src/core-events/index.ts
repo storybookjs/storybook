@@ -86,6 +86,9 @@ enum events {
   ARGTYPES_INFO_RESPONSE = 'argtypesInfoResponse',
   CREATE_NEW_STORYFILE_REQUEST = 'createNewStoryfileRequest',
   CREATE_NEW_STORYFILE_RESPONSE = 'createNewStoryfileResponse',
+  // Open a file in the code editor
+  OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
+  OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
 }
 
 // Enables: `import Events from ...`
@@ -151,6 +154,8 @@ export const {
   SAVE_STORY_RESPONSE,
   ARGTYPES_INFO_REQUEST,
   ARGTYPES_INFO_RESPONSE,
+  OPEN_IN_EDITOR_REQUEST,
+  OPEN_IN_EDITOR_RESPONSE,
 } = events;
 
 export * from './data/create-new-story';
@@ -160,3 +165,4 @@ export * from './data/request-response';
 export * from './data/save-story';
 export * from './data/whats-new';
 export * from './data/phases';
+export * from './data/open-in-editor';

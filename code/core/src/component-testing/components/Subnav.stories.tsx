@@ -1,3 +1,5 @@
+import React from 'react';
+
 import { action } from 'storybook/actions';
 
 import { Subnav } from './Subnav';
@@ -130,5 +132,20 @@ export const Detached = {
       next: false,
       end: false,
     },
+  },
+};
+
+export const WithOpenInEditorLink = {
+  args: {
+    status: 'completed',
+    controlStates: {
+      detached: true,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
+    canOpenInEditor: true,
   },
 };

@@ -316,6 +316,7 @@ export const InSidebarContextMenu: Story = {
       importPath: './path/to/story',
       prepared: true,
       parent: 'parent-id',
+      exportName: 'ExampleStory',
       depth: 1,
     },
   },

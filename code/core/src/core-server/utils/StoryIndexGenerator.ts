@@ -451,6 +451,7 @@ export class StoryIndexGenerator {
           importPath,
           componentPath,
           tags,
+          ...(input.exportName ? { exportName: input.exportName } : {}),
         };
       });
 

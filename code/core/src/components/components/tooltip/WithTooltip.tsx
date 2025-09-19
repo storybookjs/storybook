@@ -177,7 +177,12 @@ const WithToolTipState = ({
 
   useEffect(() => {
     const hide = () => onVisibilityChange(false);
-    document.addEventListener('keydown', hide, false);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        hide();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown, false);
 
     // Find all iframes on the screen and bind to clicks inside them (waiting until the iframe is ready)
     const iframes: HTMLIFrameElement[] = Array.from(document.getElementsByTagName('iframe'));
@@ -211,7 +216,7 @@ const WithToolTipState = ({
     });
 
     return () => {
-      document.removeEventListener('keydown', hide);
+      document.removeEventListener('keydown', handleKeyDown);
       unbinders.forEach((unbind) => {
         unbind();
       });

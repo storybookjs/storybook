@@ -195,6 +195,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
       immutable: true,
     })
   );
+
   router.use(compilation);
   router.use(webpackHotMiddleware(compiler, { log: false }));
 

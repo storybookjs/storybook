@@ -1,36 +1,39 @@
-import { Component, Output, EventEmitter } from '@angular/core';
+import { Component, output, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 @Component({
-  standalone: false,
+  standalone: true,
+  imports: [FormsModule],
   selector: 'storybook-form',
   template: `
-    <form id="interaction-test-form" (submit)="handleSubmit($event)">
+    <form id="interaction-test-form" ngNativeValidate (submit)="handleSubmit($event)">
   <label>
     Enter Value
-    <input type="text" data-testid="value" [(ngModel)]="value" required />
+    <input type="text" data-testid="value" name="value" [(ngModel)]="value" required />
   </label>
   <button type="submit">Submit</button>
-  <p *ngIf="complete">Completed!!</p>
+  @if (complete()) {
+    <p>Completed!!</p>
+  }
 </form>
   `,
 })
 export default class FormComponent {
   /** Optional success handler */
-  @Output()
-  onSuccess = new EventEmitter<string>();
+  onSuccess = output<string>();
 
   value = '';
 
-  complete = false;
+  complete = signal(false);
 
   handleSubmit(event: SubmitEvent) {
     event.preventDefault();
     this.onSuccess.emit(this.value);
     setTimeout(() => {
-      this.complete = true;
+      this.complete.set(true);
     }, 500);
     setTimeout(() => {
-      this.complete = false;
+      this.complete.set(false);
     }, 1500);
   }
 }

@@ -28,6 +28,8 @@ const managerContext: any = {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
     emit: fn().mockName('api::emit'),
+    getShortcutKeys: fn().mockName('api::getShortcutKeys'),
+    getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
     getElements: fn(
       () =>
         ({
@@ -45,6 +47,7 @@ const managerContext: any = {
           },
         }) satisfies Addon_Collection<Addon_TestProviderType>
     ),
+    getData: fn().mockName('api::getData'),
   },
 };
 
@@ -301,8 +304,8 @@ export const WithContextContent: Story = {
     const link = await screen.findByText('TooltipBuildList');
     await userEvent.hover(link);
 
-    const contextButton = await screen.findByTestId('context-menu');
-    await userEvent.click(contextButton);
+    const contextButton = await screen.findAllByTestId('context-menu');
+    await userEvent.click(contextButton[0]);
 
     const body = await within(document.body);
 

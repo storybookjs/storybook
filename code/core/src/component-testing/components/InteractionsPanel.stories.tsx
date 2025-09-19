@@ -30,6 +30,11 @@ const managerContext: any = {
   api: {
     getDocsUrl: fn().mockName('api::getDocsUrl'),
     emit: fn().mockName('api::emit'),
+    getData: fn()
+      .mockName('api::getData')
+      .mockImplementation(() => ({
+        importPath: 'core/src/component-testing/components/InteractionsPanel.stories.tsx',
+      })),
   },
 };
 

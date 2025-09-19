@@ -21,7 +21,7 @@ export const parse = (value: string) => {
 
 export const format = (value: NumberValue) => (value != null ? String(value) : '');
 
-const FormInput = styled(Form.Input)(({ theme, readOnly }) => ({
+const FormInput = styled(Form.Input)(({ theme }) => ({
   background: theme.base === 'light' ? theme.color.lighter : 'transparent',
 }));
 

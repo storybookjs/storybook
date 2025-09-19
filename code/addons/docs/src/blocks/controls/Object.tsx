@@ -16,7 +16,7 @@ const { window: globalWindow } = globalThis;
 
 type JsonTreeProps = ComponentProps<typeof JsonTree>;
 
-const Wrapper = styled.div<{ readOnly: boolean }>(({ theme, readOnly }) => ({
+const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   isolation: 'isolate',
@@ -239,7 +239,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
   return (
-    <Wrapper readOnly={readonly}>
+    <Wrapper>
       {isObjectOrArray && (
         <RawButton
           disabled={readonly}

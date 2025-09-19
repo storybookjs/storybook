@@ -5,7 +5,6 @@ import type { StoryIndex, Tag } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
 
-import { darken } from 'polished';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 

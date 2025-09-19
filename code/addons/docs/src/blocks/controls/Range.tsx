@@ -155,14 +155,14 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
   })
 );
 
-const RangeLabel = styled.span(({ theme }) => ({
+const RangeLabel = styled.span({
   paddingLeft: 5,
   paddingRight: 5,
   fontSize: 12,
   whiteSpace: 'nowrap',
   fontFeatureSettings: 'tnum',
   fontVariantNumeric: 'tabular-nums',
-}));
+});
 
 const RangeCurrentAndMaxLabel = styled(RangeLabel)<{
   numberOFDecimalsPlaces: number;

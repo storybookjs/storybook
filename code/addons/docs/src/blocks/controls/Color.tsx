@@ -13,10 +13,10 @@ import { styled } from 'storybook/theming';
 import { getControlId } from './helpers';
 import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types';
 
-const Wrapper = styled.div<{ readOnly: boolean }>(({ readOnly }) => ({
+const Wrapper = styled.div({
   position: 'relative',
   maxWidth: 250,
-}));
+});
 
 const PickerTooltip = styled(WithTooltip)({
   position: 'absolute',
@@ -380,7 +380,7 @@ export const ColorControl: FC<ColorControlProps> = ({
   const controlId = getControlId(name);
 
   return (
-    <Wrapper readOnly={readOnly}>
+    <Wrapper>
       <label htmlFor={controlId} className="sb-sr-only">
         {name}
       </label>

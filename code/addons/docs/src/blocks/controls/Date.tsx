@@ -38,13 +38,13 @@ export const formatTime = (value: Date | number) => {
   return `${hours}:${minutes}`;
 };
 
-const FormInput = styled(Form.Input)(({ theme, readOnly }) => ({
-  ...(readOnly
+const FormInput = styled(Form.Input)(({ theme, readOnly }) =>
+  readOnly
     ? {
         background: theme.base === 'light' ? theme.color.lighter : 'transparent',
       }
-    : {}),
-}));
+    : {}
+);
 
 const FlexSpaced = styled.fieldset(({ theme }) => ({
   flex: 1,

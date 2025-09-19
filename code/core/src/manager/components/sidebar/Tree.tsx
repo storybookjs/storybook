@@ -21,7 +21,7 @@ import {
 } from '@storybook/icons';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
-import { darken, lighten } from 'polished';
+import { darken } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
 import type {
   API,

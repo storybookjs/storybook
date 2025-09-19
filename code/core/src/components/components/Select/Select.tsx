@@ -96,8 +96,8 @@ function setSelectedFromDefault(
 }
 
 const StyledButton = styled(Button)<ButtonProps & { hasSelection?: boolean; isOpen?: boolean }>(
-  ({ isOpen, hasSelection, theme }) => ({
-    ...(isOpen || hasSelection
+  ({ isOpen, hasSelection, theme }) =>
+    isOpen || hasSelection
       ? {
           boxShadow: 'none',
           background: transparentize(0.93, theme.barSelectedColor),
@@ -110,8 +110,7 @@ const StyledButton = styled(Button)<ButtonProps & { hasSelection?: boolean; isOp
             color: theme.barSelectedColor,
           },
         }
-      : {}),
-  })
+      : {}
 );
 
 const Underlay = styled.div({

@@ -22,7 +22,7 @@ const Input = styled.input(({ theme }) => ({
     backgroundColor: theme.base === 'light' ? color.light : 'transparent',
   },
   '&:disabled:checked, &:disabled:indeterminate': {
-    backgroundColor: theme.base === 'light' ? color.light : theme.color.dark,
+    backgroundColor: theme.base === 'light' ? color.mediumdark : theme.color.dark,
   },
   '&:checked, &:indeterminate': {
     backgroundColor: color.secondary,

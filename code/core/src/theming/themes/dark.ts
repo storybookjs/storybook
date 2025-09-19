@@ -31,12 +31,12 @@ const theme: ThemeVars = {
   barBg: '#222325',
 
   // Form colors
-  buttonBg: '#222425',
-  buttonBorder: 'rgba(255,255,255,.1)',
+  buttonBg: '#1B1C1D',
+  buttonBorder: 'hsl(0 0 100 / 0.1)',
   booleanBg: '#1B1C1D',
   booleanSelectedBg: '#292B2E',
   inputBg: '#1B1C1D',
-  inputBorder: 'rgba(255,255,255,.1)',
+  inputBorder: 'hsl(0 0 100 / 0.1)',
   inputTextColor: '#C9CCCF',
   inputBorderRadius: 4,
 };

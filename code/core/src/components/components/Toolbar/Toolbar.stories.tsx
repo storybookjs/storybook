@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from 'storybook/internal/components';
 
 import preview from '../../../../../.storybook/preview';
-import { AriaToolbar } from './AriaToolbar';
+import { Toolbar } from './Toolbar';
 
 const Children = () => (
   <>
@@ -35,8 +35,8 @@ const Children = () => (
 );
 
 const meta = preview.meta({
-  title: 'AriaToolbar',
-  component: AriaToolbar,
+  title: 'Toolbar',
+  component: Toolbar,
   args: {
     children: <Children />,
   },
@@ -48,14 +48,14 @@ export const Scrollable = meta.story({
   args: {
     scrollable: true,
   },
-  render: (args) => <div style={{ width: 400 }}>{<AriaToolbar {...args} />}</div>,
+  render: (args) => <div style={{ width: 400 }}>{<Toolbar {...args} />}</div>,
 });
 
 export const NotScrollable = meta.story({
   args: {
     scrollable: false,
   },
-  render: (args) => <div style={{ width: 400 }}>{<AriaToolbar {...args} />}</div>,
+  render: (args) => <div style={{ width: 400 }}>{<Toolbar {...args} />}</div>,
 });
 
 export const Border = meta.story({

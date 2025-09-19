@@ -9,6 +9,8 @@ import type {
 } from 'react';
 import React, { forwardRef } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
+
 import { isPropValid, styled } from 'storybook/theming';
 
 interface ButtonProps
@@ -76,7 +78,7 @@ export interface TabButtonProps {
   textColor?: string;
 }
 
-export const TabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid })<TabButtonProps>(
+const StyledTabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid })<TabButtonProps>(
   {
     whiteSpace: 'normal',
     display: 'inline-flex',
@@ -125,5 +127,12 @@ export const TabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid }
             color: theme.barHoverColor,
           },
         }
+);
+
+export const TabButton = forwardRef<HTMLButtonElement & HTMLAnchorElement, TabButtonProps>(
+  (props, ref) => {
+    deprecate('The `TabButton` component is deprecated. Use `TabList` instead.');
+    return <StyledTabButton ref={ref} {...props} />;
+  }
 );
 TabButton.displayName = 'TabButton';

@@ -1,5 +1,6 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
 
 import { styled } from 'storybook/theming';
@@ -39,6 +40,8 @@ const AddonButton = styled(TabButton)<{ preActive: boolean }>(({ active, theme, 
 });
 
 export function useList(list: ChildrenListComplete) {
+  deprecate('The `useList` tabs hook is deprecated. Use `TabsView` instead.');
+
   const tabBarRef = useRef<HTMLDivElement>();
   const addonsRef = useRef<HTMLButtonElement>();
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());

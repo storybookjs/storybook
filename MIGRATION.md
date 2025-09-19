@@ -16,9 +16,13 @@
       - [Removed: active](#removed-active)
     - [IconButton is deprecated](#iconbutton-is-deprecated)
     - [Bar Component API Changes](#bar-component-api-changes)
+      - [Added: innerStyle](#added-innerstyle)
     - [FlexBar is deprecated](#flexbar-is-deprecated)
     - [Tabs is deprecated](#tabs-is-deprecated)
-    - [Tabs Component API Changes](#tabs-component-api-changes)
+    - [TabsState is deprecated](#tabsstate-is-deprecated)
+    - [TabWrapper is deprecated](#tabwrapper-is-deprecated)
+    - [TabButton is deprecated](#tabbutton-is-deprecated)
+    - [TabBar is removed](#tabbar-is-removed)
     - [Modal Component API Changes](#modal-component-api-changes)
       - [Removed: container and portalSelector](#removed-container-and-portalselector)
       - [Removed: onInteractOutside](#removed-oninteractoutside)
@@ -652,21 +656,48 @@ Use Select if the active state denotes that the Button is open while a selection
 The IconButton component is deprecated, as it overlaps with Button. Instead, use Button with the `'ghost'` variant and `'small'` padding, and add an `ariaLabel` prop for screenreaders to announce.
 
 IconButton will be removed in future versions.
+
 #### Bar Component API Changes
 
-The `Bar` component's internal layout has changed. It now applies flex positioning and applies a default item gap, that can be controlled with the `itemGap` prop.
+The `Bar` component's internal layout has changed. It now applies flex positioning and applies a default item gap, that can be controlled with the `innerStyle` prop.
+
+##### Added: innerStyle
+When `scrollable` is set to `true`, `Bar` now adds an inner container that is used to ensure the scrollbar size does not impact the height of the bar. This inner container displays as 'flex' and has the following default style:
+
+```css
+  width: 100%;
+  min-height: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 6px;
+```
+
+The inner container's style can be overridden by passing CSS properties to `innerStyle`.
 
 #### FlexBar is deprecated
 
-The `FlexBar` component is removed. Instead, use the `Bar` component and apply `justifyContent: 'space-between'` through the `innerStyle` prop.
+The `FlexBar` component is deprecated. Instead, use the `Bar` component and apply `justifyContent: 'space-between'` through the `innerStyle` prop.
 
 #### Tabs is deprecated
 
-The `Tabs` component is deprecated. Instead, use the new `AriaTabs` (name TBC) component which has a more constrained API and is accessible. In particular, `AriaTabs` (name TBC) does not support mixing HTML links and tabs.
+The `Tabs` component is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
 
-#### Tabs Component API Changes
+#### TabsState is deprecated
 
-* [ ] Tabs no longer accepts link components?
+The `TabsState` class is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabWrapper is deprecated
+
+The `TabWrapper` component is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabButton is deprecated
+
+The `TabButton` class is deprecated as it was not accessible. It does not have a replacement, as the new `TabList` component handles tab buttons internally.
+
+#### TabBar is removed
+
+The `TabBar` component, a styled bar used inside `Tabs` and not intended to be public, has been removed. It has no replacement.
 
 #### Modal Component API Changes
 

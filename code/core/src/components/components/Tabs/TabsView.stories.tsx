@@ -6,7 +6,7 @@ import { fn } from 'storybook/internal/test';
 import { CrossIcon, ExpandIcon } from '@storybook/icons';
 
 import preview from '../../../../../.storybook/preview';
-import { AriaTabs } from './AriaTabs';
+import { TabsView } from './TabsView';
 
 const DEFAULT_TABS = [
   { id: 'tab1', title: 'Tab 1', children: () => <div>Content for Tab 1</div> },
@@ -26,8 +26,8 @@ const DEFAULT_TOOLS = (
 );
 
 const meta = preview.meta({
-  title: 'AriaTabs',
-  component: AriaTabs,
+  title: 'Tabs/TabsView',
+  component: TabsView,
   args: { backgroundColor: '#2e2e2e', tabs: DEFAULT_TABS, tools: DEFAULT_TOOLS },
 });
 
@@ -83,7 +83,7 @@ export const ControlledState = meta.story({
         <p>
           Current tab: <strong>{selected}</strong>
         </p>
-        <AriaTabs
+        <TabsView
           {...args}
           selected={selected}
           onSelectionChange={(key) => {

@@ -1,8 +1,8 @@
 import type { FC } from 'react';
-import React, { Fragment, useEffect, useId, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
-import { Loader, useAriaTabListState } from 'storybook/internal/components';
+import { Loader, useTabsState } from 'storybook/internal/components';
 import { PREVIEW_BUILDER_PROGRESS, SET_CURRENT_STORY } from 'storybook/internal/core-events';
 import type { Addon_BaseType, Addon_WrapperType } from 'storybook/internal/types';
 
@@ -63,7 +63,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
   // accessible, we'd need to pass tabContent/CanvasWrap to the tabs consumed by
   // the TabPanel. It's doable, but not worth the effort considering the feature's
   // remaining lifespan.
-  const tabState = useAriaTabListState({
+  const tabState = useTabsState({
     selected: tabId ?? 'canvas',
     onSelectionChange: (key) => {
       api.applyQueryParams({ tab: key === 'canvas' ? undefined : key });

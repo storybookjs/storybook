@@ -4,10 +4,10 @@ import { useState } from 'react';
 import { expect, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
-import { AriaTabList } from './AriaTabList';
-import { AriaTabPanel } from './AriaTabPanel';
-import type { TabProps } from './AriaTabs';
-import { useAriaTabListState } from './AriaTabs';
+import { TabList } from './TabList';
+import { TabPanel } from './TabPanel';
+import type { TabProps } from './TabsView';
+import { useTabsState } from './TabsView';
 
 const TabContent: FC<{ tabNumber: number }> = ({ tabNumber }) => {
   const [counter, setCounter] = useState(0);
@@ -32,8 +32,8 @@ const DEFAULT_TABS: TabProps[] = [
 ];
 
 const meta = preview.meta({
-  title: 'AriaTabPanel',
-  component: AriaTabPanel,
+  title: 'Tabs/TabPanel',
+  component: TabPanel,
   parameters: {
     data: {
       tabs: DEFAULT_TABS,
@@ -52,10 +52,10 @@ const meta = preview.meta({
       );
     },
     (Story, { args, parameters }) => {
-      const state = useAriaTabListState({ tabs: parameters.data.tabs });
+      const state = useTabsState({ tabs: parameters.data.tabs });
       return (
         <>
-          <AriaTabList state={state} />
+          <TabList state={state} />
           <Story args={{ ...args, id: state.selectedItem?.key, state }} />
         </>
       );

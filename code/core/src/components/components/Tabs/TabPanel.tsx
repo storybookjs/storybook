@@ -7,7 +7,7 @@ import { useTabPanel } from 'react-aria';
 import type { Node, TabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
-export interface AriaTabPanelProps extends HTMLAttributes<HTMLDivElement> {
+export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {
   /** The state of the tab list. Primary mechanism for using the tabpanel. */
   state: TabListState<object>;
 
@@ -32,7 +32,7 @@ const Panel = styled.div({
   height: '100%',
 });
 
-export const AriaTabPanel: FC<AriaTabPanelProps> = ({
+export const TabPanel: FC<TabPanelProps> = ({
   hasScrollbar = true,
   renderAllChildren = false,
   id,

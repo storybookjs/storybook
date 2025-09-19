@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { Component, useMemo } from 'react';
 
-import { AriaTabs, Button, EmptyTabContent, Link } from 'storybook/internal/components';
+import { Button, EmptyTabContent, Link, TabsView } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
@@ -147,7 +147,7 @@ export const AddonPanel = React.memo<{
       <h2 id="storybook-panel-heading" className="sb-sr-only">
         Addon panel
       </h2>
-      <AriaTabs
+      <TabsView
         id="storybook-panel-root"
         showToolsWhenEmpty
         panelProps={{

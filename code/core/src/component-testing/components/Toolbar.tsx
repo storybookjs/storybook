@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { AriaToolbar, Button, P, Separator } from 'storybook/internal/components';
+import { Button, P, Separator, Toolbar as SharedToolbar } from 'storybook/internal/components';
 
 import {
   FastForwardIcon,
@@ -121,7 +121,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <ToolbarWrapper>
-      <AriaToolbar
+      <SharedToolbar
         backgroundColor={theme.background.app}
         innerStyle={{ gap: 6, paddingInline: 15 }}
         aria-label="Component test playback controls"
@@ -197,7 +197,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           ) : (
             <StyledLocation>{storyFileName}</StyledLocation>
           ))}
-      </AriaToolbar>
+      </SharedToolbar>
     </ToolbarWrapper>
   );
 };

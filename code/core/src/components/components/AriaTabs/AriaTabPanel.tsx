@@ -24,7 +24,7 @@ export interface AriaTabPanelProps extends HTMLAttributes<HTMLDivElement> {
   renderAllChildren?: boolean;
 
   /** Unique id of the tab. */
-  key: Key | undefined;
+  id: Key | undefined;
 }
 
 const Panel = styled.div({
@@ -35,12 +35,12 @@ const Panel = styled.div({
 export const AriaTabPanel: FC<AriaTabPanelProps> = ({
   hasScrollbar = true,
   renderAllChildren = false,
-  key,
+  id,
   state,
   ...rest
 }) => {
   const ref = useRef(null);
-  const { tabPanelProps } = useTabPanel({ key }, state, ref);
+  const { tabPanelProps } = useTabPanel({ id }, state, ref);
 
   const childrenToRender = renderAllChildren
     ? [...state.collection]

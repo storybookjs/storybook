@@ -148,7 +148,7 @@ export const AriaTabs: FC<AriaTabsProps> = ({
         {tools}
         <FlexAriaTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 0} />
       </Bar>
-      <FlexTabPanel state={state} {...panelProps} key={state.selectedItem?.key} />
+      <FlexTabPanel state={state} {...panelProps} id={state.selectedItem?.key} />
     </Container>
   );
 };

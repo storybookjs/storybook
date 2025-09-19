@@ -41,17 +41,23 @@ const meta = preview.meta({
   },
   args: {
     state: undefined,
+    id: undefined,
   },
   decorators: [
-    (Story, { args, parameters }) => {
-      const state = useAriaTabListState({ tabs: parameters.data.tabs });
-      return <Story args={{ ...args, state }} />;
-    },
     (Story) => {
       return (
         <div style={{ border: '1px solid grey', height: 400 }}>
           <Story />
         </div>
+      );
+    },
+    (Story, { args, parameters }) => {
+      const state = useAriaTabListState({ tabs: parameters.data.tabs });
+      return (
+        <>
+          <AriaTabList state={state} />
+          <Story args={{ ...args, id: state.selectedItem?.key, state }} />
+        </>
       );
     },
   ],
@@ -115,16 +121,6 @@ export const RenderAllChildren = meta.story({
 });
 
 export const PreserveState = meta.story({
-  decorators: [
-    (Story, { args }) => {
-      return (
-        <>
-          <AriaTabList state={args.state} />
-          <Story />
-        </>
-      );
-    },
-  ],
   args: {
     renderAllChildren: true,
   },

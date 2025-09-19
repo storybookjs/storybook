@@ -1,7 +1,6 @@
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import * as pkg from 'empathic/package';
-import { join } from 'pathe';
 import type { PackageJson } from 'type-fest';
 
 import type { Dependency } from './types';
@@ -34,10 +33,7 @@ export const getActualPackageJson = async (
       cwd: fileURLToPath(import.meta.resolve(packageName, process.cwd())),
     });
     if (!resolvedPackageJsonPath) {
-      resolvedPackageJsonPath = import.meta.resolve(
-        join(packageName, 'package.json'),
-        process.cwd()
-      );
+      resolvedPackageJsonPath = import.meta.resolve(`${packageName}/package.json`, process.cwd());
     }
 
     const { default: packageJson } = await import(pathToFileURL(resolvedPackageJsonPath).href, {

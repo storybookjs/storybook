@@ -4,7 +4,7 @@ import React, { useRef } from 'react';
 import { ScrollArea } from 'storybook/internal/components';
 
 import { useTabPanel } from 'react-aria';
-import type { Node, TabListState } from 'react-stately';
+import type { Key, Node, TabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
 export interface AriaTabPanelProps extends HTMLAttributes<HTMLDivElement> {
@@ -22,6 +22,9 @@ export interface AriaTabPanelProps extends HTMLAttributes<HTMLDivElement> {
    * rendered with the hidden attribute and do not affect the accessibility object model.
    */
   renderAllChildren?: boolean;
+
+  /** Unique id of the tab. */
+  key: Key | undefined;
 }
 
 const Panel = styled.div({
@@ -32,11 +35,12 @@ const Panel = styled.div({
 export const AriaTabPanel: FC<AriaTabPanelProps> = ({
   hasScrollbar = true,
   renderAllChildren = false,
+  key,
   state,
   ...rest
 }) => {
   const ref = useRef(null);
-  const { tabPanelProps } = useTabPanel({}, state, ref);
+  const { tabPanelProps } = useTabPanel({ key }, state, ref);
 
   const childrenToRender = renderAllChildren
     ? [...state.collection]
@@ -44,6 +48,9 @@ export const AriaTabPanel: FC<AriaTabPanelProps> = ({
 
   return childrenToRender.map((item) => {
     const isSelected = state.selectedKey === item.key;
+
+    console.log('tabPanelProps', tabPanelProps);
+    console.log('rest', rest);
 
     return (
       <Panel

@@ -138,6 +138,9 @@ export const AriaTabs: FC<AriaTabsProps> = ({
           '> *:not(:last-child)': {
             order: 2,
           },
+          '> *': {
+            flexShrink: 0,
+          },
           ...barInnerStyle,
           gap: 0,
         }}
@@ -145,7 +148,7 @@ export const AriaTabs: FC<AriaTabsProps> = ({
         {tools}
         <FlexAriaTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 0} />
       </Bar>
-      <FlexTabPanel state={state} {...panelProps} />
+      <FlexTabPanel state={state} {...panelProps} key={state.selectedItem?.key} />
     </Container>
   );
 };

@@ -107,6 +107,9 @@ const SingleSelect: FC<SelectProps> = ({ name, value, options, onChange, argType
   return (
     <SelectWrapper>
       <ChevronSmallDownIcon />
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
       <OptionsSelect disabled={readonly} id={controlId} value={selection} onChange={handleChange}>
         <option key="no-selection" disabled>
           {NO_SELECTION}

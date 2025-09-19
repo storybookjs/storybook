@@ -49,9 +49,6 @@ export const TabPanel: FC<TabPanelProps> = ({
   return childrenToRender.map((item) => {
     const isSelected = state.selectedKey === item.key;
 
-    console.log('tabPanelProps', tabPanelProps);
-    console.log('rest', rest);
-
     return (
       <Panel
         key={item.key}

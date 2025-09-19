@@ -111,6 +111,7 @@ const BarInner = styled.div<BarInnerProps>(({ bgColor }) => ({
   flexWrap: 'nowrap',
   flexShrink: 0,
   height: 40,
+  width: '100%',
   backgroundColor: bgColor || '',
 }));
 

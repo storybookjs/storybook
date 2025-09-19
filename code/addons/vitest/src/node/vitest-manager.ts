@@ -16,7 +16,6 @@ import * as find from 'empathic/find';
 import path, { dirname, join, normalize } from 'pathe';
 import slash from 'slash';
 
-import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 import { COVERAGE_DIRECTORY } from '../constants';
 import { log } from '../logger';
 import type { TriggerRunEvent } from '../types';

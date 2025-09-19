@@ -979,8 +979,10 @@ export const ResetButtonVisibilitySingle = meta.story({
 
       const resetOption = screen.getByRole('option', { name: 'Reset selection' });
       expect(resetOption).toBeInTheDocument();
-      // Reset option should not be disabled in single-select mode even without selection,
-      // because it gets auto triggered and would cause strange SR announcements.
+      // Reset option should not be disabled when the user cursor is on it in
+      // single-select mode even without selection, because single-select Select
+      // auto triggers the focused option, and we don't want to have the selection
+      // reset whilst SRs announce that the reset option is disabled.
       expect(resetOption).not.toHaveAttribute('aria-disabled', 'true');
     });
 

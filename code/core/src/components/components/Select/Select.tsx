@@ -519,7 +519,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                       }
                     }}
                     onFocus={() => setActiveOption(option)}
-                    shouldLookDisabled={option === resetOption && selectedOptions.length === 0}
+                    shouldLookDisabled={
+                      option === resetOption && selectedOptions.length === 0 && multiSelect
+                    }
                     onKeyDown={(e: KeyboardEvent) => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();

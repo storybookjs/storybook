@@ -124,7 +124,6 @@ export const AriaTabs: FC<AriaTabsProps> = ({
   return (
     <Container {...props}>
       <Bar
-        {...props}
         scrollable={false}
         border
         backgroundColor={backgroundColor}

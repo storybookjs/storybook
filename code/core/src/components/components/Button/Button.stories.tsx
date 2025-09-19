@@ -283,10 +283,10 @@ export const Tooltip = meta.story({
   },
 });
 
-export const Description = meta.story({
+export const AriaDescription = meta.story({
   args: {
     ariaLabel: 'Button',
-    description: 'Clicking this button allegedly makes you happy.',
+    ariaDescription: 'Clicking this button allegedly makes you happy.',
     children: <FaceHappyIcon />,
   },
 });

@@ -183,7 +183,7 @@ const StyledButton = styled('button', {
   lineHeight: '1',
   background: (() => {
     if (variant === 'solid') {
-      return theme.color.secondary;
+      return theme.base === 'light' ? theme.color.secondary : darken(0.18, theme.color.secondary);
     }
 
     if (variant === 'outline') {
@@ -241,7 +241,10 @@ const StyledButton = styled('button', {
       let bgColor = theme.color.secondary;
 
       if (variant === 'solid') {
-        bgColor = theme.color.secondary;
+        bgColor =
+          theme.base === 'light'
+            ? lighten(0.1, theme.color.secondary)
+            : darken(0.3, theme.color.secondary);
       }
 
       if (variant === 'outline') {

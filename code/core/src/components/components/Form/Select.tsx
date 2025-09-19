@@ -47,7 +47,7 @@ const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
     '& > svg': {
       width: 14,
       height: 14,
-      color: theme.color.dark,
+      color: theme.textMutedColor,
     },
   },
   '&:has(option:not([hidden]):checked)': {

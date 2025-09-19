@@ -29,7 +29,10 @@ const StyledToggle = styled(Button)<ToggleButtonProps>(({ theme, variant, presse
     ? {
         ...(variant === 'solid'
           ? {
-              background: darken(0.1, theme.color.secondary),
+              background:
+                theme.base === 'lighten'
+                  ? darken(0.1, theme.color.secondary)
+                  : darken(0.2, theme.color.secondary),
             }
           : {}),
         ...(variant === 'outline'

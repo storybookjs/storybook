@@ -53,7 +53,7 @@ const Item = styled('li')(({ theme }) => ({
     cursor: 'not-allowed',
   },
   '&[aria-selected="true"]': {
-    color: darken(0.18, theme.color.secondary),
+    color: theme.base === 'light' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
     fontWeight: theme.typography.weight.bold,
   },
   ':hover': {

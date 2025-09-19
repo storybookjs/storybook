@@ -18,7 +18,6 @@ import type {
   StoryAnnotations,
   StoryContext,
   StoryContextForEnhancers,
-  StoryFn,
   StoryId,
   StoryIdentifier,
   StoryName,

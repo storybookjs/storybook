@@ -40,7 +40,7 @@ export const getDescendantIds = memoize(1000)((
   skipLeafs: boolean
 ): string[] => {
   const entry = data[id];
-  if (!entry || entry.type === 'story' || entry.type === 'docs' || !entry.children) {
+  if (!entry || !('children' in entry) || !entry.children) {
     return [];
   }
   return entry.children.reduce((acc, childId) => {

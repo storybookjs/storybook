@@ -71,9 +71,11 @@ export class ExternalPreview<TRenderer extends Renderer = Renderer> extends Prev
         title,
         name,
         type: 'story',
+        subtype: 'story',
       };
     });
 
+    // TODO: We probably need to do something here about story tests
     this.onStoriesChanged({ storyIndex: this.storyIndex });
 
     return csfFile;

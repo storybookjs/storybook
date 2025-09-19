@@ -7,7 +7,7 @@ import { TagsFilter } from './TagsFilter';
 const meta = {
   component: TagsFilter,
   title: 'Sidebar/TagsFilter',
-  tags: ['haha'],
+  tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
   args: {
     api: {
       experimental_setFilter: fn(),
@@ -21,6 +21,7 @@ const meta = {
       applyQueryParams: fn().mockName('api::applyQueryParams'),
     } as any,
     isDevelopment: true,
+    tagPresets: {},
   },
 } satisfies Meta<typeof TagsFilter>;
 
@@ -42,22 +43,47 @@ export const Closed: Story = {
 export const ClosedWithSelection: Story = {
   args: {
     ...Closed.args,
-    initialSelectedTags: ['A', 'B'],
+    tagPresets: {
+      A: { defaultFilterSelection: 'include' },
+      B: { defaultFilterSelection: 'include' },
+    },
   },
 };
 
-export const Open: Story = {
+export const Open = {
   ...Closed,
   play: async ({ canvasElement }) => {
     const button = await findByRole(canvasElement, 'button');
     await button.click();
   },
-};
+} satisfies Story;
 
-export const OpenWithSelection: Story = {
+export const OpenWithSelection = {
   ...ClosedWithSelection,
   play: Open.play,
-};
+} satisfies Story;
+
+export const OpenWithSelectionInverted = {
+  ...Open,
+  args: {
+    ...Open.args,
+    tagPresets: {
+      A: { defaultFilterSelection: 'exclude' },
+      B: { defaultFilterSelection: 'exclude' },
+    },
+  },
+} satisfies Story;
+
+export const OpenWithSelectionMixed = {
+  ...Open,
+  args: {
+    ...Open.args,
+    tagPresets: {
+      A: { defaultFilterSelection: 'include' },
+      B: { defaultFilterSelection: 'exclude' },
+    },
+  },
+} satisfies Story;
 
 export const OpenEmpty: Story = {
   args: {

@@ -45,8 +45,54 @@ export async function configToCsfFactory(
    * Transform into: `export default defineMain({ tags: [], parameters: {} })`
    */
   if (config._exportsObject && hasNamedExports) {
-    config._exportsObject.properties.push(...defineConfigProps);
+    // when merging named exports with default exports, add the named exports first in the list
+    config._exportsObject.properties = [...defineConfigProps, ...config._exportsObject.properties];
     programNode.body = removeExportDeclarations(programNode, exportDecls);
+
+    // After merging, ensure the default export is wrapped with defineMain/definePreview
+    const defineConfigCall = t.callExpression(t.identifier(methodName), [config._exportsObject]);
+
+    let exportDefaultNode = null as unknown as t.ExportDefaultDeclaration;
+    let declarationNodeIndex = -1;
+
+    programNode.body.forEach((node) => {
+      // Detect Syntax 1: export default <identifier>
+      if (t.isExportDefaultDeclaration(node) && t.isIdentifier(node.declaration)) {
+        const declarationName = node.declaration.name;
+
+        declarationNodeIndex = programNode.body.findIndex(
+          (n) =>
+            t.isVariableDeclaration(n) &&
+            n.declarations.some(
+              (d) =>
+                t.isIdentifier(d.id) &&
+                d.id.name === declarationName &&
+                t.isObjectExpression(d.init)
+            )
+        );
+
+        if (declarationNodeIndex !== -1) {
+          exportDefaultNode = node;
+          // remove the original declaration as it will become a default export
+          const declarationNode = programNode.body[declarationNodeIndex];
+          if (t.isVariableDeclaration(declarationNode)) {
+            const id = declarationNode.declarations[0].id;
+            const variableName = t.isIdentifier(id) && id.name;
+
+            if (variableName) {
+              programNode.body.splice(declarationNodeIndex, 1);
+            }
+          }
+        }
+      } else if (t.isExportDefaultDeclaration(node) && t.isObjectExpression(node.declaration)) {
+        // Detect Syntax 2: export default { ... }
+        exportDefaultNode = node;
+      }
+    });
+
+    if (exportDefaultNode !== null) {
+      exportDefaultNode.declaration = defineConfigCall;
+    }
   } else if (config._exportsObject) {
     /**
      * Scenario 2: Default exports

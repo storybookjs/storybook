@@ -9,7 +9,7 @@ export interface API_BaseEntry {
   name: string;
   tags: Tag[];
   refId?: string;
-  renderLabel?: (item: API_BaseEntry, api: any) => any;
+  renderLabel?: (item: API_HashEntry, api: any) => any;
 }
 
 export interface API_RootEntry extends API_BaseEntry {
@@ -28,6 +28,7 @@ export interface API_ComponentEntry extends API_BaseEntry {
   type: 'component';
   parent?: StoryId;
   children: StoryId[];
+  importPath?: Path;
 }
 
 export interface API_DocsEntry extends API_BaseEntry {
@@ -43,6 +44,7 @@ export interface API_DocsEntry extends API_BaseEntry {
 
 export interface API_StoryEntry extends API_BaseEntry {
   type: 'story';
+  subtype: 'story';
   parent: StoryId;
   title: ComponentTitle;
   importPath: Path;
@@ -54,15 +56,21 @@ export interface API_StoryEntry extends API_BaseEntry {
   args?: Args;
   argTypes?: ArgTypes;
   initialArgs?: Args;
+  children?: StoryId[];
 }
 
-export type API_LeafEntry = API_DocsEntry | API_StoryEntry;
+export interface API_TestEntry extends Omit<API_StoryEntry, 'subtype' | 'children'> {
+  subtype: 'test';
+}
+
+export type API_LeafEntry = API_DocsEntry | API_StoryEntry | API_TestEntry;
 export type API_HashEntry =
   | API_RootEntry
   | API_GroupEntry
   | API_ComponentEntry
   | API_DocsEntry
-  | API_StoryEntry;
+  | API_StoryEntry
+  | API_TestEntry;
 
 /**
  * The `IndexHash` is our manager-side representation of the `StoryIndex`. We create entries in the

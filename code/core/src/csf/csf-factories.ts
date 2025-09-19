@@ -1,4 +1,4 @@
-import type { AddonTypes, PlayFunction, StoryContext } from 'storybook/internal/csf';
+import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
 import { combineTags } from 'storybook/internal/csf';
 import type {
   Args,
@@ -8,6 +8,7 @@ import type {
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
+  TestFunction,
 } from 'storybook/internal/types';
 
 import {
@@ -17,6 +18,7 @@ import {
   normalizeArrays,
   normalizeProjectAnnotations,
 } from '../preview-api/index';
+import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
 import { getCoreAnnotations } from './core-annotations';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
@@ -108,9 +110,6 @@ function defineMeta<
     _tag: 'Meta',
     input,
     preview,
-    get composed(): never {
-      throw new Error('Not implemented');
-    },
     // @ts-expect-error hard
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
@@ -137,13 +136,21 @@ export interface Story<
     name: string;
   };
   meta: Meta<TRenderer>;
-  __compose: () => ComposedStoryFn<TRenderer>;
   play: TInput['play'];
-  run: (context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>) => Promise<void>;
+  run: (
+    context?: Partial<StoryContext<TRenderer, Partial<TRenderer['args']>>>,
+    testName?: string
+  ) => Promise<void>;
 
   extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(
     input: TInput
   ): Story<TRenderer, TInput>;
+  test(name: string, fn: TestFunction<TRenderer>): void;
+  test(
+    name: string,
+    annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
+    fn: TestFunction<TRenderer>
+  ): void;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -155,7 +162,6 @@ function defineStory<
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
 >(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
   let composed: ComposedStoryFn<TRenderer>;
-
   const compose = () => {
     if (!composed) {
       composed = composeStory(
@@ -167,11 +173,16 @@ function defineStory<
     }
     return composed;
   };
+
+  const __children: Story<TRenderer>[] = [];
+
   return {
     _tag: 'Story',
     input,
     meta,
+    // @ts-expect-error this is a private property used only once in renderers/react/src/preview
     __compose: compose,
+    __children,
     get composed() {
       const composed = compose();
       const { args, argTypes, parameters, id, tags, globals, storyName: name } = composed;
@@ -180,15 +191,44 @@ function defineStory<
     get play() {
       return input.play ?? meta.input?.play ?? (async () => {});
     },
-    get run() {
-      return compose().run ?? (async () => {});
+    async run(context) {
+      await compose().run(context);
+    },
+    test(
+      name: string,
+      overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
+      testFn?: TestFunction<TRenderer, TRenderer['args']>
+    ): void {
+      const annotations = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
+      const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
+
+      const play =
+        mountDestructured(this.play) || mountDestructured(testFunction)
+          ? async ({ context }: StoryContext<TRenderer>) => {
+              await this.play?.(context);
+              await testFunction(context);
+            }
+          : async (context: StoryContext<TRenderer>) => {
+              await this.play?.(context);
+              await testFunction(context);
+            };
+
+      const test = this.extend({
+        ...annotations,
+        name,
+        tags: ['test-fn', '!autodocs', ...(annotations.tags ?? [])],
+        play,
+      });
+      __children.push(test);
+
+      return test as unknown as void;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(
         {
           ...this.input,
           ...input,
-          args: { ...this.input.args, ...input.args },
+          args: { ...(this.input.args || {}), ...input.args },
           argTypes: combineParameters(this.input.argTypes, input.argTypes),
           afterEach: [
             ...normalizeArrays(this.input?.afterEach ?? []),
@@ -214,4 +254,13 @@ function defineStory<
       );
     },
   };
+}
+
+export function getStoryChildren<TRenderer extends Renderer>(
+  story: Story<TRenderer>
+): Story<TRenderer>[] {
+  if ('__children' in story) {
+    return story.__children as Story<TRenderer>[];
+  }
+  return [];
 }

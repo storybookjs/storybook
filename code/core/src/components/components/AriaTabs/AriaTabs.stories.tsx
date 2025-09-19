@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { EmptyTabContent, IconButton } from 'storybook/internal/components';
+import { Button, EmptyTabContent } from 'storybook/internal/components';
 import { fn } from 'storybook/internal/test';
 
 import { CrossIcon, ExpandIcon } from '@storybook/icons';
@@ -16,12 +16,12 @@ const DEFAULT_TABS = [
 
 const DEFAULT_TOOLS = (
   <div>
-    <IconButton aria-label="Go full screen">
+    <Button variant="ghost" padding="small" ariaLabel="Go full screen">
       <ExpandIcon />
-    </IconButton>
-    <IconButton aria-label="Close">
+    </Button>
+    <Button variant="ghost" padding="small" ariaLabel="Close">
       <CrossIcon />
-    </IconButton>
+    </Button>
   </div>
 );
 

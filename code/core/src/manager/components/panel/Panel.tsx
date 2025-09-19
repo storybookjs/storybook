@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import React, { Component, useMemo } from 'react';
 
-import { AriaTabs, Button, EmptyTabContent, Link, Tabs } from 'storybook/internal/components';
+import { AriaTabs, Button, EmptyTabContent, Link } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';

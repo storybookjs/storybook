@@ -5,14 +5,30 @@ import { AbstractAriaToolbar } from './AriaToolbar';
 
 const Children = () => (
   <>
-    <Button key="button1">Button 1</Button>
-    <Button key="button2">Button 2</Button>
-    <Button key="button3">Button 3</Button>
-    <Button key="button4">Button 4</Button>
-    <Button key="button5">Button 5</Button>
-    <Button key="button6">Button 6</Button>
-    <Button key="button7">Button 7</Button>
-    <Button key="button8">Button 8</Button>
+    <Button ariaLabel={false} key="button1">
+      Button 1
+    </Button>
+    <Button ariaLabel={false} key="button2">
+      Button 2
+    </Button>
+    <Button ariaLabel={false} key="button3">
+      Button 3
+    </Button>
+    <Button ariaLabel={false} key="button4">
+      Button 4
+    </Button>
+    <Button ariaLabel={false} key="button5">
+      Button 5
+    </Button>
+    <Button ariaLabel={false} key="button6">
+      Button 6
+    </Button>
+    <Button ariaLabel={false} key="button7">
+      Button 7
+    </Button>
+    <Button ariaLabel={false} key="button8">
+      Button 8
+    </Button>
   </>
 );
 

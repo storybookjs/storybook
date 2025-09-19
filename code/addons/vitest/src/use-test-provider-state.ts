@@ -73,10 +73,10 @@ export const useTestProvider = (
         setIsSettingsUpdated(true);
         if (settingsUpdatedTimeoutRef.current) {
           clearTimeout(settingsUpdatedTimeoutRef.current);
-          settingsUpdatedTimeoutRef.current = setTimeout(() => {
-            setIsSettingsUpdated(false);
-          }, 1000);
         }
+        settingsUpdatedTimeoutRef.current = setTimeout(() => {
+          setIsSettingsUpdated(false);
+        }, 1000);
       }
     });
     return () => {

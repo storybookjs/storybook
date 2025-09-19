@@ -5,7 +5,7 @@ import React from 'react';
 import { imported } from '../imported';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore (css import not supported in TS)
-import * as styles from '../imported.module.css';
+import styles from '../imported.module.css';
 
 const local = 'local-value';
 
@@ -37,6 +37,8 @@ export const PropsWriter: React.FC<PropsWriterProps> = (props: PropsWriterProps)
   <pre>{JSON.stringify(props)}</pre>
 );
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we can't expect error as it isn't an error in 18 (development) but it is in 19 (sandbox)
+// @ts-ignore not present on react 19
 PropsWriter.defaultProps = {
   numberOptional: 1,
   stringOptional: 'stringOptional',

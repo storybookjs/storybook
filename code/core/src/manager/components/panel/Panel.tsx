@@ -1,7 +1,15 @@
 import type { ReactNode } from 'react';
 import React, { Component, useMemo } from 'react';
 
-import { Button, EmptyTabContent, Link, TabsView } from 'storybook/internal/components';
+import {
+  Button,
+  EmptyTabContent,
+  Link,
+  StatelessTab,
+  StatelessTabList,
+  StatelessTabPanel,
+  StatelessTabsView,
+} from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybook/icons';
@@ -59,6 +67,15 @@ const Section = styled.section({
   flexDirection: 'column',
 });
 
+// Avoids crashes due to rules of hooks.
+const PreRenderAddons = ({ panels }: { panels: Record<string, Addon_BaseType> }) => {
+  return Object.entries(panels).map(([k, v]) => (
+    <StatelessTabPanel key={k} id={k} hasScrollbar={false}>
+      <TabErrorBoundary key={k}>{v.render({ active: true })}</TabErrorBoundary>
+    </StatelessTabPanel>
+  ));
+};
+
 export const AddonPanel = React.memo<{
   selectedPanel?: string;
   actions: { onSelect: (id: string) => void } & Record<string, any>;
@@ -68,22 +85,6 @@ export const AddonPanel = React.memo<{
   absolute?: boolean;
 }>(({ panels, shortcuts, actions, selectedPanel = null, panelPosition = 'right' }) => {
   const { isDesktop, setMobilePanelOpen } = useLayout();
-
-  const tabs = useMemo(
-    () =>
-      Object.entries(panels).map(([id, panel]) => ({
-        id,
-        title: typeof panel.title === 'function' ? <panel.title /> : panel.title,
-        children: () => (
-          <TabErrorBoundary key={id}>
-            {/* FIXME: the original code seemed to always render as active: true.
-            Changing this now breaks state management in addons like a11y. */}
-            {panel.render({ active: true })}
-          </TabErrorBoundary>
-        ),
-      })),
-    [panels]
-  );
 
   const emptyState = (
     <EmptyTabContent
@@ -99,47 +100,50 @@ export const AddonPanel = React.memo<{
     />
   );
 
-  const tools = (
-    <ActionsWrapper>
-      {isDesktop ? (
-        <>
+  const tools = useMemo(
+    () => (
+      <ActionsWrapper>
+        {isDesktop ? (
+          <>
+            <Button
+              key="position"
+              padding="small"
+              variant="ghost"
+              onClick={actions.togglePosition}
+              ariaLabel={
+                panelPosition === 'bottom'
+                  ? 'Move addon panel to right'
+                  : 'Move addon panel to bottom'
+              }
+              ariaDescription="Changes the location of the addon panel to the bottom or right of the screen, but does not have any effect on its content."
+              shortcut={shortcuts.panelPosition}
+            >
+              {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
+            </Button>
+            <Button
+              key="visibility"
+              padding="small"
+              variant="ghost"
+              onClick={actions.toggleVisibility}
+              ariaLabel="Hide addon panel"
+              shortcut={shortcuts.togglePanel}
+            >
+              <CloseIcon />
+            </Button>
+          </>
+        ) : (
           <Button
-            key="position"
             padding="small"
             variant="ghost"
-            onClick={actions.togglePosition}
-            ariaLabel={
-              panelPosition === 'bottom'
-                ? 'Move addon panel to right'
-                : 'Move addon panel to bottom'
-            }
-            ariaDescription="Changes the location of the addon panel to the bottom or right of the screen, but does not have any effect on its content."
-            shortcut={shortcuts.panelPosition}
-          >
-            {panelPosition === 'bottom' ? <SidebarAltIcon /> : <BottomBarIcon />}
-          </Button>
-          <Button
-            key="visibility"
-            padding="small"
-            variant="ghost"
-            onClick={actions.toggleVisibility}
-            ariaLabel="Hide addon panel"
-            shortcut={shortcuts.togglePanel}
+            onClick={() => setMobilePanelOpen(false)}
+            ariaLabel="Close addon panel"
           >
             <CloseIcon />
           </Button>
-        </>
-      ) : (
-        <Button
-          padding="small"
-          variant="ghost"
-          onClick={() => setMobilePanelOpen(false)}
-          ariaLabel="Close addon panel"
-        >
-          <CloseIcon />
-        </Button>
-      )}
-    </ActionsWrapper>
+        )}
+      </ActionsWrapper>
+    ),
+    [actions, isDesktop, panelPosition, setMobilePanelOpen, shortcuts]
   );
 
   return (
@@ -147,20 +151,23 @@ export const AddonPanel = React.memo<{
       <h2 id="storybook-panel-heading" className="sb-sr-only">
         Addon panel
       </h2>
-      <TabsView
+      <StatelessTabsView
         id="storybook-panel-root"
         showToolsWhenEmpty
-        panelProps={{
-          id: 'panel-tab-content',
-          hasScrollbar: false,
-          renderAllChildren: true,
-        }}
         emptyState={emptyState}
         selected={selectedPanel ?? undefined}
         onSelectionChange={(id) => actions.onSelect(id)}
-        tabs={tabs}
         tools={tools}
-      />
+      >
+        <StatelessTabList aria-label="Available addons">
+          {Object.entries(panels).map(([k, v]) => (
+            <StatelessTab key={k} id={k}>
+              {typeof v.title === 'function' ? <v.title /> : v.title}
+            </StatelessTab>
+          ))}
+        </StatelessTabList>
+        <PreRenderAddons panels={panels} />
+      </StatelessTabsView>
     </Section>
   );
 });

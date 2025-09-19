@@ -1,71 +1,19 @@
-import type { FC, HTMLAttributes } from 'react';
+import type { FC, ReactNode } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
-import { useTab, useTabList } from 'react-aria';
-import type { Node, TabListState } from 'react-stately';
+import type { AriaLabelingProps } from '@react-types/shared';
+import {
+  type StyleRenderProps,
+  type TabListRenderProps,
+  TabList as TabListUpstream,
+} from 'react-aria-components';
 import { styled } from 'storybook/theming';
 
-const StyledTabButton = styled.button<{
-  isDisabled: boolean;
-  isPressed: boolean;
-  isSelected: boolean;
-}>(
-  {
-    whiteSpace: 'normal',
-    display: 'inline-flex',
-    overflow: 'hidden',
-    verticalAlign: 'top',
-    justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
-    textDecoration: 'none',
-    scrollSnapAlign: 'start',
-
-    '&:empty': {
-      display: 'none',
-    },
-    '&[hidden]': {
-      display: 'none',
-    },
-  },
-  ({ theme }) => ({
-    padding: '0 15px',
-    transition: 'color 0.2s linear, border-bottom-color 0.2s linear',
-    height: 40,
-    lineHeight: '12px',
-    cursor: 'pointer',
-    background: 'transparent',
-    border: '0 solid transparent',
-    borderTop: '3px solid transparent',
-    borderBottom: '3px solid transparent',
-    fontWeight: 'bold',
-    fontSize: 13,
-
-    '&:focus-visible': {
-      outline: '0 none',
-      boxShadow: `inset 0 0 0 2px ${theme.barSelectedColor}`,
-    },
-  }),
-  ({ isSelected, theme }) =>
-    isSelected
-      ? {
-          color: theme.barSelectedColor,
-          borderBottomColor: theme.barSelectedColor,
-        }
-      : {
-          color: theme.barTextColor,
-          borderBottomColor: 'transparent',
-          '&:hover': {
-            color: theme.barHoverColor,
-          },
-        }
-);
-
-const TabListContainer = styled.div({
+const Root = styled.div({
   display: 'flex',
   alignItems: 'center',
   flexShrink: 0,
@@ -87,7 +35,7 @@ const ScrollContainer = styled.div({
   },
 });
 
-const StyledTabList = styled.div({
+const StyledTabList = styled(TabListUpstream)({
   display: 'flex',
   flexShrink: 0,
 });
@@ -116,39 +64,15 @@ const ScrollButton = styled(Button)({
   width: 16,
 });
 
-interface TabButtonProps {
-  item: Node<object>;
-  state: TabListState<object>;
+export interface StatelessTabListProps
+  extends StyleRenderProps<TabListRenderProps>,
+    AriaLabelingProps {
+  children?: ReactNode;
 }
 
-const TabButton: FC<TabButtonProps> = ({ item, state }) => {
-  const { key, rendered } = item;
-  const tabRef = React.useRef(null);
-  const { tabProps, isDisabled, isPressed, isSelected } = useTab({ key }, state, tabRef);
-
-  return (
-    <StyledTabButton
-      {...tabProps}
-      isDisabled={isDisabled}
-      isPressed={isPressed}
-      isSelected={isSelected}
-      className={`tabbutton ${isSelected ? 'tabbutton-active' : ''}`}
-      ref={tabRef}
-    >
-      {rendered}
-    </StyledTabButton>
-  );
-};
-
-export interface TabListProps extends HTMLAttributes<HTMLDivElement> {
-  state: TabListState<object>;
-}
-
-export const TabList: FC<TabListProps> = ({ state, ...rest }) => {
+export const StatelessTabList: FC<StatelessTabListProps> = ({ children, ...rest }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const tabListRef = useRef<HTMLDivElement>(null);
-  const { tabListProps } = useTabList({ orientation: 'horizontal' }, state, tabListRef);
 
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -233,7 +157,7 @@ export const TabList: FC<TabListProps> = ({ state, ...rest }) => {
   const scrollForward = useCallback(() => scroll('forward'), [scroll]);
 
   return (
-    <TabListContainer {...rest} ref={containerRef} data-show-scroll-buttons={showScrollButtons}>
+    <Root ref={containerRef} className={`tablist ${showScrollButtons ? 'tablist-has-scroll' : ''}`}>
       {showScrollButtons && (
         <ScrollButtonContainer $showEndBorder={canScrollLeft}>
           <ScrollButton
@@ -250,11 +174,7 @@ export const TabList: FC<TabListProps> = ({ state, ...rest }) => {
         </ScrollButtonContainer>
       )}
       <ScrollContainer ref={scrollContainerRef}>
-        <StyledTabList ref={tabListRef} {...tabListProps}>
-          {[...state.collection].map((item) => (
-            <TabButton key={item.key} item={item} state={state} />
-          ))}
-        </StyledTabList>
+        <StyledTabList {...rest}>{children}</StyledTabList>
       </ScrollContainer>
       {showScrollButtons && (
         <ScrollButtonContainer $showStartBorder={canScrollRight}>
@@ -271,6 +191,6 @@ export const TabList: FC<TabListProps> = ({ state, ...rest }) => {
           </ScrollButton>
         </ScrollButtonContainer>
       )}
-    </TabListContainer>
+    </Root>
   );
 };

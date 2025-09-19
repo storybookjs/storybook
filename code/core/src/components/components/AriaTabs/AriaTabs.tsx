@@ -51,6 +51,13 @@ export const FlexTabPanel = styled(AriaTabPanel)(() => ({
   flex: 1,
 }));
 
+const FlexAriaTabList = styled(AriaTabList)<{ $simulatedGap: string | number }>(
+  ({ $simulatedGap = 6 }) => ({
+    flex: '1 1 100%',
+    '&[data-show-scroll-buttons="true"]': { marginInlineEnd: $simulatedGap },
+  })
+);
+
 export interface AriaTabsProps extends HTMLAttributes<HTMLDivElement> {
   /** List of tabs and their associated panel. */
   tabs: TabProps[];
@@ -118,7 +125,7 @@ export const AriaTabs: FC<AriaTabsProps> = ({
     <Container {...props}>
       <Bar
         {...props}
-        scrollable={true}
+        scrollable={false}
         border
         backgroundColor={backgroundColor}
         innerStyle={{
@@ -133,10 +140,11 @@ export const AriaTabs: FC<AriaTabsProps> = ({
             order: 2,
           },
           ...barInnerStyle,
+          gap: 0,
         }}
       >
         {tools}
-        <AriaTabList state={state} />
+        <FlexAriaTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 0} />
       </Bar>
       <FlexTabPanel state={state} {...panelProps} />
     </Container>

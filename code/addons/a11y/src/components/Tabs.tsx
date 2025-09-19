@@ -21,21 +21,8 @@ const Container = styled.div({
 
 const ActionsWrapper = styled.div({
   display: 'flex',
-  flexBasis: '100%',
   justifyContent: 'flex-end',
-  containerType: 'inline-size',
-  // 96px is the total width of the buttons without labels
-  minWidth: 96,
   gap: 6,
-});
-
-const CollapsibleButton = styled(Button)({
-  // 193px is the total width of the action buttons when the label is visible
-  '@container (max-width: 193px)': {
-    span: {
-      display: 'none',
-    },
-  },
 });
 
 interface TabsProps {
@@ -76,26 +63,18 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
         onSelectionChange={(key) => setTab(key as RuleType)}
         tools={
           <ActionsWrapper>
-            {highlighted ? (
-              <CollapsibleButton
-                onClick={toggleHighlight}
-                ariaLabel="Hide accessibility test result highlights"
-                tooltip="Hide accessibility test result highlights"
-              >
-                <EyeCloseIcon />
-                <span>Hide highlights</span>
-              </CollapsibleButton>
-            ) : (
-              <CollapsibleButton
-                onClick={toggleHighlight}
-                variant="ghost"
-                ariaLabel="Highlight elements with accessibility test results"
-                tooltip="Highlight elements with accessibility test results"
-              >
-                <EyeIcon />
-                <span>Show highlights</span>
-              </CollapsibleButton>
-            )}
+            <Button
+              variant="ghost"
+              padding="small"
+              onClick={toggleHighlight}
+              ariaLabel={
+                highlighted
+                  ? 'Hide accessibility test result highlights'
+                  : 'Highlight elements with accessibility test results'
+              }
+            >
+              {highlighted ? <EyeCloseIcon /> : <EyeIcon />}
+            </Button>
             <Button
               variant="ghost"
               padding="small"

@@ -1,3 +1,5 @@
+import { Bar } from 'storybook/internal/components';
+
 import preview from '../../../../../.storybook/preview';
 import { AriaTabList } from './AriaTabList';
 import type { TabProps } from './AriaTabs';
@@ -7,6 +9,32 @@ const DEFAULT_TABS: TabProps[] = [
   { id: 'tab1', title: 'Tab 1', children: () => <div>Content for Tab 1</div> },
   { id: 'tab2', title: 'Tab 2', children: () => <div>Content for Tab 2</div> },
   { id: 'tab3', title: 'Tab 3', children: () => <div>Content for Tab 3</div> },
+];
+
+const MANY_TABS: TabProps[] = Array.from({ length: 20 }, (_, i) => ({
+  id: `tab${i + 1}`,
+  title: `Tab ${i + 1}`,
+  children: () => <div>Content for Tab {i + 1}</div>,
+}));
+
+const LONG_TITLE_TABS: TabProps[] = [
+  { id: 'tab1', title: 'Short', children: () => <div>Content for Tab 1</div> },
+  {
+    id: 'tab2',
+    title: 'A very long tab title that will take up space',
+    children: () => <div>Content for Tab 2</div>,
+  },
+  {
+    id: 'tab3',
+    title: 'Another extremely long tab title',
+    children: () => <div>Content for Tab 3</div>,
+  },
+  { id: 'tab4', title: 'Medium title', children: () => <div>Content for Tab 4</div> },
+  {
+    id: 'tab5',
+    title: 'Yet another very long tab title that extends',
+    children: () => <div>Content for Tab 5</div>,
+  },
 ];
 
 const meta = preview.meta({
@@ -56,4 +84,46 @@ export const WithDisabledTab = meta.story({
       ],
     },
   },
+});
+
+export const WithManyTabs = meta.story({
+  name: 'With Many Tabs (Scroll)',
+  parameters: {
+    data: {
+      tabs: MANY_TABS,
+    },
+  },
+});
+
+export const WithLongTitles = meta.story({
+  name: 'With Long Titles (Scroll)',
+  parameters: {
+    data: {
+      tabs: LONG_TITLE_TABS,
+    },
+  },
+});
+
+export const WithFixedWidth = meta.story({
+  name: 'Fixed Width Container (Scroll)',
+  parameters: {
+    data: {
+      tabs: MANY_TABS.slice(0, 10),
+    },
+  },
+  decorators: [
+    (Story, { args, parameters }) => {
+      const state = useAriaTabListState({ tabs: parameters.data.tabs });
+      return (
+        <Bar
+          border
+          scrollable={false}
+          innerStyle={{ width: 400, padding: 0 }}
+          backgroundColor={'rgba(0,0,0,.05)'}
+        >
+          <Story args={{ ...args, state }} />
+        </Bar>
+      );
+    },
+  ],
 });

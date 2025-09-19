@@ -4,7 +4,7 @@ import React, { useRef } from 'react';
 import { ScrollArea } from 'storybook/internal/components';
 
 import { useTabPanel } from 'react-aria';
-import type { Key, Node, TabListState } from 'react-stately';
+import type { Node, TabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
 export interface AriaTabPanelProps extends HTMLAttributes<HTMLDivElement> {
@@ -24,7 +24,7 @@ export interface AriaTabPanelProps extends HTMLAttributes<HTMLDivElement> {
   renderAllChildren?: boolean;
 
   /** Unique id of the tab. */
-  id: Key | undefined;
+  id: string | undefined;
 }
 
 const Panel = styled.div({

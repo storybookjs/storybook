@@ -44,6 +44,7 @@ export const openInEditorTool: Addon_BaseType = {
               })
             }
             ariaLabel="Open in editor"
+            variant="ghost"
           >
             <EditorIcon />
           </Button>

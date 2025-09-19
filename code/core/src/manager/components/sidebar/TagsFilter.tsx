@@ -5,6 +5,7 @@ import type { StoryIndex, Tag } from 'storybook/internal/types';
 
 import { FilterIcon } from '@storybook/icons';
 
+import { darken } from 'polished';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
@@ -40,8 +41,8 @@ const TagSelected = styled(Badge)(({ theme }) => ({
   lineHeight: 'px',
   boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
   fontSize: theme.typography.size.s1 - 1,
-  background: theme.color.secondary,
-  color: theme.color.lightest,
+  background: theme.barSelectedColor,
+  color: theme.textInverseColor,
 }));
 
 export interface TagsFilterProps {

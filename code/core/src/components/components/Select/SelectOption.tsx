@@ -45,6 +45,7 @@ const Item = styled('li')(({ theme }) => ({
   fontSize: 12,
   lineHeight: 1.5,
   background: 'transparent',
+  color: theme.textColor,
   cursor: 'pointer',
   borderRadius: 4,
   '&[aria-disabled="true"]': {

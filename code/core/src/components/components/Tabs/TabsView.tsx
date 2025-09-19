@@ -51,12 +51,10 @@ export const FlexTabPanel = styled(TabPanel)(() => ({
   flex: 1,
 }));
 
-const FlexTabList = styled(TabList)<{ $simulatedGap: string | number }>(
-  ({ $simulatedGap = 6 }) => ({
-    flex: '1 1 100%',
-    '&[data-show-scroll-buttons="true"]': { marginInlineEnd: $simulatedGap },
-  })
-);
+const FlexTabList = styled(TabList)<{ $simulatedGap: string | number }>(({ $simulatedGap }) => ({
+  flex: '1 1 100%',
+  '&[data-show-scroll-buttons="true"]': { marginInlineEnd: $simulatedGap },
+}));
 
 export interface TabsViewProps extends HTMLAttributes<HTMLDivElement> {
   /** List of tabs and their associated panel. */
@@ -148,7 +146,7 @@ export const TabsView: FC<TabsViewProps> = ({
         }}
       >
         {tools}
-        <FlexTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 0} />
+        <FlexTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 6} />
       </Bar>
       <FlexTabPanel
         state={state}

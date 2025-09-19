@@ -93,9 +93,20 @@ export { EmptyTabContent } from './components/Tabs/EmptyTabContent';
 export { AddonPanel } from './components/addon-panel/addon-panel';
 export { Toolbar, AbstractToolbar } from './components/Toolbar/Toolbar';
 export { TabList } from './components/Tabs/TabList';
+export type { TabListProps } from './components/Tabs/TabList';
 export { TabPanel } from './components/Tabs/TabPanel';
+export type { TabPanelProps } from './components/Tabs/TabPanel';
 export { TabsView, useTabsState } from './components/Tabs/TabsView';
-export type { TabProps } from './components/Tabs/TabsView';
+export type { TabProps, TabsViewProps } from './components/Tabs/TabsView';
+
+export { StatelessTabList } from './components/Tabs/StatelessTabList';
+export type { StatelessTabListProps } from './components/Tabs/StatelessTabList';
+export { StatelessTabPanel } from './components/Tabs/StatelessTabPanel';
+export type { StatelessTabPanelProps } from './components/Tabs/StatelessTabPanel';
+export { StatelessTabsView } from './components/Tabs/StatelessTabsView';
+export type { StatelessTabsViewProps } from './components/Tabs/StatelessTabsView';
+export { StatelessTab } from './components/Tabs/StatelessTab';
+export type { StatelessTabProps } from './components/Tabs/StatelessTab';
 
 // Graphics
 export { StorybookLogo } from './brand/StorybookLogo';

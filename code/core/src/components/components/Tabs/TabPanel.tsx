@@ -42,9 +42,9 @@ export const TabPanel: FC<TabPanelProps> = ({
   const ref = useRef(null);
   const { tabPanelProps } = useTabPanel({ id }, state, ref);
 
-  const childrenToRender = renderAllChildren
-    ? [...state.collection]
-    : [state.selectedItem].filter((item): item is Node<object> => !!item);
+  const childrenToRender = (
+    renderAllChildren ? [...state.collection] : [state.selectedItem]
+  ).filter((item): item is Node<object> => !!item);
 
   return childrenToRender.map((item) => {
     const isSelected = state.selectedKey === item.key;

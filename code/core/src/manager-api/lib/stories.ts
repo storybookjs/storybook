@@ -330,9 +330,12 @@ export const transformStoryIndexToStoriesHash = (
     }
 
     if (item.type === 'component') {
-      // attach importPath to the component node which should be the same for all children
-      // this way we can add "open in editor" to the component node
-      item.importPath = acc[item.children[0]].importPath;
+      const firstChild = acc[item.children[0]];
+      if (firstChild && 'importPath' in firstChild) {
+        // attach importPath to the component node which should be the same for all children
+        // this way we can add "open in editor" to the component node
+        item.importPath = firstChild.importPath;
+      }
     }
     return acc;
   }

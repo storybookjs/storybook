@@ -45,6 +45,9 @@ const config: BuildEntries = {
       },
     ],
   },
+  extraOutputs: {
+    './internal/MockProvider.svelte': './static/MockProvider.svelte',
+  },
 };
 
 export default config;

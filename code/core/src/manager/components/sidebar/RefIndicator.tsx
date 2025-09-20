@@ -170,7 +170,7 @@ export const RefIndicator = React.memo(
           <WithPopover
             placement={isMobile ? 'bottom' : 'bottom-start'}
             padding={0}
-            popover={({ onHide }) => (
+            popover={() => (
               <MessageWrapper isMobile={isMobile}>
                 <Spaced row={0}>
                   {state === 'loading' && <LoadingMessage url={ref.url} />}

@@ -12,6 +12,9 @@ export const globalsNameReferenceMap = {
   'storybook/internal/core-events': '__STORYBOOK_MODULE_CORE_EVENTS__',
   'storybook/internal/preview-errors': '__STORYBOOK_MODULE_CORE_EVENTS_PREVIEW_ERRORS__',
   'storybook/internal/types': '__STORYBOOK_MODULE_TYPES__',
+
+  // @deprecated TODO: Remove in 9.1 or some point in the future, I guess
+  'storybook/internal/preview-api': '__STORYBOOK_MODULE_PREVIEW_API__',
 } as const;
 
 export const globalPackages = Object.keys(globalsNameReferenceMap) as Array<

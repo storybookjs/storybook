@@ -91,6 +91,14 @@ function BaseModal({
     onOpenChange?.(isOpen);
   };
 
+  // Call onOpenChange ourselves when the modal is initially opened, as react-aria won't.
+  useEffect(() => {
+    if (open || defaultOpen) {
+      onOpenChange?.(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMounted]);
+
   if (!isMounted) {
     return null;
   }

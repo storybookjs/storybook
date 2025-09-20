@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { Button } from 'storybook/internal/components';
+
 import { BottomBarIcon, CloseIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -8,7 +10,6 @@ import { action } from 'storybook/actions';
 import { expect, spyOn } from 'storybook/test';
 import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 
-import { IconButton } from '../IconButton/IconButton';
 import { TabWrapper, Tabs, TabsState } from './tabs';
 import type { ChildrenList } from './tabs.helpers';
 
@@ -165,13 +166,13 @@ export const StatefulStaticWithSetBackgroundColor = {
         initial={args.initial || 'test2'}
         backgroundColor={args.backgroundColor ?? 'rgba(0,0,0,.05)'}
       >
-        <div id="test1" title="With a function" color="#e00000">
+        <div id="test1" title="With a function" color="#C23400">
           {
             (({ active, selected }: { active: boolean; selected: string }) =>
               active ? <div>{selected} is selected</div> : null) as any
           }
         </div>
-        <div id="test2" title="With markup" color="green">
+        <div id="test2" title="With markup" color="#427C27">
           <div>test2 is always active (but visually hidden)</div>
         </div>
       </TabsState>
@@ -290,12 +291,12 @@ const AddonTools = () => (
       gap: 6,
     }}
   >
-    <IconButton title="Tool 1">
+    <Button padding="small" variant="ghost" ariaLabel="Tool 1">
       <BottomBarIcon />
-    </IconButton>
-    <IconButton title="Tool 2">
+    </Button>
+    <Button padding="small" variant="ghost" ariaLabel="Tool 2">
       <CloseIcon />
-    </IconButton>
+    </Button>
   </div>
 );
 

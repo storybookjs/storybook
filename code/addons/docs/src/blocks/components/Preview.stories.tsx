@@ -29,70 +29,138 @@ export const Loading = () => <PreviewSkeleton />;
 
 export const CodeCollapsed = () => (
   <Preview inline isExpanded={false} withSource={sourceStories.JSX.args}>
-    <Button variant="outline">Button 1</Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
   </Preview>
 );
 
 export const CodeExpanded = () => (
   <Preview inline isExpanded withSource={sourceStories.JSX.args}>
-    <Button variant="outline">Button 1</Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
   </Preview>
 );
 
 export const CodeError = () => (
   <Preview inline isExpanded withSource={sourceStories.SourceUnavailable.args}>
-    <Button variant="outline">Button 1</Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
   </Preview>
 );
 
 export const Single = () => (
   <Preview inline>
-    <Button variant="outline">Button 1</Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
   </Preview>
 );
 
 export const Row = () => (
   <Preview inline>
-    <Button variant="outline">Button 1</Button>
-    <Button variant="outline">Button 2</Button>
-    <Button variant="outline">Button 3</Button>
-    <Button variant="outline">Button 4</Button>
-    <Button variant="outline">Button 5</Button>
-    <Button variant="outline">Button 6</Button>
-    <Button variant="outline">Button 7</Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 2
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 3
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 4
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 5
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 6
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 7
+    </Button>
   </Preview>
 );
 
 export const Column = () => (
   <Preview inline isColumn>
-    <Button variant="outline">Button 1</Button>
-    <Button variant="outline">Button 2</Button>
-    <Button variant="outline">Button 3</Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 2
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 3
+    </Button>
   </Preview>
 );
 
 export const GridWith3Columns = () => (
   <Preview inline columns={3}>
-    <Button variant="outline">Button 1</Button>
-    <Button variant="outline">Button 2</Button>
-    <Button variant="outline">Button 3</Button>
-    <Button variant="outline">Button 4</Button>
-    <Button variant="outline">Button 5</Button>
-    <Button variant="outline">Button 6</Button>
-    <Button variant="outline">Button 7 long long long long long </Button>
-    <Button variant="outline">Button 8</Button>
-    <Button variant="outline">Button 9</Button>
-    <Button variant="outline">Button 10</Button>
-    <Button variant="outline">Button 11</Button>
-    <Button variant="outline">Button 12</Button>
-    <Button variant="outline">Button 13</Button>
-    <Button variant="outline">Button 14</Button>
-    <Button variant="outline">Button 15</Button>
-    <Button variant="outline">Button 16</Button>
-    <Button variant="outline">Button 17</Button>
-    <Button variant="outline">Button 18</Button>
-    <Button variant="outline">Button 19</Button>
-    <Button variant="outline">Button 20</Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 2
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 3
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 4
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 5
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 6
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 7 long long long long long{' '}
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 8
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 9
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 10
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 11
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 12
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 13
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 14
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 15
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 16
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 17
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 18
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 19
+    </Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 20
+    </Button>
   </Preview>
 );
 
@@ -267,6 +335,8 @@ export const WithAdditionalActions = () => (
       },
     ]}
   >
-    <Button variant="outline">Button 1</Button>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
   </Preview>
 );

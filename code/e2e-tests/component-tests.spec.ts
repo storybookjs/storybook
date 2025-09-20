@@ -69,7 +69,7 @@ test.describe('interactions', () => {
     await expect(interactionsTab).toBeVisible();
 
     const panel = sbPage.panelContent();
-    const runStatusBadge = panel.locator('[aria-label="Status of the test run"]');
+    const runStatusBadge = panel.locator('[aria-label^="Test status:"]');
     await expect(runStatusBadge).toContainText(/Pass/);
     await expect(panel).toContainText(/"initial value"/);
     await expect(panel).toContainText(/clear/);
@@ -110,7 +110,7 @@ test.describe('interactions', () => {
     await expect(interactionsTab.getByText('3')).toBeVisible();
 
     // Test remount state (from toolbar) - Interactions have rerun, count is correct and values are as expected
-    const remountComponentButton = page.locator('[title="Remount component"]');
+    const remountComponentButton = page.locator('[aria-label="Reload story"]');
     await remountComponentButton.click();
 
     await interactionsRow.first().isVisible();

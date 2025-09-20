@@ -82,7 +82,7 @@ export const Expanded: Story = {
     await new Promise((res) => {
       setTimeout(res, 500);
     });
-    const menuButton = await canvas.findByRole('button');
+    const menuButton = await canvas.findByRole('switch');
     await userEvent.click(menuButton);
     const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
     await expect(aboutStorybookBtn).toBeInTheDocument();

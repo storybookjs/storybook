@@ -1,6 +1,6 @@
 import React, { Fragment, useId } from 'react';
 
-import { IconButton, Separator, TabBar, TabButton } from 'storybook/internal/components';
+import { Button, Separator, TabBar, TabButton } from 'storybook/internal/components';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
@@ -13,7 +13,6 @@ import {
   type State,
   addons,
   merge,
-  shortcutToHumanString,
   types,
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -28,7 +27,7 @@ const fullScreenMapper = ({ api, state }: Combo) => {
   return {
     toggle: api.toggleFullscreen,
     isFullscreen: api.getIsFullscreen(),
-    shortcut: shortcutToHumanString(api.getShortcutKeys().fullScreen),
+    shortcut: api.getShortcutKeys().fullScreen,
     hasPanel: Object.keys(api.getElements(Addon_TypesEnum.PANEL)).length > 0,
     singleStory: state.singleStory,
   };
@@ -51,14 +50,16 @@ export const fullScreenTool: Addon_BaseType = {
       <Consumer filter={fullScreenMapper}>
         {({ toggle, isFullscreen, shortcut, hasPanel, singleStory }) =>
           (!singleStory || (singleStory && hasPanel)) && (
-            <IconButton
+            <Button
               key="full"
-              onClick={toggle as any}
-              title={`${isFullscreen ? 'Exit full screen' : 'Go full screen'} [${shortcut}]`}
-              aria-label={isFullscreen ? 'Exit full screen' : 'Go full screen'}
+              padding="small"
+              variant="ghost"
+              onClick={() => toggle()}
+              ariaLabel={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+              shortcut={shortcut}
             >
               {isFullscreen ? <CloseIcon /> : <ExpandIcon />}
-            </IconButton>
+            </Button>
           )
         }
       </Consumer>

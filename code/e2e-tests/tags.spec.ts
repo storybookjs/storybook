@@ -50,7 +50,7 @@ test.describe('tags', () => {
   test.describe('Tag filters tooltip', () => {
     test('filters stories via Tag filters tooltip (desktop)', async ({ page }) => {
       // Open Tag filters tooltip
-      await page.locator('[title="Tag filters"]').click();
+      await page.locator('[aria-label="Tag filters"]').click();
       const tooltip = page.locator('[data-testid="tooltip"]');
       await expect(tooltip).toBeVisible();
 
@@ -83,7 +83,7 @@ test.describe('tags', () => {
         await expect(page.locator('#storybook-explorer-menu')).toBeVisible();
 
         // Open Tag filters tooltip
-        await page.locator('[title="Tag filters"]').click();
+        await page.locator('[aria-label="Tag filters"]').click();
         const tooltip = page.locator('[data-testid="tooltip"]');
         await expect(tooltip).toBeVisible();
 

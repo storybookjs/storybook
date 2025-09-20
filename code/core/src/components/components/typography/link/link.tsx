@@ -102,10 +102,10 @@ const A = styled.a<LinkStylesProps>(
   ({ theme, secondary, tertiary }) => {
     let colors;
     if (secondary) {
-      colors = [theme.textMutedColor, theme.color.dark, theme.color.darker];
+      colors = [theme.textMutedColor, theme.color.secondary, theme.color.secondary];
     }
     if (tertiary) {
-      colors = [theme.color.dark, theme.color.darkest, theme.textMutedColor];
+      colors = [theme.color.dark, theme.color.secondary, theme.color.secondary];
     }
 
     return colors

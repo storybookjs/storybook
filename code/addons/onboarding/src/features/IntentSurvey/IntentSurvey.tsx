@@ -229,7 +229,13 @@ export const IntentSurvey = ({
           })}
 
           <Actions>
-            <Button disabled={isSubmitting || !isValid} size="medium" type="submit" variant="solid">
+            <Button
+              ariaLabel={false}
+              disabled={isSubmitting || !isValid}
+              size="medium"
+              type="submit"
+              variant="solid"
+            >
               Submit
             </Button>
           </Actions>

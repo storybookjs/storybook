@@ -1,15 +1,7 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
 
-import {
-  Bar,
-  Button,
-  IconButton,
-  P,
-  Separator,
-  TooltipNote,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { Bar, Button, P, Separator } from 'storybook/internal/components';
 
 import {
   FastForwardIcon,
@@ -64,11 +56,7 @@ const StyledButton = styled(Button)(({ theme }) => ({
   },
 }));
 
-const Note = styled(TooltipNote)(({ theme }) => ({
-  fontFamily: theme.typography.fonts.base,
-}));
-
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
+const StyledIconButton = styled(Button)(({ theme }) => ({
   color: theme.textMutedColor,
   margin: '0 3px',
 }));
@@ -77,10 +65,24 @@ const StyledSeparator = styled(Separator)({
   marginTop: 0,
 });
 
-const StyledLocation = styled(P)<{ isText?: boolean }>(({ theme, isText }) => ({
-  color: isText ? theme.textMutedColor : theme.color.secondary,
-  cursor: isText ? 'default' : 'pointer',
-  fontWeight: isText ? theme.typography.weight.regular : theme.typography.weight.bold,
+const OpenInEditorButton = styled(Button)(({ theme }) => ({
+  color: theme.color.secondary,
+  fontWeight: theme.typography.weight.bold,
+  justifyContent: 'flex-end',
+  textAlign: 'right',
+  whiteSpace: 'nowrap',
+  marginTop: 'auto',
+  marginBottom: 1,
+  // 15 to align on screen edge - 7 from button padding
+  marginRight: 8,
+  fontSize: 13,
+  lineHeight: 24,
+}));
+
+const StyledLocation = styled(P)(({ theme }) => ({
+  color: theme.textMutedColor,
+  cursor: 'default',
+  fontWeight: theme.typography.weight.regular,
   justifyContent: 'flex-end',
   textAlign: 'right',
   whiteSpace: 'nowrap',
@@ -139,79 +141,74 @@ export const Subnav: React.FC<SubnavProps> = ({
           <Group>
             <StatusBadge status={status} />
 
-            <JumpToEndButton onClick={onScrollToEnd} disabled={!onScrollToEnd}>
+            <JumpToEndButton ariaLabel={false} onClick={onScrollToEnd} disabled={!onScrollToEnd}>
               {buttonText}
             </JumpToEndButton>
 
             <StyledSeparator />
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to start" />}>
-              <RewindButton
-                aria-label="Go to start"
-                onClick={controls.start}
-                disabled={!controlStates.start}
-              >
-                <RewindIcon />
-              </RewindButton>
-            </WithTooltip>
+            <RewindButton
+              padding="small"
+              variant="ghost"
+              ariaLabel="Go to start"
+              onClick={controls.start}
+              disabled={!controlStates.start}
+            >
+              <RewindIcon />
+            </RewindButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go back" />}>
-              <StyledIconButton
-                aria-label="Go back"
-                onClick={controls.back}
-                disabled={!controlStates.back}
-              >
-                <PlayBackIcon />
-              </StyledIconButton>
-            </WithTooltip>
+            <StyledIconButton
+              padding="small"
+              variant="ghost"
+              ariaLabel="Go back"
+              onClick={controls.back}
+              disabled={!controlStates.back}
+            >
+              <PlayBackIcon />
+            </StyledIconButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go forward" />}>
-              <StyledIconButton
-                aria-label="Go forward"
-                onClick={controls.next}
-                disabled={!controlStates.next}
-              >
-                <PlayNextIcon />
-              </StyledIconButton>
-            </WithTooltip>
+            <StyledIconButton
+              padding="small"
+              variant="ghost"
+              ariaLabel="Go forward"
+              onClick={controls.next}
+              disabled={!controlStates.next}
+            >
+              <PlayNextIcon />
+            </StyledIconButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Go to end" />}>
-              <StyledIconButton
-                aria-label="Go to end"
-                onClick={controls.end}
-                disabled={!controlStates.end}
-              >
-                <FastForwardIcon />
-              </StyledIconButton>
-            </WithTooltip>
+            <StyledIconButton
+              padding="small"
+              variant="ghost"
+              ariaLabel="Go to end"
+              onClick={controls.end}
+              disabled={!controlStates.end}
+            >
+              <FastForwardIcon />
+            </StyledIconButton>
 
-            <WithTooltip trigger="hover" hasChrome={false} tooltip={<Note note="Rerun" />}>
-              <RerunButton aria-label="Rerun" onClick={controls.rerun}>
-                <SyncIcon />
-              </RerunButton>
-            </WithTooltip>
+            <RerunButton padding="small" variant="ghost" ariaLabel="Rerun" onClick={controls.rerun}>
+              <SyncIcon />
+            </RerunButton>
           </Group>
           {(importPath || storyFileName) && (
             <Group>
               {canOpenInEditor ? (
-                <WithTooltip
-                  trigger="hover"
-                  hasChrome={false}
-                  tooltip={<Note note="Open in editor" />}
+                <OpenInEditorButton
+                  padding="small"
+                  size="small"
+                  variant="ghost"
+                  ariaLabel="Open in editor"
+                  onClick={() => {
+                    api.openInEditor({
+                      file: importPath as string,
+                    });
+                  }}
                 >
-                  <StyledLocation
-                    aria-label="Open in editor"
-                    onClick={() => {
-                      api.openInEditor({
-                        file: importPath as string,
-                      });
-                    }}
-                  >
-                    {storyFileName}
-                  </StyledLocation>
-                </WithTooltip>
+                  {storyFileName}
+                </OpenInEditorButton>
               ) : (
-                <StyledLocation isText={true}>{storyFileName}</StyledLocation>
+                <StyledLocation>{storyFileName}</StyledLocation>
               )}
             </Group>
           )}

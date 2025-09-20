@@ -126,7 +126,7 @@ const Nav = styled.nav(({ theme }) => ({
 const Heading = styled.p(({ theme }) => ({
   fontWeight: 600,
   fontSize: '0.875em',
-  color: theme.textColor,
+  color: theme.color.defaultText,
   textTransform: 'uppercase',
   marginBottom: 10,
 }));

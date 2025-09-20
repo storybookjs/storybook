@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Form, IconButton, TooltipLinkList } from 'storybook/internal/components';
+import { Button, Form, ToggleButton, TooltipLinkList } from 'storybook/internal/components';
 import type { Tag } from 'storybook/internal/types';
 
 import {
@@ -126,25 +126,39 @@ export const TagsFilterPanel = ({
       {allTags.size > 0 && (
         <Actions>
           {selectedTags.length ? (
-            <IconButton id="unselect-all" onClick={() => setAllTags(false)}>
+            <Button
+              ariaLabel={false}
+              variant="ghost"
+              padding="small"
+              id="unselect-all"
+              onClick={() => setAllTags(false)}
+            >
               <CloseIcon />
               Clear filters
-            </IconButton>
+            </Button>
           ) : (
-            <IconButton id="select-all" onClick={() => setAllTags(true)}>
+            <Button
+              ariaLabel={false}
+              variant="ghost"
+              padding="small"
+              id="select-all"
+              onClick={() => setAllTags(true)}
+            >
               <BatchAcceptIcon />
               Select all
-            </IconButton>
+            </Button>
           )}
-          <IconButton
+          <ToggleButton
+            ariaLabel={false}
             id="invert-selection"
+            variant="ghost"
             disabled={selectedTags.length === 0}
             onClick={() => setInverted(!inverted)}
-            active={inverted}
+            pressed={inverted}
           >
             {inverted ? <EyeCloseIcon /> : <EyeIcon />}
             Invert
-          </IconButton>
+          </ToggleButton>
         </Actions>
       )}
       <TooltipLinkList links={groups} />

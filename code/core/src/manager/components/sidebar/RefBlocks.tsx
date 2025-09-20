@@ -80,7 +80,7 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
               this Storybook.
             </Text>
             <div>
-              <Button size="small" variant="outline" onClick={refresh}>
+              <Button ariaLabel={false} size="small" variant="outline" onClick={refresh}>
                 <SyncIcon />
                 Refresh now
               </Button>

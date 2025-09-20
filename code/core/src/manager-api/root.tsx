@@ -66,6 +66,7 @@ import type { Options } from './store';
 import Store from './store';
 
 export * from './lib/request-response';
+export * from './lib/platform';
 export * from './lib/shortcut';
 
 const { ActiveTabs } = layout;

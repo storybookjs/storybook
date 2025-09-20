@@ -8,6 +8,13 @@
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
     - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
+  - [API and Component Changes](#api-and-component-changes)
+    - [Button Component API Changes](#button-component-api-changes)
+      - [Added: ariaLabel](#added-arialabel)
+      - [Added: shortcut](#added-shortcut)
+      - [Added: tooltip](#added-tooltip)
+      - [Removed: active](#removed-active)
+    - [IconButton is deprecated](#iconbutton-is-deprecated)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -26,8 +33,8 @@
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
     - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
-  - [API and Component Changes](#api-and-component-changes)
-    - [Button Component API Changes](#button-component-api-changes)
+  - [API and Component Changes](#api-and-component-changes-1)
+    - [Button Component API Changes](#button-component-api-changes-1)
     - [Icon System Updates](#icon-system-updates)
     - [Sidebar Component Changes](#sidebar-component-changes)
     - [Story Store API Changes](#story-store-api-changes)
@@ -584,6 +591,39 @@ export const core = {
 #### Removed x-only builtin tags
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+
+### API and Component Changes
+
+#### Button Component API Changes
+
+##### Added: ariaLabel
+The Button component now has a mandatory `ariaLabel` prop, to ensure that Storybook UI code is accessible to screenreader users.
+
+When buttons have text content as children, and when that text content does not rely on visual context to be understood, you may pass `false` to the `ariaLabel` prop to indicate that an ARIA label is not necessary.
+
+In every other case (your Button only contains an icon, has a responsive layout that can hide its text, or relies on visual context to make sense), you must pass a label to `ariaLabel`, which screenreaders will read. The label should be short and start with an action verb.
+
+##### Added: shortcut
+
+An optional `shortcut` prop was added for internal use. When `shortcut` is set, the Button will be appended with a human-readable string for the shortcut, and the `aria-keyshortcuts` prop will be set.
+
+##### Added: tooltip
+
+Button now displays a tooltip whenever `ariaLabel` or `shortcut` is set. The tooltip can be customised by passing a string to the optional `tooltip` prop.
+
+##### Removed: active
+
+The `active` prop was removed from Button.
+
+The Button component has historically been used to implement Toggle and Select interactions. When you need a Button to have an active state, use ToggleButton if the active state denotes that a state or feature is enabled after pressing the Button.
+
+Use Select if the active state denotes that the Button is open while a selection is being made, or that the Button currently has a selected value.
+
+#### IconButton is deprecated
+
+The IconButton component is deprecated, as it overlaps with Button. Instead, use Button with the `'ghost'` variant and `'small'` padding, and add an `ariaLabel` prop for screenreaders to announce.
+
+IconButton will be removed in future versions.
 
 ## From version 8.x to 9.0.0
 

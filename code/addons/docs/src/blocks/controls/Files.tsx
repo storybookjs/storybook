@@ -63,17 +63,24 @@ export const FilesControl: FC<FilesControlProps> = ({
     }
   }, [value, name]);
 
+  const controlId = getControlId(name);
+
   return (
-    <FileInput
-      ref={inputElement}
-      id={getControlId(name)}
-      type="file"
-      name={name}
-      multiple
-      disabled={readonly}
-      onChange={handleFileChange}
-      accept={accept}
-      size="flex"
-    />
+    <>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
+      <FileInput
+        ref={inputElement}
+        id={controlId}
+        type="file"
+        name={name}
+        multiple
+        disabled={readonly}
+        onChange={handleFileChange}
+        accept={accept}
+        size="flex"
+      />
+    </>
   );
 };

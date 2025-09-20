@@ -16,11 +16,10 @@ const { window: globalWindow } = globalThis;
 
 type JsonTreeProps = ComponentProps<typeof JsonTree>;
 
-const Wrapper = styled.div<{ readOnly: boolean }>(({ theme, readOnly }) => ({
+const Wrapper = styled.div(({ theme }) => ({
   position: 'relative',
   display: 'flex',
   isolation: 'isolate',
-  opacity: readOnly ? 0.5 : 1,
 
   '.rejt-tree': {
     marginLeft: '1rem',
@@ -55,7 +54,7 @@ const Wrapper = styled.div<{ readOnly: boolean }>(({ theme, readOnly }) => ({
     color: theme.color.defaultText,
   },
   '.rejt-value-node:hover > .rejt-value': {
-    background: theme.color.lighter,
+    background: theme.base === 'light' ? theme.color.lighter : 'hsl(0 0 100 / 0.02)',
     borderColor: theme.appBorderColor,
   },
 }));
@@ -225,6 +224,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     <RawInput
       ref={htmlElRef}
       id={getControlId(name)}
+      minRows={3}
       name={name}
       defaultValue={value === null ? '' : JSON.stringify(value, null, 2)}
       onBlur={(event: FocusEvent<HTMLTextAreaElement>) => updateRaw(event.target.value)}
@@ -239,7 +239,7 @@ export const ObjectControl: FC<ObjectProps> = ({ name, value, onChange, argType 
     Array.isArray(value) || (typeof value === 'object' && value?.constructor === Object);
 
   return (
-    <Wrapper readOnly={readonly}>
+    <Wrapper>
       {isObjectOrArray && (
         <RawButton
           disabled={readonly}

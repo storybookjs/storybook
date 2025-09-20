@@ -60,11 +60,13 @@ const StyledButton = styled(Button)<{
     },
 
     '[data-selected="true"] &': {
-      background: theme.color.secondary,
-      boxShadow: `0 0 5px 5px ${theme.color.secondary}`,
+      background:
+        theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
+      boxShadow: `0 0 5px 5px ${theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary}`,
 
       '&:hover': {
-        background: lighten(0.1, theme.color.secondary),
+        background:
+          theme.base === 'dark' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
       },
     },
 

@@ -16,7 +16,7 @@ const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) =>
   width: 0,
   height: 0,
   marginLeft: 8,
-  color: isActive ? theme.color.secondary : theme.color.mediumdark,
+  color: isActive ? theme.color.secondary : theme.textMutedColor,
   borderRight: '3px solid transparent',
   borderLeft: `3px solid transparent`,
   borderTop: '3px solid',

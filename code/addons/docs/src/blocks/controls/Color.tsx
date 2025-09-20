@@ -13,11 +13,10 @@ import { styled } from 'storybook/theming';
 import { getControlId } from './helpers';
 import type { ColorConfig, ColorValue, ControlProps, PresetColor } from './types';
 
-const Wrapper = styled.div<{ readOnly: boolean }>(({ readOnly }) => ({
+const Wrapper = styled.div({
   position: 'relative',
   maxWidth: 250,
-  opacity: readOnly ? 0.5 : 1,
-}));
+});
 
 const PickerTooltip = styled(WithTooltip)({
   position: 'absolute',
@@ -67,17 +66,20 @@ const swatchBackground = `url('data:image/svg+xml;charset=utf-8,<svg xmlns="http
 
 type SwatchProps = { value: string } & React.ComponentProps<typeof SwatchColor>;
 const Swatch = ({ value, style, ...props }: SwatchProps) => {
-  const backgroundImage = `linear-gradient(${value}, ${value}), ${swatchBackground}, linear-gradient(#fff, #fff)`;
+  const backgroundImage = `linear-gradient(${value}, ${value}), ${swatchBackground}, linear-gradient(hsl(0 0 100 / .4), hsl(0 0 100 / .4))`;
   return <SwatchColor {...props} style={{ ...style, backgroundImage }} />;
 };
 
-const Input = styled(Form.Input)(({ theme, readOnly }) => ({
+const Input = styled(Form.Input)(({ theme }) => ({
   width: '100%',
   paddingLeft: 30,
   paddingRight: 30,
   boxSizing: 'border-box',
   fontFamily: theme.typography.fonts.base,
-  cursor: readOnly ? 'not-allowed' : 'text',
+
+  '[aria-readonly="true"] > &': {
+    background: theme.base === 'light' ? theme.color.lighter : 'transparent',
+  },
 }));
 
 const ToggleIcon = styled(MarkupIcon)(({ theme }) => ({
@@ -378,7 +380,7 @@ export const ColorControl: FC<ColorControlProps> = ({
   const controlId = getControlId(name);
 
   return (
-    <Wrapper readOnly={readOnly}>
+    <Wrapper>
       <label htmlFor={controlId} className="sb-sr-only">
         {name}
       </label>

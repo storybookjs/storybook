@@ -42,12 +42,13 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
       width: 16,
       height: 16,
 
-      border: `1px solid ${rgba(theme.appBorderColor, 0.2)}`,
+      border: `1px solid ${theme.appBorderColor}`,
       borderRadius: '50px',
-      boxShadow: `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}`,
+      boxShadow:
+        theme.base === 'light' ? `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}` : 'unset',
       cursor: disabled ? 'not-allowed' : 'grab',
       appearance: 'none',
-      background: `${theme.input.background}`,
+      background: theme.input.background,
       transition: 'all 150ms ease-out',
 
       '&:hover': {
@@ -72,7 +73,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
 
       '&::-webkit-slider-thumb': {
         borderColor: theme.color.secondary,
-        boxShadow: `0 0px 5px 0px ${theme.color.secondary}`,
+        boxShadow: theme.base === 'light' ? `0 0px 5px 0px ${theme.color.secondary}` : 'unset',
       },
     },
 
@@ -98,11 +99,12 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
     '&::-moz-range-thumb': {
       width: 16,
       height: 16,
-      border: `1px solid ${rgba(theme.appBorderColor, 0.2)}`,
+      border: `1px solid ${theme.appBorderColor}`,
       borderRadius: '50px',
-      boxShadow: `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}`,
-      cursor: disabled ? 'not-allowed' : 'grap',
-      background: `${theme.input.background}`,
+      boxShadow:
+        theme.base === 'light' ? `0 1px 3px 0px ${rgba(theme.appBorderColor, 0.2)}` : 'unset',
+      cursor: disabled ? 'not-allowed' : 'grab',
+      background: theme.input.background,
       transition: 'all 150ms ease-out',
 
       '&:hover': {
@@ -128,7 +130,7 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
             ${theme.color.green} 0%, ${theme.color.green} ${((value - min) / (max - min)) * 100}%, 
             ${lighten(0.02, theme.input.background)} ${((value - min) / (max - min)) * 100}%, 
             ${lighten(0.02, theme.input.background)} 100%)`,
-      boxShadow: `${theme.appBorderColor} 0 0 0 1px inset`,
+      boxShadow: theme.base === 'light' ? `${theme.appBorderColor} 0 0 0 1px inset` : 'unset',
       color: 'transparent',
       width: '100%',
       height: '6px',
@@ -143,10 +145,10 @@ const RangeInput = styled.input<{ min: number; max: number; value: number }>(
     '&::-ms-thumb': {
       width: 16,
       height: 16,
-      background: `${theme.input.background}`,
+      background: theme.input.background,
       border: `1px solid ${rgba(theme.appBorderColor, 0.2)}`,
       borderRadius: 50,
-      cursor: 'grab',
+      cursor: disabled ? 'not-allowed' : 'grab',
       marginTop: 0,
     },
     '@supports (-ms-ime-align:auto)': { 'input[type=range]': { margin: '0' } },

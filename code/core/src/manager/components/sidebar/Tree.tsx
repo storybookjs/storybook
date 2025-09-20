@@ -21,7 +21,7 @@ import {
 } from '@storybook/icons';
 
 import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
-import { darken, lighten } from 'polished';
+import { darken } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
 import type {
   API,
@@ -94,10 +94,7 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   },
 
   '&:hover, &:focus': {
-    '--tree-node-background-hover':
-      theme.base === 'dark'
-        ? darken(0.35, theme.color.secondary)
-        : lighten(0.45, theme.color.secondary),
+    '--tree-node-background-hover': theme.background.hoverable,
     background: 'var(--tree-node-background-hover)',
     outline: 'none',
   },
@@ -120,12 +117,12 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
 
   '&[data-selected="true"]': {
     color: theme.color.lightest,
-    background: theme.color.secondary,
+    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
     fontWeight: theme.typography.weight.bold,
 
     '&&:hover, &&:focus': {
-      '--tree-node-background-hover': theme.color.secondary,
-      background: 'var(--tree-node-background-hover)',
+      background:
+        theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
     },
     svg: { color: theme.color.lightest },
   },

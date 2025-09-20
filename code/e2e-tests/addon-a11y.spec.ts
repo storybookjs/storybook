@@ -68,7 +68,10 @@ test.describe('addon-a11y', () => {
     // navigate to that url
     await page.goto(clipboard);
     await new SbPage(page, expect).waitUntilLoaded();
-    await expect(page.getByRole('tab', { name: 'Passes' })).toHaveAttribute('data-active', 'true');
+    await expect(page.getByRole('tab', { name: 'Passes' })).toHaveAttribute(
+      'aria-selected',
+      'true'
+    );
     await expect(page.getByRole('button', { name: 'Hidden body' })).toHaveAttribute(
       'aria-expanded',
       'true'

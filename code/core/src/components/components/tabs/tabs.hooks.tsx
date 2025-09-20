@@ -1,14 +1,15 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
 
 import { styled } from 'storybook/theming';
 import useResizeObserver from 'use-resize-observer';
 
-import { TabButton } from '../bar/button';
 import { TooltipLinkList } from '../tooltip/TooltipLinkList';
 import type { Link } from '../tooltip/TooltipLinkList';
 import { WithTooltip } from '../tooltip/WithTooltip';
+import { TabButton } from './button';
 import type { ChildrenListComplete } from './tabs.helpers';
 
 const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
@@ -39,6 +40,8 @@ const AddonButton = styled(TabButton)<{ preActive: boolean }>(({ active, theme, 
 });
 
 export function useList(list: ChildrenListComplete) {
+  deprecate('The `useList` tabs hook is deprecated. Use `TabsView` instead.');
+
   const tabBarRef = useRef<HTMLDivElement>();
   const addonsRef = useRef<HTMLButtonElement>();
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());

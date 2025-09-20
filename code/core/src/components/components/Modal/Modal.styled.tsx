@@ -1,16 +1,25 @@
 import type { ComponentProps } from 'react';
-import React from 'react';
+import React, { useContext } from 'react';
 
 import { Button } from 'storybook/internal/components';
 
 import { CrossIcon } from '@storybook/icons';
 
-import * as Dialog from '@radix-ui/react-dialog';
+import { Heading, Text } from 'react-aria-components';
+import type { TransitionStatus } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
+
+// Import the ModalContext from the main Modal component
+import { ModalContext } from './Modal';
 
 const fadeIn = keyframes({
   from: { opacity: 0 },
   to: { opacity: 1 },
+});
+
+const fadeOut = keyframes({
+  from: { opacity: 1 },
+  to: { opacity: 0 },
 });
 
 const expand = keyframes({
@@ -29,46 +38,146 @@ const zoomIn = keyframes({
   },
 });
 
-export const Overlay = styled.div({
+const zoomOut = keyframes({
+  from: {
+    opacity: 1,
+    transform: 'translate(-50%, -50%) scale(1)',
+  },
+  to: {
+    opacity: 0,
+    transform: 'translate(-50%, -50%) scale(0.9)',
+  },
+});
+
+const slideFromBottom = keyframes({
+  from: {
+    opacity: 0,
+    transform: 'translate(0, 100%)',
+  },
+  to: {
+    opacity: 1,
+    transform: 'translate(0, 0)',
+  },
+});
+
+const slideToBottom = keyframes({
+  from: {
+    opacity: 1,
+    transform: 'translate(0, 0)',
+  },
+  to: {
+    opacity: 0,
+    transform: 'translate(0, 100%)',
+  },
+});
+
+export const Overlay = styled.div<{
+  $status?: TransitionStatus;
+  $transitionDuration?: number;
+}>(({ $status, $transitionDuration }) => ({
   backdropFilter: 'blur(24px)',
   position: 'fixed',
   inset: 0,
   width: '100%',
   height: '100%',
-  zIndex: 10,
-  animation: `${fadeIn} 200ms`,
-});
+  zIndex: 90,
+  animation:
+    $status === 'exiting'
+      ? `${fadeOut} ${$transitionDuration}ms`
+      : `${fadeIn} ${$transitionDuration}ms`,
+}));
 
-export const Container = styled.div<{ width?: number; height?: number }>(
-  ({ theme, width, height }) => ({
+export const Container = styled.div<{
+  $variant: 'dialog' | 'bottom-drawer';
+  $status?: TransitionStatus;
+  $transitionDuration?: number;
+  width?: number | string;
+  height?: number | string;
+}>(
+  ({ theme }) => ({
     backgroundColor: theme.background.bar,
     borderRadius: 6,
     boxShadow: '0px 4px 67px 0px #00000040',
     position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: width ?? 740,
-    height: height ?? 'auto',
-    maxWidth: 'calc(100% - 40px)',
-    maxHeight: '85vh',
     overflow: 'auto',
-    zIndex: 11,
-    animation: `${zoomIn} 200ms`,
+    zIndex: 100,
 
     '&:focus-visible': {
       outline: 'none',
     },
-  })
+  }),
+  ({ width, height, $variant, $status, $transitionDuration }) =>
+    $variant === 'dialog'
+      ? {
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          width: width ?? 740,
+          height: height ?? 'auto',
+          maxWidth: 'calc(100% - 40px)',
+          maxHeight: '85vh',
+          animation:
+            $status === 'exiting'
+              ? `${zoomOut} ${$transitionDuration}ms`
+              : `${zoomIn} ${$transitionDuration}ms`,
+        }
+      : {
+          bottom: '0',
+          left: '0',
+          right: '0',
+          width: width ?? '100%',
+          height: height ?? '80%',
+          maxWidth: '100%',
+          maxHeight: '85vh',
+          animation:
+            $status === 'exiting'
+              ? `${slideToBottom} ${$transitionDuration}ms`
+              : `${slideFromBottom} ${$transitionDuration}ms`,
+        }
 );
 
-export const CloseButton = () => (
-  <Dialog.Close asChild>
-    <Button padding="small" ariaLabel="Close modal" variant="ghost" shortcut={['Escape']}>
+interface CloseProps {
+  asChild?: boolean;
+  children?: React.ReactElement<
+    {
+      onClick?: (event: React.MouseEvent) => void;
+    },
+    | string
+    | React.JSXElementConstructor<{
+        onClick?: (event: React.MouseEvent) => void;
+      }>
+  >;
+  onClick?: (event: React.MouseEvent) => void;
+}
+
+export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
+  const { close } = useContext(ModalContext);
+
+  if (asChild && React.isValidElement(children)) {
+    const handleClick = (event: React.MouseEvent) => {
+      onClick?.(event);
+      children.props.onClick?.(event);
+      close?.();
+    };
+
+    return React.cloneElement(children, {
+      ...props,
+      onClick: handleClick,
+    });
+  }
+
+  return (
+    <Button
+      padding="small"
+      ariaLabel="Close modal"
+      variant="ghost"
+      shortcut={['Escape']}
+      onClick={close}
+    >
       <CrossIcon />
     </Button>
-  </Dialog.Close>
-);
+  );
+};
 
 export const Content = styled.div({
   display: 'flex',
@@ -92,17 +201,17 @@ export const Col = styled.div({
 export const Header = (props: React.ComponentProps<typeof Col>) => (
   <Row>
     <Col {...props} />
-    <CloseButton />
+    <Close />
   </Row>
 );
 
-export const Title = styled(Dialog.Title)(({ theme }) => ({
+export const Title = styled(Heading)(({ theme }) => ({
   margin: 0,
   fontSize: theme.typography.size.s3,
   fontWeight: theme.typography.weight.bold,
 }));
 
-export const Description = styled(Dialog.Description)(({ theme }) => ({
+export const Description = styled(Text)(({ theme }) => ({
   position: 'relative',
   zIndex: 1,
   margin: 0,

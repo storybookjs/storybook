@@ -89,15 +89,9 @@ type SaveStoryProps = {
   saveStory: () => Promise<unknown>;
   createStory: (storyName: string) => Promise<unknown>;
   resetArgs: () => void;
-  portalSelector?: string;
 };
 
-export const SaveStory = ({
-  saveStory,
-  createStory,
-  resetArgs,
-  portalSelector,
-}: SaveStoryProps) => {
+export const SaveStory = ({ saveStory, createStory, resetArgs }: SaveStoryProps) => {
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [saving, setSaving] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
@@ -172,12 +166,7 @@ export const SaveStory = ({
           </Button>
         </Actions>
 
-        <Modal
-          width={350}
-          open={creating}
-          onOpenChange={setCreating}
-          portalSelector={portalSelector}
-        >
+        <Modal ariaLabel="Create new story" width={350} open={creating} onOpenChange={setCreating}>
           <Form onSubmit={onSubmitForm} id="create-new-story-form">
             <Modal.Content>
               <Modal.Header>
@@ -203,11 +192,11 @@ export const SaveStory = ({
                 >
                   Create
                 </Button>
-                <Modal.Dialog.Close asChild>
+                <Modal.Close asChild>
                   <Button ariaLabel={false} disabled={saving} size="medium" type="reset">
                     Cancel
                   </Button>
-                </Modal.Dialog.Close>
+                </Modal.Close>
               </Modal.Actions>
             </Modal.Content>
           </Form>

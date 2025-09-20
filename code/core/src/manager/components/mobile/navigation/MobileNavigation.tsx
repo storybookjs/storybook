@@ -75,18 +75,20 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
     useLayout();
   const fullStoryName = useFullStoryName();
 
-  const handleAddonPanelClose = () => {
-    setMobilePanelOpen(false);
-  };
-
   return (
     <Container {...props}>
-      <MobileMenuDrawer id="storybook-mobile-menu">{menu}</MobileMenuDrawer>
+      <MobileMenuDrawer
+        id="storybook-mobile-menu"
+        isOpen={isMobileMenuOpen}
+        onOpenChange={setMobileMenuOpen}
+      >
+        {menu}
+      </MobileMenuDrawer>
 
       <MobileAddonsDrawer
         id="storybook-mobile-addon-panel"
         isOpen={isMobilePanelOpen}
-        onClose={handleAddonPanelClose}
+        onOpenChange={setMobilePanelOpen}
       >
         {panel}
       </MobileAddonsDrawer>

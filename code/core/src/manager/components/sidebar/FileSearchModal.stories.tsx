@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
+
+import { ModalDecorator } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -20,26 +22,7 @@ const meta = {
   parameters: {
     layout: 'fullscreen',
   },
-  // This decorator is used to show the modal in the side by side view
-  decorators: [
-    (Story, context) => {
-      const [container, setContainer] = useState<HTMLElement | undefined>(undefined);
-
-      return (
-        <div
-          ref={(element) => setContainer(element ?? undefined)}
-          style={{
-            width: '100%',
-            height: '100%',
-            minHeight: '600px',
-            transform: 'translateZ(0)',
-          }}
-        >
-          <Story args={{ ...context.args, container }} />
-        </div>
-      );
-    },
-  ],
+  decorators: [ModalDecorator],
 } satisfies Meta<typeof FileSearchModal>;
 
 export default meta;

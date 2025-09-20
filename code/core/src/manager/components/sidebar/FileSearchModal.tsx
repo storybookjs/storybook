@@ -126,7 +126,6 @@ interface FileSearchModalProps {
   searchResults: SearchResult[] | null;
   onCreateNewStory: (payload: NewStoryPayload) => void;
   setError: (error: Error) => void;
-  container?: HTMLElement;
 }
 
 export const FileSearchModal = ({
@@ -139,7 +138,6 @@ export const FileSearchModal = ({
   searchResults,
   onCreateNewStory,
   setError,
-  container,
 }: FileSearchModalProps) => {
   const [modalContentRef, modalContentDimensions] = useMeasure<HTMLDivElement>();
   // @ts-expect-error (non strict)
@@ -159,17 +157,11 @@ export const FileSearchModal = ({
 
   return (
     <ModalStyled
+      ariaLabel="Add a new story"
       height={MODAL_HEIGHT}
       width={440}
       open={open}
       onOpenChange={onOpenChange}
-      onEscapeKeyDown={() => {
-        onOpenChange(false);
-      }}
-      onInteractOutside={() => {
-        onOpenChange(false);
-      }}
-      container={container}
     >
       {/* @ts-expect-error (non strict) */}
       <ModalChild height={fileSearchQuery === '' ? modalContentDimensions.height : modalMaxHeight}>

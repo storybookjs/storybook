@@ -1,58 +1,153 @@
-import React from 'react';
+import React, { type HTMLAttributes, createContext, useEffect, useState } from 'react';
 
-import * as Dialog from '@radix-ui/react-dialog';
+import type { DecoratorFunction } from 'storybook/internal/csf';
+
+import { UNSAFE_PortalProvider } from 'react-aria';
+import { Dialog, ModalOverlay, Modal as ModalUpstream } from 'react-aria-components';
+import { useTransitionState } from 'react-transition-state';
 
 import * as Components from './Modal.styled';
 
-type ContentProps = React.ComponentProps<typeof Dialog.Content>;
+interface ModalProps extends HTMLAttributes<HTMLDivElement> {
+  /** Width of the Modal. Defaults to `740`. */
+  width?: number | string;
 
-interface ModalProps extends Omit<React.ComponentProps<typeof Dialog.Root>, 'children'> {
-  width?: number;
-  height?: number;
+  /** Height of the Modal. Defaults to `auto`. */
+  height?: number | string;
+
+  /** Modal content. */
   children: React.ReactNode;
-  onEscapeKeyDown?: ContentProps['onEscapeKeyDown'];
-  onInteractOutside?: ContentProps['onInteractOutside'];
+
+  /** Additional class names for the Modal. */
   className?: string;
-  container?: HTMLElement;
-  portalSelector?: string;
+
+  /** Controlled state: whether the Modal is currently open. */
+  open?: boolean;
+
+  /** Uncontrolled state: whether the Modal is initially open on the first. */
+  defaultOpen?: boolean;
+
+  /** Handler called when visibility of the Modal changes. */
+  onOpenChange?: (isOpen: boolean) => void;
+
+  /** The accessible name for the modal. */
+  ariaLabel: string;
+
+  /** Whether the modal can be dismissed by clicking outside. Defaults to `true`. */
+  dismissOnClickOutside?: boolean;
+
+  /** Whether the modal can be dismissed by pressing Escape. Defaults to `true`. */
+  dismissOnEscape?: boolean;
+
+  /** Transition duration, so we can slow down transitions on mobile. */
+  transitionDuration?: number;
+
+  /** The max dimensions, initial position and animations of the Modal. Defaults to 'dialog'. */
+  variant?: 'dialog' | 'bottom-drawer';
 }
 
-export const initial = { opacity: 0 };
-export const animate = { opacity: 1, transition: { duration: 0.3 } };
-export const exit = { opacity: 0, transition: { duration: 0.3 } };
+// Create a context to provide the close function like Radix Dialog
+export const ModalContext = createContext<{ close?: () => void }>({});
 
 function BaseModal({
   children,
   width,
   height,
-  onEscapeKeyDown,
-  onInteractOutside = (ev) => ev.preventDefault(),
+  ariaLabel,
+  dismissOnClickOutside = true,
+  dismissOnEscape = true,
   className,
-  container,
-  portalSelector,
-  ...rootProps
+  open,
+  onOpenChange,
+  defaultOpen,
+  transitionDuration = 200,
+  variant = 'dialog',
+  ...props
 }: ModalProps) {
-  const containerElement =
-    container ?? (portalSelector ? document.querySelector(portalSelector) : null) ?? document.body;
+  const [{ status, isMounted }, toggle] = useTransitionState({
+    timeout: 200,
+    mountOnEnter: true,
+    unmountOnExit: true,
+    enter: true,
+    exit: true,
+  });
+
+  // Sync external open state with transition state
+  useEffect(() => {
+    const shouldBeOpen = open ?? defaultOpen ?? false;
+    if (shouldBeOpen && !isMounted) {
+      toggle(true);
+    } else if (!shouldBeOpen && isMounted) {
+      toggle(false);
+    }
+  }, [open, defaultOpen, isMounted, toggle]);
+
+  const close = () => {
+    handleOpenChange(false);
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    toggle(isOpen);
+    onOpenChange?.(isOpen);
+  };
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
-    <Dialog.Root {...rootProps}>
-      <Dialog.Portal container={containerElement}>
-        <Dialog.Overlay asChild>
-          <Components.Overlay />
-        </Dialog.Overlay>
-        <Dialog.Content
-          asChild
-          onInteractOutside={onInteractOutside}
-          onEscapeKeyDown={onEscapeKeyDown}
-        >
-          <Components.Container className={className} width={width} height={height}>
-            {children}
-          </Components.Container>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    <ModalOverlay
+      defaultOpen={defaultOpen}
+      isOpen={open || isMounted}
+      onOpenChange={handleOpenChange}
+      isDismissable={dismissOnClickOutside}
+      isKeyboardDismissDisabled={!dismissOnEscape}
+    >
+      <Components.Overlay $status={status} $transitionDuration={transitionDuration} />
+      <ModalUpstream>
+        <Dialog aria-label={ariaLabel}>
+          <ModalContext.Provider value={{ close }}>
+            <Components.Container
+              $variant={variant}
+              $status={status}
+              $transitionDuration={transitionDuration}
+              className={className}
+              width={width}
+              height={height}
+              {...props}
+            >
+              {children}
+            </Components.Container>
+          </ModalContext.Provider>
+        </Dialog>
+      </ModalUpstream>
+    </ModalOverlay>
   );
 }
 
-export const Modal = Object.assign(BaseModal, Components, { Dialog });
+export const Modal = Object.assign(BaseModal, Components);
+
+/**
+ * Storybook decorator to help render Modals in stories with multiple theme layouts. Internal to
+ * Storybook. Use at your own risk.
+ */
+export const ModalDecorator: DecoratorFunction = (Story, { args }) => {
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+
+  return (
+    <>
+      <UNSAFE_PortalProvider getContainer={() => container}>
+        <Story args={args} />
+      </UNSAFE_PortalProvider>
+      <div
+        ref={(element) => setContainer(element ?? null)}
+        style={{
+          width: '100%',
+          height: '100%',
+          minHeight: '600px',
+          transform: 'translateZ(0)',
+        }}
+      ></div>
+    </>
+  );
+};

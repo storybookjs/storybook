@@ -510,6 +510,7 @@ export default {
     'ListItem',
     'Loader',
     'Modal',
+    'ModalDecorator',
     'OL',
     'P',
     'Placeholder',

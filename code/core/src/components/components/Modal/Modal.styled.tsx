@@ -205,7 +205,9 @@ export const Header = (props: React.ComponentProps<typeof Col>) => (
   </Row>
 );
 
-export const Title = styled(Heading)(({ theme }) => ({
+export const Title = styled((props: ComponentProps<typeof Heading>) => (
+  <Heading level={2} {...props} />
+))(({ theme }) => ({
   margin: 0,
   fontSize: theme.typography.size.s3,
   fontWeight: theme.typography.weight.bold,

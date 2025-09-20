@@ -57,7 +57,8 @@ export const getExternal = async (cwd: string) => {
 
   const runtimeExternalInclude: string[] = [
     'react',
-    'use-sync-external-store',
+    // FIXME: debugging RAM usage on CI
+    // 'use-sync-external-store',
     'react-dom',
     'react-dom/client',
     '@storybook/icons',

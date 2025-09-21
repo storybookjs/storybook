@@ -79,8 +79,7 @@ export function logMigrationSummary({
       ? 'Migration check ran with failures'
       : 'Migration check ran successfully';
 
-  return logger.logBox(messages.filter(Boolean).join(segmentDivider), {
-    title,
-    borderColor: hasFailures ? 'red' : 'green',
+  return logger.logBox(messages.filter(Boolean).join(segmentDivider), title, {
+    formatBorder: hasFailures ? picocolors.red : picocolors.green,
   });
 }

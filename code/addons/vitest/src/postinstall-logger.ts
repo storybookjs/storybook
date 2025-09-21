@@ -1,6 +1,8 @@
 import { isCI } from 'storybook/internal/common';
 import { colors, logger } from 'storybook/internal/node-logger';
 
+import picocolors from 'picocolors';
+
 const fancy = process.platform !== 'win32' || isCI() || process.env.TERM === 'xterm-256color';
 
 export const step = colors.gray('›');
@@ -9,26 +11,26 @@ export const success = colors.green(fancy ? '✔' : '√');
 export const warning = colors.orange(fancy ? '⚠' : '‼');
 export const error = colors.red(fancy ? '✖' : '×');
 
-type Options = Parameters<typeof logger.logBox>[1];
+type Options = Parameters<typeof logger.logBox>[2];
 
 const baseOptions: Options = {
-  borderStyle: 'round',
-  padding: 1,
+  rounded: true,
+  contentPadding: 1,
 };
 
-export const print = (message: string, options: Options) => {
+export const print = (message: string, title: string | undefined, options: Options) => {
   logger.line(1);
-  logger.logBox(message, { ...baseOptions, ...options });
+  logger.logBox(message, title, { ...baseOptions, ...options });
 };
 
 export const printInfo = (title: string, message: string, options?: Options) =>
-  print(message, { borderColor: 'blue', title, ...options });
+  print(message, title, { formatBorder: picocolors.blue, ...options });
 
 export const printWarning = (title: string, message: string, options?: Options) =>
-  print(message, { borderColor: 'yellow', title, ...options });
+  print(message, title, { formatBorder: picocolors.yellow, ...options });
 
 export const printError = (title: string, message: string, options?: Options) =>
-  print(message, { borderColor: 'red', title, ...options });
+  print(message, title, { formatBorder: picocolors.red, ...options });
 
 export const printSuccess = (title: string, message: string, options?: Options) =>
-  print(message, { borderColor: 'green', title, ...options });
+  print(message, title, { formatBorder: picocolors.green, ...options });

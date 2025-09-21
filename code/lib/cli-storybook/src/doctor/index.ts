@@ -103,12 +103,12 @@ export function displayDoctorResults(
           const message = result.messages[type as DiagnosticType];
           if (message) {
             const title = type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-            logger.logBox(message, {
-              title:
-                status === DiagnosticStatus.CHECK_ERROR
-                  ? CLI_COLORS.error(title)
-                  : CLI_COLORS.warning(title),
-            });
+            logger.logBox(
+              message,
+              status === DiagnosticStatus.CHECK_ERROR
+                ? CLI_COLORS.error(title)
+                : CLI_COLORS.warning(title)
+            );
           }
         }
       });
@@ -146,9 +146,7 @@ export function displayDoctorResults(
         messageWithProjects += `\n\nAffected project: ${projectName}`;
       }
 
-      logger.logBox(messageWithProjects, {
-        title: CLI_COLORS.warning(diagnostic.title),
-      });
+      logger.logBox(messageWithProjects, CLI_COLORS.warning(diagnostic.title));
     });
   }
 

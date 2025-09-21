@@ -504,7 +504,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    // Act - Open sidebar context menu and start focused test
+    // Act - Open sidebar context menu, start focused test then close menu
     await page
       .locator('[data-item-id="addons-group-test--expected-failure"]')
       .hover();
@@ -513,7 +513,7 @@ test.describe("component testing", () => {
         '[data-item-id="addons-group-test--expected-failure"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByTestId("tooltip");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
 
     // Assert - Only one test is running and reported
@@ -553,8 +553,16 @@ test.describe("component testing", () => {
         '[data-item-id="example-unhandlederrors"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByTestId("tooltip");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
+
+    // HACK: the testing module popover has poor tracking of focus due to how many disabled
+    // buttons it has and how deeply it changes its UI on events. This would be solved once
+    // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
+    // around to reset focus.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
+    await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and errors are reported
     const errorLink = page.locator(
@@ -600,8 +608,16 @@ test.describe("component testing", () => {
         '[data-item-id="addons-group-test"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByTestId("tooltip");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
+
+    // HACK: the testing module popover has poor tracking of focus due to how many disabled
+    // buttons it has and how deeply it changes its UI on events. This would be solved once
+    // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
+    // around to reset focus.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
+    await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and reported
     await expect(
@@ -648,8 +664,16 @@ test.describe("component testing", () => {
         '[data-item-id="addons-group"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByTestId("tooltip");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
+
+    // HACK: the testing module popover has poor tracking of focus due to how many disabled
+    // buttons it has and how deeply it changes its UI on events. This would be solved once
+    // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
+    // around to reset focus.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
+    await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and reported
     await expect(
@@ -706,8 +730,16 @@ test.describe("component testing", () => {
         '[data-item-id="example-button--csf-3-primary"] button[data-testid="context-menu"]'
       )
       .click();
-    const sidebarContextMenu = page.getByTestId("tooltip");
+    const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
+
+    // HACK: the testing module popover has poor tracking of focus due to how many disabled
+    // buttons it has and how deeply it changes its UI on events. This would be solved once
+    // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
+    // around to reset focus.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
+    await expect(sidebarContextMenu).not.toBeVisible();
 
     // Arrange - Wait for test to finish and unfocus sidebar context menu
     await expect(

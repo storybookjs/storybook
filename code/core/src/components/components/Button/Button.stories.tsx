@@ -100,6 +100,17 @@ export const PseudoStates = meta.story({
           Hover
         </Button>
       </Row>
+      <Row id="active">
+        <Button ariaLabel={false} variant="solid">
+          active
+        </Button>
+        <Button ariaLabel={false} variant="outline">
+          active
+        </Button>
+        <Button ariaLabel={false} variant="ghost">
+          active
+        </Button>
+      </Row>
       <Row id="focus">
         <Button ariaLabel={false} variant="solid">
           Focus
@@ -127,6 +138,7 @@ export const PseudoStates = meta.story({
   parameters: {
     pseudo: {
       hover: '#hover button',
+      active: '#active button',
       focus: '#focus button',
       focusVisible: '#focus-visible button',
     },

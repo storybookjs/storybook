@@ -6,6 +6,7 @@ import { UNSAFE_PortalProvider } from 'react-aria';
 import { Dialog, ModalOverlay, Modal as ModalUpstream } from 'react-aria-components';
 import { useTransitionState } from 'react-transition-state';
 
+import { useMediaQuery } from '../../../manager/hooks/useMedia';
 import * as Components from './Modal.styled';
 
 interface ModalProps extends HTMLAttributes<HTMLDivElement> {
@@ -64,13 +65,21 @@ function BaseModal({
   variant = 'dialog',
   ...props
 }: ModalProps) {
+  const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [{ status, isMounted }, toggle] = useTransitionState({
-    timeout: 200,
+    timeout: reducedMotion ? 0 : transitionDuration,
     mountOnEnter: true,
     unmountOnExit: true,
-    enter: true,
-    exit: true,
   });
+
+  const close = () => {
+    handleOpenChange(false);
+  };
+
+  const handleOpenChange = (isOpen: boolean) => {
+    toggle(isOpen);
+    onOpenChange?.(isOpen);
+  };
 
   // Sync external open state with transition state
   useEffect(() => {
@@ -82,24 +91,15 @@ function BaseModal({
     }
   }, [open, defaultOpen, isMounted, toggle]);
 
-  const close = () => {
-    handleOpenChange(false);
-  };
-
-  const handleOpenChange = (isOpen: boolean) => {
-    toggle(isOpen);
-    onOpenChange?.(isOpen);
-  };
-
   // Call onOpenChange ourselves when the modal is initially opened, as react-aria won't.
   useEffect(() => {
-    if (open || defaultOpen) {
+    if (isMounted && (open || defaultOpen)) {
       onOpenChange?.(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted]);
 
-  if (!isMounted) {
+  if (!isMounted || status === 'exited' || status === 'unmounted') {
     return null;
   }
 

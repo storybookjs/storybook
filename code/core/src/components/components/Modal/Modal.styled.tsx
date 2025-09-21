@@ -81,10 +81,13 @@ export const Overlay = styled.div<{
   width: '100%',
   height: '100%',
   zIndex: 90,
-  animation:
-    $status === 'exiting'
-      ? `${fadeOut} ${$transitionDuration}ms`
-      : `${fadeIn} ${$transitionDuration}ms`,
+  '@media (prefers-reduced-motion: no-preference)': {
+    animation:
+      $status === 'exiting' || $status === 'preExit'
+        ? `${fadeOut} ${$transitionDuration}ms`
+        : `${fadeIn} ${$transitionDuration}ms`,
+    animationFillMode: 'forwards',
+  },
 }));
 
 export const Container = styled.div<{
@@ -111,15 +114,22 @@ export const Container = styled.div<{
       ? {
           top: '50%',
           left: '50%',
-          transform: 'translate(-50%, -50%)',
           width: width ?? 740,
           height: height ?? 'auto',
           maxWidth: 'calc(100% - 40px)',
           maxHeight: '85vh',
-          animation:
-            $status === 'exiting'
-              ? `${zoomOut} ${$transitionDuration}ms`
-              : `${zoomIn} ${$transitionDuration}ms`,
+          '@media (prefers-reduced-motion: no-preference)': {
+            willChange: 'transform, opacity',
+            animationTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+            animation:
+              $status === 'exiting' || $status === 'preExit'
+                ? `${zoomOut} ${$transitionDuration}ms`
+                : `${zoomIn} ${$transitionDuration}ms`,
+            animationFillMode: 'forwards !important',
+          },
+          '@media (prefers-reduced-motion: reduce)': {
+            transform: 'translate(-50%, -50%) scale(1)',
+          },
         }
       : {
           bottom: '0',
@@ -128,11 +138,17 @@ export const Container = styled.div<{
           width: width ?? '100%',
           height: height ?? '80%',
           maxWidth: '100%',
-          maxHeight: '85vh',
-          animation:
-            $status === 'exiting'
-              ? `${slideToBottom} ${$transitionDuration}ms`
-              : `${slideFromBottom} ${$transitionDuration}ms`,
+          maxHeight: '80vh',
+          '@media (prefers-reduced-motion: no-preference)': {
+            animationTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+            animation:
+              $status === 'exiting' || $status === 'preExit'
+                ? `${slideToBottom} ${$transitionDuration}ms`
+                : $status === 'entering' || $status === 'preEnter'
+                  ? `${slideFromBottom} ${$transitionDuration}ms`
+                  : 'none',
+            animationFillMode: 'forwards !important',
+          },
         }
 );
 
@@ -198,10 +214,13 @@ export const Col = styled.div({
   gap: 4,
 });
 
-export const Header = (props: React.ComponentProps<typeof Col>) => (
+export const Header = ({
+  hasClose = true,
+  ...props
+}: React.ComponentProps<typeof Col> & { hasClose?: boolean }) => (
   <Row>
     <Col {...props} />
-    <Close />
+    {hasClose && <Close />}
   </Row>
 );
 
@@ -229,7 +248,9 @@ export const Actions = styled.div({
 export const ErrorWrapper = styled.div(({ theme }) => ({
   maxHeight: 100,
   overflow: 'auto',
-  animation: `${expand} 300ms, ${fadeIn} 300ms`,
+  '@media (prefers-reduced-motion: no-preference)': {
+    animation: `${expand} 300ms, ${fadeIn} 300ms`,
+  },
   backgroundColor: theme.background.critical,
   color: theme.color.lightest,
   fontSize: theme.typography.size.s2,

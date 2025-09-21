@@ -350,12 +350,14 @@ export const WithError = meta.story({
 export const AlwaysOpen = meta.story({
   args: {
     open: true,
+    dismissOnClickOutside: false,
+    dismissOnEscape: false,
     children: <SampleModalContent />,
   },
   render: (args) => (
     <Modal {...args}>
       <Modal.Content>
-        <Modal.Header>
+        <Modal.Header hasClose={false}>
           <Modal.Title>Always Open Modal</Modal.Title>
           <Modal.Description>This modal is always visible for demonstration.</Modal.Description>
         </Modal.Header>

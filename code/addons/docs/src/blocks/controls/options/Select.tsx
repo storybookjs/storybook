@@ -147,6 +147,9 @@ const MultiSelect: FC<SelectProps> = ({ name, value, options, onChange, argType 
 
   return (
     <SelectWrapper>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
       <OptionsSelect
         disabled={readonly}
         id={controlId}

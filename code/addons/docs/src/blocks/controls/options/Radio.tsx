@@ -78,7 +78,7 @@ export const RadioControl: FC<RadioProps> = ({
   const readonly = !!argType?.table?.readonly;
 
   return (
-    <Wrapper aria-readonly={readonly || undefined} isInline={isInline}>
+    <Wrapper isInline={isInline}>
       <legend className="sb-sr-only">{name}</legend>
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;

@@ -35,28 +35,22 @@ const Wrapper = styled.fieldset<{ isInline: boolean }>(
         }
 );
 
-const Text = styled.span({
-  '[aria-readonly=true] &': {
-    opacity: 0.5,
-  },
-});
+const Text = styled.span<{ $readOnly: boolean }>(({ $readOnly }) => ({
+  opacity: $readOnly ? 0.5 : 1,
+}));
 
-const Label = styled.label({
+const Label = styled.label<{ $readOnly: boolean }>(({ $readOnly }) => ({
   lineHeight: '20px',
   alignItems: 'center',
 
-  '[aria-readonly=true] &': {
-    cursor: 'not-allowed',
-  },
+  cursor: $readOnly ? 'not-allowed' : 'pointer',
 
   input: {
-    '[aria-readonly=true] &': {
-      cursor: 'not-allowed',
-    },
+    cursor: $readOnly ? 'not-allowed' : 'pointer',
     margin: 0,
     marginRight: 6,
   },
-});
+}));
 
 type RadioConfig = NormalizedOptionsConfig & { isInline: boolean };
 type RadioProps = ControlProps<OptionsSingleSelection> & RadioConfig;
@@ -83,7 +77,7 @@ export const RadioControl: FC<RadioProps> = ({
       {Object.keys(options).map((key, index) => {
         const id = `${controlId}-${index}`;
         return (
-          <Label key={id} htmlFor={id}>
+          <Label key={id} htmlFor={id} $readOnly={readonly}>
             <input
               type="radio"
               id={id}
@@ -93,7 +87,7 @@ export const RadioControl: FC<RadioProps> = ({
               onChange={(e) => onChange(options[e.currentTarget.value])}
               checked={key === selection}
             />
-            <Text>{key}</Text>
+            <Text $readOnly={readonly}>{key}</Text>
           </Label>
         );
       })}

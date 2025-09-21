@@ -510,7 +510,7 @@ test.describe("component testing", () => {
       .hover();
     await page
       .locator(
-        '[data-item-id="addons-group-test--expected-failure"] div[data-testid="context-menu"] button'
+        '[data-item-id="addons-group-test--expected-failure"] button[data-testid="context-menu"]'
       )
       .click();
     const sidebarContextMenu = page.getByTestId("tooltip");
@@ -550,7 +550,7 @@ test.describe("component testing", () => {
     await page.locator('[data-item-id="example-unhandlederrors"]').hover();
     await page
       .locator(
-        '[data-item-id="example-unhandlederrors"] div[data-testid="context-menu"] button'
+        '[data-item-id="example-unhandlederrors"] button[data-testid="context-menu"]'
       )
       .click();
     const sidebarContextMenu = page.getByTestId("tooltip");
@@ -597,7 +597,7 @@ test.describe("component testing", () => {
     await page.locator('[data-item-id="addons-group-test"]').hover();
     await page
       .locator(
-        '[data-item-id="addons-group-test"] div[data-testid="context-menu"] button'
+        '[data-item-id="addons-group-test"] button[data-testid="context-menu"]'
       )
       .click();
     const sidebarContextMenu = page.getByTestId("tooltip");
@@ -645,7 +645,7 @@ test.describe("component testing", () => {
     await page.locator('[data-item-id="addons-group"]').hover();
     await page
       .locator(
-        '[data-item-id="addons-group"] div[data-testid="context-menu"] button'
+        '[data-item-id="addons-group"] button[data-testid="context-menu"]'
       )
       .click();
     const sidebarContextMenu = page.getByTestId("tooltip");
@@ -703,7 +703,7 @@ test.describe("component testing", () => {
       .hover();
     await page
       .locator(
-        '[data-item-id="example-button--csf-3-primary"] div[data-testid="context-menu"] button'
+        '[data-item-id="example-button--csf-3-primary"] button[data-testid="context-menu"]'
       )
       .click();
     const sidebarContextMenu = page.getByTestId("tooltip");

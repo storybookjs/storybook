@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from 'storybook/internal/components';
 
 import { action } from 'storybook/actions';
-import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { Modal } from './Modal';
@@ -430,7 +430,7 @@ export const InteractiveKeyboard = meta.story({
       await expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
     });
 
-    await step('Navigate through modal content with Tab', async () => {
+    await step('Navigate through modal content with focus trap', async () => {
       await userEvent.tab();
       const closeButton = await screen.findByRole('button', { name: 'Close modal' });
       await expect(closeButton).toHaveFocus();
@@ -453,7 +453,10 @@ export const InteractiveKeyboard = meta.story({
 
     await step('Close modal with Escape key', async () => {
       await userEvent.keyboard('{Escape}');
-      await expect(screen.queryByText('Sample Modal')).not.toBeInTheDocument();
+    });
+
+    await step('Await exit animation and check modal is closed', async () => {
+      await waitFor(() => expect(screen.queryByText('Sample Modal')).not.toBeInTheDocument());
     });
   },
 });
@@ -489,7 +492,10 @@ export const InteractiveMouse = meta.story({
     await step('Click close button', async () => {
       const closeButton = await screen.findByLabelText('Close modal');
       await userEvent.click(closeButton);
-      await expect(screen.queryByText('Sample Modal')).not.toBeInTheDocument();
+    });
+
+    await step('Await exit animation and check modal is closed', async () => {
+      await waitFor(() => expect(screen.queryByText('Sample Modal')).not.toBeInTheDocument());
     });
 
     await step('Open modal and click outside to close', async () => {
@@ -499,7 +505,10 @@ export const InteractiveMouse = meta.story({
 
       const outsideButton = canvas.getByText('Outside Button');
       await userEvent.click(outsideButton);
-      await expect(screen.queryByText('Sample Modal')).not.toBeInTheDocument();
+    });
+
+    await step('Await exit animation and check modal is closed', async () => {
+      await waitFor(() => expect(screen.queryByText('Sample Modal')).not.toBeInTheDocument());
     });
   },
 });

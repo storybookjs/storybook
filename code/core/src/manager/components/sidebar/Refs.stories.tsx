@@ -283,7 +283,7 @@ export const ErroredWithIndicatorOpen: StoryAnnotations = {
   render: () => Errored(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByText('Extra actions');
+    const button = canvas.getByRole('button', { name: 'Extra actions' });
     button.click();
   },
 };
@@ -292,7 +292,7 @@ export const ErroredMobileWithIndicatorOpen: StoryAnnotations = {
   globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByText('Extra actions');
+    const button = canvas.getByRole('button', { name: 'Extra actions' });
     button.click();
   },
 };

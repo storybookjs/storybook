@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
 import type { PositionProps } from '@react-types/overlays';
 import memoize from 'memoizerific';
+import { UNSAFE_PortalProvider } from 'react-aria';
 import { styled } from 'storybook/theming';
 
 type BasicPlacement = 'top' | 'bottom' | 'left' | 'right';
@@ -53,7 +54,7 @@ const Container = styled.div({
 });
 
 // Story helper
-export const Trigger = styled.button({
+export const Trigger = styled('button')({
   width: 120,
   height: 50,
   margin: 10,
@@ -63,7 +64,19 @@ export const Trigger = styled.button({
   },
 });
 
-// Story helper
-export const OverlayTriggerDecorator: DecoratorFunction = (storyFn) => (
-  <Container>{storyFn()}</Container>
-);
+/**
+ * Storybook decorator to help render WithPopover in stories. Internal to Storybook. Use at your own
+ * risk.
+ */
+export const OverlayTriggerDecorator: DecoratorFunction = (Story, { args }) => {
+  const [container, setContainer] = useState<HTMLElement | null>(null);
+
+  return (
+    <Container>
+      <UNSAFE_PortalProvider getContainer={() => container}>
+        <Story args={args} />
+      </UNSAFE_PortalProvider>
+      <div id="portal" ref={(element) => setContainer(element ?? null)}></div>
+    </Container>
+  );
+};

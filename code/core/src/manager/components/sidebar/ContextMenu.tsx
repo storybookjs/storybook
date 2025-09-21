@@ -123,7 +123,6 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
       node: shouldRender ? (
         <WithPopover
           placement="bottom-end"
-          data-testid="context-menu"
           defaultVisible={false}
           visible={isOpen}
           onVisibleChange={setIsOpen}
@@ -133,6 +132,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         >
           <FloatingStatusButton
             data-displayed={isOpen ? 'on' : 'off'}
+            data-testid="context-menu"
             ariaLabel="Open context menu"
             type="button"
             status="status-value:pending"

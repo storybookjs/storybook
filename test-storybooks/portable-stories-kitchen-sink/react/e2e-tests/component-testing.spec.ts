@@ -101,8 +101,8 @@ test.describe("component testing", () => {
     }
 
     const configs = [
-      page.getByLabel("Coverage", { exact: true }),
-      page.getByLabel("Accessibility", { exact: true }),
+      page.getByRole('checkbox', { name: 'Coverage' }),
+      page.getByRole('checkbox', { name: 'Accessibility' }),
     ];
     for (const config of configs) {
       if (await config.isChecked()) {

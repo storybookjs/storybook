@@ -50,38 +50,45 @@ export const WithChildren = meta.story({
         <span>Custom children</span>
       </div>
     ),
+    id: undefined,
   },
 });
 
 export const PseudoStates = meta.story({
   render: (args) => (
     <>
-      <SelectOption {...args}>Inactive</SelectOption>
-      <SelectOption data-state="hover" {...args}>
+      <SelectOption {...args} id="inactive">
+        Inactive
+      </SelectOption>
+      <SelectOption {...args} id="hover" data-state="hover">
         Hover
       </SelectOption>
-      <SelectOption data-state="focus" {...args}>
+      <SelectOption {...args} id="focus" data-state="focus">
         Focus
       </SelectOption>
-      <SelectOption {...args}>Separator</SelectOption>
-      <SelectOption {...args} isSelected>
+      <SelectOption {...args} id="sep1" shouldLookDisabled>
+        ---------
+      </SelectOption>
+      <SelectOption {...args} id="inactive-selected" isSelected>
         Inactive Selected
       </SelectOption>
-      <SelectOption data-state="hover" {...args} isSelected>
+      <SelectOption {...args} id="hover-selected" data-state="hover" isSelected>
         Hover Selected
       </SelectOption>
-      <SelectOption data-state="focus" {...args} isSelected>
+      <SelectOption {...args} id="focus-selected" data-state="focus" isSelected>
         Focus Selected
       </SelectOption>
-      <SelectOption {...args}>Separator</SelectOption>
-      <SelectOption {...args} shouldLookDisabled>
-        Inactive Selected
+      <SelectOption {...args} id="sep2" shouldLookDisabled>
+        ---------
       </SelectOption>
-      <SelectOption data-state="hover" {...args} shouldLookDisabled>
-        Hover Selected
+      <SelectOption {...args} id="inactive-disabled" shouldLookDisabled>
+        Inactive Disabled
       </SelectOption>
-      <SelectOption data-state="focus" {...args} shouldLookDisabled>
-        Focus Selected
+      <SelectOption {...args} id="hover-disabled" data-state="hover" shouldLookDisabled>
+        Hover Disabled
+      </SelectOption>
+      <SelectOption {...args} id="focus-disabled" data-state="focus" shouldLookDisabled>
+        Focus Disabled
       </SelectOption>
     </>
   ),

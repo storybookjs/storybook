@@ -44,12 +44,12 @@ export const Statuses = {
   },
   render: ({ size }: { size: number }) => (
     <div style={{ display: 'flex', gap: size / 2 }}>
-      <img width={size} height={size} src={'./favicon.svg'} />
-      <img width={size} height={size} src={'./favicon.svg?status=active'} />
-      <img width={size} height={size} src={'./favicon.svg?status=positive'} />
-      <img width={size} height={size} src={'./favicon.svg?status=warning'} />
-      <img width={size} height={size} src={'./favicon.svg?status=negative'} />
-      <img width={size} height={size} src={'./favicon.svg?status=critical'} />
+      <img role="presentation" width={size} height={size} src={'./favicon.svg'} />
+      <img role="presentation" width={size} height={size} src={'./favicon.svg?status=active'} />
+      <img role="presentation" width={size} height={size} src={'./favicon.svg?status=positive'} />
+      <img role="presentation" width={size} height={size} src={'./favicon.svg?status=warning'} />
+      <img role="presentation" width={size} height={size} src={'./favicon.svg?status=negative'} />
+      <img role="presentation" width={size} height={size} src={'./favicon.svg?status=critical'} />
     </div>
   ),
 };
@@ -64,11 +64,11 @@ export const Sizes = {
   },
   render: ({ status }: { status?: Parameters<typeof getFaviconUrl>[1] }) => (
     <div style={{ display: 'flex', gap: 10 }}>
-      <img width={16} height={16} src={`./favicon.svg?status=${status}`} />
-      <img width={32} height={32} src={`./favicon.svg?status=${status}`} />
-      <img width={64} height={64} src={`./favicon.svg?status=${status}`} />
-      <img width={128} height={128} src={`./favicon.svg?status=${status}`} />
-      <img width={256} height={256} src={`./favicon.svg?status=${status}`} />
+      <img role="presentation" width={16} height={16} src={`./favicon.svg?status=${status}`} />
+      <img role="presentation" width={32} height={32} src={`./favicon.svg?status=${status}`} />
+      <img role="presentation" width={64} height={64} src={`./favicon.svg?status=${status}`} />
+      <img role="presentation" width={128} height={128} src={`./favicon.svg?status=${status}`} />
+      <img role="presentation" width={256} height={256} src={`./favicon.svg?status=${status}`} />
     </div>
   ),
 };

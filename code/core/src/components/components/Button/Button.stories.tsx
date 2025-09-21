@@ -254,13 +254,13 @@ export const Animated = meta.story({
         </Button>
       </Row>
       <Row>
-        <Button {...args} animation="glow" padding="small">
+        <Button {...args} ariaLabel="Happy" animation="glow" padding="small">
           <FaceHappyIcon />
         </Button>
-        <Button {...args} animation="jiggle" padding="small">
+        <Button {...args} ariaLabel="Happy" animation="jiggle" padding="small">
           <FaceHappyIcon />
         </Button>
-        <Button {...args} animation="rotate360" padding="small">
+        <Button {...args} ariaLabel="Happy" animation="rotate360" padding="small">
           <FaceHappyIcon />
         </Button>
       </Row>

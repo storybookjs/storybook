@@ -25,7 +25,11 @@ const meta = preview.meta({
   },
   decorators: [
     (Story) => (
-      <Listbox style={{ width: '200px', border: '1px solid #888' }}>
+      <Listbox
+        aria-label="Sample listbox"
+        role="listbox"
+        style={{ width: '200px', border: '1px solid #888' }}
+      >
         <Story />
       </Listbox>
     ),

@@ -11,4 +11,6 @@ type Story = StoryObj<typeof meta>;
 
 export default meta;
 
-export const Textarea: Story = {};
+export const Textarea: Story = {
+  render: (args) => <Component aria-label="Sample textarea" {...args} />,
+};

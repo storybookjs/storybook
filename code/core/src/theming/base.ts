@@ -29,12 +29,6 @@ export const color = {
   // For borders
   border: 'hsla(212, 50%, 30%, 0.15)',
 
-  // Status
-  positive: '#66BF3C',
-  warning: '#E69D00',
-  negative: '#FF4400',
-  critical: '#FFFFFF',
-
   // Text
   defaultText: '#2E3338',
   inverseText: '#FFFFFF',
@@ -50,12 +44,6 @@ export const background = {
   preview: color.lightest,
   gridCellSize: 10,
   hoverable: transparentize(0.9, color.secondary), // hover state for items in a list
-
-  // Notification, error, and warning backgrounds
-  positive: '#F1FFEB',
-  warning: '#FFF9EB',
-  negative: '#FFF0EB',
-  critical: '#D13800',
 };
 
 export const typography = {

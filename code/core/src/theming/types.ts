@@ -5,7 +5,7 @@ export interface ThemeVars extends ThemeVarsBase, ThemeVarsColors {}
 
 export interface ThemeVarsPartial extends ThemeVarsBase, Partial<ThemeVarsColors> {}
 
-interface ThemeVarsBase {
+export interface ThemeVarsBase {
   base: 'light' | 'dark';
 }
 

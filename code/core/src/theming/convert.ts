@@ -4,8 +4,51 @@ import { animation, easing } from './animation';
 import { background, color, typography } from './base';
 import { themes } from './create';
 import { chromeDark, chromeLight, create as createSyntax } from './modules/syntax';
-import type { Color, StorybookTheme, ThemeVars, ThemeVarsColors } from './types';
+import type { Color, StorybookTheme, ThemeVars, ThemeVarsBase, ThemeVarsColors } from './types';
 import { getPreferredColorScheme } from './utils';
+
+const syntaxColors = {
+  light: {
+    fgColor: {
+      positive: '#66BF3C',
+      warning: '#E69D00',
+      negative: '#FF4400',
+      critical: '#FFFFFF',
+    },
+    bgColor: {
+      positive: '#F1FFEB',
+      warning: '#FFF9EB',
+      negative: '#FFF0EB',
+      critical: '#D13800',
+    },
+    borderColor: {
+      positive: '#BFE7AC',
+      warning: '#F3D491',
+      negative: '#FFC3AD',
+      critical: 'hsl(16 100 100 / 0)',
+    },
+  },
+  dark: {
+    fgColor: {
+      positive: '#86CE64',
+      warning: '#EBB747',
+      negative: '#FF6933',
+      critical: '#FF6933',
+    },
+    bgColor: {
+      positive: 'hsl(101 100% 100% / 0)',
+      warning: 'hsl(101 100% 100% / 0)',
+      negative: 'hsl(101 100% 100% / 0)',
+      critical: 'hsl(101 100% 100% / 0)',
+    },
+    borderColor: {
+      positive: 'hsl(101 52 64 / 0.15)',
+      warning: 'hsl(41 67 64 / 0.15)',
+      negative: 'hsl(16 100 64 / 0.15)',
+      critical: 'hsl(16 100 100 / 0)',
+    },
+  },
+};
 
 const lightSyntaxColors = {
   green1: '#008000',
@@ -33,7 +76,7 @@ const darkSyntaxColors = {
   blue2: '#00009f',
 };
 
-const createColors = (vars: ThemeVarsColors): Color => ({
+const createColors = (base: 'light' | 'dark', vars: ThemeVarsColors) => ({
   // Changeable colors
   primary: vars.colorPrimary,
   secondary: vars.colorSecondary,
@@ -59,20 +102,42 @@ const createColors = (vars: ThemeVarsColors): Color => ({
   darker: color.darker,
   darkest: color.darkest,
 
-  // For borders
-  border: color.border,
-
-  // Status
-  positive: color.positive,
-  negative: color.negative,
-  warning: color.warning,
-  critical: color.critical,
-
-  defaultText: vars.textColor || color.darkest,
-  inverseText: vars.textInverseColor || color.lightest,
-  positiveText: color.positiveText,
-  negativeText: color.negativeText,
-  warningText: color.warningText,
+  fgColor: {
+    default: vars.textColor || color.darkest,
+    muted: vars.textMutedColor || color.dark,
+    accent: vars.colorSecondary || color.secondary,
+    inverted: vars.textInverseColor || color.lightest,
+    positive:
+      base === 'dark' ? syntaxColors.dark.fgColor.positive : syntaxColors.light.fgColor.positive,
+    negative:
+      base === 'dark' ? syntaxColors.dark.fgColor.negative : syntaxColors.light.fgColor.negative,
+    warning:
+      base === 'dark' ? syntaxColors.dark.fgColor.warning : syntaxColors.light.fgColor.warning,
+    critical:
+      base === 'dark' ? syntaxColors.dark.fgColor.critical : syntaxColors.light.fgColor.critical,
+  },
+  bgColor: {
+    positive:
+      base === 'dark' ? syntaxColors.dark.bgColor.positive : syntaxColors.light.bgColor.positive,
+    negative:
+      base === 'dark' ? syntaxColors.dark.bgColor.negative : syntaxColors.light.bgColor.negative,
+    warning:
+      base === 'dark' ? syntaxColors.dark.bgColor.warning : syntaxColors.light.bgColor.warning,
+    critical:
+      base === 'dark' ? syntaxColors.dark.bgColor.critical : syntaxColors.light.bgColor.critical,
+  },
+  borderColor: {
+    // Status borders
+    default: color.border,
+    positiveBorder:
+      base === 'dark' ? syntaxColors.dark.fgColor.positive : syntaxColors.light.fgColor.positive,
+    negativeBorder:
+      base === 'dark' ? syntaxColors.dark.fgColor.negative : syntaxColors.light.fgColor.negative,
+    warningBorder:
+      base === 'dark' ? syntaxColors.dark.fgColor.warning : syntaxColors.light.fgColor.warning,
+    criticalBorder:
+      base === 'dark' ? syntaxColors.dark.fgColor.critical : syntaxColors.light.fgColor.critical,
+  },
 });
 
 export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]): StorybookTheme => {
@@ -113,7 +178,7 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
     ...rest,
 
     base,
-    color: createColors(inherit),
+    color: createColors(base, inherit),
     background: {
       app: appBg,
       bar: barBg,
@@ -121,10 +186,6 @@ export const convert = (inherit: ThemeVars = themes[getPreferredColorScheme()]):
       preview: appPreviewBg,
       gridCellSize: gridCellSize || background.gridCellSize,
       hoverable: background.hoverable,
-      positive: background.positive,
-      negative: background.negative,
-      warning: background.warning,
-      critical: background.critical,
     },
     typography: {
       fonts: {

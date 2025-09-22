@@ -611,14 +611,6 @@ test.describe("component testing", () => {
     const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
 
-    // HACK: the testing module popover has poor tracking of focus due to how many disabled
-    // buttons it has and how deeply it changes its UI on events. This would be solved once
-    // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
-    // around to reset focus.
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Escape');
-    await expect(sidebarContextMenu).not.toBeVisible();
-
     // Assert - Tests are running and reported
     await expect(
       sidebarContextMenu.locator("#testing-module-description")
@@ -630,6 +622,14 @@ test.describe("component testing", () => {
     await expect(
       sidebarContextMenu.getByLabel("Component tests failed")
     ).toHaveCount(1);
+
+    // HACK: the testing module popover has poor tracking of focus due to how many disabled
+    // buttons it has and how deeply it changes its UI on events. This would be solved once
+    // we move to a declarative menu, and there's an ongoing PR for that. Until then, we tab
+    // around to reset focus.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Escape');
+    await expect(sidebarContextMenu).not.toBeVisible();
 
     await page.click("body");
     await expect(

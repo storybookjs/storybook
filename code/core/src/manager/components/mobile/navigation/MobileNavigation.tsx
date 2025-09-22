@@ -134,7 +134,7 @@ const Container = styled.div(({ theme }) => ({
   borderTop: `1px solid ${theme.appBorderColor}`,
 }));
 
-const MobileBottomBar = styled.nav({
+const MobileBottomBar = styled.div({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',

@@ -50,7 +50,7 @@ export const ClosedWithSelection: Story = {
   },
 };
 
-export const Open = {
+export const Clear = {
   ...Closed,
   play: async ({ canvasElement }) => {
     const button = await findByRole(canvasElement, 'button');
@@ -58,15 +58,15 @@ export const Open = {
   },
 } satisfies Story;
 
-export const OpenWithSelection = {
+export const WithSelection = {
   ...ClosedWithSelection,
-  play: Open.play,
+  play: Clear.play,
 } satisfies Story;
 
-export const OpenWithSelectionInverted = {
-  ...Open,
+export const WithSelectionInverted = {
+  ...Clear,
   args: {
-    ...Open.args,
+    ...Clear.args,
     tagPresets: {
       A: { defaultFilterSelection: 'exclude' },
       B: { defaultFilterSelection: 'exclude' },
@@ -74,10 +74,10 @@ export const OpenWithSelectionInverted = {
   },
 } satisfies Story;
 
-export const OpenWithSelectionMixed = {
-  ...Open,
+export const WithSelectionMixed = {
+  ...Clear,
   args: {
-    ...Open.args,
+    ...Clear.args,
     tagPresets: {
       A: { defaultFilterSelection: 'include' },
       B: { defaultFilterSelection: 'exclude' },
@@ -85,19 +85,20 @@ export const OpenWithSelectionMixed = {
   },
 } satisfies Story;
 
-export const OpenEmpty: Story = {
+export const Empty: Story = {
   args: {
     indexJson: {
       v: 6,
       entries: {},
     },
   },
-  play: Open.play,
+  play: Clear.play,
 };
 
 export const EmptyProduction: Story = {
   args: {
-    ...OpenEmpty.args,
+    ...Empty.args,
     isDevelopment: false,
   },
+  play: Clear.play,
 };

@@ -138,7 +138,6 @@ const LinkLine = styled.a(({ theme }) => ({
   alignItems: 'center',
   justifyContent: 'space-between',
   fontSize: theme.typography.size.s2 - 1,
-  height: 52,
   borderBottom: `1px solid ${theme.appBorderColor}`,
   cursor: 'pointer',
   padding: '0 10px',
@@ -161,7 +160,4 @@ const BottomText = styled.div(({ theme }) => ({
   marginTop: 30,
 }));
 
-const CloseButton = styled(Button)({
-  // NOTE: matching isMobile class dimensions on SidebarButton
-  minHeight: 36,
-});
+const CloseButton = styled(Button)({});

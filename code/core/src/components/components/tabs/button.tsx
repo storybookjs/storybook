@@ -5,9 +5,12 @@ import type {
   ForwardRefExoticComponent,
   ForwardedRef,
   ReactElement,
+  ReactNode,
   RefAttributes,
 } from 'react';
 import React, { forwardRef } from 'react';
+
+import { deprecate } from 'storybook/internal/client-logger';
 
 import { isPropValid, styled } from 'storybook/theming';
 
@@ -71,12 +74,14 @@ const ButtonOrLink: ButtonLike | LinkLike = forwardRef(ForwardRefFunction);
 
 ButtonOrLink.displayName = 'ButtonOrLink';
 
-export interface TabButtonProps {
+export interface TabButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   active?: boolean;
+  children: ReactNode;
+  id?: string;
   textColor?: string;
 }
 
-export const TabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid })<TabButtonProps>(
+const StyledTabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid })<TabButtonProps>(
   {
     whiteSpace: 'normal',
     display: 'inline-flex',
@@ -126,4 +131,9 @@ export const TabButton = styled(ButtonOrLink, { shouldForwardProp: isPropValid }
           },
         }
 );
+
+export const TabButton = forwardRef<HTMLButtonElement, TabButtonProps>((props, ref) => {
+  deprecate('The `TabButton` component is deprecated. Use `TabList` instead.');
+  return <StyledTabButton ref={ref} {...props} />;
+});
 TabButton.displayName = 'TabButton';

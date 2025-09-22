@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
+import { ScrollArea } from 'storybook/internal/components';
 import type { ArgTypes } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -29,13 +30,12 @@ const clean = (obj: { [key: string]: any }) =>
     {} as typeof obj
   );
 
-const AddonWrapper = styled.div({
+const AddonWrapper = styled.div<{ showSaveFromUI: boolean }>(({ showSaveFromUI }) => ({
   display: 'grid',
-  gridTemplateRows: '1fr 39px',
+  gridTemplateRows: showSaveFromUI ? '1fr 41px' : '1fr',
   height: '100%',
   maxHeight: '100vh',
-  overflowY: 'auto',
-});
+}));
 
 interface ControlsParameters {
   sort?: SortType;
@@ -88,24 +88,29 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
     [args, initialArgs]
   );
 
+  const showSaveFromUI =
+    hasControls &&
+    hasUpdatedArgs &&
+    global.CONFIG_TYPE === 'DEVELOPMENT' &&
+    disableSaveFromUI !== true;
+
   return (
-    <AddonWrapper>
-      <ArgsTable
-        key={path} // resets state when switching stories
-        compact={!expanded && hasControls}
-        rows={withPresetColors}
-        args={args}
-        globals={globals}
-        updateArgs={updateArgs}
-        resetArgs={resetArgs}
-        inAddonPanel
-        sort={sort}
-        isLoading={isLoading}
-      />
-      {hasControls &&
-        hasUpdatedArgs &&
-        global.CONFIG_TYPE === 'DEVELOPMENT' &&
-        disableSaveFromUI !== true && <SaveStory {...{ resetArgs, saveStory, createStory }} />}
+    <AddonWrapper showSaveFromUI={showSaveFromUI}>
+      <ScrollArea vertical>
+        <ArgsTable
+          key={path} // resets state when switching stories
+          compact={!expanded && hasControls}
+          rows={withPresetColors}
+          args={args}
+          globals={globals}
+          updateArgs={updateArgs}
+          resetArgs={resetArgs}
+          inAddonPanel
+          sort={sort}
+          isLoading={isLoading}
+        />
+      </ScrollArea>
+      {showSaveFromUI && <SaveStory {...{ resetArgs, saveStory, createStory }} />}
     </AddonWrapper>
   );
 };

@@ -1,13 +1,15 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
-import type { TooltipLinkListLink as Link } from 'storybook/internal/components';
-import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
 
 import { styled } from 'storybook/theming';
 import useResizeObserver from 'use-resize-observer';
 
-import { TabButton } from '../bar/button';
+import { TooltipLinkList } from '../tooltip/TooltipLinkList';
+import type { Link } from '../tooltip/TooltipLinkList';
+import { WithTooltip } from '../tooltip/WithTooltip';
+import { TabButton } from './button';
 import type { ChildrenListComplete } from './tabs.helpers';
 
 const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
@@ -15,7 +17,7 @@ const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) =>
   width: 0,
   height: 0,
   marginLeft: 8,
-  color: isActive ? theme.color.secondary : theme.textMutedColor,
+  color: isActive ? theme.color.secondary : theme.color.mediumdark,
   borderRight: '3px solid transparent',
   borderLeft: `3px solid transparent`,
   borderTop: '3px solid',
@@ -38,6 +40,8 @@ const AddonButton = styled(TabButton)<{ preActive: boolean }>(({ active, theme, 
 });
 
 export function useList(list: ChildrenListComplete) {
+  deprecate('The `useList` tabs hook is deprecated. Use `TabsView` instead.');
+
   const tabBarRef = useRef<HTMLDivElement>();
   const addonsRef = useRef<HTMLButtonElement>();
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());

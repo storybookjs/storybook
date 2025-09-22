@@ -21,7 +21,7 @@ vi.mock(import('fs'), async (importOriginal) => {
 });
 
 vi.mock('storybook/internal/node-logger');
-vi.mock('find-up');
+vi.mock('empathic/find');
 
 const MOCK_FRAMEWORK_FILES: {
   name: string;

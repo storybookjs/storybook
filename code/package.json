@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "10.0.0-beta.5",
+  "version": "10.0.0-beta.6",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -284,6 +284,5 @@
         "Dependency Upgrades"
       ]
     ]
-  },
-  "deferredNextVersion": "10.0.0-beta.6"
+  }
 }

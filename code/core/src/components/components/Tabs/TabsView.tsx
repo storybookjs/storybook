@@ -3,6 +3,7 @@ import React from 'react';
 
 import { Bar, EmptyTabContent, TabList, TabPanel } from 'storybook/internal/components';
 
+import type { Key } from '@react-types/shared';
 import type { TabListState } from 'react-stately';
 import { Item, useTabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
@@ -51,7 +52,7 @@ export const FlexTabPanel = styled(TabPanel)(() => ({
   flex: 1,
 }));
 
-const FlexTabList = styled(TabList)<{ $simulatedGap: string | number }>(({ $simulatedGap }) => ({
+const FlexTabList = styled(TabList)<{ $simulatedGap: Key }>(({ $simulatedGap }) => ({
   flex: '1 1 100%',
   '&[data-show-scroll-buttons="true"]': { marginInlineEnd: $simulatedGap },
 }));

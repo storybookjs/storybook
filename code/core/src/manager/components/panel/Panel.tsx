@@ -70,7 +70,7 @@ const Section = styled.section({
 // Avoids crashes due to rules of hooks.
 const PreRenderAddons = ({ panels }: { panels: Record<string, Addon_BaseType> }) => {
   return Object.entries(panels).map(([k, v]) => (
-    <StatelessTabPanel key={k} id={k} hasScrollbar={false}>
+    <StatelessTabPanel key={k} name={k} hasScrollbar={false}>
       <TabErrorBoundary key={k}>{v.render({ active: true })}</TabErrorBoundary>
     </StatelessTabPanel>
   ));
@@ -161,7 +161,7 @@ export const AddonPanel = React.memo<{
       >
         <StatelessTabList aria-label="Available addons">
           {Object.entries(panels).map(([k, v]) => (
-            <StatelessTab key={k} id={k}>
+            <StatelessTab key={k} name={k}>
               {typeof v.title === 'function' ? <v.title /> : v.title}
             </StatelessTab>
           ))}

@@ -25,7 +25,6 @@ const Container = styled(Tabs)<{ $simulatedGap: string | number }>(({ $simulated
 
 export interface StatelessTabsViewProps extends Omit<TabsViewProps, 'tabs'> {
   children: ReactNode;
-  // tabListChild: ReactNode;
 }
 
 export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
@@ -38,7 +37,6 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
   selected,
   showToolsWhenEmpty,
   tools,
-  // tabListChild,
   ...props
 }) => {
   const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
@@ -46,11 +44,6 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
   if (!showToolsWhenEmpty && tabPanelChildren?.length === 0) {
     return EmptyContent;
   }
-
-  // const tabPanelChildren = children;
-  // if (!showToolsWhenEmpty && !tabPanelChildren) {
-  //   return EmptyContent;
-  // }
 
   return (
     <Container

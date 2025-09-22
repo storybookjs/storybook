@@ -5,12 +5,7 @@ import { Button } from 'storybook/internal/components';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
-import type { AriaLabelingProps } from '@react-types/shared';
-import {
-  type StyleRenderProps,
-  type TabListRenderProps,
-  TabList as TabListUpstream,
-} from 'react-aria-components';
+import { TabList as TabListUpstream } from 'react-aria-components';
 import { styled } from 'storybook/theming';
 
 const Root = styled.div({
@@ -64,9 +59,7 @@ const ScrollButton = styled(Button)({
   width: 16,
 });
 
-export interface StatelessTabListProps
-  extends StyleRenderProps<TabListRenderProps>,
-    AriaLabelingProps {
+export interface StatelessTabListProps {
   children?: ReactNode;
 }
 

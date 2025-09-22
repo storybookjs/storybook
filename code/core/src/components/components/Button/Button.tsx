@@ -278,9 +278,9 @@ const StyledButton = styled('button', {
     })(),
   },
 
-  '&:focus': {
-    boxShadow: `${rgba(theme.color.secondary, 1)} 0 0 0 1px inset`,
-    outline: 'none',
+  '&:focus-visible': {
+    outline: `2px solid ${rgba(theme.color.secondary, 1)}`,
+    outlineOffset: 2,
   },
 
   '> svg': {

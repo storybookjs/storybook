@@ -3,12 +3,15 @@ import React from 'react';
 
 import { ScrollArea } from 'storybook/internal/components';
 
-import { TabPanel, type TabPanelProps } from 'react-aria-components';
+import { TabPanel } from 'react-aria-components';
 import { styled } from 'storybook/theming';
 
-export interface StatelessTabPanelProps extends TabPanelProps {
+export interface StatelessTabPanelProps {
   /** Content of the tab panel. */
   children: ReactNode;
+
+  /** Unique id of the TabPanel, must match that of its corresponding Tab. */
+  name: string;
 
   /**
    * Whether the panel adds a vertical scrollbar. Disable if you want to use fixed or sticky
@@ -27,10 +30,11 @@ const Root = styled(TabPanel)({
 export const StatelessTabPanel: FC<StatelessTabPanelProps> = ({
   children,
   hasScrollbar = true,
+  name,
   ...rest
 }) => {
   return (
-    <Root {...rest} shouldForceMount>
+    <Root {...rest} shouldForceMount id={name}>
       {hasScrollbar ? <ScrollArea vertical>{children}</ScrollArea> : children}
     </Root>
   );

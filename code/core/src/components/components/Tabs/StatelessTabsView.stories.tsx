@@ -14,17 +14,17 @@ import { StatelessTabsView, type StatelessTabsViewProps } from './StatelessTabsV
 const RenderDefault = (args: StatelessTabsViewProps) => (
   <StatelessTabsView {...args}>
     <StatelessTabList>
-      <StatelessTab id="tab1">Tab 1</StatelessTab>
-      <StatelessTab id="tab2">Tab 2</StatelessTab>
-      <StatelessTab id="tab3">Tab 3</StatelessTab>
+      <StatelessTab name="tab1">Tab 1</StatelessTab>
+      <StatelessTab name="tab2">Tab 2</StatelessTab>
+      <StatelessTab name="tab3">Tab 3</StatelessTab>
     </StatelessTabList>
-    <StatelessTabPanel id="tab1">
+    <StatelessTabPanel name="tab1">
       <div>Content for Tab 1</div>
     </StatelessTabPanel>
-    <StatelessTabPanel id="tab2">
+    <StatelessTabPanel name="tab2">
       <div>Content for Tab 2</div>
     </StatelessTabPanel>
-    <StatelessTabPanel id="tab3">
+    <StatelessTabPanel name="tab3">
       <div>Content for Tab 3</div>
     </StatelessTabPanel>
   </StatelessTabsView>

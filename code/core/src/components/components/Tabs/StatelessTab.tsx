@@ -1,10 +1,16 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { Tab, type TabProps } from 'react-aria-components';
+import { Tab } from 'react-aria-components';
 import { styled } from 'storybook/theming';
 
-export type StatelessTabProps = TabProps;
+export interface StatelessTabProps {
+  /** Unique id of the Tab, must match that of its corresponding TabPanel. */
+  name: string;
+
+  /** Tab button content */
+  children: React.ReactNode;
+}
 
 const StyledTab = styled(Tab)(({ theme }) => ({
   whiteSpace: 'normal',
@@ -48,6 +54,6 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-export const StatelessTab: FC<StatelessTabProps> = (props) => {
-  return <StyledTab {...props} />;
+export const StatelessTab: FC<StatelessTabProps> = ({ name, ...props }) => {
+  return <StyledTab id={name} {...props} />;
 };

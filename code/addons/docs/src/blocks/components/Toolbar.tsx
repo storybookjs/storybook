@@ -1,7 +1,7 @@
-import type { FC, MouseEvent as ReactMouseEvent, SyntheticEvent } from 'react';
+import type { FC, SyntheticEvent } from 'react';
 import React from 'react';
 
-import { FlexBar, IconButton } from 'storybook/internal/components';
+import { Button, Toolbar as SharedToolbar } from 'storybook/internal/components';
 
 import { ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
@@ -27,18 +27,14 @@ interface LoadingProps {
 
 export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps;
 
-const Bar = styled(FlexBar)({
+const AbsoluteBar = styled(SharedToolbar)({
   position: 'absolute',
   left: 0,
   right: 0,
   top: 0,
   transition: 'transform .2s linear',
-});
-
-const Wrapper = styled.div({
   display: 'flex',
   alignItems: 'center',
-  gap: 4,
 });
 
 const IconPlaceholder = styled.div(({ theme }) => ({
@@ -50,52 +46,49 @@ const IconPlaceholder = styled.div(({ theme }) => ({
   animation: `${theme.animation.glow} 1.5s ease-in-out infinite`,
 }));
 
-export const Toolbar: FC<ToolbarProps> = ({
-  isLoading,
-  storyId,
-  baseUrl,
-  zoom,
-  resetZoom,
-  ...rest
-}) => (
-  <Bar {...rest}>
-    <Wrapper key="left">
-      {isLoading ? (
-        [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
-      ) : (
-        <>
-          <IconButton
-            key="zoomin"
-            onClick={(e: SyntheticEvent) => {
-              e.preventDefault();
-              zoom(0.8);
-            }}
-            title="Zoom in"
-          >
-            <ZoomIcon />
-          </IconButton>
-          <IconButton
-            key="zoomout"
-            onClick={(e: SyntheticEvent) => {
-              e.preventDefault();
-              zoom(1.25);
-            }}
-            title="Zoom out"
-          >
-            <ZoomOutIcon />
-          </IconButton>
-          <IconButton
-            key="zoomreset"
-            onClick={(e: SyntheticEvent) => {
-              e.preventDefault();
-              resetZoom();
-            }}
-            title="Reset zoom"
-          >
-            <ZoomResetIcon />
-          </IconButton>
-        </>
-      )}
-    </Wrapper>
-  </Bar>
+export const Toolbar: FC<ToolbarProps> = ({ isLoading, zoom, resetZoom, ...rest }) => (
+  <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7 }} {...rest}>
+    {isLoading ? (
+      [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
+    ) : (
+      <>
+        <Button
+          padding="small"
+          variant="ghost"
+          key="zoomin"
+          onClick={(e: SyntheticEvent) => {
+            e.preventDefault();
+            zoom(0.8);
+          }}
+          ariaLabel="Zoom in"
+        >
+          <ZoomIcon />
+        </Button>
+        <Button
+          padding="small"
+          variant="ghost"
+          key="zoomout"
+          onClick={(e: SyntheticEvent) => {
+            e.preventDefault();
+            zoom(1.25);
+          }}
+          ariaLabel="Zoom out"
+        >
+          <ZoomOutIcon />
+        </Button>
+        <Button
+          padding="small"
+          variant="ghost"
+          key="zoomreset"
+          onClick={(e: SyntheticEvent) => {
+            e.preventDefault();
+            resetZoom();
+          }}
+          ariaLabel="Reset zoom"
+        >
+          <ZoomResetIcon />
+        </Button>
+      </>
+    )}
+  </AbsoluteBar>
 );

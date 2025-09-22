@@ -147,6 +147,16 @@ export class SbPage {
     await this.waitForStoryLoaded();
   }
 
+  /**
+   * We have stories with modals set to auto-open (e.g. startOpen color control). This helper closes
+   * them to free scroll and keyboard focus traps.
+   */
+  async closeAnyPendingModal() {
+    const popover = this.page.locator('[role="dialog"]');
+    await this.page.keyboard.press('Escape');
+    await popover.waitFor({ state: 'hidden' });
+  }
+
   previewIframe() {
     return this.page.frameLocator('#storybook-preview-iframe');
   }
@@ -157,11 +167,11 @@ export class SbPage {
   }
 
   panelContent() {
-    return this.page.locator('#storybook-panel-root #panel-tab-content > div:not([hidden])');
+    return this.page.locator('#storybook-panel-root').getByRole('tabpanel');
   }
 
   async viewAddonPanel(name: string) {
-    const tabs = this.page.locator('[role=tablist] button[role=tab]');
+    const tabs = this.page.locator('[role=tablist] div[role=tab]');
     const tab = tabs.locator(`text=/^${name}/`);
     await tab.click();
   }

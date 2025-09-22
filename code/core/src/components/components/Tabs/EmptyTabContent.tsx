@@ -24,7 +24,7 @@ const Title = styled.div(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,
   fontSize: theme.typography.size.s2 - 1,
   textAlign: 'center',
-  color: theme.textColor,
+  color: theme.color.defaultText,
 }));
 
 const Description = styled.div(({ theme }) => ({

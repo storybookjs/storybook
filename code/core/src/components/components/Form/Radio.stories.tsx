@@ -15,49 +15,100 @@ export const Radio: Story = {
   render: () => (
     <div style={{ display: 'inline-grid', gap: 15, gridTemplateColumns: 'repeat(3, auto)' }}>
       <small></small>
-      <small>Custom:</small>
-      <small>Native:</small>
+      <small id="col-custom">Custom:</small>
+      <small id="col-native">Native:</small>
 
-      <small>Checked, focus:</small>
-      <Component defaultChecked data-focus name="a" />
+      <small id="row-focus">Checked, focus:</small>
+      <Component aria-labelledby="col-custom row-focus" defaultChecked data-focus name="a" />
       <div>
-        <input type="radio" name="e" style={{ margin: 0 }} defaultChecked data-focus />
+        <input
+          aria-labelledby="col-native row-focus"
+          type="radio"
+          name="e"
+          style={{ margin: 0 }}
+          defaultChecked
+          data-focus
+        />
       </div>
 
-      <small>Checked:</small>
-      <Component defaultChecked name="b" />
+      <small id="row-checked">Checked:</small>
+      <Component aria-labelledby="col-custom row-checked" defaultChecked name="b" />
       <div>
-        <input type="radio" name="f" style={{ margin: 0 }} defaultChecked />
+        <input
+          aria-labelledby="col-native row-checked"
+          type="radio"
+          name="f"
+          style={{ margin: 0 }}
+          defaultChecked
+        />
       </div>
 
-      <small>Indeterminate:</small>
-      <Component name="indeterminate" />
+      <small id="row-indeterminate">Indeterminate:</small>
+      <Component aria-labelledby="col-custom row-indeterminate" name="indeterminate" />
       <div>
-        <input type="radio" name="indeterminate3" style={{ margin: 0 }} />
+        <input
+          aria-labelledby="col-native row-indeterminate"
+          type="radio"
+          name="indeterminate3"
+          style={{ margin: 0 }}
+        />
       </div>
 
-      <small>Default:</small>
-      <Component name="b" />
+      <small id="row-default">Default:</small>
+      <Component aria-labelledby="col-custom row-default" name="b" />
       <div>
-        <input type="radio" name="f" style={{ margin: 0 }} />
+        <input
+          aria-labelledby="col-native row-default"
+          type="radio"
+          name="f"
+          style={{ margin: 0 }}
+        />
       </div>
 
-      <small>Disabled, checked:</small>
-      <Component disabled defaultChecked name="c" />
+      <small id="row-disabled-checked">Disabled, checked:</small>
+      <Component
+        aria-labelledby="col-custom row-disabled-checked"
+        disabled
+        defaultChecked
+        name="c"
+      />
       <div>
-        <input type="radio" name="g" style={{ margin: 0 }} disabled defaultChecked />
+        <input
+          aria-labelledby="col-native row-disabled-checked"
+          type="radio"
+          name="g"
+          style={{ margin: 0 }}
+          disabled
+          defaultChecked
+        />
       </div>
 
-      <small>Disabled, indeterminate:</small>
-      <Component disabled name="indeterminate2" />
+      <small id="row-disabled-indeterminate">Disabled, indeterminate:</small>
+      <Component
+        aria-labelledby="col-custom row-disabled-indeterminate"
+        disabled
+        name="indeterminate2"
+      />
       <div>
-        <input type="radio" name="indeterminate4" style={{ margin: 0 }} disabled />
+        <input
+          aria-labelledby="col-native row-disabled-indeterminate"
+          type="radio"
+          name="indeterminate4"
+          style={{ margin: 0 }}
+          disabled
+        />
       </div>
 
-      <small>Disabled:</small>
-      <Component disabled name="c" />
+      <small id="row-disabled">Disabled:</small>
+      <Component aria-labelledby="col-custom row-disabled" disabled name="c" />
       <div>
-        <input type="radio" name="h" style={{ margin: 0 }} disabled />
+        <input
+          aria-labelledby="col-native row-disabled"
+          type="radio"
+          name="h"
+          style={{ margin: 0 }}
+          disabled
+        />
       </div>
     </div>
   ),

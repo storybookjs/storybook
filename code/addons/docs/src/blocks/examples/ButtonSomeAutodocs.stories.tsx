@@ -29,3 +29,46 @@ export const Secondary: Story = {
     label: 'Button',
   },
 };
+
+export const ForcedBgLight: Story = {
+  tags: ['autodocs'],
+  args: {
+    label: 'Button',
+  },
+  globals: {
+    backgrounds: {
+      value: 'light',
+    },
+  },
+};
+
+export const ForcedBgDark: Story = {
+  tags: ['autodocs'],
+  args: {
+    label: 'Button',
+  },
+  globals: {
+    backgrounds: {
+      value: 'dark',
+    },
+  },
+};
+
+export const ForcedBgBlue: Story = {
+  tags: ['autodocs'],
+  args: {
+    label: 'Button',
+  },
+  globals: {
+    backgrounds: {
+      value: 'blue',
+    },
+  },
+};
+
+export const LastStory: Story = {
+  tags: ['autodocs'],
+  args: {
+    label: 'Button',
+  },
+};

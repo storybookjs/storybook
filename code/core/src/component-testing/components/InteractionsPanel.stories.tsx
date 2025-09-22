@@ -10,7 +10,7 @@ import { isChromatic } from '../../../../.storybook/isChromatic';
 import { CallStates } from '../../instrumenter/types';
 import { getCalls, getInteractions } from '../mocks';
 import { InteractionsPanel } from './InteractionsPanel';
-import SubnavStories from './Subnav.stories';
+import ToolbarStories from './Toolbar.stories';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,
@@ -54,8 +54,8 @@ const meta = {
   args: {
     status: 'completed',
     calls: new Map(getCalls(CallStates.DONE).map((call) => [call.id, call])),
-    controls: SubnavStories.args.controls,
-    controlStates: SubnavStories.args.controlStates,
+    controls: ToolbarStories.args.controls,
+    controlStates: ToolbarStories.args.controlStates,
     interactions,
     fileName: 'addon-interactions.stories.tsx',
     hasException: false,

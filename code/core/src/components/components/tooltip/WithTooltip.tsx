@@ -1,229 +1,98 @@
-import type { ComponentProps, ReactNode } from 'react';
-import React, { useCallback, useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
+import type { DOMAttributes, ReactElement, ReactNode } from 'react';
+import React, { useCallback, useState } from 'react';
 
-import { global } from '@storybook/global';
+import { type PopperPlacement, convertToReactAriaPlacement } from 'storybook/internal/components';
 
-import type { PopperOptions, Config as ReactPopperTooltipConfig } from 'react-popper-tooltip';
-import { usePopperTooltip } from 'react-popper-tooltip';
-import { styled } from 'storybook/theming';
+import { Focusable, TooltipTrigger, Tooltip as TooltipUpstream } from 'react-aria-components';
 
-import { Tooltip } from './Tooltip';
+export interface WithTooltipProps {
+  /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */
+  triggerOnFocusOnly?: boolean;
 
-const { document } = global;
+  /** Distance between the trigger and tooltip. Customize only if you have a good reason to. */
+  offset?: number;
 
-// A target that doesn't speak popper
-const TargetContainer = styled.div<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
-  display: inline-block;
-  cursor: ${(props) =>
-    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
-`;
+  /**
+   * Placement of the tooltip. Start and End variants involve additional JS dimension calculations
+   * and should be used sparingly. Left and Right get inverted in RTL.
+   */
+  placement?: PopperPlacement;
 
-const TargetSvgContainer = styled.g<{ trigger: ReactPopperTooltipConfig['trigger'] }>`
-  cursor: ${(props) =>
-    props.trigger === 'hover' || props.trigger?.includes('hover') ? 'default' : 'pointer'};
-`;
+  /** Tooltip content */
+  tooltip: ReactNode;
 
-interface WithHideFn {
-  onHide: () => void;
+  /** Tooltip trigger, must be a single child that can receive focus and click/key events. */
+  children: ReactElement<DOMAttributes<Element>, string>;
+
+  /** Delay before showing the tooltip, defaults to 200ms. Always instant on focus. */
+  delayShow?: number;
+
+  /** Delay before hiding the tooltip, defaults to 400ms. */
+  delayHide?: number;
+
+  /** Uncontrolled state: whether the tooltip is visible by default. */
+  defaultVisible?: boolean;
+
+  /** Deprecated property - use defaultVisible instead. */
+  startOpen?: boolean;
+
+  /** Controlled state: whether the tooltip is visible. */
+  visible?: boolean;
+
+  /** Controlled state: fires when user interaction causes the tooltip to change visibility. */
+  onVisibleChange?: (isVisible: boolean) => void;
 }
 
-export interface WithTooltipPureProps
-  extends Omit<ReactPopperTooltipConfig, 'closeOnOutsideClick'>,
-    Omit<ComponentProps<typeof TargetContainer>, 'trigger'>,
-    PopperOptions {
-  svg?: boolean;
-  withArrows?: boolean;
-  hasChrome?: boolean;
-  tooltip: ReactNode | ((p: WithHideFn) => ReactNode);
-  children: ReactNode;
-  onDoubleClick?: () => void;
-  /**
-   * If `true`, a click outside the trigger element closes the tooltip
-   *
-   * @default false
-   */
-  closeOnOutsideClick?: boolean;
-  /**
-   * Optional container to portal the tooltip into. Can be a CSS selector string or a DOM Element.
-   * Falls back to document.body.
-   */
-  portalContainer?: Element | string | null;
-}
-
-// Pure, does not bind to the body
-const WithTooltipPure = ({
-  svg = false,
-  trigger = 'click',
-  closeOnOutsideClick = false,
-  placement = 'top',
-  modifiers = [
-    {
-      name: 'preventOverflow',
-      options: {
-        padding: 8,
-      },
-    },
-    {
-      name: 'offset',
-      options: {
-        offset: [8, 8],
-      },
-    },
-    {
-      name: 'arrow',
-      options: {
-        padding: 8,
-      },
-    },
-  ],
-  hasChrome = true,
-  defaultVisible = false,
-  withArrows,
-  offset,
+const WithTooltip = ({
+  triggerOnFocusOnly = false,
+  placement: placementProp = 'top',
+  offset = 8,
   tooltip,
   children,
-  closeOnTriggerHidden,
-  mutationObserverOptions,
-  delayHide = trigger === 'hover' ? 200 : 0,
+  defaultVisible,
+  startOpen,
+  delayShow = 400,
+  delayHide = 200,
   visible,
-  interactive,
-  delayShow = trigger === 'hover' ? 400 : 0,
-  strategy,
-  followCursor,
   onVisibleChange,
-  portalContainer,
   ...props
-}: WithTooltipPureProps) => {
-  const Container = svg ? TargetSvgContainer : TargetContainer;
-  const {
-    getArrowProps,
-    getTooltipProps,
-    setTooltipRef,
-    setTriggerRef,
-    visible: isVisible,
-    state,
-  } = usePopperTooltip(
-    {
-      trigger,
-      placement,
-      defaultVisible,
-      delayHide,
-      interactive,
-      closeOnOutsideClick,
-      closeOnTriggerHidden,
-      onVisibleChange,
-      delayShow,
-      followCursor,
-      mutationObserverOptions,
-      visible,
-      offset,
+}: WithTooltipProps) => {
+  const placement = convertToReactAriaPlacement(placementProp);
+  const child = React.Children.only(children);
+
+  const [isOpen, setIsOpen] = useState(defaultVisible ?? startOpen ?? false);
+  const onOpenChange = useCallback(
+    (isOpen: boolean) => {
+      setIsOpen(isOpen);
+      onVisibleChange?.(isOpen);
     },
-    {
-      modifiers,
-      strategy,
-    }
+    [onVisibleChange]
   );
-
-  const portalTarget: Element =
-    (typeof portalContainer === 'string'
-      ? document.querySelector(portalContainer)
-      : portalContainer) || document.body;
-
-  const tooltipComponent = isVisible ? (
-    <Tooltip
-      placement={state?.placement}
-      ref={setTooltipRef}
-      hasChrome={hasChrome}
-      arrowProps={getArrowProps()}
-      withArrows={withArrows}
-      {...getTooltipProps()}
-    >
-      {/* @ts-expect-error (non strict) */}
-      {typeof tooltip === 'function' ? tooltip({ onHide: () => onVisibleChange(false) }) : tooltip}
-    </Tooltip>
-  ) : null;
 
   return (
-    <>
-      <Container trigger={trigger} ref={setTriggerRef as any} {...(props as any)}>
-        {children}
-      </Container>
-      {isVisible && ReactDOM.createPortal(tooltipComponent, portalTarget)}
-    </>
+    <TooltipTrigger
+      delay={delayShow}
+      closeDelay={delayHide}
+      isOpen={visible ?? isOpen}
+      onOpenChange={onOpenChange}
+      trigger={triggerOnFocusOnly ? 'focus' : undefined}
+      {...props}
+    >
+      {/* We don't let react-aria set an aria-describedby attribute because it clashes with our intention to explicitly set an aria-label that can be different from the tooltip copy. Some screenreaders would announce the label AND description if we also allowed aria-describedby, which would decrease usability. */}
+      {/* @ts-expect-error: We have to nullify aria-describedby and this is the only way we can do it (undefined won't work and an empty string will result in DOM pollution). */}
+      <Focusable>{React.cloneElement(child, { 'aria-describedby': null })}</Focusable>
+      <TooltipUpstream
+        data-testid="tooltip"
+        placement={placement}
+        offset={offset}
+        onOpenChange={onOpenChange}
+        style={{ outlineColor: 'transparent' }}
+        {...props}
+      >
+        {tooltip}
+      </TooltipUpstream>
+    </TooltipTrigger>
   );
 };
 
-export interface WithTooltipStateProps extends Omit<WithTooltipPureProps, 'onVisibleChange'> {
-  startOpen?: boolean;
-  onVisibleChange?: (visible: boolean) => void | boolean;
-}
-
-const WithToolTipState = ({
-  startOpen = false,
-  onVisibleChange: onChange,
-  ...rest
-}: WithTooltipStateProps) => {
-  const [tooltipShown, setTooltipShown] = useState(startOpen);
-  const onVisibilityChange = useCallback(
-    (visibility: boolean) => {
-      if (onChange && onChange(visibility) === false) {
-        return;
-      }
-      setTooltipShown(visibility);
-    },
-    [onChange]
-  );
-
-  useEffect(() => {
-    const hide = () => onVisibilityChange(false);
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        hide();
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown, false);
-
-    // Find all iframes on the screen and bind to clicks inside them (waiting until the iframe is ready)
-    const iframes: HTMLIFrameElement[] = Array.from(document.getElementsByTagName('iframe'));
-    const unbinders: (() => void)[] = [];
-    iframes.forEach((iframe) => {
-      const bind = () => {
-        try {
-          // @ts-expect-error (non strict)
-          if (iframe.contentWindow.document) {
-            // @ts-expect-error (non strict)
-            iframe.contentWindow.document.addEventListener('click', hide);
-            unbinders.push(() => {
-              try {
-                // @ts-expect-error (non strict)
-                iframe.contentWindow.document.removeEventListener('click', hide);
-              } catch (e) {
-                // logger.debug('Removing a click listener from iframe failed: ', e);
-              }
-            });
-          }
-        } catch (e) {
-          // logger.debug('Adding a click listener to iframe failed: ', e);
-        }
-      };
-
-      bind(); // I don't know how to find out if it's already loaded so I potentially will bind twice
-      iframe.addEventListener('load', bind);
-      unbinders.push(() => {
-        iframe.removeEventListener('load', bind);
-      });
-    });
-
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      unbinders.forEach((unbind) => {
-        unbind();
-      });
-    };
-  });
-
-  return <WithTooltipPure {...rest} visible={tooltipShown} onVisibleChange={onVisibilityChange} />;
-};
-
-export { WithTooltipPure, WithToolTipState, WithToolTipState as WithTooltip };
+export { WithTooltip };

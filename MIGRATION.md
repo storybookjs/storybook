@@ -8,6 +8,44 @@
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
     - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
+  - [API and Component Changes](#api-and-component-changes)
+    - [Button Component API Changes](#button-component-api-changes)
+      - [Added: ariaLabel](#added-arialabel)
+      - [Added: shortcut](#added-shortcut)
+      - [Added: tooltip](#added-tooltip)
+      - [Removed: active](#removed-active)
+    - [IconButton is deprecated](#iconbutton-is-deprecated)
+    - [Bar Component API Changes](#bar-component-api-changes)
+      - [Added: innerStyle](#added-innerstyle)
+    - [FlexBar is deprecated](#flexbar-is-deprecated)
+    - [Tabs is deprecated](#tabs-is-deprecated)
+    - [TabsState is deprecated](#tabsstate-is-deprecated)
+    - [TabWrapper is deprecated](#tabwrapper-is-deprecated)
+    - [TabButton is deprecated](#tabbutton-is-deprecated)
+    - [TabBar is removed](#tabbar-is-removed)
+    - [Modal Component API Changes](#modal-component-api-changes)
+      - [Removed: container and portalSelector](#removed-container-and-portalselector)
+      - [Removed: onInteractOutside](#removed-oninteractoutside)
+      - [Removed: onEscapeKeyDown](#removed-onescapekeydown)
+      - [Added: `ariaLabel`](#added-arialabel-1)
+      - [Renamed: Modal.Dialog.Close and Modal.CloseButton](#renamed-modaldialogclose-and-modalclosebutton)
+    - [ListItem, TooltipLinkList and TooltipMessage are deprecated](#listitem-tooltiplinklist-and-tooltipmessage-are-deprecated)
+    - [Tooltip Component API Changes](#tooltip-component-api-changes)
+      - [Renamed: tooltipRef](#renamed-tooltipref)
+      - [Removed: arrowProps and withArrows](#removed-arrowprops-and-witharrows)
+      - [Removed: placement](#removed-placement)
+      - [Changed type: color](#changed-type-color)
+    - [WithPopover Component Added](#withpopover-component-added)
+    - [WithTooltip Component API Changes](#withtooltip-component-api-changes)
+      - [Removed: trigger](#removed-trigger)
+    - [Added: triggerOnFocusOnly](#added-triggeronfocusonly)
+    - [Renamed: startOpen](#renamed-startopen)
+    - [Removed: svg, strategy, withArrows, mutationObserverOptions](#removed-svg-strategy-witharrows-mutationobserveroptions)
+    - [Removed: hasChrome](#removed-haschrome)
+    - [Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick](#removed-closeontriggerhidden-followcursor-closeonoutsideclick)
+    - [Removed: interactive](#removed-interactive)
+      - [Other changes](#other-changes)
+    - [WithTooltipPure and WithTooltipState are removed](#withtooltippure-and-withtooltipstate-are-removed)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -26,8 +64,8 @@
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
     - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
-  - [API and Component Changes](#api-and-component-changes)
-    - [Button Component API Changes](#button-component-api-changes)
+  - [API and Component Changes](#api-and-component-changes-1)
+    - [Button Component API Changes](#button-component-api-changes-1)
     - [Icon System Updates](#icon-system-updates)
     - [Sidebar Component Changes](#sidebar-component-changes)
     - [Story Store API Changes](#story-store-api-changes)
@@ -485,6 +523,7 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+
 ## From version 9.x to 10.0.0
 
 ### Core Changes
@@ -584,6 +623,159 @@ export const core = {
 #### Removed x-only builtin tags
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+
+### API and Component Changes
+
+#### Button Component API Changes
+
+##### Added: ariaLabel
+The Button component now has a mandatory `ariaLabel` prop, to ensure that Storybook UI code is accessible to screenreader users.
+
+When buttons have text content as children, and when that text content does not rely on visual context to be understood, you may pass `false` to the `ariaLabel` prop to indicate that an ARIA label is not necessary.
+
+In every other case (your Button only contains an icon, has a responsive layout that can hide its text, or relies on visual context to make sense), you must pass a label to `ariaLabel`, which screenreaders will read. The label should be short and start with an action verb.
+
+##### Added: shortcut
+
+An optional `shortcut` prop was added for internal use. When `shortcut` is set, the Button will be appended with a human-readable string for the shortcut, and the `aria-keyshortcuts` prop will be set.
+
+##### Added: tooltip
+
+Button now displays a tooltip whenever `ariaLabel` or `shortcut` is set. The tooltip can be customised by passing a string to the optional `tooltip` prop.
+
+##### Removed: active
+
+The `active` prop was removed from Button.
+
+The Button component has historically been used to implement Toggle and Select interactions. When you need a Button to have an active state, use ToggleButton if the active state denotes that a state or feature is enabled after pressing the Button.
+
+Use Select if the active state denotes that the Button is open while a selection is being made, or that the Button currently has a selected value.
+
+#### IconButton is deprecated
+
+The IconButton component is deprecated, as it overlaps with Button. Instead, use Button with the `'ghost'` variant and `'small'` padding, and add an `ariaLabel` prop for screenreaders to announce.
+
+IconButton will be removed in future versions.
+
+#### Bar Component API Changes
+
+The `Bar` component's internal layout has changed. It now applies flex positioning and applies a default item gap, that can be controlled with the `innerStyle` prop.
+
+##### Added: innerStyle
+When `scrollable` is set to `true`, `Bar` now adds an inner container that is used to ensure the scrollbar size does not impact the height of the bar. This inner container displays as 'flex' and has the following default style:
+
+```css
+  width: 100%;
+  min-height: 40;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-inline: 6px;
+```
+
+The inner container's style can be overridden by passing CSS properties to `innerStyle`.
+
+#### FlexBar is deprecated
+
+The `FlexBar` component is deprecated. Instead, use the `Bar` component and apply `justifyContent: 'space-between'` through the `innerStyle` prop.
+
+#### Tabs is deprecated
+
+The `Tabs` component is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabsState is deprecated
+
+The `TabsState` class is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabWrapper is deprecated
+
+The `TabWrapper` component is deprecated as it was not accessible. Instead, use the new `TabsView` component or `TabList` and `TabPanel` with the `useTabsState` hook. Note that `TabsView` does not support mixing HTML links and tabs.
+
+#### TabButton is deprecated
+
+The `TabButton` class is deprecated as it was not accessible. It does not have a replacement, as the new `TabList` component handles tab buttons internally.
+
+#### TabBar is removed
+
+The `TabBar` component, a styled bar used inside `Tabs` and not intended to be public, has been removed. It has no replacement.
+
+#### Modal Component API Changes
+
+##### Removed: container and portalSelector
+The `container` and `portalSelector` props were not used inside Storybook, so they have been removed. The new Modal component does not support custom portal locations, because it is not recommended practice. A single portal at the end of the document ensures modals appear in their order of creation and are never cropped by CSS `overflow` properties.
+
+##### Removed: onInteractOutside
+The `onInteractOutside` prop is removed in favor of `dismissOnClickOutside`, because it was only used to close the modal when clicking outside. Use `dismissOnClickOutside` to control whether clicking outside the modal should close it or not.
+
+##### Removed: onEscapeKeyDown
+The `onEscapeKeyDown` prop is removed in favor of `dismissOnEscape`, because it was only used to close the modal when pressing Escape. Use `dismissOnEscape` to control whether pressing Escape should close it or not.
+
+##### Added: `ariaLabel`
+Modal elements must have a title to be accessible. Set that title through the mandatory `ariaLabel` prop.
+
+##### Renamed: Modal.Dialog.Close and Modal.CloseButton
+The `Modal.Dialog.Close` component and `Modal.CloseButton` components are replaced by `Modal.Close` for consistency with other components. You may call `<Modal.Close />` for a default close button, or `<Modal.Close asChild>...</Modal.Close>` to wrap your own custom button.
+
+The `Modal.Close` component no longer requires an `onClick` handler to close the modal. It will automatically close the modal when clicked. If you need to perform additional actions when the close button is clicked, you can still provide an `onClick` handler, and it will be called in addition to closing the modal.
+#### ListItem, TooltipLinkList and TooltipMessage are deprecated
+
+The ListItem and TooltipLinkList components were used in Storybook to make menus, and TooltipMessage to make message popovers. However, WithTooltip does not support keyboard interactions, so these components were not accessible.
+
+These components are now deprecated and will be removed in future versions. To replace TooltipMessage, replace WithTooltip with WithPopover, and use Popover as a base component for your popovers. To replace ListItem and TooltipLinkList, a dedicated menu component will be introduced in a future version, and Popover can be used in the meantime.
+
+#### Tooltip Component API Changes
+
+##### Renamed: tooltipRef
+Tooltip's `ref` prop is now named `ref` for consistency.
+
+##### Removed: arrowProps and withArrows
+The `arrowProps` and `withArrows` props were not used in Storybook, so they have been removed.
+
+We recommend you do not use arrows in your addon tooltips for better consistency with the Storybook UI.
+
+##### Removed: placement
+The `placement` prop was passed to help position the arrow. It has also been removed. WithToolip now entirely handles the placement of its tooltip on its own.
+
+##### Changed type: color
+The `color` prop used to accept arbitrary colors and theme background color names. This made it difficult to use.
+
+The prop was to the background color of the tooltip, and it was not possible to set the text color in a consistent fashion. To ensure Tooltip uses accessible colors, the prop has been limited to the following values: `'default'`, `'inverse'`, `'positive'`, `'negative'`, `'warning'` and `'none'`. The prop now controls both background and foreground colors.
+
+#### WithPopover Component Added
+
+The WithPopover component acts as a counterpoint to WithTooltip. When you want an interactive overlay with buttons or inputs, use WithPopover and Popover. When you want a static overlay that shows on focus or hover, use WithTooltip with TooltipNote or Tooltip.
+
+WithPopover is based on react-aria. It must have a single child that acts as a trigger. This child must have a pressable role (can be clicked or pressed) and must be able to receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your popover.
+
+#### WithTooltip Component API Changes
+
+##### Removed: trigger
+The `trigger` prop was removed to enforce better accessibility compliance. WithTooltip must not be triggered on click, as it is not reachable by keyboard. Buttons that open a popover, menu or select must use appropriate components instead.
+
+#### Added: triggerOnFocusOnly
+The `triggerOnFocusOnly` prop was added. When set, tooltips will only show on focus. Use this to provide keyboard navigation hints to keyboard users. Do not use it for other purposes.
+
+#### Renamed: startOpen
+The `startOpen` prop was renamed `defaultVisible` to match naming in other components that expose both controlled and uncontrolled visibility.
+
+#### Removed: svg, strategy, withArrows, mutationObserverOptions
+These prop were not used inside Storybook and have been removed.
+
+#### Removed: hasChrome
+The `hasChrome` prop was removed because it should be handled by the tooltip being shown instead. Popover and Tooltip both have a `hasChrome` prop. TooltipNote never needs this prop and does not have it.
+
+#### Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick
+The `closeOnTriggerHidden`, `followCursor` and `closeOnOutsideClick` prop has been removed. WithTooltip will now authoritatively decide when and where to show or hide its tooltip. It will always close on clicks outside the tooltip, because tooltips should never be modal.
+
+#### Removed: interactive
+Thed `interactive` prop has been removed as it does not align with our vision for accessible components with a well-defined role. Use WithPopover instead of WithTooltip to show interactive overlays.
+
+##### Other changes
+The underlying implementation was switched from Popper.js to react-aria. Due to these changes, WithTooltip must now have a single child that has a focusable role and that can receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your tooltip.
+
+#### WithTooltipPure and WithTooltipState are removed
+
+Instead, use WithTooltip. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
 
 ## From version 8.x to 9.0.0
 
@@ -1217,7 +1409,7 @@ Key changes:
 
 #### Angular: Introduce `features.angularFilterNonInputControls`
 
-Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular components in Storybook's controls panel.
 
 To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 

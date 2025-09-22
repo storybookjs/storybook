@@ -109,24 +109,26 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const finalTooltip = tooltip || (ariaLabel !== false ? ariaLabel : undefined);
 
     return (
-      <InteractiveTooltipWrapper shortcut={shortcut} tooltip={finalTooltip}>
-        <StyledButton
-          as={Comp}
-          ref={ref}
-          variant={variant}
-          size={size}
-          padding={padding}
-          disabled={disabled}
-          animating={isAnimating}
-          animation={animation}
-          onClick={handleClick}
-          aria-label={ariaLabel !== false ? ariaLabel : undefined}
-          aria-keyshortcuts={shortcutAttribute}
-          {...ariaDescriptionAttrs}
-          {...props}
-        />
+      <>
+        <InteractiveTooltipWrapper shortcut={shortcut} tooltip={finalTooltip}>
+          <StyledButton
+            as={Comp}
+            ref={ref}
+            variant={variant}
+            size={size}
+            padding={padding}
+            disabled={disabled}
+            animating={isAnimating}
+            animation={animation}
+            onClick={handleClick}
+            aria-label={ariaLabel !== false ? ariaLabel : undefined}
+            aria-keyshortcuts={shortcutAttribute}
+            {...ariaDescriptionAttrs}
+            {...props}
+          />
+        </InteractiveTooltipWrapper>
         <AriaDescription />
-      </InteractiveTooltipWrapper>
+      </>
     );
   }
 );
@@ -278,9 +280,9 @@ const StyledButton = styled('button', {
     })(),
   },
 
-  '&:focus': {
-    boxShadow: `${rgba(theme.color.secondary, 1)} 0 0 0 1px inset`,
-    outline: 'none',
+  '&:focus-visible': {
+    outline: `2px solid ${rgba(theme.color.secondary, 1)}`,
+    outlineOffset: 2,
   },
 
   '> svg': {
@@ -291,7 +293,7 @@ const StyledButton = styled('button', {
 
 export const IconButton = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
   deprecate(
-    '`IconButton` is deprecated and will be removed in Storybook 10, use `Button` instead.'
+    '`IconButton` is deprecated and will be removed in Storybook 11, use `Button` instead.'
   );
 
   return <Button ref={ref} {...props} />;

@@ -1,12 +1,12 @@
 import type { FC } from 'react';
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { Button, Link, ScrollArea } from 'storybook/internal/components';
 
 import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybook/icons';
 
-import { Transition, type TransitionStatus } from 'react-transition-group';
-import { styled } from 'storybook/theming';
+import { useTransitionState } from 'react-transition-state';
+import { keyframes, styled } from 'storybook/theming';
 
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
 import { useLayout } from '../../layout/LayoutProvider';
@@ -16,110 +16,119 @@ export const MobileAbout: FC = () => {
   const { isMobileAboutOpen, setMobileAboutOpen } = useLayout();
   const aboutRef = useRef(null);
 
+  const [state, toggle] = useTransitionState({
+    timeout: MOBILE_TRANSITION_DURATION,
+    mountOnEnter: true,
+    unmountOnExit: true,
+  });
+
+  // Update transition state when isMobileAboutOpen changes
+  useEffect(() => {
+    toggle(isMobileAboutOpen);
+  }, [isMobileAboutOpen, toggle]);
+
+  if (!state.isMounted) {
+    return null;
+  }
+
   return (
-    <Transition
-      nodeRef={aboutRef}
-      in={isMobileAboutOpen}
-      timeout={MOBILE_TRANSITION_DURATION}
-      appear
-      mountOnEnter
-      unmountOnExit
+    <Container
+      ref={aboutRef}
+      $status={state.status}
+      $transitionDuration={MOBILE_TRANSITION_DURATION}
     >
-      {(state) => (
-        <Container ref={aboutRef} state={state} transitionDuration={MOBILE_TRANSITION_DURATION}>
-          <ScrollArea vertical offset={3} scrollbarSize={6}>
-            <InnerArea>
-              <CloseButton
-                onClick={() => setMobileAboutOpen(false)}
-                ariaLabel="Close about section"
-                tooltip="Close about section"
-                variant="ghost"
-              >
-                <ArrowLeftIcon />
-                Back
-              </CloseButton>
-              <LinkContainer>
-                <LinkLine
-                  href="https://github.com/storybookjs/storybook"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <LinkLeft>
-                    <GithubIcon />
-                    <span>Github</span>
-                  </LinkLeft>
-                  <ShareAltIcon width={12} />
-                </LinkLine>
-                <LinkLine
-                  href="https://storybook.js.org/docs/react/get-started/install/?ref=ui"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <LinkLeft>
-                    <StorybookIcon />
-                    <span>Documentation</span>
-                  </LinkLeft>
-                  <ShareAltIcon width={12} />
-                </LinkLine>
-              </LinkContainer>
-              <UpgradeBlock />
-              <BottomText>
-                Open source software maintained by{' '}
-                <Link href="https://chromatic.com" target="_blank" rel="noopener noreferrer">
-                  Chromatic
-                </Link>{' '}
-                and the{' '}
-                <Link
-                  href="https://github.com/storybookjs/storybook/graphs/contributors"
-                  rel="noopener noreferrer"
-                >
-                  Storybook Community
-                </Link>
-              </BottomText>
-            </InnerArea>
-          </ScrollArea>
-        </Container>
-      )}
-    </Transition>
+      <ScrollArea vertical offset={3} scrollbarSize={6}>
+        <InnerArea>
+          <CloseButton
+            onClick={() => setMobileAboutOpen(false)}
+            ariaLabel="Close about section"
+            tooltip="Close about section"
+            variant="ghost"
+          >
+            <ArrowLeftIcon />
+            Back
+          </CloseButton>
+          <LinkContainer>
+            <LinkLine
+              href="https://github.com/storybookjs/storybook"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <LinkLeft>
+                <GithubIcon />
+                <span>Github</span>
+              </LinkLeft>
+              <ShareAltIcon width={12} />
+            </LinkLine>
+            <LinkLine
+              href="https://storybook.js.org/docs/react/get-started/install/?ref=ui"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <LinkLeft>
+                <StorybookIcon />
+                <span>Documentation</span>
+              </LinkLeft>
+              <ShareAltIcon width={12} />
+            </LinkLine>
+          </LinkContainer>
+          <UpgradeBlock />
+          <BottomText>
+            Open source software maintained by{' '}
+            <Link href="https://chromatic.com" target="_blank" rel="noopener noreferrer">
+              Chromatic
+            </Link>{' '}
+            and the{' '}
+            <Link
+              href="https://github.com/storybookjs/storybook/graphs/contributors"
+              rel="noopener noreferrer"
+            >
+              Storybook Community
+            </Link>
+          </BottomText>
+        </InnerArea>
+      </ScrollArea>
+    </Container>
   );
 };
 
-const Container = styled.div<{ state: TransitionStatus; transitionDuration: number }>(
-  ({ theme, state, transitionDuration }) => ({
+const slideFromRight = keyframes({
+  from: {
+    opacity: 0,
+    transform: 'translate(20px, 0)',
+  },
+  to: {
+    opacity: 1,
+    transform: 'translate(0, 0)',
+  },
+});
+
+const slideToRight = keyframes({
+  from: {
+    opacity: 1,
+    transform: 'translate(0, 0)',
+  },
+  to: {
+    opacity: 0,
+    transform: 'translate(20px, 0)',
+  },
+});
+
+const Container = styled.div<{ $status: string; $transitionDuration: number }>(
+  ({ theme, $status, $transitionDuration }) => ({
     position: 'absolute',
     width: '100%',
     height: '100%',
     top: 0,
     left: 0,
     zIndex: 11,
-    transition: `all ${transitionDuration}ms ease-in-out`,
     overflow: 'auto',
     color: theme.color.defaultText,
     background: theme.background.content,
-    opacity: `${(() => {
-      switch (state) {
-        case 'entering':
-        case 'entered':
-          return 1;
-        case 'exiting':
-        case 'exited':
-          return 0;
-        default:
-          return 0;
-      }
-    })()}`,
-    transform: `${(() => {
-      switch (state) {
-        case 'entering':
-        case 'entered':
-          return 'translateX(0)';
-        case 'exiting':
-        case 'exited':
-          return 'translateX(20px)';
-        default:
-          return 'translateX(0)';
-      }
-    })()}`,
+    animation:
+      $status === 'exiting'
+        ? `${slideToRight} ${$transitionDuration}ms`
+        : `${slideFromRight} ${$transitionDuration}ms`,
   })
 );
 

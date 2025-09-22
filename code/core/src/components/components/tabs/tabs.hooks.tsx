@@ -1,14 +1,13 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
+import type { TooltipLinkListLink as Link } from 'storybook/internal/components';
+import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 import { sanitize } from 'storybook/internal/csf';
 
 import { styled } from 'storybook/theming';
 import useResizeObserver from 'use-resize-observer';
 
 import { TabButton } from '../bar/button';
-import { TooltipLinkList } from '../tooltip/TooltipLinkList';
-import type { Link } from '../tooltip/TooltipLinkList';
-import { WithTooltip } from '../tooltip/WithTooltip';
 import type { ChildrenListComplete } from './tabs.helpers';
 
 const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
@@ -66,7 +65,6 @@ export function useList(list: ChildrenListComplete) {
       return (
         <>
           <WithTooltip
-            interactive
             visible={isTooltipVisible}
             onVisibleChange={setTooltipVisible}
             placement="bottom"

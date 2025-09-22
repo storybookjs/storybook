@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 
 import { Button, Modal } from 'storybook/internal/components';
 
-import { CloseIcon, SyncIcon } from '@storybook/icons';
+import { SyncIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -77,7 +77,6 @@ function ErrorCause({ error }: { error: ErrorLike }) {
 export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps) {
   const api = useStorybookApi();
   const { isModalOpen, setModalOpen } = useContext(GlobalErrorContext);
-  const handleClose = () => setModalOpen?.(false);
 
   const troubleshootURL = api.getDocsUrl({
     subpath: DOCUMENTATION_FATAL_ERROR_LINK,
@@ -148,7 +147,7 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
   ) : null;
 
   return (
-    <Modal onEscapeKeyDown={handleClose} onInteractOutside={handleClose} open={isModalOpen}>
+    <Modal ariaLabel="Storybook Tests error details" onOpenChange={setModalOpen} open={isModalOpen}>
       <ModalBar>
         <ModalTitle>Storybook Tests error details</ModalTitle>
         <ModalActionBar>
@@ -161,9 +160,7 @@ export function GlobalErrorModal({ onRerun, storeState }: GlobalErrorModalProps)
               Troubleshoot
             </a>
           </Button>
-          <Button variant="ghost" padding="small" onClick={handleClose} ariaLabel="Close modal">
-            <CloseIcon />
-          </Button>
+          <Modal.Close />
         </ModalActionBar>
       </ModalBar>
       <ModalStackTrace>

@@ -82,6 +82,8 @@ test.describe('addon-controls', () => {
 
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
+    await sbPage.closeAnyPendingModal();
+
     await sbPage.viewAddonPanel('Controls');
     await sbPage.panelContent().locator('#control-select').selectOption('double  space');
 
@@ -94,6 +96,7 @@ test.describe('addon-controls', () => {
 
     const sbPage = new SbPage(page, expect);
     await sbPage.waitUntilLoaded();
+    await sbPage.closeAnyPendingModal();
     await sbPage.viewAddonPanel('Controls');
     await sbPage.panelContent().locator('#control-multiSelect').selectOption('double  space');
 

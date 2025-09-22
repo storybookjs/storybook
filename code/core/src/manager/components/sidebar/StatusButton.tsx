@@ -1,5 +1,5 @@
-import type { ComponentProps, FC } from 'react';
-import React from 'react';
+import type { ComponentProps } from 'react';
+import React, { forwardRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import type { StatusValue } from 'storybook/internal/types';
@@ -88,6 +88,7 @@ const StyledButton = styled(Button)<{
     }
 );
 
-export const StatusButton: FC<StatusButtonProps> = (props) => {
-  return <StyledButton variant="ghost" padding="small" {...props} />;
-};
+export const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>((props, ref) => {
+  return <StyledButton variant="ghost" padding="small" {...props} ref={ref} />;
+});
+StatusButton.displayName = 'StatusButton';

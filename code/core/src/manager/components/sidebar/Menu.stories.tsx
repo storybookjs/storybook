@@ -79,8 +79,9 @@ export const Expanded: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    // This story can have significant loading time.
     await new Promise((res) => {
-      setTimeout(res, 500);
+      setTimeout(res, 1000);
     });
     const menuButton = await canvas.findByRole('switch');
     await userEvent.click(menuButton);

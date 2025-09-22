@@ -41,7 +41,7 @@ export { createCopyToClipboardFunction } from './components/syntaxhighlighter/sy
 
 // UI
 export { ActionBar } from './components/ActionBar/ActionBar';
-export { Modal } from './components/Modal/Modal';
+export { Modal, ModalDecorator } from './components/Modal/Modal';
 export { Spaced } from './components/spaced/Spaced';
 export { Placeholder } from './components/placeholder/placeholder';
 export { ScrollArea } from './components/ScrollArea/ScrollArea';
@@ -58,10 +58,26 @@ export { Select } from './components/Select/Select';
 // Forms
 export { Form } from './components/Form/Form';
 
+// Overlay helpers for popovers, menus, tooltips
+export { convertToReactAriaPlacement } from './components/shared/overlayHelpers';
+export type { PopperPlacement } from './components/shared/overlayHelpers';
+
+// Popovers
+export { Popover } from './components/Popover/Popover';
+export type { PopoverProps } from './components/Popover/Popover';
+export { WithPopover } from './components/Popover/lazy-WithPopover';
+export type { WithPopoverProps } from './components/Popover/WithPopover';
+
 // Tooltips
-export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip';
-export { TooltipMessage } from './components/tooltip/TooltipMessage';
+export { Tooltip } from './components/tooltip/Tooltip';
+export type { TooltipProps } from './components/tooltip/Tooltip';
 export { TooltipNote } from './components/tooltip/TooltipNote';
+export type { TooltipNoteProps } from './components/tooltip/TooltipNote';
+export { WithTooltip } from './components/tooltip/lazy-WithTooltip';
+export type { WithTooltipProps } from './components/tooltip/WithTooltip';
+
+// Old tooltips - deprecated and to remove in Storybook 11
+export { TooltipMessage } from './components/tooltip/TooltipMessage';
 export {
   TooltipLinkList,
   type Link as TooltipLinkListLink,

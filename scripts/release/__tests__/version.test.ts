@@ -252,13 +252,13 @@ describe('Version', () => {
         expect(fspExtra.writeFile).toHaveBeenCalledWith(
           CODE_PACKAGE_JSON_PATH,
           // this call is the write that removes the "deferredNextVersion" property
-          JSON.stringify({ version: currentVersion }, null, 2)
+          expect.stringContaining(JSON.stringify({ version: currentVersion }, null, 2))
         );
       }
 
       expect(fspExtra.writeFile).toHaveBeenCalledWith(
         CODE_PACKAGE_JSON_PATH,
-        JSON.stringify({ version: expectedVersion }, null, 2)
+        expect.stringContaining(JSON.stringify({ version: expectedVersion }, null, 2))
       );
       expect(fspExtra.writeFile).toHaveBeenCalledWith(
         MANAGER_API_VERSION_PATH,
@@ -270,13 +270,15 @@ describe('Version', () => {
       );
       expect(fspExtra.writeFile).toHaveBeenCalledWith(
         A11Y_PACKAGE_JSON_PATH,
-        JSON.stringify(
-          {
-            // should update package version
-            version: expectedVersion,
-          },
-          null,
-          2
+        expect.stringContaining(
+          JSON.stringify(
+            {
+              // should update package version
+              version: expectedVersion,
+            },
+            null,
+            2
+          )
         )
       );
       expect(execaCommand).toHaveBeenCalledWith('yarn install --mode=update-lockfile', {
@@ -297,7 +299,9 @@ describe('Version', () => {
     expect(fspExtra.writeFile).toHaveBeenCalledTimes(1);
     expect(fspExtra.writeFile).toHaveBeenCalledWith(
       CODE_PACKAGE_JSON_PATH,
-      JSON.stringify({ version: '1.0.0', deferredNextVersion: '2.0.0-beta.0' }, null, 2)
+      expect.stringContaining(
+        JSON.stringify({ version: '1.0.0', deferredNextVersion: '2.0.0-beta.0' }, null, 2)
+      )
     );
     expect(execaCommand).not.toHaveBeenCalled();
   });

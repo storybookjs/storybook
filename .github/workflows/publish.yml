@@ -45,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
 
       - name: Cache dependencies
         uses: actions/cache@d4323d4df104b026a6aa633fdb11d772146be0bf # v4.2.2
@@ -191,7 +191,7 @@ jobs:
 
       - name: Create Sentry release
         if: steps.publish-needed.outputs.published == 'false'
-        uses: sentry/action-release@v2
+        uses: getsentry/action-release@v3
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
@@ -206,4 +206,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@master
         with:
-          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'

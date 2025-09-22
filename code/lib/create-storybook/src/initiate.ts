@@ -31,7 +31,7 @@ import { NxProjectDetectedError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import boxen from 'boxen';
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import { getProcessAncestry } from 'process-ancestry';
 import prompts from 'prompts';
@@ -395,6 +395,18 @@ export function getStorybookVersionFromAncestry(
   return undefined;
 }
 
+export function getCliIntegrationFromAncestry(
+  ancestry: ReturnType<typeof getProcessAncestry>
+): string | undefined {
+  for (const ancestor of ancestry.toReversed()) {
+    const match = ancestor.command?.match(/\s(sv(@[^ ]+)? create|sv(@[^ ]+)? add)/i);
+    if (match) {
+      return match[1].includes('add') ? 'sv add' : 'sv create';
+    }
+  }
+  return undefined;
+}
+
 export async function doInitiate(options: CommandOptions): Promise<
   | {
       shouldRunDev: true;
@@ -439,9 +451,11 @@ export async function doInitiate(options: CommandOptions): Promise<
   const isOutdated = lt(currentVersion, latestVersion);
   const borderColor = isOutdated ? '#FC521F' : '#F1618C';
   let versionSpecifier = undefined;
+  let cliIntegration = undefined;
   try {
     const ancestry = getProcessAncestry();
     versionSpecifier = getStorybookVersionFromAncestry(ancestry);
+    cliIntegration = getCliIntegrationFromAncestry(ancestry);
   } catch (err) {
     //
   }
@@ -614,7 +628,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
 
     const vitestConfigFilesData = await vitestConfigFiles.condition(
-      { babel, findUp, fs } as any,
+      { babel, empathic: find, fs } as any,
       { directory: process.cwd() } as any
     );
     if (vitestConfigFilesData.type === 'incompatible') {
@@ -660,6 +674,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       features: telemetryFeatures,
       newUser,
       versionSpecifier,
+      cliIntegration,
     });
   }
 
@@ -699,7 +714,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     return { shouldRunDev: false };
   }
 
-  const foundGitIgnoreFile = await findUp('.gitignore');
+  const foundGitIgnoreFile = find.up('.gitignore');
   const rootDirectory = getProjectRoot();
   if (foundGitIgnoreFile && foundGitIgnoreFile.includes(rootDirectory)) {
     const contents = await fs.readFile(foundGitIgnoreFile, 'utf-8');

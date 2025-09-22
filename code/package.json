@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "10.0.0-beta.2",
+  "version": "10.0.0-beta.5",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -85,6 +85,9 @@
     "node >= 20"
   ],
   "resolutions": {
+    "@babel/runtime": "latest",
+    "@babel/traverse": "latest",
+    "@babel/types": "^7.28.4",
     "@playwright/test": "1.52.0",
     "@testing-library/user-event@npm:^14.4.0": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
     "@testing-library/user-event@npm:^14.6.1": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
@@ -103,11 +106,11 @@
   },
   "dependencies": {
     "@chromatic-com/storybook": "^4.1.1",
-    "@nx/vite": "20.2.2",
-    "@nx/workspace": "20.2.2",
+    "@nx/vite": "20.8.2",
+    "@nx/workspace": "20.8.2",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
-    "@storybook/addon-designs": "9.0.0-next.1",
+    "@storybook/addon-designs": "10.0.3--canary.67522d1.0",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-jest": "workspace:*",
     "@storybook/addon-links": "workspace:*",
@@ -190,7 +193,7 @@
     "jiti": "^2.4.2",
     "lint-staged": "^13.2.2",
     "mock-require": "^3.0.3",
-    "nx": "^20.4.0",
+    "nx": "20.8.2",
     "prettier": "^3.5.3",
     "prettier-plugin-brace-style": "^0.6.2",
     "prettier-plugin-css-order": "^2.1.2",

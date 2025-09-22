@@ -95,7 +95,7 @@ test.describe("component testing", () => {
       await clearStatusesButton.click();
     }
 
-    const watchModeToggle = page.getByLabel("Watch mode", { exact: true });
+    const watchModeToggle = page.getByRole('switch', { name: 'Watch mode' });
     if (await watchModeToggle.isVisible() && await watchModeToggle.getAttribute("aria-checked") === "true") {
       await watchModeToggle.click();
     }
@@ -206,7 +206,7 @@ test.describe("component testing", () => {
     );
 
     const runTestsButton = await page.getByLabel("Start test run");
-    const watchModeButton = await page.getByLabel("Watch mode");
+    const watchModeButton = await page.getByRole('switch', { name: 'Watch mode' });
     await expect(runTestsButton).toBeEnabled();
     await expect(watchModeButton).toBeEnabled();
 
@@ -276,7 +276,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByLabel("Watch mode", { exact: true }).click();
+    await page.getByRole('switch', { name: 'Watch mode' }).click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(8000);
@@ -330,7 +330,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByLabel("Watch mode").click();
+    await page.getByRole('switch', { name: 'Watch mode' }).click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(3000);
@@ -369,7 +369,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByLabel("Watch mode").click();
+    await page.getByRole('switch', { name: 'Watch mode' }).click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(3000);
@@ -409,7 +409,7 @@ test.describe("component testing", () => {
       .getByRole("button", { name: "test" });
     await expect(storyElement).toBeVisible({ timeout: 30000 });
 
-    await page.getByLabel("Watch mode").click();
+    await page.getByRole('switch', { name: 'Watch mode' }).click();
 
     // We shouldn't have to do an arbitrary wait, but because there is no UI for loading state yet, we have to
     await page.waitForTimeout(3000);

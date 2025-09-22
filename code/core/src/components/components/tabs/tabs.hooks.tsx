@@ -65,7 +65,6 @@ export function useList(list: ChildrenListComplete) {
       return (
         <>
           <WithTooltip
-            interactive
             visible={isTooltipVisible}
             onVisibleChange={setTooltipVisible}
             placement="bottom"

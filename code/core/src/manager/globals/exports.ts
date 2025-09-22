@@ -534,6 +534,7 @@ export default {
     'Tabs',
     'TabsState',
     'ToggleButton',
+    'Tooltip',
     'TooltipLinkList',
     'TooltipMessage',
     'TooltipNote',

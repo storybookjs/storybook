@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import { Button, TooltipLinkList, WithTooltip, getStoryHref } from 'storybook/internal/components';
+import { Button, TooltipLinkList, WithPopover, getStoryHref } from 'storybook/internal/components';
 import type { Addon_BaseType } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -152,15 +152,15 @@ export const shareTool: Addon_BaseType = {
             : window.location.href;
 
           return storyId ? (
-            <WithTooltip
+            <WithPopover
               hasChrome
               placement="bottom"
-              tooltip={<ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl }} />}
+              popover={<ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl }} />}
             >
               <Button padding="small" variant="ghost" ariaLabel="Share" tooltip="Share...">
                 <ShareIcon />
               </Button>
-            </WithTooltip>
+            </WithPopover>
           ) : null;
         }}
       </Consumer>

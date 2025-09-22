@@ -9,7 +9,7 @@ const meta = preview.meta({
   id: 'interactive-tooltip-wrapper-component',
   title: 'InteractiveTooltipWrapper',
   component: InteractiveTooltipWrapper,
-  args: { children: 'Hover me' },
+  args: { children: <button>Hover me</button> },
 });
 
 const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
@@ -20,17 +20,23 @@ export const All = meta.story({
   render: () => (
     <Stack>
       <Row>
-        <InteractiveTooltipWrapper>No tooltip</InteractiveTooltipWrapper>
+        <InteractiveTooltipWrapper>
+          <button>No tooltip</button>
+        </InteractiveTooltipWrapper>
       </Row>
       <Row>
-        <InteractiveTooltipWrapper tooltip="Save">Tooltip</InteractiveTooltipWrapper>
+        <InteractiveTooltipWrapper tooltip="Save">
+          <button>Tooltip</button>
+        </InteractiveTooltipWrapper>
       </Row>
       <Row>
-        <InteractiveTooltipWrapper shortcut={['Ctrl', 'S']}>Shortcut</InteractiveTooltipWrapper>
+        <InteractiveTooltipWrapper shortcut={['Ctrl', 'S']}>
+          <button>Shortcut</button>
+        </InteractiveTooltipWrapper>
       </Row>
       <Row>
         <InteractiveTooltipWrapper tooltip="Save" shortcut={['Ctrl', 'S']}>
-          Tooltip and shortcut
+          <button>Tooltip and shortcut</button>
         </InteractiveTooltipWrapper>
       </Row>
     </Stack>

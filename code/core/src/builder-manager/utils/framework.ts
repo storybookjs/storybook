@@ -55,5 +55,9 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
     globals.STORYBOOK_FRAMEWORK = framework;
   }
 
+  if (options.networkAddress) {
+    globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
+  }
+
   return globals;
 };

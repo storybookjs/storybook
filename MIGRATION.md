@@ -15,6 +15,12 @@
       - [Added: tooltip](#added-tooltip)
       - [Removed: active](#removed-active)
     - [IconButton is deprecated](#iconbutton-is-deprecated)
+    - [Modal Component API Changes](#modal-component-api-changes)
+      - [Removed: container and portalSelector](#removed-container-and-portalselector)
+      - [Removed: onInteractOutside](#removed-oninteractoutside)
+      - [Removed: onEscapeKeyDown](#removed-onescapekeydown)
+      - [Added: `ariaLabel`](#added-arialabel-1)
+      - [Renamed: Modal.Dialog.Close and Modal.CloseButton](#renamed-modaldialogclose-and-modalclosebutton)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -624,6 +630,25 @@ Use Select if the active state denotes that the Button is open while a selection
 The IconButton component is deprecated, as it overlaps with Button. Instead, use Button with the `'ghost'` variant and `'small'` padding, and add an `ariaLabel` prop for screenreaders to announce.
 
 IconButton will be removed in future versions.
+
+#### Modal Component API Changes
+
+##### Removed: container and portalSelector
+The `container` and `portalSelector` props were not used inside Storybook, so they have been removed. The new Modal component does not support custom portal locations, because it is not recommended practice. A single portal at the end of the document ensures modals appear in their order of creation and are never cropped by CSS `overflow` properties.
+
+##### Removed: onInteractOutside
+The `onInteractOutside` prop is removed in favor of `dismissOnClickOutside`, because it was only used to close the modal when clicking outside. Use `dismissOnClickOutside` to control whether clicking outside the modal should close it or not.
+
+##### Removed: onEscapeKeyDown
+The `onEscapeKeyDown` prop is removed in favor of `dismissOnEscape`, because it was only used to close the modal when pressing Escape. Use `dismissOnEscape` to control whether pressing Escape should close it or not.
+
+##### Added: `ariaLabel`
+Modal elements must have a title to be accessible. Set that title through the mandatory `ariaLabel` prop.
+
+##### Renamed: Modal.Dialog.Close and Modal.CloseButton
+The `Modal.Dialog.Close` component and `Modal.CloseButton` components are replaced by `Modal.Close` for consistency with other components. You may call `<Modal.Close />` for a default close button, or `<Modal.Close asChild>...</Modal.Close>` to wrap your own custom button.
+
+The `Modal.Close` component no longer requires an `onClick` handler to close the modal. It will automatically close the modal when clicked. If you need to perform additional actions when the close button is clicked, you can still provide an `onClick` handler, and it will be called in addition to closing the modal.
 
 ## From version 8.x to 9.0.0
 

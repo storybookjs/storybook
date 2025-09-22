@@ -51,7 +51,7 @@ test.describe('tags', () => {
     test('filters stories via Tag filters tooltip (desktop)', async ({ page }) => {
       // Open Tag filters tooltip
       await page.locator('[aria-label="Tag filters"]').click();
-      const tooltip = page.locator('[data-testid="tooltip"]');
+      const tooltip = page.locator('[role="dialog"]');
       await expect(tooltip).toBeVisible();
 
       // No checkbox selected by default and "Select all tags" is shown
@@ -84,26 +84,26 @@ test.describe('tags', () => {
 
         // Open Tag filters tooltip
         await page.locator('[aria-label="Tag filters"]').click();
-        const tooltip = page.locator('[data-testid="tooltip"]');
-        await expect(tooltip).toBeVisible();
+        const tagFilterPopover = page.getByRole('dialog', { name: 'Tag filters' });
+        await expect(tagFilterPopover).toBeVisible();
 
         // No checkbox selected by default and "Select all tags" is shown
-        await expect(tooltip.locator('#select-all')).toBeVisible();
-        await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+        await expect(tagFilterPopover.locator('#select-all')).toBeVisible();
+        await expect(tagFilterPopover.locator('input[type="checkbox"]:checked')).toHaveCount(0);
 
         // Select the dev-only tag
-        await tooltip.locator('#list-item-tag-dev-only').click();
+        await tagFilterPopover.locator('#list-item-tag-dev-only').click();
 
         // Assert that only one story is visible in the (mobile) sidebar
         const stories = page.locator('#storybook-explorer-menu .sidebar-item');
         await expect(stories).toHaveCount(1);
 
         // Clear selection
-        await expect(tooltip.locator('#unselect-all')).toBeVisible();
-        await tooltip.locator('#unselect-all').click();
+        await expect(tagFilterPopover.locator('#unselect-all')).toBeVisible();
+        await tagFilterPopover.locator('#unselect-all').click();
 
         // Checkboxes are not selected anymore
-        await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
+        await expect(tagFilterPopover.locator('input[type="checkbox"]:checked')).toHaveCount(0);
       });
     });
   });

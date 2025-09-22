@@ -41,7 +41,7 @@ export { createCopyToClipboardFunction } from './components/syntaxhighlighter/sy
 
 // UI
 export { ActionBar } from './components/ActionBar/ActionBar';
-export { Modal } from './components/Modal/Modal';
+export { Modal, ModalDecorator } from './components/Modal/Modal';
 export { Spaced } from './components/spaced/Spaced';
 export { Placeholder } from './components/placeholder/placeholder';
 export { ScrollArea } from './components/ScrollArea/ScrollArea';
@@ -57,6 +57,16 @@ export { Select } from './components/Select/Select';
 
 // Forms
 export { Form } from './components/Form/Form';
+
+// Overlay helpers for popovers, menus, tooltips
+export { convertToReactAriaPlacement } from './components/shared/overlayHelpers';
+export type { PopperPlacement } from './components/shared/overlayHelpers';
+
+// Popovers
+export { Popover } from './components/Popover/Popover';
+export type { PopoverProps } from './components/Popover/Popover';
+export { WithPopover } from './components/Popover/lazy-WithPopover';
+export type { WithPopoverProps } from './components/Popover/WithPopover';
 
 // Tooltips
 export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip';

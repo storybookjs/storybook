@@ -147,6 +147,16 @@ export class SbPage {
     await this.waitForStoryLoaded();
   }
 
+  /**
+   * We have stories with modals set to auto-open (e.g. startOpen color control). This helper closes
+   * them to free scroll and keyboard focus traps.
+   */
+  async closeAnyPendingModal() {
+    const popover = this.page.locator('[role="dialog"]');
+    await this.page.keyboard.press('Escape');
+    await popover.waitFor({ state: 'hidden' });
+  }
+
   previewIframe() {
     return this.page.frameLocator('#storybook-preview-iframe');
   }

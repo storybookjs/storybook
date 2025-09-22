@@ -666,7 +666,7 @@ describe('stories codemod', () => {
       // expect(transformed).toContain('C = meta.story');
     });
 
-    it('should bail transformation if some stories are not transformed to avoid mixed CSF formats', async () => {
+    it('should bail transformation and warn if some stories are not transformed to avoid mixed CSF formats', async () => {
       const source = dedent`
         export default {
           title: 'Component',
@@ -683,9 +683,24 @@ describe('stories codemod', () => {
       expect(transformed).not.toContain('preview.meta');
       expect(transformed).not.toContain('meta.story');
 
-      expect(logger.warn).toHaveBeenCalledWith(
-        'Skipping codemod for Component.stories.tsx:\nDetected stories ["A", "B", "D"] were not fully transformed because some use an unsupported format.'
-      );
+      expect(vi.mocked(logger.warn).mock.calls[0][0]).toMatchInlineSnapshot(`
+        Skipping codemod for Component.stories.tsx:
+        Some of the detected stories ["A", "B", "D"] would not be transformed because they are written in an unsupported format.
+      `);
+    });
+
+    it('should bail transformation and not warn when file is already transformed', async () => {
+      const source = dedent`
+        import preview from '#.storybook/preview';
+
+        const meta = preview.meta({ title: 'Component' });
+        export const A = meta.story();
+      `;
+      const transformed = await transform(source);
+      const formattedSource = await formatFileContent('Component.stories.tsx', source);
+      expect(transformed).toEqual(formattedSource);
+
+      expect(logger.warn).not.toHaveBeenCalled();
     });
   });
 });

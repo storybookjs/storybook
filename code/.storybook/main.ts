@@ -44,7 +44,6 @@ const config = defineMain({
     {
       directory: '../core/src/component-testing/components',
       titlePrefix: 'component-testing',
-      files: 'test-fn.stories.tsx',
     },
     {
       directory: '../core/src/controls/components',

@@ -240,11 +240,15 @@ export async function storyToCsfFactory(
   });
 
   // If some stories were detected but not all could be transformed, we skip the codemod to avoid mixed csf syntax and therefore a broken indexer.
-  if (detectedStoryNames.length > 0 && transformedStoryExports.size !== detectedStoryNames.length) {
+  if (
+    detectedStoryNames.length > 0 &&
+    transformedStoryExports.size > 0 &&
+    transformedStoryExports.size !== detectedStoryNames.length
+  ) {
     logger.warn(
-      `Skipping codemod for ${info.path}:\nDetected stories [${detectedStoryNames
+      `Skipping codemod for ${info.path}:\nSome of the detected stories [${detectedStoryNames
         .map((name) => `"${name}"`)
-        .join(', ')}] were not fully transformed because some use an unsupported format.`
+        .join(', ')}] would not be transformed because they are written in an unsupported format.`
     );
     return info.source;
   }

@@ -230,6 +230,8 @@ export function vitestPluginNext(): Plugin[] {
                 'next/dist/client/dev/noop-turbopack-hmr',
               'react-server-dom-webpack/client':
                 '@vitejs/plugin-rsc/vendor/react-server-dom/client.edge',
+              'react-server-dom-webpack/client.edge':
+                '@vitejs/plugin-rsc/vendor/react-server-dom/client.edge',
             },
           },
           environments: {

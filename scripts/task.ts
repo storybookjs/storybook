@@ -17,6 +17,7 @@ import { version } from '../code/package.json';
 import { bench } from './tasks/bench';
 import { build } from './tasks/build';
 import { check } from './tasks/check';
+import { checkSandbox } from './tasks/check-sandbox';
 import { chromatic } from './tasks/chromatic';
 import { compile } from './tasks/compile';
 import { dev } from './tasks/dev';
@@ -91,6 +92,7 @@ export const tasks = {
   // These tasks pertain to a single sandbox in the ../sandboxes dir
   generate,
   sandbox,
+  'check-sandbox': checkSandbox,
   dev,
   'smoke-test': smokeTest,
   build,

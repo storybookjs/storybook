@@ -151,4 +151,31 @@ describe('getSyncedStorybookAddons', () => {
 
     expect(transformedCode).toMatch(originalCode);
   });
+
+  it('should add an empty addons array if no addons are installed', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+
+      export default definePreview({});
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    const result = await getSyncedStorybookAddons(
+      {
+        addons: [],
+        stories: [],
+      },
+      preview,
+      configDir
+    );
+    const transformedCode = normalizeLineBreaks(printConfig(result).code);
+
+    expect(transformedCode).toMatchInlineSnapshot(`
+      import { definePreview } from "@storybook/react/preview";
+
+      export default definePreview({
+        addons: []
+      });
+    `);
+  });
 });

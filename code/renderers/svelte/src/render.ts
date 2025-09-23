@@ -3,7 +3,7 @@ import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 
 /*
 ! DO NOT change these PreviewRender and createSvelte5Props imports to relative paths, it will break them.
-! Relative imports will be compiled at build time by tsup, but we need Svelte to compile them
+! Relative imports will be compiled at build time by the bundler, but we need Svelte to compile them
 ! when compiling the rest of the Svelte files.
 */
 import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';

@@ -11,7 +11,6 @@ import React, {
 } from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
-import { deprecate } from 'storybook/internal/client-logger';
 import {
   DOCS_PREPARED,
   SET_STORIES,
@@ -42,7 +41,7 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 
 import { createContext } from './context';
 import getInitialState from './initial-state';
@@ -54,6 +53,7 @@ import * as channel from './modules/channel';
 import * as globals from './modules/globals';
 import * as layout from './modules/layout';
 import * as notifications from './modules/notifications';
+import * as openInEditor from './modules/open-in-editor';
 import * as provider from './modules/provider';
 import * as refs from './modules/refs';
 import * as settings from './modules/settings';
@@ -177,6 +177,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
       url,
       version,
       whatsnew,
+      openInEditor,
     ].map((m) =>
       m.init({ ...routeData, ...optionsData, ...apiData, state: this.state, fullAPI: this.api })
     );

@@ -181,7 +181,7 @@ export class NoMetaError extends Error {
     super(dedent`
       CSF: ${msg} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -193,7 +193,7 @@ export class MultipleMetaError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -205,7 +205,7 @@ export class MixedFactoryError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -217,7 +217,7 @@ export class BadMetaError extends Error {
     super(dedent`
       CSF: ${message} ${formatLocation(ast, fileName)}
       
-      More info: https://storybook.js.org/docs/writing-stories#default-export
+      More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export
     `);
     this.name = this.constructor.name;
   }
@@ -442,10 +442,18 @@ export class CsfFile {
             metaNode = decl;
           } else if (
             // export default { ... } as Meta<...>
+            // export default { ... } satisfies Meta<...>
             (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) &&
             t.isObjectExpression(decl.expression)
           ) {
             metaNode = decl.expression;
+          } else if (
+            // export default { ... } satisfies Meta as Meta<...>
+            t.isTSAsExpression(decl) &&
+            t.isTSSatisfiesExpression(decl.expression) &&
+            t.isObjectExpression(decl.expression.expression)
+          ) {
+            metaNode = decl.expression.expression;
           }
 
           if (metaNode && t.isProgram(parent)) {
@@ -495,10 +503,22 @@ export class CsfFile {
                 }
                 let storyNode;
                 if (t.isVariableDeclarator(decl)) {
-                  storyNode =
-                    t.isTSAsExpression(decl.init) || t.isTSSatisfiesExpression(decl.init)
-                      ? decl.init.expression
-                      : decl.init;
+                  if (
+                    t.isTSAsExpression(decl.init) &&
+                    t.isTSSatisfiesExpression(decl.init.expression)
+                  ) {
+                    // { ... } satisfies Meta<...> as Meta<...>
+                    storyNode = decl.init.expression.expression;
+                  } else if (
+                    t.isTSAsExpression(decl.init) ||
+                    t.isTSSatisfiesExpression(decl.init)
+                  ) {
+                    // { ... } as Meta<...>
+                    // { ... } satisfies Meta<...>
+                    storyNode = decl.init.expression;
+                  } else {
+                    storyNode = decl.init;
+                  }
                 } else {
                   storyNode = decl;
                 }
@@ -596,10 +616,18 @@ export class CsfFile {
                     metaNode = decl;
                   } else if (
                     // export default { ... } as Meta<...>
-                    t.isTSAsExpression(decl) &&
+                    // export default { ... } satisfies Meta<...>
+                    (t.isTSAsExpression(decl) || t.isTSSatisfiesExpression(decl)) &&
                     t.isObjectExpression(decl.expression)
                   ) {
                     metaNode = decl.expression;
+                  } else if (
+                    // export default { ... } satisfies Meta as Meta<...>
+                    t.isTSAsExpression(decl) &&
+                    t.isTSSatisfiesExpression(decl.expression) &&
+                    t.isObjectExpression(decl.expression.expression)
+                  ) {
+                    metaNode = decl.expression.expression;
                   }
 
                   if (metaNode && t.isProgram(parent)) {
@@ -681,7 +709,7 @@ export class CsfFile {
             throw new Error(dedent`
               Unexpected \`storiesOf\` usage: ${formatLocation(node, self._options.fileName)}.
 
-              SB8 does not support \`storiesOf\`. 
+              SB8 does not support \`storiesOf\`.
             `);
           }
           if (

@@ -3,7 +3,12 @@ import { mkdir, readdir, rm } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
+import {
+  JsPackageManagerFactory,
+  isCI,
+  optionalEnvToBoolean,
+  versions,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { downloadTemplate } from 'giget';
@@ -167,7 +172,7 @@ export const sandbox = async ({
         message: 'Enter the output directory',
         initialValue: outputDirectoryName ?? undefined,
         validate: (directoryName) =>
-          existsSync(directoryName)
+          directoryName && existsSync(directoryName)
             ? `${directoryName} already exists. Please choose another name.`
             : undefined,
       },
@@ -221,7 +226,7 @@ export const sandbox = async ({
         // @ts-ignore-error (no types for this)
         const { initiate } = await import('create-storybook');
         await initiate({
-          dev: process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true',
+          dev: isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX),
           ...options,
           features: ['docs', 'test'],
         });

@@ -26,9 +26,7 @@ declare var __STORYBOOK_VITEST_MOCKER__: any;
 
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';
-declare module 'better-opn';
 declare module 'lazy-universal-dotenv';
-declare module 'open';
 declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
 

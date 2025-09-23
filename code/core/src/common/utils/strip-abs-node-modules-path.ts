@@ -12,6 +12,5 @@ export function stripAbsNodeModulesPath(absPath: string) {
   // TODO: Evaluate if searching for node_modules in a yarn pnp environment is correct
   const splits = absPath.split(`node_modules${sep}`);
   // Return everything after the final "node_modules/"
-  const module = normalizePath(splits[splits.length - 1]);
-  return module;
+  return normalizePath(splits[splits.length - 1]);
 }

@@ -34,7 +34,7 @@ addons.setConfig({
 ```
 
 ```ts filename=".storybook/manager.ts" renderer="common" language="ts"
-import { addons, type State } from '@storybook/manager-api';
+import { addons, type State } from 'storybook/manager-api';
 
 addons.setConfig({
   navSize: 300,

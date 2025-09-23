@@ -1,16 +1,18 @@
 import { type ChildProcess } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
 import {
   internal_universalStatusStore,
   internal_universalTestProviderStore,
 } from 'storybook/internal/core-server';
-import type { EventInfo } from 'storybook/internal/types';
+import type { EventInfo, Options } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaNode } from 'execa';
-import { join } from 'pathe';
+import { normalize } from 'pathe';
 
+import { importMetaResolve } from '../../../../core/src/shared/utils/module';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
@@ -23,7 +25,7 @@ const MAX_START_TIME = 30000;
 
 // This path is a bit confusing, but essentially `boot-test-runner` gets bundled into the preset bundle
 // which is at the root. Then, from the root, we want to load `node/vitest.mjs`
-const vitestModulePath = join(__dirname, 'node', 'vitest.mjs');
+const vitestModulePath = fileURLToPath(importMetaResolve('@storybook/addon-vitest/vitest'));
 
 // Events that were triggered before Vitest was ready are queued up and resent once it's ready
 const eventQueue: { type: string; args?: any[] }[] = [];
@@ -43,9 +45,16 @@ const forwardUniversalStoreEvent =
     });
   };
 
-const bootTestRunner = async (channel: Channel, store: Store) => {
+const bootTestRunner = async ({
+  channel,
+  store,
+  options,
+}: {
+  channel: Channel;
+  store: Store;
+  options: Options;
+}) => {
   let stderr: string[] = [];
-
   const killChild = () => {
     unsubscribeStore?.();
     unsubscribeStatusStore?.();
@@ -74,6 +83,7 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
           TEST: 'true',
           VITEST_CHILD_PROCESS: 'true',
           NODE_ENV: process.env.NODE_ENV ?? 'test',
+          STORYBOOK_CONFIG_DIR: normalize(options.configDir),
         },
         extendEnv: true,
       });
@@ -145,18 +155,25 @@ const bootTestRunner = async (channel: Channel, store: Store) => {
   });
 };
 
-export const runTestRunner = async (
-  channel: Channel,
-  store: Store,
-  initEvent?: string,
-  initArgs?: any[]
-) => {
+export const runTestRunner = async ({
+  channel,
+  store,
+  initEvent,
+  initArgs,
+  options,
+}: {
+  channel: Channel;
+  store: Store;
+  initEvent?: string;
+  initArgs?: any[];
+  options: Options;
+}) => {
   if (!ready && initEvent) {
     eventQueue.push({ type: initEvent, args: initArgs });
   }
   if (!child) {
     ready = false;
-    await bootTestRunner(channel, store);
+    await bootTestRunner({ channel, store, options });
     ready = true;
   }
 };

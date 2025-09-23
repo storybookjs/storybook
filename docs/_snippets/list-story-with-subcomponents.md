@@ -62,7 +62,8 @@ export const OneItem = {
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -112,7 +113,7 @@ export const OneItem = {
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -140,6 +141,54 @@ export const OneItem: Story = {
     </List>
   ),
 };
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+    subcomponents: { ListItem },
+  });
+</script>
+
+<Story name="Empty" />
+
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+    subcomponents: { ListItem },
+  });
+</script>
+
+<Story name="Empty" />
+
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
 ```
 
 ```js filename="List.stories.js" renderer="web-components" language="js"

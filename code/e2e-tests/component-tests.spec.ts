@@ -36,8 +36,6 @@ test.describe('interactions', () => {
     await expect(interactionsTab).toBeVisible();
 
     const panel = sbPage.panelContent();
-    const renderStep = panel.locator('[aria-label="Render step"]');
-    await expect(renderStep).toContainText(/Render story/);
     await expect(panel).toContainText(/Pass/);
     await expect(panel).toContainText(/userEvent.click/);
     await expect(panel).toBeVisible();
@@ -141,7 +139,7 @@ test.describe('interactions', () => {
     await expect(button).toContainText('Button', { timeout: 50000 });
 
     const panel = sbPage.panelContent();
-    await expect(panel).toContainText(/Fail/);
+    await expect(panel).toContainText(/Pass/);
     await expect(panel).toContainText(/Found 1 unhandled error/);
     await expect(panel).toBeVisible();
   });

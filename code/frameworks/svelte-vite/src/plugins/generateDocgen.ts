@@ -264,7 +264,7 @@ export function generateDocgen(targetFileName: string, cache: DocgenCache): Docg
   if (cache.options === undefined || !cache.rootNames?.has(targetFileName)) {
     [cache.options, cache.rootNames] = loadConfig(targetFileName);
 
-    const shimFilename = require.resolve('svelte2tsx/svelte-shims-v4.d.ts');
+    const shimFilename = import.meta.resolve('svelte2tsx/svelte-shims-v4.d.ts');
     cache.rootNames.add(shimFilename);
     cache.rootNames.add(targetFileName);
   }

@@ -1,12 +1,11 @@
 import os from 'node:os';
 
 import { formatFileContent } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { promises as fs } from 'fs';
 import picocolors from 'picocolors';
 import slash from 'slash';
-
-const logger = console;
 
 export const maxConcurrentTasks = Math.max(1, os.cpus().length - 1);
 
@@ -90,14 +89,14 @@ export async function runCodemod(
               unmodifiedCount++;
             }
           } catch (fileError) {
-            logger.error(`Error processing file ${file}:`, fileError);
+            logger.error(`Error processing file ${file}: ${String(fileError)}`);
             errorCount++;
           }
         })
       )
     );
   } catch (error) {
-    logger.error('Error applying transform:', error);
+    logger.error(`Error applying transform: ${String(error)}`);
     errorCount++;
   }
 

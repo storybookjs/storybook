@@ -48,7 +48,8 @@ export const Primary = {
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react-vite';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
@@ -90,7 +91,7 @@ export const Primary = {
 ```
 
 ```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
@@ -166,7 +167,8 @@ export const Primary = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import { Meta, StoryObj } from '@storybook/svelte-vite';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 import MarginDecorator from './MarginDecorator.svelte';

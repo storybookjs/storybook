@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as sbcc from 'storybook/internal/common';
+import type * as sbcc from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
-import { UpgradeStorybookToLowerVersionError } from 'storybook/internal/server-errors';
 
-import { doUpgrade, getStorybookVersion, toUpgradedDependencies } from './upgrade';
+import { getStorybookVersion } from './upgrade';
+import { generateUpgradeSpecs } from './util';
 
 const findInstallationsMock =
   vi.fn<(arg: string[]) => Promise<sbcc.InstallationMetadata | undefined>>();
+const getInstalledVersionMock = vi.fn<(arg: string) => Promise<string | undefined>>();
 
 vi.mock('storybook/internal/telemetry');
 vi.mock('storybook/internal/common', async (importOriginal) => {
@@ -18,9 +18,10 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
     JsPackageManagerFactory: {
       getPackageManager: () => ({
         findInstallations: findInstallationsMock,
+        getInstalledVersion: getInstalledVersionMock,
         latestVersion: async () => '8.0.0',
-        retrievePackageJson: async () => {},
-        getAllDependencies: async () => ({ storybook: '8.0.0' }),
+        getAllDependencies: () => ({ storybook: '8.0.0' }),
+        getModulePackageJSON: vi.fn(),
       }),
     },
     versions: Object.keys(originalModule.versions).reduce(
@@ -50,50 +51,6 @@ describe.each([
   });
 });
 
-describe('Upgrade errors', () => {
-  it('should throw an error when upgrading to a lower version number', async () => {
-    findInstallationsMock.mockResolvedValue({
-      dependencies: {
-        storybook: [
-          {
-            version: '9.1.0',
-          },
-        ],
-      },
-      duplicatedDependencies: {},
-      infoCommand: '',
-      dedupeCommand: '',
-    });
-
-    await expect(doUpgrade({} as any)).rejects.toThrowError(UpgradeStorybookToLowerVersionError);
-    expect(findInstallationsMock).toHaveBeenCalledWith(Object.keys(sbcc.versions));
-  });
-  it('should show a warning when upgrading to the same version number', async () => {
-    findInstallationsMock.mockResolvedValue({
-      dependencies: {
-        storybook: [
-          {
-            version: '9.0.0',
-          },
-        ],
-      },
-      duplicatedDependencies: {},
-      infoCommand: '',
-      dedupeCommand: '',
-    });
-
-    // Mock as a throw, so that we don't have to mock the content of the doUpgrade fn that comes after it
-    vi.spyOn(logger, 'warn').mockImplementation((error: any) => {
-      throw error;
-    });
-
-    await expect(doUpgrade({ packageManager: 'npm' } as any)).rejects.toContain(
-      'You are upgrading Storybook to the same version that is currently installed in the project'
-    );
-    expect(findInstallationsMock).toHaveBeenCalledWith(Object.keys(sbcc.versions));
-  });
-});
-
 describe('toUpgradedDependencies', () => {
   let mockPackageManager: JsPackageManager;
 
@@ -110,7 +67,7 @@ describe('toUpgradedDependencies', () => {
         return '8.0.0';
       }
       if (packageName === '@chromatic-com/storybook@next') {
-        return '4.0.0-0';
+        return '4.0.0';
       }
       if (packageName === '@chromatic-com/storybook') {
         return '3.0.0';
@@ -139,7 +96,14 @@ describe('toUpgradedDependencies', () => {
         react: '18.0.0',
       };
 
-      const result = await toUpgradedDependencies(deps, mockPackageManager);
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
+        isCanary: false,
+        isCLIOutdated: false,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
+        isCLIExactLatest: false,
+      });
 
       expect(result).toEqual([
         '@storybook/react@9.0.0',
@@ -157,8 +121,13 @@ describe('toUpgradedDependencies', () => {
         '@storybook/react': '^8.0.0',
       };
 
-      const result = await toUpgradedDependencies(deps, mockPackageManager, {
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
+        isCanary: false,
         isCLIOutdated: true,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
+        isCLIExactLatest: false,
       });
 
       expect(result).toEqual(['@storybook/react@9.0.0']);
@@ -169,8 +138,13 @@ describe('toUpgradedDependencies', () => {
         '@storybook/react': '^8.0.0',
       };
 
-      const result = await toUpgradedDependencies(deps, mockPackageManager, {
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
         isCanary: true,
+        isCLIOutdated: false,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
+        isCLIExactLatest: false,
       });
 
       expect(result).toEqual(['@storybook/react@9.0.0']);
@@ -186,7 +160,12 @@ describe('toUpgradedDependencies', () => {
         '@chromatic-com/storybook': '~3.0.0',
       };
 
-      const result = await toUpgradedDependencies(deps, mockPackageManager, {
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
+        isCanary: false,
+        isCLIOutdated: false,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
         isCLIExactLatest: true,
       });
 
@@ -205,7 +184,11 @@ describe('toUpgradedDependencies', () => {
         '@storybook/addon-designs': '8.0.0',
       };
 
-      const result = await toUpgradedDependencies(deps, mockPackageManager, {
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
+        isCanary: false,
+        isCLIOutdated: false,
+        isCLIExactLatest: false,
         isCLIExactPrerelease: true,
         isCLIPrerelease: true,
       });
@@ -227,8 +210,13 @@ describe('toUpgradedDependencies', () => {
         new Error('MOCKED Network error')
       );
 
-      const result = await toUpgradedDependencies(deps, mockPackageManager, {
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
+        isCanary: false,
+        isCLIOutdated: false,
         isCLIExactLatest: true,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
       });
 
       // Should still have the core dependencies
@@ -240,7 +228,17 @@ describe('toUpgradedDependencies', () => {
   });
 
   it('should handle empty dependencies', async () => {
-    const result = await toUpgradedDependencies({}, mockPackageManager);
+    const result = await generateUpgradeSpecs(
+      {},
+      {
+        packageManager: mockPackageManager,
+        isCanary: false,
+        isCLIOutdated: false,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
+        isCLIExactLatest: false,
+      }
+    );
     expect(result).toEqual([]);
   });
 });

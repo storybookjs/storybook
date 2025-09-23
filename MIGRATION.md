@@ -1,5 +1,13 @@
 <h1>Migration</h1>
 
+- [From version 9.x to 10.0.0](#from-version-9x-to-1000)
+  - [Core Changes](#core-changes)
+    - [Local addons must be fully resolved](#local-addons-must-be-fully-resolved)
+    - [The `.storybook/main.*`-file must be valid ESM](#the-storybookmain-file-must-be-valid-esm)
+    - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
+    - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
+    - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
+    - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -17,6 +25,7 @@
     - [Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped](#vitest-addon-former-storybookexperimental-addon-test-vitest-20-support-is-dropped)
     - [Viewport/Backgrounds Addon synchronized configuration and `globals` usage](#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage)
     - [Storysource Addon removed](#storysource-addon-removed)
+    - [Mdx-gfm Addon removed](#mdx-gfm-addon-removed)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
     - [Icon System Updates](#icon-system-updates)
@@ -24,6 +33,7 @@
     - [Story Store API Changes](#story-store-api-changes)
     - [Global State Management](#global-state-management)
     - [Experimental Status API has turned into a Status Store](#experimental-status-api-has-turned-into-a-status-store)
+    - [`experimental_afterEach` has been stabilized](#experimental_aftereach-has-been-stabilized)
     - [Testing Module Changes](#testing-module-changes)
     - [Consolidate `@storybook/blocks` into addon docs](#consolidate-storybookblocks-into-addon-docs)
   - [Configuration and Type Changes](#configuration-and-type-changes)
@@ -38,10 +48,11 @@
     - [Svelte: Require v5 and up](#svelte-require-v5-and-up)
     - [Svelte: Dropped support for @storybook/svelte-webpack5](#svelte-dropped-support-for-storybooksvelte-webpack5)
     - [Svelte: Dropped automatic docgen for events and slots](#svelte-dropped-automatic-docgen-for-events-and-slots)
-    - [Angular = Require v18 and up](#angular--require-v18-and-up)
+    - [Angular: Require v18 and up](#angular-require-v18-and-up)
+    - [Angular: Introduce `features.angularFilterNonInputControls`](#angular-introduce-featuresangularfilternoninputcontrols)
     - [Dropped webpack5 Builder Support in Favor of Vite](#dropped-webpack5-builder-support-in-favor-of-vite)
-    - [Next.js = Require v14 and up](#nextjs--require-v14-and-up)
-    - [Next.js = Vite builder stabilized](#nextjs--vite-builder-stabilized)
+    - [Next.js: Require v14 and up](#nextjs-require-v14-and-up)
+    - [Next.js: Vite builder stabilized](#nextjs-vite-builder-stabilized)
     - [Lit = Require v3 and up](#lit--require-v3-and-up)
 - [From version 8.5.x to 8.6.x](#from-version-85x-to-86x)
   - [Angular: Support experimental zoneless support](#angular-support-experimental-zoneless-support)
@@ -94,7 +105,7 @@
     - [MDX is upgraded to v3](#mdx-is-upgraded-to-v3)
     - [Dropping support for \*.stories.mdx (CSF in MDX) format and MDX1 support](#dropping-support-for-storiesmdx-csf-in-mdx-format-and-mdx1-support)
     - [Dropping support for id, name and story in Story block](#dropping-support-for-id-name-and-story-in-story-block)
-  - [Core changes](#core-changes)
+  - [Core changes](#core-changes-1)
     - [`framework.options.builder.useSWC` for Webpack5-based projects removed](#frameworkoptionsbuilderuseswc-for-webpack5-based-projects-removed)
     - [Removed `@babel/core` and `babel-loader` from `@storybook/builder-webpack5`](#removed-babelcore-and-babel-loader-from-storybookbuilder-webpack5)
     - [`framework.options.fastRefresh` for Webpack5-based projects removed](#frameworkoptionsfastrefresh-for-webpack5-based-projects-removed)
@@ -474,11 +485,109 @@
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
+## From version 9.x to 10.0.0
+
+### Core Changes
+
+#### Local addons must be fully resolved
+
+In Storybook 9 it was possible to do reference local addons by a relative path, like so:
+
+```ts
+// main.ts
+
+export default {
+  addons: ["./my-addon.ts"],
+};
+```
+
+In Storybook 10 this relative path, should be fully resolved, like so:
+
+```ts
+// main.ts
+
+export default {
+  addons: [import.meta.resolve("./my-addon.ts")],
+};
+```
+
+#### The `.storybook/main.*`-file must be valid ESM
+
+Storybook will load the `.storybook/main.*` file as an ESM file.
+Thus CJS constants (`require`, `__dirname`, `__filename`) will not be defined.
+
+You can define these constants yourself, like so:
+
+```ts
+import { createRequire } from "node:module";
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const require = createRequire(import.meta.url);
+```
+
+A `main.ts` file that's CJS is no longer supported.
+
+#### Node.js 20.19+ or 22.12+ required
+
+Storybook 10 now requires Node.js version 20.19+ or 22.12+. We require these new ranges so Node.js supports `require(esm)` without a flag.
+
+#### Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition
+
+Storybook 10 has removed all `typesVersions` fields from `package.json` files. This field was previously needed for older TypeScript module resolution strategies that didn't support the `types` condition in package.json exports.
+
+**Required action:** Update your `tsconfig.json` to use a `moduleResolution` that supports the `types` condition:
+
+```json
+{
+  "compilerOptions": {
+    "moduleResolution": "bundler" // or "node16"/"nodenext"
+  }
+}
+```
+
+**Supported values:**
+
+- `"bundler"` (recommended for modern bundler-based projects)
+- `"node16"` or `"nodenext"` (Node.js 16+ module resolution)
+
+**Note:** If you're currently using `moduleResolution: "node"` (the old Node.js 10-style resolution), you'll need to upgrade to one of the supported values above.
+
+This change simplifies our package structure and aligns with modern TypeScript standards. Only TypeScript projects are affected - JavaScript projects require no changes.
+
+#### `core.builder` configuration must be a fully resolved path
+
+> [!NOTE]  
+> In the majority of cases, this is only relevant for authors of Storybook framework packages, as regular users very rarely set the `core.builder` property manually.
+
+When setting the `core.builder` or `core.builder.name` option in the main configuration, it must now be a fully resolved path to a builder's entry point, instead of just to the builder package's root directory.
+
+In a preset:
+
+```diff
+import { dirname, join } from 'node:path';
+
+const getAbsolutePath = (input) =>
+  dirname(require.resolve(join(input, 'package.json')));
+
+export const core = {
+-  builder: getAbsolutePath('@storybook/builder-vite'),
+-  // 👆 results in eg. `/absolute/path/node_modules/@storybook/builder-vite
++  builder: import.meta.resolve('@storybook/builder-vite'),
++  // 👆 results in eg. `/absolute/path/node_modules/@storybook/builder-vite/index.js
+  renderer: getAbsolutePath('@storybook/react'),
+};
+```
+
+#### Removed x-only builtin tags
+During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+
 ## From version 8.x to 9.0.0
 
 ### Core Changes and Removals
-
-Furthermore, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 #### Dropped support for legacy packages
 
@@ -552,6 +661,8 @@ export default {
 ```
 
 The public API remains the same, so no additional changes should be needed in your test files or configuration.
+
+Additionally, we have deprecated the usage of `withActions` from `@storybook/addon-actions` and we will remove it in Storybook v10. Please file an issue if you need this API.
 
 #### Dropped support
 
@@ -690,7 +801,22 @@ export const MyStory = {
 
 #### Experimental Test Addon: Stabilized and renamed
 
-In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports:
+In Storybook 9.0, we've officially stabilized the Test addon. The package has been renamed from `@storybook/experimental-addon-test` to `@storybook/addon-vitest`, reflecting its production-ready status. If you were using the experimental addon, you'll need to update your dependencies and imports.
+
+The vitest addon automatically loads Storybook's `beforeAll` hook, so that you can remove the following line in your vitest.setup.ts file:
+
+```diff
+// .storybook/vitest.setup.ts
+import { setProjectAnnotations } from '@storybook/react-vite';
+import * as addonAnnotations from 'my-addon/preview';
+import * as previewAnnotations from './.storybook/preview';
+
+- const project = setProjectAnnotations([previewAnnotations, addonAnnotations]);
++ setProjectAnnotations([previewAnnotations, addonAnnotations]);
+
+// the vitest addon automatically loads beforeAll
+- beforeAll(project.beforeAll);
+```
 
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 
@@ -707,7 +833,11 @@ See here for the ways you have to configure addon viewports & backgrounds:
 
 #### Storysource Addon removed
 
-The `@storybook/addon-storysource` addon is being removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+The `@storybook/addon-storysource` addon and the `@storybook/source-loader` package are removed in Storybook 9.0. Instead, Storybook now provides a Code Panel via `@storybook/addon-docs` that offers similar functionality with improved integration and performance.
+
+#### Mdx-gfm Addon removed
+
+The `@storybook/addon-mdx-gfm` addon is removed in Storybook 9.0 since it is no longer needed.
 
 **Migration Steps:**
 
@@ -742,7 +872,6 @@ export const MyStory = {
   },
 };
 ```
-
 
 ### API and Component Changes
 
@@ -861,6 +990,21 @@ addons.register(MY_ADDON_ID, (api) => {
 +  }]);
 ```
 
+#### `experimental_afterEach` has been stabilized
+
+The experimental_afterEach hook has been promoted to a stable API and renamed to afterEach.
+
+To migrate, simply replace all instances of experimental_afterEach with afterEach in your stories, preview files, and configuration.
+
+```diff
+ export const MyStory = {
+-   experimental_afterEach: async ({ canvasElement }) => {
++   afterEach: async ({ canvasElement }) => {
+     // cleanup logic
+   },
+ };
+```
+
 #### Testing Module Changes
 
 The `TESTING_MODULE_RUN_ALL_REQUEST` event has been removed:
@@ -876,6 +1020,15 @@ The package `@storybook/blocks` is no longer published as of Storybook 9.
 
 All exports can now be found in the export `@storybook/addon-docs/blocks`.
 
+Previously, you were able to import all blocks from `@storybook/addon-docs`, this is no longer the case.
+
+This is the only correct import path:
+
+```diff
+- import { Meta } from "@storybook/addon-docs";
++ import { Meta } from "@storybook/addon-docs/blocks";
+```
+
 ### Configuration and Type Changes
 
 #### Manager builder removed alias for `util`, `assert` and `process`
@@ -887,7 +1040,6 @@ Starting with Storybook `9.0`, we no longer alias these anymore.
 Adding these aliases meant storybook core, had to depend on these packages, which have a deep dependency graph, added to every storybook project.
 
 If you addon fails to load after this change, we recommend looking at implementing the alias at compile time of your addon, or alternatively look at other bundling config to ensure the correct entries/packages/dependencies are used.
-
 
 #### Type System Updates
 
@@ -910,7 +1062,6 @@ Deprecated getters have been removed from the CsfFile class:
 
 - `_fileName`
 - `_makeTitle`
-
 
 #### React-Native config dir renamed
 
@@ -1049,7 +1200,7 @@ The internal docgen logic for legacy Svelte components have been changed to matc
 
 This means that argTypes are no longer automatically generated for slots and events defined with `on:my-event`.
 
-#### Angular = Require v18 and up
+#### Angular: Require v18 and up
 
 Storybook has dropped support for Angular versions 15-17. The minimum supported version is now Angular 18.
 
@@ -1063,6 +1214,21 @@ Key changes:
 - Updated RxJS requirement to `^7.4.0`
 - Updated TypeScript requirement to `^4.9.0 || ^5.0.0`
 - Updated Zone.js requirement to `^0.14.0 || ^0.15.0`
+
+#### Angular: Introduce `features.angularFilterNonInputControls`
+
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+
+To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
+
+```tsx
+export default {
+  features: {
+    angularFilterNonInputControls: true,
+  },
+  // ... other configurations
+};
+```
 
 #### Dropped webpack5 Builder Support in Favor of Vite
 
@@ -1122,7 +1288,7 @@ export default {
 
 This change consolidates our builder support around Vite, which offers better performance and a more streamlined development experience. The webpack5 builders for these frameworks have been deprecated in favor of the more modern Vite-based solution.
 
-#### Next.js = Require v14 and up
+#### Next.js: Require v14 and up
 
 Storybook has dropped support for Next.js versions below 14.1. The minimum supported version is now Next.js 14.1.
 
@@ -1130,7 +1296,7 @@ If you're using an older version of Next.js, you'll need to upgrade to Next.js 1
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
 
-#### Next.js = Vite builder stabilized
+#### Next.js: Vite builder stabilized
 
 The experimental Next.js Vite builder (`@storybook/experimental-nextjs-vite`) has been stabilized and renamed to `@storybook/nextjs-vite`. If you were using the experimental package, you should update your dependencies to use the new stable package name.
 
@@ -1645,14 +1811,12 @@ These sections explain the rationale, and the required changes you might have to
 
 ### Deprecated `@storybook/testing-library` package
 
-    @@ -1082,7 +800,7 @@ To migrate by hand, install `@storybook/test` and replace `@storybook/testing-li
+The `@storybook/testing-library` package has been deprecated with the release of Storybook 8.0, and we recommend using the `@storybook/test` package instead. If you're migrating manually, you'll need to install the new package and update your imports as follows:
 
-```ts
+```diff
 - import { userEvent } from '@storybook/testing-library';
 + import { userEvent } from '@storybook/test';
 ```
-
-For more information on the change, see the [announcement post](https://storybook.js.org/blog/storybook-test/).
 
 ### Framework-specific Vite plugins have to be explicitly added
 

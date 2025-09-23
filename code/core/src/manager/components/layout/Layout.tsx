@@ -127,6 +127,18 @@ const useLayoutSyncingState = ({
   };
 };
 
+const MainContentMatcher = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
+      {({ match }) => <ContentContainer shown={!!match}>{children}</ContentContainer>}
+    </Match>
+  );
+};
+
+const OrderedMobileNavigation = styled(MobileNavigation)({
+  order: 1,
+});
+
 export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...slots }: Props) => {
   const { isDesktop, isMobile } = useLayout();
   const api = useStorybookApi();
@@ -154,15 +166,15 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
       showPanel={showPanel}
     >
       {showPages && <PagesContainer>{slots.slotPages}</PagesContainer>}
-      <Match path={/(^\/story|docs|onboarding\/|^\/$)/} startsWith={false}>
-        {({ match }) => <ContentContainer shown={!!match}>{slots.slotMain}</ContentContainer>}
-      </Match>
       {isDesktop && (
         <>
           <SidebarContainer>
             <Drag ref={sidebarResizerRef} />
             {slots.slotSidebar}
           </SidebarContainer>
+
+          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+
           {showPanel && (
             <PanelContainer position={panelPosition}>
               <Drag
@@ -175,14 +187,16 @@ export const Layout = ({ managerLayoutState, setManagerLayoutState, hasTab, ...s
           )}
         </>
       )}
+
       {isMobile && (
         <>
-          <Notifications />
-          <MobileNavigation
+          <OrderedMobileNavigation
             menu={slots.slotSidebar}
             panel={slots.slotPanel}
             showPanel={showPanel}
           />
+          <MainContentMatcher>{slots.slotMain}</MainContentMatcher>
+          <Notifications />
         </>
       )}
     </LayoutContainer>
@@ -197,6 +211,7 @@ const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
+      colorScheme: 'light dark',
 
       [MEDIA_DESKTOP_BREAKPOINT]: {
         display: 'grid',

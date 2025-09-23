@@ -204,6 +204,7 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  networkAddress?: string;
 }
 
 export interface StorybookConfigOptions {
@@ -448,6 +449,8 @@ export interface StorybookConfigRaw {
      * Set NODE_ENV to development in built Storybooks for better testability and debuggability
      */
     developmentModeForBuild?: boolean;
+    /** Only show input controls in Angular */
+    angularFilterNonInputControls?: boolean;
   };
 
   build?: TestBuildConfig;
@@ -634,9 +637,9 @@ export interface CoreCommon_StorybookInfo {
   renderer: string;
   rendererPackage: string;
   configDir?: string;
-  mainConfig?: string;
-  previewConfig?: string;
-  managerConfig?: string;
+  mainConfigPath?: string;
+  previewConfigPath?: string;
+  managerConfigPath?: string;
 }
 
 /**

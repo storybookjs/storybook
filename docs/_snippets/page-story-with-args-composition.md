@@ -24,6 +24,53 @@ export const Simple: Story = {
 };
 ```
 
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import DocumentScreen from './YourPage.svelte';
+
+  // 👇 Imports the required stories
+  import * as PageLayout from './PageLayout.stories.svelte';
+  import * as DocumentHeader from './DocumentHeader.stories.svelte';
+  import * as DocumentList from './DocumentList.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: DocumentScreen,
+  });
+</script>
+
+<Story
+  name="Simple"
+  args={{
+    user: PageLayout.Simple.args.user,
+    document: DocumentHeader.Simple.args.document,
+    subdocuments: DocumentList.Simple.args.documents,
+  }}
+/>
+```
+
+```js filename="YourPage.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import DocumentScreen from './YourPage.svelte';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+export default {
+  component: DocumentScreen,
+};
+
+export const Simple = {
+  args: {
+    user: PageLayout.Simple.args.user,
+    document: DocumentHeader.Simple.args.document,
+    subdocuments: DocumentList.Simple.args.documents,
+  },
+};
+```
+
 ```js filename="YourPage.stories.js|jsx" renderer="common" language="js"
 import { DocumentScreen } from './YourPage';
 
@@ -45,8 +92,61 @@ export const Simple = {
 };
 ```
 
+```svelte filename="YourPage.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import DocumentScreen from './YourPage.svelte';
+
+  // 👇 Imports the required stories
+  import * as PageLayout from './PageLayout.stories.svelte';
+  import * as DocumentHeader from './DocumentHeader.stories.svelte';
+  import * as DocumentList from './DocumentList.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: DocumentScreen,
+  });
+</script>
+
+<Story
+  name="Simple"
+  args={{
+    user: PageLayout.Simple.args.user,
+    document: DocumentHeader.Simple.args.document,
+    subdocuments: DocumentList.Simple.args.documents,
+  }}
+/>
+```
+
+```ts filename="YourPage.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
+
+import DocumentScreen from './YourPage.svelte';
+
+// 👇 Imports the required stories
+import * as PageLayout from './PageLayout.stories';
+import * as DocumentHeader from './DocumentHeader.stories';
+import * as DocumentList from './DocumentList.stories';
+
+const meta = {
+  component: DocumentScreen,
+} satisfies Meta<typeof DocumentScreen>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Simple: Story = {
+  args: {
+    user: PageLayout.Simple.args.user,
+    document: DocumentHeader.Simple.args.document,
+    subdocuments: DocumentList.Simple.args.documents,
+  },
+};
+```
+
 ```ts filename="YourPage.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { DocumentScreen } from './YourPage';

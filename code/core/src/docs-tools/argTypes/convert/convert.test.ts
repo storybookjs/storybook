@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { transformSync } from 'storybook/internal/babel';
 
-import { mapValues } from 'es-toolkit';
+import { mapValues } from 'es-toolkit/object';
 import requireFromString from 'require-from-string';
 
 import { normalizeNewlines } from '../utils';

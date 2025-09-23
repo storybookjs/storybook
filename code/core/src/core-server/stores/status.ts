@@ -1,3 +1,4 @@
+import { optionalEnvToBoolean } from '../../common/utils/envs';
 import { createStatusStore } from '../../shared/status-store';
 import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store';
 import { UniversalStore } from '../../shared/universal-store';
@@ -12,7 +13,7 @@ const statusStore = createStatusStore({
       before it was ready.
       This will be fixed when we do the planned UniversalStore v0.2.
     */
-    leader: process.env.VITEST_CHILD_PROCESS !== 'true',
+    leader: !optionalEnvToBoolean(process.env.VITEST_CHILD_PROCESS),
   }),
   environment: 'server',
 });

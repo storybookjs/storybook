@@ -1,5 +1,6 @@
 import type { Configuration as WebpackConfig } from 'webpack';
 
+import { resolvePackageDir } from '../../../../core/src/shared/utils/module';
 import { configureCompatibilityAliases } from '../compatibility/compatibility-map';
 import { configureNextExportMocks } from '../export-mocks/webpack';
 
@@ -12,6 +13,7 @@ export const configureAliases = (baseConfig: WebpackConfig): void => {
     alias: {
       ...(baseConfig.resolve?.alias ?? {}),
       '@opentelemetry/api': 'next/dist/compiled/@opentelemetry/api',
+      next: resolvePackageDir('next'),
     },
   };
 

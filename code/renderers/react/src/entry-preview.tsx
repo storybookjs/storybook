@@ -2,6 +2,7 @@ import * as React from 'react';
 
 import semver from 'semver';
 import { configure } from 'storybook/test';
+import { global } from '@storybook/global';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
 import type { Decorator } from './public-types';
@@ -27,10 +28,12 @@ export const decorators: Decorator[] = [
   },
   (story, context) => {
     // @ts-expect-error this feature flag only exists in the react frameworks
-    if (!global.FEATURES?.experimentalTestSyntax && context.tags?.includes('test-fn')) {
-      throw new Error('To use the experimental test function, you must enable the experimentalTestSyntax feature flag. See https://storybook.js.org/docs/10/api/main-config/main-config-features#experimentalTestSyntax');
+    if (context.tags?.includes('test-fn') && !global.FEATURES?.experimentalTestSyntax) {
+      throw new Error(
+        'To use the experimental test function, you must enable the experimentalTestSyntax feature flag. See https://storybook.js.org/docs/10/api/main-config/main-config-features#experimentalTestSyntax'
+      );
     }
-    return story()
+    return story();
   },
 ];
 

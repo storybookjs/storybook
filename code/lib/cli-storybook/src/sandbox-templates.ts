@@ -112,6 +112,9 @@ export const baseTemplates = {
       mainConfig: (config) => {
         const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
         return {
+          features: {
+            experimentalTestSyntax: true,
+          },
           stories: stories?.map((s) => {
             if (typeof s === 'string') {
               return s.replace(/\|(tsx?|ts)\b|\b(tsx?|ts)\|/g, '');
@@ -140,6 +143,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
   },
   'nextjs/14-ts': {
@@ -157,6 +165,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -178,6 +187,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -199,6 +209,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -221,6 +232,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
@@ -243,6 +255,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
@@ -263,6 +276,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -282,6 +296,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -314,6 +329,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -330,6 +346,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -345,6 +366,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -370,6 +396,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },

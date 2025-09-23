@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { sync as spawnSync } from 'cross-spawn';
-import { findUpMultipleSync, findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 
 import { BUNProxy } from './BUNProxy';
 import { JsPackageManagerFactory } from './JsPackageManagerFactory';
@@ -15,14 +15,14 @@ import { Yarn2Proxy } from './Yarn2Proxy';
 vi.mock('cross-spawn');
 const spawnSyncMock = vi.mocked(spawnSync);
 
-vi.mock('find-up');
-const findUpSyncMock = vi.mocked(findUpSync);
-const findUpMultipleSyncMock = vi.mocked(findUpMultipleSync);
+vi.mock('empathic/find');
+const findMock = vi.mocked(find);
+
 describe('CLASS: JsPackageManagerFactory', () => {
   beforeEach(() => {
     JsPackageManagerFactory.clearCache();
-    findUpSyncMock.mockReturnValue(undefined);
-    findUpMultipleSyncMock.mockReturnValue([]);
+    findMock.up.mockReturnValue(undefined);
+    findMock.any.mockReturnValue(undefined);
     spawnSyncMock.mockReturnValue({ status: 1 } as any);
     delete process.env.npm_config_user_agent;
   });
@@ -70,7 +70,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // There is only a package-lock.json
-        findUpSyncMock.mockImplementation((filename) => {
+        findMock.up.mockImplementation((filename) => {
           if (typeof filename === 'string' && filename === 'package-lock.json') {
             return '/Users/johndoe/Documents/package-lock.json';
           }
@@ -123,7 +123,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // There is only a pnpm-lock.yaml
-        findUpSyncMock.mockImplementation((filename) => {
+        findMock.up.mockImplementation((filename) => {
           if (typeof filename === 'string' && filename === 'pnpm-lock.yaml') {
             return '/Users/johndoe/Documents/pnpm-lock.yaml';
           }
@@ -134,9 +134,9 @@ describe('CLASS: JsPackageManagerFactory', () => {
       });
 
       it('PNPM LOCK IF CLOSER: when a pnpm-lock.yaml file is closer than a yarn.lock', async () => {
-        // Allow find-up to work as normal, we'll set the cwd to our fixture package
-        findUpSyncMock.mockImplementation(
-          (await vi.importActual<typeof import('find-up')>('find-up')).findUpSync
+        // Allow find to work as normal, we'll set the cwd to our fixture package
+        findMock.up.mockImplementation(
+          (await vi.importActual<typeof import('empathic/find')>('empathic/find')).up
         );
 
         spawnSyncMock.mockImplementation((command) => {
@@ -211,7 +211,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // there is a yarn.lock file
-        findUpSyncMock.mockImplementation((filename) => {
+        findMock.up.mockImplementation((filename) => {
           if (typeof filename === 'string' && filename === 'yarn.lock') {
             return '/Users/johndoe/Documents/yarn.lock';
           }
@@ -251,7 +251,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // There is a yarn.lock
-        findUpSyncMock.mockImplementation((filename) => {
+        findMock.up.mockImplementation((filename) => {
           if (typeof filename === 'string' && filename === 'yarn.lock') {
             return '/Users/johndoe/Documents/yarn.lock';
           }
@@ -262,9 +262,9 @@ describe('CLASS: JsPackageManagerFactory', () => {
       });
 
       it('when multiple lockfiles are in a project, prefers yarn', async () => {
-        // Allow find-up to work as normal, we'll set the cwd to our fixture package
-        findUpSyncMock.mockImplementation(
-          (await vi.importActual<typeof import('find-up')>('find-up')).findUpSync
+        // Allow find to work as normal, we'll set the cwd to our fixture package
+        findMock.up.mockImplementation(
+          (await vi.importActual<typeof import('empathic/find')>('empathic/find')).up
         );
 
         spawnSyncMock.mockImplementation((command) => {
@@ -338,7 +338,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
           } as any;
         });
 
-        findUpSyncMock.mockImplementation((filename) => {
+        findMock.up.mockImplementation((filename) => {
           if (typeof filename === 'string' && filename === 'yarn.lock') {
             return '/Users/johndoe/Documents/yarn.lock';
           }
@@ -385,7 +385,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
         });
 
         // There is a bun.lockb
-        findUpSyncMock.mockImplementation((filename) => {
+        findMock.up.mockImplementation((filename) => {
           if (typeof filename === 'string' && filename === 'bun.lockb') {
             return '/Users/johndoe/Documents/bun.lockb';
           }

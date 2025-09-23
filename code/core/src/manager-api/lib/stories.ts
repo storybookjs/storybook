@@ -330,6 +330,12 @@ export const transformStoryIndexToStoriesHash = (
         return currentTags === null ? child.tags : intersect(currentTags, child.tags);
       }, null);
     }
+
+    if (item.type === 'component') {
+      // attach importPath to the component node which should be the same for all children
+      // this way we can add "open in editor" to the component node
+      item.importPath = acc[item.children[0]].importPath;
+    }
     return acc;
   }
 

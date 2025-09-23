@@ -25,6 +25,13 @@ export const decorators: Decorator[] = [
 
     return <React.Suspense>{story()}</React.Suspense>;
   },
+  (story, context) => {
+    // @ts-expect-error this feature flag only exists in the react frameworks
+    if (!global.FEATURES?.experimentalTestSyntax && context.tags?.includes('test-fn')) {
+      throw new Error('In order to use the test function in stories, you must enable it. Please enable `features.experimentalTestSyntax` in your main config file.');
+    }
+    return story()
+  },
 ];
 
 export const parameters = {

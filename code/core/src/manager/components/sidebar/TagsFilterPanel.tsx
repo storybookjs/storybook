@@ -130,7 +130,7 @@ export const TagsFilterPanel = ({
     title: string;
     icon?: React.ReactNode;
     count: number;
-  }): Link => {
+  }): Link | undefined => {
     const onToggle = (selected: boolean, excluded?: boolean) =>
       toggleFilter(id, selected, excluded);
     const isIncluded = includedFilters.has(id);
@@ -138,6 +138,12 @@ export const TagsFilterPanel = ({
     const isChecked = isIncluded || isExcluded;
     const toggleTagLabel = `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
     const invertButtonLabel = `${isExcluded ? 'Include' : 'Exclude'} ${type}: ${title}`;
+
+    // for built-in filters (docs, play, test), don't show if there are no matches
+    if (count === 0 && type === 'built-in') {
+      return undefined;
+    }
+
     return {
       id: `filter-${type}-${id}`,
       content: (
@@ -192,8 +198,12 @@ export const TagsFilterPanel = ({
   };
 
   const groups = groupByType(Object.values(filtersById));
-  const links: Link[][] = Object.values(groups).map((group) =>
-    group.sort((a, b) => a.id.localeCompare(b.id)).map((filter) => renderLink(filter))
+  const links: Link[][] = Object.values(groups).map(
+    (group) =>
+      group
+        .sort((a, b) => a.id.localeCompare(b.id))
+        .map((filter) => renderLink(filter))
+        .filter(Boolean) as Link[]
   );
 
   if (!groups.tag?.length && isDevelopment) {

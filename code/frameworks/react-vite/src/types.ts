@@ -41,6 +41,14 @@ type StorybookConfigFramework = {
           options: BuilderOptions;
         };
   };
+  features?: StorybookConfigBase['features'] & {
+    /**
+     * Enable the experimental `.test` function in CSF Next
+     *
+     * @see https://storybook.js.org/docs/api/csf/csf-next
+     */
+    experimentalTestSyntax?: boolean;
+  };
 };
 
 type TypescriptOptions = TypescriptOptionsBase & {

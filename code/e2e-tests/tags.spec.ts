@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
 
-import { SbPage } from './util';
+import { SbPage, isReactSandbox } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
+const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 test.describe('tags', () => {
   test.beforeEach(async ({ page }) => {
@@ -62,9 +63,21 @@ test.describe('tags', () => {
       await sbPage.toggleTagFilter('dev-only');
       const stories = page.locator('#storybook-explorer-menu .sidebar-item');
       await expect(stories).toHaveCount(1);
+    });
 
-      // When clearing the filter, checkboxes are not selected anymore
-      await sbPage.clearTagsFilter();
+    test('filters stories via Tag filter types', async ({ page }) => {
+      test.skip(
+        !isReactSandbox(templateName),
+        'Test filtering is currently only supported in React renderer'
+      );
+
+      const sbPage = new SbPage(page, expect);
+
+      // Open Tag filters tooltip
+      const tooltip = await sbPage.openTagsFilter();
+
+      // No checkbox selected by default and "Select all tags" is shown
+      await expect(tooltip.locator('#select-all')).toBeVisible();
       await expect(tooltip.locator('input[type="checkbox"]:checked')).toHaveCount(0);
 
       // When selecting type docs, there should be no stories in the sidebar

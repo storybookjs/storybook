@@ -122,6 +122,10 @@
       "types": "./dist/node-logger/index.d.ts",
       "default": "./dist/node-logger/index.js"
     },
+    "./internal/preview-api": {
+      "types": "./dist/preview-api/index.d.ts",
+      "default": "./dist/preview-api/index.js"
+    },
     "./internal/preview-errors": {
       "types": "./dist/preview-errors.d.ts",
       "default": "./dist/preview-errors.js"

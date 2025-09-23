@@ -101,7 +101,7 @@ const config: BuildEntries = {
         entryPoint: './src/test/index.ts',
       },
       {
-        exportEntries: ['./preview-api'],
+        exportEntries: ['./preview-api', './internal/preview-api'],
         entryPoint: './src/preview-api/index.ts',
       },
       {

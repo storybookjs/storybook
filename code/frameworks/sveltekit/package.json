@@ -51,8 +51,7 @@
     "template/**/*",
     "README.md",
     "*.js",
-    "*.d.ts",
-    "src/mocks/**/*"
+    "*.d.ts"
   ],
   "scripts": {
     "check": "jiti ../../../scripts/check/check-package.ts",

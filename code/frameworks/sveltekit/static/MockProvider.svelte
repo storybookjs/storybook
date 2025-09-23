@@ -2,8 +2,8 @@
   import { onMount } from 'svelte';
   import { action } from 'storybook/actions';
   
-  import { setAfterNavigateArgument } from '../src/mocks/app/navigation';
-  import { setNavigating, setPage, setUpdated } from '../src/mocks/app/stores';
+  import { setAfterNavigateArgument } from '@storybook/sveltekit/internal/mocks/app/navigation';
+  import { setNavigating, setPage, setUpdated } from '@storybook/sveltekit/internal/mocks/app/stores';
 
   
   const{ svelteKitParameters = {}, children } = $props();

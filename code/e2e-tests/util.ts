@@ -173,6 +173,58 @@ export class SbPage {
     }
   }
 
+  async expandAllSidebarNodes() {
+    await this.page.keyboard.press('Escape');
+    await this.page.keyboard.press(
+      `${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+ArrowDown`
+    );
+  }
+
+  async openTagsFilter() {
+    const tagFiltersButton = this.page.locator('[title="Tag filters"]');
+    const tooltip = this.page.locator('[data-testid="tooltip"]');
+    const isTooltipVisible = await tooltip.isVisible();
+
+    if (!isTooltipVisible) {
+      await tagFiltersButton.click();
+      await this.expect(tooltip).toBeVisible();
+    }
+
+    return tooltip;
+  }
+
+  async clearTagsFilter() {
+    const tooltip = await this.openTagsFilter();
+    await this.expect(tooltip.locator('#deselect-all')).toBeVisible();
+    await tooltip.locator('#deselect-all').click();
+    return tooltip;
+  }
+
+  async toggleTagFilter(tag: string, toggleExclusion?: boolean) {
+    await this.openTagsFilter();
+
+    if (toggleExclusion) {
+      await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).hover();
+      await this.page.getByLabel(new RegExp(`(Exclude|Include) tag: ${tag}`)).click();
+    } else {
+      await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).click();
+    }
+  }
+
+  async toggleStoryTypeFilter(
+    type: 'Documentation' | 'Play' | 'Testing',
+    toggleExclusion?: boolean
+  ) {
+    await this.openTagsFilter();
+
+    if (toggleExclusion) {
+      await this.page.getByLabel(new RegExp(`filter: ${type}`)).hover();
+      await this.page.getByLabel(new RegExp(`(Exclude|Include) built-in: ${type}`, 'i')).click();
+    } else {
+      await this.page.getByLabel(new RegExp(`(Add|Remove) built-in filter: ${type}`)).click();
+    }
+  }
+
   getCanvasBodyElement() {
     return this.previewIframe().locator('body');
   }

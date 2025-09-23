@@ -6,9 +6,8 @@
   import { setNavigating, setPage, setUpdated } from '../src/mocks/app/stores';
 
   
-  const{ Story, svelteKitParameters = {} } = $props();
+  const{ svelteKitParameters = {}, children } = $props();
   
-  const { Component } = Story;
 
   // Set context during component initialization - this happens before any child components
   setPage(svelteKitParameters?.stores?.page);
@@ -127,4 +126,4 @@
   });
 </script>
 
-<Component {...Story.props} />
+{@render children()}

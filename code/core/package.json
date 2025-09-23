@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.0.0-beta.5",
+  "version": "10.0.0-beta.6",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -228,7 +228,7 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "@storybook/icons": "^1.4.0",
+    "@storybook/icons": "^1.6.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/user-event": "^14.6.1",
     "@vitest/expect": "3.2.4",
@@ -317,6 +317,7 @@
     "jiti": "^2.4.2",
     "js-yaml": "^4.1.0",
     "jsdoc-type-pratt-parser": "^4.0.0",
+    "launch-editor": "^2.11.1",
     "lazy-universal-dotenv": "^4.0.0",
     "leven": "^4.0.0",
     "memfs": "^4.11.1",
@@ -334,6 +335,7 @@
     "prettier": "^3.5.3",
     "pretty-hrtime": "^1.0.3",
     "prompts": "^2.4.0",
+    "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^1.3.0",

@@ -1,3 +1,7 @@
+## 9.1.8
+
+- PreactVite: Add `node` entry point - [#32534](https://github.com/storybookjs/storybook/pull/32534), thanks @ndelangen!
+
 ## 9.1.7
 
 - Dependencies: Update `vite-plugin-storybook-nextjs` to 2.0.7 - [#32331](https://github.com/storybookjs/storybook/pull/32331), thanks @k35o!

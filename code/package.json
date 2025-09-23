@@ -247,6 +247,7 @@
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
   },
+  "deferredNextVersion": "9.1.8",
   "nx": {
     "name": "root",
     "includedScripts": []

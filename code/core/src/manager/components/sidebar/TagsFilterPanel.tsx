@@ -136,6 +136,8 @@ export const TagsFilterPanel = ({
     const isIncluded = includedFilters.has(id);
     const isExcluded = excludedFilters.has(id);
     const isChecked = isIncluded || isExcluded;
+    const toggleTagLabel = `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;
+    const invertButtonLabel = `${isExcluded ? 'Include' : 'Exclude'} ${type}: ${title}`;
     return {
       id: `filter-${type}-${id}`,
       content: (
@@ -144,9 +146,7 @@ export const TagsFilterPanel = ({
             delayShow={1000}
             hasChrome={false}
             style={{ minWidth: 0, flex: 1 }}
-            tooltip={
-              <TooltipNote note={`${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`} />
-            }
+            tooltip={<TooltipNote note={toggleTagLabel} />}
             trigger="hover"
           >
             <ListItem
@@ -161,6 +161,7 @@ export const TagsFilterPanel = ({
                   />
                 </>
               }
+              aria-label={toggleTagLabel}
               title={
                 <Label>
                   {title}
@@ -173,10 +174,15 @@ export const TagsFilterPanel = ({
           <WithTooltip
             delayShow={1000}
             hasChrome={false}
-            tooltip={<TooltipNote note={`${isExcluded ? 'Include' : 'Exclude'} tag: ${title}`} />}
+            tooltip={<TooltipNote note={invertButtonLabel} />}
             trigger="hover"
           >
-            <Button variant="ghost" size="medium" onClick={() => onToggle(true, !isExcluded)}>
+            <Button
+              variant="ghost"
+              size="medium"
+              onClick={() => onToggle(true, !isExcluded)}
+              aria-label={invertButtonLabel}
+            >
               {isExcluded ? 'Include' : 'Exclude'}
             </Button>
           </WithTooltip>
@@ -202,19 +208,32 @@ export const TagsFilterPanel = ({
     ]);
   }
 
+  const filtersLabel =
+    includedFilters.size === 0 && excludedFilters.size === 0 ? 'Select all' : 'Clear filters';
+
   return (
     <Wrapper ref={ref}>
       {Object.keys(filtersById).length > 0 && (
         <Actions>
           {includedFilters.size === 0 && excludedFilters.size === 0 ? (
-            <IconButton id="select-all" key="select-all" onClick={() => setAllFilters(true)}>
+            <IconButton
+              id="select-all"
+              aria-label={filtersLabel}
+              key="select-all"
+              onClick={() => setAllFilters(true)}
+            >
               <BatchAcceptIcon />
-              Select all
+              {filtersLabel}
             </IconButton>
           ) : (
-            <IconButton id="deselect-all" key="deselect-all" onClick={() => setAllFilters(false)}>
+            <IconButton
+              id="deselect-all"
+              aria-label={filtersLabel}
+              key="deselect-all"
+              onClick={() => setAllFilters(false)}
+            >
               <SweepIcon />
-              Clear filters
+              {filtersLabel}
             </IconButton>
           )}
           {hasDefaultSelection && (

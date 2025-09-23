@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 
 import { TooltipNote, WithTooltip } from 'storybook/internal/components';
 import type {
@@ -84,7 +84,7 @@ export const FileSearchList = memo(function FileSearchList({
   errorItemId,
 }: FileSearchListProps) {
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
-  const parentRef = React.useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const sortedSearchResults = useMemo(() => {
     // search results with no exports should be at the end of the list

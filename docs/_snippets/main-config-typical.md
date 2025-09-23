@@ -7,7 +7,7 @@ const config = {
   // Optional
   addons: ['@storybook/addon-docs'],
   docs: {
-    autodocs: 'tag',
+    defaultName: 'Documentation',
   },
   staticDirs: ['../public'],
 };
@@ -25,7 +25,7 @@ const config: StorybookConfig = {
   // Optional
   addons: ['@storybook/addon-docs'],
   docs: {
-    autodocs: 'tag',
+    defaultName: 'Documentation',
   },
   staticDirs: ['../public'],
 };

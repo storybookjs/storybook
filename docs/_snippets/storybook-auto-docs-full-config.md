@@ -7,6 +7,7 @@ export default {
   docs: {
     //👇 See the table below for the list of supported options
     defaultName: 'Documentation',
+    docsMode: true,
   },
 };
 ```
@@ -22,6 +23,7 @@ const config: StorybookConfig = {
   docs: {
     //👇 See the table below for the list of supported options
     defaultName: 'Documentation',
+    docsMode: true,
   },
 };
 

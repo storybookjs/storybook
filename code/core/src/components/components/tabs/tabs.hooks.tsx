@@ -72,7 +72,6 @@ export function useList(list: ChildrenListComplete) {
             visible={isTooltipVisible}
             onVisibleChange={setTooltipVisible}
             placement="bottom"
-            delayHide={100}
             popover={
               <TooltipLinkList
                 links={invisibleList.map(({ title, id, color, active }) => {

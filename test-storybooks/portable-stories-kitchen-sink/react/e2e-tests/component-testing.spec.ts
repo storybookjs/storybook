@@ -562,6 +562,7 @@ test.describe("component testing", () => {
     // around to reset focus.
     await page.keyboard.press('Tab');
     await page.keyboard.press('Escape');
+    await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and errors are reported
@@ -629,6 +630,7 @@ test.describe("component testing", () => {
     // around to reset focus.
     await page.keyboard.press('Tab');
     await page.keyboard.press('Escape');
+    await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     await page.click("body");
@@ -673,6 +675,7 @@ test.describe("component testing", () => {
     // around to reset focus.
     await page.keyboard.press('Tab');
     await page.keyboard.press('Escape');
+    await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and reported
@@ -739,6 +742,7 @@ test.describe("component testing", () => {
     // around to reset focus.
     await page.keyboard.press('Tab');
     await page.keyboard.press('Escape');
+    await page.click("body");
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Arrange - Wait for test to finish and unfocus sidebar context menu

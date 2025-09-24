@@ -2,7 +2,7 @@ import type { FC, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import type { ButtonProps } from 'storybook/internal/components';
-import { Button, Popover, ScrollArea } from 'storybook/internal/components';
+import { Button, Popover } from 'storybook/internal/components';
 
 import { RefreshIcon } from '@storybook/icons';
 
@@ -10,7 +10,7 @@ import { useObjectRef } from '@react-aria/utils';
 import { transparentize } from 'polished';
 import { Overlay, useInteractOutside, useOverlay, useOverlayPosition } from 'react-aria';
 import { useOverlayTriggerState } from 'react-stately';
-import { styled } from 'storybook/theming';
+import { styled, useTheme } from 'storybook/theming';
 
 import { SelectOption } from './SelectOption';
 import type { Option, ResetOption } from './helpers';
@@ -142,6 +142,7 @@ const MinimalistPopover: FC<{
     overlayRef: popoverRef,
     placement: 'bottom start',
     offset: 8,
+    maxHeight: 504,
     isOpen: true,
   });
 
@@ -157,6 +158,15 @@ const MinimalistPopover: FC<{
     },
     popoverRef
   );
+
+  const theme = useTheme();
+
+  positionProps.style = {
+    ...positionProps.style,
+    overflow: 'hidden auto',
+    scrollbarColor: `${theme.barTextColor} transparent`,
+    scrollbarWidth: 'thin',
+  };
 
   return (
     <Overlay disableFocusManagement {...overlayProps}>
@@ -498,58 +508,56 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
         </StyledButton>
         {otState.isOpen && (
           <MinimalistPopover handleClose={handleClose} triggerRef={triggerRef}>
-            <ScrollArea vertical>
-              <Listbox
-                aria-label={ariaLabel}
-                role="listbox"
-                id={listboxId}
-                ref={listboxRef}
-                aria-multiselectable={multiSelect}
-                onKeyDown={handleListboxKeyDown}
-                tabIndex={isOpen ? 0 : -1}
-              >
-                {options.map((option) => (
-                  <SelectOption
-                    key={option.value ?? 'sb-reset'}
-                    title={option.title}
-                    description={option.description}
-                    icon={option.icon}
-                    id={valueToId(id, option)}
-                    isActive={isOpen && activeOption?.value === option.value}
-                    isSelected={
-                      selectedOptions?.some((sel) => sel.value === option.value) &&
-                      option !== resetOption
+            <Listbox
+              aria-label={ariaLabel}
+              role="listbox"
+              id={listboxId}
+              ref={listboxRef}
+              aria-multiselectable={multiSelect}
+              onKeyDown={handleListboxKeyDown}
+              tabIndex={isOpen ? 0 : -1}
+            >
+              {options.map((option) => (
+                <SelectOption
+                  key={option.value ?? 'sb-reset'}
+                  title={option.title}
+                  description={option.description}
+                  icon={option.icon}
+                  id={valueToId(id, option)}
+                  isActive={isOpen && activeOption?.value === option.value}
+                  isSelected={
+                    selectedOptions?.some((sel) => sel.value === option.value) &&
+                    option !== resetOption
+                  }
+                  onClick={() => {
+                    handleSelectOption(option);
+                    if (!multiSelect) {
+                      handleClose();
                     }
-                    onClick={() => {
+                  }}
+                  onFocus={() => setActiveOption(option)}
+                  shouldLookDisabled={
+                    option === resetOption && selectedOptions.length === 0 && multiSelect
+                  }
+                  onKeyDown={(e: KeyboardEvent) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
                       handleSelectOption(option);
                       if (!multiSelect) {
                         handleClose();
                       }
-                    }}
-                    onFocus={() => setActiveOption(option)}
-                    shouldLookDisabled={
-                      option === resetOption && selectedOptions.length === 0 && multiSelect
-                    }
-                    onKeyDown={(e: KeyboardEvent) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
+                    } else if (e.key === 'Tab') {
+                      if (!multiSelect) {
                         handleSelectOption(option);
-                        if (!multiSelect) {
-                          handleClose();
-                        }
-                      } else if (e.key === 'Tab') {
-                        if (!multiSelect) {
-                          handleSelectOption(option);
-                        }
-                        handleClose();
                       }
-                    }}
-                  >
-                    {option.children}
-                  </SelectOption>
-                ))}
-              </Listbox>
-            </ScrollArea>
+                      handleClose();
+                    }
+                  }}
+                >
+                  {option.children}
+                </SelectOption>
+              ))}
+            </Listbox>
           </MinimalistPopover>
         )}
       </>

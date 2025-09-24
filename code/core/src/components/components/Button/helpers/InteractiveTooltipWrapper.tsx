@@ -7,8 +7,9 @@ import type { API_KeyCollection } from 'storybook/internal/manager-api';
 export const InteractiveTooltipWrapper: React.FC<{
   children: ReactElement<DOMAttributes<Element>, string>;
   shortcut?: API_KeyCollection;
+  disableAllTooltips?: boolean;
   tooltip?: string;
-}> = ({ children, shortcut, tooltip }) => {
+}> = ({ children, disableAllTooltips, shortcut, tooltip }) => {
   const tooltipLabel = useMemo(() => {
     // We read from document despite the lack of reactivity, because this
     // option isn't changeable in the UI. If it was, we'd need to fetch the
@@ -27,7 +28,11 @@ export const InteractiveTooltipWrapper: React.FC<{
   }, [shortcut, tooltip]);
 
   return tooltipLabel ? (
-    <WithTooltip placement="top" tooltip={<TooltipNote note={tooltipLabel} />}>
+    <WithTooltip
+      placement="top"
+      tooltip={<TooltipNote note={tooltipLabel} />}
+      visible={!disableAllTooltips ? undefined : false}
+    >
       {children}
     </WithTooltip>
   ) : (

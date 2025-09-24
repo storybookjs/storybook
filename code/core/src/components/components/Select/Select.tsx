@@ -94,8 +94,8 @@ function setSelectedFromDefault(
   return options.filter((opt) => defaultOptions.some((def) => opt.value === def));
 }
 
-const StyledButton = styled(Button)<ButtonProps & { hasSelection?: boolean; isOpen?: boolean }>(
-  ({ isOpen, hasSelection, theme }) =>
+const StyledButton = styled(Button)<ButtonProps & { $hasSelection?: boolean; $isOpen?: boolean }>(
+  ({ $isOpen: isOpen, $hasSelection: hasSelection, theme }) =>
     isOpen || hasSelection
       ? {
           boxShadow: 'none',
@@ -303,7 +303,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     const moveActiveOptionDown = useCallback(
       (step = 1) => {
         if (!isOpen || !activeOption) {
-          setActiveOption(options[0]);
+          setActiveOption(options[step === 1 ? 0 : Math.min(step, options.length - 1)]);
           return;
         }
         const currentIndex = options.findIndex((option) => option.value === activeOption.value);
@@ -325,7 +325,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     const moveActiveOptionUp = useCallback(
       (step = 1) => {
         if (!isOpen || !activeOption) {
-          setActiveOption(options[options.length - 1]);
+          setActiveOption(options[Math.max(0, options.length - step)]);
           return;
         }
         const currentIndex = options.findIndex((option) => option.value === activeOption.value);
@@ -428,21 +428,36 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           optionElement.scrollIntoView({ block: 'nearest' });
           optionElement.focus();
         }
+      } else if (isOpen) {
+        listboxRef.current?.focus();
       }
     }, [isOpen, activeOption, id]);
+
+    // We customise the ariaLabel to include a current value, and we let tooltip
+    // receive the original ariaLabel as the value is displayed in children.
+    const finalAriaLabel = useMemo(() => {
+      if (selectedOptions.length === 1) {
+        return `${ariaLabel} ${selectedOptions[0].title}`;
+      }
+      if (selectedOptions.length) {
+        return `${ariaLabel}, ${selectedOptions.length} values selected`;
+      }
+      return ariaLabel;
+    }, [ariaLabel, selectedOptions]);
 
     return (
       <>
         <StyledButton
           {...props}
           variant="ghost"
-          ariaLabel={ariaLabel}
-          tooltip={isOpen ? undefined : tooltip}
+          ariaLabel={finalAriaLabel}
+          tooltip={tooltip ?? ariaLabel}
+          disableAllTooltips={isOpen}
           id={id}
           ref={triggerRef}
           padding={padding}
-          isOpen={isOpen}
-          hasSelection={!!selectedOptions.length}
+          $isOpen={isOpen}
+          $hasSelection={!!selectedOptions.length}
           // Can be removed once #32325 is fixed (Button will then provide aria-disabled)
           aria-disabled={disabled}
           disabled={disabled}
@@ -455,21 +470,15 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
           }}
           tabIndex={isOpen ? -1 : 0}
           onKeyDown={handleButtonKeyDown}
-          role={multiSelect ? 'combobox' : 'button'}
+          role="button"
           aria-controls={isOpen ? listboxId : undefined}
           aria-expanded={isOpen}
           aria-haspopup="listbox"
         >
-          {!multiSelect && selectedOptions.length === 0 && (
+          {!multiSelect && (
             <>
               {icon}
-              {children}
-            </>
-          )}
-          {!multiSelect && !!selectedOptions.length && (
-            <>
-              {icon}
-              {selectedOptions[0].title}
+              {selectedOptions[0]?.title ?? children}
             </>
           )}
 
@@ -497,6 +506,7 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
                 ref={listboxRef}
                 aria-multiselectable={multiSelect}
                 onKeyDown={handleListboxKeyDown}
+                tabIndex={isOpen ? 0 : -1}
               >
                 {options.map((option) => (
                   <SelectOption

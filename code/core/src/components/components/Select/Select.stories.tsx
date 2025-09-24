@@ -217,7 +217,7 @@ export const DefaultOptionMulti = meta.story({
 
 const disabledPlayFn: StoryAnnotations['play'] = async ({ canvasElement, args }) => {
   const canvas = within(canvasElement);
-  const selectButton = canvas.getByRole(args.multiSelect ? 'combobox' : 'button');
+  const selectButton = canvas.getByRole('button');
   expect(selectButton).toHaveAttribute('aria-disabled', 'true');
 
   await userEvent.click(selectButton);
@@ -274,7 +274,7 @@ export const MouseSelection = meta.story({
     expect(args.onChange).toHaveBeenCalledWith(['pollywog']);
 
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(selectButton).toHaveTextContent('Pollywog');
+    await expect(selectButton).toHaveTextContent('Pollywog');
   },
 });
 
@@ -291,7 +291,7 @@ export const MouseSelectionMulti = meta.story({
   ),
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+    const selectButton = canvas.getByRole('button', { name: /Animal/ });
     await userEvent.click(selectButton);
 
     const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
@@ -317,7 +317,7 @@ export const MouseSelectionMulti = meta.story({
 const kbSelectionTest =
   (triggerKey: string, selectKey: string): StoryAnnotations['play'] =>
   async ({ canvasElement, args, step }) => {
-    const selectButton = within(canvasElement).getByRole(args.multiSelect ? 'combobox' : 'button');
+    const selectButton = within(canvasElement).getByRole('button');
     selectButton.focus();
 
     await step('Open listbox', async () => {
@@ -367,7 +367,7 @@ export const KeyboardSelectionSS = meta.story({
 const kbMultiSelectionTest =
   (triggerKey: string, selectKey: string): StoryAnnotations['play'] =>
   async ({ canvasElement, args, step }) => {
-    const selectButton = within(canvasElement).getByRole('combobox');
+    const selectButton = within(canvasElement).getByRole('button');
     selectButton.focus();
 
     await step('Open listbox', async () => {
@@ -455,7 +455,7 @@ export const MouseOpenNoAutoselect = meta.story({
 export const KeyboardOpenAutoselect = meta.story({
   name: 'AutoSelect - first item select on Enter (single)',
   play: async ({ canvasElement, args, step }) => {
-    const selectButton = within(canvasElement).getByRole(args.multiSelect ? 'combobox' : 'button');
+    const selectButton = within(canvasElement).getByRole('button');
 
     await step('Open with Enter', async () => {
       selectButton.focus();
@@ -524,7 +524,7 @@ export const MouseFastNavPage = meta.story({
       await userEvent.click(selectButton);
       const listbox = await screen.findByRole('listbox');
       expect(listbox).toBeInTheDocument();
-      expect(document.activeElement).toBe(selectButton);
+      expect(document.activeElement).toBe(listbox);
     });
 
     await step('Press PageDown (6th option is active)', async () => {
@@ -589,7 +589,7 @@ export const MouseFastNavHomeEnd = meta.story({
       await userEvent.click(selectButton);
       const listbox = await screen.findByRole('listbox');
       expect(listbox).toBeInTheDocument();
-      expect(document.activeElement).toBe(selectButton);
+      expect(document.activeElement).toBe(listbox);
     });
 
     await step('Navigate to middle with ArrowDown', async () => {
@@ -660,7 +660,7 @@ export const MouseDeselection = meta.story({
   },
   play: async ({ canvasElement, args, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+    const selectButton = canvas.getByRole('button');
 
     await step('Check initial state', async () => {
       expect(selectButton).toHaveTextContent('2');
@@ -692,7 +692,7 @@ export const KeyboardDeselection = meta.story({
   },
   play: async ({ canvasElement, args, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+    const selectButton = canvas.getByRole('button');
 
     await step('Check initial state', async () => {
       expect(selectButton).toHaveTextContent('2');
@@ -750,7 +750,7 @@ export const OnDeselectHandler = meta.story({
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+    const selectButton = canvas.getByRole('button');
     await userEvent.click(selectButton);
 
     const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
@@ -769,7 +769,7 @@ export const OnChangeHandler = meta.story({
   },
   play: async ({ canvasElement, args, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+    const selectButton = canvas.getByRole('button');
 
     await step('Open select', async () => {
       await userEvent.click(selectButton);
@@ -835,7 +835,7 @@ export const WithResetMulti = meta.story({
   },
   play: async ({ canvasElement, args, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+    const selectButton = canvas.getByRole('button');
 
     await step('Check initial state', async () => {
       expect(selectButton).toHaveTextContent('2');
@@ -900,7 +900,7 @@ export const KeyboardResetMulti = meta.story({
   },
   play: async ({ canvasElement, args, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+    const selectButton = canvas.getByRole('button');
     selectButton.focus();
 
     await step('Open with Enter and navigate to reset option', async () => {
@@ -937,7 +937,7 @@ export const KeyboardResetMultiSpace = meta.story({
   },
   play: async ({ canvasElement, args, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+    const selectButton = canvas.getByRole('button');
     selectButton.focus();
 
     await step('Open with Space and navigate to reset option', async () => {
@@ -1009,7 +1009,7 @@ export const ResetButtonVisibilityMulti = meta.story({
   },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('combobox');
+    const selectButton = canvas.getByRole('button');
 
     await step('Open without selection', async () => {
       await userEvent.click(selectButton);

@@ -36,6 +36,13 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   tooltip?: string;
 
   /**
+   * Only use this flag when tooltips on button interfere with other keyboard interactions, like
+   * when building a custom select or menu button. Disables tooltips from the `tooltip`, `shortcut`
+   * and `ariaLabel` props.
+   */
+  disableAllTooltips?: boolean;
+
+  /**
    * A more thorough description of what the Button does, provided to non-sighted users through an
    * aria-describedby attribute. Use sparingly for buttons that trigger complex actions.
    */
@@ -63,6 +70,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ariaDescription = undefined,
       tooltip = undefined,
       shortcut = undefined,
+      disableAllTooltips = false,
       ...props
     },
     ref
@@ -110,7 +118,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     return (
       <>
-        <InteractiveTooltipWrapper shortcut={shortcut} tooltip={finalTooltip}>
+        <InteractiveTooltipWrapper
+          disableAllTooltips={disableAllTooltips}
+          shortcut={shortcut}
+          tooltip={finalTooltip}
+        >
           <StyledButton
             as={Comp}
             ref={ref}

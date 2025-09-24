@@ -1628,7 +1628,7 @@ __metadata:
     eslint-config-airbnb-typescript: "npm:^18.0.0"
     eslint-config-prettier: "npm:^9.1.0"
     eslint-plugin-compat: "npm:^6.0.2"
-    eslint-plugin-depend: "npm:^0.11.0"
+    eslint-plugin-depend: "npm:^1.3.1"
     eslint-plugin-eslint-comments: "npm:^3.2.0"
     eslint-plugin-file-progress: "npm:^1.4.0"
     eslint-plugin-html: "npm:^6.2.0"
@@ -5298,14 +5298,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-depend@npm:^0.11.0":
-  version: 0.11.0
-  resolution: "eslint-plugin-depend@npm:0.11.0"
+"eslint-plugin-depend@npm:^1.3.1":
+  version: 1.3.1
+  resolution: "eslint-plugin-depend@npm:1.3.1"
   dependencies:
-    fd-package-json: "npm:^1.2.0"
-    module-replacements: "npm:^2.1.0"
+    empathic: "npm:^2.0.0"
+    module-replacements: "npm:^2.8.0"
     semver: "npm:^7.6.3"
-  checksum: 10c0/64baf4d4f5d406efa1f13bda723ff0eb5fe4cee0ae8c3679fcdfccb4d7ba3a9472416fa3c54d75f1bde3e0123e55a85774662484a5b0355812f21a8968ee784a
+  checksum: 10c0/09f3394997924d57fd44f09319ebb244a616a922a71667b47cf869834a744353d03db18abbfa403804e49dcc0fba40b4d791551b9aecf73fcd7d4eee8be74274
   languageName: node
   linkType: hard
 
@@ -5938,15 +5938,6 @@ __metadata:
   dependencies:
     reusify: "npm:^1.0.4"
   checksum: 10c0/d6a001638f1574a696660fcbba5300d017760432372c801632c325ca7c16819604841c92fd3ccadcdacec0966ca336363a5ff57bc5f0be335d8ea7ac6087b98f
-  languageName: node
-  linkType: hard
-
-"fd-package-json@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "fd-package-json@npm:1.2.0"
-  dependencies:
-    walk-up-path: "npm:^3.0.1"
-  checksum: 10c0/712a78a12bd8ec8482867b26bbcb2ff1dca9b096a416150c138e1512f1879c6d23dfb41b03b8e9226afc1e58a35df4738e9f9ae57032ff1dbbae75acfb70343b
   languageName: node
   linkType: hard
 
@@ -9085,10 +9076,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"module-replacements@npm:^2.1.0":
-  version: 2.5.0
-  resolution: "module-replacements@npm:2.5.0"
-  checksum: 10c0/7fcbcb19151778a2f2fa70b7bffb134bb8922b2306e2a0d7b4a863467a9d6d9d5fed537763c43272e22b69dbddaf1610746b42a68b4663aa225e85f9ae9b03c8
+"module-replacements@npm:^2.8.0":
+  version: 2.9.0
+  resolution: "module-replacements@npm:2.9.0"
+  checksum: 10c0/a6bb343575a921b4ca719b308ca2d464d8f6b78fca46e7a03f3fc9b7e5c749acbd16ceb8e1505fb58f9760baee483ce0a9b706b8ffa460e47ee293ef0b94f254
   languageName: node
   linkType: hard
 
@@ -12937,13 +12928,6 @@ __metadata:
   bin:
     wait-on: bin/wait-on
   checksum: 10c0/7f14086c3bb6fc055207ab591d2faefc045f718aa7c959353a54af05cf08c53c25d9af80d4d5f6934a169cc0d97ebd1dcf024b13583d09b9a935c36bd745bd7b
-  languageName: node
-  linkType: hard
-
-"walk-up-path@npm:^3.0.1":
-  version: 3.0.1
-  resolution: "walk-up-path@npm:3.0.1"
-  checksum: 10c0/3184738e0cf33698dd58b0ee4418285b9c811e58698f52c1f025435a85c25cbc5a63fee599f1a79cb29ca7ef09a44ec9417b16bfd906b1a37c305f7aa20ee5bc
   languageName: node
   linkType: hard
 

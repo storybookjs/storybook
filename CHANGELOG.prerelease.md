@@ -1,3 +1,25 @@
+## 10.0.0-beta.7
+
+- Addon A11y: Prevent setting highlights for old results - [#32178](https://github.com/storybookjs/storybook/pull/32178), thanks @ghengeveld!
+- AddonViewport: Stricter types - [#32324](https://github.com/storybookjs/storybook/pull/32324), thanks @hpohlmeyer!
+- CSF: Add Storybook test syntax (Storybook v10) - [#32455](https://github.com/storybookjs/storybook/pull/32455), thanks @yannbf!
+- Controls: Allow primitive values of ReactNode argType - [#31931](https://github.com/storybookjs/storybook/pull/31931), thanks @alexey-kozlenkov!
+- Core: Prevent `BAIL` state from showing in interactions panel when switching stories - [#32172](https://github.com/storybookjs/storybook/pull/32172), thanks @ghengeveld!
+- CoreServer: Fix `Arc can't get every window` - [#32508](https://github.com/storybookjs/storybook/pull/32508), thanks @ndelangen!
+- Dts: Ensure `.tsx` files emit `.d.ts` type files - [#32461](https://github.com/storybookjs/storybook/pull/32461), thanks @mrginglymus!
+- Svelte: Improve support for async components - [#31476](https://github.com/storybookjs/storybook/pull/31476), thanks @JReinhold!
+- SvelteKit: Add support for mocking `$app/state` - [#31369](https://github.com/storybookjs/storybook/pull/31369), thanks @xeho91!
+- SvelteKit: Fix `set_context_after_init` error when experimental async is enabled - [#32513](https://github.com/storybookjs/storybook/pull/32513), thanks @Jakeii!
+- UI: Allow showing or hiding the addon panel - [#32348](https://github.com/storybookjs/storybook/pull/32348), thanks @Sidnioulz!
+
+## 10.0.0-beta.6
+
+- Core: Add "open in editor" feature - [#32452](https://github.com/storybookjs/storybook/pull/32452), thanks @yannbf!
+- Dev: Improve the browser opening experience - [#32488](https://github.com/storybookjs/storybook/pull/32488), thanks @ndelangen!
+- Maintenance: Remove globalization for dropped entrypoints - [#32491](https://github.com/storybookjs/storybook/pull/32491), thanks @ndelangen!
+- Telemetry: Queue error reporting & filter browser-extention - [#32499](https://github.com/storybookjs/storybook/pull/32499), thanks @ndelangen!
+- Upgrade: Packages `open` - [#32484](https://github.com/storybookjs/storybook/pull/32484), thanks @ndelangen!
+
 ## 10.0.0-beta.5
 
 - Dependencies: Update `vite-plugin-storybook-nextjs` to 2.0.7 - [#32331](https://github.com/storybookjs/storybook/pull/32331), thanks @k35o!

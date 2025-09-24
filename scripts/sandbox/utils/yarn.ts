@@ -1,6 +1,5 @@
-import fs from 'fs';
-// eslint-disable-next-line depend/ban-dependencies
-import { move, remove } from 'fs-extra';
+import { rename, rm, writeFile } from 'node:fs/promises';
+
 import { join } from 'path';
 
 import { runCommand } from '../generate';
@@ -13,19 +12,19 @@ interface SetupYarnOptions {
 
 export async function setupYarn({ cwd, pnp = false, version = 'classic' }: SetupYarnOptions) {
   // force yarn
-  fs.writeFileSync(join(cwd, 'yarn.lock'), '', { flag: 'a' });
+  await writeFile(join(cwd, 'yarn.lock'), '', { flag: 'a' });
   await runCommand(`yarn set version ${version}`, { cwd });
   if (version === 'berry' && !pnp) {
     await runCommand('yarn config set nodeLinker node-modules', { cwd });
   }
-  await remove(join(cwd, 'package.json'));
+  await rm(join(cwd, 'package.json'), { force: true });
 }
 
 export async function localizeYarnConfigFiles(baseDir: string, beforeDir: string) {
   await Promise.allSettled([
-    fs.writeFileSync(join(beforeDir, 'yarn.lock'), '', { flag: 'a' }),
-    move(join(baseDir, '.yarn'), join(beforeDir, '.yarn')),
-    move(join(baseDir, '.yarnrc.yml'), join(beforeDir, '.yarnrc.yml')),
-    move(join(baseDir, '.yarnrc'), join(beforeDir, '.yarnrc')),
+    writeFile(join(beforeDir, 'yarn.lock'), '', { flag: 'a' }),
+    rename(join(baseDir, '.yarn'), join(beforeDir, '.yarn')),
+    rename(join(baseDir, '.yarnrc.yml'), join(beforeDir, '.yarnrc.yml')),
+    rename(join(baseDir, '.yarnrc'), join(beforeDir, '.yarnrc')),
   ]);
 }

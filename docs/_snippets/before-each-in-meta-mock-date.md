@@ -3,8 +3,6 @@ import type { Meta, StoryObj } from '@storybook/angular';
 
 import MockDate from 'mockdate';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 import { Page } from './Page';
 
 const meta: Meta<Page> = {
@@ -24,7 +22,7 @@ export default meta;
 type Story = StoryObj<Page>;
 
 export const Default: Story = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -36,9 +34,6 @@ export const Default: Story = {
 
   import MockDate from 'mockdate';
 
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getUserFromSession } from '#api/session.mock';
-
   import Page from './Page.svelte';
 
   const meta = defineMeta({
@@ -55,7 +50,7 @@ export const Default: Story = {
   });
 </script>
 
-<Story name="Default" play={async ({ canvasElement }) => {
+<Story name="Default" play={async ({ canvas }) => {
   // ... This will run with the mocked Date
   }}
 />
@@ -63,8 +58,6 @@ export const Default: Story = {
 
 ```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF"
 import MockDate from 'mockdate';
-
-import { getUserFromSession } from '#api/session.mock';
 
 import Page from './Page.svelte';
 
@@ -82,7 +75,7 @@ export default {
 };
 
 export const Default = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -91,7 +84,6 @@ export const Default = {
 ```js filename="Page.stories.js" renderer="common" language="js"
 import MockDate from 'mockdate';
 
-import { getUserFromSession } from '#api/session.mock';
 import { Page } from './Page';
 
 export default {
@@ -108,7 +100,7 @@ export default {
 };
 
 export const Default = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -120,9 +112,6 @@ export const Default = {
 
   import MockDate from 'mockdate';
 
-  // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-  import { getUserFromSession } from '#api/session.mock';
-
   import Page from './Page.svelte';
 
   const meta = defineMeta({
@@ -139,7 +128,7 @@ export const Default = {
   });
 </script>
 
-<Story name="Default" play={async ({ canvasElement }) => {
+<Story name="Default" play={async ({ canvas }) => {
   // ... This will run with the mocked Date
   }}
 />
@@ -151,8 +140,6 @@ import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MockDate from 'mockdate';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 import Page from './Page.svelte';
 
 const meta = {
@@ -172,20 +159,18 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
 ```
 
 ```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import MockDate from 'mockdate';
 
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 import { Page } from './Page';
 
 const meta = {
@@ -205,7 +190,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -213,8 +198,6 @@ export const Default: Story = {
 
 ```js filename="Page.stories.js" renderer="web-components" language="js"
 import MockDate from 'mockdate';
-
-import { getUserFromSession } from '../../api/session.mock';
 
 export default {
   component: 'my-page',
@@ -230,7 +213,7 @@ export default {
 };
 
 export const Default = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };
@@ -240,9 +223,6 @@ export const Default = {
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import MockDate from 'mockdate';
-
-// 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getUserFromSession } from '#api/session.mock';
 
 const meta: Meta = {
   component: 'my-page',
@@ -261,7 +241,7 @@ export default meta;
 type Story = StoryObj;
 
 export const Default: Story = {
-  async play({ canvasElement }) {
+  async play({ canvas }) {
     // ... This will run with the mocked Date
   },
 };

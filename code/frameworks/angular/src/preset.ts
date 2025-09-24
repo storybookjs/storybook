@@ -1,31 +1,29 @@
-import { PresetProperty } from 'storybook/internal/types';
+import type { PresetProperty } from 'storybook/internal/types';
 
-import { dirname, join } from 'node:path';
-
-import { StandaloneOptions } from './builders/utils/standalone-options';
-
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
+import type { StandaloneOptions } from './builders/utils/standalone-options';
 
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('./server/framework-preset-angular-cli'),
-  require.resolve('./server/framework-preset-angular-ivy'),
+  import.meta.resolve('@storybook/angular/server/framework-preset-angular-cli'),
+  import.meta.resolve('@storybook/angular/server/framework-preset-angular-ivy'),
 ];
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entries = [],
   options
 ) => {
-  const annotations = [...entries, require.resolve('./client/config')];
+  const config = import.meta.resolve('@storybook/angular/client/config');
+  const annotations = [...entries, config];
 
   if ((options as any as StandaloneOptions).enableProdMode) {
-    annotations.unshift(require.resolve('./client/preview-prod'));
+    const previewProdPath = import.meta.resolve('@storybook/angular/client/preview-prod');
+    annotations.unshift(previewProdPath);
   }
 
   const docsConfig = await options.presets.apply('docs', {}, options);
   const docsEnabled = Object.keys(docsConfig).length > 0;
   if (docsEnabled) {
-    annotations.push(require.resolve('./client/docs/config'));
+    const docsConfigPath = import.meta.resolve('@storybook/angular/client/docs/config');
+    annotations.push(docsConfigPath);
   }
   return annotations;
 };
@@ -36,7 +34,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: getAbsolutePath('@storybook/builder-webpack5'),
+      name: import.meta.resolve('@storybook/builder-webpack5'),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
   };

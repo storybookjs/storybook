@@ -2,9 +2,9 @@ import { existsSync } from 'fs';
 import { join, resolve } from 'path';
 import slash from 'slash';
 
-import { getInterpretedFile } from '../../code/core/src/common';
+import { getInterpretedFile } from '../../code/core/src/common/utils/interpret-files';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { readConfig as csfReadConfig } from '../../code/core/src/csf-tools';
+import { readConfig as csfReadConfig } from '../../code/core/src/csf-tools/ConfigFile';
 
 export async function readConfig({ fileName, cwd }: { fileName: string; cwd: string }) {
   const configDir = join(cwd, '.storybook');

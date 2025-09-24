@@ -6,6 +6,10 @@ import { getServerAddresses, getServerChannelUrl, getServerPort } from './server
 
 vi.mock('node:os', () => ({
   default: { release: () => '' },
+  platform: 'darwin',
+  constants: {
+    signals: {},
+  },
 }));
 vi.mock('detect-port');
 vi.mock('storybook/internal/node-logger');

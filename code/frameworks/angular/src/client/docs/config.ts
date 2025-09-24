@@ -1,5 +1,5 @@
 import { SourceType } from 'storybook/internal/docs-tools';
-import { DecoratorFunction, Parameters } from 'storybook/internal/types';
+import type { DecoratorFunction, Parameters } from 'storybook/internal/types';
 
 import { sourceDecorator } from './sourceDecorator';
 

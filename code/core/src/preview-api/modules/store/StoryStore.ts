@@ -1,4 +1,5 @@
 import type { CleanupCallback } from 'storybook/internal/csf';
+import { getCoreAnnotations } from 'storybook/internal/csf';
 import {
   CalledExtractOnStoreError,
   MissingStoryFromCsfFileError,
@@ -19,10 +20,9 @@ import type {
   StoryIndex,
 } from 'storybook/internal/types';
 
-import { omitBy, pick } from 'es-toolkit';
+import { omitBy, pick } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 
-import { getCoreAnnotations } from '../../../shared/preview/core-annotations';
 import { HooksContext } from '../addons';
 import { ArgsStore } from './ArgsStore';
 import { GlobalsStore } from './GlobalsStore';

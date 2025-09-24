@@ -204,6 +204,7 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  networkAddress?: string;
 }
 
 export interface StorybookConfigOptions {
@@ -636,9 +637,9 @@ export interface CoreCommon_StorybookInfo {
   renderer: string;
   rendererPackage: string;
   configDir?: string;
-  mainConfig?: string;
-  previewConfig?: string;
-  managerConfig?: string;
+  mainConfigPath?: string;
+  previewConfigPath?: string;
+  managerConfigPath?: string;
 }
 
 /**

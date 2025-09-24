@@ -21,7 +21,8 @@ import type {
   Tag,
 } from 'storybook/internal/types';
 
-import { countBy, mapValues } from 'es-toolkit';
+import { countBy } from 'es-toolkit/array';
+import { mapValues } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 import { dedent } from 'ts-dedent';
 
@@ -328,6 +329,12 @@ export const transformStoryIndexToStoriesHash = (
         // On the first child, we have nothing to intersect against so we use it as a source of data.
         return currentTags === null ? child.tags : intersect(currentTags, child.tags);
       }, null);
+    }
+
+    if (item.type === 'component') {
+      // attach importPath to the component node which should be the same for all children
+      // this way we can add "open in editor" to the component node
+      item.importPath = acc[item.children[0]].importPath;
     }
     return acc;
   }

@@ -1,14 +1,11 @@
-import { copyTemplateFiles, getBabelDependencies } from '../../../../../core/src/cli/helpers';
-import { SupportedLanguage } from '../../../../../core/src/cli/project_types';
+import { SupportedLanguage, copyTemplateFiles, getBabelDependencies } from 'storybook/internal/cli';
+
 import type { Generator } from '../types';
 
 const generator: Generator = async (packageManager, npmOptions, options) => {
-  const packageJson = await packageManager.retrievePackageJson();
+  const missingReactDom = !packageManager.getDependencyVersion('react-dom');
 
-  const missingReactDom =
-    !packageJson.dependencies['react-dom'] && !packageJson.devDependencies['react-dom'];
-
-  const reactVersion = packageJson.dependencies.react;
+  const reactVersion = packageManager.getDependencyVersion('react');
 
   const peerDependencies = [
     'react-native-safe-area-context',
@@ -19,20 +16,22 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     'react-native-gesture-handler',
     '@gorhom/bottom-sheet',
     'react-native-svg',
-  ].filter((dep) => !packageJson.dependencies[dep] && !packageJson.devDependencies[dep]);
+  ].filter((dep) => !packageManager.getDependencyVersion(dep));
 
   const packagesToResolve = [
     ...peerDependencies,
-    '@storybook/addon-ondevice-controls@next',
-    '@storybook/addon-ondevice-actions@next',
-    '@storybook/react-native@next',
+    '@storybook/addon-ondevice-controls',
+    '@storybook/addon-ondevice-actions',
+    '@storybook/react-native',
+    'storybook',
   ];
 
   const packagesWithFixedVersion: string[] = [];
 
   const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve);
 
-  const babelDependencies = await getBabelDependencies(packageManager as any, packageJson);
+  // TODO: Investigate why packageManager type does not match on CI
+  const babelDependencies = await getBabelDependencies(packageManager as any);
 
   const packages: string[] = [];
 
@@ -46,7 +45,12 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     packages.push(`react-dom@${reactVersion}`);
   }
 
-  await packageManager.addDependencies({ ...npmOptions, packageJson }, packages);
+  await packageManager.addDependencies(
+    {
+      ...npmOptions,
+    },
+    packages
+  );
 
   packageManager.addScripts({
     'storybook-generate': 'sb-rn-get-stories',

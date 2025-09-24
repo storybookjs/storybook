@@ -125,7 +125,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
 
   return (
     <WithPopover
-      placement={isMobile ? 'bottom-end' : 'bottom-start'}
+      placement={'bottom-start'}
       padding={0}
       popover={({ onHide }) => <SidebarMenuList onClick={onHide} menu={menu} />}
       onVisibleChange={setIsTooltipVisible}

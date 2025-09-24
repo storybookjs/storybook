@@ -128,6 +128,8 @@ const map =
       logger.error(
         `Addon value should end in /manager or /preview or /register OR it should be a valid preset https://storybook.js.org/docs/addons/writing-presets/\n${item}`
       );
+      const error = err as Error;
+      logger.error(error.stack ?? error.message);
       return undefined;
     }
 

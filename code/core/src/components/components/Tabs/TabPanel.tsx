@@ -1,15 +1,15 @@
 import type { FC, HTMLAttributes } from 'react';
 import React, { useRef } from 'react';
 
-import { ScrollArea } from 'storybook/internal/components';
+import { ScrollArea, type useTabsState } from 'storybook/internal/components';
 
 import { useTabPanel } from 'react-aria';
-import type { Node, TabListState } from 'react-stately';
+import type { Node } from 'react-stately';
 import { styled } from 'storybook/theming';
 
 export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {
   /** The state of the tab list. Primary mechanism for using the tabpanel. */
-  state: TabListState<object>;
+  state: ReturnType<typeof useTabsState>;
 
   /**
    * Whether the panel adds a vertical scrollbar. Disable if you want to use fixed or sticky

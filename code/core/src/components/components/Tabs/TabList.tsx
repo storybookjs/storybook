@@ -1,12 +1,12 @@
 import type { FC, HTMLAttributes } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button } from 'storybook/internal/components';
+import { Button, type useTabsState } from 'storybook/internal/components';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
 import { useTab, useTabList } from 'react-aria';
-import type { Node, TabListState } from 'react-stately';
+import type { Node } from 'react-stately';
 import { styled } from 'storybook/theming';
 
 const StyledTabButton = styled.button<{
@@ -118,7 +118,7 @@ const ScrollButton = styled(Button)({
 
 interface TabButtonProps {
   item: Node<object>;
-  state: TabListState<object>;
+  state: ReturnType<typeof useTabsState>;
 }
 
 const TabButton: FC<TabButtonProps> = ({ item, state }) => {
@@ -141,7 +141,7 @@ const TabButton: FC<TabButtonProps> = ({ item, state }) => {
 };
 
 export interface TabListProps extends HTMLAttributes<HTMLDivElement> {
-  state: TabListState<object>;
+  state: ReturnType<typeof useTabsState>;
 }
 
 export const TabList: FC<TabListProps> = ({ state, ...rest }) => {

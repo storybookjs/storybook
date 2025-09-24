@@ -4,7 +4,6 @@ import React from 'react';
 import { Bar, EmptyTabContent, TabList, TabPanel } from 'storybook/internal/components';
 
 import type { Key } from '@react-types/shared';
-import type { TabListState } from 'react-stately';
 import { Item, useTabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
@@ -28,7 +27,7 @@ export const useTabsState = ({
   onSelectionChange,
   selected,
   tabs,
-}: useTabsStateProps): TabListState<object> => {
+}: useTabsStateProps) => {
   return useTabListState({
     children: tabs.map(({ children: Children, id, 'aria-label': ariaLabel, title: Title }) => (
       <Item key={id} aria-label={ariaLabel} title={typeof Title === 'function' ? <Title /> : Title}>

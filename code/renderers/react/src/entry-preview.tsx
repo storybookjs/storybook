@@ -1,8 +1,9 @@
 import * as React from 'react';
 
+import { global } from '@storybook/global';
+
 import semver from 'semver';
 import { configure } from 'storybook/test';
-import { global } from '@storybook/global';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
 import type { Decorator } from './public-types';

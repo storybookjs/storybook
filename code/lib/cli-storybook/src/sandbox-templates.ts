@@ -17,6 +17,13 @@ export type TemplateKey =
   | keyof typeof benchTemplates;
 export type Cadence = keyof typeof templatesByCadence;
 
+// Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
+type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
+  features?:
+    | (Partial<NonNullable<StorybookConfigRaw['features']>> & Record<string, unknown>)
+    | undefined;
+};
+
 export type Template = {
   /**
    * Readable name for the template, which will be used for feedback and the status page Follows the
@@ -68,9 +75,7 @@ export type Template = {
    */
   modifications?: {
     skipTemplateStories?: boolean;
-    mainConfig?:
-      | Partial<StorybookConfigRaw>
-      | ((config: ConfigFile) => Partial<StorybookConfigRaw>);
+    mainConfig?: LoosenedStorybookConfig | ((config: ConfigFile) => LoosenedStorybookConfig);
     testBuild?: boolean;
     disableDocs?: boolean;
     extraDependencies?: string[];

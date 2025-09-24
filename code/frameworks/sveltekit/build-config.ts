@@ -46,6 +46,7 @@ const config: BuildEntries = {
     ],
   },
   extraOutputs: {
+    './internal/mocks/app/state.svelte.js': './static/app-state-mock.svelte.js',
     './internal/MockProvider.svelte': './static/MockProvider.svelte',
   },
 };

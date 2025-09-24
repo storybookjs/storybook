@@ -155,6 +155,7 @@ export const shareTool: Addon_BaseType = {
             <WithPopover
               hasChrome
               placement="bottom"
+              padding={0}
               popover={<ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl }} />}
             >
               <Button padding="small" variant="ghost" ariaLabel="Share" tooltip="Share...">

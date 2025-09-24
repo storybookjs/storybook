@@ -7,7 +7,7 @@ import { LinkIcon } from '@storybook/icons';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { State } from 'storybook/manager-api';
-import { expect, screen, userEvent, within } from 'storybook/test';
+import { expect, screen, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { useMenu } from '../../container/Menu';
@@ -81,9 +81,9 @@ export const Expanded: Story = {
     const canvas = within(canvasElement);
     // This story can have significant loading time.
     await new Promise((res) => {
-      setTimeout(res, 1000);
+      setTimeout(res, 2000);
     });
-    const menuButton = await canvas.findByRole('switch');
+    const menuButton = await waitFor(() => canvas.findByRole('switch'));
     await userEvent.click(menuButton);
     const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
     await expect(aboutStorybookBtn).toBeInTheDocument();
@@ -138,12 +138,15 @@ export const ExpandedWithShortcuts: Story = {
   },
   play: async (context) => {
     const canvas = within(context.canvasElement);
+    // This story can have significant loading time.
     await new Promise((res) => {
-      setTimeout(res, 500);
+      setTimeout(res, 2000);
     });
-    // @ts-expect-error (non strict)
-    await Expanded.play(context);
-    const releaseNotes = await canvas.queryByText(/What's new/);
+    const menuButton = await waitFor(() => canvas.findByRole('switch'));
+    await userEvent.click(menuButton);
+    const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
+    await expect(aboutStorybookBtn).toBeInTheDocument();
+    const releaseNotes = canvas.queryByText(/What's new/);
     await expect(releaseNotes).not.toBeInTheDocument();
   },
 };

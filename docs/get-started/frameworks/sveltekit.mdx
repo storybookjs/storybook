@@ -105,8 +105,10 @@ export const MyStory = {
           },
         },
         navigating: {
-          route: {
-            id: '/storybook',
+          to: {
+            route: { id: '/storybook' },
+            params: {},
+            url: new URL('http://localhost/storybook'),
           },
         },
         updated: true,

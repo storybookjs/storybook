@@ -47,13 +47,15 @@ export const Navigating = {
             },
             url: new URL('https://svelte.dev'),
           },
-          route: {
-            id: '/storybook',
+          to: {
+            route: { id: '/storybook' },
+            params: {},
+            url: new URL('https://storybook.js.org'),
           },
-          type: 'enter',
+          type: 'link',
           willUnload: true,
           delta: 3,
-          complete: Promise.resolve(true),
+          complete: Promise.resolve(),
         },
       },
     },
@@ -64,81 +66,6 @@ export const Updated = {
   parameters: {
     sveltekit_experimental: {
       state: {
-        updated: {
-          current: true,
-        },
-      },
-    },
-  },
-};
-
-export const PageAndNavigating = {
-  parameters: {
-    sveltekit_experimental: {
-      state: {
-        page: {
-          data: {
-            test: 'passed',
-          },
-        },
-        navigating: {
-          route: {
-            id: '/storybook',
-          },
-        },
-      },
-    },
-  },
-};
-
-export const PageAndUpdated = {
-  parameters: {
-    sveltekit_experimental: {
-      state: {
-        page: {
-          data: {
-            test: 'passed',
-          },
-        },
-        updated: {
-          current: true,
-        },
-      },
-    },
-  },
-};
-
-export const NavigatingAndUpdated = {
-  parameters: {
-    sveltekit_experimental: {
-      state: {
-        navigating: {
-          route: {
-            id: '/storybook',
-          },
-        },
-        updated: {
-          current: true,
-        },
-      },
-    },
-  },
-};
-
-export const AllThree = {
-  parameters: {
-    sveltekit_experimental: {
-      state: {
-        page: {
-          data: {
-            test: 'passed',
-          },
-        },
-        navigating: {
-          route: {
-            id: '/storybook',
-          },
-        },
         updated: {
           current: true,
         },

@@ -1,9 +1,9 @@
-import type { Decorator } from '@storybook/svelte';
+import type { Decorator, Preview } from '@storybook/svelte';
 import MockProvider from '@storybook/sveltekit/internal/MockProvider.svelte';
 import {
   setAppStateNavigating,
   setAppStatePage,
-  setAppStateUpdated,
+  setAppStateUpdated, // @ts-expect-error no declaration file for this JS module
 } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
 
 import type { SvelteKitParameters } from './types';

@@ -16,7 +16,7 @@ test.describe('addon-toolbars', () => {
 
     // Click on viewport button and select spanish
     await sbPage.navigateToStory('core/toolbars/globals', 'basic');
-    await sbPage.selectToolbar('[aria-label="Internationalization locale"]', 'text=/Español/');
+    await sbPage.selectToolbar('[aria-label^="Internationalization locale"]', 'text=/Español/');
 
     // Check that spanish is selected
     await expect(sbPage.previewRoot()).toContainText('Hola');

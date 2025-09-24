@@ -54,6 +54,18 @@ const map = (arg: unknown, argType: InputType): any => {
         const mapped = map(val, { type: type.value[key] });
         return mapped === INCOMPATIBLE ? acc : Object.assign(acc, { [key]: mapped });
       }, {} as Args);
+    case 'other': {
+      const isPrimitiveArg =
+        typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean';
+
+      // Only proceed if `argType.value` is a `ReactNode`.
+      // Only permit primitives: they are included in `ReactNode` type, making them easily applicable.
+      if (type.value === 'ReactNode' && isPrimitiveArg) {
+        return arg;
+      }
+
+      return INCOMPATIBLE;
+    }
     default:
       return INCOMPATIBLE;
   }

@@ -11,6 +11,7 @@ export const mockEntries: StoryIndex['entries'] = {
   },
   'component-a--story-1': {
     type: 'story',
+    subtype: 'story',
     id: 'component-a--story-1',
     title: 'Component A',
     name: 'Story 1',
@@ -18,6 +19,7 @@ export const mockEntries: StoryIndex['entries'] = {
   },
   'component-a--story-2': {
     type: 'story',
+    subtype: 'story',
     id: 'component-a--story-2',
     title: 'Component A',
     name: 'Story 2',
@@ -25,6 +27,7 @@ export const mockEntries: StoryIndex['entries'] = {
   },
   'component-b--story-3': {
     type: 'story',
+    subtype: 'story',
     id: 'component-b--story-3',
     title: 'Component B',
     name: 'Story 3',
@@ -34,6 +37,7 @@ export const mockEntries: StoryIndex['entries'] = {
 export const docsEntries: StoryIndex['entries'] = {
   'component-a--page': {
     type: 'story',
+    subtype: 'story',
     id: 'component-a--page',
     title: 'Component A',
     name: 'Page',
@@ -41,6 +45,7 @@ export const docsEntries: StoryIndex['entries'] = {
   },
   'component-a--story-2': {
     type: 'story',
+    subtype: 'story',
     id: 'component-a--story-2',
     title: 'Component A',
     name: 'Story 2',
@@ -56,6 +61,7 @@ export const docsEntries: StoryIndex['entries'] = {
   },
   'component-c--story-4': {
     type: 'story',
+    subtype: 'story',
     id: 'component-c--story-4',
     title: 'Component c',
     name: 'Story 4',
@@ -65,6 +71,7 @@ export const docsEntries: StoryIndex['entries'] = {
 export const navigationEntries: StoryIndex['entries'] = {
   'a--1': {
     type: 'story',
+    subtype: 'story',
     title: 'a',
     name: '1',
     id: 'a--1',
@@ -72,6 +79,7 @@ export const navigationEntries: StoryIndex['entries'] = {
   },
   'a--2': {
     type: 'story',
+    subtype: 'story',
     title: 'a',
     name: '2',
     id: 'a--2',
@@ -79,6 +87,7 @@ export const navigationEntries: StoryIndex['entries'] = {
   },
   'b-c--1': {
     type: 'story',
+    subtype: 'story',
     title: 'b/c',
     name: '1',
     id: 'b-c--1',
@@ -86,6 +95,7 @@ export const navigationEntries: StoryIndex['entries'] = {
   },
   'b-d--1': {
     type: 'story',
+    subtype: 'story',
     title: 'b/d',
     name: '1',
     id: 'b-d--1',
@@ -93,6 +103,7 @@ export const navigationEntries: StoryIndex['entries'] = {
   },
   'b-d--2': {
     type: 'story',
+    subtype: 'story',
     title: 'b/d',
     name: '2',
     id: 'b-d--2',
@@ -100,6 +111,7 @@ export const navigationEntries: StoryIndex['entries'] = {
   },
   'custom-id--1': {
     type: 'story',
+    subtype: 'story',
     title: 'b/e',
     name: '1',
     id: 'custom-id--1',
@@ -109,6 +121,7 @@ export const navigationEntries: StoryIndex['entries'] = {
 export const preparedEntries: API_PreparedStoryIndex['entries'] = {
   'a--1': {
     type: 'story',
+    subtype: 'story',
     title: 'a',
     name: '1',
     parameters: {},
@@ -118,6 +131,7 @@ export const preparedEntries: API_PreparedStoryIndex['entries'] = {
   },
   'b--1': {
     type: 'story',
+    subtype: 'story',
     title: 'b',
     name: '1',
     parameters: {},

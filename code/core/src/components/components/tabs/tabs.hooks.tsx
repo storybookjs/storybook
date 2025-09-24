@@ -6,9 +6,9 @@ import { sanitize } from 'storybook/internal/csf';
 import { styled } from 'storybook/theming';
 import useResizeObserver from 'use-resize-observer';
 
+import { WithPopover } from '../Popover/WithPopover';
 import { TooltipLinkList } from '../tooltip/TooltipLinkList';
 import type { Link } from '../tooltip/TooltipLinkList';
-import { WithTooltip } from '../tooltip/WithTooltip';
 import { TabButton } from './button';
 import type { ChildrenListComplete } from './tabs.helpers';
 
@@ -68,12 +68,12 @@ export function useList(list: ChildrenListComplete) {
       const [isTooltipVisible, setTooltipVisible] = useState(false);
       return (
         <>
-          <WithTooltip
+          <WithPopover
             visible={isTooltipVisible}
             onVisibleChange={setTooltipVisible}
             placement="bottom"
             delayHide={100}
-            tooltip={
+            popover={
               <TooltipLinkList
                 links={invisibleList.map(({ title, id, color, active }) => {
                   return {
@@ -109,7 +109,7 @@ export function useList(list: ChildrenListComplete) {
                 isActive={isAddonsActive || isTooltipVisible}
               />
             </AddonButton>
-          </WithTooltip>
+          </WithPopover>
           {invisibleList.map(({ title, id, color }, index) => {
             const indexId = `index-${index}`;
             return (

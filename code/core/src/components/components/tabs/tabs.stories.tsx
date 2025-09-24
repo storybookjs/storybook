@@ -208,7 +208,7 @@ export const StatefulDynamicWithOpenTooltip = {
 
     await waitFor(async () => {
       const addonsTab = await canvas.findByRole('tab', { name: /Addons/ });
-      const tooltip = await screen.queryByTestId('tooltip');
+      const tooltip = await screen.queryByRole('dialog');
 
       if (!tooltip) {
         await userEvent.click(addonsTab);
@@ -218,7 +218,7 @@ export const StatefulDynamicWithOpenTooltip = {
         throw new Error('Tooltip not found');
       }
 
-      await expect(screen.queryByTestId('tooltip')).toBeInTheDocument();
+      await expect(screen.queryByRole('dialog')).toBeInTheDocument();
     });
   },
   render: (args) => (
@@ -240,7 +240,7 @@ export const StatefulDynamicWithSelectedAddon = {
     const canvas = within(context.canvasElement);
 
     await waitFor(async () => {
-      const popperContainer = await screen.findByTestId('tooltip');
+      const popperContainer = await screen.findByRole('dialog');
       const tab4 = await findByText(popperContainer, 'Tab title #4', {});
       fireEvent(tab4, new MouseEvent('click', { bubbles: true }));
       const content4 = await canvas.findByText('CONTENT 4');

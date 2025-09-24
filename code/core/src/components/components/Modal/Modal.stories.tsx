@@ -449,6 +449,9 @@ export const InteractiveKeyboard = meta.story({
 
       await userEvent.tab();
       await expect(closeButton).toHaveFocus();
+
+      await userEvent.tab();
+      await expect(sampleButton).toHaveFocus();
     });
 
     await step('Close modal with Escape key', async () => {

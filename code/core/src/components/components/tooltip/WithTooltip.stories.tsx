@@ -203,7 +203,7 @@ export const NeverOpen = meta.story({
     placement: 'right-start',
   },
   play: async () => {
-    await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
+    await expect(await screen.findByText('Lorem ipsum dolor sit')).not.toBeInTheDocument();
   },
 });
 

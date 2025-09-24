@@ -19,7 +19,7 @@ export const PseudoStateTool = () => {
 
   const options = pseudoStates.map((option) => {
     return {
-      title: PSEUDO_STATES[option],
+      title: `:${PSEUDO_STATES[option]}`,
       value: option,
     };
   });

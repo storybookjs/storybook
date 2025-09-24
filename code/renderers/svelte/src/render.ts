@@ -80,8 +80,8 @@ export async function renderToCanvas(
       target: canvasElement,
       props,
     });
-    await svelte.tick();
     componentsByDomElement.set(canvasElement, { mountedComponent, props });
+    await svelte.tick();
   } else {
     // We need to mutate the existing props for Svelte reactivity to work, we can't just re-assign them
     Object.assign(existingComponent.props, {

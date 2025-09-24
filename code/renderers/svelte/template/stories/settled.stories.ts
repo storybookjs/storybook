@@ -2,7 +2,6 @@ import type { StoryObj } from '@storybook/svelte';
 
 import { expect, fn, waitFor } from 'storybook/test';
 
-// import * as svelte from 'svelte';
 import AsyncComponent from './AsyncComponent.svelte';
 import SyncComponent from './SyncComponent.svelte';
 
@@ -41,9 +40,12 @@ export const Async: StoryObj<typeof AsyncComponent> = {
     // TODO: Ideally we should be able to call await svelte.settled() here instead of waitFor, but currently there's a bug making it never resolve
     // await svelte.settled();
 
-    await waitFor(() => {
-      expect(args.onEffect).toHaveBeenCalledOnce();
-      expect(canvas.getByTestId('after-effect')).toBeInTheDocument();
+    await waitFor(async () => {
+      await expect(args.onEffect).toHaveBeenCalledOnce();
+      await expect(canvas.getByTestId('after-effect')).toBeInTheDocument();
+      await expect(
+        canvasElement.querySelector('#sb-pending-async-component-notice')
+      ).not.toBeInTheDocument();
     });
   },
 };

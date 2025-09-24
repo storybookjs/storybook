@@ -111,7 +111,9 @@ export const MyStory = {
             url: new URL('http://localhost/storybook'),
           },
         },
-        updated: true,
+        updated: {
+          current: true,
+        },
       },
     },
   },
@@ -374,9 +376,9 @@ A partial version of the [`page`](https://svelte.dev/docs/kit/$app-state#page) s
 
 ##### `state.updated`
 
-Type: boolean
+Type: `{ current: boolean }`
 
-A boolean representing the value of [`updated`](https://svelte.dev/docs/kit/$app-state#updated) (you can also access `updated.check()` which will be a no-op).
+An object representing the current value of [`updated`](https://svelte.dev/docs/kit/$app-state#updated). You can also access `updated.check()`, which will be a no-op.
 
 ### Options
 

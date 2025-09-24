@@ -189,12 +189,20 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
 
   const defaultTags = ['dev', 'test'];
   const extraTags = globalThis.DOCS_OPTIONS?.autodocs === true ? ['autodocs'] : [];
+  /**
+   * DISCLAIMER: This feels like a hack but seems like it's the only way to override the autodocs
+   * tag for test-fn stories. That's because the Story index does not include negated tags e.g.
+   * !autodocs so the negation does not get passed through, and therefore we need to do it here.
+   * Therefore, unfortunately we have to duplicate the logic here.
+   */
+  const overrideTags = storyAnnotations?.tags?.includes('test-fn') ? ['!autodocs'] : [];
 
   const tags = combineTags(
     ...defaultTags,
     ...extraTags,
     ...(projectAnnotations.tags ?? []),
     ...(componentAnnotations.tags ?? []),
+    ...overrideTags,
     ...(storyAnnotations?.tags ?? [])
   );
 

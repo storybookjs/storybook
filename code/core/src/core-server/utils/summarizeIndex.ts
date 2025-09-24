@@ -1,7 +1,7 @@
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
-import { AUTODOCS_TAG, PLAY_FN_TAG, isMdxEntry } from './StoryIndexGenerator';
+import { AUTODOCS_TAG, PLAY_FN_TAG, TEST_FN_TAG, isMdxEntry } from './StoryIndexGenerator';
 
 const PAGE_REGEX = /(page|screen)/i;
 const SVELTE_CSF_TAG = 'svelte-csf';
@@ -34,10 +34,12 @@ export function summarizeIndex(storyIndex: StoryIndex) {
   let exampleDocsCount = 0;
   let pageStoryCount = 0;
   let playStoryCount = 0;
+  let testStoryCount = 0;
   let autodocsCount = 0;
   let mdxCount = 0;
   let svelteCsfV4Count = 0;
   let svelteCsfV5Count = 0;
+  const testsPerParentStory = new Map<string, number>();
   Object.values(storyIndex.entries).forEach((entry) => {
     if (isCLIExampleEntry(entry)) {
       if (entry.type === 'story') {
@@ -64,6 +66,10 @@ export function summarizeIndex(storyIndex: StoryIndex) {
       if (entry.tags?.includes(PLAY_FN_TAG)) {
         playStoryCount += 1;
       }
+      if (entry.tags?.includes(TEST_FN_TAG) && entry.parent) {
+        testStoryCount += 1;
+        testsPerParentStory.set(entry.parent, (testsPerParentStory.get(entry.parent) ?? 0) + 1);
+      }
       if (entry.tags?.includes('svelte-csf-v4')) {
         svelteCsfV4Count += 1;
       } else if (entry.tags?.includes('svelte-csf-v5')) {
@@ -78,11 +84,25 @@ export function summarizeIndex(storyIndex: StoryIndex) {
     }
   });
   const componentCount = componentTitles.size;
+  let maxTestsPerStory = 0;
+  let singleTestStoryCount = 0;
+  testsPerParentStory.forEach((count) => {
+    if (count > maxTestsPerStory) {
+      maxTestsPerStory = count;
+    }
+    if (count === 1) {
+      singleTestStoryCount += 1;
+    }
+  });
+
   return {
     storyCount,
     componentCount,
     pageStoryCount,
     playStoryCount,
+    testStoryCount,
+    maxTestsPerStory,
+    singleTestStoryCount,
     autodocsCount,
     mdxCount,
     exampleStoryCount,

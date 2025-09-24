@@ -28,7 +28,7 @@ interface PureProps {
   viewportName: keyof ViewportMap;
   isLocked: boolean;
   isActive: boolean;
-  isRotated: boolean;
+  isRotated: boolean | undefined;
   width: string;
   height: string;
 }
@@ -43,7 +43,7 @@ export const ViewportTool: FC<{ api: API }> = ({ api }) => {
   const { options = MINIMAL_VIEWPORTS, disable } = config || {};
   const data = globals?.[PARAM_KEY] || {};
   const viewportName = typeof data === 'string' ? data : data.value;
-  const isRotated: boolean = typeof data === 'string' ? false : data.isRotated;
+  const isRotated = typeof data === 'string' ? false : !!data.isRotated;
 
   const item = (options as ViewportMap)[viewportName] || responsiveViewport;
   const isActive = isTooltipVisible || item !== responsiveViewport;

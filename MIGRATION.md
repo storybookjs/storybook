@@ -714,7 +714,7 @@ The `onEscapeKeyDown` prop is removed in favor of `dismissOnEscape`, because it 
 Modal elements must have a title to be accessible. Set that title through the mandatory `ariaLabel` prop.
 
 ##### Renamed: Modal.Dialog.Close and Modal.CloseButton
-The `Modal.Dialog.Close` component and `Modal.CloseButton` components are replaced by `Modal.Close` for consistency with other components. You may call `<Modal.Close />` for a default close button, or `<Modal.Close asChild>...</Modal.Close>` to wrap your own custom button.
+The `Modal.Dialog.Close` component and `Modal.CloseButton` components are replaced by `Modal.Close` for consistency with other components. Those names are deprecated and will be removed in a future version. You may call `<Modal.Close />` for a default close button, or `<Modal.Close asChild>...</Modal.Close>` to wrap your own custom button.
 
 The `Modal.Close` component no longer requires an `onClick` handler to close the modal. It will automatically close the modal when clicked. If you need to perform additional actions when the close button is clicked, you can still provide an `onClick` handler, and it will be called in addition to closing the modal.
 #### ListItem, TooltipLinkList and TooltipMessage are deprecated

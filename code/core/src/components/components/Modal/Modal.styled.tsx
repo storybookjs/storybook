@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import React, { useContext } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import { Button } from 'storybook/internal/components';
 
 import { CrossIcon } from '@storybook/icons';
@@ -192,6 +193,25 @@ export const Close = ({ asChild, children, onClick, ...props }: CloseProps) => {
     >
       <CrossIcon />
     </Button>
+  );
+};
+
+export const Dialog = {
+  Close: () => {
+    deprecate('Modal.Dialog.Close is deprecated, please use Modal.Close instead.');
+    return <Close />;
+  },
+};
+
+export const CloseButton = ({ ariaLabel, ...props }: React.ComponentProps<typeof Button>) => {
+  deprecate('Modal.CloseButton is deprecated, please use Modal.Close instead.');
+
+  return (
+    <Close asChild>
+      <Button ariaLabel={ariaLabel || 'Close'} {...props}>
+        <CrossIcon />
+      </Button>
+    </Close>
   );
 };
 

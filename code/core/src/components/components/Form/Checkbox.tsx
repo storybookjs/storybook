@@ -40,7 +40,7 @@ const Input = styled.input(({ theme }) => ({
     background: 'white',
   },
   '&:enabled:focus-visible': {
-    outline: `2px solid ${color.secondary}`,
+    outline: `2px solid ${theme.color.secondary}`,
     outlineOffset: 2,
   },
 }));

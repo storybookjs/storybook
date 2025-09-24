@@ -122,7 +122,7 @@ const Item = styled.div<ItemProps>(
     borderRadius: theme.appBorderRadius,
     background: 'none',
     fontSize: theme.typography.size.s1,
-    transition: 'all 150ms ease-out',
+    transition: 'background 150ms ease-out',
     color: theme.color.dark,
     textDecoration: 'none',
     justifyContent: 'space-between',
@@ -134,6 +134,10 @@ const Item = styled.div<ItemProps>(
 
     '& > * + *': {
       paddingLeft: 10,
+    },
+
+    '&:focus-visible': {
+      outline: `2px solid ${theme.color.secondary}`,
     },
   }),
   ({ theme, href, onClick }) =>

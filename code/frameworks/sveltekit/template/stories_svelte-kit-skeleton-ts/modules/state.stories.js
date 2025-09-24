@@ -3,6 +3,15 @@ import State from './State.svelte';
 export default {
   title: 'stories/frameworks/sveltekit/modules/state',
   component: State,
+  parameters: {
+    sveltekit_experimental: {
+      state: {
+        page: {
+          url: new URL('https://storybook.js.org'), // necessary to make the rendered output deterministic in CH snapshots
+        },
+      },
+    },
+  },
 };
 
 export const Default = {};

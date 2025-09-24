@@ -53,7 +53,7 @@ const DoubleThemeRenderingHack = styled.div({
 });
 
 export const Expanded: Story = {
-  globals: { sb_theme: 'light' },
+  globals: { sb_theme: 'light', viewport: 'desktop' },
   render: () => {
     const menu = useMenu(
       { whatsNewData: undefined } as State,

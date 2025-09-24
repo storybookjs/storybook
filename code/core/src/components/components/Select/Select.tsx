@@ -7,7 +7,7 @@ import { Button, Popover } from 'storybook/internal/components';
 import { RefreshIcon } from '@storybook/icons';
 
 import { useObjectRef } from '@react-aria/utils';
-import { transparentize } from 'polished';
+import { darken, transparentize } from 'polished';
 import { Overlay, useInteractOutside, useOverlay, useOverlayPosition } from 'react-aria';
 import { useOverlayTriggerState } from 'react-stately';
 import { styled, useTheme } from 'storybook/theming';
@@ -100,7 +100,8 @@ const StyledButton = styled(Button)<ButtonProps & { $hasSelection?: boolean; $is
       ? {
           boxShadow: 'none',
           background: transparentize(0.93, theme.barSelectedColor),
-          color: theme.barSelectedColor,
+          color:
+            theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
         }
       : {}
 );

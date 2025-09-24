@@ -6931,7 +6931,7 @@ __metadata:
     eslint-config-prettier: "npm:^9.1.0"
     eslint-import-resolver-typescript: "npm:^3.6.1"
     eslint-plugin-compat: "npm:^6.0.2"
-    eslint-plugin-depend: "npm:^0.11.0"
+    eslint-plugin-depend: "npm:^1.3.1"
     eslint-plugin-eslint-comments: "npm:^3.2.0"
     eslint-plugin-file-progress: "npm:^1.4.0"
     eslint-plugin-html: "npm:^6.2.0"
@@ -13806,14 +13806,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-depend@npm:^0.11.0":
-  version: 0.11.0
-  resolution: "eslint-plugin-depend@npm:0.11.0"
+"eslint-plugin-depend@npm:^1.3.1":
+  version: 1.3.1
+  resolution: "eslint-plugin-depend@npm:1.3.1"
   dependencies:
-    fd-package-json: "npm:^1.2.0"
-    module-replacements: "npm:^2.1.0"
+    empathic: "npm:^2.0.0"
+    module-replacements: "npm:^2.8.0"
     semver: "npm:^7.6.3"
-  checksum: 10c0/64baf4d4f5d406efa1f13bda723ff0eb5fe4cee0ae8c3679fcdfccb4d7ba3a9472416fa3c54d75f1bde3e0123e55a85774662484a5b0355812f21a8968ee784a
+  checksum: 10c0/09f3394997924d57fd44f09319ebb244a616a922a71667b47cf869834a744353d03db18abbfa403804e49dcc0fba40b4d791551b9aecf73fcd7d4eee8be74274
   languageName: node
   linkType: hard
 
@@ -14764,15 +14764,6 @@ __metadata:
   dependencies:
     websocket-driver: "npm:>=0.5.1"
   checksum: 10c0/c6052a0bb322778ce9f89af92890f6f4ce00d5ec92418a35e5f4c6864a4fe736fec0bcebd47eac7c0f0e979b01530746b1c85c83cb04bae789271abf19737420
-  languageName: node
-  linkType: hard
-
-"fd-package-json@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "fd-package-json@npm:1.2.0"
-  dependencies:
-    walk-up-path: "npm:^3.0.1"
-  checksum: 10c0/712a78a12bd8ec8482867b26bbcb2ff1dca9b096a416150c138e1512f1879c6d23dfb41b03b8e9226afc1e58a35df4738e9f9ae57032ff1dbbae75acfb70343b
   languageName: node
   linkType: hard
 
@@ -19673,7 +19664,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"module-replacements@npm:^2.1.0":
+"module-replacements@npm:^2.8.0":
   version: 2.9.0
   resolution: "module-replacements@npm:2.9.0"
   checksum: 10c0/a6bb343575a921b4ca719b308ca2d464d8f6b78fca46e7a03f3fc9b7e5c749acbd16ceb8e1505fb58f9760baee483ce0a9b706b8ffa460e47ee293ef0b94f254
@@ -26851,13 +26842,6 @@ __metadata:
     matcher-collection: "npm:^2.0.0"
     minimatch: "npm:^3.0.4"
   checksum: 10c0/45fe284ffa28440f0d3d0a136b3c3fe2a0f55bf207db22c481eea9e7ab7cef6d820491485d76e9f1af9dab7489c6d7a0efbd1ebf45b43dbf871f046f0b4760bd
-  languageName: node
-  linkType: hard
-
-"walk-up-path@npm:^3.0.1":
-  version: 3.0.1
-  resolution: "walk-up-path@npm:3.0.1"
-  checksum: 10c0/3184738e0cf33698dd58b0ee4418285b9c811e58698f52c1f025435a85c25cbc5a63fee599f1a79cb29ca7ef09a44ec9417b16bfd906b1a37c305f7aa20ee5bc
   languageName: node
   linkType: hard
 

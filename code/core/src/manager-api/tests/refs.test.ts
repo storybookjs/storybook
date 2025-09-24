@@ -1227,6 +1227,7 @@ describe('Refs API', () => {
             name: '1',
             importPath: './path/to/a1.ts',
             type: 'story',
+            subtype: 'story',
           },
           'a--2': {
             id: 'a--2',
@@ -1234,6 +1235,7 @@ describe('Refs API', () => {
             name: '2',
             importPath: './path/to/a2.ts',
             type: 'story',
+            subtype: 'story',
           },
         },
       };

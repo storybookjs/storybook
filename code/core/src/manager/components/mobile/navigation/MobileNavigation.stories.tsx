@@ -45,6 +45,7 @@ const mockManagerStore: any = {
       },
       someStoryId: {
         type: 'story',
+        subtype: 'story',
         id: 'someStoryId',
         name: 'story',
         parent: 'someComponentId',
@@ -121,6 +122,7 @@ export const LongStoryName: Story = {
             },
             someStoryId: {
               type: 'story',
+              subtype: 'story',
               id: 'someStoryId',
               name: 'someLongStoryName',
               parent: 'someComponentId',

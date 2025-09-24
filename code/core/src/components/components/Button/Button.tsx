@@ -206,30 +206,6 @@ const StyledButton = styled('button', {
 
     return 'transparent';
   })(),
-  ...(variant === 'ghost'
-    ? {
-        // This is a hack to apply bar styles to the button as soon as it is part of a bar
-        // It is a temporary solution until we have implemented Theming 2.0.
-        '.sb-bar &': {
-          background: 'transparent',
-          color: theme.barTextColor,
-          '&:hover': {
-            color: theme.barHoverColor,
-            background: transparentize(0.86, theme.barHoverColor),
-          },
-
-          '&:active': {
-            color: theme.barSelectedColor,
-            background: transparentize(0.93, theme.barSelectedColor),
-          },
-
-          '&:focus': {
-            boxShadow: `${rgba(theme.barHoverColor, 1)} 0 0 0 1px inset`,
-            outline: 'none',
-          },
-        },
-      }
-    : {}),
   color: (() => {
     if (variant === 'solid') {
       return theme.color.lightest;
@@ -295,6 +271,10 @@ const StyledButton = styled('button', {
   '&:focus-visible': {
     outline: `2px solid ${rgba(theme.color.secondary, 1)}`,
     outlineOffset: 2,
+  },
+
+  '.sb-bar &:focus-visible': {
+    outlineOffset: 0,
   },
 
   '> svg': {

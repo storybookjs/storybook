@@ -46,13 +46,6 @@ const StyledToggle = styled(Button)<ToggleButtonProps>(({ theme, variant, presse
           ? {
               background: transparentize(0.94, theme.barSelectedColor),
               color: theme.barSelectedColor,
-              // This is a hack to apply bar styles to the button as soon as it is part of a bar
-              // It is a temporary solution until we have implemented Theming 2.0.
-              '.sb-bar &': {
-                background: transparentize(0.94, theme.barSelectedColor),
-
-                color: theme.barSelectedColor,
-              },
             }
           : {}),
       }

@@ -1,6 +1,6 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
-import { dirname, join, relative, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 
 import {
   loadAllPresets,
@@ -17,6 +17,7 @@ import { global } from '@storybook/global';
 
 import picocolors from 'picocolors';
 
+import { resolvePackageDir } from '../shared/utils/module';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
@@ -60,15 +61,18 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     logger.warn(`you have not specified a framework in your ${options.configDir}/main.js`);
   }
 
+  const commonPreset = join(
+    resolvePackageDir('storybook'),
+    'dist/core-server/presets/common-preset.js'
+  );
+  const commonOverridePreset = import.meta.resolve(
+    'storybook/internal/core-server/presets/common-override-preset'
+  );
+
   logger.info('=> Loading presets');
   let presets = await loadAllPresets({
-    corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
-      ...corePresets,
-    ],
-    overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
-    ],
+    corePresets: [commonPreset, ...corePresets],
+    overridePresets: [commonOverridePreset],
     isCritical: true,
     ...options,
   });
@@ -82,16 +86,13 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     : undefined;
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
+      commonPreset,
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
-    overridePresets: [
-      ...(previewBuilder.overridePresets || []),
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
-    ],
+    overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
     ...options,
     build,
   });
@@ -104,6 +105,13 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     presets.apply('stories'),
     presets.apply('docs'),
   ]);
+
+  const invokedBy = process.env.STORYBOOK_INVOKED_BY;
+  if (!core?.disableTelemetry && invokedBy) {
+    // NOTE: we don't await this event to avoid slowing things down.
+    // This could result in telemetry events being lost.
+    telemetry('test-run', { runner: invokedBy, watch: false }, { configDir: options.configDir });
+  }
 
   const fullOptions: Options = {
     ...options,
@@ -128,10 +136,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     );
   }
 
-  const coreServerPublicDir = join(
-    dirname(require.resolve('storybook/internal/package.json')),
-    'assets/browser'
-  );
+  const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
 
   let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
@@ -205,7 +210,8 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   ]);
 
   // Now the code has successfully built, we can count this as a 'dev' event.
-  if (!core?.disableTelemetry) {
+  // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible
+  if (!core?.disableTelemetry && !options.test) {
     effects.push(
       initializedStoryIndexGenerator.then(async (generator) => {
         const storyIndex = await generator?.getIndex();
@@ -217,6 +223,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
             storyIndex: summarizeIndex(storyIndex),
           });
         }
+
         await telemetry('build', payload, { configDir: options.configDir });
       })
     );

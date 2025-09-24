@@ -37,6 +37,8 @@ enum events {
   STORY_THREW_EXCEPTION = 'storyThrewException',
   // Emitted at various times during rendering
   STORY_RENDER_PHASE_CHANGED = 'storyRenderPhaseChanged',
+  // Emitted when the story/component is hot updated (without rerendering)
+  STORY_HOT_UPDATED = 'storyHotUpdated',
   // Emitted when the play function throws
   PLAY_FUNCTION_THREW_EXCEPTION = 'playFunctionThrewException',
   // Emitted when there were unhandled errors while playing the story
@@ -84,6 +86,9 @@ enum events {
   ARGTYPES_INFO_RESPONSE = 'argtypesInfoResponse',
   CREATE_NEW_STORYFILE_REQUEST = 'createNewStoryfileRequest',
   CREATE_NEW_STORYFILE_RESPONSE = 'createNewStoryfileResponse',
+  // Open a file in the code editor
+  OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
+  OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
 }
 
 // Enables: `import Events from ...`
@@ -136,6 +141,7 @@ export const {
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
   STORY_UNCHANGED,
+  STORY_HOT_UPDATED,
   UPDATE_GLOBALS,
   UPDATE_QUERY_PARAMS,
   UPDATE_STORY_ARGS,
@@ -148,6 +154,8 @@ export const {
   SAVE_STORY_RESPONSE,
   ARGTYPES_INFO_REQUEST,
   ARGTYPES_INFO_RESPONSE,
+  OPEN_IN_EDITOR_REQUEST,
+  OPEN_IN_EDITOR_RESPONSE,
 } = events;
 
 export * from './data/create-new-story';
@@ -157,3 +165,4 @@ export * from './data/request-response';
 export * from './data/save-story';
 export * from './data/whats-new';
 export * from './data/phases';
+export * from './data/open-in-editor';

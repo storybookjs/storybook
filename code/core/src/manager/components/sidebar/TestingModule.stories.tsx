@@ -11,7 +11,7 @@ import {
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext, mockChannel } from 'storybook/manager-api';
-import { fireEvent, fn } from 'storybook/test';
+import { expect, fireEvent, fn, waitFor } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { internal_fullTestProviderStore } from '../../manager-stores.mock';
@@ -74,6 +74,7 @@ const meta = {
     warningCount: 0,
     warningsActive: false,
     setWarningsActive: fn(),
+    successCount: 0,
   },
   decorators: [
     (storyFn) => (
@@ -186,7 +187,11 @@ export const Crashed: Story = {
 export const SettingsUpdated: Story = {
   play: async (playContext) => {
     await Expanded.play!(playContext);
+    const testingModule = document.getElementById('storybook-testing-module');
+    await waitFor(() => expect(testingModule!.dataset.updated).toBe('false'));
     internal_fullTestProviderStore.settingsChanged();
+    await waitFor(() => expect(testingModule!.dataset.updated).toBe('true'));
+    await waitFor(() => expect(testingModule!.dataset.updated).toBe('false'));
   },
 };
 

@@ -6,7 +6,6 @@ import type {
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
   Renderer,
-  StoryAnnotations,
   StoryAnnotationsOrFn,
   StoryId,
 } from 'storybook/internal/types';
@@ -28,7 +27,7 @@ export function normalizeStory<TRenderer extends Renderer>(
   storyAnnotations: StoryAnnotationsOrFn<TRenderer>,
   meta: NormalizedComponentAnnotations<TRenderer>
 ): NormalizedStoryAnnotations<TRenderer> {
-  const storyObject: StoryAnnotations<TRenderer> = storyAnnotations;
+  const storyObject = storyAnnotations;
   const userStoryFn: ArgsStoryFn<TRenderer> | null =
     typeof storyAnnotations === 'function' ? storyAnnotations : null;
 
@@ -58,9 +57,9 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(story?.beforeEach),
   ];
 
-  const experimental_afterEach = [
-    ...normalizeArrays(storyObject.experimental_afterEach),
-    ...normalizeArrays(story?.experimental_afterEach),
+  const afterEach = [
+    ...normalizeArrays(storyObject.afterEach),
+    ...normalizeArrays(story?.afterEach),
   ];
   const { render, play, tags = [], globals = {} } = storyObject;
 
@@ -76,7 +75,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     argTypes: normalizeInputTypes(argTypes),
     loaders,
     beforeEach,
-    experimental_afterEach,
+    afterEach,
     globals,
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),

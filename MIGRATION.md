@@ -756,7 +756,7 @@ The `trigger` prop was removed to enforce better accessibility compliance. WithT
 The `triggerOnFocusOnly` prop was added. When set, tooltips will only show on focus. Use this to provide keyboard navigation hints to keyboard users. Do not use it for other purposes.
 
 #### Renamed: startOpen
-The `startOpen` prop was renamed `defaultVisible` to match naming in other components that expose both controlled and uncontrolled visibility.
+The `startOpen` prop was renamed `defaultVisible` to match naming in other components that expose both controlled and uncontrolled visibility. The `startOpen` prop will be removed in future versions.
 
 #### Removed: svg, strategy, withArrows, mutationObserverOptions
 These prop were not used inside Storybook and have been removed.

@@ -1,6 +1,7 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
 import React, { useCallback, useState } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import { type PopperPlacement, convertToReactAriaPlacement } from 'storybook/internal/components';
 
 import { Focusable, TooltipTrigger, Tooltip as TooltipUpstream } from 'react-aria-components';
@@ -59,6 +60,10 @@ const WithTooltip = ({
 }: WithTooltipProps) => {
   const placement = convertToReactAriaPlacement(placementProp);
   const child = React.Children.only(children);
+
+  if (startOpen !== undefined) {
+    deprecate('The `startOpen` prop is deprecated. Please use `defaultVisible` instead.');
+  }
 
   const [isOpen, setIsOpen] = useState(defaultVisible ?? startOpen ?? false);
   const onOpenChange = useCallback(

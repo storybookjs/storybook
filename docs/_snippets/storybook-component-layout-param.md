@@ -152,6 +152,6 @@ const meta = preview.meta({
   // Sets the layout parameter component wide.
   parameters: {
     layout: 'centered',
-  }
+  },
 });
 ```

@@ -261,7 +261,7 @@ const meta = preview.meta({
       Alert text
       <Button {...args} />
     </Alert>
-  )
+  ),
 });
 
 export const DefaultInAlert = meta.story({

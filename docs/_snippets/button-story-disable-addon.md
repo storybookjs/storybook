@@ -107,6 +107,6 @@ const meta = preview.meta({
 
   parameters: {
     myAddon: { disable: true }, // Disables the addon
-  }
+  },
 });
 ```

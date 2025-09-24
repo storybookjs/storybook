@@ -192,7 +192,7 @@ import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
   component: MyComponent,
-  title: 'components/MyComponent/MyComponent'
+  title: 'components/MyComponent/MyComponent',
 });
 
 export const Default = meta.story({

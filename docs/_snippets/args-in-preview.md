@@ -25,7 +25,6 @@ export default definePreview({
   // The default value of the theme arg for all stories
   args: { theme: 'light' },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -38,5 +37,4 @@ export default definePreview({
   // The default value of the theme arg for all stories
   args: { theme: 'light' },
 });
-
 ```

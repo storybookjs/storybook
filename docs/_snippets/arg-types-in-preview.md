@@ -44,7 +44,6 @@ const preview = {
 } satisfies Preview;
 
 export default preview;
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -62,5 +61,4 @@ export default definePreview({
     },
   },
 });
-
 ```

@@ -267,7 +267,7 @@ import preview from '../.storybook/preview';
 import { List } from './List';
 
 const meta = preview.meta({
-  component: List
+  component: List,
 });
 
 // Always an empty list, not super interesting

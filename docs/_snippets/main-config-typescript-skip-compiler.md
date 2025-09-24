@@ -24,5 +24,4 @@ export default defineMain({
     skipCompiler: true,
   },
 });
-
 ```

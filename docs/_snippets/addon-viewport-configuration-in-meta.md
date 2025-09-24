@@ -269,6 +269,6 @@ const meta = preview.meta({
       //👇 Set available viewports for every story in the file
       options: INITIAL_VIEWPORTS,
     },
-  }
+  },
 });
 ```

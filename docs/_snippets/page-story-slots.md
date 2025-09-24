@@ -302,7 +302,7 @@ const meta = preview.meta({
     <Page {...args}>
       <footer>{footer}</footer>
     </Page>
-  )
+  ),
 });
 
 export const CustomFooter = meta.story({

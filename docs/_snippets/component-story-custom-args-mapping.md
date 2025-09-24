@@ -330,6 +330,6 @@ const meta = preview.meta({
         },
       },
     },
-  }
+  },
 });
 ```

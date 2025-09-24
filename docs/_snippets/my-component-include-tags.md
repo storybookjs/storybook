@@ -81,7 +81,7 @@ const meta = preview.meta({
   component: MyComponent,
 
   //👇 Provides the `test-only` tag to all stories in this file
-  tags: ['test-only']
+  tags: ['test-only'],
 });
 
 export const IncludeStory = meta.story({

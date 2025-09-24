@@ -221,6 +221,6 @@ const meta = preview.meta({
   // ✅ Do this instead
   args: {
     value: 0,
-  }
+  },
 });
 ```

@@ -48,6 +48,6 @@ const meta = preview.meta({
 
   parameters: {
     react: { rsc: false },
-  }
+  },
 });
 ```

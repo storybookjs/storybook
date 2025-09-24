@@ -283,7 +283,7 @@ const meta = preview.meta({
   args: {
     // 👇 Use `fn` to spy on the onSubmit arg
     onSubmit: fn(),
-  }
+  },
 });
 
 export const FilledForm = meta.story({

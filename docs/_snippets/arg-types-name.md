@@ -165,6 +165,6 @@ const meta = preview.meta({
     actualArgName: {
       name: 'Friendly name',
     },
-  }
+  },
 });
 ```

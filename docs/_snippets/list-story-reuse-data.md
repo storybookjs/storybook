@@ -393,7 +393,7 @@ import { ListItem } from './ListItem';
 import { Selected, Unselected } from './ListItem.stories';
 
 const meta = preview.meta({
-  component: List
+  component: List,
 });
 
 export const ManyItems = meta.story({

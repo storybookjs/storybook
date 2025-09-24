@@ -170,6 +170,6 @@ const meta = preview.meta({
     docs: {
       controls: { exclude: ['style'] },
     },
-  }
+  },
 });
 ```

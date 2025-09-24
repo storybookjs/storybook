@@ -198,6 +198,6 @@ const meta = preview.meta({
     margin: { control: 'number', if: { arg: 'advanced' } },
     padding: { control: 'number', if: { arg: 'advanced' } },
     cornerRadius: { control: 'number', if: { arg: 'advanced' } },
-  }
+  },
 });
 ```

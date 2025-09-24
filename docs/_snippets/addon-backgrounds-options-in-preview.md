@@ -64,7 +64,6 @@ export default definePreview({
     backgrounds: { value: 'light' },
   },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -91,5 +90,4 @@ export default definePreview({
     backgrounds: { value: 'light' },
   },
 });
-
 ```

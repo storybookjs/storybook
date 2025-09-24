@@ -135,5 +135,4 @@ const AppDecorator = (storyFn) => {
 export default definePreview({
   decorators: [AppDecorator],
 });
-
 ```

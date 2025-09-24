@@ -260,6 +260,6 @@ const meta = preview.meta({
         gray: { name: 'Gray', value: '#CCC' },
       },
     },
-  }
+  },
 });
 ```

@@ -72,7 +72,6 @@ export default definePreview({
     theme: 'light',
   },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -100,5 +99,4 @@ export default definePreview({
     theme: 'light',
   },
 });
-
 ```

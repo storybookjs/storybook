@@ -411,7 +411,7 @@ const meta = preview.meta({
     myAddon: {
       data: 'This data is passed to the addon',
     },
-  }
+  },
 });
 
 export const Basic = meta.story({

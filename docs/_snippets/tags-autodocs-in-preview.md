@@ -28,7 +28,6 @@ export default definePreview({
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -42,5 +41,4 @@ export default definePreview({
   //👇 Enables auto-generated documentation for all stories
   tags: ['autodocs'],
 });
-
 ```

@@ -329,7 +329,7 @@ import { createNotes } from '../app/mocks/notes';
 import NoteUI from './note-ui';
 
 const meta = preview.meta({
-  component: NoteUI
+  component: NoteUI,
 });
 
 const notes = createNotes();

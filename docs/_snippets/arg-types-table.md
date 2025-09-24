@@ -198,6 +198,6 @@ const meta = preview.meta({
         type: { summary: 'number' },
       },
     },
-  }
+  },
 });
 ```

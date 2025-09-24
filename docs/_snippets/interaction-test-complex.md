@@ -443,7 +443,7 @@ import { users } from '../mocks/users';
 import { EventForm } from './EventForm';
 
 const meta = preview.meta({
-  component: EventForm
+  component: EventForm,
 });
 
 export const Submits = meta.story({

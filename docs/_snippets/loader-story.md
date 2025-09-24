@@ -395,7 +395,7 @@ import { TodoItem } from './TodoItem';
 
 const meta = preview.meta({
   component: TodoItem,
-  render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />
+  render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
 });
 
 export const Primary = meta.story({

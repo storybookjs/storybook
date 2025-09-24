@@ -24,5 +24,4 @@ export default defineMain({
     reactDocgen: 'react-docgen',
   },
 });
-
 ```

@@ -49,7 +49,6 @@ export default definePreview({
     viewport: { value: 'ipad', isRotated: false },
   },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -71,5 +70,4 @@ export default definePreview({
     viewport: { value: 'ipad', isRotated: false },
   },
 });
-
 ```

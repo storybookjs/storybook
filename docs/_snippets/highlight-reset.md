@@ -336,7 +336,7 @@ import { HIGHLIGHT, RESET_HIGHLIGHT } from 'storybook/highlight';
 import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
-  component: MyComponent
+  component: MyComponent,
 });
 
 export const ResetHighlight = meta.story({

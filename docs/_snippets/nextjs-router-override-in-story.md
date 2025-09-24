@@ -82,7 +82,7 @@ import preview from '../.storybook/preview';
 import RouterBasedComponent from './RouterBasedComponent';
 
 const meta = preview.meta({
-  component: RouterBasedComponent
+  component: RouterBasedComponent,
 });
 
 // Interact with the links to see the route change events in the Actions panel.

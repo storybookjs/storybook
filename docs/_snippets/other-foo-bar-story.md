@@ -128,7 +128,7 @@ const meta = preview.meta({
   component: Foo,
 
   // Or 'foo-bar' if you prefer
-  id: 'Foo/Bar'
+  id: 'Foo/Bar',
 });
 
 export const Baz = meta.story({

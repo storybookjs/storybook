@@ -34,7 +34,6 @@ export default definePreview({
     spyOn(console, 'log').mockName('console.log');
   },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -50,5 +49,4 @@ export default definePreview({
     spyOn(console, 'log').mockName('console.log');
   },
 });
-
 ```

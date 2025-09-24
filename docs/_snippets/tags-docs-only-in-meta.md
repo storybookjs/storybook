@@ -167,13 +167,13 @@ import preview from '../.storybook/preview';
 import { Button } from './Button';
 
 const meta = preview.meta({
- component: Button,
+  component: Button,
 
- /*
-  * All stories in this file will:
-  * - Be included in the docs page
-  * - Not appear in Storybook's sidebar
-  */
- tags: ['autodocs', '!dev']
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
 });
 ```

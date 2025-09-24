@@ -152,13 +152,13 @@ import preview from '../.storybook/preview';
 import { Foo } from './Foo';
 
 const meta = preview.meta({
- /* 👇 The title prop is optional.
-  * See https://storybook.js.org/docs/configure/#configure-story-loading
-  * to learn how to generate automatic titles
-  */
- title: 'Foo/Bar',
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Foo/Bar',
 
- component: Foo
+  component: Foo,
 });
 
 export const Baz = meta.story();

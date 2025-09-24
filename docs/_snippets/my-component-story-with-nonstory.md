@@ -412,7 +412,7 @@ const meta = preview.meta({
   includeStories: ['SimpleStory', 'ComplexStory'],
 
   // 👈 Storybook ignores anything that contains Data
-  excludeStories: /.*Data$/
+  excludeStories: /.*Data$/,
 });
 
 export const simpleData = { foo: 1, bar: 'baz' };

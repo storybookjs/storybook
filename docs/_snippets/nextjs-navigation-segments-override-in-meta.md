@@ -68,6 +68,6 @@ const meta = preview.meta({
         segments: ['dashboard', 'analytics'],
       },
     },
-  }
+  },
 });
 ```

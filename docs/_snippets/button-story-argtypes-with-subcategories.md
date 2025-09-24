@@ -317,6 +317,6 @@ const meta = preview.meta({
         category: 'Sizes',
       },
     },
-  }
+  },
 });
 ```

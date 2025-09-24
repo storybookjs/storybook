@@ -143,6 +143,6 @@ const meta = preview.meta({
 
   argTypes: {
     value: { type: 'number' },
-  }
+  },
 });
 ```

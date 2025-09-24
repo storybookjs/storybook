@@ -198,6 +198,6 @@ const meta = preview.meta({
         disable: true, // 👈 Disables the table of contents
       },
     },
-  }
+  },
 });
 ```

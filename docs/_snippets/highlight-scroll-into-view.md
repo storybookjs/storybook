@@ -300,7 +300,7 @@ import { SCROLL_INTO_VIEW } from 'storybook/highlight';
 import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
-  component: MyComponent
+  component: MyComponent,
 });
 
 export const ScrollIntoView = meta.story({

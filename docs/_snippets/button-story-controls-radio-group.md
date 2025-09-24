@@ -176,6 +176,6 @@ const meta = preview.meta({
       options: ['primary', 'secondary'],
       control: { type: 'radio' },
     },
-  }
+  },
 });
 ```

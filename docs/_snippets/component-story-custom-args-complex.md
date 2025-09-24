@@ -609,7 +609,7 @@ const meta = preview.meta({
     propertyB: {
       options: ['Another Item One', 'Another Item Two', 'Another Item Three'],
     },
-  }
+  },
 });
 
 const someFunction = (valuePropertyA, valuePropertyB) => {

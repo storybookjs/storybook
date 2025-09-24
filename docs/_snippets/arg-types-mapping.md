@@ -207,6 +207,6 @@ const meta = preview.meta({
         Italic: <i>Italic</i>,
       },
     },
-  }
+  },
 });
 ```

@@ -454,7 +454,7 @@ const meta = preview.meta({
       // 👇 Enable Code panel for all stories in this file
       codePanel: true,
     },
-  }
+  },
 });
 
 // 👇 This story will display the Code panel

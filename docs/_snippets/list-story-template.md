@@ -595,7 +595,7 @@ const meta = preview.meta({
    */
   title: 'List',
 
-  component: List
+  component: List,
 });
 
 //👇 The ListTemplate construct will be spread to the existing stories.

@@ -32,7 +32,6 @@ sb.mock(import('../lib/session.ts'));
 sb.mock(import('uuid'));
 
 // ...rest of the file
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -49,5 +48,4 @@ sb.mock('../lib/session.js');
 sb.mock('uuid');
 
 // ...rest of the file
-
 ```

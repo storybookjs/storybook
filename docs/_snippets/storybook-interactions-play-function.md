@@ -384,7 +384,7 @@ const meta = preview.meta({
   args: {
     // 👇 Use `fn` to spy on the onSubmit arg
     onSubmit: fn(),
-  }
+  },
 });
 
 /*

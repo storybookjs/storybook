@@ -165,6 +165,6 @@ const meta = preview.meta({
     value: {
       description: 'The value of the slider',
     },
-  }
+  },
 });
 ```

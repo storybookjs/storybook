@@ -168,7 +168,7 @@ import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
 import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
-  component: MyComponent
+  component: MyComponent,
 });
 
 const theme = {

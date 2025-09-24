@@ -220,6 +220,6 @@ const meta = preview.meta({
         step: 10,
       },
     },
-  }
+  },
 });
 ```

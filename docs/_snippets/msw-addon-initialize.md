@@ -52,7 +52,6 @@ export default definePreview({
   // ... rest of preview configuration
   loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -75,5 +74,4 @@ export default definePreview({
   // 👈 Add the MSW loader to all stories
   loaders: [mswLoader],
 });
-
 ```

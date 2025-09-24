@@ -528,7 +528,7 @@ import { HIGHLIGHT } from 'storybook/highlight';
 import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
-  component: MyComponent
+  component: MyComponent,
 });
 
 export const StyledHighlight = meta.story({

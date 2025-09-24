@@ -659,7 +659,7 @@ import { http, HttpResponse, delay } from 'msw';
 import { DocumentScreen } from './YourPage';
 
 const meta = preview.meta({
-  component: DocumentScreen
+  component: DocumentScreen,
 });
 
 // 👇 The mocked data that will be used in the story

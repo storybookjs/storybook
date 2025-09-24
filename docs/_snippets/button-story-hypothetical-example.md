@@ -64,7 +64,7 @@ import preview from '../.storybook/preview';
 import { Button } from './Button';
 
 const meta = preview.meta({
-  component: Button
+  component: Button,
 });
 
 export const Sample = meta.story({

@@ -176,6 +176,6 @@ const meta = preview.meta({
     foo: {
       control: false,
     },
-  }
+  },
 });
 ```

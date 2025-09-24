@@ -361,7 +361,7 @@ import preview from '../.storybook/preview';
 import { YourComponent } from './YourComponent';
 
 const meta = preview.meta({
-  component: YourComponent
+  component: YourComponent,
 });
 
 export const ArrayInclude = meta.story({

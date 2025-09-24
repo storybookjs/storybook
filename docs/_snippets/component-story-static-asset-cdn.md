@@ -262,7 +262,7 @@ import preview from '../.storybook/preview';
 import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
-  component: MyComponent
+  component: MyComponent,
 });
 
 export const WithAnImage = meta.story({

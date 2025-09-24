@@ -218,7 +218,7 @@ import { expect } from 'storybook/test';
 import { Dialog } from './Dialog';
 
 const meta = preview.meta({
-  component: Dialog
+  component: Dialog,
 });
 
 export const Opens = meta.story({

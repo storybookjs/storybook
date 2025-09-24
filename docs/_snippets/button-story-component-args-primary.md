@@ -271,6 +271,6 @@ const meta = preview.meta({
   args: {
     //👇 Now all Button stories will be primary.
     primary: true,
-  }
+  },
 });
 ```

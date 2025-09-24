@@ -547,7 +547,7 @@ import { List } from './List';
 import { ListItem } from './ListItem';
 
 const meta = preview.meta({
-  component: List
+  component: List,
 });
 
 export const Empty = meta.story();

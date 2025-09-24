@@ -26,5 +26,4 @@ export default defineMain({
     return config;
   },
 });
-
 ```

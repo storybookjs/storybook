@@ -8,7 +8,7 @@ const preview: Preview = {
       (story) => `<div [class]="myTheme">${story}</div>`,
       ({ globals }) => {
         return { myTheme: globals['theme'] };
-      }
+      },
     ),
   ],
 };
@@ -182,7 +182,6 @@ export default definePreview({
     },
   ],
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -203,12 +202,11 @@ export default definePreview({
     },
   ],
 });
-
 ```
 
 ```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from "@storybook/your-framework";
+import { definePreview } from '@storybook/your-framework';
 
 import { ThemeProvider } from 'styled-components';
 
@@ -232,7 +230,7 @@ export default definePreview({
 
 ```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from "@storybook/your-framework";
+import { definePreview } from '@storybook/your-framework';
 import { ThemeProvider } from 'styled-components';
 
 import { MyThemes } from '../my-theme-folder/my-theme-file';

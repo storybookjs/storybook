@@ -47,7 +47,6 @@ export default defineMain({
     skipCompiler: false,
   },
 });
-
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
@@ -65,5 +64,4 @@ export default defineMain({
     skipCompiler: true,
   },
 });
-
 ```

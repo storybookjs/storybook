@@ -176,6 +176,6 @@ const meta = preview.meta({
   args: {
     // 👇 Create an action that appears when the onClick event is fired
     onClick: action('on-click'),
-  }
+  },
 });
 ```

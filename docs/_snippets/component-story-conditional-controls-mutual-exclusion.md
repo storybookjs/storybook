@@ -231,6 +231,6 @@ const meta = preview.meta({
       control: { type: 'select', options: ['foo.jpg', 'bar.jpg'] },
       if: { arg: 'label', truthy: false },
     },
-  }
+  },
 });
 ```

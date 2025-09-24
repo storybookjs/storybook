@@ -216,7 +216,7 @@ const meta = preview.meta({
   // 👇 Runs after each story in this file
   async afterEach(context) {
     console.log(`✅ Tested ${context.name} story`);
-  }
+  },
 });
 
 export const Default = meta.story({

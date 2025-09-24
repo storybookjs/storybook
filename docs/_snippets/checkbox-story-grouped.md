@@ -151,12 +151,12 @@ import preview from '../.storybook/preview';
 import { CheckBox } from './Checkbox';
 
 const meta = preview.meta({
- /* 👇 The title prop is optional.
-  * See https://storybook.js.org/docs/configure/#configure-story-loading
-  * to learn how to generate automatic titles
-  */
- title: 'Design System/Atoms/Checkbox',
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Design System/Atoms/Checkbox',
 
- component: CheckBox
+  component: CheckBox,
 });
 ```

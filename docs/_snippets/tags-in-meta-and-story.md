@@ -291,15 +291,15 @@ import preview from '../.storybook/preview';
 import { Button } from './Button';
 
 const meta = preview.meta({
- component: Button,
+  component: Button,
 
- /*
-  * All stories in this file will have these tags applied:
-  * - autodocs
-  * - dev (implicit default, inherited from preview)
-  * - test (implicit default, inherited from preview)
-  */
- tags: ['autodocs']
+  /*
+   * All stories in this file will have these tags applied:
+   * - autodocs
+   * - dev (implicit default, inherited from preview)
+   * - test (implicit default, inherited from preview)
+   */
+  tags: ['autodocs'],
 });
 
 export const ExperimentalFeatureStory = meta.story({

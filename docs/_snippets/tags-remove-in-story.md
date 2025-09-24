@@ -184,7 +184,7 @@ const meta = preview.meta({
   component: Button,
 
   // 👇 Applies to all stories in this file
-  tags: ['stable']
+  tags: ['stable'],
 });
 
 export const ExperimentalFeatureStory = meta.story({

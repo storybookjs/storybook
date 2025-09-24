@@ -1082,7 +1082,7 @@ const meta = preview.meta({
         <Story />
       </ApolloProvider>
     ),
-  ]
+  ],
 });
 
 export const MockedSuccess = meta.story({

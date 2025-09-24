@@ -176,6 +176,6 @@ const meta = preview.meta({
     icon: {
       options: ['arrow-up', 'arrow-down', 'loading'],
     },
-  }
+  },
 });
 ```

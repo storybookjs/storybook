@@ -339,7 +339,7 @@ import { MyComponent } from './MyComponent';
 import imageFile from './static/image.png';
 
 const meta = preview.meta({
-  component: MyComponent
+  component: MyComponent,
 });
 
 const image = {

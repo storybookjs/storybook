@@ -610,7 +610,7 @@ const meta = preview.meta({
       // Optional flag to prevent the automatic check
       manual: true,
     },
-  }
+  },
 });
 
 export const ExampleStory = meta.story({

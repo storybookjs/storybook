@@ -375,7 +375,7 @@ const meta = preview.meta({
         component: 'Another description, overriding the comments',
       },
     },
-  }
+  },
 });
 
 /**

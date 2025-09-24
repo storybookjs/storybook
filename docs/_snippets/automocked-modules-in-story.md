@@ -330,7 +330,7 @@ const meta = preview.meta({
     // 👇 Force known, consistent behavior for mocked modules
     uuidv4.mockReturnValue('1234-5678-90ab-cdef');
     getUserFromSession.mockReturnValue({ name: 'John Doe' });
-  }
+  },
 });
 
 export const LogIn = meta.story({

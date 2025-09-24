@@ -161,6 +161,6 @@ const meta = preview.meta({
     // 👇 This component's accessibility tests will not fail
     //    Instead, they display warnings in the Storybook UI
     a11y: { test: 'todo' },
-  }
+  },
 });
 ```

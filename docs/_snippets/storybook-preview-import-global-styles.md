@@ -28,7 +28,6 @@ import '../src/styles/global.css';
 export default definePreview({
   parameters: {},
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -42,5 +41,4 @@ import '../src/styles/global.css';
 export default definePreview({
   parameters: {},
 });
-
 ```

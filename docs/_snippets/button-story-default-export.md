@@ -179,12 +179,12 @@ import preview from '../.storybook/preview';
 import { Button } from './Button';
 
 const meta = preview.meta({
- /* 👇 The title prop is optional.
-  * See https://storybook.js.org/docs/configure/#configure-story-loading
-  * to learn how to generate automatic titles
-  */
- title: 'Button',
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Button',
 
- component: Button
+  component: Button,
 });
 ```

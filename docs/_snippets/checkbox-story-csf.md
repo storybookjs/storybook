@@ -176,7 +176,7 @@ import preview from '../.storybook/preview';
 import { Checkbox } from './Checkbox';
 
 const meta = preview.meta({
-  component: Checkbox
+  component: Checkbox,
 });
 
 export const Unchecked = meta.story({

@@ -206,7 +206,7 @@ import { Alert } from './Alert';
 import { Button } from './Button';
 
 const meta = preview.meta({
-  component: Button
+  component: Button,
 });
 
 export const PrimaryInAlert = meta.story({

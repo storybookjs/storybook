@@ -39,7 +39,6 @@ export default defineMain({
     // 'storybook-addon-next-router',
   ],
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -57,5 +56,4 @@ export default defineMain({
     // 'storybook-addon-next-router',
   ],
 });
-
 ```

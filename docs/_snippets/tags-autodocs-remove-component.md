@@ -130,6 +130,6 @@ const meta = preview.meta({
   component: Page,
 
   // 👇 Disable auto-generated documentation for this component
-  tags: ['!autodocs']
+  tags: ['!autodocs'],
 });
 ```

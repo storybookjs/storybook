@@ -627,6 +627,6 @@ const meta = preview.meta({
     revisionDate: {
       control: 'date',
     },
-  }
+  },
 });
 ```

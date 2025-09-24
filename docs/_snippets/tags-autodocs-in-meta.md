@@ -130,6 +130,6 @@ const meta = preview.meta({
   component: Button,
 
   //👇 Enables auto-generated documentation for this component and includes all stories in this file
-  tags: ['autodocs']
+  tags: ['autodocs'],
 });
 ```

@@ -35,7 +35,6 @@ export default defineMain({
     backgrounds: false, // 👈 disable the backgrounds feature
   },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -54,5 +53,4 @@ export default defineMain({
     backgrounds: false, // 👈 disable the backgrounds feature
   },
 });
-
 ```

@@ -100,7 +100,7 @@ const meta = preview.meta({
     nextjs: {
       appDirectory: true,
     },
-  }
+  },
 });
 
 // Interact with the links to see the route change events in the Actions panel.

@@ -56,6 +56,6 @@ const meta = preview.meta({
     nextjs: {
       appDirectory: true, // 👈 Set this
     },
-  }
+  },
 });
 ```

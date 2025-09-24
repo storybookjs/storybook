@@ -31,7 +31,6 @@ export default defineMain({
     '@storybook/addon-a11y',
   ],
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -46,5 +45,4 @@ export default defineMain({
     '@storybook/addon-a11y',
   ],
 });
-
 ```

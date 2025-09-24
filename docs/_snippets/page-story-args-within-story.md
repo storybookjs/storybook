@@ -107,7 +107,7 @@ import { Checkbox } from './checkbox';
 
 const meta = preview.meta({
   title: 'Inputs/Checkbox',
-  component: Checkbox
+  component: Checkbox,
 });
 
 export const Example = meta.story({

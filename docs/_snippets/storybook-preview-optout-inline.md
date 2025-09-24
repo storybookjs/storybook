@@ -37,7 +37,6 @@ export default definePreview({
     },
   },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -54,5 +53,4 @@ export default definePreview({
     },
   },
 });
-
 ```

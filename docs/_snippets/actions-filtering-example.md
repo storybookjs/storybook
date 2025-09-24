@@ -9,18 +9,18 @@ const originalConsoleLog = console.log;
 const preview: Preview = {
   async beforeEach() {
     spyOn(console, 'log')
-    // Disable automatic logging in the actions panel
-    .mockName('')
-    .mockImplementation((args) => {
-      // Check if the log message matches a certain pattern
-      if (someCondition(args)) {
-        // Manually log an action
-        action('console.log')(args);
-      }
+      // Disable automatic logging in the actions panel
+      .mockName('')
+      .mockImplementation((args) => {
+        // Check if the log message matches a certain pattern
+        if (someCondition(args)) {
+          // Manually log an action
+          action('console.log')(args);
+        }
 
-      // Call the original console.log function
-      originalConsoleLog(...args);
-    });
+        // Call the original console.log function
+        originalConsoleLog(...args);
+      });
   },
 };
 
@@ -35,18 +35,18 @@ const originalConsoleLog = console.log;
 export default {
   async beforeEach() {
     spyOn(console, 'log')
-    // Disable automatic logging in the actions panel
-    .mockName('')
-    .mockImplementation((args) => {
-      // Check if the log message matches a certain pattern
-      if (someCondition(args)) {
-        // Manually log an action
-        action('console.log')(args);
-      }
+      // Disable automatic logging in the actions panel
+      .mockName('')
+      .mockImplementation((args) => {
+        // Check if the log message matches a certain pattern
+        if (someCondition(args)) {
+          // Manually log an action
+          action('console.log')(args);
+        }
 
-      // Call the original console.log function
-      originalConsoleLog(...args);
-    });
+        // Call the original console.log function
+        originalConsoleLog(...args);
+      });
   },
 };
 ```
@@ -77,7 +77,6 @@ export default definePreview({
       });
   },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -107,5 +106,4 @@ export default definePreview({
       });
   },
 });
-
 ```

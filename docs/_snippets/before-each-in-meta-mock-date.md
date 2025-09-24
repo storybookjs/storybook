@@ -293,7 +293,7 @@ const meta = preview.meta({
     return () => {
       MockDate.reset();
     };
-  }
+  },
 });
 
 export const Default = meta.story({

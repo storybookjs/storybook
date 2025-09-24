@@ -71,7 +71,6 @@ export default defineMain({
     },
   ],
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -96,5 +95,4 @@ export default defineMain({
     },
   ],
 });
-
 ```

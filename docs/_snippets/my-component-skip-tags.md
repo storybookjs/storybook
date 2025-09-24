@@ -81,7 +81,7 @@ const meta = preview.meta({
   component: MyComponent,
 
   //👇 Provides the `skip-test` tag to all stories in this file
-  tags: ['skip-test']
+  tags: ['skip-test'],
 });
 
 export const SkipStory = meta.story({

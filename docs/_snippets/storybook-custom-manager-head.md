@@ -31,7 +31,6 @@ export default defineMain({
     <link rel="icon" type="image/png" href="/logo192.png" sizes="192x192" />
   `,
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -46,5 +45,4 @@ export default defineMain({
     <link rel="icon" type="image/png" href="/logo192.png" sizes="192x192" />
   `,
 });
-
 ```

@@ -241,6 +241,6 @@ const meta = preview.meta({
         offsetY: 16, // Default is 0 if story has 'fullscreen' layout, 16 if layout is 'padded'
       },
     },
-  }
+  },
 });
 ```

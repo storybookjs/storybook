@@ -187,6 +187,6 @@ const meta = preview.meta({
       control: 'text',
       description: 'Overwritten description',
     },
-  }
+  },
 });
 ```

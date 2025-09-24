@@ -315,7 +315,7 @@ const meta = preview.meta({
    */
   title: 'List',
 
-  component: List
+  component: List,
 });
 
 export const OneItem = meta.story({

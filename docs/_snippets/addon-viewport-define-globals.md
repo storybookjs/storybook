@@ -228,7 +228,7 @@ const meta = preview.meta({
   globals: {
     // 👇 Set viewport for all component stories
     viewport: { value: 'tablet', isRotated: false },
-  }
+  },
 });
 
 export const OnPhone = meta.story({

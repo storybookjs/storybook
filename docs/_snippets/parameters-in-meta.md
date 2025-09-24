@@ -176,6 +176,6 @@ const meta = preview.meta({
     backgrounds: {
       options: {},
     },
-  }
+  },
 });
 ```

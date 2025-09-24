@@ -292,7 +292,7 @@ const meta = preview.meta({
   parameters: {
     // 👇 Applies to all stories in this file
     a11y: { test: 'error' },
-  }
+  },
 });
 
 // 👇 This story will use the 'error' value and fail on accessibility violations

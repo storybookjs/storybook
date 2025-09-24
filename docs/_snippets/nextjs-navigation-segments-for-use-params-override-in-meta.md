@@ -80,6 +80,6 @@ const meta = preview.meta({
         ],
       },
     },
-  }
+  },
 });
 ```

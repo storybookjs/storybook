@@ -230,7 +230,7 @@ const meta = preview.meta({
   globals: {
     // 👇 Set background value for all component stories
     backgrounds: { value: 'gray', grid: false },
-  }
+  },
 });
 
 export const OnDark = meta.story({

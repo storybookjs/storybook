@@ -220,7 +220,7 @@ import { getUserFromSession } from '../lib/session';
 import { Page } from './Page';
 
 const meta = preview.meta({
-  component: Page
+  component: Page,
 });
 
 export const Default = meta.story({

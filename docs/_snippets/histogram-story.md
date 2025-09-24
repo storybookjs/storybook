@@ -392,7 +392,7 @@ import preview from '../.storybook/preview';
 import { Histogram } from './Histogram';
 
 const meta = preview.meta({
-  component: Histogram
+  component: Histogram,
 });
 
 export const Default = meta.story({

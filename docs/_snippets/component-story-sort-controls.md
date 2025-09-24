@@ -120,6 +120,6 @@ import { YourComponent } from './YourComponent';
 
 const meta = preview.meta({
   component: YourComponent,
-  parameters: { controls: { sort: 'requiredFirst' } }
+  parameters: { controls: { sort: 'requiredFirst' } },
 });
 ```

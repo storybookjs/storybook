@@ -33,7 +33,6 @@ export default definePreview({
     a11y: { test: 'error' },
   },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -49,5 +48,4 @@ export default definePreview({
     a11y: { test: 'error' },
   },
 });
-
 ```

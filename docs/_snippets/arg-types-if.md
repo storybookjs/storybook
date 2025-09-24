@@ -407,6 +407,6 @@ const meta = preview.meta({
 
     // 👇 Only shown when `theme` global exists
     parentExists: { if: { global: 'theme', exists: true } },
-  }
+  },
 });
 ```

@@ -43,7 +43,6 @@ export default definePreview({
    */
   tags: ['autodocs'],
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -62,5 +61,4 @@ export default definePreview({
    */
   tags: ['autodocs'],
 });
-
 ```

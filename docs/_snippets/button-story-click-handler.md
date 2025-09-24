@@ -246,7 +246,7 @@ import { action } from 'storybook/actions';
 import { Button } from './Button';
 
 const meta = preview.meta({
-  component: Button
+  component: Button,
 });
 
 export const Text = meta.story({

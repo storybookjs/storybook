@@ -348,7 +348,7 @@ import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
-  component: MyComponent
+  component: MyComponent,
 });
 
 export const RemoveHighlight = meta.story({

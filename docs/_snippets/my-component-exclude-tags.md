@@ -81,7 +81,7 @@ const meta = preview.meta({
   component: MyComponent,
 
   //👇 Provides the `no-tests` tag to all stories in this file
-  tags: ['no-tests']
+  tags: ['no-tests'],
 });
 
 export const ExcludeStory = meta.story({

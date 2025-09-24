@@ -288,6 +288,6 @@ const meta = preview.meta({
         <Story />
       </div>
     ),
-  ]
+  ],
 });
 ```

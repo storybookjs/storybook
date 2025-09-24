@@ -67,12 +67,12 @@ import preview from '../.storybook/preview';
 import { MyComponent } from '@component-package/src/MyComponent';
 
 const meta = preview.meta({
- /* 👇 The title prop is optional.
-  * See https://storybook.js.org/docs/configure/#configure-story-loading
-  * to learn how to generate automatic titles
-  */
- title: 'MyComponent',
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'MyComponent',
 
- component: MyComponent
+  component: MyComponent,
 });
 ```

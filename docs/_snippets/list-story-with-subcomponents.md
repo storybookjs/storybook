@@ -331,7 +331,7 @@ const meta = preview.meta({
   component: List,
 
   //👈 Adds the ListItem component as a subcomponent
-  subcomponents: { ListItem }
+  subcomponents: { ListItem },
 });
 
 export const Empty = meta.story();

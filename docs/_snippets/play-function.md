@@ -385,7 +385,7 @@ import preview from '../.storybook/preview';
 import { RegistrationForm } from './RegistrationForm';
 
 const meta = preview.meta({
-  component: RegistrationForm
+  component: RegistrationForm,
 });
 
 /*

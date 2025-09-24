@@ -1,21 +1,14 @@
-<script>
+<script lang="ts">
   let shown = $state(false);
-  let { onEffect } = $props();
 
-  /*
-  TODO: Replace this with the comment below once async components have been released in Svelte.
-  https://github.com/sveltejs/svelte/discussions/15845
-  await new Promise((resolve) => {
+  let { onEffect }: { onEffect?: () => void } = $props();
+
+  await new Promise<void>((resolve) => {
     setTimeout(() => {
       onEffect?.();
       shown = true;
       resolve();
     }, 100);
-  });
-  */
-  $effect(() => {
-    onEffect?.();
-    shown = true;
   });
 </script>
 

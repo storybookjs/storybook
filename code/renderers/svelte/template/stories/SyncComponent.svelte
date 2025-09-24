@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
   let shown = $state(false);
-  let { onEffect } = $props();
+
+  let { onEffect }: { onEffect?: () => void } = $props();
 
   $effect(() => {
     onEffect?.();

@@ -44,8 +44,9 @@ const StyledToggle = styled(Button)<ToggleButtonProps>(({ theme, variant, presse
           : {}),
         ...(variant === 'ghost'
           ? {
-              background: transparentize(0.94, theme.barSelectedColor),
-              color: theme.barSelectedColor,
+              background: transparentize(0.93, theme.barSelectedColor),
+              color:
+                theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
             }
           : {}),
       }

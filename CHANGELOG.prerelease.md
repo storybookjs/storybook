@@ -1,3 +1,21 @@
+## 10.0.0-beta.6
+
+- Core: Add "open in editor" feature - [#32452](https://github.com/storybookjs/storybook/pull/32452), thanks @yannbf!
+- Dev: Improve the browser opening experience - [#32488](https://github.com/storybookjs/storybook/pull/32488), thanks @ndelangen!
+- Maintenance: Remove globalization for dropped entrypoints - [#32491](https://github.com/storybookjs/storybook/pull/32491), thanks @ndelangen!
+- Telemetry: Queue error reporting & filter browser-extention - [#32499](https://github.com/storybookjs/storybook/pull/32499), thanks @ndelangen!
+- Upgrade: Packages `open` - [#32484](https://github.com/storybookjs/storybook/pull/32484), thanks @ndelangen!
+
+## 10.0.0-beta.5
+
+- Dependencies: Update `vite-plugin-storybook-nextjs` to 2.0.7 - [#32331](https://github.com/storybookjs/storybook/pull/32331), thanks @k35o!
+- Fix: ESLint plugin homepage URL updates - [#32445](https://github.com/storybookjs/storybook/pull/32445), thanks @VivekKavala!
+- Upgrades: Packages `boxen` `commander` `giget` - [#32469](https://github.com/storybookjs/storybook/pull/32469), thanks @ndelangen!
+
+## 10.0.0-beta.4
+
+- Replace: Use `empathic` over `find-up` - [#31338](https://github.com/storybookjs/storybook/pull/31338), thanks @beeequeue!
+
 ## 10.0.0-beta.3
 
 - CLI: Add addon-console automigration - [#32083](https://github.com/storybookjs/storybook/pull/32083), thanks @Sidnioulz!

@@ -1,3 +1,13 @@
+## 9.1.8
+
+- PreactVite: Add `node` entry point - [#32534](https://github.com/storybookjs/storybook/pull/32534), thanks @ndelangen!
+
+## 9.1.7
+
+- Dependencies: Update `vite-plugin-storybook-nextjs` to 2.0.7 - [#32331](https://github.com/storybookjs/storybook/pull/32331), thanks @k35o!
+- React: Preserve `@ts-expect-error` in preview - [#32442](https://github.com/storybookjs/storybook/pull/32442), thanks @mrginglymus!
+- Telemetry: Queue error reporting & filter browser-extention - [#32499](https://github.com/storybookjs/storybook/pull/32499), thanks @ndelangen!
+
 ## 9.1.6
 
 - CLI: Capture the version specifier used in `create-storybook` - [#32344](https://github.com/storybookjs/storybook/pull/32344), thanks @shilman!

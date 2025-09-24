@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "10.0.0-beta.3",
+  "version": "10.0.0-beta.6",
   "description": "Storybook Addon A11y: Test UI component compliance with WCAG web accessibility standards",
   "keywords": [
     "a11y",
@@ -64,7 +64,7 @@
   },
   "devDependencies": {
     "@radix-ui/react-tabs": "1.0.4",
-    "@storybook/icons": "^1.4.0",
+    "@storybook/icons": "^1.6.0",
     "@testing-library/react": "^14.0.0",
     "execa": "^9.5.2",
     "react": "^18.2.0",

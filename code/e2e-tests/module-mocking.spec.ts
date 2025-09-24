@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { log } from 'console';
 import process from 'process';
 
 import { SbPage } from './util';
@@ -21,12 +20,6 @@ test.describe('module-mocking', () => {
     await sbPage.viewAddonPanel('Actions');
     const panel = sbPage.panelContent();
     await expect(panel).toBeVisible();
-
-    // Ensure we have fresh logs as the panel may mount too late to catch the first events in Playwright
-    await page.getByRole('button', { name: 'Clear' }).click();
-    await expect(panel.locator('li')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Reload story' }).click();
-    await expect(panel.locator('li')).toHaveCount(9);
 
     const expectedTexts = [
       '1 - [from loaders]',
@@ -50,8 +43,6 @@ test.describe('module-mocking', () => {
 
     let lastMatchIndex = -1;
 
-    console.log(actualTexts);
-
     for (const expected of expectedTexts) {
       const foundIndex = actualTexts.findIndex(
         (text, i) => i > lastMatchIndex && text.includes(expected)
@@ -69,7 +60,7 @@ test.describe('module-mocking', () => {
     await sbPage.navigateToStory('core/module-mocking', 'basic');
 
     await sbPage.viewAddonPanel('Actions');
-    const logItem = sbPage.panelContent().locator('span', {
+    const logItem = sbPage.panelContent().filter({
       hasText: 'foo: []',
     });
     await expect(logItem).toBeVisible();

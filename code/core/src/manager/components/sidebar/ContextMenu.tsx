@@ -29,6 +29,9 @@ const empty = {
 const FloatingStatusButton = styled(StatusButton)({
   background: 'var(--tree-node-background-hover)',
   boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
+  position: 'absolute',
+  right: 0,
+  zIndex: 1,
 });
 
 export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {

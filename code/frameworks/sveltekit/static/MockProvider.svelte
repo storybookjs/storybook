@@ -3,16 +3,14 @@
   import { action } from 'storybook/actions';
   
   import { setAfterNavigateArgument } from '@storybook/sveltekit/internal/mocks/app/navigation';
-  import { setNavigating, setPage, setUpdated } from '@storybook/sveltekit/internal/mocks/app/stores';
+  import { setAppStoresNavigating, setAppStoresPage, setAppStoresUpdated } from '@storybook/sveltekit/internal/mocks/app/stores';
 
-  
-  const{ svelteKitParameters = {}, children } = $props();
-  
+  const { svelteKitParameters = {}, children } = $props();
 
   // Set context during component initialization - this happens before any child components
-  setPage(svelteKitParameters?.stores?.page);
-  setNavigating(svelteKitParameters?.stores?.navigating);
-  setUpdated(svelteKitParameters?.stores?.updated);
+  setAppStoresPage(svelteKitParameters?.stores?.page);
+  setAppStoresNavigating(svelteKitParameters?.stores?.navigating);
+  setAppStoresUpdated(svelteKitParameters?.stores?.updated);
   setAfterNavigateArgument(svelteKitParameters?.navigation?.afterNavigate);
 
   const normalizeHrefConfig = (hrefConfig) => {

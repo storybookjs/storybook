@@ -96,7 +96,10 @@ const enhanceContext: LoaderFunction = async (context) => {
   if (clipboard) {
     context.userEvent = instrument(
       { userEvent: uninstrumentedUserEvent.setup() },
-      { intercept: true }
+      {
+        intercept: true,
+        getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper'),
+      }
     ).userEvent;
 
     // Restore original clipboard, which was replaced with a stub by userEvent.setup()

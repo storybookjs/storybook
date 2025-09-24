@@ -14,9 +14,9 @@ import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
 import {
-  getRequireWrapperName,
-  wrapValueWithRequireWrapper,
-} from './automigrate/fixes/wrap-require-utils';
+  getAbsolutePathWrapperName,
+  wrapValueWithGetAbsolutePathWrapper,
+} from './automigrate/fixes/wrap-getAbsolutePath-utils';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { postinstallAddon } from './postinstallAddon';
 
@@ -45,13 +45,6 @@ export const getVersionSpecifier = (addon: string) => {
     return [groups[1], groups[2]] as const;
   }
   return [addon, undefined] as const;
-};
-
-const requireMain = (configDir: string) => {
-  const absoluteConfigDir = isAbsolute(configDir) ? configDir : join(process.cwd(), configDir);
-  const mainFile = join(absoluteConfigDir, 'main');
-
-  return serverRequire(mainFile) ?? {};
 };
 
 const checkInstalled = (addonName: string, main: StorybookConfigRaw) => {
@@ -176,10 +169,10 @@ export async function add(
     logger.log(`Adding '${addon}' to the "addons" field in ${mainConfigPath}`);
 
     const mainConfigAddons = main.getFieldNode(['addons']);
-    if (mainConfigAddons && getRequireWrapperName(main) !== null) {
+    if (mainConfigAddons && getAbsolutePathWrapperName(main) !== null) {
       const addonNode = main.valueToNode(addonName);
       main.appendNodeToArray(['addons'], addonNode as any);
-      wrapValueWithRequireWrapper(main, addonNode as any);
+      wrapValueWithGetAbsolutePathWrapper(main, addonNode as any);
     } else {
       main.appendValueToArray(['addons'], addonName);
     }

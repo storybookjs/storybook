@@ -183,7 +183,7 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       }
 
       if (essentialsOptions) {
-        updateMainConfig(
+        await updateMainConfig(
           { mainConfigPath, dryRun: !!dryRun },
           moveEssentialOptions(dryRun, essentialsOptions)
         );

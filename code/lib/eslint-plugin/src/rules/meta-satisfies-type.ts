@@ -13,7 +13,7 @@ import { createStorybookRule } from '../utils/create-storybook-rule';
 // Rule Definition
 //------------------------------------------------------------------------------
 
-export = createStorybookRule({
+export default createStorybookRule({
   name: 'meta-satisfies-type',
   defaultOptions: [],
   meta: {

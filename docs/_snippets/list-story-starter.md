@@ -108,7 +108,7 @@ export const Empty = {};
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 

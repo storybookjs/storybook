@@ -1,11 +1,10 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { readFile, readJson, writeFile, writeJson } from 'fs-extra';
 import picocolors from 'picocolors';
 import semver from 'semver';
 import { z } from 'zod';
@@ -111,6 +110,11 @@ const validateOptions = (options: { [key: string]: any }): options is Options =>
   return true;
 };
 
+const readJson = async (path: string) => {
+  const content = await readFile(path, 'utf-8');
+  return JSON.parse(content);
+};
+
 const getCurrentVersion = async () => {
   console.log(`📐 Reading current version of Storybook...`);
   const { version } = await readJson(CODE_PACKAGE_JSON_PATH);
@@ -123,7 +127,7 @@ const bumpCodeVersion = async (nextVersion: string) => {
   const codePkgJson = await readJson(CODE_PACKAGE_JSON_PATH);
 
   codePkgJson.version = nextVersion;
-  await writeJson(CODE_PACKAGE_JSON_PATH, codePkgJson, { spaces: 2 });
+  await writeFile(CODE_PACKAGE_JSON_PATH, JSON.stringify(codePkgJson, null, 2) + '\n');
 
   console.log(`✅ Bumped version of ${picocolors.cyan('code')}'s package.json`);
 };
@@ -176,7 +180,7 @@ const bumpAllPackageJsons = async ({
           `    Bumping ${picocolors.blue(pkg.name)}'s version to ${picocolors.yellow(nextVersion)}`
         );
       }
-      await writeJson(packageJsonPath, packageJson, { spaces: 2 });
+      await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
     })
   );
 };
@@ -198,7 +202,7 @@ const bumpDeferred = async (nextVersion: string) => {
   }
 
   codePkgJson.deferredNextVersion = nextVersion;
-  await writeJson(CODE_PACKAGE_JSON_PATH, codePkgJson, { spaces: 2 });
+  await writeFile(CODE_PACKAGE_JSON_PATH, JSON.stringify(codePkgJson, null, 2) + '\n');
 
   console.log(`✅ Set a ${picocolors.cyan('deferred')} version bump. Not bumping any packages.`);
 };
@@ -220,7 +224,7 @@ const applyDeferredVersionBump = async () => {
   }
 
   delete codePkgJson.deferredNextVersion;
-  await writeJson(CODE_PACKAGE_JSON_PATH, codePkgJson, { spaces: 2 });
+  await writeFile(CODE_PACKAGE_JSON_PATH, JSON.stringify(codePkgJson, null, 2) + '\n');
 
   console.log(
     `✅ Extracted and removed deferred version ${picocolors.green(

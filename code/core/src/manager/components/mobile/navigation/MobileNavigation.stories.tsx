@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { startCase } from 'es-toolkit';
+import { startCase } from 'es-toolkit/string';
 import { ManagerContext } from 'storybook/manager-api';
 import { within } from 'storybook/test';
 
@@ -45,6 +45,7 @@ const mockManagerStore: any = {
       },
       someStoryId: {
         type: 'story',
+        subtype: 'story',
         id: 'someStoryId',
         name: 'story',
         parent: 'someComponentId',
@@ -121,6 +122,7 @@ export const LongStoryName: Story = {
             },
             someStoryId: {
               type: 'story',
+              subtype: 'story',
               id: 'someStoryId',
               name: 'someLongStoryName',
               parent: 'someComponentId',

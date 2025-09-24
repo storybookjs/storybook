@@ -82,9 +82,6 @@
     "webpack": "5",
     "webpack-cli": "^4.9.2"
   },
-  "engines": {
-    "node": ">=20.0.0"
-  },
   "--storybook": {
     "chromatic": {
       "projectToken": "19z23qxndju"

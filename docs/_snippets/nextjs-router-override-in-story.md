@@ -5,8 +5,7 @@ export default {
   component: RouterBasedComponent,
 };
 
-// If you have the actions addon,
-// you can interact with the links and see the route change events there
+// Interact with the links to see the route change events in the Actions panel.
 export const Example = {
   parameters: {
     nextjs: {
@@ -35,8 +34,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// If you have the actions addon,
-// you can interact with the links and see the route change events there
+// Interact with the links to see the route change events in the Actions panel.
 export const Example: Story = {
   parameters: {
     nextjs: {

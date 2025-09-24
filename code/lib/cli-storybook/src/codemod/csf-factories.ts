@@ -1,4 +1,8 @@
-import { type JsPackageManager, syncStorybookAddons } from 'storybook/internal/common';
+import {
+  type JsPackageManager,
+  optionalEnvToBoolean,
+  syncStorybookAddons,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -19,11 +23,11 @@ async function runStoriesCodemod(options: {
   const { dryRun, packageManager, ...codemodOptions } = options;
   try {
     let globString = '{stories,src}/**/{Button,Header,Page}.stories.*';
-    if (!process.env.IN_STORYBOOK_SANDBOX) {
+    if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
       logger.log('Please enter the glob for your stories to migrate');
       globString = await prompt.text({
         message: 'glob',
-        initialValue: 'src/**/*.stories.*',
+        initialValue: '**/*.stories.*',
       });
     }
 
@@ -59,14 +63,15 @@ export const csfFactories: CommandFix = {
   promptType: 'command',
   async run({ dryRun, mainConfig, mainConfigPath, previewConfigPath, packageManager, configDir }) {
     let useSubPathImports = true;
-    if (!process.env.IN_STORYBOOK_SANDBOX) {
+
+    if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
-        The CSF factories format benefits from subpath imports (the imports property in your \`package.json\`), which is a node standard for module resolution. This makes it more convenient to import the preview config in your story files.
+        The CSF factories format benefits from subpath imports (the imports property in your \`package.json\`), which is a node standard for module resolution (commonly known as alias imports). This makes it more convenient to import the preview config in your story files.
       
         However, please note that this might not work if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
       
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports')}
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports?ref=upgrade')}
 
         As we modify your story files, we can create two types of imports:
       
@@ -77,7 +82,7 @@ export const csfFactories: CommandFix = {
       useSubPathImports = await prompt.select<boolean>({
         message: 'Which would you like to use?',
         options: [
-          { label: 'Subpath imports', value: true },
+          { label: 'Subpath imports (alias)', value: true },
           { label: 'Relative imports', value: false },
         ],
       });
@@ -123,7 +128,7 @@ export const csfFactories: CommandFix = {
           You can now run Storybook with the new CSF factories format.
           
           For more info, check out the docs:
-          ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories')}
+          ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories?ref=upgrade')}
         `
     );
   },

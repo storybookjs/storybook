@@ -53,8 +53,8 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   };
 });
 
-vi.mock('find-up', () => ({
-  sync: vi.fn(),
+vi.mock('empathic/find', () => ({
+  up: vi.fn(),
 }));
 
 vi.mock('path', async (importOriginal) => {

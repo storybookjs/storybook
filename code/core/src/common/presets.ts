@@ -82,8 +82,6 @@ export const resolveAddonName = (
   const managerFile = safeResolveModule({ specifier: join(name, 'manager'), parent: configDir });
   const previewFile = safeResolveModule({ specifier: join(name, 'preview'), parent: configDir });
 
-  console.log({ managerFile, previewFile, presetFile });
-
   if (managerFile || previewFile || presetFile) {
     const previewAnnotations = [];
     if (previewFile) {
@@ -130,8 +128,6 @@ const map =
       logger.error(
         `Addon value should end in /manager or /preview or /register OR it should be a valid preset https://storybook.js.org/docs/addons/writing-presets/\n${item}`
       );
-      const error = err as Error;
-      logger.error(error.stack ?? error.message);
       return undefined;
     }
 

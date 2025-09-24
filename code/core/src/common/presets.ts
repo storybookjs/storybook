@@ -82,6 +82,8 @@ export const resolveAddonName = (
   const managerFile = safeResolveModule({ specifier: join(name, 'manager'), parent: configDir });
   const previewFile = safeResolveModule({ specifier: join(name, 'preview'), parent: configDir });
 
+  console.log({ managerFile, previewFile, presetFile });
+
   if (managerFile || previewFile || presetFile) {
     const previewAnnotations = [];
     if (previewFile) {

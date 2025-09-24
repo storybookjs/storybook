@@ -76,9 +76,7 @@ const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
 export const checkVersionConsistency = () => {
-  const lines = spawnSync('npm', ['ls'], { stdio: 'pipe', shell: true })
-    .output.toString()
-    .split('\n');
+  const lines = spawnSync('npm ls', { stdio: 'pipe', shell: true }).output.toString().split('\n');
   const storybookPackages = lines
     .map(getStorybookVersion)
     .filter((item): item is NonNullable<typeof item> => !!item)
@@ -265,7 +263,7 @@ function logUpgradeResults(
   }
 
   logger.log(
-    `For a full list of changes, please check our migration guide: ${CLI_COLORS.cta('https://storybook.js.org/docs/releases/migration-guide?ref=upgrade')}`
+    `For a full list of changes, please check our migration guide: ${CLI_COLORS.cta('https://storybook.js.org/docs/migration-guide?ref=upgrade?ref=upgrade')}`
   );
 }
 

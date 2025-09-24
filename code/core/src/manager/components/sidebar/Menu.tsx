@@ -113,8 +113,8 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
       onVisibleChange={setIsTooltipVisible}
     >
       <SidebarIconButton
-        title="Shortcuts"
-        aria-label="Shortcuts"
+        title="Settings"
+        aria-label="Settings"
         highlighted={!!isHighlighted}
         active={isTooltipVisible}
         size="medium"

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
+// eslint-disable-next-line depend/ban-dependencies
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
 
@@ -1980,10 +1981,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -2002,10 +2001,11 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
-        - type: story
-          importPath: foo/bar.stories.js
+          type: story
+          subtype: story
+          name: A
+        - importPath: foo/bar.stories.js
           exportName: B
-          name: B
           title: custom foo title
           metaId: component-id
           tags:
@@ -2024,6 +2024,9 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: B
       `);
     });
 
@@ -2044,10 +2047,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -2064,6 +2065,9 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -2083,10 +2087,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           tags:
             - component-tag
@@ -2109,6 +2111,9 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -2134,7 +2139,7 @@ describe('CsfFile', () => {
     });
   });
 
-  describe('componenent paths', () => {
+  describe('component paths', () => {
     it('no component', () => {
       const { indexInputs } = loadCsf(
         dedent`
@@ -2151,10 +2156,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2169,6 +2172,9 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -2190,10 +2196,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2208,6 +2212,9 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -2228,11 +2235,9 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           rawComponentPath: ../src/Component.js
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2247,6 +2252,9 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -2267,11 +2275,9 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           rawComponentPath: some-library
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2286,6 +2292,9 @@ describe('CsfFile', () => {
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
   });
@@ -2577,6 +2586,69 @@ describe('CsfFile', () => {
                 mount: false
                 moduleMock: false
         `);
+      });
+
+      it('story test - index snapshot', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.meta({ component: 'foo' });
+              export default meta;
+              export const A = meta.story({ args: { label: 'foo' } })
+              A.test('simple test', async () => {})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                tests: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('story test - parsing', () => {
+        const data = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export default meta;
+            export const A = meta.story({ args: { label: 'foo' } })
+            A.test('simple test', async () => {})
+            A.test('with overrides', { args: { label: 'bar' } }, async () => {})
+            const runTest = () => {}
+            A.test('with function reference', runTest)
+            A.test('with function call', runTest())
+          `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(4);
+        expect(storyTests[0].name).toBe('simple test');
+        expect(storyTests[1].name).toBe('with overrides');
+        expect(storyTests[2].name).toBe('with function reference');
+        expect(storyTests[3].name).toBe('with function call');
+        expect(storyTests[0].function).toBeDefined();
+        expect(storyTests[1].function).toBeDefined();
+        expect(storyTests[2].function).toBeDefined();
+        expect(storyTests[3].function).toBeDefined();
       });
 
       it('story name', () => {

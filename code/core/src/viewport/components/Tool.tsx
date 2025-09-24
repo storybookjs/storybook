@@ -25,10 +25,10 @@ interface PureProps {
   updateGlobals: ReturnType<typeof useGlobals>['1'];
   setIsTooltipVisible: React.Dispatch<React.SetStateAction<boolean>>;
   viewportMap: ViewportMap;
-  viewportName: any;
+  viewportName: keyof ViewportMap;
   isLocked: boolean;
   isActive: boolean;
-  isRotated: any;
+  isRotated: boolean;
   width: string;
   height: string;
 }

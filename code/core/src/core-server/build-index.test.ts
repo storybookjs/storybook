@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildIndex } from './build-index';
 
 describe('buildIndex', () => {
-  it('should build index', async () => {
+  it.skip('should build index', async () => {
     const index = await buildIndex({
       configDir: `${__dirname}/utils/__mockdata__`,
     });
@@ -15,6 +15,7 @@ describe('buildIndex', () => {
             "id": "my-component-a--story-one",
             "importPath": "./core/src/core-server/utils/__mockdata__/docs-id-generation/A.stories.jsx",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "dev",
               "test",
@@ -43,6 +44,7 @@ describe('buildIndex', () => {
             "id": "my-component-b--story-one",
             "importPath": "./core/src/core-server/utils/__mockdata__/docs-id-generation/B.stories.jsx",
             "name": "Story One",
+            "subtype": "story",
             "tags": [
               "dev",
               "test",

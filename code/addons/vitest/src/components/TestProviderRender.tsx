@@ -1,7 +1,7 @@
 import React, { type ComponentProps, type FC } from 'react';
 
 import {
-  Checkbox,
+  Form,
   IconButton,
   ListItem,
   ProgressSpinner,
@@ -242,15 +242,19 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               <IconButton
                 aria-label="Start test run"
                 size="medium"
-                onClick={() =>
+                onClick={() => {
+                  let storyIds;
+                  if (entry) {
+                    // Don't send underlying child test ids when running on a story
+                    // Vitest Manager already handles running the underlying tests
+                    storyIds =
+                      entry.type === 'story' ? [entry.id] : api.findAllLeafStoryIds(entry.id);
+                  }
                   store.send({
                     type: 'TRIGGER_RUN',
-                    payload: {
-                      storyIds: entry ? api.findAllLeafStoryIds(entry.id) : undefined,
-                      triggeredBy: entry ? entry.type : 'global',
-                    },
-                  })
-                }
+                    payload: { storyIds, triggeredBy: entry?.type ?? 'global' },
+                  });
+                }}
               >
                 <PlayHollowIcon />
               </IconButton>
@@ -264,7 +268,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
           <ListItem
             as="label"
             title="Interactions"
-            icon={entry ? null : <Checkbox checked disabled />}
+            icon={entry ? null : <Form.Checkbox checked disabled />}
           />
           <WithTooltip
             hasChrome={false}
@@ -307,7 +311,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               as="label"
               title={watching ? <Muted>Coverage (unavailable)</Muted> : 'Coverage'}
               icon={
-                <Checkbox
+                <Form.Checkbox
                   checked={config.coverage}
                   disabled={isRunning}
                   onChange={() =>
@@ -386,7 +390,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               title="Accessibility"
               icon={
                 entry ? null : (
-                  <Checkbox
+                  <Form.Checkbox
                     checked={config.a11y}
                     disabled={isRunning}
                     onChange={() =>

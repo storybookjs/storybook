@@ -75,7 +75,7 @@ export const AddonPanel = React.memo<{
               </>
             }
             footer={
-              <Link href={'https://storybook.js.org/integrations'} target="_blank" withArrow>
+              <Link href={'https://storybook.js.org/addons?ref=ui'} target="_blank" withArrow>
                 <DocumentIcon /> Explore integrations catalog
               </Link>
             }
@@ -103,7 +103,7 @@ export const AddonPanel = React.memo<{
                 </IconButton>
               </>
             ) : (
-              <IconButton onClick={() => setMobilePanelOpen(false)} title="Close addon panel">
+              <IconButton onClick={() => setMobilePanelOpen(false)} aria-label="Close addon panel">
                 <CloseIcon />
               </IconButton>
             )}

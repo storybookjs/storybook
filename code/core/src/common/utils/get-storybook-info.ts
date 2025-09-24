@@ -21,7 +21,7 @@ export const rendererPackages: Record<string, string> = {
 
   // community (outside of monorepo)
   'storybook-framework-qwik': 'qwik',
-  'storybook-solidjs': 'solid',
+  'storybook-solidjs-vite': 'solid',
 
   /** @deprecated This is deprecated. */
   '@storybook/vue': 'vue',

@@ -1,4 +1,4 @@
-import { HandledError, cache, loadAllPresets } from 'storybook/internal/common';
+import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 import type { EventType } from 'storybook/internal/telemetry';
@@ -14,7 +14,7 @@ type TelemetryOptions = {
 };
 
 const promptCrashReports = async () => {
-  if (process.env.CI) {
+  if (isCI() || !process.stdout.isTTY) {
     return undefined;
   }
 
@@ -179,6 +179,6 @@ export async function withTelemetry<T>(
 
     throw error;
   } finally {
-    process.off('SIGINIT', cancelTelemetry);
+    process.off('SIGINT', cancelTelemetry);
   }
 }

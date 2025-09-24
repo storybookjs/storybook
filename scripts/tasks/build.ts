@@ -1,13 +1,21 @@
+import { access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists } from 'fs-extra';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
+
+async function pathExists(path: string) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export const build: Task = {
   description: 'Build the static version of the sandbox',

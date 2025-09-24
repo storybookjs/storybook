@@ -1,6 +1,6 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import type { JsPackageManager } from 'storybook/internal/common';
-import { versions as storybookCorePackages, versions } from 'storybook/internal/common';
+import { versions as storybookCorePackages } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
@@ -31,7 +31,7 @@ export const checkPackageCompatibility = async (
 ): Promise<AnalysedPackage> => {
   const { currentStorybookVersion, skipErrors, packageManager } = context;
   try {
-    const dependencyPackageJson = packageManager.getModulePackageJSON(dependency);
+    const dependencyPackageJson = await packageManager.getModulePackageJSON(dependency);
     if (dependencyPackageJson === null) {
       return { packageName: dependency };
     }
@@ -58,6 +58,8 @@ export const checkPackageCompatibility = async (
         // prevent issues with "tag" based versions e.g. "latest" or "next" instead of actual numbers
         return (
           versionRange &&
+          // We can't check compatibility for 0.x packages, so we skip them
+          !/^[~^]?0\./.test(versionRange) &&
           semver.validRange(versionRange) &&
           !semver.satisfies(currentStorybookVersion, versionRange)
         );
@@ -101,14 +103,21 @@ export const checkPackageCompatibility = async (
 export const getIncompatibleStorybookPackages = async (
   context: Context
 ): Promise<AnalysedPackage[]> => {
+  if (context.currentStorybookVersion.includes('0.0.0')) {
+    // We can't know if a Storybook canary version is compatible with other packages, so we skip it
+    return [];
+  }
+
   const allDeps = context.packageManager.getAllDependencies();
-  const storybookLikeDeps = Object.keys(allDeps).filter(
-    (dep) => dep.includes('storybook') && !versions[dep as keyof typeof versions]
-  );
+  const storybookLikeDeps = Object.keys(allDeps).filter((dep) => dep.includes('storybook'));
   if (storybookLikeDeps.length === 0 && !context.skipErrors) {
     throw new Error('No Storybook dependencies found in the package.json');
   }
-  return Promise.all(storybookLikeDeps.map((dep) => checkPackageCompatibility(dep, context)));
+  return Promise.all(
+    storybookLikeDeps
+      .filter((dep) => !storybookCorePackages[dep as keyof typeof storybookCorePackages])
+      .map((dep) => checkPackageCompatibility(dep, context))
+  );
 };
 
 export const getIncompatiblePackagesSummary = (

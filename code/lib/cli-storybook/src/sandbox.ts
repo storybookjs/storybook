@@ -1,12 +1,18 @@
 import { existsSync } from 'node:fs';
-import { readdir, rm } from 'node:fs/promises';
-import { isAbsolute, join } from 'node:path';
+import { mkdir, readdir, rm } from 'node:fs/promises';
+import { isAbsolute } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
+import {
+  JsPackageManagerFactory,
+  isCI,
+  optionalEnvToBoolean,
+  versions,
+} from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { downloadTemplate } from 'giget';
+import { join } from 'pathe';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';
 import invariant from 'tiny-invariant';
@@ -166,7 +172,7 @@ export const sandbox = async ({
         message: 'Enter the output directory',
         initialValue: outputDirectoryName ?? undefined,
         validate: (directoryName) =>
-          existsSync(directoryName)
+          directoryName && existsSync(directoryName)
             ? `${directoryName} already exists. Please choose another name.`
             : undefined,
       },
@@ -192,6 +198,8 @@ export const sandbox = async ({
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
       const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${branch}`;
+      // create templateDestination first (because it errors on Windows if it doesn't exist)
+      await mkdir(templateDestination, { recursive: true });
       await downloadTemplate(gitPath, {
         force: true,
         dir: templateDestination,
@@ -218,7 +226,7 @@ export const sandbox = async ({
         // @ts-ignore-error (no types for this)
         const { initiate } = await import('create-storybook');
         await initiate({
-          dev: process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANDBOX !== 'true',
+          dev: isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX),
           ...options,
           features: ['docs', 'test'],
         });

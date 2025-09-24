@@ -1,6 +1,6 @@
 import type { WriteStream } from 'node:fs';
 import { createWriteStream, mkdirSync } from 'node:fs';
-import { readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
 
@@ -78,7 +78,7 @@ export async function getCoercedStorybookVersion(packageManager: JsPackageManage
     await Promise.all(
       Object.keys(rendererPackages).map(async (pkg) => ({
         name: pkg,
-        version: packageManager.getModulePackageJSON(pkg)?.version ?? null,
+        version: (await packageManager.getModulePackageJSON(pkg))?.version ?? null,
       }))
     )
   ).filter(({ version }) => !!version);
@@ -147,10 +147,11 @@ export const createLogStream = async (
 
   return new Promise((resolve, reject) => {
     logStream.once('open', () => {
-      const moveLogFile = async () => rename(temporaryLogPath, finalLogPath);
       const clearLogFile = async () => writeFile(temporaryLogPath, '');
       const removeLogFile = async () => rm(temporaryLogPath, { recursive: true, force: true });
       const readLogFile = async () => readFile(temporaryLogPath, { encoding: 'utf8' });
+      // Can't use rename because it doesn't work across disks.
+      const moveLogFile = async () => copyFile(temporaryLogPath, finalLogPath).then(removeLogFile);
       resolve({ logStream, moveLogFile, clearLogFile, removeLogFile, readLogFile });
     });
     logStream.once('error', reject);

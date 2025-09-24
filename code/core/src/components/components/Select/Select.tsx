@@ -2,7 +2,7 @@ import type { FC, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import type { ButtonProps } from 'storybook/internal/components';
-import { Button, Popover } from 'storybook/internal/components';
+import { Button, Form, Popover } from 'storybook/internal/components';
 
 import { RefreshIcon } from '@storybook/icons';
 
@@ -511,46 +511,54 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
               onKeyDown={handleListboxKeyDown}
               tabIndex={isOpen ? 0 : -1}
             >
-              {options.map((option) => (
-                <SelectOption
-                  key={option.value ?? 'sb-reset'}
-                  title={option.title}
-                  description={option.description}
-                  icon={option.icon}
-                  id={valueToId(id, option)}
-                  isActive={isOpen && activeOption?.value === option.value}
-                  isSelected={
-                    selectedOptions?.some((sel) => sel.value === option.value) &&
-                    option !== resetOption
-                  }
-                  onClick={() => {
-                    handleSelectOption(option);
-                    if (!multiSelect) {
-                      handleClose();
+              {options.map((option) => {
+                const isSelected =
+                  selectedOptions?.some((sel) => sel.value === option.value) &&
+                  option !== resetOption;
+                const isReset = option === resetOption;
+
+                return (
+                  <SelectOption
+                    key={option.value ?? 'sb-reset'}
+                    title={option.title}
+                    description={option.description}
+                    icon={
+                      !isReset && multiSelect ? (
+                        <Form.Checkbox checked={isSelected} hidden />
+                      ) : (
+                        option.icon
+                      )
                     }
-                  }}
-                  onFocus={() => setActiveOption(option)}
-                  shouldLookDisabled={
-                    option === resetOption && selectedOptions.length === 0 && multiSelect
-                  }
-                  onKeyDown={(e: KeyboardEvent) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
+                    id={valueToId(id, option)}
+                    isActive={isOpen && activeOption?.value === option.value}
+                    isSelected={isSelected}
+                    onClick={() => {
                       handleSelectOption(option);
                       if (!multiSelect) {
                         handleClose();
                       }
-                    } else if (e.key === 'Tab') {
-                      if (!multiSelect) {
+                    }}
+                    onFocus={() => setActiveOption(option)}
+                    shouldLookDisabled={isReset && selectedOptions.length === 0 && multiSelect}
+                    onKeyDown={(e: KeyboardEvent) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
                         handleSelectOption(option);
+                        if (!multiSelect) {
+                          handleClose();
+                        }
+                      } else if (e.key === 'Tab') {
+                        if (!multiSelect) {
+                          handleSelectOption(option);
+                        }
+                        handleClose();
                       }
-                      handleClose();
-                    }
-                  }}
-                >
-                  {option.children}
-                </SelectOption>
-              ))}
+                    }}
+                  >
+                    {option.children}
+                  </SelectOption>
+                );
+              })}
             </Listbox>
           </MinimalistPopover>
         )}

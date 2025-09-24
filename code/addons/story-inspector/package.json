@@ -1,0 +1,74 @@
+{
+  "name": "@storybook/addon-story-inspector",
+  "version": "10.0.0-beta.6",
+  "description": "Storybook Story Inspector addon: Visualize components and navigate to their stories",
+  "keywords": [
+    "storybook",
+    "storybook-addon",
+    "inspector",
+    "component",
+    "components",
+    "stories",
+    "highlight",
+    "debug",
+    "development"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/story-inspector",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/story-inspector"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json",
+    "./preset": "./dist/preset.js",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    }
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "scripts": {
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
+  },
+  "dependencies": {
+    "magic-string": "^0.30.5",
+    "ts-dedent": "^2.0.0"
+  },
+  "devDependencies": {
+    "@storybook/icons": "^1.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "storybook": {
+    "displayName": "Story Inspector",
+    "icon": "🔍"
+  }
+}

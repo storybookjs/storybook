@@ -11,6 +11,8 @@ import onboardingConfig from '../../../code/addons/onboarding/build-config';
 // @ts-ignore
 import pseudoStatesConfig from '../../../code/addons/pseudo-states/build-config';
 // @ts-ignore
+import storyInspectorConfig from '../../../code/addons/story-inspector/build-config';
+// @ts-ignore
 import themesConfig from '../../../code/addons/themes/build-config';
 // @ts-ignore
 import vitestConfig from '../../../code/addons/vitest/build-config';
@@ -93,6 +95,7 @@ export const buildEntries = {
   '@storybook/addon-links': linksConfig,
   '@storybook/addon-onboarding': onboardingConfig,
   'storybook-addon-pseudo-states': pseudoStatesConfig,
+  '@storybook/addon-story-inspector': storyInspectorConfig,
   '@storybook/addon-themes': themesConfig,
   '@storybook/addon-vitest': vitestConfig,
   '@storybook/addon-jest': jestConfig,

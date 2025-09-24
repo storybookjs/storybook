@@ -1,0 +1,151 @@
+#!/usr/bin/env node
+
+import { readFileSync } from "fs";
+import { spawnSync, execSync } from "child_process";
+import { createRequire } from "module";
+
+const require = createRequire(import.meta.url);
+
+const isMusl = () => {
+  let musl = false;
+  if (process.platform === "linux") {
+    musl = isMuslFromFilesystem();
+    if (musl === null) {
+      musl = isMuslFromReport();
+    }
+    if (musl === null) {
+      musl = isMuslFromChildProcess();
+    }
+  }
+  return musl;
+};
+
+const isFileMusl = (f) => f.includes("libc.musl-") || f.includes("ld-musl-");
+
+const isMuslFromFilesystem = () => {
+  try {
+    return readFileSync("/usr/bin/ldd", "utf-8").includes("musl");
+  } catch {
+    return null;
+  }
+};
+
+const isMuslFromReport = () => {
+  const report =
+    typeof process.report.getReport === "function"
+      ? process.report.getReport()
+      : null;
+  if (!report) {
+    return null;
+  }
+  if (report.header && report.header.glibcVersionRuntime) {
+    return false;
+  }
+  if (Array.isArray(report.sharedObjects)) {
+    if (report.sharedObjects.some(isFileMusl)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const isMuslFromChildProcess = () => {
+  try {
+    return execSync("ldd --version", { encoding: "utf8" })
+      .includes("musl");
+  } catch (e) {
+    // If we reach this case, we don't know if the system is musl or not, so is better to just fallback to false
+    return false;
+  }
+};
+
+const { platform, arch, env, version, release } = process;
+
+const BIN_NAME = "oxc_language_server";
+
+const PLATFORMS = {
+  win32: {
+    x64: {
+      musl: `@oxlint/win32-x64/${BIN_NAME}.exe`,
+      gnu: `@oxlint/win32-x64/${BIN_NAME}.exe`,
+    },
+    arm64: {
+      musl: `@oxlint/win32-arm64/${BIN_NAME}.exe`,
+      gnu: `@oxlint/win32-arm64/${BIN_NAME}.exe`,
+    },
+  },
+  darwin: {
+    x64: {
+      musl: `@oxlint/darwin-x64/${BIN_NAME}`,
+      gnu: `@oxlint/darwin-x64/${BIN_NAME}`,
+    },
+    arm64: {
+      musl: `@oxlint/darwin-arm64/${BIN_NAME}`,
+      gnu: `@oxlint/darwin-arm64/${BIN_NAME}`,
+    },
+  },
+  linux: {
+    x64: {
+      musl: `@oxlint/linux-x64-musl/${BIN_NAME}`,
+      gnu: `@oxlint/linux-x64-gnu/${BIN_NAME}`,
+    },
+    arm64: {
+      musl: `@oxlint/linux-arm64-musl/${BIN_NAME}`,
+      gnu: `@oxlint/linux-arm64-gnu/${BIN_NAME}`,
+    },
+  },
+};
+
+let binPath = PLATFORMS[platform]?.[arch]?.[isMusl() ? "musl" : "gnu"];
+
+if (binPath) {
+  const result = spawnSync(
+    require.resolve(binPath),
+    process.argv.slice(2),
+    {
+      shell: false,
+      stdio: "inherit",
+      env: {
+        ...env,
+        JS_RUNTIME_VERSION: version,
+        JS_RUNTIME_NAME: release.name,
+        NODE_PACKAGE_MANAGER: detectPackageManager(),
+      },
+    }
+  );
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  process.exitCode = result.status;
+} else {
+  let target = `${platform}-${arch}`;
+  if (isMusl()) {
+    target = `${target}-musl`;
+  }
+  console.error(
+    `The oxc_language_server CLI package doesn't ship with prebuilt binaries for your platform (${target}) yet. ` +
+      "You can create an issue at https://github.com/oxc-project/oxc/issues for support."
+  );
+  process.exitCode = 1;
+}
+
+/**
+ * NPM, Yarn, and other package manager set the `npm_config_user_agent`. It has the following format:
+ *
+ * ```
+ * "npm/8.3.0 node/v16.13.2 win32 x64 workspaces/false
+ * ```
+ *
+ * @returns The package manager string (`npm/8.3.0`) or null if the user agent string isn't set.
+ */
+function detectPackageManager() {
+  const userAgent = env.npm_config_user_agent;
+
+  if (userAgent == null) {
+    return null;
+  }
+
+  return userAgent.split(" ")[0];
+}

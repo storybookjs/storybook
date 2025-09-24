@@ -1,9 +1,8 @@
 import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { detectLanguage } from '../../../../../core/src/cli/detect';
-import { cliStoriesTargetPath } from '../../../../../core/src/cli/helpers';
-import { SupportedLanguage } from '../../../../../core/src/cli/project_types';
+import { SupportedLanguage, cliStoriesTargetPath, detectLanguage } from 'storybook/internal/cli';
+
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
@@ -20,10 +19,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     npmOptions,
     options,
     'react',
-    {
-      extraPackages,
-      extraAddons: [`@storybook/addon-onboarding`],
-    },
+    { extraPackages },
     'react-native-web-vite'
   );
 

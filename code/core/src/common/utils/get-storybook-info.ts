@@ -1,9 +1,10 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 import type { SupportedFrameworks } from 'storybook/internal/types';
 import type { CoreCommon_StorybookInfo, PackageJson } from 'storybook/internal/types';
 
+import { JsPackageManager } from '../js-package-manager/JsPackageManager';
 import { getStorybookConfiguration } from './get-storybook-configuration';
 
 export const rendererPackages: Record<string, string> = {
@@ -20,7 +21,7 @@ export const rendererPackages: Record<string, string> = {
 
   // community (outside of monorepo)
   'storybook-framework-qwik': 'qwik',
-  'storybook-solidjs': 'solid',
+  'storybook-solidjs-vite': 'solid',
 
   /** @deprecated This is deprecated. */
   '@storybook/vue': 'vue',
@@ -50,8 +51,6 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
 
 export const builderPackages = ['@storybook/builder-webpack5', '@storybook/builder-vite'];
 
-const logger = console;
-
 const findDependency = (
   { dependencies, devDependencies, peerDependencies }: PackageJson,
   predicate: (entry: [string, string | undefined]) => string
@@ -62,25 +61,26 @@ const findDependency = (
     Object.entries(peerDependencies || {}).find(predicate),
   ] as const;
 
-const getRendererInfo = (packageJson: PackageJson) => {
-  // Pull the viewlayer from dependencies in package.json
-  const [dep, devDep, peerDep] = findDependency(packageJson, ([key]) => rendererPackages[key]);
-  const [pkg, version] = dep || devDep || peerDep || [];
+const getRendererInfo = (configDir: string) => {
+  const packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(dirname(configDir));
 
-  if (dep && devDep && dep[0] === devDep[0]) {
-    logger.warn(
-      `Found "${dep[0]}" in both "dependencies" and "devDependencies". This is probably a mistake.`
-    );
-  }
-  if (dep && peerDep && dep[0] === peerDep[0]) {
-    logger.warn(
-      `Found "${dep[0]}" in both "dependencies" and "peerDependencies". This is probably a mistake.`
-    );
+  for (const packageJsonPath of packageJsonPaths) {
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+    // Pull the viewlayer from dependencies in package.json
+    const [dep, devDep, peerDep] = findDependency(packageJson, ([key]) => rendererPackages[key]);
+    const [pkg, version] = dep || devDep || peerDep || [];
+
+    if (pkg && version) {
+      return {
+        version,
+        frameworkPackage: pkg,
+      };
+    }
   }
 
   return {
-    version,
-    frameworkPackage: pkg,
+    version: undefined,
+    frameworkPackage: undefined,
   };
 };
 
@@ -92,28 +92,37 @@ export const findConfigFile = (prefix: string, configDir: string) => {
   return extension ? `${filePrefix}.${extension}` : null;
 };
 
-export const getConfigInfo = (packageJson: PackageJson, configDir?: string) => {
+export const getConfigInfo = (configDir?: string) => {
   let storybookConfigDir = configDir ?? '.storybook';
-  const storybookScript = packageJson.scripts?.storybook;
-  if (storybookScript && !configDir) {
-    const configParam = getStorybookConfiguration(storybookScript, '-c', '--config-dir');
 
-    if (configParam) {
-      storybookConfigDir = configParam;
+  if (!existsSync(storybookConfigDir)) {
+    const packageJsonPaths = JsPackageManager.listAllPackageJsonPaths(storybookConfigDir);
+
+    for (const packageJsonPath of packageJsonPaths) {
+      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+      const storybookScript = packageJson.scripts?.storybook;
+      if (storybookScript && !configDir) {
+        const configParam = getStorybookConfiguration(storybookScript, '-c', '--config-dir');
+
+        if (configParam) {
+          storybookConfigDir = configParam;
+          break;
+        }
+      }
     }
   }
 
   return {
     configDir: storybookConfigDir,
-    mainConfig: findConfigFile('main', storybookConfigDir),
-    previewConfig: findConfigFile('preview', storybookConfigDir),
-    managerConfig: findConfigFile('manager', storybookConfigDir),
+    mainConfigPath: findConfigFile('main', storybookConfigDir),
+    previewConfigPath: findConfigFile('preview', storybookConfigDir),
+    managerConfigPath: findConfigFile('manager', storybookConfigDir),
   };
 };
 
-export const getStorybookInfo = (packageJson: PackageJson, configDir?: string) => {
-  const rendererInfo = getRendererInfo(packageJson);
-  const configInfo = getConfigInfo(packageJson, configDir);
+export const getStorybookInfo = (configDir = '.storybook') => {
+  const rendererInfo = getRendererInfo(configDir);
+  const configInfo = getConfigInfo(configDir);
 
   return {
     ...rendererInfo,

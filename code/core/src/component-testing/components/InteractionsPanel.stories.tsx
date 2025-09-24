@@ -30,6 +30,11 @@ const managerContext: any = {
   api: {
     getDocsUrl: fn().mockName('api::getDocsUrl'),
     emit: fn().mockName('api::emit'),
+    getData: fn()
+      .mockName('api::getData')
+      .mockImplementation(() => ({
+        importPath: 'core/src/component-testing/components/InteractionsPanel.stories.tsx',
+      })),
   },
 };
 
@@ -47,13 +52,13 @@ const meta = {
   ],
   parameters: { layout: 'fullscreen' },
   args: {
+    status: 'completed',
     calls: new Map(getCalls(CallStates.DONE).map((call) => [call.id, call])),
     controls: SubnavStories.args.controls,
     controlStates: SubnavStories.args.controlStates,
     interactions,
     fileName: 'addon-interactions.stories.tsx',
     hasException: false,
-    isPlaying: false,
     onScrollToEnd: () => {},
     endRef: null,
     // prop for the AddonPanel used as wrapper of Panel
@@ -105,10 +110,11 @@ export const Passing: Story = {
 
 export const Paused: Story = {
   args: {
+    status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
-    isPlaying: true,
     interactions: getInteractions(CallStates.WAITING),
     controlStates: {
+      detached: false,
       start: false,
       back: false,
       goto: true,
@@ -121,14 +127,15 @@ export const Paused: Story = {
 
 export const Playing: Story = {
   args: {
+    status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
-    isPlaying: true,
     interactions: getInteractions(CallStates.ACTIVE),
   },
 };
 
 export const Failed: Story = {
   args: {
+    status: 'errored',
     browserTestStatus: CallStates.ERROR,
     hasException: true,
     interactions: getInteractions(CallStates.ERROR),
@@ -137,6 +144,7 @@ export const Failed: Story = {
 
 export const CaughtException: Story = {
   args: {
+    status: 'errored',
     browserTestStatus: CallStates.ERROR,
     hasException: true,
     interactions: [],
@@ -151,6 +159,21 @@ export const DiscrepancyResult: Story = {
   },
 };
 
+export const DetachedDebugger = {
+  args: {
+    browserTestStatus: CallStates.DONE,
+    interactions: getInteractions(CallStates.DONE),
+    controlStates: {
+      detached: true,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
+  },
+};
+
 export const RenderOnly: Story = {
   args: {
     browserTestStatus: CallStates.DONE,
@@ -161,5 +184,13 @@ export const RenderOnly: Story = {
 export const Empty: Story = {
   args: {
     interactions: [],
+    controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };

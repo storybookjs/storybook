@@ -204,6 +204,7 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
+  networkAddress?: string;
 }
 
 export interface StorybookConfigOptions {
@@ -330,6 +331,8 @@ export interface TestBuildConfig {
 type Tag = string;
 
 export interface TagOptions {
+  /** Visually include or exclude stories with this tag in the sidebar by default */
+  defaultFilterSelection?: 'include' | 'exclude';
   excludeFromSidebar: boolean;
   excludeFromDocsStories: boolean;
 }
@@ -636,9 +639,9 @@ export interface CoreCommon_StorybookInfo {
   renderer: string;
   rendererPackage: string;
   configDir?: string;
-  mainConfig?: string;
-  previewConfig?: string;
-  managerConfig?: string;
+  mainConfigPath?: string;
+  previewConfigPath?: string;
+  managerConfigPath?: string;
 }
 
 /**

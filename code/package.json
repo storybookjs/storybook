@@ -208,7 +208,6 @@
     "sort-package-json": "^2.14.0",
     "storybook": "workspace:^",
     "storybook-addon-pseudo-states": "workspace:*",
-    "svelte": "^5.0.0-next.268",
     "ts-dedent": "^2.0.0",
     "typescript": "^5.8.3",
     "uuid": "^11.1.0",

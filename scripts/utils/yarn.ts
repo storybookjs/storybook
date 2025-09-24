@@ -47,7 +47,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
 };
 
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
-  await rm(join(cwd, '.yarnrc.yml'), { force: true }).then(() => {});
+  await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
 
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 

@@ -10,6 +10,7 @@ import {
   useArgs,
   useGlobals,
   useParameter,
+  useStorybookApi,
   useStorybookState,
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -50,6 +51,7 @@ interface ControlsPanelProps {
 }
 
 export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) => {
+  const api = useStorybookApi();
   const [isLoading, setIsLoading] = useState(true);
   const [args, updateArgs, resetArgs, initialArgs] = useArgs();
   const [globals] = useGlobals();
@@ -61,6 +63,7 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
     disableSaveFromUI = false,
   } = useParameter<ControlsParameters>(PARAM_KEY, {});
   const { path, previewInitialized } = useStorybookState();
+  const storyData = api.getCurrentStoryData();
 
   // If the story is prepared, then show the args table
   // and reset the loading states
@@ -103,6 +106,8 @@ export const ControlsPanel = ({ saveStory, createStory }: ControlsPanelProps) =>
         isLoading={isLoading}
       />
       {hasControls &&
+        storyData.type === 'story' &&
+        storyData.subtype !== 'test' &&
         hasUpdatedArgs &&
         global.CONFIG_TYPE === 'DEVELOPMENT' &&
         disableSaveFromUI !== true && <SaveStory {...{ resetArgs, saveStory, createStory }} />}

@@ -3,7 +3,7 @@ import React from 'react';
 import { HighlightStyles } from './HighlightStyles';
 import { IconSymbols } from './IconSymbols';
 import { LeafNodeStyleWrapper } from './Tree';
-import { ComponentNode, DocumentNode, GroupNode, StoryNode } from './TreeNode';
+import { ComponentNode, DocumentNode, GroupNode, StoryNode, TestNode } from './TreeNode';
 
 export default {
   title: 'Sidebar/TreeNode',
@@ -25,6 +25,7 @@ export const Types = () => (
     <ComponentNode>Component</ComponentNode>
     <GroupNode>Group</GroupNode>
     <StoryNode>Story</StoryNode>
+    <TestNode>Test</TestNode>
     <DocumentNode docsMode={false}>Document</DocumentNode>
   </>
 );
@@ -91,10 +92,73 @@ export const Nested = () => (
       One
     </GroupNode>
     <StoryNode depth={2}>Two</StoryNode>
+    <TestNode depth={3}>Three</TestNode>
     <ComponentNode isExpandable isExpanded depth={2}>
       Two
     </ComponentNode>
     <StoryNode depth={3}>Three</StoryNode>
+    <TestNode depth={4}>Four</TestNode>
+  </>
+);
+
+export const NestedLongName = () => (
+  <>
+    <DocumentNode docsMode={false} depth={0}>
+      A very very very very very very very very very very very very very very very very very very
+      very veryvery very very very very very very very very veryvery very very very very very very
+      very very veryvery very very very very very very very very veryvery very very very very very
+      very very very veryvery very very very very very very very very veryvery very very very very
+      very very very very veryvery very very very very very very very very very long name
+    </DocumentNode>
+    <GroupNode isExpandable isExpanded depth={0}>
+      A very very very very very very very very very very very very very very very very very very
+      very veryvery very very very very very very very very veryvery very very very very very very
+      very very veryvery very very very very very very very very veryvery very very very very very
+      very very very veryvery very very very very very very very very veryvery very very very very
+      very very very very veryvery very very very very very very very very very long name
+    </GroupNode>
+    <GroupNode isExpandable isExpanded depth={1}>
+      A very very very very very very very very very very very very very very very very very very
+      very veryvery very very very very very very very very veryvery very very very very very very
+      very very veryvery very very very very very very very very veryvery very very very very very
+      very very very veryvery very very very very very very very very veryvery very very very very
+      very very very very veryvery very very very very very very very very very long name
+    </GroupNode>
+    <StoryNode depth={2}>
+      A very very very very very very very very very very very very very very very very very very
+      very veryvery very very very very very very very very veryvery very very very very very very
+      very very veryvery very very very very very very very very veryvery very very very very very
+      very very very veryvery very very very very very very very very veryvery very very very very
+      very very very very veryvery very very very very very very very very very long name
+    </StoryNode>
+    <TestNode depth={3}>
+      A very very very very very very very very very very very very very very very very very very
+      very veryvery very very very very very very very very veryvery very very very very very very
+      very very veryvery very very very very very very very very veryvery very very very very very
+      very very very veryvery very very very very very very very very veryvery very very very very
+      very very very very veryvery very very very very very very very very very long name
+    </TestNode>
+    <ComponentNode isExpandable isExpanded depth={2}>
+      A very very very very very very very very very very very very very very very very very very
+      very veryvery very very very very very very very very veryvery very very very very very very
+      very very veryvery very very very very very very very very veryvery very very very very very
+      very very very veryvery very very very very very very very very veryvery very very very very
+      very very very very veryvery very very very very very very very very very long name
+    </ComponentNode>
+    <StoryNode depth={3}>
+      A very very very very very very very very very very very very very very very very very very
+      very veryvery very very very very very very very very veryvery very very very very very very
+      very very veryvery very very very very very very very very veryvery very very very very very
+      very very very veryvery very very very very very very very very veryvery very very very very
+      very very very very veryvery very very very very very very very very very long name
+    </StoryNode>
+    <TestNode depth={4}>
+      A very very very very very very very very very very very very very very very very very very
+      very veryvery very very very very very very very very veryvery very very very very very very
+      very very veryvery very very very very very very very very veryvery very very very very very
+      very very very veryvery very very very very very very very very veryvery very very very very
+      very very very very veryvery very very very very very very very very very long name
+    </TestNode>
   </>
 );
 
@@ -136,6 +200,24 @@ export const Selection = () => (
       className="sidebar-item"
     >
       <StoryNode>Highlighted + Selected story</StoryNode>
+    </LeafNodeStyleWrapper>
+    <LeafNodeStyleWrapper
+      data-ref-id="baz"
+      data-item-id="bar"
+      data-nodetype="test"
+      data-selected="false"
+      className="sidebar-item"
+    >
+      <TestNode>Default test</TestNode>
+    </LeafNodeStyleWrapper>
+    <LeafNodeStyleWrapper
+      data-ref-id="baz"
+      data-item-id="bar"
+      data-nodetype="test"
+      data-selected="true"
+      className="sidebar-item"
+    >
+      <TestNode>Selected test</TestNode>
     </LeafNodeStyleWrapper>
     <LeafNodeStyleWrapper
       data-ref-id="foo"

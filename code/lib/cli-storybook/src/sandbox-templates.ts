@@ -17,6 +17,13 @@ export type TemplateKey =
   | keyof typeof benchTemplates;
 export type Cadence = keyof typeof templatesByCadence;
 
+// Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
+type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
+  features?:
+    | (Partial<NonNullable<StorybookConfigRaw['features']>> & Record<string, unknown>)
+    | undefined;
+};
+
 export type Template = {
   /**
    * Readable name for the template, which will be used for feedback and the status page Follows the
@@ -68,9 +75,7 @@ export type Template = {
    */
   modifications?: {
     skipTemplateStories?: boolean;
-    mainConfig?:
-      | Partial<StorybookConfigRaw>
-      | ((config: ConfigFile) => Partial<StorybookConfigRaw>);
+    mainConfig?: LoosenedStorybookConfig | ((config: ConfigFile) => LoosenedStorybookConfig);
     testBuild?: boolean;
     disableDocs?: boolean;
     extraDependencies?: string[];
@@ -112,6 +117,9 @@ export const baseTemplates = {
       mainConfig: (config) => {
         const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
         return {
+          features: {
+            experimentalTestSyntax: true,
+          },
           stories: stories?.map((s) => {
             if (typeof s === 'string') {
               return s.replace(/\|(tsx?|ts)\b|\b(tsx?|ts)\|/g, '');
@@ -140,6 +148,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
   },
   'nextjs/14-ts': {
@@ -157,6 +170,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -178,6 +192,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -199,6 +214,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -221,6 +237,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
@@ -243,6 +260,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
@@ -263,6 +281,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -282,6 +301,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -292,15 +312,15 @@ export const baseTemplates = {
     /**
      * 1. Create a Vite project with the React template
      * 2. Add React beta versions
-     * 3. Add resolutions for @types/react and @types/react-dom, see
+     * 3. Add resolutions for react, react-dom,@types/react and @types/react-dom, see
      *    https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
      * 4. Add @types/react and @types/react-dom pointing to the beta packages
      */
     script: `
       npm create vite --yes {{beforeDir}} -- --template react-ts && \
       cd {{beforeDir}} && \
+      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta", "react": "npm:react@beta", "react-dom": "npm:react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
       yarn add react@beta react-dom@beta && \
-      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
       yarn add --dev @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
       `,
     expected: {
@@ -314,6 +334,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -330,6 +351,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -345,6 +371,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -370,6 +401,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },

@@ -1,6 +1,7 @@
 import type { FC } from 'react';
 import { useState } from 'react';
 
+import type { TabListState } from 'react-stately';
 import { expect, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
@@ -56,7 +57,7 @@ const meta = preview.meta({
       return (
         <>
           <TabList state={state} />
-          <Story args={{ ...args, id: state.selectedItem?.key, state }} />
+          <Story args={{ ...args, id: (state as TabListState<object>).selectedItem?.key, state }} />
         </>
       );
     },

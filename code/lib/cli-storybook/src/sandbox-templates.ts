@@ -637,6 +637,11 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['bench', 'vitest-integration'],
   },
@@ -682,6 +687,11 @@ const internalTemplates = {
         [...addons, '@storybook/addon-webpack5-compiler-babel'].filter(
           (a) => a !== '@storybook/addon-webpack5-compiler-swc'
         ),
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     isInternal: true,
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
@@ -698,6 +708,11 @@ const internalTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
     isInternal: true,

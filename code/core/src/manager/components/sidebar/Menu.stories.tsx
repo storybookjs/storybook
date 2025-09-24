@@ -77,17 +77,18 @@ export const Expanded: Story = {
       </DoubleThemeRenderingHack>
     );
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    // This story can have significant loading time.
-    await new Promise((res) => {
-      setTimeout(res, 2000);
-    });
-    const menuButton = await waitFor(() => canvas.findByRole('switch'));
-    await userEvent.click(menuButton);
-    const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
-    await expect(aboutStorybookBtn).toBeInTheDocument();
-  },
+  // https://github.com/storybookjs/storybook/issues/32552
+  // play: async ({ canvasElement }) => {
+  //   const canvas = within(canvasElement);
+  //   // This story can have significant loading time.
+  //   await new Promise((res) => {
+  //     setTimeout(res, 2000);
+  //   });
+  //   const menuButton = await waitFor(() => canvas.findByRole('switch'));
+  //   await userEvent.click(menuButton);
+  //   const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
+  //   await expect(aboutStorybookBtn).toBeInTheDocument();
+  // },
   decorators: [
     (StoryFn) => (
       <div style={{ height: 800 }}>
@@ -136,19 +137,20 @@ export const ExpandedWithShortcuts: Story = {
       </DoubleThemeRenderingHack>
     );
   },
-  play: async (context) => {
-    const canvas = within(context.canvasElement);
-    // This story can have significant loading time.
-    await new Promise((res) => {
-      setTimeout(res, 2000);
-    });
-    const menuButton = await waitFor(() => canvas.findByRole('switch'));
-    await userEvent.click(menuButton);
-    const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
-    await expect(aboutStorybookBtn).toBeInTheDocument();
-    const releaseNotes = canvas.queryByText(/What's new/);
-    await expect(releaseNotes).not.toBeInTheDocument();
-  },
+  // https://github.com/storybookjs/storybook/issues/32552
+  // play: async (context) => {
+  //   const canvas = within(context.canvasElement);
+  //   // This story can have significant loading time.
+  //   await new Promise((res) => {
+  //     setTimeout(res, 2000);
+  //   });
+  //   const menuButton = await waitFor(() => canvas.findByRole('switch'));
+  //   await userEvent.click(menuButton);
+  //   const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
+  //   await expect(aboutStorybookBtn).toBeInTheDocument();
+  //   const releaseNotes = canvas.queryByText(/What's new/);
+  //   await expect(releaseNotes).not.toBeInTheDocument();
+  // },
 };
 
 export const ExpandedWithWhatsNew: Story = {
@@ -177,14 +179,15 @@ export const ExpandedWithWhatsNew: Story = {
       </DoubleThemeRenderingHack>
     );
   },
-  play: async (context) => {
-    const canvas = within(context.canvasElement);
-    await new Promise((res) => {
-      setTimeout(res, 500);
-    });
-    // @ts-expect-error (non strict)
-    await Expanded.play(context);
-    const releaseNotes = await canvas.queryByText(/What's new/);
-    await expect(releaseNotes).not.toBeInTheDocument();
-  },
+  // https://github.com/storybookjs/storybook/issues/32552
+  // play: async (context) => {
+  //   const canvas = within(context.canvasElement);
+  //   await new Promise((res) => {
+  //     setTimeout(res, 500);
+  //   });
+  //   // @ts-expect-error (non strict)
+  //   await Expanded.play(context);
+  //   const releaseNotes = await canvas.queryByText(/What's new/);
+  //   await expect(releaseNotes).not.toBeInTheDocument();
+  // },
 };

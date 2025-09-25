@@ -1,18 +1,20 @@
-import { background, color, typography } from '../base';
+import { background, color, tokens, typography } from '../base';
 import type { ThemeVars } from '../types';
+
+const { fgColor, bgColor, borderColor } = tokens.light;
 
 const theme: ThemeVars = {
   base: 'light',
 
   // Storybook-specific color palette
   colorPrimary: color.primary,
-  colorSecondary: color.secondary,
+  colorSecondary: fgColor.accent,
 
   // UI
-  appBg: background.app,
-  appContentBg: color.lightest,
-  appPreviewBg: color.lightest,
-  appBorderColor: color.border,
+  appBg: bgColor.muted,
+  appContentBg: bgColor.default,
+  appPreviewBg: bgColor.default,
+  appBorderColor: borderColor.default,
   appBorderRadius: 4,
 
   // Fonts
@@ -20,24 +22,24 @@ const theme: ThemeVars = {
   fontCode: typography.fonts.mono,
 
   // Text colors
-  textColor: color.darkest,
-  textInverseColor: color.lightest,
-  textMutedColor: color.dark,
+  textColor: fgColor.default,
+  textInverseColor: fgColor.inverse,
+  textMutedColor: fgColor.muted,
 
   // Toolbar default and active colors
-  barTextColor: color.dark,
+  barTextColor: fgColor.muted,
   barHoverColor: '#005CC7',
   barSelectedColor: '#0063D6',
-  barBg: color.lightest,
+  barBg: bgColor.default,
 
   // Form colors
-  buttonBg: background.app,
+  buttonBg: bgColor.muted,
   buttonBorder: color.medium,
   booleanBg: color.mediumlight,
-  booleanSelectedBg: color.lightest,
-  inputBg: color.lightest,
-  inputBorder: color.border,
-  inputTextColor: color.darkest,
+  booleanSelectedBg: bgColor.default,
+  inputBg: bgColor.default,
+  inputBorder: borderColor.default,
+  inputTextColor: fgColor.default,
   inputBorderRadius: 4,
 };
 

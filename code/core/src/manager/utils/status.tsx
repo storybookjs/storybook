@@ -6,7 +6,7 @@ import { type API_HashEntry, type StatusesByStoryIdAndTypeId } from 'storybook/i
 
 import { CircleIcon } from '@storybook/icons';
 
-import { styled } from 'storybook/theming';
+import { type Theme, styled } from 'storybook/theming';
 
 import { UseSymbol } from '../components/sidebar/IconSymbols';
 import { getDescendantIds } from './tree';
@@ -31,27 +31,31 @@ export const statusPriority: StatusValue[] = [
   'status-value:warning',
   'status-value:error',
 ];
-export const statusMapping: Record<StatusValue, [ReactElement | null, string | null]> = {
-  ['status-value:unknown']: [null, null],
-  ['status-value:pending']: [<LoadingIcons key="icon" />, 'currentColor'],
-  ['status-value:success']: [
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="success" />
-    </svg>,
-    'currentColor',
-  ],
-  ['status-value:warning']: [
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="warning" />
-    </svg>,
-    '#A15C20',
-  ],
-  ['status-value:error']: [
-    <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-      <UseSymbol type="error" />
-    </svg>,
-    '#D43900',
-  ],
+
+export const getStatus = (theme: Theme, status: StatusValue) => {
+  const statusMapping: Record<StatusValue, [ReactElement | null, string | null]> = {
+    ['status-value:unknown']: [null, null],
+    ['status-value:pending']: [<LoadingIcons key="icon" />, 'currentColor'],
+    ['status-value:success']: [
+      <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <UseSymbol type="success" />
+      </svg>,
+      'currentColor',
+    ],
+    ['status-value:warning']: [
+      <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <UseSymbol type="warning" />
+      </svg>,
+      theme.fgColor.warning,
+    ],
+    ['status-value:error']: [
+      <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
+        <UseSymbol type="error" />
+      </svg>,
+      theme.fgColor.negative,
+    ],
+  };
+  return statusMapping[status];
 };
 
 export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusValue => {

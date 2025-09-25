@@ -34,7 +34,7 @@ import { styled, useTheme } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
-import { getGroupStatus, getMostCriticalStatusValue, statusMapping } from '../../utils/status';
+import { getGroupStatus, getMostCriticalStatusValue, getStatus } from '../../utils/status';
 import {
   createId,
   getAncestorIds,
@@ -226,6 +226,7 @@ const Node = React.memo<NodeProps>(function Node({
   onSelectStoryId,
   api,
 }) {
+  const theme = useTheme();
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
   const { counts, statusesByValue } = useStatusSummary(item);
 
@@ -299,7 +300,7 @@ const Node = React.memo<NodeProps>(function Node({
     const statusValue = getMostCriticalStatusValue(
       Object.values(statuses || {}).map((s) => s.value)
     );
-    const [icon, textColor] = statusMapping[statusValue];
+    const [icon, textColor] = getStatus(theme, statusValue);
 
     return (
       <LeafNodeStyleWrapper
@@ -398,7 +399,7 @@ const Node = React.memo<NodeProps>(function Node({
 
   if (item.type === 'component' || item.type === 'group') {
     const itemStatus = groupStatus?.[item.id];
-    const color = itemStatus ? statusMapping[itemStatus][1] : null;
+    const color = itemStatus ? getStatus(theme, itemStatus)[1] : null;
     const BranchNode = item.type === 'component' ? ComponentNode : GroupNode;
 
     return (

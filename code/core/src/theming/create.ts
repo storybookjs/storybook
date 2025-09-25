@@ -11,24 +11,27 @@ export const themes: { light: ThemeVars; dark: ThemeVars; normal: ThemeVars } = 
 };
 
 interface Rest {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const preferredColorScheme = getPreferredColorScheme();
 
 export const create = (
-  vars: ThemeVarsPartial = { base: preferredColorScheme },
+  vars: ThemeVarsPartial = {
+    base: preferredColorScheme,
+  },
   rest?: Rest
 ): ThemeVars => {
+  const base = themes[vars.base] ? vars.base : preferredColorScheme;
   const inherit: ThemeVars = {
     ...themes[preferredColorScheme],
-    ...(themes[vars.base] || {}),
+    ...themes[vars.base],
     ...vars,
-    ...{ base: themes[vars.base] ? vars.base : preferredColorScheme },
+    base,
   };
   return {
     ...rest,
     ...inherit,
-    ...{ barSelectedColor: vars.barSelectedColor || inherit.colorSecondary },
+    barSelectedColor: vars.barSelectedColor || inherit.colorSecondary,
   };
 };

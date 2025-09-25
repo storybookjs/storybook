@@ -1,7 +1,7 @@
 ```js filename="next.config.js" language="js"
-import * as path from 'path';
+const path = require('path');
 
-export default {
+module.exports = {
   // Any options here are included in Sass compilation for your stories
   sassOptions: {
     includePaths: [path.join(process.cwd(), 'styles')],

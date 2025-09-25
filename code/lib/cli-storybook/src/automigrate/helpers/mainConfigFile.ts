@@ -249,14 +249,10 @@ export function containsESMUsage(content: string): boolean {
 
 /** Check if the file content contains require usage */
 export function containsRequireUsage(content: string): boolean {
-  // Remove comments to avoid false positives
-  const withoutComments = content
-    .replace(/\/\*[\s\S]*?\*\//g, '') // Remove /* */ comments
-    .replace(/\/\/.*$/gm, ''); // Remove // comments
-
   // Check for require() calls
-  const requireCallRegex = /\brequire\s*\(/;
-  return requireCallRegex.test(withoutComments);
+  const requireCallRegex = /\brequire\(/;
+  const requireDotRegex = /\brequire\./;
+  return requireCallRegex.test(content) || requireDotRegex.test(content);
 }
 
 /** Check if the file already has the require banner */

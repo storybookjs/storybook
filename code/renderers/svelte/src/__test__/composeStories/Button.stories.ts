@@ -53,7 +53,6 @@ const getCaptionForLocale = (locale: string) => {
   }
 };
 
-// @ts-expect-error -- incompatibility with Svelte 5 types and CSF
 export const CSF2StoryWithLocale: CSF2Story<typeof StoryWithLocaleComponent> = (
   args,
   { globals }

@@ -1,4 +1,4 @@
-```js filename="next.config.js" language="js"
+```js filename="next.config.js" language="js" renderer="react"
 const path = require('path');
 
 module.exports = {
@@ -9,7 +9,7 @@ module.exports = {
 };
 ```
 
-```ts filename="next.config.ts" language="ts"
+```ts filename="next.config.ts" language="ts" renderer="react"
 import * as path from 'path';
 import type { NextConfig } from 'next';
 

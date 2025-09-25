@@ -15,6 +15,7 @@ import nextBabelPreset from './babel/preset';
 import { configureConfig } from './config/webpack';
 import TransformFontImports from './font/babel';
 import type { FrameworkOptions, StorybookConfig } from './types';
+import { getNextjsVersion } from './utils';
 
 export const addons: PresetProperty<'addons'> = [
   fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),

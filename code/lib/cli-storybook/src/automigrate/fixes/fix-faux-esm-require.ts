@@ -31,8 +31,6 @@ export const fixFauxEsmRequire = {
     const isWithRequire = containsRequireUsage(content);
     const isWithBanner = hasRequireBanner(content);
 
-    console.log({ isESM, isWithRequire, isWithBanner });
-
     // Check if the file is ESM format based on content
     if (!isESM) {
       return null;

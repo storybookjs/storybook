@@ -1,4 +1,4 @@
-import MagicString from 'magic-string';
+import { babelParse, generate, traverse } from 'storybook/internal/babel';
 
 import { COMPONENT_PATH_ATTRIBUTE } from '../constants';
 
@@ -34,18 +34,18 @@ export function componentPathInjectorPlugin(options?: any): any {
         return undefined;
       }
 
-      const s = new MagicString(code);
-
-      // Find JSX elements and add the component path attribute
-      const transformedCode = injectComponentPath(s, code, id);
+      // Find JSX elements and add the component path attribute using AST parsing
+      const transformedCode = injectComponentPath(code, id);
 
       if (transformedCode === code) {
         return undefined; // No changes made
       }
 
       return {
-        code: s.toString(),
-        map: s.generateMap({ hires: true, source: id }),
+        code: transformedCode,
+        // For AST-based transformations, we don't generate source maps
+        // as Babel handles this internally and it's complex to maintain
+        map: null as any,
       };
     },
   };
@@ -64,48 +64,148 @@ function isComponentFile(code: string): boolean {
   );
 }
 
-/** Inject component path attribute into JSX elements */
-function injectComponentPath(s: MagicString, code: string, filePath: string): string {
-  // This is a simplified approach - in a real implementation we'd use a proper AST parser
-  // For now, we'll use regex to find JSX opening tags and add our attribute
+/** Inject component path attribute into JSX elements using AST parsing */
+function injectComponentPath(code: string, filePath: string): string {
+  // Make file path relative with ./ prefix - similar to how story index calculates paths
+  let normalizedPath: string;
+  const codePattern = '/code/';
+  const codeIndex = filePath.indexOf(codePattern);
 
-  // Normalize file path
-  const normalizedPath = filePath.replace(/\\/g, '/');
+  if (codeIndex !== -1) {
+    // Verify this is the "code" directory we want, not just part of another path
+    const afterCode = filePath.substring(codeIndex + codePattern.length);
+    const beforeCode = filePath.substring(0, codeIndex);
 
-  // Find JSX opening tags that don't already have our attribute
-  const jsxElementRegex = /<([A-Z][a-zA-Z0-9]*(?:\.[A-Z][a-zA-Z0-9]*)*)\s*([^>]*?)(\s*\/?>)/g;
+    // Should look like a valid Storybook code directory structure
+    const hasValidStructure =
+      /^(?:src|addons|\.storybook|frameworks|lib|core)\//.test(afterCode) ||
+      /storybook/.test(beforeCode.toLowerCase());
 
-  let match;
-  const replacements: Array<{ start: number; end: number; replacement: string }> = [];
-
-  while ((match = jsxElementRegex.exec(code)) !== null) {
-    const [fullMatch, componentName, attributes, closing] = match;
-    const { index } = match;
-
-    // Skip if already has our attribute
-    if (attributes.includes(COMPONENT_PATH_ATTRIBUTE)) {
-      continue;
+    if (hasValidStructure) {
+      normalizedPath = `./${afterCode}`;
+    } else {
+      // If no valid structure, treat as absolute path and make it relative
+      let cleanPath = filePath.replace(/\\/g, '/');
+      if (cleanPath.startsWith('/')) {
+        cleanPath = cleanPath.substring(1);
+      }
+      normalizedPath = cleanPath.startsWith('./') ? cleanPath : `./${cleanPath}`;
     }
-
-    // Skip HTML elements (lowercase first letter)
-    if (componentName[0].toLowerCase() === componentName[0]) {
-      continue;
+  } else {
+    // For paths without /code/, make them relative if they don't start with ./
+    let cleanPath = filePath.replace(/\\/g, '/');
+    // Remove leading slash if present to make it relative
+    if (cleanPath.startsWith('/')) {
+      cleanPath = cleanPath.substring(1);
     }
-
-    // Build replacement
-    const trimmedAttributes = attributes.trim();
-    const attributesToAdd = trimmedAttributes
-      ? ` ${trimmedAttributes} ${COMPONENT_PATH_ATTRIBUTE}="${normalizedPath}"`
-      : ` ${COMPONENT_PATH_ATTRIBUTE}="${normalizedPath}"`;
-
-    const replacement = `<${componentName}${attributesToAdd}${closing}`;
-    replacements.push({ start: index, end: index + fullMatch.length, replacement });
+    normalizedPath = cleanPath.startsWith('./') ? cleanPath : `./${cleanPath}`;
   }
 
-  // Apply replacements in reverse order to maintain indices
-  replacements.reverse().forEach(({ start, end, replacement }) => {
-    s.overwrite(start, end, replacement);
-  });
+  try {
+    // Parse the code into an AST
+    const ast = babelParse(code);
 
-  return s.toString();
+    let hasChanges = false;
+
+    // Traverse the AST to find JSX opening elements
+    traverse(ast, {
+      JSXOpeningElement(path) {
+        const { node } = path;
+
+        // Check if this is a React component (starts with uppercase)
+        if (node.name.type === 'JSXIdentifier') {
+          const componentName = node.name.name;
+
+          // Skip HTML elements (lowercase first letter)
+          if (componentName[0].toLowerCase() === componentName[0]) {
+            return;
+          }
+
+          // Check if we already have this attribute
+          const hasAttribute = node.attributes.some((attr) => {
+            return (
+              attr.type === 'JSXAttribute' &&
+              attr.name.type === 'JSXIdentifier' &&
+              attr.name.name === COMPONENT_PATH_ATTRIBUTE
+            );
+          });
+
+          if (!hasAttribute) {
+            // Add the component path attribute
+            node.attributes.push({
+              type: 'JSXAttribute',
+              name: {
+                type: 'JSXIdentifier',
+                name: COMPONENT_PATH_ATTRIBUTE,
+              },
+              value: {
+                type: 'StringLiteral',
+                value: normalizedPath,
+              },
+            } as any);
+            hasChanges = true;
+          }
+        } else if (node.name.type === 'JSXMemberExpression') {
+          // Handle member expressions like Namespace.Component
+          const getComponentName = (expr: any): string => {
+            if (expr.type === 'JSXIdentifier') {
+              return expr.name;
+            }
+            if (expr.type === 'JSXMemberExpression') {
+              return getComponentName(expr.object) + '.' + getComponentName(expr.property);
+            }
+            return '';
+          };
+
+          const componentName = getComponentName(node.name);
+
+          // Skip if first part is lowercase (like html.div)
+          const firstPart = componentName.split('.')[0];
+          if (firstPart[0]?.toLowerCase() === firstPart[0]) {
+            return;
+          }
+
+          // Check if we already have this attribute
+          const hasAttribute = node.attributes.some((attr) => {
+            return (
+              attr.type === 'JSXAttribute' &&
+              attr.name.type === 'JSXIdentifier' &&
+              attr.name.name === COMPONENT_PATH_ATTRIBUTE
+            );
+          });
+
+          if (!hasAttribute) {
+            // Add the component path attribute
+            node.attributes.push({
+              type: 'JSXAttribute',
+              name: {
+                type: 'JSXIdentifier',
+                name: COMPONENT_PATH_ATTRIBUTE,
+              },
+              value: {
+                type: 'StringLiteral',
+                value: normalizedPath,
+              },
+            } as any);
+            hasChanges = true;
+          }
+        }
+      },
+    });
+
+    if (hasChanges) {
+      // Generate the modified code
+      const result = generate(ast, {
+        retainLines: true,
+        compact: false,
+      });
+      return result.code;
+    }
+
+    return code;
+  } catch (error) {
+    // If AST parsing fails, return original code
+    console.warn('Story Inspector: Failed to parse code with AST, skipping transformation:', error);
+    return code;
+  }
 }

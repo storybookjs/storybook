@@ -6,6 +6,7 @@ export default {
   '@storybook/addon-links': '10.0.0-beta.6',
   '@storybook/addon-onboarding': '10.0.0-beta.6',
   'storybook-addon-pseudo-states': '10.0.0-beta.6',
+  '@storybook/addon-story-inspector': '10.0.0-beta.6',
   '@storybook/addon-themes': '10.0.0-beta.6',
   '@storybook/addon-vitest': '10.0.0-beta.6',
   '@storybook/builder-vite': '10.0.0-beta.6',

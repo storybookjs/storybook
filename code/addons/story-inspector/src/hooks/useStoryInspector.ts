@@ -4,13 +4,14 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { HIGHLIGHT, REMOVE_HIGHLIGHT } from 'storybook/highlight';
 import type { HighlightMenuItem } from 'storybook/highlight';
-import { useChannel, useStorybookState } from 'storybook/manager-api';
+import { useChannel, useGlobals, useStorybookState } from 'storybook/manager-api';
 
 import {
   ADDON_ID,
   EVENTS,
   HIGHLIGHT_ID_WITHOUT_STORIES,
   HIGHLIGHT_ID_WITH_STORIES,
+  PARAM_KEY,
 } from '../constants';
 import {
   type ComponentInfo,
@@ -21,15 +22,11 @@ import {
 } from '../utils/story-matcher';
 
 export function useStoryInspector() {
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [globals] = useGlobals();
+  const isEnabled = !!globals[PARAM_KEY];
   const [components, setComponents] = useState<ComponentInfo[]>([]);
   const emit = useChannel({});
-  const { index } = useStorybookState();
-
-  const toggleInspector = useCallback(() => {
-    setIsEnabled((prev) => !prev);
-    emit(EVENTS.TOGGLE_INSPECTOR, !isEnabled);
-  }, [isEnabled, emit]);
+  const { index, storyId: currentStoryId } = useStorybookState();
 
   const createStoryForComponent = useCallback(
     (componentPath: string) => {
@@ -45,8 +42,30 @@ export function useStoryInspector() {
 
     const foundComponents = findComponentsInDOM();
     const componentsWithStoryStatus = checkComponentsAgainstIndex(foundComponents, index as any);
-    setComponents(componentsWithStoryStatus);
-  }, [index]);
+
+    // Filter out the current story's component to avoid redundant highlighting
+    const filteredComponents = componentsWithStoryStatus.filter((component) => {
+      if (!currentStoryId) {
+        return true;
+      }
+
+      const currentStoryEntry = index[currentStoryId];
+
+      if (!currentStoryEntry) {
+        return true;
+      }
+
+      // Compare component paths (normalize for comparison)
+
+      // Compare component paths (normalize for comparison)
+      const currentComponentPath = (currentStoryEntry as any).componentPath?.replace(/\\/g, '/');
+      const componentPath = component.componentPath.replace(/\\/g, '/');
+
+      return currentComponentPath !== componentPath;
+    });
+
+    setComponents(filteredComponents);
+  }, [index, currentStoryId]);
 
   const updateHighlights = useCallback(() => {
     // Remove existing highlights
@@ -86,11 +105,18 @@ export function useStoryInspector() {
             selectors: [generateSelectorsForComponents([component])[0]],
           },
           {
-            id: `${component.storyId}:navigate`,
+            id: component.storyId,
             iconLeft: 'shareAlt',
             title: 'Go to story',
             clickEvent: 'storybook/navigate-to-story',
             eventData: { storyId: component.storyId },
+            selectors: [generateSelectorsForComponents([component])[0]],
+          },
+          {
+            id: component.componentPath,
+            iconLeft: 'edit',
+            title: 'Open in editor',
+            clickEvent: 'storybook/open-editor',
             selectors: [generateSelectorsForComponents([component])[0]],
           },
         ]),
@@ -124,11 +150,18 @@ export function useStoryInspector() {
             selectors: [generateSelectorsForComponents([component])[0]],
           },
           {
-            id: `${component.componentPath}:create`,
+            id: component.componentPath,
             iconLeft: 'plus',
             title: 'Create story',
             clickEvent: EVENTS.CREATE_STORY_FOR_COMPONENT,
             eventData: { componentPath: component.componentPath },
+            selectors: [generateSelectorsForComponents([component])[0]],
+          },
+          {
+            id: component.componentPath,
+            iconLeft: 'edit',
+            title: 'Open in editor',
+            clickEvent: 'storybook/open-editor',
             selectors: [generateSelectorsForComponents([component])[0]],
           },
         ]),
@@ -158,7 +191,6 @@ export function useStoryInspector() {
 
   return {
     isEnabled,
-    toggleInspector,
     createStoryForComponent,
     components: groupComponentsByStoryStatus(components),
   };

@@ -12,35 +12,62 @@ export interface ComponentInfo {
 
 /** Find all components in the DOM that have component path metadata */
 export function findComponentsInDOM(): ComponentInfo[] {
-  const elements = document.querySelectorAll(`[${COMPONENT_PATH_ATTRIBUTE}]`);
-  const components: ComponentInfo[] = [];
+  // Find the preview iframe - this is where the actual stories are rendered
+  const previewIframe = document.getElementById('storybook-preview-iframe') as HTMLIFrameElement;
+
+  if (!previewIframe) {
+    console.warn('Story Inspector: Preview iframe not found');
+    return [];
+  }
+
+  // Check if iframe is loaded and accessible
+  let previewDocument: Document;
+  try {
+    previewDocument = previewIframe.contentDocument || previewIframe.contentWindow?.document;
+    if (!previewDocument) {
+      console.warn('Story Inspector: Could not access preview iframe document');
+      return [];
+    }
+  } catch (error) {
+    // Handle cross-origin restrictions
+    console.warn('Story Inspector: Cannot access iframe document (possibly cross-origin):', error);
+    return [];
+  }
+
+  // Query within the iframe's document, not the manager's document
+  const elements = previewDocument.querySelectorAll(`[${COMPONENT_PATH_ATTRIBUTE}]`);
+  const componentMap = new Map<string, ComponentInfo>();
 
   elements.forEach((element) => {
     const componentPath = element.getAttribute(COMPONENT_PATH_ATTRIBUTE);
     if (componentPath) {
-      components.push({
-        element,
-        componentPath,
-        hasStory: false, // Will be determined by checkComponentsAgainstIndex
-      });
+      // Deduplicate: only keep one entry per component path
+      // Use the first element found for each unique component path
+      if (!componentMap.has(componentPath)) {
+        componentMap.set(componentPath, {
+          element,
+          componentPath,
+          hasStory: false, // Will be determined by checkComponentsAgainstIndex
+        });
+      }
     }
   });
 
-  return components;
+  return Array.from(componentMap.values());
 }
 
 /** Check components against the story index to determine which have stories */
 export function checkComponentsAgainstIndex(
   components: ComponentInfo[],
-  storyIndex: StoryIndex
+  storyIndex: StoryIndex['entries']
 ): ComponentInfo[] {
-  const entries = storyIndex.entries || {};
+  const entries = storyIndex || {};
 
   return components.map((component) => {
-    // Find matching story entries by comparing rawComponentPath
+    // Find matching story entries by comparing componentPath
     const matchingEntry = Object.values(entries).find((entry) => {
       // Normalize paths for comparison
-      const entryPath = entry.rawComponentPath?.replace(/\\/g, '/');
+      const entryPath = (entry as any).componentPath?.replace(/\\/g, '/');
       const componentPath = component.componentPath.replace(/\\/g, '/');
       return entryPath === componentPath;
     });

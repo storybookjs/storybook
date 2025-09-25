@@ -12,6 +12,7 @@ import addonA11y from '@storybook/addon-a11y';
 // import * as designs from '@storybook/addon-designs/preview';
 import addonDocs from '@storybook/addon-docs';
 import { DocsContext } from '@storybook/addon-docs/blocks';
+import addonInspector from '@storybook/addon-story-inspector';
 import addonThemes from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
 
@@ -406,6 +407,7 @@ export default definePreview({
     addonA11y(),
     addonTest(),
     addonPseudoStates(),
+    addonInspector(),
     templatePreview,
   ],
   decorators,

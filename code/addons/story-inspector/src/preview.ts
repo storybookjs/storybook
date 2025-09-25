@@ -1,10 +1,10 @@
-import type { Decorator, StoryContext } from 'storybook/preview-api';
+import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { PARAM_KEY } from './constants';
 
 /** Global decorator that helps with story inspector functionality */
-export const decorators: Decorator[] = [
-  (storyFn, context) => {
+export const decorators: DecoratorFunction[] = [
+  (storyFn: any, context: any) => {
     // The decorator doesn't need to do much - the main work is done by:
     // 1. The Vite plugin (injecting component paths)
     // 2. The manager-side highlighting logic
@@ -23,4 +23,9 @@ export const parameters = {
     // Default to disabled - users can enable via toolbar
     enabled: false,
   },
+};
+
+/** Initial globals for the story inspector */
+export const initialGlobals = {
+  [PARAM_KEY]: false,
 };

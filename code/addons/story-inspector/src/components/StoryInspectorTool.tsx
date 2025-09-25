@@ -2,15 +2,24 @@ import React from 'react';
 
 import { IconButton } from 'storybook/internal/components';
 
-import { EyeCloseIcon, EyeIcon } from '@storybook/icons';
+import { PaintBrushAltIcon, PaintBrushIcon } from '@storybook/icons';
 
+import { useGlobals } from 'storybook/manager-api';
+
+import { PARAM_KEY } from '../constants';
 import { useStoryInspector } from '../hooks/useStoryInspector';
 
 export const StoryInspectorTool = () => {
-  const { isEnabled, toggleInspector, components } = useStoryInspector();
+  const [globals, updateGlobals] = useGlobals();
+  const isEnabled = !!globals[PARAM_KEY];
 
+  const { components } = useStoryInspector();
   const { withStories, withoutStories } = components;
   const totalComponents = withStories.length + withoutStories.length;
+
+  const toggleInspector = () => {
+    updateGlobals({ [PARAM_KEY]: !isEnabled });
+  };
 
   const title = isEnabled
     ? `Story Inspector: ON (${totalComponents} components found: ${withStories.length} with stories, ${withoutStories.length} without)`
@@ -18,24 +27,25 @@ export const StoryInspectorTool = () => {
 
   return (
     <IconButton key="story-inspector" active={isEnabled} title={title} onClick={toggleInspector}>
-      {isEnabled ? <EyeIcon /> : <EyeCloseIcon />}
+      <PaintBrushAltIcon />
       {totalComponents > 0 && isEnabled && (
         <span
           style={{
             position: 'absolute',
-            top: '-8px',
-            right: '-8px',
             background: withoutStories.length > 0 ? '#f59e0b' : '#22c55e',
             color: 'white',
-            borderRadius: '50%',
-            padding: '2px 6px',
-            fontSize: '10px',
+            borderRadius: '50% 0 30% 0',
+            fontSize: '8px',
+            lineHeight: '15px',
             fontWeight: 'bold',
-            minWidth: '16px',
+            bottom: 0,
+            right: 0,
+            width: '14px',
+            height: '14px',
             textAlign: 'center',
           }}
         >
-          {totalComponents}
+          {totalComponents > 9 ? '9+' : totalComponents}
         </span>
       )}
     </IconButton>

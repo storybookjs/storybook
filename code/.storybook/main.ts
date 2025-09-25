@@ -105,6 +105,7 @@ const config = defineMain({
     '@storybook/addon-designs',
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
+    '@storybook/addon-story-inspector',
     'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
   ],

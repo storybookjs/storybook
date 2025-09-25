@@ -6199,6 +6199,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/addon-story-inspector@workspace:*, @storybook/addon-story-inspector@workspace:addons/story-inspector":
+  version: 0.0.0-use.local
+  resolution: "@storybook/addon-story-inspector@workspace:addons/story-inspector"
+  dependencies:
+    "@storybook/icons": "npm:^1.6.0"
+    magic-string: "npm:^0.30.5"
+    react: "npm:^18.2.0"
+    react-dom: "npm:^18.2.0"
+    ts-dedent: "npm:^2.0.0"
+    typescript: "npm:^5.8.3"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:addons/themes"
@@ -6874,6 +6889,7 @@ __metadata:
     "@storybook/addon-jest": "workspace:*"
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-onboarding": "workspace:*"
+    "@storybook/addon-story-inspector": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
     "@storybook/addon-vitest": "workspace:*"
     "@storybook/angular": "workspace:*"

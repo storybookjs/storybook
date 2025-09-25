@@ -228,3 +228,65 @@ export const updateMainConfig = async (
     );
   }
 };
+
+/** Check if a file is in ESM format based on its content */
+export function containsESMUsage(filePath: string, content: string): boolean {
+  // Check file extension for ESM indicators
+  const esmExtensions = ['.mjs', '.mts', '.mtsx'];
+  const hasEsmExtension = esmExtensions.some((ext) => filePath.endsWith(ext));
+
+  if (hasEsmExtension) {
+    return true;
+  }
+
+  // For .js/.ts files, check the content for ESM syntax
+  if (filePath.endsWith('.js') || filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {
+    // Check for ESM syntax indicators (multiline aware)
+    const hasImportStatement =
+      /^\s*import\s+/m.test(content) ||
+      /^\s*import\s*{/m.test(content) ||
+      /^\s*import\s*\(/m.test(content);
+    const hasExportStatement =
+      /^\s*export\s+/m.test(content) ||
+      /^\s*export\s*{/m.test(content) ||
+      /^\s*export\s*default/m.test(content);
+    const hasImportMeta = /import\.meta/.test(content);
+
+    // If any ESM syntax is found, it's likely an ESM file
+    return hasImportStatement || hasExportStatement || hasImportMeta;
+  }
+
+  return false;
+}
+
+/** Check if the file content contains require usage */
+export function containsRequireUsage(content: string): boolean {
+  // Remove comments to avoid false positives
+  const withoutComments = content
+    .replace(/\/\*[\s\S]*?\*\//g, '') // Remove /* */ comments
+    .replace(/\/\/.*$/gm, ''); // Remove // comments
+
+  // Check for require() calls
+  const requireCallRegex = /\brequire\s*\(/;
+  return requireCallRegex.test(withoutComments);
+}
+
+/** Check if the file already has the require banner */
+export function hasRequireBanner(content: string): boolean {
+  const comment =
+    '// end of storybook 10 migration assistant header, you can delete the above code';
+  return content.includes(comment);
+}
+
+/** Generate the require compatibility banner */
+export function getRequireBanner(): string {
+  return dedent`
+    import { createRequire } from "node:module";
+    import { dirname } from "node:path";
+    import { fileURLToPath } from "node:url";
+  
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const require = createRequire(import.meta.url);
+  `;
+}

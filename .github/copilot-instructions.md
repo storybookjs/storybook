@@ -18,11 +18,15 @@ Storybook is a large monorepo built with TypeScript, React, and various other fr
 storybook/
 ├── .github/           # GitHub configurations and workflows
 ├── code/              # Main monorepo codebase
-│   ├── addons/        # Storybook addons
+│   ├── .storybook/    # Configuration for internal UI Storybook
+│   ├── core/          # Core Storybook package
+│   ├── lib/           # Core supporting libraries
+│   ├── addons/        # Core Storybook addons
+│   ├── builders/      # Builder integrations
+│   ├── renderers/     # Renderer integrations
 │   ├── frameworks/    # Framework integrations
-│   ├── lib/           # Core libraries
-│   ├── builders/      # Build tools
-│   └── sandbox/       # Internal build artifacts (not for testing)
+│   ├── presets/       # Preset packages for Webpack-based integrations
+│   └── sandbox/       # Internal build artifacts (not useful for anything, ignore)
 ├── sandbox/           # Generated sandbox environments (created by yarn task --task sandbox)
 ├── scripts/           # Build and development scripts
 ├── docs/              # Documentation
@@ -62,12 +66,14 @@ cd code && yarn storybook:ui
 # Time: ~2.26 seconds startup time
 # Serves on: http://localhost:6006/
 # Note: This runs indefinitely - use timeout or async mode
+# Note: This requires the repository to be compiled first, see Compilation above
 
 # Build Storybook UI for production (run from code/ directory)
 cd code && yarn storybook:ui:build
 # Time: ~1m 46s
 # Output: code/storybook-static/
 # Note: This does NOT run indefinitely
+# Note: This requires the repository to be compiled first, see Compilation above
 ```
 
 ### Testing
@@ -95,7 +101,6 @@ yarn task --task vitest-test        # Vitest integration tests
 ### Commands to Avoid
 - **DO NOT RUN**: `yarn task --task dev` - This starts a permanent development server that runs indefinitely and will cause timeouts
 - **DO NOT RUN**: `yarn start` - This also starts a long-running development server
-- **USE WITH CAUTION**: Any `*-dev` task commands (e2e-tests-dev, test-runner-dev) - These may start long-running servers
 
 ### Available Task Commands
 The repository includes 20 task scripts in `scripts/tasks/`:
@@ -137,9 +142,9 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 ### For Code Changes
 1. Install dependencies: `yarn i` (if needed)
 2. Compile packages: `yarn task --task compile`
-3. Run linting: `yarn lint`
-4. Make your changes
-5. Test changes with: `cd code && yarn storybook:ui`
+3. Make your changes
+4. Compile packages with `cd code && yarn task --task compile`
+5. Test changes with: `cd code && yarn storybook:ui:build`
 6. Run relevant tests: `cd code && yarn test`
 
 ### For Testing UI Changes
@@ -147,11 +152,12 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 2. If sandbox generation fails, use Storybook UI: `cd code && yarn storybook:ui`
 3. Access at http://localhost:6006/
 
-### For Addon/Framework Development
-1. Navigate to the relevant package in `code/addons/` or `code/frameworks/`
+### For Addon/Framework/Renderers Development
+1. Navigate to the relevant package in `code/addons/`, `code/frameworks/` or `code/renderers/`
 2. Make changes to source files
 3. Rebuild with compilation command
-4. Test in Storybook UI
+4. Generate a sandbox that matches the framework/renderer being worked on
+5. Test with the appropriate test tasks
 
 ## Bash Command Guidelines
 

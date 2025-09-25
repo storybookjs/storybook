@@ -12,7 +12,7 @@
     "pretty-docs": "cd scripts; yarn install >/dev/null; yarn docs:prettier:write",
     "start": "yarn task --task dev --template react-vite/default-ts --start-from=install",
     "svelte-ecosystem-ci:before-test": "node ./scripts/ecosystem-ci/before-test.js svelte-kit/skeleton-ts && cd ./sandbox/svelte-kit-skeleton-ts && yarn install",
-    "svelte-ecosystem-ci:build": "yarn task --task sandbox --template svelte-kit/skeleton-ts --start-from=install --no-link",
+    "svelte-ecosystem-ci:build": "yarn --cwd code build svelte && yarn task --task sandbox --template svelte-kit/skeleton-ts --start-from=install --no-link",
     "svelte-ecosystem-ci:test": "yarn task --task test-runner --template svelte-kit/skeleton-ts --start-from=build --no-link && yarn task --task test-runner --template svelte-kit/skeleton-ts --start-from=build --no-link && yarn task --task vitest-integration --template svelte-kit/skeleton-ts --start-from vitest-integration --no-link",
     "task": "echo 'Installing Script Dependencies...'; cd scripts; yarn install >/dev/null; cd ..; yarn --cwd=./scripts task",
     "test": "cd code; yarn test",

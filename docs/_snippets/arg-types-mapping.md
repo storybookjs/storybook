@@ -197,7 +197,6 @@ import { Example } from './Example';
 
 const meta = preview.meta({
   component: Example,
-
   argTypes: {
     label: {
       control: { type: 'select' },

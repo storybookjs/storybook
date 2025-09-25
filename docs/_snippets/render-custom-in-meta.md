@@ -255,7 +255,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   render: (args) => (
     <Alert>
       Alert text

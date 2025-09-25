@@ -130,7 +130,6 @@ import MyForm from './my-form';
 
 const meta = preview.meta({
   component: MyForm,
-
   parameters: {
     nextjs: {
       // 👇 As in the Next.js application, next/navigation only works using App Router

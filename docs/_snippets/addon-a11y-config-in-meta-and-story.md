@@ -576,7 +576,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   parameters: {
     a11y: {
       /*

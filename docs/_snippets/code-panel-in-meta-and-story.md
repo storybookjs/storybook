@@ -448,7 +448,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   parameters: {
     docs: {
       // 👇 Enable Code panel for all stories in this file

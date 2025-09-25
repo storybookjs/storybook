@@ -190,7 +190,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   argTypes: {
     label: { control: 'text' }, // Always shows the control
     advanced: { control: 'boolean' },

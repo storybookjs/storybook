@@ -156,7 +156,6 @@ import { DataTable } from './DataTable';
 
 const meta = preview.meta({
   component: DataTable,
-
   parameters: {
     // 👇 This component's accessibility tests will not fail
     //    Instead, they display warnings in the Storybook UI

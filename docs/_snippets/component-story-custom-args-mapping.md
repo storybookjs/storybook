@@ -314,7 +314,6 @@ const arrows = { ArrowUp, ArrowDown, ArrowLeft, ArrowRight };
 
 const meta = preview.meta({
   component: Button,
-
   argTypes: {
     arrow: {
       options: Object.keys(arrows), // An array of serializable values

@@ -279,7 +279,6 @@ import { LoginForm } from './LoginForm';
 
 const meta = preview.meta({
   component: LoginForm,
-
   args: {
     // 👇 Use `fn` to spy on the onSubmit arg
     onSubmit: fn(),

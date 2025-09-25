@@ -226,7 +226,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   globals: {
     // 👇 Set background value for all component stories
     backgrounds: { value: 'gray', grid: false },

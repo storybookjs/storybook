@@ -190,7 +190,6 @@ import { YourComponent } from './YourComponent';
 
 const meta = preview.meta({
   component: YourComponent,
-
   argTypes: {
     // foo is the property we want to remove from the UI
     foo: {

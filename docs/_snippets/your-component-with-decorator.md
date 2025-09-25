@@ -208,7 +208,6 @@ import { YourComponent } from './YourComponent';
 
 const meta = preview.meta({
   component: YourComponent,
-
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>

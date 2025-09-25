@@ -191,7 +191,6 @@ import { MyComponent } from './MyComponent';
 const meta = preview.meta({
   component: MyComponent,
   tags: ['autodocs'],
-
   parameters: {
     docs: {
       toc: {

@@ -165,7 +165,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   parameters: {
     docs: {
       controls: { exclude: ['style'] },

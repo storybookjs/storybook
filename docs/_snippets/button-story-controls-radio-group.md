@@ -170,7 +170,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   argTypes: {
     variant: {
       options: ['primary', 'secondary'],

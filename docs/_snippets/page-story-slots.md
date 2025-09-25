@@ -297,7 +297,6 @@ import { Page } from './Page';
 
 const meta = preview.meta({
   component: Page,
-
   render: ({ footer, ...args }) => (
     <Page {...args}>
       <footer>{footer}</footer>

@@ -280,7 +280,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   decorators: [
     (Story) => (
       <div style={{ margin: '3em' }}>

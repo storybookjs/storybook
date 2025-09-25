@@ -403,9 +403,7 @@ const meta = preview.meta({
    * to learn how to generate automatic titles
    */
   title: 'Button',
-
   component: Button,
-
   //👇 Creates specific parameters for the story
   parameters: {
     myAddon: {

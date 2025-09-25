@@ -380,7 +380,6 @@ import { Example } from './Example';
 
 const meta = preview.meta({
   component: Example,
-
   argTypes: {
     parent: { control: 'select', options: ['one', 'two', 'three'] },
 

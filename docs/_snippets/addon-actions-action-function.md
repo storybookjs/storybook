@@ -172,7 +172,6 @@ import Button from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   args: {
     // 👇 Create an action that appears when the onClick event is fired
     onClick: action('on-click'),

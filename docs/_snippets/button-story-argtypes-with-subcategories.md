@@ -281,7 +281,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   argTypes: {
     // Assigns the argTypes to the Colors category
     backgroundColor: {

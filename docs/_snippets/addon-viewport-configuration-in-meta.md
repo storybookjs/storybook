@@ -263,7 +263,6 @@ import { MyComponent } from './MyComponent';
 
 const meta = preview.meta({
   component: MyComponent,
-
   parameters: {
     viewport: {
       //👇 Set available viewports for every story in the file

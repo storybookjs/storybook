@@ -171,7 +171,6 @@ import { Example } from './Example';
 
 const meta = preview.meta({
   component: Example,
-
   argTypes: {
     icon: {
       options: ['arrow-up', 'arrow-down', 'loading'],

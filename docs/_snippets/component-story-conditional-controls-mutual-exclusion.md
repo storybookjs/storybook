@@ -220,7 +220,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   argTypes: {
     // Button can be passed a label or an image, not both
     label: {

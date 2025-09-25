@@ -224,7 +224,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   globals: {
     // 👇 Set viewport for all component stories
     viewport: { value: 'tablet', isRotated: false },

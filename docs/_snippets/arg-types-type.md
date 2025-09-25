@@ -140,7 +140,6 @@ import { Example } from './Example';
 
 const meta = preview.meta({
   component: Example,
-
   argTypes: {
     value: { type: 'number' },
   },

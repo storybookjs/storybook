@@ -81,7 +81,6 @@ import { defineMain } from '@storybook/your-framework/node';
 
 export default defineMain({
   stories: [],
-
   addons: [
     // Other Storybook addons
     {

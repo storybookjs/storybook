@@ -72,7 +72,6 @@ const meta = preview.meta({
    * to learn how to generate automatic titles
    */
   title: 'MyComponent',
-
   component: MyComponent,
 });
 ```

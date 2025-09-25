@@ -580,7 +580,6 @@ import { Gizmo } from './Gizmo';
 
 const meta = preview.meta({
   component: Gizmo,
-
   argTypes: {
     canRotate: {
       control: 'boolean',

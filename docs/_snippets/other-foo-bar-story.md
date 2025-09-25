@@ -124,9 +124,7 @@ const meta = preview.meta({
    * to learn how to generate automatic titles
    */
   title: 'OtherFoo/Bar',
-
   component: Foo,
-
   // Or 'foo-bar' if you prefer
   id: 'Foo/Bar',
 });

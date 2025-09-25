@@ -1075,7 +1075,6 @@ const TestData = {
 
 const meta = preview.meta({
   component: DocumentScreen,
-
   decorators: [
     (Story) => (
       <ApolloProvider client={mockedClient}>

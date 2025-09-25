@@ -160,7 +160,6 @@ import { Example } from './Example';
 
 const meta = preview.meta({
   component: Example,
-
   argTypes: {
     actualArgName: {
       name: 'Friendly name',

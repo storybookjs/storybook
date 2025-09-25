@@ -288,7 +288,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   parameters: {
     // 👇 Applies to all stories in this file
     a11y: { test: 'error' },

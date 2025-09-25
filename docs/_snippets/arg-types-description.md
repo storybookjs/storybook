@@ -160,7 +160,6 @@ import { Example } from './Example';
 
 const meta = preview.meta({
   component: Example,
-
   argTypes: {
     value: {
       description: 'The value of the slider',

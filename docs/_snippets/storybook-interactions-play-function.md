@@ -380,7 +380,6 @@ import { Form } from './Form';
 
 const meta = preview.meta({
   component: Form,
-
   args: {
     // 👇 Use `fn` to spy on the onSubmit arg
     onSubmit: fn(),

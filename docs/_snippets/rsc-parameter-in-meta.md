@@ -45,7 +45,6 @@ import MyServerComponent from './MyServerComponent';
 
 const meta = preview.meta({
   component: MyServerComponent,
-
   parameters: {
     react: { rsc: false },
   },

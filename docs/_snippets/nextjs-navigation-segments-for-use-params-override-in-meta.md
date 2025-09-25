@@ -69,7 +69,6 @@ import NavigationBasedComponent from './NavigationBasedComponent';
 
 const meta = preview.meta({
   component: NavigationBasedComponent,
-
   parameters: {
     nextjs: {
       appDirectory: true,

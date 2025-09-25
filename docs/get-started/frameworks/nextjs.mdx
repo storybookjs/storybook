@@ -455,11 +455,11 @@ const preview: Preview = {
 
 [`next/head`](https://nextjs.org/docs/pages/api-reference/components/head) is supported out of the box. You can use it in your stories like you would in your Next.js application. Please keep in mind, that the Head `children` are placed into the head element of the iframe that Storybook uses to render your stories.
 
-## Next.js Styling
+## Next.js styling
 
 ### Sass/Scss
 
-[Global Sass/Scss stylesheets](https://nextjs.org/docs/pages/building-your-application/styling/sass) are supported without any additional configuration as well. Just import them into [`.storybook/preview.js|ts`](../../configure/index.mdx#configure-story-rendering)
+[Global Sass/Scss stylesheets](https://nextjs.org/docs/pages/building-your-application/styling/sass) are supported without any additional configuration as well. Just import them into [the preview config file](../../configure/index.mdx#configure-story-rendering)
 
 {/* prettier-ignore-start */}
 
@@ -467,7 +467,7 @@ const preview: Preview = {
 
 {/* prettier-ignore-end */}
 
-This will automatically include any of your [custom Sass configurations](https://nextjs.org/docs/pages/building-your-application/styling/sass#customizing-sass-options) in your `next.config.js` file.
+This will automatically include any of your [custom Sass configurations](https://nextjs.org/docs/pages/building-your-application/styling/sass#customizing-sass-options) in your Next.js config file.
 
 {/* prettier-ignore-start */}
 

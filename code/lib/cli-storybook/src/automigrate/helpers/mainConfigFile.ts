@@ -145,9 +145,9 @@ export const getStorybookData = async ({
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
   logger.debug('Loading main config...');
-  let mainConfig: StorybookConfigRaw;
+  let mainConfig: ConfigFile;
   try {
-    mainConfig = (await loadMainConfig({ configDir, cwd })) as StorybookConfigRaw;
+    mainConfig = await readConfig(mainConfigPath!);
   } catch (err) {
     throw new Error(
       dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`
@@ -160,7 +160,7 @@ export const getStorybookData = async ({
 
   logger.debug('Getting stories paths...');
   const storiesPaths = await getStoriesPathsFromConfig({
-    stories: mainConfig.stories,
+    stories: mainConfig.getFieldValue(['stories'])!,
     configDir,
     workingDir,
   });

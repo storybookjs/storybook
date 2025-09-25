@@ -39,7 +39,8 @@
     "./preview": {
       "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
-    }
+    },
+    "./vite-plugin": "./dist/vite-plugin.js"
   },
   "files": [
     "dist/**/*",

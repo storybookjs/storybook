@@ -18,7 +18,6 @@ addons.register(ADDON_ID, (api) => {
 
   // Handle navigation to stories
   api.on('storybook/navigate-to-story', (storyId: string) => {
-    console.log(storyId);
     api.selectStory(storyId);
   });
 

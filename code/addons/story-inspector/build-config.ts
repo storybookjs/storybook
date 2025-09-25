@@ -23,6 +23,11 @@ const config: BuildEntries = {
         entryPoint: './src/preset.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./vite-plugin'],
+        entryPoint: './src/vite-plugin.ts',
+        dts: false,
+      },
     ],
   },
 };

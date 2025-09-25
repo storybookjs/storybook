@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
@@ -153,7 +153,7 @@ export const AlwaysOpen = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const popover = canvas.getByText('Lorem ipsum dolor sit amet');
+    const popover = screen.getByText('Lorem ipsum dolor sit amet');
     await expect(popover).toBeInTheDocument();
   },
 });
@@ -201,12 +201,12 @@ export const InteractivePopoverKB = meta.story({
     await step('Open popover', async () => {
       trigger.focus();
       await userEvent.keyboard('{Enter}');
-      await expect(canvas.queryByText('Lorem ipsum dolor sit amet')).toBeInTheDocument();
+      await expect(screen.queryByText('Lorem ipsum dolor sit amet')).toBeInTheDocument();
     });
 
     await step('Press Tab to enter popover', async () => {
       await userEvent.tab();
-      const continueButton = await canvas.findByText('Continue');
+      const continueButton = await screen.findByText('Continue');
       await expect(continueButton).toHaveFocus();
     });
 
@@ -234,13 +234,13 @@ export const InteractivePopoverMouse = meta.story({
     await step('Open popover', async () => {
       const trigger = canvas.getByText('Click me!');
       await userEvent.click(trigger);
-      await expect(canvas.queryByText('Lorem ipsum dolor sit amet')).toBeInTheDocument();
+      await expect(screen.queryByText('Lorem ipsum dolor sit amet')).toBeInTheDocument();
     });
 
     await step('Click outside popover to close it', async () => {
       const sibling = canvas.getByText('Sibling Button');
       await userEvent.click(sibling);
-      await expect(canvas.queryByText('Lorem ipsum dolor sit amet')).not.toBeInTheDocument();
+      await expect(screen.queryByText('Lorem ipsum dolor sit amet')).not.toBeInTheDocument();
     });
   },
 });

@@ -9,6 +9,7 @@ import type { Addon_BaseType, Addon_WrapperType } from 'storybook/internal/types
 import { global } from '@storybook/global';
 
 import { Helmet } from 'react-helmet-async';
+import type { TabListState } from 'react-stately';
 import { type Combo, Consumer, addons, merge, types } from 'storybook/manager-api';
 
 import { FramesRenderer } from './FramesRenderer';
@@ -122,7 +123,7 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
             key="tools"
             isShown={customisedShowToolbar}
             tabs={tabs}
-            tabState={tabState}
+            tabState={tabState as TabListState<object>}
             tools={tools}
             toolsExtra={toolsExtra}
           />

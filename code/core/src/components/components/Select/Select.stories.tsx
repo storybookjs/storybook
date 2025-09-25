@@ -6,7 +6,7 @@ import { styled } from 'storybook/internal/theming';
 import { LinuxIcon } from '@storybook/icons';
 
 import type { StoryAnnotations } from 'core/src/types';
-import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { Select } from './Select';
@@ -291,7 +291,7 @@ export const MouseSelectionMulti = meta.story({
   ),
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button', { name: /Animal/ });
+    const selectButton = await waitFor(() => canvas.getByRole('button', { name: /Animal/ }));
     await userEvent.click(selectButton);
 
     const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
@@ -367,7 +367,8 @@ export const KeyboardSelectionSS = meta.story({
 const kbMultiSelectionTest =
   (triggerKey: string, selectKey: string): StoryAnnotations['play'] =>
   async ({ canvasElement, args, step }) => {
-    const selectButton = within(canvasElement).getByRole('button');
+    const canvas = within(canvasElement);
+    const selectButton = await waitFor(() => canvas.getByRole('button', { name: /Animal/ }));
     selectButton.focus();
 
     await step('Open listbox', async () => {
@@ -660,7 +661,7 @@ export const MouseDeselection = meta.story({
   },
   play: async ({ canvasElement, args, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+    const selectButton = await waitFor(() => canvas.getByRole('button', { name: /Animal/ }));
 
     await step('Check initial state', async () => {
       expect(selectButton).toHaveTextContent('2');
@@ -692,7 +693,7 @@ export const KeyboardDeselection = meta.story({
   },
   play: async ({ canvasElement, args, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+    const selectButton = await waitFor(() => canvas.getByRole('button', { name: /Animal/ }));
 
     await step('Check initial state', async () => {
       expect(selectButton).toHaveTextContent('2');
@@ -750,7 +751,7 @@ export const OnDeselectHandler = meta.story({
   },
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+    const selectButton = await waitFor(() => canvas.getByRole('button', { name: /Animal/ }));
     await userEvent.click(selectButton);
 
     const tadpoleOption = screen.getByRole('option', { name: 'Tadpole' });
@@ -769,7 +770,7 @@ export const OnChangeHandler = meta.story({
   },
   play: async ({ canvasElement, args, step }) => {
     const canvas = within(canvasElement);
-    const selectButton = canvas.getByRole('button');
+    const selectButton = await waitFor(() => canvas.getByRole('button', { name: /Animal/ }));
 
     await step('Open select', async () => {
       await userEvent.click(selectButton);

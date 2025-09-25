@@ -173,11 +173,12 @@ export const ReadyWithResults = meta.story({
       />
     );
   },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole('button', { name: /Rerun accessibility scan/ }));
-    expect(context.handleManual).toHaveBeenCalled();
-  },
+  // https://github.com/storybookjs/storybook/issues/32552
+  // play: async ({ canvasElement }) => {
+  //   const canvas = within(canvasElement);
+  //   await userEvent.click(await canvas.findByRole('button', { name: /Rerun accessibility scan/ }));
+  //   expect(context.handleManual).toHaveBeenCalled();
+  // },
 });
 
 export const ReadyWithResultsDiscrepancyCLIPassedBrowserFailed = meta.story({

@@ -6,7 +6,7 @@ import { Button, type useTabsState } from 'storybook/internal/components';
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
 import { useTab, useTabList } from 'react-aria';
-import type { Node } from 'react-stately';
+import type { Node, TabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
 const StyledTabButton = styled.button<{
@@ -124,7 +124,8 @@ interface TabButtonProps {
 const TabButton: FC<TabButtonProps> = ({ item, state }) => {
   const { key, rendered } = item;
   const tabRef = React.useRef(null);
-  const { tabProps, isDisabled, isPressed, isSelected } = useTab({ key }, state, tabRef);
+  const typedState = state as TabListState<object>;
+  const { tabProps, isDisabled, isPressed, isSelected } = useTab({ key }, typedState, tabRef);
 
   return (
     <StyledTabButton
@@ -148,7 +149,11 @@ export const TabList: FC<TabListProps> = ({ state, ...rest }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const tabListRef = useRef<HTMLDivElement>(null);
-  const { tabListProps } = useTabList({ orientation: 'horizontal' }, state, tabListRef);
+  const { tabListProps } = useTabList(
+    { orientation: 'horizontal' },
+    state as TabListState<object>,
+    tabListRef
+  );
 
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -251,7 +256,7 @@ export const TabList: FC<TabListProps> = ({ state, ...rest }) => {
       )}
       <ScrollContainer ref={scrollContainerRef}>
         <StyledTabList ref={tabListRef} {...tabListProps}>
-          {[...state.collection].map((item) => (
+          {[...(state as TabListState<object>).collection].map((item) => (
             <TabButton key={item.key} item={item} state={state} />
           ))}
         </StyledTabList>

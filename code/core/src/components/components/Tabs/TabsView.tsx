@@ -5,6 +5,7 @@ import { Bar, EmptyTabContent, TabList, TabPanel } from 'storybook/internal/comp
 
 import type { Key } from '@react-types/shared';
 import { Item, useTabListState } from 'react-stately';
+import type { TabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
 export interface TabProps {
@@ -27,7 +28,7 @@ export const useTabsState = ({
   onSelectionChange,
   selected,
   tabs,
-}: useTabsStateProps) => {
+}: useTabsStateProps): unknown => {
   return useTabListState({
     children: tabs.map(({ children: Children, id, 'aria-label': ariaLabel, title: Title }) => (
       <Item key={id} aria-label={ariaLabel} title={typeof Title === 'function' ? <Title /> : Title}>
@@ -113,7 +114,12 @@ export const TabsView: FC<TabsViewProps> = ({
   tools,
   ...props
 }) => {
-  const state = useTabsState({ defaultSelected, onSelectionChange, selected, tabs });
+  const state = useTabsState({
+    defaultSelected,
+    onSelectionChange,
+    selected,
+    tabs,
+  }) as TabListState<object>;
 
   const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
 

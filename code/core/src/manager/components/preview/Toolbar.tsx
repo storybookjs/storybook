@@ -1,16 +1,11 @@
 import React, { useId } from 'react';
 
-import {
-  AbstractToolbar,
-  Button,
-  Separator,
-  TabList,
-  type TabListProps,
-} from 'storybook/internal/components';
+import { AbstractToolbar, Button, Separator, TabList } from 'storybook/internal/components';
 import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
+import type { TabListState } from 'react-stately';
 import {
   type API,
   type Combo,
@@ -76,7 +71,7 @@ export const fullScreenTool: Addon_BaseType = {
 export interface ToolData {
   isShown: boolean;
   tabs: Addon_BaseType[];
-  tabState: TabListProps['state'];
+  tabState: TabListState<object>;
   tools: Addon_BaseType[];
   toolsExtra: Addon_BaseType[];
 }

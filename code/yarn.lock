@@ -25419,59 +25419,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-aria@npm:^3.43.2":
-  version: 3.43.2
-  resolution: "react-aria@npm:3.43.2"
-  dependencies:
-    "@internationalized/string": "npm:^3.2.7"
-    "@react-aria/breadcrumbs": "npm:^3.5.28"
-    "@react-aria/button": "npm:^3.14.1"
-    "@react-aria/calendar": "npm:^3.9.1"
-    "@react-aria/checkbox": "npm:^3.16.1"
-    "@react-aria/color": "npm:^3.1.1"
-    "@react-aria/combobox": "npm:^3.13.2"
-    "@react-aria/datepicker": "npm:^3.15.1"
-    "@react-aria/dialog": "npm:^3.5.30"
-    "@react-aria/disclosure": "npm:^3.0.8"
-    "@react-aria/dnd": "npm:^3.11.2"
-    "@react-aria/focus": "npm:^3.21.1"
-    "@react-aria/gridlist": "npm:^3.14.0"
-    "@react-aria/i18n": "npm:^3.12.12"
-    "@react-aria/interactions": "npm:^3.25.5"
-    "@react-aria/label": "npm:^3.7.21"
-    "@react-aria/landmark": "npm:^3.0.6"
-    "@react-aria/link": "npm:^3.8.5"
-    "@react-aria/listbox": "npm:^3.14.8"
-    "@react-aria/menu": "npm:^3.19.2"
-    "@react-aria/meter": "npm:^3.4.26"
-    "@react-aria/numberfield": "npm:^3.12.1"
-    "@react-aria/overlays": "npm:^3.29.1"
-    "@react-aria/progress": "npm:^3.4.26"
-    "@react-aria/radio": "npm:^3.12.1"
-    "@react-aria/searchfield": "npm:^3.8.8"
-    "@react-aria/select": "npm:^3.16.2"
-    "@react-aria/selection": "npm:^3.25.1"
-    "@react-aria/separator": "npm:^3.4.12"
-    "@react-aria/slider": "npm:^3.8.1"
-    "@react-aria/ssr": "npm:^3.9.10"
-    "@react-aria/switch": "npm:^3.7.7"
-    "@react-aria/table": "npm:^3.17.7"
-    "@react-aria/tabs": "npm:^3.10.7"
-    "@react-aria/tag": "npm:^3.7.1"
-    "@react-aria/textfield": "npm:^3.18.1"
-    "@react-aria/toast": "npm:^3.0.7"
-    "@react-aria/tooltip": "npm:^3.8.7"
-    "@react-aria/tree": "npm:^3.1.3"
-    "@react-aria/utils": "npm:^3.30.1"
-    "@react-aria/visually-hidden": "npm:^3.8.27"
-    "@react-types/shared": "npm:^3.32.0"
-  peerDependencies:
-    react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-    react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
-  checksum: 10c0/4ae525bf805c5192758ee9ba93c0949a257d406d5d4ab04f01ba9a9ae8ce40ec1726b77603e00e4ad2a5503435037dfb67b1dfa1033cba545a122d0b4fc18599
-  languageName: node
-  linkType: hard
-
 "react-colorful@npm:^5.1.2":
   version: 5.6.1
   resolution: "react-colorful@npm:5.6.1"
@@ -27884,13 +27831,11 @@ __metadata:
     prompts: "npm:^2.4.0"
     qrcode.react: "npm:^4.2.0"
     react: "npm:^18.2.0"
-    react-aria: "npm:^3.43.2"
     react-aria-components: "npm:^1.12.1"
     react-dom: "npm:^18.2.0"
     react-helmet-async: "npm:^1.3.0"
     react-inspector: "npm:^6.0.0"
     react-router-dom: "npm:6.15.0"
-    react-stately: "npm:^3.41.0"
     react-syntax-highlighter: "npm:^15.4.5"
     react-textarea-autosize: "npm:^8.3.0"
     react-transition-state: "npm:^2.3.1"

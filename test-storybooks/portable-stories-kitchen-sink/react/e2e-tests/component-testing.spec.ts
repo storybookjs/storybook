@@ -518,7 +518,7 @@ test.describe("component testing", () => {
 
     // Assert - Only one test is running and reported
     await expect(
-      sidebarContextMenu.locator("#testing-module-description")
+      page.locator("#testing-module-description")
     ).toContainText("Ran 1 test", { timeout: 30000 });
     await expect(
       sidebarContextMenu.getByLabel("Component tests passed")
@@ -566,8 +566,7 @@ test.describe("component testing", () => {
     await expect(sidebarContextMenu).not.toBeVisible();
 
     // Assert - Tests are running and errors are reported
-    const errorLink = page.locator(
-      "#storybook-testing-module #testing-module-description a"
+    const errorLink = page.locator("#testing-module-description a"
     );
     await expect(errorLink).toContainText("View full error", {
       timeout: 30000,
@@ -614,7 +613,7 @@ test.describe("component testing", () => {
 
     // Assert - Tests are running and reported
     await expect(
-      sidebarContextMenu.locator("#testing-module-description")
+      page.locator("#testing-module-description")
     ).toContainText("Ran 9 tests", { timeout: 30000 });
     // Assert - Failing test shows as a failed status
     await expect(
@@ -680,7 +679,7 @@ test.describe("component testing", () => {
 
     // Assert - Tests are running and reported
     await expect(
-      sidebarContextMenu.locator("#testing-module-description")
+      page.locator("#testing-module-description")
     ).toContainText("Ran 11 tests", { timeout: 30000 });
     // Assert - 1 failing test shows as a failed status
     await expect(
@@ -747,7 +746,7 @@ test.describe("component testing", () => {
 
     // Arrange - Wait for test to finish and unfocus sidebar context menu
     await expect(
-      sidebarContextMenu.locator("#testing-module-description")
+      page.locator("#testing-module-description")
     ).toContainText("Ran 1 test", { timeout: 30000 });
     await page.click("body");
 

@@ -4,7 +4,7 @@ import React, { useRef } from 'react';
 import { ScrollArea, type useTabsState } from 'storybook/internal/components';
 
 import { useTabPanel } from 'react-aria';
-import type { Node } from 'react-stately';
+import type { Node, TabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
 export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {
@@ -40,14 +40,15 @@ export const TabPanel: FC<TabPanelProps> = ({
   ...rest
 }) => {
   const ref = useRef(null);
-  const { tabPanelProps } = useTabPanel({ id }, state, ref);
+  const typedState = state as TabListState<object>;
+  const { tabPanelProps } = useTabPanel({ id }, typedState, ref);
 
   const childrenToRender = (
-    renderAllChildren ? [...state.collection] : [state.selectedItem]
+    renderAllChildren ? [...typedState.collection] : [typedState.selectedItem]
   ).filter((item): item is Node<object> => !!item);
 
   return childrenToRender.map((item) => {
-    const isSelected = state.selectedKey === item.key;
+    const isSelected = typedState.selectedKey === item.key;
 
     return (
       <Panel

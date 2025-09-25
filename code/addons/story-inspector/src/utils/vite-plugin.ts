@@ -1,4 +1,5 @@
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
+import type { Options } from 'storybook/internal/types';
 
 import { COMPONENT_PATH_ATTRIBUTE } from '../constants';
 
@@ -6,7 +7,7 @@ import { COMPONENT_PATH_ATTRIBUTE } from '../constants';
  * This Vite plugin injects component file path metadata into JSX/TSX elements so they can be
  * identified by the story inspector
  */
-export function componentPathInjectorPlugin(options?: any): any {
+export function componentPathInjectorPlugin(options?: Options): any {
   // Simple filter function instead of using vite's createFilter
   const filter = (id: string) => {
     // Include React/Vue/Svelte component files
@@ -14,7 +15,7 @@ export function componentPathInjectorPlugin(options?: any): any {
     const hasIncludedExt = includeExtensions.some((ext) => id.endsWith(ext));
 
     // Exclude certain patterns
-    const excludePatterns = ['node_modules', '.stories.', '.spec.', '.test.'];
+    const excludePatterns = ['node_modules', '.stories.', '.spec.', '.test.', 'dist', 'build'];
     const isExcluded = excludePatterns.some((pattern) => id.includes(pattern));
 
     return hasIncludedExt && !isExcluded;
@@ -55,52 +56,21 @@ export function componentPathInjectorPlugin(options?: any): any {
 function isComponentFile(code: string): boolean {
   // Look for JSX elements or React imports
   return (
-    code.includes('jsx') ||
-    code.includes('React') ||
-    code.includes('</') ||
-    /export\s+(default\s+)?function\s+[A-Z]/.test(code) ||
-    /export\s+(default\s+)?const\s+[A-Z]/.test(code) ||
-    /export\s+{\s*[A-Z]/.test(code)
+    code.includes('</') &&
+    (code.includes('jsx') ||
+      code.includes('React') ||
+      /export\s+(default\s+)?function\s+[A-Z]/.test(code) ||
+      /export\s+(default\s+)?const\s+[A-Z]/.test(code) ||
+      /export\s+{\s*[A-Z]/.test(code))
   );
 }
 
 /** Inject component path attribute into JSX elements using AST parsing */
 function injectComponentPath(code: string, filePath: string): string {
   // Make file path relative with ./ prefix - similar to how story index calculates paths
-  let normalizedPath: string;
-  const codePattern = '/code/';
-  const codeIndex = filePath.indexOf(codePattern);
-
-  if (codeIndex !== -1) {
-    // Verify this is the "code" directory we want, not just part of another path
-    const afterCode = filePath.substring(codeIndex + codePattern.length);
-    const beforeCode = filePath.substring(0, codeIndex);
-
-    // Should look like a valid Storybook code directory structure
-    const hasValidStructure =
-      /^(?:src|addons|\.storybook|frameworks|lib|core)\//.test(afterCode) ||
-      /storybook/.test(beforeCode.toLowerCase());
-
-    if (hasValidStructure) {
-      normalizedPath = `./${afterCode}`;
-    } else {
-      // If no valid structure, treat as absolute path and make it relative
-      let cleanPath = filePath.replace(/\\/g, '/');
-      if (cleanPath.startsWith('/')) {
-        cleanPath = cleanPath.substring(1);
-      }
-      normalizedPath = cleanPath.startsWith('./') ? cleanPath : `./${cleanPath}`;
-    }
-  } else {
-    // For paths without /code/, make them relative if they don't start with ./
-    let cleanPath = filePath.replace(/\\/g, '/');
-    // Remove leading slash if present to make it relative
-    if (cleanPath.startsWith('/')) {
-      cleanPath = cleanPath.substring(1);
-    }
-    normalizedPath = cleanPath.startsWith('./') ? cleanPath : `./${cleanPath}`;
-  }
-
+  const root = process.cwd();
+  let normalizedPath = filePath.replace(root, '');
+  normalizedPath = normalizedPath.startsWith('./') ? normalizedPath : `.${normalizedPath}`;
   try {
     // Parse the code into an AST
     const ast = babelParse(code);

@@ -12,7 +12,6 @@ import type { Fix } from '../types';
 
 export interface FixFauxEsmRequireRunOptions {
   storybookVersion: string;
-  isConfigTypescript: boolean;
 }
 
 export const fixFauxEsmRequire = {
@@ -27,24 +26,28 @@ export const fixFauxEsmRequire = {
     // Read the raw file content to check for ESM syntax and require usage
     const content = await readFile(mainConfigPath, 'utf-8');
 
+    const isESM = containsESMUsage(mainConfigPath, content);
+    const isWithRequire = containsRequireUsage(content);
+    const isWithBanner = hasRequireBanner(content);
+
+    console.log({ isESM, isWithRequire, isWithBanner });
+
     // Check if the file is ESM format based on content
-    if (!containsESMUsage(mainConfigPath, content)) {
+    if (!isESM) {
       return null;
     }
 
     // Check if the file already has the require banner
-    if (hasRequireBanner(content)) {
+    if (isWithBanner) {
       return null;
     }
 
     // Check if the file contains require usage
-    if (!containsRequireUsage(content)) {
+    if (!isWithRequire) {
       return null;
     }
 
-    const isConfigTypescript = mainConfigPath.endsWith('.ts') || mainConfigPath.endsWith('.tsx');
-
-    return { storybookVersion, isConfigTypescript };
+    return { storybookVersion };
   },
 
   prompt() {

@@ -230,33 +230,21 @@ export const updateMainConfig = async (
 };
 
 /** Check if a file is in ESM format based on its content */
-export function containsESMUsage(filePath: string, content: string): boolean {
-  // Check file extension for ESM indicators
-  const esmExtensions = ['.mjs', '.mts', '.mtsx'];
-  const hasEsmExtension = esmExtensions.some((ext) => filePath.endsWith(ext));
-
-  if (hasEsmExtension) {
-    return true;
-  }
-
+export function containsESMUsage(content: string): boolean {
   // For .js/.ts files, check the content for ESM syntax
-  if (filePath.endsWith('.js') || filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {
-    // Check for ESM syntax indicators (multiline aware)
-    const hasImportStatement =
-      /^\s*import\s+/m.test(content) ||
-      /^\s*import\s*{/m.test(content) ||
-      /^\s*import\s*\(/m.test(content);
-    const hasExportStatement =
-      /^\s*export\s+/m.test(content) ||
-      /^\s*export\s*{/m.test(content) ||
-      /^\s*export\s*default/m.test(content);
-    const hasImportMeta = /import\.meta/.test(content);
+  // Check for ESM syntax indicators (multiline aware)
+  const hasImportStatement =
+    /^\s*import\s+/m.test(content) ||
+    /^\s*import\s*{/m.test(content) ||
+    /^\s*import\s*\(/m.test(content);
+  const hasExportStatement =
+    /^\s*export\s+/m.test(content) ||
+    /^\s*export\s*{/m.test(content) ||
+    /^\s*export\s*default/m.test(content);
+  const hasImportMeta = /import\.meta/.test(content);
 
-    // If any ESM syntax is found, it's likely an ESM file
-    return hasImportStatement || hasExportStatement || hasImportMeta;
-  }
-
-  return false;
+  // If any ESM syntax is found, it's likely an ESM file
+  return hasImportStatement || hasExportStatement || hasImportMeta;
 }
 
 /** Check if the file content contains require usage */

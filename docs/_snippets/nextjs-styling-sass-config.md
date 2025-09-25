@@ -1,4 +1,4 @@
-```js title="next.config.js"
+```js filename="next.config.js" language="js"
 import * as path from 'path';
 
 export default {
@@ -7,4 +7,18 @@ export default {
     includePaths: [path.join(process.cwd(), 'styles')],
   },
 };
+```
+
+```ts filename="next.config.ts" language="ts"
+import * as path from 'path';
+import type { NextConfig } from 'next';
+
+const config: NextConfig = {
+  // Any options here are included in Sass compilation for your stories
+  sassOptions: {
+    includePaths: [path.join(process.cwd(), 'styles')],
+  },
+};
+
+export default config;
 ```

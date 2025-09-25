@@ -20,7 +20,6 @@ import { wrapGetAbsolutePath } from './wrap-getAbsolutePath';
 export * from '../types';
 
 export const allFixes: Fix[] = [
-  wrapGetAbsolutePath,
   eslintPlugin,
   addonMdxGfmRemove,
   addonStorysourceCodePanel,
@@ -36,6 +35,7 @@ export const allFixes: Fix[] = [
   removeEssentials,
   addonA11yParameters,
   removeDocsAutodocs,
+  wrapGetAbsolutePath,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

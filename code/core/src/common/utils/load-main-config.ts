@@ -1,6 +1,7 @@
-import { readFile, writeFile } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { readFile, rm, writeFile } from 'node:fs/promises';
+import { join, parse, relative, resolve } from 'node:path';
 
+import { logger } from 'storybook/internal/node-logger';
 import { MainFileEvaluationError } from 'storybook/internal/server-errors';
 import type { StorybookConfig } from 'storybook/internal/types';
 
@@ -29,19 +30,31 @@ export async function loadMainConfig({
       throw e;
     }
     if (e.message.includes('require is not defined')) {
-      const header = dedent`
-      import { createRequire } from "node:module";
-      import { dirname } from "node:path";
-      import { fileURLToPath } from "node:url";
-
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = dirname(__filename);
-      const require = createRequire(import.meta.url);
-      // end of storybook 10 migration assistant header, you can delete the above code
-    `;
+      logger.info(
+        'loading main config failed, trying a temporary fix, please ensure the main config is valid ESM'
+      );
+      const comment =
+        '// end of storybook 10 migration assistant header, you can delete the above code';
       const content = await readFile(mainPath, 'utf-8');
-      await writeFile(mainPath, [header, content].join('\n\n'));
-      return loadMainConfig({ configDir, cwd });
+
+      if (!content.includes(comment)) {
+        const header = dedent`
+          import { createRequire } from "node:module";
+          import { dirname } from "node:path";
+          import { fileURLToPath } from "node:url";
+    
+          const __filename = fileURLToPath(import.meta.url);
+          const __dirname = dirname(__filename);
+          const require = createRequire(import.meta.url);
+        `;
+
+        const { ext, name, dir } = parse(mainPath);
+        const modifiedMainPath = join(dir, `${name}.tmp.${ext}`);
+        await writeFile(modifiedMainPath, [header, comment, content].join('\n\n'));
+        const out = await importModule(modifiedMainPath);
+        await rm(modifiedMainPath);
+        return out;
+      }
     }
 
     throw new MainFileEvaluationError({

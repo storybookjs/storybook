@@ -1,9 +1,9 @@
 ```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const getAbsolutePath = (packageName) =>
-  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
+  dirname(fileURLToPath(import.meta.resolve(`${packageName}/package.json`)));
 
 export default {
   framework: {
@@ -23,11 +23,11 @@ export default {
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const getAbsolutePath = (packageName: string) =>
-  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
+  dirname(fileURLToPath(import.meta.resolve(`${packageName}/package.json`)));
 
 const config: StorybookConfig = {
   framework: {

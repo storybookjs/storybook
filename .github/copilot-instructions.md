@@ -59,6 +59,14 @@ yarn lint
 # Timeout: Use 300+ seconds for bash commands
 ```
 
+### Type Checking
+```bash
+# Run TypeScript type checking across all packages (run from repository root)
+yarn task --task check
+# Time: Variable, depends on codebase size
+# Timeout: Use 300+ seconds for bash commands
+```
+
 ### Development Server
 ```bash
 # Start Storybook UI development server (run from code/ directory)
@@ -116,7 +124,7 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 - `install` - Dependency installation
 - `publish` - Package publishing
 - `run-registry` - Local npm registry
-- `sandbox` - Sandbox creation (fails due to API limits)
+- `sandbox` - Sandbox creation (may occasionally fail due to environment issues)
 - `serve` - Static serving
 - `smoke-test` - Basic functionality tests
 - `sync-docs` - Documentation synchronization
@@ -125,9 +133,9 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 - `vitest-test` - Vitest integration tests
 
 ### Known Issues
-1. **GitHub API Rate Limiting**: Sandbox creation fails with 403 Forbidden errors due to GitHub API limits in CI environments
+1. **Sandbox Generation Dependencies**: Sandbox creation may occasionally fail due to environment-specific issues (like Yarn version conflicts), but the GitHub API rate limiting has been resolved
    ```bash
-   # This will fail in CI environments:
+   # Sandbox generation now works in CI environments
    yarn task --task sandbox --template react-vite/default-ts
    ```
 
@@ -135,7 +143,7 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 
 3. **Large Build Times**: Most build operations take several minutes - always use appropriate timeouts
 
-4. **Sandbox Generation**: Currently unreliable in CI environments - use Storybook UI for testing changes instead
+4. **Sandbox Generation**: Generally reliable in CI environments, though may occasionally fail due to dependency or environment-specific issues
 
 ## Recommended Development Workflow
 
@@ -148,7 +156,7 @@ The repository includes 20 task scripts in `scripts/tasks/`:
 6. Run relevant tests: `cd code && yarn test`
 
 ### For Testing UI Changes
-1. Generate a sandbox with: `yarn task --task sandbox --template [framework-template]` (may fail due to API limits)
+1. Generate a sandbox with: `yarn task --task sandbox --template [framework-template]` (may occasionally fail due to environment issues)
 2. If sandbox generation fails, use Storybook UI: `cd code && yarn storybook:ui`
 3. Access at http://localhost:6006/
 
@@ -183,13 +191,13 @@ bash(command="cd /path/to/storybook/code && yarn storybook:ui", async=true)
 ## Sandbox Environments
 
 ### Generating New Sandboxes
-Sandboxes are test environments that allow you to test Storybook changes with different framework combinations. **Note**: Sandbox creation currently fails in CI environments due to GitHub API rate limits.
+Sandboxes are test environments that allow you to test Storybook changes with different framework combinations. **Note**: Sandbox creation generally works in CI environments, though may occasionally fail due to dependency or environment-specific issues.
 
 ```bash
 # Generate a new sandbox (run from repository root)
 yarn task --task sandbox --template react-vite/default-ts
 # Creates: sandbox/react-vite-default-ts/
-# Note: This will fail in CI with 403 Forbidden due to GitHub API limits
+# Note: May occasionally fail due to environment-specific issues (e.g., Yarn version conflicts)
 ```
 
 ### Available Framework/Builder Templates
@@ -216,8 +224,8 @@ yarn storybook
 ```
 
 ### Current Limitations
-- **GitHub API Rate Limiting**: Sandbox creation fails with 403 Forbidden errors due to GitHub API limits in CI environments
-- **Workaround**: For testing changes, you may need to work directly with the Storybook UI instead of generating new sandboxes
+- **Environment-Specific Issues**: Sandbox creation may occasionally fail due to dependency conflicts (e.g., Yarn version management), but the GitHub API rate limiting has been resolved
+- **Workaround**: For testing changes when sandbox generation fails, you can work directly with the Storybook UI instead
 - The `code/sandbox/` directory contains internal build artifacts and should not be used for testing
 
 ### Testing Changes Without Sandboxes
@@ -280,7 +288,7 @@ cd code && yarn storybook:vitest
 1. **Build Failures**: Often resolved by running `yarn i` followed by `yarn task --task compile`
 2. **Port Conflicts**: Storybook UI uses port 6006 by default
 3. **Memory Issues**: Large compilation tasks may require increased Node.js memory limits
-4. **API Rate Limits**: Sandbox generation fails in CI - use Storybook UI for testing instead
+4. **Environment-Specific Issues**: Sandbox generation may occasionally fail due to dependency conflicts - use Storybook UI for testing as fallback
 5. **Sandbox Directory Confusion**: Use root `sandbox/` directory for generated sandboxes, not `code/sandbox/`
 
 ### Debug Information

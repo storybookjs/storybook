@@ -260,10 +260,10 @@ export function containsRequireUsage(content: string): boolean {
 }
 
 /** Check if the file already has the require banner */
+export const bannerComment =
+  '// end of storybook 10 migration assistant header, you can delete the above code';
 export function hasRequireBanner(content: string): boolean {
-  const comment =
-    '// end of storybook 10 migration assistant header, you can delete the above code';
-  return content.includes(comment);
+  return content.includes(bannerComment);
 }
 
 /** Generate the require compatibility banner */

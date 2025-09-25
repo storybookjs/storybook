@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dedent } from 'ts-dedent';
 
 import {
+  bannerComment,
   containsESMUsage,
   containsRequireUsage,
   getRequireBanner,
@@ -26,7 +27,7 @@ export const fixFauxEsmRequire = {
     // Read the raw file content to check for ESM syntax and require usage
     const content = await readFile(mainConfigPath, 'utf-8');
 
-    const isESM = containsESMUsage(mainConfigPath, content);
+    const isESM = containsESMUsage(content);
     const isWithRequire = containsRequireUsage(content);
     const isWithBanner = hasRequireBanner(content);
 
@@ -61,8 +62,7 @@ export const fixFauxEsmRequire = {
 
     const content = await readFile(mainConfigPath, 'utf-8');
     const banner = getRequireBanner();
-    const comment =
-      '// end of storybook 10 migration assistant header, delete this if you are not using require';
+    const comment = bannerComment;
 
     const newContent = [banner, comment, content].join('\n\n');
 

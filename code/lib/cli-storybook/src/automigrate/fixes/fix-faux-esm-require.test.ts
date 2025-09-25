@@ -2,12 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  containsESMUsage,
-  containsRequireUsage,
-  getRequireBanner,
-  hasRequireBanner,
-} from '../helpers/mainConfigFile';
+import { bannerComment } from '../helpers/mainConfigFile';
 import { fixFauxEsmRequire } from './fix-faux-esm-require';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
@@ -64,7 +59,7 @@ describe('fix-faux-esm-require', () => {
     it('should return null if file already has require banner', async () => {
       const contentWithBanner = `
         import { createRequire } from "node:module";
-        // end of storybook 10 migration assistant header, you can delete the above code
+        ${bannerComment}
         const config = require('./some-config');
       `;
 
@@ -117,7 +112,6 @@ describe('fix-faux-esm-require', () => {
 
       expect(result).toEqual({
         storybookVersion: '8.0.0',
-        isConfigTypescript: false,
       });
     });
 
@@ -140,7 +134,6 @@ describe('fix-faux-esm-require', () => {
 
       expect(result).toEqual({
         storybookVersion: '8.0.0',
-        isConfigTypescript: true,
       });
     });
   });

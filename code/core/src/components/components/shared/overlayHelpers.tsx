@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { type ButtonHTMLAttributes, type ReactNode, forwardRef, useState } from 'react';
 
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
@@ -54,15 +54,21 @@ const Container = styled.div({
 });
 
 // Story helper
-export const Trigger = styled('button')({
-  width: 120,
-  height: 50,
-  margin: 10,
-  '&:focus-visible': {
-    outline: '2px solid blue',
-    outlineOffset: '2px',
-  },
-});
+interface TriggerProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  children: ReactNode;
+}
+export const Trigger = forwardRef<HTMLButtonElement, TriggerProps>((props, ref) => (
+  <button
+    {...props}
+    ref={ref}
+    style={{
+      width: 120,
+      height: 50,
+      margin: 10,
+    }}
+  />
+));
+Trigger.displayName = 'Trigger';
 
 /**
  * Storybook decorator to help render WithPopover in stories. Internal to Storybook. Use at your own

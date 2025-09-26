@@ -3,7 +3,6 @@ import React from 'react';
 import { Popover, TooltipNote } from 'storybook/internal/components';
 
 import { expect, fn, screen } from 'storybook/test';
-import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
 import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers';
@@ -11,10 +10,6 @@ import { WithTooltip } from './WithTooltip';
 
 const SampleTooltip = () => 'Lorem ipsum dolor sit';
 const SampleTooltipNote = () => <TooltipNote note="This note appears on hover and focus" />;
-
-const MaxWidthPopover = styled(Popover)({
-  maxWidth: 300,
-});
 
 const meta = preview.meta({
   id: 'overlay-WithTooltip',
@@ -123,7 +118,7 @@ export const WithCustomTooltip = meta.story({
 export const WithLongContent = meta.story({
   args: {
     tooltip: (
-      <MaxWidthPopover color="positive" hasChrome padding={8}>
+      <Popover style={{ maxWidth: 300 }} color="positive" hasChrome padding={8}>
         <h3 style={{ margin: '0 0 8px 0' }}>Very Long Tooltip Content</h3>
         <p style={{ margin: '0', fontSize: '12px', lineHeight: '1.4' }}>
           This is a very long tooltip that demonstrates how the tooltip component handles extensive
@@ -131,7 +126,7 @@ export const WithLongContent = meta.story({
           text. The tooltip positioning should also adapt to ensure it remains visible within the
           viewport boundaries.
         </p>
-      </MaxWidthPopover>
+      </Popover>
     ),
     children: <Trigger>Long content</Trigger>,
   },
@@ -140,7 +135,7 @@ export const WithLongContent = meta.story({
 export const WithComplexContent = meta.story({
   args: {
     tooltip: (
-      <MaxWidthPopover color="positive" hasChrome padding={8}>
+      <Popover style={{ maxWidth: 300 }} color="positive" hasChrome padding={8}>
         <h3 style={{ margin: '0 0 8px 0', fontSize: '14px' }}>Complex Tooltip</h3>
         <p style={{ margin: '0 0 8px 0', fontSize: '12px' }}>
           This tooltip contains multiple elements including:
@@ -151,7 +146,7 @@ export const WithComplexContent = meta.story({
           <li>Lists</li>
           <li>And more!</li>
         </ul>
-      </MaxWidthPopover>
+      </Popover>
     ),
     children: <Trigger>Complex content</Trigger>,
   },

@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { type HTMLAttributes, forwardRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
 
@@ -6,7 +6,7 @@ import { CloseIcon } from '@storybook/icons';
 
 import { lighten, styled } from 'storybook/theming';
 
-export interface PopoverProps {
+export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
   /** Content of the popover. */
   children: React.ReactNode;
 

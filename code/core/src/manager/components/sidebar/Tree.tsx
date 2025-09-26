@@ -66,6 +66,7 @@ const CollapseButton = styled(Button)(({ theme }) => ({
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: theme.textMutedColor,
+  padding: '0 8px',
 }));
 
 export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
@@ -297,7 +298,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
         data-nodetype="root"
       >
         <CollapseButton
-          padding="small"
           variant="ghost"
           ariaLabel={isExpanded ? 'Collapse' : 'Expand'}
           data-action="collapse-root"

@@ -4,12 +4,17 @@ import type {
   Args,
   ComponentAnnotations,
   ComposedStoryFn,
+  EachAnnotationsFunction,
+  EachTestFunction,
+  EachTestParam,
   NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
   StoryAnnotations,
   TestFunction,
 } from 'storybook/internal/types';
+
+import { printf } from 'fast-printf';
 
 import {
   combineParameters,
@@ -20,6 +25,10 @@ import {
 } from '../preview-api/index';
 import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils';
 import { getCoreAnnotations } from './core-annotations';
+
+type MatrixParams<T extends EachTestParam[]> = {
+  [K in keyof T]: T[K][];
+};
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
@@ -151,6 +160,32 @@ export interface Story<
     annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
     fn: TestFunction<TRenderer>
   ): void;
+  each<T extends EachTestParam[]>(
+    name: string,
+    parameters: ReadonlyArray<T>,
+    fn: EachTestFunction<T, TRenderer>
+  ): void;
+  each<T extends EachTestParam[]>(
+    name: string,
+    parameters: ReadonlyArray<T>,
+    annotations:
+      | StoryAnnotations<TRenderer, TRenderer['args']>
+      | EachAnnotationsFunction<T, TRenderer, TRenderer['args']>,
+    fn: EachTestFunction<T, TRenderer>
+  ): void;
+  matrix<T extends EachTestParam[]>(
+    name: string,
+    parameters: MatrixParams<T>,
+    fn: EachTestFunction<T, TRenderer>
+  ): void;
+  matrix<T extends EachTestParam[]>(
+    name: string,
+    parameters: MatrixParams<T>,
+    annotations:
+      | StoryAnnotations<TRenderer, TRenderer['args']>
+      | EachAnnotationsFunction<T, TRenderer, TRenderer['args']>,
+    fn: EachTestFunction<T, TRenderer>
+  ): void;
 }
 
 export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
@@ -222,6 +257,59 @@ function defineStory<
       __children.push(test);
 
       return test as unknown as void;
+    },
+    each<T extends EachTestParam[]>(
+      name: string,
+      parameters: ReadonlyArray<T>,
+      overridesOrTestFn:
+        | EachTestFunction<T, TRenderer>
+        | StoryAnnotations<TRenderer, TRenderer['args']>
+        | EachAnnotationsFunction<T, TRenderer, TRenderer['args']>,
+      testFn?: EachTestFunction<T, TRenderer>
+    ): void {
+      parameters.forEach((parameter) => {
+        const testFunction: TestFunction<TRenderer, TRenderer['args']> = (context) =>
+          (testFn ?? (overridesOrTestFn as EachTestFunction<T, TRenderer>))(context, ...parameter);
+        const annotations: StoryAnnotations<TRenderer, TRenderer['args']> =
+          testFn === undefined
+            ? {}
+            : typeof overridesOrTestFn === 'function'
+              ? (overridesOrTestFn as EachAnnotationsFunction<T, TRenderer, TRenderer['args']>)(
+                  ...parameter
+                )
+              : overridesOrTestFn;
+
+        this.test(printf(name, ...parameter), annotations, testFunction);
+      });
+    },
+    matrix<T extends EachTestParam[]>(
+      name: string,
+      parameters: MatrixParams<T>,
+      overridesOrTestFn:
+        | EachTestFunction<T, TRenderer>
+        | StoryAnnotations<TRenderer, TRenderer['args']>
+        | EachAnnotationsFunction<T, TRenderer, TRenderer['args']>,
+      testFn?: EachTestFunction<T, TRenderer>
+    ): void {
+      const combinations = parameters.reduce<T[]>(
+        (acc, param) => acc.flatMap((acc2) => param.map((p) => [...acc2, p] as T)),
+        [[]] as unknown as T[]
+      );
+
+      combinations.forEach((parameter) => {
+        const testFunction: TestFunction<TRenderer, TRenderer['args']> = (context) =>
+          (testFn ?? (overridesOrTestFn as EachTestFunction<T, TRenderer>))(context, ...parameter);
+        const annotations: StoryAnnotations<TRenderer, TRenderer['args']> =
+          testFn === undefined
+            ? {}
+            : typeof overridesOrTestFn === 'function'
+              ? (overridesOrTestFn as EachAnnotationsFunction<T, TRenderer, TRenderer['args']>)(
+                  ...parameter
+                )
+              : overridesOrTestFn;
+
+        this.test(printf(name, ...parameter), annotations, testFunction);
+      });
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(

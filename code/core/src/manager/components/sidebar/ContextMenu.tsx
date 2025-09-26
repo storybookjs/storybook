@@ -35,6 +35,9 @@ const FloatingStatusButton = styled(StatusButton)(({ theme }) => {
     position: 'absolute',
     right: 0,
     zIndex: 1,
+    '&:focus-visible': {
+      outlineOffset: -2,
+    },
   };
 });
 

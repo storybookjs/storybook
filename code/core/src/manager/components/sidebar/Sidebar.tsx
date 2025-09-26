@@ -148,6 +148,7 @@ export const Sidebar = React.memo(function Sidebar({
   const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);
   const dataset = useCombination(index, indexError, previewInitialized, allStatuses, refs);
   const isLoading = !index && !indexError;
+  const hasEntries = Object.keys(indexJson?.entries ?? {}).length > 0;
   const lastViewedProps = useLastViewed(selected);
   const { isMobile } = useLayout();
   const api = useStorybookApi();
@@ -230,6 +231,7 @@ export const Sidebar = React.memo(function Sidebar({
                   selected={selected}
                   isLoading={isLoading}
                   isBrowsing={isBrowsing}
+                  hasEntries={hasEntries}
                 />
                 <SearchResults
                   query={query}

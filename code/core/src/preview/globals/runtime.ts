@@ -25,6 +25,5 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/internal/core-events': CORE_EVENTS,
   'storybook/internal/types': TYPES,
   'storybook/internal/preview-errors': CORE_EVENTS_PREVIEW_ERRORS,
-
   'storybook/internal/preview-api': PREVIEW_API,
 };

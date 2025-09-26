@@ -1,3 +1,13 @@
+## 10.0.0-beta.8
+
+- AutoMigration: Fix sb10 migration when main config contains `require` - [#32558](https://github.com/storybookjs/storybook/pull/32558), thanks @ndelangen!
+- Cleanup: Remove duplicated entrypoints in core - [#32507](https://github.com/storybookjs/storybook/pull/32507), thanks @ndelangen!
+- Controls: Fix adding new values to arrays - [#32512](https://github.com/storybookjs/storybook/pull/32512), thanks @takashi-kasajima!
+- Core: Use `exsolve` `resolveModulePath` for `safeResolveModule` - [#32477](https://github.com/storybookjs/storybook/pull/32477), thanks @mrginglymus!
+- Next.js: Remove next/config usage in Next.js >=v16 projects - [#32547](https://github.com/storybookjs/storybook/pull/32547), thanks @valentinpalkovic!
+- Svelte: Ignore inherited `HTMLAttributes` when using utility types on `svelte/elements` in docgen - [#32173](https://github.com/storybookjs/storybook/pull/32173), thanks @steciuk!
+- UI: Improve sidebar empty state - [#32548](https://github.com/storybookjs/storybook/pull/32548), thanks @ghengeveld!
+
 ## 10.0.0-beta.7
 
 - Addon A11y: Prevent setting highlights for old results - [#32178](https://github.com/storybookjs/storybook/pull/32178), thanks @ghengeveld!

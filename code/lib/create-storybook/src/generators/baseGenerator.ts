@@ -399,7 +399,7 @@ export async function baseGenerator(
   if (addMainFile) {
     const prefixes = shouldApplyRequireWrapperOnPackageNames
       ? [
-          'import { join, dirname } from "path"',
+          'import { dirname } from "path"',
           'import { fileURLToPath } from "url"',
           language === SupportedLanguage.JAVASCRIPT
             ? dedent`/**
@@ -407,14 +407,14 @@ export async function baseGenerator(
             * It is needed in projects that use Yarn PnP or are set up within a monorepo.
             */
             function getAbsolutePath(value) {
-              return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))))
+              return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)))
             }`
             : dedent`/**
           * This function is used to resolve the absolute path of a package.
           * It is needed in projects that use Yarn PnP or are set up within a monorepo.
           */
           function getAbsolutePath(value: string): any {
-            return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))))
+            return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)))
           }`,
         ]
       : [];

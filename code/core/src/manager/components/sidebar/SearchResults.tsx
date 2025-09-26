@@ -15,6 +15,7 @@ import { styled } from 'storybook/theming';
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { statusMapping } from '../../utils/status';
 import { UseSymbol } from './IconSymbols';
+import { NoResults } from './NoResults';
 import { StatusLabel } from './StatusButton';
 import { TypeIcon } from './TreeNode';
 import type { DownshiftItem, Match, SearchResult } from './types';
@@ -62,18 +63,6 @@ const ResultRowContent = styled.div({
   display: 'flex',
   flexDirection: 'column',
 });
-
-const NoResults = styled.div(({ theme }) => ({
-  marginTop: 20,
-  textAlign: 'center',
-  fontSize: `${theme.typography.size.s2}px`,
-  lineHeight: `18px`,
-  color: theme.color.defaultText,
-  small: {
-    color: theme.textMutedColor,
-    fontSize: `${theme.typography.size.s1}px`,
-  },
-}));
 
 const Mark = styled.mark(({ theme }) => ({
   background: 'transparent',
@@ -312,7 +301,6 @@ export const SearchResults: FC<{
         <li>
           <NoResults>
             <strong>No components found</strong>
-            <br />
             <small>Find components by name or path.</small>
           </NoResults>
         </li>

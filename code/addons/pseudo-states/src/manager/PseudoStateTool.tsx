@@ -1,11 +1,11 @@
 import React, { type ComponentProps, useCallback } from 'react';
 
 import { Form, IconButton, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { color, styled } from 'storybook/internal/theming';
 
 import { ButtonIcon, RefreshIcon } from '@storybook/icons';
 
 import { useGlobals } from 'storybook/manager-api';
+import { color, styled } from 'storybook/theming';
 
 import { PARAM_KEY, PSEUDO_STATES } from '../constants';
 

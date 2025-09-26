@@ -173,7 +173,7 @@ test.describe('test function', () => {
     const welcome = sbPage.previewRoot().locator('button');
     await expect(welcome).toContainText('Arg from story', { timeout: 50000 });
 
-    const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
+    const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
     await expect(interactionsTab).toContainText(/(\d)/);
     await expect(interactionsTab).toBeVisible();
 

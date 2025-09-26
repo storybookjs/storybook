@@ -11,16 +11,7 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
   writeFile: vi.fn(),
 }));
 
-vi.mock('storybook/internal/csf-tools', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/csf-tools')>()),
-  readConfig: vi.fn(),
-}));
-
 describe('fix-faux-esm-require', () => {
-  const mockPackageManager = {
-    isStorybookInMonorepo: vi.fn(() => false),
-  } as any;
-
   const mockReadFile = vi.mocked(readFile);
   const mockWriteFile = vi.mocked(writeFile);
 
@@ -31,8 +22,6 @@ describe('fix-faux-esm-require', () => {
   describe('check', () => {
     it('should return null if no mainConfigPath', async () => {
       const result = await fixFauxEsmRequire.check({
-        packageManager: mockPackageManager,
-        storybookVersion: '8.0.0',
         mainConfigPath: undefined,
       } as any);
 
@@ -48,8 +37,6 @@ describe('fix-faux-esm-require', () => {
       mockReadFile.mockResolvedValue(contentWithoutESM);
 
       const result = await fixFauxEsmRequire.check({
-        packageManager: mockPackageManager,
-        storybookVersion: '8.0.0',
         mainConfigPath: 'main.js',
       } as any);
 
@@ -66,8 +53,6 @@ describe('fix-faux-esm-require', () => {
       mockReadFile.mockResolvedValue(contentWithBanner);
 
       const result = await fixFauxEsmRequire.check({
-        packageManager: mockPackageManager,
-        storybookVersion: '8.0.0',
         mainConfigPath: 'main.js',
       } as any);
 
@@ -85,15 +70,13 @@ describe('fix-faux-esm-require', () => {
       mockReadFile.mockResolvedValue(contentWithoutRequire);
 
       const result = await fixFauxEsmRequire.check({
-        packageManager: mockPackageManager,
-        storybookVersion: '8.0.0',
         mainConfigPath: 'main.js',
       } as any);
 
       expect(result).toBeNull();
     });
 
-    it('should return options if file is ESM with require usage', async () => {
+    it('should return true if file is ESM with require usage', async () => {
       const contentWithRequire = `
         import { addons } from '@storybook/addon-essentials';
         const config = require('./some-config');
@@ -105,14 +88,10 @@ describe('fix-faux-esm-require', () => {
       mockReadFile.mockResolvedValue(contentWithRequire);
 
       const result = await fixFauxEsmRequire.check({
-        packageManager: mockPackageManager,
-        storybookVersion: '8.0.0',
         mainConfigPath: 'main.js',
       } as any);
 
-      expect(result).toEqual({
-        storybookVersion: '8.0.0',
-      });
+      expect(result).toBe(true);
     });
 
     it('should detect TypeScript config files', async () => {
@@ -127,14 +106,10 @@ describe('fix-faux-esm-require', () => {
       mockReadFile.mockResolvedValue(contentWithRequire);
 
       const result = await fixFauxEsmRequire.check({
-        packageManager: mockPackageManager,
-        storybookVersion: '8.0.0',
         mainConfigPath: 'main.ts',
       } as any);
 
-      expect(result).toEqual({
-        storybookVersion: '8.0.0',
-      });
+      expect(result).toBe(true);
     });
   });
 

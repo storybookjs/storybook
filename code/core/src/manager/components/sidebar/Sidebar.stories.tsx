@@ -76,6 +76,7 @@ const meta = {
           title: 'dummy',
           importPath: './dummy.stories.js',
           type: 'story',
+          subtype: 'story',
           tags: ['A', 'B', 'C', 'dev'],
         },
       },

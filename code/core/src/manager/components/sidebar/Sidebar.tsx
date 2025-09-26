@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 
 import { Button, ScrollArea, Spaced } from 'storybook/internal/components';
-import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
+import type { API_LoadedRefData, StoryIndex, TagsOptions } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -142,6 +142,16 @@ export const Sidebar = React.memo(function Sidebar({
   const { isMobile } = useLayout();
   const api = useStorybookApi();
 
+  const tagPresets = useMemo(
+    () =>
+      Object.entries(global.TAGS_OPTIONS ?? {}).reduce((acc, entry) => {
+        const [tag, option] = entry;
+        acc[tag] = option;
+        return acc;
+      }, {} as TagsOptions),
+    []
+  );
+
   return (
     <Container className="container sidebar-container" aria-label="Global">
       <ScrollArea vertical offset={3} scrollbarSize={6}>
@@ -180,7 +190,12 @@ export const Sidebar = React.memo(function Sidebar({
             }
             searchFieldContent={
               indexJson && (
-                <TagsFilter api={api} indexJson={indexJson} isDevelopment={isDevelopment} />
+                <TagsFilter
+                  api={api}
+                  indexJson={indexJson}
+                  isDevelopment={isDevelopment}
+                  tagPresets={tagPresets}
+                />
               )
             }
             {...lastViewedProps}

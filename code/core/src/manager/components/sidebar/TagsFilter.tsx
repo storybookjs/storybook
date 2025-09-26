@@ -1,18 +1,31 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { Badge, Button, WithPopover } from 'storybook/internal/components';
-import type { StoryIndex, Tag } from 'storybook/internal/types';
+import type {
+  API_PreparedIndexEntry,
+  StoryIndex,
+  Tag,
+  TagsOptions,
+} from 'storybook/internal/types';
 
-import { FilterIcon } from '@storybook/icons';
+import { BeakerIcon, DocumentIcon, FilterIcon, PlayHollowIcon } from '@storybook/icons';
 
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { color, styled } from 'storybook/theming';
 
-import { TagsFilterPanel } from './TagsFilterPanel';
+import { type Filter, type FilterFunction, TagsFilterPanel, groupByType } from './TagsFilterPanel';
 
 const TAGS_FILTER = 'tags-filter';
 
-const BUILT_IN_TAGS_HIDE = new Set(['dev', 'autodocs', 'test', 'attached-mdx', 'unattached-mdx']);
+const BUILT_IN_TAGS = new Set([
+  'dev',
+  'test',
+  'autodocs',
+  'attached-mdx',
+  'unattached-mdx',
+  'play-fn',
+  'test-fn',
+]);
 
 // Temporary to prevent regressions until TagFilterPanel can be refactored.
 const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
@@ -43,60 +56,145 @@ const TagSelected = styled(Badge)(({ theme }) => ({
 export interface TagsFilterProps {
   api: API;
   indexJson: StoryIndex;
-  initialSelectedTags?: Tag[];
   isDevelopment: boolean;
+  tagPresets: TagsOptions;
 }
 
-export const TagsFilter = ({
-  api,
-  indexJson,
-  initialSelectedTags = [],
-  isDevelopment,
-}: TagsFilterProps) => {
-  const [selectedTags, setSelectedTags] = useState(initialSelectedTags);
+export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
+  const filtersById = useMemo<{ [id: string]: Filter }>(() => {
+    const userTagsCounts = Object.values(indexJson.entries).reduce((acc, entry) => {
+      entry.tags?.forEach((tag: Tag) => {
+        if (!BUILT_IN_TAGS.has(tag)) {
+          acc.set(tag, (acc.get(tag) || 0) + 1);
+        }
+      });
+      return acc;
+    }, new Map<Tag, number>());
+
+    const userFilters = Object.fromEntries(
+      userTagsCounts.entries().map(([tag, count]) => {
+        const filterFn = (entry: API_PreparedIndexEntry, excluded?: boolean) =>
+          excluded ? !entry.tags?.includes(tag) : !!entry.tags?.includes(tag);
+        return [tag, { id: tag, type: 'tag', title: tag, count, filterFn }];
+      })
+    );
+
+    const withCount = (filterFn: FilterFunction) => ({
+      count: Object.values(indexJson.entries).filter((entry) => filterFn(entry)).length,
+      filterFn,
+    });
+
+    const builtInFilters = {
+      _docs: {
+        id: '_docs',
+        type: 'built-in',
+        title: 'Documentation',
+        icon: <DocumentIcon color={color.gold} />,
+        ...withCount((entry: API_PreparedIndexEntry, excluded?: boolean) =>
+          excluded ? entry.type !== 'docs' : entry.type === 'docs'
+        ),
+      },
+      _play: {
+        id: '_play',
+        type: 'built-in',
+        title: 'Play',
+        icon: <PlayHollowIcon color={color.seafoam} />,
+        ...withCount((entry: API_PreparedIndexEntry, excluded?: boolean) =>
+          excluded
+            ? entry.type !== 'story' || !entry.tags?.includes('play-fn')
+            : entry.type === 'story' && !!entry.tags?.includes('play-fn')
+        ),
+      },
+      _test: {
+        id: '_test',
+        type: 'built-in',
+        title: 'Testing',
+        icon: <BeakerIcon color={color.green} />,
+        ...withCount((entry: API_PreparedIndexEntry, excluded?: boolean) =>
+          excluded
+            ? entry.type !== 'story' || entry.subtype !== 'test'
+            : entry.type === 'story' && entry.subtype === 'test'
+        ),
+      },
+    };
+
+    return { ...userFilters, ...builtInFilters };
+  }, [indexJson.entries]);
+
+  const { defaultIncluded, defaultExcluded } = useMemo(() => {
+    return Object.entries(tagPresets).reduce(
+      (acc, [tag, { defaultFilterSelection }]) => {
+        if (defaultFilterSelection === 'include') {
+          acc.defaultIncluded.add(tag);
+        } else if (defaultFilterSelection === 'exclude') {
+          acc.defaultExcluded.add(tag);
+        }
+        return acc;
+      },
+      { defaultIncluded: new Set<string>(), defaultExcluded: new Set<string>() }
+    );
+  }, [tagPresets]);
+
+  const [includedFilters, setIncludedFilters] = useState(new Set(defaultIncluded));
+  const [excludedFilters, setExcludedFilters] = useState(new Set(defaultExcluded));
   const [expanded, setExpanded] = useState(false);
-  const [inverted, setInverted] = useState(false);
-  const tagsActive = selectedTags.length > 0;
+  const tagsActive = includedFilters.size > 0 || excludedFilters.size > 0;
+
+  const resetFilters = useCallback(() => {
+    setIncludedFilters(new Set(defaultIncluded));
+    setExcludedFilters(new Set(defaultExcluded));
+  }, [defaultIncluded, defaultExcluded]);
+
+  useEffect(resetFilters, [resetFilters]);
 
   useEffect(() => {
     api.experimental_setFilter(TAGS_FILTER, (item) => {
-      if (selectedTags.length === 0) {
-        return true;
-      }
-      const match = selectedTags.some((tag) => item.tags?.includes(tag));
-      return inverted ? !match : match;
-    });
-  }, [api, selectedTags, inverted]);
+      const included = Object.values(
+        groupByType(Array.from(includedFilters).map((id) => filtersById[id]))
+      );
+      const excluded = Object.values(
+        groupByType(Array.from(excludedFilters).map((id) => filtersById[id]))
+      );
 
-  const allTags = Object.values(indexJson.entries).reduce((acc, entry) => {
-    entry.tags?.forEach((tag: Tag) => {
-      if (!BUILT_IN_TAGS_HIDE.has(tag)) {
-        acc.set(tag, (acc.get(tag) || 0) + 1);
-      }
+      return (
+        (!included.length ||
+          included.every((group) => group.some(({ filterFn }) => filterFn(item, false)))) &&
+        (!excluded.length ||
+          excluded.every((group) => group.every(({ filterFn }) => filterFn(item, true))))
+      );
     });
-    return acc;
-  }, new Map<Tag, number>());
+  }, [api, includedFilters, excludedFilters, filtersById]);
 
-  const toggleTag = useCallback(
-    (tag: string) => {
-      if (selectedTags.includes(tag)) {
-        setSelectedTags(selectedTags.filter((t) => t !== tag));
+  const toggleFilter = useCallback(
+    (id: string, selected: boolean, excluded?: boolean) => {
+      const set = new Set([id]);
+      if (excluded === true) {
+        setExcludedFilters(excludedFilters.union(set));
+        setIncludedFilters(includedFilters.difference(set));
+      } else if (excluded === false) {
+        setIncludedFilters(includedFilters.union(set));
+        setExcludedFilters(excludedFilters.difference(set));
+      } else if (selected) {
+        setIncludedFilters(includedFilters.union(set));
+        setExcludedFilters(excludedFilters.difference(set));
       } else {
-        setSelectedTags([...selectedTags, tag]);
+        setIncludedFilters(includedFilters.difference(set));
+        setExcludedFilters(excludedFilters.difference(set));
       }
     },
-    [selectedTags, setSelectedTags]
+    [includedFilters, excludedFilters]
   );
-  const setAllTags = useCallback(
+
+  const setAllFilters = useCallback(
     (selected: boolean) => {
       if (selected) {
-        setSelectedTags(Array.from(allTags.keys()));
+        setIncludedFilters(new Set(Object.keys(filtersById)));
       } else {
-        setSelectedTags([]);
-        setInverted(false);
+        setIncludedFilters(new Set());
       }
+      setExcludedFilters(new Set());
     },
-    [allTags, setSelectedTags]
+    [filtersById]
   );
 
   const handleToggleExpand = useCallback(
@@ -108,7 +206,7 @@ export const TagsFilter = ({
   );
 
   // Hide the entire UI if there are no tags and it's a built Storybook
-  if (allTags.size === 0 && !isDevelopment) {
+  if (Object.keys(filtersById).length === 0 && !isDevelopment) {
     return null;
   }
 
@@ -121,13 +219,18 @@ export const TagsFilter = ({
       popover={() => (
         <TagsFilterPanel
           api={api}
-          allTags={allTags}
-          selectedTags={selectedTags}
-          toggleTag={toggleTag}
-          setAllTags={setAllTags}
-          inverted={inverted}
-          setInverted={setInverted}
+          filtersById={filtersById}
+          includedFilters={includedFilters}
+          excludedFilters={excludedFilters}
+          toggleFilter={toggleFilter}
+          setAllFilters={setAllFilters}
+          resetFilters={resetFilters}
           isDevelopment={isDevelopment}
+          isDefaultSelection={
+            includedFilters.symmetricDifference(defaultIncluded).size === 0 &&
+            excludedFilters.symmetricDifference(defaultExcluded).size === 0
+          }
+          hasDefaultSelection={defaultIncluded.size > 0 || defaultExcluded.size > 0}
         />
       )}
     >
@@ -141,7 +244,7 @@ export const TagsFilter = ({
         onClick={handleToggleExpand}
       >
         <FilterIcon />
-        {selectedTags.length > 0 && <TagSelected />}
+        {includedFilters.size + excludedFilters.size > 0 && <TagSelected />}
       </StyledIconButton>
     </WithPopover>
   );

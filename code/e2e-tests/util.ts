@@ -30,10 +30,10 @@ export class SbPage {
   }
 
   /** Visit a story via the URL instead of selecting from the sidebar. */
-  async deepLinkToStory(baseURL: string, title: string, name: 'docs' | string) {
+  async deepLinkToStory(baseURL: string, title: string, name: 'docs' | string, testName?: string) {
     const titleId = toId(title);
     const storyId = toId(name);
-    const storyLinkId = `${titleId}--${storyId}`;
+    const storyLinkId = testName ? `${titleId}--${storyId}:${testName}` : `${titleId}--${storyId}`;
     const viewMode = name === 'docs' ? 'docs' : 'story';
     await this.page.goto(`${baseURL}/?path=/${viewMode}/${storyLinkId}`);
 
@@ -183,6 +183,59 @@ export class SbPage {
     }
   }
 
+  async expandAllSidebarNodes() {
+    await this.page.keyboard.press('Escape');
+    await this.page.keyboard.press(
+      `${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+ArrowDown`
+    );
+  }
+
+  async openTagsFilter() {
+    const tagFiltersButton = this.page.locator('[aria-label="Tag filters"]');
+    // FIXME: we might want to strengthen this locator with an aria-label or testid on the dialog.
+    const tooltip = this.page.locator('[role="dialog"]');
+    const isTooltipVisible = await tooltip.isVisible();
+
+    if (!isTooltipVisible) {
+      await tagFiltersButton.click();
+      await this.expect(tooltip).toBeVisible();
+    }
+
+    return tooltip;
+  }
+
+  async clearTagsFilter() {
+    const tooltip = await this.openTagsFilter();
+    await this.expect(tooltip.locator('#deselect-all')).toBeVisible();
+    await tooltip.locator('#deselect-all').click();
+    return tooltip;
+  }
+
+  async toggleTagFilter(tag: string, toggleExclusion?: boolean) {
+    await this.openTagsFilter();
+
+    if (toggleExclusion) {
+      await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).hover();
+      await this.page.getByLabel(new RegExp(`(Exclude|Include) tag: ${tag}`)).click();
+    } else {
+      await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).click();
+    }
+  }
+
+  async toggleStoryTypeFilter(
+    type: 'Documentation' | 'Play' | 'Testing',
+    toggleExclusion?: boolean
+  ) {
+    await this.openTagsFilter();
+
+    if (toggleExclusion) {
+      await this.page.getByLabel(new RegExp(`filter: ${type}`)).hover();
+      await this.page.getByLabel(new RegExp(`(Exclude|Include) built-in: ${type}`, 'i')).click();
+    } else {
+      await this.page.getByLabel(new RegExp(`(Add|Remove) built-in filter: ${type}`)).click();
+    }
+  }
+
   getCanvasBodyElement() {
     return this.previewIframe().locator('body');
   }
@@ -221,6 +274,16 @@ export const isReactSandbox = (templateName: string) =>
 
 export const hasVitestIntegration =
   !templates[templateName]?.skipTasks?.includes('vitest-integration');
+
+export const checkTemplate = (
+  templateName: string,
+  predicate: (template: (typeof templates)[keyof typeof templates]) => boolean
+) => {
+  return (
+    templates[templateName as keyof typeof templates] &&
+    predicate(templates[templateName as keyof typeof templates])
+  );
+};
 
 export const hasOnboardingFeature = (templateName: string) =>
   ['@storybook/react', '@storybook/vue3', '@storybook/angular'].includes(

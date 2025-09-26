@@ -238,15 +238,19 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               padding="small"
               size="medium"
               variant="ghost"
-              onClick={() =>
+              onClick={() => {
+                let storyIds;
+                if (entry) {
+                  // Don't send underlying child test ids when running on a story
+                  // Vitest Manager already handles running the underlying tests
+                  storyIds =
+                    entry.type === 'story' ? [entry.id] : api.findAllLeafStoryIds(entry.id);
+                }
                 store.send({
                   type: 'TRIGGER_RUN',
-                  payload: {
-                    storyIds: entry ? api.findAllLeafStoryIds(entry.id) : undefined,
-                    triggeredBy: entry ? entry.type : 'global',
-                  },
-                })
-              }
+                  payload: { storyIds, triggeredBy: entry?.type ?? 'global' },
+                });
+              }}
             >
               <PlayHollowIcon />
             </Button>

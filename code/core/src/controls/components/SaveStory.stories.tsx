@@ -36,14 +36,12 @@ export const Creating = {
 } satisfies Story;
 
 export const Created: Story = {
-  play: async ({ context, userEvent }) => {
+  play: async ({ context }) => {
     await Creating.play(context);
-    const event = userEvent.setup({ delay: null });
 
     const dialog = await screen.findByRole('dialog');
     const input = await within(dialog).findByRole('textbox');
-    await event.type(input, 'MyNewStory');
-
+    await fireEvent.change(input, { target: { value: 'MyNewStory' } });
     await fireEvent.submit(dialog.getElementsByTagName('form')[0]);
     await expect(context.args.createStory).toHaveBeenCalledWith('MyNewStory');
   },

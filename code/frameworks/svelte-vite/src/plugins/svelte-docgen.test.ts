@@ -23,6 +23,12 @@ vi.mock('storybook/internal/csf-tools', () => ({
   })),
 }));
 
+vi.mock('storybook/internal/common', () => ({
+  normalizeStories: vi.fn().mockImplementation((stories) => 
+    stories || [{ directory: '.', files: '**/*.stories.*' }]
+  ),
+}));
+
 vi.mock('globby', () => ({
   globby: vi.fn().mockResolvedValue([]),
 }));
@@ -135,7 +141,7 @@ describe('svelteDocgen', () => {
 
   describe('extractSvelteCSFComponentRef', () => {
     // Create a local copy for testing
-    const extractSvelteCSFComponentRef = (content: string, filePath: string): string | null => {
+    const extractSvelteCSFComponentRef = (content: string, filePath: string): { path: string; componentName: string } | null => {
       const defineMetaMatch = content.match(/defineMeta\s*\(\s*\{([^}]+)\}/);
       if (!defineMetaMatch) return null;
 
@@ -150,7 +156,7 @@ describe('svelteDocgen', () => {
       
       if (importMatch) {
         // For testing, just return the import path
-        return importMatch[1];
+        return { path: importMatch[1], componentName };
       }
 
       return null;
@@ -166,7 +172,8 @@ describe('svelteDocgen', () => {
       `;
       
       const result = extractSvelteCSFComponentRef(content, '/test/story.svelte');
-      expect(result).toBe('./Button.svelte');
+      expect(result?.path).toBe('./Button.svelte');
+      expect(result?.componentName).toBe('Button');
     });
 
     it('should extract named import component reference', () => {
@@ -179,7 +186,8 @@ describe('svelteDocgen', () => {
       `;
       
       const result = extractSvelteCSFComponentRef(content, '/test/story.svelte');
-      expect(result).toBe('./components');
+      expect(result?.path).toBe('./components');
+      expect(result?.componentName).toBe('Button');
     });
 
     it('should return null for content without defineMeta', () => {
@@ -211,9 +219,14 @@ describe('svelteDocgen', () => {
       const { globby } = await import('globby');
       vi.mocked(globby).mockResolvedValue([]);
       
-      // We need to extract and test the function, but since it's not exported,
-      // we'll test it through the plugin interface
-      const plugin = await svelteDocgen();
+      const mockOptions = {
+        configDir: '/test',
+        presets: {
+          apply: vi.fn().mockResolvedValue([])
+        }
+      } as any;
+      
+      const plugin = await svelteDocgen(mockOptions);
       expect(plugin).toBeDefined();
       expect(plugin.name).toBe('storybook:svelte-docgen-plugin');
     });
@@ -236,7 +249,14 @@ describe('svelteDocgen', () => {
       const { globby } = await import('globby');
       vi.mocked(globby).mockResolvedValue([storyPath]);
       
-      const plugin = await svelteDocgen();
+      const mockOptions = {
+        configDir: TEST_DIR,
+        presets: {
+          apply: vi.fn().mockResolvedValue([])
+        }
+      } as any;
+      
+      const plugin = await svelteDocgen(mockOptions);
       expect(plugin).toBeDefined();
     });
 
@@ -261,7 +281,14 @@ describe('svelteDocgen', () => {
       const { globby } = await import('globby');
       vi.mocked(globby).mockResolvedValue([storyPath]);
       
-      const plugin = await svelteDocgen();
+      const mockOptions = {
+        configDir: TEST_DIR,
+        presets: {
+          apply: vi.fn().mockResolvedValue([])
+        }
+      } as any;
+      
+      const plugin = await svelteDocgen(mockOptions);
       expect(plugin).toBeDefined();
     });
   });
@@ -301,7 +328,14 @@ describe('svelteDocgen', () => {
       const { globby } = await import('globby');
       vi.mocked(globby).mockResolvedValue([]);
       
-      const plugin = await svelteDocgen();
+      const mockOptions = {
+        configDir: '/test',
+        presets: {
+          apply: vi.fn().mockResolvedValue([])
+        }
+      } as any;
+      
+      const plugin = await svelteDocgen(mockOptions);
       const result = await plugin.transform?.call(
         { parse: vi.fn() } as any,
         'content',
@@ -316,7 +350,14 @@ describe('svelteDocgen', () => {
       const { globby } = await import('globby');
       vi.mocked(globby).mockResolvedValue(['/nonexistent/file.stories.js']);
       
-      const plugin = await svelteDocgen();
+      const mockOptions = {
+        configDir: '/test',
+        presets: {
+          apply: vi.fn().mockResolvedValue([])
+        }
+      } as any;
+      
+      const plugin = await svelteDocgen(mockOptions);
       expect(plugin).toBeDefined();
       expect(plugin.name).toBe('storybook:svelte-docgen-plugin');
     });
@@ -339,7 +380,14 @@ describe('svelteDocgen', () => {
       const { globby } = await import('globby');
       vi.mocked(globby).mockResolvedValue([storyPath]);
       
-      const plugin = await svelteDocgen();
+      const mockOptions = {
+        configDir: TEST_DIR,
+        presets: {
+          apply: vi.fn().mockResolvedValue([])
+        }
+      } as any;
+      
+      const plugin = await svelteDocgen(mockOptions);
       expect(plugin).toBeDefined();
     });
 
@@ -347,7 +395,14 @@ describe('svelteDocgen', () => {
       const { globby } = await import('globby');
       vi.mocked(globby).mockRejectedValue(new Error('Glob error'));
       
-      const plugin = await svelteDocgen();
+      const mockOptions = {
+        configDir: '/test',
+        presets: {
+          apply: vi.fn().mockResolvedValue([])
+        }
+      } as any;
+      
+      const plugin = await svelteDocgen(mockOptions);
       expect(plugin).toBeDefined();
     });
   });

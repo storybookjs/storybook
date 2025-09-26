@@ -7,6 +7,8 @@ import MagicString from 'magic-string';
 import type { JSDocType, SvelteComponentDoc, SvelteDataItem } from 'sveltedoc-parser';
 import type { PluginOption } from 'vite';
 import { loadCsf } from 'storybook/internal/csf-tools';
+import { normalizeStories } from 'storybook/internal/common';
+import type { Options } from 'storybook/internal/types';
 
 import { type Docgen, type Type, createDocgenCache, generateDocgen } from './generateDocgen';
 
@@ -120,23 +122,16 @@ function resolveImportPath(importPath: string, baseFilePath: string): string | n
   let resolvedPath = resolve(baseDir, importPath);
 
   // Try different extensions for the resolved path
-  const extensions = ['.svelte', '.js', '.ts', '.jsx', '.tsx', '.mjs'];
+  const extensions = ['', '.svelte', '.js', '.ts', '.mjs'];
   
-  // Check if the resolved path exists as-is
-  if (existsSync(resolvedPath)) {
-    return resolvedPath;
-  }
-
-  // Try with different extensions
   for (const ext of extensions) {
+    // Check if the path exists with the extension
     const pathWithExt = resolvedPath + ext;
     if (existsSync(pathWithExt)) {
       return pathWithExt;
     }
-  }
-
-  // Try index files in directory
-  for (const ext of extensions) {
+    
+    // Also try index files in directory
     const indexPath = join(resolvedPath, `index${ext}`);
     if (existsSync(indexPath)) {
       return indexPath;
@@ -147,9 +142,9 @@ function resolveImportPath(importPath: string, baseFilePath: string): string | n
 }
 
 /**
- * Extracts component references from Svelte CSF files
+ * Extracts component references from Svelte CSF files and returns both the path and component name
  */
-function extractSvelteCSFComponentRef(content: string, filePath: string): string | null {
+function extractSvelteCSFComponentRef(content: string, filePath: string): { path: string; componentName: string } | null {
   // Parse Svelte CSF format: import { defineMeta } from '@storybook/addon-svelte-csf'
   // Look for defineMeta({ component: Button, ... })
   const defineMetaMatch = content.match(/defineMeta\s*\(\s*\{([^}]+)\}/);
@@ -171,23 +166,26 @@ function extractSvelteCSFComponentRef(content: string, filePath: string): string
   
   if (importMatch) {
     const importPath = importMatch[1];
-    return resolveImportPath(importPath, filePath);
+    const resolvedPath = resolveImportPath(importPath, filePath);
+    if (resolvedPath) {
+      return { path: resolvedPath, componentName };
+    }
   }
 
   return null;
 }
 
 /**
- * Collects component file paths referenced in story files
+ * Collects component file paths referenced in story files using Storybook's configured story patterns
  */
-async function collectReferencedComponents(cwd: string): Promise<Set<string>> {
+async function collectReferencedComponents(options: Options): Promise<Set<string>> {
   const referencedComponents = new Set<string>();
 
-  // Find all story files
-  const storyPatterns = [
-    '**/*.stories.@(js|jsx|ts|tsx|mjs|svelte)',
-    '**/*.story.@(js|jsx|ts|tsx|mjs|svelte)',
-  ];
+  // Get story patterns from Storybook configuration via presets
+  const storySpecifiers = normalizeStories(await options.presets.apply('stories', [], options), {
+    configDir: options.configDir,
+    workingDir: options.configDir,
+  });
 
   let storyFiles: string[] = [];
   
@@ -195,10 +193,13 @@ async function collectReferencedComponents(cwd: string): Promise<Set<string>> {
   // eslint-disable-next-line depend/ban-dependencies
   const { globby } = await import('globby');
   
-  for (const pattern of storyPatterns) {
+  // Use the configured story patterns instead of hardcoded ones
+  for (const { directory, files } of storySpecifiers) {
+    const pattern = join(directory, files);
+    const absolutePattern = isAbsolute(pattern) ? pattern : join(options.configDir, pattern);
+    
     try {
-      const files = await globby(pattern, {
-        cwd,
+      const files = await globby(absolutePattern, {
         ignore: ['**/node_modules/**'],
         absolute: true,
       });
@@ -218,7 +219,10 @@ async function collectReferencedComponents(cwd: string): Promise<Set<string>> {
       if (ext === '.svelte') {
         const componentRef = extractSvelteCSFComponentRef(content, storyFile);
         if (componentRef) {
-          referencedComponents.add(componentRef);
+          referencedComponents.add(componentRef.path);
+          // Follow transitive imports for barrel exports
+          const transitiveComponents = await followTransitiveImports(componentRef.path, componentRef.componentName);
+          transitiveComponents.forEach(comp => referencedComponents.add(comp));
         }
         continue;
       }
@@ -233,8 +237,13 @@ async function collectReferencedComponents(cwd: string): Promise<Set<string>> {
           if (resolvedPath) {
             referencedComponents.add(resolvedPath);
             
+            // Extract component name from the raw component path
+            const componentNameMatch = content.match(/component\s*:\s*([^,\s}]+)/);
+            const componentName = componentNameMatch ? componentNameMatch[1].trim() : undefined;
+            
             // Follow transitive imports for barrel exports
-            await followTransitiveImports(resolvedPath, referencedComponents);
+            const transitiveComponents = await followTransitiveImports(resolvedPath, componentName);
+            transitiveComponents.forEach(comp => referencedComponents.add(comp));
           }
         }
       } catch (e) {
@@ -252,7 +261,8 @@ async function collectReferencedComponents(cwd: string): Promise<Set<string>> {
             const resolvedPath = resolveImportPath(importPath, storyFile);
             if (resolvedPath) {
               referencedComponents.add(resolvedPath);
-              await followTransitiveImports(resolvedPath, referencedComponents);
+              const transitiveComponents = await followTransitiveImports(resolvedPath, componentName);
+              transitiveComponents.forEach(comp => referencedComponents.add(comp));
             }
           }
         }
@@ -266,42 +276,88 @@ async function collectReferencedComponents(cwd: string): Promise<Set<string>> {
 }
 
 /**
- * Follows transitive imports to handle barrel exports
+ * Follows transitive imports to handle barrel exports for a specific component and returns found component paths
  */
-async function followTransitiveImports(filePath: string, referencedComponents: Set<string>) {
+async function followTransitiveImports(filePath: string, componentName?: string): Promise<Set<string>> {
+  const foundComponents = new Set<string>();
+  
   if (!filePath.endsWith('.svelte')) {
     try {
       const content = await readFile(filePath, 'utf-8');
       
-      // Look for re-exports: export { Button } from './Button.svelte'
-      const reExportMatches = content.matchAll(/export\s+\{[^}]*\}\s+from\s+['"]([^'"]+)['"]/g);
-      for (const match of reExportMatches) {
-        const importPath = match[1];
-        const resolvedPath = resolveImportPath(importPath, filePath);
-        if (resolvedPath && resolvedPath.endsWith('.svelte')) {
-          referencedComponents.add(resolvedPath);
+      if (componentName) {
+        // Look for specific named export: export { Button } from './Button.svelte'
+        const namedExportRegex = new RegExp(`export\\s+\\{[^}]*\\b${componentName}\\b[^}]*\\}\\s+from\\s+['"]([^'"]+)['"]`);
+        const namedExportMatch = content.match(namedExportRegex);
+        if (namedExportMatch) {
+          const importPath = namedExportMatch[1];
+          const resolvedPath = resolveImportPath(importPath, filePath);
+          if (resolvedPath) {
+            if (resolvedPath.endsWith('.svelte')) {
+              foundComponents.add(resolvedPath);
+            } else {
+              // Recursively follow barrel exports
+              const nestedComponents = await followTransitiveImports(resolvedPath, componentName);
+              nestedComponents.forEach(comp => foundComponents.add(comp));
+            }
+          }
         }
-      }
-
-      // Look for import/export combinations
-      const importMatches = content.matchAll(/import\s+[^from]+from\s+['"]([^'"]+)['"]/g);
-      for (const match of importMatches) {
-        const importPath = match[1];
-        const resolvedPath = resolveImportPath(importPath, filePath);
-        if (resolvedPath && resolvedPath.endsWith('.svelte')) {
-          referencedComponents.add(resolvedPath);
+        
+        // Look for default export re-export: export { default as Button } from './Button.svelte'
+        const defaultExportRegex = new RegExp(`export\\s+\\{\\s*default\\s+as\\s+${componentName}\\s*\\}\\s+from\\s+['"]([^'"]+)['"]`);
+        const defaultExportMatch = content.match(defaultExportRegex);
+        if (defaultExportMatch) {
+          const importPath = defaultExportMatch[1];
+          const resolvedPath = resolveImportPath(importPath, filePath);
+          if (resolvedPath) {
+            if (resolvedPath.endsWith('.svelte')) {
+              foundComponents.add(resolvedPath);
+            } else {
+              // Recursively follow barrel exports
+              const nestedComponents = await followTransitiveImports(resolvedPath, 'default');
+              nestedComponents.forEach(comp => foundComponents.add(comp));
+            }
+          }
+        }
+        
+        // Look for import/export combinations for specific component
+        const importExportRegex = new RegExp(`import\\s+(?:\\{[^}]*\\b${componentName}\\b[^}]*\\}|${componentName})\\s+from\\s+['"]([^'"]+)['"];?(?:\\s*export\\s+(?:\\{[^}]*\\b${componentName}\\b[^}]*\\}|${componentName}))?`);
+        const importExportMatch = content.match(importExportRegex);
+        if (importExportMatch) {
+          const importPath = importExportMatch[1];
+          const resolvedPath = resolveImportPath(importPath, filePath);
+          if (resolvedPath) {
+            if (resolvedPath.endsWith('.svelte')) {
+              foundComponents.add(resolvedPath);
+            } else {
+              // Recursively follow barrel exports
+              const nestedComponents = await followTransitiveImports(resolvedPath, componentName);
+              nestedComponents.forEach(comp => foundComponents.add(comp));
+            }
+          }
+        }
+      } else {
+        // Fallback: look for all re-exports if no specific component name
+        const reExportMatches = content.matchAll(/export\s+\{[^}]*\}\s+from\s+['"]([^'"]+)['"]/g);
+        for (const match of reExportMatches) {
+          const importPath = match[1];
+          const resolvedPath = resolveImportPath(importPath, filePath);
+          if (resolvedPath && resolvedPath.endsWith('.svelte')) {
+            foundComponents.add(resolvedPath);
+          }
         }
       }
     } catch (e) {
       // Ignore file read errors
     }
   }
+  
+  return foundComponents;
 }
 
-export async function svelteDocgen(): Promise<PluginOption> {
-  const cwd = process.cwd();
+export async function svelteDocgen(options?: Options): Promise<PluginOption> {
   const include = /\.svelte$/;
-  const exclude = /node_modules\/.*/;
+  const exclude = /node_modules\/.*|\.stories?\.(js|jsx|ts|tsx|mjs|svelte)$/;
   const { createFilter } = await import('vite');
 
   const baseFilter = createFilter(include, exclude);
@@ -312,22 +368,53 @@ export async function svelteDocgen(): Promise<PluginOption> {
   // This significantly improves performance by avoiding expensive docgen on unused components.
   let referencedComponents: Set<string> | null = null;
   
+  const refreshReferencedComponents = async () => {
+    if (options) {
+      referencedComponents = await collectReferencedComponents(options);
+    }
+    return referencedComponents || new Set<string>();
+  };
+  
   const getReferencedComponents = async () => {
     if (!referencedComponents) {
-      referencedComponents = await collectReferencedComponents(cwd);
+      return await refreshReferencedComponents();
     }
     return referencedComponents;
   };
 
   return {
     name: 'storybook:svelte-docgen-plugin',
-    async transform(src: string, id: string) {
-      if (id.startsWith('\0') || !baseFilter(id)) {
-        return undefined;
+    
+    async buildStart() {
+      // Initialize component reference collection on build start
+      await refreshReferencedComponents();
+    },
+    
+    async handleHotUpdate(ctx) {
+      // Check if the updated file is a story file or component file
+      const isStoryFile = /\.stories?\.(js|jsx|ts|tsx|mjs|svelte)$/.test(ctx.file);
+      const isComponentFile = /\.svelte$/.test(ctx.file) && !isStoryFile;
+      
+      if (isStoryFile) {
+        // If a story file changed, refresh the component reference list
+        await refreshReferencedComponents();
+      } else if (isComponentFile) {
+        // If a component file changed and it's in our referenced list, allow normal HMR
+        const normalizedPath = resolve(ctx.file);
+        const components = await getReferencedComponents();
+        if (components.has(normalizedPath)) {
+          // Let Vite handle the HMR for referenced components
+          return;
+        }
       }
-
-      // Skip story files themselves
-      if (/\.stories?\.(js|jsx|ts|tsx|mjs|svelte)$/.test(id)) {
+      
+      // For other files, let Vite handle normally
+      return;
+    },
+    
+    async transform(src: string, id: string) {
+      // Skip files with virtual module prefix or files that don't match base filter (includes story files)
+      if (id.startsWith('\0') || !baseFilter(id)) {
         return undefined;
       }
 
@@ -340,7 +427,7 @@ export async function svelteDocgen(): Promise<PluginOption> {
         return undefined;
       }
 
-      const resource = relative(cwd, id);
+      const resource = relative(process.cwd(), id);
 
       // Get props information
       const docgen = generateDocgen(resource, sourceFileCache);

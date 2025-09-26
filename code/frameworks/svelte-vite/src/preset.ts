@@ -12,7 +12,7 @@ export const core: PresetProperty<'core'> = {
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const { plugins = [] } = config;
 
-  plugins.push(await svelteDocgen());
+  plugins.push(await svelteDocgen(options));
 
   await handleSvelteKit(plugins, options);
 

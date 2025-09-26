@@ -224,8 +224,6 @@ const ListItem = forwardRef((props: ListItemProps, ref) => {
     '`ListItem` is deprecated and will be removed in Storybook 11, use `MenuItem` instead.'
   );
 
-  console.log(itemProps);
-
   return (
     <Item ref={ref} {...rest} {...commonProps} {...itemProps}>
       <>

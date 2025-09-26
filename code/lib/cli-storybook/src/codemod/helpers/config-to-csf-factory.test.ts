@@ -242,7 +242,7 @@ describe('preview specific functionality', () => {
       });
     `);
   });
-  it('should work', async () => {
+  it('should wrap definePreview for mixed annotations and default export', async () => {
     await expect(
       transform(dedent`
         export const decorators = [1]
@@ -256,6 +256,63 @@ describe('preview specific functionality', () => {
       export default definePreview({
         decorators: [1],
         parameters: {},
+      });
+    `);
+  });
+
+  it('should wrap definePreview for const defined preview with type annotations', async () => {
+    await expect(
+      transform(dedent`
+        import { type Preview } from '@storybook/react-vite';
+
+        const preview = {
+          decorators: [],
+          
+          parameters: {
+            options: {}
+          }
+        } satisfies Preview;
+
+        export default preview;
+
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { definePreview } from '@storybook/react-vite';
+
+      export default definePreview({
+        decorators: [],
+
+        parameters: {
+          options: {},
+        },
+      });
+    `);
+  });
+
+  it('should wrap definePreview for mixed annotations and default const export', async () => {
+    await expect(
+      transform(dedent`
+        import { type Preview } from '@storybook/react-vite';
+        export const decorators = []
+        const preview = {
+          
+          parameters: {
+            options: {}
+          }
+        } satisfies Preview;
+
+        export default preview;
+
+      `)
+    ).resolves.toMatchInlineSnapshot(`
+      import { definePreview } from '@storybook/react-vite';
+
+      export default definePreview({
+        decorators: [],
+
+        parameters: {
+          options: {},
+        },
       });
     `);
   });

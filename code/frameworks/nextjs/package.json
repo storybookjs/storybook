@@ -66,6 +66,7 @@
       "import": "./dist/export-mocks/cache/index.mjs",
       "require": "./dist/export-mocks/cache/index.js"
     },
+    "./config/preview": "./dist/config/preview.mjs",
     "./headers.mock": {
       "types": "./dist/export-mocks/headers/index.d.ts",
       "import": "./dist/export-mocks/headers/index.mjs",
@@ -204,6 +205,7 @@
     "entries": [
       "./src/image-context.ts",
       "./src/index.ts",
+      "./src/config/preview.ts",
       "./src/preset.ts",
       "./src/node/index.ts",
       "./src/preview.tsx",

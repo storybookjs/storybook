@@ -10,6 +10,7 @@ import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
 import { normalizePostCssConfig } from './find-postcss-config';
 import type { FrameworkOptions } from './types';
+import { isNextVersionGte } from './utils';
 
 export const core: PresetProperty<'core'> = async (config, options) => {
   const framework = await options.presets.apply('framework');
@@ -30,8 +31,16 @@ export const core: PresetProperty<'core'> = async (config, options) => {
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
   const nextDir = dirname(require.resolve('@storybook/nextjs-vite/package.json'));
-  const result = [...entry, join(nextDir, 'dist/preview.mjs')];
-  return result;
+  const annotations = [...entry, join(nextDir, 'dist/preview.mjs')];
+
+  const isNext16orNewer = isNextVersionGte('16.0.0');
+
+  // TODO: Remove this once we only support Next.js v16 and above
+  if (!isNext16orNewer) {
+    annotations.push(join(nextDir, 'dist/config/preview.mjs'));
+  }
+
+  return annotations;
 };
 
 export const optimizeViteDeps = [

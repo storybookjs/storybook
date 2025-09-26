@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from 'storybook/internal/components';
 
 import { action } from 'storybook/actions';
-import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, getByRole, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { Modal } from './Modal';
@@ -391,12 +391,20 @@ export const WithOpenChangeCallback = meta.story({
       </>
     );
   },
-  play: async ({ args, canvasElement }) => {
+  play: async ({ args, canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const trigger = canvas.getByText('Open Modal (with callback)');
 
-    await userEvent.click(trigger);
-    await expect(args.onOpenChange).toHaveBeenCalledWith(true);
+    await step('Open modal and verify callback', async () => {
+      const trigger = canvas.getByText('Open Modal (with callback)');
+      await userEvent.click(trigger);
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+      await expect(args.onOpenChange).toHaveBeenCalledWith(true);
+    });
 
     const closeButton = await screen.findByLabelText('Close modal');
     await userEvent.click(closeButton);
@@ -427,7 +435,12 @@ export const InteractiveKeyboard = meta.story({
     await step('Open modal with Enter key', async () => {
       trigger.focus();
       await userEvent.keyboard('{Enter}');
-      await expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
     });
 
     await step('Navigate through modal content with focus trap', async () => {
@@ -492,7 +505,12 @@ export const InteractiveMouse = meta.story({
     await step('Open modal', async () => {
       const trigger = canvas.getByText('Open Modal (Mouse Test)');
       await userEvent.click(trigger);
-      await expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.queryByText('Sample Modal')).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
     });
 
     await step('Click close button', async () => {

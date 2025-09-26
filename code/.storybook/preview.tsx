@@ -11,7 +11,7 @@ import addonA11y from '@storybook/addon-a11y';
 // TODO add empty preview
 // import * as designs from '@storybook/addon-designs/preview';
 import addonDocs from '@storybook/addon-docs';
-import { DocsContext } from '@storybook/addon-docs/blocks';
+// import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonInspector from '@storybook/addon-story-inspector';
 import addonThemes from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
@@ -143,8 +143,8 @@ const ThemedSetRoot = () => {
 
 const loaders = [
   /**
-   * This loader adds a DocsContext to the story, which is required for the most Blocks to work. A
-   * story will specify which stories they need in the index with:
+   * // * This loader adds a DocsContext to the story, which is required for the most Blocks to
+   * work. A story will specify which stories they need in the index with:
    *
    * ```ts
    * parameters: {
@@ -194,25 +194,26 @@ const loaders = [
 
 const decorators = [
   // This decorator adds the DocsContext created in the loader above
-  (Story, { loaded: { docsContext } }) =>
-    docsContext ? (
-      <DocsContext.Provider value={docsContext}>
-        <Story />
-      </DocsContext.Provider>
-    ) : (
-      <Story />
-    ),
+  // (Story, { loaded: { docsContext } }) =>
+  //   docsContext ? (
+  //     <DocsContext.Provider value={docsContext}>
+  //       <Story />
+  //     </DocsContext.Provider>
+  //   ) : (
+  //     <Story />
+  //   ),
   /**
    * This decorator adds wrappers that contains global styles for stories to be targeted by.
    * Activated with parameters.docsStyles = true
-   */ (Story, { parameters: { docsStyles } }) =>
-    docsStyles ? (
-      <DocsPageWrapper>
-        <Story />
-      </DocsPageWrapper>
-    ) : (
-      <Story />
-    ),
+   */
+  // (Story, { parameters: { docsStyles } }) =>
+  //   docsStyles ? (
+  //     <DocsPageWrapper>
+  //       <Story />
+  //     </DocsPageWrapper>
+  //   ) : (
+  //     <Story />
+  //   ),
   /**
    * This decorator renders the stories side-by-side, stacked or default based on the theme switcher
    * in the toolbar

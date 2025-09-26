@@ -1,3 +1,7 @@
+## 9.1.9
+
+- Svelte: Ignore inherited `HTMLAttributes` when using utility types on `svelte/elements` in docgen - [#32173](https://github.com/storybookjs/storybook/pull/32173), thanks @steciuk!
+
 ## 9.1.8
 
 - PreactVite: Add `node` entry point - [#32534](https://github.com/storybookjs/storybook/pull/32534), thanks @ndelangen!

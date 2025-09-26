@@ -60,22 +60,13 @@ const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
   marginBottom: 20,
 }));
 
-const CollapseButton = styled.button({
-  all: 'unset',
-  display: 'flex',
-  padding: '0px 8px',
-  borderRadius: 4,
-  transition: 'color 150ms, box-shadow 150ms',
-  gap: 6,
-  alignItems: 'center',
-  cursor: 'pointer',
-  height: 28,
-
-  '&:hover, &:focus': {
-    outline: 'none',
-    background: 'var(--tree-node-background-hover)',
-  },
-});
+const CollapseButton = styled(Button)(({ theme }) => ({
+  fontSize: `${theme.typography.size.s1 - 1}px`,
+  fontWeight: theme.typography.weight.bold,
+  letterSpacing: '0.16em',
+  textTransform: 'uppercase',
+  color: theme.textMutedColor,
+}));
 
 export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   position: 'relative',
@@ -306,7 +297,9 @@ const Node = React.memo<NodeProps>(function Node(props) {
         data-nodetype="root"
       >
         <CollapseButton
-          type="button"
+          padding="small"
+          variant="ghost"
+          ariaLabel={isExpanded ? 'Collapse' : 'Expand'}
           data-action="collapse-root"
           onClick={(event) => {
             event.preventDefault();
@@ -322,7 +315,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
             padding="small"
             variant="ghost"
             className="sidebar-subheading-action"
-            ariaLabel={isFullyExpanded ? 'Collapse' : 'Expand'}
+            ariaLabel={isFullyExpanded ? 'Collapse all' : 'Expand all'}
             data-action="expand-all"
             data-expanded={isFullyExpanded}
             onClick={(event) => {

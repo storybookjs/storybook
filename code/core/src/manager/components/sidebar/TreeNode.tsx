@@ -80,13 +80,6 @@ export const RootNode = styled.div(({ theme }) => ({
   justifyContent: 'space-between',
   marginTop: 16,
   marginBottom: 4,
-  fontSize: `${theme.typography.size.s1 - 1}px`,
-  fontWeight: theme.typography.weight.bold,
-  lineHeight: '16px',
-  minHeight: 28,
-  letterSpacing: '0.16em',
-  textTransform: 'uppercase',
-  color: theme.textMutedColor,
 }));
 
 const Wrapper = styled.div({

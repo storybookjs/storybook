@@ -2,7 +2,7 @@
   import Button from './Button.svelte';
   import type { ComponentProps } from 'svelte';
 
-  export let buttonProps: ComponentProps<typeof Button>;
+  let { buttonProps }: { buttonProps: ComponentProps<typeof Button> } = $props();
 </script>
 
 <div>

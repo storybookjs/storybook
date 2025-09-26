@@ -1,31 +1,8 @@
 {
-  "name": "story-inspector",
-  "$schema": "../../../nx.json",
+  "name": "storybook-inspector",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {
-    "prep": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          {
-            "command": "yarn prep",
-            "forwardAllArgs": false
-          }
-        ],
-        "parallel": false
-      }
-    },
-    "check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "commands": [
-          {
-            "command": "yarn check",
-            "forwardAllArgs": false
-          }
-        ],
-        "parallel": false
-      }
-    }
+    "build": {}
   }
 }

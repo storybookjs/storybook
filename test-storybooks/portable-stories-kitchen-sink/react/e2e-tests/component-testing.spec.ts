@@ -667,6 +667,15 @@ test.describe("component testing", () => {
       .click();
     const sidebarContextMenu = page.getByRole('dialog');
     await sidebarContextMenu.getByLabel("Start test run").click();
+      
+
+    // Assert - 1 failing test shows as a failed status
+    await expect(
+      sidebarContextMenu.getByText("2 stories with errors")
+    ).toBeVisible();
+    await expect(
+      sidebarContextMenu.getByLabel("Component tests failed")
+    ).toHaveCount(1);
 
     // HACK: the testing module popover has poor tracking of focus due to how many disabled
     // buttons it has and how deeply it changes its UI on events. This would be solved once
@@ -681,13 +690,11 @@ test.describe("component testing", () => {
     await expect(
       page.locator("#testing-module-description")
     ).toContainText("Ran 11 tests", { timeout: 30000 });
-    // Assert - 1 failing test shows as a failed status
     await expect(
-      sidebarContextMenu.getByText("2 stories with errors")
-    ).toBeVisible();
-    await expect(
-      sidebarContextMenu.getByLabel("Component tests failed")
-    ).toHaveCount(1);
+      page
+        .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
+    ).toHaveCount(4); // 1 visible/expanded story, 1 expanded component, 1 collapsed component, 1 group
+    
 
     await page.click("body");
     await expect(
@@ -697,7 +704,7 @@ test.describe("component testing", () => {
     await expect(
       page
         .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
-    ).toHaveCount(1);
+    ).toHaveCount(4);
   });
 
   test("should run focused tests without coverage, even when enabled", async ({

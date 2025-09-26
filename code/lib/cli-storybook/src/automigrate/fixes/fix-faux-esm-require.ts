@@ -50,7 +50,7 @@ export const fixFauxEsmRequire = {
   },
 
   prompt() {
-    return dedent`We have detected that your main config file is in ESM format but contains 'require' references. This will cause issues in Storybook 10. We'll add a compatibility banner to make it work.`;
+    return dedent`Main config is ESM but uses 'require'. This will break in Storybook 10; Adding compatibility banner`;
   },
 
   async run({ dryRun, mainConfigPath }) {

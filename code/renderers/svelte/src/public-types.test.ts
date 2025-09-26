@@ -202,13 +202,13 @@ describe('Story args can be inferred', () => {
 });
 
 it('mount accepts a Component and props', () => {
-  const Basic: StoryObj<Button> = {
+  const Basic: StoryObj<typeof Button> = {
     async play({ mount }) {
       const canvas = await mount(Button, { props: { label: 'label', disabled: true } });
       expectTypeOf(canvas).toExtend<Canvas>();
     },
   };
-  expectTypeOf(Basic).toExtend<StoryObj<Button>>();
+  expectTypeOf(Basic).toExtend<StoryObj<typeof Button>>();
 });
 
 it('StoryObj can accept args directly', () => {

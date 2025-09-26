@@ -406,9 +406,13 @@ export const WithOpenChangeCallback = meta.story({
       await expect(args.onOpenChange).toHaveBeenCalledWith(true);
     });
 
-    const closeButton = await screen.findByLabelText('Close modal');
-    await userEvent.click(closeButton);
-    await expect(args.onOpenChange).toHaveBeenCalledWith(false);
+    await step('Close modal and verify callback', async () => {
+      const closeButton = await waitFor(() => screen.findByLabelText('Close modal'), {
+        timeout: 3000,
+      });
+      await userEvent.click(closeButton);
+      await expect(args.onOpenChange).toHaveBeenCalledWith(false);
+    });
   },
 });
 

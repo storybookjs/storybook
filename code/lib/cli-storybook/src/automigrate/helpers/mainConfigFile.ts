@@ -257,7 +257,7 @@ export function containsRequireUsage(content: string): boolean {
 
 /** Check if the file already has the require banner */
 export const bannerComment =
-  '// end of storybook 10 migration assistant header, you can delete the above code';
+  '// end of Storybook 10 migration assistant header, You can delete the above code';
 export function hasRequireBanner(content: string): boolean {
   return content.includes(bannerComment);
 }

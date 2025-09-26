@@ -31,10 +31,10 @@ export async function loadMainConfig({
     }
     if (e.message.includes('require is not defined')) {
       logger.info(
-        'loading main config failed, trying a temporary fix, please ensure the main config is valid ESM'
+        'Loading main config failed, trying a temporary fix, Please ensure the main config is valid ESM'
       );
       const comment =
-        '// end of storybook 10 migration assistant header, you can delete the above code';
+        '// end of Storybook 10 migration assistant header, you can delete the above code';
       const content = await readFile(mainPath, 'utf-8');
 
       if (!content.includes(comment)) {

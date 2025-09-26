@@ -1,5 +1,11 @@
 import React from 'react';
 
+import type {
+  CreateNewStoryResponsePayload,
+  FileComponentSearchResponsePayload,
+  ResponseData,
+} from 'storybook/internal/core-events';
+
 import { addons, types } from 'storybook/manager-api';
 
 import { StoryInspectorTool } from './components/StoryInspectorTool';
@@ -25,16 +31,9 @@ addons.register(ADDON_ID, (api) => {
     api.openInEditor({ file });
   });
 
+  console.log('manager');
   // Handle create story requests
   api.on(EVENTS.CREATE_STORY_FOR_COMPONENT, async (componentPath: string) => {
-    // Extract component information for the create story modal
-    const componentName =
-      componentPath
-        .split('/')
-        .pop()
-        ?.replace(/\.(tsx?|jsx?)$/, '') || 'Component';
-    const isDefaultExport = true; // Assume default export for now
-
     try {
       // Use the same logic as CreateNewStoryFileModal
       const { experimental_requestResponse, addons: storybookAddons } = await import(
@@ -47,22 +46,70 @@ addons.register(ADDON_ID, (api) => {
         ARGTYPES_INFO_RESPONSE,
         SAVE_STORY_REQUEST,
         SAVE_STORY_RESPONSE,
+        FILE_COMPONENT_SEARCH_REQUEST,
+        FILE_COMPONENT_SEARCH_RESPONSE,
       } = await import('storybook/internal/core-events');
 
       const channel = storybookAddons.getChannel();
 
-      // Create new story file
-      const createNewStoryResult = (await experimental_requestResponse(
-        channel,
-        CREATE_NEW_STORYFILE_REQUEST,
-        CREATE_NEW_STORYFILE_RESPONSE,
-        {
-          componentExportName: componentName,
-          componentFilePath: componentPath,
-          componentIsDefaultExport: isDefaultExport,
-          componentExportCount: 1,
+      // First, search for component information using channel.on/emit pattern
+      const searchId = `search-${Date.now()}`;
+      let componentName =
+        componentPath
+          .split('/')
+          .pop()
+          ?.replace(/\.(tsx?|jsx?)$/, '') || 'Component';
+      let isDefaultExport = true;
+      let exportCount = 1;
+
+      // Search for component information
+      const searchResult: ResponseData<FileComponentSearchResponsePayload> = await new Promise(
+        (resolve) => {
+          const handleSearchResponse = (data: any) => {
+            channel.off(FILE_COMPONENT_SEARCH_RESPONSE, handleSearchResponse);
+            resolve(data);
+          };
+
+          console.log('emitting search');
+          channel.on(FILE_COMPONENT_SEARCH_RESPONSE, handleSearchResponse);
+          channel.emit(FILE_COMPONENT_SEARCH_REQUEST, {
+            id: componentPath.replace('./', ''),
+            payload: {},
+          });
         }
-      )) as any;
+      );
+
+      // Find the component in search results
+      if (searchResult?.success) {
+        const componentFile = searchResult.payload?.files?.find(
+          (file: any) => !!componentPath.match(file.filepath)
+        );
+
+        if (componentFile?.exportedComponents?.length > 0) {
+          // Use the first export found, preferring default exports
+          const defaultExport = componentFile.exportedComponents.find((exp: any) => exp.default);
+          const firstExport = componentFile.exportedComponents[0];
+          const selectedExport = defaultExport || firstExport;
+
+          componentName = selectedExport.name;
+          isDefaultExport = selectedExport.default;
+          exportCount = componentFile.exportedComponents.length;
+        }
+      }
+
+      // Create new story file
+      const createNewStoryResult: CreateNewStoryResponsePayload =
+        await experimental_requestResponse(
+          channel,
+          CREATE_NEW_STORYFILE_REQUEST,
+          CREATE_NEW_STORYFILE_RESPONSE,
+          {
+            componentExportName: componentName,
+            componentFilePath: componentPath,
+            componentIsDefaultExport: isDefaultExport,
+            componentExportCount: exportCount,
+          }
+        );
 
       if (!createNewStoryResult || !createNewStoryResult.storyId) {
         throw new Error('Failed to create new story - no story ID returned');
@@ -155,9 +202,14 @@ addons.register(ADDON_ID, (api) => {
         duration: 5000,
         icon: <span>✅</span>,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle errors
       let errorMessage = 'Failed to create story';
+      const componentName =
+        componentPath
+          .split('/')
+          .pop()
+          ?.replace(/\.(tsx?|jsx?)$/, '') || 'Component';
 
       if (error?.payload?.type === 'STORY_FILE_EXISTS') {
         errorMessage = 'Story already exists';

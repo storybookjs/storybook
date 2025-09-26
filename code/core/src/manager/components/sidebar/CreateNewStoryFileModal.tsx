@@ -98,6 +98,7 @@ export const CreateNewStoryFileModal = ({ open, onOpenChange }: CreateNewStoryFi
     const set = (data: ResponseData<FileComponentSearchResponsePayload>) => {
       const isLatestRequest = data.id === fileSearchQueryDeferred;
 
+      console.log({ data });
       if (isLatestRequest) {
         if (data.success) {
           setSearchResults(data.payload.files);

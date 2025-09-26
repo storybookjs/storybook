@@ -1,4 +1,4 @@
-import React, { type ComponentProps, type ReactNode, type SyntheticEvent } from 'react';
+import React, { type ComponentProps, type ReactNode, type SyntheticEvent, forwardRef } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
@@ -116,7 +116,7 @@ export interface ItemProps {
   onClick?: (event: SyntheticEvent, ...args: any[]) => any;
 }
 
-const Item = styled.div<ItemProps>(
+const Item = styled.button<ItemProps>(
   ({ theme }) => ({
     width: '100%',
     minWidth: 0, // required for overflow
@@ -167,6 +167,7 @@ const Item = styled.div<ItemProps>(
 const getItemProps = memoize(100)(({ onClick, input, href, LinkWrapper }) => ({
   ...(onClick && {
     as: 'button',
+    role: 'button',
     onClick,
   }),
   ...(input && {
@@ -174,6 +175,7 @@ const getItemProps = memoize(100)(({ onClick, input, href, LinkWrapper }) => ({
   }),
   ...(href && {
     as: 'a',
+    role: 'link',
     href,
     ...(LinkWrapper && {
       as: LinkWrapper,
@@ -198,7 +200,7 @@ export interface ListItemProps extends Omit<ComponentProps<typeof Item>, 'title'
   isIndented?: boolean;
 }
 
-const ListItem = (props: ListItemProps) => {
+const ListItem = forwardRef((props: ListItemProps, ref) => {
   const {
     loading = false,
     title = <span>Loading state</span>,
@@ -222,8 +224,10 @@ const ListItem = (props: ListItemProps) => {
     '`ListItem` is deprecated and will be removed in Storybook 11, use `MenuItem` instead.'
   );
 
+  console.log(itemProps);
+
   return (
-    <Item {...rest} {...commonProps} {...itemProps}>
+    <Item ref={ref} {...rest} {...commonProps} {...itemProps}>
       <>
         {left && <Left {...commonProps}>{left}</Left>}
         {title || center ? (
@@ -240,6 +244,7 @@ const ListItem = (props: ListItemProps) => {
       </>
     </Item>
   );
-};
+});
+ListItem.displayName = 'ListItem';
 
 export default ListItem;

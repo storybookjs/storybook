@@ -50,7 +50,7 @@ const Actions = styled.div(({ theme }) => ({
 const TagRow = styled.div({
   display: 'flex',
 
-  '& button': {
+  '& button:last-of-type': {
     width: 64,
     maxWidth: 64,
     marginLeft: 4,
@@ -59,8 +59,8 @@ const TagRow = styled.div({
     fontWeight: 'normal',
     transition: 'all 150ms',
   },
-  '&:not(:hover)': {
-    '& button': {
+  '&:not(:hover):not(:focus-within)': {
+    '& button:last-of-type': {
       marginLeft: 0,
       maxWidth: 0,
       opacity: 0,
@@ -150,7 +150,7 @@ export const TagsFilterPanel = ({
           <WithTooltip delayShow={1000} tooltip={<TooltipNote note={toggleTagLabel} />}>
             <ListItem
               style={{ minWidth: 0, flex: 1 }}
-              as="label"
+              onClick={() => onToggle(!isChecked)}
               icon={
                 <>
                   {isExcluded ? <DeleteIcon /> : isIncluded ? null : icon}
@@ -158,6 +158,8 @@ export const TagsFilterPanel = ({
                     checked={isChecked}
                     onChange={() => onToggle(!isChecked)}
                     data-tag={title}
+                    aria-hidden={true}
+                    tabIndex={-1}
                   />
                 </>
               }

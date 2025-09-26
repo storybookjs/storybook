@@ -113,6 +113,7 @@ const useLayoutSyncingState = ({
     : managerLayoutState;
 
   const customisedNavSize = api.getNavSizeWithCustomisations?.(navSize) ?? navSize;
+  const customisedShowPanel = api.getShowPanelWithCustomisations?.(isPanelShown) ?? isPanelShown;
 
   return {
     navSize: customisedNavSize,
@@ -122,7 +123,7 @@ const useLayoutSyncingState = ({
     panelResizerRef,
     sidebarResizerRef,
     showPages: isPagesShown,
-    showPanel: isPanelShown,
+    showPanel: customisedShowPanel,
     isDragging: internalDraggingSizeState.isDragging,
   };
 };
@@ -219,8 +220,8 @@ const LayoutContainer = styled.div<LayoutState & { showPanel: boolean }>(
         gridTemplateColumns: `minmax(0, ${navSize}px) minmax(${MINIMUM_CONTENT_WIDTH_PX}px, 1fr) minmax(0, ${rightPanelWidth}px)`,
         gridTemplateRows: `1fr minmax(0, ${bottomPanelHeight}px)`,
         gridTemplateAreas: (() => {
-          if (viewMode === 'docs' || !showPanel) {
-            // remove panel in docs viewMode
+          if (!showPanel) {
+            // showPanel is false by default when viewMode is not 'story', but can be overridden by the user
             return `"sidebar content content"
                   "sidebar content content"`;
           }

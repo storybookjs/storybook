@@ -11,15 +11,11 @@ import {
 } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
-export interface FixFauxEsmRequireRunOptions {
-  storybookVersion: string;
-}
-
 export const fixFauxEsmRequire = {
   id: 'fix-faux-esm-require',
   link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
 
-  async check({ storybookVersion, mainConfigPath }) {
+  async check({ mainConfigPath }) {
     if (!mainConfigPath) {
       return null;
     }
@@ -46,7 +42,7 @@ export const fixFauxEsmRequire = {
       return null;
     }
 
-    return { storybookVersion };
+    return true;
   },
 
   prompt() {
@@ -66,4 +62,4 @@ export const fixFauxEsmRequire = {
 
     await writeFile(mainConfigPath, newContent);
   },
-} satisfies Fix<FixFauxEsmRequireRunOptions>;
+} satisfies Fix<true>;

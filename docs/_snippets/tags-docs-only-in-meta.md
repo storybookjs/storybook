@@ -47,7 +47,7 @@ export default {
 };
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js"
+```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -97,7 +97,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts"
+```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -142,4 +142,38 @@ const meta: Meta = {
   tags: ['autodocs', '!dev'],
 };
 export default meta;
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+
+  /*
+   * All stories in this file will:
+   * - Be included in the docs page
+   * - Not appear in Storybook's sidebar
+   */
+  tags: ['autodocs', '!dev'],
+});
 ```

@@ -54,7 +54,7 @@ export default {
 };
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="common" language="js"
+```js filename="YourComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { YourComponent } from './YourComponent';
 
 export default {
@@ -111,7 +111,7 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
@@ -162,4 +162,41 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  argTypes: {
+    // foo is the property we want to remove from the UI
+    foo: {
+      table: {
+        disable: true,
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  argTypes: {
+    // foo is the property we want to remove from the UI
+    foo: {
+      table: {
+        disable: true,
+      },
+    },
+  },
+});
 ```

@@ -107,7 +107,7 @@ export const RegexExclude = {
 };
 ```
 
-```js filename="YourComponent.stories.js|jsx" renderer="common" language="js"
+```js filename="YourComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { YourComponent } from './YourComponent';
 
 export default {
@@ -217,7 +217,7 @@ export const RegexExclude: Story = {
 };
 ```
 
-```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="YourComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -318,4 +318,73 @@ export const RegexExclude: Story = {
     controls: { exclude: /^hello*/ },
   },
 };
+```
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+export const ArrayInclude = meta.story({
+  parameters: {
+    controls: { include: ['foo', 'bar'] },
+  },
+});
+
+export const RegexInclude = meta.story({
+  parameters: {
+    controls: { include: /^hello*/ },
+  },
+});
+
+export const ArrayExclude = meta.story({
+  parameters: {
+    controls: { exclude: ['foo', 'bar'] },
+  },
+});
+
+export const RegexExclude = meta.story({
+  parameters: {
+    controls: { exclude: /^hello*/ },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="YourComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+export const ArrayInclude = meta.story({
+  parameters: {
+    controls: { include: ['foo', 'bar'] },
+  },
+});
+
+export const RegexInclude = meta.story({
+  parameters: {
+    controls: { include: /^hello*/ },
+  },
+});
+
+export const ArrayExclude = meta.story({
+  parameters: {
+    controls: { exclude: ['foo', 'bar'] },
+  },
+});
+
+export const RegexExclude = meta.story({
+  parameters: {
+    controls: { exclude: /^hello*/ },
+  },
+});
 ```

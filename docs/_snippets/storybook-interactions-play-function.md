@@ -111,7 +111,7 @@ export const Submitted = {
 };
 ```
 
-```js filename="Form.stories.js|jsx" renderer="common" language="js"
+```js filename="Form.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { expect, fn, waitFor } from 'storybook/test';
 
 import { Form } from './Form';
@@ -225,7 +225,7 @@ export const Submitted: Story = {
 };
 ```
 
-```ts filename="Form.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="Form.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -332,4 +332,78 @@ export const Submitted: Story = {
     await waitFor(() => expect(args.onSubmit).toHaveBeenCalled());
   },
 };
+```
+
+```ts filename="Form.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { expect, fn, waitFor } from 'storybook/test';
+
+import { Form } from './Form';
+
+const meta = preview.meta({
+  component: Form,
+  args: {
+    // 👇 Use `fn` to spy on the onSubmit arg
+    onSubmit: fn(),
+  },
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const Submitted = meta.story({
+  play: async ({ args, canvas, step, userEvent }) => {
+    await step('Enter credentials', async () => {
+      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
+      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
+    });
+
+    await step('Submit form', async () => {
+      await userEvent.click(canvas.getByRole('button'));
+    });
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await waitFor(() => expect(args.onSubmit).toHaveBeenCalled());
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Form.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect, fn, waitFor } from 'storybook/test';
+
+import { Form } from './Form';
+
+const meta = preview.meta({
+  component: Form,
+  args: {
+    // 👇 Use `fn` to spy on the onSubmit arg
+    onSubmit: fn(),
+  },
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const Submitted = meta.story({
+  play: async ({ args, canvas, step, userEvent }) => {
+    // Starts querying the component from its root element
+    await step('Enter credentials', async () => {
+      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
+      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
+    });
+
+    await step('Submit form', async () => {
+      await userEvent.click(canvas.getByRole('button'));
+    });
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await waitFor(() => expect(args.onSubmit).toHaveBeenCalled());
+  },
+});
 ```

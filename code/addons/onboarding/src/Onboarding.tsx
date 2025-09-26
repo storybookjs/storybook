@@ -82,7 +82,8 @@ export default function Onboarding({ api }: { api: API }) {
     sourceFileName: string;
   } | null>();
 
-  const userAgent = window?.navigator?.userAgent;
+  // eslint-disable-next-line compat/compat
+  const userAgent = globalThis?.navigator?.userAgent;
 
   const selectStory = useCallback(
     (storyId: string) => {

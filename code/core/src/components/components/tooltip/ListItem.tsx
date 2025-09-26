@@ -140,6 +140,7 @@ const Item = styled.button<ItemProps>(
 
     '&:focus-visible': {
       outline: `2px solid ${theme.color.secondary}`,
+      outlineOffset: 0,
     },
   }),
   ({ theme, href, onClick }) =>

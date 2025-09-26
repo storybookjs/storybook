@@ -154,32 +154,31 @@ export const Running = meta.story({
   },
 });
 
-// https://github.com/storybookjs/storybook/issues/32552
-// export const ReadyWithResults = meta.story({
-//   render: () => {
-//     return (
-//       <Template
-//         results={results}
-//         status="ready"
-//         error={null}
-//         discrepancy={null}
-//         selectedItems={
-//           new Map([
-//             [
-//               `${RuleType.VIOLATION}.${results.violations[0].id}`,
-//               `${RuleType.VIOLATION}.${results.violations[0].id}.1`,
-//             ],
-//           ])
-//         }
-//       />
-//     );
-//   },
-//   play: async ({ canvasElement }) => {
-//     const canvas = within(canvasElement);
-//     await userEvent.click(await canvas.findByRole('button', { name: /Rerun accessibility scan/ }));
-//     expect(context.handleManual).toHaveBeenCalled();
-//   },
-// });
+export const ReadyWithResults = meta.story({
+  render: () => {
+    return (
+      <Template
+        results={results}
+        status="ready"
+        error={null}
+        discrepancy={null}
+        selectedItems={
+          new Map([
+            [
+              `${RuleType.VIOLATION}.${results.violations[0].id}`,
+              `${RuleType.VIOLATION}.${results.violations[0].id}.1`,
+            ],
+          ])
+        }
+      />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(await canvas.findByRole('button', { name: /Rerun accessibility scan/ }));
+    expect(context.handleManual).toHaveBeenCalled();
+  },
+});
 
 export const ReadyWithResultsDiscrepancyCLIPassedBrowserFailed = meta.story({
   render: () => {

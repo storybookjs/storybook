@@ -369,7 +369,6 @@ export const AlwaysOpen = meta.story({
   ),
 });
 
-// https://github.com/storybookjs/storybook/issues/32552
 export const WithOpenChangeCallback = meta.story({
   args: {
     children: <SampleModalContent />,
@@ -405,7 +404,6 @@ export const WithOpenChangeCallback = meta.story({
   },
 });
 
-// https://github.com/storybookjs/storybook/issues/32552
 export const InteractiveKeyboard = meta.story({
   args: {
     children: <SampleModalContent />,
@@ -498,7 +496,9 @@ export const InteractiveMouse = meta.story({
     });
 
     await step('Click close button', async () => {
-      const closeButton = await screen.findByLabelText('Close modal');
+      const closeButton = await waitFor(() => screen.findByLabelText('Close modal'), {
+        timeout: 3000,
+      });
       await userEvent.click(closeButton);
     });
 

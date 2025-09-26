@@ -29,6 +29,9 @@ const BUILT_IN_TAGS = new Set([
 
 // Temporary to prevent regressions until TagFilterPanel can be refactored.
 const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
+  '&:focus-visible': {
+    outlineOffset: 4,
+  },
   ...(active && {
     background: theme.background.hoverable,
     color: theme.color.secondary,

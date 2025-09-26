@@ -62,7 +62,7 @@ export const fixFauxEsmRequire = {
     const banner = getRequireBanner();
     const comment = bannerComment;
 
-    const newContent = [banner, comment, content].join('\n\n');
+    const newContent = [banner, comment, content].join('\n');
 
     await writeFile(mainConfigPath, newContent);
   },

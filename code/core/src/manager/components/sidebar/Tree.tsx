@@ -343,6 +343,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const itemStatusButton = itemIcon ? (
     <StatusButton
       ariaLabel={`Test status: ${itemStatus.replace('status-value:', '')}`}
+      data-testid="tree-status-button"
       role="status"
       type="button"
       status={itemStatus}

@@ -8,7 +8,7 @@ import { getStorySortParameter, readCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type { NormalizedStoriesSpecifier, StoryIndexEntry } from 'storybook/internal/types';
 
-import { csfIndexer } from '../presets/common-preset';
+import { csfIndexer } from '../presets/indexers/csf-indexer';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
 

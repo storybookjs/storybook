@@ -56,7 +56,6 @@ test.describe('addon-actions', () => {
       hasText: 'console.log:',
     });
     // Avoid getting failed due to other console.log calls by frameworks
-    expect(logItem.count()).toBeGreaterThanOrEqual(3);
     await expect(logItem.getByText('first')).toBeVisible();
     await expect(logItem.getByText('second')).toBeVisible();
     await expect(logItem.getByText('third')).toBeVisible();

@@ -45,20 +45,11 @@ const IndicatorPlacement = styled.aside(({ theme }) => ({
 }));
 
 const IndicatorClickTarget = styled(Button)(({ theme }) => ({
-  borderRadius: '100%',
-  cursor: 'pointer',
   color: theme.textMutedColor,
-
-  '&:hover': {
-    color: theme.barSelectedColor,
-  },
-  '&:focus': {
-    color: theme.barSelectedColor,
-    borderColor: theme.barSelectedColor,
-  },
   svg: {
-    height: 10,
-    width: 10,
+    height: 14,
+    width: 14,
+    padding: 2,
     transition: 'all 150ms ease-out',
     color: 'inherit',
   },

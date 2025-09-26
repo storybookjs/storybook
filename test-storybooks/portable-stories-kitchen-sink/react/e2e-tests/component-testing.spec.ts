@@ -518,7 +518,7 @@ test.describe("component testing", () => {
 
     // Assert - Only one test is running and reported
     await expect(
-      page.locator("#testing-module-description")
+      sidebarContextMenu.locator("#testing-module-description")
     ).toContainText("Ran 1 test", { timeout: 30000 });
     await expect(
       sidebarContextMenu.getByLabel("Component tests passed")

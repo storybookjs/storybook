@@ -49,17 +49,14 @@ export const core: PresetProperty<'core'> = async (config, options) => {
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const annotations = [
-    ...entry,
-    fileURLToPath(import.meta.resolve('@storybook/nextjs-vite/preview')),
-  ];
+  const annotations = [...entry, fileURLToPath(import.meta.resolve('@storybook/nextjs/preview'))];
 
   const nextjsVersion = getNextjsVersion();
   const isNext16orNewer = semver.gte(nextjsVersion, '16.0.0');
 
   // TODO: Remove this once we only support Next.js v16 and above
   if (!isNext16orNewer) {
-    annotations.push(fileURLToPath(import.meta.resolve('@storybook/nextjs-vite/config/preview')));
+    annotations.push(fileURLToPath(import.meta.resolve('@storybook/nextjs/config/preview')));
   }
 
   return annotations;

@@ -57,7 +57,7 @@ const TagRow = styled.div({
     paddingLeft: 0,
     paddingRight: 0,
     fontWeight: 'normal',
-    transition: 'all 150ms',
+    transition: 'max-width 150ms',
   },
   '&:not(:hover):not(:focus-within)': {
     '& button:last-of-type': {

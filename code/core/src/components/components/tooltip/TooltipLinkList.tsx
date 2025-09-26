@@ -77,7 +77,7 @@ export const TooltipLinkList = ({ links, LinkWrapper, ...props }: TooltipLinkLis
     group.some((link) => ('icon' in link && link.icon) || ('input' in link && link.input))
   );
   return (
-    <List {...props}>
+    <List {...props} className="sb-list">
       {groups
         .filter((group) => group.length)
         .map((group, index) => {

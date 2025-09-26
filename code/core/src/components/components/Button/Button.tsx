@@ -273,7 +273,7 @@ const StyledButton = styled('button', {
     outlineOffset: 2,
   },
 
-  '.sb-bar &:focus-visible': {
+  '.sb-bar &:focus-visible, .sb-list &:focus-visible': {
     outlineOffset: 0,
   },
 

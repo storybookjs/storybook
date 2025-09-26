@@ -55,9 +55,9 @@
   },
   "devDependencies": {
     "@storybook/icons": "^1.6.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-resize-detector": "^7.1.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-resize-detector": "^12.3.0",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
@@ -66,7 +66,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16",
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae18",
   "storybook": {
     "displayName": "Jest",
     "icon": "https://pbs.twimg.com/profile_images/821713465245102080/mMtKIMax_400x400.jpg",

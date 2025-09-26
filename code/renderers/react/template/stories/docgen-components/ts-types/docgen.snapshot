@@ -21,6 +21,7 @@ var StringEnum = /*#__PURE__*/function (StringEnum) {
   return StringEnum;
 }(StringEnum || {});
 export const TypeScriptProps = () => /*#__PURE__*/React.createElement("div", null, "TypeScript!");
+// @ts-expect-error (Converted from ts-ignore)
 TypeScriptProps.defaultProps = {
   any: 'Any value',
   string: 'A string value',

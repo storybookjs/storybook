@@ -18,6 +18,7 @@ export const Paragraph: React.FC<ElemBProps> = ({ size, children }) => (
   <div className={size}>{children}</div>
 );
 
+// @ts-expect-error (Converted from ts-ignore)
 Paragraph.defaultProps = { size: 'md' };
 
 export const component = Header;

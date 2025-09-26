@@ -20,9 +20,7 @@ export const StoryContent = ({
     <main style={{ minHeight: 1200, minWidth: 1200 }}>
       {withPopover && (
         <>
-          {/* @ts-expect-error popover is not yet supported by React */}
-          <button popovertarget="my-popover">Open Popover 1</button>
-          {/* @ts-expect-error popover is not yet supported by React */}
+          <button popoverTarget="my-popover">Open Popover 1</button>
           <div popover="manual" id="my-popover" style={{ padding: 20 }}>
             Greetings, one and all!
           </div>

@@ -11,6 +11,8 @@ export const Paragraph = ({
 }) => /*#__PURE__*/React.createElement("div", {
   className: size
 }, children);
+
+// @ts-expect-error (Converted from ts-ignore)
 Paragraph.defaultProps = {
   size: 'md'
 };

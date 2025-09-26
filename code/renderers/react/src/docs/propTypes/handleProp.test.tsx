@@ -9,6 +9,7 @@ import {
   extractComponentProps,
 } from 'storybook/internal/docs-tools';
 
+// @ts-expect-error (no longer valid/typed with React 19)
 import PropTypes from 'prop-types';
 
 import { enhancePropTypesProp, enhancePropTypesProps } from './handleProp';

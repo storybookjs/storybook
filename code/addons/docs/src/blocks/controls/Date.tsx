@@ -69,8 +69,8 @@ const FlexSpaced = styled.div(({ theme }) => ({
 export type DateProps = ControlProps<DateValue> & DateConfig;
 export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onBlur, argType }) => {
   const [valid, setValid] = useState(true);
-  const dateRef = useRef<HTMLInputElement>();
-  const timeRef = useRef<HTMLInputElement>();
+  const dateRef = useRef<HTMLInputElement | null>(null);
+  const timeRef = useRef<HTMLInputElement | null>(null);
   const readonly = !!argType?.table?.readonly;
 
   useEffect(() => {

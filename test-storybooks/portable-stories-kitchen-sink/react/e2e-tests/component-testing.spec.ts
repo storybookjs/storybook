@@ -613,7 +613,7 @@ test.describe("component testing", () => {
 
     // Assert - Tests are running and reported
     await expect(
-      page.locator("#testing-module-description")
+      sidebarContextMenu.locator("#testing-module-description")
     ).toContainText("Ran 9 tests", { timeout: 30000 });
     // Assert - Failing test shows as a failed status
     await expect(
@@ -640,7 +640,7 @@ test.describe("component testing", () => {
     await expect(
       page
         .locator("#storybook-explorer-menu [data-testid=\"tree-status-button\"][aria-label=\"Test status: error\"]")
-    ).toHaveCount(1);
+    ).toHaveCount(3); // 1 story, 1 component, 1 group
   });
 
   test("should run focused test for a group", async ({ page, browserName }) => {

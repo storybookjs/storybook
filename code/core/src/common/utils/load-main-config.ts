@@ -51,8 +51,12 @@ export async function loadMainConfig({
         const { ext, name, dir } = parse(mainPath);
         const modifiedMainPath = join(dir, `${name}.tmp.${ext}`);
         await writeFile(modifiedMainPath, [header, comment, content].join('\n\n'));
-        const out = await importModule(modifiedMainPath);
-        await rm(modifiedMainPath);
+        let out;
+        try {
+          out = await importModule(modifiedMainPath);
+        } finally {
+          await rm(modifiedMainPath);
+        }
         return out;
       }
     }

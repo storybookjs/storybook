@@ -8,6 +8,16 @@ sidebar:
 
 Storybook provides an dedicated [ESLint plugin](https://github.com/storybookjs/eslint-plugin-storybook) to help you write stories and components aligned with the latest Storybook and frontend development best practices.
 
+## Hybrid Oxlint + ESLint Setup
+
+Starting with Storybook 10, you can use a hybrid linting setup that combines Oxlint's performance benefits with ESLint's Storybook-specific rules. This setup provides 50-100x faster linting for general JavaScript/TypeScript code while maintaining all Storybook best practices.
+
+### Why Hybrid?
+
+- **Oxlint** is a fast Rust-based linter but doesn't support custom plugins like `eslint-plugin-storybook`
+- **ESLint** provides essential Storybook-specific rules and best practices
+- **Together** they offer optimal performance and comprehensive coverage
+
 ## Installation
 
 You'll first need to install [ESLint](https://eslint.org/):
@@ -48,6 +58,74 @@ export default [
   },
 ];
 ```
+
+## Hybrid Oxlint + ESLint Installation
+
+For optimal performance, install both Oxlint and ESLint with the compatibility plugin:
+
+<CodeSnippets path="oxlint-eslint-hybrid-install.md" />
+
+### Configuration
+
+1. **Create Oxlint configuration** (`.oxlintrc.json`):
+
+```json title=".oxlintrc.json"
+{
+  "extends": ["recommended", "react"],
+  "rules": {
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-unused-vars": "warn",
+    "typescript/ban-ts-comment": "error",
+    "no-unused-vars": "off",
+    "no-use-before-define": "off",
+    "react/no-unescaped-entities": "off",
+    "react/react-in-jsx-scope": "off",
+    "no-console": "warn",
+    "no-debugger": "error",
+    "prefer-const": "error",
+    "no-var": "error",
+    "eqeqeq": "error"
+  },
+  "env": {
+    "browser": true,
+    "node": true
+  }
+}
+```
+
+2. **Update your ESLint config** to include both plugins:
+
+```js title=".eslintrc"
+{
+  "extends": [
+    // ... your existing extends
+    "plugin:storybook/recommended",
+    "plugin:oxlint/recommended"
+  ]
+}
+```
+
+3. **Update your package.json scripts**:
+
+```json title="package.json"
+{
+  "scripts": {
+    "lint": "oxlint && eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "oxlint --fix && eslint . --ext .js,.jsx,.ts,.tsx --fix"
+  }
+}
+```
+
+### Benefits
+
+- **50-100x faster** general linting with Oxlint
+- **Complete Storybook coverage** with eslint-plugin-storybook
+- **No rule conflicts** thanks to eslint-plugin-oxlint
+- **Gradual adoption** - works alongside existing ESLint setups
+
+## ESLint-Only Installation
+
+If you prefer to use only ESLint:
 
 ## ESLint compatibility
 

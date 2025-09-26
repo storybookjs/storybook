@@ -22,5 +22,9 @@
   "packageManager": "yarn@4.9.1",
   "engines": {
     "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "eslint-plugin-oxlint": "^1.17.0",
+    "oxlint": "^1.17.0"
   }
 }

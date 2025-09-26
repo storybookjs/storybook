@@ -104,7 +104,7 @@ export const CSF3Button: CSF3Story = {
   args: { label: 'foo' },
 };
 
-export const CSF3ButtonWithRender: StoryObj<CustomRenderComponent> = {
+export const CSF3ButtonWithRender: StoryObj<typeof CustomRenderComponent> = {
   args: {
     buttonProps: CSF3Button.args,
   },

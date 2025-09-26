@@ -7148,7 +7148,6 @@ __metadata:
   dependencies:
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
     "@testing-library/svelte": "npm:^5.2.4"
-    expect-type: "npm:^1.1.0"
     svelte: "npm:^5.39.5"
     svelte-check: "npm:^4.3.2"
     sveltedoc-parser: "npm:^4.2.1"
@@ -14738,13 +14737,6 @@ __metadata:
   version: 0.15.0
   resolution: "expect-type@npm:0.15.0"
   checksum: 10c0/d5ffc86df1937290a6555e763f76a8c27d18d9bfa63e18788a79ff52bba3d2a9a518af1163d437854efca6bd8e03768a2c4b10ea29e861c9d6f57ff53f19c3c4
-  languageName: node
-  linkType: hard
-
-"expect-type@npm:^1.1.0":
-  version: 1.2.2
-  resolution: "expect-type@npm:1.2.2"
-  checksum: 10c0/6019019566063bbc7a690d9281d920b1a91284a4a093c2d55d71ffade5ac890cf37a51e1da4602546c4b56569d2ad2fc175a2ccee77d1ae06cb3af91ef84f44b
   languageName: node
   linkType: hard
 

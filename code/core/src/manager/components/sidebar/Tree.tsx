@@ -471,7 +471,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           item.name}
       </LeafNode>
       {isSelected && (
-        <SkipToContentLink asChild>
+        <SkipToContentLink ariaLabel={false} asChild>
           <a href="#storybook-preview-wrapper">Skip to canvas</a>
         </SkipToContentLink>
       )}

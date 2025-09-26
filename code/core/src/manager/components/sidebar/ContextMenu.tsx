@@ -26,12 +26,16 @@ const empty = {
   node: null,
 };
 
-const FloatingStatusButton = styled(StatusButton)({
-  background: 'var(--tree-node-background-hover)',
-  boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
-  position: 'absolute',
-  right: 0,
-  zIndex: 1,
+const FloatingStatusButton = styled(StatusButton)(({ theme }) => {
+  // --tree-node-background-hover, but opaque to avoid layering colors
+  const background = theme.base === 'dark' ? '#1b2432' : '#ddebfa';
+  return {
+    background,
+    boxShadow: `0 0 5px 5px ${background}`,
+    position: 'absolute',
+    right: 0,
+    zIndex: 1,
+  };
 });
 
 export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {

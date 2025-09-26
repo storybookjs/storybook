@@ -82,6 +82,9 @@ export default function Onboarding({ api }: { api: API }) {
     sourceFileName: string;
   } | null>();
 
+  // eslint-disable-next-line compat/compat
+  const userAgent = globalThis?.navigator?.userAgent;
+
   const selectStory = useCallback(
     (storyId: string) => {
       try {
@@ -111,15 +114,17 @@ export default function Onboarding({ api }: { api: API }) {
       api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
         step: '7:FinishedOnboarding' satisfies StepKey,
         type: 'telemetry',
+        userAgent,
       });
       api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
         answers,
         type: 'survey',
+        userAgent,
       });
       selectStory('configure-your-project--docs');
       disableOnboarding();
     },
-    [api, selectStory, disableOnboarding]
+    [api, selectStory, disableOnboarding, userAgent]
   );
 
   useEffect(() => {
@@ -177,8 +182,8 @@ export default function Onboarding({ api }: { api: API }) {
   }, [api]);
 
   useEffect(
-    () => api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, { step, type: 'telemetry' }),
-    [api, step]
+    () => api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, { step, type: 'telemetry', userAgent }),
+    [api, step, userAgent]
   );
 
   if (!enabled) {

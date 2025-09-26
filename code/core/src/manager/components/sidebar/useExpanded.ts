@@ -195,10 +195,11 @@ export const useExpanded = ({
       }
 
       const type = highlightedElement.getAttribute('data-nodetype');
-      if (!type) {
-        return;
-      }
-      if ((isEnter || isSpace) && ['component', 'story', 'document'].includes(type)) {
+      if (
+        type &&
+        (isEnter || isSpace) &&
+        ['component', 'story', 'document', 'test'].includes(type)
+      ) {
         onSelectStoryId(highlightedItemId);
       }
 

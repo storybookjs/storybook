@@ -55,7 +55,7 @@ export const init: ModuleFn = ({ provider, fullAPI }) => {
     api,
     state,
     init: async () => {
-      const { color } = await import('storybook/theming');
+      const { color } = await import('../../theming');
       provider.channel?.on(OPEN_IN_EDITOR_RESPONSE, (payload: OpenInEditorResponsePayload) => {
         if (payload.error !== null) {
           fullAPI.addNotification({

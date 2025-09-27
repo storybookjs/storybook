@@ -14,10 +14,12 @@ import { execaCommand } from 'execa';
 const filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(filename);
 
+const sandbox = process.argv[2] ?? 'react-vite/default-ts';
+
 const rootPackageJsonPath = resolve(__dirname, '../../package.json');
 const sandboxPackageJsonPath = resolve(
   __dirname,
-  '../../sandbox/react-vite-default-ts/package.json'
+  `../../sandbox/${sandbox.replace('/', '-')}/package.json`
 );
 
 const rootPackageJson = JSON.parse(await readFile(rootPackageJsonPath, 'utf-8'));
@@ -29,7 +31,7 @@ sandboxPackageJson.resolutions = {
 };
 
 await writeFile(sandboxPackageJsonPath, JSON.stringify(sandboxPackageJson, null, 2));
-const sandboxFolder = dirname(sandboxPackageJsonPath);
+const sandboxDir = dirname(sandboxPackageJsonPath);
 
-await execaCommand('yarn add playwright', { cwd: sandboxFolder, shell: true });
-await execaCommand('yarn playwright install', { cwd: sandboxFolder, shell: true });
+await execaCommand('yarn add playwright', { cwd: sandboxDir, shell: true });
+await execaCommand('yarn playwright install', { cwd: sandboxDir, shell: true });

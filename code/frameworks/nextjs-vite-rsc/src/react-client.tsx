@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as ReactDOMClient from 'react-dom/client';
 
 import * as ReactClient from '@vitejs/plugin-rsc/react/browser';
+import buildClientReferences from 'virtual:vite-rsc-browser-mode/build-client-references';
 
 import type { RenderConfiguration } from './testing-library';
 
@@ -93,6 +94,16 @@ async function act<T>(callback: () => T | Promise<T>) {
 
 export function initialize() {
   ReactClient.setRequireModule({
-    load: (id) => import(/* @vite-ignore */ id),
+    load: (id) => {
+      if (import.meta.env.__vite_rsc_build__) {
+        const import_ = buildClientReferences[id];
+        if (!import_) {
+          throw new Error(`invalid client reference: ${id}`);
+        }
+        return import_();
+      } else {
+        return import(/* @vite-ignore */ id);
+      }
+    },
   });
 }

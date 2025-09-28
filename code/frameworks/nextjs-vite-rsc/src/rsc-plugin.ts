@@ -39,7 +39,7 @@ export function rscBrowserModePlugin(): Plugin[] {
                 exclude: ['vite', '@vitejs/plugin-rsc'],
               },
               build: {
-                outDir: 'dist/client',
+                outDir: 'storybook-static',
               },
             },
             react_client: {
@@ -63,12 +63,12 @@ export function rscBrowserModePlugin(): Plugin[] {
                 },
               },
               build: {
-                outDir: 'dist/react_client',
+                outDir: 'storybook-static/react_client',
                 copyPublicDir: false,
                 emitAssets: true,
                 rollupOptions: {
                   input: {
-                    index: './src/framework/entry.browser.tsx',
+                    index: '@storybook/nextjs-vite-rsc/react-client',
                   },
                 },
               },
@@ -138,6 +138,7 @@ export function rscBrowserModePlugin(): Plugin[] {
         manager.isScanBuild = true;
         reactServer.config.build.write = false;
         await builder.build(reactServer);
+        await builder.build(reactServer);
         manager.isScanBuild = false;
         reactServer.config.build.write = true;
         await builder.build(reactClient);
@@ -149,7 +150,7 @@ export function rscBrowserModePlugin(): Plugin[] {
       resolveId(source) {
         if (source === 'virtual:vite-rsc-browser-mode/load-client') {
           if (this.environment.mode === 'dev') {
-            return this.resolve('/src/framework/load-client-dev');
+            return this.resolve('@storybook/nextjs-vite-rsc/load-client-dev');
           }
           return '\0' + source;
         }
@@ -159,7 +160,7 @@ export function rscBrowserModePlugin(): Plugin[] {
           if (manager.isScanBuild) {
             return `export default async () => {}`;
           } else {
-            return `export default async () => import("/dist/react_client/index.js")`;
+            return `export default async () => import("/storybook-static/react_client/index.mjs")`;
           }
         }
       },

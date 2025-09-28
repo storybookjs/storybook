@@ -3,13 +3,10 @@ import type { JSXElementConstructor, ReactNode } from 'react';
 import type { Container, RootOptions } from 'react-dom/client';
 
 import * as ReactServer from '@vitejs/plugin-rsc/react/rsc';
+import buildServerReferences from 'virtual:vite-rsc-browser-mode/build-server-references';
+import loadClient from 'virtual:vite-rsc-browser-mode/load-client';
 
 import type { FetchRsc, RscPayload, TestingLibraryClientRoot } from './react-client';
-import { importReactClient } from './utilts';
-
-const client = await importReactClient<typeof import('./react-client')>(
-  '@storybook/nextjs-vite-rsc/react-client'
-);
 
 const mountedContainers = new Set<Container>();
 const mountedRootEntries: {
@@ -113,11 +110,24 @@ const config: RenderConfiguration = {
 
 declare let __vite_rsc_raw_import__: (id: string) => Promise<unknown>;
 
+const client = await loadClient();
+
 export function initialize(customConfig: Partial<RenderConfiguration> = {}): void {
   Object.assign(config, customConfig);
 
   ReactServer.setRequireModule({
-    load: (id) => __vite_rsc_raw_import__(id),
+    load: (id) => {
+      if (import.meta.env.__vite_rsc_build__) {
+        const import_ = buildServerReferences[id];
+        if (!import_) {
+          throw new Error(`invalid server reference: ${id}`);
+        }
+        return import_();
+      } else {
+        return __vite_rsc_raw_import__(/* @vite-ignore */ id);
+      }
+    },
   });
+
   client.initialize();
 }

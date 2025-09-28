@@ -28,6 +28,10 @@ const config: BuildEntries = {
         entryPoint: './src/export-mocks/router/index.ts',
       },
       {
+        exportEntries: ['./load-client-dev'],
+        entryPoint: './src/load-client-dev.tsx',
+      },
+      {
         exportEntries: ['./react-client'],
         entryPoint: './src/react-client.tsx',
       },

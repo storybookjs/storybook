@@ -39,6 +39,10 @@
       "types": "./dist/export-mocks/headers/index.d.ts",
       "default": "./dist/export-mocks/headers/index.js"
     },
+    "./load-client-dev": {
+      "types": "./dist/load-client-dev.d.ts",
+      "default": "./dist/load-client-dev.js"
+    },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",
       "default": "./dist/export-mocks/navigation/index.js"
@@ -89,7 +93,7 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
-    "@vitejs/plugin-rsc": "https://pkg.pr.new/@vitejs/plugin-rsc@4672651",
+    "@vitejs/plugin-rsc": "^0.4.31",
     "styled-jsx": "5.1.6",
     "vite-plugin-storybook-nextjs": "^2.0.5"
   },

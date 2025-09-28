@@ -6438,7 +6438,7 @@ __metadata:
     "@storybook/react": "workspace:*"
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.0.0"
-    "@vitejs/plugin-rsc": "https://pkg.pr.new/@vitejs/plugin-rsc@4672651"
+    "@vitejs/plugin-rsc": "npm:^0.4.31"
     next: "npm:^15.2.3"
     postcss-load-config: "npm:^6.0.1"
     styled-jsx: "npm:5.1.6"
@@ -8495,9 +8495,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitejs/plugin-rsc@https://pkg.pr.new/@vitejs/plugin-rsc@4672651":
-  version: 0.4.27
-  resolution: "@vitejs/plugin-rsc@https://pkg.pr.new/@vitejs/plugin-rsc@4672651"
+"@vitejs/plugin-rsc@npm:^0.4.31":
+  version: 0.4.31
+  resolution: "@vitejs/plugin-rsc@npm:0.4.31"
   dependencies:
     "@remix-run/node-fetch-server": "npm:^0.8.0"
     es-module-lexer: "npm:^1.7.0"
@@ -8510,7 +8510,7 @@ __metadata:
     react: "*"
     react-dom: "*"
     vite: "*"
-  checksum: 10c0/a09eb48e02c15fe05ad7d7329273f04da82630907e41e0b46975f8daed98ff03281b26e2e733e6c789115d007485183e4b9badb35bdd240bca4ffa12f79bda94
+  checksum: 10c0/b7b042cae70a52b477304ebe2872529bf37a7f39745860347b13453d51945aa5f7b539d9015486db04e6c7417af139ad828e6b618b20ee45320a5c345805a124
   languageName: node
   linkType: hard
 

@@ -9,7 +9,7 @@ import { debounce } from 'es-toolkit/compat';
 import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
-import { csfIndexer } from '../presets/common-preset';
+import { csfIndexer } from '../presets/indexers/csf-indexer';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
 import type { ServerChannel } from './get-server-channel';

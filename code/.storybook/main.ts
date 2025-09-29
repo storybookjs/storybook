@@ -98,6 +98,11 @@ const config = defineMain({
       titlePrefix: 'addons/vitest',
       files: 'stories.tsx',
     },
+    {
+      titlePrefix: 'virtual',
+      directory: '../core/src/manager',
+      files: './**/!(*.stories|*.story).@(js|jsx|ts|tsx)',
+    },
   ],
   addons: [
     '@storybook/addon-themes',

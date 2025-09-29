@@ -15,12 +15,10 @@ import {
   loadEnvs,
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
-import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type {
   CoreConfig,
-  Indexer,
   Options,
   PresetProperty,
   PresetPropertyFn,
@@ -37,6 +35,8 @@ import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
 import { type OptionsWithRequiredCache, initializeWhatsNew } from '../utils/whats-new';
+import { csfIndexer } from './indexers/csf-indexer';
+import { createGhostStoriesIndexer } from './indexers/ghost-stories.indexer';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);
@@ -209,13 +209,10 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   measure: true,
 });
 
-export const csfIndexer: Indexer = {
-  test: /(stories|story)\.(m?js|ts)x?$/,
-  createIndex: async (fileName, options) => (await readCsf(fileName, options)).parse().indexInputs,
-};
-
-export const experimental_indexers: PresetProperty<'experimental_indexers'> = (existingIndexers) =>
-  [csfIndexer].concat(existingIndexers || []);
+export const experimental_indexers: PresetProperty<'experimental_indexers'> = (
+  existingIndexers,
+  options
+) => [createGhostStoriesIndexer(options), csfIndexer].concat(existingIndexers || []);
 
 export const frameworkOptions = async (
   _: never,
@@ -300,6 +297,7 @@ export const viteFinal = async (
 
   const { viteInjectMockerRuntime } = await import('./vitePlugins/vite-inject-mocker/plugin');
   const { viteMockPlugin } = await import('./vitePlugins/vite-mock/plugin');
+  const { virtualStoriesPlugin } = await import('../utils/vite-plugin-virtual-stories');
   const coreOptions = await options.presets.apply('core');
 
   return {
@@ -312,6 +310,7 @@ export const viteFinal = async (
             viteMockPlugin({ previewConfigPath, coreOptions, configDir: options.configDir }),
           ]
         : []),
+      virtualStoriesPlugin({ storybookOptions: options }),
     ],
   };
 };

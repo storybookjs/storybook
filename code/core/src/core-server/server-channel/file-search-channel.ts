@@ -1,11 +1,7 @@
-import { readFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
-
 import type { Channel } from 'storybook/internal/channels';
 import {
   extractProperRendererNameFromFramework,
   getFrameworkName,
-  getProjectRoot,
 } from 'storybook/internal/common';
 import type {
   FileComponentSearchRequestPayload,
@@ -20,9 +16,37 @@ import {
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options, SupportedRenderers } from 'storybook/internal/types';
 
-import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
-import { getParser } from '../utils/parser';
-import { searchFiles } from '../utils/search-files';
+import { type ComponentIndexEntry, createComponentIndex } from '../utils/component-file-indexer';
+
+/** Transform component index entries back to the expected file response format */
+function transformIndexEntriesToFileResponse(indexEntries: ComponentIndexEntry[]): Array<{
+  filepath: string;
+  exportedComponents: Array<{
+    name: string;
+    default: boolean;
+  }> | null;
+  storyFileExists: boolean;
+}> {
+  // Group entries by filepath
+  const fileGroups = new Map<string, ComponentIndexEntry[]>();
+
+  for (const entry of indexEntries) {
+    if (!fileGroups.has(entry.filepath)) {
+      fileGroups.set(entry.filepath, []);
+    }
+    fileGroups.get(entry.filepath)!.push(entry);
+  }
+
+  // Transform grouped entries back to file format
+  return Array.from(fileGroups.entries()).map(([filepath, entries]) => ({
+    filepath,
+    exportedComponents: entries.map((entry) => ({
+      name: entry.componentName,
+      default: entry.isDefaultExport,
+    })),
+    storyFileExists: entries[0]?.storyFileExists ?? false,
+  }));
+}
 
 export async function initFileSearchChannel(
   channel: Channel,
@@ -40,54 +64,24 @@ export async function initFileSearchChannel(
         }
 
         const frameworkName = await getFrameworkName(options);
-
         const rendererName = (await extractProperRendererNameFromFramework(
           frameworkName
         )) as SupportedRenderers;
 
-        const files = await searchFiles({
+        // Create component index entries using the extracted logic
+        const indexEntries = await createComponentIndex({
           searchQuery,
-          cwd: getProjectRoot(),
+          rendererName,
         });
 
-        const entries = files.map(async (file) => {
-          const parser = getParser(rendererName);
-
-          try {
-            const content = await readFile(join(getProjectRoot(), file), 'utf-8');
-            const { storyFileName } = getStoryMetadata(join(getProjectRoot(), file));
-            const dir = dirname(file);
-
-            const storyFileExists = doesStoryFileExist(join(getProjectRoot(), dir), storyFileName);
-
-            const info = await parser.parse(content);
-
-            return {
-              filepath: file,
-              exportedComponents: info.exports,
-              storyFileExists,
-            };
-          } catch (e) {
-            if (!coreOptions.disableTelemetry) {
-              telemetry('create-new-story-file-search', {
-                success: false,
-                error: `Could not parse file: ${e}`,
-              });
-            }
-
-            return {
-              filepath: file,
-              storyFileExists: false,
-              exportedComponents: null,
-            };
-          }
-        });
+        // Transform index entries back to the expected format for the response
+        const files = transformIndexEntriesToFileResponse(indexEntries);
 
         if (!coreOptions.disableTelemetry) {
           telemetry('create-new-story-file-search', {
             success: true,
             payload: {
-              fileCount: entries.length,
+              fileCount: files.length,
             },
           });
         }
@@ -96,7 +90,7 @@ export async function initFileSearchChannel(
           success: true,
           id: searchQuery,
           payload: {
-            files: await Promise.all(entries),
+            files,
           },
           error: null,
         } satisfies ResponseData<FileComponentSearchResponsePayload>);

@@ -1,31 +1,36 @@
-import { getEnvConfig, versions } from 'storybook/internal/common';
+import { readFileSync } from 'node:fs';
+
+import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
-import { CLIOptions } from 'storybook/internal/types';
+import type { CLIOptions } from 'storybook/internal/types';
 
-import {
+import type {
   BuilderContext,
   BuilderHandlerFn,
   BuilderOutput,
   Target,
-  createBuilder,
-  targetFromTargetString,
+  Builder as DevkitBuilder,
 } from '@angular-devkit/architect';
-import { BrowserBuilderOptions, StylePreprocessorOptions } from '@angular-devkit/build-angular';
-import {
+import { createBuilder, targetFromTargetString } from '@angular-devkit/architect';
+import type {
+  BrowserBuilderOptions,
+  StylePreprocessorOptions,
+} from '@angular-devkit/build-angular';
+import type {
   AssetPattern,
   SourceMapUnion,
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
-import { JsonObject } from '@angular-devkit/core';
-import { findPackageSync } from 'fd-package-json';
-import { sync as findUpSync } from 'find-up';
+import type { JsonObject } from '@angular-devkit/core';
+import * as find from 'empathic/find';
+import * as pkg from 'empathic/package';
 import { Observable, from, of } from 'rxjs';
 import { map, mapTo, switchMap } from 'rxjs/operators';
 
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
-import { StandaloneOptions } from '../utils/standalone-options';
+import type { StandaloneOptions } from '../utils/standalone-options';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -70,7 +75,10 @@ export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
 const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, context) => {
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
-      const docTSConfig = findUpSync('tsconfig.doc.json', { cwd: options.configDir });
+      const docTSConfig = find.up('tsconfig.doc.json', {
+        cwd: options.configDir,
+        last: getProjectRoot(),
+      });
 
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
@@ -125,8 +133,12 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         experimentalZoneless = false,
       } = options;
 
+      const packageJsonPath = pkg.up({ cwd: __dirname });
+      const packageJson =
+        packageJsonPath != null ? JSON.parse(readFileSync(packageJsonPath, 'utf8')) : null;
+
       const standaloneOptions: StandaloneOptions = {
-        packageJson: findPackageSync(__dirname),
+        packageJson,
         ci,
         configDir,
         ...(docs ? { docs } : {}),
@@ -171,7 +183,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
   return builder as any as BuilderOutput;
 };
 
-export default createBuilder(commandBuilder);
+export default createBuilder(commandBuilder) as DevkitBuilder<StorybookBuilderOptions & JsonObject>;
 
 async function setup(options: StorybookBuilderOptions, context: BuilderContext) {
   let browserOptions: (JsonObject & BrowserBuilderOptions) | undefined;
@@ -188,7 +200,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   return {
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir }) ??
+      find.up('tsconfig.json', { cwd: options.configDir }) ??
       browserOptions.tsConfig,
   };
 }

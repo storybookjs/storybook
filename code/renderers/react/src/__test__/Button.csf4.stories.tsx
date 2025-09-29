@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-import { expect, fn, mocked, userEvent, within } from '@storybook/test';
+import { action } from 'storybook/actions';
+import { expect, fn, mocked, userEvent, within } from 'storybook/test';
 
-import { action } from '@storybook/addon-actions';
-
-import { definePreview } from '../preview';
+import { __definePreview } from '../preview';
 import { Button } from './Button';
 
-const preview = definePreview({});
+const preview = __definePreview({
+  addons: [],
+});
 
 const meta = preview.meta({
   id: 'button-component',
@@ -50,7 +51,7 @@ const getCaptionForLocale = (locale: string) => {
 };
 
 export const CSF2StoryWithLocale = meta.story({
-  render: (args, { globals: { locale } }) => {
+  render: (_, { globals: { locale } }) => {
     const caption = getCaptionForLocale(locale);
     return (
       <>
@@ -219,8 +220,8 @@ export const WithActionArg = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const buttonEl = await canvas.getByRole('button');
-    await buttonEl.click();
+    const buttonEl = canvas.getByRole('button');
+    buttonEl.click();
   },
 });
 
@@ -291,7 +292,7 @@ export const Modal = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const openModalButton = await canvas.getByRole('button', { name: /open modal/i });
+    const openModalButton = canvas.getByRole('button', { name: /open modal/i });
     await userEvent.click(openModalButton);
     await expect(within(document.body).getByRole('dialog')).toBeInTheDocument();
   },

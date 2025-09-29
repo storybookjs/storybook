@@ -1,5 +1,3 @@
-import path from 'node:path';
-
 import { isCorePackage } from './cli';
 
 /**
@@ -23,24 +21,25 @@ export function getAnnotationsName(addonName: string): string {
   return cleanedUpName;
 }
 
-export async function getAddonAnnotations(addon: string) {
-  try {
-    const data = {
-      // core addons will have a function as default export in index entrypoint
-      importPath: addon,
-      importName: getAnnotationsName(addon),
-      isCoreAddon: isCorePackage(addon),
-    };
+// TODO: test this
+export async function getAddonAnnotations(addon: string, configDir: string) {
+  const data = {
+    // core addons will have a function as default export in index entrypoint
+    importPath: addon,
+    importName: getAnnotationsName(addon),
+    isCoreAddon: isCorePackage(addon),
+  };
 
+  if (!data.isCoreAddon) {
     // for backwards compatibility, if it's not a core addon we use /preview entrypoint
-    if (!data.isCoreAddon) {
-      data.importPath = `@storybook/${addon}/preview`;
-    }
+    data.importPath = `${addon}/preview`;
+  }
 
-    require.resolve(path.join(addon, 'preview'));
-
-    return data;
-  } catch (err) {}
-
-  return null;
+  // If the preview endpoint doesn't exist, we don't need to add the addon to definePreview
+  try {
+    import.meta.resolve(`${addon}/preview`, configDir);
+  } catch (err) {
+    return null;
+  }
+  return data;
 }

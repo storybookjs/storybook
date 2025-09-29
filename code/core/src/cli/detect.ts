@@ -1,12 +1,11 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import type { JsPackageManager, PackageJsonWithMaybeDeps } from '@storybook/core/common';
-import { HandledError, commandLog } from '@storybook/core/common';
+import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
+import { HandledError, commandLog, getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
-import { logger } from '@storybook/core/node-logger';
-
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
 import prompts from 'prompts';
 import semver from 'semver';
 
@@ -113,9 +112,9 @@ export function detectFrameworkPreset(
  * @returns CoreBuilder
  */
 export async function detectBuilder(packageManager: JsPackageManager, projectType: ProjectType) {
-  const viteConfig = findUpSync(viteConfigFiles);
-  const webpackConfig = findUpSync(webpackConfigFiles);
-  const dependencies = await packageManager.getAllDependencies();
+  const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
+  const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
+  const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
     commandLog('Detected Vite project. Setting builder to Vite')();
@@ -172,7 +171,7 @@ export function isStorybookInstantiated(configDir = resolve(process.cwd(), '.sto
 }
 
 export async function detectPnp() {
-  return !!findUpSync(['.pnp.js', '.pnp.cjs']);
+  return !!find.any(['.pnp.js', '.pnp.cjs']);
 }
 
 export async function detectLanguage(packageManager: JsPackageManager) {
@@ -182,21 +181,25 @@ export async function detectLanguage(packageManager: JsPackageManager) {
     return language;
   }
 
-  const isTypescriptDirectDependency = await packageManager
-    .getAllDependencies()
-    .then((deps) => Boolean(deps.typescript));
+  const isTypescriptDirectDependency = !!packageManager.getAllDependencies().typescript;
 
-  const typescriptVersion = await packageManager.getPackageVersion('typescript');
-  const prettierVersion = await packageManager.getPackageVersion('prettier');
-  const babelPluginTransformTypescriptVersion = await packageManager.getPackageVersion(
-    '@babel/plugin-transform-typescript'
-  );
-  const typescriptEslintParserVersion = await packageManager.getPackageVersion(
-    '@typescript-eslint/parser'
-  );
+  const getModulePackageJSONVersion = async (pkg: string) => {
+    return (await packageManager.getModulePackageJSON(pkg))?.version ?? null;
+  };
 
-  const eslintPluginStorybookVersion =
-    await packageManager.getPackageVersion('eslint-plugin-storybook');
+  const [
+    typescriptVersion,
+    prettierVersion,
+    babelPluginTransformTypescriptVersion,
+    typescriptEslintParserVersion,
+    eslintPluginStorybookVersion,
+  ] = await Promise.all([
+    getModulePackageJSONVersion('typescript'),
+    getModulePackageJSONVersion('prettier'),
+    getModulePackageJSONVersion('@babel/plugin-transform-typescript'),
+    getModulePackageJSONVersion('@typescript-eslint/parser'),
+    getModulePackageJSONVersion('eslint-plugin-storybook'),
+  ]);
 
   if (isTypescriptDirectDependency && typescriptVersion) {
     if (
@@ -207,18 +210,18 @@ export async function detectLanguage(packageManager: JsPackageManager) {
       (!typescriptEslintParserVersion || semver.gte(typescriptEslintParserVersion, '5.44.0')) &&
       (!eslintPluginStorybookVersion || semver.gte(eslintPluginStorybookVersion, '0.6.8'))
     ) {
-      language = SupportedLanguage.TYPESCRIPT_4_9;
-    } else if (semver.gte(typescriptVersion, '3.8.0')) {
-      language = SupportedLanguage.TYPESCRIPT_3_8;
-    } else if (semver.lt(typescriptVersion, '3.8.0')) {
-      logger.warn('Detected TypeScript < 3.8, populating with JavaScript examples');
+      language = SupportedLanguage.TYPESCRIPT;
+    } else {
+      logger.warn(
+        'Detected TypeScript < 4.9 or incompatible tooling, populating with JavaScript examples'
+      );
     }
   } else {
     // No direct dependency on TypeScript, but could be a transitive dependency
     // This is eg the case for Nuxt projects, which support a recent version of TypeScript
     // Check for tsconfig.json (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
     if (existsSync('tsconfig.json')) {
-      language = SupportedLanguage.TYPESCRIPT_4_9;
+      language = SupportedLanguage.TYPESCRIPT;
     }
   }
 
@@ -229,19 +232,18 @@ export async function detect(
   packageManager: JsPackageManager,
   options: { force?: boolean; html?: boolean } = {}
 ) {
-  const packageJson = await packageManager.retrievePackageJson();
+  try {
+    if (await isNxProject()) {
+      return ProjectType.NX;
+    }
 
-  if (!packageJson) {
+    if (options.html) {
+      return ProjectType.HTML;
+    }
+
+    const { packageJson } = packageManager.primaryPackageJson;
+    return detectFrameworkPreset(packageJson);
+  } catch (e) {
     return ProjectType.UNDETECTED;
   }
-
-  if (await isNxProject()) {
-    return ProjectType.NX;
-  }
-
-  if (options.html) {
-    return ProjectType.HTML;
-  }
-
-  return detectFrameworkPreset(packageJson);
 }

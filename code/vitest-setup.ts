@@ -6,6 +6,10 @@ import { dedent } from 'ts-dedent';
 const ignoreList = [
   (error: any) => error.message.includes('":nth-child" is potentially unsafe'),
   (error: any) => error.message.includes('":first-child" is potentially unsafe'),
+  (error: any) =>
+    error.message.match(
+      `Support for defaultProps will be removed from function components in a future major release`
+    ),
   (error: any) => error.message.match(/Browserslist: .* is outdated. Please run:/),
   (error: any) => error.message.includes('Consider adding an error boundary'),
   (error: any) =>
@@ -19,6 +23,10 @@ const ignoreList = [
     ),
   (error: any) => error.message.includes('Lit is in dev mode. Not recommended for production!'),
   (error: any) => error.message.includes('error: `DialogContent` requires a `DialogTitle`'),
+  (error: any) =>
+    error.message.includes(
+      "importMetaResolve from within Storybook is being used in a Vitest test, but it shouldn't be. Please report this at https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml"
+    ),
 ];
 
 const throwMessage = (type: any, message: any) => {
@@ -48,4 +56,52 @@ expect.extend({
       message,
     };
   },
+});
+
+vi.mock('storybook/internal/node-logger', async (importOriginal) => {
+  return {
+    ...(await importOriginal<typeof import('storybook/internal/node-logger')>()),
+    prompt: {
+      select: vi.fn(),
+      multiSelect: vi.fn(),
+      confirm: vi.fn(),
+      text: vi.fn(),
+      getPreferredStdio: vi.fn(),
+      executeTask: vi.fn(),
+      executeTaskWithSpinner: vi.fn(),
+      taskLog: vi.fn(() => ({
+        message: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+      })),
+    },
+    logger: {
+      SYMBOLS: {
+        success: '✓',
+        error: '✗',
+      },
+      plain: vi.fn(),
+      line: vi.fn(),
+      error: vi.fn(),
+      log: vi.fn(),
+      warn: vi.fn(),
+      info: vi.fn(),
+      trace: vi.fn(),
+      debug: vi.fn(),
+      logBox: vi.fn(),
+      intro: vi.fn(),
+      outro: vi.fn(),
+      step: vi.fn(),
+    },
+  };
+});
+
+vi.mock('./core/src/shared/utils/module.ts', async (importOriginal) => {
+  return {
+    ...(await importOriginal()),
+    resolvePackageDir: vi.fn().mockReturnValue('/mocked/package/dir'),
+    importModule: vi.fn().mockResolvedValue({
+      mocked: true,
+    }),
+  };
 });

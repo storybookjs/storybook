@@ -1,13 +1,13 @@
 import type { Dispatch, MutableRefObject, Reducer } from 'react';
 import { useCallback, useEffect, useReducer } from 'react';
 
+import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from 'storybook/internal/core-events';
+
 import { global } from '@storybook/global';
 
-import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from '@storybook/core/core-events';
-import type { StoriesHash } from '@storybook/core/manager-api';
-import { useStorybookApi } from '@storybook/core/manager-api';
-
-import { throttle } from 'es-toolkit';
+import { throttle } from 'es-toolkit/function';
+import type { StoriesHash } from 'storybook/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { getAncestorIds, getDescendantIds, isAncestor, scrollIntoView } from '../../utils/tree';
@@ -202,8 +202,11 @@ export const useExpanded = ({
       }
 
       const type = highlightedElement.getAttribute('data-nodetype');
-      // @ts-expect-error (non strict)
-      if ((isEnter || isSpace) && ['component', 'story', 'document'].includes(type)) {
+      if (
+        type &&
+        (isEnter || isSpace) &&
+        ['component', 'story', 'document', 'test'].includes(type)
+      ) {
         onSelectStoryId(highlightedItemId);
       }
 

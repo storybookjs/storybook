@@ -1,9 +1,8 @@
 import type { Mock } from 'vitest';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StorybookConfigRaw } from '@storybook/types';
-
-import { loadConfig, printConfig } from '@storybook/core/csf-tools';
+import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -23,6 +22,8 @@ describe('getSyncedStorybookAddons', () => {
     addons: ['custom-addon', '@storybook/addon-a11y'],
   };
 
+  const configDir = '/user/storybook/.storybook';
+
   it('should sync addons between main and preview', async () => {
     const preview = loadConfig(`
       import * as myAddonAnnotations from "custom-addon/preview";
@@ -37,7 +38,7 @@ describe('getSyncedStorybookAddons', () => {
       return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
     });
 
-    const result = await getSyncedStorybookAddons(mainConfig, preview);
+    const result = await getSyncedStorybookAddons(mainConfig, preview, configDir);
     expect(printConfig(result).code).toMatchInlineSnapshot(`
       import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
       import * as myAddonAnnotations from "custom-addon/preview";
@@ -67,7 +68,7 @@ describe('getSyncedStorybookAddons', () => {
       };
     });
 
-    const result = await getSyncedStorybookAddons(mainConfig, preview);
+    const result = await getSyncedStorybookAddons(mainConfig, preview, configDir);
     expect(printConfig(result).code).toMatchInlineSnapshot(`
       import addonA11yAnnotations from "@storybook/addon-a11y";
       import * as myAddonAnnotations from "custom-addon/preview";
@@ -93,7 +94,7 @@ describe('getSyncedStorybookAddons', () => {
       return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
     });
 
-    const result = await getSyncedStorybookAddons(mainConfig, preview);
+    const result = await getSyncedStorybookAddons(mainConfig, preview, configDir);
     expect(printConfig(result).code).toMatchInlineSnapshot(`
       import * as addonA11yAnnotations from "@storybook/addon-a11y/preview";
       import { definePreview } from "@storybook/react/preview";
@@ -123,7 +124,7 @@ describe('getSyncedStorybookAddons', () => {
       return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
     });
 
-    const result = await getSyncedStorybookAddons(mainConfig, preview);
+    const result = await getSyncedStorybookAddons(mainConfig, preview, configDir);
     const transformedCode = normalizeLineBreaks(printConfig(result).code);
 
     expect(transformedCode).toMatch(originalCode);
@@ -145,9 +146,36 @@ describe('getSyncedStorybookAddons', () => {
       return { importName: 'addonA11yAnnotations', importPath: '@storybook/addon-a11y/preview' };
     });
 
-    const result = await getSyncedStorybookAddons(mainConfig, preview);
+    const result = await getSyncedStorybookAddons(mainConfig, preview, configDir);
     const transformedCode = normalizeLineBreaks(printConfig(result).code);
 
     expect(transformedCode).toMatch(originalCode);
+  });
+
+  it('should add an empty addons array if no addons are installed', async () => {
+    const originalCode = dedent`
+      import { definePreview } from "@storybook/react/preview";
+
+      export default definePreview({});
+    `;
+    const preview = loadConfig(originalCode).parse();
+
+    const result = await getSyncedStorybookAddons(
+      {
+        addons: [],
+        stories: [],
+      },
+      preview,
+      configDir
+    );
+    const transformedCode = normalizeLineBreaks(printConfig(result).code);
+
+    expect(transformedCode).toMatchInlineSnapshot(`
+      import { definePreview } from "@storybook/react/preview";
+
+      export default definePreview({
+        addons: []
+      });
+    `);
   });
 });

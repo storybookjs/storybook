@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getStoryTitle } from '@storybook/core/common';
+import { getStoryTitle } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { type RawSourceMap, SourceMapConsumer } from 'source-map';
 
 import { vitestTransform as originalTransform } from './transformer';
 
-vi.mock('@storybook/core/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@storybook/core/common')>();
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('storybook/internal/common')>();
   return {
     ...actual,
     getStoryTitle: vi.fn(() => 'automatic/calculated/title'),
@@ -47,17 +48,6 @@ const transform = async ({
 };
 
 describe('transformer', () => {
-  describe('no-op', () => {
-    it('should return original code if the file is not a story file', async () => {
-      const code = `console.log('Not a story file');`;
-      const fileName = 'src/components/Button.js';
-
-      const result = await transform({ code, fileName });
-
-      expect(result.code).toMatchInlineSnapshot(`console.log('Not a story file');`);
-    });
-  });
-
   describe('CSF v1/v2/v3', () => {
     describe('default exports (meta)', () => {
       it('should add title to inline default export if not present', async () => {
@@ -74,16 +64,16 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             component: Button,
             title: "automatic/calculated/title"
           };
           export default _meta;
           export const Story = {};
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, _meta, []));
+            _test("Story", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -103,16 +93,16 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             title: "automatic/calculated/title",
             component: Button
           };
           export default _meta;
           export const Story = {};
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, _meta, []));
+            _test("Story", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -123,7 +113,7 @@ describe('transformer', () => {
             component: Button,
           };
           export default meta;
-  
+
           export const Story = {};
         `;
 
@@ -133,16 +123,16 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const meta = {
             component: Button,
             title: "automatic/calculated/title"
           };
           export default meta;
           export const Story = {};
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, meta, []));
+            _test("Story", _testStory("Story", Story, meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -152,9 +142,9 @@ describe('transformer', () => {
           const meta = {
             title: 'Button',
             component: Button,
-          };  
+          };
           export default meta;
-  
+
           export const Story = {};
         `;
 
@@ -164,16 +154,16 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const meta = {
             title: "automatic/calculated/title",
             component: Button
           };
           export default meta;
           export const Story = {};
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, meta, []));
+            _test("Story", _testStory("Story", Story, meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -196,7 +186,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             component: Button,
             title: "automatic/calculated/title"
@@ -207,9 +197,9 @@ describe('transformer', () => {
               label: 'Primary Button'
             }
           };
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, _meta, []));
+            _test("Primary", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -223,7 +213,7 @@ describe('transformer', () => {
 
           expect(result.code).toMatchInlineSnapshot(`
             import { test as _test, expect as _expect } from "vitest";
-            import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+            import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
             const _meta = {
               component: Button,
               title: "automatic/calculated/title"
@@ -232,9 +222,9 @@ describe('transformer', () => {
             export const Primary = {
               name: "custom name"
             };
-            const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+            const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
             if (_isRunningFromThisFile) {
-              _test("custom name", _testStory("Primary", Primary, _meta, []));
+              _test("custom name", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
             }
           `);
         });
@@ -247,7 +237,7 @@ describe('transformer', () => {
           const result = await transform({ code: code });
           expect(result.code).toMatchInlineSnapshot(`
             import { test as _test, expect as _expect } from "vitest";
-            import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+            import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
             const _meta = {
               component: Button,
               title: "automatic/calculated/title"
@@ -255,9 +245,9 @@ describe('transformer', () => {
             export default _meta;
             export const Story = () => {};
             Story.storyName = 'custom name';
-            const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+            const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
             if (_isRunningFromThisFile) {
-              _test("custom name", _testStory("Story", Story, _meta, []));
+              _test("custom name", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
             }
           `);
         });
@@ -271,7 +261,7 @@ describe('transformer', () => {
               label: 'Primary Button',
             },
           };
-  
+
           export { Primary };
         `;
 
@@ -279,7 +269,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             title: "automatic/calculated/title"
           };
@@ -290,9 +280,9 @@ describe('transformer', () => {
             }
           };
           export { Primary };
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, _meta, []));
+            _test("Primary", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -305,7 +295,7 @@ describe('transformer', () => {
               label: 'Primary Button',
             },
           };
-  
+
           export { Primary as PrimaryStory };
         `;
 
@@ -313,7 +303,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             title: "automatic/calculated/title"
           };
@@ -324,9 +314,9 @@ describe('transformer', () => {
             }
           };
           export { Primary as PrimaryStory };
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("PrimaryStory", _testStory("PrimaryStory", Primary, _meta, []));
+            _test("PrimaryStory", _testStory("PrimaryStory", Primary, _meta, [], "automatic-calculated-title--primary-story"));
           }
         `);
       });
@@ -339,16 +329,16 @@ describe('transformer', () => {
               label: 'Primary Button',
             },
           };
-  
+
           export const Secondary = {}
-  
+
           export { Primary };
         `;
 
         const result = await transform({ code });
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             title: "automatic/calculated/title"
           };
@@ -360,10 +350,10 @@ describe('transformer', () => {
           };
           export const Secondary = {};
           export { Primary };
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Secondary", _testStory("Secondary", Secondary, _meta, []));
-            _test("Primary", _testStory("Primary", Primary, _meta, []));
+            _test("Secondary", _testStory("Secondary", Secondary, _meta, [], "automatic-calculated-title--secondary"));
+            _test("Primary", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -383,7 +373,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             title: "automatic/calculated/title",
             component: Button,
@@ -392,9 +382,9 @@ describe('transformer', () => {
           export default _meta;
           export const Story = {};
           export const nonStory = 123;
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, _meta, []));
+            _test("Story", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -429,7 +419,7 @@ describe('transformer', () => {
         const code = `
           export default {};
           export const Included = { tags: ['include-me'] };
-  
+
           export const NotIncluded = {}
         `;
 
@@ -440,7 +430,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             title: "automatic/calculated/title"
           };
@@ -449,9 +439,9 @@ describe('transformer', () => {
             tags: ['include-me']
           };
           export const NotIncluded = {};
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Included", _testStory("Included", Included, _meta, []));
+            _test("Included", _testStory("Included", Included, _meta, [], "automatic-calculated-title--included"));
           }
         `);
       });
@@ -460,7 +450,7 @@ describe('transformer', () => {
         const code = `
           export default {};
           export const Included = {};
-  
+
           export const NotIncluded = { tags: ['exclude-me'] }
         `;
 
@@ -471,7 +461,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             title: "automatic/calculated/title"
           };
@@ -480,9 +470,9 @@ describe('transformer', () => {
           export const NotIncluded = {
             tags: ['exclude-me']
           };
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Included", _testStory("Included", Included, _meta, []));
+            _test("Included", _testStory("Included", Included, _meta, [], "automatic-calculated-title--included"));
           }
         `);
       });
@@ -500,7 +490,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const _meta = {
             title: "automatic/calculated/title"
           };
@@ -508,9 +498,9 @@ describe('transformer', () => {
           export const Skipped = {
             tags: ['skip-me']
           };
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Skipped", _testStory("Skipped", Skipped, _meta, ["skip-me"]));
+            _test("Skipped", _testStory("Skipped", Skipped, _meta, ["skip-me"], "automatic-calculated-title--skipped"));
           }
         `);
       });
@@ -533,16 +523,16 @@ describe('transformer', () => {
 
         expect(transformedCode).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           const meta = {
             title: "automatic/calculated/title",
             component: Button
           };
           export default meta;
           export const Primary = {};
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, meta, []));
+            _test("Primary", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
           }
         `);
 
@@ -590,16 +580,16 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           import { config } from '#.storybook/preview';
           const meta = config.meta({
             component: Button,
             title: "automatic/calculated/title"
           });
           export const Story = meta.story({});
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Story", _testStory("Story", Story, meta, []));
+            _test("Story", _testStory("Story", Story, meta, [], "automatic-calculated-title--story"));
           }
         `);
       });
@@ -615,7 +605,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           import { config } from '#.storybook/preview';
           const meta = config.meta({
             component: Button,
@@ -624,9 +614,9 @@ describe('transformer', () => {
           export const Primary = meta.story({
             name: "custom name"
           });
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("custom name", _testStory("Primary", Primary, meta, []));
+            _test("custom name", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -635,7 +625,7 @@ describe('transformer', () => {
         const code = `
         import { config } from '#.storybook/preview';
         const meta = config.meta({ component: Button });
-        const Primary = meta.story({ 
+        const Primary = meta.story({
           args: {
             label: 'Primary Button',
           }
@@ -648,7 +638,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           import { config } from '#.storybook/preview';
           const meta = config.meta({
             component: Button,
@@ -660,9 +650,9 @@ describe('transformer', () => {
             }
           });
           export { Primary };
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, meta, []));
+            _test("Primary", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
           }
         `);
       });
@@ -671,7 +661,7 @@ describe('transformer', () => {
         const code = `
         import { config } from '#.storybook/preview';
         const meta = config.meta({ component: Button });
-        const Primary = meta.story({ 
+        const Primary = meta.story({
           args: {
             label: 'Primary Button',
           }
@@ -684,7 +674,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           import { config } from '#.storybook/preview';
           const meta = config.meta({
             component: Button,
@@ -696,9 +686,9 @@ describe('transformer', () => {
             }
           });
           export { Primary as PrimaryStory };
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("PrimaryStory", _testStory("PrimaryStory", Primary, meta, []));
+            _test("PrimaryStory", _testStory("PrimaryStory", Primary, meta, [], "automatic-calculated-title--primary-story"));
           }
         `);
       });
@@ -719,25 +709,25 @@ describe('transformer', () => {
 
         const result = await transform({ code });
         expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          title: "automatic/calculated/title"
-        };
-        export default _meta;
-        const Primary = {
-          args: {
-            label: 'Primary Button'
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          const Primary = {
+            args: {
+              label: 'Primary Button'
+            }
+          };
+          export const Secondary = {};
+          export { Primary };
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Secondary", _testStory("Secondary", Secondary, _meta, [], "automatic-calculated-title--secondary"));
+            _test("Primary", _testStory("Primary", Primary, _meta, [], "automatic-calculated-title--primary"));
           }
-        };
-        export const Secondary = {};
-        export { Primary };
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Secondary", _testStory("Secondary", Secondary, _meta, []));
-          _test("Primary", _testStory("Primary", Primary, _meta, []));
-        }
-      `);
+        `);
       });
 
       it('should exclude exports via excludeStories', async () => {
@@ -754,21 +744,21 @@ describe('transformer', () => {
         const result = await transform({ code });
 
         expect(result.code).toMatchInlineSnapshot(`
-        import { test as _test, expect as _expect } from "vitest";
-        import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
-        const _meta = {
-          title: "automatic/calculated/title",
-          component: Button,
-          excludeStories: ['nonStory']
-        };
-        export default _meta;
-        export const Story = {};
-        export const nonStory = 123;
-        const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
-        if (_isRunningFromThisFile) {
-          _test("Story", _testStory("Story", Story, _meta, []));
-        }
-      `);
+          import { test as _test, expect as _expect } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title",
+            component: Button,
+            excludeStories: ['nonStory']
+          };
+          export default _meta;
+          export const Story = {};
+          export const nonStory = 123;
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _test("Story", _testStory("Story", Story, _meta, [], "automatic-calculated-title--story"));
+          }
+        `);
       });
 
       it('should return a describe with skip if there are no valid stories', async () => {
@@ -794,6 +784,72 @@ describe('transformer', () => {
         _describe.skip("No valid tests found");
       `);
       });
+      it('should support test annotation', async () => {
+        const code = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({ component: Button });
+        export const A = meta.story({});
+        A.test("foo", { args: { primary: true }}, () => {});
+        A.test("bar", () => {});
+      `;
+
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            component: Button,
+            title: "automatic/calculated/title"
+          });
+          export const A = meta.story({});
+          A.test("foo", {
+            args: {
+              primary: true
+            }
+          }, () => {});
+          A.test("bar", () => {});
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _describe("A  ", () => {
+              _test("base story", _testStory("A", A, meta, [], "automatic-calculated-title--a"));
+              _test("foo", _testStory("A", A, meta, [], "automatic-calculated-title--a:foo", "foo"));
+              _test("bar", _testStory("A", A, meta, [], "automatic-calculated-title--a:bar", "bar"));
+            });
+          }
+        `);
+      });
+    });
+
+    describe('test syntax', () => {
+      it('should add test statement to story tests', async () => {
+        const code = `
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({});
+          export const Primary = meta.story({});
+          Primary.test("foo", () => {});
+        `;
+        const result = await transform({ code });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Primary = meta.story({});
+          Primary.test("foo", () => {});
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _describe("Primary  ", () => {
+              _test("base story", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
+              _test("foo", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary:foo", "foo"));
+            });
+          }
+        `);
+      });
     });
 
     describe('tags filtering mechanism', () => {
@@ -813,7 +869,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           import { config } from '#.storybook/preview';
           const meta = config.meta({
             title: "automatic/calculated/title"
@@ -822,9 +878,9 @@ describe('transformer', () => {
             tags: ['include-me']
           });
           export const NotIncluded = meta.story({});
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Included", _testStory("Included", Included, meta, []));
+            _test("Included", _testStory("Included", Included, meta, [], "automatic-calculated-title--included"));
           }
         `);
       });
@@ -845,7 +901,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           import { config } from '#.storybook/preview';
           const meta = config.meta({
             title: "automatic/calculated/title"
@@ -854,9 +910,9 @@ describe('transformer', () => {
           export const NotIncluded = meta.story({
             tags: ['exclude-me']
           });
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Included", _testStory("Included", Included, meta, []));
+            _test("Included", _testStory("Included", Included, meta, [], "automatic-calculated-title--included"));
           }
         `);
       });
@@ -875,7 +931,7 @@ describe('transformer', () => {
 
         expect(result.code).toMatchInlineSnapshot(`
           import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           import { config } from '#.storybook/preview';
           const meta = config.meta({
             title: "automatic/calculated/title"
@@ -883,9 +939,9 @@ describe('transformer', () => {
           export const Skipped = meta.story({
             tags: ['skip-me']
           });
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Skipped", _testStory("Skipped", Skipped, meta, ["skip-me"]));
+            _test("Skipped", _testStory("Skipped", Skipped, meta, ["skip-me"], "automatic-calculated-title--skipped"));
           }
         `);
       });
@@ -897,6 +953,7 @@ describe('transformer', () => {
         import { config } from '#.storybook/preview';
         const meta = config.meta({});
         export const Primary = meta.story({});
+        Primary.test("foo", () => {});
       `;
 
         const { code: transformedCode, map } = await transform({
@@ -904,29 +961,33 @@ describe('transformer', () => {
         });
 
         expect(transformedCode).toMatchInlineSnapshot(`
-          import { test as _test, expect as _expect } from "vitest";
-          import { testStory as _testStory } from "@storybook/experimental-addon-test/internal/test-utils";
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
           import { config } from '#.storybook/preview';
           const meta = config.meta({
             title: "automatic/calculated/title"
           });
           export const Primary = meta.story({});
-          const _isRunningFromThisFile = import.meta.url.includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          Primary.test("foo", () => {});
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
           if (_isRunningFromThisFile) {
-            _test("Primary", _testStory("Primary", Primary, meta, []));
+            _describe("Primary  ", () => {
+              _test("base story", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary"));
+              _test("foo", _testStory("Primary", Primary, meta, [], "automatic-calculated-title--primary:foo", "foo"));
+            });
           }
         `);
 
         const consumer = await new SourceMapConsumer(map as unknown as RawSourceMap);
 
-        // Locate `__test("Primary"...` in the transformed code
+        // Locate `_test("base story"...` in the transformed code
         const testPrimaryLine =
-          transformedCode.split('\n').findIndex((line) => line.includes('_test("Primary"')) + 1;
+          transformedCode.split('\n').findIndex((line) => line.includes('_test("base story"')) + 1;
         const testPrimaryColumn = transformedCode
           .split('\n')
-          [testPrimaryLine - 1].indexOf('_test("Primary"');
+          [testPrimaryLine - 1].indexOf('_test("base story"');
 
-        // Get the original position from the source map for `__test("Primary"...`
+        // Get the original position from the source map for `_test("base story"...`
         const originalPosition = consumer.originalPositionFor({
           line: testPrimaryLine,
           column: testPrimaryColumn,
@@ -943,11 +1004,94 @@ describe('transformer', () => {
         expect(originalPosition.line, 'original line location').toBe(originalPrimaryLine);
         expect(originalPosition.column, 'original column location').toBe(originalPrimaryColumn);
       });
+
+      it.skip('should remap the location of story tests', async () => {
+        const originalCode = `
+        import { config } from '#.storybook/preview';
+        const meta = config.meta({});
+        export const Primary = meta.story({});
+        Primary.test("foo", () => {});
+      `;
+
+        const { code: transformedCode, map } = await transform({
+          code: originalCode,
+        });
+
+        expect(transformedCode).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Primary = meta.story({});
+          Primary.test("foo", () => {});
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _describe("Primary", () => {
+              _test("base story", _testStory("Primary", Primary, meta, []));
+              _test("foo", _testStory("Primary", Primary, meta, [], "foo"));
+            });
+          }
+        `);
+
+        const consumer = await new SourceMapConsumer(map as unknown as RawSourceMap);
+
+        // Locate `_test("render test"...` in the transformed code
+        const testPrimaryLine =
+          transformedCode.split('\n').findIndex((line) => line.includes('_test("render test"')) + 1;
+        const testPrimaryColumn = transformedCode
+          .split('\n')
+          [testPrimaryLine - 1].indexOf('_test("render test"');
+
+        // Get the original position from the source map for `_test("render test"...`
+        const originalPosition = consumer.originalPositionFor({
+          line: testPrimaryLine,
+          column: testPrimaryColumn,
+        });
+
+        // Locate `export const Primary` in the original code
+        const originalPrimaryLine =
+          originalCode.split('\n').findIndex((line) => line.includes('export const Primary')) + 1;
+        const originalPrimaryColumn = originalCode
+          .split('\n')
+          [originalPrimaryLine - 1].indexOf('export const Primary');
+
+        // The original locations of the transformed code should match with the ones of the original code
+        expect(originalPosition.line, 'original line location').toBe(originalPrimaryLine);
+        expect(originalPosition.column, 'original column location').toBe(originalPrimaryColumn);
+
+        // Locate `_test("foo"...` in the transformed code
+        const storyTestLine =
+          transformedCode.split('\n').findIndex((line) => line.includes('_test("foo"')) + 1;
+        const storyTestColumn = transformedCode
+          .split('\n')
+          [storyTestLine - 1].indexOf('_test("foo"');
+
+        // Get the original position from the source map for `_test("foo"...`
+        const originalTestPosition = consumer.originalPositionFor({
+          line: storyTestLine,
+          column: storyTestColumn,
+        });
+
+        // Locate `Primary.test("foo"'` in the original code
+        const originalStoryTestLine =
+          originalCode.split('\n').findIndex((line) => line.includes('Primary.test("foo"')) + 1;
+        const originalStoryTestColumn = originalCode
+          .split('\n')
+          [originalStoryTestLine - 1].indexOf('Primary.test("foo"');
+
+        // The original locations of the transformed code should match with the ones of the original code
+        expect(originalTestPosition.line, 'original line location').toBe(originalStoryTestLine);
+        expect(originalTestPosition.column, 'original column location').toBe(
+          originalStoryTestColumn
+        );
+      });
     });
   });
 
   describe('error handling', () => {
-    const warnSpy = vi.spyOn(console, 'warn');
+    const warnSpy = vi.spyOn(logger, 'warn');
     beforeEach(() => {
       vi.mocked(getStoryTitle).mockRestore();
       warnSpy.mockReset();

@@ -1,25 +1,24 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
 import {
   extractProperRendererNameFromFramework,
   getFrameworkName,
   getProjectRoot,
-} from '@storybook/core/common';
-import { telemetry } from '@storybook/core/telemetry';
-import type { CoreConfig, Options, SupportedRenderers } from '@storybook/core/types';
-
+} from 'storybook/internal/common';
 import type {
   FileComponentSearchRequestPayload,
   FileComponentSearchResponsePayload,
   RequestData,
   ResponseData,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import { telemetry } from 'storybook/internal/telemetry';
+import type { CoreConfig, Options, SupportedRenderers } from 'storybook/internal/types';
 
 import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
 import { getParser } from '../utils/parser';
@@ -46,22 +45,20 @@ export async function initFileSearchChannel(
           frameworkName
         )) as SupportedRenderers;
 
-        const projectRoot = getProjectRoot();
-
         const files = await searchFiles({
           searchQuery,
-          cwd: projectRoot,
+          cwd: getProjectRoot(),
         });
 
         const entries = files.map(async (file) => {
           const parser = getParser(rendererName);
 
           try {
-            const content = await readFile(join(projectRoot, file), 'utf-8');
-            const { storyFileName } = getStoryMetadata(join(projectRoot, file));
+            const content = await readFile(join(getProjectRoot(), file), 'utf-8');
+            const { storyFileName } = getStoryMetadata(join(getProjectRoot(), file));
             const dir = dirname(file);
 
-            const storyFileExists = doesStoryFileExist(join(projectRoot, dir), storyFileName);
+            const storyFileExists = doesStoryFileExist(join(getProjectRoot(), dir), storyFileName);
 
             const info = await parser.parse(content);
 

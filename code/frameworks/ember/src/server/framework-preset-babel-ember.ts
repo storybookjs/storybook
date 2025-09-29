@@ -1,7 +1,7 @@
 import type { PresetProperty, PresetPropertyFn } from 'storybook/internal/types';
 
 import type { TransformOptions } from '@babel/core';
-import { precompile } from 'ember-source/dist/ember-template-compiler';
+import { precompile } from 'ember-source/dist/ember-template-compiler.js';
 
 import { findDistFile } from '../util';
 
@@ -32,7 +32,7 @@ export const babel: PresetPropertyFn<'babel'> = (config: TransformOptions, optio
 
   const extraPlugins = [
     [
-      require.resolve('babel-plugin-htmlbars-inline-precompile'),
+      import.meta.resolve('babel-plugin-htmlbars-inline-precompile'),
       {
         precompile: precompileWithPlugins,
         modules: {
@@ -42,7 +42,7 @@ export const babel: PresetPropertyFn<'babel'> = (config: TransformOptions, optio
         },
       },
     ],
-    [require.resolve('babel-plugin-ember-modules-api-polyfill')],
+    [import.meta.resolve('babel-plugin-ember-modules-api-polyfill')],
   ];
 
   return {

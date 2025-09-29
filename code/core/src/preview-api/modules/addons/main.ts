@@ -1,4 +1,5 @@
-import type { Channel } from '@storybook/core/channels';
+import type { Channel } from 'storybook/internal/channels';
+
 import { global } from '@storybook/global';
 
 import { mockChannel } from './storybook-channel-mock';

@@ -1,9 +1,10 @@
-import { global } from '@storybook/global';
+import { TELEMETRY_ERROR } from 'storybook/internal/core-events';
 
-import { TELEMETRY_ERROR } from '@storybook/core/core-events';
+import { global } from '@storybook/global';
 
 import { globalPackages, globalsNameReferenceMap } from './globals/globals';
 import { globalsNameValueMap } from './globals/runtime';
+import { maybeSetupPreviewNavigator } from './preview-navigator';
 import { prepareForTelemetry } from './utils';
 
 function errorListener(args: any) {
@@ -33,6 +34,7 @@ export function setup() {
   // handle all uncaught StorybookError at the root of the application and log to telemetry if applicable
   global.addEventListener('error', errorListener);
   global.addEventListener('unhandledrejection', unhandledRejectionListener);
+  maybeSetupPreviewNavigator();
 }
 
 // TODO: In the future, remove this call to make the module side-effect free

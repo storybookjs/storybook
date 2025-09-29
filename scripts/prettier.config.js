@@ -8,10 +8,6 @@ export default {
 
   overrides: [
     {
-      files: '*.html',
-      options: { parser: 'babel' },
-    },
-    {
       files: '*.component.html',
       options: { parser: 'angular' },
     },

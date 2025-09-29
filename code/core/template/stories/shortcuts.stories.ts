@@ -1,11 +1,12 @@
-import type { PlayFunctionContext } from '@storybook/core/csf';
-import { global as globalThis } from '@storybook/global';
-import { expect, fn, userEvent, within } from '@storybook/test';
+import { PREVIEW_KEYDOWN } from 'storybook/internal/core-events';
+import type { PlayFunctionContext } from 'storybook/internal/csf';
 
-import { PREVIEW_KEYDOWN } from '@storybook/core/core-events';
+import { global as globalThis } from '@storybook/global';
+
+import { expect, fn, userEvent, within } from 'storybook/test';
 
 export default {
-  component: globalThis.Components.Form,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Form,
   tags: ['autodocs'],
   args: {
     onSubmit: fn(),

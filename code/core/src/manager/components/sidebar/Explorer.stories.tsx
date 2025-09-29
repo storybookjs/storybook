@@ -22,11 +22,6 @@ export default {
   ],
 };
 
-const selected = {
-  refId: 'storybook_internal',
-  storyId: 'root-1-child-a2--grandchild-a1-1',
-};
-
 const simple: Record<string, RefType> = {
   storybook_internal: {
     title: undefined,
@@ -81,17 +76,25 @@ const withRefs: Record<string, RefType> = {
 export const Simple = () => (
   <Explorer
     dataset={{ hash: simple, entries: Object.entries(simple) }}
-    selected={selected}
+    selected={{
+      refId: 'storybook_internal',
+      storyId: 'root-1-child-a2--grandchild-a1-1:test1',
+    }}
     isLoading={false}
     isBrowsing
+    hasEntries={true}
   />
 );
 
 export const WithRefs = () => (
   <Explorer
     dataset={{ hash: withRefs, entries: Object.entries(withRefs) }}
-    selected={selected}
+    selected={{
+      refId: 'storybook_internal',
+      storyId: 'root-1-child-a2--grandchild-a1-1',
+    }}
     isLoading={false}
     isBrowsing
+    hasEntries={true}
   />
 );

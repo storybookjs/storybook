@@ -41,7 +41,6 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
   }
 
   const channel = new Channel({ transports });
-  // eslint-disable-next-line no-underscore-dangle
   UniversalStore.__prepare(
     channel,
     page === 'manager' ? UniversalStore.Environment.MANAGER : UniversalStore.Environment.PREVIEW

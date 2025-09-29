@@ -1,8 +1,12 @@
-import { isExportStory, isStory } from '@storybook/core/csf';
-import type { ComponentTitle, Parameters, Path, Renderer } from '@storybook/core/types';
-import type { CSFFile, ModuleExports, NormalizedComponentAnnotations } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
+import type { Story } from 'storybook/internal/csf';
+import { getStoryChildren, isExportStory, isStory, toTestId } from 'storybook/internal/csf';
+import type { ComponentTitle, Parameters, Path, Renderer } from 'storybook/internal/types';
+import type {
+  CSFFile,
+  ModuleExports,
+  NormalizedComponentAnnotations,
+} from 'storybook/internal/types';
 
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeStory } from './normalizeStory';
@@ -43,7 +47,6 @@ export function processCSFFile<TRenderer extends Renderer>(
   importPath: Path,
   title: ComponentTitle
 ): CSFFile<TRenderer> {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { default: defaultExport, __namedExportsOrder, ...namedExports } = moduleExports;
 
   const firstStory = Object.values(namedExports)[0];
@@ -56,10 +59,26 @@ export function processCSFFile<TRenderer extends Renderer>(
 
     Object.keys(namedExports).forEach((key) => {
       if (isExportStory(key, meta)) {
-        const storyMeta = normalizeStory(key, namedExports[key].input, meta);
+        const story: Story<TRenderer> = namedExports[key];
+
+        const storyMeta = normalizeStory(key, story.input as any, meta);
         checkDisallowedParameters(storyMeta.parameters);
 
         csfFile.stories[storyMeta.id] = storyMeta;
+
+        // if the story has tests, we need to add those to the csfFile
+
+        getStoryChildren(story).forEach((child) => {
+          const name = child.input.name!;
+          const childId = toTestId(storyMeta.id, name);
+
+          child.input.parameters ??= {};
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore We provide the __id parameter because we don't want normalizeStory to calculate the id
+          child.input.parameters.__id = childId;
+
+          csfFile.stories[childId] = normalizeStory(name, child.input as any, meta);
+        });
       }
     });
 

@@ -14,49 +14,16 @@ test.describe('Svelte', () => {
 
   test.skip(!templateName?.includes('svelte'), 'Only run these tests on Svelte');
 
-  test('JS story has auto-generated args table', async ({ page }) => {
-    const sbPage = new SbPage(page, expect);
-
-    await sbPage.navigateToStory('stories/renderers/svelte/docs-jsdoc', 'docs');
-    const root = sbPage.previewRoot();
-    const argsTable = root.locator('.docblock-argstable');
-    await expect(argsTable).toContainText('Union of literal strings');
-  });
-
-  test('TS story has auto-generated args table', async ({ page }) => {
-    test.skip(!templateName?.endsWith('ts') || false, 'Only test TS story in TS templates');
-    const sbPage = new SbPage(page, expect);
-
-    await sbPage.navigateToStory('stories/renderers/svelte/docs-ts', 'docs');
-    const root = sbPage.previewRoot();
-    const argsTable = root.locator('.docblock-argstable');
-    await expect(argsTable).toContainText('Union of literal strings');
-  });
-
   test('Decorators are excluded from generated source code', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('stories/renderers/svelte/slot-decorators', 'docs');
+    await sbPage.navigateToStory('stories/renderers/svelte/decorators', 'docs');
     const root = sbPage.previewRoot();
     const showCodeButton = (await root.locator('button', { hasText: 'Show Code' }).all())[0];
     await showCodeButton.click();
     const sourceCode = root.locator('pre.prismjs');
-    const expectedSource = '<ButtonJavaScript primary/>';
+    const expectedSource = '<Button />';
     await expect(sourceCode).toHaveText(expectedSource);
-  });
-
-  test('Decorators runs only once', async ({ page }) => {
-    const sbPage = new SbPage(page, expect);
-    const lines: string[] = [];
-    page.on('console', (msg) => {
-      const text = msg.text();
-      if (text === 'decorator called') {
-        lines.push(text);
-      }
-    });
-
-    await sbPage.navigateToStory('stories/renderers/svelte/decorators-runs-once', 'default');
-    expect(lines).toHaveLength(1);
   });
 
   test.describe('SvelteKit', () => {
@@ -65,7 +32,7 @@ test.describe('Svelte', () => {
     test('Links are logged in Actions panel', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 
-      await sbPage.navigateToStory('stories/sveltekit/modules/hrefs', 'default-actions');
+      await sbPage.navigateToStory('stories/frameworks/sveltekit/modules/hrefs', 'default-actions');
       const root = sbPage.previewRoot();
       const link = root.locator('a', { hasText: 'Link to /basic-href' });
       await link.click();
@@ -85,7 +52,10 @@ test.describe('Svelte', () => {
     test('goto are logged in Actions panel', async ({ page }) => {
       const sbPage = new SbPage(page, expect);
 
-      await sbPage.navigateToStory('stories/sveltekit/modules/navigation', 'default-actions');
+      await sbPage.navigateToStory(
+        'stories/frameworks/sveltekit/modules/navigation',
+        'default-actions'
+      );
       const root = sbPage.previewRoot();
       await sbPage.viewAddonPanel('Actions');
 

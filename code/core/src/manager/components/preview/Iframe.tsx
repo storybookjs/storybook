@@ -1,8 +1,9 @@
 import type { IframeHTMLAttributes } from 'react';
 import React from 'react';
 
-import { Zoom } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { Zoom } from 'storybook/internal/components';
+
+import { styled } from 'storybook/theming';
 
 const StyledIframe = styled.iframe(({ theme }) => ({
   backgroundColor: theme.background.preview,

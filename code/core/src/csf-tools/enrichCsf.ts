@@ -1,5 +1,4 @@
-/* eslint-disable no-underscore-dangle */
-import { generate, types as t } from '@storybook/core/babel';
+import { generate, types as t } from 'storybook/internal/babel';
 
 import type { CsfFile } from './CsfFile';
 

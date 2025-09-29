@@ -3,12 +3,27 @@ import { dirname, join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
-import { logger } from '@storybook/core/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
 import * as m from './common-preset';
 
+// mock src/core-server/utils/constants.ts:8:27
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: join(
+      dirname(require.resolve('storybook/package.json')),
+      '/assets/browser/favicon.svg'
+    ),
+  };
+});
+
+vi.mock('../../shared/utils/module', () => ({
+  resolvePackageDir: vi.fn().mockReturnValue('mocked-path'),
+}));
+
 const defaultFavicon = join(
-  dirname(require.resolve('@storybook/core/package.json')),
+  dirname(require.resolve('storybook/package.json')),
   '/assets/browser/favicon.svg'
 );
 
@@ -29,7 +44,7 @@ const createOptions = (locations: string[]): Parameters<typeof m.favicon>[1] => 
   },
 });
 
-vi.mock('@storybook/core/node-logger', () => {
+vi.mock('storybook/internal/node-logger', () => {
   return {
     logger: {
       warn: vi.fn(() => {}),
@@ -42,13 +57,34 @@ vi.mock('node:fs', async (importOriginal) => ({
   existsSync: vi.fn((p: string) => {
     return false;
   }),
+  statSync: vi.fn((p: string) => {
+    return {
+      isFile: () => false,
+    };
+  }),
 }));
 const existsSyncMock = vi.mocked(fs.existsSync);
+const statSyncMock = vi.mocked(fs.statSync);
 
 it('with no staticDirs favicon should return default', async () => {
   const options = createOptions([]);
 
   expect(await m.favicon(undefined, options)).toBe(defaultFavicon);
+});
+
+it('with staticDirs referencing a favicon.ico directly should return the found favicon', async () => {
+  const location = 'favicon.ico';
+  existsSyncMock.mockImplementation((p) => {
+    return p === createPath(location);
+  });
+  statSyncMock.mockImplementation((p) => {
+    return {
+      isFile: () => p === createPath('favicon.ico'),
+    } as any;
+  });
+  const options = createOptions([location]);
+
+  expect(await m.favicon(undefined, options)).toBe(createPath('favicon.ico'));
 });
 
 it('with staticDirs containing a single favicon.ico should return the found favicon', async () => {

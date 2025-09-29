@@ -33,7 +33,7 @@ export async function transformIframeHtml(html: string, options: Options) {
     .replace('[LOGLEVEL HERE]', logLevel || '')
     .replace(`'[FRAMEWORK_OPTIONS HERE]'`, JSON.stringify(frameworkOptions))
     .replace(
-      `('OTHER_GLOBLALS HERE');`,
+      `('OTHER_GLOBALS HERE');`,
       Object.entries(otherGlobals)
         .map(([k, v]) => `window["${k}"] = ${JSON.stringify(v)};`)
         .join('')

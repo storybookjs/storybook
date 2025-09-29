@@ -1,5 +1,5 @@
-import type { Renderer, StoryId } from '@storybook/core/types';
-import type { StoryRenderOptions } from '@storybook/core/types';
+import type { Renderer, StoryId } from 'storybook/internal/types';
+import type { StoryRenderOptions } from 'storybook/internal/types';
 
 export type RenderType = 'story' | 'docs';
 
@@ -12,6 +12,7 @@ export type RenderType = 'story' | 'docs';
  * - Tracking what is rendered to know if a change requires re-rendering or teardown + recreation.
  */
 export interface Render<TRenderer extends Renderer> {
+  renderId: number;
   type: RenderType;
   id: StoryId;
   isPreparing: () => boolean;

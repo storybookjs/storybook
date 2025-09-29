@@ -1,4 +1,5 @@
-import type { API_UnknownEntries, API_Version, API_Versions } from '@storybook/core/types';
+import type { API_UnknownEntries, API_Version, API_Versions } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
@@ -97,7 +98,11 @@ export const init: ModuleFn = ({ store }) => {
 
       if (versioned && current?.version && latest?.version) {
         const versionDiff = semver.diff(latest.version, current.version);
-        const isLatestDocs = versionDiff === 'patch' || versionDiff === null;
+        const isLatestDocs =
+          versionDiff === 'patch' ||
+          versionDiff === null ||
+          // assume latest version when current version is a 0.0.0 canary
+          semver.satisfies(current.version, '0.0.0', { includePrerelease: true });
 
         if (!isLatestDocs) {
           url += `${semver.major(current.version)}.${semver.minor(current.version)}/`;

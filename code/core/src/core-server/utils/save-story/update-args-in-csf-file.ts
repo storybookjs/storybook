@@ -1,4 +1,4 @@
-import { types as t, traverse } from '@storybook/core/babel';
+import { types as t, traverse } from 'storybook/internal/babel';
 
 import { SaveStoryError } from './utils';
 import { valueToAST } from './valueToAST';

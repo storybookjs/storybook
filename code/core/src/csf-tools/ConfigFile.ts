@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
@@ -8,13 +7,12 @@ import {
   recast,
   types as t,
   traverse,
-} from '@storybook/core/babel';
+} from 'storybook/internal/babel';
+import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType';
-
-const logger = console;
 
 const getCsfParsingErrorMessage = ({
   expectedType,
@@ -48,7 +46,6 @@ const unwrap = (node: t.Node | undefined | null): any => {
   return node;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   if (path.length === 0) {
     return node;
@@ -63,7 +60,6 @@ const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   return undefined;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | undefined => {
   if (path.length === 0) {
     if (t.isObjectExpression(node)) {
@@ -85,7 +81,7 @@ const _getPathProperties = (path: string[], node: t.Node): t.ObjectProperty[] | 
   }
   return undefined;
 };
-// eslint-disable-next-line @typescript-eslint/naming-convention
+
 const _findVarDeclarator = (
   identifier: string,
   program: t.Program
@@ -118,13 +114,11 @@ const _findVarDeclarator = (
   return declarator;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _findVarInitialization = (identifier: string, program: t.Program) => {
   const declarator = _findVarDeclarator(identifier, program);
   return declarator?.init;
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
   if (path.length === 0) {
     return value;
@@ -134,7 +128,6 @@ const _makeObjectExpression = (path: string[], value: t.Expression): t.Expressio
   return t.objectExpression([t.objectProperty(t.identifier(first), innerExpression)]);
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 const _updateExportNode = (path: string[], expr: t.Expression, existing: t.ObjectExpression) => {
   const [first, ...rest] = path;
   const existingField = (existing.properties as t.ObjectProperty[]).find(
@@ -380,18 +373,46 @@ export class ConfigFile {
   setFieldNode(path: string[], expr: t.Expression) {
     const [first, ...rest] = path;
     const exportNode = this._exports[first];
+
+    // First check if we have a direct path in the exports
     if (this._exportsObject) {
+      const properties = this._exportsObject.properties as t.ObjectProperty[];
+      const existingProp = properties.find((p) => propKey(p) === first);
+
+      // If the property exists and is an identifier, follow the reference
+      if (existingProp && t.isIdentifier(existingProp.value)) {
+        const varDecl = _findVarDeclarator(existingProp.value.name, this._ast.program);
+        if (varDecl && t.isObjectExpression(varDecl.init)) {
+          _updateExportNode(rest, expr, varDecl.init);
+          return;
+        }
+      }
+
+      // Otherwise update the export object directly
       _updateExportNode(path, expr, this._exportsObject);
       this._exports[path[0]] = expr;
-    } else if (exportNode && t.isObjectExpression(exportNode) && rest.length > 0) {
+      return;
+    }
+
+    if (exportNode && t.isObjectExpression(exportNode) && rest.length > 0) {
       _updateExportNode(rest, expr, exportNode);
-    } else if (exportNode && rest.length === 0 && this._exportDecls[path[0]]) {
+      return;
+    }
+
+    // If no direct path found, try variable declarations
+    const varDecl = _findVarDeclarator(first, this._ast.program);
+    if (varDecl && t.isObjectExpression(varDecl.init)) {
+      _updateExportNode(rest, expr, varDecl.init);
+      return;
+    }
+
+    if (exportNode && rest.length === 0 && this._exportDecls[path[0]]) {
       const decl = this._exportDecls[path[0]];
       if (t.isVariableDeclarator(decl)) {
         decl.init = _makeObjectExpression([], expr);
       }
     } else if (this.hasDefaultExport) {
-      // This means the main.js of the user has a default export that is not an object expression, therefore we can'types change the AST.
+      // This means the main.js of the user has a default export that is not an object expression, therefore we can't change the AST.
       throw new Error(
         `Could not set the "${path.join(
           '.'
@@ -527,7 +548,7 @@ export class ConfigFile {
         properties.splice(index, 1);
       }
     };
-    // the structure of this._exports doesn'types work for this use case
+    // the structure of this._exports doesn't work for this use case
     // so we have to manually bypass it here
     if (path.length === 1) {
       let removedRootProperty = false;
@@ -714,8 +735,8 @@ export class ConfigFile {
    * @param fromImport - The module to import from
    */
   setRequireImport(importSpecifier: string[] | string, fromImport: string) {
-    const requireDeclaration = this._ast.program.body.find(
-      (node) =>
+    const requireDeclaration = this._ast.program.body.find((node) => {
+      const hasDeclaration =
         t.isVariableDeclaration(node) &&
         node.declarations.length === 1 &&
         t.isVariableDeclarator(node.declarations[0]) &&
@@ -723,8 +744,15 @@ export class ConfigFile {
         t.isIdentifier(node.declarations[0].init.callee) &&
         node.declarations[0].init.callee.name === 'require' &&
         t.isStringLiteral(node.declarations[0].init.arguments[0]) &&
-        node.declarations[0].init.arguments[0].value === fromImport
-    ) as t.VariableDeclaration | undefined;
+        (node.declarations[0].init.arguments[0].value === fromImport ||
+          node.declarations[0].init.arguments[0].value === fromImport.split('node:')[1]);
+      if (hasDeclaration) {
+        // @ts-expect-error the node declaration was found above already
+        fromImport = node.declarations[0].init.arguments[0].value;
+      }
+
+      return hasDeclaration;
+    }) as t.VariableDeclaration | undefined;
 
     /**
      * Returns true, when the given import declaration has the given import specifier
@@ -777,10 +805,10 @@ export class ConfigFile {
 
       if (requireDeclaration) {
         if (!hasDefaultRequireSpecifier(requireDeclaration, importSpecifier)) {
-          // If the import declaration hasn'types the specified default identifier, we add a new variable declaration
+          // If the import declaration hasn't the specified default identifier, we add a new variable declaration
           addDefaultRequireSpecifier();
         }
-        // If the import declaration with the given source doesn'types exist
+        // If the import declaration with the given source doesn't exist
       } else {
         // Add the import declaration to the top of the file
         addDefaultRequireSpecifier();
@@ -836,6 +864,18 @@ export class ConfigFile {
    * @param fromImport - The module to import from
    */
   setImport(importSpecifier: string[] | string | { namespace: string } | null, fromImport: string) {
+    const importDeclaration = this._ast.program.body.find((node) => {
+      const hasDeclaration =
+        t.isImportDeclaration(node) &&
+        (node.source.value === fromImport || node.source.value === fromImport.split('node:')[1]);
+
+      if (hasDeclaration) {
+        fromImport = node.source.value;
+      }
+
+      return hasDeclaration;
+    }) as t.ImportDeclaration | undefined;
+
     const getNewImportSpecifier = (specifier: string) =>
       t.importSpecifier(t.identifier(specifier), t.identifier(specifier));
     /**
@@ -863,7 +903,7 @@ export class ConfigFile {
      *
      * ```ts
      * // import foo from 'bar';
-     * hasImportSpecifier(declaration, 'foo');
+     * hasNamespaceImportSpecifier(declaration, 'foo');
      * ```
      */
     const hasNamespaceImportSpecifier = (declaration: t.ImportDeclaration, name: string) =>
@@ -882,10 +922,6 @@ export class ConfigFile {
           t.isIdentifier(specifier.local) &&
           specifier.local.name === name
       );
-
-    const importDeclaration = this._ast.program.body.find(
-      (node) => t.isImportDeclaration(node) && node.source.value === fromImport
-    ) as t.ImportDeclaration | undefined;
 
     // Handle side-effect imports (e.g., import 'foo')
     if (importSpecifier === null) {
@@ -941,6 +977,185 @@ export class ConfigFile {
         );
       }
     }
+  }
+
+  _removeRequireImport(
+    importSpecifier: string[] | string | { namespace: string } | null,
+    fromImport: string
+  ) {
+    // Find require declaration first.
+    const requireDeclarationIndex = this._ast.program.body.findIndex((node) => {
+      const hasDeclaration =
+        t.isVariableDeclaration(node) &&
+        node.declarations.length === 1 &&
+        t.isVariableDeclarator(node.declarations[0]) &&
+        t.isCallExpression(node.declarations[0].init) &&
+        t.isIdentifier(node.declarations[0].init.callee) &&
+        node.declarations[0].init.callee.name === 'require' &&
+        t.isStringLiteral(node.declarations[0].init.arguments[0]) &&
+        (node.declarations[0].init.arguments[0].value === fromImport ||
+          node.declarations[0].init.arguments[0].value === fromImport.split('node:')[1]);
+
+      return hasDeclaration;
+    });
+
+    if (requireDeclarationIndex === -1) {
+      return;
+    }
+
+    const requireDeclaration = this._ast.program.body[
+      requireDeclarationIndex
+    ] as t.VariableDeclaration;
+    const declarator = requireDeclaration.declarations[0];
+
+    // Handle side-effect requires - require() statements don't have side-effect only versions like imports
+    // so we skip this case for require statements
+    if (importSpecifier === null) {
+      return;
+    }
+
+    // Handle default requires e.g. const foo = require('bar')
+    if (typeof importSpecifier === 'string') {
+      // For default requires, if the identifier matches, remove the entire declaration
+      if (t.isIdentifier(declarator.id) && declarator.id.name === importSpecifier) {
+        this._ast.program.body.splice(requireDeclarationIndex, 1);
+      }
+      return;
+    }
+
+    // require() doesn't have namespace imports so we skip this.
+    // We only allow it in our param type to keep things consistent for removeImport.
+    if (typeof importSpecifier === 'object' && 'namespace' in importSpecifier) {
+      return;
+    }
+
+    // Handle named requires e.g. const { foo, bar } = require('baz')
+    if (Array.isArray(importSpecifier) && t.isObjectPattern(declarator.id)) {
+      const objectPattern = declarator.id as t.ObjectPattern;
+      importSpecifier.forEach((specifier) => {
+        const index = objectPattern.properties.findIndex(
+          (prop) =>
+            t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === specifier
+        );
+
+        if (index !== -1) {
+          objectPattern.properties.splice(index, 1);
+        }
+      });
+
+      // If no properties left in the destructuring, remove the entire declaration
+      if (objectPattern.properties.length === 0) {
+        this._ast.program.body.splice(requireDeclarationIndex, 1);
+      }
+    }
+  }
+
+  _removeImport(
+    importSpecifier: string[] | string | { namespace: string } | null,
+    fromImport: string
+  ) {
+    // Find import declaration first.
+    const importDeclarationIndex = this._ast.program.body.findIndex(
+      (node) =>
+        t.isImportDeclaration(node) &&
+        (node.source.value === fromImport || node.source.value === fromImport.split('node:')[1])
+    );
+    if (importDeclarationIndex === -1) {
+      return;
+    }
+    const importDeclaration = this._ast.program.body[importDeclarationIndex] as t.ImportDeclaration;
+
+    // Remove side-effect imports (e.g., import 'foo') if exact match, else do nothing.
+    if (importSpecifier === null) {
+      if (importDeclaration.specifiers.length === 0) {
+        this._ast.program.body.splice(importDeclarationIndex, 1);
+      }
+
+      return;
+    }
+
+    // From now on, remove requested specifiers from the import declaration.
+    // Handle namespace imports e.g. import * as foo from 'bar'
+    if (typeof importSpecifier === 'object' && 'namespace' in importSpecifier) {
+      const index = importDeclaration.specifiers.findIndex(
+        (specifier) =>
+          t.isImportNamespaceSpecifier(specifier) &&
+          t.isIdentifier(specifier.local) &&
+          specifier.local.name === importSpecifier.namespace
+      );
+
+      if (index !== -1) {
+        importDeclaration.specifiers.splice(index, 1);
+      }
+    }
+
+    // Handle default imports e.g. import foo from 'bar'
+    if (typeof importSpecifier === 'string') {
+      const index = importDeclaration.specifiers.findIndex(
+        (specifier) =>
+          t.isImportDefaultSpecifier(specifier) &&
+          t.isIdentifier(specifier.local) &&
+          specifier.local.name === importSpecifier
+      );
+
+      if (index !== -1) {
+        importDeclaration.specifiers.splice(index, 1);
+      }
+    }
+
+    // Handle named imports e.g. import { foo } from 'bar'
+    if (Array.isArray(importSpecifier)) {
+      importSpecifier.forEach((specifier) => {
+        const index = importDeclaration.specifiers.findIndex(
+          (current) =>
+            t.isImportSpecifier(current) &&
+            t.isIdentifier(current.imported) &&
+            current.imported.name === specifier
+        );
+
+        if (index !== -1) {
+          importDeclaration.specifiers.splice(index, 1);
+        }
+      });
+    }
+
+    // If the import declaration has no specifiers left, remove it.
+    if (importDeclaration.specifiers.length === 0) {
+      this._ast.program.body.splice(importDeclarationIndex, 1);
+    }
+  }
+
+  /**
+   * Remove import specifiers for a given import statement.
+   *
+   * Does not support removing type imports (yet)
+   *
+   * @example
+   *
+   * ```ts
+   * // import { foo } from 'bar';
+   * setImport(['foo'], 'bar');
+   *
+   * // import foo from 'bar';
+   * setImport('foo', 'bar');
+   *
+   * // import * as foo from 'bar';
+   * setImport({ namespace: 'foo' }, 'bar');
+   *
+   * // import 'bar';
+   * setImport(null, 'bar');
+   * ```
+   *
+   * @param importSpecifiers - The import specifiers to remove. If a string is passed in, will only
+   *   remove the default import. Otherwise, named imports matching the array will be removed.
+   * @param fromImport - The module to import from
+   */
+  removeImport(
+    importSpecifier: string[] | string | { namespace: string } | null,
+    fromImport: string
+  ) {
+    this._removeRequireImport(importSpecifier, fromImport);
+    this._removeImport(importSpecifier, fromImport);
   }
 }
 

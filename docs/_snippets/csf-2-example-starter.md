@@ -27,7 +27,8 @@ Primary.args = { primary: true };
 ```
 
 ```tsx filename="CSF 2 - Button.stories.ts|tsx" renderer="react" language="ts"
-import { ComponentStory, ComponentMeta } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { ComponentStory, ComponentMeta } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
@@ -53,7 +54,7 @@ Primary.args = { primary: true };
 ```
 
 ```tsx filename="CSF 2 - Button.stories.ts|tsx" renderer="solid" language="ts"
-import { ComponentStory, ComponentMeta } from 'storybook-solidjs';
+import { ComponentStory, ComponentMeta } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
@@ -82,7 +83,8 @@ Primary.args = { primary: true };
 ```
 
 ```ts filename="CSF 2 - Button.stories.ts" renderer="svelte" language="ts"
-import type { Meta, StoryFn } from '@storybook/svelte';
+// Replace your-framework with the framework you are using, e.g. sveltekit or svelte-vite
+import type { Meta, StoryFn } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 
@@ -117,7 +119,7 @@ Primary.args = { primary: true };
 ```
 
 ```ts filename="CSF 2 - Button.stories.ts" renderer="vue" language="ts"
-import { Meta, StoryFn } from '@storybook/vue3';
+import { Meta, StoryFn } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
 
@@ -151,7 +153,7 @@ Primary.args = {
 ```
 
 ```ts filename="CSF 2 - Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, Story } from '@storybook/web-components';
+import type { Meta, Story } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 

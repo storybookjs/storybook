@@ -1,4 +1,6 @@
-import type { StorybookConfig } from '@storybook/types';
+import type { StorybookConfig } from 'storybook/internal/types';
+
+import { normalizePath } from './normalize-path';
 
 export const getAddonNames = (mainConfig: StorybookConfig): string[] => {
   const addons = mainConfig.addons || [];
@@ -13,6 +15,9 @@ export const getAddonNames = (mainConfig: StorybookConfig): string[] => {
     if (name.startsWith('.')) {
       return undefined;
     }
+
+    // Ensure posix paths for plugin name sniffing
+    name = normalizePath(name);
 
     // For absolute paths, pnpm and yarn pnp,
     // Remove everything before and including "node_modules/"

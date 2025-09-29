@@ -2,28 +2,29 @@ import { readFile } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
 import {
+  JsPackageManagerFactory,
   getConfigInfo,
+  getInterpretedFile,
   getProjectRoot,
   loadAllPresets,
   loadMainConfig,
   resolveAddonName,
   resolvePathInStorybookCache,
-  serverResolve,
-  syncStorybookAddons,
   validateFrameworkName,
   versions,
-} from '@storybook/core/common';
-import { oneWayHash, telemetry } from '@storybook/core/telemetry';
-import type { BuilderOptions, CLIOptions, LoadOptions, Options } from '@storybook/core/types';
-import { global } from '@storybook/global';
+} from 'storybook/internal/common';
+import { deprecate, logger } from 'storybook/internal/node-logger';
+import { MissingBuilderError, NoStatsForViteDevError } from 'storybook/internal/server-errors';
+import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
 
-import { deprecate } from '@storybook/core/node-logger';
-import { MissingBuilderError, NoStatsForViteDevError } from '@storybook/core/server-errors';
+import { global } from '@storybook/global';
 
 import prompts from 'prompts';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
+import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
 import { buildOrThrow } from './utils/build-or-throw';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
@@ -51,7 +52,7 @@ export async function buildDevStandalone(
       `Expected package.json#version to be defined in the "${packageJson.name}" package}`
     );
     storybookVersion = packageJson.version;
-    previewConfigPath = getConfigInfo(packageJson, configDir).previewConfig ?? undefined;
+    previewConfigPath = getConfigInfo(configDir).previewConfigPath ?? undefined;
   } else {
     if (!storybookVersion) {
       storybookVersion = versions.storybook;
@@ -77,8 +78,7 @@ export async function buildDevStandalone(
     }
   }
 
-  const rootDir = getProjectRoot();
-  const cacheKey = oneWayHash(relative(rootDir, configDir));
+  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
   const cacheOutputDir = resolvePathInStorybookCache('public', cacheKey);
   let outputDir = resolve(options.outputDir || cacheOutputDir);
@@ -108,15 +108,22 @@ export async function buildDevStandalone(
 
   frameworkName = frameworkName || 'custom';
 
-  try {
-    await warnOnIncompatibleAddons(storybookVersion);
-  } catch (e) {
-    console.warn('Storybook failed to check addon compatibility', e);
-  }
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
 
   try {
-    await syncStorybookAddons(config, previewConfigPath!);
-  } catch (e) {}
+    await warnOnIncompatibleAddons(storybookVersion, packageManager);
+  } catch (e) {
+    logger.warn('Storybook failed to check addon compatibility');
+    logger.debug(`${e instanceof Error ? e.stack : String(e)}`);
+  }
+
+  // TODO: Bring back in 9.x when we officialy launch CSF4
+  // We need to consider more scenarios in this function, such as removing addons from main.ts
+  // try {
+  //   await syncStorybookAddons(config, previewConfigPath!);
+  // } catch (e) {}
 
   try {
     await warnWhenUsingArgTypesRegex(previewConfigPath, config);
@@ -128,7 +135,7 @@ export async function buildDevStandalone(
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     isCritical: true,
@@ -146,18 +153,20 @@ export async function buildDevStandalone(
     }
   }
 
-  const builderName = typeof builder === 'string' ? builder : builder.name;
+  const resolvedPreviewBuilder = typeof builder === 'string' ? builder : builder.name;
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName, options.configDir),
+    getPreviewBuilder(resolvedPreviewBuilder),
     getManagerBuilder(),
   ]);
 
-  if (builderName.includes('builder-vite')) {
+  if (resolvedPreviewBuilder.includes('builder-vite')) {
     const deprecationMessage =
       dedent(`Using CommonJS in your main configuration file is deprecated with Vite.
               - Refer to the migration guide at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#commonjs-with-vite-is-deprecated`);
 
-    const mainJsPath = serverResolve(resolve(options.configDir || '.storybook', 'main')) as string;
+    const mainJsPath = getInterpretedFile(
+      resolve(options.configDir || '.storybook', 'main')
+    ) as string;
     if (/\.c[jt]s$/.test(mainJsPath)) {
       deprecate(deprecationMessage);
     }
@@ -175,7 +184,7 @@ export async function buildDevStandalone(
   // Load second pass: all presets are applied in order
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('@storybook/core/core-server/presets/common-preset'),
+      join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
       ...(managerBuilder.corePresets || []),
       ...(previewBuilder.corePresets || []),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
@@ -183,7 +192,7 @@ export async function buildDevStandalone(
     ],
     overridePresets: [
       ...(previewBuilder.overridePresets || []),
-      require.resolve('@storybook/core/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
   });
@@ -234,7 +243,7 @@ export async function buildDevStandalone(
         (warning) => !warning.message.includes(`Conflicting values for 'process.env.NODE_ENV'`)
       );
 
-    console.log(problems.map((p) => p.stack));
+    logger.log(problems.map((p) => p.stack).join('\n'));
     process.exit(problems.length > 0 ? 1 : 0);
   } else {
     const name =

@@ -1,25 +1,39 @@
-import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
+import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('@storybook/react-dom-shim/dist/preset'),
+  import.meta.resolve('@storybook/react-dom-shim/preset'),
 ];
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options
 ) => {
-  const docsConfig = await options.presets.apply('docs', {}, options);
-  const features = await options.presets.apply('features', {}, options);
+  const [docsConfig, features] = await Promise.all([
+    options.presets.apply('docs', {}, options),
+    options.presets.apply('features', {}, options),
+  ]);
   const docsEnabled = Object.keys(docsConfig).length > 0;
+  const experimentalRSC = features?.experimentalRSC;
   const result: string[] = [];
 
   return result
     .concat(input)
-    .concat([join(__dirname, 'entry-preview.mjs')])
-    .concat(docsEnabled ? [join(__dirname, 'entry-preview-docs.mjs')] : [])
-    .concat(features?.experimentalRSC ? [join(__dirname, 'entry-preview-rsc.mjs')] : []);
+    .concat([
+      fileURLToPath(import.meta.resolve('@storybook/react/entry-preview')),
+      fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-argtypes')),
+    ])
+    .concat(
+      docsEnabled ? [fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-docs'))] : []
+    )
+    .concat(
+      experimentalRSC
+        ? [fileURLToPath(import.meta.resolve('@storybook/react/entry-preview-rsc'))]
+        : []
+    );
 };
 
 /**
@@ -30,15 +44,16 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
  *
  * We do the exact same thing in the common preset, but that will fail in Yarn PnP because
  *
- * @storybook/core-server doesn't have a peer dependency on react
- * This will make @storybook/react projects work in Yarn PnP
+ * Storybook/internal/core-server doesn't have a peer dependency on react This will make
+ *
+ * @storybook/react projects work in Yarn PnP
  */
 export const resolvedReact = async (existing: any) => {
   try {
     return {
       ...existing,
-      react: dirname(require.resolve('react/package.json')),
-      reactDom: dirname(require.resolve('react-dom/package.json')),
+      react: resolvePackageDir('react'),
+      reactDom: resolvePackageDir('react-dom'),
     };
   } catch (e) {
     return existing;

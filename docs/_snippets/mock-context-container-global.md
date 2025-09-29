@@ -21,8 +21,8 @@ export default { decorators: [AppDecorator] };
 ```ts filename=".storybook/preview.ts" renderer="react" language="ts"
 import React from 'react';
 
-// Replace your-framework with the framework you are using (e.g., react, vue3)
-import { Preview } from '@storybook/your-framework';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { normal as NavigationNormal } from '../components/Navigation.stories';
 

@@ -1,16 +1,18 @@
 {
   "name": "@storybook/addon-jest",
-  "version": "8.6.0-beta.4",
-  "description": "React storybook addon that show component jest report",
+  "version": "10.0.0-beta.7",
+  "description": "Storybook Jest addon: Show Jest report in Storybook's addon panel",
   "keywords": [
-    "addon",
     "jest",
     "react",
     "report",
     "results",
     "storybook",
+    "storybook-addon",
     "unit-testing",
-    "test"
+    "test",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/jest",
   "bugs": {
@@ -27,19 +29,15 @@
   },
   "license": "MIT",
   "author": "Renaud Tertrais <renaud.tertrais@gmail.com> (https://github.com/renaudtertrais)",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
     "./manager": "./dist/manager.js",
-    "./register": "./dist/manager.js",
     "./package.json": "./package.json"
   },
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -48,21 +46,19 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/addon-bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
-    "@storybook/global": "^5.0.0",
     "tiny-invariant": "^1.3.1",
-    "ts-dedent": "^2.0.0",
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.2.12",
+    "@storybook/icons": "^1.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"
@@ -70,15 +66,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "exportEntries": [
-      "./src/index.ts"
-    ],
-    "managerEntries": [
-      "./src/manager.tsx"
-    ]
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16",
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16",
   "storybook": {
     "displayName": "Jest",
     "icon": "https://pbs.twimg.com/profile_images/821713465245102080/mMtKIMax_400x400.jpg",

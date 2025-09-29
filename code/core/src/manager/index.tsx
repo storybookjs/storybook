@@ -2,16 +2,16 @@ import type { ComponentProps, FC } from 'react';
 import React, { useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { Location, LocationProvider, useNavigate } from '@storybook/core/router';
-import { ThemeProvider, ensure as ensureTheme } from '@storybook/core/theming';
-import type { Addon_PageType } from '@storybook/core/types';
+import { ProviderDoesNotExtendBaseProviderError } from 'storybook/internal/manager-errors';
+import { Location, LocationProvider, useNavigate } from 'storybook/internal/router';
+import type { Addon_PageType } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
-import { Provider as ManagerProvider, types } from '@storybook/core/manager-api';
-import type { Combo } from '@storybook/core/manager-api';
-import { ProviderDoesNotExtendBaseProviderError } from '@storybook/core/manager-errors';
-
 import { HelmetProvider } from 'react-helmet-async';
+import { Provider as ManagerProvider, types } from 'storybook/manager-api';
+import type { Combo } from 'storybook/manager-api';
+import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming';
 
 import { App } from './App';
 import type { Layout } from './components/layout/Layout';

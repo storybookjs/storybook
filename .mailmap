@@ -8,43 +8,44 @@ Your name here <yourname@example.com> # github:my-github-account, npm:my-npm-acc
 
 # --- list ----------- #
 
-Aaron Mc Adam <aaron@aaronmcadam.com> 
-Aruna Herath <aruna@kadira.io> <arunabherath@gmail.com> 
-Arunoda Susiripala <arunoda.susiripala@gmail.com>  Arunoda Susiripala <arunoda.susiripala@gmail.com> 
-Benedikt D Valdez <benediktvaldez@users.noreply.github.com>  Benedikt D Valdez <benediktvaldez@users.noreply.github.com> 
+Aaron Mc Adam <aaron@aaronmcadam.com>
+Aruna Herath <aruna@kadira.io> <arunabherath@gmail.com>
+Arunoda Susiripala <arunoda.susiripala@gmail.com>  Arunoda Susiripala <arunoda.susiripala@gmail.com>
+Benedikt D Valdez <benediktvaldez@users.noreply.github.com>  Benedikt D Valdez <benediktvaldez@users.noreply.github.com>
 Daniel Duan <dduan@squarespace.com> <dduan@yahoo.com> # github:danielduan, npm:danielduan, twitter:danduan
-Daniel James <daniel@thzinc.com> <djames@syncromatics.com> 
-Danny Andrews <danny-andrews@users.noreply.github.com>  danny@ownlocal.com> 
-Dustin Kane <dkane@athenahealth.com> <dustinpkane@gmail.com> 
-Eli Sherer <eli.sherer@gmail.com>  elish <elish@payoneer.com> 
-Evgeny Kochetkov <evgeny.kochetkov@me.com>  Evgeny Kochetkov <evgenykochetkov@users.noreply.github.com> 
-Fabien Bernard <fabien0102@hotmail.com>  Fabien BERNARD <fabien0102@hotmail.com> 
-Fernando Daciuk <f.daciuk@gmail.com> <fdaciuk@users.noreply.github.com> 
-Greenkeeper <support@greenkeeper.io>  greenkeeper[bot] <greenkeeper[bot]@users.noreply.github.com> 
-Greenkeeper <support@greenkeeper.io>  greenkeeperio-bot <support@greenkeeper.io> 
-Jason Schloer <jschloer@Jasons-Mac-Pro.local>  jschloer <jschloer@terragotech.com> 
-Jean-Michel Francois <jmfrancois@talend.com>  Jean-Michel FRANCOIS <jmfrancois@talend.com> 
-Jeff Carbonella <jeff.carbonella@gmail.com> <jeff@contactually.com> 
-Jeff Knaggs <jeef3@users.noreply.github.com> <mail@jeef3.com> 
-Jordan Gensler <jordan.gensler@airbnb.com> <jordangens@gmail.com> 
-Kanitkorn Sujautra <k.sujautra@gmail.com>  Kanitkorn S <lukyth@users.noreply.github.com> 
-Kent C. Dodds <kent@doddsfamily.us> <kent+github@doddsfamily.us> 
-larry <bshy522@gmail.com> <larry@yunify.com> 
-Madushan Nishantha <j.l.madushan@gmail.com> <madushan1000@users.noreply.github.com> 
-Marie-Laure Thuret <mthuret@users.noreply.github.com>  mthuret <marielaure.thuret@algolia.com> 
-Max Hodges <max@whiterabbitjapan.com>  MaxHodges <max@whiterabbitjapan.com> 
-Michael Shilman <shilman@lab80.co> <shilman@users.noreply.github.com> 
-Michael Shilman <shilman@lab80.co> <michael@lab80.co> 
-Muhammed Thanish <mnmtanish@gmail.com> <mnmtanish@users.noreply.github.com> 
-Ned Schwartz <ned@theinterned.net>  Ned Schwartz <ned@theinterned.net> 
-Joe Nelson <Joe.Nelson@regence.com>  Nelson, Joe <Joe.Nelson@regence.com> 
-Nikolay Kozhuharenko <Nikolay.Kozhuharenko@gmail.com>  Nikolay <Nikolay.Kozhuharenko@gmail.com> 
+Daniel James <daniel@thzinc.com> <djames@syncromatics.com>
+Danny Andrews <danny-andrews@users.noreply.github.com>  danny@ownlocal.com>
+Dustin Kane <dkane@athenahealth.com> <dustinpkane@gmail.com>
+Eli Sherer <eli.sherer@gmail.com>  elish <elish@payoneer.com>
+Evgeny Kochetkov <evgeny.kochetkov@me.com>  Evgeny Kochetkov <evgenykochetkov@users.noreply.github.com>
+Fabien Bernard <fabien0102@hotmail.com>  Fabien BERNARD <fabien0102@hotmail.com>
+Fernando Daciuk <f.daciuk@gmail.com> <fdaciuk@users.noreply.github.com>
+Gert Hengeveld <info@ghengeveld.nl> <gert@chromatic.com>  # github:ghengeveld, npm:ghengeveld
+Greenkeeper <support@greenkeeper.io>  greenkeeper[bot] <greenkeeper[bot]@users.noreply.github.com>
+Greenkeeper <support@greenkeeper.io>  greenkeeperio-bot <support@greenkeeper.io>
+Jason Schloer <jschloer@Jasons-Mac-Pro.local>  jschloer <jschloer@terragotech.com>
+Jean-Michel Francois <jmfrancois@talend.com>  Jean-Michel FRANCOIS <jmfrancois@talend.com>
+Jeff Carbonella <jeff.carbonella@gmail.com> <jeff@contactually.com>
+Jeff Knaggs <jeef3@users.noreply.github.com> <mail@jeef3.com>
+Jordan Gensler <jordan.gensler@airbnb.com> <jordangens@gmail.com>
+Kanitkorn Sujautra <k.sujautra@gmail.com>  Kanitkorn S <lukyth@users.noreply.github.com>
+Kent C. Dodds <kent@doddsfamily.us> <kent+github@doddsfamily.us>
+larry <bshy522@gmail.com> <larry@yunify.com>
+Madushan Nishantha <j.l.madushan@gmail.com> <madushan1000@users.noreply.github.com>
+Marie-Laure Thuret <mthuret@users.noreply.github.com>  mthuret <marielaure.thuret@algolia.com>
+Max Hodges <max@whiterabbitjapan.com>  MaxHodges <max@whiterabbitjapan.com>
+Michael Shilman <shilman@lab80.co> <shilman@users.noreply.github.com>
+Michael Shilman <shilman@lab80.co> <michael@lab80.co>
+Muhammed Thanish <mnmtanish@gmail.com> <mnmtanish@users.noreply.github.com>
+Ned Schwartz <ned@theinterned.net>  Ned Schwartz <ned@theinterned.net>
+Joe Nelson <Joe.Nelson@regence.com>  Nelson, Joe <Joe.Nelson@regence.com>
+Nikolay Kozhuharenko <Nikolay.Kozhuharenko@gmail.com>  Nikolay <Nikolay.Kozhuharenko@gmail.com>
 Norbert de Langen <ndelangen@me.com>  # github:ndelangen, npm:ndelangen, twitter:norbertdelangen
-Oleg Proskurin <regx@usul.su>  UsulPro <regx@usul.su> 
-Orta <orta.therox@gmail.com>  orta <orta.therox@gmail.com> 
-Ritesh Kumar <ritz078@users.noreply.github.com>  Ritesh Kumar <rkritesh078@gmail.com> 
-Sylvain Bannier <sylvain.bannier@smile.fr>  Sylvain BANNIER <sylvain.bannier@smile.fr> 
-Tom Coleman <tom@percolatestudio.com>  Tom Coleman <tom@thesnail.org> 
+Oleg Proskurin <regx@usul.su>  UsulPro <regx@usul.su>
+Orta <orta.therox@gmail.com>  orta <orta.therox@gmail.com>
+Ritesh Kumar <ritz078@users.noreply.github.com>  Ritesh Kumar <rkritesh078@gmail.com>
+Sylvain Bannier <sylvain.bannier@smile.fr>  Sylvain BANNIER <sylvain.bannier@smile.fr>
+Tom Coleman <tom@percolatestudio.com>  Tom Coleman <tom@thesnail.org>
 Trevor Eyre <trevoreyre@gmail.com> # github:TrevorEyre, twitter:trevor_eyre
-William Castandet <wcastand@gmail.com>  wcastand <wcastand@gmail.com> 
-Xavier Cazalot <xavier.cazalot@gmail.com>  xavcz <xavier.cazalot@gmail.com> 
+William Castandet <wcastand@gmail.com>  wcastand <wcastand@gmail.com>
+Xavier Cazalot <xavier.cazalot@gmail.com>  xavcz <xavier.cazalot@gmail.com>

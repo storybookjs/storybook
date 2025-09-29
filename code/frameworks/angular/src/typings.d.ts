@@ -1,5 +1,3 @@
-/* eslint-disable no-underscore-dangle, @typescript-eslint/naming-convention */
-
 // will be provided by the webpack define plugin
 declare var NODE_ENV: string | undefined;
 

@@ -3,7 +3,6 @@ import { global as globalThis } from '@storybook/global';
 import { LitElement } from 'lit';
 
 const { customElements } = globalThis;
-
 /** @tag sb-html */
 export class SbHtml extends LitElement {
   static get properties() {
@@ -26,6 +25,5 @@ export class SbHtml extends LitElement {
     return this;
   }
 }
-
 export const HtmlTag = 'sb-html';
 customElements.define(HtmlTag, SbHtml);

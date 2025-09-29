@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 import process from 'process';
 import { dedent } from 'ts-dedent';
 
-import { SbPage } from './util';
+import { SbPage, isReactSandbox } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -106,7 +106,7 @@ test.describe('addon-docs', () => {
     for (let i = 0; i < codeCount; i += 1) {
       const code = codes.nth(i);
       const text = await code.innerText();
-      await expect(text).not.toMatch(/^\(args\) => /);
+      expect(text).not.toMatch(/^\(args\) => /);
     }
   });
 
@@ -209,7 +209,6 @@ test.describe('addon-docs', () => {
       templateName.includes('internal/react18-webpack-babel') ||
       templateName.includes('preact-vite/default-js') ||
       templateName.includes('preact-vite/default-ts') ||
-      templateName.includes('react-native-web-vite/expo-ts') ||
       templateName.includes('react-webpack/18-ts')
     ) {
       expectedReactVersionRange = /^18/;
@@ -280,5 +279,15 @@ test.describe('addon-docs', () => {
       'H 1 Content',
       'H 2 Content',
     ]);
+  });
+
+  // We want to avoid the docs page crashing when JSX elements are part of args table
+  test('should show JSX elements in docs page', async ({ page }) => {
+    test.skip(!isReactSandbox(templateName), 'This is a React only feature');
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.navigateToStory('/stories/renderers/react/jsx-docgen', 'docs');
+    const root = sbPage.previewRoot();
+    await expect(root.getByText('children').first()).toBeVisible();
   });
 });

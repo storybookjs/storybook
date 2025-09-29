@@ -1,12 +1,11 @@
 import os from 'node:os';
 
 import { formatFileContent } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { promises as fs } from 'fs';
 import picocolors from 'picocolors';
 import slash from 'slash';
-
-const logger = console;
 
 export const maxConcurrentTasks = Math.max(1, os.cpus().length - 1);
 
@@ -47,7 +46,7 @@ export async function runCodemod(
   // glob only supports forward slashes
   const files = await globby(slash(globPattern), {
     followSymbolicLinks: true,
-    ignore: ['node_modules/**', 'dist/**', 'storybook-static/**', 'build/**'],
+    ignore: ['**/node_modules/**', '**/dist/**', '**/storybook-static/**', '**/build/**'],
   });
 
   if (!files.length) {
@@ -64,11 +63,18 @@ export async function runCodemod(
     const limit = pLimit(maxConcurrentTasks);
 
     await Promise.all(
-      files.map((file) =>
+      files.map((file: string) =>
         limit(async () => {
           try {
-            const source = await fs.readFile(file, 'utf-8');
-            const fileInfo: FileInfo = { path: file, source };
+            let filePath = file;
+            try {
+              filePath = await fs.realpath(file);
+            } catch (err) {
+              // if anything goes wrong when resolving the file, fallback to original path as is set above
+            }
+
+            const source = await fs.readFile(filePath, 'utf-8');
+            const fileInfo: FileInfo = { path: filePath, source };
             const transformedSource = await transform(fileInfo);
 
             if (transformedSource !== source) {
@@ -83,14 +89,14 @@ export async function runCodemod(
               unmodifiedCount++;
             }
           } catch (fileError) {
-            logger.error(`Error processing file ${file}:`, fileError);
+            logger.error(`Error processing file ${file}: ${String(fileError)}`);
             errorCount++;
           }
         })
       )
     );
   } catch (error) {
-    logger.error('Error applying transform:', error);
+    logger.error(`Error applying transform: ${String(error)}`);
     errorCount++;
   }
 

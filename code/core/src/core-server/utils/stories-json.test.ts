@@ -2,9 +2,8 @@ import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { normalizeStoriesEntry } from '@storybook/core/common';
-
-import { STORY_INDEX_INVALIDATED } from '@storybook/core/core-events';
+import { normalizeStoriesEntry } from 'storybook/internal/common';
+import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
 import { debounce } from 'es-toolkit/compat';
 import type { Polka, Request, Response } from 'polka';
@@ -18,7 +17,14 @@ import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/compat');
-vi.mock('@storybook/core/node-logger');
+vi.mock('storybook/internal/node-logger');
+
+vi.mock('../utils/constants', () => {
+  return {
+    defaultStaticDirs: [{ from: './from', to: './to' }],
+    defaultFavicon: './favicon.svg',
+  };
+});
 
 const workingDir = join(__dirname, '__mockdata__');
 const normalizedStories = [
@@ -48,7 +54,7 @@ const getInitializedStoryIndexGenerator = async (
     indexers: [csfIndexer],
     configDir: workingDir,
     workingDir,
-    docs: { defaultName: 'docs', autodocs: false },
+    docs: { defaultName: 'docs' },
     ...overrides,
   };
   const generator = new StoryIndexGenerator(inputNormalizedStories, options);
@@ -144,9 +150,11 @@ describe('useStoriesJson', () => {
               "type": "docs",
             },
             "a--story-one": {
+              "exportName": "StoryOne",
               "id": "a--story-one",
               "importPath": "./src/A.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -156,10 +164,25 @@ describe('useStoriesJson', () => {
               "title": "A",
               "type": "story",
             },
+            "b--docs": {
+              "id": "b--docs",
+              "importPath": "./src/B.stories.ts",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "B",
+              "type": "docs",
+            },
             "b--story-one": {
+              "exportName": "StoryOne",
               "id": "b--story-one",
               "importPath": "./src/B.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -170,9 +193,11 @@ describe('useStoriesJson', () => {
             },
             "componentpath-extension--story-one": {
               "componentPath": "./src/componentPath/component.js",
+              "exportName": "StoryOne",
               "id": "componentpath-extension--story-one",
               "importPath": "./src/componentPath/extension.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -182,9 +207,11 @@ describe('useStoriesJson', () => {
             },
             "componentpath-noextension--story-one": {
               "componentPath": "./src/componentPath/component.js",
+              "exportName": "StoryOne",
               "id": "componentpath-noextension--story-one",
               "importPath": "./src/componentPath/noExtension.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -194,9 +221,11 @@ describe('useStoriesJson', () => {
             },
             "componentpath-package--story-one": {
               "componentPath": "component-package",
+              "exportName": "StoryOne",
               "id": "componentpath-package--story-one",
               "importPath": "./src/componentPath/package.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -204,10 +233,25 @@ describe('useStoriesJson', () => {
               "title": "componentPath/package",
               "type": "story",
             },
+            "d--docs": {
+              "id": "d--docs",
+              "importPath": "./src/D.stories.jsx",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "D",
+              "type": "docs",
+            },
             "d--story-one": {
+              "exportName": "StoryOne",
               "id": "d--story-one",
               "importPath": "./src/D.stories.jsx",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -242,6 +286,21 @@ describe('useStoriesJson', () => {
               "title": "docs2/NoTitle",
               "type": "docs",
             },
+            "docs2-tags--docs": {
+              "id": "docs2-tags--docs",
+              "importPath": "./src/docs2/Tags.mdx",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "foo",
+                "bar",
+                "unattached-mdx",
+              ],
+              "title": "docs2/Tags",
+              "type": "docs",
+            },
             "docs2-yabbadabbadooo--docs": {
               "id": "docs2-yabbadabbadooo--docs",
               "importPath": "./src/docs2/Title.mdx",
@@ -256,9 +315,11 @@ describe('useStoriesJson', () => {
               "type": "docs",
             },
             "example-button--story-one": {
+              "exportName": "StoryOne",
               "id": "example-button--story-one",
               "importPath": "./src/Button.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -268,9 +329,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-f--story-one": {
+              "exportName": "StoryOne",
               "id": "first-nested-deeply-f--story-one",
               "importPath": "./src/first-nested/deeply/F.stories.js",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -279,9 +342,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-csf-1": {
+              "exportName": "WithCSF1",
               "id": "first-nested-deeply-features--with-csf-1",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With CSF 1",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -290,9 +355,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-play": {
+              "exportName": "WithPlay",
               "id": "first-nested-deeply-features--with-play",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Play",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -302,9 +369,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-render": {
+              "exportName": "WithRender",
               "id": "first-nested-deeply-features--with-render",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Render",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -313,9 +382,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-story-fn": {
+              "exportName": "WithStoryFn",
               "id": "first-nested-deeply-features--with-story-fn",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Story Fn",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -324,9 +395,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "first-nested-deeply-features--with-test": {
+              "exportName": "WithTest",
               "id": "first-nested-deeply-features--with-test",
               "importPath": "./src/first-nested/deeply/Features.stories.jsx",
               "name": "With Test",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -335,10 +408,25 @@ describe('useStoriesJson', () => {
               "title": "first-nested/deeply/Features",
               "type": "story",
             },
+            "h--docs": {
+              "id": "h--docs",
+              "importPath": "./src/H.stories.mjs",
+              "name": "docs",
+              "storiesImports": [],
+              "tags": [
+                "dev",
+                "test",
+                "autodocs",
+              ],
+              "title": "H",
+              "type": "docs",
+            },
             "h--story-one": {
+              "exportName": "StoryOne",
               "id": "h--story-one",
               "importPath": "./src/H.stories.mjs",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -348,9 +436,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "nested-button--story-one": {
+              "exportName": "StoryOne",
               "id": "nested-button--story-one",
               "importPath": "./src/nested/Button.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",
@@ -360,9 +450,11 @@ describe('useStoriesJson', () => {
               "type": "story",
             },
             "second-nested-g--story-one": {
+              "exportName": "StoryOne",
               "id": "second-nested-g--story-one",
               "importPath": "./src/second-nested/G.stories.ts",
               "name": "Story One",
+              "subtype": "story",
               "tags": [
                 "dev",
                 "test",

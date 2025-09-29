@@ -1,13 +1,13 @@
-import { logConfig } from '@storybook/core/common';
-import type { Options } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/node-logger';
-import { MissingBuilderError } from '@storybook/core/server-errors';
+import { logConfig } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { MissingBuilderError } from 'storybook/internal/server-errors';
+import type { Options } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
 import invariant from 'tiny-invariant';
 
+import { telemetry } from '../telemetry';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
@@ -16,10 +16,11 @@ import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
 import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 import { getMiddleware } from './utils/middleware';
-import { openInBrowser } from './utils/open-in-browser';
+import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
+import { summarizeIndex } from './utils/summarizeIndex';
 
 export async function storybookDevServer(options: Options) {
   const [server, core] = await Promise.all([getServer(options), options.presets.apply('core')]);
@@ -47,21 +48,25 @@ export async function storybookDevServer(options: Options) {
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 
-  getMiddleware(options.configDir)(app);
+  (await getMiddleware(options.configDir))(app);
 
   const { port, host, initialPath } = options;
   invariant(port, 'expected options to have a port');
   const proto = options.https ? 'https' : 'http';
   const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
 
+  // Expose addresses on options for the manager builder to surface in globals, important for QR code link sharing
+  options.networkAddress = networkAddress;
+
   if (!core?.builder) {
     throw new MissingBuilderError();
   }
 
-  const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
+  const resolvedPreviewBuilder =
+    typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
 
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName, options.configDir),
+    getPreviewBuilder(resolvedPreviewBuilder),
     getManagerBuilder(),
     useStatics(app, options),
   ]);
@@ -70,13 +75,15 @@ export async function storybookDevServer(options: Options) {
     logConfig('Preview webpack config', await previewBuilder.getConfig(options));
   }
 
-  const managerResult = await managerBuilder.start({
-    startTime: process.hrtime(),
-    options,
-    router: app,
-    server,
-    channel: serverChannel,
-  });
+  const managerResult = options.previewOnly
+    ? undefined
+    : await managerBuilder.start({
+        startTime: process.hrtime(),
+        options,
+        router: app,
+        server,
+        channel: serverChannel,
+      });
 
   let previewResult: Awaited<ReturnType<(typeof previewBuilder)['start']>> =
     await Promise.resolve();
@@ -116,7 +123,10 @@ export async function storybookDevServer(options: Options) {
 
   await Promise.all([initializedStoryIndexGenerator, listening]).then(async ([indexGenerator]) => {
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
-      openInBrowser(host ? networkAddress : address);
+      const url = host ? networkAddress : address;
+      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url).catch(() => {
+        // the browser window could not be opened, this is non-critical, we just ignore the error
+      });
     }
   });
   if (indexError) {
@@ -127,6 +137,28 @@ export async function storybookDevServer(options: Options) {
 
   // Now the preview has successfully started, we can count this as a 'dev' event.
   doTelemetry(app, core, initializedStoryIndexGenerator, options);
+
+  async function cancelTelemetry() {
+    const payload = { eventType: 'dev' };
+    try {
+      const generator = await initializedStoryIndexGenerator;
+      const indexAndStats = await generator?.getIndexAndStats();
+      // compute stats so we can get more accurate story counts
+      if (indexAndStats) {
+        Object.assign(payload, {
+          storyIndex: summarizeIndex(indexAndStats.storyIndex),
+          storyStats: indexAndStats.stats,
+        });
+      }
+    } catch (err) {}
+    await telemetry('canceled', payload, { immediate: true });
+    process.exit(0);
+  }
+
+  if (!core?.disableTelemetry) {
+    process.on('SIGINT', cancelTelemetry);
+    process.on('SIGTERM', cancelTelemetry);
+  }
 
   return { previewResult, managerResult, address, networkAddress };
 }

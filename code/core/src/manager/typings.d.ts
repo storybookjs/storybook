@@ -1,13 +1,16 @@
-/* eslint-disable no-underscore-dangle,  @typescript-eslint/naming-convention */
-
 declare var DOCS_OPTIONS: any;
 declare var CONFIG_TYPE: 'DEVELOPMENT' | 'PRODUCTION';
 declare var PREVIEW_URL: any;
+/**
+ * The network address of the Storybook instance. Used by Storybook to generate a QR code so users
+ * can access the story on mobile devices.
+ */
+declare var STORYBOOK_NETWORK_ADDRESS: string | undefined;
 
 declare var __STORYBOOK_ADDONS_MANAGER: any;
 declare var RELEASE_NOTES_DATA: any;
 
-declare var FEATURES: import('@storybook/core/types').StorybookConfigRaw['features'];
+declare var FEATURES: import('storybook/internal/types').StorybookConfigRaw['features'];
 
 declare var REFS: any;
 declare var VERSIONCHECK: any;
@@ -23,6 +26,8 @@ declare var __STORYBOOK_CORE_EVENTS_MANAGER_ERRORS__: any;
 declare var __STORYBOOK_ROUTER__: any;
 declare var __STORYBOOK_THEMING__: any;
 declare var __STORYBOOK_THEMING_CREATE__: any;
+declare var __STORYBOOK_TEST__: any;
+declare var __STORYBOOK_ACTIONS__: any;
 declare var __STORYBOOK_API__: any;
 declare var __STORYBOOK_ICONS__: any;
 declare var __STORYBOOK_CLIENT_LOGGER__: any;

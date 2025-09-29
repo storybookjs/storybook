@@ -1,24 +1,22 @@
 import { isAbsolute, join } from 'node:path';
 
 import {
-  JsPackageManagerFactory,
   type PackageManagerName,
   serverRequire,
   syncStorybookAddons,
   versions,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import { prompt } from 'storybook/internal/node-logger';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import type { StorybookConfigRaw } from '@storybook/types';
-
-import prompts from 'prompts';
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
 import {
-  getRequireWrapperName,
-  wrapValueWithRequireWrapper,
-} from './automigrate/fixes/wrap-require-utils';
+  getAbsolutePathWrapperName,
+  wrapValueWithGetAbsolutePathWrapper,
+} from './automigrate/fixes/wrap-getAbsolutePath-utils';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { postinstallAddon } from './postinstallAddon';
 
@@ -26,6 +24,7 @@ export interface PostinstallOptions {
   packageManager: PackageManagerName;
   configDir: string;
   yes?: boolean;
+  skipInstall?: boolean;
 }
 
 /**
@@ -48,13 +47,6 @@ export const getVersionSpecifier = (addon: string) => {
   return [addon, undefined] as const;
 };
 
-const requireMain = (configDir: string) => {
-  const absoluteConfigDir = isAbsolute(configDir) ? configDir : join(process.cwd(), configDir);
-  const mainFile = join(absoluteConfigDir, 'main');
-
-  return serverRequire(mainFile) ?? {};
-};
-
 const checkInstalled = (addonName: string, main: StorybookConfigRaw) => {
   const existingAddon = main.addons?.find((entry: string | { name: string }) => {
     const name = typeof entry === 'string' ? entry : entry.name;
@@ -68,6 +60,7 @@ const isCoreAddon = (addonName: string) => Object.hasOwn(versions, addonName);
 type CLIOptions = {
   packageManager?: PackageManagerName;
   configDir?: string;
+  skipInstall?: boolean;
   skipPostinstall: boolean;
   yes?: boolean;
 };
@@ -79,24 +72,29 @@ type CLIOptions = {
  *
  * ```sh
  * sb add "@storybook/addon-docs"
- * sb add "@storybook/addon-interactions@7.0.1"
+ * sb add "@storybook/addon-vitest@9.0.1"
  * ```
  *
- * If there is no version specifier and it's a storybook addon, it will try to use the version
+ * If there is no version specifier and it's a Storybook addon, it will try to use the version
  * specifier matching your current Storybook install version.
  */
 export async function add(
   addon: string,
-  { packageManager: pkgMgr, skipPostinstall, configDir: userSpecifiedConfigDir, yes }: CLIOptions,
+  {
+    packageManager: pkgMgr,
+    skipPostinstall,
+    configDir: userSpecifiedConfigDir,
+    yes,
+    skipInstall,
+  }: CLIOptions,
   logger = console
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
 
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr });
-  const { mainConfig, mainConfigPath, configDir, previewConfigPath, storybookVersion } =
+  const { mainConfig, mainConfigPath, configDir, previewConfigPath, packageManager } =
     await getStorybookData({
-      packageManager,
       configDir: userSpecifiedConfigDir,
+      packageManagerName: pkgMgr,
     });
 
   if (typeof configDir === 'undefined') {
@@ -115,9 +113,7 @@ export async function add(
     shouldAddToMain = false;
     if (!yes) {
       logger.log(`The Storybook addon "${addonName}" is already present in ${mainConfigPath}.`);
-      const { shouldForceInstall } = await prompts({
-        type: 'confirm',
-        name: 'shouldForceInstall',
+      const shouldForceInstall = await prompt.confirm({
         message: `Do you wish to install it again?`,
       });
 
@@ -132,35 +128,51 @@ export async function add(
 
   let version = inputVersion;
 
-  if (!version && isCoreAddon(addonName) && storybookVersion) {
-    version = storybookVersion;
-  }
-  if (!version) {
-    version = await packageManager.latestVersion(addonName);
+  if (!version && isCoreAddon(addonName)) {
+    version = versions.storybook;
   }
 
-  if (isCoreAddon(addonName) && version !== storybookVersion) {
+  if (!version) {
+    const latestVersion = await packageManager.latestVersion(addonName);
+    if (!latestVersion) {
+      throw new Error(`No version found for ${addonName}`);
+    }
+    version = latestVersion;
+  }
+
+  const storybookVersion = versions.storybook;
+  const versionIsStorybook = version === versions.storybook;
+
+  if (isCoreAddon(addonName) && !versionIsStorybook) {
     logger.warn(
       `The version of ${addonName} (${version}) you are installing is not the same as the version of Storybook you are using (${storybookVersion}). This may lead to unexpected behavior.`
     );
   }
 
-  const addonWithVersion =
-    isValidVersion(version) && !version.includes('-pr-')
+  const storybookVersionSpecifier = packageManager.getDependencyVersion('storybook');
+  const versionRange = storybookVersionSpecifier?.match(/^[~^]/)?.[0] ?? '';
+
+  const addonWithVersion = versionIsStorybook
+    ? `${addonName}@${versionRange}${storybookVersion}`
+    : isValidVersion(version) && !version.includes('-pr-')
       ? `${addonName}@^${version}`
       : `${addonName}@${version}`;
 
   logger.log(`Installing ${addonWithVersion}`);
-  await packageManager.addDependencies({ installAsDevDependencies: true }, [addonWithVersion]);
+
+  await packageManager.addDependencies(
+    { type: 'devDependencies', writeOutputToFile: false, skipInstall },
+    [addonWithVersion]
+  );
 
   if (shouldAddToMain) {
     logger.log(`Adding '${addon}' to the "addons" field in ${mainConfigPath}`);
 
     const mainConfigAddons = main.getFieldNode(['addons']);
-    if (mainConfigAddons && getRequireWrapperName(main) !== null) {
+    if (mainConfigAddons && getAbsolutePathWrapperName(main) !== null) {
       const addonNode = main.valueToNode(addonName);
       main.appendNodeToArray(['addons'], addonNode as any);
-      wrapValueWithRequireWrapper(main, addonNode as any);
+      wrapValueWithGetAbsolutePathWrapper(main, addonNode as any);
     } else {
       main.appendValueToArray(['addons'], addonName);
     }
@@ -168,10 +180,20 @@ export async function add(
     await writeConfig(main);
   }
 
-  await syncStorybookAddons(mainConfig, previewConfigPath!);
+  // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
+  try {
+    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
+  } catch (e) {
+    //
+  }
 
   if (!skipPostinstall && isCoreAddon(addonName)) {
-    await postinstallAddon(addonName, { packageManager: packageManager.type, configDir, yes });
+    await postinstallAddon(addonName, {
+      packageManager: packageManager.type,
+      configDir,
+      yes,
+      skipInstall,
+    });
   }
 }
 function isValidVersion(version: string) {

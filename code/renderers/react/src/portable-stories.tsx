@@ -1,11 +1,5 @@
 import * as React from 'react';
 
-import {
-  composeStories as originalComposeStories,
-  composeStory as originalComposeStory,
-  setProjectAnnotations as originalSetProjectAnnotations,
-  setDefaultProjectAnnotations,
-} from 'storybook/internal/preview-api';
 import type {
   Args,
   ComposedStoryFn,
@@ -17,7 +11,16 @@ import type {
   StoryAnnotationsOrFn,
 } from 'storybook/internal/types';
 
+import {
+  composeConfigs,
+  composeStories as originalComposeStories,
+  composeStory as originalComposeStory,
+  setProjectAnnotations as originalSetProjectAnnotations,
+  setDefaultProjectAnnotations,
+} from 'storybook/preview-api';
+
 import * as reactProjectAnnotations from './entry-preview';
+import * as reactArgTypesAnnotations from './entry-preview-argtypes';
 import type { Meta } from './public-types';
 import type { ReactRenderer } from './types';
 
@@ -52,20 +55,24 @@ export function setProjectAnnotations(
 }
 
 // This will not be necessary once we have auto preset loading
-export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRenderer> = {
-  ...reactProjectAnnotations,
-  /** @deprecated */
-  renderToCanvas: async (renderContext, canvasElement) => {
-    if (renderContext.storyContext.testingLibraryRender == null) {
-      return reactProjectAnnotations.renderToCanvas(renderContext, canvasElement);
-    }
-    const {
-      storyContext: { context, unboundStoryFn: Story, testingLibraryRender: render },
-    } = renderContext;
-    const { unmount } = render(<Story {...context} />, { container: context.canvasElement });
-    return unmount;
-  },
-};
+export const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRenderer> =
+  composeConfigs([
+    reactProjectAnnotations,
+    reactArgTypesAnnotations,
+    {
+      /** @deprecated */
+      renderToCanvas: async (renderContext, canvasElement) => {
+        if (renderContext.storyContext.testingLibraryRender == null) {
+          return reactProjectAnnotations.renderToCanvas(renderContext, canvasElement);
+        }
+        const {
+          storyContext: { context, unboundStoryFn: Story, testingLibraryRender: render },
+        } = renderContext;
+        const { unmount } = render(<Story {...context} />, { container: context.canvasElement });
+        return unmount;
+      },
+    } as ProjectAnnotations<ReactRenderer>,
+  ]);
 
 /**
  * Function that will receive a story along with meta (e.g. a default export from a .stories file)

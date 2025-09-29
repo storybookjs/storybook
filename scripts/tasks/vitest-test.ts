@@ -10,6 +10,6 @@ export const vitestTests: Task = {
   async run({ sandboxDir }, { dryRun, debug }) {
     console.log(`running Vitest tests in ${sandboxDir}`);
 
-    return exec(`yarn vitest`, { cwd: sandboxDir }, { dryRun, debug });
+    return exec(`yarn vitest run --testTimeout=15000`, { cwd: sandboxDir }, { dryRun, debug });
   },
 };

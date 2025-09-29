@@ -1,14 +1,6 @@
 import type { Mock, Mocked } from 'vitest';
 import { vi } from 'vitest';
 
-import type {
-  ModuleImportFn,
-  ProjectAnnotations,
-  Renderer,
-  StoryIndex,
-  TeardownRenderToCanvas,
-} from '@storybook/core/types';
-
 import {
   DOCS_RENDERED,
   STORY_ERRORED,
@@ -16,7 +8,14 @@ import {
   STORY_MISSING,
   STORY_RENDER_PHASE_CHANGED,
   STORY_THREW_EXCEPTION,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
+import type {
+  ModuleImportFn,
+  ProjectAnnotations,
+  Renderer,
+  StoryIndex,
+  TeardownRenderToCanvas,
+} from 'storybook/internal/types';
 
 import { EventEmitter } from 'events';
 
@@ -111,6 +110,7 @@ export const storyIndex: StoryIndex = {
     },
     'component-one--a': {
       type: 'story',
+      subtype: 'story',
       id: 'component-one--a',
       title: 'Component One',
       name: 'A',
@@ -118,6 +118,7 @@ export const storyIndex: StoryIndex = {
     },
     'component-one--b': {
       type: 'story',
+      subtype: 'story',
       id: 'component-one--b',
       title: 'Component One',
       name: 'B',
@@ -125,6 +126,7 @@ export const storyIndex: StoryIndex = {
     },
     'component-one--e': {
       type: 'story',
+      subtype: 'story',
       id: 'component-one--e',
       title: 'Component One',
       name: 'E',
@@ -141,6 +143,7 @@ export const storyIndex: StoryIndex = {
     },
     'component-two--c': {
       type: 'story',
+      subtype: 'story',
       id: 'component-two--c',
       title: 'Component Two',
       name: 'C',

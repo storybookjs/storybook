@@ -72,7 +72,7 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
         ) {
           throw new CommonJsConfigNotSupportedError();
         } else {
-          mainConfig.setImport(['dirname', 'join'], 'node:path');
+          mainConfig.setImport(['dirname'], 'node:path');
           mainConfig.setImport(['fileURLToPath'], 'node:url');
         }
         mainConfig.setBodyDeclaration(

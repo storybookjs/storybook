@@ -7,7 +7,9 @@ import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
 import { addonStorysourceCodePanel } from './addon-storysource-code-panel';
 import { consolidatedImports } from './consolidated-imports';
 import { eslintPlugin } from './eslint-plugin';
+import { fixFauxEsmRequire } from './fix-faux-esm-require';
 import { initialGlobals } from './initial-globals';
+import { migrateAddonConsole } from './migrate-addon-console';
 import { removeAddonInteractions } from './remove-addon-interactions';
 import { removeDocsAutodocs } from './remove-docs-autodocs';
 import { removeEssentials } from './remove-essentials';
@@ -28,12 +30,14 @@ export const allFixes: Fix[] = [
   consolidatedImports,
   addonExperimentalTest,
   rnstorybookConfig,
+  migrateAddonConsole,
   removeAddonInteractions,
   rendererToFramework,
   removeEssentials,
   addonA11yParameters,
   removeDocsAutodocs,
   wrapGetAbsolutePath,
+  fixFauxEsmRequire,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

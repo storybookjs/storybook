@@ -11,8 +11,10 @@ import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import postCssLoadConfig from 'postcss-load-config';
+import semver from 'semver';
 
 import type { FrameworkOptions } from './types';
+import { getNextjsVersion } from './utils';
 
 const require = createRequire(import.meta.url);
 
@@ -25,18 +27,30 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: import.meta.resolve('@storybook/builder-vite'),
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-vite')),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: import.meta.resolve('@storybook/react/preset'),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
-  const result = [...entry, import.meta.resolve('@storybook/nextjs-vite/preview')];
-  return result;
+  const annotations = [
+    ...entry,
+    fileURLToPath(import.meta.resolve('@storybook/nextjs-vite/preview')),
+  ];
+
+  const nextjsVersion = getNextjsVersion();
+  const isNext16orNewer = semver.gte(nextjsVersion, '16.0.0');
+
+  // TODO: Remove this once we only support Next.js v16 and above
+  if (!isNext16orNewer) {
+    annotations.push(fileURLToPath(import.meta.resolve('@storybook/nextjs-vite/config/preview')));
+  }
+
+  return annotations;
 };
 
 export const optimizeViteDeps = [

@@ -110,6 +110,7 @@ export const storyIndex: StoryIndex = {
     },
     'component-one--a': {
       type: 'story',
+      subtype: 'story',
       id: 'component-one--a',
       title: 'Component One',
       name: 'A',
@@ -117,6 +118,7 @@ export const storyIndex: StoryIndex = {
     },
     'component-one--b': {
       type: 'story',
+      subtype: 'story',
       id: 'component-one--b',
       title: 'Component One',
       name: 'B',
@@ -124,6 +126,7 @@ export const storyIndex: StoryIndex = {
     },
     'component-one--e': {
       type: 'story',
+      subtype: 'story',
       id: 'component-one--e',
       title: 'Component One',
       name: 'E',
@@ -140,6 +143,7 @@ export const storyIndex: StoryIndex = {
     },
     'component-two--c': {
       type: 'story',
+      subtype: 'story',
       id: 'component-two--c',
       title: 'Component Two',
       name: 'C',

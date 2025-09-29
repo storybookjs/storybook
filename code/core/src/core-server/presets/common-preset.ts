@@ -32,6 +32,7 @@ import { dedent } from 'ts-dedent';
 import { resolvePackageDir } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
+import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
@@ -256,6 +257,7 @@ export const experimental_serverChannel = async (
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
+  initOpenInEditorChannel(channel, options, coreOptions);
 
   return channel;
 };
@@ -276,16 +278,6 @@ export const resolvedReact = async (existing: any) => {
   } catch (e) {
     return existing;
   }
-};
-
-/** Set up `dev-only`, `docs-only`, `test-only` tags out of the box */
-export const tags = async (existing: any) => {
-  return {
-    ...existing,
-    'dev-only': { excludeFromDocsStories: true },
-    'docs-only': { excludeFromSidebar: true },
-    'test-only': { excludeFromSidebar: true, excludeFromDocsStories: true },
-  };
 };
 
 export const managerEntries = async (existing: any) => {

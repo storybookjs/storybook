@@ -1,7 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
-import { scanAndTransformFiles } from 'storybook/internal/common';
 import type { ConfigFile, CsfFile } from 'storybook/internal/csf-tools';
 import {
   formatConfig,
@@ -133,7 +132,7 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
     return "You're using a deprecated config API for viewport/backgrounds. The globals API will be used instead.";
   },
 
-  async run({ dryRun = false, result }) {
+  async run({ dryRun = false, result, storiesPaths }) {
     const {
       previewConfig,
       needsViewportMigration,
@@ -219,19 +218,16 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
 
     // Update stories
     if (needsViewportMigration || needsBackgroundsMigration) {
-      await scanAndTransformFiles({
-        promptMessage:
-          'Enter a glob pattern to scan for story files to migrate (or press enter to use default):',
-        defaultGlob: '**/*.stories.{js,jsx,ts,tsx,mdx}',
-        dryRun,
-        transformFn: (files, options, dryRun) => transformStoryFiles(files, options, dryRun),
-        transformOptions: {
+      await transformStoryFiles(
+        storiesPaths,
+        {
           needsViewportMigration,
           needsBackgroundsMigration,
           viewportsOptions,
           backgroundsOptions,
         },
-      });
+        dryRun
+      );
     }
   },
 };

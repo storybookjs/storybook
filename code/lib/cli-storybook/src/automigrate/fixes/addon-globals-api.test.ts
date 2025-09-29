@@ -3,23 +3,14 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import * as common from 'storybook/internal/common';
-
 // Import common to mock
 import dedent from 'ts-dedent';
 
 // Import FixResult type
 import { addonGlobalsApi, transformStoryFileSync } from './addon-globals-api';
 
-// Mock fs/promises and common utilities
+// Mock fs/promises
 vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const original = await importOriginal<typeof common>();
-  return {
-    ...original,
-    scanAndTransformFiles: vi.fn().mockResolvedValue([]), // Mock scanAndTransformFiles
-  };
-});
 
 const previewConfigPath = join('.storybook', 'preview.js');
 
@@ -37,11 +28,10 @@ const check = async (previewContents: string) => {
   });
 };
 
-// Helper to run the migration for preview file and capture scanAndTransformFiles args
+// Helper to run the migration for preview file and capture transform function
 const runMigrationAndGetTransformFn = async (previewContents: string) => {
   const result = await check(previewContents);
   const mockWriteFile = vi.mocked(fsp.writeFile);
-  const mockScanAndTransform = vi.mocked(common.scanAndTransformFiles);
 
   let transformFn: (filePath: string, content: string) => string | null = () => null;
 
@@ -51,6 +41,7 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
     await addonGlobalsApi.run?.({
       result,
       dryRun: false,
+      storiesPaths: ['**/*.stories.{js,jsx,ts,tsx,mdx}'], // Mock stories paths
       packageManager: {} as any, // Add necessary mock properties
     } as any);
 
@@ -85,7 +76,6 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
 describe('addon-globals-api', () => {
   afterEach(() => {
     vi.clearAllMocks();
-    vi.mocked(common.scanAndTransformFiles).mockClear();
   });
 
   describe('check', () => {

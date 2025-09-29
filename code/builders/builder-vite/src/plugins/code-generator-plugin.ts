@@ -17,14 +17,14 @@ export function codeGeneratorPlugin(options: Options): Plugin {
   const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));
   let iframeId: string;
   let projectRoot: string;
-  let storyIndexGenerator: StoryIndexGenerator | undefined;
+  let storyIndexGenerator: StoryIndexGenerator;
 
   return {
     name: 'storybook:code-generator-plugin',
     enforce: 'pre',
     async configureServer(server) {
-      storyIndexGenerator = await options?.getStoryIndexGenerator?.();
-      storyIndexGenerator?.onInvalidated(() => {
+      storyIndexGenerator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+      storyIndexGenerator.onInvalidated(() => {
         server.watcher.emit(
           'change',
           getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
@@ -34,7 +34,8 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     async buildStart() {
       // configureServer is not called in build mode, so we need to initialize the storyIndexGenerator here
       // in dev mode it will have been set in configureServer already
-      storyIndexGenerator ??= await options?.getStoryIndexGenerator?.();
+      storyIndexGenerator ??=
+        await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
     },
     config(config, { command }) {
       // If we are building the static distribution, add iframe.html as an entry.
@@ -68,9 +69,8 @@ export function codeGeneratorPlugin(options: Options): Plugin {
     async load(id) {
       switch (id) {
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE):
-          return generateImportFnScriptCode(
-            (await storyIndexGenerator?.getIndex()) ?? { v: 5, entries: {} }
-          );
+          const index = (await storyIndexGenerator?.getIndex()) ?? { v: 5, entries: {} };
+          return generateImportFnScriptCode(index);
 
         case getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_ADDON_SETUP_FILE):
           return generateAddonSetupCode();

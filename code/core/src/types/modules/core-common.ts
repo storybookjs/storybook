@@ -205,7 +205,6 @@ export interface BuilderOptions {
   versionCheck?: VersionCheck;
   disableWebpackDefaults?: boolean;
   serverChannelUrl?: string;
-  getStoryIndexGenerator?: () => Promise<StoryIndexGenerator | undefined>;
   networkAddress?: string;
 }
 
@@ -480,6 +479,8 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  storyIndexGenerator?: StoryIndexGenerator;
 
   docs?: DocsOptions;
 

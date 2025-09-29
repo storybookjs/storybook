@@ -1,3 +1,4 @@
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Options, StoryIndex } from 'storybook/internal/types';
 
 import type { UserConfig, InlineConfig as ViteInlineConfig } from 'vite';
@@ -12,14 +13,17 @@ const asyncFilter = async (arr: string[], predicate: (val: string) => Promise<bo
   Promise.all(arr.map(predicate)).then((results) => arr.filter((_v, index) => results[index]));
 
 export async function getOptimizeDeps(config: ViteInlineConfig, options: Options) {
-  const extraOptimizeDeps = await options.presets.apply('optimizeViteDeps', []);
+  const [extraOptimizeDeps, storyIndexGenerator] = await Promise.all([
+    options.presets.apply('optimizeViteDeps', []),
+    options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'),
+  ]);
 
-  const index: StoryIndex = (await (await options.getStoryIndexGenerator?.())?.getIndex()) ?? {
+  const index: StoryIndex = (await storyIndexGenerator.getIndex()) ?? {
     v: 5,
     entries: {},
   };
 
-  const stories = Object.values(index.entries).map((entry) => entry.importPath);
+  const storyModulePaths = Object.values(index.entries).map((entry) => entry.importPath);
 
   const { resolveConfig } = await import('vite');
   // TODO: check if resolveConfig takes a lot of time, possible optimizations here
@@ -35,7 +39,7 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
 
   const optimizeDeps: UserConfig['optimizeDeps'] = {
     ...config.optimizeDeps,
-    entries: stories,
+    entries: storyModulePaths,
     // We need Vite to precompile these dependencies, because they contain non-ESM code that would break
     // if we served it directly to the browser.
     include: [...include, ...(config.optimizeDeps?.include || [])],

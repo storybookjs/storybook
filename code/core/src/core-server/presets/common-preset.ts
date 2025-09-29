@@ -4,7 +4,7 @@ import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
-import { optionalEnvToBoolean } from 'storybook/internal/common';
+import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -33,6 +33,7 @@ import { resolvePackageDir } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
+import { StoryIndexGenerator } from '../utils/StoryIndexGenerator';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
@@ -285,6 +286,37 @@ export const managerEntries = async (existing: any) => {
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
+};
+
+let initializedStoryIndexGenerator: StoryIndexGenerator | undefined = undefined;
+export const storyIndexGenerator: PresetPropertyFn<'storyIndexGenerator'> = async (_, options) => {
+  if (initializedStoryIndexGenerator) {
+    return initializedStoryIndexGenerator;
+  }
+
+  const workingDir = process.cwd();
+  const configDir = options.configDir;
+
+  const [stories, indexers, docs] = await Promise.all([
+    options.presets.apply('stories'),
+    options.presets.apply('experimental_indexers', []),
+    options.presets.apply('docs'),
+  ]);
+
+  const normalizedStories = normalizeStories(stories, {
+    configDir,
+    workingDir,
+  });
+
+  const generator = new StoryIndexGenerator(normalizedStories, {
+    workingDir,
+    configDir,
+    indexers,
+    docs,
+  });
+  await generator.initialize();
+  initializedStoryIndexGenerator = generator;
+  return initializedStoryIndexGenerator;
 };
 
 export const viteFinal = async (

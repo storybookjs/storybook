@@ -6,7 +6,6 @@ import {
   loadAllPresets,
   loadMainConfig,
   logConfig,
-  normalizeStories,
   resolveAddonName,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -18,7 +17,7 @@ import { global } from '@storybook/global';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';
-import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
 import { getBuilders } from './utils/get-builders';
@@ -97,13 +96,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     build,
   });
 
-  const [features, core, staticDirs, indexers, stories, docsOptions] = await Promise.all([
+  const [features, core, staticDirs] = await Promise.all([
     presets.apply('features'),
     presets.apply('core'),
     presets.apply('staticDirs'),
-    presets.apply('experimental_indexers', []),
-    presets.apply('stories'),
-    presets.apply('docs'),
   ]);
 
   const invokedBy = process.env.STORYBOOK_INVOKED_BY;
@@ -139,29 +135,13 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
 
-  let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
+  const initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
   if (!options.ignorePreview) {
-    const workingDir = process.cwd();
-    const directories = {
-      configDir: options.configDir,
-      workingDir,
-    };
-    const normalizedStories = normalizeStories(stories, directories);
+    const storyIndexGeneratorPromise = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-    const generator = new StoryIndexGenerator(normalizedStories, {
-      ...directories,
-      indexers,
-      docs: docsOptions,
-      build,
-    });
-
-    initializedStoryIndexGenerator = generator.initialize().then(() => generator);
     effects.push(
-      extractStoriesJson(
-        join(options.outputDir, 'index.json'),
-        initializedStoryIndexGenerator as Promise<StoryIndexGenerator>
-      )
+      extractStoriesJson(join(options.outputDir, 'index.json'), storyIndexGeneratorPromise)
     );
   }
 
@@ -189,10 +169,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
           previewBuilder
             .build({
               startTime,
-              options: {
-                ...fullOptions,
-                getStoryIndexGenerator: () => initializedStoryIndexGenerator,
-              },
+              options: fullOptions,
             })
             .then(async (previewStats) => {
               logger.trace({ message: '=> Preview built', time: process.hrtime(startTime) });

@@ -1,4 +1,4 @@
-import { logConfig } from 'storybook/internal/common';
+import { logConfig, normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
@@ -14,12 +14,12 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
 import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
-import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
+import { useStoriesJson } from './utils/stories-json';
 import { summarizeIndex } from './utils/summarizeIndex';
 
 export async function storybookDevServer(options: Options) {
@@ -32,12 +32,28 @@ export async function storybookDevServer(options: Options) {
   );
 
   let indexError: Error | undefined;
-  // try get index generator, if failed, send telemetry without storyCount, then rethrow the error
-  const initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
-    getStoryIndexGenerator(app, options, serverChannel).catch((err) => {
-      indexError = err;
-      return undefined;
-    });
+
+  const storyIndexGeneratorPromise =
+    options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  const workingDir = process.cwd();
+  const configDir = options.configDir;
+
+  const stories = await options.presets.apply('stories');
+
+  const normalizedStories = normalizeStories(stories, {
+    configDir,
+    workingDir,
+  });
+
+  useStoriesJson({
+    app,
+    storyIndexGeneratorPromise,
+    normalizedStories,
+    serverChannel,
+    workingDir,
+    configDir,
+  });
 
   app.use(compression({ level: 1 }));
 
@@ -95,7 +111,7 @@ export async function storybookDevServer(options: Options) {
     previewResult = await previewBuilder
       .start({
         startTime: process.hrtime(),
-        options: { ...options, getStoryIndexGenerator: () => initializedStoryIndexGenerator },
+        options,
         router: app,
         server,
         channel: serverChannel,
@@ -121,7 +137,7 @@ export async function storybookDevServer(options: Options) {
     app.listen({ port, host }, resolve);
   });
 
-  await Promise.all([initializedStoryIndexGenerator, listening]).then(async ([indexGenerator]) => {
+  await Promise.all([storyIndexGeneratorPromise, listening]).then(async ([indexGenerator]) => {
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
       const url = host ? networkAddress : address;
       openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url).catch(() => {
@@ -136,12 +152,12 @@ export async function storybookDevServer(options: Options) {
   }
 
   // Now the preview has successfully started, we can count this as a 'dev' event.
-  doTelemetry(app, core, initializedStoryIndexGenerator, options);
+  doTelemetry(app, core, storyIndexGeneratorPromise, options);
 
   async function cancelTelemetry() {
     const payload = { eventType: 'dev' };
     try {
-      const generator = await initializedStoryIndexGenerator;
+      const generator = await storyIndexGeneratorPromise;
       const indexAndStats = await generator?.getIndexAndStats();
       // compute stats so we can get more accurate story counts
       if (indexAndStats) {

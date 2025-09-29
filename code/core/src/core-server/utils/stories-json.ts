@@ -26,14 +26,14 @@ export async function extractStoriesJson(
 
 export function useStoriesJson({
   app,
-  initializedStoryIndexGenerator,
+  storyIndexGeneratorPromise,
   workingDir = process.cwd(),
   configDir,
   serverChannel,
   normalizedStories,
 }: {
   app: Polka;
-  initializedStoryIndexGenerator: Promise<StoryIndexGenerator>;
+  storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
   serverChannel: ServerChannel;
   workingDir?: string;
   configDir?: string;
@@ -43,15 +43,13 @@ export function useStoriesJson({
     leading: true,
   });
   watchStorySpecifiers(normalizedStories, { workingDir }, async (specifier, path, removed) => {
-    const generator = await initializedStoryIndexGenerator;
-    generator.invalidate(specifier, path, removed);
+    (await storyIndexGeneratorPromise).invalidate(specifier, path, removed);
     maybeInvalidate();
   });
   if (configDir) {
     watchConfig(configDir, async (filePath) => {
       if (basename(filePath).startsWith('preview')) {
-        const generator = await initializedStoryIndexGenerator;
-        generator.invalidateAll();
+        (await storyIndexGeneratorPromise).invalidateAll();
         maybeInvalidate();
       }
     });
@@ -59,8 +57,7 @@ export function useStoriesJson({
 
   app.use('/index.json', async (req, res) => {
     try {
-      const generator = await initializedStoryIndexGenerator;
-      const index = await generator.getIndex();
+      const index = await (await storyIndexGeneratorPromise).getIndex();
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify(index));
     } catch (err) {

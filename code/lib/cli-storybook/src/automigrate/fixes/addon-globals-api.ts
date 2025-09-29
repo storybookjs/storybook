@@ -1,17 +1,27 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
-import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
+import { scanAndTransformFiles } from 'storybook/internal/common';
+import type { ConfigFile, CsfFile } from 'storybook/internal/csf-tools';
+import {
+  formatConfig,
+  formatCsf,
+  loadConfig,
+  loadCsf,
+  writeCsf,
+} from 'storybook/internal/csf-tools';
 
 import type { ArrayExpression, Expression, ObjectExpression } from '@babel/types';
-import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
 
+import {
+  addProperty,
+  getKeyFromName,
+  getObjectProperty,
+  removeProperty,
+  transformStoryParameters,
+  transformValuesToOptions,
+} from '../helpers/ast-utils';
 import type { Fix } from '../types';
-
-const MIGRATION =
-  'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage';
 
 interface AddonGlobalsApiOptions {
   previewConfig: ConfigFile;
@@ -41,7 +51,7 @@ interface AddonGlobalsApiOptions {
  */
 export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
   id: 'addon-globals-api',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#viewportbackgrounds-addon-synchronized-configuration-and-globals-usage',
 
   async check({ previewConfigPath }) {
     if (!previewConfigPath) {
@@ -119,20 +129,11 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
     };
   },
 
-  prompt({ needsViewportMigration, needsBackgroundsMigration }) {
-    return dedent`
-      We've detected that you're using the ${needsViewportMigration && needsBackgroundsMigration ? 'viewport and backgrounds addons' : needsViewportMigration ? 'viewport addon' : 'backgrounds addon'} with the deprecated configuration API.
-      
-      In Storybook 9, ${needsViewportMigration && needsBackgroundsMigration ? 'these addons have' : 'this addon has'} been updated to use the new globals API which ensures a consistent experience while navigating between stories.
-      
-      We'll update your configuration to use the new API:
-      ${needsViewportMigration ? `- ${picocolors.yellow('viewports')} → ${picocolors.yellow('options')} and ${picocolors.yellow('defaultViewport')} → ${picocolors.yellow('initialGlobals.viewport')}\n` : ''}${needsBackgroundsMigration ? `- ${picocolors.yellow('values')} → ${picocolors.yellow('options')} and ${picocolors.yellow('default')} → ${picocolors.yellow('initialGlobals.backgrounds')}\n` : ''}
-      
-      Learn more: ${picocolors.cyan(MIGRATION)}
-    `;
+  prompt() {
+    return "You're using a deprecated config API for viewport/backgrounds. The globals API will be used instead.";
   },
 
-  async run({ dryRun, result }) {
+  async run({ dryRun = false, result }) {
     const {
       previewConfig,
       needsViewportMigration,
@@ -215,86 +216,230 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
     if (!dryRun) {
       await writeFile(result.previewConfigPath, formatConfig(previewConfig));
     }
+
+    // Update stories
+    if (needsViewportMigration || needsBackgroundsMigration) {
+      await scanAndTransformFiles({
+        promptMessage:
+          'Enter a glob pattern to scan for story files to migrate (or press enter to use default):',
+        defaultGlob: '**/*.stories.{js,jsx,ts,tsx,mdx}',
+        dryRun,
+        transformFn: (files, options, dryRun) => transformStoryFiles(files, options, dryRun),
+        transformOptions: {
+          needsViewportMigration,
+          needsBackgroundsMigration,
+          viewportsOptions,
+          backgroundsOptions,
+        },
+      });
+    }
   },
 };
 
-// Helper functions
-
-function getObjectProperty(obj: ObjectExpression, propertyName: string): Expression | undefined {
-  if (!obj || !obj.properties) {
-    return undefined;
+// Individual story transformation function for testing
+export function transformStoryFileSync(
+  source: string,
+  options: {
+    needsViewportMigration: boolean;
+    needsBackgroundsMigration: boolean;
+    viewportsOptions: any;
+    backgroundsOptions: any;
   }
-
-  const property = obj.properties.find(
-    (prop) =>
-      t.isObjectProperty(prop) &&
-      ((t.isIdentifier(prop.key) && prop.key.name === propertyName) ||
-        (t.isStringLiteral(prop.key) && prop.key.value === propertyName))
-  ) as t.ObjectProperty;
-
-  return property?.value as Expression;
+): string | null {
+  const result = transformStoryFile(source, options);
+  return result ? formatCsf(result, {}, source) : null;
 }
 
-function removeProperty(obj: ObjectExpression, propertyName: string): void {
-  if (!obj || !obj.properties) {
-    return;
-  }
+// Story transformation function
+async function transformStoryFiles(
+  files: string[],
+  options: {
+    needsViewportMigration: boolean;
+    needsBackgroundsMigration: boolean;
+    viewportsOptions: any;
+    backgroundsOptions: any;
+  },
+  dryRun: boolean
+): Promise<Array<{ file: string; error: Error }>> {
+  const errors: Array<{ file: string; error: Error }> = [];
+  const { default: pLimit } = await import('p-limit');
+  const limit = pLimit(10);
 
-  const index = obj.properties.findIndex(
-    (prop) =>
-      t.isObjectProperty(prop) &&
-      ((t.isIdentifier(prop.key) && prop.key.name === propertyName) ||
-        (t.isStringLiteral(prop.key) && prop.key.value === propertyName))
+  await Promise.all(
+    files.map((file) =>
+      limit(async () => {
+        try {
+          const content = await readFile(file, 'utf-8');
+          const transformed = transformStoryFile(content, options);
+
+          if (transformed && !dryRun) {
+            await writeCsf(transformed, file);
+          }
+        } catch (error) {
+          errors.push({ file, error: error as Error });
+        }
+      })
+    )
   );
 
-  if (index !== -1) {
-    obj.properties.splice(index, 1);
-  }
+  return errors;
 }
 
-function addProperty(obj: ObjectExpression, propertyName: string, value: Expression): void {
-  if (!obj) {
-    return;
+// Transform a single story file
+function transformStoryFile(
+  source: string,
+  options: {
+    needsViewportMigration: boolean;
+    needsBackgroundsMigration: boolean;
+    viewportsOptions: any;
+    backgroundsOptions: any;
   }
+): CsfFile | null {
+  const { needsViewportMigration, needsBackgroundsMigration, backgroundsOptions } = options;
 
-  obj.properties.push(t.objectProperty(t.identifier(propertyName), value));
-}
+  // Load the story file using CSF tools
+  const storyConfig = loadCsf(source, {
+    makeTitle: (title?: string) => title || 'default',
+  }).parse();
 
-function transformValuesToOptions(valuesArray: ArrayExpression): Expression {
-  // Transform [{ name: 'Light', value: '#FFF' }] to { light: { name: 'Light', value: '#FFF' } }
-  const optionsObject = t.objectExpression([]);
+  // Use the story transformer utility to handle all story iteration
+  const hasChanges = transformStoryParameters(storyConfig, (parameters, storyObject) => {
+    let newGlobals: ObjectExpression | undefined;
+    let viewportParams: ObjectExpression | undefined;
+    let backgroundsParams: ObjectExpression | undefined;
+    let storyHasChanges = false;
 
-  if (valuesArray && t.isArrayExpression(valuesArray) && valuesArray.elements) {
-    valuesArray.elements.forEach((element) => {
-      if (t.isObjectExpression(element)) {
-        const nameProperty = getObjectProperty(element, 'name');
+    // Handle viewport migration
+    if (needsViewportMigration) {
+      viewportParams = getObjectProperty(parameters, 'viewport') as ObjectExpression;
+      if (viewportParams) {
+        const defaultViewport = getObjectProperty(viewportParams, 'defaultViewport');
+        if (defaultViewport && t.isStringLiteral(defaultViewport)) {
+          // Create globals.viewport
+          if (!newGlobals) {
+            newGlobals = t.objectExpression([]);
+          }
 
-        if (t.isStringLiteral(nameProperty)) {
-          const key = nameProperty.value.toLowerCase().replace(/\s+/g, '_');
+          newGlobals.properties.push(
+            t.objectProperty(
+              t.identifier('viewport'),
+              t.objectExpression([
+                t.objectProperty(t.identifier('value'), t.stringLiteral(defaultViewport.value)),
+                t.objectProperty(t.identifier('isRotated'), t.booleanLiteral(false)),
+              ])
+            )
+          );
 
-          optionsObject.properties.push(t.objectProperty(t.identifier(key), element));
-        }
-      }
-    });
-  }
-
-  return optionsObject;
-}
-
-function getKeyFromName(valuesArray: ArrayExpression, name: string): string {
-  // Generate a key from a name in the values array
-  if (valuesArray && t.isArrayExpression(valuesArray) && valuesArray.elements) {
-    for (const element of valuesArray.elements) {
-      if (t.isObjectExpression(element)) {
-        const nameProperty = getObjectProperty(element, 'name');
-
-        if (t.isStringLiteral(nameProperty) && nameProperty.value === name) {
-          return name.toLowerCase().replace(/\s+/g, '_');
+          // Remove defaultViewport from parameters
+          removeProperty(viewportParams, 'defaultViewport');
+          storyHasChanges = true;
         }
       }
     }
-  }
 
-  // If not found, generate a key from the name
-  return name.toLowerCase().replace(/\s+/g, '_');
+    // Handle backgrounds migration
+    if (needsBackgroundsMigration) {
+      backgroundsParams = getObjectProperty(parameters, 'backgrounds') as ObjectExpression;
+      if (backgroundsParams) {
+        const defaultBackground = getObjectProperty(backgroundsParams, 'default');
+        const disableBackground = getObjectProperty(backgroundsParams, 'disable');
+
+        if (defaultBackground && t.isStringLiteral(defaultBackground)) {
+          // Create globals.backgrounds
+          if (!newGlobals) {
+            newGlobals = t.objectExpression([]);
+          }
+
+          const backgroundKey = getKeyFromName(
+            backgroundsOptions?.values as ArrayExpression,
+            defaultBackground.value
+          );
+
+          newGlobals.properties.push(
+            t.objectProperty(
+              t.identifier('backgrounds'),
+              t.objectExpression([
+                t.objectProperty(t.identifier('value'), t.stringLiteral(backgroundKey)),
+              ])
+            )
+          );
+
+          // Remove default from parameters
+          removeProperty(backgroundsParams, 'default');
+          storyHasChanges = true;
+        }
+
+        // Handle disable -> disabled rename
+        if (disableBackground && t.isBooleanLiteral(disableBackground)) {
+          removeProperty(backgroundsParams, 'disable');
+          // Rename disable to disabled (preserve both true and false values)
+          addProperty(backgroundsParams, 'disabled', disableBackground);
+          storyHasChanges = true;
+        }
+      }
+    }
+
+    // Add globals to story if we created any
+    if (newGlobals && newGlobals.properties.length > 0) {
+      const existingGlobals = getObjectProperty(storyObject, 'globals') as
+        | ObjectExpression
+        | undefined;
+
+      if (existingGlobals) {
+        // Merge new globals with existing globals
+        newGlobals.properties.forEach((newGlobal) => {
+          if (t.isObjectProperty(newGlobal) && t.isIdentifier(newGlobal.key)) {
+            const globalName = newGlobal.key.name;
+            const existingGlobal = getObjectProperty(existingGlobals, globalName) as
+              | ObjectExpression
+              | undefined;
+
+            if (existingGlobal) {
+              // Merge properties if both are object expressions
+              if (t.isObjectExpression(newGlobal.value) && t.isObjectExpression(existingGlobal)) {
+                newGlobal.value.properties.forEach((newProp) => {
+                  if (t.isObjectProperty(newProp) && t.isIdentifier(newProp.key)) {
+                    const propName = newProp.key.name;
+                    const existingProp = getObjectProperty(existingGlobal, propName);
+
+                    if (!existingProp) {
+                      existingGlobal.properties.push(newProp);
+                    }
+                  }
+                });
+              }
+            } else {
+              // Add new global to existing globals
+              existingGlobals.properties.push(newGlobal);
+            }
+          }
+        });
+      } else {
+        // No existing globals, add new ones
+        storyObject.properties.push(t.objectProperty(t.identifier('globals'), newGlobals));
+      }
+      storyHasChanges = true;
+    }
+
+    // Clean up empty parameter objects
+    if (viewportParams && viewportParams.properties.length === 0) {
+      removeProperty(parameters, 'viewport');
+      storyHasChanges = true;
+    }
+
+    if (backgroundsParams && backgroundsParams.properties.length === 0) {
+      removeProperty(parameters, 'backgrounds');
+      storyHasChanges = true;
+    }
+
+    // Remove parameters if it's now empty
+    if (parameters.properties.length === 0) {
+      removeProperty(storyObject, 'parameters');
+      storyHasChanges = true;
+    }
+
+    return storyHasChanges;
+  });
+
+  return hasChanges ? storyConfig : null;
 }

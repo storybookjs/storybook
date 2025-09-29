@@ -8,9 +8,8 @@ import * as common from 'storybook/internal/common';
 // Import common to mock
 import dedent from 'ts-dedent';
 
-import type { FixResult } from '../types';
 // Import FixResult type
-import { addonGlobalsApi } from './addon-globals-api';
+import { addonGlobalsApi, transformStoryFileSync } from './addon-globals-api';
 
 // Mock fs/promises and common utilities
 vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
@@ -34,6 +33,7 @@ const check = async (previewContents: string) => {
     mainConfig: {} as any,
     storybookVersion: '9.0.0', // Assume v9 for testing migrations
     previewConfigPath,
+    storiesPaths: [],
   });
 };
 
@@ -43,7 +43,8 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
   const mockWriteFile = vi.mocked(fsp.writeFile);
   const mockScanAndTransform = vi.mocked(common.scanAndTransformFiles);
 
-  let transformFn: ((filePath: string, content: string) => Promise<string | null>) | undefined;
+  let transformFn: (filePath: string, content: string) => string | null = () => null;
+
   let transformOptions: any;
 
   if (result) {
@@ -53,8 +54,16 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
       packageManager: {} as any, // Add necessary mock properties
     } as any);
 
-    if (mockScanAndTransform.mock.calls.length > 0) {
-      transformFn = mockScanAndTransform.mock.calls[0][0].transformFn;
+    if (result) {
+      // Create a transform function that uses the sync version
+      transformFn = (filePath: string, content: string) => {
+        return transformStoryFileSync(content, {
+          needsViewportMigration: result.needsViewportMigration,
+          needsBackgroundsMigration: result.needsBackgroundsMigration,
+          viewportsOptions: result.viewportsOptions,
+          backgroundsOptions: result.backgroundsOptions,
+        });
+      };
       // Extract options passed to transformStoryFile from the closure
       // This is a bit indirect, relying on the implementation detail
       transformOptions = {
@@ -489,153 +498,177 @@ describe('addon-globals-api', () => {
     it('should migrate parameters.backgrounds.default to globals.backgrounds', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const Default = {
-          parameters: {
-            backgrounds: { default: 'Dark' }
-          }
-        };
-      `;
+          import Button from './Button';
+          export default { component: Button };
+          export const Default = {
+            parameters: {
+              backgrounds: { default: 'Dark' }
+            }
+          };
+        `;
 
       const expectedContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const Default = {
-          globals: {
-            backgrounds: { value: "dark" }
-          }
-        };
-      `;
+          import Button from './Button';
+          export default {
+            component: Button
+          };
+          export const Default = {
+            globals: {
+              backgrounds: {
+                value: "dark"
+              }
+            }
+          };
+        `;
       expect(transformFn).toBeDefined();
-      await expect(transformFn!('story.js', storyContent)).resolves.toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
     });
 
     it('should migrate parameters.backgrounds.disable: true to disabled: true', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const Disabled = {
-          parameters: {
-            backgrounds: { disable: true }
-          }
-        };
-      `;
+          import Button from './Button';
+          export default { component: Button };
+          export const Disabled = {
+            parameters: {
+              backgrounds: { disable: true }
+            }
+          };
+        `;
       const expectedContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const Disabled = {
-          parameters: {
-            backgrounds: { disabled: true }
-          }
-        };
-      `;
+          import Button from './Button';
+          export default {
+            component: Button
+          };
+          export const Disabled = {
+            parameters: {
+              backgrounds: {
+                disabled: true
+              }
+            }
+          };
+        `;
       expect(transformFn).toBeDefined();
-      await expect(transformFn!('story.js', storyContent)).resolves.toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
     });
 
-    it('should remove parameters.backgrounds.disable: false', async () => {
+    it('should rename parameters.backgrounds.disable: false to disabled: false', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const Disabled = {
-          parameters: {
-            backgrounds: { disable: false } // This should be removed
-          }
-        };
-      `;
-      // parameters.backgrounds becomes empty and should be removed
+          import Button from './Button';
+          export default { component: Button };
+          export const Disabled = {
+            parameters: {
+              backgrounds: { disable: false }
+            }
+          };
+        `;
+      // disable should be renamed to disabled
       const expectedContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const Disabled = {};
-      `;
+          import Button from './Button';
+          export default {
+            component: Button
+          };
+          export const Disabled = {
+            parameters: {
+              backgrounds: {
+                disabled: false
+              }
+            }
+          };
+        `;
       expect(transformFn).toBeDefined();
-      await expect(transformFn!('story.js', storyContent)).resolves.toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
     });
 
     it('should migrate parameters.viewport.defaultViewport to globals.viewport', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const MobileOnly = {
-          parameters: {
-            viewport: { defaultViewport: 'mobile' }
-          }
-        };
-      `;
-      const expectedContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const MobileOnly = {
-          globals: {
-            viewport: {
-              value: "mobile",
-              isRotated: false
+          import Button from './Button';
+          export default { component: Button };
+          export const MobileOnly = {
+            parameters: {
+              viewport: { defaultViewport: 'mobile' }
             }
-          }
-        };
-      `;
+          };
+        `;
+      const expectedContent = dedent`
+          import Button from './Button';
+          export default {
+            component: Button
+          };
+          export const MobileOnly = {
+            globals: {
+              viewport: {
+                value: "mobile",
+                isRotated: false
+              }
+            }
+          };
+        `;
       expect(transformFn).toBeDefined();
-      await expect(transformFn!('story.js', storyContent)).resolves.toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
     });
 
     it('should migrate both viewport and backgrounds in the same story', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const DarkMobile = {
-          parameters: {
-            viewport: { defaultViewport: 'mobile' },
-            backgrounds: { default: 'Dark' }
-          }
-        };
-      `;
+          import Button from './Button';
+          export default { component: Button };
+          export const DarkMobile = {
+            parameters: {
+              viewport: { defaultViewport: 'mobile' },
+              backgrounds: { default: 'Dark' }
+            }
+          };
+        `;
       const expectedContent = dedent`
-        import Button from './Button';
-        export default { component: Button };
-        export const DarkMobile = {
-          globals: {
-            viewport: {
-              value: "mobile",
-              isRotated: false
-            },
-            backgrounds: { value: "dark" }
-          }
-        };
-      `;
+          import Button from './Button';
+          export default {
+            component: Button
+          };
+          export const DarkMobile = {
+            globals: {
+              viewport: {
+                value: "mobile",
+                isRotated: false
+              },
+              backgrounds: {
+                value: "dark"
+              }
+            }
+          };
+        `;
       expect(transformFn).toBeDefined();
-      await expect(transformFn!('story.js', storyContent)).resolves.toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
     });
 
     it('should handle migration in meta (export default)', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
-        import Button from './Button';
-        export default {
-          component: Button,
-          parameters: {
-            backgrounds: { default: 'Tweet' }
-          }
-        };
-        export const Default = {};
-      `;
+          import Button from './Button';
+          export default {
+            component: Button,
+            parameters: {
+              backgrounds: { default: 'Tweet' }
+            }
+          };
+          export const Default = {};
+        `;
       const expectedContent = dedent`
-        import Button from './Button';
-        export default {
-          component: Button,
-          globals: {
-            backgrounds: { value: "tweet" }
-          }
-        };
-        export const Default = {};
-      `;
+          import Button from './Button';
+          export default {
+            component: Button,
+            globals: {
+              backgrounds: {
+                value: "tweet"
+              }
+            }
+          };
+          export const Default = {};
+        `;
       expect(transformFn).toBeDefined();
-      await expect(transformFn!('story.js', storyContent)).resolves.toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
     });
 
     it('should return null if no changes are needed', async () => {
@@ -648,43 +681,105 @@ describe('addon-globals-api', () => {
          export const ExistingDisabled = { parameters: { backgrounds: { disabled: true } } };
       `;
       expect(transformFn).toBeDefined();
-      await expect(transformFn!('story.js', storyContent)).resolves.toBeNull();
+      expect(transformFn!('story.js', storyContent)).toBeNull();
     });
 
-    it('should remove empty parameters/backgrounds/viewport objects after migration', async () => {
+    it('should migrate parameters even when other stories have existing globals', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
         import Button from './Button';
         export default { component: Button };
-        export const TestStory = {
-          parameters: {
-            otherParam: true,
-            backgrounds: { default: 'Dark' }, // This will move
-            viewport: { defaultViewport: 'tablet' } // This will move
-          }
-        };
+        export const ExistingGlobals = { globals: { backgrounds: { value: 'dark' } } };
+        export const NeedsMigration = { parameters: { backgrounds: { default: 'Dark' } } };
       `;
-      // parameters.backgrounds and parameters.viewport become empty and are removed
-      // parameters still has otherParam, so it remains
       const expectedContent = dedent`
         import Button from './Button';
-        export default { component: Button };
-        export const TestStory = {
-          parameters: {
-            otherParam: true
-          },
-
+        export default {
+          component: Button
+        };
+        export const ExistingGlobals = {
           globals: {
-            backgrounds: { value: "dark" },
-            viewport: {
-              value: "tablet",
-              isRotated: false
+            backgrounds: {
+              value: 'dark'
+            }
+          }
+        };
+        export const NeedsMigration = {
+          globals: {
+            backgrounds: {
+              value: "dark"
             }
           }
         };
       `;
       expect(transformFn).toBeDefined();
-      await expect(transformFn!('story.js', storyContent)).resolves.toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+    });
+
+    it('should merge new globals with existing globals in the same story', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+        import Button from './Button';
+        export default { component: Button };
+        export const ExistingAndNeedsMigration = {
+          globals: { backgrounds: { value: 'light' } },
+          parameters: { backgrounds: { default: 'Dark' } }
+        };
+      `;
+      const expectedContent = dedent`
+        import Button from './Button';
+        export default {
+          component: Button
+        };
+        export const ExistingAndNeedsMigration = {
+          globals: {
+            backgrounds: {
+              value: 'light'
+            }
+          }
+        };
+      `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+    });
+
+    it('should remove empty parameters/backgrounds/viewport objects after migration', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+          import Button from './Button';
+          export default { component: Button };
+          export const TestStory = {
+            parameters: {
+              otherParam: true,
+              backgrounds: { default: 'Dark' }, // This will move
+              viewport: { defaultViewport: 'tablet' } // This will move
+            }
+          };
+        `;
+      // parameters.backgrounds and parameters.viewport become empty and are removed
+      // parameters still has otherParam, so it remains
+      const expectedContent = dedent`
+          import Button from './Button';
+          export default {
+            component: Button
+          };
+          export const TestStory = {
+            parameters: {
+              otherParam: true
+            },
+            globals: {
+              viewport: {
+                value: "tablet",
+                isRotated: false
+              },
+              backgrounds: {
+                value: "dark"
+              }
+            }
+          };
+        `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
     });
   });
 });

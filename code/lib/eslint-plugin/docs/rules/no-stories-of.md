@@ -13,10 +13,11 @@ Since Storybook 5.2, the [CSF format](https://storybook.js.org/docs/api/csf) was
 Examples of **incorrect** code for this rule:
 
 ```js
-import { storiesOf } from '@storybook/react'
-import Button from '../components/Button'
+import { storiesOf } from '@storybook/react';
 
-storiesOf('Button', module).add('primary', () => <Button primary />)
+import Button from '../components/Button';
+
+storiesOf('Button', module).add('primary', () => <Button primary />);
 ```
 
 Examples of **correct** code for this rule:

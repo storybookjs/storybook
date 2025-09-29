@@ -1,4 +1,4 @@
-import type { MockInstance, Mock as MockV2 } from '@vitest/spy';
+import type { Mock, MockInstance } from '@vitest/spy';
 import {
   type MaybeMocked,
   type MaybeMockedDeep,
@@ -17,8 +17,7 @@ export type * from '@vitest/spy';
 export { isMockFunction, mocks };
 
 type Listener = (mock: MockInstance, args: unknown[]) => void;
-const listeners = globalThis.__STORYBOOK_TEST_SPY_LISTENERS__ || new Set<Listener>();
-globalThis.__STORYBOOK_TEST_SPY_LISTENERS__ = listeners;
+const listeners = new Set<Listener>();
 
 export function onMockCall(callback: Listener): () => void {
   listeners.add(callback);
@@ -33,24 +32,7 @@ export const spyOn: typeof vitestSpyOn = (...args) => {
 
 type Procedure = (...args: any[]) => any;
 
-// TODO: Remove in 9.0
-export type Mock<T extends Procedure | any[] = any[], R = any> = T extends Procedure
-  ? MockV2<T>
-  : T extends any[]
-    ? MockV2<(...args: T) => R>
-    : never;
-
-// V2
 export function fn<T extends Procedure = Procedure>(implementation?: T): Mock<T>;
-// TODO: Remove in 9.0
-// V1
-export function fn<TArgs extends any[] = any, R = any>(): Mock<(...args: TArgs) => R>;
-export function fn<TArgs extends any[] = any[], R = any>(
-  implementation: (...args: TArgs) => R
-): Mock<(...args: TArgs) => R>;
-export function fn<TArgs extends any[] = any[], R = any>(
-  implementation?: (...args: TArgs) => R
-): Mock<(...args: TArgs) => R>;
 export function fn(implementation?: Procedure) {
   const mock = implementation ? vitestFn(implementation) : vitestFn();
   return reactiveMock(mock);

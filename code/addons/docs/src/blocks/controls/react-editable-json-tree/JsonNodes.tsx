@@ -2,6 +2,7 @@
 import type { ReactElement } from 'react';
 import React, { Component, cloneElement } from 'react';
 
+import { JsonNodeAccordion } from './JsonNodeAccordion';
 import * as dataTypes from './types/dataTypes';
 import * as deltaTypes from './types/deltaTypes';
 import * as inputUsageTypes from './types/inputUsageTypes';
@@ -37,16 +38,18 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     if (onlyValue && inputRefValue && typeof inputRefValue.focus === 'function') {
       inputRefValue.focus();
     }
-
-    document.addEventListener('keydown', this.onKeydown);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeydown);
   }
 
   onKeydown(event: KeyboardEvent) {
     if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+      return;
+    }
+    const { inputRefKey, inputRefValue } = this.state;
+    const { addButtonElement, handleCancel } = this.props;
+    const isFormFocused = [inputRefKey, inputRefValue, addButtonElement].some(
+      (elm) => elm === event.target
+    );
+    if (!isFormFocused) {
       return;
     }
     if (event.code === 'Enter' || event.key === 'Enter') {
@@ -55,7 +58,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     }
     if (event.code === 'Escape' || event.key === 'Escape') {
       event.preventDefault();
-      this.props.handleCancel();
+      handleCancel();
     }
   }
 
@@ -111,6 +114,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
     const inputElementValueLayout = cloneElement(inputElementValue, {
       placeholder: 'Value',
       ref: this.refInputValue,
+      onKeyDown: this.onKeydown,
     });
     let inputElementKeyLayout = null;
 
@@ -119,6 +123,7 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
       inputElementKeyLayout = cloneElement(inputElementKey, {
         placeholder: 'Key',
         ref: this.refInputKey,
+        onKeyDown: this.onKeydown,
       });
     }
 
@@ -126,8 +131,8 @@ export class JsonAddValue extends Component<JsonAddValueProps, JsonAddValueState
       <span className="rejt-add-value-node">
         {inputElementKeyLayout}
         {inputElementValueLayout}
-        {cancelButtonElementLayout}
         {addButtonElementLayout}
+        {cancelButtonElementLayout}
       </span>
     );
   }
@@ -155,8 +160,8 @@ JsonAddValue.defaultProps = {
 interface JsonArrayState {
   data: JsonArrayProps['data'];
   name: JsonArrayProps['name'];
-  keyPath: string[];
-  deep: JsonArrayProps['deep'];
+  keyPath: Exclude<JsonArrayProps['keyPath'], undefined>;
+  deep: Exclude<JsonArrayProps['deep'], undefined>;
   nextDeep: JsonArrayProps['deep'];
   collapsed: any;
   addFormVisible: boolean;
@@ -168,7 +173,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     this.state = {
       data: props.data,
       name: props.name,
-      keyPath,
+      keyPath: keyPath ?? [],
       deep: props.deep ?? 0,
       nextDeep: (props.deep ?? 0) + 1,
       collapsed: props.isCollapsed(keyPath, props.deep ?? 0, props.data),
@@ -247,9 +252,10 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     };
   }
 
-  handleAddValueAdd({ key, newValue }: any) {
+  handleAddValueAdd({ newValue }: any) {
     const { data, keyPath = [], nextDeep: deep } = this.state;
     const { beforeAddAction, logger } = this.props;
+    const key = data.length;
 
     (beforeAddAction || Promise.resolve.bind(Promise))(key, keyPath, deep, newValue)
       .then(() => {
@@ -330,15 +336,16 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
+        'aria-label': `remove the array '${String(name)}'`,
       });
 
     return (
-      <span className="rejt-collapsed">
-        <span className="rejt-collapsed-text" style={collapsed} onClick={this.handleCollapseMode}>
+      <>
+        <span style={collapsed}>
           [...] {data.length} {data.length === 1 ? 'item' : 'items'}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
@@ -353,7 +360,6 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
       dataType,
       addButtonElement,
       cancelButtonElement,
-      editButtonElement,
       inputElementGenerator,
       textareaElementGenerator,
       minusMenuElement,
@@ -374,6 +380,7 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         onClick: this.handleAddMode,
         className: 'rejt-plus-menu',
         style: plus,
+        'aria-label': `add a new item to the '${String(name)}' array`,
       });
     const removeItemButton =
       minusMenuElement &&
@@ -381,13 +388,14 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
+        'aria-label': `remove the array '${String(name)}'`,
       });
 
     const onlyValue = true;
     const startObject = '[';
     const endObject = ']';
     return (
-      <span className="rejt-not-collapsed">
+      <>
         <span className="rejt-not-collapsed-delimiter" style={delimiter}>
           {startObject}
         </span>
@@ -409,7 +417,6 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
               getStyle={getStyle}
               addButtonElement={addButtonElement}
               cancelButtonElement={cancelButtonElement}
-              editButtonElement={editButtonElement}
               inputElementGenerator={inputElementGenerator}
               textareaElementGenerator={textareaElementGenerator}
               minusMenuElement={minusMenuElement}
@@ -441,25 +448,24 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
           {endObject}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
   render() {
-    const { name, collapsed, data, keyPath, deep } = this.state;
-    const { dataType, getStyle } = this.props;
+    const { name, collapsed, keyPath, deep } = this.state;
     const value = collapsed ? this.renderCollapsed() : this.renderNotCollapsed();
-    const style = getStyle(name, data, keyPath, deep, dataType);
 
     return (
-      <div className="rejt-array-node">
-        <span onClick={this.handleCollapseMode}>
-          <span className="rejt-name" style={style.name}>
-            {name} :{' '}
-          </span>
-        </span>
+      <JsonNodeAccordion
+        name={name}
+        collapsed={collapsed}
+        deep={deep}
+        keyPath={keyPath}
+        onClick={this.handleCollapseMode}
+      >
         {value}
-      </div>
+      </JsonNodeAccordion>
     );
   }
 }
@@ -478,7 +484,6 @@ interface JsonArrayProps {
   getStyle: (...args: any) => any;
   addButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
-  editButtonElement?: ReactElement;
   inputElementGenerator: (...args: any) => any;
   textareaElementGenerator: (...args: any) => any;
   minusMenuElement?: ReactElement;
@@ -501,8 +506,8 @@ JsonArray.defaultProps = {
 interface JsonFunctionValueState {
   value: JsonFunctionValueProps['value'];
   name: JsonFunctionValueProps['name'];
-  keyPath: string[];
-  deep: JsonFunctionValueProps['deep'];
+  keyPath: Exclude<JsonFunctionValueProps['keyPath'], undefined>;
+  deep: Exclude<JsonFunctionValueProps['deep'], undefined>;
   editEnabled: boolean;
   inputRef: any;
 }
@@ -514,8 +519,8 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     this.state = {
       value: props.value,
       name: props.name,
-      keyPath,
-      deep: props.deep,
+      keyPath: keyPath ?? [],
+      deep: props.deep ?? 0,
       editEnabled: false,
       inputRef: null,
     };
@@ -542,16 +547,16 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
     }
   }
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.onKeydown);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeydown);
-  }
-
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+    const { inputRef } = this.state;
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      inputRef !== event.target
+    ) {
       return;
     }
     if (event.code === 'Enter' || event.key === 'Enter') {
@@ -615,11 +620,9 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
       readOnly,
       dataType,
       getStyle,
-      editButtonElement,
-      cancelButtonElement,
       textareaElementGenerator,
       minusMenuElement,
-      keyPath: comeFromKeyPath,
+      keyPath: comeFromKeyPath = [],
     } = this.props;
 
     const style = getStyle(name, originalValue, keyPath, deep, dataType);
@@ -637,25 +640,15 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
         dataType
       );
 
-      const editButtonElementLayout =
-        editButtonElement &&
-        cloneElement(editButtonElement, {
-          onClick: this.handleEdit,
-        });
-      const cancelButtonElementLayout =
-        cancelButtonElement &&
-        cloneElement(cancelButtonElement, {
-          onClick: this.handleCancelEdit,
-        });
       const textareaElementLayout = cloneElement(textareaElement, {
         ref: this.refInput,
-        defaultValue: originalValue,
+        defaultValue: value,
+        onKeyDown: this.onKeydown,
       });
 
       result = (
         <span className="rejt-edit-form" style={style.editForm}>
-          {textareaElementLayout} {cancelButtonElementLayout}
-          {editButtonElementLayout}
+          {textareaElementLayout}
         </span>
       );
       minusElement = null;
@@ -669,18 +662,24 @@ export class JsonFunctionValue extends Component<JsonFunctionValueProps, JsonFun
           {value}
         </span>
       );
+
+      const parentPropertyName = comeFromKeyPath.at(-1);
+
       const minusMenuLayout =
         minusMenuElement &&
         cloneElement(minusMenuElement, {
           onClick: handleRemove,
           className: 'rejt-minus-menu',
           style: style.minus,
+          'aria-label': `remove the function '${String(name)}'${
+            String(parentPropertyName) ? ` from '${String(parentPropertyName)}'` : ''
+          }`,
         });
       minusElement = resultOnlyResult ? null : minusMenuLayout;
     }
 
     return (
-      <li className="rejt-function-value-node" style={style.li}>
+      <li className="rejt-value-node" style={style.li}>
         <span className="rejt-name" style={style.name}>
           {name} :{' '}
         </span>
@@ -702,7 +701,6 @@ interface JsonFunctionValueProps {
   readOnly: (...args: any) => any;
   dataType?: string;
   getStyle: (...args: any) => any;
-  editButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
   textareaElementGenerator: (...args: any) => any;
   minusMenuElement?: ReactElement;
@@ -715,7 +713,6 @@ JsonFunctionValue.defaultProps = {
   keyPath: [],
   deep: 0,
   handleUpdateValue: () => {},
-  editButtonElement: <button>e</button>,
   cancelButtonElement: <button>c</button>,
   minusMenuElement: <span> - </span>,
 };
@@ -723,8 +720,8 @@ JsonFunctionValue.defaultProps = {
 interface JsonNodeState {
   data: JsonNodeProps['data'];
   name: JsonNodeProps['name'];
-  keyPath: JsonNodeProps['keyPath'];
-  deep: JsonNodeProps['deep'];
+  keyPath: Exclude<JsonNodeProps['keyPath'], undefined>;
+  deep: Exclude<JsonNodeProps['deep'], undefined>;
 }
 
 export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
@@ -733,8 +730,8 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
     this.state = {
       data: props.data,
       name: props.name,
-      keyPath: props.keyPath,
-      deep: props.deep,
+      keyPath: props.keyPath ?? [],
+      deep: props.deep ?? 0,
     };
   }
 
@@ -754,7 +751,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
       getStyle,
       addButtonElement,
       cancelButtonElement,
-      editButtonElement,
       inputElementGenerator,
       textareaElementGenerator,
       minusMenuElement,
@@ -785,7 +781,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             getStyle={getStyle}
             addButtonElement={addButtonElement}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             textareaElementGenerator={textareaElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -813,7 +808,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             getStyle={getStyle}
             addButtonElement={addButtonElement}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             textareaElementGenerator={textareaElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -841,7 +835,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             getStyle={getStyle}
             addButtonElement={addButtonElement}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             textareaElementGenerator={textareaElementGenerator}
             minusMenuElement={minusMenuElement}
@@ -867,7 +860,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             dataType={dataType}
             getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
             logger={logger}
@@ -888,7 +880,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             dataType={dataType}
             getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
             logger={logger}
@@ -909,7 +900,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             dataType={dataType}
             getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
             logger={logger}
@@ -930,7 +920,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             dataType={dataType}
             getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
             logger={logger}
@@ -951,7 +940,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             dataType={dataType}
             getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
             logger={logger}
@@ -972,7 +960,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             dataType={dataType}
             getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
             logger={logger}
@@ -993,7 +980,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             dataType={dataType}
             getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             textareaElementGenerator={textareaElementGenerator}
             minusMenuElement={minusMenuElement}
             logger={logger}
@@ -1014,7 +1000,6 @@ export class JsonNode extends Component<JsonNodeProps, JsonNodeState> {
             dataType={dataType}
             getStyle={getStyle}
             cancelButtonElement={cancelButtonElement}
-            editButtonElement={editButtonElement}
             inputElementGenerator={inputElementGenerator}
             minusMenuElement={minusMenuElement}
             logger={logger}
@@ -1041,7 +1026,6 @@ interface JsonNodeProps {
   getStyle: (...args: any) => any;
   addButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
-  editButtonElement?: ReactElement;
   inputElementGenerator: (...args: any) => any;
   textareaElementGenerator: (...args: any) => any;
   minusMenuElement?: ReactElement;
@@ -1063,8 +1047,8 @@ interface JsonObjectState {
   name: string;
   collapsed: ReturnType<JsonObjectProps['isCollapsed']>;
   data: JsonObjectProps['data'];
-  keyPath: JsonObjectProps['keyPath'];
-  deep: JsonObjectProps['deep'];
+  keyPath: Exclude<JsonObjectProps['keyPath'], undefined>;
+  deep: Exclude<JsonObjectProps['deep'], undefined>;
   nextDeep: number;
   addFormVisible: boolean;
 }
@@ -1076,7 +1060,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     this.state = {
       name: props.name,
       data: props.data,
-      keyPath,
+      keyPath: keyPath ?? [],
       deep: props.deep ?? 0,
       nextDeep: (props.deep ?? 0) + 1,
       collapsed: props.isCollapsed(keyPath, props.deep ?? 0, props.data),
@@ -1239,15 +1223,16 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
+        'aria-label': `remove the object '${String(name)}'`,
       });
 
     return (
-      <span className="rejt-collapsed">
-        <span className="rejt-collapsed-text" style={collapsed} onClick={this.handleCollapseMode}>
+      <>
+        <span style={collapsed}>
           {'{...}'} {keyList.length} {keyList.length === 1 ? 'key' : 'keys'}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
@@ -1262,7 +1247,6 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
       dataType,
       addButtonElement,
       cancelButtonElement,
-      editButtonElement,
       inputElementGenerator,
       textareaElementGenerator,
       minusMenuElement,
@@ -1285,6 +1269,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         onClick: this.handleAddMode,
         className: 'rejt-plus-menu',
         style: plus,
+        'aria-label': `add a new property to the object '${String(name)}'`,
       });
     const removeItemButton =
       minusMenuElement &&
@@ -1292,6 +1277,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: minus,
+        'aria-label': `remove the object '${String(name)}'`,
       });
 
     const list = keyList.map((key) => (
@@ -1310,7 +1296,6 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
         getStyle={getStyle}
         addButtonElement={addButtonElement}
         cancelButtonElement={cancelButtonElement}
-        editButtonElement={editButtonElement}
         inputElementGenerator={inputElementGenerator}
         textareaElementGenerator={textareaElementGenerator}
         minusMenuElement={minusMenuElement}
@@ -1327,7 +1312,7 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
     const endObject = '}';
 
     return (
-      <span className="rejt-not-collapsed">
+      <>
         <span className="rejt-not-collapsed-delimiter" style={delimiter}>
           {startObject}
         </span>
@@ -1353,25 +1338,24 @@ export class JsonObject extends Component<JsonObjectProps, JsonObjectState> {
           {endObject}
         </span>
         {!isReadOnly && removeItemButton}
-      </span>
+      </>
     );
   }
 
   render() {
-    const { name, collapsed, data, keyPath, deep } = this.state;
-    const { getStyle, dataType } = this.props;
+    const { name, collapsed, keyPath, deep = 0 } = this.state;
     const value = collapsed ? this.renderCollapsed() : this.renderNotCollapsed();
-    const style = getStyle(name, data, keyPath, deep, dataType);
 
     return (
-      <div className="rejt-object-node">
-        <span onClick={this.handleCollapseMode}>
-          <span className="rejt-name" style={style.name}>
-            {name} :{' '}
-          </span>
-        </span>
+      <JsonNodeAccordion
+        name={name}
+        collapsed={collapsed}
+        deep={deep}
+        keyPath={keyPath}
+        onClick={this.handleCollapseMode}
+      >
         {value}
-      </div>
+      </JsonNodeAccordion>
     );
   }
 }
@@ -1390,7 +1374,6 @@ interface JsonObjectProps {
   getStyle: (...args: any) => any;
   addButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
-  editButtonElement?: ReactElement;
   inputElementGenerator: (...args: any) => any;
   textareaElementGenerator: (...args: any) => any;
   minusMenuElement?: ReactElement;
@@ -1413,8 +1396,8 @@ JsonObject.defaultProps = {
 interface JsonValueState {
   value: JsonValueProps['value'];
   name: JsonValueProps['name'];
-  keyPath: string[];
-  deep: JsonValueProps['deep'];
+  keyPath: Exclude<JsonValueProps['keyPath'], undefined>;
+  deep: Exclude<JsonValueProps['deep'], undefined>;
   editEnabled: boolean;
   inputRef: any;
 }
@@ -1426,8 +1409,8 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     this.state = {
       value: props.value,
       name: props.name,
-      keyPath,
-      deep: props.deep,
+      keyPath: keyPath ?? [],
+      deep: props.deep ?? 0,
       editEnabled: false,
       inputRef: null,
     };
@@ -1454,16 +1437,16 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
     }
   }
 
-  componentDidMount() {
-    document.addEventListener('keydown', this.onKeydown);
-  }
-
-  componentWillUnmount() {
-    document.removeEventListener('keydown', this.onKeydown);
-  }
-
   onKeydown(event: KeyboardEvent) {
-    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || event.repeat) {
+    const { inputRef } = this.state;
+    if (
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      event.repeat ||
+      inputRef !== event.target
+    ) {
       return;
     }
     if (event.code === 'Enter' || event.key === 'Enter') {
@@ -1527,8 +1510,6 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
       readOnly,
       dataType,
       getStyle,
-      editButtonElement,
-      cancelButtonElement,
       inputElementGenerator,
       minusMenuElement,
       keyPath: comeFromKeyPath,
@@ -1546,26 +1527,23 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
       dataType
     );
 
-    const editButtonElementLayout =
-      editButtonElement &&
-      cloneElement(editButtonElement, {
-        onClick: this.handleEdit,
-      });
-    const cancelButtonElementLayout =
-      cancelButtonElement &&
-      cloneElement(cancelButtonElement, {
-        onClick: this.handleCancelEdit,
-      });
     const inputElementLayout = cloneElement(inputElement, {
       ref: this.refInput,
       defaultValue: JSON.stringify(originalValue),
+      onKeyDown: this.onKeydown,
     });
+
+    const parentPropertyName = keyPath.at(-2);
+
     const minusMenuLayout =
       minusMenuElement &&
       cloneElement(minusMenuElement, {
         onClick: handleRemove,
         className: 'rejt-minus-menu',
         style: style.minus,
+        'aria-label': `remove the property '${String(name)}' with value '${String(originalValue)}'${
+          String(parentPropertyName) ? ` from '${String(parentPropertyName)}'` : ''
+        }`,
       });
 
     return (
@@ -1576,8 +1554,7 @@ export class JsonValue extends Component<JsonValueProps, JsonValueState> {
         </span>
         {isEditing ? (
           <span className="rejt-edit-form" style={style.editForm}>
-            {inputElementLayout} {cancelButtonElementLayout}
-            {editButtonElementLayout}
+            {inputElementLayout}
           </span>
         ) : (
           <span
@@ -1605,7 +1582,6 @@ interface JsonValueProps {
   readOnly: (...args: any) => any;
   dataType?: string;
   getStyle: (...args: any) => any;
-  editButtonElement?: ReactElement;
   cancelButtonElement?: ReactElement;
   inputElementGenerator: (...args: any) => any;
   minusMenuElement?: ReactElement;
@@ -1618,7 +1594,6 @@ JsonValue.defaultProps = {
   keyPath: [],
   deep: 0,
   handleUpdateValue: () => Promise.resolve(),
-  editButtonElement: <button>e</button>,
   cancelButtonElement: <button>c</button>,
   minusMenuElement: <span> - </span>,
 };

@@ -1,6 +1,7 @@
+import React from 'react';
+
 import { action } from 'storybook/actions';
 
-import { CallStates } from '../../instrumenter/types';
 import { Subnav } from './Subnav';
 
 export default {
@@ -19,6 +20,7 @@ export default {
       rerun: action('rerun'),
     },
     controlStates: {
+      detached: false,
       start: true,
       back: true,
       goto: true,
@@ -31,28 +33,57 @@ export default {
   },
 };
 
-export const Pass = {
+export const Wait = {
   args: {
-    status: CallStates.DONE,
-  },
-};
-
-export const Fail = {
-  args: {
-    status: CallStates.ERROR,
+    status: 'rendering',
+    controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };
 
 export const Runs = {
   args: {
-    status: CallStates.WAITING,
+    status: 'playing',
+  },
+};
+
+export const Pass = {
+  args: {
+    status: 'completed',
+  },
+};
+
+export const Fail = {
+  args: {
+    status: 'errored',
+  },
+};
+
+export const Bail = {
+  args: {
+    status: 'aborted',
+    controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };
 
 export const AtStart = {
   args: {
-    status: CallStates.WAITING,
+    status: 'playing',
     controlStates: {
+      detached: false,
       start: false,
       back: false,
       goto: true,
@@ -64,8 +95,9 @@ export const AtStart = {
 
 export const Midway = {
   args: {
-    status: CallStates.WAITING,
+    status: 'playing',
     controlStates: {
+      detached: false,
       start: true,
       back: true,
       goto: true,
@@ -77,13 +109,43 @@ export const Midway = {
 
 export const Locked = {
   args: {
-    status: CallStates.ACTIVE,
+    status: 'playing',
     controlStates: {
+      detached: false,
       start: false,
       back: false,
       goto: false,
       next: false,
       end: false,
     },
+  },
+};
+
+export const Detached = {
+  args: {
+    status: 'completed',
+    controlStates: {
+      detached: true,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
+  },
+};
+
+export const WithOpenInEditorLink = {
+  args: {
+    status: 'completed',
+    controlStates: {
+      detached: true,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
+    canOpenInEditor: true,
   },
 };

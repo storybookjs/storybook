@@ -19,7 +19,7 @@ const labels = {
 };
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   decorators: [
     (storyFn: PartialStoryFn, context: StoryContext) => {
       return storyFn({

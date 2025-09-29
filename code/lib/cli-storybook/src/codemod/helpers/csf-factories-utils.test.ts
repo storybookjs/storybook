@@ -23,7 +23,7 @@ expect.addSnapshotSerializer({
 });
 
 function parseCodeToProgramNode(code: string): t.Program {
-  return parser.parse(code, { sourceType: 'module', plugins: ['typescript'] }).program;
+  return parser.parse(code, { sourceType: 'unambiguous', plugins: ['typescript'] }).program;
 }
 
 function generateCodeFromAST(node: t.Program) {
@@ -191,7 +191,7 @@ describe('getConfigProperties', () => {
       bar: t.variableDeclarator(t.identifier('bar'), t.numericLiteral(42)),
     };
 
-    const properties = getConfigProperties(exportDecls);
+    const properties = getConfigProperties(exportDecls, { configType: 'main' });
 
     expect(properties).toHaveLength(2);
     expect(properties[0].key.name).toBe('foo');
@@ -205,7 +205,7 @@ describe('getConfigProperties', () => {
       foo: t.functionDeclaration(t.identifier('foo'), [], t.blockStatement([])),
     };
 
-    const properties = getConfigProperties(exportDecls);
+    const properties = getConfigProperties(exportDecls, { configType: 'main' });
 
     expect(properties).toHaveLength(1);
     expect(properties[0].key.name).toBe('foo');

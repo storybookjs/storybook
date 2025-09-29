@@ -15,6 +15,7 @@ import { styled } from 'storybook/theming';
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { statusMapping } from '../../utils/status';
 import { UseSymbol } from './IconSymbols';
+import { NoResults } from './NoResults';
 import { StatusLabel } from './StatusButton';
 import { TypeIcon } from './TreeNode';
 import type { DownshiftItem, Match, SearchResult } from './types';
@@ -62,18 +63,6 @@ const ResultRowContent = styled.div({
   display: 'flex',
   flexDirection: 'column',
 });
-
-const NoResults = styled.div(({ theme }) => ({
-  marginTop: 20,
-  textAlign: 'center',
-  fontSize: `${theme.typography.size.s2}px`,
-  lineHeight: `18px`,
-  color: theme.color.defaultText,
-  small: {
-    color: theme.textMutedColor,
-    fontSize: `${theme.typography.size.s1}px`,
-  },
-}));
 
 const Mark = styled.mark(({ theme }) => ({
   background: 'transparent',
@@ -199,8 +188,8 @@ const Result: FC<
           </TypeIcon>
         )}
         {item.type === 'story' && (
-          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type="story">
-            <UseSymbol type="story" />
+          <TypeIcon viewBox="0 0 14 14" width="14" height="14" type={item.subtype}>
+            <UseSymbol type={item.subtype} />
           </TypeIcon>
         )}
         {!(item.type === 'component' || item.type === 'story') && (
@@ -296,7 +285,7 @@ export const SearchResults: FC<{
   };
 
   return (
-    <ResultsList {...getMenuProps()}>
+    <ResultsList {...getMenuProps()} key="results-list">
       {results.length > 0 && !query && (
         <RecentlyOpenedTitle className="search-result-recentlyOpened">
           Recently opened
@@ -312,21 +301,18 @@ export const SearchResults: FC<{
         <li>
           <NoResults>
             <strong>No components found</strong>
-            <br />
             <small>Find components by name or path.</small>
           </NoResults>
         </li>
       )}
       {results.map((result: DownshiftItem, index) => {
         if (isExpandType(result)) {
+          const props = { ...results, ...getItemProps({ key: index, index, item: result }) };
+          const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
               {/* @ts-expect-error (non strict) */}
-              <Button
-                {...result}
-                {...getItemProps({ key: index, index, item: result })}
-                size="small"
-              >
+              <Button key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>
             </MoreWrapper>
@@ -337,11 +323,10 @@ export const SearchResults: FC<{
         const key = `${item.refId}::${item.id}`;
         return (
           <Result
-            // @ts-expect-error (non strict)
-            key={item.id}
             {...result}
             {...getItemProps({ key, index, item: result })}
             isHighlighted={highlightedIndex === index}
+            key={key}
             data-id={result.item.id}
             data-refid={result.item.refId}
             onMouseOver={mouseOverHandler}

@@ -1,11 +1,11 @@
 import * as domTestingLibrary from '@testing-library/dom';
 import type { FireFunction, FireObject } from '@testing-library/dom/types/events';
-import _userEvent from '@testing-library/user-event';
+import * as _userEvent from '@testing-library/user-event';
 
 import { once } from 'storybook/internal/client-logger';
 import { instrument } from 'storybook/internal/instrumenter';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 import type { Writable } from 'type-fest';
 
 import type { Promisify, PromisifyObject } from './utils';
@@ -15,6 +15,7 @@ type TestingLibraryDom = typeof domTestingLibrary;
 const testingLibrary = instrument(
   { ...domTestingLibrary },
   {
+    getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper'),
     intercept: (method, path) =>
       path[0] === 'fireEvent' || method.startsWith('find') || method.startsWith('waitFor'),
   }
@@ -26,7 +27,7 @@ testingLibrary.screen = new Proxy(testingLibrary.screen, {
   get(target, prop, receiver) {
     once.warn(dedent`
           You are using Testing Library's \`screen\` object. Use \`within(canvasElement)\` instead.
-          More info: https://storybook.js.org/docs/essentials/interactions
+          More info: https://storybook.js.org/docs/writing-tests/interaction-testing?ref=error
         `);
     return Reflect.get(target, prop, receiver);
   },
@@ -114,8 +115,9 @@ type _UserEvent = typeof _userEvent;
 
 export interface UserEvent extends _UserEvent {}
 
-export const { userEvent }: { userEvent: UserEvent } = instrument(
-  // @ts-expect-error CJS workaround
-  { userEvent: _userEvent.default ?? _userEvent },
-  { intercept: true }
+export const uninstrumentedUserEvent = _userEvent.userEvent;
+
+export const { userEvent }: { userEvent: UserEvent['userEvent'] } = instrument(
+  { userEvent: _userEvent.userEvent },
+  { intercept: true, getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper') }
 );

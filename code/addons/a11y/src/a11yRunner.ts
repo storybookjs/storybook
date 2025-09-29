@@ -1,13 +1,13 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import { ElementA11yParameterError } from 'storybook/internal/preview-errors';
 
 import { global } from '@storybook/global';
 
-import type { AxeResults, ContextProp, ContextSpec, Selector, SelectorList } from 'axe-core';
-import { addons } from 'storybook/preview-api';
+import type { AxeResults, ContextProp, ContextSpec } from 'axe-core';
+import { addons, waitForAnimations } from 'storybook/preview-api';
 
+import { withLinkPaths } from './a11yRunnerUtils';
 import { EVENTS } from './constants';
-import type { A11yParameters, SelectorWithoutNode } from './params';
+import type { A11yParameters } from './params';
 
 const { document } = global;
 
@@ -40,8 +40,12 @@ const runNext = async () => {
   runNext();
 };
 
-export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
-  const { default: axe } = await import('axe-core');
+export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: string) => {
+  const axeCore = await import('axe-core');
+  // We do this workaround when Vite projects can't optimize deps in pnpm projects
+  // as axe-core is UMD and therefore won't resolve.
+  // In that case, we just use the global axe (which will be there as a side effect of UMD import).
+  const axe = axeCore?.default || (globalThis as any).axe;
 
   const { config = {}, options = {} } = input;
 
@@ -52,7 +56,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
 
   const context: ContextSpec = {
     include: document?.body,
-    exclude: ['.sb-wrapper', '#storybook-docs'], // Internal Storybook elements that are always in the document
+    exclude: ['.sb-wrapper', '#storybook-docs', '#storybook-highlights-root'], // Internal Storybook elements that are always in the document
   };
 
   if (input.context) {
@@ -89,10 +93,16 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
   axe.configure(configWithDefault);
 
   return new Promise<AxeResults>((resolve, reject) => {
+    const highlightsRoot = document?.getElementById('storybook-highlights-root');
+    if (highlightsRoot) {
+      highlightsRoot.style.display = 'none';
+    }
+
     const task = async () => {
       try {
         const result = await axe.run(context, options);
-        resolve(result);
+        const resultWithLinks = withLinkPaths(result, storyId);
+        resolve(resultWithLinks);
       } catch (error) {
         reject(error);
       }
@@ -103,12 +113,17 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS) => {
     if (!isRunning) {
       runNext();
     }
+
+    if (highlightsRoot) {
+      highlightsRoot.style.display = '';
+    }
   });
 };
 
 channel.on(EVENTS.MANUAL, async (storyId: string, input: A11yParameters = DEFAULT_PARAMETERS) => {
   try {
-    const result = await run(input);
+    await waitForAnimations();
+    const result = await run(input, storyId);
     // Axe result contains class instances, which telejson deserializes in a
     // way that violates:
     //  Content Security Policy directive: "script-src 'self' 'unsafe-inline'".

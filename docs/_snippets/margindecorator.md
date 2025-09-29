@@ -1,16 +1,4 @@
-```svelte filename="MarginDecorator.svelte" renderer="svelte" language="js" tabTitle="Svelte 4"
-<div>
-  <slot />
-</div>
-
-<style>
-  div {
-    margin: 3em;
-  }
-</style>
-```
-
-```svelte filename="MarginDecorator.svelte" renderer="svelte" language="js" tabTitle="Svelte 5"
+```svelte filename="MarginDecorator.svelte" renderer="svelte" language="js"
 <script>
   let { children } = $props();
 </script>
@@ -26,19 +14,7 @@
 </style>
 ```
 
-```svelte filename="MarginDecorator.svelte" renderer="svelte" language="ts" tabTitle="Svelte 4"
-<div>
-  <slot />
-</div>
-
-<style>
-  div {
-    margin: 3em;
-  }
-</style>
-```
-
-```svelte filename="MarginDecorator.svelte" renderer="svelte" language="ts" tabTitle="Svelte 5"
+```svelte filename="MarginDecorator.svelte" renderer="svelte" language="ts"
 <script>
   import type { Snippet } from 'svelte';
 

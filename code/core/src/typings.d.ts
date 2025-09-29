@@ -22,12 +22,11 @@ declare var __STORYBOOK_STORY_STORE__: any;
 declare var __STORYBOOK_TEST__: any;
 declare var __STORYBOOK_TEST_SPY_LISTENERS__: Set<any>;
 declare var __STORYBOOK_ACTIONS__: any;
+declare var __STORYBOOK_VITEST_MOCKER__: any;
 
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';
-declare module 'better-opn';
 declare module 'lazy-universal-dotenv';
-declare module 'open';
 declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
 

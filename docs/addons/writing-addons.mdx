@@ -9,9 +9,9 @@ Storybook addons are a powerful way to extend Storybook's functionality and cust
 
 ## What are we going to build?
 
-This reference guide is to help you develop a mental model for how Storybook addons work by building a simple addon based on the popular [Outline addon](https://storybook.js.org/addons/@storybook/addon-outline/). Throughout this guide, you'll learn how addons are structured, Storybook's APIs, how to test your addon locally, and how to publish it.
+This reference guide is to help you develop a mental model for how Storybook addons work by building a simple addon based on the popular [Outline addon](https://storybook.js.org/addons/@storybook/addon-outline/) (which is the historical basis for the built-in [outline feature](../essentials/measure-and-outline.mdx#outline)). Throughout this guide, you'll learn how addons are structured, Storybook's APIs, how to test your addon locally, and how to publish it.
 
-<Video src="../_assets/addons/storybook-addon-finished-state.mp4" />
+![Fully implemented Storybook addon](../_assets/addons/storybook-addon-finished-state.png)
 
 ## Addon anatomy
 
@@ -189,7 +189,7 @@ The first category of metadata is related to the addon itself. This includes the
   "types": "dist/index.d.ts",
   "files": ["dist/**/*", "README.md", "*.js", "*.d.ts"],
   "devDependencies": {
-    "@storybook/blocks": "^9.0.0",
+    "@storybook/addon-docs": "^9.0.0",
     "storybook": "^9.0.0"
   },
   "bundler": {

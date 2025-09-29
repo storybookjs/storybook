@@ -1,17 +1,16 @@
+import * as fspImp from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import * as fsExtraImp from 'fs-extra';
 
-import type * as MockedFSToExtra from '../../../code/__mocks__/fs-extra';
+import type * as MockedFSPToExtra from '../../../code/__mocks__/fs/promises';
 import { run as version } from '../version';
 
-vi.mock('fs-extra', async () => import('../../../code/__mocks__/fs-extra'));
-const fsExtra = fsExtraImp as unknown as typeof MockedFSToExtra;
+vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs/promises'));
+const fspExtra = fspImp as unknown as typeof MockedFSPToExtra;
 
 vi.mock('../../../code/core/src/common/src/versions', () => ({
   '@storybook/addon-a11y': '7.1.0-alpha.29',
@@ -40,7 +39,7 @@ describe('Version', () => {
   const A11Y_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'addons', 'a11y', 'package.json');
 
   it('should throw when release type is invalid', async () => {
-    fsExtra.__setMockFiles({
+    fspExtra.__setMockFiles({
       [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
@@ -70,7 +69,7 @@ describe('Version', () => {
   });
 
   it('should throw when prerelease identifier is combined with non-pre release type', async () => {
-    fsExtra.__setMockFiles({
+    fspExtra.__setMockFiles({
       [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
@@ -89,7 +88,7 @@ describe('Version', () => {
   });
 
   it('should throw when exact is combined with release type', async () => {
-    fsExtra.__setMockFiles({
+    fspExtra.__setMockFiles({
       [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
@@ -108,7 +107,7 @@ describe('Version', () => {
   });
 
   it('should throw when exact is invalid semver', async () => {
-    fsExtra.__setMockFiles({
+    fspExtra.__setMockFiles({
       [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
@@ -128,7 +127,7 @@ describe('Version', () => {
   });
 
   it('should throw when apply is combined with releaseType', async () => {
-    fsExtra.__setMockFiles({
+    fspExtra.__setMockFiles({
       [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
@@ -147,7 +146,7 @@ describe('Version', () => {
   });
 
   it('should throw when apply is combined with exact', async () => {
-    fsExtra.__setMockFiles({
+    fspExtra.__setMockFiles({
       [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
@@ -166,7 +165,7 @@ describe('Version', () => {
   });
 
   it('should throw when apply is combined with deferred', async () => {
-    fsExtra.__setMockFiles({
+    fspExtra.__setMockFiles({
       [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
       [MANAGER_API_VERSION_PATH]: `export const version = "1.0.0";`,
       [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "1.0.0" };`,
@@ -185,7 +184,7 @@ describe('Version', () => {
   });
 
   it('should throw when applying without a "deferredNextVersion" set', async () => {
-    fsExtra.__setMockFiles({
+    fspExtra.__setMockFiles({
       [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
     });
 
@@ -193,8 +192,7 @@ describe('Version', () => {
       `[Error: The 'deferredNextVersion' property in code/package.json is unset. This is necessary to apply a deferred version bump]`
     );
 
-    expect(fsExtra.writeJson).not.toHaveBeenCalled();
-    expect(fsExtra.writeFile).not.toHaveBeenCalled();
+    expect(fspExtra.writeFile).not.toHaveBeenCalled();
     expect(execaCommand).not.toHaveBeenCalled();
   });
 
@@ -238,7 +236,7 @@ describe('Version', () => {
       expectedVersion,
       deferredNextVersion,
     }) => {
-      fsExtra.__setMockFiles({
+      fspExtra.__setMockFiles({
         [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: currentVersion, deferredNextVersion }),
         [MANAGER_API_VERSION_PATH]: `export const version = "${currentVersion}";`,
         [VERSIONS_PATH]: `export default { "@storybook/addon-a11y": "${currentVersion}" };`,
@@ -249,36 +247,39 @@ describe('Version', () => {
       });
 
       await version({ releaseType, preId, exact, apply });
-      expect(fsExtra.writeJson).toHaveBeenCalledTimes(apply ? 3 : 2);
+      expect(fspExtra.writeFile).toHaveBeenCalledTimes(apply ? 5 : 4);
       if (apply) {
-        expect(fsExtra.writeJson).toHaveBeenCalledWith(
+        expect(fspExtra.writeFile).toHaveBeenCalledWith(
           CODE_PACKAGE_JSON_PATH,
           // this call is the write that removes the "deferredNextVersion" property
-          { version: currentVersion },
-          { spaces: 2 }
+          expect.stringContaining(JSON.stringify({ version: currentVersion }, null, 2))
         );
       }
 
-      expect(fsExtra.writeJson).toHaveBeenCalledWith(
+      expect(fspExtra.writeFile).toHaveBeenCalledWith(
         CODE_PACKAGE_JSON_PATH,
-        { version: expectedVersion },
-        { spaces: 2 }
+        expect.stringContaining(JSON.stringify({ version: expectedVersion }, null, 2))
       );
-      expect(fsExtra.writeFile).toHaveBeenCalledWith(
+      expect(fspExtra.writeFile).toHaveBeenCalledWith(
         MANAGER_API_VERSION_PATH,
         `export const version = "${expectedVersion}";`
       );
-      expect(fsExtra.writeFile).toHaveBeenCalledWith(
+      expect(fspExtra.writeFile).toHaveBeenCalledWith(
         VERSIONS_PATH,
         `export default { "@storybook/addon-a11y": "${expectedVersion}" };`
       );
-      expect(fsExtra.writeJson).toHaveBeenCalledWith(
+      expect(fspExtra.writeFile).toHaveBeenCalledWith(
         A11Y_PACKAGE_JSON_PATH,
-        expect.objectContaining({
-          // should update package version
-          version: expectedVersion,
-        }),
-        { spaces: 2 }
+        expect.stringContaining(
+          JSON.stringify(
+            {
+              // should update package version
+              version: expectedVersion,
+            },
+            null,
+            2
+          )
+        )
       );
       expect(execaCommand).toHaveBeenCalledWith('yarn install --mode=update-lockfile', {
         cwd: join(CODE_DIR_PATH),
@@ -289,19 +290,19 @@ describe('Version', () => {
   );
 
   it('should only set version in "deferredNextVersion" when using --deferred', async () => {
-    fsExtra.__setMockFiles({
+    fspExtra.__setMockFiles({
       [CODE_PACKAGE_JSON_PATH]: JSON.stringify({ version: '1.0.0' }),
     });
 
     await version({ releaseType: 'premajor', preId: 'beta', deferred: true });
 
-    expect(fsExtra.writeJson).toHaveBeenCalledTimes(1);
-    expect(fsExtra.writeJson).toHaveBeenCalledWith(
+    expect(fspExtra.writeFile).toHaveBeenCalledTimes(1);
+    expect(fspExtra.writeFile).toHaveBeenCalledWith(
       CODE_PACKAGE_JSON_PATH,
-      { version: '1.0.0', deferredNextVersion: '2.0.0-beta.0' },
-      { spaces: 2 }
+      expect.stringContaining(
+        JSON.stringify({ version: '1.0.0', deferredNextVersion: '2.0.0-beta.0' }, null, 2)
+      )
     );
-    expect(fsExtra.writeFile).not.toHaveBeenCalled();
     expect(execaCommand).not.toHaveBeenCalled();
   });
 });

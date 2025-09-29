@@ -1,5 +1,5 @@
 import type { ClipboardEvent, FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
-import React, { Children, useCallback, useState } from 'react';
+import React, { Children, useCallback, useContext, useState } from 'react';
 
 import { ActionBar, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
@@ -9,6 +9,8 @@ import { styled } from 'storybook/theming';
 
 import type { SourceProps } from '.';
 import { Source } from '.';
+import { DocsContext } from '../blocks/DocsContext';
+import { getStoryId } from '../blocks/Story';
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
 import { StorySkeleton } from './Story';
 import { Toolbar } from './Toolbar';
@@ -17,6 +19,7 @@ import { ZoomContext } from './ZoomContext';
 export type PreviewProps = PropsWithChildren<{
   isLoading?: true;
   layout?: Layout;
+  inline?: boolean;
   isColumn?: boolean;
   columns?: number;
   withSource?: SourceProps;
@@ -46,18 +49,18 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
           display: 'inline-block',
         },
   }),
-  ({ layout = 'padded' }) =>
+  ({ layout = 'padded', inline }) =>
     layout === 'centered' || layout === 'padded'
       ? {
-          padding: '30px 20px',
+          padding: inline ? '32px 22px' : '0px',
           '& .innerZoomElementWrapper > *': {
             width: 'auto',
-            border: '10px solid transparent!important',
+            border: '8px solid transparent!important',
           },
         }
       : {},
-  ({ layout = 'padded' }) =>
-    layout === 'centered'
+  ({ layout = 'padded', inline }) =>
+    layout === 'centered' && inline
       ? {
           display: 'flex',
           justifyContent: 'center',
@@ -150,11 +153,12 @@ const getSource = (
     }
   }
 };
-function getStoryId(children: ReactNode) {
+
+function getChildProps(children: ReactNode) {
   if (Children.count(children) === 1) {
     const elt = children as ReactElement;
     if (elt.props) {
-      return elt.props.id;
+      return elt.props;
     }
   }
   return null;
@@ -188,6 +192,7 @@ export const Preview: FC<PreviewProps> = ({
   additionalActions,
   className,
   layout = 'padded',
+  inline = false,
   ...props
 }) => {
   const [expanded, setExpanded] = useState(isExpanded);
@@ -202,6 +207,8 @@ export const Preview: FC<PreviewProps> = ({
   const actionItems = [...defaultActionItems, ...additionalActionItems];
 
   const { window: globalWindow } = globalThis;
+
+  const context = useContext(DocsContext);
 
   const copyToClipboard = useCallback(async (text: string) => {
     const { createCopyToClipboardFunction } = await import('storybook/internal/components');
@@ -238,6 +245,8 @@ export const Preview: FC<PreviewProps> = ({
     }
   };
 
+  const childProps = getChildProps(children);
+
   return (
     <PreviewContainer
       {...{ withSource, withToolbar }}
@@ -250,7 +259,7 @@ export const Preview: FC<PreviewProps> = ({
           border
           zoom={(z: number) => setScale(scale * z)}
           resetZoom={() => setScale(1)}
-          storyId={getStoryId(children)}
+          storyId={!isLoading && childProps ? getStoryId(childProps, context) : undefined}
           baseUrl="./iframe.html"
         />
       )}
@@ -260,8 +269,9 @@ export const Preview: FC<PreviewProps> = ({
             isColumn={isColumn || !Array.isArray(children)}
             columns={columns}
             layout={layout}
+            inline={inline}
           >
-            <Zoom.Element scale={scale}>
+            <Zoom.Element centered={layout === 'centered'} scale={inline ? scale : 1}>
               {Array.isArray(children) ? (
                 children.map((child, i) => <div key={i}>{child}</div>)
               ) : (

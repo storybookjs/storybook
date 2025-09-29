@@ -51,7 +51,7 @@ export const statusMapping: Record<StatusValue, [ReactElement | null, string | n
     <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
       <UseSymbol type="error" />
     </svg>,
-    'brown',
+    '#D43900',
   ],
 };
 
@@ -69,7 +69,7 @@ export function getGroupStatus(
   allStatuses: StatusesByStoryIdAndTypeId
 ): Record<string, StatusValue> {
   return Object.values(collapsedData).reduce<Record<string, StatusValue>>((acc, item) => {
-    if (item.type === 'group' || item.type === 'component') {
+    if (item.type === 'group' || item.type === 'component' || item.type === 'story') {
       // @ts-expect-error (non strict)
       const leafs = getDescendantIds(collapsedData as any, item.id, false)
         .map((id) => collapsedData[id])

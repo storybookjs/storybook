@@ -191,6 +191,7 @@ describe('transformStoryIndexV4toV5', () => {
             "id": "component-a--story-1",
             "importPath": "./path/to/component-a.ts",
             "name": "Story 1",
+            "subtype": "story",
             "tags": [
               "dev",
             ],
@@ -201,6 +202,7 @@ describe('transformStoryIndexV4toV5', () => {
             "id": "component-a--story-2",
             "importPath": "./path/to/component-a.ts",
             "name": "Story 2",
+            "subtype": "story",
             "tags": [
               "dev",
             ],
@@ -211,6 +213,7 @@ describe('transformStoryIndexV4toV5', () => {
             "id": "component-b--story-3",
             "importPath": "./path/to/component-b.ts",
             "name": "Story 3",
+            "subtype": "story",
             "tags": [
               "dev",
             ],
@@ -233,6 +236,7 @@ describe('transformStoryIndexToStoriesHash', () => {
         '1': {
           id: '1',
           type: 'story',
+          subtype: 'story',
           title: 'Story 1',
           name: 'Story 1',
           importPath: './path/to/story-1.ts',
@@ -242,6 +246,7 @@ describe('transformStoryIndexToStoriesHash', () => {
         '2': {
           id: '2',
           type: 'story',
+          subtype: 'story',
           title: 'Story 2',
           name: 'Story 2',
           importPath: './path/to/story-2.ts',

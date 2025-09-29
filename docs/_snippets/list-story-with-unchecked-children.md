@@ -20,8 +20,9 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { List } from './List';
 
@@ -39,33 +40,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const OneItem: Story = {
-  args: {
-    children: <Unchecked {...Unchecked.args} />,
-  },
-};
-```
-
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { List } from './List';
-
-//👇 Instead of importing ListItem, we import the stories
-import { Unchecked } from './ListItem.stories';
-
-const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 export const OneItem: Story = {
   args: {
@@ -96,8 +70,8 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 
@@ -115,33 +89,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const OneItem: Story = {
-  args: {
-    children: <Unchecked {...Unchecked.args} />,
-  },
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { List } from './List';
-
-//👇 Instead of importing ListItem, we import the stories
-import { Unchecked } from './ListItem.stories';
-
-const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 export const OneItem: Story = {
   args: {

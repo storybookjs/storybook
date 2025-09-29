@@ -21,7 +21,6 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
 
 * React-Native ≥ 0.72
 * React-Native-Web ≥ 0.19
-* Storybook ≥ 8.5
 * Vite ≥ 5.0
 
 ## Getting started
@@ -97,6 +96,8 @@ Both options provide a catalog of your stories that hot refreshes as you edit th
 
 {/* [Image: native + web] */}
 
+### Comparison
+
 So, which option is right for you?
 
 **Native.** You should choose this option if you want:
@@ -111,7 +112,13 @@ So, which option is right for you?
 - [**Testing**](../../writing-tests/index.mdx) - Component, visual, and a11y tests for your components.
 - [**Addons**](https://storybook.js.org/addons) - 500+ addons that improve development, documentation, testing, and integration with other tools.
 
-**Both.** It’s also possible to use both options together. However, this increases Storybook’s install footprint and requires more work to configure. Therefore, we recommend choosing one option to start and extending it once you have something working.
+**Both.** It’s also possible to use both options together. This increases Storybook’s install footprint but is a good option if you want native fidelity in addition to all of the web features. Learn more below.
+
+## Using both React Native and React Native Web
+
+The easiest way to use React Native and React Native Web is to select the "Both" option when installing Storybook. This will install and create configurations for both environments, allowing you to run Storybook for both in the same project.
+
+However, you can install them separately if one version is installed. You can add a React Native Web Storybook alongside an existing React Native Storybook by running the install command and selecting "React Native Web" in the setup wizard, and vice versa.
 
 ## API
 
@@ -126,6 +133,8 @@ const config: StorybookConfig = {
   framework: {
     name: '@storybook/react-native-web-vite',
     options: {
+      modulesToTranspile: ['my-library'], // add libraries that are not transpiled for web by default
+
       // You should apply babel plugins and presets here for your project that you want to apply to your code
       // for example put the reanimated preset here if you are using reanimated
       // or the nativewind jsxImportSource for example
@@ -137,23 +146,9 @@ const config: StorybookConfig = {
           presets: Array<string | [string, any]>,
           // ... other compatible babel options
         }
-        include: Array<string|RegExp>,
+        include: Array<string|RegExp>, 
         exclude: Array<string|RegExp>,
         // ... other compatible @vitejs/plugin-react options
-      }
-
-      // these options are used to configure transpilation of node_modules via babel
-      // in most cases, you don't need to configure these options, but they are available if you need them
-      pluginBabelOptions: {
-        include: Array<string|RegExp>, // default: [/node_modules\/(react-native|@react-native)/]
-        exclude: Array<string|RegExp>, // default: undefined
-        presets: Array<string|[string, any]>,
-        plugins: Array<string|[string, any]>,
-        presetReact?: {
-          runtime?: 'automatic' | 'classic'; // default: 'automatic'
-          importSource?: string; // default: 'react'
-        };
-        // ... other compatible vite-plugin-babel options
       }
     },
   },
@@ -198,6 +193,24 @@ const main: StorybookConfig = {
       pluginReactOptions: {
         jsxImportSource: "nativewind",
       },
+    },
+  },
+}
+```
+
+#### Example configuration to transpile additional node_modules
+
+Let's say you need to transpile a library called `my-library` that is not transpiled for web by default.
+You can add it to the `modulesToTranspile` option.
+
+```ts title=".storybook/main.ts"
+const main: StorybookConfig = {
+  // ... rest of config
+
+  framework: {
+    name: "@storybook/react-native-web-vite",
+    options: {
+      modulesToTranspile: ['my-library'],
     },
   },
 }

@@ -69,9 +69,6 @@ export async function commonConfig(
     resolve: {
       conditions: ['storybook', 'stories', 'test', ...defaultClientConditions],
       preserveSymlinks: isPreservingSymlinks(),
-      alias: {
-        assert: require.resolve('browser-assert'),
-      },
     },
     // If an envPrefix is specified in the vite config, add STORYBOOK_ to it,
     // otherwise, add VITE_ and STORYBOOK_ so that vite doesn't lose its default.
@@ -88,7 +85,6 @@ export async function commonConfig(
 }
 
 export async function pluginConfig(options: Options) {
-  const frameworkName = await getFrameworkName(options);
   const build = await options.presets.apply('build');
 
   const externals: Record<string, string> = globalsNameReferenceMap;
@@ -111,7 +107,7 @@ export async function pluginConfig(options: Options) {
         // add storybook specific directories only if there's an allow list so that we don't end up
         // disallowing the root unless root is already disallowed
         if (config?.server?.fs?.allow) {
-          config.server.fs.allow.push('.storybook');
+          config.server.fs.allow.push(options.configDir);
         }
       },
     },

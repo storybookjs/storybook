@@ -122,8 +122,9 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Histogram } from './Histogram';
 
@@ -133,28 +134,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-};
-```
-
-```ts filename="Histogram.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { Histogram } from './Histogram';
-
-const meta: Meta<typeof Histogram> = {
-  component: Histogram,
-};
-
-export default meta;
-type Story = StoryObj<typeof Histogram>;
 
 export const Default: Story = {
   args: {
@@ -183,8 +162,8 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```ts filename="Histogram.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Histogram } from './Histogram';
 
@@ -194,28 +173,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-};
-```
-
-```ts filename="Histogram.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { Histogram } from './Histogram';
-
-const meta: Meta<typeof Histogram> = {
-  component: Histogram,
-};
-
-export default meta;
-type Story = StoryObj<typeof Histogram>;
 
 export const Default: Story = {
   args: {
@@ -266,50 +223,6 @@ export const Default = {
 };
 ```
 
-```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Histogram from './Histogram.svelte';
-
-  const { Story } = defineMeta({
-    component: Histogram,
-  });
-</script>
-
-<Story
-  name="Default"
-  args={{
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  }}
-/>
-```
-
-```ts filename="Histogram.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import Histogram from './Histogram.svelte';
-
-const meta = {
-  component: Histogram,
-} satisfies Meta<typeof Histogram>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Default: Story = {
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-};
-```
-
 ```svelte filename="Histogram.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -333,13 +246,14 @@ export const Default: Story = {
 ```
 
 ```ts filename="Histogram.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Histogram from './Histogram.svelte';
 
-const meta: Meta<typeof Histogram> = {
+const meta = {
   component: Histogram,
-};
+} satisfies Meta<typeof Histogram>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -383,8 +297,8 @@ export const Default = {
 };
 ```
 
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="Histogram.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Histogram from './Histogram.vue';
 
@@ -394,40 +308,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Default: Story = {
-  render: (args) => ({
-    components: { Histogram },
-    setup() {
-      return { args };
-    },
-    template: '<Histogram v-bind="args" />',
-  }),
-  args: {
-    dataType: 'latency',
-    showHistogramLabels: true,
-    histogramAccentColor: '#1EA7FD',
-    label: 'Latency distribution',
-  },
-};
-```
-
-```ts filename="Histogram.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import Histogram from './Histogram.vue';
-
-const meta: Meta<typeof Histogram> = {
-  component: Histogram,
-};
-
-export default meta;
-type Story = StoryObj<typeof Histogram>;
 
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
@@ -466,8 +346,8 @@ export const Default = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+```ts filename="Histogram.stories.ts" renderer="web-components" language="ts"
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'histogram-component',

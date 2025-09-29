@@ -29,7 +29,7 @@ To opt into a builder, the user must add it as a dependency and then edit their 
 
 ## Builder API
 
-In Storybook, every builder must implement the following [API](https://github.com/storybookjs/storybook/blob/next/code/lib/types/src/modules/core-common.ts#L183-L203), exposing the following configuration options and entry points:
+In Storybook, every builder must implement the following [API](https://github.com/storybookjs/storybook/blob/main/code/core/src/types/modules/core-common.ts#L239-L259), exposing the following configuration options and entry points:
 
 {/* prettier-ignore-start */}
 
@@ -44,7 +44,7 @@ In production, the `build` API call is responsible for generating a static Story
 
 ## Implementation
 
-Under the hood, a builder is responsible for serving/building the preview `iframe`, which has its own set of requirements. To fully support Storybook, including the [Essential addons](../writing-stories/index.mdx) that ship with Storybook, it must consider the following.
+Under the hood, a builder is responsible for serving/building the preview `iframe`, which has its own set of requirements. To fully support Storybook, including the [essential features](../writing-stories/index.mdx) that ship with Storybook, it must consider the following.
 
 ### Import stories
 

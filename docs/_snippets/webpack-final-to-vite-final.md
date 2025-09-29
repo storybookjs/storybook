@@ -26,7 +26,7 @@ export default {
 import graphql from 'vite-plugin-graphql-loader';
 
 export default {
-  // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite)
+  // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   async viteFinal(config) {
@@ -67,7 +67,7 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="With Vite"
-// Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 import graphql from 'vite-plugin-graphql-loader';
 

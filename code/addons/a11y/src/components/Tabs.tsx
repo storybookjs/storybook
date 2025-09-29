@@ -58,6 +58,8 @@ const Subnav = styled.div(({ theme }) => ({
   overflow: 'auto',
   paddingRight: 10,
   gap: 6,
+  scrollbarColor: `${theme.barTextColor} ${theme.background.app}`,
+  scrollbarWidth: 'thin',
 }));
 
 const TabsWrapper = styled.div({});
@@ -116,7 +118,7 @@ export const Tabs: React.FC<TabsProps> = ({ tabs }) => {
   return (
     <Container ref={ref}>
       <Subnav>
-        <TabsWrapper>
+        <TabsWrapper role="tablist">
           {tabs.map((tab, index) => (
             <Item
               role="tab"

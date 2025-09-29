@@ -1,7 +1,7 @@
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Options, StoryIndex } from 'storybook/internal/types';
 
-import type { UserConfig, InlineConfig as ViteInlineConfig } from 'vite';
+import { type UserConfig, type InlineConfig as ViteInlineConfig, resolveConfig } from 'vite';
 
 import { INCLUDE_CANDIDATES } from './constants';
 
@@ -25,7 +25,6 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
 
   const storyModulePaths = Object.values(index.entries).map((entry) => entry.importPath);
 
-  const { resolveConfig } = await import('vite');
   // TODO: check if resolveConfig takes a lot of time, possible optimizations here
   const resolvedConfig = await resolveConfig(config, 'serve', 'development');
 

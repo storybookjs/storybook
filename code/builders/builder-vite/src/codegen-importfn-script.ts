@@ -11,7 +11,7 @@ import { dedent } from 'ts-dedent';
  * creates a function, `importFn(path)`, which resolves a path to an import function and this is
  * called by Storybook to fetch a story dynamically when needed.
  */
-export async function generateImportFnScriptCode(index: StoryIndex): Promise<string> {
+export function generateImportFnScriptCode(index: StoryIndex): string {
   const uniqueImportPaths = [
     ...new Set(Object.values(index.entries).map((entry) => entry.importPath)),
   ];
@@ -22,7 +22,7 @@ export async function generateImportFnScriptCode(index: StoryIndex): Promise<str
     }
 
     const absolutePath = join(process.cwd(), importPath);
-    return [importPath, genDynamicImport(normalize(absolutePath))];
+    return [normalize(importPath), genDynamicImport(normalize(absolutePath))];
   });
 
   return dedent`

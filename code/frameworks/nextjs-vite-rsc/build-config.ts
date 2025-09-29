@@ -1,6 +1,13 @@
 import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
 
 const config: BuildEntries = {
+  extraOutputs: {
+    './navigation': {
+      types: './dist/rsc/navigation.react-server.d.ts',
+      'react-server': './dist/rsc/navigation.react-server.js',
+      default: './dist/rsc/navigation.js',
+    },
+  },
   entries: {
     browser: [
       {
@@ -34,6 +41,16 @@ const config: BuildEntries = {
       {
         exportEntries: ['./react-client'],
         entryPoint: './src/react-client.tsx',
+      },
+      {
+        exportEntries: ['./headers'],
+        entryPoint: './src/rsc/headers.ts',
+      },
+      {
+        entryPoint: './src/rsc/navigation.ts',
+      },
+      {
+        entryPoint: './src/rsc/navigation.react-server.ts',
       },
       {
         exportEntries: ['./rsc/client'],

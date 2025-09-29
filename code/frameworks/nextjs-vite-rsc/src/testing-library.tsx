@@ -35,43 +35,35 @@ export async function renderServer(
 }> {
   container ??= baseElement.appendChild(document.createElement('div'));
 
-  let root: TestingLibraryClientRoot;
-
-  if (!mountedContainers.has(container)) {
-    const fetchRsc: FetchRsc = async (actionRequest) => {
-      let returnValue: unknown | undefined;
-      let temporaryReferences: unknown | undefined;
-      if (actionRequest) {
-        const { id, reply } = actionRequest;
-        temporaryReferences = ReactServer.createTemporaryReferenceSet();
-        const args = await ReactServer.decodeReply(reply, {
-          temporaryReferences,
-        });
-        const action = await ReactServer.loadServerAction(id);
-        returnValue = await action(...args);
-      }
-      let serverRoot = ui;
-      if (WrapperComponent) {
-        serverRoot = <WrapperComponent>{ui}</WrapperComponent>;
-      }
-      const rscPayload: RscPayload = {
-        root: serverRoot,
-        returnValue,
-      };
-      const rscOptions = { temporaryReferences };
-
-      return ReactServer.renderToReadableStream<RscPayload>(rscPayload, rscOptions);
+  const fetchRsc: FetchRsc = async (actionRequest) => {
+    let returnValue: unknown | undefined;
+    let temporaryReferences: unknown | undefined;
+    if (actionRequest) {
+      const { id, reply } = actionRequest;
+      temporaryReferences = ReactServer.createTemporaryReferenceSet();
+      const args = await ReactServer.decodeReply(reply, {
+        temporaryReferences,
+      });
+      const action = await ReactServer.loadServerAction(id);
+      returnValue = await action(...args);
+    }
+    let serverRoot = ui;
+    if (WrapperComponent) {
+      serverRoot = <WrapperComponent>{ui}</WrapperComponent>;
+    }
+    const rscPayload: RscPayload = {
+      root: serverRoot,
+      returnValue,
     };
-    root = await client.createTestingLibraryClientRoot({
-      container,
-      config,
-      fetchRsc,
-    });
-    mountedRootEntries.push({ container, root });
-    mountedContainers.add(container);
-  } else {
-    root = mountedRootEntries.find((it) => it.container === container)!.root;
-  }
+    const rscOptions = { temporaryReferences };
+
+    return ReactServer.renderToReadableStream<RscPayload>(rscPayload, rscOptions);
+  };
+  const root = await client.createTestingLibraryClientRoot({
+    container,
+    config,
+    fetchRsc,
+  });
 
   return {
     container,

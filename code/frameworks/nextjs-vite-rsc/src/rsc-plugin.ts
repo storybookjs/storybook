@@ -35,6 +35,7 @@ export function rscBrowserModePlugin(): Plugin[] {
                   'react/jsx-dev-runtime',
                   '@vitejs/plugin-rsc/vendor/react-server-dom/server.edge',
                   '@vitejs/plugin-rsc/vendor/react-server-dom/client.edge',
+                  '@storybook/nextjs-vite-rsc/load-client-dev',
                 ],
                 exclude: ['vite', '@vitejs/plugin-rsc'],
               },
@@ -224,9 +225,9 @@ export function vitestPluginNext(): Plugin[] {
           resolve: {
             alias: {
               'next/link': 'next/dist/client/app-dir/link',
-              'next/navigation': 'vitest-plugin-rsc/dist/nextjs/navigation',
-              'next/headers': 'vitest-plugin-rsc/nextjs/headers',
-              'next/cache': 'vitest-plugin-rsc/nextjs/cache',
+              'next/navigation': '@storybook/nextjs-vite-rsc/navigation',
+              'next/headers': '@storybook/nextjs-vite-rsc/headers',
+              'next/cache': '@storybook/nextjs-vite-rsc/cache',
               '@vercel/turbopack-ecmascript-runtime/browser/dev/hmr-client/hmr-client.ts':
                 'next/dist/client/dev/noop-turbopack-hmr',
               'react-server-dom-webpack/client':

@@ -35,6 +35,10 @@
       "types": "./dist/export-mocks/cache/index.d.ts",
       "default": "./dist/export-mocks/cache/index.js"
     },
+    "./headers": {
+      "types": "./dist/rsc/headers.d.ts",
+      "default": "./dist/rsc/headers.js"
+    },
     "./headers.mock": {
       "types": "./dist/export-mocks/headers/index.d.ts",
       "default": "./dist/export-mocks/headers/index.js"
@@ -42,6 +46,11 @@
     "./load-client-dev": {
       "types": "./dist/load-client-dev.d.ts",
       "default": "./dist/load-client-dev.js"
+    },
+    "./navigation": {
+      "types": "./dist/rsc/navigation.react-server.d.ts",
+      "react-server": "./dist/rsc/navigation.react-server.js",
+      "default": "./dist/rsc/navigation.js"
     },
     "./navigation.mock": {
       "types": "./dist/export-mocks/navigation/index.d.ts",

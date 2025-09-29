@@ -42,9 +42,10 @@ const config = {
     "../stories/**/*.stories.@(js|jsx|ts|tsx)",
   ],
   addons: [
-    "@storybook/addon-essentials",
 -   "@storybook/addon-onboarding"
   ],
 };
 export default config;
 ```
+
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

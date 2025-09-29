@@ -1,13 +1,13 @@
 ```js filename=".storybook/main.js" renderer="common" language="js"
 const config = {
   // Required
-  // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+  // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   // Optional
-  addons: ['@storybook/addon-essentials'],
+  addons: ['@storybook/addon-docs'],
   docs: {
-    autodocs: 'tag',
+    defaultName: 'Documentation',
   },
   staticDirs: ['../public'],
 };
@@ -15,7 +15,7 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
 const config: StorybookConfig = {
@@ -23,13 +23,12 @@ const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   // Optional
-  addons: ['@storybook/addon-essentials'],
+  addons: ['@storybook/addon-docs'],
   docs: {
-    autodocs: 'tag',
+    defaultName: 'Documentation',
   },
   staticDirs: ['../public'],
 };
 
 export default config;
 ```
-

@@ -1,7 +1,8 @@
 ```js filename="Form.test.js|jsx" renderer="react" language="js"
 import { fireEvent, screen } from '@testing-library/react';
 
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as FormStories from './LoginForm.stories';
 
@@ -37,7 +38,8 @@ test('Tests filled form', async () => {
 ```ts filename="Form.test.ts|tsx" renderer="react" language="ts"
 import { fireEvent, screen } from '@testing-library/react';
 
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as FormStories from './LoginForm.stories';
 
@@ -70,10 +72,10 @@ test('Tests filled form', async () => {
 });
 ```
 
-```js filename="tests/Form.test.js" renderer="vue" language="js" tabTitle="3"
+```js filename="tests/Form.test.js" renderer="vue" language="js"
 import { fireEvent, screen } from '@testing-library/vue';
 
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 import * as FormStories from './LoginForm.stories';
 
@@ -106,10 +108,10 @@ test('Tests filled form', async () => {
 });
 ```
 
-```ts filename="tests/Form.test.ts" renderer="vue" language="ts" tabTitle="3"
+```ts filename="tests/Form.test.ts" renderer="vue" language="ts"
 import { fireEvent, screen } from '@testing-library/vue';
 
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 import * as FormStories from './LoginForm.stories';
 

@@ -3,4 +3,3 @@ addons.register('my-organisation/my-addon', (api) => {
   api.selectInCurrentKind('Default');
 });
 ```
-

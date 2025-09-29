@@ -1,10 +1,9 @@
 import type { MouseEvent } from 'react';
 import React, { useCallback, useEffect, useState } from 'react';
 
-import { styled } from '@storybook/core/theming';
-import { global } from '@storybook/global';
+import { logger } from 'storybook/internal/client-logger';
 
-import { logger } from '@storybook/core/client-logger';
+import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
 // @ts-expect-error (Converted from ts-ignore)
@@ -22,6 +21,7 @@ import tsx from 'react-syntax-highlighter/dist/esm/languages/prism/tsx';
 import typescript from 'react-syntax-highlighter/dist/esm/languages/prism/typescript';
 import yml from 'react-syntax-highlighter/dist/esm/languages/prism/yaml';
 import ReactSyntaxHighlighter from 'react-syntax-highlighter/dist/esm/prism-light';
+import { styled } from 'storybook/theming';
 
 import { ActionBar } from '../ActionBar/ActionBar';
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
@@ -32,7 +32,7 @@ import type {
   SyntaxHighlighterRendererProps,
 } from './syntaxhighlighter-types';
 
-const { navigator, document, window: globalWindow } = global;
+const { document, window: globalWindow } = global;
 
 export const supportedLanguages = {
   jsextra: jsExtras,
@@ -59,8 +59,14 @@ const themedSyntax = memoize(2)((theme) =>
 const copyToClipboard: (text: string) => Promise<void> = createCopyToClipboardFunction();
 
 export function createCopyToClipboardFunction() {
-  if (navigator?.clipboard) {
-    return (text: string) => navigator.clipboard.writeText(text);
+  if (globalWindow.navigator?.clipboard) {
+    return async (text: string) => {
+      try {
+        await globalWindow.top?.navigator.clipboard.writeText(text);
+      } catch {
+        await globalWindow.navigator.clipboard.writeText(text);
+      }
+    };
   }
   return async (text: string) => {
     const tmp = document.createElement('TEXTAREA') as HTMLTextAreaElement;

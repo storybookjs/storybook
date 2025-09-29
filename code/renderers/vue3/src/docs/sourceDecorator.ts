@@ -1,9 +1,8 @@
-/* eslint-disable no-underscore-dangle */
-import { SNIPPET_RENDERED, SourceType } from 'storybook/internal/docs-tools';
-import { addons } from 'storybook/internal/preview-api';
+import { SourceType } from 'storybook/internal/docs-tools';
 
+import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
 import type { VNode } from 'vue';
-import { isVNode, watch } from 'vue';
+import { isVNode } from 'vue';
 
 import type { Args, Decorator, StoryContext } from '../public-types';
 
@@ -26,30 +25,33 @@ export type SourceCodeGeneratorContext = {
   imports: Record<string, Set<string>>;
 };
 
+/**
+ * Used to get the tracking data from the proxy. A symbol is unique, so when using it as a key it
+ * can't be accidentally accessed.
+ */
+const TRACKING_SYMBOL = Symbol('DEEP_ACCESS_SYMBOL');
+
+type TrackingProxy = {
+  [TRACKING_SYMBOL]: true;
+  toString: () => string;
+};
+
+const isProxy = (obj: unknown): obj is TrackingProxy =>
+  !!(obj && typeof obj === 'object' && TRACKING_SYMBOL in obj);
+
 /** Decorator to generate Vue source code for stories. */
 export const sourceDecorator: Decorator = (storyFn, ctx) => {
   const story = storyFn();
 
-  if (shouldSkipSourceCodeGeneration(ctx)) {
-    return story;
-  }
+  useEffect(() => {
+    const sourceCode = generateSourceCode(ctx);
 
-  const channel = addons.getChannel();
+    if (shouldSkipSourceCodeGeneration(ctx)) {
+      return;
+    }
 
-  watch(
-    () => ctx.args,
-    () => {
-      const sourceCode = generateSourceCode(ctx);
-
-      channel.emit(SNIPPET_RENDERED, {
-        id: ctx.id,
-        args: ctx.args,
-        source: sourceCode,
-        format: 'vue',
-      });
-    },
-    { immediate: true, deep: true }
-  );
+    emitTransformCode(sourceCode, ctx);
+  });
 
   return story;
 };
@@ -107,7 +109,6 @@ ${template}`;
  * Checks if the source code generation should be skipped for the given Story context. Will be true
  * if one of the following is true:
  *
- * - View mode is not "docs"
  * - Story is no arg story
  * - Story has set custom source code via parameters.docs.source.code
  * - Story has set source type to "code" via parameters.docs.source.type
@@ -120,13 +121,10 @@ export const shouldSkipSourceCodeGeneration = (context: StoryContext): boolean =
   }
 
   const isArgsStory = context?.parameters.__isArgsStory;
-  const isDocsViewMode = context?.viewMode === 'docs';
 
   // never render if the user is forcing the block to render code, or
   // if the user provides code, or if it's not an args story.
-  return (
-    !isDocsViewMode || !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE
-  );
+  return !isArgsStory || sourceParams?.code || sourceParams?.type === SourceType.CODE;
 };
 
 /**
@@ -230,6 +228,10 @@ export const generatePropsSourceCode = (
       return;
     } // do not render undefined/null values // do not render undefined/null values
 
+    if (isProxy(value)) {
+      value = value.toString();
+    }
+
     switch (typeof value) {
       case 'string':
         if (value === '') {
@@ -273,7 +275,7 @@ export const generatePropsSourceCode = (
       case 'object': {
         properties.push({
           name: propName,
-          value: formatObject(value),
+          value: formatObject(value ?? {}),
           // to follow Vue best practices, complex values like object and arrays are
           // usually placed inside the <script setup> block instead of inlining them in the <template>
           templateFn: undefined,
@@ -433,24 +435,60 @@ const generateSlotChildrenSourceCode = (
           (param) => !['{', '}'].includes(param)
         );
 
-        const parameters = paramNames.reduce<Record<string, string>>((obj, param) => {
-          obj[param] = `{{ ${param} }}`;
-          return obj;
-        }, {});
-
-        const returnValue = child(parameters);
-        let slotSourceCode = generateSlotChildrenSourceCode([returnValue], ctx);
-
-        // if slot bindings are used for properties of other components, our {{ paramName }} is incorrect because
-        // it would generate e.g. my-prop="{{ paramName }}", therefore, we replace it here to e.g. :my-prop="paramName"
+        // We create proxy to track how and which properties of a parameter are accessed
+        const parameters: Record<string, string> = {};
+        // TODO: it should be possible to extend the proxy logic here and maybe get rid of the `generatePropsSourceCode` and `getFunctionParamNames`
+        const proxied: Record<string, TrackingProxy> = {};
         paramNames.forEach((param) => {
-          slotSourceCode = slotSourceCode.replaceAll(
-            new RegExp(` (\\S+)="{{ ${param} }}"`, 'g'),
-            ` :$1="${param}"`
+          parameters[param] = `{{ ${param} }}`;
+          proxied[param] = new Proxy(
+            {
+              // we use the symbol to identify the proxy
+              [TRACKING_SYMBOL]: true,
+            } as TrackingProxy,
+            {
+              // getter is called when any prop of the parameter is read
+              get: (t, key) => {
+                if (key === TRACKING_SYMBOL) {
+                  // allow retrieval of the tracking data
+                  return t[TRACKING_SYMBOL];
+                }
+                if ([Symbol.toPrimitive, Symbol.toStringTag, 'toString'].includes(key)) {
+                  // when the parameter is used as a string we return the parameter name
+                  // we use the double brace notation as we don't know if the parameter is used in text or in a binding
+                  return () => `{{ ${param} }}`;
+                }
+                if (key === 'v-bind') {
+                  // if this key is returned we just return the parameter name
+                  return `${param}`;
+                }
+                // otherwise a specific key of the parameter was accessed
+                // we use the double brace notation as we don't know if the parameter is used in text or in a binding
+                return `{{ ${param}.${key.toString()} }}`;
+              },
+              // ownKeys is called, among other uses, when an object is destructured
+              // in this case we assume the parameter is supposed to be bound using "v-bind"
+              // Therefore we only return one special key "v-bind" and the getter will be called afterwards with it
+              ownKeys: () => {
+                return [`v-bind`];
+              },
+              /** Called when destructured */
+              getOwnPropertyDescriptor: () => ({
+                configurable: true,
+                enumerable: true,
+                value: param,
+                writable: true,
+              }),
+            }
           );
         });
 
-        return slotSourceCode;
+        const returnValue = child(proxied);
+        const slotSourceCode = generateSlotChildrenSourceCode([returnValue], ctx);
+
+        // if slot bindings are used for properties of other components, our {{ paramName }} is incorrect because
+        // it would generate e.g. my-prop="{{ paramName }}", therefore, we replace it here to e.g. :my-prop="paramName"
+        return slotSourceCode.replaceAll(/ (\S+)="{{ (\S+) }}"/g, ` :$1="$2"`);
       }
 
       case 'bigint':
@@ -543,7 +581,6 @@ const getVNodeName = (vnode: VNode) => {
  *
  * @see Based on https://stackoverflow.com/a/9924463
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
 export const getFunctionParamNames = (func: Function): string[] => {
   const STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/gm;
   const ARGUMENT_NAMES = /([^\s,]+)/g;

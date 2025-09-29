@@ -1,41 +1,19 @@
 import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
 import React, { forwardRef, useEffect, useState } from 'react';
 
-import { isPropValid, styled } from '@storybook/core/theming';
-
-import { deprecate } from '@storybook/core/client-logger';
-
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
+import { isPropValid, styled } from 'storybook/theming';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   asChild?: boolean;
   size?: 'small' | 'medium';
-  padding?: 'small' | 'medium';
+  padding?: 'small' | 'medium' | 'none';
   variant?: 'outline' | 'solid' | 'ghost';
   onClick?: (event: SyntheticEvent) => void;
   disabled?: boolean;
   active?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
-
-  /** @deprecated Use {@link asChild} instead. This will be removed in Storybook 9.0 */
-  isLink?: boolean;
-  /** @deprecated Use {@link variant} instead. This will be removed in Storybook 9.0 */
-  primary?: boolean;
-  /** @deprecated Use {@link variant} instead. This will be removed in Storybook 9.0 */
-  secondary?: boolean;
-  /** @deprecated Use {@link variant} instead. This will be removed in Storybook 9.0 */
-  tertiary?: boolean;
-  /** @deprecated Use {@link variant} instead. This will be removed in Storybook 9.0 */
-  gray?: boolean;
-  /** @deprecated Use {@link variant} instead. This will be removed in Storybook 9.0 */
-  inForm?: boolean;
-  /** @deprecated Use {@link size} instead. This will be removed in Storybook 9.0 */
-  small?: boolean;
-  /** @deprecated Use {@link variant} instead. This will be removed in Storybook 9.0 */
-  outline?: boolean;
-  /** @deprecated Add your icon as a child directly. This will be removed in Storybook 9.0 */
-  containsIcon?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -55,15 +33,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     let Comp: 'button' | 'a' | typeof Slot = 'button';
 
-    if (props.isLink) {
-      Comp = 'a';
-    }
-
     if (asChild) {
       Comp = Slot;
     }
-    let localVariant = variant;
-    let localSize = size;
 
     const [isAnimating, setIsAnimating] = useState(false);
 
@@ -87,48 +59,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       return () => clearTimeout(timer);
     }, [isAnimating]);
 
-    // Match the old API with the new API.
-    // TODO: Remove this after 9.0.
-    if (props.primary) {
-      localVariant = 'solid';
-      localSize = 'medium';
-    }
-
-    // Match the old API with the new API.
-    // TODO: Remove this after 9.0.
-    if (props.secondary || props.tertiary || props.gray || props.outline || props.inForm) {
-      localVariant = 'outline';
-      localSize = 'medium';
-    }
-
-    if (
-      props.small ||
-      props.isLink ||
-      props.primary ||
-      props.secondary ||
-      props.tertiary ||
-      props.gray ||
-      props.outline ||
-      props.inForm ||
-      props.containsIcon
-    ) {
-      const buttonContent = React.Children.toArray(props.children).filter(
-        (e) => typeof e === 'string' && e !== ''
-      );
-
-      deprecate(
-        `Use of deprecated props in the button ${
-          buttonContent.length > 0 ? `"${buttonContent.join(' ')}"` : 'component'
-        } detected, see the migration notes at https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-ui-and-props-for-button-and-iconbutton-components`
-      );
-    }
-
     return (
       <StyledButton
         as={Comp}
         ref={ref}
-        variant={localVariant}
-        size={localSize}
+        variant={variant}
+        size={size}
         padding={padding}
         disabled={disabled}
         active={active}
@@ -159,18 +95,18 @@ const StyledButton = styled('button', {
   justifyContent: 'center',
   overflow: 'hidden',
   padding: (() => {
+    if (padding === 'none') {
+      return 0;
+    }
     if (padding === 'small' && size === 'small') {
       return '0 7px';
     }
-
     if (padding === 'small' && size === 'medium') {
       return '0 9px';
     }
-
     if (size === 'small') {
       return '0 10px';
     }
-
     if (size === 'medium') {
       return '0 12px';
     }

@@ -1,6 +1,4 @@
-```yml renderer="common" language="ts" tabTitle="yml"
-# .github/workflows/deploy-github-pages.yaml
-
+```yml filename=".github/workflows/deploy-github-pages.yml" renderer="common" language="js"
 # Workflow name
 name: Build and Publish Storybook to GitHub Pages
 
@@ -23,12 +21,12 @@ jobs:
     steps:
       # Manual Checkout
       - uses: actions/checkout@v4
-
+        with:
+          fetch-depth: 0
       # Set up Node
       - uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-
+          node-version: '20'
       #👇 Add Storybook build and deploy to GitHub Pages as a step in the workflow
       - uses: bitovi/github-actions-storybook-to-github-pages@v1.0.3
         with:
@@ -37,4 +35,3 @@ jobs:
           path: storybook-static # default: dist/storybook
           checkout: false # default: true
 ```
-

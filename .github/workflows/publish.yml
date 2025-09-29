@@ -45,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: '.nvmrc'
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -174,12 +174,13 @@ jobs:
           git commit -m "Update CHANGELOG.md for v${{ steps.version.outputs.current-version }} [skip ci]" || true
           git push origin next
 
-      # TODO: remove this step - @JReinhold
+      # Sync the next.json version file to the main branch so it gets deployed to the docs site
+      # but only if this is a prerelease, because in minor/major releases we're already force pushing next-release onto main, so it's already there
       - name: Sync version JSONs from `next-release` to `main`
-        if: github.ref_name == 'next-release'
+        if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'true'
         working-directory: .
         run: |
-          VERSION_FILE="./docs/versions/${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }}.json"
+          VERSION_FILE="./docs/versions/next.json"
           git fetch origin main
           git checkout main
           git pull
@@ -188,10 +189,21 @@ jobs:
           git commit -m "Update $VERSION_FILE for v${{ steps.version.outputs.current-version }}"
           git push origin main
 
+      - name: Create Sentry release
+        if: steps.publish-needed.outputs.published == 'false'
+        uses: getsentry/action-release@v3
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          release: ${{ steps.version.outputs.current-version }}
+          environment: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'prerelease' || 'latest' }}
+
       - name: Report job failure to Discord
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@master
         with:
-          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'

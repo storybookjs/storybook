@@ -26,6 +26,8 @@ describe('RendererFactory', () => {
     rootDocstargetDOMNode = global.document.getElementById('root-docs');
     (platformBrowserDynamic as any).mockImplementation(platformBrowserDynamicTesting);
     vi.spyOn(console, 'log').mockImplementation(() => {});
+    // @ts-expect-error Ignore
+    globalThis.STORYBOOK_ANGULAR_OPTIONS = { experimentalZoneless: false };
   });
 
   afterEach(() => {

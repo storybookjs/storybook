@@ -9,9 +9,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     npmOptions,
     { ...options, builder: CoreBuilder.Webpack5 },
     'ember',
-    {
-      staticDir: 'dist',
-    },
+    { staticDir: 'dist' },
     'ember'
   );
 };

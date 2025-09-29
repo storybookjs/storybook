@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, Inject, HostBinding } from '@an
 import { CHIP_COLOR } from './chip-color.token';
 
 @Component({
+  standalone: false,
   selector: 'storybook-chip',
   template: `
     <span class="text">{{ displayText | chipText }}</span>

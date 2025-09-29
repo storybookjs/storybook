@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { logger } from '@storybook/core/node-logger';
-import { MissingAngularJsonError } from '@storybook/core/server-errors';
+import { logger } from 'storybook/internal/node-logger';
+import { MissingAngularJsonError } from 'storybook/internal/server-errors';
 
 import boxen from 'boxen';
 import prompts from 'prompts';

@@ -8,4 +8,3 @@ addons.register(ADDON_ID, () => {
   });
 });
 ```
-

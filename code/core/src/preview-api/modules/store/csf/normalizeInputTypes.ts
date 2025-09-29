@@ -5,9 +5,9 @@ import type {
   StrictArgTypes,
   StrictGlobalTypes,
   StrictInputType,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
-import { mapValues } from 'es-toolkit';
+import { mapValues } from 'es-toolkit/object';
 
 const normalizeType = (type: InputType['type']): StrictInputType['type'] => {
   return typeof type === 'string' ? { name: type } : type;

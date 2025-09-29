@@ -1,8 +1,4 @@
-import type { DocsIndexEntry, StoryIndex } from '@storybook/core/types';
-import type { Args, Globals, Renderer, StoryId, ViewMode } from '@storybook/core/types';
-import type { ModuleImportFn, ProjectAnnotations } from '@storybook/core/types';
-
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
 import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
@@ -19,13 +15,16 @@ import {
   STORY_THREW_EXCEPTION,
   STORY_UNCHANGED,
   UPDATE_QUERY_PARAMS,
-} from '@storybook/core/core-events';
+} from 'storybook/internal/core-events';
 import {
   CalledPreviewMethodBeforeInitializationError,
   EmptyIndexError,
   MdxFileWithNoCsfReferencesError,
   NoStoryMatchError,
-} from '@storybook/core/preview-errors';
+} from 'storybook/internal/preview-errors';
+import type { DocsIndexEntry, StoryIndex } from 'storybook/internal/types';
+import type { Args, Globals, Renderer, StoryId, ViewMode } from 'storybook/internal/types';
+import type { ModuleImportFn, ProjectAnnotations } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
@@ -281,9 +280,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
 
     const { selection } = this.selectionStore;
-    // Protected function, shouldn't be possible
-
-    // Protected function, shouldn't be possible
 
     if (!selection) {
       throw new Error('Cannot call renderSelection as no selection was made');
@@ -510,8 +506,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // renderException is used if we fail to render the story and it is uncaught by the app layer
   renderException(storyId: StoryId, error: Error) {
     const { name = 'Error', message = String(error), stack } = error;
+    const renderId = this.currentRender?.renderId;
     this.channel.emit(STORY_THREW_EXCEPTION, { name, message, stack });
-    this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', storyId });
+    this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', renderId, storyId });
 
     this.view.showErrorDisplay(error);
     logger.error(`Error rendering story '${storyId}':`);
@@ -521,12 +518,11 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   // renderError is used by the various app layers to inform the user they have done something
   // wrong -- for instance returned the wrong thing from a story
   renderError(storyId: StoryId, { title, description }: { title: string; description: string }) {
-    logger.error(`Error rendering story ${title}: ${description}`);
+    const renderId = this.currentRender?.renderId;
     this.channel.emit(STORY_ERRORED, { title, description });
-    this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', storyId });
-    this.view.showErrorDisplay({
-      message: title,
-      stack: description,
-    });
+    this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', renderId, storyId });
+
+    this.view.showErrorDisplay({ message: title, stack: description });
+    logger.error(`Error rendering story ${title}: ${description}`);
   }
 }

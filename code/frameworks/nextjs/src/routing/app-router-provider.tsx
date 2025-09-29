@@ -48,7 +48,7 @@ function getSelectedParams(currentTree: FlightRouterState, params: Params = {}):
     const isCatchAll = isDynamicParameter && (segment[2] === 'c' || segment[2] === 'oc');
 
     if (isCatchAll) {
-      params[segment[0]] = segment[1].split('/');
+      params[segment[0]] = Array.isArray(segment[1]) ? segment[1] : segment[1].split('/');
     } else if (isDynamicParameter) {
       params[segment[0]] = segment[1];
     }
@@ -77,8 +77,43 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
 
   const tree: FlightRouterState = [pathname, { children: getParallelRoutes([...segments]) }];
   const pathParams = useMemo(() => {
-    return getSelectedParams(tree);
-  }, [tree]);
+    const params: Params = {};
+    const currentSegments = routeParams.segments;
+
+    if (currentSegments) {
+      if (Array.isArray(currentSegments)) {
+        for (const segmentEntry of currentSegments) {
+          if (
+            Array.isArray(segmentEntry) &&
+            segmentEntry.length === 2 &&
+            typeof segmentEntry[0] === 'string'
+          ) {
+            const key: string = segmentEntry[0];
+            const value = segmentEntry[1] as string | string[] | undefined;
+            params[key] = value;
+          }
+        }
+      } else if (typeof currentSegments === 'object' && !Array.isArray(currentSegments)) {
+        const segmentObject = currentSegments as Record<string, string | string[] | undefined>;
+        for (const key in segmentObject) {
+          if (Object.prototype.hasOwnProperty.call(segmentObject, key)) {
+            params[key] = segmentObject[key];
+          }
+        }
+      }
+    }
+    return params;
+  }, [routeParams.segments]);
+
+  const newLazyCacheNode = {
+    lazyData: null,
+    rsc: null,
+    prefetchRsc: null,
+    head: null,
+    prefetchHead: null,
+    parallelRoutes: new Map(),
+    loading: null,
+  };
 
   // https://github.com/vercel/next.js/blob/canary/packages/next/src/client/components/app-router.tsx#L436
   return (
@@ -87,6 +122,8 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
         <SearchParamsContext.Provider value={new URLSearchParams(query)}>
           <GlobalLayoutRouterContext.Provider
             value={{
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore (Only available in Next.js >= v15.1.1)
               changeByServerResponse() {
                 // NOOP
               },
@@ -104,8 +141,19 @@ export const AppRouterProvider: React.FC<React.PropsWithChildren<AppRouterProvid
             <AppRouterContext.Provider value={getRouter()}>
               <LayoutRouterContext.Provider
                 value={{
+                  // TODO Remove when dropping Next.js < v15.1.1
                   childNodes: new Map(),
                   tree,
+                  // TODO END
+
+                  // START Next.js v15.2 support
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-ignore Only available in Next.js >= v15.1.1
+                  parentTree: tree,
+                  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                  // @ts-ignore Only available in Next.js >= v15.1.1
+                  parentCacheNode: newLazyCacheNode,
+                  // END
                   url: pathname,
                   loading: null,
                 }}

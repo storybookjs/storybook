@@ -1,18 +1,26 @@
-import { ApplicationRef, NgModule, enableProdMode } from '@angular/core';
+import type { ApplicationRef, NgModule } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { BehaviorSubject, Subject } from 'rxjs';
+import type { Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { stringify } from 'telejson';
 
-import { ICollection, StoryFnAngularReturnType } from '../types';
+import type { ICollection, StoryFnAngularReturnType } from '../types';
 import { getApplication } from './StorybookModule';
 import { storyPropsProvider } from './StorybookProvider';
 import { queueBootstrapping } from './utils/BootstrapQueue';
 import { PropertyExtractor } from './utils/PropertyExtractor';
+import { getProvideZonelessChangeDetectionFn } from './utils/Zoneless';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
   moduleMetadataSnapshot: string;
 };
+
+declare global {
+  const STORYBOOK_ANGULAR_OPTIONS: {
+    experimentalZoneless: boolean;
+  };
+}
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
 
@@ -95,8 +103,11 @@ export abstract class AbstractRenderer {
     this.initAngularRootElement(targetDOMNode, targetSelector);
 
     const analyzedMetadata = new PropertyExtractor(storyFnAngular.moduleMetadata, component);
+    await analyzedMetadata.init();
 
-    const storyUid = targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE);
+    const storyUid = this.generateStoryUIdFromRawStoryUid(
+      targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE)
+    );
     const componentSelector = storyUid !== null ? `${targetSelector}[${storyUid}]` : targetSelector;
     if (storyUid !== null) {
       const element = targetDOMNode.querySelector(targetSelector);
@@ -110,14 +121,26 @@ export abstract class AbstractRenderer {
       analyzedMetadata,
     });
 
+    const providers = [
+      storyPropsProvider(newStoryProps$),
+      ...analyzedMetadata.applicationProviders,
+      ...(storyFnAngular.applicationConfig?.providers ?? []),
+    ];
+
+    if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
+      const provideZonelessChangeDetectionFn = await getProvideZonelessChangeDetectionFn();
+
+      if (!provideZonelessChangeDetectionFn) {
+        throw new Error('Zoneless change detection requires Angular 18 or higher');
+      } else {
+        providers.unshift(provideZonelessChangeDetectionFn());
+      }
+    }
+
     const applicationRef = await queueBootstrapping(() => {
       return bootstrapApplication(application, {
         ...storyFnAngular.applicationConfig,
-        providers: [
-          storyPropsProvider(newStoryProps$),
-          ...analyzedMetadata.applicationProviders,
-          ...(storyFnAngular.applicationConfig?.providers ?? []),
-        ],
+        providers,
       });
     });
 
@@ -143,6 +166,27 @@ export abstract class AbstractRenderer {
     return storyIdIsInvalidHtmlTagName ? `sb-${id.replace(invalidHtmlTag, '')}-component` : id;
   }
 
+  /**
+   * Angular is unable to handle components that have selectors with accented attributes.
+   *
+   * Therefore, stories break when meta's title contains accents.
+   * https://github.com/storybookjs/storybook/issues/29132
+   *
+   * This method filters accents from a given raw id. For example, this method converts
+   * 'Example/Button with an "é" accent' into 'Example/Button with an "e" accent'.
+   *
+   * @memberof AbstractRenderer
+   * @protected
+   */
+  protected generateStoryUIdFromRawStoryUid(rawStoryUid: string | null) {
+    if (rawStoryUid === null) {
+      return rawStoryUid;
+    }
+
+    const accentCharacters = /[\u0300-\u036f]/g;
+    return rawStoryUid.normalize('NFD').replace(accentCharacters, '');
+  }
+
   /** Adds DOM element that angular will use as bootstrap component. */
   protected initAngularRootElement(targetDOMNode: HTMLElement, targetSelector: string) {
     targetDOMNode.innerHTML = '';
@@ -164,7 +208,7 @@ export abstract class AbstractRenderer {
 
     const currentStoryRender = {
       storyFnAngular,
-      moduleMetadataSnapshot: stringify(moduleMetadata, { allowFunction: false }),
+      moduleMetadataSnapshot: stringify(moduleMetadata, { maxDepth: 50 }),
     };
 
     this.previousStoryRenderInfo.set(targetDOMNode, currentStoryRender);

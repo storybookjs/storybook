@@ -1,10 +1,9 @@
-import type { Channel } from '@storybook/core/channels';
-import type { Renderer, StoryId } from '@storybook/core/types';
-import type { CSFFile, ModuleExports } from '@storybook/core/types';
-import type { IndexEntry } from '@storybook/core/types';
-import type { RenderContextCallbacks } from '@storybook/core/types';
-
-import { DOCS_RENDERED } from '@storybook/core/core-events';
+import type { Channel } from 'storybook/internal/channels';
+import { DOCS_RENDERED } from 'storybook/internal/core-events';
+import type { Renderer, StoryId } from 'storybook/internal/types';
+import type { CSFFile, ModuleExports } from 'storybook/internal/types';
+import type { IndexEntry } from 'storybook/internal/types';
+import type { RenderContextCallbacks } from 'storybook/internal/types';
 
 import type { StoryStore } from '../../store';
 import { DocsContext } from '../docs-context/DocsContext';
@@ -25,6 +24,8 @@ import { PREPARE_ABORTED } from './Render';
  */
 
 export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRenderer> {
+  public readonly renderId: number;
+
   public readonly type: RenderType = 'docs';
 
   public readonly subtype = 'mdx';
@@ -52,6 +53,7 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
     private callbacks: RenderContextCallbacks<TRenderer>
   ) {
     this.id = entry.id;
+    this.renderId = Date.now();
   }
 
   isPreparing() {
@@ -105,7 +107,7 @@ export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRender
 
     const docsContext = this.docsContext(renderStoryToElement);
 
-    const { docs } = this.store.projectAnnotations.parameters || {};
+    const { docs } = this.store.projectAnnotations.parameters ?? ({} as { docs: any });
 
     if (!docs) {
       throw new Error(

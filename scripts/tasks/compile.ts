@@ -1,6 +1,5 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { readFile } from 'fs-extra';
-import { resolve } from 'path';
+import { readFile, rm } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
@@ -12,8 +11,8 @@ const amountOfVCPUs = 4;
 const parallel = `--parallel=${process.env.CI ? amountOfVCPUs - 1 : maxConcurrentTasks}`;
 
 const linkedContents = `export * from '../../src/manager-api/index.ts';`;
-const linkCommand = `nx run-many -t build ${parallel}`;
-const noLinkCommand = `nx run-many -t build -c production ${parallel}`;
+const linkCommand = `npx nx run-many -t build ${parallel}`;
+const noLinkCommand = `npx nx run-many -t build -c production ${parallel}`;
 
 export const compile: Task = {
   description: 'Compile the source code of the monorepo',
@@ -37,9 +36,11 @@ export const compile: Task = {
       return false;
     }
   },
-  async run({ codeDir }, { link, dryRun, debug, prod }) {
+  async run({ codeDir }, { link, dryRun, debug, prod, skipCache }) {
+    const command = link && !prod ? linkCommand : noLinkCommand;
+    await rm(join(codeDir, 'bench/esbuild-metafiles'), { recursive: true, force: true });
     return exec(
-      link && !prod ? linkCommand : noLinkCommand,
+      `${command} ${skipCache ? '--skip-nx-cache' : ''}`,
       { cwd: codeDir },
       {
         startMessage: '🥾 Bootstrapping',

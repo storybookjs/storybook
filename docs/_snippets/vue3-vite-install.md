@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/vue3-vite
 ```shell renderer="vue" language="js" packageManager="yarn"
 yarn add --dev @storybook/vue3-vite
 ```
-

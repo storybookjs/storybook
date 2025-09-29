@@ -1,4 +1,5 @@
-import { Meta, StoryObj, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { moduleMetadata } from '@storybook/angular';
 
 import { CustomPipePipe } from './custom.pipe';
 import { WithPipeComponent } from './with-pipe.component';
@@ -11,8 +12,6 @@ const meta: Meta<WithPipeComponent> = {
       declarations: [CustomPipePipe],
     }),
   ],
-  tags: ['!test', '!vitest'],
-  parameters: { chromatic: { disable: true } },
 };
 
 export default meta;

@@ -1,24 +1,25 @@
 import { existsSync } from 'node:fs';
-import { readdir } from 'node:fs/promises';
-import { isAbsolute, join } from 'node:path';
+import { mkdir, readdir, rm } from 'node:fs/promises';
+import { isAbsolute } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory } from 'storybook/internal/common';
-import { versions } from 'storybook/internal/common';
+import {
+  JsPackageManagerFactory,
+  isCI,
+  optionalEnvToBoolean,
+  versions,
+} from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
-import boxen from 'boxen';
-import { initiate } from 'create-storybook';
 import { downloadTemplate } from 'giget';
+import { join } from 'pathe';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import type { Template, TemplateKey } from './sandbox-templates';
 import { allTemplates as TEMPLATES } from './sandbox-templates';
-
-const logger = console;
 
 interface SandboxOptions {
   filterValue?: string;
@@ -29,7 +30,7 @@ interface SandboxOptions {
 }
 type Choice = keyof typeof TEMPLATES;
 
-const toChoices = (c: Choice): prompts.Choice => ({ title: TEMPLATES[c].name, value: c });
+const toChoices = (c: Choice) => ({ label: TEMPLATES[c].name, value: c });
 
 export const sandbox = async ({
   output: outputDirectory,
@@ -46,8 +47,8 @@ export const sandbox = async ({
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: pkgMgr,
   });
-  const latestVersion = await packageManager.latestVersion('storybook');
-  const nextVersion = await packageManager.latestVersion('storybook@next').catch((e) => '0.0.0');
+  const latestVersion = (await packageManager.latestVersion('storybook'))!;
+  const nextVersion = (await packageManager.latestVersion('storybook@next')) ?? '0.0.0';
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);
@@ -71,15 +72,13 @@ export const sandbox = async ({
     prerelease: picocolors.yellow('This is a pre-release version.'),
   };
 
-  logger.log(
-    boxen(
-      [messages.welcome]
-        .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
-        .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
-        .concat(isPrerelease ? [messages.prerelease] : [])
-        .join('\n'),
-      { borderStyle: 'round', padding: 1, borderColor }
-    )
+  logger.logBox(
+    [messages.welcome]
+      .concat(isOutdated && !isPrerelease ? [messages.notLatest] : [])
+      .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
+      .concat(isPrerelease ? [messages.prerelease] : [])
+      .join('\n'),
+    { borderStyle: 'round', padding: 1, borderColor }
   );
 
   if (!selectedConfig) {
@@ -110,9 +109,8 @@ export const sandbox = async ({
     }, []);
 
     if (choices.length === 0) {
-      logger.info(
-        boxen(
-          dedent`
+      logger.logBox(
+        dedent`
             🔎 You filtered out all templates. 🔍
 
             After filtering all the templates with "${picocolors.yellow(
@@ -122,8 +120,7 @@ export const sandbox = async ({
             Available templates:
             ${keys.map((key) => picocolors.blue(`- ${key}`)).join('\n')}
             `.trim(),
-          { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
-        )
+        { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
       );
       process.exit(1);
     }
@@ -131,9 +128,8 @@ export const sandbox = async ({
     if (choices.length === 1) {
       [templateId] = choices;
     } else {
-      logger.info(
-        boxen(
-          dedent`
+      logger.logBox(
+        dedent`
             🤗 Welcome to ${picocolors.yellow('sb sandbox')}! 🤗
 
             Create a ${picocolors.green('new project')} to minimally reproduce Storybook issues.
@@ -143,8 +139,7 @@ export const sandbox = async ({
 
             After the reproduction is ready, we'll guide you through the next steps.
             `.trim(),
-          { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
-        )
+        { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
       );
 
       templateId = await promptSelectedTemplate(choices);
@@ -159,6 +154,7 @@ export const sandbox = async ({
     selectedConfig = templateId ? TEMPLATES[templateId] : undefined;
 
     if (!selectedConfig) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error('🚨 Sandbox: please specify a valid template type');
     }
   }
@@ -166,20 +162,19 @@ export const sandbox = async ({
   let selectedDirectory = outputDirectory;
   const outputDirectoryName = outputDirectory || templateId;
   if (selectedDirectory && existsSync(`${selectedDirectory}`)) {
-    logger.info(`⚠️  ${selectedDirectory} already exists! Overwriting...`);
+    logger.log(`⚠️  ${selectedDirectory} already exists! Overwriting...`);
+    await rm(selectedDirectory, { recursive: true, force: true });
   }
 
   if (!selectedDirectory) {
-    const { directory } = await prompts(
+    const directory = await prompt.text(
       {
-        type: 'text',
         message: 'Enter the output directory',
-        name: 'directory',
-        initial: outputDirectoryName ?? undefined,
-        validate: async (directoryName) =>
-          existsSync(directoryName)
+        initialValue: outputDirectoryName ?? undefined,
+        validate: (directoryName) =>
+          directoryName && existsSync(directoryName)
             ? `${directoryName} already exists. Please choose another name.`
-            : true,
+            : undefined,
       },
       {
         onCancel: () => {
@@ -197,12 +192,14 @@ export const sandbox = async ({
       ? selectedDirectory
       : join(process.cwd(), selectedDirectory);
 
-    logger.info(`🏃 Adding ${selectedConfig.name} into ${templateDestination}`);
+    logger.log(`🏃 Adding ${selectedConfig.name} into ${templateDestination}`);
 
     logger.log(`📦 Downloading sandbox template (${picocolors.bold(downloadType)})...`);
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
       const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${branch}`;
+      // create templateDestination first (because it errors on Windows if it doesn't exist)
+      await mkdir(templateDestination, { recursive: true });
       await downloadTemplate(gitPath, {
         force: true,
         dir: templateDestination,
@@ -225,9 +222,13 @@ export const sandbox = async ({
         const before = process.cwd();
         process.chdir(templateDestination);
         // we run doInitiate, instead of initiate, to avoid sending this init event to telemetry, because it's not a real world project
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore-error (no types for this)
+        const { initiate } = await import('create-storybook');
         await initiate({
-          dev: process.env.CI !== 'true' && process.env.IN_STORYBOOK_SANBOX !== 'true',
+          dev: isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX),
           ...options,
+          features: ['docs', 'test'],
         });
         process.chdir(before);
       }
@@ -243,9 +244,8 @@ export const sandbox = async ({
         `)
       : `Recreate your setup, then ${picocolors.yellow(`npx storybook@latest init`)}`;
 
-    logger.info(
-      boxen(
-        dedent`
+    logger.logBox(
+      dedent`
         🎉 Your Storybook reproduction project is ready to use! 🎉
 
         ${picocolors.yellow(`cd ${selectedDirectory}`)}
@@ -259,8 +259,7 @@ export const sandbox = async ({
 
         Having a clean repro helps us solve your issue faster! 🙏
       `.trim(),
-        { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
-      )
+      { borderStyle: 'round', padding: 1, borderColor: '#F1618C' }
     );
   } catch (error) {
     logger.error('🚨 Failed to create sandbox');
@@ -269,20 +268,10 @@ export const sandbox = async ({
 };
 
 async function promptSelectedTemplate(choices: Choice[]): Promise<Choice | null> {
-  const { template } = await prompts(
-    {
-      type: 'select',
-      message: '🌈 Select the template',
-      name: 'template',
-      choices: choices.map(toChoices),
-    },
-    {
-      onCancel: () => {
-        logger.log('Command cancelled by the user. Exiting...');
-        process.exit(1);
-      },
-    }
-  );
-
-  return template || null;
+  // using any here as the types are too strict
+  const selected = await prompt.select<any>({
+    message: 'Select a template',
+    options: choices.map(toChoices),
+  });
+  return selected as Choice;
 }

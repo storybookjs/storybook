@@ -1,6 +1,6 @@
 import type { WriteStream } from 'node:fs';
 import { createWriteStream, mkdirSync } from 'node:fs';
-import { readFile, realpath, rename, rm, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import { join } from 'node:path';
 
@@ -8,7 +8,8 @@ import { type MergeExclusive } from 'type-fest';
 import uniqueString from 'unique-string';
 
 import type { JsPackageManager } from '../js-package-manager';
-import versions from '../versions';
+import satelliteAddons from '../satellite-addons';
+import storybookPackagesVersions from '../versions';
 import { rendererPackages } from './get-storybook-info';
 
 const tempDir = () => realpath(os.tmpdir());
@@ -77,12 +78,12 @@ export async function getCoercedStorybookVersion(packageManager: JsPackageManage
     await Promise.all(
       Object.keys(rendererPackages).map(async (pkg) => ({
         name: pkg,
-        version: await packageManager.getPackageVersion(pkg),
+        version: (await packageManager.getModulePackageJSON(pkg))?.version ?? null,
       }))
     )
   ).filter(({ version }) => !!version);
 
-  return packages[0]?.version;
+  return packages[0]?.version || storybookPackagesVersions.storybook;
 }
 
 export function getEnvConfig(program: Record<string, any>, configEnv: Record<string, any>): void {
@@ -146,14 +147,17 @@ export const createLogStream = async (
 
   return new Promise((resolve, reject) => {
     logStream.once('open', () => {
-      const moveLogFile = async () => rename(temporaryLogPath, finalLogPath);
       const clearLogFile = async () => writeFile(temporaryLogPath, '');
       const removeLogFile = async () => rm(temporaryLogPath, { recursive: true, force: true });
       const readLogFile = async () => readFile(temporaryLogPath, { encoding: 'utf8' });
+      // Can't use rename because it doesn't work across disks.
+      const moveLogFile = async () => copyFile(temporaryLogPath, finalLogPath).then(removeLogFile);
       resolve({ logStream, moveLogFile, clearLogFile, removeLogFile, readLogFile });
     });
     logStream.once('error', reject);
   });
 };
 
-export const isCorePackage = (pkg: string) => Object.keys(versions).includes(pkg);
+export const isCorePackage = (pkg: string) =>
+  !!storybookPackagesVersions[pkg as keyof typeof storybookPackagesVersions];
+export const isSatelliteAddon = (pkg: string) => satelliteAddons.includes(pkg);

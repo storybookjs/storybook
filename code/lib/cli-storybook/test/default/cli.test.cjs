@@ -1,14 +1,56 @@
-import { describe, it, expect } from 'vitest';
+import { expect, test } from 'vitest';
 
-const run = require('../helpers.cjs');
+const { run, cleanLog } = require('../helpers.cjs');
 
-describe('Default behavior', () => {
-  it('suggests the closest match to an unknown command', () => {
-    const { status, stderr, stdout } = run(['upgraed']);
+test('suggests the closest match to an unknown command', () => {
+  const { status, stderr } = run(['upgraed']);
 
-    // Assertions
-    expect(status).toBe(1);
-    expect(stderr.toString()).toContain('Invalid command: upgraed.');
-    expect(stdout.toString()).toContain('Did you mean upgrade?');
-  });
+  // Assertions
+  expect(status).toBe(1);
+  const stderrString = cleanLog(stderr.toString());
+  expect(stderrString).toContain('Invalid command: upgraed.');
+  expect(stderrString).toContain('Did you mean upgrade?');
+});
+
+test('help command', () => {
+  const { status, stdout, stderr } = run(['help']);
+
+  const stderrString = cleanLog(stderr.toString());
+  const stdoutString = cleanLog(stdout.toString());
+
+  expect(stderrString).toBe('');
+  expect(stdoutString).toContain('init');
+  expect(stdoutString).toContain('Initialize Storybook into your project');
+
+  expect(stdoutString).toContain('add');
+  expect(stdoutString).toContain('Add an addon to your Storybook');
+
+  expect(stdoutString).toContain('remove');
+  expect(stdoutString).toContain('Remove an addon from your Storybook');
+
+  expect(stdoutString).toContain('upgrade');
+  expect(stdoutString).toContain('Upgrade your Storybook packages to');
+
+  expect(stdoutString).toContain('migrate');
+  expect(stdoutString).toContain('Run a Storybook codemod migration on your source files');
+
+  expect(stdoutString).toContain('sandbox');
+  expect(stdoutString).toContain('Create a sandbox from a set of possible templates');
+
+  expect(stdoutString).toContain('link');
+  expect(stdoutString).toContain(
+    'Pull down a repro from a URL (or a local directory), link it, and run storybook'
+  );
+
+  expect(stdoutString).toContain('automigrate');
+  expect(stdoutString).toContain(
+    'Check storybook for incompatibilities or migrations and apply fixes'
+  );
+
+  expect(stdoutString).toContain('doctor');
+  expect(stdoutString).toContain(
+    'Check Storybook for known problems and provide suggestions or fixes'
+  );
+
+  expect(status).toBe(0);
 });

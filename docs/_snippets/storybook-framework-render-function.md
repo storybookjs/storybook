@@ -7,4 +7,3 @@ export default function renderMain({ storyFn }: RenderMainArgs) {
   rootElement.innerHTML = html;
 }
 ```
-

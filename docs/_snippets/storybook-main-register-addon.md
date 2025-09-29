@@ -3,4 +3,3 @@ export default {
   addons: ['path/to/manager.js'],
 };
 ```
-

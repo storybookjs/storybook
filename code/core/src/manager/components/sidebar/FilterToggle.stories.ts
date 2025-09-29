@@ -1,9 +1,10 @@
-import { fn } from '@storybook/test';
+import { fn } from 'storybook/test';
 
 import { FilterToggle } from './FilterToggle';
 
 export default {
   component: FilterToggle,
+  title: 'Sidebar/FilterToggle',
   args: {
     active: false,
     onClick: fn(),

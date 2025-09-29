@@ -1,12 +1,17 @@
-import type { NextConfig } from 'next';
-import type { Configuration as WebpackConfig } from 'webpack';
-import { DefinePlugin } from 'webpack';
+import { fileURLToPath } from 'node:url';
 
-import { addScopedAlias, resolveNextConfig, setAlias } from '../utils';
+import type { NextConfig } from 'next';
+import semver from 'semver';
+import type { Configuration as WebpackConfig } from 'webpack';
+
+import { addScopedAlias, getNextjsVersion, resolveNextConfig } from '../utils';
+
+const nextjsVersion = getNextjsVersion();
+const isNext16orNewer = semver.gte(nextjsVersion, '16.0.0');
 
 const tryResolve = (path: string) => {
   try {
-    return require.resolve(path);
+    return fileURLToPath(import.meta.resolve(path)) || false;
   } catch (err) {
     return false;
   }
@@ -21,7 +26,10 @@ export const configureConfig = async ({
 }): Promise<NextConfig> => {
   const nextConfig = await resolveNextConfig({ nextConfigPath });
 
-  addScopedAlias(baseConfig, 'next/config');
+  // TODO: Remove this once we only support Next.js 16 and above
+  if (!isNext16orNewer) {
+    addScopedAlias(baseConfig, 'next/config');
+  }
 
   // @ts-expect-error We know that alias is an object
   if (baseConfig.resolve?.alias?.['react-dom']) {
@@ -48,24 +56,32 @@ export const configureConfig = async ({
     addScopedAlias(baseConfig, 'react-dom/server', 'next/dist/compiled/react-dom/server');
   }
 
-  setupRuntimeConfig(baseConfig, nextConfig);
+  await setupRuntimeConfig(baseConfig, nextConfig);
 
   return nextConfig;
 };
 
-const setupRuntimeConfig = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
-  const definePluginConfig: Record<string, any> = {
+const setupRuntimeConfig = async (
+  baseConfig: WebpackConfig,
+  nextConfig: NextConfig
+): Promise<void> => {
+  const definePluginConfig: Record<string, any> = {};
+
+  // TODO: Remove this once we only support Next.js 16 and above
+  if (!isNext16orNewer) {
     // this mimics what nextjs does client side
     // https://github.com/vercel/next.js/blob/57702cb2a9a9dba4b552e0007c16449cf36cfb44/packages/next/client/index.tsx#L101
-    'process.env.__NEXT_RUNTIME_CONFIG': JSON.stringify({
+    definePluginConfig['process.env.__NEXT_RUNTIME_CONFIG'] = JSON.stringify({
       serverRuntimeConfig: {},
       publicRuntimeConfig: nextConfig.publicRuntimeConfig,
-    }),
-  };
+    });
+  }
 
   const newNextLinkBehavior = (nextConfig.experimental as any)?.newNextLinkBehavior;
 
   definePluginConfig['process.env.__NEXT_NEW_LINK_BEHAVIOR'] = newNextLinkBehavior;
 
-  baseConfig.plugins?.push(new DefinePlugin(definePluginConfig));
+  // Load DefinePlugin with a dynamic import to ensure that Next.js can first
+  // replace webpack with its own internal instance, and we get that here.
+  baseConfig.plugins?.push(new (await import('webpack')).default.DefinePlugin(definePluginConfig));
 };

@@ -34,4 +34,3 @@ const Template: Story = (args) => {
   };
 };
 ```
-

@@ -1,7 +1,7 @@
 ```tsx filename="Button.test.tsx" renderer="react" language="ts"
 import { test } from '@jest/globals';
-// 👉 Using Next.js? Import from @storybook/nextjs instead
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 import * as stories from './Button.stories';
 
@@ -15,7 +15,7 @@ test('renders and executes the play function', async () => {
 
 ```ts filename="Button.test.ts" renderer="vue" language="ts"
 import { test } from '@jest/globals';
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 import * as stories from './Button.stories';
 

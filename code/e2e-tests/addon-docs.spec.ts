@@ -5,7 +5,7 @@ import { expect, test } from '@playwright/test';
 import process from 'process';
 import { dedent } from 'ts-dedent';
 
-import { SbPage } from './util';
+import { SbPage, isReactSandbox } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -106,7 +106,7 @@ test.describe('addon-docs', () => {
     for (let i = 0; i < codeCount; i += 1) {
       const code = codes.nth(i);
       const text = await code.innerText();
-      await expect(text).not.toMatch(/^\(args\) => /);
+      expect(text).not.toMatch(/^\(args\) => /);
     }
   });
 
@@ -123,6 +123,7 @@ test.describe('addon-docs', () => {
       //   - template: https://638db567ed97c3fb3e21cc22-ulhjwkqzzj.chromatic.com/?path=/docs/addons-docs-docspage-basic--docs
       //   - real: https://638db567ed97c3fb3e21cc22-ulhjwkqzzj.chromatic.com/?path=/docs/example-button--docs
       'lit-vite',
+      'react-native-web',
     ];
     test.skip(
       new RegExp(`^${skipped.join('|')}`, 'i').test(`${templateName}`),
@@ -190,7 +191,7 @@ test.describe('addon-docs', () => {
 
   test('should resolve react to the correct version', async ({ page }) => {
     test.skip(
-      templateName?.includes('nextjs'),
+      templateName?.includes('nextjs') || templateName?.includes('nuxt'),
       'TODO: remove this once sandboxes are synced (SOON!!)'
     );
     // Arrange - Navigate to MDX docs
@@ -199,18 +200,18 @@ test.describe('addon-docs', () => {
     const root = sbPage.previewRoot();
 
     // Arrange - Setup expectations
-    let expectedReactVersionRange = /^18/;
+    let expectedReactVersionRange = /^19/;
     if (templateName.includes('react-webpack/17') || templateName.includes('react-vite/17')) {
       expectedReactVersionRange = /^17/;
     } else if (templateName.includes('react16')) {
       expectedReactVersionRange = /^16/;
     } else if (
-      templateName.includes('nextjs/default-ts') ||
-      templateName.includes('nextjs/prerelease') ||
-      templateName.includes('react-vite/prerelease') ||
-      templateName.includes('react-webpack/prerelease')
+      templateName.includes('internal/react18-webpack-babel') ||
+      templateName.includes('preact-vite/default-js') ||
+      templateName.includes('preact-vite/default-ts') ||
+      templateName.includes('react-webpack/18-ts')
     ) {
-      expectedReactVersionRange = /^19/;
+      expectedReactVersionRange = /^18/;
     }
 
     // Arrange - Get the actual versions
@@ -278,5 +279,15 @@ test.describe('addon-docs', () => {
       'H 1 Content',
       'H 2 Content',
     ]);
+  });
+
+  // We want to avoid the docs page crashing when JSX elements are part of args table
+  test('should show JSX elements in docs page', async ({ page }) => {
+    test.skip(!isReactSandbox(templateName), 'This is a React only feature');
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.navigateToStory('/stories/renderers/react/jsx-docgen', 'docs');
+    const root = sbPage.previewRoot();
+    await expect(root.getByText('children').first()).toBeVisible();
   });
 });

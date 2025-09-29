@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/naming-convention
 enum events {
   CHANNEL_WS_DISCONNECT = 'channelWSDisconnect',
   CHANNEL_CREATED = 'channelCreated',
@@ -32,11 +31,14 @@ enum events {
   STORY_CHANGED = 'storyChanged',
   STORY_UNCHANGED = 'storyUnchanged',
   STORY_RENDERED = 'storyRendered',
+  STORY_FINISHED = 'storyFinished',
   STORY_MISSING = 'storyMissing',
   STORY_ERRORED = 'storyErrored',
   STORY_THREW_EXCEPTION = 'storyThrewException',
   // Emitted at various times during rendering
   STORY_RENDER_PHASE_CHANGED = 'storyRenderPhaseChanged',
+  // Emitted when the story/component is hot updated (without rerendering)
+  STORY_HOT_UPDATED = 'storyHotUpdated',
   // Emitted when the play function throws
   PLAY_FUNCTION_THREW_EXCEPTION = 'playFunctionThrewException',
   // Emitted when there were unhandled errors while playing the story
@@ -84,14 +86,9 @@ enum events {
   ARGTYPES_INFO_RESPONSE = 'argtypesInfoResponse',
   CREATE_NEW_STORYFILE_REQUEST = 'createNewStoryfileRequest',
   CREATE_NEW_STORYFILE_RESPONSE = 'createNewStoryfileResponse',
-
-  TESTING_MODULE_CRASH_REPORT = 'testingModuleCrashReport',
-  TESTING_MODULE_PROGRESS_REPORT = 'testingModuleProgressReport',
-  TESTING_MODULE_RUN_REQUEST = 'testingModuleRunRequest',
-  TESTING_MODULE_RUN_ALL_REQUEST = 'testingModuleRunAllRequest',
-  TESTING_MODULE_CANCEL_TEST_RUN_REQUEST = 'testingModuleCancelTestRunRequest',
-  TESTING_MODULE_CANCEL_TEST_RUN_RESPONSE = 'testingModuleCancelTestRunResponse',
-  TESTING_MODULE_WATCH_MODE_REQUEST = 'testingModuleWatchModeRequest',
+  // Open a file in the code editor
+  OPEN_IN_EDITOR_REQUEST = 'openInEditorRequest',
+  OPEN_IN_EDITOR_RESPONSE = 'openInEditorResponse',
 }
 
 // Enables: `import Events from ...`
@@ -140,9 +137,11 @@ export const {
   STORY_PREPARED,
   STORY_RENDER_PHASE_CHANGED,
   STORY_RENDERED,
+  STORY_FINISHED,
   STORY_SPECIFIED,
   STORY_THREW_EXCEPTION,
   STORY_UNCHANGED,
+  STORY_HOT_UPDATED,
   UPDATE_GLOBALS,
   UPDATE_QUERY_PARAMS,
   UPDATE_STORY_ARGS,
@@ -155,13 +154,8 @@ export const {
   SAVE_STORY_RESPONSE,
   ARGTYPES_INFO_REQUEST,
   ARGTYPES_INFO_RESPONSE,
-  TESTING_MODULE_CRASH_REPORT,
-  TESTING_MODULE_PROGRESS_REPORT,
-  TESTING_MODULE_RUN_REQUEST,
-  TESTING_MODULE_RUN_ALL_REQUEST,
-  TESTING_MODULE_CANCEL_TEST_RUN_REQUEST,
-  TESTING_MODULE_CANCEL_TEST_RUN_RESPONSE,
-  TESTING_MODULE_WATCH_MODE_REQUEST,
+  OPEN_IN_EDITOR_REQUEST,
+  OPEN_IN_EDITOR_RESPONSE,
 } = events;
 
 export * from './data/create-new-story';
@@ -170,4 +164,5 @@ export * from './data/argtypes-info';
 export * from './data/request-response';
 export * from './data/save-story';
 export * from './data/whats-new';
-export * from './data/testing-module';
+export * from './data/phases';
+export * from './data/open-in-editor';

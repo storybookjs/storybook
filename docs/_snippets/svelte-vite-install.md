@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/svelte-vite
 ```shell renderer="svelte" language="js" packageManager="yarn"
 yarn add --dev @storybook/svelte-vite
 ```
-

@@ -1,8 +1,9 @@
-import type { ViewMode as ViewModeBase } from '@storybook/csf';
+import type { ViewMode as ViewModeBase } from 'storybook/internal/csf';
 
-import type { Addon_OptionsParameter } from './addons';
+import type { Addon_OptionsParameterV7 } from './addons';
 
 export type {
+  AfterEach,
   AnnotatedStoryFn,
   Args,
   ArgsEnhancer,
@@ -11,7 +12,10 @@ export type {
   ArgTypes,
   ArgTypesEnhancer,
   BaseAnnotations,
+  BeforeAll,
+  BeforeEach,
   Canvas,
+  CleanupCallback,
   ComponentAnnotations,
   ComponentId,
   ComponentTitle,
@@ -28,8 +32,10 @@ export type {
   LoaderFunction,
   Parameters,
   PartialStoryFn,
+  TestFunction,
   PlayFunction,
   PlayFunctionContext,
+  ProjectAnnotations as BaseProjectAnnotations,
   Renderer,
   SBArrayType,
   SBEnumType,
@@ -59,7 +65,7 @@ export type {
   StrictGlobalTypes,
   StrictInputType,
   Tag,
-} from '@storybook/csf';
+} from 'storybook/internal/csf';
 
 type OrString<T extends string> = T | (string & {});
 
@@ -68,13 +74,17 @@ export type ViewMode = OrString<ViewModeBase | 'settings'> | undefined;
 type Layout = 'centered' | 'fullscreen' | 'padded' | 'none';
 
 export interface StorybookParameters {
-  options?: Addon_OptionsParameter;
+  options?: Addon_OptionsParameterV7;
   /**
    * The layout property defines basic styles added to the preview body where the story is rendered.
    *
    * If you pass `none`, no styles are applied.
    */
   layout?: Layout;
+}
+
+export interface StorybookTypes {
+  parameters: StorybookParameters;
 }
 
 export interface StorybookInternalParameters extends StorybookParameters {

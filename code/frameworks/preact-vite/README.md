@@ -1,47 +1,7 @@
-# Storybook for Preact <!-- omit in toc -->
+# Storybook for Preact & Vite
 
-## Requirements
+Develop, document, and test UI components in isolation.
 
-- [Preact](https://preactjs.com/) >= 10.x
-- [Storybook](https://storybook.js.org/) >= 7.x
+See [documentation](https://storybook.js.org/docs/get-started/frameworks/preact-vite?renderer=preact&ref=readme) for installation instructions, usage examples, APIs, and more.
 
-## Getting Started
-
-### In a project without Storybook
-
-Follow the prompts after running this command in your Preact project's root directory:
-
-```bash
-npx storybook@latest init
-```
-
-[More on getting started with Storybook](https://storybook.js.org/docs/get-started/install?renderer=preact)
-
-### In a project with Storybook
-
-This framework is designed to work with Storybook 7. If you’re not already using v7, upgrade with this command:
-
-```bash
-npx storybook@latest upgrade
-```
-
-#### Manual migration
-
-Install the framework:
-
-```bash
-yarn add --dev @storybook/preact-vite
-```
-
-Update your `main.js` to change the framework property:
-
-```js
-// .storybook/main.js
-export default {
-  // ...
-  framework: {
-    name: '@storybook/preact-vite', // <- Change this
-    options: {},
-  },
-};
-```
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

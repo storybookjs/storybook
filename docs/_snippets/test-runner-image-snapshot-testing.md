@@ -49,4 +49,3 @@ const config: TestRunnerConfig = {
 };
 export default config;
 ```
-

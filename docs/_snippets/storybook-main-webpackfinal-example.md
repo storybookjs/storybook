@@ -9,4 +9,3 @@ export function webpackFinal(config, { configDir }) {
   return applyCRAWebpackConfig(config, configDir);
 }
 ```
-

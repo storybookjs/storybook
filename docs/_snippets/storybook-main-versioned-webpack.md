@@ -7,4 +7,3 @@ export function webpackFinal(config, { presets }) {
   return config;
 }
 ```
-

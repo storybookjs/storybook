@@ -10,6 +10,7 @@ import { commonConfig } from './vite-config';
 vi.mock('vite', async (importOriginal) => ({
   ...(await importOriginal<typeof import('vite')>()),
   loadConfigFromFile: vi.fn(async () => ({})),
+  defaultClientConditions: undefined,
 }));
 const loadConfigFromFileMock = vi.mocked(loadConfigFromFile);
 

@@ -1,8 +1,8 @@
 /// <reference path="../../typings.d.ts" />
-import { global } from '@storybook/global';
+import { logger, pretty } from 'storybook/internal/client-logger';
+import * as EVENTS from 'storybook/internal/core-events';
 
-import { logger, pretty } from '@storybook/core/client-logger';
-import * as EVENTS from '@storybook/core/core-events';
+import { global } from '@storybook/global';
 
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
@@ -20,7 +20,7 @@ const { document, location } = global;
 
 export const KEY = 'storybook-channel';
 
-const defaultEventOptions = { allowFunction: false, maxDepth: 25 };
+const defaultEventOptions = { maxDepth: 25 };
 
 // TODO: we should export a method for opening child windows here and keep track of em.
 // that way we can send postMessage to child windows as well, not just iframe
@@ -69,29 +69,23 @@ export class PostMessageTransport implements ChannelTransport {
 
       // telejson options
       allowRegExp,
-      allowFunction,
       allowSymbol,
       allowDate,
       allowError,
       allowUndefined,
-      allowClass,
       maxDepth,
       space,
-      lazyEval,
     } = options || {};
 
     const eventOptions = Object.fromEntries(
       Object.entries({
         allowRegExp,
-        allowFunction,
         allowSymbol,
         allowDate,
         allowError,
         allowUndefined,
-        allowClass,
         maxDepth,
         space,
-        lazyEval,
       }).filter(([k, v]) => typeof v !== 'undefined')
     );
 

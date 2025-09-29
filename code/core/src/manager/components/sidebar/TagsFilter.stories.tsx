@@ -1,11 +1,13 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { findByRole, fn } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { findByRole, fn } from 'storybook/test';
 
 import { TagsFilter } from './TagsFilter';
 
 const meta = {
   component: TagsFilter,
-  tags: ['haha'],
+  title: 'Sidebar/TagsFilter',
+  tags: ['haha', 'this-is-a-very-long-tag-that-will-be-truncated-after-a-while'],
   args: {
     api: {
       experimental_setFilter: fn(),
@@ -19,6 +21,7 @@ const meta = {
       applyQueryParams: fn().mockName('api::applyQueryParams'),
     } as any,
     isDevelopment: true,
+    tagPresets: {},
   },
 } satisfies Meta<typeof TagsFilter>;
 
@@ -40,36 +43,62 @@ export const Closed: Story = {
 export const ClosedWithSelection: Story = {
   args: {
     ...Closed.args,
-    initialSelectedTags: ['A', 'B'],
+    tagPresets: {
+      A: { defaultFilterSelection: 'include' },
+      B: { defaultFilterSelection: 'include' },
+    },
   },
 };
 
-export const Open: Story = {
+export const Clear = {
   ...Closed,
   play: async ({ canvasElement }) => {
     const button = await findByRole(canvasElement, 'button');
     await button.click();
   },
-};
+} satisfies Story;
 
-export const OpenWithSelection: Story = {
+export const WithSelection = {
   ...ClosedWithSelection,
-  play: Open.play,
-};
+  play: Clear.play,
+} satisfies Story;
 
-export const OpenEmpty: Story = {
+export const WithSelectionInverted = {
+  ...Clear,
+  args: {
+    ...Clear.args,
+    tagPresets: {
+      A: { defaultFilterSelection: 'exclude' },
+      B: { defaultFilterSelection: 'exclude' },
+    },
+  },
+} satisfies Story;
+
+export const WithSelectionMixed = {
+  ...Clear,
+  args: {
+    ...Clear.args,
+    tagPresets: {
+      A: { defaultFilterSelection: 'include' },
+      B: { defaultFilterSelection: 'exclude' },
+    },
+  },
+} satisfies Story;
+
+export const Empty: Story = {
   args: {
     indexJson: {
       v: 6,
       entries: {},
     },
   },
-  play: Open.play,
+  play: Clear.play,
 };
 
 export const EmptyProduction: Story = {
   args: {
-    ...OpenEmpty.args,
+    ...Empty.args,
     isDevelopment: false,
   },
+  play: Clear.play,
 };

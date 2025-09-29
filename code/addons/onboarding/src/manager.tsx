@@ -2,7 +2,10 @@ import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom';
 
 import { STORY_SPECIFIED } from 'storybook/internal/core-events';
-import { addons } from 'storybook/internal/manager-api';
+
+import { addons } from 'storybook/manager-api';
+
+import { ADDON_CONTROLS_ID } from './constants';
 
 const Onboarding = lazy(() => import('./Onboarding'));
 
@@ -32,7 +35,7 @@ addons.register('@storybook/addon-onboarding', async (api) => {
 
     api.togglePanel(true);
     api.togglePanelPosition('bottom');
-    api.setSelectedPanel('addon-controls');
+    api.setSelectedPanel(ADDON_CONTROLS_ID);
 
     // Add a new DOM element to document.body, where we will bootstrap our React app
     const domNode = document.createElement('div');

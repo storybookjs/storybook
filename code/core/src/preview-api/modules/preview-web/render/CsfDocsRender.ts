@@ -1,10 +1,9 @@
-import type { Channel } from '@storybook/core/channels';
-import type { Renderer, StoryId } from '@storybook/core/types';
-import type { CSFFile, PreparedStory } from '@storybook/core/types';
-import type { IndexEntry } from '@storybook/core/types';
-import type { RenderContextCallbacks } from '@storybook/core/types';
-
-import { DOCS_RENDERED } from '@storybook/core/core-events';
+import type { Channel } from 'storybook/internal/channels';
+import { DOCS_RENDERED } from 'storybook/internal/core-events';
+import type { Renderer, StoryId } from 'storybook/internal/types';
+import type { CSFFile, PreparedStory } from 'storybook/internal/types';
+import type { IndexEntry } from 'storybook/internal/types';
+import type { RenderContextCallbacks } from 'storybook/internal/types';
 
 import type { StoryStore } from '../../../store';
 import { DocsContext } from '../docs-context/DocsContext';
@@ -25,6 +24,8 @@ import { PREPARE_ABORTED } from './Render';
  * - Autodocs, where there is no story, and we fall back to the globally defined template.
  */
 export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRenderer> {
+  public readonly renderId: number;
+
   public readonly type: RenderType = 'docs';
 
   public readonly subtype = 'csf';
@@ -52,6 +53,7 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
     private callbacks: RenderContextCallbacks<TRenderer>
   ) {
     this.id = entry.id;
+    this.renderId = Date.now();
   }
 
   isPreparing() {

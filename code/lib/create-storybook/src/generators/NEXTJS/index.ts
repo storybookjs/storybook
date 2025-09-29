@@ -18,11 +18,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     npmOptions,
     { ...options, builder: CoreBuilder.Webpack5 },
     'react',
-    {
-      staticDir,
-      extraAddons: [`@storybook/addon-onboarding`],
-      webpackCompiler: ({ builder }) => undefined,
-    },
+    { staticDir, webpackCompiler: () => undefined },
     'nextjs'
   );
 };

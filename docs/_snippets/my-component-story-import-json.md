@@ -2,4 +2,3 @@
 // This will automatically be parsed to the contents of `data.json`
 import data from './data.json';
 ```
-

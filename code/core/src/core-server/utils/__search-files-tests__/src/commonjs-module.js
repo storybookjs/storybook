@@ -9,8 +9,19 @@ Object.defineProperty(exports, 'c', { value: 'c' });
 /* exports.d = 'not detected'; */
 
 // reexports detection
-if (maybe) module.exports = require('./dep1.js');
-if (another) module.exports = require('./dep2.js');
+
+/* exports.d = 'not detected'; */
+
+// reexports detection
+if (maybe) {
+  module.exports = require('./dep1.js');
+}
+
+if (another) {
+  module.exports = require('./dep2.js');
+}
+
+// literal exports assignments
 
 // literal exports assignments
 module.exports = { a, b: c, d, e: f };

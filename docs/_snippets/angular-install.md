@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/angular
 ```shell renderer="angular" language="js" packageManager="yarn"
 yarn add --dev @storybook/angular
 ```
-

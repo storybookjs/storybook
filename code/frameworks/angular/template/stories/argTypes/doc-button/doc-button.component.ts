@@ -1,4 +1,4 @@
-/* eslint-disable no-underscore-dangle */
+import type { ElementRef } from '@angular/core';
 import {
   Component,
   EventEmitter,
@@ -7,7 +7,6 @@ import {
   Input,
   Output,
   ViewChild,
-  ElementRef,
 } from '@angular/core';
 
 export const exportedConstant = 'An exported constant';
@@ -38,6 +37,7 @@ export enum ButtonAccent {
  * @html <span class="badge">aaa</span>
  */
 @Component({
+  standalone: false,
   selector: 'my-button',
   templateUrl: './doc-button.component.html',
   styleUrls: ['./doc-button.component.scss'],

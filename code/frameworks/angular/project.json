@@ -5,11 +5,7 @@
   "targets": {
     "build": {},
     "check": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "echo '\"nx check angular\" can only run with the parameter \"-c production\"'",
-        "description": "We need to expand code/storybook/storybook/scripts/prepare/check.ts"
-      },
+      "command": "echo '\"nx check angular\" can only run with the parameter \"-c production\", we need to expand code/storybook/storybook/scripts/prepare/check.ts'",
       "configurations": {
         "production": {
           "cwd": "{projectRoot}",

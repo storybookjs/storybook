@@ -1,7 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { global } from '@storybook/global';
+import { UncaughtManagerError } from 'storybook/internal/manager-errors';
 
-import { UncaughtManagerError } from '@storybook/core/manager-errors';
+import { global } from '@storybook/global';
 
 import type { BrowserInfo } from 'browser-dtector';
 import BrowserDetector from 'browser-dtector';
@@ -25,6 +25,8 @@ const errorMessages = [
   // Safari does not seem to provide any helpful info on window.onerror
   // https://bugs.webkit.org/show_bug.cgi?id=132945
   'Script error.',
+  // When react-dev-tools is installed as a browser extension, it will log this error
+  'React is running in production mode',
 ];
 
 export const shouldSkipError = (error: Error) => errorMessages.includes(error?.message);

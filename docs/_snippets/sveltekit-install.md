@@ -9,4 +9,3 @@ pnpm add --save-dev @storybook/sveltekit
 ```shell renderer="svelte" language="js" packageManager="yarn"
 yarn add --dev @storybook/sveltekit
 ```
-

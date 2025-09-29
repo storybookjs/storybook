@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import type { Options } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
+import { importMetaResolve } from '../../../../core/src/shared/utils/module';
 import { generateImportFnScriptCode } from '../codegen-importfn-script';
 import { generateModernIframeScriptCode } from '../codegen-modern-iframe-script';
 import { generateAddonSetupCode } from '../codegen-set-addon-channel';
@@ -11,7 +13,7 @@ import { transformIframeHtml } from '../transform-iframe-html';
 import { SB_VIRTUAL_FILES, getResolvedVirtualModuleId } from '../virtual-file-names';
 
 export function codeGeneratorPlugin(options: Options): Plugin {
-  const iframePath = require.resolve('@storybook/builder-vite/input/iframe.html');
+  const iframePath = fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html'));
   let iframeId: string;
   let projectRoot: string;
 
@@ -44,7 +46,10 @@ export function codeGeneratorPlugin(options: Options): Plugin {
         // TODO maybe use the stories declaration in main
         if (/\.stories\.([tj])sx?$/.test(path) || /\.mdx$/.test(path)) {
           // We need to emit a change event to trigger HMR
-          server.watcher.emit('change', SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE);
+          server.watcher.emit(
+            'change',
+            getResolvedVirtualModuleId(SB_VIRTUAL_FILES.VIRTUAL_STORIES_FILE)
+          );
         }
       });
     },
@@ -100,7 +105,10 @@ export function codeGeneratorPlugin(options: Options): Plugin {
       }
 
       if (id === iframeId) {
-        return readFileSync(require.resolve('@storybook/builder-vite/input/iframe.html'), 'utf-8');
+        return readFileSync(
+          fileURLToPath(importMetaResolve('@storybook/builder-vite/input/iframe.html')),
+          'utf-8'
+        );
       }
 
       return undefined;

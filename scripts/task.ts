@@ -1,8 +1,9 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { outputFile, pathExists, readFile } from 'fs-extra';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
+
 import type { TestCase } from 'junit-xml';
 import { getJunitXml } from 'junit-xml';
-import { join, resolve } from 'path';
+import { dirname, join, resolve } from 'path';
+import picocolors from 'picocolors';
 import { prompt } from 'prompts';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -33,12 +34,13 @@ import { testRunnerBuild } from './tasks/test-runner-build';
 import { testRunnerDev } from './tasks/test-runner-dev';
 import { vitestTests } from './tasks/vitest-test';
 import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants';
+import { findMostMatchText } from './utils/diff';
 import type { OptionValues } from './utils/options';
 import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options';
 
 const sandboxDir = process.env.SANDBOX_ROOT || SANDBOX_DIRECTORY;
 
-export const extraAddons = ['@storybook/addon-a11y', '@storybook/addon-storysource'];
+export const extraAddons = ['@storybook/addon-a11y'];
 
 export type Path = string;
 export type TemplateDetails = {
@@ -101,7 +103,7 @@ export const tasks = {
   bench,
   'vitest-integration': vitestTests,
 };
-type TaskKey = keyof typeof tasks;
+export type TaskKey = keyof typeof tasks;
 
 function isSandboxTask(taskKey: TaskKey) {
   return !['install', 'compile', 'publish', 'run-registry', 'check', 'sync-docs'].includes(taskKey);
@@ -157,6 +159,11 @@ export const options = createOptions({
     description: "Don't execute commands, just list them (dry run)?",
     promptType: false,
   },
+  skipCache: {
+    type: 'boolean',
+    description: 'Skip NX remote cache?',
+    promptType: false,
+  },
   debug: {
     type: 'boolean',
     description: 'Print all the logs to the console',
@@ -179,12 +186,26 @@ export const options = createOptions({
   },
 });
 
-export type PassedOptionValues = Omit<OptionValues<typeof options>, 'task' | 'startFrom' | 'junit'>;
+export type PassedOptionValues = Omit<OptionValues<typeof options>, 'startFrom' | 'junit'>;
 
 const logger = console;
 
 function getJunitFilename(taskKey: TaskKey) {
   return join(JUNIT_DIRECTORY, `${taskKey}.xml`);
+}
+
+async function pathExists(path: string) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function outputFile(file: string, data: string) {
+  await mkdir(dirname(file), { recursive: true });
+  await writeFile(file, data);
 }
 
 async function writeJunitXml(
@@ -347,7 +368,21 @@ async function run() {
 
   const allOptionValues = await getOptionsOrPrompt('yarn task', options);
 
-  const { task: taskKey, startFrom, junit, ...optionValues } = allOptionValues;
+  const { junit, startFrom, ...optionValues } = allOptionValues;
+  const taskKey = optionValues.task;
+
+  if (!(taskKey in tasks)) {
+    const matchText = findMostMatchText(Object.keys(tasks), taskKey);
+
+    if (matchText) {
+      console.log(
+        `${picocolors.red('Error')}: ${picocolors.cyan(
+          taskKey
+        )} is not a valid task name, Did you mean ${picocolors.cyan(matchText)}?`
+      );
+    }
+    process.exit(1);
+  }
 
   const finalTask = tasks[taskKey];
   const { template: templateKey } = optionValues;
@@ -363,7 +398,6 @@ async function run() {
     builtSandboxDir: templateKey && join(templateSandboxDir, 'storybook-static'),
     junitFilename: junit && getJunitFilename(taskKey),
   };
-
   const { sortedTasks, tasksThatDepend } = getTaskList(finalTask, details, optionValues);
   const sortedTasksReady = await Promise.all(
     sortedTasks.map((t) => t.ready(details, optionValues))
@@ -482,27 +516,31 @@ async function run() {
         }
       } catch (err) {
         invariant(err instanceof Error);
-        logger.error(`Error running task ${getTaskKey(task)}:`);
+        let errorTitle = `Error running task ${picocolors.bold(getTaskKey(task))}`;
+        if (details.key) {
+          errorTitle += ` for ${picocolors.bgCyan(picocolors.white(details.key))}:`;
+        }
+        logger.error(errorTitle);
         logger.error(JSON.stringify(err, null, 2));
 
         if (process.env.CI) {
-          logger.error(
-            dedent`
-              To reproduce this error locally, run:
+          const separator = '\n--------------------------------------------\n';
+          const reproduceMessage = dedent`
+            To reproduce this error locally, run:
 
-              ${getCommand('yarn task', options, {
+            ${picocolors.bold(
+              getCommand('yarn task', options, {
                 ...allOptionValues,
                 link: true,
                 startFrom: 'auto',
-              })}
-              
-              Note this uses locally linking which in rare cases behaves differently to CI. For a closer match, run:
-              
-              ${getCommand('yarn task', options, {
-                ...allOptionValues,
-                startFrom: 'auto',
-              })}`
-          );
+              })
+            )}
+
+            Note this uses locally linking which in rare cases behaves differently to CI.
+            For a closer match, add ${picocolors.bold('--no-link')} to the command above.
+          `;
+
+          err.message += `\n${separator}${reproduceMessage}${separator}\n`;
         }
 
         controllers.forEach((controller) => {

@@ -11,4 +11,5 @@ export type SupportedRenderers =
   | 'html'
   | 'web-components'
   | 'server'
-  | 'solid';
+  | 'solid'
+  | 'nuxt';

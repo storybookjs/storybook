@@ -1,5 +1,3 @@
-import { dirname, join } from 'node:path';
-
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import type { PresetProperty } from 'storybook/internal/types';
 
@@ -7,12 +5,8 @@ import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { StorybookConfig } from './types';
 
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
-
 export const addons: PresetProperty<'addons'> = [
-  require.resolve('./server/framework-preset-babel-ember'),
-  require.resolve('./server/framework-preset-ember-docs'),
+  import.meta.resolve('@storybook/ember/server/framework-preset-babel-ember'),
 ];
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, options) => {
@@ -31,7 +25,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
           test: typescriptOptions.skipCompiler ? /\.((c|m)?jsx?)$/ : /\.((c|m)?(j|t)sx?)$/,
           use: [
             {
-              loader: require.resolve('babel-loader'),
+              loader: import.meta.resolve('babel-loader'),
               options: {
                 cacheDirectory: resolvePathInStorybookCache('babel'),
                 ...babelOptions,
@@ -52,7 +46,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: getAbsolutePath('@storybook/builder-webpack5'),
+      name: import.meta.resolve('@storybook/builder-webpack5'),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
   };

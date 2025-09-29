@@ -1,4 +1,5 @@
-import { Meta, StoryFn, StoryObj, moduleMetadata } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular';
+import { StoryFn, moduleMetadata } from '@storybook/angular';
 
 import { ChipsGroupComponent } from './angular-src/chips-group.component';
 import { ChipsModule } from './angular-src/chips.module';
@@ -11,8 +12,6 @@ const meta: Meta<ChipsGroupComponent> = {
       imports: [ChipsModule],
     }),
   ],
-  tags: ['!test', '!vitest'],
-  parameters: { chromatic: { disable: true } },
 };
 
 export default meta;

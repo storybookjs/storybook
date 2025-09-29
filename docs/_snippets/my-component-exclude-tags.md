@@ -1,9 +1,30 @@
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="story"
+```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
+import type { Meta, StoryObj } from '@storybook/angular';
+
+import { MyComponent } from './MyComponent.component';
+
+const meta: Meta<MyComponent> = {
+  component: MyComponent,
+  //👇 Provides the `no-tests` tag to all stories in this file
+  tags: ['no-tests'],
+};
+
+export default meta;
+type Story = StoryObj<MyComponent>;
+
+export const ExcludeStory: Story = {
+  //👇 Adds the `no-tests` tag to this story to exclude it from the tests when enabled in the test-runner configuration
+  tags: ['no-tests'],
+};
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
 import { MyComponent } from './MyComponent';
 
 export default {
   component: MyComponent,
-  tags: ['no-tests'], // 👈 Provides the `no-tests` tag to all stories in this file
+  //👇 Provides the `no-tests` tag to all stories in this file
+  tags: ['no-tests'],
 };
 
 export const ExcludeStory = {
@@ -12,23 +33,23 @@ export const ExcludeStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="story"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the name of your framework
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { MyComponent } from './MyComponent';
 
-const meta: Meta<typeof MyComponent> = {
+const meta = {
   component: MyComponent,
-  tags: ['no-tests'], // 👈 Provides the `no-tests` tag to all stories in this file
-};
+  //👇 Provides the `no-tests` tag to all stories in this file
+  tags: ['no-tests'],
+} satisfies Meta<typeof MyComponent>;
 
 export default meta;
-type Story = StoryObj<typeof MyComponent>;
+type Story = StoryObj<typeof meta>;
 
 export const ExcludeStory: Story = {
   //👇 Adds the `no-tests` tag to this story to exclude it from the tests when enabled in the test-runner configuration
   tags: ['no-tests'],
 };
 ```
-

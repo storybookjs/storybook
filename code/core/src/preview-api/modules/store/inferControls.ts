@@ -1,13 +1,12 @@
+import { logger } from 'storybook/internal/client-logger';
 import type {
   ArgTypesEnhancer,
   Renderer,
   SBEnumType,
   StrictInputType,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
-import { logger } from '@storybook/core/client-logger';
-
-import { mapValues } from 'es-toolkit';
+import { mapValues } from 'es-toolkit/object';
 
 import { filterArgTypes } from './filterArgTypes';
 import { combineParameters } from './parameters';
@@ -67,7 +66,6 @@ const inferControl = (argType: StrictInputType, name: string, matchers: Controls
 export const inferControls: ArgTypesEnhancer<Renderer> = (context) => {
   const {
     argTypes,
-    // eslint-disable-next-line @typescript-eslint/naming-convention
     parameters: { __isArgsStory, controls: { include = null, exclude = null, matchers = {} } = {} },
   } = context;
 

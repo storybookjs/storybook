@@ -1,7 +1,7 @@
 import type { ComponentProps } from 'react';
 import React, { Children } from 'react';
 
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/theming';
 
 import type { ScrollAreaProps } from '../ScrollArea/ScrollArea';
 import { ScrollArea } from '../ScrollArea/ScrollArea';
@@ -18,7 +18,7 @@ export const Side = styled.div<SideProps>(
     whiteSpace: 'nowrap',
     flexBasis: 'auto',
     marginLeft: 3,
-    marginRight: 3,
+    marginRight: 10,
   },
   ({ scrollable }) => (scrollable ? { flexShrink: 0 } : {}),
   ({ left }) =>
@@ -32,10 +32,7 @@ export const Side = styled.div<SideProps>(
   ({ right }) =>
     right
       ? {
-          marginLeft: 30,
-          '& > *': {
-            marginRight: 4,
-          },
+          gap: 6,
         }
       : {}
 );
@@ -55,14 +52,17 @@ const UnstyledBar = ({ children, className, scrollable }: UnstyledBarProps) =>
   );
 
 export interface BarProps extends UnstyledBarProps {
+  backgroundColor?: string;
   border?: boolean;
 }
 export const Bar = styled(UnstyledBar)<BarProps>(
-  ({ theme, scrollable = true }) => ({
+  ({ backgroundColor, theme, scrollable = true }) => ({
     color: theme.barTextColor,
     width: '100%',
-    height: 40,
+    minHeight: 40,
     flexShrink: 0,
+    scrollbarColor: `${theme.barTextColor} ${backgroundColor || theme.barBg}`,
+    scrollbarWidth: 'thin',
     overflow: scrollable ? 'auto' : 'hidden',
     overflowY: 'hidden',
   }),
@@ -97,7 +97,7 @@ export interface FlexBarProps extends ComponentProps<typeof Bar> {
 export const FlexBar = ({ children, backgroundColor, className, ...rest }: FlexBarProps) => {
   const [left, right] = Children.toArray(children);
   return (
-    <Bar className={`sb-bar ${className}`} {...rest}>
+    <Bar backgroundColor={backgroundColor} className={`sb-bar ${className}`} {...rest}>
       <BarInner bgColor={backgroundColor}>
         <Side scrollable={rest.scrollable} left>
           {left}

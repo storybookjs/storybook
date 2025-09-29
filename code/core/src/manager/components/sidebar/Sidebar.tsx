@@ -6,13 +6,15 @@ import {
   Spaced,
   TooltipNote,
   WithTooltip,
-} from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import type { API_LoadedRefData, Addon_SidebarTopType, StoryIndex } from '@storybook/core/types';
+} from 'storybook/internal/components';
+import type { API_LoadedRefData, StoryIndex, TagsOptions } from 'storybook/internal/types';
+import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 import { PlusIcon } from '@storybook/icons';
 
-import { type State, useStorybookApi } from '@storybook/core/manager-api';
+import { type State, useStorybookApi } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
 import { useLayout } from '../layout/LayoutProvider';
@@ -24,7 +26,6 @@ import { Search } from './Search';
 import { SearchResults } from './SearchResults';
 import { SidebarBottom } from './SidebarBottom';
 import { TagsFilter } from './TagsFilter';
-import { TEST_PROVIDER_ID } from './Tree';
 import type { CombinedDataset, Selection } from './types';
 import { useLastViewed } from './useLastViewed';
 
@@ -60,10 +61,10 @@ const TooltipNoteWrapper = styled(TooltipNote)({
   margin: 0,
 });
 
-const CreateNewStoryButton = styled(IconButton)(({ theme }) => ({
+const CreateNewStoryButton = styled(IconButton)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
   color: theme.color.mediumdark,
-  width: 32,
-  height: 32,
+  width: isMobile ? 36 : 32,
+  height: isMobile ? 36 : 32,
   borderRadius: theme.appBorderRadius + 2,
 }));
 
@@ -87,23 +88,24 @@ const useCombination = (
   index: SidebarProps['index'],
   indexError: SidebarProps['indexError'],
   previewInitialized: SidebarProps['previewInitialized'],
-  status: SidebarProps['status'],
+  allStatuses: StatusesByStoryIdAndTypeId,
   refs: SidebarProps['refs']
 ): CombinedDataset => {
   const hash = useMemo(
     () => ({
       [DEFAULT_REF_ID]: {
         index,
+        filteredIndex: index,
         indexError,
         previewInitialized,
-        status,
+        allStatuses,
         title: null,
         id: DEFAULT_REF_ID,
         url: 'iframe.html',
       },
       ...refs,
     }),
-    [refs, index, indexError, previewInitialized, status]
+    [refs, index, indexError, previewInitialized, allStatuses]
   );
   // @ts-expect-error (non strict)
   return useMemo(() => ({ hash, entries: Object.entries(hash) }), [hash]);
@@ -113,9 +115,8 @@ const isRendererReact = global.STORYBOOK_RENDERER === 'react';
 
 export interface SidebarProps extends API_LoadedRefData {
   refs: State['refs'];
-  status: State['status'];
+  allStatuses: StatusesByStoryIdAndTypeId;
   menu: any[];
-  extra: Addon_SidebarTopType[];
   storyId?: string;
   refId?: string;
   menuHighlighted?: boolean;
@@ -132,10 +133,9 @@ export const Sidebar = React.memo(function Sidebar({
   index,
   indexJson,
   indexError,
-  status,
+  allStatuses,
   previewInitialized,
   menu,
-  extra,
   menuHighlighted = false,
   enableShortcuts = true,
   isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT',
@@ -146,21 +146,31 @@ export const Sidebar = React.memo(function Sidebar({
   const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
   // @ts-expect-error (non strict)
   const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);
-  const dataset = useCombination(index, indexError, previewInitialized, status, refs);
+  const dataset = useCombination(index, indexError, previewInitialized, allStatuses, refs);
   const isLoading = !index && !indexError;
+  const hasEntries = Object.keys(indexJson?.entries ?? {}).length > 0;
   const lastViewedProps = useLastViewed(selected);
   const { isMobile } = useLayout();
   const api = useStorybookApi();
 
+  const tagPresets = useMemo(
+    () =>
+      Object.entries(global.TAGS_OPTIONS ?? {}).reduce((acc, entry) => {
+        const [tag, option] = entry;
+        acc[tag] = option;
+        return acc;
+      }, {} as TagsOptions),
+    []
+  );
+
   return (
-    <Container className="container sidebar-container">
+    <Container className="container sidebar-container" aria-label="Global">
       <ScrollArea vertical offset={3} scrollbarSize={6}>
         <Top row={1.6}>
           <Heading
             className="sidebar-header"
             menuHighlighted={menuHighlighted}
             menu={menu}
-            extra={extra}
             skipLinkHref="#storybook-preview-wrapper"
             isLoading={isLoading}
             onMenuClick={onMenuClick}
@@ -177,6 +187,8 @@ export const Sidebar = React.memo(function Sidebar({
                     tooltip={<TooltipNoteWrapper note="Create a new story" />}
                   >
                     <CreateNewStoryButton
+                      aria-label="Create a new story"
+                      isMobile={isMobile}
                       onClick={() => {
                         setIsFileSearchModalOpen(true);
                       }}
@@ -194,7 +206,12 @@ export const Sidebar = React.memo(function Sidebar({
             }
             searchFieldContent={
               indexJson && (
-                <TagsFilter api={api} indexJson={indexJson} isDevelopment={isDevelopment} />
+                <TagsFilter
+                  api={api}
+                  indexJson={indexJson}
+                  isDevelopment={isDevelopment}
+                  tagPresets={tagPresets}
+                />
               )
             }
             {...lastViewedProps}
@@ -214,6 +231,7 @@ export const Sidebar = React.memo(function Sidebar({
                   selected={selected}
                   isLoading={isLoading}
                   isBrowsing={isBrowsing}
+                  hasEntries={hasEntries}
                 />
                 <SearchResults
                   query={query}

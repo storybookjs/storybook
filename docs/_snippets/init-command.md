@@ -1,4 +1,4 @@
-```shell renderer="common" language="js" packageManager="npx"
+```shell renderer="common" language="js" packageManager="npm"
 npx storybook@latest init
 ```
 
@@ -9,4 +9,3 @@ pnpm dlx storybook@latest init
 ```shell renderer="common" language="js" packageManager="yarn"
 yarn dlx storybook@latest init
 ```
-

@@ -1,9 +1,24 @@
-import * as React from 'react';
-import { Fragment, useEffect } from 'react';
+import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
-import { DocsContext as DocsContextProps, useArgs } from 'storybook/internal/preview-api';
-import type { PreviewWeb } from 'storybook/internal/preview-api';
+
+import { global } from '@storybook/global';
+
+import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
+import { definePreview } from '@storybook/react-vite';
+
+import addonA11y from '@storybook/addon-a11y';
+// TODO add empty preview
+// import * as designs from '@storybook/addon-designs/preview';
+import addonDocs from '@storybook/addon-docs';
+import { DocsContext } from '@storybook/addon-docs/blocks';
+import addonThemes from '@storybook/addon-themes';
+import addonTest from '@storybook/addon-vitest';
+
+import addonPseudoStates from 'storybook-addon-pseudo-states';
+import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
+import type { PreviewWeb } from 'storybook/preview-api';
+import { sb } from 'storybook/test';
 import {
   Global,
   ThemeProvider,
@@ -12,16 +27,25 @@ import {
   styled,
   themes,
   useTheme,
-} from 'storybook/internal/theming';
+} from 'storybook/theming';
 
-import { DocsContext } from '@storybook/blocks';
-import { global } from '@storybook/global';
-import type { Decorator, Loader, ReactRenderer } from '@storybook/react';
-
-import { DocsPageWrapper } from '../lib/blocks/src/components';
+import { DocsPageWrapper } from '../addons/docs/src/blocks/components';
+import * as templatePreview from '../core/template/stories/preview';
+import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
 
+sb.mock('../core/template/stories/test/ModuleMocking.utils.ts');
+sb.mock('../core/template/stories/test/ModuleSpyMocking.utils.ts', { spy: true });
+sb.mock('../core/template/stories/test/ModuleAutoMocking.utils.ts');
+/* eslint-disable depend/ban-dependencies */
+sb.mock(import('lodash-es'));
+sb.mock(import('lodash-es/add'));
+sb.mock(import('lodash-es/sum'));
+sb.mock(import('uuid'));
+/* eslint-enable depend/ban-dependencies */
+
 const { document } = global;
+globalThis.CONFIG_TYPE = 'DEVELOPMENT';
 
 const ThemeBlock = styled.div<{ side: 'left' | 'right'; layout: string }>(
   {
@@ -87,7 +111,7 @@ const PlayFnNotice = styled.div(
   })
 );
 
-const StackContainer = ({ children, layout }) => (
+const StackContainer: FC<React.PropsWithChildren<{ layout: string }>> = ({ children, layout }) => (
   <div
     style={{
       height: '100%',
@@ -116,10 +140,7 @@ const ThemedSetRoot = () => {
   return null;
 };
 
-// eslint-disable-next-line no-underscore-dangle
-const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer>;
-const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel;
-export const loaders = [
+const loaders = [
   /**
    * This loader adds a DocsContext to the story, which is required for the most Blocks to work. A
    * story will specify which stories they need in the index with:
@@ -133,14 +154,16 @@ export const loaders = [
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
-    // TODO bring a better way to skip tests when running as part of the vitest plugin instead of __STORYBOOK_URL__
-    // eslint-disable-next-line no-underscore-dangle
-    if (!relativeCsfPaths || (import.meta as any).env?.__STORYBOOK_URL__) {
+    const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
+    const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
+    // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
+    // which isn't loaded in portable stories/vitest
+    if (!relativeCsfPaths || !preview || !channel) {
       return {};
     }
     const csfFiles = await Promise.all(
       (relativeCsfPaths as string[]).map(async (blocksRelativePath) => {
-        const projectRelativePath = `./lib/blocks/src/${blocksRelativePath.replace(
+        const projectRelativePath = `./addons/docs/src/blocks/${blocksRelativePath.replace(
           /^..\//,
           ''
         )}.tsx`;
@@ -168,7 +191,7 @@ export const loaders = [
   },
 ] as Loader[];
 
-export const decorators = [
+const decorators = [
   // This decorator adds the DocsContext created in the loader above
   (Story, { loaded: { docsContext } }) =>
     docsContext ? (
@@ -193,7 +216,7 @@ export const decorators = [
    * This decorator renders the stories side-by-side, stacked or default based on the theme switcher
    * in the toolbar
    */
-  (StoryFn, { globals, playFunction, args, storyGlobals, parameters }) => {
+  (StoryFn, { globals, playFunction, testFunction, args, storyGlobals, parameters }) => {
     let theme = globals.sb_theme;
     let showPlayFnNotice = false;
 
@@ -201,10 +224,13 @@ export const decorators = [
     // but this is acceptable, I guess
     // we need to ensure only a single rendering in chromatic
     // a more 'correct' approach would be to set a specific theme global on every story that has a playFunction
-    if (playFunction && args.autoplay !== false && !(theme === 'light' || theme === 'dark')) {
+    if (
+      (testFunction || (playFunction && args.autoplay !== false)) &&
+      !(theme === 'light' || theme === 'dark')
+    ) {
       theme = 'light';
       showPlayFnNotice = true;
-    } else if (isChromatic() && !storyGlobals.sb_theme && !playFunction) {
+    } else if (isChromatic() && !storyGlobals.sb_theme && !playFunction && !testFunction) {
       theme = 'stacked';
     }
 
@@ -259,8 +285,8 @@ export const decorators = [
               <>
                 <PlayFnNotice>
                   <span>
-                    Detected play function in Chromatic. Rendering only light theme to avoid
-                    multiple play functions in the same story.
+                    Detected play/test function in Chromatic. Rendering only light theme to avoid
+                    multiple play/test functions in the same story.
                   </span>
                 </PlayFnNotice>
                 <div style={{ marginBottom: 20 }} />
@@ -306,13 +332,27 @@ export const decorators = [
   },
 ] satisfies Decorator[];
 
-export const parameters = {
-  options: {
-    storySort: (a, b) =>
-      a.title === b.title ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
-  },
+const parameters = {
   docs: {
     theme: themes.light,
+    codePanel: true,
+    source: {
+      transform: async (source) => {
+        try {
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = (await import('prettier/plugins/estree')).default;
+
+          return await prettier.format(source, {
+            parser: 'babel',
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        } catch (error) {
+          console.error(error);
+          return source;
+        }
+      },
+    },
     toc: {},
   },
   controls: {
@@ -321,7 +361,7 @@ export const parameters = {
       { color: '#1EA7FD', title: 'Ocean' },
       { color: 'rgb(252, 82, 31)', title: 'Orange' },
       { color: 'rgba(255, 174, 0, 0.5)', title: 'Gold' },
-      { color: 'hsl(101, 52%, 49%)', title: 'Green' },
+      { color: 'hsl(102, 30.20%, 74.70%)', title: 'Green' },
       { color: 'hsla(179,65%,53%,0.5)', title: 'Seafoam' },
       { color: '#6F2CAC', title: 'Purple' },
       { color: '#2A0481', title: 'Ultraviolet' },
@@ -359,4 +399,17 @@ export const parameters = {
   },
 };
 
-export const tags = ['test', 'vitest'];
+export default definePreview({
+  addons: [
+    addonDocs(),
+    addonThemes(),
+    addonA11y(),
+    addonTest(),
+    addonPseudoStates(),
+    templatePreview,
+  ],
+  decorators,
+  loaders,
+  tags: ['test', 'vitest'],
+  parameters,
+});

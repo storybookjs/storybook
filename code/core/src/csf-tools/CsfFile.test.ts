@@ -1,10 +1,12 @@
-/* eslint-disable no-underscore-dangle */
 import { describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
+// eslint-disable-next-line depend/ban-dependencies
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
 
-import { type CsfOptions, formatCsf, isModuleMock, loadCsf } from './CsfFile';
+import { type CsfOptions, formatCsf, isModuleMock, isValidPreviewPath, loadCsf } from './CsfFile';
 
 expect.addSnapshotSerializer({
   print: (val: any) => yaml.dump(val).trimEnd(),
@@ -37,6 +39,7 @@ describe('CsfFile', () => {
       const parsed = loadCsf(code, { makeTitle }).parse();
       expect(Object.keys(parsed._stories)).toEqual(['validStory']);
     });
+
     it('filters out non-story exports', () => {
       const code = `
         export default { title: 'foo/bar', excludeStories: ['invalidStory'] };
@@ -48,12 +51,13 @@ describe('CsfFile', () => {
       const parsed = loadCsf(code, { makeTitle }).parse();
       expect(Object.keys(parsed._stories)).toEqual(['A', 'B']);
     });
+
     it('transforms inline default exports to constant declarations', () => {
       expect(
         transform(
           dedent`
-          export default { title: 'foo/bar' };
-        `,
+            export default { title: 'foo/bar' };
+          `,
           { transformInlineMeta: true }
         )
       ).toMatchInlineSnapshot(`
@@ -90,6 +94,7 @@ describe('CsfFile', () => {
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -104,6 +109,7 @@ describe('CsfFile', () => {
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -129,11 +135,13 @@ describe('CsfFile', () => {
               __isArgsStory: false
               __id: foo-bar--basic
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -160,11 +168,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -189,11 +199,13 @@ describe('CsfFile', () => {
           - id: foo-bar--include-a
             name: Include A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -216,11 +228,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: Some story
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -244,22 +258,26 @@ describe('CsfFile', () => {
           - id: default-title--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
           - id: default-title--b
             name: B
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -283,22 +301,26 @@ describe('CsfFile', () => {
           - id: custom-id--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
           - id: custom-id--b
             name: B
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -322,22 +344,26 @@ describe('CsfFile', () => {
           - id: custom-meta-id--just-custom-meta-id
             name: Just Custom Meta Id
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
           - id: custom-id
             name: Custom Paremeters Id
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -362,22 +388,26 @@ describe('CsfFile', () => {
           - id: foo-bar-baz--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
           - id: foo-bar-baz--b
             name: B
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -406,11 +436,13 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -420,11 +452,13 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--b
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -453,11 +487,13 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -467,11 +503,64 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--b
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+      `);
+    });
+
+    it('typescript satisfies as', () => {
+      expect(
+        parse(
+          dedent`
+          import type { Meta, StoryFn, StoryObj } from '@storybook/react';
+          type PropTypes = {};
+          export default { title: 'foo/bar' } satisfies Meta<PropTypes> as Meta<PropTypes>;
+          export const A = { name: 'AA' } satisfies StoryObj<PropTypes>;
+          export const B = ((args) => {}) satisfies StoryFn<PropTypes>;
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: AA
+            parameters:
+              __isArgsStory: true
+              __id: foo-bar--a
+            __stats:
+              factory: false
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+          - id: foo-bar--b
+            name: B
+            parameters:
+              __isArgsStory: true
+              __id: foo-bar--b
+            __stats:
+              factory: false
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -497,22 +586,26 @@ describe('CsfFile', () => {
           - id: foo-bar-baz--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
           - id: foo-bar-baz--b
             name: B
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -538,23 +631,157 @@ describe('CsfFile', () => {
           - id: foo-bar-baz--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
           - id: foo-bar-baz--b
             name: B
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
+              mount: false
+              moduleMock: false
+      `);
+    });
+
+    it('typescript satisfies as meta', () => {
+      expect(
+        parse(
+          dedent`
+          import type { Meta, StoryFn } from '@storybook/react';
+          type PropTypes = {};
+          const meta = { title: 'foo/bar/baz' } satisfies Meta<PropTypes> as Meta<PropTypes>;
+          export default meta;
+          export const A: StoryFn<PropTypes> = () => <>A</>;
+          export const B: StoryFn<PropTypes> = () => <>B</>;
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar/baz
+        stories:
+          - id: foo-bar-baz--a
+            name: A
+            __stats:
+              factory: false
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: true
+              mount: false
+              moduleMock: false
+          - id: foo-bar-baz--b
+            name: B
+            __stats:
+              factory: false
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: true
+              mount: false
+              moduleMock: false
+      `);
+    });
+
+    it('typescript satisfies as stories', () => {
+      expect(
+        parse(
+          dedent`
+          import type { Meta, StoryFn, StoryObj } from '@storybook/react';
+          type PropTypes = {};
+          export default { title: 'foo/bar' } as Meta<PropTypes>;
+          export const A = { name: 'AA' } satisfies StoryObj<PropTypes> as StoryObj<PropTypes>;
+          export const B = ((args) => {}) satisfies StoryFn<PropTypes> as StoryFn<PropTypes>;
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: AA
+            parameters:
+              __isArgsStory: true
+              __id: foo-bar--a
+            __stats:
+              factory: false
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+          - id: foo-bar--b
+            name: B
+            parameters:
+              __isArgsStory: true
+              __id: foo-bar--b
+            __stats:
+              factory: false
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+      `);
+    });
+
+    it('typescript satisfies as export specifier', () => {
+      expect(
+        parse(
+          dedent`
+          import type { Meta, StoryFn } from '@storybook/react';
+          type PropTypes = {};
+          const meta = { title: 'foo/bar/baz' } satisfies Meta<PropTypes> as Meta<PropTypes>;
+          const story = { name: 'Story A' };
+          export { meta as default, story as A };
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar/baz
+        stories:
+          - id: foo-bar-baz--a
+            name: A
+            localName: story
+            parameters:
+              __id: foo-bar-baz--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
               mount: false
               moduleMock: false
       `);
@@ -577,22 +804,26 @@ describe('CsfFile', () => {
           - id: default-title--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
           - id: default-title--b
             name: B
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -620,11 +851,13 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -651,11 +884,13 @@ describe('CsfFile', () => {
               __isArgsStory: false
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -683,11 +918,13 @@ describe('CsfFile', () => {
               __id: foo-bar--page
               docsOnly: true
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -720,11 +957,13 @@ describe('CsfFile', () => {
               __id: foo-bar--page
               docsOnly: true
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -752,11 +991,13 @@ describe('CsfFile', () => {
               __isArgsStory: false
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -766,11 +1007,13 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--b
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -799,6 +1042,7 @@ describe('CsfFile', () => {
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -811,6 +1055,7 @@ describe('CsfFile', () => {
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -838,11 +1083,13 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--b
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -852,11 +1099,13 @@ describe('CsfFile', () => {
               __isArgsStory: false
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -891,6 +1140,7 @@ describe('CsfFile', () => {
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -966,22 +1216,26 @@ describe('CsfFile', () => {
           - id: default-title--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
           - id: default-title--b
             name: B
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1030,22 +1284,26 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
           - id: foo-bar--b
             name: B
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: true
               mount: false
               moduleMock: false
@@ -1118,11 +1376,13 @@ describe('CsfFile', () => {
               __isArgsStory: false
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: true
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1150,11 +1410,13 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: true
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1180,11 +1442,13 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1212,11 +1476,13 @@ describe('CsfFile', () => {
               __isArgsStory: true
               __id: foo-bar--a
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1224,7 +1490,7 @@ describe('CsfFile', () => {
     });
 
     it('Object export with storyName', () => {
-      const consoleWarnMock = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleWarnMock = vi.spyOn(logger, 'warn').mockImplementation(() => {});
 
       parse(
         dedent`
@@ -1293,11 +1559,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: true
               storyFn: true
               mount: false
               moduleMock: false
@@ -1326,11 +1594,55 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: false
               render: true
               loaders: false
               beforeEach: false
               globals: false
+              tags: true
+              storyFn: false
+              mount: false
+              moduleMock: false
+            tags:
+              - 'Y'
+      `);
+    });
+
+    it('csf3 as renamed export', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar', tags: ['X'] };
+
+          const localName = {
+            render: () => {},
+            tags: ['Y']
+          };
+          export {
+            localName as exportedName,
+          };
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+          tags:
+            - X
+        stories:
+          - id: foo-bar--exported-name
+            name: exportedName
+            localName: localName
+            parameters:
+              __id: foo-bar--exported-name
+            __stats:
+              play: false
+              render: true
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: true
               storyFn: false
               mount: false
               moduleMock: false
@@ -1361,11 +1673,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: false
               render: true
               loaders: false
               beforeEach: false
               globals: false
+              tags: true
               storyFn: false
               mount: false
               moduleMock: false
@@ -1421,11 +1735,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: true
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: true
               storyFn: true
               mount: false
               moduleMock: false
@@ -1456,11 +1772,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: true
               render: true
               loaders: false
               beforeEach: false
               globals: false
+              tags: true
               storyFn: false
               mount: false
               moduleMock: false
@@ -1487,11 +1805,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: true
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: true
               moduleMock: false
@@ -1517,11 +1837,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: true
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: true
               moduleMock: false
@@ -1550,11 +1872,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: true
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: true
               moduleMock: false
@@ -1583,11 +1907,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: true
               render: true
               loaders: true
               beforeEach: false
               globals: false
+              tags: true
               storyFn: false
               mount: false
               moduleMock: false
@@ -1615,11 +1941,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: true
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: true
               storyFn: true
               mount: false
               moduleMock: false
@@ -1653,10 +1981,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -1665,18 +1991,21 @@ describe('CsfFile', () => {
             - play-fn
           __id: component-id--a
           __stats:
+            factory: false
             play: true
             render: false
             loaders: false
             beforeEach: false
             globals: false
+            tags: true
             storyFn: false
             mount: false
             moduleMock: false
-        - type: story
-          importPath: foo/bar.stories.js
+          type: story
+          subtype: story
+          name: A
+        - importPath: foo/bar.stories.js
           exportName: B
-          name: B
           title: custom foo title
           metaId: component-id
           tags:
@@ -1685,14 +2014,19 @@ describe('CsfFile', () => {
             - play-fn
           __id: component-id--b
           __stats:
+            factory: false
             play: true
             render: false
             loaders: false
             beforeEach: false
             globals: false
+            tags: true
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: B
       `);
     });
 
@@ -1713,24 +2047,27 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           metaId: component-id
           tags:
             - component-tag
           __id: custom-story-id
           __stats:
+            factory: false
             play: false
             render: false
             loaders: false
             beforeEach: false
             globals: false
+            tags: true
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -1750,10 +2087,8 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           tags:
             - component-tag
@@ -1766,14 +2101,19 @@ describe('CsfFile', () => {
             - inherit-tag-dup
           __id: custom-foo-title--a
           __stats:
+            factory: false
             play: false
             render: false
             loaders: false
             beforeEach: false
             globals: false
+            tags: true
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -1799,7 +2139,7 @@ describe('CsfFile', () => {
     });
   });
 
-  describe('componenent paths', () => {
+  describe('component paths', () => {
     it('no component', () => {
       const { indexInputs } = loadCsf(
         dedent`
@@ -1816,22 +2156,25 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
           __stats:
+            factory: false
             play: false
             render: true
             loaders: false
             beforeEach: false
             globals: false
+            tags: false
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -1839,7 +2182,7 @@ describe('CsfFile', () => {
       const { indexInputs } = loadCsf(
         dedent`
           const Component = (props) => <div>hello</div>;
-          
+
           export default {
             title: 'custom foo title',
             component: Component,
@@ -1853,22 +2196,25 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
           __stats:
+            factory: false
             play: false
             render: true
             loaders: false
             beforeEach: false
             globals: false
+            tags: false
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -1889,23 +2235,26 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           rawComponentPath: ../src/Component.js
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
           __stats:
+            factory: false
             play: false
             render: true
             loaders: false
             beforeEach: false
             globals: false
+            tags: false
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
 
@@ -1926,23 +2275,26 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - type: story
-          importPath: foo/bar.stories.js
+        - importPath: foo/bar.stories.js
           rawComponentPath: some-library
           exportName: A
-          name: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
           __stats:
+            factory: false
             play: false
             render: true
             loaders: false
             beforeEach: false
             globals: false
+            tags: false
             storyFn: false
             mount: false
             moduleMock: false
+          type: story
+          subtype: story
+          name: A
       `);
     });
   });
@@ -1965,11 +2317,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: true
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -1995,11 +2349,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: true
+              tags: false
               storyFn: false
               mount: false
               moduleMock: false
@@ -2024,11 +2380,13 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: true
@@ -2050,15 +2408,470 @@ describe('CsfFile', () => {
           - id: foo-bar--a
             name: A
             __stats:
+              factory: false
               play: false
               render: false
               loaders: false
               beforeEach: false
               globals: false
+              tags: false
               storyFn: false
               mount: false
               moduleMock: true
       `);
+    });
+  });
+
+  describe('csf factories', () => {
+    describe('normal', () => {
+      it('meta variable', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.meta({ component: 'foo' });
+              export const A = meta.story({})
+              export const B = meta.story({})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+            - id: default-title--b
+              name: B
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('meta variable with renamed factory', () => {
+        expect(
+          parse(
+            dedent`
+              import { boo as moo } from '#.storybook/preview'
+              const meta = moo.meta({ component: 'foo' });
+              export const A = meta.story({})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('meta default export', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.meta({ component: 'foo' });
+              export default meta;
+              export const A = meta.story({})
+              export const B = meta.story({})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+            - id: default-title--b
+              name: B
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('extend story', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.meta({ component: 'foo' });
+              export default meta;
+              export const A = meta.story({})
+              export const B = A.extend({})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+            - id: default-title--b
+              name: B
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('story test - index snapshot', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.meta({ component: 'foo' });
+              export default meta;
+              export const A = meta.story({ args: { label: 'foo' } })
+              A.test('simple test', async () => {})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                tests: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('story test - parsing', () => {
+        const data = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export default meta;
+            export const A = meta.story({ args: { label: 'foo' } })
+            A.test('simple test', async () => {})
+            A.test('with overrides', { args: { label: 'bar' } }, async () => {})
+            const runTest = () => {}
+            A.test('with function reference', runTest)
+            A.test('with function call', runTest())
+          `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(4);
+        expect(storyTests[0].name).toBe('simple test');
+        expect(storyTests[1].name).toBe('with overrides');
+        expect(storyTests[2].name).toBe('with function reference');
+        expect(storyTests[3].name).toBe('with function call');
+        expect(storyTests[0].function).toBeDefined();
+        expect(storyTests[1].function).toBeDefined();
+        expect(storyTests[2].function).toBeDefined();
+        expect(storyTests[3].function).toBeDefined();
+      });
+
+      it('story name', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.meta({ component: 'foo' });
+              export const A = meta.story({ name: 'bar'})
+            `
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: bar
+              __stats:
+                factory: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('Object export with no-args render', () => {
+        expect(
+          parse(
+            dedent`
+              import { config } from '#.storybook/preview'
+              const meta = config.meta({ title: 'foo/bar' });
+              export const A = meta.story({
+                render: () => {}
+              })
+            `,
+            true
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            title: foo/bar
+          stories:
+            - id: foo-bar--a
+              name: A
+              parameters:
+                __isArgsStory: false
+                __id: foo-bar--a
+              __stats:
+                factory: true
+                play: false
+                render: true
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('Object export with args render', () => {
+        expect(
+          parse(
+            dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ title: 'foo/bar' });
+            export const A = meta.story({
+              render: (args) => {}
+            });
+          `,
+            true
+          )
+        ).toMatchInlineSnapshot(`
+          meta:
+            title: foo/bar
+          stories:
+            - id: foo-bar--a
+              name: A
+              parameters:
+                __isArgsStory: true
+                __id: foo-bar--a
+              __stats:
+                factory: true
+                play: false
+                render: true
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+    });
+    describe('errors', () => {
+      it('multiple meta variables', () => {
+        expect(() =>
+          parse(
+            dedent`
+            import { config } from '#.storybook/preview'
+            const foo = config.meta({ component: 'foo' });
+            export const A = foo.story({})
+            const bar = config.meta({ component: 'bar' });
+            export const B = bar.story({})
+        `
+          )
+        ).toThrowErrorMatchingInlineSnapshot(`
+          [MultipleMetaError: CSF: multiple meta objects (line 4, col 24)
+
+          More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
+        `);
+      });
+
+      it('default export and meta', () => {
+        expect(() =>
+          parse(
+            dedent`
+            import { config } from '#.storybook/preview'
+            export default { title: 'atoms/foo' };
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({})
+            export const B = meta.story({})
+        `
+          )
+        ).toThrowErrorMatchingInlineSnapshot(`
+          [MultipleMetaError: CSF: multiple meta objects (line 3, col 25)
+
+          More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
+        `);
+      });
+
+      it('meta and default export', () => {
+        expect(() =>
+          parse(
+            dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export default { title: 'atoms/foo' };
+            export const A = meta.story({})
+            export const B = meta.story({})
+        `
+          )
+        ).toThrowErrorMatchingInlineSnapshot(`
+          [MultipleMetaError: CSF: multiple meta objects 
+
+          More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
+        `);
+      });
+
+      it('bad preview import', () => {
+        expect(() =>
+          parse(
+            dedent`
+            import { config } from '#.storybook/bad-preview'
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({})
+        `
+          )
+        ).toThrowErrorMatchingInlineSnapshot(`
+          [BadMetaError: CSF: meta() factory must be imported from .storybook/preview configuration (line 1, col 0)
+
+          More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
+        `);
+      });
+
+      it('local defineConfig', () => {
+        expect(() =>
+          parse(
+            dedent`
+            import { defineConfig } from '@storybook/react/preview';
+            const config = defineConfig({ });
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({})
+        `
+          )
+        ).toThrowErrorMatchingInlineSnapshot(`
+          [BadMetaError: CSF: meta() factory must be imported from .storybook/preview configuration (line 4, col 28)
+
+          More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
+        `);
+      });
+
+      it('mixed factories and non-factories', () => {
+        expect(() =>
+          parse(
+            dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export const A = meta.story({})
+            export const B = {}
+        `
+          )
+        ).toThrowErrorMatchingInlineSnapshot(`
+          [MixedFactoryError: CSF: expected factory story (line 4, col 17)
+
+          More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
+        `);
+      });
+
+      it('factory stories in non-factory file', () => {
+        expect(() =>
+          parse(
+            dedent`
+              import { meta } from 'somewhere';
+              export default { title: 'atoms/foo' };
+              export const A = {}
+              export const B = meta.story({})
+            `
+          )
+        ).toThrowErrorMatchingInlineSnapshot(`
+          [MixedFactoryError: CSF: expected non-factory story (line 4, col 28)
+
+          More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
+        `);
+      });
     });
   });
 });
@@ -2080,5 +2893,24 @@ describe('isModuleMock', () => {
 
     expect(isModuleMock('#foo.mocktail')).toBe(false);
     expect(isModuleMock('#foo.mock.test.ts')).toBe(false);
+  });
+});
+
+describe('isValidPreviewPath', () => {
+  it.each([
+    ['#.storybook/preview', true],
+    ['../../.storybook/preview', true],
+    ['/path/to/.storybook/preview', true],
+    ['./preview', true],
+    ['./preview.ts', true],
+    ['./preview.tsx', true],
+    ['./preview.js', true],
+    ['./preview.jsx', true],
+    ['./preview.mjs', true],
+    ['foo', false],
+    ['#.storybook/bad-preview', false],
+    ['preview', false],
+  ])('isValidPreviewPath("%s") === %s', (path, expected) => {
+    expect(isValidPreviewPath(path)).toBe(expected);
   });
 });

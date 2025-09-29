@@ -2,7 +2,7 @@
 import custom from '../webpack.config.js'; // 👈 Custom Webpack configuration being imported.
 
 export default {
-  // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+  // Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, angular, etc.
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   webpackFinal: async (config) => {
@@ -15,7 +15,7 @@ export default {
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+// Replace your-framework with the framework you are using, e.g. react-webpack5, nextjs, angular, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
 import custom from '../webpack.config.js'; // 👈 Custom Webpack configuration being imported.
@@ -33,4 +33,3 @@ const config: StorybookConfig = {
 
 export default config;
 ```
-

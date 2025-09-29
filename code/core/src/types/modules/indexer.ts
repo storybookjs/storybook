@@ -73,6 +73,9 @@ export interface BaseIndexEntry {
 }
 export type StoryIndexEntry = BaseIndexEntry & {
   type: 'story';
+  subtype: 'story' | 'test';
+  parent?: StoryId; // exists only on tests
+  parentName?: StoryName; // exists only on tests
 };
 
 export type DocsIndexEntry = BaseIndexEntry & {
@@ -85,12 +88,15 @@ export type IndexEntry = StoryIndexEntry | DocsIndexEntry;
 export interface IndexInputStats {
   loaders?: boolean;
   play?: boolean;
+  tests?: boolean;
   render?: boolean;
   storyFn?: boolean;
   mount?: boolean;
   beforeEach?: boolean;
   moduleMock?: boolean;
   globals?: boolean;
+  factory?: boolean;
+  tags?: boolean;
 }
 
 /** The base input for indexing a story or docs entry. */
@@ -128,6 +134,9 @@ export type BaseIndexInput = {
 /** The input for indexing a story entry. */
 export type StoryIndexInput = BaseIndexInput & {
   type: 'story';
+  subtype: 'story' | 'test';
+  parent?: StoryId; // exists only on tests
+  parentName?: StoryName; // exists only on tests
 };
 
 /** The input for indexing a docs entry. */
@@ -139,7 +148,7 @@ export type DocsIndexInput = BaseIndexInput & {
 
 export type IndexInput = StoryIndexInput | DocsIndexInput;
 
-export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags'> {
+export interface V3CompatIndexEntry extends Omit<StoryIndexEntry, 'type' | 'tags' | 'subtype'> {
   kind: ComponentTitle;
   story: StoryName;
   parameters: Parameters;

@@ -1,9 +1,9 @@
 import type { FC, MouseEventHandler } from 'react';
 import React, { forwardRef, useCallback, useMemo } from 'react';
 
-import type { TooltipLinkListLink } from '@storybook/core/components';
-import { Spaced, TooltipLinkList, WithTooltip } from '@storybook/core/components';
-import { styled, useTheme } from '@storybook/core/theming';
+import type { TooltipLinkListLink } from 'storybook/internal/components';
+import { Spaced, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+
 import { global } from '@storybook/global';
 import {
   AlertIcon,
@@ -17,16 +17,17 @@ import {
   TimeIcon,
 } from '@storybook/icons';
 
-import { useStorybookApi } from '@storybook/core/manager-api';
-
 import { transparentize } from 'polished';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled, useTheme } from 'storybook/theming';
 
+import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList';
 import type { getStateType } from '../../utils/tree';
 import type { RefType } from './types';
 
 const { document, window: globalWindow } = global;
 
-export type ClickHandler = TooltipLinkListLink['onClick'];
+export type ClickHandler = NormalLink['onClick'];
 export interface IndicatorIconProps {
   type: ReturnType<typeof getStateType>;
 }
@@ -307,7 +308,10 @@ const ReadDocsMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message href="https://storybook.js.org/docs/sharing/storybook-composition" target="_blank">
+    <Message
+      href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui"
+      target="_blank"
+    >
       <DocumentIcon color={theme.color.green} />
       <div>
         <MessageTitle>Read Composition docs</MessageTitle>
@@ -350,7 +354,10 @@ const PerformanceDegradedMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message href="https://storybook.js.org/docs/sharing/storybook-composition" target="_blank">
+    <Message
+      href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui"
+      target="_blank"
+    >
       <LightningIcon color={theme.color.gold} />
       <div>
         <MessageTitle>Reduce lag</MessageTitle>

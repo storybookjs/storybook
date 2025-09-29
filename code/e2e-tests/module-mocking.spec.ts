@@ -15,7 +15,7 @@ test.describe('module-mocking', () => {
   test('should assert story lifecycle order', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('lib/test/before-each', 'before-each-order');
+    await sbPage.navigateToStory('core/order-of-hooks', 'order-of-hooks');
 
     await sbPage.viewAddonPanel('Actions');
     const logItem = page.locator('#storybook-panel-root #panel-tab-content');
@@ -25,21 +25,39 @@ test.describe('module-mocking', () => {
       '1 - [from loaders]',
       '2 - [from meta beforeEach]',
       '3 - [from story beforeEach]',
-      '4 - [from decorator]',
-      '5 - [from onClick]',
+      '4 - [before mount]',
+      '5 - [from decorator]',
+      '6 - [after mount]',
+      '7 - [from onClick]',
+      '8 - [from story afterEach]',
+      '9 - [from meta afterEach]',
     ];
 
-    // Assert that each LI text content contains the expected text in order
-    for (let i = 0; i < expectedTexts.length; i++) {
-      const nthText = await logItem.locator(`li >> nth=${i}`).innerText();
-      expect(nthText).toMatch(expectedTexts[i]);
+    // Collect all logs in the panel but only check the order of the logs
+    // we care about, disregarding any other logs that could appear in between
+    const logItemsCount = await logItem.locator('li').count();
+    const actualTexts = [];
+    for (let i = 0; i < logItemsCount; i++) {
+      actualTexts.push(await logItem.locator(`li >> nth=${i}`).innerText());
+    }
+
+    let lastMatchIndex = -1;
+
+    for (const expected of expectedTexts) {
+      const foundIndex = actualTexts.findIndex(
+        (text, i) => i > lastMatchIndex && text.includes(expected)
+      );
+      expect(foundIndex, `Expected log "${expected}" to appear in order`).toBeGreaterThan(
+        lastMatchIndex
+      );
+      lastMatchIndex = foundIndex;
     }
   });
 
   test('should assert that utils import is mocked', async ({ page }) => {
     const sbPage = new SbPage(page, expect);
 
-    await sbPage.navigateToStory('lib/test/module-mocking', 'basic');
+    await sbPage.navigateToStory('core/module-mocking', 'basic');
 
     await sbPage.viewAddonPanel('Actions');
     const logItem = page.locator('#storybook-panel-root #panel-tab-content', {

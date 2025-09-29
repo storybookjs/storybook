@@ -1,8 +1,8 @@
 ```tsx filename="Button.test.tsx" renderer="react" language="ts"
 import { test, expect } from '@jest/globals';
 import { render, screen } from '@testing-library/react';
-// 👉 Using Next.js? Import from @storybook/nextjs instead
-import { composeStories } from '@storybook/react';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 // Import all stories and the component annotations from the stories file
 import * as stories from './Button.stories';
@@ -28,7 +28,7 @@ test('renders primary button with overridden props', () => {
 ```ts filename="Button.test.ts" renderer="vue" language="ts"
 import { test, expect } from '@jest/globals';
 import { render, screen } from '@testing-library/vue';
-import { composeStories } from '@storybook/vue3';
+import { composeStories } from '@storybook/vue3-vite';
 
 // Import all stories and the component annotations from the stories file
 import * as stories from './Button.stories';
@@ -50,4 +50,3 @@ test('renders primary button with overridden props', () => {
   expect(buttonElement).not.toBeNull();
 });
 ```
-

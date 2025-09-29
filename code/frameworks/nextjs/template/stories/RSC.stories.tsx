@@ -1,7 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
 import { Nested, RSC } from './RSC';
 
@@ -28,7 +28,7 @@ export const DisableRSC: Story = {
 };
 
 export const Errored: Story = {
-  tags: ['!test'],
+  tags: ['!test', '!vitest'],
   parameters: {
     chromatic: { disable: true },
   },

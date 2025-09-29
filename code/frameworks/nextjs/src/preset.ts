@@ -1,6 +1,7 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
 import { existsSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -10,53 +11,55 @@ import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
 import semver from 'semver';
 
-import { configureAliases } from './aliases/webpack';
-import { configureBabelLoader } from './babel/loader';
 import nextBabelPreset from './babel/preset';
-import { configureCompatibilityAliases } from './compatibility/compatibility-map';
 import { configureConfig } from './config/webpack';
-import { configureCss } from './css/webpack';
-import { configureNextExportMocks } from './export-mocks/webpack';
-import { configureFastRefresh } from './fastRefresh/webpack';
 import TransformFontImports from './font/babel';
-import { configureNextFont } from './font/webpack/configureNextFont';
-import { configureImages } from './images/webpack';
-import { configureImports } from './imports/webpack';
-import { configureNodePolyfills } from './nodePolyfills/webpack';
-import { configureRSC } from './rsc/webpack';
-import { configureStyledJsx } from './styledJsx/webpack';
-import { configureSWCLoader } from './swc/loader';
 import type { FrameworkOptions, StorybookConfig } from './types';
-import { configureRuntimeNextjsVersionResolution, getNextjsVersion } from './utils';
+import { getNextjsVersion } from './utils';
 
 export const addons: PresetProperty<'addons'> = [
-  dirname(require.resolve(join('@storybook/preset-react-webpack', 'package.json'))),
+  fileURLToPath(import.meta.resolve('@storybook/preset-react-webpack')),
 ];
 
 export const core: PresetProperty<'core'> = async (config, options) => {
-  const framework = await options.presets.apply('framework');
+  const framework = await options.presets.apply<StorybookConfig['framework']>('framework');
+
+  // Load the Next.js configuration before we need it in webpackFinal (below).
+  // This gives Next.js an opportunity to override some of webpack's internals
+  // (see next/dist/server/config-utils.js) before @storybook/builder-webpack5
+  // starts to use it. Without this, webpack's file system cache (fsCache: true)
+  // does not work.
+  await configureConfig({
+    // Pass in a dummy webpack config object for now, since we don't want to
+    // modify the real one yet. We pass in the real one in webpackFinal.
+    baseConfig: {},
+    nextConfigPath: typeof framework === 'string' ? undefined : framework.options.nextConfigPath,
+  });
 
   return {
     ...config,
     builder: {
-      name: dirname(
-        require.resolve(join('@storybook/builder-webpack5', 'package.json'))
-      ) as '@storybook/builder-webpack5',
+      name: fileURLToPath(import.meta.resolve('@storybook/builder-webpack5')),
       options: {
         ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
       },
     },
-    renderer: dirname(require.resolve(join('@storybook/react', 'package.json'))),
+    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
   };
 };
 
-export const previewAnnotations: PresetProperty<'previewAnnotations'> = (
-  entry = [],
-  { features }
-) => {
-  const nextDir = dirname(require.resolve('@storybook/nextjs/package.json'));
-  const result = [...entry, join(nextDir, 'dist/preview.mjs')];
-  return result;
+export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
+  const annotations = [...entry, fileURLToPath(import.meta.resolve('@storybook/nextjs/preview'))];
+
+  const nextjsVersion = getNextjsVersion();
+  const isNext16orNewer = semver.gte(nextjsVersion, '16.0.0');
+
+  // TODO: Remove this once we only support Next.js v16 and above
+  if (!isNext16orNewer) {
+    annotations.push(fileURLToPath(import.meta.resolve('@storybook/nextjs/config/preview')));
+  }
+
+  return annotations;
 };
 
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
@@ -83,7 +86,8 @@ export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOption
       (preset) =>
         !(
           (isPresetConfigItem(preset) &&
-            (preset as ConfigItem).file?.request === require.resolve('@babel/preset-react')) ||
+            (preset as ConfigItem).file?.request ===
+              fileURLToPath(import.meta.resolve('@babel/preset-react'))) ||
           isNextBabelConfig(preset)
         )
     ) ?? [];
@@ -144,6 +148,22 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
     nextConfigPath,
   });
 
+  // Use dynamic imports to ensure these modules that use webpack load after
+  // Next.js has been configured (above), and has replaced webpack with its precompiled
+  // version.
+  const { configureNextFont } = await import('./font/webpack/configureNextFont');
+  const { configureRuntimeNextjsVersionResolution, getNextjsVersion } = await import('./utils');
+  const { configureImports } = await import('./imports/webpack');
+  const { configureCss } = await import('./css/webpack');
+  const { configureImages } = await import('./images/webpack');
+  const { configureStyledJsx } = await import('./styledJsx/webpack');
+  const { configureNodePolyfills } = await import('./nodePolyfills/webpack');
+  const { configureAliases } = await import('./aliases/webpack');
+  const { configureFastRefresh } = await import('./fastRefresh/webpack');
+  const { configureRSC } = await import('./rsc/webpack');
+  const { configureSWCLoader } = await import('./swc/loader');
+  const { configureBabelLoader } = await import('./babel/loader');
+
   const babelRCPath = join(getProjectRoot(), '.babelrc');
   const babelConfigPath = join(getProjectRoot(), 'babel.config.js');
   const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
@@ -176,7 +196,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
     await configureSWCLoader(baseConfig, options, nextConfig);
   } else {
     logger.info('=> Using Babel as compiler');
-    await configureBabelLoader(baseConfig, options);
+    await configureBabelLoader(baseConfig, options, nextConfig);
   }
 
   return baseConfig;

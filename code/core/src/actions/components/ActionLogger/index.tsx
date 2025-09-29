@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentRef, ReactNode } from 'react';
 import React, { Fragment, forwardRef, useEffect, useRef } from 'react';
 
 import { ActionBar, ScrollArea } from 'storybook/internal/components';
@@ -42,7 +42,7 @@ interface ActionLoggerProps {
 }
 
 export const ActionLogger = ({ actions, onClear }: ActionLoggerProps) => {
-  const wrapperRef = useRef<React.ComponentRef<typeof Wrapper> | null>(null);
+  const wrapperRef = useRef<ComponentRef<typeof Wrapper> | null>(null);
   const wrapper = wrapperRef.current;
   const wasAtBottom = wrapper && wrapper.scrollHeight - wrapper.scrollTop === wrapper.clientHeight;
 

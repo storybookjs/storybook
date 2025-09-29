@@ -273,6 +273,7 @@ export const Errored = () => (
 export const ErroredMobile = () => (
   <Ref
     {...refs.error}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""

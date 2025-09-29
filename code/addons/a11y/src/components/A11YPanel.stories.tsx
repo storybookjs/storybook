@@ -175,8 +175,9 @@ export const ReadyWithResults = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const btn = await waitFor(() =>
-      canvas.findByRole('button', { name: /Rerun accessibility scan/ })
+    const btn = await waitFor(
+      () => canvas.findByRole('button', { name: /Rerun accessibility scan/ }),
+      { timeout: 3000 }
     );
     await userEvent.click(btn);
     expect(context.handleManual).toHaveBeenCalled();

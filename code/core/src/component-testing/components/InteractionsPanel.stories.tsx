@@ -82,31 +82,31 @@ export const Passing: Story = {
     const canvas = within(canvasElement);
 
     await step('Go to start', async () => {
-      const btn = await waitFor(() => canvas.getByLabelText('Go to start'));
+      const btn = await canvas.findByLabelText('Go to start');
       await userEvent.click(btn);
       await expect(args.controls.start).toHaveBeenCalled();
     });
 
     await step('Go back', async () => {
-      const btn = await waitFor(() => canvas.getByLabelText('Go back'));
+      const btn = await canvas.findByLabelText('Go back');
       await userEvent.click(btn);
       await expect(args.controls.back).toHaveBeenCalled();
     });
 
     await step('Go forward', async () => {
-      const btn = await waitFor(() => canvas.getByLabelText('Go forward'));
+      const btn = await canvas.findByLabelText('Go forward');
       await userEvent.click(btn);
       await expect(args.controls.next).not.toHaveBeenCalled();
     });
 
     await step('Go to end', async () => {
-      const btn = await waitFor(() => canvas.getByLabelText('Go to end'));
+      const btn = await canvas.findByLabelText('Go to end');
       await userEvent.click(btn);
       await expect(args.controls.end).not.toHaveBeenCalled();
     });
 
     await step('Rerun', async () => {
-      const btn = await waitFor(() => canvas.getByLabelText('Rerun'));
+      const btn = await canvas.findByLabelText('Rerun');
       await userEvent.click(btn);
       await expect(args.controls.rerun).toHaveBeenCalled();
     });

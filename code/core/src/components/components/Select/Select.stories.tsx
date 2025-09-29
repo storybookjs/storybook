@@ -913,7 +913,7 @@ export const KeyboardResetMulti = meta.story({
 
     await step('Close with Escape', async () => {
       await userEvent.keyboard('{Escape}');
-      expect(await screen.findByRole('listbox')).not.toBeInTheDocument();
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
   },
 });
@@ -949,7 +949,7 @@ export const KeyboardResetMultiSpace = meta.story({
 
     await step('Close with Escape', async () => {
       await userEvent.keyboard('{Escape}');
-      expect(await screen.findByRole('listbox')).not.toBeInTheDocument();
+      expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
   },
 });

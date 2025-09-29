@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { startCase } from 'es-toolkit/string';
 import { ManagerContext } from 'storybook/manager-api';
-import { fn, screen, within } from 'storybook/test';
+import { fn, screen, userEvent } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
 import { MobileNavigation } from './MobileNavigation';
@@ -162,9 +162,9 @@ export const LongStoryName: Story = {
 };
 
 export const MenuOpen: Story = {
-  play: async ({ canvasElement }) => {
-    const menuOpen = within(canvasElement).getByLabelText('Open navigation menu');
-    menuOpen.click();
+  play: async ({ canvas }) => {
+    const menuOpen = await canvas.findByLabelText('Open navigation menu');
+    await userEvent.click(menuOpen);
   },
 };
 
@@ -173,15 +173,15 @@ export const MenuClosed: Story = {
     // @ts-expect-error (non strict)
     await MenuOpen.play(context);
     await new Promise((resolve) => setTimeout(resolve, 500));
-    const overlay = screen.getByLabelText('Close navigation menu');
-    overlay.click();
+    const overlay = await screen.findByLabelText('Close navigation menu');
+    await userEvent.click(overlay);
   },
 };
 
 export const PanelOpen: Story = {
-  play: async ({ canvasElement }) => {
-    const panelButton = within(canvasElement).getByLabelText('Open addon panel');
-    panelButton.click();
+  play: async ({ canvas }) => {
+    const panelButton = await canvas.findByLabelText('Open addon panel');
+    await userEvent.click(panelButton);
   },
 };
 
@@ -190,8 +190,8 @@ export const PanelClosed: Story = {
     // @ts-expect-error (non strict)
     await PanelOpen.play(context);
     await new Promise((resolve) => setTimeout(resolve, 500));
-    const closeButton = screen.getByLabelText('Close addon panel');
-    closeButton.click();
+    const closeButton = await screen.findByLabelText('Close addon panel');
+    await userEvent.click(closeButton);
   },
 };
 

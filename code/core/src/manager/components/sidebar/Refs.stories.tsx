@@ -3,7 +3,7 @@ import React from 'react';
 import type { StoryAnnotations } from 'storybook/internal/csf';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { fn, within } from 'storybook/test';
+import { fn, userEvent, within } from 'storybook/test';
 
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -286,8 +286,8 @@ export const ErroredWithErrorOpen: StoryAnnotations = {
   render: () => Errored(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByText('View error');
-    button.click();
+    const button = await canvas.findByText('View error');
+    await userEvent.click(button);
   },
 };
 export const ErroredMobileWithErrorOpen: StoryAnnotations = {
@@ -295,16 +295,16 @@ export const ErroredMobileWithErrorOpen: StoryAnnotations = {
   globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByText('View error');
-    button.click();
+    const button = await canvas.findByText('View error');
+    await userEvent.click(button);
   },
 };
 export const ErroredWithIndicatorOpen: StoryAnnotations = {
   render: () => Errored(),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button', { name: 'Extra actions' });
-    button.click();
+    const button = await canvas.findByRole('button', { name: 'Extra actions' });
+    await userEvent.click(button);
   },
 };
 export const ErroredMobileWithIndicatorOpen: StoryAnnotations = {
@@ -312,8 +312,8 @@ export const ErroredMobileWithIndicatorOpen: StoryAnnotations = {
   globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const button = canvas.getByRole('button', { name: 'Extra actions' });
-    button.click();
+    const button = await canvas.findByRole('button', { name: 'Extra actions' });
+    await userEvent.click(button);
   },
 };
 export const Auth = () => (

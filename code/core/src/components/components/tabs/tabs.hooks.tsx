@@ -124,7 +124,7 @@ export function useList(list: ChildrenListComplete) {
                 textColor={color}
                 role="tab"
               >
-                {/* @ts-expect-error (non strict) */}
+                {/* @ts-expect-error (we know this is broken) */}
                 {title}
               </TabButton>
             );

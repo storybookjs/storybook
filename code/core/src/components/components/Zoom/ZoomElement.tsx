@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, RefObject } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { styled } from 'storybook/theming';
@@ -39,7 +39,7 @@ export function ZoomElement({ centered, scale, children }: ZoomProps) {
   }, [scale]);
 
   useResizeObserver({
-    ref: componentWrapperRef as React.RefObject<HTMLDivElement>,
+    ref: componentWrapperRef as RefObject<HTMLDivElement>,
     onResize,
   });
 

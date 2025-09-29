@@ -48,14 +48,13 @@ const HeightPreserver = styled.div<Pick<BarProps, 'innerStyle'>>(({ innerStyle }
 }));
 
 export const Bar = forwardRef<HTMLDivElement, BarProps>(
-  ({ scrollable = true, className, children, innerStyle, ...rest }, ref) => {
+  ({ scrollable = true, children, innerStyle, ...rest }, ref) => {
     return (
       <StyledBar
         {...rest}
         ref={ref}
         innerStyle={scrollable ? undefined : innerStyle}
         scrollable={scrollable}
-        className={className}
       >
         {scrollable ? (
           <HeightPreserver innerStyle={innerStyle}>{children}</HeightPreserver>

@@ -14,7 +14,6 @@ import { createRouter } from '@storybook/nextjs/router.mock';
 
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
 
-import './config/preview';
 import { HeadManagerDecorator } from './head-manager/decorator';
 import { ImageDecorator } from './images/decorator';
 import { RouterDecorator } from './routing/decorator';

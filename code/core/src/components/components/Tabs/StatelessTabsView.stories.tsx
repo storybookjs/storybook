@@ -1,9 +1,10 @@
 import { useState } from 'react';
 
 import { Button, EmptyTabContent } from 'storybook/internal/components';
-import { fn } from 'storybook/internal/test';
 
 import { CrossIcon, ExpandIcon } from '@storybook/icons';
+
+import { fn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { StatelessTab } from './StatelessTab';

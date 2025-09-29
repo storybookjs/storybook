@@ -2,11 +2,10 @@ import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
-import { shortcutToAriaKeyshortcuts } from 'storybook/internal/manager-api';
-import type { API_KeyCollection } from 'storybook/internal/manager-api';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
+import { type API_KeyCollection, shortcutToAriaKeyshortcuts } from 'storybook/manager-api';
 import { isPropValid, styled } from 'storybook/theming';
 
 import { InteractiveTooltipWrapper } from './helpers/InteractiveTooltipWrapper';

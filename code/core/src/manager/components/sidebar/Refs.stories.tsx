@@ -174,6 +174,18 @@ const refs: Record<string, RefType> = {
 export const Optimized = () => (
   <Ref
     {...refs.optimized}
+    hasEntries={true}
+    isLoading={false}
+    isBrowsing
+    selectedStoryId=""
+    highlightedRef={{ current: null }}
+    setHighlighted={() => {}}
+  />
+);
+export const NoEntries = () => (
+  <Ref
+    {...refs.empty}
+    hasEntries={false}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -184,6 +196,7 @@ export const Optimized = () => (
 export const IsEmpty = () => (
   <Ref
     {...refs.empty}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -194,6 +207,7 @@ export const IsEmpty = () => (
 export const StartInjectedUnknown = () => (
   <Ref
     {...refs.startInjected_unknown}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -204,6 +218,7 @@ export const StartInjectedUnknown = () => (
 export const StartInjectedLoading = () => (
   <Ref
     {...refs.startInjected_loading}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -214,6 +229,7 @@ export const StartInjectedLoading = () => (
 export const StartInjectedReady = () => (
   <Ref
     {...refs.startInjected_ready}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -224,6 +240,7 @@ export const StartInjectedReady = () => (
 export const Versions = () => (
   <Ref
     {...refs.versions}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -234,6 +251,7 @@ export const Versions = () => (
 export const VersionsMissingCurrent = () => (
   <Ref
     {...refs.versionsMissingCurrent}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -244,6 +262,7 @@ export const VersionsMissingCurrent = () => (
 export const Errored = () => (
   <Ref
     {...refs.error}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -299,6 +318,7 @@ export const ErroredMobileWithIndicatorOpen: StoryAnnotations = {
 export const Auth = () => (
   <Ref
     {...refs.auth}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -309,6 +329,7 @@ export const Auth = () => (
 export const Long = () => (
   <Ref
     {...refs.long}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -320,6 +341,7 @@ export const Long = () => (
 export const WithSourceCode = () => (
   <Ref
     {...refs.withSourceCode}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""

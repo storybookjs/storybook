@@ -1,10 +1,9 @@
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import { FaceHappyIcon } from '@storybook/icons';
 
 import { fn } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';

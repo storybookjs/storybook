@@ -200,6 +200,16 @@ export const EmptyMobile: Story = {
   globals: { sb_theme: 'light', viewport: { value: 'mobile1' } },
 };
 
+export const EmptyIndex: Story = {
+  args: {
+    index: {},
+    indexJson: {
+      entries: {},
+      v: 6,
+    },
+  },
+};
+
 export const IndexError: Story = {
   args: {
     indexError,

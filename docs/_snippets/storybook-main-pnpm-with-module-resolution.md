@@ -1,9 +1,9 @@
 ```js filename=".storybook/main.js" renderer="common" language="js"
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const getAbsolutePath = (packageName) =>
-  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
+  dirname(fileURLToPath(import.meta.resolve(`${packageName}/package.json`)));
 
 export default {
   framework: {
@@ -27,7 +27,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const getAbsolutePath = (packageName: string) =>
-  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
+  dirname(fileURLToPath(import.meta.resolve(`${packageName}/package.json`)));
 
 const config: StorybookConfig = {
   framework: {

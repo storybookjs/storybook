@@ -606,10 +606,10 @@ When setting the `core.builder` or `core.builder.name` option in the main config
 In a preset:
 
 ```diff
-import { dirname, join } from 'node:path';
+import { dirname } from 'node:path';
 
 const getAbsolutePath = (input) =>
-  dirname(require.resolve(join(input, 'package.json')));
+  dirname(require.resolve(`${input}/package.json`));
 
 export const core = {
 -  builder: getAbsolutePath('@storybook/builder-vite'),

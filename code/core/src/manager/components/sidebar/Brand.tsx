@@ -20,7 +20,6 @@ export const Img = styled.img({
 export const LogoLink = styled.a(({ theme }) => ({
   display: 'inline-flex',
   alignItems: 'center',
-  flexGrow: 0,
   height: '100%',
   minHeight: 32,
   padding: '4px 6px',

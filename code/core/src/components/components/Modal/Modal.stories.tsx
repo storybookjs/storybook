@@ -448,6 +448,7 @@ export const InteractiveKeyboard = meta.story({
     });
 
     await step('Navigate through modal content with focus trap', async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
       await userEvent.tab();
       const closeButton = await waitFor(
         () => screen.findByRole('button', { name: 'Close modal' }),

@@ -97,7 +97,7 @@ const config: BuildEntries = {
         entryPoint: './src/instrumenter/index.ts',
       },
       {
-        exportEntries: ['./test'],
+        exportEntries: ['./test', './internal/test'],
         entryPoint: './src/test/index.ts',
       },
       {
@@ -105,19 +105,19 @@ const config: BuildEntries = {
         entryPoint: './src/preview-api/index.ts',
       },
       {
-        exportEntries: ['./highlight'],
+        exportEntries: ['./highlight', './internal/highlight'],
         entryPoint: './src/highlight/index.ts',
       },
       {
-        exportEntries: ['./actions'],
+        exportEntries: ['./actions', './internal/actions'],
         entryPoint: './src/actions/index.ts',
       },
       {
-        exportEntries: ['./actions/decorator'],
+        exportEntries: ['./actions/decorator', './internal/actions/decorator'],
         entryPoint: './src/actions/decorator.ts',
       },
       {
-        exportEntries: ['./viewport'],
+        exportEntries: ['./viewport', './internal/viewport'],
         entryPoint: './src/viewport/index.ts',
       },
       {
@@ -145,11 +145,11 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        exportEntries: ['./theming'],
+        exportEntries: ['./theming', './internal/theming'],
         entryPoint: './src/theming/index.ts',
       },
       {
-        exportEntries: ['./theming/create'],
+        exportEntries: ['./theming/create', './internal/theming/create'],
         entryPoint: './src/theming/create.ts',
       },
       {
@@ -157,7 +157,7 @@ const config: BuildEntries = {
         entryPoint: './src/components/index.ts',
       },
       {
-        exportEntries: ['./manager-api'],
+        exportEntries: ['./manager-api', './internal/manager-api'],
         entryPoint: './src/manager-api/index.ts',
       },
       {

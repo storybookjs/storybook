@@ -1,9 +1,9 @@
 import type { FC } from 'react';
 import React, { createContext, useContext, useState } from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import { useParameter } from 'storybook/internal/preview-api';
 
-import { useParameter } from 'storybook/preview-api';
+import type { Meta, StoryObj } from '@storybook/react';
 
 const Component: FC = () => <p>Story</p>;
 

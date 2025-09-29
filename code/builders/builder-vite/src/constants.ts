@@ -105,6 +105,7 @@ export const INCLUDE_CANDIDATES = [
   'storybook/actions/decorator',
   'storybook/internal/core-events',
   'storybook/internal/csf',
+  'storybook/internal/preview-api',
   'storybook/internal/preview/runtime',
   'storybook/preview-api',
   'storybook/viewport',

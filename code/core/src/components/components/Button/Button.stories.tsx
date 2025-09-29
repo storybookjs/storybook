@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { FaceHappyIcon } from '@storybook/icons';
+import { styled } from 'storybook/internal/theming';
 
-import { styled } from 'storybook/theming';
+import { FaceHappyIcon } from '@storybook/icons';
 
 import preview from '../../../../../.storybook/preview';
 import { Button } from './Button';

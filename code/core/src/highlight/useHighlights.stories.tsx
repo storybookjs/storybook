@@ -1,6 +1,7 @@
 import React from 'react';
 
-import { useChannel } from 'storybook/preview-api';
+import { useChannel } from 'storybook/internal/preview-api';
+
 import { fn, userEvent, within } from 'storybook/test';
 
 import preview from '../../../.storybook/preview';

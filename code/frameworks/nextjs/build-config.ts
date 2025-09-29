@@ -12,11 +12,6 @@ const config: BuildEntries = {
         entryPoint: './src/preview.tsx',
       },
       {
-        exportEntries: ['./config/preview'],
-        entryPoint: './src/config/preview.ts',
-        dts: false,
-      },
-      {
         exportEntries: ['./cache.mock'],
         entryPoint: './src/export-mocks/cache/index.ts',
       },

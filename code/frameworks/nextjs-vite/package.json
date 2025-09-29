@@ -35,7 +35,6 @@
       "types": "./dist/export-mocks/cache/index.d.ts",
       "default": "./dist/export-mocks/cache/index.js"
     },
-    "./config/preview": "./dist/config/preview.js",
     "./headers.mock": {
       "types": "./dist/export-mocks/headers/index.d.ts",
       "default": "./dist/export-mocks/headers/index.js"
@@ -89,7 +88,6 @@
     "@types/node": "^22.0.0",
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",
-    "semver": "^7.3.5",
     "typescript": "^5.8.3"
   },
   "peerDependencies": {

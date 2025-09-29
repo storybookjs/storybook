@@ -6566,7 +6566,6 @@ __metadata:
     "@types/node": "npm:^22.0.0"
     next: "npm:^15.2.3"
     postcss-load-config: "npm:^6.0.1"
-    semver: "npm:^7.3.5"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.8.3"
     vite-plugin-storybook-nextjs: "npm:^2.0.7"

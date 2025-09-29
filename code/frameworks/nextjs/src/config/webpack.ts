@@ -1,13 +1,9 @@
 import { fileURLToPath } from 'node:url';
 
 import type { NextConfig } from 'next';
-import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { addScopedAlias, getNextjsVersion, resolveNextConfig } from '../utils';
-
-const nextjsVersion = getNextjsVersion();
-const isNext16orNewer = semver.gte(nextjsVersion, '16.0.0');
+import { addScopedAlias, resolveNextConfig } from '../utils';
 
 const tryResolve = (path: string) => {
   try {
@@ -26,10 +22,7 @@ export const configureConfig = async ({
 }): Promise<NextConfig> => {
   const nextConfig = await resolveNextConfig({ nextConfigPath });
 
-  // TODO: Remove this once we only support Next.js 16 and above
-  if (!isNext16orNewer) {
-    addScopedAlias(baseConfig, 'next/config');
-  }
+  addScopedAlias(baseConfig, 'next/config');
 
   // @ts-expect-error We know that alias is an object
   if (baseConfig.resolve?.alias?.['react-dom']) {
@@ -65,17 +58,14 @@ const setupRuntimeConfig = async (
   baseConfig: WebpackConfig,
   nextConfig: NextConfig
 ): Promise<void> => {
-  const definePluginConfig: Record<string, any> = {};
-
-  // TODO: Remove this once we only support Next.js 16 and above
-  if (!isNext16orNewer) {
+  const definePluginConfig: Record<string, any> = {
     // this mimics what nextjs does client side
     // https://github.com/vercel/next.js/blob/57702cb2a9a9dba4b552e0007c16449cf36cfb44/packages/next/client/index.tsx#L101
-    definePluginConfig['process.env.__NEXT_RUNTIME_CONFIG'] = JSON.stringify({
+    'process.env.__NEXT_RUNTIME_CONFIG': JSON.stringify({
       serverRuntimeConfig: {},
       publicRuntimeConfig: nextConfig.publicRuntimeConfig,
-    });
-  }
+    }),
+  };
 
   const newNextLinkBehavior = (nextConfig.experimental as any)?.newNextLinkBehavior;
 

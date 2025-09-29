@@ -53,14 +53,11 @@ const initializeExpanded = ({
       ? getAncestorIds(data, highlightedRef.current?.itemId)
       : [];
   return [...rootIds, ...highlightedAncestors].reduce<ExpandedState>(
-    (acc: ExpandedState, id: string) =>
-      Object.assign(acc, {
-        [id]: id in (initialExpanded || {}) ? (initialExpanded || {})[id] : true,
-      }),
+    // @ts-expect-error (non strict)
+    (acc, id) => Object.assign(acc, { [id]: id in initialExpanded ? initialExpanded[id] : true }),
     {}
   );
 };
-
 const noop = () => {};
 
 export const useExpanded = ({

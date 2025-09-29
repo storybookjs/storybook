@@ -21,9 +21,9 @@ import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
 import { getBuilders } from './utils/get-builders';
+import { writeIndexJson } from './utils/index-json';
 import { extractStorybookMetadata } from './utils/metadata';
 import { outputStats } from './utils/output-stats';
-import { extractStoriesJson } from './utils/stories-json';
 import { summarizeIndex } from './utils/summarizeIndex';
 
 export type BuildStaticStandaloneOptions = CLIOptions &
@@ -140,9 +140,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   if (!options.ignorePreview) {
     const storyIndexGeneratorPromise = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-    effects.push(
-      extractStoriesJson(join(options.outputDir, 'index.json'), storyIndexGeneratorPromise)
-    );
+    effects.push(writeIndexJson(join(options.outputDir, 'index.json'), storyIndexGeneratorPromise));
   }
 
   if (!core?.disableProjectJson) {

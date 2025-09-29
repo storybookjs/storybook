@@ -14,12 +14,12 @@ import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
 import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
+import { registerIndexJsonRoute } from './utils/index-json';
 import { getMiddleware } from './utils/middleware';
 import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
-import { useStoriesJson } from './utils/stories-json';
 import { summarizeIndex } from './utils/summarizeIndex';
 
 export async function storybookDevServer(options: Options) {
@@ -46,7 +46,7 @@ export async function storybookDevServer(options: Options) {
     workingDir,
   });
 
-  useStoriesJson({
+  registerIndexJsonRoute({
     app,
     storyIndexGeneratorPromise,
     normalizedStories,

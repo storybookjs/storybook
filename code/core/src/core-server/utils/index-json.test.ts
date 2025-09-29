@@ -13,7 +13,7 @@ import { csfIndexer } from '../presets/common-preset';
 import type { StoryIndexGeneratorOptions } from './StoryIndexGenerator';
 import { StoryIndexGenerator } from './StoryIndexGenerator';
 import type { ServerChannel } from './get-server-channel';
-import { DEBOUNCE, useStoriesJson } from './stories-json';
+import { DEBOUNCE, registerIndexJsonRoute } from './index-json';
 
 vi.mock('watchpack');
 vi.mock('es-toolkit/compat');
@@ -46,7 +46,7 @@ const normalizedStories = [
   ),
 ];
 
-const getInitializedStoryIndexGenerator = async (
+const getStoryIndexGeneratorPromise = async (
   overrides: any = {},
   inputNormalizedStories = normalizedStories
 ) => {
@@ -62,7 +62,7 @@ const getInitializedStoryIndexGenerator = async (
   return generator;
 };
 
-describe('useStoriesJson', () => {
+describe('registerIndexJsonRoute', () => {
   const use = vi.fn();
   const app: Polka = { use } as any;
   const end = vi.fn();
@@ -94,15 +94,15 @@ describe('useStoriesJson', () => {
   describe('JSON endpoint', () => {
     it('scans and extracts index', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      console.time('useStoriesJson');
-      useStoriesJson({
+      console.time('registerIndexJsonRoute');
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
-      console.timeEnd('useStoriesJson');
+      console.timeEnd('registerIndexJsonRoute');
 
       expect(use).toHaveBeenCalledTimes(1);
       const route = use.mock.calls[0][1];
@@ -471,12 +471,12 @@ describe('useStoriesJson', () => {
     it('can handle simultaneous access', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
 
-      useStoriesJson({
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
 
       expect(use).toHaveBeenCalledTimes(1);
@@ -487,7 +487,6 @@ describe('useStoriesJson', () => {
       const secondPromise = route(request, secondResponse);
 
       await Promise.all([firstPromise, secondPromise]);
-
       expect(end).toHaveBeenCalledTimes(1);
       expect(response.statusCode).not.toEqual(500);
       expect(secondResponse.end).toHaveBeenCalledTimes(1);
@@ -503,12 +502,12 @@ describe('useStoriesJson', () => {
 
     it('sends invalidate events', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      useStoriesJson({
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
 
       expect(use).toHaveBeenCalledTimes(1);
@@ -537,12 +536,12 @@ describe('useStoriesJson', () => {
 
     it('only sends one invalidation when multiple event listeners are listening', async () => {
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      useStoriesJson({
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
 
       expect(use).toHaveBeenCalledTimes(1);
@@ -579,12 +578,12 @@ describe('useStoriesJson', () => {
       );
 
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;
-      useStoriesJson({
+      registerIndexJsonRoute({
         app,
         serverChannel: mockServerChannel,
         workingDir,
         normalizedStories,
-        initializedStoryIndexGenerator: getInitializedStoryIndexGenerator(),
+        storyIndexGeneratorPromise: getStoryIndexGeneratorPromise(),
       });
 
       expect(use).toHaveBeenCalledTimes(1);

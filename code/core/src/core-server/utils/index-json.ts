@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
-import type { NormalizedStoriesSpecifier, StoryIndex } from 'storybook/internal/types';
+import type { NormalizedStoriesSpecifier } from 'storybook/internal/types';
 
 import { debounce } from 'es-toolkit/compat';
 import type { Polka } from 'polka';
@@ -14,17 +14,16 @@ import { watchConfig } from './watchConfig';
 
 export const DEBOUNCE = 100;
 
-export async function extractStoriesJson(
+export async function writeIndexJson(
   outputFile: string,
-  initializedStoryIndexGenerator: Promise<StoryIndexGenerator>,
-  transform?: (index: StoryIndex) => any
+  initializedStoryIndexGenerator: Promise<StoryIndexGenerator>
 ) {
   const generator = await initializedStoryIndexGenerator;
   const storyIndex = await generator.getIndex();
-  await writeFile(outputFile, JSON.stringify(transform ? transform(storyIndex) : storyIndex));
+  await writeFile(outputFile, JSON.stringify(storyIndex));
 }
 
-export function useStoriesJson({
+export function registerIndexJsonRoute({
   app,
   storyIndexGeneratorPromise,
   workingDir = process.cwd(),

@@ -3,7 +3,7 @@ import React, { useRef } from 'react';
 
 import { ScrollArea, type useTabsState } from 'storybook/internal/components';
 
-import { useTabPanel } from 'react-aria';
+import { useTabPanel } from '@react-aria/tabs';
 import type { Node, TabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 

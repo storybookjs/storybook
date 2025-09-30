@@ -6,9 +6,10 @@ import { Button, Form, Popover } from 'storybook/internal/components';
 
 import { RefreshIcon } from '@storybook/icons';
 
+import { useInteractOutside } from '@react-aria/interactions';
+import { Overlay, useOverlay, useOverlayPosition } from '@react-aria/overlays';
 import { useObjectRef } from '@react-aria/utils';
 import { darken, transparentize } from 'polished';
-import { Overlay, useInteractOutside, useOverlay, useOverlayPosition } from 'react-aria';
 import { useOverlayTriggerState } from 'react-stately';
 import { styled, useTheme } from 'storybook/theming';
 

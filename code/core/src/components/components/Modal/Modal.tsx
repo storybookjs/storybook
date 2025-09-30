@@ -2,7 +2,7 @@ import React, { type HTMLAttributes, createContext, useEffect, useState } from '
 
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
-import { UNSAFE_PortalProvider } from 'react-aria';
+import { UNSAFE_PortalProvider } from '@react-aria/overlays';
 import { Dialog, ModalOverlay, Modal as ModalUpstream } from 'react-aria-components';
 import { useTransitionState } from 'react-transition-state';
 

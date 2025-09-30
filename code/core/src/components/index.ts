@@ -87,8 +87,8 @@ export { default as ListItem } from './components/tooltip/ListItem';
 // Bar, Toolbar and Tabs
 export { Tabs, TabsState, TabWrapper } from './components/Tabs/Tabs';
 export { TabButton } from './components/Tabs/Button';
-export { Separator, interleaveSeparators } from './components/Bar2/Separator';
-export { Bar, FlexBar, type BarProps } from './components/Bar2/Bar';
+export { Separator, interleaveSeparators } from './components/Bar/Separator';
+export { Bar, FlexBar, type BarProps } from './components/Bar/Bar';
 export { EmptyTabContent } from './components/Tabs/EmptyTabContent';
 export { AddonPanel } from './components/addon-panel/addon-panel';
 export { Toolbar, AbstractToolbar } from './components/Toolbar/Toolbar';

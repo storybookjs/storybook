@@ -241,7 +241,7 @@ export function transformStoryFileSync(
     viewportsOptions: any;
     backgroundsOptions: any;
   }
-): string | null {
+) {
   const result = transformStoryFile(source, options);
   return result ? formatCsf(result, {}, source) : null;
 }

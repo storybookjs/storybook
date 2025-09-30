@@ -33,7 +33,10 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
   const result = await check(previewContents);
   const mockWriteFile = vi.mocked(fsp.writeFile);
 
-  let transformFn: (filePath: string, content: string) => string | null = () => null;
+  let transformFn: (
+    filePath: string,
+    content: string
+  ) => ReturnType<typeof transformStoryFileSync> = () => null;
 
   let transformOptions: any;
 

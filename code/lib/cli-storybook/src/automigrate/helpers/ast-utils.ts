@@ -87,7 +87,13 @@ export function transformValuesToOptions(valuesArray: t.ArrayExpression): t.Expr
         if (t.isStringLiteral(nameProperty)) {
           const key = nameProperty.value.toLowerCase().replace(/\s+/g, '_');
 
-          optionsObject.properties.push(t.objectProperty(t.identifier(key), element));
+          // For complex names with dots, brackets, or other special characters, use string literal
+          // For simple names, use identifier
+          const keyNode = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)
+            ? t.identifier(key)
+            : t.stringLiteral(nameProperty.value);
+
+          optionsObject.properties.push(t.objectProperty(keyNode, element));
         }
       }
     });

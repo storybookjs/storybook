@@ -462,6 +462,44 @@ describe('addon-globals-api', () => {
           };"
       `);
     });
+
+    it('should migrate complex backgrounds configuration with dots and brackets in names', async () => {
+      const { previewFileContent } = await runMigrationAndGetTransformFn(`
+        export default {
+          parameters: {
+            backgrounds: {
+              default: 'palette.neutral[100]',
+              values: [
+                {
+                  name: 'palette.neutral[100]',
+                  value: palette.neutral[100],
+                },
+              ],
+            }
+          }
+        }
+      `);
+
+      expect(previewFileContent).toMatchInlineSnapshot(`
+          "
+                  export default {
+                    parameters: {
+                      backgrounds: {
+                        options: {
+                          'palette.neutral[100]': { name: 'palette.neutral[100]', value: palette.neutral[100] },
+                        }
+                      },
+                    },
+
+                    initialGlobals: {
+                      backgrounds: {
+                        value: 'palette.neutral[100]'
+                      }
+                    }
+                  };
+                "
+      `);
+    });
   });
 
   describe('run - story files', () => {

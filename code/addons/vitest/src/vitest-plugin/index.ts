@@ -1,4 +1,4 @@
-import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
@@ -12,10 +12,10 @@ import {
   resolvePathInStorybookCache,
   validateConfigurationFiles,
 } from 'storybook/internal/common';
-import type {
-  experimental_loadStorybook as ExperimentalLoadStorybookType,
-  mapStaticDir as MapStaticDirType,
-  StoryIndexGenerator as StoryIndexGeneratorType,
+import {
+  StoryIndexGenerator,
+  experimental_loadStorybook,
+  mapStaticDir,
 } from 'storybook/internal/core-server';
 import { readConfig, vitestTransform } from 'storybook/internal/csf-tools';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
@@ -32,17 +32,6 @@ import { dedent } from 'ts-dedent';
 // ! Relative import to prebundle it without needing to depend on the Vite builder
 import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
-
-const require = createRequire(import.meta.url);
-
-// we need to require core-server here, because its ESM output is not valid
-
-const { StoryIndexGenerator, experimental_loadStorybook, mapStaticDir } =
-  require('storybook/internal/core-server') as {
-    StoryIndexGenerator: typeof StoryIndexGeneratorType;
-    experimental_loadStorybook: typeof ExperimentalLoadStorybookType;
-    mapStaticDir: typeof MapStaticDirType;
-  };
 
 const WORKING_DIR = process.cwd();
 
@@ -108,8 +97,6 @@ const mdxStubPlugin: Plugin = {
   },
 };
 
-const PACKAGE_DIR = dirname(require.resolve('@storybook/addon-vitest/package.json'));
-
 export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   const finalOptions = {
     ...defaultOptions,
@@ -157,6 +144,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     previewLevelTags,
     core,
     extraOptimizeDeps,
+    features,
   ] = await Promise.all([
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
@@ -166,6 +154,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     extractTagsFromPreview(finalOptions.configDir),
     presets.apply('core'),
     presets.apply('optimizeViteDeps', []),
+    presets.apply('features', {}),
   ]);
 
   const pluginsToIgnore = [
@@ -244,7 +233,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
           setupFiles: [
-            join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),
+            fileURLToPath(import.meta.resolve('@storybook/addon-vitest/internal/setup-file')),
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
             typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
               nonMutableInputConfig.test?.setupFiles,
@@ -252,7 +241,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
           ...(finalOptions.storybookScript
             ? {
-                globalSetup: [join(PACKAGE_DIR, 'dist/vitest-plugin/global-setup.mjs')],
+                globalSetup: [
+                  fileURLToPath(
+                    import.meta.resolve('@storybook/addon-vitest/internal/global-setup')
+                  ),
+                ],
               }
             : {}),
 
@@ -341,6 +334,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           ...(frameworkName?.includes('vue3')
             ? { __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false' }
             : {}),
+          FEATURES: JSON.stringify(features),
         },
       };
 

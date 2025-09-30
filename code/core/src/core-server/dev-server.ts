@@ -16,7 +16,7 @@ import { getServerChannel } from './utils/get-server-channel';
 import { getAccessControlMiddleware } from './utils/getAccessControlMiddleware';
 import { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 import { getMiddleware } from './utils/middleware';
-import { openInBrowser } from './utils/open-in-browser';
+import { openInBrowser } from './utils/open-browser/open-in-browser';
 import { getServerAddresses } from './utils/server-address';
 import { getServer } from './utils/server-init';
 import { useStatics } from './utils/server-statics';
@@ -48,21 +48,25 @@ export async function storybookDevServer(options: Options) {
   app.use(getAccessControlMiddleware(core?.crossOriginIsolated ?? false));
   app.use(getCachingMiddleware());
 
-  getMiddleware(options.configDir)(app);
+  (await getMiddleware(options.configDir))(app);
 
   const { port, host, initialPath } = options;
   invariant(port, 'expected options to have a port');
   const proto = options.https ? 'https' : 'http';
   const { address, networkAddress } = getServerAddresses(port, host, proto, initialPath);
 
+  // Expose addresses on options for the manager builder to surface in globals, important for QR code link sharing
+  options.networkAddress = networkAddress;
+
   if (!core?.builder) {
     throw new MissingBuilderError();
   }
 
-  const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
+  const resolvedPreviewBuilder =
+    typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
 
   const [previewBuilder, managerBuilder] = await Promise.all([
-    getPreviewBuilder(builderName, options.configDir),
+    getPreviewBuilder(resolvedPreviewBuilder),
     getManagerBuilder(),
     useStatics(app, options),
   ]);
@@ -120,7 +124,9 @@ export async function storybookDevServer(options: Options) {
   await Promise.all([initializedStoryIndexGenerator, listening]).then(async ([indexGenerator]) => {
     if (indexGenerator && !options.ci && !options.smokeTest && options.open) {
       const url = host ? networkAddress : address;
-      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url);
+      openInBrowser(options.previewOnly ? `${url}iframe.html?navigator=true` : url).catch(() => {
+        // the browser window could not be opened, this is non-critical, we just ignore the error
+      });
     }
   });
   if (indexError) {

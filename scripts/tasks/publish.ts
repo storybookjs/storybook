@@ -1,11 +1,20 @@
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists } from 'fs-extra';
+import { access } from 'node:fs/promises';
+
 import { resolve } from 'path';
 
 import type { Task } from '../task';
 import { exec } from '../utils/exec';
 
 const verdaccioCacheDir = resolve(__dirname, '../../.verdaccio-cache');
+
+const pathExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const publish: Task = {
   description: 'Publish the packages of the monorepo to an internal npm server',

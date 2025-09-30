@@ -57,7 +57,10 @@ vi.mock('prompts', () => {
 });
 
 class PackageManager implements Partial<JsPackageManager> {
-  getModulePackageJSON(packageName: string, basePath?: string | undefined): PackageJson | null {
+  async getModulePackageJSON(
+    packageName: string,
+    basePath?: string | undefined
+  ): Promise<PackageJson | null> {
     return getModulePackageJSON(packageName, basePath);
   }
 }

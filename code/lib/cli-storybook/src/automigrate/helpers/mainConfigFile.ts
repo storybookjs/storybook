@@ -128,7 +128,6 @@ export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
   cwd,
   packageManagerName,
-  cache = false,
 }: {
   configDir?: string;
   cwd?: string;
@@ -141,14 +140,14 @@ export const getStorybookData = async ({
     version: storybookVersionSpecifier,
     configDir: configDirFromScript,
     previewConfigPath,
-  } = getStorybookInfo(userDefinedConfigDir);
+  } = await getStorybookInfo(userDefinedConfigDir);
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
 
   logger.debug('Loading main config...');
   let mainConfig: StorybookConfigRaw;
   try {
-    mainConfig = (await loadMainConfig({ configDir, noCache: !cache, cwd })) as StorybookConfigRaw;
+    mainConfig = (await loadMainConfig({ configDir, cwd })) as StorybookConfigRaw;
   } catch (err) {
     throw new Error(
       dedent`Unable to find or evaluate ${picocolors.blue(mainConfigPath)}: ${String(err)}`
@@ -229,3 +228,49 @@ export const updateMainConfig = async (
     );
   }
 };
+
+/** Check if a file is in ESM format based on its content */
+export function containsESMUsage(content: string): boolean {
+  // For .js/.ts files, check the content for ESM syntax
+  // Check for ESM syntax indicators (multiline aware)
+  const hasImportStatement =
+    /^\s*import\s+/m.test(content) ||
+    /^\s*import\s*{/m.test(content) ||
+    /^\s*import\s*\(/m.test(content);
+  const hasExportStatement =
+    /^\s*export\s+/m.test(content) ||
+    /^\s*export\s*{/m.test(content) ||
+    /^\s*export\s*default/m.test(content);
+  const hasImportMeta = /import\.meta/.test(content);
+
+  // If any ESM syntax is found, it's likely an ESM file
+  return hasImportStatement || hasExportStatement || hasImportMeta;
+}
+
+/** Check if the file content contains require usage */
+export function containsRequireUsage(content: string): boolean {
+  // Check for require() calls
+  const requireCallRegex = /\brequire\(/;
+  const requireDotRegex = /\brequire\./;
+  return requireCallRegex.test(content) || requireDotRegex.test(content);
+}
+
+/** Check if the file already has the require banner */
+export const bannerComment =
+  '// end of Storybook 10 migration assistant header, You can delete the above code';
+export function hasRequireBanner(content: string): boolean {
+  return content.includes(bannerComment);
+}
+
+/** Generate the require compatibility banner */
+export function getRequireBanner(): string {
+  return dedent`
+    import { createRequire } from "node:module";
+    import { dirname } from "node:path";
+    import { fileURLToPath } from "node:url";
+  
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    const require = createRequire(import.meta.url);
+  `;
+}

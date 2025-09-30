@@ -1,6 +1,9 @@
 import * as React from 'react';
 
+import { global } from '@storybook/global';
+
 import semver from 'semver';
+import { configure } from 'storybook/test';
 
 import { getAct, getReactActEnvironment, setReactActEnvironment } from './act-compat';
 import type { Decorator } from './public-types';
@@ -24,6 +27,15 @@ export const decorators: Decorator[] = [
 
     return <React.Suspense>{story()}</React.Suspense>;
   },
+  (story, context) => {
+    // @ts-expect-error this feature flag only exists in the react frameworks
+    if (context.tags?.includes('test-fn') && !global.FEATURES?.experimentalTestSyntax) {
+      throw new Error(
+        'To use the experimental test function, you must enable the experimentalTestSyntax feature flag. See https://storybook.js.org/docs/10/api/main-config/main-config-features#experimentalTestSyntax'
+      );
+    }
+    return story();
+  },
 ];
 
 export const parameters = {
@@ -34,7 +46,6 @@ export const beforeAll = async () => {
   try {
     // copied from
     // https://github.com/testing-library/react-testing-library/blob/3dcd8a9649e25054c0e650d95fca2317b7008576/src/pure.js
-    const { configure } = await import('storybook/test');
 
     const act = await getAct();
 

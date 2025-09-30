@@ -8,7 +8,8 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { isEqual as deepEqual, pick, toMerged } from 'es-toolkit';
+import { pick, toMerged } from 'es-toolkit/object';
+import { isEqual as deepEqual } from 'es-toolkit/predicate';
 import type { ThemeVars } from 'storybook/theming';
 import { create } from 'storybook/theming/create';
 
@@ -91,6 +92,11 @@ export interface SubAPI {
    * account customisations requested by the end user via a layoutCustomisations function.
    */
   getShowToolbarWithCustomisations: (showToolbar: boolean) => boolean;
+  /**
+   * GetShowPanelWithCustomisations - Returns the current visibility of the addon panel, taking into
+   * account customisations requested by the end user via a layoutCustomisations function.
+   */
+  getShowPanelWithCustomisations: (showPanel: boolean) => boolean;
   /**
    * GetNavSizeWithCustomisations - Returns the size to apply to the sidebar/nav, taking into
    * account customisations requested by the end user via a layoutCustomisations function.
@@ -374,6 +380,16 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
       }
 
       return showToolbar;
+    },
+
+    getShowPanelWithCustomisations(showPanel: boolean) {
+      const state = store.getState();
+
+      if (isFunction(state.layoutCustomisations.showPanel)) {
+        return state.layoutCustomisations.showPanel(state, showPanel) ?? showPanel;
+      }
+
+      return showPanel;
     },
 
     getNavSizeWithCustomisations(navSize: number) {

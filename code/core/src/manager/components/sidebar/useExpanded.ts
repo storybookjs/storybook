@@ -5,7 +5,7 @@ import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from 'storybook/internal/cor
 
 import { global } from '@storybook/global';
 
-import { throttle } from 'es-toolkit';
+import { throttle } from 'es-toolkit/function';
 import type { StoriesHash } from 'storybook/manager-api';
 import { useStorybookApi } from 'storybook/manager-api';
 
@@ -202,8 +202,11 @@ export const useExpanded = ({
       }
 
       const type = highlightedElement.getAttribute('data-nodetype');
-      // @ts-expect-error (non strict)
-      if ((isEnter || isSpace) && ['component', 'story', 'document'].includes(type)) {
+      if (
+        type &&
+        (isEnter || isSpace) &&
+        ['component', 'story', 'document', 'test'].includes(type)
+      ) {
         onSelectStoryId(highlightedItemId);
       }
 

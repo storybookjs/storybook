@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import {
@@ -10,7 +11,7 @@ import {
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
-import { findPackage, findPackagePath } from 'fd-package-json';
+import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
 import { globalSettings } from '../cli/globalSettings';
@@ -213,7 +214,7 @@ export const computeStorybookMetadata = async ({
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
-  const storybookInfo = getStorybookInfo(configDir);
+  const storybookInfo = await getStorybookInfo(configDir);
 
   try {
     const { previewConfigPath: previewConfig } = storybookInfo;
@@ -246,11 +247,11 @@ export const computeStorybookMetadata = async ({
 };
 
 async function getPackageJsonDetails() {
-  const packageJsonPath = await findPackagePath(process.cwd());
+  const packageJsonPath = pkg.up();
   if (packageJsonPath) {
     return {
       packageJsonPath,
-      packageJson: (await findPackage(packageJsonPath)) || {},
+      packageJson: JSON.parse(await readFile(packageJsonPath, 'utf8')),
     };
   }
 

@@ -1,35 +1,43 @@
 import { execSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 
+import * as babel from 'storybook/internal/babel';
+import {
+  type Builder,
+  type NpmOptions,
+  ProjectType,
+  type Settings,
+  detect,
+  detectLanguage,
+  detectPnp,
+  globalSettings,
+  installableProjectTypes,
+  isStorybookInstantiated,
+} from 'storybook/internal/cli';
+import {
+  HandledError,
+  type JsPackageManager,
+  JsPackageManagerFactory,
+  commandLog,
+  getProjectRoot,
+  invalidateProjectRootCache,
+  isCI,
+  paddedLog,
+  versions,
+} from 'storybook/internal/common';
+import { withTelemetry } from 'storybook/internal/core-server';
+import { logger } from 'storybook/internal/node-logger';
+import { NxProjectDetectedError } from 'storybook/internal/server-errors';
+import { telemetry } from 'storybook/internal/telemetry';
+
 import boxen from 'boxen';
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import picocolors from 'picocolors';
+import { getProcessAncestry } from 'process-ancestry';
 import prompts from 'prompts';
 import { lt, prerelease } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import * as babel from '../../../core/src/babel';
-import type { NpmOptions } from '../../../core/src/cli/NpmOptions';
-import {
-  detect,
-  detectLanguage,
-  detectPnp,
-  isStorybookInstantiated,
-} from '../../../core/src/cli/detect';
-import { type Settings, globalSettings } from '../../../core/src/cli/globalSettings';
-import type { Builder } from '../../../core/src/cli/project_types';
-import { ProjectType, installableProjectTypes } from '../../../core/src/cli/project_types';
-import type { JsPackageManager } from '../../../core/src/common/js-package-manager/JsPackageManager';
-import { JsPackageManagerFactory } from '../../../core/src/common/js-package-manager/JsPackageManagerFactory';
-import { HandledError } from '../../../core/src/common/utils/HandledError';
-import { isCI } from '../../../core/src/common/utils/envs';
-import { commandLog, paddedLog } from '../../../core/src/common/utils/log';
-import { getProjectRoot, invalidateProjectRootCache } from '../../../core/src/common/utils/paths';
-import versions from '../../../core/src/common/versions';
-import { withTelemetry } from '../../../core/src/core-server/withTelemetry';
-import { logger } from '../../../core/src/node-logger';
-import { NxProjectDetectedError } from '../../../core/src/server-errors';
-import { telemetry } from '../../../core/src/telemetry';
 import angularGenerator from './generators/ANGULAR';
 import emberGenerator from './generators/EMBER';
 import htmlGenerator from './generators/HTML';
@@ -375,6 +383,30 @@ export const promptInstallType = async ({
   return installType;
 };
 
+export function getStorybookVersionFromAncestry(
+  ancestry: ReturnType<typeof getProcessAncestry>
+): string | undefined {
+  for (const ancestor of ancestry.toReversed()) {
+    const match = ancestor.command?.match(/\s(?:create-storybook|storybook)@([^\s]+)/);
+    if (match) {
+      return match[1];
+    }
+  }
+  return undefined;
+}
+
+export function getCliIntegrationFromAncestry(
+  ancestry: ReturnType<typeof getProcessAncestry>
+): string | undefined {
+  for (const ancestor of ancestry.toReversed()) {
+    const match = ancestor.command?.match(/\s(sv(@[^ ]+)? create|sv(@[^ ]+)? add)/i);
+    if (match) {
+      return match[1].includes('add') ? 'sv add' : 'sv create';
+    }
+  }
+  return undefined;
+}
+
 export async function doInitiate(options: CommandOptions): Promise<
   | {
       shouldRunDev: true;
@@ -418,6 +450,15 @@ export async function doInitiate(options: CommandOptions): Promise<
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, latestVersion);
   const borderColor = isOutdated ? '#FC521F' : '#F1618C';
+  let versionSpecifier = undefined;
+  let cliIntegration = undefined;
+  try {
+    const ancestry = getProcessAncestry();
+    versionSpecifier = getStorybookVersionFromAncestry(ancestry);
+    cliIntegration = getCliIntegrationFromAncestry(ancestry);
+  } catch (err) {
+    //
+  }
 
   const messages = {
     welcome: `Adding Storybook version ${picocolors.bold(currentVersion)} to your project..`,
@@ -587,7 +628,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     }
 
     const vitestConfigFilesData = await vitestConfigFiles.condition(
-      { babel, findUp, fs } as any,
+      { babel, empathic: find, fs } as any,
       { directory: process.cwd() } as any
     );
     if (vitestConfigFilesData.type === 'incompatible') {
@@ -628,7 +669,13 @@ export async function doInitiate(options: CommandOptions): Promise<
   }
 
   if (!options.disableTelemetry) {
-    await telemetry('init', { projectType, features: telemetryFeatures, newUser });
+    await telemetry('init', {
+      projectType,
+      features: telemetryFeatures,
+      newUser,
+      versionSpecifier,
+      cliIntegration,
+    });
   }
 
   if ([ProjectType.REACT_NATIVE, ProjectType.REACT_NATIVE_AND_RNW].includes(projectType)) {
@@ -667,7 +714,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     return { shouldRunDev: false };
   }
 
-  const foundGitIgnoreFile = await findUp('.gitignore');
+  const foundGitIgnoreFile = find.up('.gitignore');
   const rootDirectory = getProjectRoot();
   if (foundGitIgnoreFile && foundGitIgnoreFile.includes(rootDirectory)) {
     const contents = await fs.readFile(foundGitIgnoreFile, 'utf-8');

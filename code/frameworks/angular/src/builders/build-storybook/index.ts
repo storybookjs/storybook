@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+
 import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
@@ -22,14 +24,15 @@ import type {
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
 import type { JsonObject } from '@angular-devkit/core';
-import { findPackageSync } from 'fd-package-json';
-import { findUpSync } from 'find-up';
+import * as find from 'empathic/find';
+import * as pkg from 'empathic/package';
 import { from, of, throwError } from 'rxjs';
 import { catchError, map, mapTo, switchMap } from 'rxjs/operators';
 
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
 import type { StandaloneOptions } from '../utils/standalone-options';
+import { VERSION } from '@angular/core';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -72,9 +75,9 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
 ): BuilderOutputLike => {
   const builder = from(setup(options, context)).pipe(
     switchMap(({ tsConfig }) => {
-      const docTSConfig = findUpSync('tsconfig.doc.json', {
+      const docTSConfig = find.up('tsconfig.doc.json', {
         cwd: options.configDir,
-        stopAt: getProjectRoot(),
+        last: getProjectRoot(),
       });
       const runCompodoc$ = options.compodoc
         ? runCompodoc(
@@ -111,11 +114,15 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         previewUrl,
         sourceMap = false,
         preserveSymlinks = false,
-        experimentalZoneless = false,
+        experimentalZoneless = !!(VERSION.major && Number(VERSION.major) >= 21),
       } = options;
 
+      const packageJsonPath = pkg.up({ cwd: __dirname });
+      const packageJson =
+        packageJsonPath != null ? JSON.parse(readFileSync(packageJsonPath, 'utf8')) : null;
+
       const standaloneOptions: StandaloneBuildOptions = {
-        packageJson: findPackageSync(__dirname),
+        packageJson,
         configDir,
         ...(docs ? { docs } : {}),
         loglevel,
@@ -169,7 +176,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   return {
     tsConfig:
       options.tsConfig ??
-      findUpSync('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() }) ??
+      find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
       browserOptions.tsConfig,
   };
 }

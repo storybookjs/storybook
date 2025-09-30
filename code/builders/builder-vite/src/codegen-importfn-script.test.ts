@@ -34,7 +34,7 @@ describe('generateImportFnScriptCode', () => {
 
     expect(result).toMatchInlineSnapshot(`
       "const importers = {
-        "to/abs-story.js": () => import("/absolute/path/to/abs-story.js"),
+        "./to/abs-story.js": () => import("/absolute/path/to/abs-story.js"),
         "virtual:story.js": () => import("virtual:story.js")
       };
 
@@ -73,7 +73,7 @@ describe('generateImportFnScriptCode', () => {
 
     expect(result).toMatchInlineSnapshot(`
       "const importers = {
-        "to/abs-story.js": () => import("C:/absolute/path/to/abs-story.js"),
+        "./to/abs-story.js": () => import("C:/absolute/path/to/abs-story.js"),
         "virtual:story.js": () => import("virtual:story.js")
       };
 

@@ -1,7 +1,7 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
-import { join, normalize } from 'pathe';
+import { join, normalize, relative } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 /**
@@ -21,8 +21,19 @@ export function generateImportFnScriptCode(index: StoryIndex): string {
       return [importPath, genDynamicImport(importPath)];
     }
 
-    const absolutePath = join(process.cwd(), importPath);
-    return [normalize(importPath), genDynamicImport(normalize(absolutePath))];
+    /**
+     * Relative paths get passed either with no leading './' - e.g. `src/Foo.stories.js`, or with a
+     * leading `../` (etc), e.g. `../src/Foo.stories.js`. We want to deal in importPaths relative to
+     * the working dir, so we normalize
+     */
+    const relativePath = normalize(relative(process.cwd(), importPath));
+    const normalizedRelativePath = relativePath.startsWith('../')
+      ? relativePath
+      : `./${relativePath}`;
+
+    const absolutePath = normalize(join(process.cwd(), importPath));
+
+    return [normalizedRelativePath, genDynamicImport(absolutePath)];
   });
 
   return dedent`

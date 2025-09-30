@@ -217,7 +217,7 @@ describe('addon-globals-api', () => {
 
   describe('run - preview file', () => {
     it('should migrate viewport configuration correctly', async () => {
-      const { previewFileContent } = await runMigrationAndGetTransformFn(`
+      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
         export default {
           parameters: {
             viewport: {
@@ -231,31 +231,29 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(`
-          "
-                  export default {
-                    parameters: {
-                      viewport: {
-                        options: {
-                          mobile: { name: 'Mobile', width: '320px', height: '568px' },
-                          tablet: { name: 'Tablet', width: '768px', height: '1024px' }
-                        }
-                      }
-                    },
+      expect(previewFileContent).toMatchInlineSnapshot(dedent`
+  "export default {
+    parameters: {
+      viewport: {
+        options: {
+          mobile: { name: 'Mobile', width: '320px', height: '568px' },
+          tablet: { name: 'Tablet', width: '768px', height: '1024px' }
+        }
+      }
+    },
 
-                    initialGlobals: {
-                      viewport: {
-                        value: 'mobile',
-                        isRotated: false
-                      }
-                    }
-                  };
-                "
-      `);
+    initialGlobals: {
+      viewport: {
+        value: 'mobile',
+        isRotated: false
+      }
+    }
+  };"
+`);
     });
 
     it('should migrate backgrounds configuration correctly', async () => {
-      const { previewFileContent } = await runMigrationAndGetTransformFn(`
+      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
         export default {
           parameters: {
             backgrounds: {
@@ -269,30 +267,28 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(`
-          "
-                  export default {
-                    parameters: {
-                      backgrounds: {
-                        options: {
-                          light: { name: 'Light', value: '#F8F8F8' },
-                          dark: { name: 'Dark', value: '#333333' }
-                        }
-                      }
-                    },
+      expect(previewFileContent).toMatchInlineSnapshot(dedent`
+  "export default {
+    parameters: {
+      backgrounds: {
+        options: {
+          light: { name: 'Light', value: '#F8F8F8' },
+          dark: { name: 'Dark', value: '#333333' }
+        }
+      }
+    },
 
-                    initialGlobals: {
-                      backgrounds: {
-                        value: 'light'
-                      }
-                    }
-                  };
-                "
-      `);
+    initialGlobals: {
+      backgrounds: {
+        value: 'light'
+      }
+    }
+  };"
+`);
     });
 
     it('should rename backgrounds disable property to disabled', async () => {
-      const { previewFileContent } = await runMigrationAndGetTransformFn(`
+      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
         export default {
           parameters: {
             backgrounds: {
@@ -306,24 +302,22 @@ describe('addon-globals-api', () => {
       `);
 
       // Verify the transformation results
-      expect(previewFileContent).toMatchInlineSnapshot(`
-        "
-                export default {
-                  parameters: {
-                    backgrounds: {
-                      options: {
-                        light: { name: 'Light', value: '#F8F8F8' }
-                      },
-                      disabled: true
-                    }
-                  }
-                }
-              "
+      expect(previewFileContent).toMatchInlineSnapshot(dedent`
+        "export default {
+          parameters: {
+            backgrounds: {
+              options: {
+                light: { name: 'Light', value: '#F8F8F8' }
+              },
+              disabled: true
+            }
+          }
+        }"
       `);
     });
 
     it('should migrate both viewport and backgrounds configurations', async () => {
-      const { previewFileContent } = await runMigrationAndGetTransformFn(`
+      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
         export default {
           parameters: {
             viewport: {
@@ -335,7 +329,7 @@ describe('addon-globals-api', () => {
             backgrounds: {
               values: [
                 { name: 'Light', value: '#F8F8F8' },
-                { name: 'Dark', value: '#F8F8F8' }
+                { name: 'Dark', value: '#333333' }
               ],
               default: 'Light'
             }
@@ -343,36 +337,34 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(`
-          "
-                  export default {
-                    parameters: {
-                      viewport: {
-                        options: {
-                          mobile: { name: 'Mobile', width: '320px', height: '568px' }
-                        }
-                      },
-                      backgrounds: {
-                        options: {
-                          light: { name: 'Light', value: '#F8F8F8' },
-                          dark: { name: 'Dark', value: '#F8F8F8' }
-                        }
-                      }
-                    },
+      expect(previewFileContent).toMatchInlineSnapshot(dedent`
+  "export default {
+    parameters: {
+      viewport: {
+        options: {
+          mobile: { name: 'Mobile', width: '320px', height: '568px' }
+        }
+      },
+      backgrounds: {
+        options: {
+          light: { name: 'Light', value: '#F8F8F8' },
+          dark: { name: 'Dark', value: '#333333' }
+        }
+      }
+    },
 
-                    initialGlobals: {
-                      viewport: {
-                        value: 'mobile',
-                        isRotated: false
-                      },
+    initialGlobals: {
+      viewport: {
+        value: 'mobile',
+        isRotated: false
+      },
 
-                      backgrounds: {
-                        value: 'light'
-                      }
-                    }
-                  };
-                "
-      `);
+      backgrounds: {
+        value: 'light'
+      }
+    }
+  };"
+`);
     });
 
     it('should correctly handle partial configurations', async () => {
@@ -433,7 +425,7 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(`
+      expect(previewFileContent).toMatchInlineSnapshot(dedent`
           "import { INITIAL_VIEWPORTS } from '@storybook/addon-viewport';
 
           export default {
@@ -464,7 +456,7 @@ describe('addon-globals-api', () => {
     });
 
     it('should migrate complex backgrounds configuration with dots and brackets in names', async () => {
-      const { previewFileContent } = await runMigrationAndGetTransformFn(`
+      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
         export default {
           parameters: {
             backgrounds: {
@@ -480,25 +472,26 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      expect(previewFileContent).toMatchInlineSnapshot(`
-          "
-                  export default {
-                    parameters: {
-                      backgrounds: {
-                        options: {
-                          'palette.neutral[100]': { name: 'palette.neutral[100]', value: palette.neutral[100] },
-                        }
-                      },
-                    },
+      expect(previewFileContent).toMatchInlineSnapshot(dedent`
+  "export default {
+    parameters: {
+      backgrounds: {
+        options: {
+          "palette.neutral[100]": {
+            name: 'palette.neutral[100]',
+            value: palette.neutral[100],
+          }
+        }
+      }
+    },
 
-                    initialGlobals: {
-                      backgrounds: {
-                        value: 'palette.neutral[100]'
-                      }
-                    }
-                  };
-                "
-      `);
+    initialGlobals: {
+      backgrounds: {
+        value: 'palette.neutral[100]'
+      }
+    }
+  };"
+`);
     });
   });
 
@@ -705,8 +698,8 @@ describe('addon-globals-api', () => {
         import Button from './Button';
         export default { component: Button };
         export const NoParams = {};
-         export const ExistingGlobals = { globals: { backgrounds: { value: 'dark' } } };
-         export const ExistingDisabled = { parameters: { backgrounds: { disabled: true } } };
+        export const ExistingGlobals = { globals: { backgrounds: { value: 'dark' } } };
+        export const ExistingDisabled = { parameters: { backgrounds: { disabled: true } } };
       `;
       expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toBeNull();

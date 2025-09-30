@@ -61,6 +61,7 @@ export const getExternal = async (cwd: string) => {
     'react-dom',
     'react-dom/client',
     '@storybook/icons',
+    '@ember/renderer', // most `@ember` packages are virtual, so they must be excluded
 
     /**
      * @note This is not a real package, it's a hack to allow `frameworks/nextjs` to be able to alias

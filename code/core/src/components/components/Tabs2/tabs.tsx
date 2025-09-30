@@ -8,7 +8,7 @@ import type { Addon_RenderOptions } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import { EmptyTabContent } from '../Tabs/EmptyTabContent';
+import { EmptyTabContent } from '../Tabs2/EmptyTabContent';
 import { FlexBar } from '../bar/bar';
 import { TabButton } from './button';
 import { VisuallyHidden, childrenToList } from './tabs.helpers';

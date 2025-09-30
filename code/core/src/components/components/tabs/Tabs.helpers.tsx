@@ -6,7 +6,7 @@ import type { Addon_RenderOptions } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import type { TabsProps } from './_Tabs';
+import type { TabsProps } from './Tabs';
 
 export interface VisuallyHiddenProps {
   active?: boolean;

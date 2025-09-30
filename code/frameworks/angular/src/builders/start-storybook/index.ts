@@ -29,6 +29,7 @@ import { map, mapTo, switchMap } from 'rxjs/operators';
 import { errorSummary, printErrorDetails } from '../utils/error-handler';
 import { runCompodoc } from '../utils/run-compodoc';
 import type { StandaloneOptions } from '../utils/standalone-options';
+import { VERSION } from '@angular/core';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -128,7 +129,7 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (options, cont
         previewUrl,
         sourceMap = false,
         preserveSymlinks = false,
-        experimentalZoneless = false,
+        experimentalZoneless = !!(VERSION.major && Number(VERSION.major) >= 21),
       } = options;
 
       const standaloneOptions: StandaloneOptions = {

@@ -147,6 +147,8 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
 
   logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);
 
+  builderOptions.experimentalZoneless = options.angularBuilderOptions?.experimentalZoneless;
+
   return builderOptions;
 }
 

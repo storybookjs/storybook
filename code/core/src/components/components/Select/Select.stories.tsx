@@ -28,7 +28,7 @@ const meta = preview.meta({
       { title: 'Frog', value: 'frog' },
     ],
   },
-  tags: ['!vitest']
+  tags: ['!vitest'],
 });
 
 const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });

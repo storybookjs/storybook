@@ -6,7 +6,7 @@ import { DocumentIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { EmptyTabContent } from './_EmptyTabContent';
+import { EmptyTabContent } from './EmptyTabContent';
 
 export default {
   title: 'Tabs/TabContentEmpty',

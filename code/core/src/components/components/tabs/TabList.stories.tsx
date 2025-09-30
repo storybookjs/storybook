@@ -2,8 +2,8 @@ import { Bar } from 'storybook/internal/components';
 
 import preview from '../../../../../.storybook/preview';
 import { TabList } from './TabList';
-import type { TabProps } from './_TabsView';
-import { useTabsState } from './_TabsView';
+import type { TabProps } from './TabsView';
+import { useTabsState } from './TabsView';
 
 const DEFAULT_TABS: TabProps[] = [
   { id: 'tab1', title: 'Tab 1', children: () => <div>Content for Tab 1</div> },

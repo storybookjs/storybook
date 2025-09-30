@@ -6,9 +6,9 @@ import { expect, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { TabList } from './TabList';
-import { TabPanel } from './_TabPanel';
-import { useTabsState } from './_TabsView';
-import type { TabProps } from './_TabsView';
+import { TabPanel } from './TabPanel';
+import { useTabsState } from './TabsView';
+import type { TabProps } from './TabsView';
 
 const TabContent: FC<{ tabNumber: number }> = ({ tabNumber }) => {
   const [counter, setCounter] = useState(0);

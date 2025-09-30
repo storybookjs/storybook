@@ -2800,7 +2800,7 @@ describe('CsfFile', () => {
         `
           )
         ).toThrowErrorMatchingInlineSnapshot(`
-          [MultipleMetaError: CSF: multiple meta objects
+          [MultipleMetaError: CSF: multiple meta objects 
 
           More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
         `);

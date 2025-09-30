@@ -12,6 +12,17 @@ import { addonGlobalsApi, transformStoryFileSync } from './addon-globals-api';
 // Mock fs/promises
 vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
 
+vi.mock(import('storybook/internal/babel'), async (actualImport) => {
+  const actual = await actualImport();
+  return {
+    ...actual,
+    recast: {
+      ...actual.recast,
+      print: (ast, options) => actual.recast.print(ast, { ...options, quote: 'single' }),
+    },
+  };
+});
+
 const previewConfigPath = join('.storybook', 'preview.js');
 
 const check = async (previewContents: string) => {
@@ -480,7 +491,7 @@ describe('addon-globals-api', () => {
     parameters: {
       backgrounds: {
         options: {
-          "palette.neutral[100]": {
+          'palette.neutral[100]': {
             name: 'palette.neutral[100]',
             value: palette.neutral[100],
           }

@@ -1,43 +1,29 @@
-import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
+// import type { StorybookConfigVite } from '@storybook/builder-vite';
+// import {
+//   ember,
+//   /*, extensions */
+// } from '@embroider/vite';
+import { fileURLToPath } from 'node:url';
+
 import type { PresetProperty } from 'storybook/internal/types';
 
-import { getVirtualModules } from '@storybook/builder-webpack5';
+import type { TransformOptions } from '@babel/core';
+import { buildMacros } from '@embroider/macros/babel';
 
+import { emberIndexer } from './node/indexer';
 import type { StorybookConfig } from './types';
 
-export const addons: PresetProperty<'addons'> = [
-  import.meta.resolve('@storybook/ember/server/framework-preset-babel-ember'),
-];
+// export const viteFinal: StorybookConfigVite['viteFinal'] = async (config /*, options*/) => {
+//   return {
+//     ...config,
+//     plugins: [...(config.plugins ?? []), ember()],
+//   };
+// };
 
-export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, options) => {
-  const { virtualModules } = await getVirtualModules(options);
+export const experimental_indexers: StorybookConfig['experimental_indexers'] = (indexers) => {
+  console.log('HELLOOOOO');
 
-  const babelOptions = await options.presets.apply('babel', {}, options);
-  const typescriptOptions = await options.presets.apply('typescript', {}, options);
-
-  return {
-    ...baseConfig,
-    module: {
-      ...baseConfig.module,
-      rules: [
-        ...(baseConfig.module?.rules ?? []),
-        {
-          test: typescriptOptions.skipCompiler ? /\.((c|m)?jsx?)$/ : /\.((c|m)?(j|t)sx?)$/,
-          use: [
-            {
-              loader: import.meta.resolve('babel-loader'),
-              options: {
-                cacheDirectory: resolvePathInStorybookCache('babel'),
-                ...babelOptions,
-              },
-            },
-          ],
-          include: [getProjectRoot()],
-          exclude: [/node_modules/, ...Object.keys(virtualModules)],
-        },
-      ],
-    },
-  };
+  return [emberIndexer, ...(indexers || [])];
 };
 
 export const core: PresetProperty<'core'> = async (config, options) => {
@@ -46,8 +32,52 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   return {
     ...config,
     builder: {
-      name: import.meta.resolve('@storybook/builder-webpack5'),
+      name: import.meta.resolve('@storybook/builder-vite'),
       options: typeof framework === 'string' ? {} : framework.options.builder || {},
     },
   };
 };
+
+const macros = buildMacros();
+
+export function babelDefault(config: TransformOptions) {
+  return {
+    ...config,
+    plugins: [
+      [
+        '@babel/plugin-transform-typescript',
+        {
+          allExtensions: true,
+          onlyRemoveTypeImports: true,
+          allowDeclareFields: true,
+        },
+      ],
+      [
+        'babel-plugin-ember-template-compilation',
+        {
+          transforms: [...macros.templateMacros],
+        },
+      ],
+      [
+        'module:decorator-transforms',
+        {
+          runtime: {
+            import: fileURLToPath(import.meta.resolve('decorator-transforms/runtime-esm')),
+          },
+        },
+      ],
+      [
+        '@babel/plugin-transform-runtime',
+        {
+          absoluteRuntime: import.meta.dirname,
+          useESModules: true,
+          regenerator: false,
+        },
+      ],
+    ],
+
+    generatorOpts: {
+      compact: false,
+    },
+  };
+}

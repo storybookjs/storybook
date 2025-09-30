@@ -14,14 +14,8 @@ const config: BuildEntries = {
         entryPoint: './src/node/index.ts',
       },
       {
-        exportEntries: ['./server/framework-preset-babel-ember'],
-        entryPoint: './src/server/framework-preset-babel-ember.ts',
-        dts: false,
-      },
-      {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',
-        dts: false,
       },
     ],
   },

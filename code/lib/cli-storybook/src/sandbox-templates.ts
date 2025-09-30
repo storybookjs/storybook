@@ -598,26 +598,38 @@ export const baseTemplates = {
     // TODO: The community template does not provide standard stories, which is required for e2e tests.
     skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
   },
-  'ember/3-js': {
-    name: 'Ember v3 (Webpack | JavaScript)',
-    script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}}',
-    inDevelopment: true,
-    expected: {
-      framework: '@storybook/ember',
-      renderer: '@storybook/ember',
-      builder: '@storybook/builder-webpack5',
-    },
-  },
-  'ember/default-js': {
-    name: 'Ember v4 (Webpack | JavaScript)',
+  // 'ember/3-js': {
+  //   name: 'Ember v3 (Webpack | JavaScript)',
+  //   script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}}',
+  //   inDevelopment: true,
+  //   expected: {
+  //     framework: '@storybook/ember',
+  //     renderer: '@storybook/ember',
+  //     builder: '@storybook/builder-webpack5',
+  //   },
+  // },
+  // 'ember/default-js': {
+  //   name: 'Ember v4 (Webpack | JavaScript)',
+  //   script:
+  //     'npx --package ember-cli@4.12.1 ember new {{beforeDir}} --yarn && cd {{beforeDir}} && yarn add --dev @storybook/ember-cli-storybook && yarn build',
+  //   inDevelopment: true,
+  //   expected: {
+  //     framework: '@storybook/ember',
+  //     renderer: '@storybook/ember',
+  //     builder: '@storybook/builder-webpack5',
+  //   },
+  // },
+  'ember/default-ts': {
+    name: 'Ember Latest (Vite | TypeScript)',
     script:
-      'npx --package ember-cli@4.12.1 ember new {{beforeDir}} --yarn && cd {{beforeDir}} && yarn add --dev @storybook/ember-cli-storybook && yarn build',
+      'npx --package ember-cli@latest ember new {{beforeDir}} -b @ember/app-blueprint -yarn --typescript',
     inDevelopment: true,
     expected: {
       framework: '@storybook/ember',
       renderer: '@storybook/ember',
-      builder: '@storybook/builder-webpack5',
+      builder: '@storybook/builder-vite',
     },
+    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
   'react-native-web-vite/expo-ts': {
     // NOTE: create-expo-app installs React 18.2.0. But yarn portal
@@ -844,7 +856,7 @@ export const normal: TemplateKey[] = [
   'bench/react-vite-default-ts-nodocs',
   'bench/react-vite-default-ts-test-build',
   'bench/react-webpack-18-ts-test-build',
-  'ember/default-js',
+  'ember/default-ts',
 ];
 
 export const merged: TemplateKey[] = [

@@ -71,7 +71,6 @@
     "ember-cli-uglify": "^3.0.0",
     "ember-load-initializers": "^2.1.2",
     "ember-resolver": "^7.0.0",
-    "ember-source": "~3.24.0",
     "loader.js": "^4.7.0",
     "os-browserify": "^0.3.0",
     "shx": "^0.3.2",

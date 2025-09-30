@@ -13,7 +13,7 @@ export function useAriaDescription(description?: string): {
   };
   AriaDescription: () => React.ReactElement | undefined;
 } {
-  const describedbyId = description?.toLowerCase().trim().replace(/\s+/g, '-');
+  const describedbyId = (description || '').toLowerCase().trim().replace(/\s+/g, '-');
 
   return {
     ariaDescriptionAttrs: {

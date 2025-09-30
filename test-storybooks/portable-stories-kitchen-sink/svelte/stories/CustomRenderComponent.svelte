@@ -1,7 +1,7 @@
 <script>
   import Button from './Button.svelte';
 
-  export let args;
+  const { args } = $props();
 </script>
 
 <div>

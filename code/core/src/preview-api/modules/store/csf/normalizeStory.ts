@@ -2,12 +2,11 @@ import { deprecate, logger } from 'storybook/internal/client-logger';
 import { storyNameFromExport, toId } from 'storybook/internal/csf';
 import type {
   ArgTypes,
-  LegacyStoryAnnotationsOrFn,
+  ArgsStoryFn,
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
   Renderer,
-  StoryAnnotations,
-  StoryFn,
+  StoryAnnotationsOrFn,
   StoryId,
 } from 'storybook/internal/types';
 
@@ -25,11 +24,11 @@ See https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#hoisted-csf-
 
 export function normalizeStory<TRenderer extends Renderer>(
   key: StoryId,
-  storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
+  storyAnnotations: StoryAnnotationsOrFn<TRenderer>,
   meta: NormalizedComponentAnnotations<TRenderer>
 ): NormalizedStoryAnnotations<TRenderer> {
-  const storyObject: StoryAnnotations<TRenderer> = storyAnnotations;
-  const userStoryFn: StoryFn<TRenderer> | null =
+  const storyObject = storyAnnotations;
+  const userStoryFn: ArgsStoryFn<TRenderer> | null =
     typeof storyAnnotations === 'function' ? storyAnnotations : null;
 
   const { story } = storyObject;
@@ -57,14 +56,13 @@ export function normalizeStory<TRenderer extends Renderer>(
     ...normalizeArrays(storyObject.beforeEach),
     ...normalizeArrays(story?.beforeEach),
   ];
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const experimental_afterEach = [
-    ...normalizeArrays(storyObject.experimental_afterEach),
-    ...normalizeArrays(story?.experimental_afterEach),
+
+  const afterEach = [
+    ...normalizeArrays(storyObject.afterEach),
+    ...normalizeArrays(story?.afterEach),
   ];
   const { render, play, tags = [], globals = {} } = storyObject;
 
-  // eslint-disable-next-line no-underscore-dangle
   const id = parameters.__id || toId(meta.id, exportName);
   return {
     moduleExport: storyAnnotations,
@@ -77,7 +75,7 @@ export function normalizeStory<TRenderer extends Renderer>(
     argTypes: normalizeInputTypes(argTypes),
     loaders,
     beforeEach,
-    experimental_afterEach,
+    afterEach,
     globals,
     ...(render && { render }),
     ...(userStoryFn && { userStoryFn }),

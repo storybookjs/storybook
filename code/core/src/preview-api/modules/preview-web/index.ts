@@ -16,3 +16,6 @@ export { simulatePageLoad, simulateDOMContentLoaded } from './simulate-pageload'
 export { DocsContext } from './docs-context/DocsContext';
 export type { DocsContextProps } from './docs-context/DocsContextProps';
 export type { DocsRenderFunction } from './docs-context/DocsRenderFunction';
+export { emitTransformCode } from './emitTransformCode';
+
+export { pauseAnimations, waitForAnimations } from './render/animation-utils';

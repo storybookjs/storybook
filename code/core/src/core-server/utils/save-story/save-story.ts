@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 

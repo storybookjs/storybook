@@ -45,6 +45,6 @@ export type StorybookConfig = Omit<
   StorybookConfigFramework;
 
 declare global {
-  // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/naming-convention, no-var
+  // eslint-disable-next-line no-var
   var __EMBER_GENERATED_DOC_JSON__: any;
 }

@@ -1,31 +1,27 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
-import { isFunction } from 'es-toolkit';
-// eslint-disable-next-line depend/ban-dependencies
-import {
-  copy,
-  ensureDir,
-  ensureSymlink,
-  existsSync,
-  pathExists,
-  readFileSync,
-  readJson,
-  writeFile,
-  writeJson,
-} from 'fs-extra';
-import { readFile } from 'fs/promises';
+import { existsSync } from 'node:fs';
+import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
+
+import { isFunction } from 'es-toolkit/predicate';
 import JSON5 from 'json5';
 import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 import slash from 'slash';
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { babelParse, types as t } from '../../code/core/src/babel';
 import { detectLanguage } from '../../code/core/src/cli/detect';
 import { SupportedLanguage } from '../../code/core/src/cli/project_types';
-import { JsPackageManagerFactory, versions as storybookPackages } from '../../code/core/src/common';
+import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
+import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { writeConfig } from '../../code/core/src/csf-tools';
+import {
+  readConfig as csfReadConfig,
+  formatConfig,
+  writeConfig,
+} from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
@@ -43,13 +39,56 @@ import {
   installYarn2,
 } from '../utils/yarn';
 
+async function ensureSymlink(src: string, dest: string): Promise<void> {
+  await mkdir(dirname(dest), { recursive: true });
+
+  try {
+    await lstat(dest);
+    return;
+  } catch (e: any) {
+    if (e?.code !== 'ENOENT') {
+      throw e;
+    }
+  }
+
+  await symlink(src, dest);
+}
+
+// Windows-compatible symlink function that falls back to copying
+async function ensureSymlinkOrCopy(source: string, target: string): Promise<void> {
+  try {
+    await ensureSymlink(source, target);
+  } catch (error: any) {
+    // If symlink fails (typically on Windows without admin privileges), fall back to cp
+    if (error.code === 'EPERM' || error.code === 'EEXIST') {
+      logger.info(`Symlink failed for ${target}, falling back to cp`);
+      await cp(source, target, { recursive: true, force: true });
+    } else {
+      throw error;
+    }
+  }
+}
+
+async function readJson(path: string) {
+  const content = await readFile(path, 'utf-8');
+  return JSON.parse(content);
+}
+
+async function pathExists(path: string) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 const logger = console;
 
 export const essentialsAddons = [
   'actions',
   'backgrounds',
   'controls',
-  'docs',
   'highlight',
   'measure',
   'outline',
@@ -59,14 +98,14 @@ export const essentialsAddons = [
 
 export const create: Task['run'] = async ({ key, template, sandboxDir }, { dryRun, debug }) => {
   const parentDir = resolve(sandboxDir, '..');
-  await ensureDir(parentDir);
+  await mkdir(parentDir, { recursive: true });
 
   if ('inDevelopment' in template && template.inDevelopment) {
     const srcDir = join(REPROS_DIRECTORY, key, 'after-storybook');
     if (!existsSync(srcDir)) {
       throw new Error(`Missing repro directory '${srcDir}', did the generate task run?`);
     }
-    await copy(srcDir, sandboxDir);
+    await cp(srcDir, sandboxDir, { recursive: true });
   } else {
     await executeCLIStep(steps.repro, {
       argument: key,
@@ -84,7 +123,7 @@ export const install: Task['run'] = async ({ sandboxDir, key }, { link, dryRun, 
 
   if (link) {
     await executeCLIStep(steps.link, {
-      argument: sandboxDir,
+      argument: `"${sandboxDir}"`,
       cwd: CODE_DIRECTORY,
       optionValues: { local: true, start: false },
       dryRun,
@@ -135,12 +174,24 @@ export const init: Task['run'] = async (
   const cwd = sandboxDir;
 
   let extra = {};
-  if (template.expected.renderer === '@storybook/html') {
-    extra = { type: 'html' };
-  } else if (template.expected.renderer === '@storybook/server') {
-    extra = { type: 'server' };
-  } else if (template.expected.framework === '@storybook/react-native-web-vite') {
-    extra = { type: 'react_native_web' };
+
+  switch (template.expected.renderer) {
+    case '@storybook/html':
+      extra = { type: 'html' };
+      break;
+    case '@storybook/server':
+      extra = { type: 'server' };
+      break;
+    case '@storybook/svelte':
+      await prepareSvelteSandbox(cwd);
+      break;
+  }
+
+  switch (template.expected.framework) {
+    case '@storybook/react-native-web-vite':
+      extra = { type: 'react_native_web' };
+      await prepareReactNativeWebSandbox(cwd);
+      break;
   }
 
   await executeCLIStep(steps.init, {
@@ -221,7 +272,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
           exclude: /\\.stories\\.mdx$/,
           use: [
             {
-              loader: require.resolve('@storybook/addon-docs/mdx-loader'),
+              loader: '@storybook/addon-docs/mdx-loader',
             },
           ],
         },
@@ -306,23 +357,6 @@ function addStoriesEntry(mainConfig: ConfigFile, path: string, disableDocs: bool
   mainConfig.setFieldValue(['stories'], [...stories, entry]);
 }
 
-// Add refs to older versions of storybook to test out composition
-function addRefs(mainConfig: ConfigFile) {
-  const refs = mainConfig.getFieldValue(['refs']) as Record<string, string>;
-
-  mainConfig.setFieldValue(['refs'], {
-    ...refs,
-    'storybook@8.0.0': {
-      title: 'Storybook 8.0.0',
-      url: 'https://635781f3500dd2c49e189caf-gckybvsekn.chromatic.com/',
-    },
-    'storybook@7.6.18': {
-      title: 'Storybook 7.6.18',
-      url: 'https://635781f3500dd2c49e189caf-oljwjdrftz.chromatic.com/',
-    },
-  } as Record<string, any>);
-}
-
 function getStoriesFolderWithVariant(variant?: string, folder = 'stories') {
   return variant ? `${folder}_${variant}` : folder;
 }
@@ -350,7 +384,7 @@ async function linkPackageStories(
     ? resolve(linkInDir, variant ? getStoriesFolderWithVariant(variant, packageDir) : packageDir)
     : resolve(cwd, 'template-stories', packageDir);
 
-  await ensureSymlink(source, target);
+  await ensureSymlinkOrCopy(source, target);
 
   if (!linkInDir) {
     addStoriesEntry(mainConfig, packageDir, disableDocs);
@@ -395,22 +429,20 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   // This workaround is needed because Vitest seems to have issues in link mode
   // so the /setup-file and /global-setup files from the vitest addon won't work in portal protocol
   if (options.link) {
-    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'test'));
+    const vitestAddonPath = relative(sandboxDir, join(CODE_DIRECTORY, 'addons', 'vitest'));
     packageJson.resolutions = {
       ...packageJson.resolutions,
-      '@storybook/addon-test': `file:${vitestAddonPath}`,
+      '@storybook/addon-vitest': `file:${vitestAddonPath}`,
     };
   }
 
-  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
   const isVue = template.expected.renderer === '@storybook/vue3';
-  const isNextjs = template.expected.framework.includes('nextjs');
   // const isAngular = template.expected.framework === '@storybook/angular';
 
   const portableStoriesFrameworks = [
-    '@storybook/nextjs',
-    '@storybook/experimental-nextjs-vite',
+    '@storybook/nextjs-vite',
     '@storybook/sveltekit',
     // TODO: add angular once we enable their sandboxes
   ];
@@ -418,7 +450,11 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     ? template.expected.framework
     : template.expected.renderer;
 
-  const setupFilePath = join(sandboxDir, '.storybook/vitest.setup.ts');
+  const isTypeScriptSandbox = template.name.includes('TypeScript');
+  const setupFilePath = join(
+    sandboxDir,
+    isTypeScriptSandbox ? '.storybook/vitest.setup.ts' : '.storybook/vitest.setup.js'
+  );
 
   const shouldUseCsf4 = template.expected.framework === '@storybook/react-vite';
   if (shouldUseCsf4) {
@@ -429,8 +465,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       import projectAnnotations from './preview'
 
       // setProjectAnnotations still kept to support non-CSF4 story tests
-      const annotations = setProjectAnnotations(projectAnnotations.composed)
-      beforeAll(annotations.beforeAll)
+      setProjectAnnotations(projectAnnotations.composed)
       `
     );
   } else {
@@ -438,26 +473,20 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
       setupFilePath,
       dedent`import { beforeAll } from 'vitest'
       import { setProjectAnnotations } from '${storybookPackage}'
-      import * as rendererDocsAnnotations from '${template.expected.renderer}/dist/entry-preview-docs.mjs'
+      import * as rendererDocsAnnotations from '${template.expected.renderer}/entry-preview-docs'
       import * as addonA11yAnnotations from '@storybook/addon-a11y/preview'
-      import * as addonTestAnnotations from '@storybook/addon-test/preview'
       import '../src/stories/components'
       import * as templateAnnotations from '../template-stories/core/preview'
-      import * as toolbarAnnotations from '../template-stories/addons/toolbars/preview'
       import * as projectAnnotations from './preview'
       ${isVue ? 'import * as vueAnnotations from "../src/stories/renderers/vue3/preview.js"' : ''}
-  
-      const annotations = setProjectAnnotations([
+
+      setProjectAnnotations([
         ${isVue ? 'vueAnnotations,' : ''}
         rendererDocsAnnotations,
         templateAnnotations,
-        toolbarAnnotations,
-        addonTestAnnotations,
         addonA11yAnnotations,
         projectAnnotations,
-      ])
-  
-      beforeAll(annotations.beforeAll)`
+      ])`
     );
   }
 
@@ -466,148 +495,39 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const vitestConfigFile = await findFirstPath(['vitest.config.ts', 'vitest.config.js'], opts);
   const workspaceFile = await findFirstPath(['vitest.workspace.ts', 'vitest.workspace.js'], opts);
 
-  if (workspaceFile) {
-    await writeFile(
-      join(sandboxDir, workspaceFile),
-      dedent`
-        import path from 'node:path';
-        import { fileURLToPath } from 'node:url';
-        import { defineWorkspace, defaultExclude } from "vitest/config";
-        import { storybookTest } from "@storybook/addon-test/vitest-plugin";
-
-        ${viteConfigFile ? `import viteConfig from './${viteConfigFile}';` : ''}
-
-        const dirname =
-          typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-
-        export default defineWorkspace([
-          {
-            ${!isNextjs ? `extends: "${viteConfigFile}",` : ''}
-            plugins: [
-              storybookTest({
-                configDir: path.join(dirname, '.storybook'),
-                storybookScript: "yarn storybook --ci",
-                tags: {
-                  include: ["vitest"],
-                },
-              }),
-            ],
-            ${
-              isNextjs
-                ? `optimizeDeps: {
-              include: [
-                "next/image",
-                "next/legacy/image",
-                "next/dist/compiled/react",
-                "sb-original/default-loader",
-                "sb-original/image-context",
-              ],
-            },`
-                : ''
-            }
-            resolve: {
-              preserveSymlinks: true,
-            },
-            test: {
-              name: "storybook",
-              pool: "threads",
-              exclude: [
-                ...defaultExclude,
-                // TODO: investigate TypeError: Cannot read properties of null (reading 'useContext')
-                "**/*argtypes*",
-              ],
-              /**
-               * TODO: Either fix or acknowledge limitation of:
-               * - storybook/preview-api hooks:
-               * -- UseState
-               */
-              // @ts-expect-error this type does not exist but the property does!
-              testNamePattern: /^(?!.*(UseState)).*$/,
-              browser: {
-                enabled: true,
-                name: "chromium",
-                provider: "playwright",
-                headless: true,
-              },
-              setupFiles: ["./.storybook/vitest.setup.ts"],
-              environment: "happy-dom",
-            },
-          },
-        ]);
-      `
-    );
-  } else {
-    const defaultConfigFile = template.name.includes('JavaScript')
-      ? 'vitest.config.js'
-      : 'vitest.config.ts';
-    await writeFile(
-      join(sandboxDir, vitestConfigFile || viteConfigFile || defaultConfigFile),
-      dedent`
-        import path from 'node:path';
-        import { fileURLToPath } from 'node:url';
-        import { defineConfig, defaultExclude } from "vitest/config";
-        import { storybookTest } from "@storybook/addon-test/vitest-plugin";
-
-        ${vitestConfigFile && viteConfigFile ? `import viteConfig from './${viteConfigFile}';` : ''}
-
-        const dirname =
-          typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
-
-        export default defineConfig({
-          ${!isNextjs ? `extends: "${viteConfigFile}",` : ''}
-          plugins: [
-            storybookTest({
-              configDir: path.join(dirname, '.storybook'),
-              storybookScript: "yarn storybook --ci",
-              tags: {
-                include: ["vitest"],
-              },
-            }),
-          ],
-          ${
-            isNextjs
-              ? `optimizeDeps: {
-            include: [
-              "next/image",
-              "next/legacy/image",
-              "next/dist/compiled/react",
-              "sb-original/default-loader",
-              "sb-original/image-context",
-            ],
-          },`
-              : ''
-          }
-          resolve: {
-            preserveSymlinks: true,
-          },
-          test: {
-            name: "storybook",
-            pool: "threads",
-            exclude: [
-              ...defaultExclude,
-              // TODO: investigate TypeError: Cannot read properties of null (reading 'useContext')
-              "**/*argtypes*",
-            ],
-            /**
-             * TODO: Either fix or acknowledge limitation of:
-             * - storybook/preview-api hooks:
-             * -- UseState
-             */
-            // @ts-expect-error this type does not exist but the property does!
-            testNamePattern: /^(?!.*(UseState)).*$/,
-            browser: {
-              enabled: true,
-              name: "chromium",
-              provider: "playwright",
-              headless: true,
-            },
-            setupFiles: ["./.storybook/vitest.setup.ts"],
-            environment: "happy-dom",
-          },
-        });
-      `
-    );
+  const configFile = workspaceFile || vitestConfigFile || viteConfigFile;
+  if (!configFile) {
+    throw new Error(`No Vitest or Vite config file found in sandbox: ${sandboxDir}`);
   }
+
+  let fileContent = await readFile(join(sandboxDir, configFile), 'utf-8');
+  // Insert resolve: { preserveSymlinks: true } as a sibling to plugins in the top-level config object
+  // Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }])
+  fileContent = fileContent.replace(/(plugins\s*:\s*\[[^\]]*\],?)/, (match) => {
+    // Insert resolve after plugins
+    return `${match}\n  resolve: {\n    preserveSymlinks: true\n  },`;
+  });
+  // search for storybookTest({...}) and place `tags: 'vitest'` into it but tags option doesn't exist yet in the config. Also consider multi line
+  const storybookTestRegex = /storybookTest\((\{[\s\S]*?\})\)/g;
+  fileContent = fileContent.replace(storybookTestRegex, (match, args) => {
+    // Add tags as the last property before the closing }
+    const lastBraceIndex = args.lastIndexOf('}');
+    if (lastBraceIndex !== -1) {
+      // Insert before the last }
+      const before = args.slice(0, lastBraceIndex).trimEnd();
+      const needsComma = before.endsWith('{') ? '' : ',';
+      const after = args.slice(lastBraceIndex);
+      return `storybookTest(${before}${needsComma}\n  tags: {\n    include: ['vitest']\n  }\n${after})`;
+    }
+    // If tags exists and is not empty, or any other case, return as is
+    return match;
+  });
+
+  await writeFile(join(sandboxDir, configFile), fileContent);
+  // Only run story tests which are tagged with 'vitest'
+  const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
+  previewConfig.setFieldValue(['tags'], ['vitest']);
+  await writeConfig(previewConfig);
 }
 
 export async function addExtraDependencies({
@@ -621,7 +541,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  const extraDevDeps = ['@storybook/test-runner@next'];
+  const extraDevDeps = ['@storybook/test-runner@0.23.1--canary.d0c3175.0'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);
@@ -631,11 +551,10 @@ export async function addExtraDependencies({
     return;
   }
 
-  const packageJson = JSON.parse(await readFile(join(cwd, 'package.json'), { encoding: 'utf8' }));
-
   const packageManager = JsPackageManagerFactory.getPackageManager({}, cwd);
+
   await packageManager.addDependencies(
-    { installAsDevDependencies: true, skipInstall: true, packageJson },
+    { type: 'devDependencies', skipInstall: true },
     extraDevDeps
   );
 
@@ -645,11 +564,17 @@ export async function addExtraDependencies({
       logger.log('\uD83C\uDF81 Adding extra deps', versionedExtraDeps);
     }
     await packageManager.addDependencies(
-      { installAsDevDependencies: true, skipInstall: true, packageJson },
+      { type: 'devDependencies', skipInstall: true },
       versionedExtraDeps
     );
   }
 }
+
+export const addGlobalMocks: Task['run'] = async ({ sandboxDir }) => {
+  await cp(join(CODE_DIRECTORY, 'core', 'template', '__mocks__'), join(sandboxDir, '__mocks__'), {
+    recursive: true,
+  });
+};
 
 export const addStories: Task['run'] = async (
   { sandboxDir, template, key },
@@ -680,7 +605,7 @@ export const addStories: Task['run'] = async (
   if (isCoreRenderer) {
     // Link in the template/components/index.js from preview-api, the renderer and the addons
     const rendererPath = await workspacePath('renderer', template.expected.renderer);
-    await ensureSymlink(
+    await ensureSymlinkOrCopy(
       join(CODE_DIRECTORY, rendererPath, 'template', 'components'),
       resolve(cwd, storiesPath, 'components')
     );
@@ -754,7 +679,7 @@ export const addStories: Task['run'] = async (
       disableDocs,
     });
 
-    await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-test'), {
+    await linkPackageStories(await workspacePath('addon test package', '@storybook/addon-vitest'), {
       mainConfig,
       cwd,
       disableDocs,
@@ -809,10 +734,6 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   logger.log('📝 Extending main.js');
   const mainConfig = await readConfig({ fileName: 'main', cwd: sandboxDir });
 
-  if (key === 'react-vite/default-ts') {
-    addRefs(mainConfig);
-  }
-
   const templateConfig: any = isFunction(template.modifications?.mainConfig)
     ? template.modifications?.mainConfig(mainConfig)
     : template.modifications?.mainConfig || {};
@@ -865,9 +786,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   // Simulate Storybook Lite
   if (disableDocs) {
     const addons = mainConfig.getFieldValue(['addons']);
-    const addonsNoDocs = addons.map((addon: any) =>
-      addon !== '@storybook/addon-essentials' ? addon : { name: addon, options: { docs: false } }
-    );
+    const addonsNoDocs = addons.filter((addon: any) => addon !== '@storybook/addon-docs');
     mainConfig.setFieldValue(['addons'], addonsNoDocs);
 
     // remove the docs options so that docs tags are ignored
@@ -898,19 +817,39 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
       { namespace: 'templateAnnotations' },
       '../template-stories/core/preview'
     );
-    previewConfig.setImport(
-      { namespace: 'toolbarAnnotations' },
-      '../template-stories/addons/toolbars/preview'
-    );
     previewConfig.appendNodeToArray(['addons'], t.identifier('templateAnnotations'));
-    previewConfig.appendNodeToArray(['addons'], t.identifier('toolbarAnnotations'));
   }
 
   if (template.expected.builder.includes('vite')) {
     previewConfig.setFieldValue(['tags'], ['vitest']);
   }
 
-  await writeConfig(previewConfig);
+  if (template.name.includes('Bench')) {
+    await writeConfig(previewConfig);
+    return;
+  }
+
+  previewConfig.setImport(['sb'], 'storybook/test');
+  let config = formatConfig(previewConfig);
+
+  const mockBlock = [
+    "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
+    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
+    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
+    "sb.mock(import('lodash-es'));",
+    "sb.mock(import('lodash-es/add'));",
+    "sb.mock(import('lodash-es/sum'));",
+    "sb.mock(import('uuid'));",
+    '',
+  ].join('\n');
+
+  // find last import statement and append sb.mock calls
+  config = config.replace(
+    'import { sb } from "storybook/test";',
+    `import { sb } from 'storybook/test';\n\n${mockBlock}`
+  );
+
+  await writeFile(previewConfig.fileName, config);
 };
 
 export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dryRun, debug }) => {
@@ -920,6 +859,9 @@ export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dry
       argument: 'csf-factories',
       dryRun,
       debug,
+      env: {
+        STORYBOOK_PROJECT_ROOT: sandboxDir,
+      },
     });
   }
 };
@@ -934,7 +876,45 @@ export async function setImportMap(cwd: string) {
     },
   };
 
-  await writeJson(join(cwd, 'package.json'), packageJson, { spaces: 2 });
+  await writeFile(join(cwd, 'package.json'), JSON.stringify(packageJson, null, 2));
+}
+
+async function prepareReactNativeWebSandbox(cwd: string) {
+  // Make it so that RN sandboxes have stories in src/stories similar to
+  // other react sandboxes, for consistency.
+  if (!(await pathExists(join(cwd, 'src')))) {
+    await mkdir(join(cwd, 'src'));
+  }
+}
+
+async function prepareSvelteSandbox(cwd: string) {
+  const svelteConfigJsPath = join(cwd, 'svelte.config.js');
+  const svelteConfigTsPath = join(cwd, 'svelte.config.ts');
+
+  // Check which config file exists
+  const configPath = (await pathExists(svelteConfigTsPath))
+    ? svelteConfigTsPath
+    : (await pathExists(svelteConfigJsPath))
+      ? svelteConfigJsPath
+      : null;
+
+  if (!configPath) {
+    throw new Error(
+      `No svelte.config.js or svelte.config.ts found in sandbox: ${cwd}, cannot modify config.`
+    );
+  }
+
+  const svelteConfig = await csfReadConfig(configPath);
+
+  // Enable async components
+  // see https://svelte.dev/docs/svelte/await-expressions
+  svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
+
+  // Enable remote functions
+  // see https://svelte.dev/docs/kit/remote-functions
+  svelteConfig.setFieldValue(['kit', 'experimental', 'remoteFunctions'], true);
+
+  await writeConfig(svelteConfig);
 }
 
 async function prepareAngularSandbox(cwd: string, templateName: string) {
@@ -957,7 +937,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
     angularJson.projects[projectName].architect['build-storybook'].options.preserveSymlinks = true;
   });
 
-  await writeJson(join(cwd, 'angular.json'), angularJson, { spaces: 2 });
+  await writeFile(join(cwd, 'angular.json'), JSON.stringify(angularJson, null, 2));
 
   const packageJsonPath = join(cwd, 'package.json');
   const packageJson = await readJson(packageJsonPath);
@@ -969,12 +949,12 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
     'build-storybook': `yarn docs:json && ${packageJson.scripts['build-storybook']}`,
   };
 
-  await writeJson(packageJsonPath, packageJson, { spaces: 2 });
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
 
   // Set tsConfig compilerOptions
 
   const tsConfigPath = join(cwd, '.storybook', 'tsconfig.json');
-  const tsConfigContent = readFileSync(tsConfigPath, { encoding: 'utf-8' });
+  const tsConfigContent = await readFile(tsConfigPath, { encoding: 'utf-8' });
   // This does not preserve comments, but that shouldn't be an issue for sandboxes
   const tsConfigJson = JSON5.parse(tsConfigContent);
 
@@ -987,7 +967,7 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
   tsConfigJson.include = [
     ...tsConfigJson.include,
     '../template-stories/**/*.stories.ts',
-    // This is necessary since template stories depend on globalThis.components, which Typescript can't look up automatically
+    // This is necessary since template stories depend on globalThis.__TEMPLATE_COMPONENTS__, which Typescript can't look up automatically
     '../src/stories/**/*',
   ];
 
@@ -997,5 +977,5 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
     };
   }
 
-  await writeJson(tsConfigPath, tsConfigJson, { spaces: 2 });
+  await writeFile(tsConfigPath, JSON.stringify(tsConfigJson, null, 2));
 }

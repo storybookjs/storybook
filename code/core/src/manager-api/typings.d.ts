@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle, @typescript-eslint/naming-convention */
 declare var __STORYBOOK_ADDONS_MANAGER: any;
 
 declare var CONFIG_TYPE: string;

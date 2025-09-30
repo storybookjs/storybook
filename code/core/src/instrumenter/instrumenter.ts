@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import type { Channel } from 'storybook/internal/channels';
 import { once } from 'storybook/internal/client-logger';
 import {
@@ -11,32 +10,24 @@ import type { StoryId } from 'storybook/internal/types';
 import { global } from '@storybook/global';
 
 import { processError } from '@vitest/utils/error';
-import { addons } from 'storybook/preview-api';
 
-import type { Call, CallRef, ControlStates, LogItem, Options, State, SyncPayload } from './types';
+import { EVENTS } from './EVENTS';
+import { addons } from './preview-api';
+import type {
+  Call,
+  CallRef,
+  ControlStates,
+  LogItem,
+  Options,
+  RenderPhase,
+  State,
+  SyncPayload,
+} from './types';
 import { CallStates } from './types';
 import './typings.d.ts';
 
-export const EVENTS = {
-  CALL: 'storybook/instrumenter/call',
-  SYNC: 'storybook/instrumenter/sync',
-  START: 'storybook/instrumenter/start',
-  BACK: 'storybook/instrumenter/back',
-  GOTO: 'storybook/instrumenter/goto',
-  NEXT: 'storybook/instrumenter/next',
-  END: 'storybook/instrumenter/end',
-};
-
 type PatchedObj<TObj extends Record<string, unknown>> = {
   [Property in keyof TObj]: TObj[Property] & { __originalFn__: TObj[Property] };
-};
-
-const controlsDisabled: ControlStates = {
-  start: false,
-  back: false,
-  goto: false,
-  next: false,
-  end: false,
 };
 
 const alreadyCompletedException = new Error(
@@ -66,13 +57,13 @@ const isInstrumentable = (o: unknown) => {
 const construct = (obj: any) => {
   try {
     return new obj.constructor();
-  } catch (e) {
+  } catch {
     return {};
   }
 };
 
 const getInitialState = (): State => ({
-  renderPhase: undefined,
+  renderPhase: 'preparing',
   isDebugging: false,
   isPlaying: false,
   isLocked: false,
@@ -103,23 +94,25 @@ const getRetainedState = (state: State, isDebugging = false) => {
 export class Instrumenter {
   channel: Channel | undefined;
 
+  detached = false;
   initialized = false;
 
   // State is tracked per story to deal with multiple stories on the same canvas (i.e. docs mode)
-  state: Record<StoryId, State>;
+  state: Record<StoryId, State> = {};
 
   constructor() {
     // Restore state from the parent window in case the iframe was reloaded.
-    // @ts-expect-error (TS doesn't know about this global variable)
-    this.state = global.window?.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
+    this.loadParentWindowState();
 
     // When called from `start`, isDebugging will be true.
     const resetState = ({
       storyId,
+      renderPhase,
       isPlaying = true,
       isDebugging = false,
     }: {
       storyId: StoryId;
+      renderPhase?: RenderPhase;
       isPlaying?: boolean;
       isDebugging?: boolean;
     }) => {
@@ -127,6 +120,7 @@ export class Instrumenter {
       this.setState(storyId, {
         ...getInitialState(),
         ...getRetainedState(state, isDebugging),
+        renderPhase: renderPhase || state.renderPhase,
         shadowCalls: isDebugging ? state.shadowCalls : [],
         chainedCallIds: isDebugging ? state.chainedCallIds : new Set<Call['id']>(),
         playUntil: isDebugging ? state.playUntil : undefined,
@@ -220,69 +214,106 @@ export class Instrumenter {
       Object.values(this.getState(storyId).resolvers).forEach((resolve) => resolve());
     };
 
-    const renderPhaseChanged = ({ storyId, newPhase }: { storyId: string; newPhase: any }) => {
+    const renderPhaseChanged = ({
+      storyId,
+      newPhase,
+    }: {
+      storyId: string;
+      newPhase: RenderPhase;
+    }) => {
       const { isDebugging } = this.getState(storyId);
-      this.setState(storyId, { renderPhase: newPhase });
       if (newPhase === 'preparing' && isDebugging) {
-        resetState({ storyId });
+        return resetState({ storyId, renderPhase: newPhase });
+      } else if (newPhase === 'playing') {
+        return resetState({ storyId, renderPhase: newPhase, isDebugging });
       }
-      if (newPhase === 'playing') {
-        resetState({ storyId, isDebugging });
-      }
+
       if (newPhase === 'played') {
         this.setState(storyId, {
+          renderPhase: newPhase,
           isLocked: false,
           isPlaying: false,
           isDebugging: false,
         });
-      }
-      if (newPhase === 'errored') {
+      } else if (newPhase === 'errored') {
         this.setState(storyId, {
+          renderPhase: newPhase,
           isLocked: false,
           isPlaying: false,
         });
+      } else if (newPhase === 'aborted') {
+        this.setState(storyId, {
+          renderPhase: newPhase,
+          isLocked: true,
+          isPlaying: false,
+        });
+      } else {
+        this.setState(storyId, {
+          renderPhase: newPhase,
+        });
       }
+
+      this.sync(storyId);
     };
 
     // Support portable stories where addons are not available
-    (addons ? addons.ready() : Promise.resolve()).then(() => {
-      this.channel = addons.getChannel();
+    if (addons) {
+      addons.ready().then(() => {
+        this.channel = addons.getChannel();
 
-      // A forceRemount might be triggered for debugging (on `start`), or elsewhere in Storybook.
-      this.channel.on(FORCE_REMOUNT, resetState);
+        // A forceRemount might be triggered for debugging (on `start`), or elsewhere in Storybook.
+        this.channel.on(FORCE_REMOUNT, resetState);
 
-      // Start with a clean slate before playing after a remount, and stop debugging when done.
-      this.channel.on(STORY_RENDER_PHASE_CHANGED, renderPhaseChanged);
+        // Start with a clean slate before playing after a remount, and stop debugging when done.
+        this.channel.on(STORY_RENDER_PHASE_CHANGED, renderPhaseChanged);
 
-      // Trash non-retained state and clear the log when switching stories, but not on initial boot.
-      this.channel.on(SET_CURRENT_STORY, () => {
-        if (this.initialized) {
-          this.cleanup();
-        } else {
-          this.initialized = true;
-        }
+        // Trash non-retained state and clear the log when switching stories, but not on initial boot.
+        this.channel.on(SET_CURRENT_STORY, () => {
+          if (this.initialized) {
+            this.cleanup();
+          } else {
+            this.initialized = true;
+          }
+        });
+
+        this.channel.on(EVENTS.START, start(this.channel));
+        this.channel.on(EVENTS.BACK, back(this.channel));
+        this.channel.on(EVENTS.GOTO, goto(this.channel));
+        this.channel.on(EVENTS.NEXT, next(this.channel));
+        this.channel.on(EVENTS.END, end);
       });
-
-      this.channel.on(EVENTS.START, start(this.channel));
-      this.channel.on(EVENTS.BACK, back(this.channel));
-      this.channel.on(EVENTS.GOTO, goto(this.channel));
-      this.channel.on(EVENTS.NEXT, next(this.channel));
-      this.channel.on(EVENTS.END, end);
-    });
+    }
   }
+
+  loadParentWindowState = () => {
+    try {
+      this.state = global.window?.parent?.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ || {};
+    } catch {
+      // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
+      this.detached = true;
+    }
+  };
+
+  updateParentWindowState = () => {
+    try {
+      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+    } catch {
+      // This happens when window.parent is not on the same origin (e.g. for a composed storybook)
+      this.detached = true;
+    }
+  };
 
   getState(storyId: StoryId) {
     return this.state[storyId] || getInitialState();
   }
 
   setState(storyId: StoryId, update: Partial<State> | ((state: State) => Partial<State>)) {
-    const state = this.getState(storyId);
-    const patch = typeof update === 'function' ? update(state) : update;
-    this.state = { ...this.state, [storyId]: { ...state, ...patch } };
-    // Track state on the parent window so we can reload the iframe without losing state.
-    if (global.window?.parent) {
-      // @ts-expect-error fix this later in d.ts file
-      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
+    if (storyId) {
+      const state = this.getState(storyId);
+      const patch = typeof update === 'function' ? update(state) : update;
+      this.state = { ...this.state, [storyId]: { ...state, ...patch } };
+      // Track state on the parent window so we can reload the iframe without losing state.
+      this.updateParentWindowState();
     }
   }
 
@@ -300,12 +331,17 @@ export class Instrumenter {
       },
       {} as Record<StoryId, State>
     );
-    const payload: SyncPayload = { controlStates: controlsDisabled, logItems: [] };
+    const controlStates: ControlStates = {
+      detached: this.detached,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    };
+    const payload: SyncPayload = { controlStates, logItems: [] };
     this.channel?.emit(EVENTS.SYNC, payload);
-    if (global.window?.parent) {
-      // @ts-expect-error fix this later in d.ts file
-      global.window.parent.__STORYBOOK_ADDON_INTERACTIONS_INSTRUMENTER_STATE__ = this.state;
-    }
+    this.updateParentWindowState();
   }
 
   getLog(storyId: string): LogItem[] {
@@ -355,12 +391,14 @@ export class Instrumenter {
       (acc, key) => {
         const descriptor = getPropertyDescriptor(obj, key);
         if (typeof descriptor?.get === 'function') {
-          const getter = () => descriptor?.get?.bind(obj)?.();
-          Object.defineProperty(acc, key, {
-            get: () => {
-              return this.instrument(getter(), { ...options, path: path.concat(key) }, depth);
-            },
-          });
+          if (descriptor.configurable) {
+            const getter = () => descriptor?.get?.bind(obj)?.();
+            Object.defineProperty(acc, key, {
+              get: () => {
+                return this.instrument(getter(), { ...options, path: path.concat(key) }, depth);
+              },
+            });
+          }
           return acc;
         }
 
@@ -443,7 +481,6 @@ export class Instrumenter {
       }));
     }).then(() => {
       this.setState(call.storyId, (state) => {
-        // eslint-disable-next-line @typescript-eslint/naming-convention
         const { [call.id]: _, ...resolvers } = state.resolvers;
         return { isLocked: true, resolvers };
       });
@@ -456,7 +493,7 @@ export class Instrumenter {
 
     // TODO This function should not needed anymore, as the channel already serializes values with telejson
     // Possibly we need to add HTMLElement support to telejson though
-    // Keeping this function here, as removing it means we need to refactor the deserializing that happens in addon-interactions
+    // Keeping this function here, as removing it means we need to refactor the deserializing that happens in core interactions
     const maximumDepth = 25; // mimicks the max depth of telejson
     const serializeValues = (value: any, depth: number, seen: unknown[]): any => {
       if (seen.includes(value)) {
@@ -576,8 +613,8 @@ export class Instrumenter {
       const finalArgs = actualArgs.map((arg: any) => {
         // We only want to wrap plain functions, not objects.
 
-        // We only want to wrap plain functions, not objects.
-        if (typeof arg !== 'function' || Object.keys(arg).length) {
+        // We only want to wrap plain functions, not objects or classes.
+        if (typeof arg !== 'function' || isClass(arg) || Object.keys(arg).length) {
           return arg;
         }
 
@@ -666,8 +703,16 @@ export class Instrumenter {
         .find((item) => item.status === CallStates.WAITING)?.callId;
 
       const hasActive = logItems.some((item) => item.status === CallStates.ACTIVE);
-      if (isLocked || hasActive || logItems.length === 0) {
-        const payload: SyncPayload = { controlStates: controlsDisabled, logItems };
+      if (this.detached || isLocked || hasActive || logItems.length === 0) {
+        const controlStates: ControlStates = {
+          detached: this.detached,
+          start: false,
+          back: false,
+          goto: false,
+          next: false,
+          end: false,
+        };
+        const payload: SyncPayload = { controlStates, logItems };
         this.channel?.emit(EVENTS.SYNC, payload);
         return;
       }
@@ -676,6 +721,7 @@ export class Instrumenter {
         (item) => item.status === CallStates.DONE || item.status === CallStates.ERROR
       );
       const controlStates: ControlStates = {
+        detached: this.detached,
         start: hasPrevious,
         back: hasPrevious,
         goto: true,
@@ -743,4 +789,53 @@ function getPropertyDescriptor<T>(obj: T, propName: keyof T) {
     target = Object.getPrototypeOf(target);
   }
   return undefined;
+}
+
+export function isClass(obj: unknown) {
+  // if not a function, return false.
+
+  // if not a function, return false.
+  if (typeof obj !== 'function') {
+    return false;
+  }
+
+  // ⭐ is a function, has a prototype, and can't be deleted!
+
+  // ⭐ although a function's prototype is writable (can be reassigned),
+  //   it's not configurable (can't update property flags), so it
+  //   will remain writable.
+  //
+  // ⭐ a class's prototype is non-writable.
+  //
+  // Table: property flags of function/class prototype
+  // ---------------------------------
+  //   prototype  write  enum  config
+  // ---------------------------------
+  //   function     v      .      .
+  //   class        .      .      .
+  // ---------------------------------
+
+  // ⭐ is a function, has a prototype, and can't be deleted!
+
+  // ⭐ although a function's prototype is writable (can be reassigned),
+  //   it's not configurable (can't update property flags), so it
+  //   will remain writable.
+  //
+  // ⭐ a class's prototype is non-writable.
+  //
+  // Table: property flags of function/class prototype
+  // ---------------------------------
+  //   prototype  write  enum  config
+  // ---------------------------------
+  //   function     v      .      .
+  //   class        .      .      .
+  // ---------------------------------
+  const descriptor = Object.getOwnPropertyDescriptor(obj, 'prototype');
+
+  // every method shorthand version has no prototype
+  if (!descriptor) {
+    return false;
+  }
+
+  return !descriptor.writable;
 }

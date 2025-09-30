@@ -90,9 +90,7 @@ describe('projectAnnotations', () => {
     setProjectAnnotations([
       {
         parameters: { injected: true },
-        globalTypes: {
-          locale: { defaultValue: 'en' },
-        },
+        initialGlobals: { locale: 'en' },
       },
     ]);
     const WithEnglishText = composeStory(ButtonStories.CSF2StoryWithLocale, ButtonStories.default);

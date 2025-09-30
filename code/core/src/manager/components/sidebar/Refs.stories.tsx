@@ -10,11 +10,13 @@ import { mockDataset } from './mockdata';
 import type { RefType } from './types';
 
 const managerContext = {
-  state: { docsOptions: {}, testProviders: {} },
+  state: { docsOptions: {} },
   api: {
     on: fn().mockName('api::on'),
     off: fn().mockName('api::off'),
-    getElements: fn(() => ({})),
+    emit: fn().mockName('api::emit'),
+    getElements: fn(() => ({})).mockName('api::getElements'),
+    getShortcutKeys: fn(() => ({})).mockName('api::getShortcutKeys'),
   },
 } as any;
 
@@ -60,6 +62,7 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
   empty: {
     id: 'empty',
@@ -68,6 +71,7 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     filteredIndex: {},
     previewInitialized: false,
+    allStatuses: {},
   },
   startInjected_unknown: {
     id: 'startInjected_unknown',
@@ -77,6 +81,7 @@ const refs: Record<string, RefType> = {
     previewInitialized: false,
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
   startInjected_loading: {
     id: 'startInjected_loading',
@@ -86,6 +91,7 @@ const refs: Record<string, RefType> = {
     previewInitialized: false,
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
   startInjected_ready: {
     id: 'startInjected_ready',
@@ -95,6 +101,7 @@ const refs: Record<string, RefType> = {
     previewInitialized: true,
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
   versions: {
     id: 'versions',
@@ -105,6 +112,7 @@ const refs: Record<string, RefType> = {
     filteredIndex,
     versions: { '1.0.0': 'https://example.com/v1', '2.0.0': 'https://example.com' },
     previewInitialized: true,
+    allStatuses: {},
   },
   versionsMissingCurrent: {
     id: 'versions_missing_current',
@@ -115,6 +123,7 @@ const refs: Record<string, RefType> = {
     filteredIndex,
     versions: { '1.0.0': 'https://example.com/v1', '2.0.0': 'https://example.com/v2' },
     previewInitialized: true,
+    allStatuses: {},
   },
   error: {
     id: 'error',
@@ -123,6 +132,7 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     indexError,
     previewInitialized: true,
+    allStatuses: {},
   },
   auth: {
     id: 'Authentication',
@@ -131,6 +141,7 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     loginUrl: 'https://example.com',
     previewInitialized: true,
+    allStatuses: {},
   },
   long: {
     id: 'long',
@@ -154,12 +165,25 @@ const refs: Record<string, RefType> = {
     type: 'lazy',
     // @ts-expect-error (invalid input)
     filteredIndex,
+    allStatuses: {},
   },
 };
 
 export const Optimized = () => (
   <Ref
     {...refs.optimized}
+    hasEntries={true}
+    isLoading={false}
+    isBrowsing
+    selectedStoryId=""
+    highlightedRef={{ current: null }}
+    setHighlighted={() => {}}
+  />
+);
+export const NoEntries = () => (
+  <Ref
+    {...refs.empty}
+    hasEntries={false}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -170,6 +194,7 @@ export const Optimized = () => (
 export const IsEmpty = () => (
   <Ref
     {...refs.empty}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -180,6 +205,7 @@ export const IsEmpty = () => (
 export const StartInjectedUnknown = () => (
   <Ref
     {...refs.startInjected_unknown}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -190,6 +216,7 @@ export const StartInjectedUnknown = () => (
 export const StartInjectedLoading = () => (
   <Ref
     {...refs.startInjected_loading}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -200,6 +227,7 @@ export const StartInjectedLoading = () => (
 export const StartInjectedReady = () => (
   <Ref
     {...refs.startInjected_ready}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -210,6 +238,7 @@ export const StartInjectedReady = () => (
 export const Versions = () => (
   <Ref
     {...refs.versions}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -220,6 +249,7 @@ export const Versions = () => (
 export const VersionsMissingCurrent = () => (
   <Ref
     {...refs.versionsMissingCurrent}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -230,6 +260,7 @@ export const VersionsMissingCurrent = () => (
 export const Errored = () => (
   <Ref
     {...refs.error}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -240,6 +271,7 @@ export const Errored = () => (
 export const Auth = () => (
   <Ref
     {...refs.auth}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -250,6 +282,7 @@ export const Auth = () => (
 export const Long = () => (
   <Ref
     {...refs.long}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""
@@ -261,6 +294,7 @@ export const Long = () => (
 export const WithSourceCode = () => (
   <Ref
     {...refs.withSourceCode}
+    hasEntries={true}
     isLoading={false}
     isBrowsing
     selectedStoryId=""

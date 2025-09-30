@@ -5,11 +5,13 @@ import { LocationProvider } from 'storybook/internal/router';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { startCase } from 'es-toolkit/string';
 import { action } from 'storybook/actions';
+import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';
+import { isChromatic } from '../../../../../.storybook/isChromatic';
 import { Layout } from './Layout';
 import { LayoutProvider } from './LayoutProvider';
 
@@ -25,6 +27,9 @@ const PlaceholderBlock = styled.div({
 const PlaceholderClock: FC<PropsWithChildren> = ({ children }) => {
   const [count, setCount] = React.useState(0);
   React.useEffect(() => {
+    if (isChromatic()) {
+      return;
+    }
     const interval = setInterval(() => {
       setCount(count + 1);
     }, 1000);
@@ -32,7 +37,7 @@ const PlaceholderClock: FC<PropsWithChildren> = ({ children }) => {
   }, [count]);
   return (
     <PlaceholderBlock>
-      <h2>{count}</h2>
+      <h2 data-chromatic="ignore">{count}</h2>
       {children}
     </PlaceholderBlock>
   );
@@ -54,6 +59,41 @@ const defaultState = {
   viewMode: 'story',
 } as const;
 
+const renderLabel = ({ name }: { name: string }) => startCase(name);
+
+const mockManagerStore: any = {
+  state: {
+    index: {
+      someRootId: {
+        type: 'root',
+        id: 'someRootId',
+        name: 'root',
+        renderLabel,
+      },
+      someComponentId: {
+        type: 'component',
+        id: 'someComponentId',
+        name: 'component',
+        parent: 'someRootId',
+        renderLabel,
+      },
+      someStoryId: {
+        type: 'story',
+        subtype: 'story',
+        id: 'someStoryId',
+        name: 'story',
+        parent: 'someComponentId',
+        renderLabel,
+      },
+    },
+  },
+  api: {
+    getCurrentStoryData: fn(() => {
+      return mockManagerStore.state.index.someStoryId;
+    }),
+  },
+};
+
 const meta = {
   title: 'Layout',
   component: Layout,
@@ -69,11 +109,12 @@ const meta = {
   globals: { sb_theme: 'light' },
   parameters: { layout: 'fullscreen' },
   decorators: [
-    MobileNavigationStoriesMeta.decorators[0] as any,
     (storyFn) => (
-      <LocationProvider>
-        <LayoutProvider>{storyFn()}</LayoutProvider>
-      </LocationProvider>
+      <ManagerContext.Provider value={mockManagerStore}>
+        <LocationProvider>
+          <LayoutProvider>{storyFn()}</LayoutProvider>
+        </LocationProvider>
+      </ManagerContext.Provider>
     ),
   ],
   render: (args) => {

@@ -1,6 +1,8 @@
-import type { AxeResults, ElementContext, RunOptions, Spec } from 'axe-core';
+import type { AxeResults, NodeResult, Result } from 'axe-core';
 
-export type A11YReport = AxeResults | { error: Error };
+import type { A11yParameters as A11yParams } from './params';
+
+export type A11YReport = EnhancedResults | { error: Error };
 
 export interface A11yParameters {
   /**
@@ -8,27 +10,7 @@ export interface A11yParameters {
    *
    * @see https://storybook.js.org/docs/writing-tests/accessibility-testing
    */
-  a11y?: {
-    /** Manual configuration for specific elements */
-    element?: ElementContext;
-
-    /**
-     * Configuration for the accessibility rules
-     *
-     * @see https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#api-name-axeconfigure
-     */
-    config?: Spec;
-
-    /**
-     * Options for the accessibility checks To learn more about the available options,
-     *
-     * @see https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter
-     */
-    options?: RunOptions;
-
-    /** Remove the addon panel and disable the addon's behavior */
-    disable?: boolean;
-  };
+  a11y?: A11yParams;
 }
 
 export interface A11yGlobals {
@@ -37,7 +19,7 @@ export interface A11yGlobals {
    *
    * @see https://storybook.js.org/docs/writing-tests/accessibility-testing
    */
-  a11y: {
+  a11y?: {
     /**
      * Prevent the addon from executing automated accessibility checks upon visiting a story. You
      * can still trigger the checks from the addon panel.
@@ -46,4 +28,31 @@ export interface A11yGlobals {
      */
     manual?: boolean;
   };
+}
+
+export const RuleType = {
+  VIOLATION: 'violations',
+  PASS: 'passes',
+  INCOMPLETION: 'incomplete',
+} as const;
+
+export type RuleType = (typeof RuleType)[keyof typeof RuleType];
+
+export type EnhancedNodeResult = NodeResult & {
+  linkPath: string;
+};
+
+export type EnhancedResult = Omit<Result, 'nodes'> & {
+  nodes: EnhancedNodeResult[];
+};
+
+export type EnhancedResults = Omit<AxeResults, 'incomplete' | 'passes' | 'violations'> & {
+  incomplete: EnhancedResult[];
+  passes: EnhancedResult[];
+  violations: EnhancedResult[];
+};
+
+export interface A11yTypes {
+  parameters: A11yParameters;
+  globals: A11yGlobals;
 }

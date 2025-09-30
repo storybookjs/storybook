@@ -47,7 +47,7 @@ Here's an example file:
 <!-- prettier-ignore-start -->
 
 ```md
-import { Meta, Story, Canvas } from '@storybook/blocks';
+import { Meta, Story, Canvas } from '@storybook/addon-docs/blocks';
 import * as CheckboxStories from './Checkbox.stories';
 
 <Meta title="MDX/Checkbox" of={CheckboxStories} />
@@ -76,7 +76,7 @@ For more information on `MDX`, see the [`MDX` reference](https://github.com/stor
 
 Storybook Docs supports all view layers that Storybook supports except for React Native (currently). There are some framework-specific features as well, such as props tables and inline story rendering. The following page captures the current state of support:
 
-[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support)
+[Framework Support](https://storybook.js.org/docs/configure/integration/frameworks-feature-support?ref=readme)
 
 **Note:** `#` = WIP support
 
@@ -139,11 +139,11 @@ export default {
 
 `csfPluginOptions` is an object for configuring `@storybook/csf-plugin`. When set to `null` it tells docs not to run the `csf-plugin` at all, which can be used as an optimization, or if you're already using `csf-plugin` in your `main.js`.
 
-> With the release of version 7.0, it is no longer possible to import `.md` files directly into Storybook using the `transcludeMarkdown` [option](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#importing-plain-markdown-files-with-transcludemarkdown-has-changed). Instead, we recommend using the [`Markdown`](https://storybook.js.org/docs/api/doc-blocks/doc-block-markdown) Doc Block for importing Markdown files into your Storybook documentation.
+> With the release of version 7.0, it is no longer possible to import `.md` files directly into Storybook using the `transcludeMarkdown` [option](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#importing-plain-markdown-files-with-transcludemarkdown-has-changed). Instead, we recommend using the [`Markdown`](https://storybook.js.org/docs/api/doc-blocks/doc-block-markdown?ref=readme) Doc Block for importing Markdown files into your Storybook documentation.
 
 ## TypeScript configuration
 
-As of SB6 [TypeScript is zero-config](https://storybook.js.org/docs/configure/integration/typescript) and should work with SB Docs out of the box. For advanced configuration options, refer to the [Props documentation](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/docs/props-tables.md).
+As of SB6 [TypeScript is zero-config](https://storybook.js.org/docs/configure/integration/typescript?ref=readme) and should work with SB Docs out of the box. For advanced configuration options, refer to the [Props documentation](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/docs/props-tables.md).
 
 ## More resources
 
@@ -152,3 +152,5 @@ Want to learn more? Here are some more articles on Storybook Docs:
 - References: [DocsPage](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/docs/docspage.md) / [MDX](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/docs/mdx.md) / [FAQ](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/docs/faq.md) / [Recipes](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/docs/recipes.md) / [Theming](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/docs/theming.md) / [Props](https://github.com/storybookjs/storybook/tree/next/code/addons/docs/docs/props-tables.md)
 - Announcements: [Vision](https://medium.com/storybookjs/storybook-docs-sneak-peak-5be78445094a) / [DocsPage](https://medium.com/storybookjs/storybook-docspage-e185bc3622bf) / [MDX](https://medium.com/storybookjs/rich-docs-with-storybook-mdx-61bc145ae7bc) / [Framework support](https://medium.com/storybookjs/storybook-docs-for-new-frameworks-b1f6090ee0ea)
 - Example: [Storybook Design System](https://github.com/storybookjs/design-system)
+
+Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=readme).

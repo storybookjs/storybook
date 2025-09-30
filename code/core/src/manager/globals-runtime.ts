@@ -10,19 +10,36 @@ globalPackages.forEach((key) => {
   globalThis[globalsNameReferenceMap[key]] = globalsNameValueMap[key];
 });
 
+const queuedErrors: Error[] = [];
+
 globalThis.sendTelemetryError = (error) => {
-  if (!shouldSkipError(error)) {
-    const channel = global.__STORYBOOK_ADDONS_CHANNEL__;
-    channel.emit(TELEMETRY_ERROR, prepareForTelemetry(error));
+  if (shouldSkipError(error)) {
+    return;
   }
+
+  const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
+  const preparedError = prepareForTelemetry(error);
+
+  if (!channel) {
+    queuedErrors.push(preparedError);
+    return;
+  }
+
+  // Flush any queued errors first
+  while (queuedErrors.length > 0) {
+    const queuedError = queuedErrors.shift();
+    channel.emit(TELEMETRY_ERROR, queuedError);
+  }
+
+  channel.emit(TELEMETRY_ERROR, preparedError);
 };
 
 // handle all uncaught errors at the root of the application and log to telemetry
 globalThis.addEventListener('error', (args) => {
   const error = args.error || args;
-  global.sendTelemetryError(error);
+  globalThis.sendTelemetryError(error);
 });
 
 globalThis.addEventListener('unhandledrejection', ({ reason }) => {
-  global.sendTelemetryError(reason);
+  globalThis.sendTelemetryError(reason);
 });

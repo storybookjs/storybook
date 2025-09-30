@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { PureArgsTable as ArgsTable } from '@storybook/blocks';
+import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 
 import { mapValues } from 'es-toolkit/compat';
 import PropTypes from 'prop-types';

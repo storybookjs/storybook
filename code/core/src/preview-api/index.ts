@@ -27,12 +27,15 @@ export { makeDecorator } from './addons';
  */
 export { addons, mockChannel } from './addons';
 
-/** ADDON ANNOTATIONS TYPE HELPER */
-export { definePreview } from './addons';
-
-export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
-export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-preview';
-export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
+// TODO: Universal Stores are disabled in the preview, until we get automatic leader negotiation in place
+// export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store';
+// export { useUniversalStore as experimental_useUniversalStore } from '../shared/universal-store/use-universal-store-preview';
+// export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock';
+// export {
+//   getStatusStoreByTypeId as experimental_getStatusStore,
+//   useStatusStore as experimental_useStatusStore,
+//   fullStatusStore as internal_fullStatusStore,
+// } from './stores/status';
 
 /** DOCS API */
 export { DocsContext } from './preview-web';
@@ -51,6 +54,7 @@ export {
   defaultDecorateStory,
   prepareStory,
   prepareMeta,
+  normalizeArrays,
   normalizeStory,
   filterArgTypes,
   sanitizeStoryContextUpdate,
@@ -70,6 +74,14 @@ export type { PropDescriptor } from './store';
 
 /** STORIES API */
 export { StoryStore, type Report, ReporterAPI } from './store';
-export { Preview, PreviewWeb, PreviewWithSelection, UrlStore, WebView } from './preview-web';
+export {
+  Preview,
+  PreviewWeb,
+  PreviewWithSelection,
+  UrlStore,
+  WebView,
+  emitTransformCode,
+  pauseAnimations,
+  waitForAnimations,
+} from './preview-web';
 export type { SelectionStore, View } from './preview-web';
-export { getComposedCoreAnnotations, getCoreAnnotations } from './core-annotations';

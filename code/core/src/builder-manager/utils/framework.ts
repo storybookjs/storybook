@@ -43,15 +43,20 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
       (await extractProperRendererNameFromFramework(frameworkName)) ?? undefined;
   }
 
-  const builderName = pluckNameFromConfigProperty(builder);
-  if (builderName) {
+  const resolvedPreviewBuilder = pluckNameFromConfigProperty(builder);
+  if (resolvedPreviewBuilder) {
     globals.STORYBOOK_BUILDER =
-      pluckStorybookPackageFromPath(builderName) ?? pluckThirdPartyPackageFromPath(builderName);
+      pluckStorybookPackageFromPath(resolvedPreviewBuilder) ??
+      pluckThirdPartyPackageFromPath(resolvedPreviewBuilder);
   }
 
   const framework = pluckNameFromConfigProperty(await options.presets.apply('framework'));
   if (framework) {
     globals.STORYBOOK_FRAMEWORK = framework;
+  }
+
+  if (options.networkAddress) {
+    globals.STORYBOOK_NETWORK_ADDRESS = options.networkAddress;
   }
 
   return globals;

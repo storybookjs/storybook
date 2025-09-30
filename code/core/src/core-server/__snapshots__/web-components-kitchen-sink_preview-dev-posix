@@ -184,27 +184,6 @@ Object {
         ],
       },
       Object {
-        "enforce": "pre",
-        "loader": "CWD/lib/source-loader/dist/index.js",
-        "options": Object {
-          "injectStoryParameters": true,
-          "inspectLocalDependencies": true,
-        },
-        "test": "/\\\\.(stories|story)\\\\.[tj]sx?$/",
-      },
-      Object {
-        "enforce": "pre",
-        "test": Array [
-          "/\\\\.stories\\\\.(jsx?$|tsx?$)/",
-        ],
-        "use": Array [
-          Object {
-            "loader": "CWD/lib/source-loader/dist/index.js",
-            "options": undefined,
-          },
-        ],
-      },
-      Object {
         "sideEffects": true,
         "test": "/\\\\.css$/",
         "use": Array [

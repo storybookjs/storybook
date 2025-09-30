@@ -16,6 +16,7 @@ import { StoryRender, serializeError } from './StoryRender';
 
 const entry = {
   type: 'story',
+  subtype: 'story',
   id: 'component--a',
   name: 'A',
   title: 'component',
@@ -45,7 +46,7 @@ const buildStory = (overrides: Partial<PreparedStory> = {}): PreparedStory =>
     name: 'name',
     tags: [],
     applyLoaders: vi.fn(),
-    applyBeforeEach: vi.fn(),
+    applyBeforeEach: vi.fn(() => []),
     applyAfterEach: vi.fn(),
     unboundStoryFn: vi.fn(),
     playFunction: vi.fn(),

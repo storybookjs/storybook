@@ -1,15 +1,15 @@
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
 import { temporaryDirectory, versions } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
-import type { SupportedFrameworks } from 'storybook/internal/types';
+import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
 import downloadTarballDefault from '@ndelangen/get-tarball';
 import getNpmTarballUrlDefault from 'get-npm-tarball-url';
 import invariant from 'tiny-invariant';
 
+import { resolvePackageDir } from '../shared/utils/module';
 import { externalFrameworks } from './project_types';
-import type { SupportedRenderers } from './project_types';
 
 const resolveUsingBranchInstall = async (packageManager: JsPackageManager, request: string) => {
   const tempDirectory = await temporaryDirectory();
@@ -47,11 +47,7 @@ export async function getRendererDir(
   const errors: Error[] = [];
 
   try {
-    return dirname(
-      require.resolve(packageJsonPath, {
-        paths: [process.cwd()],
-      })
-    );
+    return resolvePackageDir(frameworkPackageName, process.cwd());
   } catch (e) {
     invariant(e instanceof Error);
     errors.push(e);

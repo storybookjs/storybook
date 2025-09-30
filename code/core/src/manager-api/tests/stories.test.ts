@@ -15,7 +15,7 @@ import {
   STORY_SPECIFIED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import type { API_StoryEntry } from 'storybook/internal/types';
+import { type API_StoryEntry } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -26,6 +26,7 @@ import type { ModuleArgs } from '../lib/types';
 import { init as initStories } from '../modules/stories';
 import type { API, State } from '../root';
 import type Store from '../store';
+import { fullStatusStore } from '../stores/status';
 import { docsEntries, mockEntries, navigationEntries, preparedEntries } from './mockStoriesEntries';
 
 const mockGetEntries = vi.fn();
@@ -126,6 +127,7 @@ describe('stories API', () => {
       });
       expect(index!['component-a--story-1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'component-a--story-1',
         parent: 'component-a',
         title: 'Component A',
@@ -145,6 +147,7 @@ describe('stories API', () => {
         entries: {
           'design-system-some-component--my-story': {
             type: 'story',
+            subtype: 'story',
             id: 'design-system-some-component--my-story',
             title: '  Design System  /  Some Component  ', // note the leading/trailing whitespace around each part of the path
             name: '  My Story  ', // we only trim the path, so this will be kept as-is (it may intentionally have whitespace)
@@ -170,6 +173,7 @@ describe('stories API', () => {
       });
       expect(index!['design-system-some-component--my-story']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         title: '  Design System  /  Some Component  ', // title is kept as-is, because it may be used as identifier
         name: '  My Story  ', // story name is kept as-is, because it's set directly on the story
       });
@@ -183,6 +187,7 @@ describe('stories API', () => {
         entries: {
           'root-first--story-1': {
             type: 'story',
+            subtype: 'story',
             id: 'root-first--story-1',
             title: 'Root/First',
             name: 'Story 1',
@@ -222,6 +227,7 @@ describe('stories API', () => {
         entries: {
           'a-b--1': {
             type: 'story',
+            subtype: 'story',
             id: 'a-b--1',
             title: 'a/b',
             name: '1',
@@ -247,6 +253,7 @@ describe('stories API', () => {
       });
       expect(index!['a-b--1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a-b--1',
         parent: 'a-b',
         name: '1',
@@ -263,6 +270,7 @@ describe('stories API', () => {
         entries: {
           'a--1': {
             type: 'story',
+            subtype: 'story',
             id: 'a--1',
             title: 'a',
             name: '1',
@@ -280,6 +288,7 @@ describe('stories API', () => {
       });
       expect(index!['a--1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a--1',
         parent: 'a',
         title: 'a',
@@ -295,6 +304,7 @@ describe('stories API', () => {
         entries: {
           'a--1': {
             type: 'story',
+            subtype: 'story',
             id: 'a--1',
             title: 'a',
             name: '1',
@@ -303,6 +313,7 @@ describe('stories API', () => {
           },
           'a--2': {
             type: 'story',
+            subtype: 'story',
             id: 'a--2',
             title: 'a',
             name: '2',
@@ -322,6 +333,7 @@ describe('stories API', () => {
       });
       expect(index!['a--1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a--1',
         parent: 'a',
         title: 'a',
@@ -330,6 +342,7 @@ describe('stories API', () => {
       });
       expect(index!['a--2']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a--2',
         parent: 'a',
         title: 'a',
@@ -347,6 +360,7 @@ describe('stories API', () => {
         entries: {
           'a-sampleone': {
             type: 'story',
+            subtype: 'story',
             id: 'a-sampleone',
             title: 'A/SampleOne',
             name: '1',
@@ -355,6 +369,7 @@ describe('stories API', () => {
           },
           'a-sampletwo': {
             type: 'story',
+            subtype: 'story',
             id: 'a-sampletwo',
             title: 'A/SampleTwo',
             name: '2',
@@ -417,9 +432,30 @@ describe('stories API', () => {
       api.setIndex({
         v: 5,
         entries: {
-          'a--1': { type: 'story', title: 'a', name: '1', id: 'a--1', importPath: './a.ts' },
-          'b--1': { type: 'story', title: 'b', name: '1', id: 'b--1', importPath: './b.ts' },
-          'a--2': { type: 'story', title: 'a', name: '2', id: 'a--2', importPath: './a.ts' },
+          'a--1': {
+            type: 'story',
+            subtype: 'story',
+            title: 'a',
+            name: '1',
+            id: 'a--1',
+            importPath: './a.ts',
+          },
+          'b--1': {
+            type: 'story',
+            subtype: 'story',
+            title: 'b',
+            name: '1',
+            id: 'b--1',
+            importPath: './b.ts',
+          },
+          'a--2': {
+            type: 'story',
+            subtype: 'story',
+            title: 'a',
+            name: '2',
+            id: 'a--2',
+            importPath: './a.ts',
+          },
         },
       });
       const { index } = store.getState();
@@ -446,6 +482,7 @@ describe('stories API', () => {
         entries: {
           'prepared--story': {
             type: 'story',
+            subtype: 'story',
             id: 'prepared--story',
             title: 'Prepared',
             name: 'Story',
@@ -458,6 +495,7 @@ describe('stories API', () => {
       const { index } = store.getState();
       expect(index!['prepared--story']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'prepared--story',
         parent: 'prepared',
         title: 'Prepared',
@@ -593,6 +631,7 @@ describe('stories API', () => {
             entries: {
               'component-a--story-1': {
                 type: 'story',
+                subtype: 'story',
                 id: 'component-a--story-1',
                 title: 'Component A',
                 name: 'Story 1',
@@ -644,6 +683,7 @@ describe('stories API', () => {
             entries: {
               'component-a--story-1': {
                 type: 'story',
+                subtype: 'story',
                 id: 'component-a--story-1',
                 title: 'Component A',
                 name: 'Story 1',
@@ -945,6 +985,33 @@ describe('stories API', () => {
       expect(result).toBe('b-c--1');
     });
   });
+  describe('findAllLeafStoryIds', () => {
+    it('work for a leaf story', () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({ v: 5, entries: navigationEntries });
+      const result = api.findAllLeafStoryIds('a--1');
+      expect(result).toEqual(['a--1']);
+    });
+    it('work for an entry with children', () => {
+      const initialState = {
+        path: '/story/group-a/component-a',
+        storyId: 'component-a--story-1',
+        viewMode: 'story',
+      };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+      api.setIndex({
+        v: 5,
+        entries: mockEntries,
+      });
+      const result = api.findAllLeafStoryIds('component-a');
+      expect(result).toEqual(['component-a--story-1', 'component-a--story-2']);
+    });
+  });
   describe('jumpToComponent', () => {
     it('works forward', () => {
       const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1162,6 +1229,7 @@ describe('stories API', () => {
       const { index } = store.getState();
       expect(index!['component-a--story-1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'component-a--story-1',
         parent: 'component-a',
         title: 'Component A',
@@ -1342,195 +1410,6 @@ describe('stories API', () => {
       );
     });
   });
-  describe('experimental_updateStatus', () => {
-    it('is included in the initial state', () => {
-      const moduleArgs = createMockModuleArgs({});
-      const { state } = initStories(moduleArgs as unknown as ModuleArgs);
-
-      expect(state).toEqual(
-        expect.objectContaining({
-          status: {},
-        })
-      );
-    });
-    it('updates a story', async () => {
-      const moduleArgs = createMockModuleArgs({});
-      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
-      const { store } = moduleArgs;
-
-      await api.setIndex({ v: 5, entries: mockEntries });
-
-      await expect(
-        api.experimental_updateStatus('a-addon-id', {
-          'a-story-id': {
-            status: 'pending',
-            title: 'an addon title',
-            description: 'an addon description',
-          },
-        })
-      ).resolves.not.toThrow();
-      expect(store.getState().status).toMatchInlineSnapshot(`
-        {
-          "a-story-id": {
-            "a-addon-id": {
-              "description": "an addon description",
-              "status": "pending",
-              "title": "an addon title",
-            },
-          },
-        }
-      `);
-    });
-    it('skips updating index, if index is unset', async () => {
-      const moduleArgs = createMockModuleArgs({});
-      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
-      const { store } = moduleArgs;
-
-      await expect(
-        api.experimental_updateStatus('a-addon-id', {
-          'a-story-id': {
-            status: 'pending',
-            title: 'an addon title',
-            description: 'an addon description',
-          },
-        })
-      ).resolves.not.toThrow();
-      expect(store.getState().status).toMatchInlineSnapshot(`
-        {
-          "a-story-id": {
-            "a-addon-id": {
-              "description": "an addon description",
-              "status": "pending",
-              "title": "an addon title",
-            },
-          },
-        }
-      `);
-    });
-    it('updates multiple stories', async () => {
-      const moduleArgs = createMockModuleArgs({});
-      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
-      const { store } = moduleArgs;
-
-      await api.setIndex({ v: 5, entries: mockEntries });
-
-      await expect(
-        api.experimental_updateStatus('a-addon-id', {
-          'a-story-id': {
-            status: 'pending',
-            title: 'an addon title',
-            description: 'an addon description',
-          },
-          'another-story-id': { status: 'success', title: 'a addon title', description: '' },
-        })
-      ).resolves.not.toThrow();
-      expect(store.getState().status).toMatchInlineSnapshot(`
-        {
-          "a-story-id": {
-            "a-addon-id": {
-              "description": "an addon description",
-              "status": "pending",
-              "title": "an addon title",
-            },
-          },
-          "another-story-id": {
-            "a-addon-id": {
-              "description": "",
-              "status": "success",
-              "title": "a addon title",
-            },
-          },
-        }
-      `);
-    });
-    it('delete when value is null', async () => {
-      const moduleArgs = createMockModuleArgs({});
-      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
-      const { store } = moduleArgs;
-
-      await api.setIndex({ v: 5, entries: mockEntries });
-
-      await expect(
-        api.experimental_updateStatus('a-addon-id', {
-          'a-story-id': {
-            status: 'pending',
-            title: 'an addon title',
-            description: 'an addon description',
-          },
-          'another-story-id': { status: 'success', title: 'a addon title', description: '' },
-        })
-      ).resolves.not.toThrow();
-
-      // do a second update, this time with null
-      await expect(
-        api.experimental_updateStatus('a-addon-id', {
-          'a-story-id': null!,
-          'another-story-id': { status: 'success', title: 'a addon title', description: '' },
-        })
-      ).resolves.not.toThrow();
-
-      expect(store.getState().status).toMatchInlineSnapshot(`
-        {
-          "another-story-id": {
-            "a-addon-id": {
-              "description": "",
-              "status": "success",
-              "title": "a addon title",
-            },
-          },
-        }
-      `);
-    });
-    it('updates with a function', async () => {
-      const moduleArgs = createMockModuleArgs({});
-      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
-      const { store } = moduleArgs;
-
-      await api.setIndex({ v: 5, entries: mockEntries });
-
-      // setup initial state
-      await expect(
-        api.experimental_updateStatus('a-addon-id', () => ({
-          'a-story-id': {
-            status: 'pending',
-            title: 'an addon title',
-            description: 'an addon description',
-          },
-          'another-story-id': { status: 'success', title: 'a addon title', description: '' },
-        }))
-      ).resolves.not.toThrow();
-
-      // use existing state in function
-      await expect(
-        api.experimental_updateStatus('a-addon-id', (current: any) => {
-          return Object.fromEntries(
-            Object.entries(current).map(([k, v]: any) => [
-              k,
-              { ...v['a-addon-id'], status: 'success' },
-            ])
-          );
-        })
-      ).resolves.not.toThrow();
-      expect(store.getState().status).toMatchInlineSnapshot(`
-        {
-          "a-story-id": {
-            "a-addon-id": {
-              "description": "an addon description",
-              "status": "success",
-              "title": "an addon title",
-            },
-          },
-          "another-story-id": {
-            "a-addon-id": {
-              "description": "",
-              "status": "success",
-              "title": "a addon title",
-            },
-          },
-        }
-      `);
-    });
-  });
   describe('experimental_setFilter', () => {
     it('is included in the initial state', async () => {
       const moduleArgs = createMockModuleArgs({});
@@ -1582,6 +1461,7 @@ describe('stories API', () => {
             ],
             "depth": 0,
             "id": "a",
+            "importPath": "./a.ts",
             "name": "a",
             "parent": undefined,
             "renderLabel": undefined,
@@ -1596,6 +1476,7 @@ describe('stories API', () => {
             "parent": "a",
             "prepared": false,
             "renderLabel": undefined,
+            "subtype": "story",
             "tags": [],
             "title": "a",
             "type": "story",
@@ -1608,6 +1489,7 @@ describe('stories API', () => {
             "parent": "a",
             "prepared": false,
             "renderLabel": undefined,
+            "subtype": "story",
             "tags": [],
             "title": "a",
             "type": "story",
@@ -1617,6 +1499,7 @@ describe('stories API', () => {
     });
 
     it('can filter on status', async () => {
+      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -1624,52 +1507,64 @@ describe('stories API', () => {
       await api.setIndex({ v: 5, entries: navigationEntries });
       await api.experimental_setFilter(
         'myCustomFilter',
-        (item: any) =>
-          item.status !== undefined &&
-          Object.values(item.status).some((v: any) => v.status === 'pending')
+        (item) =>
+          item.statuses !== undefined &&
+          Object.values(item.statuses).some((status) => status.value === 'status-value:pending')
       );
 
       // empty, because there are no stories with status
       expect(store.getState().filteredIndex).toMatchInlineSnapshot('{}');
 
       // setting status should update the index
-      await api.experimental_updateStatus('a-addon-id', {
-        'a--1': {
-          status: 'pending',
+      fullStatusStore.set([
+        {
+          typeId: 'a-addon-id',
+          storyId: 'a--1',
+          value: 'status-value:pending',
           title: 'an addon title',
           description: 'an addon description',
         },
-        'a--2': { status: 'success', title: 'a addon title', description: '' },
-      });
-
-      expect(store.getState().filteredIndex).toMatchInlineSnapshot(`
         {
-          "a": {
-            "children": [
-              "a--1",
-            ],
-            "depth": 0,
-            "id": "a",
-            "name": "a",
-            "parent": undefined,
-            "renderLabel": undefined,
-            "tags": [],
-            "type": "component",
-          },
-          "a--1": {
-            "depth": 1,
-            "id": "a--1",
-            "importPath": "./a.ts",
-            "name": "1",
-            "parent": "a",
-            "prepared": false,
-            "renderLabel": undefined,
-            "tags": [],
-            "title": "a",
-            "type": "story",
-          },
-        }
-      `);
+          typeId: 'a-addon-id',
+          storyId: 'a--2',
+          value: 'status-value:success',
+          title: 'an addon title',
+          description: 'an addon description',
+        },
+      ]);
+
+      await vi.waitFor(() => {
+        expect(store.getState().filteredIndex).toMatchInlineSnapshot(`
+          {
+            "a": {
+              "children": [
+                "a--1",
+              ],
+              "depth": 0,
+              "id": "a",
+              "importPath": "./a.ts",
+              "name": "a",
+              "parent": undefined,
+              "renderLabel": undefined,
+              "tags": [],
+              "type": "component",
+            },
+            "a--1": {
+              "depth": 1,
+              "id": "a--1",
+              "importPath": "./a.ts",
+              "name": "1",
+              "parent": "a",
+              "prepared": false,
+              "renderLabel": undefined,
+              "subtype": "story",
+              "tags": [],
+              "title": "a",
+              "type": "story",
+            },
+          }
+        `);
+      });
     });
 
     it('persists filter when index is updated', async () => {
@@ -1693,6 +1588,7 @@ describe('stories API', () => {
             ],
             "depth": 0,
             "id": "a",
+            "importPath": "./a.ts",
             "name": "a",
             "parent": undefined,
             "renderLabel": undefined,
@@ -1707,6 +1603,7 @@ describe('stories API', () => {
             "parent": "a",
             "prepared": false,
             "renderLabel": undefined,
+            "subtype": "story",
             "tags": [],
             "title": "a",
             "type": "story",
@@ -1719,6 +1616,7 @@ describe('stories API', () => {
             "parent": "a",
             "prepared": false,
             "renderLabel": undefined,
+            "subtype": "story",
             "tags": [],
             "title": "a",
             "type": "story",

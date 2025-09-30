@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 

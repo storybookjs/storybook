@@ -1,8 +1,5 @@
 <script>
-  /**
-   * content
-   */
-  export let content = '';
+  const { content } = $props();
 </script>
 
 <div>{@html content}</div>

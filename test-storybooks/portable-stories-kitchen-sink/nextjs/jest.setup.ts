@@ -1,18 +1,6 @@
-import '@testing-library/jest-dom';
-import type { ProjectAnnotations } from 'storybook/internal/types';
-import { ReactRenderer } from '@storybook/react';
-import { setProjectAnnotations } from '@storybook/nextjs';
-import * as addonInteractions from '@storybook/addon-interactions/preview';
+import "@testing-library/jest-dom";
+import { setProjectAnnotations } from "@storybook/nextjs";
 
-/**
- * For some weird reason, Jest in Nextjs throws the following error:
- * Cannot find module '.storybook/preview' from 'jest.setup.ts
- *
- * when using import sbAnnotations from './.storybook/preview';
- */
-const sbAnnotations = require('./.storybook/preview');
+import sbAnnotations from "./.storybook/preview";
 
-setProjectAnnotations([
-  sbAnnotations,
-  addonInteractions as ProjectAnnotations<ReactRenderer>, // instruments actions as spies
-]);
+setProjectAnnotations([sbAnnotations]);

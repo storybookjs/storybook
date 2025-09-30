@@ -4,7 +4,6 @@ import { ChevronSmallDownIcon } from '@storybook/icons';
 
 import { convert, styled, themes } from 'storybook/theming';
 
-// eslint-disable-next-line import/no-named-as-default
 import Message from './Message';
 
 const Wrapper = styled.div<{ status: string }>(({ theme, status }) => ({

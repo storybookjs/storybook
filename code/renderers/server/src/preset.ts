@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { ComponentTitle, PresetProperty, StoryName, Tag } from 'storybook/internal/types';
 
@@ -11,7 +11,6 @@ type FileContent = {
   stories: { name: StoryName; tags?: Tag[] }[];
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_indexers: PresetProperty<'experimental_indexers'> = (
   existingIndexers
 ) => [
@@ -32,6 +31,7 @@ export const experimental_indexers: PresetProperty<'experimental_indexers'> = (
           title: content.title,
           tags,
           type: 'story',
+          subtype: 'story',
         };
       });
     },
@@ -49,5 +49,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   }
   const result: string[] = [];
 
-  return result.concat(input).concat([join(__dirname, 'entry-preview.mjs')]);
+  return result
+    .concat(input)
+    .concat([fileURLToPath(import.meta.resolve('@storybook/server/entry-preview'))]);
 };

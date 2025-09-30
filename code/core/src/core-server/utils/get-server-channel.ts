@@ -32,10 +32,7 @@ export class ServerChannelTransport {
     this.socket.on('connection', (wss) => {
       wss.on('message', (raw) => {
         const data = raw.toString();
-        const event =
-          typeof data === 'string' && isJSON(data)
-            ? parse(data, { allowFunction: false, allowClass: false })
-            : data;
+        const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;
         this.handler?.(event);
       });
     });
@@ -63,7 +60,7 @@ export class ServerChannelTransport {
   }
 
   send(event: any) {
-    const data = stringify(event, { maxDepth: 15, allowFunction: false, allowClass: false });
+    const data = stringify(event, { maxDepth: 15 });
 
     Array.from(this.socket.clients)
       .filter((c) => c.readyState === WebSocket.OPEN)
@@ -76,7 +73,6 @@ export function getServerChannel(server: Server) {
 
   const channel = new Channel({ transports, async: true });
 
-  // eslint-disable-next-line no-underscore-dangle
   UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
 
   return channel;

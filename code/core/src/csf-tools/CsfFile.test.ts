@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
+// eslint-disable-next-line depend/ban-dependencies
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
 
@@ -2799,7 +2800,7 @@ describe('CsfFile', () => {
         `
           )
         ).toThrowErrorMatchingInlineSnapshot(`
-          [MultipleMetaError: CSF: multiple meta objects 
+          [MultipleMetaError: CSF: multiple meta objects
 
           More info: https://storybook.js.org/docs/writing-stories?ref=error#default-export]
         `);

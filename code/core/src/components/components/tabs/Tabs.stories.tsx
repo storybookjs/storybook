@@ -10,7 +10,7 @@ import { action } from 'storybook/actions';
 import { expect, spyOn } from 'storybook/test';
 import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 
-import type { ChildrenList } from './_Tabs.helpers';
+import type { ChildrenList } from './Tabs.helpers';
 import { TabWrapper, Tabs, TabsState } from './tabs';
 
 const colours = Array.from(new Array(15), (val, index) => index).map((i) =>

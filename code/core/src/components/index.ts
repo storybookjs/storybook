@@ -85,28 +85,28 @@ export {
 export { default as ListItem } from './components/tooltip/ListItem';
 
 // Bar, Toolbar and Tabs
-export { Tabs, TabsState, TabWrapper } from './components/Tabs2/_Tabs';
-export { TabButton } from './components/Tabs2/_Button';
+export { Tabs, TabsState, TabWrapper } from './components/Tabs/Tabs';
+export { TabButton } from './components/Tabs/Button';
 export { Separator, interleaveSeparators } from './components/Bar2/_Separator';
 export { Bar, FlexBar, type BarProps } from './components/Bar2/_Bar';
-export { EmptyTabContent } from './components/Tabs2/_EmptyTabContent';
+export { EmptyTabContent } from './components/Tabs/EmptyTabContent';
 export { AddonPanel } from './components/addon-panel/addon-panel';
 export { Toolbar, AbstractToolbar } from './components/Toolbar/Toolbar';
-export { TabList } from './components/Tabs2/_TabList';
-export type { TabListProps } from './components/Tabs2/_TabList';
-export { TabPanel } from './components/Tabs2/_TabPanel';
-export type { TabPanelProps } from './components/Tabs2/_TabPanel';
-export { TabsView, useTabsState } from './components/Tabs2/_TabsView';
-export type { TabProps, TabsViewProps } from './components/Tabs2/_TabsView';
+export { TabList } from './components/Tabs/TabList';
+export type { TabListProps } from './components/Tabs/TabList';
+export { TabPanel } from './components/Tabs/TabPanel';
+export type { TabPanelProps } from './components/Tabs/TabPanel';
+export { TabsView, useTabsState } from './components/Tabs/TabsView';
+export type { TabProps, TabsViewProps } from './components/Tabs/TabsView';
 
-export { StatelessTabList } from './components/Tabs2/_StatelessTabList';
-export type { StatelessTabListProps } from './components/Tabs2/_StatelessTabList';
-export { StatelessTabPanel } from './components/Tabs2/_StatelessTabPanel';
-export type { StatelessTabPanelProps } from './components/Tabs2/_StatelessTabPanel';
-export { StatelessTabsView } from './components/Tabs2/_StatelessTabsView';
-export type { StatelessTabsViewProps } from './components/Tabs2/_StatelessTabsView';
-export { StatelessTab } from './components/Tabs2/_StatelessTab';
-export type { StatelessTabProps } from './components/Tabs2/_StatelessTab';
+export { StatelessTabList } from './components/Tabs/StatelessTabList';
+export type { StatelessTabListProps } from './components/Tabs/StatelessTabList';
+export { StatelessTabPanel } from './components/Tabs/StatelessTabPanel';
+export type { StatelessTabPanelProps } from './components/Tabs/StatelessTabPanel';
+export { StatelessTabsView } from './components/Tabs/StatelessTabsView';
+export type { StatelessTabsViewProps } from './components/Tabs/StatelessTabsView';
+export { StatelessTab } from './components/Tabs/StatelessTab';
+export type { StatelessTabProps } from './components/Tabs/StatelessTab';
 
 // Graphics
 export { StorybookLogo } from './brand/StorybookLogo';

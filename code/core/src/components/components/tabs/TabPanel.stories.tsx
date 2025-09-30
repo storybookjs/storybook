@@ -5,7 +5,7 @@ import type { TabListState } from 'react-stately';
 import { expect, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
-import { TabList } from './_TabList';
+import { TabList } from './TabList';
 import { TabPanel } from './_TabPanel';
 import { useTabsState } from './_TabsView';
 import type { TabProps } from './_TabsView';

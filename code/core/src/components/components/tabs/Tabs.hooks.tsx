@@ -9,8 +9,8 @@ import useResizeObserver from 'use-resize-observer';
 import { WithPopover } from '../Popover/WithPopover';
 import { TooltipLinkList } from '../tooltip/TooltipLinkList';
 import type { Link } from '../tooltip/TooltipLinkList';
-import { TabButton } from './_Button';
-import type { ChildrenListComplete } from './_Tabs.helpers';
+import { TabButton } from './Button';
+import type { ChildrenListComplete } from './Tabs.helpers';
 
 const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
   display: 'inline-block',

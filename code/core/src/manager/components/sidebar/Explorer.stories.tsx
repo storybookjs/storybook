@@ -82,6 +82,7 @@ export const Simple = () => (
     }}
     isLoading={false}
     isBrowsing
+    hasEntries={true}
   />
 );
 
@@ -94,5 +95,6 @@ export const WithRefs = () => (
     }}
     isLoading={false}
     isBrowsing
+    hasEntries={true}
   />
 );

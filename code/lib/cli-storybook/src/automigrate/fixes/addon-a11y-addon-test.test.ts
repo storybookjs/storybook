@@ -4,7 +4,6 @@ import { getAddonNames } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import * as jscodeshift from 'jscodeshift';
 import path from 'path';
 import { dedent } from 'ts-dedent';
 

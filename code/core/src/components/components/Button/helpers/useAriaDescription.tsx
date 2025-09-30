@@ -1,4 +1,4 @@
-import React, { useId } from 'react';
+import React from 'react';
 
 /**
  * Provides a way to create an accessible description for an element. Returns a hidden element that
@@ -13,7 +13,7 @@ export function useAriaDescription(description?: string): {
   };
   AriaDescription: () => React.ReactElement | undefined;
 } {
-  const describedbyId = useId();
+  const describedbyId = description?.toLowerCase().trim().replace(/\s+/g, '-');
 
   return {
     ariaDescriptionAttrs: {

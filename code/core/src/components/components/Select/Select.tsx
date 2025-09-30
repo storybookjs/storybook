@@ -1,5 +1,5 @@
 import type { FC, KeyboardEvent } from 'react';
-import React, { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { ButtonProps } from 'storybook/internal/components';
 import { Button, Form, Popover } from 'storybook/internal/components';
@@ -196,7 +196,9 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     const [isOpen, setIsOpen] = useState(props.defaultOpen || false);
     const triggerRef = useObjectRef(ref);
 
-    const id = useId();
+    const id = useMemo(() => {
+      return 'select-' + Math.random().toString(36).substring(2, 15);
+    }, []);
     const listboxId = `${id}-listbox`;
     const listboxRef = useRef<HTMLUListElement>(null);
 

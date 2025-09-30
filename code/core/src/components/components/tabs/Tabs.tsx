@@ -9,10 +9,10 @@ import type { Addon_RenderOptions } from 'storybook/internal/types';
 import { styled } from 'storybook/theming';
 
 import { FlexBar } from '../Bar2/_Bar';
-import { TabButton } from './_Button';
-import { EmptyTabContent } from './_EmptyTabContent';
-import { VisuallyHidden, childrenToList } from './_Tabs.helpers';
-import { useList } from './_Tabs.hooks';
+import { TabButton } from './Button';
+import { EmptyTabContent } from './EmptyTabContent';
+import { VisuallyHidden, childrenToList } from './Tabs.helpers';
+import { useList } from './Tabs.hooks';
 
 const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';

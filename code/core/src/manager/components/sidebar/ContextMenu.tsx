@@ -137,7 +137,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
           visible={isOpen}
           onVisibleChange={setIsOpen}
           popover={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
-          hasChrome={false}
+          hasChrome={true}
           padding={0}
         >
           <FloatingStatusButton

@@ -10,7 +10,7 @@ import preview from '../../../../../.storybook/preview';
 import { StatelessTab } from './StatelessTab';
 import { StatelessTabList } from './StatelessTabList';
 import { StatelessTabPanel } from './StatelessTabPanel';
-import { StatelessTabsView, type StatelessTabsViewProps } from './StatelessTabsView';
+import { StatelessTabsView, type StatelessTabsViewProps } from './_StatelessTabsView';
 
 const RenderDefault = (args: StatelessTabsViewProps) => (
   <StatelessTabsView {...args}>

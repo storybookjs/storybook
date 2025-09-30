@@ -5,10 +5,10 @@ import type { TabListState } from 'react-stately';
 import { expect, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
-import { TabList } from './TabList';
-import { TabPanel } from './TabPanel';
-import type { TabProps } from './TabsView';
-import { useTabsState } from './TabsView';
+import { TabList } from './_TabList';
+import { TabPanel } from './_TabPanel';
+import { useTabsState } from './_TabsView';
+import type { TabProps } from './_TabsView';
 
 const TabContent: FC<{ tabNumber: number }> = ({ tabNumber }) => {
   const [counter, setCounter] = useState(0);

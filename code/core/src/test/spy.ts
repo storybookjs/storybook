@@ -5,7 +5,6 @@ import {
   type MaybePartiallyMocked,
   type MaybePartiallyMockedDeep,
   isMockFunction,
-  mocks,
   fn as vitestFn,
   spyOn as vitestSpyOn,
 } from '@vitest/spy';
@@ -14,7 +13,7 @@ import * as tinyspy from 'tinyspy';
 
 export type * from '@vitest/spy';
 
-export { isMockFunction, mocks };
+export { isMockFunction };
 
 type Listener = (mock: MockInstance, args: unknown[]) => void;
 const listeners = new Set<Listener>();
@@ -53,35 +52,6 @@ function listenWhenCalled(mock: MockInstance) {
     return impl?.apply(this, args);
   });
   return mock;
-}
-
-/**
- * Calls [`.mockClear()`](https://vitest.dev/api/mock#mockclear) on every mocked function. This will
- * only empty `.mock` state, it will not reset implementation.
- *
- * It is useful if you need to clean up mock between different assertions.
- */
-export function clearAllMocks() {
-  mocks.forEach((spy) => spy.mockClear());
-}
-
-/**
- * Calls [`.mockReset()`](https://vitest.dev/api/mock#mockreset) on every mocked function. This will
- * empty `.mock` state, reset "once" implementations and force the base implementation to return
- * `undefined` when invoked.
- *
- * This is useful when you want to completely reset a mock to the default state.
- */
-export function resetAllMocks() {
-  mocks.forEach((spy) => spy.mockReset());
-}
-
-/**
- * Calls [`.mockRestore()`](https://vitest.dev/api/mock#mockrestore) on every mocked function. This
- * will restore all original implementations.
- */
-export function restoreAllMocks() {
-  mocks.forEach((spy) => spy.mockRestore());
 }
 
 /**

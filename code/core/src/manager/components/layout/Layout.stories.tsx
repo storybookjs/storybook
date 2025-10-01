@@ -1,17 +1,17 @@
 import type { FC, PropsWithChildren } from 'react';
 import React, { useState } from 'react';
 
-import { ManagerContext } from 'storybook/internal/manager-api';
 import { LocationProvider } from 'storybook/internal/router';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import { startCase } from 'es-toolkit/string';
 import { action } from 'storybook/actions';
+import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { isChromatic } from '../../../../../.storybook/isChromatic';
-import MobileNavigationStoriesMeta from '../mobile/navigation/MobileNavigation.stories';
 import { Layout } from './Layout';
 import { LayoutProvider } from './LayoutProvider';
 
@@ -59,13 +59,38 @@ const defaultState = {
   viewMode: 'story',
 } as const;
 
-const managerContext: any = {
-  state: {},
+const renderLabel = ({ name }: { name: string }) => startCase(name);
+
+const mockManagerStore: any = {
+  state: {
+    index: {
+      someRootId: {
+        type: 'root',
+        id: 'someRootId',
+        name: 'root',
+        renderLabel,
+      },
+      someComponentId: {
+        type: 'component',
+        id: 'someComponentId',
+        name: 'component',
+        parent: 'someRootId',
+        renderLabel,
+      },
+      someStoryId: {
+        type: 'story',
+        subtype: 'story',
+        id: 'someStoryId',
+        name: 'story',
+        parent: 'someComponentId',
+        renderLabel,
+      },
+    },
+  },
   api: {
-    foo: 'bar',
-    getNavSizeWithCustomisations: fn()
-      .mockName('api::getNavSizeWithCustomisations')
-      .mockImplementation((size: number) => size),
+    getCurrentStoryData: fn(() => {
+      return mockManagerStore.state.index.someStoryId;
+    }),
   },
 };
 
@@ -85,13 +110,11 @@ const meta = {
   parameters: { layout: 'fullscreen' },
   decorators: [
     (storyFn) => (
-      <ManagerContext.Provider value={managerContext}>{storyFn()}</ManagerContext.Provider>
-    ),
-    MobileNavigationStoriesMeta.decorators[0] as any,
-    (storyFn) => (
-      <LocationProvider>
-        <LayoutProvider>{storyFn()}</LayoutProvider>
-      </LocationProvider>
+      <ManagerContext.Provider value={mockManagerStore}>
+        <LocationProvider>
+          <LayoutProvider>{storyFn()}</LayoutProvider>
+        </LocationProvider>
+      </ManagerContext.Provider>
     ),
   ],
   render: (args) => {

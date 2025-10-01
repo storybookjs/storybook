@@ -50,7 +50,7 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
       {...props}
       $simulatedGap={barInnerStyle?.gap ?? 6}
       defaultSelectedKey={defaultSelected}
-      onSelectionChange={(k: any) => onSelectionChange?.(k ? `${k}` : '')}
+      onSelectionChange={(k) => onSelectionChange?.(k ? `${k}` : '')}
       selectedKey={selected}
     >
       <Bar

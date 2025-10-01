@@ -50,6 +50,12 @@ module.exports = {
               "Don't import from react-stately directly, please use the specific submodule like @react-stately/overlays instead",
             allowTypeImports: false,
           },
+          {
+            name: 'react-aria-components',
+            message:
+              "Don't import from react-aria-components root, but use the react-aria-components/patched-dist/ComponentX entrypoints which are optimised for tree-shaking. Might require addition patching of the package if using new, unpatched components. See https://github.com/storybookjs/storybook/pull/32594",
+            allowTypeImports: true,
+          },
         ],
       },
     ],

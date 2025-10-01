@@ -1,5 +1,5 @@
 import type { ComponentProps, FC } from 'react';
-import React from 'react';
+import React, { useId } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
@@ -74,6 +74,7 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
     useLayout();
   const fullStoryName = useFullStoryName();
+  const headingId = useId();
 
   return (
     <Container {...props}>
@@ -94,7 +95,10 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
       </MobileAddonsDrawer>
 
       {!isMobilePanelOpen && (
-        <MobileBottomBar className="sb-bar" aria-label="Mobile navigation controls">
+        <MobileBottomBar className="sb-bar" aria-labelledby={headingId}>
+          <h2 id={headingId} className="sb-sr-only">
+            Navigation controls
+          </h2>
           <BottomBarButton
             padding="small"
             variant="ghost"
@@ -136,7 +140,7 @@ const Container = styled.div(({ theme }) => ({
   borderTop: `1px solid ${theme.appBorderColor}`,
 }));
 
-const MobileBottomBar = styled.div({
+const MobileBottomBar = styled.section({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',

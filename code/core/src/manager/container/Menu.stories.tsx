@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { Button, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -20,7 +20,7 @@ export default {
         }}
       >
         <WithTooltip placement="top" startOpen tooltip={storyFn()}>
-          <div>Tooltip</div>
+          <Button ariaLabel={false}>Hover me</Button>
         </WithTooltip>
       </div>
     ),

@@ -65,7 +65,7 @@ export type { PopperPlacement } from './components/shared/overlayHelpers';
 // Popovers
 export { Popover } from './components/Popover/Popover';
 export type { PopoverProps } from './components/Popover/Popover';
-export { WithPopover } from './components/Popover/lazy-WithPopover';
+export { WithPopover } from './components/Popover/WithPopover';
 export type { WithPopoverProps } from './components/Popover/WithPopover';
 
 // Tooltips
@@ -73,7 +73,7 @@ export { Tooltip } from './components/tooltip/Tooltip';
 export type { TooltipProps } from './components/tooltip/Tooltip';
 export { TooltipNote } from './components/tooltip/TooltipNote';
 export type { TooltipNoteProps } from './components/tooltip/TooltipNote';
-export { WithTooltip } from './components/tooltip/lazy-WithTooltip';
+export { WithTooltip } from './components/tooltip/WithTooltip';
 export type { WithTooltipProps } from './components/tooltip/WithTooltip';
 
 // Old tooltips - deprecated and to remove in Storybook 11

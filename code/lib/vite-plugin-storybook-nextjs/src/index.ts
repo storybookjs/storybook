@@ -123,7 +123,6 @@ function VitePlugin({
               "styled-jsx/style",
               "sb-original/image-context",
               "sb-original/default-loader",
-              "@mdx-js/react",
               "next/dist/compiled/react",
               "next/image",
               "next/legacy/image",

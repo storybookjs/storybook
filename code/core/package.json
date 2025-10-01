@@ -312,7 +312,7 @@
     "prompts": "^2.4.0",
     "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
-    "react-aria-components": "^1.12.1",
+    "react-aria-components": "patch:react-aria-components@npm%3A1.12.2#~/.yarn/patches/react-aria-components-npm-1.12.2-6c5dcdafab.patch",
     "react-dom": "^18.2.0",
     "react-helmet-async": "^1.3.0",
     "react-inspector": "^6.0.0",

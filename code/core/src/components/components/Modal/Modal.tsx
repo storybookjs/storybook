@@ -3,15 +3,12 @@ import React, { type HTMLAttributes, createContext, useEffect, useState } from '
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
 import { UNSAFE_PortalProvider } from '@react-aria/overlays';
+import { Dialog } from 'react-aria-components/patched-dist/Dialog';
+import { ModalOverlay, Modal as ModalUpstream } from 'react-aria-components/patched-dist/Modal';
 import { useTransitionState } from 'react-transition-state';
 
 import { useMediaQuery } from '../../../manager/hooks/useMedia';
 import * as Components from './Modal.styled';
-
-// import { Dialog, ModalOverlay, Modal as ModalUpstream } from 'react-aria-components';
-const Dialog = (props: any) => <div {...props} />;
-const ModalOverlay = (props: any) => <div {...props} />;
-const ModalUpstream = (props: any) => <div {...props} />;
 
 interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   /** Width of the Modal. Defaults to `740`. */

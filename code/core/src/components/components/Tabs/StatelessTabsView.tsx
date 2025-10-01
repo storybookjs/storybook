@@ -4,10 +4,8 @@ import React from 'react';
 import { Bar, EmptyTabContent } from 'storybook/internal/components';
 import type { TabsViewProps } from 'storybook/internal/components';
 
+import { Tabs } from 'react-aria-components/patched-dist/Tabs';
 import { styled } from 'storybook/theming';
-
-// import { Tabs } from 'react-aria-components';
-const Tabs = (props: any) => <div {...props} />;
 
 const Container = styled(Tabs)<{ $simulatedGap: string | number }>(({ $simulatedGap }) => ({
   display: 'flex',

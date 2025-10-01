@@ -5,10 +5,8 @@ import { Button } from 'storybook/internal/components';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
+import { TabList as TabListUpstream } from 'react-aria-components/patched-dist/Tabs';
 import { styled } from 'storybook/theming';
-
-// import { TabList as TabListUpstream } from 'react-aria-components';
-const TabListUpstream = (props: any) => <div {...props} />;
 
 const Root = styled.div({
   display: 'flex',

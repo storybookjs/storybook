@@ -1,10 +1,8 @@
 import type { FC } from 'react';
 import React from 'react';
 
-// import { Tab } from 'react-aria-components';
+import { Tab } from 'react-aria-components/patched-dist/Tabs';
 import { styled } from 'storybook/theming';
-
-const Tab = (props: any) => <div {...props} />;
 
 export interface StatelessTabProps {
   /** Unique id of the Tab, must match that of its corresponding TabPanel. */

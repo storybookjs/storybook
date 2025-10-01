@@ -6,12 +6,15 @@ import { Button } from 'storybook/internal/components';
 
 import { CrossIcon } from '@storybook/icons';
 
-import { Heading, Text } from 'react-aria-components';
 import type { TransitionStatus } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
 
 // Import the ModalContext from the main Modal component
 import { ModalContext } from './Modal';
+
+// import { Heading, Text } from 'react-aria-components';
+const Heading = (props: any) => <h1 {...props} />;
+const Text = (props: any) => <p {...props} />;
 
 const fadeIn = keyframes({
   from: { opacity: 0 },

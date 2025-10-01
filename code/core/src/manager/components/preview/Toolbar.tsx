@@ -5,7 +5,7 @@ import { type Addon_BaseType, Addon_TypesEnum } from 'storybook/internal/types';
 
 import { CloseIcon, ExpandIcon } from '@storybook/icons';
 
-import type { TabListState } from 'react-stately';
+import type { TabListState } from '@react-stately/tabs';
 import {
   type API,
   type Combo,

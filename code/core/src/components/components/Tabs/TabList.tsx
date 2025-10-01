@@ -5,8 +5,9 @@ import { Button, type useTabsState } from 'storybook/internal/components';
 
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
-import { useTab, useTabList } from 'react-aria';
-import type { Node, TabListState } from 'react-stately';
+import { useTab, useTabList } from '@react-aria/tabs';
+import type { TabListState } from '@react-stately/tabs';
+import type { Node } from '@react-types/shared';
 import { styled } from 'storybook/theming';
 
 const StyledTabButton = styled.button<{

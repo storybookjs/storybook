@@ -38,6 +38,18 @@ module.exports = {
             message: 'Please dynamically import from vite instead, to force the use of ESM',
             allowTypeImports: true,
           },
+          {
+            name: 'react-aria',
+            message:
+              "Don't import from react-aria directly, please use the specific submodule like @react-aria/overlays instead",
+            allowTypeImports: false,
+          },
+          {
+            name: 'react-stately',
+            message:
+              "Don't import from react-stately directly, please use the specific submodule like @react-stately/overlays instead",
+            allowTypeImports: false,
+          },
         ],
       },
     ],

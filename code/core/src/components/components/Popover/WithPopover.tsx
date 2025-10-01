@@ -4,7 +4,10 @@ import React, { useCallback, useState } from 'react';
 import { Popover, convertToReactAriaPlacement } from 'storybook/internal/components';
 import type { PopperPlacement } from 'storybook/internal/components';
 
-import { DialogTrigger, Popover as PopoverUpstream, Pressable } from 'react-aria-components';
+// import { DialogTrigger, Popover as PopoverUpstream, Pressable } from 'react-aria-components';
+const DialogTrigger = (props: any) => <div {...props} />;
+const PopoverUpstream = (props: any) => <div {...props} />;
+const Pressable = (props: any) => <div {...props} />;
 
 export interface WithPopoverProps {
   /** Whether to display the Popover in a prestyled container. True by default. */

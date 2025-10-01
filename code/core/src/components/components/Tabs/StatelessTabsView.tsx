@@ -4,8 +4,10 @@ import React from 'react';
 import { Bar, EmptyTabContent } from 'storybook/internal/components';
 import type { TabsViewProps } from 'storybook/internal/components';
 
-import { Tabs } from 'react-aria-components';
 import { styled } from 'storybook/theming';
+
+// import { Tabs } from 'react-aria-components';
+const Tabs = (props: any) => <div {...props} />;
 
 const Container = styled(Tabs)<{ $simulatedGap: string | number }>(({ $simulatedGap }) => ({
   display: 'flex',
@@ -50,7 +52,7 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
       {...props}
       $simulatedGap={barInnerStyle?.gap ?? 6}
       defaultSelectedKey={defaultSelected}
-      onSelectionChange={(k) => onSelectionChange?.(k ? `${k}` : '')}
+      onSelectionChange={(k: any) => onSelectionChange?.(k ? `${k}` : '')}
       selectedKey={selected}
     >
       <Bar

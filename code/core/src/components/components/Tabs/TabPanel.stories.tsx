@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import { useState } from 'react';
 
-import type { TabListState } from 'react-stately';
+import type { TabListState } from '@react-stately/tabs';
 import { expect, userEvent, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';

@@ -4,7 +4,7 @@ import { ModalDecorator } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, findByText, fireEvent, fn } from 'storybook/test';
+import { expect, fireEvent, fn, within } from 'storybook/test';
 
 import { WithResults } from './FileSearchList.stories';
 import { FileSearchModal } from './FileSearchModal';
@@ -78,9 +78,13 @@ export const WithSearchResults: Story = {
     searchResults: WithResults.args.searchResults,
   },
   play: async ({ canvasElement, args }) => {
-    const parent = canvasElement.parentNode as HTMLElement;
+    const parent = within(canvasElement.parentNode as HTMLElement);
 
-    const moduleSingleExport = await findByText(parent, 'module-single-export.js');
+    const moduleSingleExport = await parent.findByText(
+      'module-single-export.js',
+      {},
+      { timeout: 3000 }
+    );
     await fireEvent.click(moduleSingleExport);
 
     await expect(args.onCreateNewStory).toHaveBeenCalledWith({

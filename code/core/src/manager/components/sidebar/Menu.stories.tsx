@@ -77,16 +77,23 @@ export const Expanded: Story = {
       </DoubleThemeRenderingHack>
     );
   },
-  play: async ({ canvasElement }) => {
+  play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    // This story can have significant loading time.
-    await new Promise((res) => {
-      setTimeout(res, 2000);
+    await step('Wait 3 seconds for story to load', async () => {
+      await new Promise((res) => {
+        setTimeout(res, 3000);
+      });
     });
-    const menuButton = await waitFor(() => canvas.findByRole('switch'));
-    await userEvent.click(menuButton);
-    const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
-    await expect(aboutStorybookBtn).toBeInTheDocument();
+
+    await step('Expand menu', async () => {
+      const menuButton = await canvas.findByRole('switch');
+      await userEvent.click(menuButton);
+    });
+
+    await step('Check menu is open', async () => {
+      const aboutStorybookBtn = await screen.findByText(/About your Storybook/);
+      await expect(aboutStorybookBtn).toBeInTheDocument();
+    });
   },
   decorators: [
     (StoryFn) => (

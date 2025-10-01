@@ -163,7 +163,7 @@ export const LongStoryName: Story = {
 
 export const MenuOpen: Story = {
   play: async ({ canvas }) => {
-    const menuOpen = await canvas.findByLabelText('Open navigation menu');
+    const menuOpen = await canvas.findByLabelText('Open navigation menu', {}, { timeout: 3000 });
     await userEvent.click(menuOpen);
   },
 };

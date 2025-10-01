@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Button, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
+import { Button, TooltipLinkList, WithPopover } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -19,9 +19,9 @@ export default {
           height: '300px',
         }}
       >
-        <WithTooltip placement="top" startOpen tooltip={storyFn()}>
-          <Button ariaLabel={false}>Hover me</Button>
-        </WithTooltip>
+        <WithPopover placement="top" defaultVisible padding={0} popover={storyFn()}>
+          <Button ariaLabel={false}>Click me</Button>
+        </WithPopover>
       </div>
     ),
   ],

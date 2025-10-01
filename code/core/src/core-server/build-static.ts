@@ -135,12 +135,17 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
   effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true }));
 
-  const initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
+  let initializedStoryIndexGenerator: Promise<StoryIndexGenerator | undefined> =
     Promise.resolve(undefined);
   if (!options.ignorePreview) {
-    const storyIndexGeneratorPromise = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+    initializedStoryIndexGenerator = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
 
-    effects.push(writeIndexJson(join(options.outputDir, 'index.json'), storyIndexGeneratorPromise));
+    effects.push(
+      writeIndexJson(
+        join(options.outputDir, 'index.json'),
+        initializedStoryIndexGenerator as Promise<StoryIndexGenerator>
+      )
+    );
   }
 
   if (!core?.disableProjectJson) {

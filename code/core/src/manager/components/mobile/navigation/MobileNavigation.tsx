@@ -1,11 +1,12 @@
+import React from 'react';
 import type { ComponentProps, FC } from 'react';
-import React, { useId } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
 
+import { useId } from '@react-aria/utils';
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 

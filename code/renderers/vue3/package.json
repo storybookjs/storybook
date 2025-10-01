@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "9.1.9",
+  "version": "9.1.10",
   "description": "Storybook Vue 3 renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

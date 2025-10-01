@@ -90,6 +90,9 @@ export default async function postInstall(options: PostinstallOptions) {
   const isVitest3_2OrNewer = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=3.2.0')
     : true;
+  const isVitest4OrNewer = vitestVersionSpecifier
+    ? satisfies(vitestVersionSpecifier, '>=4.0.0')
+    : true;
 
   const mainJsPath = getInterpretedFile(resolve(options.configDir, 'main')) as string;
   const config = await readConfig(mainJsPath);
@@ -367,20 +370,11 @@ export default async function postInstall(options: PostinstallOptions) {
     `
   );
 
-  const vitestWorkspaceFile =
-    findFile('vitest.workspace', ['.ts', '.js', '.json']) ||
-    findFile('vitest.projects', ['.ts', '.js', '.json']);
+  const vitestWorkspaceFile = findFile('vitest.workspace', ['.ts', '.js', '.json']);
   const viteConfigFile = findFile('vite.config');
   const vitestConfigFile = findFile('vitest.config');
   const vitestShimFile = findFile('vitest.shims.d');
   const rootConfig = vitestConfigFile || viteConfigFile;
-
-  const browserConfig = `{
-        enabled: true,
-        headless: true,
-        provider: 'playwright',
-        instances: [{ browser: 'chromium' }]
-      }`;
 
   if (fileExtension === 'ts' && !vitestShimFile) {
     await writeFile(
@@ -397,7 +391,6 @@ export default async function postInstall(options: PostinstallOptions) {
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
         : '',
       CONFIG_DIR: options.configDir,
-      BROWSER_CONFIG: browserConfig,
       SETUP_FILE: relative(dirname(vitestWorkspaceFile), vitestSetupFile),
     }).then((t) => t.replace(`\n  'ROOT_CONFIG',`, '').replace(/\s+extends: '',/, ''));
     const workspaceFile = await fs.readFile(vitestWorkspaceFile, 'utf8');
@@ -440,6 +433,7 @@ export default async function postInstall(options: PostinstallOptions) {
     );
 
     const templateName =
+      // Checking for Vitest 4 not necessary because a workspace file doesn't exist in Vitest 4
       hasProjectsConfig || isVitest3_2OrNewer
         ? 'vitest.config.3.2.template.ts'
         : 'vitest.config.template.ts';
@@ -447,7 +441,6 @@ export default async function postInstall(options: PostinstallOptions) {
     if (templateName) {
       const configTemplate = await loadTemplate(templateName, {
         CONFIG_DIR: options.configDir,
-        BROWSER_CONFIG: browserConfig,
         SETUP_FILE: relative(dirname(rootConfig), vitestSetupFile),
       });
 
@@ -483,14 +476,21 @@ export default async function postInstall(options: PostinstallOptions) {
   // If there's no existing Vitest/Vite config, we create a new Vitest config file.
   else {
     const newConfigFile = resolve(`vitest.config.${fileExtension}`);
-    const configTemplate = await loadTemplate(
-      isVitest3_2OrNewer ? 'vitest.config.3.2.template.ts' : 'vitest.config.template.ts',
-      {
-        CONFIG_DIR: options.configDir,
-        BROWSER_CONFIG: browserConfig,
-        SETUP_FILE: relative(dirname(newConfigFile), vitestSetupFile),
+
+    const getTemplateName = () => {
+      if (isVitest4OrNewer) {
+        return 'vitest.config.4.template.ts';
       }
-    );
+      if (isVitest3_2OrNewer) {
+        return 'vitest.config.3.2.template.ts';
+      }
+      return 'vitest.config.template.ts';
+    };
+
+    const configTemplate = await loadTemplate(getTemplateName(), {
+      CONFIG_DIR: options.configDir,
+      SETUP_FILE: relative(dirname(newConfigFile), vitestSetupFile),
+    });
 
     logger.line(1);
     logger.plain(`${step} Creating a Vitest config file:`);
@@ -505,26 +505,24 @@ export default async function postInstall(options: PostinstallOptions) {
   if (a11yAddon) {
     try {
       logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
-      const command = ['automigrate', 'addon-a11y-addon-test'];
 
-      command.push('--loglevel', 'silent');
-      command.push('--yes', '--skip-doctor');
-
-      if (options.packageManager) {
-        command.push('--package-manager', options.packageManager);
-      }
-
-      if (options.skipInstall) {
-        command.push('--skip-install');
-      }
-
-      if (options.configDir !== '.storybook') {
-        command.push('--config-dir', `"${options.configDir}"`);
-      }
-
-      await execa('storybook', command, {
-        stdio: 'inherit',
-      });
+      await execa(
+        'storybook',
+        [
+          'automigrate',
+          'addon-a11y-addon-test',
+          '--loglevel',
+          'silent',
+          '--yes',
+          '--skip-doctor',
+          ...(options.packageManager ? ['--package-manager', options.packageManager] : []),
+          ...(options.skipInstall ? ['--skip-install'] : []),
+          ...(options.configDir !== '.storybook' ? ['--config-dir', `"${options.configDir}"`] : []),
+        ],
+        {
+          stdio: 'inherit',
+        }
+      );
     } catch (e: unknown) {
       logErrors(
         '🚨 Oh no!',

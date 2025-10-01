@@ -267,6 +267,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           ],
 
           // if the existing deps.inline is true, we keep it as-is, because it will inline everything
+          // TODO: Remove the check once we don't support Vitest 3 anymore
           ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
             ? {
                 server: {
@@ -277,6 +278,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
               }
             : {}),
 
+          // @ts-expect-error: browser config requires `instances` property in Vitest 4
+          // It will be set to optional in the next version of Vitest
           browser: {
             commands: {
               getInitialGlobals: () => {

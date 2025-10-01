@@ -6,7 +6,6 @@ import type {
   TestProject,
   TestSpecification,
   Vitest,
-  WorkspaceProject,
 } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
@@ -165,16 +164,9 @@ export class VitestManager {
   }
 
   private updateLastChanged(filepath: string) {
-    const projects = this.vitest!.getModuleProjects(filepath);
-    projects.forEach(({ server, browser }) => {
-      if (server) {
-        const serverMods = server.moduleGraph.getModulesByFile(filepath);
-        serverMods?.forEach((mod) => server.moduleGraph.invalidateModule(mod));
-      }
-      if (browser) {
-        const browserMods = browser.vite.moduleGraph.getModulesByFile(filepath);
-        browserMods?.forEach((mod) => browser.vite.moduleGraph.invalidateModule(mod));
-      }
+    this.vitest!.projects.forEach((project) => {
+      const mods = project.vite.moduleGraph.getModulesByFile(filepath);
+      mods?.forEach((mod) => project.vite.moduleGraph.invalidateModule(mod));
     });
   }
 
@@ -507,7 +499,7 @@ export class VitestManager {
     this.registerVitestConfigListener();
   }
 
-  isStorybookProject(project: TestProject | WorkspaceProject) {
+  isStorybookProject(project: TestProject) {
     return !!project.config.env?.__STORYBOOK_URL__;
   }
 }

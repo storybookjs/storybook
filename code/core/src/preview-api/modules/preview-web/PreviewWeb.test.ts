@@ -115,24 +115,24 @@ beforeEach(() => {
   document.location.search = '';
   mockChannel.emit.mockClear();
   emitter.removeAllListeners();
-  componentOneExports.default.loaders[0].mockReset().mockImplementation(async () => ({ l: 7 }));
-  componentOneExports.a.play.mockReset();
-  teardownrenderToCanvas.mockReset();
-  projectAnnotations.renderToCanvas.mockReset().mockReturnValue(teardownrenderToCanvas);
+  componentOneExports.default.loaders[0].mockImplementation(async () => ({ l: 7 }));
+  projectAnnotations.renderToCanvas.mockReturnValue(teardownrenderToCanvas);
   projectAnnotations.render.mockClear();
   projectAnnotations.decorators[0].mockClear();
   docsRenderer.render.mockClear();
   vi.mocked(logger.warn).mockClear();
 
-  vi.mocked(console.error).mockReset();
+  vi.mocked(console.error);
 
-  mockStoryIndex.mockReset().mockReturnValue(storyIndex);
+  mockStoryIndex.mockReturnValue(storyIndex);
 
   addons.setChannel(mockChannel as any);
   mockFetchResult = { status: 200, json: mockStoryIndex, text: () => 'error text' };
 
   vi.mocked(WebView.prototype).prepareForDocs.mockReturnValue('docs-element' as any);
   vi.mocked(WebView.prototype).prepareForStory.mockReturnValue('story-element' as any);
+
+  vi.clearAllMocks();
 });
 
 describe('PreviewWeb', () => {
@@ -3905,8 +3905,8 @@ describe('PreviewWeb', () => {
                 },
               },
               "docs": {
-                "container": [MockFunction spy],
-                "page": [MockFunction spy],
+                "container": [MockFunction],
+                "page": [MockFunction],
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentOne.stories.js",
@@ -3979,8 +3979,8 @@ describe('PreviewWeb', () => {
                 },
               },
               "docs": {
-                "container": [MockFunction spy],
-                "page": [MockFunction spy],
+                "container": [MockFunction],
+                "page": [MockFunction],
                 "renderer": [Function],
               },
               "fileName": "./src/ComponentOne.stories.js",
@@ -4031,7 +4031,7 @@ describe('PreviewWeb', () => {
                 },
               },
               "docs": {
-                "page": [MockFunction spy],
+                "page": [MockFunction],
                 "renderer": [Function],
               },
               "fileName": "./src/ExtraComponentOne.stories.js",

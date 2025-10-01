@@ -49,7 +49,7 @@ describe('LinkTo', () => {
         </LinkTo>
       );
 
-      await waitFor(() => {
+      waitFor(() => {
         expect(screen.getByText('link')).toHaveAttribute(
           'href',
           'originpathname?path=/story/foo--bar'

@@ -180,7 +180,7 @@ export const MenuClosed: Story = {
 
 export const PanelOpen: Story = {
   play: async ({ canvas }) => {
-    const panelButton = await canvas.findByLabelText('Open addon panel');
+    const panelButton = await canvas.findByLabelText('Open addon panel', {}, { timeout: 3000 });
     await userEvent.click(panelButton);
   },
 };

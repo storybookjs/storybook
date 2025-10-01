@@ -131,14 +131,13 @@ Type: `'story'`
 
 The type of entry.
 
-##### `type`
+##### `subtype`
 
 (⚠️ **Experimental**)
 
-Type: `'story' | 'test'`
+Type: `'story' | 'test'` (optional, defaults to `'story'`)
 
-The subtype of the story entry. Use this to mark an entry as a _test_ (experimental). Only relevant when [`type`](#type) is `'story'`.
-
+The subtype of the story entry when [`type`](#type) is `'story'`. Use this to mark an entry as a _test_ (experimental). If not specified, defaults to `'story'`.
 ##### `rawComponentPath`
 
 Type: `string`

@@ -270,6 +270,8 @@ const StyledButton = styled('button', {
   '&:focus-visible': {
     outline: `2px solid ${rgba(theme.color.secondary, 1)}`,
     outlineOffset: 2,
+    // Should ensure focus outline gets drawn above next sibling
+    zIndex: '1',
   },
 
   '.sb-bar &:focus-visible, .sb-list &:focus-visible': {

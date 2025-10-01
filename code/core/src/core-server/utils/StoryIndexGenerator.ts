@@ -439,10 +439,11 @@ export class StoryIndexGenerator {
 
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));
         const tags = combineTags(...projectTags, ...(input.tags ?? []));
+        const subtype = input.type !== 'story' ? 'story' : (input.subtype ?? 'story');
 
         return {
           type: 'story',
-          subtype: input.type === 'story' ? input.subtype : 'story',
+          subtype,
           id,
           extra: {
             metaId: input.metaId,
@@ -453,7 +454,7 @@ export class StoryIndexGenerator {
           importPath,
           componentPath,
           tags,
-          ...(input.type === 'story' && input.subtype === 'test'
+          ...(input.type === 'story' && subtype === 'test'
             ? { parent: input.parent, parentName: input.parentName }
             : {}),
           ...(input.exportName ? { exportName: input.exportName } : {}),

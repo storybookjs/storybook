@@ -3,8 +3,9 @@ import React, { useRef } from 'react';
 
 import { ScrollArea, type useTabsState } from 'storybook/internal/components';
 
-import { useTabPanel } from 'react-aria';
-import type { Node, TabListState } from 'react-stately';
+import { useTabPanel } from '@react-aria/tabs';
+import type { TabListState } from '@react-stately/tabs';
+import type { Node } from '@react-types/shared';
 import { styled } from 'storybook/theming';
 
 export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {

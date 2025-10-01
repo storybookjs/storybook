@@ -6,7 +6,8 @@ import { Button } from 'storybook/internal/components';
 
 import { CrossIcon } from '@storybook/icons';
 
-import { Heading, Text } from 'react-aria-components';
+import { Heading } from 'react-aria-components/patched-dist/Heading';
+import { Text } from 'react-aria-components/patched-dist/Text';
 import type { TransitionStatus } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
 

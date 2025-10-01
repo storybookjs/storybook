@@ -3,9 +3,10 @@ import React from 'react';
 
 import { Bar, EmptyTabContent, TabList, TabPanel } from 'storybook/internal/components';
 
+import { Item } from '@react-stately/collections';
+import type { TabListState } from '@react-stately/tabs';
+import { useTabListState } from '@react-stately/tabs';
 import type { Key } from '@react-types/shared';
-import { Item, useTabListState } from 'react-stately';
-import type { TabListState } from 'react-stately';
 import { styled } from 'storybook/theming';
 
 export interface TabProps {

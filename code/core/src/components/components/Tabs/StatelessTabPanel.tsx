@@ -3,7 +3,7 @@ import React from 'react';
 
 import { ScrollArea } from 'storybook/internal/components';
 
-import { TabPanel } from 'react-aria-components';
+import { TabPanel } from 'react-aria-components/patched-dist/Tabs';
 import { styled } from 'storybook/theming';
 
 export interface StatelessTabPanelProps {

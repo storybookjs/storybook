@@ -2,7 +2,6 @@
 
 import React, { type ReactNode, useMemo } from 'react';
 
-import { type Mock, fn } from '@vitest/spy';
 import {
   type AppRouterActionQueue,
   publicAppRouterInstance,
@@ -28,12 +27,6 @@ import {
 } from 'next/dist/shared/lib/hooks-client-context.shared-runtime';
 
 import { buildFlightRouterState } from './flight-router-state';
-
-declare global {
-  // eslint-disable-next-line no-var
-  var onNavigate: Mock<(url: URL) => void>;
-}
-globalThis.onNavigate = fn<(url: URL) => void>();
 
 export const NextRouter = ({
   children,
@@ -65,7 +58,7 @@ export const NextRouter = ({
     }),
     dispatch: (payload, setState) => {
       if (payload.type === 'navigate') {
-        globalThis.onNavigate(payload.url);
+        (globalThis as any).onNavigate(payload.url);
       }
     },
     action: async (state, action) => {

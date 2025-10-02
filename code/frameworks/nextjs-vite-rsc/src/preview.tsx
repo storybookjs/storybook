@@ -8,6 +8,7 @@ import type { Decorator, Preview, ReactRenderer } from '@storybook/react';
 // import { NextRouter } from '@storybook/nextjs-vite-rsc/rsc/client';
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
 import { defaultDecorateStory } from 'storybook/preview-api';
+import { type Mock, fn } from 'storybook/test';
 
 import { initialize, renderServer } from './testing-library';
 
@@ -16,6 +17,13 @@ import { initialize, renderServer } from './testing-library';
 // import { HeadManagerDecorator } from './head-manager/decorator';
 // import { ImageDecorator } from './images/decorator';
 // import { StyledJsxDecorator } from './styledJsx/decorator';
+
+declare global {
+  // eslint-disable-next-line no-var
+  var onNavigate: Mock<(url: URL) => void>;
+}
+
+globalThis.onNavigate = fn<(url: URL) => void>().mockName('onNavigate');
 
 function addNextHeadCount() {
   const meta = document.createElement('meta');
@@ -87,6 +95,11 @@ export const parameters = {
 };
 
 const preview: Preview = {
+  async beforeEach() {
+    return () => {
+      (globalThis as any).onNavigate.mockRestore();
+    };
+  },
   render: (args, context) => {
     const { id, component: Component } = context;
     if (!Component) {

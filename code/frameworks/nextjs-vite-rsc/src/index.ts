@@ -10,7 +10,7 @@ import type vitePluginStorybookNextJs from 'vite-plugin-storybook-nextjs';
 import * as nextPreview from './preview';
 import type { NextJsTypes } from './types';
 
-export * from '@storybook/react';
+// export * from '@storybook/react';
 export * from './types';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment

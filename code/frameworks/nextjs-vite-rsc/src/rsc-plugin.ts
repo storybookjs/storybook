@@ -20,6 +20,12 @@ export function rscBrowserModePlugin(): Plugin[] {
           define: {
             'import.meta.env.__vite_rsc_build__': JSON.stringify(env.command === 'build'),
           },
+          optimizeDeps: {
+            exclude: [
+              'virtual:vite-rsc-browser-mode/build-server-references',
+              'virtual:vite-rsc-browser-mode/load-client',
+            ],
+          },
           environments: {
             client: {
               keepProcessEnv: false,
@@ -57,6 +63,7 @@ export function rscBrowserModePlugin(): Plugin[] {
                   'react/jsx-runtime',
                   'react/jsx-dev-runtime',
                   '@vitejs/plugin-rsc/vendor/react-server-dom/client.browser',
+                  '@storybook/nextjs-vite-rsc/navigation',
                 ],
                 exclude: ['@vitejs/plugin-rsc'],
                 esbuildOptions: {

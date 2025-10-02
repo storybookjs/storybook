@@ -1,7 +1,17 @@
 import { RequestCookies } from 'next/dist/compiled/@edge-runtime/cookies';
 import { HeadersAdapter } from 'next/dist/server/web/spec-extension/adapters/headers';
-import { RequestCookiesAdapter } from 'next/dist/server/web/spec-extension/adapters/request-cookies';
+import { fn } from 'storybook/test';
 
-const headersAdapter = new HeadersAdapter({});
-export const headers = () => headersAdapter;
-export const cookies = () => RequestCookiesAdapter.seal(new RequestCookies(headersAdapter));
+let headersAdapter = new HeadersAdapter({});
+let requestCookies = new RequestCookies(headersAdapter);
+
+export const cookies = fn(() => requestCookies);
+export const headers = fn(() => headersAdapter);
+
+const originalRestore = cookies.mockRestore.bind(null);
+
+cookies.mockRestore = () => {
+  originalRestore();
+  headersAdapter = new HeadersAdapter({});
+  requestCookies = new RequestCookies(headersAdapter);
+};

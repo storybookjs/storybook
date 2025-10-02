@@ -23,7 +23,7 @@ jobs:
   publish:
     name: Publish new version
     runs-on: ubuntu-latest
-    environment: release
+    environment: Release
     defaults:
       run:
         working-directory: scripts

@@ -635,7 +635,7 @@ describe('addon-globals-api', () => {
           export const MobileOnly = {
             globals: {
               viewport: {
-                value: "mobile",
+                value: 'mobile',
                 isRotated: false
               }
             }
@@ -665,7 +665,7 @@ describe('addon-globals-api', () => {
           export const DarkMobile = {
             globals: {
               viewport: {
-                value: "mobile",
+                value: 'mobile',
                 isRotated: false
               },
               backgrounds: {
@@ -804,7 +804,7 @@ describe('addon-globals-api', () => {
             },
             globals: {
               viewport: {
-                value: "tablet",
+                value: 'tablet',
                 isRotated: false
               },
               backgrounds: {
@@ -845,7 +845,7 @@ describe('addon-globals-api', () => {
             },
             globals: {
               viewport: {
-                value: "iphonex",
+                value: 'iphonex',
                 isRotated: true
               }
             }
@@ -880,6 +880,49 @@ describe('addon-globals-api', () => {
               viewport: {
                 value: MINIMAL_VIEWPORTS.mobile2,
                 isRotated: false
+              }
+            }
+          };
+        `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+    });
+
+    it('should transform backgrounds values to options and migrate default in story files', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+          import Button from './Button';
+          export default { component: Button };
+          export const Mobile = {
+            parameters: {
+              backgrounds: {
+                default: 'Light',
+                values: [
+                  { name: 'Gray', value: '#CCC' },
+                ],
+              },
+            },
+          };
+        `;
+      const expectedContent = dedent`
+          import Button from './Button';
+          export default {
+            component: Button
+          };
+          export const Mobile = {
+            parameters: {
+              backgrounds: {
+                options: {
+                  gray: {
+                    name: 'Gray',
+                    value: '#CCC'
+                  }
+                }
+              }
+            },
+            globals: {
+              backgrounds: {
+                value: "light"
               }
             }
           };

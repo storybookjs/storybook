@@ -373,6 +373,18 @@ function transformStoryFile(
       if (backgroundsParams) {
         const defaultBackground = getObjectProperty(backgroundsParams, 'default');
         const disableBackground = getObjectProperty(backgroundsParams, 'disable');
+        const valuesBackground = getObjectProperty(backgroundsParams, 'values');
+
+        // Handle values -> options transformation
+        if (valuesBackground && t.isArrayExpression(valuesBackground)) {
+          // Transform values array to options object
+          const optionsObject = transformValuesToOptions(valuesBackground);
+
+          // Remove the old values property
+          removeProperty(backgroundsParams, 'values');
+          addProperty(backgroundsParams, 'options', optionsObject);
+          storyHasChanges = true;
+        }
 
         if (defaultBackground && t.isStringLiteral(defaultBackground)) {
           // Create globals.backgrounds

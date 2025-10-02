@@ -3,16 +3,19 @@ run-name: "${{ github.event_name == 'workflow_dispatch' && format('Publish Canar
 
 on:
   push:
+    # Normal releases, major/minor/patch/prerelease
     branches:
       - latest-release
       - next-release
   workflow_dispatch:
+    # Manual canary releases on PRs
     inputs:
       pr:
         description: "⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for"
         required: true
         type: number
   pull_request:
+    # Automated canary releases on PRs with the "with-canary-release"-suffix in the branch name
     types: [opened, synchronize, reopened]
 
 env:
@@ -25,6 +28,9 @@ permissions:
   pull-requests: write
 
 concurrency:
+  # Group concurrent runs based on the event type:
+  # - For workflow_dispatch and pull_request: group by PR number to allow only one canary release per PR
+  # - For push events: group by branch name to prevent multiple releases on the same branch
   group: ${{ github.event_name == 'workflow_dispatch' && format('{0}-{1}', github.workflow, inputs.pr) || github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}', github.workflow, github.ref_name) }}
   cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
 
@@ -113,7 +119,7 @@ jobs:
       - name: Install code dependencies
         if: steps.publish-needed.outputs.published == 'false'
         working-directory: .
-        run: yarn task --task=install --start-from=install
+        run: cd ../code && yarn install
 
       - name: Publish
         if: steps.publish-needed.outputs.published == 'false'

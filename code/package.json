@@ -239,14 +239,12 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.9.1",
-  "engines": {
-    "node": ">=20.0.0"
-  },
+  "packageManager": "yarn@4.10.3",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
   },
+  "deferredNextVersion": "9.1.11",
   "nx": {
     "name": "root",
     "includedScripts": []
@@ -285,6 +283,5 @@
         "Dependency Upgrades"
       ]
     ]
-  },
-  "deferredNextVersion": "9.1.11"
+  }
 }

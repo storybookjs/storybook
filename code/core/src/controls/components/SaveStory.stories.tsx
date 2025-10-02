@@ -1,8 +1,10 @@
 import React from 'react';
 
+import { ModalDecorator } from 'storybook/internal/components';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, fireEvent, fn, within } from 'storybook/test';
+import { expect, fireEvent, fn, screen, within } from 'storybook/test';
 
 import { SaveStory } from './SaveStory';
 
@@ -12,19 +14,11 @@ const meta = {
     saveStory: fn(),
     createStory: fn(),
     resetArgs: fn(),
-    portalSelector: '#portal-container',
   },
   parameters: {
     layout: 'fullscreen',
   },
-  decorators: [
-    (Story) => (
-      <div style={{ minHeight: '100vh' }}>
-        <Story />
-        <div id="portal-container" />
-      </div>
-    ),
-  ],
+  decorators: [ModalDecorator],
   tags: ['!vitest'],
 } satisfies Meta<typeof SaveStory>;
 
@@ -42,10 +36,10 @@ export const Creating = {
 } satisfies Story;
 
 export const Created: Story = {
-  play: async ({ canvas, context }) => {
+  play: async ({ context }) => {
     await Creating.play(context);
 
-    const dialog = await canvas.findByRole('dialog');
+    const dialog = await screen.findByRole('dialog');
     const input = await within(dialog).findByRole('textbox');
     await fireEvent.change(input, { target: { value: 'MyNewStory' } });
     await fireEvent.submit(dialog.getElementsByTagName('form')[0]);

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, findByText, fireEvent, fn } from 'storybook/test';
+import { time } from 'console';
+import { expect, findByText, fireEvent, fn, waitFor } from 'storybook/test';
 
 import { FileSearchList } from './FileSearchList';
 
@@ -41,7 +42,9 @@ export const WithResults: Story = {
   play: async ({ canvasElement, args }) => {
     // use react testing library
     // select first item in the list and click on it
-    const firstItem = await findByText(canvasElement, 'module-multiple-exports.js');
+    const firstItem = await waitFor(() => findByText(canvasElement, 'module-multiple-exports.js'), {
+      timeout: 3000,
+    });
     fireEvent.click(firstItem);
 
     const exportedElement1 = await findByText(canvasElement, 'module-multiple-exports');

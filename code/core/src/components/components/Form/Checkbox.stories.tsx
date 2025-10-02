@@ -15,49 +15,86 @@ export const Checkbox: Story = {
   render: () => (
     <div style={{ display: 'inline-grid', gap: 15, gridTemplateColumns: 'repeat(3, auto)' }}>
       <small></small>
-      <small>Custom:</small>
-      <small>Native:</small>
+      <small id="col-custom">Custom:</small>
+      <small id="col-native">Native:</small>
 
-      <small>Checked, focus:</small>
-      <Component defaultChecked data-focus />
+      <small id="row-focus">Checked, focus:</small>
+      <Component aria-labelledby="col-custom row-focus" defaultChecked data-focus />
       <div>
-        <input type="checkbox" style={{ margin: 0 }} defaultChecked data-focus />
+        <input
+          aria-labelledby="col-native row-focus"
+          type="checkbox"
+          style={{ margin: 0 }}
+          defaultChecked
+          data-focus
+        />
       </div>
 
-      <small>Checked:</small>
-      <Component defaultChecked />
+      <small id="row-checked">Checked:</small>
+      <Component aria-labelledby="col-custom row-checked" defaultChecked />
       <div>
-        <input type="checkbox" style={{ margin: 0 }} defaultChecked />
+        <input
+          aria-labelledby="col-native row-checked"
+          type="checkbox"
+          style={{ margin: 0 }}
+          defaultChecked
+        />
       </div>
 
-      <small>Indeterminate:</small>
-      <Component data-indeterminate />
+      <small id="row-indeterminate">Indeterminate:</small>
+      <Component aria-labelledby="col-custom row-indeterminate" data-indeterminate />
       <div>
-        <input type="checkbox" style={{ margin: 0 }} data-indeterminate />
+        <input
+          aria-labelledby="col-native row-indeterminate"
+          type="checkbox"
+          style={{ margin: 0 }}
+          data-indeterminate
+        />
       </div>
 
-      <small>Default:</small>
-      <Component />
+      <small id="row-default">Default:</small>
+      <Component aria-labelledby="col-custom row-default" />
       <div>
-        <input type="checkbox" style={{ margin: 0 }} />
+        <input aria-labelledby="col-native row-default" type="checkbox" style={{ margin: 0 }} />
       </div>
 
-      <small>Disabled, checked:</small>
-      <Component disabled defaultChecked />
+      <small id="row-disabled-checked">Disabled, checked:</small>
+      <Component aria-labelledby="col-custom row-disabled-checked" disabled defaultChecked />
       <div>
-        <input type="checkbox" style={{ margin: 0 }} disabled defaultChecked />
+        <input
+          aria-labelledby="col-native row-disabled-checked"
+          type="checkbox"
+          style={{ margin: 0 }}
+          disabled
+          defaultChecked
+        />
       </div>
 
-      <small>Disabled, indeterminate:</small>
-      <Component disabled data-indeterminate />
+      <small id="row-disabled-indeterminate">Disabled, indeterminate:</small>
+      <Component
+        aria-labelledby="col-custom row-disabled-indeterminate"
+        disabled
+        data-indeterminate
+      />
       <div>
-        <input type="checkbox" style={{ margin: 0 }} disabled data-indeterminate />
+        <input
+          aria-labelledby="col-native row-disabled-indeterminate"
+          type="checkbox"
+          style={{ margin: 0 }}
+          disabled
+          data-indeterminate
+        />
       </div>
 
-      <small>Disabled:</small>
-      <Component disabled />
+      <small id="row-disabled">Disabled:</small>
+      <Component aria-labelledby="col-custom row-disabled" disabled />
       <div>
-        <input type="checkbox" style={{ margin: 0 }} disabled />
+        <input
+          aria-labelledby="col-native row-disabled"
+          type="checkbox"
+          style={{ margin: 0 }}
+          disabled
+        />
       </div>
     </div>
   ),

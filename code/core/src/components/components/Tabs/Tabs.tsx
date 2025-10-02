@@ -2,16 +2,17 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
 import React, { Component, memo, useMemo } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
 import type { Addon_RenderOptions } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import { FlexBar } from '../bar/bar';
-import { TabButton } from '../bar/button';
+import { FlexBar } from '../Bar/Bar';
+import { TabButton } from './Button';
 import { EmptyTabContent } from './EmptyTabContent';
-import { VisuallyHidden, childrenToList } from './tabs.helpers';
-import { useList } from './tabs.hooks';
+import { VisuallyHidden, childrenToList } from './Tabs.helpers';
+import { useList } from './Tabs.hooks';
 
 const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';
@@ -46,7 +47,7 @@ const Wrapper = styled.div<WrapperProps>(
         }
 );
 
-export const TabBar = styled.div({
+const TabBar = styled.div({
   overflow: 'hidden',
 
   '&:first-of-type': {
@@ -110,9 +111,10 @@ export interface TabWrapperProps {
   children?: ReactNode;
 }
 
-export const TabWrapper: FC<TabWrapperProps> = ({ active, render, children }) => (
-  <VisuallyHidden active={active}>{render ? render() : children}</VisuallyHidden>
-);
+export const TabWrapper: FC<TabWrapperProps> = ({ active, render, children }) => {
+  deprecate('The `TabWrapper` component is deprecated. Use `TabsView` instead.');
+  return <VisuallyHidden active={active}>{render ? render() : children}</VisuallyHidden>;
+};
 
 export const panelProps = {};
 
@@ -184,6 +186,8 @@ export const Tabs: FC<TabsProps> = memo(
     emptyState,
     showToolsWhenEmpty,
   }) => {
+    deprecate('The `Tabs` component is deprecated. Use `TabsView` instead.');
+
     const list = useMemo(
       () =>
         childrenToList(children).map((i, index) => ({
@@ -280,6 +284,7 @@ export class TabsState extends Component<TabsStateProps, TabsStateState> {
 
   constructor(props: TabsStateProps) {
     super(props);
+    deprecate('The `TabsState` class is deprecated. Use `TabsView` instead.');
 
     this.state = {
       selected: props.initial,

@@ -1,7 +1,9 @@
 import React from 'react';
 
+import type { StoryAnnotations } from 'storybook/internal/csf';
+
 import { ManagerContext } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { fn, userEvent, within } from 'storybook/test';
 
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -268,6 +270,52 @@ export const Errored = () => (
     setHighlighted={() => {}}
   />
 );
+export const ErroredMobile = () => (
+  <Ref
+    {...refs.error}
+    hasEntries={true}
+    isLoading={false}
+    isBrowsing
+    selectedStoryId=""
+    highlightedRef={{ current: null }}
+    setHighlighted={() => {}}
+  />
+);
+ErroredMobile.globals = { sb_theme: 'stacked', viewport: { value: 'mobile1' } };
+export const ErroredWithErrorOpen: StoryAnnotations = {
+  render: () => Errored(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = await canvas.findByText('View error');
+    await userEvent.click(button);
+  },
+};
+export const ErroredMobileWithErrorOpen: StoryAnnotations = {
+  render: () => ErroredMobile(),
+  globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = await canvas.findByText('View error');
+    await userEvent.click(button);
+  },
+};
+export const ErroredWithIndicatorOpen: StoryAnnotations = {
+  render: () => Errored(),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = await canvas.findByRole('button', { name: 'Extra actions' });
+    await userEvent.click(button);
+  },
+};
+export const ErroredMobileWithIndicatorOpen: StoryAnnotations = {
+  render: () => ErroredMobile(),
+  globals: { sb_theme: 'stacked', viewport: { value: 'mobile1' } },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const button = await canvas.findByRole('button', { name: 'Extra actions' });
+    await userEvent.click(button);
+  },
+};
 export const Auth = () => (
   <Ref
     {...refs.auth}

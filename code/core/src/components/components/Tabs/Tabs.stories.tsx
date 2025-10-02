@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { Button } from 'storybook/internal/components';
+
 import { BottomBarIcon, CloseIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -8,9 +10,8 @@ import { action } from 'storybook/actions';
 import { expect, spyOn } from 'storybook/test';
 import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
 
-import { IconButton } from '../IconButton/IconButton';
-import { TabWrapper, Tabs, TabsState } from './tabs';
-import type { ChildrenList } from './tabs.helpers';
+import { TabWrapper, Tabs, TabsState } from './Tabs';
+import type { ChildrenList } from './Tabs.helpers';
 
 const colours = Array.from(new Array(15), (val, index) => index).map((i) =>
   Math.floor((1 / 15) * i * 16777215)
@@ -207,7 +208,7 @@ export const StatefulDynamicWithOpenTooltip = {
 
     await waitFor(async () => {
       const addonsTab = await canvas.findByRole('tab', { name: /Addons/ });
-      const tooltip = await screen.queryByTestId('tooltip');
+      const tooltip = await screen.queryByRole('dialog');
 
       if (!tooltip) {
         await userEvent.click(addonsTab);
@@ -217,7 +218,7 @@ export const StatefulDynamicWithOpenTooltip = {
         throw new Error('Tooltip not found');
       }
 
-      await expect(screen.queryByTestId('tooltip')).toBeInTheDocument();
+      await expect(screen.queryByRole('dialog')).toBeInTheDocument();
     });
   },
   render: (args) => (
@@ -239,7 +240,7 @@ export const StatefulDynamicWithSelectedAddon = {
     const canvas = within(context.canvasElement);
 
     await waitFor(async () => {
-      const popperContainer = await screen.findByTestId('tooltip');
+      const popperContainer = await screen.findByRole('dialog');
       const tab4 = await findByText(popperContainer, 'Tab title #4', {});
       fireEvent(tab4, new MouseEvent('click', { bubbles: true }));
       const content4 = await canvas.findByText('CONTENT 4');
@@ -290,12 +291,12 @@ const AddonTools = () => (
       gap: 6,
     }}
   >
-    <IconButton title="Tool 1">
+    <Button padding="small" variant="ghost" ariaLabel="Tool 1">
       <BottomBarIcon />
-    </IconButton>
-    <IconButton title="Tool 2">
+    </Button>
+    <Button padding="small" variant="ghost" ariaLabel="Tool 2">
       <CloseIcon />
-    </IconButton>
+    </Button>
   </div>
 );
 

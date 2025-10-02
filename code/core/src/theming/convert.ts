@@ -12,16 +12,16 @@ const lightSyntaxColors = {
   red1: '#A31515',
   red2: '#9a050f',
   red3: '#800000',
-  red4: '#ff0000',
+  red4: '#eb0000',
   gray1: '#393A34',
-  cyan1: '#36acaa',
-  cyan2: '#2B91AF',
+  cyan1: '#008380',
+  cyan2: '#007ca0',
   blue1: '#0000ff',
   blue2: '#00009f',
 };
 
 const darkSyntaxColors = {
-  green1: '#7C7C7C',
+  green1: '#95999D',
   red1: '#92C379',
   red2: '#9a050f',
   red3: '#A8FF60',

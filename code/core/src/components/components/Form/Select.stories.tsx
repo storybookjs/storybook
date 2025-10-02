@@ -15,7 +15,7 @@ export default meta;
 
 export const Select: Story = {
   render: (args) => (
-    <Component onChange={action('onChange')} defaultValue="" {...args}>
+    <Component aria-label="Fruit" onChange={action('onChange')} defaultValue="" {...args}>
       <option value="" hidden disabled>
         Select a Fruit
       </option>

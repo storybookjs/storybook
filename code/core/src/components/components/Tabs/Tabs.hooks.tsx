@@ -1,15 +1,16 @@
 import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
 
 import { styled } from 'storybook/theming';
 import useResizeObserver from 'use-resize-observer';
 
-import { TabButton } from '../bar/button';
+import { WithPopover } from '../Popover/WithPopover';
 import { TooltipLinkList } from '../tooltip/TooltipLinkList';
 import type { Link } from '../tooltip/TooltipLinkList';
-import { WithTooltip } from '../tooltip/WithTooltip';
-import type { ChildrenListComplete } from './tabs.helpers';
+import { TabButton } from './Button';
+import type { ChildrenListComplete } from './Tabs.helpers';
 
 const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
   display: 'inline-block',
@@ -39,6 +40,8 @@ const AddonButton = styled(TabButton)<{ preActive: boolean }>(({ active, theme, 
 });
 
 export function useList(list: ChildrenListComplete) {
+  deprecate('The `useList` tabs hook is deprecated. Use `TabsView` instead.');
+
   const tabBarRef = useRef<HTMLDivElement>();
   const addonsRef = useRef<HTMLButtonElement>();
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -65,13 +68,11 @@ export function useList(list: ChildrenListComplete) {
       const [isTooltipVisible, setTooltipVisible] = useState(false);
       return (
         <>
-          <WithTooltip
-            interactive
+          <WithPopover
             visible={isTooltipVisible}
             onVisibleChange={setTooltipVisible}
             placement="bottom"
-            delayHide={100}
-            tooltip={
+            popover={
               <TooltipLinkList
                 links={invisibleList.map(({ title, id, color, active }) => {
                   return {
@@ -107,7 +108,7 @@ export function useList(list: ChildrenListComplete) {
                 isActive={isAddonsActive || isTooltipVisible}
               />
             </AddonButton>
-          </WithTooltip>
+          </WithPopover>
           {invisibleList.map(({ title, id, color }, index) => {
             const indexId = `index-${index}`;
             return (

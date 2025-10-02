@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { useState } from 'react';
 
-import { SyntaxHighlighter, WithTooltipPure, codeCommon } from 'storybook/internal/components';
+import { SyntaxHighlighter, WithTooltip, codeCommon } from 'storybook/internal/components';
 
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
@@ -171,8 +171,7 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
   }
 
   return (
-    <WithTooltipPure
-      closeOnOutsideClick
+    <WithTooltip
       placement="bottom"
       visible={isOpen}
       onVisibleChange={(isVisible) => {
@@ -190,7 +189,7 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
         <span>{summaryAsString}</span>
         {isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
       </Expandable>
-    </WithTooltipPure>
+    </WithTooltip>
   );
 };
 

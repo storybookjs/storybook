@@ -1,11 +1,12 @@
 import type { FC, PropsWithChildren, ReactChild, ReactElement, ReactNode } from 'react';
 import React, { Children } from 'react';
 
+import { deprecate } from 'storybook/internal/client-logger';
 import type { Addon_RenderOptions } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import type { TabsProps } from './tabs';
+import type { TabsProps } from './Tabs';
 
 export interface VisuallyHiddenProps {
   active?: boolean;
@@ -15,8 +16,9 @@ export const VisuallyHidden = styled.div<VisuallyHiddenProps>(({ active }) =>
   active ? { display: 'block' } : { display: 'none' }
 );
 
-export const childrenToList = (children: TabsProps['children']) =>
-  Children.toArray(children).map(
+export const childrenToList = (children: TabsProps['children']) => {
+  deprecate('The `childrenToList` tabs helper is deprecated. Use `TabsView` instead.');
+  return Children.toArray(children).map(
     // @ts-expect-error (non strict)
     ({
       props: { title, id, color, children: childrenOfChild },
@@ -49,6 +51,7 @@ export const childrenToList = (children: TabsProps['children']) =>
       };
     }
   );
+};
 
 export type ChildrenList = ReturnType<typeof childrenToList>;
 export type ChildrenListComplete = Array<

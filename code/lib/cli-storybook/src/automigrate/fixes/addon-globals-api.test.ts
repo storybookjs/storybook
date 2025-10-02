@@ -816,5 +816,43 @@ describe('addon-globals-api', () => {
       expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
     });
+
+    it('should transform defaultOrientation and disabled properties in viewport stories', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+          import Button from './Button';
+          export default { component: Button };
+          export const Mobile = {
+            parameters: {
+              viewport: {
+                defaultOrientation: 'portrait',
+                defaultViewport: 'iphonex',
+                disable: true,
+              },
+            },
+          };
+        `;
+      const expectedContent = dedent`
+          import Button from './Button';
+          export default {
+            component: Button
+          };
+          export const Mobile = {
+            parameters: {
+              viewport: {
+                disabled: true
+              }
+            },
+            globals: {
+              viewport: {
+                value: "iphonex",
+                isRotated: true
+              }
+            }
+          };
+        `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+    });
   });
 });

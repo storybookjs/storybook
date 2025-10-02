@@ -310,10 +310,18 @@ function transformStoryFile(
       viewportParams = getObjectProperty(parameters, 'viewport') as ObjectExpression;
       if (viewportParams) {
         const defaultViewport = getObjectProperty(viewportParams, 'defaultViewport');
+        const defaultOrientation = getObjectProperty(viewportParams, 'defaultOrientation');
+        const disableViewport = getObjectProperty(viewportParams, 'disable');
         if (defaultViewport && t.isStringLiteral(defaultViewport)) {
           // Create globals.viewport
           if (!newGlobals) {
             newGlobals = t.objectExpression([]);
+          }
+
+          // Determine isRotated based on defaultOrientation
+          let isRotated = false;
+          if (defaultOrientation && t.isStringLiteral(defaultOrientation)) {
+            isRotated = defaultOrientation.value === 'portrait';
           }
 
           newGlobals.properties.push(
@@ -321,13 +329,27 @@ function transformStoryFile(
               t.identifier('viewport'),
               t.objectExpression([
                 t.objectProperty(t.identifier('value'), t.stringLiteral(defaultViewport.value)),
-                t.objectProperty(t.identifier('isRotated'), t.booleanLiteral(false)),
+                t.objectProperty(t.identifier('isRotated'), t.booleanLiteral(isRotated)),
               ])
             )
           );
 
           // Remove defaultViewport from parameters
           removeProperty(viewportParams, 'defaultViewport');
+          storyHasChanges = true;
+        }
+
+        // Handle defaultOrientation removal
+        if (defaultOrientation) {
+          removeProperty(viewportParams, 'defaultOrientation');
+          storyHasChanges = true;
+        }
+
+        // Handle disable -> disabled rename
+        if (disableViewport && t.isBooleanLiteral(disableViewport)) {
+          removeProperty(viewportParams, 'disable');
+          // Rename disable to disabled (preserve both true and false values)
+          addProperty(viewportParams, 'disabled', disableViewport);
           storyHasChanges = true;
         }
       }

@@ -1,11 +1,19 @@
 name: Publish
-run-name: Publish new version on ${{ github.ref_name }}, triggered by ${{ github.triggering_actor }}
+run-name: "${{ github.event_name == 'workflow_dispatch' && format('Publish Canary on PR #{0}, triggered by {1}', inputs.pr, github.triggering_actor) || format('Publish new version on {0}, triggered by {1}', github.ref_name, github.triggering_actor) }}"
 
 on:
   push:
     branches:
       - latest-release
       - next-release
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: "⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for"
+        required: true
+        type: number
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -17,12 +25,30 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref_name }}
+  group: ${{ github.event_name == 'workflow_dispatch' && format('{0}-{1}', github.workflow, inputs.pr) || github.event_name == 'pull_request' && format('{0}-{1}', github.workflow, github.event.pull_request.number) || format('{0}-{1}', github.workflow, github.ref_name) }}
+  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
 
 jobs:
-  publish:
-    name: Publish new version
+  determine-release-type:
+    name: Determine release type
     runs-on: ubuntu-latest
+    outputs:
+      release-type: ${{ steps.determine.outputs.release-type }}
+    steps:
+      - name: Determine if this is a canary release
+        id: determine
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || [[ "${{ github.event_name }}" == "pull_request" && "${{ github.head_ref }}" == *"with-canary-release" ]]; then
+            echo "release-type=canary" >> $GITHUB_OUTPUT
+          else
+            echo "release-type=normal" >> $GITHUB_OUTPUT
+          fi
+
+  publish-normal:
+    name: Publish normal version
+    runs-on: ubuntu-latest
+    needs: determine-release-type
+    if: needs.determine-release-type.outputs.release-type == 'normal'
     environment: Release
     defaults:
       run:
@@ -209,3 +235,107 @@ jobs:
         uses: Ilshidur/action-discord@master
         with:
           args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+  publish-canary:
+    name: Publish canary version
+    runs-on: ubuntu-latest
+    needs: determine-release-type
+    if: needs.determine-release-type.outputs.release-type == 'canary'
+    environment: Release
+    steps:
+      - name: Fail if triggering actor is not administrator
+        uses: prince-chrismc/check-actor-permissions-action@v2.0.4
+        with:
+          permission: admin
+
+      - name: Get pull request information
+        id: info
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          PR_NUMBER=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          PR_INFO=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json isCrossRepository,headRefOid,headRefName,headRepository,headRepositoryOwner --jq '{isFork: .isCrossRepository, owner: .headRepositoryOwner.login, repoName: .headRepository.name, branch: .headRefName, sha: .headRefOid}')
+          echo $PR_INFO
+          # Loop through each key-value pair in PR_INFO and set as step output
+          for key in $(echo "$PR_INFO" | jq -r 'keys[]'); do
+            value=$(echo "$PR_INFO" | jq -r ".$key")
+            echo "$key=$value" >> "$GITHUB_OUTPUT"
+          done
+          echo "repository=$(echo "$PR_INFO" | jq -r ".owner")/$(echo "$PR_INFO" | jq -r ".repoName")" >> $GITHUB_OUTPUT
+          echo "shortSha=$(echo "$PR_INFO" | jq -r ".sha" | cut -c 1-8)" >> $GITHUB_OUTPUT
+          echo "date=$(date)" >> $GITHUB_OUTPUT
+          echo "timestamp=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.info.outputs.isFork == 'true' && steps.info.outputs.repository || null }}
+          ref: ${{ steps.info.outputs.sha }}
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.yarn/berry/cache
+          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
+          restore-keys: |
+            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
+            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
+            yarn-v1
+
+      - name: Install dependencies
+        run: yarn task --task=install --start-from=install
+
+      - name: Set version
+        id: version
+        working-directory: scripts
+        run: |
+          PR_NUMBER=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          yarn release:version --exact 0.0.0-pr-$PR_NUMBER-sha-${{ steps.info.outputs.shortSha }} --verbose
+
+      - name: Publish v${{ steps.version.outputs.next-version }}
+        working-directory: scripts
+        run: yarn release:publish --tag canary --verbose
+
+      - name: Replace Pull Request Body
+        uses: ivangabriele/find-and-replace-pull-request-body@042438c
+        with:
+          githubToken: ${{ secrets.GH_TOKEN }}
+          prNumber: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || '' }}
+          find: "CANARY_RELEASE_SECTION"
+          isHtmlCommentTag: true
+          replace: |
+            This pull request has been released as version `${{ steps.version.outputs.next-version }}`. Try it out in a new sandbox by running `npx storybook@${{ steps.version.outputs.next-version }} sandbox` or in an existing project with `npx storybook@${{ steps.version.outputs.next-version }} upgrade`.
+            <details>
+            <summary>More information</summary>
+
+            | | |
+            | --- | --- |
+            | **Published version** | [`${{ steps.version.outputs.next-version }}`](https://npmjs.com/package/storybook/v/${{ steps.version.outputs.next-version }}) |
+            | **Triggered by** | @${{ github.triggering_actor }} |
+            | **Repository** | [${{ steps.info.outputs.repository }}](https://github.com/${{ steps.info.outputs.repository }}) |
+            | **Branch** | [`${{ steps.info.outputs.branch }}`](https://github.com/${{ steps.info.outputs.repository }}/tree/${{ steps.info.outputs.branch }}) |
+            | **Commit** | [`${{ steps.info.outputs.shortSha }}`](https://github.com/${{ steps.info.outputs.repository }}/commit/${{ steps.info.outputs.sha }}) |
+            | **Datetime** | ${{ steps.info.outputs.date }} (`${{ steps.info.outputs.timestamp }}`) |
+            | **Workflow run** | [${{ github.run_id }}](https://github.com/storybookjs/storybook/actions/runs/${{ github.run_id }}) |
+
+            To request a new release of this pull request, mention the `@storybookjs/core` team.
+
+            _core team members can create a new canary release [here](https://github.com/storybookjs/storybook/actions/workflows/publish.yml) or locally with `gh workflow run --repo storybookjs/storybook publish.yml --field pr=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}`_
+            </details>
+
+      - name: Create failing comment on PR
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          PR_NUMBER=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          gh pr comment $PR_NUMBER\
+            --repo "${{github.repository }}"\
+            --body "Failed to publish canary version of this pull request, triggered by @${{ github.triggering_actor }}. See the failed workflow run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

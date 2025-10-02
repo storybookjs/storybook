@@ -30,26 +30,11 @@ jobs:
           ref: main
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.yarn/berry/cache
-          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-          restore-keys: |
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
-            yarn-v1
-
-      - name: Install Dependencies
-        working-directory: .
-        run: |
-          yarn task --task=install
+      - name: Install code dependencies
+        run: cd ../code && yarn install
 
       - name: Check if pull request is frozen
         if: github.event_name != 'workflow_dispatch'

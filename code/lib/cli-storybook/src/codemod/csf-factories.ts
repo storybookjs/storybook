@@ -62,7 +62,7 @@ export const csfFactories: CommandFix = {
   id: 'csf-factories',
   promptType: 'command',
   async run({ dryRun, mainConfig, mainConfigPath, previewConfigPath, packageManager, configDir }) {
-    let useSubPathImports = true;
+    let useSubPathImports = false;
 
     if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
       // prompt whether the user wants to use imports map
@@ -71,19 +71,19 @@ export const csfFactories: CommandFix = {
       
         However, please note that this might not work if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
       
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories#subpath-imports?ref=upgrade')}
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next#subpath-imports')}
 
         As we modify your story files, we can create two types of imports:
       
-        - ${picocolors.bold('Subpath imports (recommended):')} ${picocolors.cyan("`import preview from '#.storybook/preview'`")}
-        - ${picocolors.bold('Relative imports (suitable for mono repos):')} ${picocolors.cyan("`import preview from '../../.storybook/preview'`")}
+        - ${picocolors.bold('Relative imports (recommended):')} ${picocolors.cyan("`import preview from '../../.storybook/preview'`")}
+        - ${picocolors.bold('Subpath imports (suitable for mono repos):')} ${picocolors.cyan("`import preview from '#.storybook/preview'`")}
       `);
 
       useSubPathImports = await prompt.select<boolean>({
         message: 'Which would you like to use?',
         options: [
-          { label: 'Subpath imports (alias)', value: true },
           { label: 'Relative imports', value: false },
+          { label: 'Subpath imports (alias)', value: true },
         ],
       });
     }
@@ -128,7 +128,7 @@ export const csfFactories: CommandFix = {
           You can now run Storybook with the new CSF factories format.
           
           For more info, check out the docs:
-          ${picocolors.yellow('https://storybook.js.org/docs/api/csf/csf-factories?ref=upgrade')}
+          ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next')}
         `
     );
   },

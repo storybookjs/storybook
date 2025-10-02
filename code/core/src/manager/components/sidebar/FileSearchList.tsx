@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from 'react';
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 
 import { TooltipNote, WithTooltip } from 'storybook/internal/components';
 import type {
@@ -84,7 +84,7 @@ export const FileSearchList = memo(function FileSearchList({
   errorItemId,
 }: FileSearchListProps) {
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
-  const parentRef = React.useRef<HTMLDivElement>();
+  const parentRef = useRef<HTMLDivElement | null>(null);
 
   const sortedSearchResults = useMemo(() => {
     // search results with no exports should be at the end of the list
@@ -119,7 +119,6 @@ export const FileSearchList = memo(function FileSearchList({
 
   const rowVirtualizer = useVirtualizer({
     count,
-    // @ts-expect-error (non strict)
 
     getScrollElement: () => parentRef.current,
     paddingStart: 16,
@@ -291,7 +290,6 @@ export const FileSearchList = memo(function FileSearchList({
   if (sortedSearchResults?.length > 0) {
     return (
       <FileListWrapper>
-        {/* @ts-expect-error (non strict) */}
         <FileList ref={parentRef}>
           <FileListUl
             style={{

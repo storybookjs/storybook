@@ -20,6 +20,7 @@ const WithCallback: React.FC<{ callback: () => void; children: ReactElement }> =
   children,
 }) => {
   // See https://github.com/reactwg/react-18/discussions/5#discussioncomment-2276079
+  // @ts-expect-error - React18 allowed this
   const once = React.useRef<() => void>();
   React.useLayoutEffect(() => {
     if (once.current === callback) {
@@ -32,7 +33,7 @@ const WithCallback: React.FC<{ callback: () => void; children: ReactElement }> =
   return children;
 };
 
-// pony-fill
+// pony-fill for Promise.withResolvers (ES2024 feature)
 if (typeof Promise.withResolvers === 'undefined') {
   Promise.withResolvers = <T extends unknown>() => {
     let resolve: PromiseWithResolvers<T>['resolve'] = null!;

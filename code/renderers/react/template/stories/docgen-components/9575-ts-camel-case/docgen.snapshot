@@ -1,4 +1,6 @@
 import React from 'react';
+
+// @ts-expect-error (Converted from ts-ignore)
 import PropTypes from 'prop-types';
 const iconButton = function IconButton(props) {
   return /*#__PURE__*/React.createElement("div", {
@@ -9,6 +11,8 @@ iconButton.propTypes = {
   // deepscan-disable-next-line
   color: PropTypes.string
 };
+
+// @ts-expect-error (Converted from ts-ignore)
 iconButton.defaultProps = {
   color: 'primary'
 };

@@ -226,7 +226,7 @@ export const Preview: FC<PreviewProps> = ({
 
     e.preventDefault();
     if (additionalActionItems.filter((item) => item.title === 'Copied').length === 0) {
-      copyToClipboard(source?.props.code ?? '').then(() => {
+      copyToClipboard((source?.props as { code?: string })?.code ?? '').then(() => {
         setAdditionalActionItems([
           ...additionalActionItems,
           {

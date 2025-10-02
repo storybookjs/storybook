@@ -3,7 +3,7 @@
 import { describe, it } from 'vitest';
 import { expect, test } from 'vitest';
 
-import type { ComponentType, KeyboardEventHandler, ReactElement, ReactNode } from 'react';
+import type { ComponentType, JSX, KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
 import type { Canvas } from 'storybook/internal/csf';

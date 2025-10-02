@@ -1,7 +1,12 @@
 <script lang="ts">
-import { VNode } from 'vue';
+import { VNode, defineComponent } from 'vue';
 
-export default {} as new () => {
+export default defineComponent({
+  name: 'ClassSlotsComponent',
+  setup() {
+    return {};
+  },
+}) as unknown as new () => {
   $slots: {
     default(_: { num: number }): VNode[];
     foo(_: { str: string }): VNode[];

@@ -116,7 +116,7 @@ export const TagsFilterPanel = ({
   isDefaultSelection,
   hasDefaultSelection,
 }: TagsFilterPanelProps) => {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement | null>(null);
 
   const renderLink = ({
     id,

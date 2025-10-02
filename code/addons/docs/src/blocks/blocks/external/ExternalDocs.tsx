@@ -15,7 +15,7 @@ export type ExternalDocsProps<TRenderer extends Renderer = Renderer> = {
 function usePreview<TRenderer extends Renderer = Renderer>(
   projectAnnotations: ProjectAnnotations<TRenderer>
 ) {
-  const previewRef = useRef<ExternalPreview<TRenderer>>();
+  const previewRef = useRef<ExternalPreview<TRenderer> | null>(null);
 
   if (!previewRef.current) {
     previewRef.current = new ExternalPreview<TRenderer>(projectAnnotations);

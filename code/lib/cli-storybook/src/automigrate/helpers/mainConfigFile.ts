@@ -255,9 +255,7 @@ export function containsRequireUsage(content: string): boolean {
   return requireCallRegex.test(content) || requireDotRegex.test(content);
 }
 
-/**
- * Check if the file already imports createRequire from 'module' or 'node:module'
- */
+/** Check if the file already imports createRequire from 'module' or 'node:module' */
 export function hasCreateRequireImport(content: string): boolean {
   // Check for import { createRequire } from 'module' or 'node:module'
   const createRequireImportRegex =
@@ -265,9 +263,7 @@ export function hasCreateRequireImport(content: string): boolean {
   return createRequireImportRegex.test(content);
 }
 
-/**
- * Check if the file already defines a 'require' variable using createRequire
- */
+/** Check if the file already defines a 'require' variable using createRequire */
 export function hasRequireDefinition(content: string): boolean {
   // Check for: const require = createRequire(...)
   // or: const require=createRequire(...)

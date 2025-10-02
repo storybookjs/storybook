@@ -1,3 +1,15 @@
+# v5.0.9 (Thu Oct 02 2025)
+
+#### 🐛 Bug Fix
+
+- Add the addon to Vite's optimizeDeps [#330](https://github.com/storybookjs/addon-svelte-csf/pull/330) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v5.0.8 (Wed Aug 20 2025)
 
 #### 🐛 Bug Fix

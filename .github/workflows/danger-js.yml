@@ -21,12 +21,12 @@ jobs:
     name: Danger JS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version-file: ".nvmrc"
       - name: Danger JS
-        uses: danger/danger-js@11.2.6
+        uses: danger/danger-js@899a8200c0781b16d740c2d68a15e64530f6ab56 # 11.2.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

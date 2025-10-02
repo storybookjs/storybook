@@ -69,28 +69,8 @@ jobs:
           fetch-depth: 100
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
-
-      - name: Update npm to latest
-        run: npm install -g npm@latest
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.yarn/berry/cache
-          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-          restore-keys: |
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
-            yarn-v1
-
-      - name: Install script dependencies
-        run: |
-          yarn install
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
 
       - name: Cancel all release preparation runs
         env:
@@ -273,24 +253,8 @@ jobs:
           ref: ${{ steps.info.outputs.sha }}
           token: ${{ secrets.GH_TOKEN }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: ".nvmrc"
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.yarn/berry/cache
-          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-          restore-keys: |
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
-            yarn-v1
-
-      - name: Install dependencies
-        run: yarn task --task=install --start-from=install
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
 
       - name: Set version
         id: version

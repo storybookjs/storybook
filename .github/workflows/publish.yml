@@ -278,7 +278,7 @@ jobs:
         run: yarn release:publish --tag canary --verbose
 
       - name: Replace Pull Request Body
-        uses: ivangabriele/find-and-replace-pull-request-body@042438c
+        uses: ivangabriele/find-and-replace-pull-request-body@042438c6cbfbacf6a4701d6042f59b1f73db2fd8
         with:
           githubToken: ${{ secrets.GH_TOKEN }}
           prNumber: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || '' }}

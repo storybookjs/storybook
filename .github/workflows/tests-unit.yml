@@ -21,9 +21,8 @@ jobs:
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
-
-      - name: Install code dependencies
-        run: cd code && yarn install
+        with:
+          install-code-deps: true
 
       - name: compile
         run: yarn task --task compile --start-from=compile

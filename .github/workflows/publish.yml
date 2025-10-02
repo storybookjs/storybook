@@ -43,13 +43,15 @@ jobs:
     steps:
       - name: Determine if this is a canary release
         id: determine
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] || [[ "${{ github.event_name }}" == "pull_request" && "${{ github.head_ref }}" == *"with-canary-release" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]] || [[ "$GITHUB_EVENT_NAME" == "pull_request" && "$HEAD_REF" == *"with-canary-release" ]]; then
             echo "release-type=canary" >> $GITHUB_OUTPUT
           else
             echo "release-type=normal" >> $GITHUB_OUTPUT
           fi
-
   publish-normal:
     name: Publish normal version
     runs-on: ubuntu-latest
@@ -77,6 +79,8 @@ jobs:
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
 
       - name: Cancel all release preparation runs
         env:
@@ -115,11 +119,6 @@ jobs:
         if: steps.publish-needed.outputs.published == 'false'
         id: is-prerelease
         run: yarn release:is-prerelease ${{ steps.version.outputs.current-version }} --verbose
-
-      - name: Install code dependencies
-        if: steps.publish-needed.outputs.published == 'false'
-        working-directory: .
-        run: cd ../code && yarn install
 
       - name: Publish
         if: steps.publish-needed.outputs.published == 'false'
@@ -261,6 +260,8 @@ jobs:
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
 
       - name: Set version
         id: version

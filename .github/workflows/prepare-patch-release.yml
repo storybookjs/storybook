@@ -19,7 +19,7 @@ jobs:
   prepare-patch-pull-request:
     name: Prepare patch pull request
     runs-on: ubuntu-latest
-    environment: release
+    environment: Release
     defaults:
       run:
         working-directory: scripts
@@ -32,9 +32,6 @@ jobs:
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
-
-      - name: Install code dependencies
-        run: cd ../code && yarn install
 
       - name: Check if pull request is frozen
         if: github.event_name != 'workflow_dispatch'

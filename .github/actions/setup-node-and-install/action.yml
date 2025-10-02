@@ -1,6 +1,12 @@
 name: 'Setup Node.js and Install Dependencies'
 description: 'Sets up Node.js, caches dependencies, and installs packages for Storybook'
 
+inputs:
+  install-code-deps:
+    description: 'Whether to install code dependencies in addition to script dependencies'
+    required: false
+    default: 'false'
+
 runs:
   using: 'composite'
   steps:
@@ -27,4 +33,10 @@ runs:
     - name: Install script dependencies
       shell: bash
       working-directory: scripts
+      run: yarn install
+
+    - name: Install code dependencies
+      if: inputs.install-code-deps == 'true'
+      shell: bash
+      working-directory: code
       run: yarn install

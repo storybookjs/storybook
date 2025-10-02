@@ -12,6 +12,7 @@ env:
   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
 
 permissions:
+  id-token: write
   contents: write
   pull-requests: write
 

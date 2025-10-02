@@ -7,7 +7,9 @@ import {
   containsESMUsage,
   containsRequireUsage,
   getRequireBanner,
+  hasCreateRequireImport,
   hasRequireBanner,
+  hasRequireDefinition,
 } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
@@ -39,6 +41,15 @@ export const fixFauxEsmRequire = {
 
     // Check if the file contains require usage
     if (!isWithRequire) {
+      return null;
+    }
+
+    // Check if the file already has createRequire imported and require defined
+    // If so, the user has already set up require properly and we don't need to add the banner
+    const hasCreateRequire = hasCreateRequireImport(content);
+    const hasRequire = hasRequireDefinition(content);
+
+    if (hasCreateRequire && hasRequire) {
       return null;
     }
 

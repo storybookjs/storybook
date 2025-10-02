@@ -255,6 +255,28 @@ export function containsRequireUsage(content: string): boolean {
   return requireCallRegex.test(content) || requireDotRegex.test(content);
 }
 
+/**
+ * Check if the file already imports createRequire from 'module' or 'node:module'
+ */
+export function hasCreateRequireImport(content: string): boolean {
+  // Check for import { createRequire } from 'module' or 'node:module'
+  const createRequireImportRegex =
+    /import\s+{[^}]*\bcreateRequire\b[^}]*}\s+from\s+['"](?:node:)?module['"]/;
+  return createRequireImportRegex.test(content);
+}
+
+/**
+ * Check if the file already defines a 'require' variable using createRequire
+ */
+export function hasRequireDefinition(content: string): boolean {
+  // Check for: const require = createRequire(...)
+  // or: const require=createRequire(...)
+  // or: let require = createRequire(...)
+  // or: var require = createRequire(...)
+  const requireDefinitionRegex = /\b(?:const|let|var)\s+require\s*=\s*createRequire\s*\(/;
+  return requireDefinitionRegex.test(content);
+}
+
 /** Check if the file already has the require banner */
 export const bannerComment =
   '// end of Storybook 10 migration assistant header, You can delete the above code';

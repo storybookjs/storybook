@@ -5,6 +5,8 @@ import {
   getFrameworkPackageName,
   getRendererName,
   getRendererPackageNameFromFramework,
+  hasCreateRequireImport,
+  hasRequireDefinition,
 } from './mainConfigFile';
 
 describe('getBuilderPackageName', () => {
@@ -214,5 +216,94 @@ describe('getRendererPackageNameFromFramework', () => {
     const frameworkPackageName = '@storybook/unknown';
     const packageName = getRendererPackageNameFromFramework(frameworkPackageName);
     expect(packageName).toBeNull();
+  });
+});
+
+describe('hasCreateRequireImport', () => {
+  it('should return true when file imports createRequire from module', () => {
+    const content = `import { createRequire } from 'module';`;
+    expect(hasCreateRequireImport(content)).toBe(true);
+  });
+
+  it('should return true when file imports createRequire from node:module', () => {
+    const content = `import { createRequire } from "node:module";`;
+    expect(hasCreateRequireImport(content)).toBe(true);
+  });
+
+  it('should return true when file imports createRequire with other imports', () => {
+    const content = `import { createRequire, other } from 'module';`;
+    expect(hasCreateRequireImport(content)).toBe(true);
+  });
+
+  it('should return true when file has createRequire in multiline import', () => {
+    const content = `
+      import {
+        createRequire,
+        other
+      } from 'module';
+    `;
+    expect(hasCreateRequireImport(content)).toBe(true);
+  });
+
+  it('should return false when file does not import createRequire', () => {
+    const content = `import { something } from 'module';`;
+    expect(hasCreateRequireImport(content)).toBe(false);
+  });
+
+  it('should return false when file imports from different module', () => {
+    const content = `import { createRequire } from 'other-module';`;
+    expect(hasCreateRequireImport(content)).toBe(false);
+  });
+
+  it('should return false when createRequire is in a comment', () => {
+    const content = `// import { createRequire } from 'module';`;
+    expect(hasCreateRequireImport(content)).toBe(false);
+  });
+});
+
+describe('hasRequireDefinition', () => {
+  it('should return true when file defines require with const', () => {
+    const content = `const require = createRequire(import.meta.url);`;
+    expect(hasRequireDefinition(content)).toBe(true);
+  });
+
+  it('should return true when file defines require with let', () => {
+    const content = `let require = createRequire(import.meta.url);`;
+    expect(hasRequireDefinition(content)).toBe(true);
+  });
+
+  it('should return true when file defines require with var', () => {
+    const content = `var require = createRequire(import.meta.url);`;
+    expect(hasRequireDefinition(content)).toBe(true);
+  });
+
+  it('should return true when file defines require without spaces', () => {
+    const content = `const require=createRequire(import.meta.url);`;
+    expect(hasRequireDefinition(content)).toBe(true);
+  });
+
+  it('should return true when file defines require inside a function', () => {
+    const content = `
+      function getAbsolutePath(value: string): string {
+        const require = createRequire(import.meta.url);
+        return require.resolve(value);
+      }
+    `;
+    expect(hasRequireDefinition(content)).toBe(true);
+  });
+
+  it('should return false when file does not define require', () => {
+    const content = `const something = createRequire(import.meta.url);`;
+    expect(hasRequireDefinition(content)).toBe(false);
+  });
+
+  it('should return false when require is not using createRequire', () => {
+    const content = `const require = something();`;
+    expect(hasRequireDefinition(content)).toBe(false);
+  });
+
+  it('should return false when require definition is in a comment', () => {
+    const content = `// const require = createRequire(import.meta.url);`;
+    expect(hasRequireDefinition(content)).toBe(false);
   });
 });

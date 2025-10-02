@@ -203,7 +203,6 @@ function defineStory<
       const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
 
       const play =
-        //@ts-expect-error don't know why the testFunction type is failing
         mountDestructured(this.play) || mountDestructured(testFunction)
           ? async ({ context }: StoryContext<TRenderer>) => {
               await this.play?.(context);

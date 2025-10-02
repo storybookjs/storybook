@@ -15,6 +15,7 @@ import {
   loadEnvs,
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
+import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -33,7 +34,6 @@ import { resolvePackageDir } from '../../shared/utils/module';
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel';
-import { StoryIndexGenerator } from '../utils/StoryIndexGenerator';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';

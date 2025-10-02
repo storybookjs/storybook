@@ -1,12 +1,12 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { FileSystemCache } from 'storybook/internal/common';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import type { StoryIndexGenerator } from '../../core-server';
 import type { Indexer, StoriesEntry } from './indexer';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */

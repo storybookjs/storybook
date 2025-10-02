@@ -185,5 +185,5 @@
     "verdaccio": "^5.31.1",
     "verdaccio-auth-memory": "^10.2.2"
   },
-  "packageManager": "yarn@4.9.1"
+  "packageManager": "yarn@4.10.3"
 }

@@ -58,7 +58,7 @@ export async function storyToCsfFactory(
   );
 
   let previewPath = '#.storybook/preview';
-  if (!useSubPathImports) {
+  if (useSubPathImports) {
     // calculate relative path from story file to preview file
     const relativePath = path.relative(path.dirname(info.path), previewConfigPath);
     const { dir, name } = path.parse(relativePath);

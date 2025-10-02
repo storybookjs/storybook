@@ -62,7 +62,7 @@ export const csfFactories: CommandFix = {
   id: 'csf-factories',
   promptType: 'command',
   async run({ dryRun, mainConfig, mainConfigPath, previewConfigPath, packageManager, configDir }) {
-    let useSubPathImports = false;
+    let useSubPathImports = true;
 
     if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
       // prompt whether the user wants to use imports map
@@ -71,7 +71,7 @@ export const csfFactories: CommandFix = {
       
         However, please note that this might not work if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
       
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next#subpath-imports')}
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next#subpath-imports?ref=upgrade')}
 
         As we modify your story files, we can create two types of imports:
       
@@ -82,15 +82,15 @@ export const csfFactories: CommandFix = {
       useSubPathImports = await prompt.select<boolean>({
         message: 'Which would you like to use?',
         options: [
-          { label: 'Relative imports', value: false },
-          { label: 'Subpath imports (alias)', value: true },
+          { label: 'Relative imports', value: true },
+          { label: 'Subpath imports (alias)', value: false },
         ],
       });
     }
 
     const { packageJson } = packageManager.primaryPackageJson;
 
-    if (useSubPathImports && !packageJson.imports?.['#*']) {
+    if (!useSubPathImports && !packageJson.imports?.['#*']) {
       logger.log(
         `🗺️ Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
       );
@@ -128,7 +128,7 @@ export const csfFactories: CommandFix = {
           You can now run Storybook with the new CSF factories format.
           
           For more info, check out the docs:
-          ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next')}
+          ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next?ref=upgrade')}
         `
     );
   },

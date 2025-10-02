@@ -1,5 +1,6 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { FileSystemCache } from 'storybook/internal/common';
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
@@ -478,6 +479,8 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  storyIndexGenerator?: StoryIndexGenerator;
 
   docs?: DocsOptions;
 

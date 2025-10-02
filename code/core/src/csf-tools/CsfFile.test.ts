@@ -1981,8 +1981,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -2004,8 +2003,7 @@ describe('CsfFile', () => {
           type: story
           subtype: story
           name: A
-        - importPath: foo/bar.stories.js
-          exportName: B
+        - exportName: B
           title: custom foo title
           metaId: component-id
           tags:
@@ -2047,8 +2045,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           metaId: component-id
           tags:
@@ -2087,8 +2084,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           tags:
             - component-tag
@@ -2156,8 +2152,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2196,8 +2191,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          exportName: A
+        - exportName: A
           title: custom foo title
           tags: []
           __id: custom-foo-title--a
@@ -2235,8 +2229,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          rawComponentPath: ../src/Component.js
+        - rawComponentPath: ../src/Component.js
           exportName: A
           title: custom foo title
           tags: []
@@ -2275,8 +2268,7 @@ describe('CsfFile', () => {
       ).parse();
 
       expect(indexInputs).toMatchInlineSnapshot(`
-        - importPath: foo/bar.stories.js
-          rawComponentPath: some-library
+        - rawComponentPath: some-library
           exportName: A
           title: custom foo title
           tags: []

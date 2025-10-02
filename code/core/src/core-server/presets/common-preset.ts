@@ -4,7 +4,7 @@ import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
-import { optionalEnvToBoolean } from 'storybook/internal/common';
+import { normalizeStories, optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   JsPackageManagerFactory,
   type RemoveAddonOptions,
@@ -15,6 +15,7 @@ import {
   loadEnvs,
   removeAddon as removeAddonBase,
 } from 'storybook/internal/common';
+import { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { readCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -285,6 +286,37 @@ export const managerEntries = async (existing: any) => {
     pathe.join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-manager.js'),
     ...(existing || []),
   ];
+};
+
+let initializedStoryIndexGenerator: StoryIndexGenerator | undefined = undefined;
+export const storyIndexGenerator: PresetPropertyFn<'storyIndexGenerator'> = async (_, options) => {
+  if (initializedStoryIndexGenerator) {
+    return initializedStoryIndexGenerator;
+  }
+
+  const workingDir = process.cwd();
+  const configDir = options.configDir;
+
+  const [stories, indexers, docs] = await Promise.all([
+    options.presets.apply('stories'),
+    options.presets.apply('experimental_indexers', []),
+    options.presets.apply('docs'),
+  ]);
+
+  const normalizedStories = normalizeStories(stories, {
+    configDir,
+    workingDir,
+  });
+
+  const generator = new StoryIndexGenerator(normalizedStories, {
+    workingDir,
+    configDir,
+    indexers,
+    docs,
+  });
+  await generator.initialize();
+  initializedStoryIndexGenerator = generator;
+  return initializedStoryIndexGenerator;
 };
 
 export const viteFinal = async (

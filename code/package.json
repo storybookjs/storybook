@@ -240,7 +240,7 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.9.1",
+  "packageManager": "yarn@4.10.3",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
@@ -283,5 +283,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.0.0-beta.9"
 }

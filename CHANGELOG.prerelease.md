@@ -1,3 +1,9 @@
+## 10.0.0-beta.9
+
+- Automigrations: Add automigration for viewport and backgrounds - [#31614](https://github.com/storybookjs/storybook/pull/31614), thanks @valentinpalkovic!
+- Svelte: Simplify public types - use modern `Component` - [#31394](https://github.com/storybookjs/storybook/pull/31394), thanks @xeho91!
+- Telemetry: Log userAgent in onboarding - [#32566](https://github.com/storybookjs/storybook/pull/32566), thanks @shilman!
+
 ## 10.0.0-beta.8
 
 - Addon-docs: Add eject button to canvas toolbar - [#29825](https://github.com/storybookjs/storybook/pull/29825), thanks @mihkeleidast!

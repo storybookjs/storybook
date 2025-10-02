@@ -45,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
+          node-version-file: ".nvmrc"
 
       - name: Cache dependencies
         uses: actions/cache@v4
@@ -107,8 +107,6 @@ jobs:
 
       - name: Publish
         if: steps.publish-needed.outputs.published == 'false'
-        env:
-          YARN_NPM_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
 
       - name: Get target branch
@@ -206,4 +204,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@master
         with:
-          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

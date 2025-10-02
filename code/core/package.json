@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.0.0-beta.5",
+  "version": "10.0.0-beta.8",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -58,14 +58,6 @@
       "types": "./dist/highlight/index.d.ts",
       "default": "./dist/highlight/index.js"
     },
-    "./internal/actions": {
-      "types": "./dist/actions/index.d.ts",
-      "default": "./dist/actions/index.js"
-    },
-    "./internal/actions/decorator": {
-      "types": "./dist/actions/decorator.d.ts",
-      "default": "./dist/actions/decorator.js"
-    },
     "./internal/babel": {
       "types": "./dist/babel/index.d.ts",
       "default": "./dist/babel/index.js"
@@ -113,17 +105,9 @@
       "types": "./dist/docs-tools/index.d.ts",
       "default": "./dist/docs-tools/index.js"
     },
-    "./internal/highlight": {
-      "types": "./dist/highlight/index.d.ts",
-      "default": "./dist/highlight/index.js"
-    },
     "./internal/instrumenter": {
       "types": "./dist/instrumenter/index.d.ts",
       "default": "./dist/instrumenter/index.js"
-    },
-    "./internal/manager-api": {
-      "types": "./dist/manager-api/index.d.ts",
-      "default": "./dist/manager-api/index.js"
     },
     "./internal/manager-errors": {
       "types": "./dist/manager-errors.d.ts",
@@ -163,25 +147,9 @@
       "types": "./dist/telemetry/index.d.ts",
       "default": "./dist/telemetry/index.js"
     },
-    "./internal/test": {
-      "types": "./dist/test/index.d.ts",
-      "default": "./dist/test/index.js"
-    },
-    "./internal/theming": {
-      "types": "./dist/theming/index.d.ts",
-      "default": "./dist/theming/index.js"
-    },
-    "./internal/theming/create": {
-      "types": "./dist/theming/create.d.ts",
-      "default": "./dist/theming/create.js"
-    },
     "./internal/types": {
       "types": "./dist/types/index.d.ts",
       "default": "./dist/types/index.js"
-    },
-    "./internal/viewport": {
-      "types": "./dist/viewport/index.d.ts",
-      "default": "./dist/viewport/index.js"
     },
     "./manager-api": {
       "types": "./dist/manager-api/index.d.ts",

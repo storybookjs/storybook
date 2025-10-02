@@ -89,6 +89,7 @@ export interface API_Layout {
 }
 
 export interface API_LayoutCustomisations {
+  showPanel?: (state: State, defaultValue: boolean) => boolean | undefined;
   showSidebar?: (state: State, defaultValue: boolean) => boolean | undefined;
   showToolbar?: (state: State, defaultValue: boolean) => boolean | undefined;
 }

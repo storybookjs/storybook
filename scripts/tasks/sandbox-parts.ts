@@ -17,7 +17,11 @@ import { SupportedLanguage } from '../../code/core/src/cli/project_types';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager';
 import storybookPackages from '../../code/core/src/common/versions';
 import type { ConfigFile } from '../../code/core/src/csf-tools';
-import { formatConfig, writeConfig } from '../../code/core/src/csf-tools';
+import {
+  readConfig as csfReadConfig,
+  formatConfig,
+  writeConfig,
+} from '../../code/core/src/csf-tools';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task';
 import { executeCLIStep, steps } from '../utils/cli-step';
@@ -170,19 +174,24 @@ export const init: Task['run'] = async (
   const cwd = sandboxDir;
 
   let extra = {};
-  if (template.expected.renderer === '@storybook/html') {
-    extra = { type: 'html' };
-  } else if (template.expected.renderer === '@storybook/server') {
-    extra = { type: 'server' };
-  } else if (template.expected.framework === '@storybook/react-native-web-vite') {
-    extra = { type: 'react_native_web' };
+
+  switch (template.expected.renderer) {
+    case '@storybook/html':
+      extra = { type: 'html' };
+      break;
+    case '@storybook/server':
+      extra = { type: 'server' };
+      break;
+    case '@storybook/svelte':
+      await prepareSvelteSandbox(cwd);
+      break;
   }
 
   switch (template.expected.framework) {
     case '@storybook/react-native-web-vite':
+      extra = { type: 'react_native_web' };
       await prepareReactNativeWebSandbox(cwd);
       break;
-    default:
   }
 
   await executeCLIStep(steps.init, {
@@ -876,6 +885,36 @@ async function prepareReactNativeWebSandbox(cwd: string) {
   if (!(await pathExists(join(cwd, 'src')))) {
     await mkdir(join(cwd, 'src'));
   }
+}
+
+async function prepareSvelteSandbox(cwd: string) {
+  const svelteConfigJsPath = join(cwd, 'svelte.config.js');
+  const svelteConfigTsPath = join(cwd, 'svelte.config.ts');
+
+  // Check which config file exists
+  const configPath = (await pathExists(svelteConfigTsPath))
+    ? svelteConfigTsPath
+    : (await pathExists(svelteConfigJsPath))
+      ? svelteConfigJsPath
+      : null;
+
+  if (!configPath) {
+    throw new Error(
+      `No svelte.config.js or svelte.config.ts found in sandbox: ${cwd}, cannot modify config.`
+    );
+  }
+
+  const svelteConfig = await csfReadConfig(configPath);
+
+  // Enable async components
+  // see https://svelte.dev/docs/svelte/await-expressions
+  svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
+
+  // Enable remote functions
+  // see https://svelte.dev/docs/kit/remote-functions
+  svelteConfig.setFieldValue(['kit', 'experimental', 'remoteFunctions'], true);
+
+  await writeConfig(svelteConfig);
 }
 
 async function prepareAngularSandbox(cwd: string, templateName: string) {

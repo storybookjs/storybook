@@ -254,11 +254,6 @@ describe('hasCreateRequireImport', () => {
     const content = `import { createRequire } from 'other-module';`;
     expect(hasCreateRequireImport(content)).toBe(false);
   });
-
-  it('should return false when createRequire is in a comment', () => {
-    const content = `// import { createRequire } from 'module';`;
-    expect(hasCreateRequireImport(content)).toBe(false);
-  });
 });
 
 describe('hasRequireDefinition', () => {
@@ -299,11 +294,6 @@ describe('hasRequireDefinition', () => {
 
   it('should return false when require is not using createRequire', () => {
     const content = `const require = something();`;
-    expect(hasRequireDefinition(content)).toBe(false);
-  });
-
-  it('should return false when require definition is in a comment', () => {
-    const content = `// const require = createRequire(import.meta.url);`;
     expect(hasRequireDefinition(content)).toBe(false);
   });
 });

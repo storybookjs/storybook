@@ -312,7 +312,19 @@ function transformStoryFile(
         const defaultViewport = getObjectProperty(viewportParams, 'defaultViewport');
         const defaultOrientation = getObjectProperty(viewportParams, 'defaultOrientation');
         const disableViewport = getObjectProperty(viewportParams, 'disable');
-        if (defaultViewport && t.isStringLiteral(defaultViewport)) {
+
+        // Handle both string literals and member expressions for defaultViewport
+        let viewportValue: t.StringLiteral | t.MemberExpression | null = null;
+        if (defaultViewport) {
+          if (t.isStringLiteral(defaultViewport)) {
+            viewportValue = defaultViewport;
+          } else if (t.isMemberExpression(defaultViewport)) {
+            // Preserve the member expression as-is
+            viewportValue = defaultViewport;
+          }
+        }
+
+        if (viewportValue) {
           // Create globals.viewport
           if (!newGlobals) {
             newGlobals = t.objectExpression([]);
@@ -328,7 +340,7 @@ function transformStoryFile(
             t.objectProperty(
               t.identifier('viewport'),
               t.objectExpression([
-                t.objectProperty(t.identifier('value'), t.stringLiteral(defaultViewport.value)),
+                t.objectProperty(t.identifier('value'), viewportValue),
                 t.objectProperty(t.identifier('isRotated'), t.booleanLiteral(isRotated)),
               ])
             )

@@ -854,5 +854,38 @@ describe('addon-globals-api', () => {
       expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
     });
+
+    it('should transform member expression references in viewport stories', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+          import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
+          import Button from './Button';
+          export default { component: Button };
+          export const Mobile = {
+            parameters: {
+              viewport: {
+                defaultViewport: MINIMAL_VIEWPORTS.mobile2
+              },
+            },
+          };
+        `;
+      const expectedContent = dedent`
+          import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
+          import Button from './Button';
+          export default {
+            component: Button
+          };
+          export const Mobile = {
+            globals: {
+              viewport: {
+                value: MINIMAL_VIEWPORTS.mobile2,
+                isRotated: false
+              }
+            }
+          };
+        `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+    });
   });
 });

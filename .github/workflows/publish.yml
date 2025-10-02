@@ -35,39 +35,13 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' }}
 
 jobs:
-  determine-release-type:
-    name: Determine release type
-    runs-on: ubuntu-latest
-    outputs:
-      release-type: ${{ steps.determine.outputs.release-type }}
-    steps:
-      - name: Determine release type and if workflow should be skipped
-        id: determine
-        env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-          HEAD_REF: ${{ github.head_ref }}
-          REF_NAME: ${{ github.ref_name }}
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-        run: |
-          # Check if [skip ci] is in the commit message
-          if [[ "$COMMIT_MESSAGE" == *"[skip ci]"* ]]; then
-            echo "release-type=none" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Determine release type
-          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]] || [[ "$GITHUB_EVENT_NAME" == "pull_request" && "$HEAD_REF" == *"with-canary-release" ]]; then
-            echo "release-type=canary" >> $GITHUB_OUTPUT
-          elif [[ "$GITHUB_EVENT_NAME" == "push" && ("$REF_NAME" == "latest-release" || "$REF_NAME" == "next-release") ]]; then
-            echo "release-type=normal" >> $GITHUB_OUTPUT
-          else
-            echo "release-type=none" >> $GITHUB_OUTPUT
-          fi
   publish-normal:
     name: Publish normal version
     runs-on: ubuntu-latest
-    needs: determine-release-type
-    if: needs.determine-release-type.outputs.release-type == 'normal'
+    if: |
+      github.event_name == 'push' &&
+      (github.ref_name == 'latest-release' || github.ref_name == 'next-release') &&
+      contains(github.event.head_commit.message, '[skip ci]') != true
     environment: Release
     defaults:
       run:
@@ -246,8 +220,12 @@ jobs:
   publish-canary:
     name: Publish canary version
     runs-on: ubuntu-latest
-    needs: determine-release-type
-    if: needs.determine-release-type.outputs.release-type == 'canary'
+    if: |
+      (
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'pull_request' && endsWith(github.head_ref, 'with-canary-release'))
+      ) &&
+      contains(github.event.head_commit.message, '[skip ci]') != true
     environment: Release
     steps:
       - name: Fail if triggering actor is not administrator

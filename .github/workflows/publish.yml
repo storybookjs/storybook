@@ -89,6 +89,8 @@ jobs:
 
       - name: Apply deferred version bump and commit
         working-directory: .
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
           CURRENT_VERSION=$(cat ./code/package.json | jq '.version')
           DEFERRED_NEXT_VERSION=$(cat ./code/package.json | jq '.deferredNextVersion')
@@ -105,7 +107,7 @@ jobs:
           git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
           git add .
           git commit -m "Bump version from $CURRENT_VERSION to $DEFERRED_NEXT_VERSION [skip ci]" || true
-          git push origin ${{ github.ref_name }}
+          git push origin "$REF_NAME"
 
       - name: Get current version
         id: version
@@ -113,12 +115,16 @@ jobs:
 
       - name: Check if publish is needed
         id: publish-needed
-        run: yarn release:is-version-published ${{ steps.version.outputs.current-version }}
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+        run: yarn release:is-version-published "$CURRENT_VERSION"
 
       - name: Check release vs prerelease
         if: steps.publish-needed.outputs.published == 'false'
         id: is-prerelease
-        run: yarn release:is-prerelease ${{ steps.version.outputs.current-version }} --verbose
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+        run: yarn release:is-prerelease "$CURRENT_VERSION" --verbose
 
       - name: Publish
         if: steps.publish-needed.outputs.published == 'false'
@@ -131,7 +137,9 @@ jobs:
       - name: Get changelog for ${{ steps.version.outputs.current-version }}
         if: steps.publish-needed.outputs.published == 'false'
         id: changelog
-        run: yarn release:get-changelog-from-file ${{ steps.version.outputs.current-version }}
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+        run: yarn release:get-changelog-from-file "$CURRENT_VERSION"
 
       # tags are needed to get list of patches to label as picked
       - name: Fetch git tags
@@ -149,23 +157,31 @@ jobs:
         if: steps.publish-needed.outputs.published == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+          REPOSITORY: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+          IS_PRERELEASE: ${{ steps.is-prerelease.outputs.prerelease == 'true' && '--prerelease' || '' }}
         run: |
           gh release create \
-          v${{ steps.version.outputs.current-version }} \
-            --repo "${{ github.repository }}" \
-            --target ${{ github.ref_name }} \
-            --title "v${{ steps.version.outputs.current-version }}" \
-            --notes "${{ steps.changelog.outputs.changelog }}" \
-            ${{ steps.is-prerelease.outputs.prerelease == 'true' && '--prerelease' || '' }}
+          "v$CURRENT_VERSION" \
+            --repo "$REPOSITORY" \
+            --target "$REF_NAME" \
+            --title "v$CURRENT_VERSION" \
+            --notes "$CHANGELOG" \
+            $IS_PRERELEASE
 
       - name: Merge ${{ github.ref_name }} into ${{ steps.target.outputs.target }}
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          TARGET_BRANCH: ${{ steps.target.outputs.target }}
         run: |
           git config --global user.name "storybook-bot"
           git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
-          git fetch origin ${{ steps.target.outputs.target }}
-          git checkout ${{ steps.target.outputs.target }}
-          git merge ${{ github.ref_name }}
-          git push origin ${{ steps.target.outputs.target }}
+          git fetch origin "$TARGET_BRANCH"
+          git checkout "$TARGET_BRANCH"
+          git merge "$REF_NAME"
+          git push origin "$TARGET_BRANCH"
 
       - name: Force push from 'next' to 'latest-release' and 'main' on minor/major releases
         if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'false'
@@ -178,13 +194,15 @@ jobs:
       - name: Sync CHANGELOG.md from `main` to `next`
         if: steps.target.outputs.target == 'main'
         working-directory: .
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
         run: |
           git fetch origin next
           git checkout next
           git pull
           git checkout origin/main ./CHANGELOG.md
           git add ./CHANGELOG.md
-          git commit -m "Update CHANGELOG.md for v${{ steps.version.outputs.current-version }} [skip ci]" || true
+          git commit -m "Update CHANGELOG.md for v$CURRENT_VERSION [skip ci]" || true
           git push origin next
 
       # Sync the next.json version file to the main branch so it gets deployed to the docs site
@@ -192,6 +210,8 @@ jobs:
       - name: Sync version JSONs from `next-release` to `main`
         if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'true'
         working-directory: .
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
         run: |
           VERSION_FILE="./docs/versions/next.json"
           git fetch origin main
@@ -199,7 +219,7 @@ jobs:
           git pull
           git checkout origin/next-release $VERSION_FILE
           git add $VERSION_FILE
-          git commit -m "Update $VERSION_FILE for v${{ steps.version.outputs.current-version }}"
+          git commit -m "Update $VERSION_FILE for v$CURRENT_VERSION"
           git push origin main
 
       - name: Create Sentry release
@@ -217,7 +237,7 @@ jobs:
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
-        uses: Ilshidur/action-discord@master
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
         with:
           args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
@@ -229,7 +249,7 @@ jobs:
     environment: Release
     steps:
       - name: Fail if triggering actor is not administrator
-        uses: prince-chrismc/check-actor-permissions-action@v2.0.4
+        uses: prince-chrismc/check-actor-permissions-action@87c6d9b36c730377858fd9719fbbac1b58fa678d
         with:
           permission: admin
 
@@ -237,9 +257,10 @@ jobs:
         id: info
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
         run: |
-          PR_NUMBER=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
-          PR_INFO=$(gh pr view $PR_NUMBER --repo ${{ github.repository }} --json isCrossRepository,headRefOid,headRefName,headRepository,headRepositoryOwner --jq '{isFork: .isCrossRepository, owner: .headRepositoryOwner.login, repoName: .headRepository.name, branch: .headRefName, sha: .headRefOid}')
+          PR_INFO=$(gh pr view "$PR_NUMBER" --repo "$REPOSITORY" --json isCrossRepository,headRefOid,headRefName,headRepository,headRepositoryOwner --jq '{isFork: .isCrossRepository, owner: .headRepositoryOwner.login, repoName: .headRepository.name, branch: .headRefName, sha: .headRefOid}')
           echo $PR_INFO
           # Loop through each key-value pair in PR_INFO and set as step output
           for key in $(echo "$PR_INFO" | jq -r 'keys[]'); do
@@ -266,9 +287,11 @@ jobs:
       - name: Set version
         id: version
         working-directory: scripts
+        env:
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          SHORT_SHA: ${{ steps.info.outputs.shortSha }}
         run: |
-          PR_NUMBER=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
-          yarn release:version --exact 0.0.0-pr-$PR_NUMBER-sha-${{ steps.info.outputs.shortSha }} --verbose
+          yarn release:version --exact "0.0.0-pr-$PR_NUMBER-sha-$SHORT_SHA" --verbose
 
       - name: Publish v${{ steps.version.outputs.next-version }}
         working-directory: scripts
@@ -305,8 +328,11 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          PR_NUMBER: ${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          TRIGGERING_ACTOR: ${{ github.triggering_actor }}
+          RUN_ID: ${{ github.run_id }}
         run: |
-          PR_NUMBER=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }}
-          gh pr comment $PR_NUMBER\
-            --repo "${{github.repository }}"\
-            --body "Failed to publish canary version of this pull request, triggered by @${{ github.triggering_actor }}. See the failed workflow run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          gh pr comment "$PR_NUMBER"\
+            --repo "$REPOSITORY"\
+            --body "Failed to publish canary version of this pull request, triggered by @$TRIGGERING_ACTOR. See the failed workflow run at: https://github.com/$REPOSITORY/actions/runs/$RUN_ID"

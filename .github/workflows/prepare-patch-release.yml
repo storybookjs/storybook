@@ -165,6 +165,6 @@ jobs:
         if: failure()
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
-        uses: Ilshidur/action-discord@master
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
         with:
           args: "The GitHub Action for preparing the release pull request bumping from v${{ steps.versions.outputs.current }} to v${{ steps.versions.outputs.next }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

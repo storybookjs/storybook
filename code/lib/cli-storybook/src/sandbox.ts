@@ -31,6 +31,8 @@ interface SandboxOptions {
 type Choice = keyof typeof TEMPLATES;
 
 const toChoices = (c: Choice) => ({ label: TEMPLATES[c].name, value: c });
+const formatBorderOutdated = (text: string) => `\u001b[38;2;252;82;31m${text}\u001b[39m`;
+const formatBorderDefault = (text: string) => `\u001b[38;2;241;97;140m${text}\u001b[39m`;
 
 export const sandbox = async ({
   output: outputDirectory,
@@ -52,7 +54,7 @@ export const sandbox = async ({
   const currentVersion = versions.storybook;
   const isPrerelease = prerelease(currentVersion);
   const isOutdated = lt(currentVersion, isPrerelease ? nextVersion : latestVersion);
-  const borderColor = isOutdated ? '#FC521F' : '#F1618C';
+  const formatBorder = isOutdated ? formatBorderOutdated : formatBorderDefault;
 
   const downloadType = !isOutdated && init ? 'after-storybook' : 'before-storybook';
   const branch = isPrerelease ? 'next' : 'main';
@@ -78,7 +80,8 @@ export const sandbox = async ({
       .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
       .concat(isPrerelease ? [messages.prerelease] : [])
       .join('\n'),
-    { borderStyle: 'round', padding: 1, borderColor }
+    undefined,
+    { rounded: true, contentPadding: 1, formatBorder }
   );
 
   if (!selectedConfig) {
@@ -120,7 +123,8 @@ export const sandbox = async ({
             Available templates:
             ${keys.map((key) => picocolors.blue(`- ${key}`)).join('\n')}
             `.trim(),
-        { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
+        undefined,
+        { rounded: true, contentPadding: 1, formatBorder: formatBorderDefault }
       );
       process.exit(1);
     }
@@ -139,7 +143,8 @@ export const sandbox = async ({
 
             After the reproduction is ready, we'll guide you through the next steps.
             `.trim(),
-        { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
+        undefined,
+        { rounded: true, contentPadding: 1, formatBorder: formatBorderDefault }
       );
 
       templateId = await promptSelectedTemplate(choices);
@@ -259,7 +264,8 @@ export const sandbox = async ({
 
         Having a clean repro helps us solve your issue faster! 🙏
       `.trim(),
-      { borderStyle: 'round', padding: 1, borderColor: '#F1618C' }
+      undefined,
+      { rounded: true, contentPadding: 1, formatBorder: formatBorderDefault }
     );
   } catch (error) {
     logger.error('🚨 Failed to create sandbox');

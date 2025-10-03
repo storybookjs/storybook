@@ -31,7 +31,6 @@ export const experimental_indexers: PresetProperty<'experimental_indexers'> = (
           title: content.title,
           tags,
           type: 'story',
-          subtype: 'story',
         };
       });
     },

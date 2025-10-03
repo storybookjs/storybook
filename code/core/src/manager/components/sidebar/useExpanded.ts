@@ -41,18 +41,24 @@ const initializeExpanded = ({
   initialExpanded,
   highlightedRef,
   rootIds,
+  selectedStoryId,
 }: {
   refId: string;
   data: StoriesHash;
   initialExpanded?: ExpandedState;
   highlightedRef: MutableRefObject<Highlight>;
   rootIds: string[];
+  selectedStoryId: string | null;
 }) => {
-  const highlightedAncestors =
-    highlightedRef.current?.refId === refId
-      ? getAncestorIds(data, highlightedRef.current?.itemId)
-      : [];
-  return [...rootIds, ...highlightedAncestors].reduce<ExpandedState>(
+  const selectedStory = selectedStoryId && data[selectedStoryId];
+  const candidates = [...rootIds];
+  if (highlightedRef.current?.refId === refId) {
+    candidates.push(...getAncestorIds(data, highlightedRef.current?.itemId));
+  }
+  if (selectedStory && 'children' in selectedStory && selectedStory.children?.length) {
+    candidates.push(selectedStoryId);
+  }
+  return candidates.reduce<ExpandedState>(
     // @ts-expect-error (non strict)
     (acc, id) => Object.assign(acc, { [id]: id in initialExpanded ? initialExpanded[id] : true }),
     {}
@@ -90,7 +96,7 @@ export const useExpanded = ({
     (state, { ids, value }) =>
       ids.reduce((acc, id) => Object.assign(acc, { [id]: value }), { ...state }),
     // @ts-expect-error (non strict)
-    { refId, data, highlightedRef, rootIds, initialExpanded },
+    { refId, data, highlightedRef, rootIds, initialExpanded, selectedStoryId },
     initializeExpanded
   );
 

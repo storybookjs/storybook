@@ -113,7 +113,7 @@ export const FilledForm = {
 };
 ```
 
-```js filename="RegistrationForm.stories.js|jsx" renderer="common" language="js"
+```js filename="RegistrationForm.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { RegistrationForm } from './RegistrationForm';
 
 export default {
@@ -229,7 +229,7 @@ export const FilledForm: Story = {
 };
 ```
 
-```ts filename="RegistrationForm.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="RegistrationForm.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -339,4 +339,79 @@ export const FilledForm: Story = {
     await userEvent.click(submitButton);
   },
 };
+```
+
+```ts filename="RegistrationForm.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { RegistrationForm } from './RegistrationForm';
+
+const meta = preview.meta({
+  component: RegistrationForm,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FilledForm = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    const emailInput = canvas.getByLabelText('email', {
+      selector: 'input',
+    });
+
+    await userEvent.type(emailInput, 'example-email@email.com', {
+      delay: 100,
+    });
+
+    const passwordInput = canvas.getByLabelText('password', {
+      selector: 'input',
+    });
+
+    await userEvent.type(passwordInput, 'ExamplePassword', {
+      delay: 100,
+    });
+
+    const submitButton = canvas.getByRole('button');
+    await userEvent.click(submitButton);
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="RegistrationForm.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { RegistrationForm } from './RegistrationForm';
+
+const meta = preview.meta({
+  component: RegistrationForm,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FilledForm = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    const emailInput = canvas.getByLabelText('email', {
+      selector: 'input',
+    });
+
+    await userEvent.type(emailInput, 'example-email@email.com', {
+      delay: 100,
+    });
+
+    const passwordInput = canvas.getByLabelText('password', {
+      selector: 'input',
+    });
+
+    await userEvent.type(passwordInput, 'ExamplePassword', {
+      delay: 100,
+    });
+
+    const submitButton = canvas.getByRole('button');
+    await userEvent.click(submitButton);
+  },
+});
 ```

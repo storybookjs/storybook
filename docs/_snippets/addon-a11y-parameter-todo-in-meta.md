@@ -14,7 +14,7 @@ const meta: Meta<DataTable> = {
 export default meta;
 ```
 
-```ts filename="DataTable.stories.ts" renderer="common" language="ts"
+```ts filename="DataTable.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import { Meta } from '@storybook/your-framework';
 
@@ -31,7 +31,7 @@ const meta = {
 export default meta;
 ```
 
-```js filename="DataTable.stories.js" renderer="common" language="js"
+```js filename="DataTable.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { DataTable } from './DataTable';
 
 export default {
@@ -131,4 +131,35 @@ export default {
     a11y: { test: 'todo' },
   },
 };
+```
+
+```ts filename="DataTable.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { DataTable } from './DataTable';
+
+const meta = preview.meta({
+  component: DataTable,
+  parameters: {
+    // 👇 This component's accessibility tests will not fail
+    //    Instead, they display warnings in the Storybook UI
+    a11y: { test: 'todo' },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="DataTable.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { DataTable } from './DataTable';
+
+const meta = preview.meta({
+  component: DataTable,
+  parameters: {
+    // 👇 This component's accessibility tests will not fail
+    //    Instead, they display warnings in the Storybook UI
+    a11y: { test: 'todo' },
+  },
+});
 ```

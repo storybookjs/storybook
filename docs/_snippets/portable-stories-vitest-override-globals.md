@@ -10,7 +10,7 @@ test('renders in English', async () => {
   const Primary = composeStory(
     PrimaryStory,
     meta,
-    { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
+    { globals: { locale: 'en' } }, // 👈 Project annotations to override the locale
   );
 
   await Primary.run();
@@ -35,7 +35,7 @@ test('renders in English', async () => {
   const Primary = composeStory(
     PrimaryStory,
     meta,
-    { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
+    { globals: { locale: 'en' } }, // 👈 Project annotations to override the locale
   );
 
   await Primary.run();
@@ -59,7 +59,7 @@ test('renders in English', async () => {
   const Primary = composeStory(
     PrimaryStory,
     meta,
-    { globals: { locale: 'en' } } // 👈 Project annotations to override the locale
+    { globals: { locale: 'en' } }, // 👈 Project annotations to override the locale
   );
 
   await Primary.run();

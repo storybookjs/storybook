@@ -40,7 +40,7 @@ export default mergeConfig(
         }),
       ],
     },
-  })
+  }),
 );
 ```
 
@@ -86,7 +86,7 @@ export default mergeConfig(
         }),
       ],
     },
-  })
+  }),
 );
 ```
 
@@ -132,6 +132,6 @@ export default mergeConfig(
         }),
       ],
     },
-  })
+  }),
 );
 ```

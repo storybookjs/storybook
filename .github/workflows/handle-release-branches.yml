@@ -5,6 +5,7 @@ on:
 
 jobs:
   branch-checks:
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
       - id: get-branch

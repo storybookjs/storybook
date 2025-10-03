@@ -44,7 +44,7 @@ const HeadingWrapper = styled.div({
   justifyContent: 'space-between',
   position: 'relative',
   minHeight: 42,
-  paddingLeft: 8,
+  paddingLeft: 2,
 });
 
 const SkipToCanvasLink = styled(Button)(({ theme }) => ({
@@ -88,7 +88,7 @@ export const Heading: FC<HeadingProps & ComponentProps<typeof HeadingWrapper>> =
   return (
     <HeadingWrapper {...props}>
       {skipLinkHref && (
-        <SkipToCanvasLink asChild>
+        <SkipToCanvasLink ariaLabel={false} asChild>
           <a href={skipLinkHref} tabIndex={0}>
             Skip to canvas
           </a>

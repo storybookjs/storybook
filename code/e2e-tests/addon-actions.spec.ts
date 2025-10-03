@@ -28,8 +28,8 @@ test.describe('addon-actions', () => {
     await expect(button).toBeVisible();
     await button.click();
 
-    const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
-      hasText: 'click',
+    const logItem = sbPage.panelContent().locator('span', {
+      hasText: 'onClick:',
     });
     await expect(logItem).toBeVisible();
   });
@@ -52,9 +52,12 @@ test.describe('addon-actions', () => {
     await expect(button).toBeVisible();
     await button.click();
 
-    const logItem = page.locator('#storybook-panel-root #panel-tab-content', {
-      hasText: 'console.log',
+    const logItem = sbPage.panelContent().locator('span', {
+      hasText: 'console.log:',
     });
-    await expect(logItem).toBeVisible();
+    // Avoid getting failed due to other console.log calls by frameworks
+    await expect(logItem.getByText('first')).toBeVisible();
+    await expect(logItem.getByText('second')).toBeVisible();
+    await expect(logItem.getByText('third')).toBeVisible();
   });
 });

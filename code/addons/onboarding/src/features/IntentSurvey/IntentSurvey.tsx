@@ -170,7 +170,16 @@ export const IntentSurvey = ({
   };
 
   return (
-    <Modal defaultOpen width={420} onEscapeKeyDown={onDismiss}>
+    <Modal
+      ariaLabel="Storybook user survey"
+      defaultOpen
+      width={420}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) {
+          onDismiss();
+        }
+      }}
+    >
       <Form onSubmit={onSubmitForm} id="intent-survey-form">
         <Content>
           <Modal.Header>
@@ -229,7 +238,13 @@ export const IntentSurvey = ({
           })}
 
           <Actions>
-            <Button disabled={isSubmitting || !isValid} size="medium" type="submit" variant="solid">
+            <Button
+              ariaLabel={false}
+              disabled={isSubmitting || !isValid}
+              size="medium"
+              type="submit"
+              variant="solid"
+            >
               Submit
             </Button>
           </Actions>

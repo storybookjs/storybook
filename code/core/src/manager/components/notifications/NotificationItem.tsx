@@ -1,7 +1,7 @@
 import type { FC, SyntheticEvent } from 'react';
 import React, { useCallback, useEffect, useRef } from 'react';
 
-import { IconButton } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import { Link } from 'storybook/internal/router';
 
 import { CloseAltIcon } from '@storybook/icons';
@@ -107,10 +107,10 @@ const NotificationTextWrapper = styled.div(({ theme }) => ({
   width: '100%',
   display: 'flex',
   flexDirection: 'column',
-  color: theme.base === 'dark' ? theme.color.mediumdark : theme.color.mediumlight,
+  color: theme.color.inverseText,
 }));
 
-const Headline = styled.div<{ hasIcon: boolean }>(({ theme, hasIcon }) => ({
+const Headline = styled.div(({ theme }) => ({
   height: '100%',
   alignItems: 'center',
   whiteSpace: 'balance',
@@ -136,15 +136,13 @@ const ItemContent: FC<Pick<State['notifications'][0], 'icon' | 'content'>> = ({
   <>
     {!icon || <NotificationIconWrapper>{icon}</NotificationIconWrapper>}
     <NotificationTextWrapper>
-      <Headline title={headline} hasIcon={!!icon}>
-        {headline}
-      </Headline>
+      <Headline title={headline}>{headline}</Headline>
       {subHeadline && <SubHeadline>{subHeadline}</SubHeadline>}
     </NotificationTextWrapper>
   </>
 );
 
-const DismissButtonWrapper = styled(IconButton)(({ theme }) => ({
+const DismissButtonWrapper = styled(Button)(({ theme }) => ({
   width: 28,
   alignSelf: 'center',
   marginTop: 0,
@@ -155,7 +153,9 @@ const DismissNotificationItem: FC<{
   onDismiss: () => void;
 }> = ({ onDismiss }) => (
   <DismissButtonWrapper
-    title="Dismiss notification"
+    padding="small"
+    variant="ghost"
+    ariaLabel="Dismiss notification"
     onClick={(e: SyntheticEvent) => {
       e.preventDefault();
       e.stopPropagation();

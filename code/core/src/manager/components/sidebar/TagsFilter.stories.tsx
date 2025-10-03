@@ -53,8 +53,8 @@ export const ClosedWithSelection: Story = {
 export const Clear = {
   ...Closed,
   play: async ({ canvasElement }) => {
-    const button = await findByRole(canvasElement, 'button');
-    await button.click();
+    const button = await findByRole(canvasElement, 'button', {}, { timeout: 3000 });
+    button.click();
   },
 } satisfies Story;
 

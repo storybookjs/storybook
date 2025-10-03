@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Badge, IconButton, WithTooltip } from 'storybook/internal/components';
+import { Badge, Button, WithPopover } from 'storybook/internal/components';
 import type {
   API_PreparedIndexEntry,
   StoryIndex,
@@ -27,9 +27,16 @@ const BUILT_IN_TAGS = new Set([
   'test-fn',
 ]);
 
-const Wrapper = styled.div({
-  position: 'relative',
-});
+// Temporary to prevent regressions until TagFilterPanel can be refactored.
+const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme }) => ({
+  '&:focus-visible': {
+    outlineOffset: 4,
+  },
+  ...(active && {
+    background: theme.background.hoverable,
+    color: theme.color.secondary,
+  }),
+}));
 
 const TagSelected = styled(Badge)(({ theme }) => ({
   position: 'absolute',
@@ -45,8 +52,8 @@ const TagSelected = styled(Badge)(({ theme }) => ({
   lineHeight: 'px',
   boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
   fontSize: theme.typography.size.s1 - 1,
-  background: theme.color.secondary,
-  color: theme.color.lightest,
+  background: theme.barSelectedColor,
+  color: theme.color.inverseText,
 }));
 
 export interface TagsFilterProps {
@@ -207,13 +214,12 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
   }
 
   return (
-    <WithTooltip
+    <WithPopover
       placement="bottom"
-      trigger="click"
       onVisibleChange={setExpanded}
-      // render the tooltip in the mobile menu (so that the stacking context is correct) and fallback to document.body on desktop
-      portalContainer="#storybook-mobile-menu"
-      tooltip={() => (
+      offset={8}
+      padding={0}
+      popover={() => (
         <TagsFilterPanel
           api={api}
           filtersById={filtersById}
@@ -230,14 +236,19 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
           hasDefaultSelection={defaultIncluded.size > 0 || defaultExcluded.size > 0}
         />
       )}
-      closeOnOutsideClick
     >
-      <Wrapper>
-        <IconButton key="tags" title="Tag filters" active={tagsActive} onClick={handleToggleExpand}>
-          <FilterIcon />
-        </IconButton>
+      <StyledIconButton
+        key="tags"
+        ariaLabel="Tag filters"
+        ariaDescription="Filter the items shown in a sidebar based on the tags applied to them."
+        variant="ghost"
+        padding="small"
+        active={tagsActive}
+        onClick={handleToggleExpand}
+      >
+        <FilterIcon />
         {includedFilters.size + excludedFilters.size > 0 && <TagSelected />}
-      </Wrapper>
-    </WithTooltip>
+      </StyledIconButton>
+    </WithPopover>
   );
 };

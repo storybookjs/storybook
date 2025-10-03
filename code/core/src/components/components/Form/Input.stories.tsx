@@ -11,4 +11,6 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Input: Story = {};
+export const Input: Story = {
+  render: (args) => <Component aria-label="Sample input" {...args} />,
+};

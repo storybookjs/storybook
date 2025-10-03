@@ -561,24 +561,24 @@ jobs:
           clone_options: --depth 1 --verbose
       - attach_workspace:
           at: .
+      - run:
+          background: true
+          command: |
+            cd code
+            yarn local-registry --open
+          name: Verdaccio
+      - run:
+          command: |
+            cd code
+            yarn wait-on tcp:127.0.0.1:6001
+            yarn wait-on tcp:127.0.0.1:6002
+          name: Wait on Verdaccio
       - when:
           condition:
             equal:
               - npm
               - << parameters.packageManager >>
           steps:
-            - run:
-                background: true
-                command: |
-                  cd code
-                  yarn local-registry --open
-                name: Verdaccio
-            - run:
-                command: |
-                  cd code
-                  yarn wait-on tcp:127.0.0.1:6001
-                  yarn wait-on tcp:127.0.0.1:6002
-                name: Wait on Verdaccio
             - run:
                 command: |
                   cd ..
@@ -599,18 +599,6 @@ jobs:
               - << parameters.packageManager >>
           steps:
             - run:
-                background: true
-                command: |
-                  cd code
-                  yarn local-registry --open
-                name: Verdaccio
-            - run:
-                command: |
-                  cd code
-                  yarn wait-on tcp:127.0.0.1:6001
-                  yarn wait-on tcp:127.0.0.1:6002
-                name: Wait on Verdaccio
-            - run:
                 command: |
                   cd ..
                   mkdir empty-<< parameters.template >>
@@ -628,18 +616,6 @@ jobs:
               - yarn2
               - << parameters.packageManager >>
           steps:
-            - run:
-                background: true
-                command: |
-                  cd code
-                  yarn local-registry --open
-                name: Verdaccio
-            - run:
-                command: |
-                  cd code
-                  yarn wait-on tcp:127.0.0.1:6001
-                  yarn wait-on tcp:127.0.0.1:6002
-                name: Wait on Verdaccio
             - run:
                 command: |
                   cd ..
@@ -661,18 +637,6 @@ jobs:
               - << parameters.packageManager >>
           steps:
             - run:
-                background: true
-                command: |
-                  cd code
-                  yarn local-registry --open
-                name: Verdaccio
-            - run:
-                command: |
-                  cd code
-                  yarn wait-on tcp:127.0.0.1:6001
-                  yarn wait-on tcp:127.0.0.1:6002
-                name: Wait on Verdaccio
-            - run:
                 command: |
                   cd ..
                   mkdir empty-<< parameters.template >>
@@ -692,18 +656,6 @@ jobs:
               - react-vite-ts
               - << parameters.template >>
           steps:
-            - run:
-                background: true
-                command: |
-                  cd code
-                  yarn local-registry --open
-                name: Verdaccio
-            - run:
-                command: |
-                  cd code
-                  yarn wait-on tcp:127.0.0.1:6001
-                  yarn wait-on tcp:127.0.0.1:6002
-                name: Wait on Verdaccio
             - run:
                 command: |
                   cd ..

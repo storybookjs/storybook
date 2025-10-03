@@ -16,6 +16,7 @@ export interface ThemeVarsColors {
   // UI
   appBg: string;
   appContentBg: string;
+  appHoverBg: string;
   appPreviewBg: string;
   appBorderColor: string;
   appBorderRadius: number;

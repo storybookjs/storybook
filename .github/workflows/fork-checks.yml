@@ -1,4 +1,4 @@
-name: Fork Checks
+name: Fork checks
 
 on:
   push:
@@ -45,4 +45,4 @@ jobs:
           install-code-deps: true
 
       - name: prettier
-        run: yarn lint:prettier --check code
+        run: cd code && yarn lint:prettier --check .

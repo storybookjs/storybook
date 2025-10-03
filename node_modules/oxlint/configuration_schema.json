@@ -1,0 +1,577 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Oxlintrc",
+  "description": "Oxlint Configuration File\n\nThis configuration is aligned with ESLint v8's configuration schema (`eslintrc.json`).\n\nUsage: `oxlint -c oxlintrc.json --import-plugin`\n\n::: danger NOTE\n\nOnly the `.json` format is supported. You can use comments in configuration files.\n\n:::\n\nExample\n\n`.oxlintrc.json`\n\n```json\n{\n\"$schema\": \"./node_modules/oxlint/configuration_schema.json\",\n\"plugins\": [\"import\", \"typescript\", \"unicorn\"],\n\"env\": {\n\"browser\": true\n},\n\"globals\": {\n\"foo\": \"readonly\"\n},\n\"settings\": {\n},\n\"rules\": {\n\"eqeqeq\": \"warn\",\n\"import/no-cycle\": \"error\",\n\"react/self-closing-comp\": [\"error\", { \"html\": false }]\n},\n\"overrides\": [\n{\n\"files\": [\"*.test.ts\", \"*.spec.ts\"],\n\"rules\": {\n\"@typescript-eslint/no-explicit-any\": \"off\"\n}\n}\n]\n}\n```",
+  "type": "object",
+  "properties": {
+    "categories": {
+      "default": {},
+      "allOf": [
+        {
+          "$ref": "#/definitions/OxlintCategories"
+        }
+      ]
+    },
+    "env": {
+      "description": "Environments enable and disable collections of global variables.",
+      "default": {
+        "builtin": true
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/OxlintEnv"
+        }
+      ]
+    },
+    "extends": {
+      "description": "Paths of configuration files that this configuration file extends (inherits from). The files\nare resolved relative to the location of the configuration file that contains the `extends`\nproperty. The configuration files are merged from the first to the last, with the last file\noverriding the previous ones.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "globals": {
+      "description": "Enabled or disabled specific global variables.",
+      "default": {},
+      "allOf": [
+        {
+          "$ref": "#/definitions/OxlintGlobals"
+        }
+      ]
+    },
+    "ignorePatterns": {
+      "description": "Globs to ignore during linting. These are resolved from the configuration file path.",
+      "default": [],
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "overrides": {
+      "description": "Add, remove, or otherwise reconfigure rules for specific files or groups of files.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/OxlintOverrides"
+        }
+      ]
+    },
+    "plugins": {
+      "default": null,
+      "anyOf": [
+        {
+          "$ref": "#/definitions/LintPlugins"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "rules": {
+      "description": "Example\n\n`.oxlintrc.json`\n\n```json\n{\n\"$schema\": \"./node_modules/oxlint/configuration_schema.json\",\n\"rules\": {\n\"eqeqeq\": \"warn\",\n\"import/no-cycle\": \"error\",\n\"prefer-const\": [\"error\", { \"ignoreReadBeforeAssign\": true }]\n}\n}\n```\n\nSee [Oxlint Rules](https://oxc.rs/docs/guide/usage/linter/rules.html) for the list of\nrules.",
+      "default": {},
+      "allOf": [
+        {
+          "$ref": "#/definitions/OxlintRules"
+        }
+      ]
+    },
+    "settings": {
+      "default": {
+        "jsx-a11y": {
+          "polymorphicPropName": null,
+          "components": {},
+          "attributes": {}
+        },
+        "next": {
+          "rootDir": []
+        },
+        "react": {
+          "formComponents": [],
+          "linkComponents": []
+        },
+        "jsdoc": {
+          "ignorePrivate": false,
+          "ignoreInternal": false,
+          "ignoreReplacesDocs": true,
+          "overrideReplacesDocs": true,
+          "augmentsExtendsReplacesDocs": false,
+          "implementsReplacesDocs": false,
+          "exemptDestructuredRootsFromChecks": false,
+          "tagNamePreference": {}
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/OxlintSettings"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "AllowWarnDeny": {
+      "oneOf": [
+        {
+          "description": "Oxlint rule.\n- \"allow\" or \"off\": Turn off the rule.\n- \"warn\": Turn the rule on as a warning (doesn't affect exit code).\n- \"error\" or \"deny\": Turn the rule on as an error (will exit with a failure code).",
+          "type": "string",
+          "enum": [
+            "allow",
+            "off",
+            "warn",
+            "error",
+            "deny"
+          ]
+        },
+        {
+          "description": "Oxlint rule.\n    \n- 0: Turn off the rule.\n- 1: Turn the rule on as a warning (doesn't affect exit code).\n- 2: Turn the rule on as an error (will exit with a failure code).",
+          "type": "integer",
+          "format": "uint32",
+          "maximum": 2.0,
+          "minimum": 0.0
+        }
+      ]
+    },
+    "CustomComponent": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": [
+            "attribute",
+            "name"
+          ],
+          "properties": {
+            "attribute": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "attributes",
+            "name"
+          ],
+          "properties": {
+            "attributes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "DummyRule": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/AllowWarnDeny"
+        },
+        {
+          "type": "array",
+          "items": true
+        }
+      ]
+    },
+    "DummyRuleMap": {
+      "description": "See [Oxlint Rules](https://oxc.rs/docs/guide/usage/linter/rules.html)",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/DummyRule"
+      }
+    },
+    "GlobSet": {
+      "description": "A set of glob patterns.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "GlobalValue": {
+      "type": "string",
+      "enum": [
+        "readonly",
+        "writeable",
+        "off"
+      ]
+    },
+    "JSDocPluginSettings": {
+      "type": "object",
+      "properties": {
+        "augmentsExtendsReplacesDocs": {
+          "description": "Only for `require-(yields|returns|description|example|param|throws)` rule",
+          "default": false,
+          "type": "boolean"
+        },
+        "exemptDestructuredRootsFromChecks": {
+          "description": "Only for `require-param-type` and `require-param-description` rule",
+          "default": false,
+          "type": "boolean"
+        },
+        "ignoreInternal": {
+          "description": "For all rules but NOT apply to `empty-tags` rule",
+          "default": false,
+          "type": "boolean"
+        },
+        "ignorePrivate": {
+          "description": "For all rules but NOT apply to `check-access` and `empty-tags` rule",
+          "default": false,
+          "type": "boolean"
+        },
+        "ignoreReplacesDocs": {
+          "description": "Only for `require-(yields|returns|description|example|param|throws)` rule",
+          "default": true,
+          "type": "boolean"
+        },
+        "implementsReplacesDocs": {
+          "description": "Only for `require-(yields|returns|description|example|param|throws)` rule",
+          "default": false,
+          "type": "boolean"
+        },
+        "overrideReplacesDocs": {
+          "description": "Only for `require-(yields|returns|description|example|param|throws)` rule",
+          "default": true,
+          "type": "boolean"
+        },
+        "tagNamePreference": {
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/TagNamePreference"
+          }
+        }
+      }
+    },
+    "JSXA11yPluginSettings": {
+      "description": "Configure JSX A11y plugin rules.\n\nSee\n[eslint-plugin-jsx-a11y](https://github.com/jsx-eslint/eslint-plugin-jsx-a11y#configurations)'s\nconfiguration for a full reference.",
+      "type": "object",
+      "properties": {
+        "attributes": {
+          "description": "Map of attribute names to their DOM equivalents.\nThis is useful for non-React frameworks that use different attribute names.\n\nExample:\n\n```json\n{\n\"settings\": {\n\"jsx-a11y\": {\n\"attributes\": {\n\"for\": [\"htmlFor\", \"for\"]\n}\n}\n}\n}\n```",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "components": {
+          "description": "To have your custom components be checked as DOM elements, you can\nprovide a mapping of your component names to the DOM element name.\n\nExample:\n\n```json\n{\n\"settings\": {\n\"jsx-a11y\": {\n\"components\": {\n\"Link\": \"a\",\n\"IconButton\": \"button\"\n}\n}\n}\n}\n```",
+          "default": {},
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "polymorphicPropName": {
+          "description": "An optional setting that define the prop your code uses to create polymorphic components.\nThis setting will be used to determine the element type in rules that\nrequire semantic context.\n\nFor example, if you set the `polymorphicPropName` to `as`, then this element:\n\n```jsx\n<Box as=\"h3\">Hello</Box>\n```\n\nWill be treated as an `h3`. If not set, this component will be treated\nas a `Box`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "LintPluginOptionsSchema": {
+      "type": "string",
+      "enum": [
+        "eslint",
+        "react",
+        "unicorn",
+        "typescript",
+        "oxc",
+        "import",
+        "jsdoc",
+        "jest",
+        "vitest",
+        "jsx-a11y",
+        "nextjs",
+        "react-perf",
+        "promise",
+        "node",
+        "regex",
+        "vue"
+      ]
+    },
+    "LintPlugins": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/LintPluginOptionsSchema"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      }
+    },
+    "NextPluginSettings": {
+      "description": "Configure Next.js plugin rules.",
+      "type": "object",
+      "properties": {
+        "rootDir": {
+          "description": "The root directory of the Next.js project.\n\nThis is particularly useful when you have a monorepo and your Next.js\nproject is in a subfolder.\n\nExample:\n\n```json\n{\n\"settings\": {\n\"next\": {\n\"rootDir\": \"apps/dashboard/\"\n}\n}\n}\n```",
+          "default": [],
+          "allOf": [
+            {
+              "$ref": "#/definitions/OneOrMany_for_String"
+            }
+          ]
+        }
+      }
+    },
+    "OneOrMany_for_String": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      ]
+    },
+    "OxlintCategories": {
+      "title": "Rule Categories",
+      "description": "Configure an entire category of rules all at once.\n\nRules enabled or disabled this way will be overwritten by individual rules in the `rules` field.\n\nExample\n```json\n{\n    \"$schema\": \"./node_modules/oxlint/configuration_schema.json\",\n    \"categories\": {\n        \"correctness\": \"warn\"\n    },\n    \"rules\": {\n        \"eslint/no-unused-vars\": \"error\"\n    }\n}\n```",
+      "examples": [
+        {
+          "correctness": "warn"
+        }
+      ],
+      "type": "object",
+      "properties": {
+        "correctness": {
+          "$ref": "#/definitions/AllowWarnDeny"
+        },
+        "nursery": {
+          "$ref": "#/definitions/AllowWarnDeny"
+        },
+        "pedantic": {
+          "$ref": "#/definitions/AllowWarnDeny"
+        },
+        "perf": {
+          "$ref": "#/definitions/AllowWarnDeny"
+        },
+        "restriction": {
+          "$ref": "#/definitions/AllowWarnDeny"
+        },
+        "style": {
+          "$ref": "#/definitions/AllowWarnDeny"
+        },
+        "suspicious": {
+          "$ref": "#/definitions/AllowWarnDeny"
+        }
+      }
+    },
+    "OxlintEnv": {
+      "description": "Predefine global variables.\n\nEnvironments specify what global variables are predefined. See [ESLint's\nlist of\nenvironments](https://eslint.org/docs/v8.x/use/configure/language-options#specifying-environments)\nfor what environments are available and what each one provides.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "OxlintGlobals": {
+      "description": "Add or remove global variables.\n\nFor each global variable, set the corresponding value equal to `\"writable\"`\nto allow the variable to be overwritten or `\"readonly\"` to disallow overwriting.\n\nGlobals can be disabled by setting their value to `\"off\"`. For example, in\nan environment where most Es2015 globals are available but `Promise` is unavailable,\nyou might use this config:\n\n```json\n\n{\n\"$schema\": \"./node_modules/oxlint/configuration_schema.json\",\n\"env\": {\n\"es6\": true\n},\n\"globals\": {\n\"Promise\": \"off\"\n}\n}\n\n```\n\nYou may also use `\"readable\"` or `false` to represent `\"readonly\"`, and\n`\"writeable\"` or `true` to represent `\"writable\"`.",
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/GlobalValue"
+      }
+    },
+    "OxlintOverride": {
+      "type": "object",
+      "required": [
+        "files"
+      ],
+      "properties": {
+        "env": {
+          "description": "Environments enable and disable collections of global variables.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/OxlintEnv"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "files": {
+          "description": "A list of glob patterns to override.\n\n## Example\n`[ \"*.test.ts\", \"*.spec.ts\" ]`",
+          "allOf": [
+            {
+              "$ref": "#/definitions/GlobSet"
+            }
+          ]
+        },
+        "globals": {
+          "description": "Enabled or disabled specific global variables.",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/OxlintGlobals"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "plugins": {
+          "description": "Optionally change what plugins are enabled for this override. When\nomitted, the base config's plugins are used.",
+          "default": null,
+          "anyOf": [
+            {
+              "$ref": "#/definitions/LintPlugins"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rules": {
+          "default": {},
+          "allOf": [
+            {
+              "$ref": "#/definitions/OxlintRules"
+            }
+          ]
+        }
+      }
+    },
+    "OxlintOverrides": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/OxlintOverride"
+      }
+    },
+    "OxlintRules": {
+      "$ref": "#/definitions/DummyRuleMap"
+    },
+    "OxlintSettings": {
+      "title": "Oxlint Plugin Settings",
+      "description": "Configure the behavior of linter plugins.\n\nHere's an example if you're using Next.js in a monorepo:\n\n```json\n{\n\"settings\": {\n\"next\": {\n\"rootDir\": \"apps/dashboard/\"\n},\n\"react\": {\n\"linkComponents\": [\n{ \"name\": \"Link\", \"linkAttribute\": \"to\" }\n]\n},\n\"jsx-a11y\": {\n\"components\": {\n\"Link\": \"a\",\n\"Button\": \"button\"\n}\n}\n}\n}\n```",
+      "type": "object",
+      "properties": {
+        "jsdoc": {
+          "default": {
+            "ignorePrivate": false,
+            "ignoreInternal": false,
+            "ignoreReplacesDocs": true,
+            "overrideReplacesDocs": true,
+            "augmentsExtendsReplacesDocs": false,
+            "implementsReplacesDocs": false,
+            "exemptDestructuredRootsFromChecks": false,
+            "tagNamePreference": {}
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/JSDocPluginSettings"
+            }
+          ]
+        },
+        "jsx-a11y": {
+          "default": {
+            "polymorphicPropName": null,
+            "components": {},
+            "attributes": {}
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/JSXA11yPluginSettings"
+            }
+          ]
+        },
+        "next": {
+          "default": {
+            "rootDir": []
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/NextPluginSettings"
+            }
+          ]
+        },
+        "react": {
+          "default": {
+            "formComponents": [],
+            "linkComponents": []
+          },
+          "allOf": [
+            {
+              "$ref": "#/definitions/ReactPluginSettings"
+            }
+          ]
+        }
+      }
+    },
+    "ReactPluginSettings": {
+      "description": "Configure React plugin rules.\n\nDerived from [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react#configuration-legacy-eslintrc-)",
+      "type": "object",
+      "properties": {
+        "formComponents": {
+          "description": "Components used as alternatives to `<form>` for forms, such as `<Formik>`.\n\nExample:\n\n```jsonc\n{\n\"settings\": {\n\"react\": {\n\"formComponents\": [\n\"CustomForm\",\n// OtherForm is considered a form component and has an endpoint attribute\n{ \"name\": \"OtherForm\", \"formAttribute\": \"endpoint\" },\n// allows specifying multiple properties if necessary\n{ \"name\": \"Form\", \"formAttribute\": [\"registerEndpoint\", \"loginEndpoint\"] }\n]\n}\n}\n}\n```",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomComponent"
+          }
+        },
+        "linkComponents": {
+          "description": "Components used as alternatives to `<a>` for linking, such as `<Link>`.\n\nExample:\n\n```jsonc\n{\n\"settings\": {\n\"react\": {\n\"linkComponents\": [\n\"HyperLink\",\n// Use `linkAttribute` for components that use a different prop name\n// than `href`.\n{ \"name\": \"MyLink\", \"linkAttribute\": \"to\" },\n// allows specifying multiple properties if necessary\n{ \"name\": \"Link\", \"linkAttribute\": [\"to\", \"href\"] }\n]\n}\n}\n}\n```",
+          "default": [],
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomComponent"
+          }
+        }
+      }
+    },
+    "TagNamePreference": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": [
+            "message",
+            "replacement"
+          ],
+          "properties": {
+            "message": {
+              "type": "string"
+            },
+            "replacement": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "message"
+          ],
+          "properties": {
+            "message": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    }
+  }
+}

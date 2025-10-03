@@ -8,6 +8,7 @@ module.exports = {
     path.join(scriptPath, '.eslintrc.cjs'),
     'plugin:storybook/recommended',
     'plugin:compat/recommended',
+    'plugin:oxlint/recommended',
   ],
   parserOptions: {
     tsconfigRootDir: __dirname,

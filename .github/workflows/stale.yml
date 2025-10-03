@@ -6,6 +6,7 @@ on:
 jobs:
   stale:
     runs-on: ubuntu-latest
+    if: github.repository_owner == 'storybookjs'
     steps:
       - uses: actions/stale@v9
         with:

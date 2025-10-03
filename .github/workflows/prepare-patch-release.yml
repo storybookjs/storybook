@@ -18,6 +18,7 @@ concurrency:
 jobs:
   prepare-patch-pull-request:
     name: Prepare patch pull request
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     environment: Release
     defaults:

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "10.0.0-beta.7",
+  "version": "10.0.0-beta.9",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -240,7 +240,7 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.9.1",
+  "packageManager": "yarn@4.10.3",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"

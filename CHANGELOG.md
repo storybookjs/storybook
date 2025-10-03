@@ -1,3 +1,13 @@
+## 9.1.10
+
+- Automigrations: Add automigration for viewport and backgrounds - [#31614](https://github.com/storybookjs/storybook/pull/31614), thanks @valentinpalkovic!
+- Telemetry: Log userAgent in onboarding - [#32566](https://github.com/storybookjs/storybook/pull/32566), thanks @shilman!
+
+## 9.1.9
+
+- Angular: Enable experimental zoneless detection on Angular v21 - [#32580](https://github.com/storybookjs/storybook/pull/32580), thanks @yannbf!
+- Svelte: Ignore inherited `HTMLAttributes` docgen when using utility types - [#32173](https://github.com/storybookjs/storybook/pull/32173), thanks @steciuk!
+
 ## 9.1.8
 
 - PreactVite: Add `node` entry point - [#32534](https://github.com/storybookjs/storybook/pull/32534), thanks @ndelangen!

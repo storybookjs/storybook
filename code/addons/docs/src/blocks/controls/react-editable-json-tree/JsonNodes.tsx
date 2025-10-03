@@ -252,9 +252,10 @@ export class JsonArray extends Component<JsonArrayProps, JsonArrayState> {
     };
   }
 
-  handleAddValueAdd({ key, newValue }: any) {
+  handleAddValueAdd({ newValue }: any) {
     const { data, keyPath = [], nextDeep: deep } = this.state;
     const { beforeAddAction, logger } = this.props;
+    const key = data.length;
 
     (beforeAddAction || Promise.resolve.bind(Promise))(key, keyPath, deep, newValue)
       .then(() => {

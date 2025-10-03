@@ -45,7 +45,7 @@ export default mergeConfig(
 ```
 
 ```ts filename="vitest.config.ts" renderer="vue"
-import { defineConfig, mergeConfig } from 'vitest/config';
+import { defineConfig, mergeConfig, defineProject } from 'vitest/config';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -91,7 +91,7 @@ export default mergeConfig(
 ```
 
 ```ts filename="vitest.config.ts" renderer="svelte"
-import { defineConfig, mergeConfig } from 'vitest/config';
+import { defineConfig, mergeConfig, defineProject } from 'vitest/config';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

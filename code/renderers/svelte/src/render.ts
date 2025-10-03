@@ -35,7 +35,7 @@ const componentsByDomElement = new Map<
   { mountedComponent: ReturnType<(typeof svelte)['mount']>; props: RenderContext }
 >();
 
-export function renderToCanvas(
+export async function renderToCanvas(
   {
     storyFn,
     title,
@@ -81,6 +81,7 @@ export function renderToCanvas(
       props,
     });
     componentsByDomElement.set(canvasElement, { mountedComponent, props });
+    await svelte.tick();
   } else {
     // We need to mutate the existing props for Svelte reactivity to work, we can't just re-assign them
     Object.assign(existingComponent.props, {
@@ -90,6 +91,7 @@ export function renderToCanvas(
       title,
       showError,
     });
+    await svelte.tick();
   }
 
   showMain();

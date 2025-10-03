@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import {
@@ -10,7 +11,7 @@ import {
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
-import { findPackage, findPackagePath } from 'fd-package-json';
+import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
 import { globalSettings } from '../cli/globalSettings';
@@ -33,6 +34,9 @@ export const metaFrameworks = {
   '@nrwl/storybook': 'nx',
   '@vue/cli-service': 'vue-cli',
   '@sveltejs/kit': 'sveltekit',
+  '@tanstack/react-router': 'tanstack-react',
+  '@react-router/dev': 'react-router',
+  '@remix-run/dev': 'remix',
 } as Record<string, string>;
 
 export const sanitizeAddonName = (name: string) => {
@@ -246,11 +250,11 @@ export const computeStorybookMetadata = async ({
 };
 
 async function getPackageJsonDetails() {
-  const packageJsonPath = await findPackagePath(process.cwd());
+  const packageJsonPath = pkg.up();
   if (packageJsonPath) {
     return {
       packageJsonPath,
-      packageJson: (await findPackage(packageJsonPath)) || {},
+      packageJson: JSON.parse(await readFile(packageJsonPath, 'utf8')),
     };
   }
 

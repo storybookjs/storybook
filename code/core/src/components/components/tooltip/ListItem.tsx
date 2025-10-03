@@ -62,6 +62,7 @@ const Center = styled.span<{ isIndented: boolean }>(
     textAlign: 'left',
     display: 'flex',
     flexDirection: 'column',
+    minWidth: 0, // required for overflow
   },
   ({ isIndented }) => (isIndented ? { marginLeft: 24 } : {})
 );
@@ -116,6 +117,7 @@ export interface ItemProps {
 const Item = styled.div<ItemProps>(
   ({ theme }) => ({
     width: '100%',
+    minWidth: 0, // required for overflow
     border: 'none',
     borderRadius: theme.appBorderRadius,
     background: 'none',

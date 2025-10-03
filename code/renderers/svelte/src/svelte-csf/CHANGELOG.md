@@ -1,3 +1,15 @@
+# v5.0.10 (Fri Oct 03 2025)
+
+#### 🐛 Bug Fix
+
+- Use npm Trusted Publishing [#332](https://github.com/storybookjs/addon-svelte-csf/pull/332) ([@JReinhold](https://github.com/JReinhold))
+
+#### Authors: 1
+
+- Jeppe Reinhold ([@JReinhold](https://github.com/JReinhold))
+
+---
+
 # v5.0.9 (Thu Oct 02 2025)
 
 #### 🐛 Bug Fix

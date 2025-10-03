@@ -410,13 +410,12 @@ export const Search = React.memo<SearchProps>(function Search({
                   </FocusKey>
                 )}
                 <Actions>
-                  {isOpen && (
+                  {input && (
                     <Button
                       padding="small"
                       variant="ghost"
                       ariaLabel="Clear search"
                       onClick={() => clearSelection()}
-                      tabIndex={-1}
                     >
                       <CloseIcon />
                     </Button>

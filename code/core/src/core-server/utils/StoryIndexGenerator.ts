@@ -17,6 +17,7 @@ import type {
   Path,
   StoryIndex,
   StoryIndexEntry,
+  StoryIndexInput,
   StorybookConfigRaw,
   Tag,
 } from 'storybook/internal/types';
@@ -414,7 +415,9 @@ export class StoryIndexGenerator {
 
     invariant(indexer, `No matching indexer found for ${absolutePath}`);
 
-    const indexInputs = await indexer.createIndex(absolutePath, { makeTitle: defaultMakeTitle });
+    const indexInputs = (await indexer.createIndex(absolutePath, {
+      makeTitle: defaultMakeTitle,
+    })) as StoryIndexInput[]; // we don't actually support DocsIndexInputs at runtime, although types say we do
     const tsconfigPath = find.up('tsconfig.json', {
       cwd: this.options.workingDir,
       last: getProjectRoot(),
@@ -439,9 +442,9 @@ export class StoryIndexGenerator {
 
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));
         const tags = combineTags(...projectTags, ...(input.tags ?? []));
-        const subtype = input.type !== 'story' ? 'story' : (input.subtype ?? 'story');
+        const subtype = input.subtype ?? 'story';
 
-        return {
+        const entry: StoryIndexEntryWithExtra & { tags: Tag[] } = {
           type: 'story',
           subtype,
           id,
@@ -454,11 +457,17 @@ export class StoryIndexGenerator {
           importPath,
           componentPath,
           tags,
-          ...(input.type === 'story' && subtype === 'test'
-            ? { parent: input.parent, parentName: input.parentName }
-            : {}),
-          ...(input.exportName ? { exportName: input.exportName } : {}),
         };
+
+        if (subtype === 'test') {
+          entry.parent = input.parent;
+          entry.parentName = input.parentName;
+        }
+        if (input.exportName) {
+          entry.exportName = input.exportName;
+        }
+
+        return entry;
       }
     );
 

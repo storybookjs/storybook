@@ -8,3 +8,6 @@ bench
 core/report
 
 /.nx/workspace-data
+
+# This file contains imports with an order that must be preserved.
+core/src/core-server/presets/common-manager.ts

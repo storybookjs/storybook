@@ -168,7 +168,7 @@ export function rscBrowserModePlugin(): Plugin[] {
           if (manager.isScanBuild) {
             return `export default async () => {}`;
           } else {
-            return `export default async () => import("/storybook-static/react_client/index.mjs")`;
+            return `export default async () => import("/storybook-static/react_client/index")`;
           }
         }
       },

@@ -5,7 +5,8 @@ import { type RenderContext } from 'storybook/internal/types';
 
 import type { Decorator, Preview, ReactRenderer } from '@storybook/react';
 
-// import { NextRouter } from '@storybook/nextjs-vite-rsc/rsc/client';
+import { NextRouter } from '@storybook/nextjs-vite-rsc/rsc/client';
+
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
 import { defaultDecorateStory } from 'storybook/preview-api';
 import { type Mock, fn } from 'storybook/test';
@@ -61,11 +62,11 @@ globalThis.addEventListener('error', (ev: WindowEventMap['error']): void => {
 });
 
 export const decorators: Decorator[] = [
-  // (Story, context) => (
-  //   <NextRouter>
-  //     <Story />
-  //   </NextRouter>
-  // ),
+  (Story, context) => (
+    <NextRouter url={context.parameters?.nextjs?.pathname ?? ''}>
+      <Story />
+    </NextRouter>
+  ),
   // TODO
   // StyledJsxDecorator,
   // ImageDecorator,

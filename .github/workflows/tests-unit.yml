@@ -2,8 +2,6 @@ name: Unit tests
 
 on:
   push:
-    branches:
-      - next
   pull_request:
     types: [opened, synchronize, reopened]
 
@@ -13,6 +11,8 @@ env:
 jobs:
   build:
     name: Core Unit Tests, windows-latest
+    # Always run on forks, only run on next in our own repo
+    if: ${{ github.repository_owner != 'storybookjs' || github.ref == 'next' }}
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4

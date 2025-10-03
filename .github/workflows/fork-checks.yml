@@ -1,4 +1,4 @@
-name: Unit tests
+name: Fork Checks
 
 on:
   push:
@@ -11,31 +11,9 @@ env:
   NODE_OPTIONS: '--max_old_space_size=4096'
 
 jobs:
-  build:
-    name: Core Unit Tests, windows-latest
-    runs-on: windows-11-arm
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
-        with:
-          install-code-deps: true
-
-      - name: compile
-        run: yarn task --task compile --start-from=compile
-
-      - name: Install Playwright Dependencies
-        run: cd code && yarn exec playwright install chromium --with-deps
-
-      - name: test
-        run: yarn test
-
   # This job is only for forks, so they can get basic checks in without a CircleCI API key
-  linux:
-    name: Core Unit Tests, ubuntu-latest
+  check:
+    name: Core Type Checking
     if: github.repository_owner != 'storybookjs'
     runs-on: ubuntu-latest
     steps:
@@ -48,11 +26,23 @@ jobs:
         with:
           install-code-deps: true
 
-      - name: compile
-        run: yarn task --task compile --start-from=compile
+      - name: check
+        run: yarn task --task check
 
-      - name: Install Playwright Dependencies
-        run: cd code && yarn exec playwright install chromium --with-deps
+  # This job is only for forks, so they can get basic checks in without a CircleCI API key
+  prettier:
+    name: Core Formatting
+    if: github.repository_owner != 'storybookjs'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
-      - name: test
-        run: yarn test
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: prettier
+        run: yarn lint:prettier --check code

@@ -69,7 +69,7 @@ test.describe('interactions', () => {
     await expect(interactionsTab).toBeVisible();
 
     const panel = sbPage.panelContent();
-    const runStatusBadge = panel.locator('[aria-label="Status of the test run"]');
+    const runStatusBadge = panel.locator('[aria-label="Story status"]');
     await expect(runStatusBadge).toContainText(/Pass/);
     await expect(panel).toContainText(/"initial value"/);
     await expect(panel).toContainText(/clear/);

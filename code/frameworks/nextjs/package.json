@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "10.0.0-beta.2",
+  "version": "10.0.0-beta.9",
   "description": "Storybook for Next.js: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -35,6 +35,7 @@
       "default": "./dist/export-mocks/cache/index.js"
     },
     "./compatibility/draft-mode.compat": "./dist/compatibility/draft-mode.compat.js",
+    "./config/preview": "./dist/config/preview.js",
     "./export-mocks": "./dist/export-mocks/index.js",
     "./headers.mock": {
       "types": "./dist/export-mocks/headers/index.d.ts",

@@ -76,6 +76,7 @@ const meta = {
           title: 'dummy',
           importPath: './dummy.stories.js',
           type: 'story',
+          subtype: 'story',
           tags: ['A', 'B', 'C', 'dev'],
         },
       },
@@ -158,6 +159,16 @@ export const Loading: Story = {
 export const Empty: Story = {
   args: {
     index: {},
+  },
+};
+
+export const EmptyIndex: Story = {
+  args: {
+    index: {},
+    indexJson: {
+      entries: {},
+      v: 6,
+    },
   },
 };
 

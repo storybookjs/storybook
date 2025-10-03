@@ -3,9 +3,7 @@
 import type { PlayFunction } from 'storybook/internal/csf';
 import { type Renderer } from 'storybook/internal/types';
 
-export function mountDestructured<TRenderer extends Renderer>(
-  playFunction?: PlayFunction<TRenderer>
-): boolean {
+export function mountDestructured(playFunction?: (...args: any[]) => any): boolean {
   return playFunction != null && getUsedProps(playFunction).includes('mount');
 }
 export function getUsedProps(fn: Function) {

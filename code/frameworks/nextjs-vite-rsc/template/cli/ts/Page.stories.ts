@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite-rsc';
 
 import { expect, userEvent, within } from 'storybook/test';
 

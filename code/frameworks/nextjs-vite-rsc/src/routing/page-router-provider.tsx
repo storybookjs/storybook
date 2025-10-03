@@ -6,7 +6,7 @@ import React from 'react';
 // is the only way to achieve it actually being a singleton
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { getRouter } from '@storybook/nextjs-vite/router.mock';
+import { getRouter } from '@storybook/nextjs-vite-rsc/router.mock';
 
 import { RouterContext } from 'next/dist/shared/lib/router-context.shared-runtime';
 

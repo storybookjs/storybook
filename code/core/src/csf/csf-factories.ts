@@ -204,7 +204,8 @@ function defineStory<
 
       const play =
         mountDestructured(this.play) || mountDestructured(testFunction)
-          ? async ({ context }: StoryContext<TRenderer>) => {
+          ? // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            async ({ context, mount }: StoryContext<TRenderer>) => {
               await this.play?.(context);
               await testFunction(context);
             }

@@ -15,7 +15,7 @@ function findPlugin(config: InlineConfig, name: string) {
 }
 
 export async function build(options: Options) {
-  const { build: viteBuild, mergeConfig } = await import('vite');
+  const { build: viteBuild, mergeConfig, createBuilder } = await import('vite');
   const { presets } = options;
 
   const config = await commonConfig(options, 'build');
@@ -64,7 +64,7 @@ export async function build(options: Options) {
     finalConfig.plugins = await withoutVitePlugins(finalConfig.plugins, [turbosnapPluginName]);
   }
 
-  await viteBuild(await sanitizeEnvVars(options, finalConfig));
+  await (await createBuilder(await sanitizeEnvVars(options, finalConfig), null)).buildApp();
 
   const statsPlugin = findPlugin(
     finalConfig,

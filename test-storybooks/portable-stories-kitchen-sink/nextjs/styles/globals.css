@@ -79,7 +79,7 @@
   margin: 0;
 }
 
-/* Custom variant for forcing hover */
+/* Custom variant for forcing hover. Useful for Tailwind 4+ */
 @custom-variant hover (&:hover);
 
 html,

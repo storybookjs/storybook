@@ -3,8 +3,6 @@ name: Fork checks
 # This workflow is only for forks, so they can get basic checks in without a CircleCI API key
 on:
   push:
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 env:
   NODE_OPTIONS: '--max_old_space_size=4096'
@@ -46,8 +44,7 @@ jobs:
 
   test-windows:
     name: Core Unit Tests, windows-latest
-    # Dont run windows tests on every commit, that's fairly costly
-    if: github.repository_owner != 'storybookjs' && github.event_name == 'pull_request'
+    if: github.repository_owner != 'storybookjs'
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4

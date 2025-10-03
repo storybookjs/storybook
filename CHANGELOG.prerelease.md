@@ -1,3 +1,9 @@
+## 10.0.0-beta.10
+
+- Core: Make `subtype` an optional property on an index input - [#32602](https://github.com/storybookjs/storybook/pull/32602), thanks @JReinhold!
+- Core: Various QA fixes - [#32629](https://github.com/storybookjs/storybook/pull/32629), thanks @ghengeveld!
+- Telemetry: Add metadata for react routers - [#32615](https://github.com/storybookjs/storybook/pull/32615), thanks @shilman!
+
 ## 10.0.0-beta.9
 
 - Automigrations: Add automigration for viewport and backgrounds - [#31614](https://github.com/storybookjs/storybook/pull/31614), thanks @valentinpalkovic!

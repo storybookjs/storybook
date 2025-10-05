@@ -5,7 +5,7 @@ import { definePreview } from 'storybook/internal/csf';
 import pseudoAddon from '.';
 
 describe('addon parameters are injected to csf factory', () => {
-  // Define preview with psuedo addon
+  // Define preview with pseudo addon
   const preview = definePreview({ addons: [pseudoAddon()] });
 
   it('with invalid value', () => {

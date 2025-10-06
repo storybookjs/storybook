@@ -1,16 +1,18 @@
 {
   "name": "@storybook/addon-jest",
-  "version": "9.2.0-alpha.3",
-  "description": "React storybook addon that show component jest report",
+  "version": "10.0.0-beta.9",
+  "description": "Storybook Jest addon: Show Jest report in Storybook's addon panel",
   "keywords": [
-    "addon",
     "jest",
     "react",
     "report",
     "results",
     "storybook",
+    "storybook-addon",
     "unit-testing",
-    "test"
+    "test",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/jest",
   "bugs": {
@@ -52,7 +54,7 @@
     "upath": "^2.0.1"
   },
   "devDependencies": {
-    "@storybook/icons": "^1.4.0",
+    "@storybook/icons": "^1.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-resize-detector": "^7.1.2",

@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 import type { PackageJsonWithDepsAndDevDeps } from '../common';
@@ -14,8 +14,8 @@ import {
   normalizeExtends,
 } from './eslintPlugin';
 
-vi.mock('find-up', () => ({
-  findUp: vi.fn(),
+vi.mock('empathic/find', () => ({
+  up: vi.fn(),
 }));
 
 vi.mock(import('node:fs/promises'), async (importOriginal) => {
@@ -38,32 +38,32 @@ describe('extractEslintInfo', () => {
   } satisfies Partial<JsPackageManager>;
 
   beforeEach(() => {
-    vi.mocked(findUp).mockClear();
+    vi.mocked(find).up.mockClear();
     mockPackageManager.getAllDependencies.mockClear();
   });
 
   it('should find ESLint config file with supported extension', async () => {
-    vi.mocked(findUp).mockImplementation(async (fileName) => {
+    vi.mocked(find).up.mockImplementation((fileName) => {
       return String(fileName) === '.eslintrc.js' ? String(fileName) : undefined;
     });
 
-    const result = await findEslintFile(process.cwd());
+    const result = findEslintFile(process.cwd());
     expect(result).toBe('.eslintrc.js');
   });
 
   it('should return undefined if no ESLint config file is found', async () => {
-    vi.mocked(findUp).mockImplementation(async () => undefined);
+    vi.mocked(find).up.mockImplementation(() => undefined);
 
-    const result = await findEslintFile(process.cwd());
+    const result = findEslintFile(process.cwd());
     expect(result).toBeUndefined();
   });
 
   it('should throw error for unsupported ESLint config file extensions', async () => {
-    vi.mocked(findUp).mockImplementation(async () => {
+    vi.mocked(find).up.mockImplementation(() => {
       return '.eslintrc.yaml';
     });
 
-    await expect(findEslintFile(process.cwd())).rejects.toThrowError(
+    expect(() => findEslintFile(process.cwd())).toThrowError(
       'Unsupported ESLint config extension: .yaml'
     );
   });
@@ -72,7 +72,7 @@ describe('extractEslintInfo', () => {
     mockPackageManager.getAllDependencies.mockReturnValue({});
     mockPackageManager.primaryPackageJson.packageJson = { dependencies: {}, devDependencies: {} };
 
-    vi.mocked(findUp).mockImplementation(async () => undefined);
+    vi.mocked(find).up.mockImplementation(() => undefined);
 
     const result = await extractEslintInfo(mockPackageManager as any);
 
@@ -96,7 +96,7 @@ describe('extractEslintInfo', () => {
       operationDir: '/some/path',
     };
 
-    vi.mocked(findUp).mockImplementation(async (fileName) =>
+    vi.mocked(find).up.mockImplementation((fileName) =>
       String(fileName) === '.eslintrc.js' ? String(fileName) : undefined
     );
 

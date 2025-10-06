@@ -1,7 +1,16 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "9.2.0-alpha.3",
-  "description": "A plugin to run and build Storybooks with Vite",
+  "version": "10.0.0-beta.9",
+  "description": "A Storybook builder to dev and build with Vite",
+  "keywords": [
+    "storybook",
+    "storybook-builder",
+    "vite",
+    "builder",
+    "bundler",
+    "component",
+    "components"
+  ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/builders/builder-vite/#readme",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
@@ -43,10 +52,9 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "@types/find-cache-dir": "^3.2.1",
     "@types/node": "^22.0.0",
+    "empathic": "^2.0.0",
     "es-module-lexer": "^1.5.0",
-    "find-cache-dir": "^3.0.0",
     "glob": "^10.0.0",
     "knitwork": "^1.1.0",
     "magic-string": "^0.30.0",

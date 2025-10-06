@@ -1,9 +1,14 @@
 {
   "name": "@storybook/svelte-vite",
-  "version": "9.2.0-alpha.3",
-  "description": "Storybook for Svelte and Vite: Develop Svelte components in isolation with Hot Reloading.",
+  "version": "10.0.0-beta.9",
+  "description": "Storybook for Svelte and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-framework",
+    "svelte",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/svelte-vite",
   "bugs": {
@@ -51,19 +56,19 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/svelte": "workspace:*",
     "magic-string": "^0.30.0",
-    "svelte2tsx": "^0.7.35",
+    "svelte2tsx": "^0.7.44",
     "typescript": "^4.9.4 || ^5.0.0"
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@sveltejs/vite-plugin-svelte": "^6.2.0",
     "@types/node": "^22.0.0",
-    "svelte": "^5.0.5",
+    "svelte": "^5.39.5",
     "sveltedoc-parser": "^4.2.1",
     "typescript": "^5.8.3",
     "vite": "^7.0.4"
   },
   "peerDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0",
+    "@sveltejs/vite-plugin-svelte": "^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0",
     "storybook": "workspace:^",
     "svelte": "^5.0.0",
     "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"

@@ -1,15 +1,12 @@
+import { readFileSync } from 'node:fs';
+
+import { generate, parser, types as t } from 'storybook/internal/babel';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig } from 'storybook/internal/types';
 
-import { generate } from '@babel/generator';
-import { parse } from '@babel/parser';
-import type { ParserOptions } from '@babel/parser';
-import type { Node } from '@babel/types';
-import * as t from '@babel/types';
 import { transformSync } from 'esbuild';
 import { walk } from 'estree-walker';
-import { readFileSync } from 'fs';
 import { basename, normalize } from 'pathe';
 
 import { resolveMock } from './resolve';
@@ -45,13 +42,12 @@ interface ExtractMockCallsOptions {
  * @returns The parsed code.
  */
 export const babelParser = (code: string) => {
-  const parserOptions: ParserOptions = {
+  return parser.parse(code, {
     sourceType: 'module',
     // Enable plugins to handle modern JavaScript features, including TSX.
     plugins: ['typescript', 'jsx', 'classProperties', 'objectRestSpread'],
     errorRecovery: true,
-  };
-  return parse(code, parserOptions).program;
+  }).program;
 };
 
 /** Utility to rewrite sb.mock(import('...'), ...) to sb.mock('...', ...) */
@@ -94,7 +90,7 @@ export function extractMockCalls(
       allowReturnOutsideFunction?: boolean;
       jsx?: boolean;
     }
-  ) => Node,
+  ) => t.Node,
   root: string
 ): MockCall[] {
   try {
@@ -124,7 +120,7 @@ export function extractMockCalls(
 
     walk(ast as any, {
       // @ts-expect-error - Node comes from babel
-      async enter(node: Node) {
+      async enter(node: t.Node) {
         if (
           node.type !== 'CallExpression' ||
           node.callee.type !== 'MemberExpression' ||

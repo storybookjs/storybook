@@ -15,6 +15,7 @@ type TestingLibraryDom = typeof domTestingLibrary;
 const testingLibrary = instrument(
   { ...domTestingLibrary },
   {
+    getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper'),
     intercept: (method, path) =>
       path[0] === 'fireEvent' || method.startsWith('find') || method.startsWith('waitFor'),
   }
@@ -26,7 +27,7 @@ testingLibrary.screen = new Proxy(testingLibrary.screen, {
   get(target, prop, receiver) {
     once.warn(dedent`
           You are using Testing Library's \`screen\` object. Use \`within(canvasElement)\` instead.
-          More info: https://storybook.js.org/docs/essentials/interactions
+          More info: https://storybook.js.org/docs/writing-tests/interaction-testing?ref=error
         `);
     return Reflect.get(target, prop, receiver);
   },
@@ -118,5 +119,5 @@ export const uninstrumentedUserEvent = _userEvent.userEvent;
 
 export const { userEvent }: { userEvent: UserEvent['userEvent'] } = instrument(
   { userEvent: _userEvent.userEvent },
-  { intercept: true }
+  { intercept: true, getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper') }
 );

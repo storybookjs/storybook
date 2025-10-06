@@ -6,7 +6,7 @@ import type { BuilderContext } from '@angular-devkit/architect';
 import { targetFromTargetString } from '@angular-devkit/architect';
 import type { JsonObject } from '@angular-devkit/core';
 import { logging } from '@angular-devkit/core';
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import type webpack from 'webpack';
 
 import { getWebpackConfig as getCustomWebpackConfig } from './angular-cli-webpack';
@@ -129,20 +129,28 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
     browserTargetOptions = await builderContext.getTargetOptions(browserTarget);
   }
 
+  // `options.angularBuilderOptions` implicitly adds all options a target can have
+  // To figure out what user-land actually has explicitly defined in their target options, we
+  // manually need to read them
+  const explicitAngularBuilderOptions = await builderContext.getTargetOptions(
+    builderContext.target
+  );
+
   /**
    * Merge target options from browser target options and from storybook options Use deep merge to
    * preserve nested properties like stylePreprocessorOptions.includePaths when they exist in
    * browserTarget but not in storybook options
    */
-  const builderOptions = deepMerge(browserTargetOptions, options.angularBuilderOptions || {});
+  const builderOptions = deepMerge(browserTargetOptions, explicitAngularBuilderOptions || {});
 
   // Handle tsConfig separately to maintain existing logic
   builderOptions.tsConfig =
     options.tsConfig ??
-    (await findUp('tsconfig.json', { cwd: options.configDir, stopAt: getProjectRoot() })) ??
+    find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
     browserTargetOptions.tsConfig;
-
   logger.info(`=> Using angular project with "tsConfig:${builderOptions.tsConfig}"`);
+
+  builderOptions.experimentalZoneless = options.angularBuilderOptions?.experimentalZoneless;
 
   return builderOptions;
 }

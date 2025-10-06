@@ -16,7 +16,8 @@ import { BROWSER_TARGETS, SUPPORTED_FEATURES } from '../src/shared/constants/env
 
 GlobalRegistrator.register({ url: 'http://localhost:3000', width: 1920, height: 1080 });
 
-const CORE_ROOT_DIR = join(import.meta.dirname, '..', '..', '..', '..', 'code', 'core');
+const CODE_DIR = join(import.meta.dirname, '..', '..', '..', 'code');
+const CORE_ROOT_DIR = join(CODE_DIR, 'core');
 const tempDir = () => realpath(os.tmpdir());
 const getPath = async (prefix = '') =>
   join(await tempDir(), prefix + (Math.random() + 1).toString(36).substring(7));
@@ -89,15 +90,7 @@ async function generateVersionsFile(prettierConfig: prettier.Options | null): Pr
 async function generateFrameworksFile(prettierConfig: prettier.Options | null): Promise<void> {
   const thirdPartyFrameworks = ['qwik', 'solid', 'nuxt', 'react-rsbuild', 'vue3-rsbuild'];
   const destination = join(CORE_ROOT_DIR, 'src', 'types', 'modules', 'frameworks.ts');
-  const frameworksDirectory = join(
-    import.meta.dirname,
-    '..',
-    '..',
-    '..',
-    '..',
-    'code',
-    'frameworks'
-  );
+  const frameworksDirectory = join(CODE_DIR, 'frameworks');
 
   const readFrameworks = (await readdir(frameworksDirectory)).filter((framework) =>
     existsSync(join(frameworksDirectory, framework, 'package.json'))
@@ -184,3 +177,5 @@ async function generateExportsFile(prettierConfig: prettier.Options | null): Pro
     )
   );
 }
+
+generateSourceFiles();

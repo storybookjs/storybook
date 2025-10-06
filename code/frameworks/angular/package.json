@@ -1,10 +1,13 @@
 {
   "name": "@storybook/angular",
-  "version": "9.2.0-alpha.3",
-  "description": "Storybook for Angular: Develop Angular components in isolation with hot reloading.",
+  "version": "10.0.0-beta.9",
+  "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
-    "angular"
+    "storybook-framework",
+    "angular",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular",
   "bugs": {
@@ -80,8 +83,7 @@
     "@angular/platform-browser-dynamic": "^19.1.1",
     "@storybook/core-webpack": "workspace:*",
     "@types/node": "^22.0.0",
-    "fd-package-json": "^1.2.0",
-    "find-up": "^7.0.0",
+    "empathic": "^2.0.0",
     "rimraf": "^6.0.1",
     "typescript": "^5.8.3",
     "webpack": "5",

@@ -1,14 +1,14 @@
 {
   "name": "eslint-plugin-storybook",
-  "version": "9.2.0-alpha.3",
-  "description": "Best practice rules for Storybook",
+  "version": "10.0.0-beta.9",
+  "description": "Storybook ESLint Plugin: Best practice rules for writing stories",
   "keywords": [
     "eslint",
     "eslintplugin",
     "eslint-plugin",
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/code/lib/eslint-plugin#readme",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/eslint-plugin#readme",
   "bugs": {
     "url": "https://github.com/storybookjs/storybook/issues"
   },

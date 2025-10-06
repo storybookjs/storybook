@@ -1,9 +1,14 @@
 {
   "name": "@storybook/react-vite",
-  "version": "9.2.0-alpha.3",
-  "description": "Storybook for React and Vite: Develop React components in isolation with Hot Reloading.",
+  "version": "10.0.0-beta.9",
+  "description": "Storybook for React and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
-    "storybook"
+    "storybook",
+    "storybook-framework",
+    "react",
+    "vite",
+    "component",
+    "components"
   ],
   "homepage": "https://github.com/storybookjs/storybook/tree/next/code/frameworks/react-vite",
   "bugs": {
@@ -52,7 +57,7 @@
     "@rollup/pluginutils": "^5.0.2",
     "@storybook/builder-vite": "workspace:*",
     "@storybook/react": "workspace:*",
-    "find-up": "^7.0.0",
+    "empathic": "^2.0.0",
     "magic-string": "^0.30.0",
     "react-docgen": "^8.0.0",
     "resolve": "^1.22.8",

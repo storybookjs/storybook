@@ -66,8 +66,10 @@ export function addExtensionsToRelativeImports(source: string, filePath: string)
   const patterns = [
     // import/export ... from './path' or "../path" (including side-effect imports)
     /(\b(?:import|export)\s+(?:[^'"]*?\s+from\s+)?['"])(\.[^'"]+)(['"])/g,
-    // import('./path') or import("../path") - dynamic imports
-    /(\bimport\s*\(\s*['"])(\.[^'"]+)(['"])/g,
+    // import('./path') or import("../path") - dynamic imports with quotes (with closing paren, no concatenation)
+    /(\bimport\s*\(\s*['"])(\.[^'"]+)(['"]\s*\))/g,
+    // import(`./path`) - dynamic imports with backticks (with closing paren, no template interpolation)
+    /(\bimport\s*\(\s*`)(\.[^`$]+)(`\s*\))/g,
   ];
 
   let result = source;

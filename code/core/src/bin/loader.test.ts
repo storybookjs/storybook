@@ -284,5 +284,59 @@ describe('loader', () => {
   './utils.ts'
 );`);
     });
+
+    it('should handle dynamic imports with backticks', () => {
+      const source = 'import(`./foo`);';
+      const result = addExtensionsToRelativeImports(source, '/project/src/file.ts');
+
+      expect(result).toBe('import(`./foo.ts`);');
+    });
+
+    it('should not modify dynamic imports with template literal interpolation', () => {
+      const source = 'import(`${foo}/bar`);';
+      const result = addExtensionsToRelativeImports(source, '/project/src/file.ts');
+
+      // Cannot be supported: template interpolation ${foo} is a runtime value
+      // The regex stops at $ to avoid matching interpolated expressions
+      expect(result).toBe('import(`${foo}/bar`);');
+    });
+
+    it('should not modify dynamic imports with template literal interpolation and relative path', () => {
+      const source = 'import(`./${foo}/bar`);';
+      const result = addExtensionsToRelativeImports(source, '/project/src/file.ts');
+
+      // Cannot be supported: template interpolation ${foo} is a runtime value
+      // The regex stops at $ to avoid matching interpolated expressions
+      expect(result).toBe('import(`./${foo}/bar`);');
+    });
+
+    it('should handle array of dynamic imports', () => {
+      const source = `const [] = [
+  import('./foo'),
+  import('./bar'),
+];`;
+      const result = addExtensionsToRelativeImports(source, '/project/src/file.ts');
+
+      expect(result).toBe(`const [] = [
+  import('./foo.ts'),
+  import('./bar.ts'),
+];`);
+    });
+
+    it('should handle multi-line backtick dynamic imports', () => {
+      const source = 'const module = await import(\n  `./utils`\n);';
+      const result = addExtensionsToRelativeImports(source, '/project/src/file.ts');
+
+      expect(result).toBe('const module = await import(\n  `./utils.ts`\n);');
+    });
+
+    it('should handle mixed quote types in same file', () => {
+      const source = `import foo from './foo';\nimport bar from "./bar";\nimport(\`./baz\`);`;
+      const result = addExtensionsToRelativeImports(source, '/project/src/file.ts');
+
+      expect(result).toBe(
+        `import foo from './foo.ts';\nimport bar from "./bar.ts";\nimport(\`./baz.ts\`);`
+      );
+    });
   });
 });

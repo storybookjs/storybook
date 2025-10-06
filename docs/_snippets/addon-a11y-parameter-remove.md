@@ -13,7 +13,7 @@ const meta: Meta<Button> = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3" tabTitle="CSF 3"
+```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -154,21 +154,7 @@ const meta = preview.meta({
 
 ```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
-import { Button } from './Button';
 
-const meta = preview.meta({
-  component: Button,
-  parameters: {
-    // 👇 Remove this once all stories pass accessibility tests
-    // a11y: { test: 'todo' },
-  },
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { Button } from './Button';
 
 const meta = preview.meta({

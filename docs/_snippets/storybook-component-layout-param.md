@@ -148,7 +148,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   // Sets the layout parameter component wide.
   parameters: {
     layout: 'centered',

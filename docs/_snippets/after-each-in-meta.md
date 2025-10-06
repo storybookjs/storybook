@@ -212,7 +212,6 @@ import { Page } from './Page';
 
 const meta = preview.meta({
   component: Page,
-
   // 👇 Runs after each story in this file
   async afterEach(context) {
     console.log(`✅ Tested ${context.name} story`);

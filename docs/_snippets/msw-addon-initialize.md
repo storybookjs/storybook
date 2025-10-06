@@ -71,7 +71,6 @@ initialize();
 
 export default definePreview({
   // ... rest of preview configuration
-  // 👈 Add the MSW loader to all stories
-  loaders: [mswLoader],
+  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 });
 ```

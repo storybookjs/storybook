@@ -587,9 +587,9 @@ export const MockedError: Story = {
 ```
 
 ```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
 import { http, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
 
@@ -653,8 +653,9 @@ export const MockedError = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import { http, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
 

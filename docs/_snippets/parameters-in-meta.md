@@ -170,7 +170,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   //👇 Creates specific parameters at the component level
   parameters: {
     backgrounds: {

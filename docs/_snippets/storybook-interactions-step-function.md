@@ -33,7 +33,13 @@ export const Submitted: Story = {
 ```
 
 ```ts filename="MyComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// ...rest of story file
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
 
 export const Submitted = meta.story({
   play: async ({ args, canvas, step }) => {
@@ -52,7 +58,13 @@ export const Submitted = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// ...rest of story file
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
 
 export const Submitted = meta.story({
   play: async ({ args, canvas, step }) => {

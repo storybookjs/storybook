@@ -401,18 +401,15 @@ export const ComplexStory = meta.story({
 
 ```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { MyComponent } from './MyComponent';
 
 import someData from './data.json';
 
 const meta = preview.meta({
   component: MyComponent,
-
-  // 👈 Storybook loads these stories
-  includeStories: ['SimpleStory', 'ComplexStory'],
-
-  // 👈 Storybook ignores anything that contains Data
-  excludeStories: /.*Data$/,
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
 });
 
 export const simpleData = { foo: 1, bar: 'baz' };

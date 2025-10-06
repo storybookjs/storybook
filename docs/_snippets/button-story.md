@@ -63,8 +63,9 @@ export const Primary = {
 ```
 
 ```tsx filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import React, { useState } from 'react';
+
+import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
@@ -95,8 +96,9 @@ export const Primary = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```jsx filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
 import React, { useState } from 'react';
+
+import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 

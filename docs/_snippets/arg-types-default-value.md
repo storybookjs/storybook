@@ -216,7 +216,6 @@ const meta = preview.meta({
       defaultValue: 0,
     },
   },
-
   // ✅ Do this instead
   args: {
     value: 0,

@@ -12,11 +12,6 @@ import { ListItem } from './list-item.component';
 import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
   decorators: [
     moduleMetadata({
@@ -56,11 +51,6 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -83,11 +73,6 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 export const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -110,11 +95,6 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -136,11 +116,6 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 export const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -164,11 +139,6 @@ import ListItem from './ListItem.vue';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -202,11 +172,6 @@ import ListItem from './ListItem.vue';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -271,56 +236,44 @@ export const OneItem: Story = {
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { List } from './List';
-
-//👇 Instead of importing ListItem, we import the stories
-import { Unchecked } from './ListItem.stories';
-
-export const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-} satisfies Meta<typeof List>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const OneItem: Story = {
-  render: (args) => (
-    <List {...args}>
-      <Unchecked {...Unchecked.args} />
-    </List>
-  ),
-};
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { List } from './List';
 
 //👇 Instead of importing ListItem, we import the stories
 import { Unchecked } from './ListItem.stories';
 
 const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 });
 
 export const OneItem = meta.story({
   render: (args) => (
     <List {...args}>
-      <Unchecked {...Unchecked.args} />
+      <Unchecked {...Unchecked.input.args} />
+    </List>
+  ),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+
+//👇 Instead of importing ListItem, we import the stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <Unchecked {...Unchecked.input.args} />
     </List>
   ),
 });

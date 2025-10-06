@@ -8,45 +8,8 @@ const preview: Preview = {
       (story) => `<div [class]="myTheme">${story}</div>`,
       ({ globals }) => {
         return { myTheme: globals['theme'] };
-      },
+      }
     ),
-  ],
-};
-
-export default preview;
-```
-
-```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="CSF 3"
-import { MyThemes } from '../my-theme-folder/my-theme-file';
-
-const preview = {
-  decorators: [
-    (story, context) => {
-      const selectedTheme = context.globals.theme || 'light';
-      const theme = MyThemes[selectedTheme];
-      // Your theme provider and other context providers goes in the return statement
-      return;
-    },
-  ],
-};
-
-export default preview;
-```
-
-```ts filename=".storybook/preview.ts" renderer="common" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-import type { Preview } from '@storybook/your-framework';
-
-import { MyThemes } from '../my-theme-folder/my-theme-file';
-
-const preview: Preview = {
-  decorators: [
-    (story, context) => {
-      const selectedTheme = context.globals.theme || 'light';
-      const theme = MyThemes[selectedTheme];
-      // Your theme provider and other context providers goes in the return statement
-      return;
-    },
   ],
 };
 
@@ -164,44 +127,6 @@ const preview: Preview = {
 };
 
 export default preview;
-```
-
-```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
-
-import { MyThemes } from '../my-theme-folder/my-theme-file';
-
-export default definePreview({
-  decorators: [
-    (story, context) => {
-      const selectedTheme = context.globals.theme || 'light';
-      const theme = MyThemes[selectedTheme];
-      // Your theme provider and other context providers goes in the return statement
-      return;
-    },
-  ],
-});
-```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
-```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { definePreview } from '@storybook/your-framework';
-
-import { MyThemes } from '../my-theme-folder/my-theme-file';
-
-export default definePreview({
-  decorators: [
-    (story, context) => {
-      const selectedTheme = context.globals.theme || 'light';
-      const theme = MyThemes[selectedTheme];
-      // Your theme provider and other context providers goes in the return statement
-      return;
-    },
-  ],
-});
 ```
 
 ```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"

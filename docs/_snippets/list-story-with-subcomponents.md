@@ -38,7 +38,7 @@ export const OneItem: Story = {
 ```
 
 ```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
-import React from 'react';
+import * as React from 'react';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -60,7 +60,7 @@ export const OneItem = {
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-import React from 'react';
+import * as React from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
@@ -296,8 +296,9 @@ export const OneItem: Story = {
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
 import preview from '../.storybook/preview';
-import React from 'react';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -321,17 +322,16 @@ export const OneItem = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
 import preview from '../.storybook/preview';
-import React from 'react';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
 
 const meta = preview.meta({
   component: List,
-
-  //👈 Adds the ListItem component as a subcomponent
-  subcomponents: { ListItem },
+  subcomponents: { ListItem }, // 👈 Adds the ListItem component as a subcomponent
 });
 
 export const Empty = meta.story();

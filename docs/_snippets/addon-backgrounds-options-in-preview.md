@@ -84,7 +84,6 @@ export default definePreview({
       },
     },
   },
-
   initialGlobals: {
     // 👇 Set the initial background color
     backgrounds: { value: 'light' },

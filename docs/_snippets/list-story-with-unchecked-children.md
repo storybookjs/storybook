@@ -5,11 +5,6 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -30,11 +25,6 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -55,11 +45,6 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -79,11 +64,6 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -106,17 +86,12 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 });
 
 export const OneItem = meta.story({
   args: {
-    children: <Unchecked {...Unchecked.args} />,
+    children: <Unchecked {...Unchecked.input.args} />,
   },
 });
 ```
@@ -131,17 +106,12 @@ import { List } from './List';
 import { Unchecked } from './ListItem.stories';
 
 const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 });
 
 export const OneItem = meta.story({
   args: {
-    children: <Unchecked {...Unchecked.args} />,
+    children: <Unchecked {...Unchecked.input.args} />,
   },
 });
 ```

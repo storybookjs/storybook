@@ -65,7 +65,6 @@ export default definePreview({
       options: INITIAL_VIEWPORTS,
     },
   },
-
   initialGlobals: {
     viewport: { value: 'ipad', isRotated: false },
   },

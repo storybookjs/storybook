@@ -284,7 +284,6 @@ import { Page } from './Page';
 
 const meta = preview.meta({
   component: Page,
-
   // 👇 Set the value of Date for every story in the file
   async beforeEach() {
     MockDate.set('2024-02-14');

@@ -30,10 +30,8 @@ export default preview;
 ```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { definePreview } from '@storybook/your-framework';
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import type { Preview } from '@storybook/your-framework';
 
-const preview = {
+export default definePreview({
   argTypes: {
     // 👇 All stories expect a label arg
     label: {
@@ -41,9 +39,7 @@ const preview = {
       description: 'Overwritten description',
     },
   },
-} satisfies Preview;
-
-export default preview;
+});
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->

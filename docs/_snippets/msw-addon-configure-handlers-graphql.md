@@ -128,7 +128,8 @@ export function createApollo(httpLink: HttpLink): ApolloClientOptions<any> {
 export class MockGraphQLModule {}
 ```
 
-```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
 
@@ -223,12 +224,13 @@ export const MockedError = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
+```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
+
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { DocumentScreen } from './YourPage';
 
@@ -928,11 +930,12 @@ export const MockedError: Story = {
 </script>
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
+```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
 
@@ -1026,10 +1029,12 @@ export const MockedError = meta.story({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```js filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
+```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
 
 import { DocumentScreen } from './YourPage';
 

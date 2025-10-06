@@ -599,7 +599,6 @@ import { YourComponent } from './your-component';
 
 const meta = preview.meta({
   component: YourComponent,
-
   //👇 Creates specific argTypes with options
   argTypes: {
     propertyA: {

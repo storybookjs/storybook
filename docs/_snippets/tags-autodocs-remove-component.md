@@ -124,11 +124,11 @@ const meta = preview.meta({
 
 ```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Page } from './Page';
 
 const meta = preview.meta({
   component: Page,
-
   // 👇 Disable auto-generated documentation for this component
   tags: ['!autodocs'],
 });

@@ -6,9 +6,6 @@ const config = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   // Optional
   addons: ['@storybook/addon-docs'],
-  docs: {
-    defaultName: 'Documentation',
-  },
   staticDirs: ['../public'],
 };
 export default config;
@@ -24,9 +21,6 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   // Optional
   addons: ['@storybook/addon-docs'],
-  docs: {
-    defaultName: 'Documentation',
-  },
   staticDirs: ['../public'],
 };
 
@@ -43,9 +37,6 @@ export default defineMain({
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   // Optional
   addons: ['@storybook/addon-docs'],
-  docs: {
-    autodocs: 'tag',
-  },
   staticDirs: ['../public'],
 });
 ```
@@ -62,9 +53,6 @@ export default defineMain({
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   // Optional
   addons: ['@storybook/addon-docs'],
-  docs: {
-    autodocs: 'tag',
-  },
   staticDirs: ['../public'],
 });
 ```

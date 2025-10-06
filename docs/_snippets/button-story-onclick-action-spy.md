@@ -128,7 +128,6 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
   args: { onClick: fn() },
 });

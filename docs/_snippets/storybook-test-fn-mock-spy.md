@@ -216,7 +216,7 @@ export const SaveFlow = {
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior
@@ -340,7 +340,7 @@ export const SaveFlow = meta.story({
     isEditing: true,
     note: notes[0],
   },
-  play: async ({ canvas }) => {
+  play: async ({ canvas, userEvent }) => {
     const saveButton = canvas.getByRole('menuitem', { name: /done/i });
     await userEvent.click(saveButton);
     // 👇 This is the mock function, so you can assert its behavior

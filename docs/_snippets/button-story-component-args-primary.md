@@ -262,12 +262,10 @@ import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   //👇 Creates specific argTypes
   argTypes: {
     backgroundColor: { control: 'color' },
   },
-
   args: {
     //👇 Now all Button stories will be primary.
     primary: true,

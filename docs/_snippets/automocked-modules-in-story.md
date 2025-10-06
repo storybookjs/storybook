@@ -324,7 +324,6 @@ import { getUserFromSession } from '../lib/session';
 
 const meta = preview.meta({
   component: AuthButton,
-
   // 👇 This will run before each story is rendered
   beforeEach: async () => {
     // 👇 Force known, consistent behavior for mocked modules

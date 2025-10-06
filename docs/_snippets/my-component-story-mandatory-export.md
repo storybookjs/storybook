@@ -203,3 +203,26 @@ const meta = preview.meta({
   },
 });
 ```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Path/To/MyComponent',
+  component: MyComponent,
+  decorators: [
+    /* ... */
+  ],
+  parameters: {
+    /* ... */
+  },
+});
+```

@@ -31,9 +31,9 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+import type { Indexer } from 'storybook/internal/types';
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
-import type { Indexer } from 'storybook/internal/types';
 
 import fs from 'fs/promises';
 
@@ -67,9 +67,9 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import type { Indexer } from 'storybook/internal/types';
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
-import type { Indexer } from 'storybook/internal/types';
 
 import fs from 'fs/promises';
 

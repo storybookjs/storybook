@@ -47,7 +47,6 @@ export default defineMain({
   // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-
   features: {
     backgrounds: false, // 👈 disable the backgrounds feature
   },

@@ -1,12 +1,10 @@
 ```ts filename="MyComponent.stories.ts" renderer="angular" language="ts"
 import type { Meta, StoryObj } from '@storybook/angular';
-
 import { moduleMetadata, argsToTemplate } from '@storybook/angular';
 
 import { CommonModule } from '@angular/common';
 
 import { Layout } from './Layout.component';
-
 import { MyComponent } from './MyComponent.component';
 
 const meta: Meta<MyComponent> = {
@@ -45,7 +43,6 @@ export const Example: Story = {
 import { h } from 'preact';
 
 import { Layout } from './Layout';
-
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -69,7 +66,6 @@ export const Example = {
 
 ```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Layout } from './Layout';
-
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -96,7 +92,6 @@ export const Example = {
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Layout } from './Layout';
-
 import { MyComponent } from './MyComponent';
 
 const meta = {
@@ -123,7 +118,6 @@ export const Example: Story = {
 
 ```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js"
 import { Layout } from './Layout';
-
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -150,7 +144,6 @@ export const Example = {
 import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { Layout } from './Layout';
-
 import { MyComponent } from './MyComponent';
 
 const meta = {
@@ -177,7 +170,6 @@ export const Example: Story = {
 
 ```js filename="MyComponent.stories.js" renderer="vue" language="js"
 import Layout from './Layout.vue';
-
 import MyComponent from './MyComponent.vue';
 
 export default {
@@ -206,7 +198,6 @@ export const Example = {
 import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import Layout from './Layout.vue';
-
 import MyComponent from './MyComponent.vue';
 
 const meta = {
@@ -281,4 +272,56 @@ export const Example: Story = {
     </layout>
   `,
 };
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Layout } from './Layout';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Layout } from './Layout';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// This story uses a render function to fully control how the component renders.
+export const Example = meta.story({
+  render: () => (
+    <Layout>
+      <header>
+        <h1>Example</h1>
+      </header>
+      <article>
+        <MyComponent />
+      </article>
+    </Layout>
+  ),
+});
 ```

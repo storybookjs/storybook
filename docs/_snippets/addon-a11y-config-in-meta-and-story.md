@@ -572,6 +572,7 @@ export const ExampleStory = meta.story({
 
 ```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
 const meta = preview.meta({
@@ -603,7 +604,6 @@ const meta = preview.meta({
       test: 'error',
     },
   },
-
   globals: {
     a11y: {
       // Optional flag to prevent the automatic check

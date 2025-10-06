@@ -12,11 +12,6 @@ import { ListItem } from './list-item.component';
 import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
   decorators: [
     moduleMetadata({
@@ -68,11 +63,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -119,11 +109,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -166,11 +151,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -216,11 +196,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -266,11 +241,6 @@ export const OneItem = {
   import { Unchecked } from './ListItem.stories.svelte';
 
   const { Story } = defineMeta({
-    /* 👇 The title prop is optional.
-     * See https://storybook.js.org/docs/configure/#configure-story-loading
-     * to learn how to generate automatic titles
-    */
-    title: 'List',
     component: List,
   });
 </script>
@@ -309,11 +279,6 @@ export const OneItem = {
   import { Unchecked } from './ListItem.stories.svelte';
 
   const { Story } = defineMeta({
-    /* 👇 The title prop is optional.
-     * See https://storybook.js.org/docs/configure/#configure-story-loading
-     * to learn how to generate automatic titles
-    */
-    title: 'List',
     component: List,
   });
 </script>
@@ -349,11 +314,6 @@ import ListItem from './ListItem.vue';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -402,11 +362,6 @@ import ListItem from './ListItem.vue';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -455,7 +410,6 @@ import { repeat } from 'lit/directives/repeat.js';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  title: 'List',
   component: 'demo-list',
 };
 
@@ -495,7 +449,6 @@ import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
 const meta: Meta = {
-  title: 'List',
   component: 'demo-list',
 };
 
@@ -542,16 +495,10 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 });
 
-//👇 The ListTemplate construct will be spread to the existing stories.
-const ListTemplate: Story = {
+export const Empty = meta.story({
   render: ({ items, ...args }) => {
     return (
       <List>
@@ -561,19 +508,18 @@ const ListTemplate: Story = {
       </List>
     );
   },
-};
-
-export const Empty = meta.story({
-  ...ListTemplate,
   args: {
     items: [],
   },
 });
 
-export const OneItem = meta.story({
-  ...ListTemplate,
+export const OneItem = Empty.extend({
   args: {
-    items: [{ ...Unchecked.args }],
+    items: [
+      {
+        ...Unchecked.input.args,
+      },
+    ],
   },
 });
 ```
@@ -589,16 +535,10 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 const meta = preview.meta({
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 });
 
-//👇 The ListTemplate construct will be spread to the existing stories.
-const ListTemplate = {
+export const Empty = meta.story({
   render: ({ items, ...args }) => {
     return (
       <List>
@@ -608,21 +548,16 @@ const ListTemplate = {
       </List>
     );
   },
-};
-
-export const Empty = meta.story({
-  ...ListTemplate,
   args: {
     items: [],
   },
 });
 
-export const OneItem = meta.story({
-  ...ListTemplate,
+export const OneItem = Empty.extend({
   args: {
     items: [
       {
-        ...Unchecked.args,
+        ...Unchecked.input.args,
       },
     ],
   },

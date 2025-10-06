@@ -1,4 +1,4 @@
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -17,21 +17,4 @@ export const Example = {
     label: 'Button',
   },
 } satisfies Story;
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-import preview from '../.storybook/preview';
-
-import { Button } from './Button';
-
-const meta = preview.meta({
-  component: Button,
-});
-
-export const Example = meta.story({
-  args: {
-    primary: true,
-    label: 'Button',
-  },
-});
 ```

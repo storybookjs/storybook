@@ -41,6 +41,7 @@ export default defineMain({
   docs: {
     //👇 See the table below for the list of supported options
     defaultName: 'Documentation',
+    docsMode: true,
   },
 });
 ```
@@ -58,6 +59,7 @@ export default defineMain({
   docs: {
     //👇 See the table below for the list of supported options
     defaultName: 'Documentation',
+    docsMode: true,
   },
 });
 ```

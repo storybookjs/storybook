@@ -124,11 +124,11 @@ const meta = preview.meta({
 
 ```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import preview from '../.storybook/preview';
+
 import { Button } from './Button';
 
 const meta = preview.meta({
   component: Button,
-
   //👇 Enables auto-generated documentation for this component and includes all stories in this file
   tags: ['autodocs'],
 });

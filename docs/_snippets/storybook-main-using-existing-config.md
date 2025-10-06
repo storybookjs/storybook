@@ -38,9 +38,7 @@ export default config;
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
 import { defineMain } from '@storybook/your-framework/node';
 
-import custom from '../webpack.config.js';
-
-// 👈 Custom Webpack configuration being imported.
+import custom from '../webpack.config.js'; // 👈 Custom Webpack configuration being imported.
 
 export default defineMain({
   framework: '@storybook/your-framework',

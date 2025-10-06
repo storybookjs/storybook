@@ -137,7 +137,13 @@ export const ExampleStory = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// ...rest of story file
+import preview from '../.storybook/preview';
+
+import Button from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
 
 export const ExampleStory = meta.story({
   parameters: {
@@ -159,7 +165,13 @@ export const ExampleStory = meta.story({
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// ...rest of story file
+import preview from '../.storybook/preview';
+
+import Button from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
 
 export const ExampleStory = meta.story({
   parameters: {

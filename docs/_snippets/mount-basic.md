@@ -105,16 +105,22 @@ export const ChristmasUI = {
 ```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import MockDate from 'mockdate';
 
-// ...rest of story file
+import preview from '../.storybook/preview';
 
-export const ChristmasUI: Story = {
+import Page from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
   async play({ mount }) {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
     // ...rest of test
   },
-};
+});
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -122,14 +128,20 @@ export const ChristmasUI: Story = {
 ```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import MockDate from 'mockdate';
 
-// ...rest of story file
+import preview from '../.storybook/preview';
 
-export const ChristmasUI = {
+import Page from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const ChristmasUI = meta.story({
   async play({ mount }) {
     MockDate.set('2024-12-25');
     // 👇 Render the component with the mocked date
     await mount();
     // ...rest of test
   },
-};
+});
 ```

@@ -1,6 +1,7 @@
 import React, { type ComponentProps, type FC } from 'react';
 
 import {
+  Form,
   IconButton,
   ListItem,
   ProgressSpinner,
@@ -16,7 +17,12 @@ import { addons } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { A11Y_ADDON_ID, A11Y_PANEL_ID, PANEL_ID } from '../constants';
+import {
+  A11Y_ADDON_ID,
+  A11Y_PANEL_ID,
+  COMPONENT_TESTING_PANEL_ID,
+  FULL_RUN_TRIGGERS,
+} from '../constants';
 import type { StoreState } from '../types';
 import type { StatusValueToStoryIds } from '../use-test-provider-state';
 import { Description } from './Description';
@@ -54,13 +60,6 @@ const Actions = styled.div({
 
 const Extras = styled.div({
   marginBottom: 2,
-});
-
-const Checkbox = styled.input({
-  margin: 0,
-  '&:enabled': {
-    cursor: 'pointer',
-  },
 });
 
 const Muted = styled.span(({ theme }) => ({
@@ -124,7 +123,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     ComponentProps<typeof TestStatusIcon>['status'],
     string,
   ] = fatalError
-    ? ['critical', 'Local tests crashed']
+    ? ['critical', 'Component tests crashed']
     : componentTestStatusValueToStoryIds['status-value:error'].length > 0
       ? ['negative', 'Component tests failed']
       : isRunning
@@ -137,7 +136,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     ComponentProps<typeof TestStatusIcon>['status'],
     string,
   ] = fatalError
-    ? ['critical', 'Local tests crashed']
+    ? ['critical', 'Component tests crashed']
     : a11yStatusValueToStoryIds['status-value:error'].length > 0
       ? ['negative', 'Accessibility tests failed']
       : a11yStatusValueToStoryIds['status-value:warning'].length > 0
@@ -152,22 +151,26 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
     <Container {...props}>
       <Heading>
         <Info>
-          <Title
-            id="testing-module-title"
-            crashed={
-              testProviderState === 'test-provider-state:crashed' ||
-              fatalError !== undefined ||
-              currentRun.unhandledErrors.length > 0
-            }
-          >
-            {currentRun.unhandledErrors.length === 1
-              ? 'Local tests completed with an error'
-              : currentRun.unhandledErrors.length > 1
-                ? 'Local tests completed with errors'
-                : fatalError
-                  ? 'Local tests didn’t complete'
-                  : 'Run local tests'}
-          </Title>
+          {entry ? (
+            <Title id="testing-module-title">Run component tests</Title>
+          ) : (
+            <Title
+              id="testing-module-title"
+              crashed={
+                testProviderState === 'test-provider-state:crashed' ||
+                fatalError !== undefined ||
+                currentRun.unhandledErrors.length > 0
+              }
+            >
+              {currentRun.unhandledErrors.length === 1
+                ? 'Component tests completed with an error'
+                : currentRun.unhandledErrors.length > 1
+                  ? 'Component tests completed with errors'
+                  : fatalError
+                    ? 'Component tests didn’t complete'
+                    : 'Run component tests'}
+            </Title>
+          )}
           <Description
             id="testing-module-description"
             storeState={storeState}
@@ -239,15 +242,19 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               <IconButton
                 aria-label="Start test run"
                 size="medium"
-                onClick={() =>
+                onClick={() => {
+                  let storyIds;
+                  if (entry) {
+                    // Don't send underlying child test ids when running on a story
+                    // Vitest Manager already handles running the underlying tests
+                    storyIds =
+                      entry.type === 'story' ? [entry.id] : api.findAllLeafStoryIds(entry.id);
+                  }
                   store.send({
                     type: 'TRIGGER_RUN',
-                    payload: {
-                      storyIds: entry ? api.findAllLeafStoryIds(entry.id) : undefined,
-                      triggeredBy: entry ? entry.type : 'global',
-                    },
-                  })
-                }
+                    payload: { storyIds, triggeredBy: entry?.type ?? 'global' },
+                  });
+                }}
               >
                 <PlayHollowIcon />
               </IconButton>
@@ -260,8 +267,8 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
         <Row>
           <ListItem
             as="label"
-            title="Component tests"
-            icon={entry ? null : <Checkbox type="checkbox" checked disabled />}
+            title="Interactions"
+            icon={entry ? null : <Form.Checkbox checked disabled />}
           />
           <WithTooltip
             hasChrome={false}
@@ -278,7 +285,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               onClick={() => {
                 openPanel({
                   api,
-                  panelId: PANEL_ID,
+                  panelId: COMPONENT_TESTING_PANEL_ID,
                   entryId:
                     componentTestStatusValueToStoryIds['status-value:error'][0] ??
                     componentTestStatusValueToStoryIds['status-value:warning'][0] ??
@@ -304,8 +311,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               as="label"
               title={watching ? <Muted>Coverage (unavailable)</Muted> : 'Coverage'}
               icon={
-                <Checkbox
-                  type="checkbox"
+                <Form.Checkbox
                   checked={config.coverage}
                   disabled={isRunning}
                   onChange={() =>
@@ -325,20 +331,22 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
                   note={
                     watching
                       ? 'Unavailable in watch mode'
-                      : currentRun.triggeredBy && currentRun.triggeredBy !== 'global'
+                      : currentRun.triggeredBy &&
+                          !FULL_RUN_TRIGGERS.includes(currentRun.triggeredBy)
                         ? 'Unavailable when running focused tests'
                         : isRunning
                           ? 'Testing in progress'
                           : currentRun.coverageSummary
                             ? 'View coverage report'
                             : fatalError
-                              ? 'Local tests crashed'
+                              ? 'Component tests crashed'
                               : 'Run tests to calculate coverage'
                   }
                 />
               }
             >
-              {watching || (currentRun.triggeredBy && currentRun.triggeredBy !== 'global') ? (
+              {watching ||
+              (currentRun.triggeredBy && !FULL_RUN_TRIGGERS.includes(currentRun.triggeredBy)) ? (
                 <IconButton size="medium" disabled>
                   <InfoIcon
                     aria-label={
@@ -382,8 +390,7 @@ export const TestProviderRender: FC<TestProviderRenderProps> = ({
               title="Accessibility"
               icon={
                 entry ? null : (
-                  <Checkbox
-                    type="checkbox"
+                  <Form.Checkbox
                     checked={config.a11y}
                     disabled={isRunning}
                     onChange={() =>

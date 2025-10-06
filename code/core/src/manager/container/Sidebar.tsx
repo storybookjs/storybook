@@ -1,6 +1,4 @@
-import React, { useMemo } from 'react';
-
-import { Addon_TypesEnum } from 'storybook/internal/types';
+import React from 'react';
 
 import type { Combo, StoriesHash } from 'storybook/manager-api';
 import { Consumer, experimental_useStatusStore } from 'storybook/manager-api';
@@ -25,7 +23,6 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       layout: { showToolbar },
       // FIXME: This is the actual `index.json` index where the `index` below
       // is actually the stories hash. We should fix this up and make it consistent.
-      // eslint-disable-next-line @typescript-eslint/naming-convention
       internal_index,
       filteredIndex: index,
       indexError,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-import { type Addon_TestProviderType, Addon_TypesEnum } from 'storybook/internal/types';
+import { Addon_TypesEnum } from 'storybook/internal/types';
 
 import {
   a11yStatusStore,
@@ -13,7 +13,7 @@ import { addons } from 'storybook/manager-api';
 import { GlobalErrorContext, GlobalErrorModal } from './components/GlobalErrorModal';
 import { SidebarContextMenu } from './components/SidebarContextMenu';
 import { TestProviderRender } from './components/TestProviderRender';
-import { A11Y_PANEL_ID, ADDON_ID, PANEL_ID, TEST_PROVIDER_ID } from './constants';
+import { A11Y_PANEL_ID, ADDON_ID, COMPONENT_TESTING_PANEL_ID, TEST_PROVIDER_ID } from './constants';
 import { useTestProvider } from './use-test-provider-state';
 
 addons.register(ADDON_ID, (api) => {
@@ -24,7 +24,7 @@ addons.register(ADDON_ID, (api) => {
       api.togglePanel(true);
     };
     componentTestStatusStore.onSelect(() => {
-      openPanel(PANEL_ID);
+      openPanel(COMPONENT_TESTING_PANEL_ID);
     });
     a11yStatusStore.onSelect(() => {
       openPanel(A11Y_PANEL_ID);

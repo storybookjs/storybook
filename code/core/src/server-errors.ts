@@ -56,10 +56,10 @@ export class NxProjectDetectedError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 1,
-      documentation: 'https://nx.dev/packages/storybook',
+      documentation: 'https://nx.dev/nx-api/storybook#generating-storybook-configuration',
       message: dedent`
         We have detected Nx in your project. Nx has its own Storybook initializer, so please use it instead.
-        Run "nx g @nx/storybook:configuration" to add Storybook to your project.`,
+        Run "nx g @nx/storybook:configuration <your-project-name>" to add Storybook to a given Nx app or lib.`,
     });
   }
 }
@@ -218,7 +218,7 @@ export class MissingAngularJsonError extends StorybookError {
     super({
       category: Category.CLI_INIT,
       code: 2,
-      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found',
+      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found?ref=error',
       message: dedent`
         An angular.json file was not found in the current working directory: ${data.path}
         Storybook needs it to work properly, so please rerun the command at the root of your project, where the angular.json file is located.`,
@@ -350,61 +350,19 @@ export class NoMatchingExportError extends StorybookError {
   }
 }
 
-export class MainFileESMOnlyImportError extends StorybookError {
-  constructor(
-    public data: { location: string; line: string | undefined; num: number | undefined }
-  ) {
-    const message = [
-      `Storybook failed to load ${data.location}`,
-      '',
-      `It looks like the file tried to load/import an ESM only module.`,
-      `Support for this is currently limited in ${data.location}`,
-      `You can import ESM modules in your main file, but only as dynamic import.`,
-      '',
-    ];
-    if (data.line) {
-      message.push(
-        picocolors.white(
-          `In your ${picocolors.yellow(data.location)} file, line ${picocolors.bold(
-            picocolors.cyan(data.num)
-          )} threw an error:`
-        ),
-        picocolors.gray(data.line)
-      );
-    }
-
-    message.push(
-      '',
-      picocolors.white(
-        `Convert the static import to a dynamic import ${picocolors.underline('where they are used')}.`
-      ),
-      picocolors.white(`Example:`) + ' ' + picocolors.gray(`await import(<your ESM only module>);`),
-      ''
-    );
-
-    super({
-      category: Category.CORE_SERVER,
-      code: 5,
-      documentation:
-        'https://github.com/storybookjs/storybook/issues/23972#issuecomment-1948534058',
-      message: message.join('\n'),
-    });
-  }
-}
-
 export class MainFileMissingError extends StorybookError {
   constructor(public data: { location: string; source?: 'storybook' | 'vitest' }) {
     const map = {
       storybook: {
         helperMessage:
           'You can pass a --config-dir flag to tell Storybook, where your main.js file is located at.',
-        documentation: 'https://storybook.js.org/docs/configure',
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
       vitest: {
         helperMessage:
           'You can pass a configDir plugin option to tell where your main.js file is located at.',
         // TODO: add proper docs once available
-        documentation: 'https://storybook.js.org/docs/configure',
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
       },
     };
     const { documentation, helperMessage } = map[data.source || 'storybook'];
@@ -496,29 +454,6 @@ export class UpgradeStorybookToLowerVersionError extends StorybookError {
   }
 }
 
-export class UpgradeStorybookToSameVersionError extends StorybookError {
-  constructor(public data: { beforeVersion: string }) {
-    super({
-      category: Category.CLI_UPGRADE,
-      code: 4,
-      message: dedent`
-        You are upgrading Storybook to the same version that is currently installed in the project, version ${data.beforeVersion}.
-        
-        This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
-        This will cause npm to run the globally cached storybook binary, which might be the same version that you already have.
-        This also happens if you're running the Storybook CLI that is locally installed in your project.
-        
-        If you intended to upgrade to the latest version, you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
-        
-        "npx storybook@latest upgrade"
-        
-        If you intended to re-run automigrations, you should run the "automigrate" command directly instead:
-        
-        "npx storybook automigrate"`,
-    });
-  }
-}
-
 export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
   constructor() {
     super({
@@ -529,19 +464,6 @@ export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
         
         Are you running the Storybook CLI in a project without Storybook?
         It might help if you specify your Storybook config directory with the --config-dir flag.`,
-    });
-  }
-}
-
-export class UpgradeStorybookInWrongWorkingDirectory extends StorybookError {
-  constructor() {
-    super({
-      category: Category.CLI_UPGRADE,
-      code: 6,
-      message: dedent`
-        You are running the upgrade command in a CWD that does not contain Storybook dependencies.
-        
-        Did you mean to run it in a different directory? Make sure the directory you run this command in contains a package.json with your Storybook dependencies.`,
     });
   }
 }
@@ -569,6 +491,64 @@ export class FindPackageVersionsError extends StorybookError {
       message: dedent`
         Unable to find versions of "${data.packageName}" using ${data.packageManager}
         ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class IncompatiblePostCssConfigError extends StorybookError {
+  constructor(public data: { error: Error }) {
+    super({
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 3,
+      message: dedent`
+        Incompatible PostCSS configuration format detected.
+
+        Next.js uses an array-based format for plugins which is not compatible with Vite:
+        
+        // ❌ Incompatible format (used by Next.js)
+        const config = {
+          plugins: ["@tailwindcss/postcss"],
+        };
+        
+        Please transform your PostCSS config to use the object-based format, which is compatible with Next.js and Vite:
+        
+        // ✅ Compatible format (works with Next.js and Vite)
+        const config = {
+          plugins: {
+            "@tailwindcss/postcss": {},
+          },
+        };
+        
+        Original error: ${data.error.message}
+      `,
+    });
+  }
+}
+
+export class SavingGlobalSettingsFileError extends StorybookError {
+  constructor(public data: { filePath: string; error: Error | unknown }) {
+    super({
+      category: Category.CORE_SERVER,
+      code: 1,
+      message: dedent`
+        Unable to save global settings file to ${data.filePath}
+        ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class CommonJsConfigNotSupportedError extends StorybookError {
+  constructor() {
+    super({
+      category: Category.CLI_AUTOMIGRATE,
+      code: 1,
+      documentation: 'https://storybook.js.org/docs/configure/overview?ref=error#es-modules',
+      message: dedent`
+        Support for CommonJS Storybook config files has been removed in Storybook 10.0.0.
+        Please migrate your config to a valid ESM file.
+        
+        CommonJS files (ending in .cjs, .cts, .cjsx, .ctsx) or files containing 'module.exports' are no longer supported.
+        Please convert your config to use ES modules (import/export syntax).`,
     });
   }
 }

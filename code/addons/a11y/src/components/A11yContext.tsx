@@ -2,11 +2,15 @@ import type { FC, PropsWithChildren } from 'react';
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import {
+  STORY_CHANGED,
   STORY_FINISHED,
+  STORY_HOT_UPDATED,
   STORY_RENDER_PHASE_CHANGED,
   type StoryFinishedPayload,
 } from 'storybook/internal/core-events';
 
+import type { ClickEventDetails, HighlightMenuItem } from 'storybook/highlight';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlight';
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
@@ -20,18 +24,19 @@ import {
 import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
-import {
-  HIGHLIGHT,
-  RESET_HIGHLIGHT,
-  SCROLL_INTO_VIEW,
-} from '../../../../core/src/highlight/constants';
+import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper';
 import { ADDON_ID, EVENTS, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport, EnhancedResult, EnhancedResults } from '../types';
 import { RuleType } from '../types';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage';
 
+// These elements should not be highlighted because they usually cover the whole page.
+// They may still appear in the results and be selectable though.
+const unhighlightedSelectors = ['html', 'body', 'main'];
+
 export interface A11yContextStore {
+  parameters: A11yParameters;
   results: EnhancedResults | undefined;
   highlighted: boolean;
   toggleHighlight: () => void;
@@ -52,13 +57,15 @@ export interface A11yContextStore {
   handleSelectionChange: (key: string) => void;
 }
 
+const theme = convert(themes.light);
 const colorsByType = {
-  [RuleType.VIOLATION]: convert(themes.light).color.negative,
-  [RuleType.PASS]: convert(themes.light).color.positive,
-  [RuleType.INCOMPLETION]: convert(themes.light).color.warning,
+  [RuleType.VIOLATION]: theme.color.negative,
+  [RuleType.PASS]: theme.color.positive,
+  [RuleType.INCOMPLETION]: theme.color.warning,
 };
 
 export const A11yContext = createContext<A11yContextStore>({
+  parameters: {},
   results: undefined,
   highlighted: false,
   toggleHighlight: () => {},
@@ -195,10 +202,34 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
           if (status === 'ran') {
             setStatus('ready');
           }
+          if (selectedItems.size === 1) {
+            const [key] = selectedItems.values();
+            document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }, 900);
       }
     },
-    [setResults, status, storyId]
+    [setResults, status, storyId, selectedItems]
+  );
+
+  const handleSelect = useCallback(
+    (itemId: string, details: ClickEventDetails) => {
+      const [type, id] = itemId.split('.');
+      const { helpUrl, nodes } = results?.[type as RuleType]?.find((r) => r.id === id) || {};
+      const openedWindow = helpUrl && window.open(helpUrl, '_blank', 'noopener,noreferrer');
+      if (nodes && !openedWindow) {
+        const index =
+          nodes.findIndex((n) => details.selectors.some((s) => s === String(n.target))) ?? -1;
+        if (index !== -1) {
+          const key = `${type}.${id}.${index + 1}`;
+          setSelectedItems(new Map([[`${type}.${id}`, key]]));
+          setTimeout(() => {
+            document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+        }
+      }
+    },
+    [results]
   );
 
   const handleReport = useCallback(
@@ -220,11 +251,10 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     ({ newPhase }: { newPhase: string }) => {
       if (newPhase === 'loading') {
         setResults(undefined);
-        if (manual) {
-          setStatus('manual');
-        } else {
-          setStatus('running');
-        }
+        setStatus(manual ? 'manual' : 'initial');
+      }
+      if (newPhase === 'afterEach' && !manual) {
+        setStatus('running');
       }
     },
     [manual, setResults]
@@ -234,10 +264,16 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     {
       [EVENTS.RESULT]: handleResult,
       [EVENTS.ERROR]: handleError,
+      [EVENTS.SELECT]: handleSelect,
+      [STORY_CHANGED]: () => setSelectedItems(new Map()),
       [STORY_RENDER_PHASE_CHANGED]: handleReset,
       [STORY_FINISHED]: handleReport,
+      [STORY_HOT_UPDATED]: () => {
+        setStatus('running');
+        emit(EVENTS.MANUAL, storyId, parameters);
+      },
     },
-    [handleReset, handleReport, handleReset, handleError, handleResult]
+    [handleReset, handleReport, handleSelect, handleError, handleResult, parameters, storyId]
   );
 
   const handleManual = useCallback(() => {
@@ -259,40 +295,107 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     setStatus(getInitialStatus(manual));
   }, [getInitialStatus, manual]);
 
+  const isInitial = status === 'initial';
+
   useEffect(() => {
-    emit(RESET_HIGHLIGHT);
-    if (!highlighted) {
+    emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/selected`);
+    emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/others`);
+
+    if (!highlighted || isInitial) {
       return;
     }
 
     const selected = Array.from(selectedItems.values()).flatMap((key) => {
       const [type, id, number] = key.split('.');
+      if (type !== tab) {
+        return [];
+      }
       const result = results?.[type as RuleType]?.find((r) => r.id === id);
       const target = result?.nodes[Number(number) - 1]?.target;
-      return target ? [target] : [];
+      return target ? [String(target)] : [];
     });
-    const others = results?.[tab as RuleType]
-      ?.flatMap((r) => r.nodes.map((n) => n.target))
-      .filter((e) => !selected.includes(e));
-
-    if (selected?.length) {
+    if (selected.length) {
       emit(HIGHLIGHT, {
-        elements: selected,
-        color: colorsByType[tab],
-        width: '2px',
-        offset: '0px',
+        id: `${ADDON_ID}/selected`,
+        priority: 1,
+        selectors: selected,
+        styles: {
+          outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
+          backgroundColor: 'transparent',
+        },
+        hoverStyles: {
+          outlineWidth: '2px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        menu: results?.[tab as RuleType].map<HighlightMenuItem[]>((result) => {
+          const selectors = result.nodes
+            .flatMap((n) => n.target)
+            .map(String)
+            .filter((e) => selected.includes(e));
+          return [
+            {
+              id: `${tab}.${result.id}:info`,
+              title: getTitleForAxeResult(result),
+              description: getFriendlySummaryForAxeResult(result),
+              selectors,
+            },
+            {
+              id: `${tab}.${result.id}`,
+              iconLeft: 'info',
+              iconRight: 'shareAlt',
+              title: 'Learn how to resolve this violation',
+              clickEvent: EVENTS.SELECT,
+              selectors,
+            },
+          ];
+        }),
       });
     }
+
+    const others = results?.[tab as RuleType]
+      .flatMap((r) => r.nodes.flatMap((n) => n.target).map(String))
+      .filter((e) => ![...unhighlightedSelectors, ...selected].includes(e));
     if (others?.length) {
       emit(HIGHLIGHT, {
-        elements: others,
-        color: `${colorsByType[tab]}99`,
-        style: 'dashed',
-        width: '1px',
-        offset: '1px',
+        id: `${ADDON_ID}/others`,
+        selectors: others,
+        styles: {
+          outline: `1px solid color-mix(in srgb, ${colorsByType[tab]}, transparent 30%)`,
+          backgroundColor: `color-mix(in srgb, ${colorsByType[tab]}, transparent 60%)`,
+        },
+        hoverStyles: {
+          outlineWidth: '2px',
+        },
+        focusStyles: {
+          backgroundColor: 'transparent',
+        },
+        menu: results?.[tab as RuleType].map<HighlightMenuItem[]>((result) => {
+          const selectors = result.nodes
+            .flatMap((n) => n.target)
+            .map(String)
+            .filter((e) => !selected.includes(e));
+          return [
+            {
+              id: `${tab}.${result.id}:info`,
+              title: getTitleForAxeResult(result),
+              description: getFriendlySummaryForAxeResult(result),
+              selectors,
+            },
+            {
+              id: `${tab}.${result.id}`,
+              iconLeft: 'info',
+              iconRight: 'shareAlt',
+              title: 'Learn how to resolve this violation',
+              clickEvent: EVENTS.SELECT,
+              selectors,
+            },
+          ];
+        }),
       });
     }
-  }, [emit, highlighted, results, tab, selectedItems]);
+  }, [isInitial, emit, highlighted, results, tab, selectedItems]);
 
   const discrepancy: TestDiscrepancy = useMemo(() => {
     if (!currentStoryA11yStatusValue) {
@@ -317,6 +420,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   return (
     <A11yContext.Provider
       value={{
+        parameters,
         results,
         highlighted,
         toggleHighlight: handleToggleHighlight,

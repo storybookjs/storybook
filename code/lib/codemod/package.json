@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codemod",
-  "version": "9.0.0-alpha.17",
+  "version": "10.0.0-beta.9",
   "description": "A collection of codemod scripts written with JSCodeshift",
   "keywords": [
     "storybook"
@@ -20,21 +20,18 @@
   },
   "license": "MIT",
   "sideEffects": false,
+  "type": "module",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "node": "./dist/index.js",
-      "require": "./dist/index.js"
+      "default": "./dist/index.js"
     },
-    "./dist/transforms/csf-2-to-3.js": "./dist/transforms/csf-2-to-3.js",
-    "./dist/transforms/csf-hoist-story-annotations.js": "./dist/transforms/csf-hoist-story-annotations.js",
-    "./dist/transforms/find-implicit-spies.js": "./dist/transforms/find-implicit-spies.js",
-    "./dist/transforms/upgrade-deprecated-types.js": "./dist/transforms/upgrade-deprecated-types.js",
-    "./dist/transforms/upgrade-hierarchy-separators.js": "./dist/transforms/upgrade-hierarchy-separators.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./transforms/csf-2-to-3": "./dist/transforms/csf-2-to-3.js",
+    "./transforms/find-implicit-spies": "./dist/transforms/find-implicit-spies.js",
+    "./transforms/upgrade-deprecated-types": "./dist/transforms/upgrade-deprecated-types.js",
+    "./transforms/upgrade-hierarchy-separators": "./dist/transforms/upgrade-hierarchy-separators.js"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "files": [
     "dist/**/*",
     "README.md",
@@ -43,53 +40,27 @@
     "!src/**/*"
   ],
   "scripts": {
-    "check": "jiti ../../../scripts/prepare/check.ts",
-    "prep": "jiti ../../../scripts/prepare/bundle.ts"
+    "check": "jiti ../../../scripts/check/check-package.ts",
+    "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
-    "@babel/core": "^7.24.4",
-    "@babel/preset-env": "^7.24.4",
-    "@babel/types": "^7.24.0",
-    "@types/cross-spawn": "^6.0.2",
-    "cross-spawn": "^7.0.3",
-    "es-toolkit": "^1.22.0",
-    "globby": "^14.0.1",
+    "@types/cross-spawn": "^6.0.6",
+    "cross-spawn": "^7.0.6",
+    "es-toolkit": "^1.36.0",
     "jscodeshift": "^0.15.1",
-    "prettier": "^3.1.1",
-    "recast": "^0.23.5",
+    "prettier": "^3.5.3",
     "storybook": "workspace:*",
-    "tiny-invariant": "^1.3.1"
+    "tiny-invariant": "^1.3.1",
+    "tinyglobby": "^0.2.13"
   },
   "devDependencies": {
     "@types/jscodeshift": "^0.11.10",
     "ansi-regex": "^6.0.1",
-    "camelcase": "^8.0.0",
-    "mdast-util-mdx-jsx": "^3.0.0",
-    "mdast-util-mdxjs-esm": "^2.0.1",
-    "remark": "^15.0.1",
-    "remark-mdx": "^3.0.0",
     "ts-dedent": "^2.2.0",
-    "typescript": "^5.7.3",
-    "unist-util-is": "^6.0.0",
-    "unist-util-select": "^5.1.0",
-    "unist-util-visit": "^5.0.0",
-    "util": "^0.12.4",
-    "vfile": "^5.3.7"
+    "typescript": "^5.8.3"
   },
   "publishConfig": {
     "access": "public"
   },
-  "bundler": {
-    "entries": [
-      "./src/index.ts",
-      "./src/transforms/csf-2-to-3.ts",
-      "./src/transforms/find-implicit-spies.ts",
-      "./src/transforms/upgrade-deprecated-types.ts",
-      "./src/transforms/upgrade-hierarchy-separators.js"
-    ],
-    "formats": [
-      "cjs"
-    ]
-  },
-  "gitHead": "e6a7fd8a655c69780bc20b9749c2699e44beae16"
+  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
 }

@@ -1,16 +1,22 @@
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { defineMain } from '@storybook/react-vite/node';
 
 import react from '@vitejs/plugin-react';
 
-import { defineMain } from '../frameworks/react-vite/src/node';
+import { BROWSER_TARGETS } from '../core/src/shared/constants/environments-support.ts';
 
-const componentsPath = join(__dirname, '../core/src/components/index.ts');
-const managerApiPath = join(__dirname, '../core/src/manager-api/index.mock.ts');
-const imageContextPath = join(__dirname, '../frameworks/nextjs/src/image-context.ts');
+const currentFilePath = fileURLToPath(import.meta.url);
+const currentDirPath = dirname(currentFilePath);
+
+const componentsPath = join(currentDirPath, '../core/src/components/index.ts');
+const managerApiPath = join(currentDirPath, '../core/src/manager-api/index.mock.ts');
+const imageContextPath = join(currentDirPath, '../frameworks/nextjs/src/image-context.ts');
 
 const config = defineMain({
   stories: [
-    './*.stories.@(js|jsx|ts|tsx)',
+    './bench/*.stories.@(js|jsx|ts|tsx)',
     {
       directory: '../core/template/stories',
       titlePrefix: 'core',
@@ -21,6 +27,10 @@ const config = defineMain({
     },
     {
       directory: '../core/src/preview-api',
+      titlePrefix: 'preview',
+    },
+    {
+      directory: '../core/src/preview',
       titlePrefix: 'preview',
     },
     {
@@ -36,8 +46,16 @@ const config = defineMain({
       titlePrefix: 'component-testing',
     },
     {
-      directory: '../lib/blocks/src',
-      titlePrefix: 'blocks',
+      directory: '../core/src/controls/components',
+      titlePrefix: 'controls',
+    },
+    {
+      directory: '../core/src/highlight',
+      titlePrefix: 'highlight',
+    },
+    {
+      directory: '../addons/docs/src/blocks',
+      titlePrefix: 'addons/docs/blocks',
     },
     {
       directory: '../addons/a11y/src',
@@ -64,12 +82,21 @@ const config = defineMain({
       titlePrefix: 'addons/onboarding',
     },
     {
+      directory: '../addons/pseudo-states/src',
+      titlePrefix: 'addons/pseudo-states',
+    },
+    {
       directory: '../addons/vitest/src/components',
       titlePrefix: 'addons/vitest',
     },
     {
       directory: '../addons/vitest/template/stories',
       titlePrefix: 'addons/vitest',
+    },
+    {
+      directory: '../addons/vitest/src',
+      titlePrefix: 'addons/vitest',
+      files: 'stories.tsx',
     },
   ],
   addons: [
@@ -78,6 +105,7 @@ const config = defineMain({
     '@storybook/addon-designs',
     '@storybook/addon-vitest',
     '@storybook/addon-a11y',
+    'storybook-addon-pseudo-states',
     '@chromatic-com/storybook',
   ],
   previewAnnotations: [
@@ -108,7 +136,9 @@ const config = defineMain({
   },
   features: {
     developmentModeForBuild: true,
+    experimentalTestSyntax: true,
   },
+  staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig, { configType }) => {
     const { mergeConfig } = await import('vite');
 
@@ -127,14 +157,10 @@ const config = defineMain({
         },
       },
       plugins: [react()],
-      optimizeDeps: {
-        force: true,
-        include: ['@storybook/blocks'],
-      },
       build: {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
-        target: ['chrome100'],
+        target: BROWSER_TARGETS,
       },
       server: {
         watch: {

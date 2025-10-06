@@ -52,7 +52,7 @@ export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
 // Forms
 export { Button } from './components/Button/Button';
 export { IconButton } from './components/IconButton/IconButton';
-export { Form } from './components/form/index';
+export { Form } from './components/Form/Form';
 
 // Tooltips
 export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip';

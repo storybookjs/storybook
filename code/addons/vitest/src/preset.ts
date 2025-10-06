@@ -5,6 +5,7 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   createFileSystemCache,
   getFrameworkName,
+  loadPreviewOrConfigFile,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import {
@@ -12,9 +13,14 @@ import {
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
-import type { Options, PresetPropertyFn, StoryId } from 'storybook/internal/types';
+import type {
+  Options,
+  PresetPropertyFn,
+  PreviewAnnotation,
+  StoryId,
+} from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
@@ -40,19 +46,27 @@ type Event = {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');
-  const builderName = typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
+
+  const previewPath = loadPreviewOrConfigFile({ configDir: options.configDir });
+  const previewAnnotations = await options.presets.apply<PreviewAnnotation[]>(
+    'previewAnnotations',
+    [],
+    options
+  );
+
+  const resolvedPreviewBuilder =
+    typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
   const framework = await getFrameworkName(options);
 
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
-  if (!builderName?.includes('vite')) {
+  if (!resolvedPreviewBuilder?.includes('vite')) {
     if (framework.includes('nextjs')) {
       log(dedent`
         You're using ${framework}, which is a Webpack-based builder. In order to use Storybook Test, with your project, you need to use '@storybook/nextjs-vite', a high performance Vite-based equivalent.
 
-        Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite')}\n
+        Information on how to upgrade here: ${picocolors.yellow('https://storybook.js.org/docs/get-started/frameworks/nextjs?ref=upgrade#with-vite')}\n
       `);
     }
     return channel;
@@ -65,29 +79,25 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   });
   const cachedState: CachedState = await fsCache.get<CachedState>('state', {
     config: storeOptions.initialState.config,
-    watching: storeOptions.initialState.watching,
   });
 
+  const selectCachedState = (s: Partial<StoreState>): Partial<CachedState> => ({
+    config: s.config,
+  });
   const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
     ...storeOptions,
     initialState: {
       ...storeOptions.initialState,
-      ...cachedState,
+      previewAnnotations: (previewAnnotations ?? []).concat(previewPath ?? []),
+      ...selectCachedState(cachedState),
     },
     leader: true,
   });
   store.onStateChange((state, previousState) => {
-    const selectCachedState = (s: StoreState): CachedState => ({
-      config: s.config,
-      watching: s.watching,
-    });
     if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
       fsCache.set('state', selectCachedState(state));
     }
   });
-  if (cachedState.watching) {
-    runTestRunner(channel, store);
-  }
   const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
 
   store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
@@ -96,7 +106,13 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       ...s,
       fatalError: undefined,
     }));
-    runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+    runTestRunner({
+      channel,
+      store,
+      initEvent: STORE_CHANNEL_EVENT_NAME,
+      initArgs: [{ event, eventInfo }],
+      options,
+    });
   });
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
     store.setState((s) => ({
@@ -111,7 +127,13 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       },
     }));
     if (event.payload.to) {
-      runTestRunner(channel, store, STORE_CHANNEL_EVENT_NAME, [{ event, eventInfo }]);
+      runTestRunner({
+        channel,
+        store,
+        initEvent: STORE_CHANNEL_EVENT_NAME,
+        initArgs: [{ event, eventInfo }],
+        options,
+      });
     }
   });
   store.subscribe('FATAL_ERROR', (event) => {
@@ -159,11 +181,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
   if (!core.disableTelemetry) {
     const enableCrashReports = core.enableCrashReports || options.enableCrashReports;
-    const packageJsonPath = require.resolve('@storybook/addon-vitest/package.json');
-
-    const { version: addonVersion } = JSON.parse(
-      readFileSync(packageJsonPath, { encoding: 'utf-8' })
-    );
 
     channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {
       telemetry('addon-test', {
@@ -172,22 +189,19 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
           ...event.payload,
           storyId: oneWayHash(event.payload.storyId),
         },
-        addonVersion,
       });
     });
 
     store.subscribe('TOGGLE_WATCHING', async (event) => {
       await telemetry('addon-test', {
         watchMode: event.payload.to,
-        addonVersion,
       });
     });
     store.subscribe('TEST_RUN_COMPLETED', async (event) => {
-      const { unhandledErrors, startedAt, finishedAt, storyIds, ...currentRun } = event.payload;
+      const { unhandledErrors, startedAt, finishedAt, ...currentRun } = event.payload;
       await telemetry('addon-test', {
         ...currentRun,
         duration: (finishedAt ?? 0) - (startedAt ?? 0),
-        selectedStoryCount: storyIds?.length ?? 0,
         unhandledErrorCount: unhandledErrors.length,
         ...(enableCrashReports &&
           unhandledErrors.length > 0 && {
@@ -196,7 +210,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
               return sanitizeError(errorWithoutStacks);
             }),
           }),
-        addonVersion,
       });
     });
 
@@ -204,7 +217,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       store.subscribe('FATAL_ERROR', async (event) => {
         await telemetry('addon-test', {
           fatalError: cleanPaths(event.payload.error.message),
-          addonVersion,
         });
       });
     }

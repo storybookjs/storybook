@@ -37,7 +37,6 @@ export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) =>
           : `${activeTab} dlx storybook@latest upgrade`}
       </Code>
       {onNavigateToWhatsNew && (
-        // eslint-disable-next-line jsx-a11y/anchor-is-valid
         <Link onClick={onNavigateToWhatsNew}>See what's new in Storybook</Link>
       )}
     </Container>

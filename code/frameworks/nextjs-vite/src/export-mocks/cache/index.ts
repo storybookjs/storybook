@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import { fn } from 'storybook/test';
 
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import type { FC, ReactElement, ReactNode } from 'react';
 import React, {
   Component,
@@ -8,15 +7,17 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from 'react';
 
 import type { Listener } from 'storybook/internal/channels';
-import { deprecate } from 'storybook/internal/client-logger';
 import {
+  DOCS_PREPARED,
   SET_STORIES,
   SHARED_STATE_CHANGED,
   SHARED_STATE_SET,
   STORY_CHANGED,
+  STORY_PREPARED,
 } from 'storybook/internal/core-events';
 import type { RouterData } from 'storybook/internal/router';
 import type {
@@ -33,6 +34,7 @@ import type {
   API_RootEntry,
   API_StateMerger,
   API_StoryEntry,
+  API_TestEntry,
   ArgTypes,
   Args,
   Globals,
@@ -40,7 +42,7 @@ import type {
   StoryId,
 } from 'storybook/internal/types';
 
-import { isEqual } from 'es-toolkit';
+import { isEqual } from 'es-toolkit/predicate';
 
 import { createContext } from './context';
 import getInitialState from './initial-state';
@@ -52,6 +54,7 @@ import * as channel from './modules/channel';
 import * as globals from './modules/globals';
 import * as layout from './modules/layout';
 import * as notifications from './modules/notifications';
+import * as openInEditor from './modules/open-in-editor';
 import * as provider from './modules/provider';
 import * as refs from './modules/refs';
 import * as settings from './modules/settings';
@@ -175,6 +178,7 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
       url,
       version,
       whatsnew,
+      openInEditor,
     ].map((m) =>
       m.init({ ...routeData, ...optionsData, ...apiData, state: this.state, fullAPI: this.api })
     );
@@ -338,9 +342,22 @@ export function useStoryPrepared(storyId?: StoryId) {
 
 export function useParameter<S>(parameterKey: string, defaultValue?: S) {
   const api = useStorybookApi();
+  const [parameter, setParameter] = useState(api.getCurrentParameter<S>(parameterKey));
 
-  const result = api.getCurrentParameter<S>(parameterKey);
-  return orDefault<S>(result, defaultValue!);
+  const handleParameterChange = useCallback(() => {
+    const newParameter = api.getCurrentParameter<S>(parameterKey);
+    setParameter(newParameter);
+  }, [api, parameterKey]);
+
+  useChannel(
+    {
+      [STORY_PREPARED]: handleParameterChange,
+      [DOCS_PREPARED]: handleParameterChange,
+    },
+    [handleParameterChange]
+  );
+
+  return orDefault<S>(parameter, defaultValue!);
 }
 
 // cache for taking care of HMR
@@ -472,7 +489,7 @@ export function useGlobalTypes(): ArgTypes {
   return useStorybookApi().getGlobalTypes();
 }
 
-function useCurrentStory(): API_StoryEntry | API_DocsEntry {
+function useCurrentStory(): API_StoryEntry | API_TestEntry | API_DocsEntry {
   const { getCurrentStoryData } = useStorybookApi();
 
   return getCurrentStoryData();

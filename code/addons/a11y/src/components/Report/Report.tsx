@@ -1,14 +1,30 @@
-import type { FC } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
-import { EmptyTabContent, IconButton } from 'storybook/internal/components';
+import { Badge, EmptyTabContent, IconButton } from 'storybook/internal/components';
 
 import { ChevronSmallDownIcon } from '@storybook/icons';
 
+import type { ImpactValue } from 'axe-core';
 import { styled } from 'storybook/theming';
 
-import type { EnhancedResult, RuleType } from '../../types';
+import { getTitleForAxeResult } from '../../axeRuleMappingHelper';
+import { type EnhancedResult, RuleType } from '../../types';
 import { Details } from './Details';
+
+const impactStatus: Record<NonNullable<ImpactValue>, ComponentProps<typeof Badge>['status']> = {
+  minor: 'neutral',
+  moderate: 'warning',
+  serious: 'negative',
+  critical: 'critical',
+};
+
+const impactLabels: Record<NonNullable<ImpactValue>, string> = {
+  minor: 'Minor',
+  moderate: 'Moderate',
+  serious: 'Serious',
+  critical: 'Critical',
+};
 
 const Wrapper = styled.div(({ theme }) => ({
   display: 'flex',
@@ -16,6 +32,7 @@ const Wrapper = styled.div(({ theme }) => ({
   width: '100%',
   borderBottom: `1px solid ${theme.appBorderColor}`,
   containerType: 'inline-size',
+  fontSize: theme.typography.size.s2,
 }));
 
 const Icon = styled(ChevronSmallDownIcon)({
@@ -39,15 +56,19 @@ const HeaderBar = styled.div(({ theme }) => ({
   },
 }));
 
-const Title = styled.div({
+const Title = styled.div(({ theme }) => ({
   display: 'flex',
+  alignItems: 'baseline',
   flexGrow: 1,
-  gap: 6,
-});
+  fontSize: theme.typography.size.s2,
+  gap: 8,
+}));
 
 const RuleId = styled.div(({ theme }) => ({
   display: 'none',
   color: theme.textMutedColor,
+  fontFamily: theme.typography.fonts.mono,
+  fontSize: theme.typography.size.s1,
 
   '@container (min-width: 800px)': {
     display: 'block',
@@ -84,31 +105,42 @@ export const Report: FC<ReportProps> = ({
     {items && items.length ? (
       items.map((item) => {
         const id = `${type}.${item.id}`;
+        const detailsId = `details:${id}`;
         const selection = selectedItems.get(id);
+        const title = getTitleForAxeResult(item);
         return (
           <Wrapper key={id}>
-            <HeaderBar
-              onClick={(event) => toggleOpen(event, type, item)}
-              role="button"
-              data-active={!!selection}
-            >
+            <HeaderBar onClick={(event) => toggleOpen(event, type, item)} data-active={!!selection}>
               <Title>
-                <strong>{item.help}</strong>
+                <strong>{title}</strong>
                 <RuleId>{item.id}</RuleId>
               </Title>
+              {item.impact && (
+                <Badge status={type === RuleType.PASS ? 'neutral' : impactStatus[item.impact]}>
+                  {impactLabels[item.impact]}
+                </Badge>
+              )}
               <Count>{item.nodes.length}</Count>
-              <IconButton onClick={(event) => toggleOpen(event, type, item)}>
+              <IconButton
+                onClick={(event) => toggleOpen(event, type, item)}
+                aria-label={`${selection ? 'Collapse' : 'Expand'} details for ${title}`}
+                aria-expanded={!!selection}
+                aria-controls={detailsId}
+              >
                 <Icon style={{ transform: `rotate(${selection ? -180 : 0}deg)` }} />
               </IconButton>
             </HeaderBar>
             {selection ? (
               <Details
+                id={detailsId}
                 item={item}
                 type={type}
                 selection={selection}
                 handleSelectionChange={handleSelectionChange}
               />
-            ) : null}
+            ) : (
+              <div id={detailsId} />
+            )}
           </Wrapper>
         );
       })

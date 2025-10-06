@@ -75,13 +75,12 @@ export async function renderToCanvas(
   const { renderElement, unmountElement } = await import('@storybook/react-dom-shim');
   const Story = unboundStoryFn as FC<StoryContext<ReactRenderer>>;
 
-  // eslint-disable-next-line no-underscore-dangle
   const isPortableStory = storyContext.parameters.__isPortableStory;
 
   const content = isPortableStory ? (
     <Story {...storyContext} />
   ) : (
-    <ErrorBoundary showMain={showMain} showException={showException}>
+    <ErrorBoundary key={storyContext.id} showMain={showMain} showException={showException}>
       <Story {...storyContext} />
     </ErrorBoundary>
   );
@@ -98,7 +97,9 @@ export async function renderToCanvas(
     unmountElement(canvasElement);
   }
 
-  const act = await getAct();
+  // Disable act in docs, see:
+  // https://github.com/storybookjs/storybook/issues/30356
+  const act = await getAct({ disableAct: storyContext.viewMode === 'docs' });
   await new Promise<void>(async (resolve, reject) => {
     actQueue.push(async () => {
       try {

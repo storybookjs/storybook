@@ -2,21 +2,23 @@ import React, { type FC, Fragment, useEffect } from 'react';
 
 import type { Channel } from 'storybook/internal/channels';
 
-import { DocsContext } from '@storybook/blocks';
 import { global } from '@storybook/global';
 
 import type { Decorator, Loader, ReactRenderer } from '@storybook/react-vite';
-// TODO add empty preview
-// import * as designs from '@storybook/addon-designs/preview';
 import { definePreview } from '@storybook/react-vite';
 
 import addonA11y from '@storybook/addon-a11y';
+// TODO add empty preview
+// import * as designs from '@storybook/addon-designs/preview';
 import addonDocs from '@storybook/addon-docs';
+import { DocsContext } from '@storybook/addon-docs/blocks';
 import addonThemes from '@storybook/addon-themes';
 import addonTest from '@storybook/addon-vitest';
 
+import addonPseudoStates from 'storybook-addon-pseudo-states';
 import { DocsContext as DocsContextProps, useArgs } from 'storybook/preview-api';
 import type { PreviewWeb } from 'storybook/preview-api';
+import { sb } from 'storybook/test';
 import {
   Global,
   ThemeProvider,
@@ -27,10 +29,20 @@ import {
   useTheme,
 } from 'storybook/theming';
 
+import { DocsPageWrapper } from '../addons/docs/src/blocks/components';
 import * as templatePreview from '../core/template/stories/preview';
-import { DocsPageWrapper } from '../lib/blocks/src/components';
 import '../renderers/react/template/components/index';
 import { isChromatic } from './isChromatic';
+
+sb.mock('../core/template/stories/test/ModuleMocking.utils.ts');
+sb.mock('../core/template/stories/test/ModuleSpyMocking.utils.ts', { spy: true });
+sb.mock('../core/template/stories/test/ModuleAutoMocking.utils.ts');
+/* eslint-disable depend/ban-dependencies */
+sb.mock(import('lodash-es'));
+sb.mock(import('lodash-es/add'));
+sb.mock(import('lodash-es/sum'));
+sb.mock(import('uuid'));
+/* eslint-enable depend/ban-dependencies */
 
 const { document } = global;
 globalThis.CONFIG_TYPE = 'DEVELOPMENT';
@@ -142,7 +154,6 @@ const loaders = [
    * The DocsContext will then be added via the decorator below.
    */
   async ({ parameters: { relativeCsfPaths, attached = true } }) => {
-    // eslint-disable-next-line no-underscore-dangle
     const preview = (window as any).__STORYBOOK_PREVIEW__ as PreviewWeb<ReactRenderer> | undefined;
     const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel | undefined;
     // __STORYBOOK_PREVIEW__ and __STORYBOOK_ADDONS_CHANNEL__ is set in the PreviewWeb constructor
@@ -152,7 +163,7 @@ const loaders = [
     }
     const csfFiles = await Promise.all(
       (relativeCsfPaths as string[]).map(async (blocksRelativePath) => {
-        const projectRelativePath = `./lib/blocks/src/${blocksRelativePath.replace(
+        const projectRelativePath = `./addons/docs/src/blocks/${blocksRelativePath.replace(
           /^..\//,
           ''
         )}.tsx`;
@@ -205,7 +216,7 @@ const decorators = [
    * This decorator renders the stories side-by-side, stacked or default based on the theme switcher
    * in the toolbar
    */
-  (StoryFn, { globals, playFunction, args, storyGlobals, parameters }) => {
+  (StoryFn, { globals, playFunction, testFunction, args, storyGlobals, parameters }) => {
     let theme = globals.sb_theme;
     let showPlayFnNotice = false;
 
@@ -213,10 +224,13 @@ const decorators = [
     // but this is acceptable, I guess
     // we need to ensure only a single rendering in chromatic
     // a more 'correct' approach would be to set a specific theme global on every story that has a playFunction
-    if (playFunction && args.autoplay !== false && !(theme === 'light' || theme === 'dark')) {
+    if (
+      (testFunction || (playFunction && args.autoplay !== false)) &&
+      !(theme === 'light' || theme === 'dark')
+    ) {
       theme = 'light';
       showPlayFnNotice = true;
-    } else if (isChromatic() && !storyGlobals.sb_theme && !playFunction) {
+    } else if (isChromatic() && !storyGlobals.sb_theme && !playFunction && !testFunction) {
       theme = 'stacked';
     }
 
@@ -271,8 +285,8 @@ const decorators = [
               <>
                 <PlayFnNotice>
                   <span>
-                    Detected play function in Chromatic. Rendering only light theme to avoid
-                    multiple play functions in the same story.
+                    Detected play/test function in Chromatic. Rendering only light theme to avoid
+                    multiple play/test functions in the same story.
                   </span>
                 </PlayFnNotice>
                 <div style={{ marginBottom: 20 }} />
@@ -389,7 +403,14 @@ const parameters = {
 };
 
 export default definePreview({
-  addons: [addonDocs(), addonThemes(), addonA11y(), addonTest(), templatePreview],
+  addons: [
+    addonDocs(),
+    addonThemes(),
+    addonA11y(),
+    addonTest(),
+    addonPseudoStates(),
+    templatePreview,
+  ],
   decorators,
   loaders,
   tags: ['test', 'vitest'],

@@ -1,5 +1,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
+
 import { StringEmpty, StringRequired, StringUndefined } from './my-props';
 
 export default defineComponent({

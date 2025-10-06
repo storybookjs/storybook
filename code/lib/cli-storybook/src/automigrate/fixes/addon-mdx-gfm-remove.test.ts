@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { JsPackageManager, PackageJson } from 'storybook/internal/common';
+import { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { CheckOptions, RunOptions } from '../types';
@@ -18,15 +18,19 @@ vi.mock('node:fs/promises', async () => {
 });
 
 vi.mock('../helpers/mainConfigFile', () => {
-  const updateMainConfig = vi.fn().mockImplementation(({ mainConfigPath, dryRun }, callback) => {
+  const updateMainConfig = vi.fn().mockImplementation(({ mainConfigPath }, callback) => {
     return callback(mockConfigs.get(mainConfigPath));
   });
   return { updateMainConfig };
 });
 
-vi.mock('storybook/internal/cli', () => ({
-  getStorybookVersionSpecifier: vi.fn(),
-}));
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    removeAddon: vi.fn(),
+  };
+});
 
 // Mock ConfigFile type
 interface MockConfigFile {
@@ -46,16 +50,7 @@ const mockConfigs = new Map<string, MockConfigFile>();
 // Get reference to mocked readFile
 const readFileMock = vi.mocked(await import('node:fs/promises')).readFile;
 
-const mockPackageManager = {
-  retrievePackageJson: vi.fn(),
-  removeDependencies: vi.fn(),
-  runPackageCommand: vi.fn(),
-} as unknown as JsPackageManager;
-
-const mockPackageJson = {
-  dependencies: {},
-  devDependencies: {},
-} as PackageJson;
+const mockPackageManager = vi.mocked(JsPackageManager.prototype);
 
 const baseCheckOptions: CheckOptions = {
   packageManager: mockPackageManager,
@@ -65,6 +60,7 @@ const baseCheckOptions: CheckOptions = {
   } as StorybookConfigRaw,
   storybookVersion: '7.0.0',
   configDir: '.storybook',
+  storiesPaths: [],
 };
 
 interface AddonMdxGfmOptions {
@@ -73,7 +69,7 @@ interface AddonMdxGfmOptions {
 
 // Add type for migration object
 interface Migration {
-  check: (options: CheckOptions) => Promise<AddonMdxGfmOptions | null>;
+  check: (options: CheckOptions) => Promise<true | null>;
   run: (options: RunOptions<any>) => Promise<void>;
 }
 
@@ -82,6 +78,13 @@ const typedAddonMdxGfmRemove = addonMdxGfmRemove as Migration;
 describe('addon-mdx-gfm-remove migration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPackageManager.runPackageCommand = vi.fn();
+    Object.defineProperty(mockPackageManager, 'packageJsonPaths', {
+      value: [],
+      writable: true,
+      configurable: true,
+    });
+    mockPackageManager.removeDependencies = vi.fn();
     mockConfigs.clear();
   });
 
@@ -133,9 +136,7 @@ describe('addon-mdx-gfm-remove migration', () => {
           addons: ['@storybook/addon-mdx-gfm'],
         } as StorybookConfigRaw,
       });
-      expect(result).toEqual({
-        hasMdxGfm: true,
-      });
+      expect(result).toEqual(true);
     });
 
     it('detects mdx-gfm addon when present as object', async () => {
@@ -160,25 +161,25 @@ describe('addon-mdx-gfm-remove migration', () => {
           addons: [{ name: '@storybook/addon-mdx-gfm' }],
         } as StorybookConfigRaw,
       });
-      expect(result).toEqual({
-        hasMdxGfm: true,
-      });
+      expect(result).toEqual(true);
     });
   });
 
   describe('run phase', () => {
     it('removes mdx-gfm addon using storybook remove command', async () => {
-      await typedAddonMdxGfmRemove.run({
-        result: {
-          hasMdxGfm: true,
-        },
-        packageManager: mockPackageManager,
-      } as RunOptions<AddonMdxGfmOptions>);
+      const { removeAddon } = await import('storybook/internal/common');
 
-      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith('storybook', [
-        'remove',
-        '@storybook/addon-mdx-gfm',
-      ]);
+      await typedAddonMdxGfmRemove.run({
+        result: true,
+        packageManager: mockPackageManager as JsPackageManager,
+        configDir: '.storybook',
+      } as RunOptions<true>);
+
+      expect(removeAddon).toHaveBeenCalledWith('@storybook/addon-mdx-gfm', {
+        configDir: '.storybook',
+        skipInstall: true,
+        packageManager: mockPackageManager,
+      });
     });
   });
 });

@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { deprecate } from 'storybook/internal/client-logger';
 import { SourceType } from 'storybook/internal/docs-tools';
 import type {
@@ -22,6 +21,11 @@ import type { SvelteRenderer, SvelteStoryResult } from '../types';
 const skipSourceRender = (context: StoryContext<SvelteRenderer>) => {
   const sourceParams = context?.parameters.docs?.source;
   const isArgsStory = context?.parameters.__isArgsStory;
+
+  if ((context?.tags ?? []).some((tag) => tag.startsWith('svelte-csf'))) {
+    // skip if Svelte CSF, as the addon does its own source code generation
+    return true;
+  }
 
   // always render if the user forces it
   if (sourceParams?.type === SourceType.DYNAMIC) {
@@ -85,7 +89,6 @@ function getComponentName(component: any): string | null {
     return null;
   }
 
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { __docgen = {} } = component;
   let { name } = __docgen;
 
@@ -153,7 +156,6 @@ function getWrapperProperties(
     __docgen?: SvelteComponentDoc & { keywords?: string[] };
   }
 ) {
-  // eslint-disable-next-line @typescript-eslint/naming-convention
   const { __docgen } = component || {};
   if (!__docgen) {
     return { wrapper: false };

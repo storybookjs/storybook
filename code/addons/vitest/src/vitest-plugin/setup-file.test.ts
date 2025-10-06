@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { type Task, modifyErrorMessage } from './setup-file';
@@ -27,7 +26,7 @@ describe('modifyErrorMessage', () => {
 
     expect(task.result?.errors?.[0].message).toMatchInlineSnapshot(`
       "
-      [34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/my-story&addonPanel=storybook/test/panel[39m
+      [34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/my-story&addonPanel=storybook/interactions/panel[39m
 
       Original error message"
     `);

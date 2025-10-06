@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/naming-convention,storybook/prefer-pascal-case */
-import { expect, userEvent as globalUserEvent, within } from 'storybook/test';
+/* eslint-disable storybook/prefer-pascal-case */
+import { expect, within } from 'storybook/test';
 
 const meta = {
-  component: globalThis.Components.Button,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Button,
   parameters: { chromatic: { disable: true } },
   args: { label: 'Button' },
 };

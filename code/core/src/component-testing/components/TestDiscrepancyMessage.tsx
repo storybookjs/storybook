@@ -11,7 +11,7 @@ import { DOCUMENTATION_DISCREPANCY_LINK } from '../constants';
 const Wrapper = styled.div(({ theme: { color, typography, background } }) => ({
   textAlign: 'start',
   padding: '11px 15px',
-  fontSize: `${typography.size.s2}px`,
+  fontSize: `${typography.size.s2 - 1}px`,
   fontWeight: typography.weight.regular,
   lineHeight: '1rem',
   background: background.app,
@@ -48,7 +48,7 @@ export const TestDiscrepancyMessage = ({ browserTestStatus }: TestDiscrepancyMes
 
   return (
     <Wrapper>
-      This component test passed in {passed}, but the tests failed in {failed}.{' '}
+      This interaction test passed in {passed}, but the tests failed in {failed}.{' '}
       <Link href={docsUrl} target="_blank" withArrow>
         Learn what could cause this
       </Link>

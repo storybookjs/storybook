@@ -1,5 +1,5 @@
 import { normalizeStories } from 'storybook/internal/common';
-import type { DocsOptions, Options } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
 import type { Polka } from 'polka';
 
@@ -20,7 +20,7 @@ export async function getStoryIndexGenerator(
   };
   const stories = options.presets.apply('stories');
   const indexers = options.presets.apply('experimental_indexers', []);
-  const docsOptions = options.presets.apply<DocsOptions>('docs', {});
+  const docsOptions = options.presets.apply('docs');
   const normalizedStories = normalizeStories(await stories, directories);
 
   const generator = new StoryIndexGenerator(normalizedStories, {

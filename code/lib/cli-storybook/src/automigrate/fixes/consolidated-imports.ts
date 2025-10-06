@@ -1,16 +1,11 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { commonGlobOptions, getProjectRoot, versions } from 'storybook/internal/common';
-
-import picocolors from 'picocolors';
-import prompts from 'prompts';
-import { dedent } from 'ts-dedent';
+import { transformImportFiles, versions } from 'storybook/internal/common';
 
 import { consolidatedPackages } from '../helpers/consolidated-packages';
-import type { Fix, RunOptions } from '../types';
+import type { Fix } from '../types';
 
 export interface ConsolidatedOptions {
-  packageJsonFiles: string[];
   consolidatedDeps: Set<keyof typeof consolidatedPackages>;
 }
 
@@ -22,7 +17,7 @@ function transformPackageJson(content: string): string | null {
   const packagesToAdd = new Set<string>();
 
   // Check both dependencies and devDependencies
-  const depTypes = ['dependencies', 'devDependencies'] as const;
+  const depTypes = ['dependencies', 'devDependencies', 'peerDependencies'] as const;
 
   // Determine where storybook is installed and get its version
   let storybookVersion: string | null = null;
@@ -41,8 +36,8 @@ function transformPackageJson(content: string): string | null {
       for (const [dep] of Object.entries(packageJson[depType])) {
         if (dep in consolidatedPackages) {
           const newPackage = consolidatedPackages[dep as keyof typeof consolidatedPackages];
-          // Only add to packagesToAdd if it's not being consolidated into storybook/*
-          if (!newPackage.startsWith('storybook/')) {
+          // Only add to packagesToAdd if it's not being consolidated into storybook/* or if it's a sub-path of a consolidated package
+          if (!newPackage.startsWith('storybook/') && !newPackage.match(/(?:.*\/){2,}/)) {
             packagesToAdd.add(newPackage);
           }
           delete packageJson[depType][dep];
@@ -64,22 +59,6 @@ function transformPackageJson(content: string): string | null {
   }
 
   return hasChanges ? JSON.stringify(packageJson, null, 2) : null;
-}
-
-function transformImports(source: string) {
-  let hasChanges = false;
-  let transformed = source;
-
-  for (const [from, to] of Object.entries(consolidatedPackages)) {
-    // Match the package name when it's inside either single or double quotes
-    const regex = new RegExp(`(['"])${from}(\/.*)?\\1`, 'g');
-    if (regex.test(transformed)) {
-      transformed = transformed.replace(regex, `$1${to}$2$1`);
-      hasChanges = true;
-    }
-  }
-
-  return hasChanges ? transformed : null;
 }
 
 export const transformPackageJsonFiles = async (files: string[], dryRun: boolean) => {
@@ -108,53 +87,17 @@ export const transformPackageJsonFiles = async (files: string[], dryRun: boolean
   return errors;
 };
 
-export const transformImportFiles = async (files: string[], dryRun: boolean) => {
-  const errors: Array<{ file: string; error: Error }> = [];
-  const { default: pLimit } = await import('p-limit');
-  const limit = pLimit(10);
-
-  await Promise.all(
-    files.map((file) =>
-      limit(async () => {
-        try {
-          const contents = await readFile(file, 'utf-8');
-          const transformed = transformImports(contents);
-          if (!dryRun && transformed) {
-            await writeFile(file, transformed);
-          }
-        } catch (error) {
-          errors.push({ file, error: error as Error });
-        }
-      })
-    )
-  );
-
-  return errors;
-};
-
 export const consolidatedImports: Fix<ConsolidatedOptions> = {
   id: 'consolidated-imports',
-  versionRange: ['<9.0.0', '^9.0.0-0 || ^9.0.0'],
-  check: async () => {
-    const projectRoot = getProjectRoot();
-    // eslint-disable-next-line depend/ban-dependencies
-    const globby = (await import('globby')).globby;
-
-    const packageJsonFiles = await globby(['**/package.json'], {
-      ...commonGlobOptions(''),
-      ignore: ['**/node_modules/**'],
-      cwd: projectRoot,
-      gitignore: true,
-      absolute: true,
-    });
-
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packages',
+  check: async ({ packageManager }) => {
     const consolidatedDeps = new Set<keyof typeof consolidatedPackages>();
     const affectedPackageJSONFiles = new Set<string>();
 
     // Check all package.json files for consolidated packages
     await Promise.all(
-      packageJsonFiles.map(async (file) => {
-        const contents = await readFile(file, 'utf-8');
+      packageManager.packageJsonPaths.map(async (packageJsonPath) => {
+        const contents = await readFile(packageJsonPath, 'utf-8');
         const packageJson = JSON.parse(contents);
 
         // Check both dependencies and devDependencies
@@ -173,7 +116,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
         });
 
         if (hasConsolidatedDeps) {
-          affectedPackageJSONFiles.add(file);
+          affectedPackageJSONFiles.add(packageJsonPath);
         }
       })
     );
@@ -184,65 +127,41 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
 
     return {
       consolidatedDeps,
-      packageJsonFiles: Array.from(affectedPackageJSONFiles),
     };
   },
-  prompt: (result: ConsolidatedOptions) => {
-    return dedent`
-      Found package.json files that contain consolidated or renamed Storybook packages that need to be updated:
-      ${result.packageJsonFiles.map((file) => `- ${file}`).join('\n')}
-
-      We will automatically rename the following packages:
-      ${Array.from(result.consolidatedDeps)
-        .map((dep) => `- ${picocolors.red(dep)} -> ${picocolors.cyan(consolidatedPackages[dep])}`)
-        .join('\n')}
-
-      These packages have been renamed or consolidated into the main ${picocolors.cyan('storybook')} package and should be removed.
-      The main ${picocolors.cyan('storybook')} package will be added to devDependencies if not already present.
-      
-      Would you like to:
-      1. Update these package.json files
-      2. Scan your codebase and update any imports from these updated packages
-      
-      This will ensure your project is properly updated to use the new updated package structure and to use the latest package names.
-    `;
+  prompt: () => {
+    return "We've detected Storybook packages that have been renamed or consolidated. We'll update these packages by scanning your codebase and updating any imports from these packages.";
   },
-  run: async (options: RunOptions<ConsolidatedOptions>) => {
-    const { result, dryRun = false } = options;
-    const { packageJsonFiles } = result;
-
+  run: async ({ dryRun = false, packageManager, storiesPaths, configDir }) => {
     const errors: Array<{ file: string; error: Error }> = [];
 
-    const packageJsonErrors = await transformPackageJsonFiles(packageJsonFiles, dryRun);
+    const packageJsonErrors = await transformPackageJsonFiles(
+      packageManager.packageJsonPaths,
+      dryRun
+    );
     errors.push(...packageJsonErrors);
 
-    const projectRoot = getProjectRoot();
-
-    const defaultGlob = '**/*.{mjs,cjs,js,jsx,ts,tsx,mdx}';
-    // Find all files matching the glob pattern
-    const { glob } = await prompts({
-      type: 'text',
-      name: 'glob',
-      message: 'Enter a custom glob pattern to scan (or press enter to use default):',
-      initial: defaultGlob,
-    });
-
-    console.log('Scanning for affected files...');
-
     // eslint-disable-next-line depend/ban-dependencies
-    const globby = (await import('globby')).globby;
+    const { globby } = await import('globby');
+    const configFiles = await globby([`${configDir}/**/*`]);
 
-    const sourceFiles = await globby([glob], {
-      ...commonGlobOptions(''),
-      ignore: ['**/node_modules/**'],
-      dot: true,
-      cwd: projectRoot,
-      absolute: true,
-    });
+    const importErrors = await transformImportFiles(
+      [...storiesPaths, ...configFiles].filter(Boolean) as string[],
+      {
+        ...consolidatedPackages,
+        'storybook/internal/manager-api': 'storybook/manager-api',
+        'storybook/internal/preview-api': 'storybook/preview-api',
+        'storybook/internal/theming': 'storybook/theming',
+        'storybook/internal/theming/create': 'storybook/theming/create',
+        'storybook/internal/test': 'storybook/test',
+        'storybook/internal/actions': 'storybook/internal/actions',
+        'storybook/internal/actions/decorator': 'storybook/internal/actions/decorator',
+        'storybook/internal/highlight': 'storybook/internal/highlight',
+        'storybook/internal/viewport': 'storybook/internal/viewport',
+      },
+      !!dryRun
+    );
 
-    console.log(`Transforming ${sourceFiles.length} files...`);
-
-    const importErrors = await transformImportFiles(sourceFiles, dryRun);
     errors.push(...importErrors);
 
     if (errors.length > 0) {
@@ -252,10 +171,6 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
           .map(({ file, error }) => `- ${file}: ${error.message}`)
           .join('\n')}`
       );
-    }
-
-    if (!dryRun && result.packageJsonFiles.length > 0) {
-      await options.packageManager.installDependencies();
     }
   },
 };

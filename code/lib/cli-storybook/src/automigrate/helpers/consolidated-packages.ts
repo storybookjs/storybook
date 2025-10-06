@@ -7,6 +7,7 @@ export const consolidatedPackages = {
   '@storybook/client-logger': 'storybook/internal/client-logger',
   '@storybook/core-common': 'storybook/internal/common',
   '@storybook/core-events': 'storybook/internal/core-events',
+  '@storybook/csf': 'storybook/internal/csf',
   '@storybook/csf-tools': 'storybook/internal/csf-tools',
   '@storybook/docs-tools': 'storybook/internal/docs-tools',
   '@storybook/node-logger': 'storybook/internal/node-logger',
@@ -22,16 +23,9 @@ export const consolidatedPackages = {
   '@storybook/builder-manager': 'storybook/internal/builder-manager',
   '@storybook/components': 'storybook/internal/components',
   '@storybook/test': 'storybook/test',
-  '@storybook/addon-actions': 'storybook/actions',
-  '@storybook/addon-controls': 'storybook/internal/controls',
-  '@storybook/addon-toolbars': 'storybook/internal/toolbars',
-  '@storybook/addon-highlight': 'storybook/highlight',
-  '@storybook/addon-measure': 'storybook/measure',
-  '@storybook/addon-outline': 'storybook/outline',
-  '@storybook/addon-backgrounds': 'storybook/backgrounds',
-  '@storybook/addon-viewport': 'storybook/viewport',
   '@storybook/experimental-nextjs-vite': '@storybook/nextjs-vite',
   '@storybook/instrumenter': 'storybook/internal/instrumenter',
+  '@storybook/blocks': '@storybook/addon-docs/blocks',
 } as const;
 
 export type ConsolidatedPackage = keyof typeof consolidatedPackages;

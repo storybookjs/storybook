@@ -1,4 +1,5 @@
 import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   getBuilderOptions,
@@ -18,31 +19,14 @@ import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import TerserWebpackPlugin from 'terser-webpack-plugin';
 import { dedent } from 'ts-dedent';
-import { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin, ProvidePlugin } from 'webpack';
+import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
 import type { TypescriptOptions } from '../types';
 import { getVirtualModules } from './virtual-module-mapping';
 
-const getAbsolutePath = <I extends string>(input: I): I =>
-  dirname(require.resolve(join(input, 'package.json'))) as any;
-const maybeGetAbsolutePath = <I extends string>(input: I): I | false => {
-  try {
-    return getAbsolutePath(input);
-  } catch (e) {
-    return false;
-  }
-};
-
-const globalPath = maybeGetAbsolutePath(`@storybook/global`);
-
-// these packages are not pre-bundled because of react dependencies.
-// these are not dependencies of the builder anymore, thus resolving them can fail.
-// we should remove the aliases in 8.0, I'm not sure why they are here in the first place.
-const storybookPaths: Record<string, string> = {
-  ...(globalPath ? { [`@storybook/global`]: globalPath } : {}),
-};
+const { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin } = webpackModule;
 
 export default async (
   options: Options & { typescriptOptions: TypescriptOptions }
@@ -120,7 +104,7 @@ export default async (
 
   const externals: Record<string, string> = globalsNameReferenceMap;
   if (build?.test?.disableBlocks) {
-    externals['@storybook/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
+    externals['@storybook/addon-docs/blocks'] = '__STORYBOOK_BLOCKS_EMPTY_MODULE__';
   }
 
   const { virtualModules: virtualModuleMapping, entries: dynamicEntries } =
@@ -199,7 +183,6 @@ export default async (
           features?.developmentModeForBuild && isProd ? 'development' : process.env.NODE_ENV
         ),
       }),
-      new ProvidePlugin({ process: require.resolve('process/browser.js') }),
       isProd ? null : new HotModuleReplacementPlugin(),
       new CaseSensitivePathsPlugin(),
       quiet ? null : new ProgressPlugin({ modulesCount }),
@@ -215,7 +198,9 @@ export default async (
           enforce: 'post',
           use: [
             {
-              loader: require.resolve('@storybook/builder-webpack5/loaders/export-order-loader'),
+              loader: fileURLToPath(
+                import.meta.resolve('@storybook/builder-webpack5/loaders/export-order-loader')
+              ),
             },
           ],
         },
@@ -239,16 +224,6 @@ export default async (
       extensions: ['.mjs', '.js', '.jsx', '.ts', '.tsx', '.json', '.cjs'],
       modules: ['node_modules'].concat(envs.NODE_PATH || []),
       mainFields: ['browser', 'module', 'main'].filter(Boolean),
-      alias: storybookPaths,
-      fallback: {
-        stream: false,
-        path: require.resolve('path-browserify'),
-        assert: require.resolve('browser-assert'),
-        util: require.resolve('util'),
-        url: require.resolve('url'),
-        fs: false,
-        constants: require.resolve('constants-browserify'),
-      },
       // Set webpack to resolve symlinks based on whether the user has asked node to.
       // This feels like it should be default out-of-the-box in webpack :shrug:
       symlinks: !isPreservingSymlinks(),

@@ -6,10 +6,12 @@ import { OutlineSelector } from './OutlineSelector';
 import { ADDON_ID } from './constants';
 
 export default addons.register(ADDON_ID, () => {
-  addons.add(ADDON_ID, {
-    title: 'Outline',
-    type: types.TOOL,
-    match: ({ viewMode, tabId }) => !!(viewMode && viewMode.match(/^(story|docs)$/)) && !tabId,
-    render: () => <OutlineSelector />,
-  });
+  if (globalThis?.FEATURES?.outline) {
+    addons.add(ADDON_ID, {
+      title: 'Outline',
+      type: types.TOOL,
+      match: ({ viewMode, tabId }) => !!(viewMode && viewMode.match(/^(story|docs)$/)) && !tabId,
+      render: () => <OutlineSelector />,
+    });
+  }
 });

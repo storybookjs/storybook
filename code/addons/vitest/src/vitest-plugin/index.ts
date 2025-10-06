@@ -278,8 +278,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
               }
             : {}),
 
-          // @ts-expect-error: browser config requires `instances` property in Vitest 4
-          // It will be set to optional in the next version of Vitest
           browser: {
             commands: {
               getInitialGlobals: () => {

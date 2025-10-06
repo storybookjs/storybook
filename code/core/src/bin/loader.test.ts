@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
+import { deprecate } from 'storybook/internal/node-logger';
 
 import { addExtensionsToRelativeImports, resolveWithExtension } from './loader';
 
@@ -16,7 +16,7 @@ describe('loader', () => {
       const result = resolveWithExtension('./test.js', '/project/src/file.ts');
 
       expect(result).toBe('./test.js');
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(deprecate).not.toHaveBeenCalled();
     });
 
     it('should resolve extensionless import to .ts extension when file exists', () => {
@@ -27,8 +27,14 @@ describe('loader', () => {
       const result = resolveWithExtension('./utils', '/project/src/file.ts');
 
       expect(result).toBe('./utils.ts');
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Extensionless import'));
-      expect(logger.warn).toHaveBeenCalledWith('Resolved to "./utils.ts"');
+      expect(deprecate).toHaveBeenCalledWith(
+        expect.stringContaining('One or more extensionless imports detected: "./utils"')
+      );
+      expect(deprecate).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'For maximum compatibility, you should add an explicit file extension'
+        )
+      );
     });
 
     it('should resolve extensionless import to .js extension when file exists', () => {
@@ -39,27 +45,33 @@ describe('loader', () => {
       const result = resolveWithExtension('./utils', '/project/src/file.ts');
 
       expect(result).toBe('./utils.js');
-      expect(logger.warn).toHaveBeenCalledWith('Resolved to "./utils.js"');
+      expect(deprecate).toHaveBeenCalledWith(
+        expect.stringContaining('One or more extensionless imports detected: "./utils"')
+      );
     });
 
-    it('should warn when encountering an extensionless import', () => {
+    it('should show deprecation message when encountering an extensionless import', () => {
       vi.mocked(existsSync).mockReturnValue(true);
 
       resolveWithExtension('./utils', '/project/src/file.ts');
 
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Extensionless import detected: "./utils"')
+      expect(deprecate).toHaveBeenCalledWith(
+        expect.stringContaining('One or more extensionless imports detected: "./utils"')
+      );
+      expect(deprecate).toHaveBeenCalledWith(
+        expect.stringContaining('in file "/project/src/file.ts"')
       );
     });
 
-    it('should warn when file cannot be resolved', () => {
+    it('should return original path when file cannot be resolved', () => {
       vi.mocked(existsSync).mockReturnValue(false);
 
       const result = resolveWithExtension('./missing', '/project/src/file.ts');
 
       expect(result).toBe('./missing');
-      expect(logger.warn).toHaveBeenCalledWith('Could not resolve "./missing"');
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('ERR_MODULE_NOT_FOUND'));
+      expect(deprecate).toHaveBeenCalledWith(
+        expect.stringContaining('One or more extensionless imports detected: "./missing"')
+      );
     });
 
     it('should resolve relative to parent directory', () => {
@@ -70,6 +82,9 @@ describe('loader', () => {
       const result = resolveWithExtension('../utils', '/project/src/file.ts');
 
       expect(result).toBe('../utils.ts');
+      expect(deprecate).toHaveBeenCalledWith(
+        expect.stringContaining('One or more extensionless imports detected: "../utils"')
+      );
     });
   });
 
@@ -95,7 +110,7 @@ describe('loader', () => {
       testCases.forEach(({ input, expected }) => {
         const result = addExtensionsToRelativeImports(input, '/project/src/file.ts');
         expect(result).toBe(expected);
-        expect(logger.warn).not.toHaveBeenCalled();
+        expect(deprecate).not.toHaveBeenCalled();
       });
     });
 
@@ -176,7 +191,7 @@ describe('loader', () => {
 
       // Should not be modified since it doesn't start with ./ or ../
       expect(result).toBe(source);
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(deprecate).not.toHaveBeenCalled();
     });
 
     it('should handle single quotes', () => {

@@ -9,7 +9,7 @@ import type { LoadHook } from 'node:module';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { logger } from 'storybook/internal/node-logger';
+import { deprecate } from 'storybook/internal/node-logger';
 
 import { transform } from 'esbuild';
 import { dedent } from 'ts-dedent';
@@ -37,9 +37,11 @@ export function resolveWithExtension(importPath: string, currentFilePath: string
     return importPath;
   }
 
-  logger.warn(dedent`Extensionless import detected: "${importPath}" in file "${currentFilePath}".
+  deprecate(dedent`One or more extensionless imports detected: "${importPath}" in file "${currentFilePath}".
     For maximum compatibility, you should add an explicit file extension to this import.
-    Storybook will attempt to resolve it automatically, but this may change in the future.`);
+    Storybook will attempt to resolve it automatically, but this may change in the future.
+    If adding the extension results in an error from TypeScript, we recommend setting moduleResolution to "bundler" in tsconfig.json
+    or alternatively look into the allowImportingTsExtensions option.`);
 
   // Resolve the import path relative to the current file
   const currentDir = path.dirname(currentFilePath);
@@ -48,16 +50,10 @@ export function resolveWithExtension(importPath: string, currentFilePath: string
   for (const ext of supportedExtensions) {
     const candidatePath = `${absolutePath}${ext}`;
     if (existsSync(candidatePath)) {
-      logger.warn(`Resolved to "${importPath}${ext}"`);
       return `${importPath}${ext}`;
     }
   }
 
-  // If no file is found, warn about the likely error
-  logger.warn(`Could not resolve "${importPath}"`);
-  logger.warn(
-    `This will likely result in an ERR_MODULE_NOT_FOUND error. Please add an explicit file extension to the import.`
-  );
   return importPath;
 }
 

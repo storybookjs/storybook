@@ -1,3 +1,15 @@
+# v2.0.8 (Mon Oct 06 2025)
+
+#### 🐛 Bug Fix
+
+- Fix when addon-docs isn't installed [#60](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/60) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
 # v2.0.7 (Tue Aug 26 2025)
 
 #### 🐛 Bug Fix

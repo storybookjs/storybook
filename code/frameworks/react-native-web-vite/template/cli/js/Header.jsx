@@ -13,10 +13,9 @@ export const Header = ({ user, onLogin, onLogout, onCreateAccount }) => (
       <View style={styles.buttonContainer}>
         {user ? (
           <>
-            <>
-              <Text>Welcome, </Text>
-              <Text style={styles.userName}>{user.name}!</Text>
-            </>
+            <Text>Welcome, </Text>
+            <Text style={styles.userName}>{user.name}!</Text>
+
             <Button style={styles.button} size="small" onPress={onLogout} label="Log out" />
           </>
         ) : (

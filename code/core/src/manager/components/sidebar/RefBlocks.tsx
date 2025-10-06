@@ -3,12 +3,14 @@ import React, { Fragment, useCallback, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
 import { Button, ErrorFormatter, Link, Spaced, WithTooltip } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
 
 import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
 
+import { styled } from 'storybook/theming';
+
 import { Contained, Loader } from './Loader';
+import { NoResults } from './NoResults';
 
 const { window: globalWindow } = global;
 
@@ -79,8 +81,7 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
               this Storybook.
             </Text>
             <div>
-              {/* TODO: Make sure this button is working without the deprecated props */}
-              <Button small gray onClick={refresh}>
+              <Button size="small" variant="outline" onClick={refresh}>
                 <SyncIcon />
                 Refresh now
               </Button>
@@ -91,7 +92,7 @@ export const AuthBlock: FC<{ loginUrl: string; id: string }> = ({ loginUrl, id }
             <Text>Sign in to browse this Storybook.</Text>
             <div>
               {/* @ts-expect-error (non strict) */}
-              <Button small gray onClick={open}>
+              <Button size="small" variant="outline" onClick={open}>
                 <LockIcon />
                 Sign in
               </Button>
@@ -116,12 +117,11 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => (
             </ErrorDisplay>
           }
         >
-          {/* eslint-disable-next-line jsx-a11y/anchor-is-valid */}
           <Link isButton>
             View error <ChevronDownIcon />
           </Link>
         </WithTooltip>{' '}
-        <Link withArrow href="https://storybook.js.org/docs" cancel={false} target="_blank">
+        <Link withArrow href="https://storybook.js.org/docs?ref=ui" cancel={false} target="_blank">
           View docs
         </Link>
       </TextStyle>
@@ -136,29 +136,48 @@ const WideSpaced = styled(Spaced)({
   flex: 1,
 });
 
-export const EmptyBlock: FC<any> = ({ isMain }) => (
+export const EmptyBlock = ({ isMain, hasEntries }: { isMain: boolean; hasEntries: boolean }) => (
   <Contained>
     <FlexSpaced col={1}>
       <WideSpaced>
-        <Text>
-          {isMain ? (
-            <>
-              Oh no! Your Storybook is empty. Possible reasons why:
-              <ul>
-                <li>
-                  The glob specified in <code>main.js</code> isn't correct.
-                </li>
-                <li>No stories are defined in your story files.</li>
-                <li>You're using filter-functions, and all stories are filtered away.</li>
-              </ul>{' '}
-            </>
-          ) : (
-            <>
-              This composed storybook is empty, maybe you're using filter-functions, and all stories
-              are filtered away.
-            </>
-          )}
-        </Text>
+        {hasEntries ? (
+          <NoResults>
+            <strong>No stories found</strong>
+            <small>Your selected filters did not match any stories.</small>
+          </NoResults>
+        ) : isMain ? (
+          <Text>
+            Oh no! Your Storybook is empty. This can happen when:
+            <ul>
+              <li>
+                Your{' '}
+                <Link
+                  href="https://storybook.js.org/docs/api/main-config/main-config-stories?ref=ui"
+                  cancel={false}
+                  target="_blank"
+                >
+                  stories glob configuration
+                </Link>{' '}
+                does not match any files.{' '}
+              </li>
+              <li>
+                You have{' '}
+                <Link
+                  href="https://storybook.js.org/docs/writing-stories?ref=ui"
+                  cancel={false}
+                  target="_blank"
+                >
+                  no stories defined
+                </Link>{' '}
+                in your story files.{' '}
+              </li>
+            </ul>
+          </Text>
+        ) : (
+          <Text>
+            This composed Storybook is empty. Perhaps no stories match your selected filters.
+          </Text>
+        )}
       </WideSpaced>
     </FlexSpaced>
   </Contained>

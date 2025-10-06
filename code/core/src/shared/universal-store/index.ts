@@ -1,4 +1,3 @@
-import { isEqual } from 'es-toolkit';
 import { dedent } from 'ts-dedent';
 
 import { instances } from './instances';
@@ -259,10 +258,7 @@ export class UniversalStore<
     UniversalStore.isInternalConstructing = false;
 
     this.id = options.id;
-    this.actorId = globalThis.crypto
-      ? globalThis.crypto.randomUUID()
-      : // TODO: remove this fallback in SB 9.0 when we no longer support Node 18
-        Date.now().toString(36) + Math.random().toString(36).substring(2);
+    this.actorId = Date.now().toString(36) + Math.random().toString(36).substring(2);
     this.actorType = options.leader
       ? UniversalStore.ActorType.LEADER
       : UniversalStore.ActorType.FOLLOWER;
@@ -327,6 +323,7 @@ export class UniversalStore<
     this.environment = environmentOverrides?.environment ?? UniversalStore.preparation.environment;
 
     if (this.channel && this.environment) {
+      UniversalStore.preparation.resolve({ channel: this.channel, environment: this.environment });
       this.prepareThis({ channel: this.channel, environment: this.environment });
     } else {
       UniversalStore.preparation.promise.then(this.prepareThis);
@@ -603,6 +600,7 @@ export class UniversalStore<
             responseEvent,
           });
           this.emitToChannel(responseEvent, { actor: this.actor });
+          this.emitToListeners(responseEvent, { actor: this.actor });
           break;
         case UniversalStore.InternalEventType.LEADER_CREATED:
           // if a leader receives a LEADER_CREATED event it should not forward it,

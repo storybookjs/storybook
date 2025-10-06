@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { defineConfig, defineWorkspace } from 'vitest/config';
 
 export default defineWorkspace([
-  '.storybook/vitest.config.ts',
+  'vitest-storybook.config.mts',
   'addons/*/vitest.config.ts',
   'frameworks/*/vitest.config.ts',
   'lib/*/vitest.config.ts',
@@ -22,7 +22,7 @@ export default defineWorkspace([
  * @see https://circleci.com/docs/configuration-reference/#x86
  * @see .circleci/config.yml#L214
  */
-const threadCount = process.env.CI ? 7 : undefined;
+const threadCount = process.env.CI ? (process.platform === 'win32' ? 4 : 7) : undefined;
 
 export const vitestCommonConfig = defineConfig({
   test: {
@@ -36,7 +36,8 @@ export const vitestCommonConfig = defineConfig({
     passWithNoTests: true,
     clearMocks: true,
     setupFiles: [resolve(__dirname, './vitest-setup.ts')],
-    globals: true,
+    // Disable globals due to https://github.com/testing-library/user-event/pull/1176 not being released yet
+    globals: false,
     testTimeout: 10000,
     environment: 'node',
   },

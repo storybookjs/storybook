@@ -2,14 +2,15 @@ import type { ComponentProps, FC } from 'react';
 import React, { Component } from 'react';
 
 import { Button, Form } from 'storybook/internal/components';
+
+import { CheckIcon } from '@storybook/icons';
+
 import {
   eventToShortcut,
   shortcutMatchesShortcut,
   shortcutToHumanString,
-} from 'storybook/internal/manager-api';
-import { keyframes, styled } from 'storybook/internal/theming';
-
-import { CheckIcon } from '@storybook/icons';
+} from 'storybook/manager-api';
+import { keyframes, styled } from 'storybook/theming';
 
 import SettingsFooter from './SettingsFooter';
 
@@ -61,24 +62,25 @@ export type ValidationStates = 'valid' | 'error' | 'warn';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore-error (this only errors during compilation for production)
-export const TextInput: FC<ComponentProps<typeof Form.Input> & { valid: ValidationStates }> =
-  styled(Form.Input)<{ valid: ValidationStates }>(
-    ({ valid, theme }) =>
-      valid === 'error'
-        ? {
-            animation: `${theme.animation.jiggle} 700ms ease-out`,
-          }
-        : {},
-    {
-      display: 'flex',
-      width: 80,
-      flexDirection: 'column',
-      justifySelf: 'flex-end',
-      paddingLeft: 4,
-      paddingRight: 4,
-      textAlign: 'center',
-    }
-  );
+export const TextInput: FC<
+  ComponentProps<typeof Form.Input> & { valid: ValidationStates | undefined }
+> = styled(Form.Input)<{ valid: ValidationStates }>(
+  ({ valid, theme }) =>
+    valid === 'error'
+      ? {
+          animation: `${theme.animation.jiggle} 700ms ease-out`,
+        }
+      : {},
+  {
+    display: 'flex',
+    width: 80,
+    flexDirection: 'column',
+    justifySelf: 'flex-end',
+    paddingLeft: 4,
+    paddingRight: 4,
+    textAlign: 'center',
+  }
+);
 
 export const Fade = keyframes`
 0%,100% { opacity: 0; }
@@ -130,6 +132,10 @@ const shortcutLabels = {
   collapseAll: 'Collapse all items on sidebar',
   expandAll: 'Expand all items on sidebar',
   remount: 'Remount component',
+  openInEditor: 'Open story in editor',
+  copyStoryLink: 'Copy story link to clipboard',
+  // TODO: bring this back once we want to add shortcuts for this
+  // copyStoryName: 'Copy story name to clipboard',
 };
 
 export type Feature = keyof typeof shortcutLabels;
@@ -192,16 +198,21 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       return false;
     }
 
+    // Normalize special characters produced by Option/Alt on macOS (e.g. ['Ø','O'] -> 'O')
+    const normalizedShortcut = shortcut.map((key) =>
+      Array.isArray(key) ? key.at(-1) : key
+    ) as string[];
+
     // Check we don't match any other shortcuts
     const error = !!Object.entries(shortcutKeys).find(
       ([feature, { shortcut: existingShortcut }]) =>
         feature !== activeFeature &&
         existingShortcut &&
-        shortcutMatchesShortcut(shortcut, existingShortcut)
+        shortcutMatchesShortcut(normalizedShortcut, existingShortcut)
     );
 
     return this.setState({
-      shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut, error } },
+      shortcutKeys: { ...shortcutKeys, [activeFeature]: { shortcut: normalizedShortcut, error } },
     });
   };
 
@@ -267,9 +278,8 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       : undefined;
   };
 
-  displayError = (activeElement: Feature): ValidationStates => {
+  displayError = (activeElement: Feature): ValidationStates | undefined => {
     const { activeFeature, shortcutKeys } = this.state;
-    // @ts-expect-error (non strict)
     return activeElement === activeFeature && shortcutKeys[activeElement].error === true
       ? 'error'
       : undefined;

@@ -2,9 +2,10 @@ import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'reac
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
-import { useStorybookApi } from 'storybook/internal/manager-api';
 
 import { global } from '@storybook/global';
+
+import { useStorybookApi } from 'storybook/manager-api';
 
 import { matchesKeyCode, matchesModifiers } from '../../keybinding';
 import { cycle, isAncestor, scrollIntoView } from '../../utils/tree';
@@ -143,10 +144,8 @@ export const useHighlighted = ({
           // @ts-expect-error (non strict)
           const { itemId, refId } = highlightedRef.current;
           const item = api.resolveStory(itemId, refId === 'storybook_internal' ? undefined : refId);
-          // @ts-expect-error (non strict)
-          if (item.type === 'component') {
+          if (item?.type === 'component') {
             api.emit(PRELOAD_ENTRIES, {
-              // @ts-expect-error (non strict)
               ids: [item.children[0]],
               options: { target: refId },
             });
@@ -157,7 +156,7 @@ export const useHighlighted = ({
 
     document.addEventListener('keydown', navigateTree);
     return () => document.removeEventListener('keydown', navigateTree);
-  }, [isLoading, isBrowsing, highlightedRef, highlightElement]);
+  }, [api, containerRef, isLoading, isBrowsing, highlightedRef, highlightElement]);
 
   // @ts-expect-error (non strict)
   return [highlighted, updateHighlighted, highlightedRef];

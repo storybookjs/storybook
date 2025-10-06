@@ -1,4 +1,4 @@
-import type { JsPackageManager, PackageJson, PackageManagerName } from 'storybook/internal/common';
+import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 export interface CheckOptions {
@@ -9,17 +9,20 @@ export interface CheckOptions {
   storybookVersion: string;
   previewConfigPath?: string;
   mainConfigPath?: string;
+  storiesPaths: string[];
 }
 
 export interface RunOptions<ResultType> {
   packageManager: JsPackageManager;
-  packageJson: PackageJson;
   result: ResultType;
   dryRun?: boolean;
   mainConfigPath: string;
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
+  configDir: string;
   skipInstall?: boolean;
+  storybookVersion: string;
+  storiesPaths: string[];
 }
 
 /**
@@ -34,16 +37,12 @@ export type Prompt = 'auto' | 'manual' | 'notification' | 'command';
 
 type BaseFix<ResultType = any> = {
   id: string;
-  /**
-   * The from/to version range of Storybook that this fix applies to. The strings are semver ranges.
-   * The versionRange will only be checked if the automigration is part of an upgrade. If the
-   * automigration is not part of an upgrade but rather called via `automigrate` CLI, the check
-   * function should handle the version check.
-   */
-  versionRange: [from: string, to: string];
   check: (options: CheckOptions) => Promise<ResultType | null>;
-  prompt: (result: ResultType) => string;
-  promptDefaultValue?: boolean;
+  /** Keep the prompt message short and concise. */
+  prompt: () => string;
+  /** Whether the automigration is selected by default when the user is prompted. */
+  defaultSelected?: boolean;
+  link?: string;
 };
 
 type PromptType<ResultType = any, T = Prompt> =
@@ -75,7 +74,6 @@ export enum PreCheckFailure {
 
 export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageManager'> {
   packageManager: JsPackageManager;
-  packageJson: PackageJson;
   mainConfigPath: string;
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
@@ -85,6 +83,7 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   /** Whether the migration is part of an upgrade. */
   isUpgrade: boolean;
   isLatest: boolean;
+  storiesPaths: string[];
 }
 export interface AutofixOptionsFromCLI {
   fixId?: FixId;
@@ -97,6 +96,7 @@ export interface AutofixOptionsFromCLI {
   renderer?: string;
   skipInstall?: boolean;
   hideMigrationSummary?: boolean;
+  skipDoctor?: boolean;
 }
 
 export enum FixStatus {

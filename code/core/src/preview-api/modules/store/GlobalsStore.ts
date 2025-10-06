@@ -62,5 +62,11 @@ export class GlobalsStore {
 
   update(newGlobals: Globals) {
     this.globals = { ...this.globals, ...this.filterAllowedGlobals(newGlobals) };
+
+    for (const key in newGlobals) {
+      if (newGlobals[key] === undefined) {
+        this.globals[key] = this.initialGlobals[key];
+      }
+    }
   }
 }

@@ -2,8 +2,8 @@ import type { ComponentProps, FC } from 'react';
 import React from 'react';
 
 import { Button } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
-import type { Addon_SidebarTopType } from 'storybook/internal/types';
+
+import { styled } from 'storybook/theming';
 
 import { Brand } from './Brand';
 import type { MenuList, SidebarMenuProps } from './Menu';
@@ -12,7 +12,6 @@ import { SidebarMenu } from './Menu';
 export interface HeadingProps {
   menuHighlighted?: boolean;
   menu: MenuList;
-  extra: Addon_SidebarTopType[];
   skipLinkHref?: string;
   isLoading: boolean;
   onMenuClick?: SidebarMenuProps['onClick'];
@@ -82,7 +81,6 @@ export const Heading: FC<HeadingProps & ComponentProps<typeof HeadingWrapper>> =
   menuHighlighted = false,
   menu,
   skipLinkHref,
-  extra,
   isLoading,
   onMenuClick,
   ...props
@@ -101,7 +99,6 @@ export const Heading: FC<HeadingProps & ComponentProps<typeof HeadingWrapper>> =
         <Brand />
       </BrandArea>
 
-      {isLoading ? null : extra.map(({ id, render: Render }) => <Render key={id} />)}
       <SidebarMenu menu={menu} isHighlighted={menuHighlighted} onClick={onMenuClick} />
     </HeadingWrapper>
   );

@@ -5,12 +5,12 @@ import type {
   CreateNewStoryRequestPayload,
   FileComponentSearchResponsePayload,
 } from 'storybook/internal/core-events';
-import { styled } from 'storybook/internal/theming';
 
 import { ChevronDownIcon, ChevronRightIcon, ComponentIcon } from '@storybook/icons';
 
 import type { VirtualItem } from '@tanstack/react-virtual';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { styled } from 'storybook/theming';
 
 import { useArrowKeyNavigation } from './FIleSearchList.utils';
 import {

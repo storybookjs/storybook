@@ -1,4 +1,3 @@
-/* eslint-disable no-underscore-dangle */
 import { writeFile } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -54,11 +53,10 @@ export function initializeWhatsNew(
           return response.json();
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-throw-literal
         throw response;
       })) as WhatsNewResponse;
 
-      const main = await loadMainConfig({ configDir: options.configDir, noCache: true });
+      const main = await loadMainConfig({ configDir: options.configDir });
       const disableWhatsNewNotifications =
         (main.core as CoreConfig)?.disableWhatsNewNotifications === true;
 

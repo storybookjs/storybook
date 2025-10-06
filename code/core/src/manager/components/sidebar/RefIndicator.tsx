@@ -3,8 +3,6 @@ import React, { forwardRef, useCallback, useMemo } from 'react';
 
 import type { TooltipLinkListLink } from 'storybook/internal/components';
 import { Spaced, TooltipLinkList, WithTooltip } from 'storybook/internal/components';
-import { useStorybookApi } from 'storybook/internal/manager-api';
-import { styled, useTheme } from 'storybook/internal/theming';
 
 import { global } from '@storybook/global';
 import {
@@ -20,6 +18,8 @@ import {
 } from '@storybook/icons';
 
 import { transparentize } from 'polished';
+import { useStorybookApi } from 'storybook/manager-api';
+import { styled, useTheme } from 'storybook/theming';
 
 import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList';
 import type { getStateType } from '../../utils/tree';
@@ -308,7 +308,10 @@ const ReadDocsMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message href="https://storybook.js.org/docs/sharing/storybook-composition" target="_blank">
+    <Message
+      href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui"
+      target="_blank"
+    >
       <DocumentIcon color={theme.color.green} />
       <div>
         <MessageTitle>Read Composition docs</MessageTitle>
@@ -351,7 +354,10 @@ const PerformanceDegradedMessage: FC = () => {
   const theme = useTheme();
 
   return (
-    <Message href="https://storybook.js.org/docs/sharing/storybook-composition" target="_blank">
+    <Message
+      href="https://storybook.js.org/docs/sharing/storybook-composition?ref=ui"
+      target="_blank"
+    >
       <LightningIcon color={theme.color.gold} />
       <div>
         <MessageTitle>Reduce lag</MessageTitle>

@@ -9,7 +9,7 @@ import {
 } from '@angular/platform-browser/animations';
 import { describe, expect, it, vi } from 'vitest';
 
-import { NgModuleMetadata } from '../../types';
+import type { NgModuleMetadata } from '../../types';
 import { WithOfficialModule } from '../__testfixtures__/test.module';
 import { PropertyExtractor } from './PropertyExtractor';
 

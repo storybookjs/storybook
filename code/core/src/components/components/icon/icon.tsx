@@ -2,9 +2,10 @@ import type { ComponentProps } from 'react';
 import React, { memo } from 'react';
 
 import { deprecate, logger } from 'storybook/internal/client-logger';
-import { styled } from 'storybook/internal/theming';
 
 import * as StorybookIcons from '@storybook/icons';
+
+import { styled } from 'storybook/theming';
 
 export type IconType = keyof typeof icons;
 type NewIconTypes = (typeof icons)[IconType];

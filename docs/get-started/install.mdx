@@ -53,6 +53,48 @@ The command above will make the following changes to your local environment:
 
 <YouTubeCallout id="CtfU1UnizHU" title="New Storybook" style={{ marginTop: '1em' }} />
 
+## Project requirements
+
+Storybook is designed to work with a variety of frameworks and environments. If your project is using one of the packages listed here, please ensure that you have the following versions installed:
+
+<div style={{ columns: 2, marginBottom: '1.5rem' }}>
+- Angular 18+
+- Lit 3+
+- Next.js 14+
+- Node.js 20+
+- npm 10+
+- pnpm 9+
+- Preact 8+
+- React Native 0.72+
+- React Native Web 0.19+
+- Svelte 5+
+- SvelteKit 1+
+- TypeScript 4.9+
+- Vite 5+
+- Vitest 3+
+- Vue 3+
+- Webpack 5+
+- Yarn 4+
+</div>
+
+Additionally, the Storybook app supports the following browsers:
+
+- Chrome 131+
+- Edge 134+
+- Firefox 136+
+- Safari 18.3+
+- Opera 117+
+
+<details>
+<summary>How do I use Storybook with older browsers?</summary>
+
+You can use Storybook with older browsers in two ways:
+
+1. Use a version of Storybook prior to `9.0.0`, which will have less strict requirements.
+2. Develop or build your Storybook in ["preview-only" mode](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers), which can be used in older, unsupported browsers.
+
+</details>
+
 <IfRenderer renderer="react">
   ## Run the Setup Wizard
 
@@ -223,13 +265,11 @@ There are some noteworthy items here:
 
   <IfRenderer renderer="html">
     * [Storybook's HTML Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-vite) for more information on how to set up Storybook in your HTML project with Vite.
-    * [Storybook's HTML Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-webpack5) for more information on how to set up Storybook in your HTML project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="preact">
     * Storybook's Preact Vite [framework documentation](./frameworks/preact-vite.mdx) for more information on how to set up Storybook in your Preact project with Vite.
-    * [Storybook's Preact Webpack README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/preact-webpack5) for more information on how to set up Storybook in your Preact project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
@@ -245,26 +285,23 @@ There are some noteworthy items here:
   </IfRenderer>
 
   <IfRenderer renderer="solid">
-    * [Storybook's SolidJS README](https://github.com/storybookjs/solidjs) for more information on how to set up Storybook in your SolidJS project.
+    * [Storybook's SolidJS README](https://github.com/solidjs-community/storybook) for more information on how to set up Storybook in your SolidJS project.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="svelte">
     * Storybook's SvelteKit [framework documentation](./frameworks/sveltekit.mdx) for more information on how to set up Storybook in your SvelteKit project.
     * Storybook's Svelte Vite [framework documentation](./frameworks/svelte-vite.mdx) for more information on how to set up Storybook in your Svelte project with Vite.
-    * Storybook's Svelte Webpack [framework documentation](./frameworks/svelte-webpack5.mdx) for more information on how to set up Storybook in your Svelte project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="vue">
     * Storybook's Vue 3 Vite [framework documentation](./frameworks/vue3-vite.mdx) for more information on how to set up Storybook in your Vue 3 project with Vite.
-    * Storybook's Vue 3 Webpack [framework documentation](./frameworks/vue3-webpack5.mdx) for more information on how to set up Storybook in your Vue 3 project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 
   <IfRenderer renderer="web-components">
     * Storybook's Web Components Vite [framework documentation](./frameworks/web-components-vite.mdx) for more information on how to set up Storybook in your Web Components project with Vite.
-    * Storybook's Web Components Webpack [framework documentation](./frameworks/web-components-webpack5.mdx) for more information on how to set up Storybook in your Web Components project with Webpack 5.
     * [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
   </IfRenderer>
 </details>

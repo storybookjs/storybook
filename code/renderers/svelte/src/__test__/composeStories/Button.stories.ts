@@ -19,7 +19,7 @@ const meta = {
     },
   },
   excludeStories: /.*ImNotAStory$/,
-} satisfies Meta<Button>;
+} satisfies Meta<typeof Button>;
 
 export default meta;
 type CSF3Story = StoryObj<typeof meta>;
@@ -53,7 +53,6 @@ const getCaptionForLocale = (locale: string) => {
   }
 };
 
-// @ts-expect-error -- incompatibility with Svelte 5 types and CSF
 export const CSF2StoryWithLocale: CSF2Story<typeof StoryWithLocaleComponent> = (
   args,
   { globals }
@@ -105,7 +104,7 @@ export const CSF3Button: CSF3Story = {
   args: { label: 'foo' },
 };
 
-export const CSF3ButtonWithRender: StoryObj<CustomRenderComponent> = {
+export const CSF3ButtonWithRender: StoryObj<typeof CustomRenderComponent> = {
   args: {
     buttonProps: CSF3Button.args,
   },

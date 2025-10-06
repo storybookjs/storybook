@@ -2,7 +2,8 @@ import type { FC } from 'react';
 import React from 'react';
 
 import { Link } from 'storybook/internal/components';
-import { styled } from 'storybook/internal/theming';
+
+import { styled } from 'storybook/theming';
 
 const Footer = styled.div(({ theme }) => ({
   display: 'flex',
@@ -17,7 +18,7 @@ const Footer = styled.div(({ theme }) => ({
 }));
 const SettingsFooter: FC<any> = (props) => (
   <Footer {...props}>
-    <Link secondary href="https://storybook.js.org" cancel={false} target="_blank">
+    <Link secondary href="https://storybook.js.org?ref=ui" cancel={false} target="_blank">
       Docs
     </Link>
     <Link secondary href="https://github.com/storybookjs/storybook" cancel={false} target="_blank">
@@ -25,7 +26,7 @@ const SettingsFooter: FC<any> = (props) => (
     </Link>
     <Link
       secondary
-      href="https://storybook.js.org/community#support"
+      href="https://storybook.js.org/community?ref=ui#support"
       cancel={false}
       target="_blank"
     >

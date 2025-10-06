@@ -1,8 +1,8 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import type { Combo } from 'storybook/internal/manager-api';
-import { Consumer } from 'storybook/internal/manager-api';
+import type { Combo } from 'storybook/manager-api';
+import { Consumer } from 'storybook/manager-api';
 
 import { NotificationList } from '../components/notifications/NotificationList';
 

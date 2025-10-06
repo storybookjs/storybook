@@ -1,11 +1,15 @@
 // this file tests Typescript types that's why there are no assertions
-import { describe, it } from 'vitest';
+import { describe, expectTypeOf, it } from 'vitest';
 
 import { satisfies } from 'storybook/internal/common';
-import type { Canvas, ComponentAnnotations, StoryAnnotations } from 'storybook/internal/types';
+import type {
+  Args,
+  Canvas,
+  ComponentAnnotations,
+  StoryAnnotations,
+} from 'storybook/internal/types';
 
-import { expectTypeOf } from 'expect-type';
-import type { ComponentProps, SvelteComponent } from 'svelte';
+import type { Component, ComponentProps } from 'svelte';
 
 import Button from './__test__/Button.svelte';
 import Decorator2 from './__test__/Decorator2.svelte';
@@ -13,15 +17,15 @@ import Decorator1 from './__test__/Decorator.svelte';
 import type { Decorator, Meta, StoryObj } from './public-types';
 import type { SvelteRenderer } from './types';
 
-type SvelteStory<Component extends SvelteComponent, Args, RequiredArgs> = StoryAnnotations<
-  SvelteRenderer<Component>,
+type SvelteStory<Comp extends Component<any, any, any>, Args, RequiredArgs> = StoryAnnotations<
+  SvelteRenderer<Comp>,
   Args,
   RequiredArgs
 >;
 
 describe('Meta', () => {
   it('Generic parameter of Meta can be a component', () => {
-    const meta: Meta<Button> = {
+    const meta: Meta<typeof Button> = {
       component: Button,
       args: {
         label: 'good',
@@ -29,8 +33,8 @@ describe('Meta', () => {
       },
     };
 
-    expectTypeOf(meta).toMatchTypeOf<
-      ComponentAnnotations<SvelteRenderer<Button>, { disabled: boolean; label: string }>
+    expectTypeOf(meta).toExtend<
+      ComponentAnnotations<SvelteRenderer<typeof Button>, { disabled: boolean; label: string }>
     >();
   });
 
@@ -40,78 +44,41 @@ describe('Meta', () => {
       args: { label: 'good', disabled: false },
     };
 
-    expectTypeOf(meta).toMatchTypeOf<
+    expectTypeOf(meta).toExtend<
       ComponentAnnotations<SvelteRenderer, { disabled: boolean; label: string }>
     >();
-  });
-
-  it('Events are inferred from component', () => {
-    const meta: Meta<Button> = {
-      component: Button,
-      args: {
-        label: 'good',
-        disabled: false,
-      },
-      render: (args) => ({
-        Component: Button,
-        props: args,
-        on: {
-          mousemove: (event) => {
-            expectTypeOf(event).toMatchTypeOf<MouseEvent>();
-          },
-        },
-      }),
-    };
-    expectTypeOf(meta).toMatchTypeOf<Meta<Button>>();
-  });
-
-  it('Events fallback to custom events when no component is specified', () => {
-    const meta: Meta<{ disabled: boolean; label: string }> = {
-      component: Button,
-      args: { label: 'good', disabled: false },
-      render: (args) => ({
-        Component: Button,
-        props: args,
-        on: {
-          mousemove: (event) => {
-            expectTypeOf(event).toMatchTypeOf<CustomEvent>();
-          },
-        },
-      }),
-    };
-    expectTypeOf(meta).toMatchTypeOf<Meta<Button>>();
   });
 });
 
 describe('StoryObj', () => {
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = satisfies<Meta<Button>>()({
+    const meta = satisfies<Meta<typeof Button>>()({
       component: Button,
       args: { label: 'good' },
     });
 
     type Actual = StoryObj<typeof meta>;
     type Expected = SvelteStory<
-      Button,
+      typeof Button,
       { disabled: boolean; label: string },
       { disabled: boolean; label?: string }
     >;
-    expectTypeOf<Actual>().toMatchTypeOf<Expected>();
+    expectTypeOf<Actual>().toExtend<Expected>();
   });
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = satisfies<Meta<Button>>()({ component: Button });
+      const meta = satisfies<Meta<typeof Button>>()({ component: Button });
 
       type Expected = SvelteStory<
-        Button,
+        typeof Button,
         { disabled: boolean; label: string },
         { disabled: boolean; label: string }
       >;
-      expectTypeOf<StoryObj<typeof meta>>().toMatchTypeOf<Expected>();
+      expectTypeOf<StoryObj<typeof meta>>().toExtend<Expected>();
     }
     {
-      const meta = satisfies<Meta<Button>>()({
+      const meta = satisfies<Meta<typeof Button>>()({
         component: Button,
         args: { label: 'good' },
       });
@@ -119,11 +86,11 @@ describe('StoryObj', () => {
       const Basic: StoryObj<typeof meta> = {};
 
       type Expected = SvelteStory<
-        Button,
+        typeof Button,
         { disabled: boolean; label: string },
         { disabled: boolean; label?: string }
       >;
-      expectTypeOf(Basic).toMatchTypeOf<Expected>();
+      expectTypeOf(Basic).toExtend<Expected>();
     }
     {
       const meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
@@ -133,18 +100,18 @@ describe('StoryObj', () => {
       };
 
       type Expected = SvelteStory<
-        Button,
+        typeof Button,
         { disabled: boolean; label: string },
         { disabled: boolean; label: string }
       >;
-      expectTypeOf(Basic).toMatchTypeOf<Expected>();
+      expectTypeOf(Basic).toExtend<Expected>();
     }
   });
 
   it('Component can be used as generic parameter for StoryObj', () => {
-    expectTypeOf<StoryObj<Button>>().toMatchTypeOf<
+    expectTypeOf<StoryObj<typeof Button>>().toExtend<
       SvelteStory<
-        Button,
+        typeof Button,
         { disabled: boolean; label: string },
         { disabled?: boolean; label?: string }
       >
@@ -156,7 +123,7 @@ type ThemeData = 'light' | 'dark';
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
-    const meta = satisfies<Meta<ComponentProps<Button> & { theme: ThemeData }>>()({
+    const meta = satisfies<Meta<ComponentProps<typeof Button> & { theme: ThemeData }>>()({
       component: Button,
       args: { disabled: false },
       render: (args, { component }) => {
@@ -170,11 +137,11 @@ describe('Story args can be inferred', () => {
     const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
 
     type Expected = SvelteStory<
-      Button,
+      typeof Button,
       { theme: ThemeData; disabled: boolean; label: string },
       { theme: ThemeData; disabled?: boolean; label: string }
     >;
-    expectTypeOf(Basic).toMatchTypeOf<Expected>();
+    expectTypeOf(Basic).toExtend<Expected>();
   });
 
   const withDecorator: Decorator<{ decoratorArg: string }> = (
@@ -186,7 +153,7 @@ describe('Story args can be inferred', () => {
   });
 
   it('Correct args are inferred when type is widened for decorators', () => {
-    type Props = ComponentProps<Button> & { decoratorArg: string };
+    type Props = ComponentProps<typeof Button> & { decoratorArg: string };
 
     const meta = satisfies<Meta<Props>>()({
       component: Button,
@@ -197,15 +164,15 @@ describe('Story args can be inferred', () => {
     const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 'title', label: 'good' } };
 
     type Expected = SvelteStory<
-      Button,
+      typeof Button,
       Props,
       { decoratorArg: string; disabled?: boolean; label: string }
     >;
-    expectTypeOf(Basic).toMatchTypeOf<Expected>();
+    expectTypeOf(Basic).toExtend<Expected>();
   });
 
   it('Correct args are inferred when type is widened for multiple decorators', () => {
-    type Props = ComponentProps<Button> & { decoratorArg: string; decoratorArg2: string };
+    type Props = ComponentProps<typeof Button> & { decoratorArg: string; decoratorArg2: string };
 
     const secondDecorator: Decorator<{ decoratorArg2: string }> = (
       _storyFn,
@@ -226,20 +193,32 @@ describe('Story args can be inferred', () => {
     };
 
     type Expected = SvelteStory<
-      Button,
+      typeof Button,
       Props,
       { decoratorArg: string; decoratorArg2: string; disabled?: boolean; label: string }
     >;
-    expectTypeOf(Basic).toMatchTypeOf<Expected>();
+    expectTypeOf(Basic).toExtend<Expected>();
   });
 });
 
 it('mount accepts a Component and props', () => {
-  const Basic: StoryObj<Button> = {
+  const Basic: StoryObj<typeof Button> = {
     async play({ mount }) {
       const canvas = await mount(Button, { props: { label: 'label', disabled: true } });
-      expectTypeOf(canvas).toMatchTypeOf<Canvas>();
+      expectTypeOf(canvas).toExtend<Canvas>();
     },
   };
-  expectTypeOf(Basic).toMatchTypeOf<StoryObj<Button>>();
+  expectTypeOf(Basic).toExtend<StoryObj<typeof Button>>();
+});
+
+it('StoryObj can accept args directly', () => {
+  const _Story: StoryObj<Args> = {
+    args: {},
+  };
+
+  const _Story2: StoryObj<{ prop: boolean }> = {
+    args: {
+      prop: true,
+    },
+  };
 });

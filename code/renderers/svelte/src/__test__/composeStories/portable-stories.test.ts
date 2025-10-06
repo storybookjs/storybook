@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 /// <reference types="@testing-library/jest-dom" />;
 import { cleanup, render, screen } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 // import '@testing-library/svelte/vitest';
 import { expectTypeOf } from 'expect-type';
@@ -46,16 +46,6 @@ describe('renders', () => {
     render(Secondary.Component, Secondary.props);
     const buttonElement = screen.getByRole('button');
     expect(buttonElement.textContent).toMatch(Secondary.args.label);
-  });
-
-  // TODO TypeError: component.$on is not a function - Potentially only works in Svelte 4
-  it.skip('onclick handler is called', async () => {
-    const onClickSpy = vi.fn();
-    const { component } = render(Secondary.Component, { ...Secondary.props, onClick: onClickSpy });
-    component.$on('click', onClickSpy);
-    const buttonElement = screen.getByRole('button');
-    buttonElement.click();
-    expect(onClickSpy).toHaveBeenCalled();
   });
 
   it('reuses args from composeStories', () => {

@@ -23,14 +23,11 @@ import type {
   SaveStoryRequestPayload,
   SaveStoryResponsePayload,
 } from 'storybook/internal/core-events';
-import type { RequestResponseError } from 'storybook/internal/manager-api';
-import {
-  addons,
-  experimental_requestResponse,
-  useStorybookApi,
-} from 'storybook/internal/manager-api';
 
 import { CheckIcon } from '@storybook/icons';
+
+import type { RequestResponseError } from 'storybook/manager-api';
+import { addons, experimental_requestResponse, useStorybookApi } from 'storybook/manager-api';
 
 import { useDebounce } from '../../hooks/useDebounce';
 import type { NewStoryPayload, SearchResult } from './FileSearchList';

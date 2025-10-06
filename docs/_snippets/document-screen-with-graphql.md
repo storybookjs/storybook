@@ -465,90 +465,94 @@ export function DocumentScreen() {
 
 ```svelte filename="YourPage.svelte" renderer="svelte" language="js"
 <script>
-  import gql from 'graphql-tag';
-  import { query } from 'svelte-apollo';
+  import { queryStore, gql, getContextClient } from '@urql/svelte';
+
   import PageLayout from './PageLayout.svelte';
   import DocumentHeader from './DocumentHeader.svelte';
   import DocumentList from './DocumentList.svelte';
 
-  const AllInfoQuery = gql`
-    query AllInfoQuery {
-      user {
-        userID
-        name
+  const AllInfoQuery = queryStore({
+    client: getContextClient(),
+    query: gql`
+      query AllInfoQuery {
+        user {
+          userID
+          name
+        }
+        document {
+          id
+          userID
+          title
+          brief
+          status
+        }
+        subdocuments {
+          id
+          userID
+          title
+          content
+          status
+        }
       }
-      document {
-        id
-        userID
-        title
-        brief
-        status
-      }
-      subdocuments {
-        id
-        userID
-        title
-        content
-        status
-      }
-    }
-  `;
-  const infoResult = query(AllInfoQuery);
+    `,
+  });
 </script>
 
-{#if $infoResult.loading}
+{#if $AllInfoQuery.fetching}
 <p>Loading...</p>
-{:else if $infoResult.error}
+{:else if $AllInfoQuery.error}
 <p>There was an error fetching the data!</p>
 {:else}
-<PageLayout {$infoResult.data.user}>
-  <DocumentHeader {$infoResult.data.document} />
-  <DocumentList {$infoResult.data.subdocuments} />
+<PageLayout user={$AllInfoQuery.data.AllInfoQuery.user}>
+  <DocumentHeader document={$AllInfoQuery.data.AllInfoQuery.document} />
+  <DocumentList documents={$AllInfoQuery.data.AllInfoQuery.subdocuments} />
 </PageLayout>
 {/if}
 ```
 
 ```svelte filename="YourPage.svelte" renderer="svelte" language="ts"
 <script lang="ts">
-  import gql from 'graphql-tag';
-  import { query } from 'svelte-apollo';
+  import { queryStore, gql, getContextClient } from '@urql/svelte';
+
   import PageLayout from './PageLayout.svelte';
   import DocumentHeader from './DocumentHeader.svelte';
   import DocumentList from './DocumentList.svelte';
 
-  const AllInfoQuery = gql`
-    query AllInfoQuery {
-      user {
-        userID
-        name
+  const AllInfoQuery = queryStore({
+    client: getContextClient(),
+    query: gql`
+      query AllInfoQuery {
+        user {
+          userID
+          name
+        }
+        document {
+          id
+          userID
+          title
+          brief
+          status
+        }
+        subdocuments {
+          id
+          userID
+          title
+          content
+          status
+        }
       }
-      document {
-        id
-        userID
-        title
-        brief
-        status
-      }
-      subdocuments {
-        id
-        userID
-        title
-        content
-        status
-      }
-    }
-  `;
-  const infoResult = query(AllInfoQuery);
+    `,
+  });
 </script>
 
-{#if $infoResult.loading}
+{#if $AllInfoQuery.fetching}
 <p>Loading...</p>
-{:else if $infoResult.error}
+{:else if $AllInfoQuery.error}
 <p>There was an error fetching the data!</p>
 {:else}
-<PageLayout {$infoResult.data.user}>
-  <DocumentHeader {$infoResult.data.document} />
-  <DocumentList {$infoResult.data.subdocuments} />
+<PageLayout user={$AllInfoQuery.data.AllInfoQuery.user}>
+  <DocumentHeader document={$AllInfoQuery.data.AllInfoQuery.document} />
+  <DocumentList documents={$AllInfoQuery.data.AllInfoQuery.subdocuments} />
 </PageLayout>
 {/if}
 ```

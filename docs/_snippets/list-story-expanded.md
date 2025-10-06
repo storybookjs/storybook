@@ -168,8 +168,9 @@ export const ManyItems = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -180,45 +181,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Empty: Story = {};
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const OneItem: Story = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem />
-    </List>
-  ),
-};
-
-export const ManyItems: Story = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem />
-      <ListItem />
-      <ListItem />
-    </List>
-  ),
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 export const Empty: Story = {};
 
@@ -280,8 +242,8 @@ export const ManyItems = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -292,45 +254,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const Empty: Story = {};
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const OneItem: Story = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem />
-    </List>
-  ),
-};
-
-export const ManyItems: Story = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem />
-      <ListItem />
-      <ListItem />
-    </List>
-  ),
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 export const Empty: Story = {};
 
@@ -373,7 +296,7 @@ export const ManyItems: Story = {
 <Story name="Empty" />
 
 <Story name="One Item">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
     </List>
@@ -381,40 +304,7 @@ export const ManyItems: Story = {
 </Story>
 
 <Story name="Many Items">
-  {#snippet children(args)}
-    <List {...args} >
-      <ListItem />
-      <ListItem />
-      <ListItem />
-    </List>
-  {/snippet}
-</Story>
-```
-
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import List from './List.svelte';
-  import ListItem from './ListItem.svelte';
-
-  const { Story } = defineMeta({
-    component: List,
-  });
-</script>
-
-<Story name="Empty" />
-
-<Story name="One Item">
-  {#snippet children(args)}
-    <List {...args} >
-      <ListItem />
-    </List>
-  {/snippet}
-</Story>
-
-<Story name="Many Items">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
       <ListItem />
@@ -439,7 +329,7 @@ export const ManyItems: Story = {
 <Story name="Empty" />
 
 <Story name="One Item">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
     </List>
@@ -447,7 +337,7 @@ export const ManyItems: Story = {
 </Story>
 
 <Story name="Many Items">
-  {#snippet children(args)}
+  {#snippet template(args)}
     <List {...args} >
       <ListItem />
       <ListItem />
@@ -500,8 +390,8 @@ export const ManyItems = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="List.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './ListComponent.vue';
 import ListItem from './ListItem.vue';
@@ -548,54 +438,6 @@ export const ManyItems: Story = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import List from './ListComponent.vue';
-import ListItem from './ListItem.vue';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
-
-/*
- *👇 Render functions are a framework specific feature to allow you control on how the component renders.
- * See https://storybook.js.org/docs/api/csf
- * to learn how to use render functions.
- */
-export const Empty: Story = {
-  render: () => ({
-    components: { List },
-    template: '<List/>',
-  }),
-};
-
-export const OneItem: Story = {
-  render: () => ({
-    components: { List, ListItem },
-    template: `
-      <List>
-        <list-item/>
-      </List>`,
-  }),
-};
-
-export const ManyItems: Story = {
-  render: () => ({
-    components: { List, ListItem },
-    template: `
-      <List>
-        <list-item/>
-        <list-item/>
-        <list-item/>
-      </List>`,
-  }),
-};
-```
-
 ```js filename="List.stories.js" renderer="web-components" language="js"
 import { html } from 'lit';
 
@@ -627,7 +469,7 @@ export const ManyItems = {
 ```
 
 ```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 

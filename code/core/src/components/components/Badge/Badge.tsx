@@ -1,18 +1,19 @@
 import React from 'react';
 
-import { styled } from 'storybook/internal/theming';
-
 import { transparentize } from 'polished';
+import { styled } from 'storybook/theming';
 
 const BadgeWrapper = styled.div<BadgeProps>(
-  ({ theme }) => ({
-    display: 'inline-block',
-    fontSize: 11,
-    lineHeight: '12px',
-    alignSelf: 'center',
-    padding: '4px 12px',
-    borderRadius: '3em',
+  ({ theme, compact }) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: theme.typography.size.s1,
     fontWeight: theme.typography.weight.bold,
+    lineHeight: '12px',
+    minWidth: 20,
+    borderRadius: 20,
+    padding: compact ? '4px 7px' : '4px 10px',
   }),
   {
     svg: {
@@ -56,12 +57,9 @@ const BadgeWrapper = styled.div<BadgeProps>(
       }
       case 'neutral': {
         return {
-          color: theme.color.dark,
-          background: theme.color.mediumlight,
-          boxShadow:
-            theme.base === 'light'
-              ? `inset 0 0 0 1px ${transparentize(0.9, theme.color.dark)}`
-              : 'none',
+          color: theme.textMutedColor,
+          background: theme.base === 'light' ? theme.background.app : theme.barBg,
+          boxShadow: `inset 0 0 0 1px ${transparentize(0.8, theme.textMutedColor)}`,
         };
       }
       case 'positive': {
@@ -74,6 +72,13 @@ const BadgeWrapper = styled.div<BadgeProps>(
               : 'none',
         };
       }
+      case 'active': {
+        return {
+          color: theme.color.secondary,
+          background: theme.background.hoverable,
+          boxShadow: `inset 0 0 0 1px ${transparentize(0.9, theme.color.secondary)}`,
+        };
+      }
       default: {
         return {};
       }
@@ -82,7 +87,8 @@ const BadgeWrapper = styled.div<BadgeProps>(
 );
 
 export interface BadgeProps {
-  status?: 'positive' | 'negative' | 'neutral' | 'warning' | 'critical';
+  compact?: boolean;
+  status?: 'positive' | 'negative' | 'neutral' | 'warning' | 'critical' | 'active';
   children?: React.ReactNode;
 }
 

@@ -1,5 +1,25 @@
 import { types as t, traverse } from 'storybook/internal/babel';
 
+const projectAnnotationNames = [
+  'decorators',
+  'parameters',
+  'args',
+  'argTypes',
+  'loaders',
+  'beforeEach',
+  'afterEach',
+  'render',
+  'tags',
+  'mount',
+  'argsEnhancers',
+  'argTypesEnhancers',
+  'beforeAll',
+  'initialGlobals',
+  'globalTypes',
+  'applyDecorators',
+  'runStep',
+];
+
 export function cleanupTypeImports(programNode: t.Program, disallowList: string[]) {
   const usedIdentifiers = new Set<string>();
 
@@ -12,6 +32,7 @@ export function cleanupTypeImports(programNode: t.Program, disallowList: string[
           usedIdentifiers.add(path.node.name);
         }
       },
+      noScope: true,
     });
   } catch (err) {
     // traversing could fail if the code isn't supported by
@@ -74,12 +95,17 @@ export function removeExportDeclarations(
 }
 
 export function getConfigProperties(
-  exportDecls: Record<string, t.VariableDeclarator | t.FunctionDeclaration>
+  exportDecls: Record<string, t.VariableDeclarator | t.FunctionDeclaration>,
+  options: { configType: 'main' | 'preview' }
 ) {
   const properties = [];
 
   // Collect properties from named exports
   for (const [name, decl] of Object.entries(exportDecls)) {
+    // only include real preview exports to definePreview factory
+    if (options.configType === 'preview' && !projectAnnotationNames.includes(name)) {
+      continue;
+    }
     if (t.isVariableDeclarator(decl) && decl.init) {
       properties.push(t.objectProperty(t.identifier(name), decl.init));
     } else if (t.isFunctionDeclaration(decl)) {

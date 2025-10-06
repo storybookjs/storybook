@@ -12,6 +12,8 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
+import { resolvePackageDir } from '../shared/utils/module';
+
 export async function loadStorybook(
   options: CLIOptions &
     LoadOptions &
@@ -22,8 +24,7 @@ export async function loadStorybook(
 ): Promise<Options> {
   const configDir = resolve(options.configDir);
 
-  const rootDir = getProjectRoot();
-  const cacheKey = oneWayHash(relative(rootDir, configDir));
+  const cacheKey = oneWayHash(relative(getProjectRoot(), configDir));
 
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;
@@ -50,7 +51,7 @@ export async function loadStorybook(
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
     isCritical: true,
@@ -63,12 +64,12 @@ export async function loadStorybook(
 
   presets = await loadAllPresets({
     corePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-preset'),
+      join(resolvePackageDir('storybook'), 'dist/core-server/presets/common-preset.js'),
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
     overridePresets: [
-      require.resolve('storybook/internal/core-server/presets/common-override-preset'),
+      import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
     ...options,
   });

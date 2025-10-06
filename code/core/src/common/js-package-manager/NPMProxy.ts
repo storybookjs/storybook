@@ -1,15 +1,14 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { join } from 'node:path';
 
-import { logger } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
-import { findUp } from 'find-up';
+import * as find from 'empathic/find';
 import sort from 'semver/functions/sort.js';
-import { dedent } from 'ts-dedent';
 
-import { createLogStream } from '../utils/cli';
+import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
 import type { InstallationMetadata, PackageMetadata } from './types';
@@ -69,33 +68,17 @@ export class NPMProxy extends JsPackageManager {
 
   installArgs: string[] | undefined;
 
-  async initPackageJson() {
-    await this.executeCommand({ command: 'npm', args: ['init', '-y'] });
-  }
-
-  getRunStorybookCommand(): string {
-    return 'npm run storybook';
-  }
-
   getRunCommand(command: string): string {
     return `npm run ${command}`;
   }
 
-  getRemoteRunCommand(): string {
-    return 'npx';
+  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
+    return `npx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
-  public async getPackageJSON(
-    packageName: string,
-    basePath = this.cwd
-  ): Promise<PackageJson | null> {
-    const packageJsonPath = await findUp(
-      (dir) => {
-        const possiblePath = join(dir, 'node_modules', packageName, 'package.json');
-        return existsSync(possiblePath) ? possiblePath : undefined;
-      },
-      { cwd: basePath }
-    );
+  async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
+    const wantedPath = join('node_modules', packageName, 'package.json');
+    const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
 
     if (!packageJsonPath) {
       return null;
@@ -126,16 +109,36 @@ export class NPMProxy extends JsPackageManager {
     });
   }
 
-  public async runPackageCommand(command: string, args: string[], cwd?: string): Promise<string> {
+  public runPackageCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'pipe' | 'inherit'
+  ) {
     return this.executeCommand({
       command: 'npm',
       args: ['exec', '--', command, ...args],
       cwd,
+      stdio,
+    });
+  }
+
+  public runInternalCommand(
+    command: string,
+    args: string[],
+    cwd?: string,
+    stdio?: 'inherit' | 'pipe' | 'ignore'
+  ) {
+    return this.executeCommand({
+      command: 'npm',
+      args: [command, ...args],
+      cwd,
+      stdio,
     });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
-    const exec = async ({ packageDepth }: { packageDepth: number }) => {
+    const exec = ({ packageDepth }: { packageDepth: number }) => {
       const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
       return this.executeCommand({
         command: 'npm',
@@ -143,11 +146,13 @@ export class NPMProxy extends JsPackageManager {
         env: {
           FORCE_COLOR: 'false',
         },
+        cwd: this.instanceDir,
       });
     };
 
     try {
-      const commandResult = await exec({ packageDepth: depth });
+      const childProcess = await exec({ packageDepth: depth });
+      const commandResult = childProcess.stdout ?? '';
       const parsedOutput = JSON.parse(commandResult);
 
       return this.mapDependencies(parsedOutput, pattern);
@@ -155,12 +160,13 @@ export class NPMProxy extends JsPackageManager {
       // when --depth is higher than 0, npm can return a non-zero exit code
       // in case the user's project has peer dependency issues. So we try again with no depth
       try {
-        const commandResult = await exec({ packageDepth: 0 });
+        const childProcess = await exec({ packageDepth: 0 });
+        const commandResult = childProcess.stdout ?? '';
         const parsedOutput = JSON.parse(commandResult);
 
         return this.mapDependencies(parsedOutput, pattern);
       } catch (err) {
-        logger.warn(`An issue occurred while trying to find dependencies metadata using npm.`);
+        logger.debug(`An issue occurred while trying to find dependencies metadata using npm.`);
         return undefined;
       }
     }
@@ -175,63 +181,39 @@ export class NPMProxy extends JsPackageManager {
     };
   }
 
-  protected async runInstall() {
-    await this.executeCommand({
+  protected runInstall(options?: { force?: boolean }) {
+    return this.executeCommand({
       command: 'npm',
-      args: ['install', ...this.getInstallArgs()],
-      stdio: 'inherit',
+      args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
+      cwd: this.cwd,
+      stdio: prompt.getPreferredStdio(),
     });
   }
 
   public async getRegistryURL() {
-    const res = await this.executeCommand({
+    const process = this.executeCommand({
       command: 'npm',
       // "npm config" commands are not allowed in workspaces per default
       // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
       args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
     });
-    const url = res.trim();
+    const result = await process;
+    const url = (result.stdout ?? '').trim();
     return url === 'undefined' ? undefined : url;
   }
 
-  protected async runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
-    const { logStream, readLogFile, moveLogFile, removeLogFile } = await createLogStream();
+  protected runAddDeps(dependencies: string[], installAsDevDependencies: boolean) {
     let args = [...dependencies];
 
     if (installAsDevDependencies) {
       args = ['-D', ...args];
     }
 
-    try {
-      await this.executeCommand({
-        command: 'npm',
-        args: ['install', ...args, ...this.getInstallArgs()],
-        stdio: process.env.CI ? 'inherit' : ['ignore', logStream, logStream],
-      });
-    } catch (err) {
-      const stdout = await readLogFile();
-
-      const errorMessage = this.parseErrorFromLogs(stdout);
-
-      await moveLogFile();
-
-      throw new Error(
-        dedent`${errorMessage}
-        
-        Please check the logfile generated at ./storybook.log for troubleshooting and try again.`
-      );
-    }
-
-    await removeLogFile();
-  }
-
-  protected async runRemoveDeps(dependencies: string[]) {
-    const args = [...dependencies];
-
-    await this.executeCommand({
+    return this.executeCommand({
       command: 'npm',
-      args: ['uninstall', ...this.getInstallArgs(), ...args],
-      stdio: 'inherit',
+      args: ['install', ...args, ...this.getInstallArgs()],
+      stdio: prompt.getPreferredStdio(),
+      cwd: this.primaryPackageJson.operationDir,
     });
   }
 
@@ -239,14 +221,16 @@ export class NPMProxy extends JsPackageManager {
     packageName: string,
     fetchAllVersions: T
   ): Promise<T extends true ? string[] : string> {
-    const args = [fetchAllVersions ? 'versions' : 'version', '--json'];
+    const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
     try {
-      const commandResult = await this.executeCommand({
+      const process = this.executeCommand({
         command: 'npm',
         args: ['info', packageName, ...args],
       });
+      const result = await process;
+      const commandResult = result.stdout ?? '';
 
-      const parsedOutput = JSON.parse(commandResult);
+      const parsedOutput = fetchAllVersions ? JSON.parse(commandResult) : commandResult.trim();
 
       if (parsedOutput.error?.summary) {
         // this will be handled in the catch block below

@@ -1,7 +1,5 @@
-/* eslint-disable no-underscore-dangle */
-
-/* eslint-disable @typescript-eslint/naming-convention */
-import { type CleanupCallback, type Preview, isExportStory } from 'storybook/internal/csf';
+import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
+import { getCoreAnnotations } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -22,9 +20,15 @@ import type {
   StrictArgTypes,
 } from 'storybook/internal/types';
 
+import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
+import {
+  isTestEnvironment,
+  pauseAnimations,
+  waitForAnimations,
+} from '../../preview-web/render/animation-utils';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
 import { getCsfFactoryAnnotations } from './csf-factory-utils';
@@ -73,17 +77,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   globalThis.globalProjectAnnotations = composeConfigs([
+    ...getCoreAnnotations(),
     globalThis.defaultProjectAnnotations ?? {},
     composeConfigs(annotations.map(extractAnnotation)),
   ]);
 
-  /*
-    We must return the composition of default and global annotations here
-    To ensure that the user has the full project annotations, eg. when running
-
-    const projectAnnotations = setProjectAnnotations(...);
-    beforeAll(projectAnnotations.beforeAll)
-  */
   return globalThis.globalProjectAnnotations ?? {};
 }
 
@@ -134,8 +132,8 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   );
 
   const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+
   const globals = {
-    // TODO: remove loading from globalTypes in 9.0
     ...globalsFromGlobalTypes,
     ...normalizedProjectAnnotations.initialGlobals,
     ...story.storyGlobals,
@@ -155,6 +153,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       step: (label, play) => story.runStep(label, play, context),
       canvasElement: null!,
       canvas: {} as Canvas,
+      userEvent: {} as UserEventObject,
       globalTypes: normalizedProjectAnnotations.globalTypes,
       ...story,
       context: null!,
@@ -167,7 +166,10 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
     if (story.renderToCanvas) {
       context.renderToCanvas = async () => {
-        // Consolidate this renderContext with Context in SB 9.0
+        // TODO: Consolidate this renderContext with Context in SB 10.0
+        // Change renderToCanvas function to only use the context object
+        // and to make the renderContext an internal implementation detail
+        // wasnt'possible so far because showError and showException are not part of the story context (yet)
         const unmount = await story.renderToCanvas?.(
           {
             componentId: story.componentId,
@@ -299,7 +301,9 @@ export function composeStories<TModule extends Store_CSFExports>(
   return composedStories;
 }
 
-type WrappedStoryRef = { __pw_type: 'jsx' | 'importRef' };
+type WrappedStoryRef =
+  | { __pw_type: 'jsx'; props: Record<string, any> }
+  | { __pw_type: 'importRef' };
 type UnwrappedJSXStoryRef = {
   __pw_type: 'jsx';
   type: UnwrappedImportStoryRef;
@@ -335,16 +339,20 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
               do:
               await mount(<MyComponent foo="bar"/>)
 
-              More info: https://storybook.js.org/docs/api/portable-stories-playwright
+              More info: https://storybook.js.org/docs/api/portable-stories/portable-stories-playwright?ref=error
             `);
         }
+
+        // Props are not necessarily serialisable and so can't be passed to browser via
+        // `page.evaluate`. Regardless they are not needed for storybook load/play steps.
+        const { props, ...storyRefWithoutProps } = storyRef;
 
         await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
           const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
           const story =
             '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
           return story?.load?.();
-        }, storyRef);
+        }, storyRefWithoutProps);
 
         // mount the story
         const mountResult = await mount(storyRef, ...restArgs);
@@ -356,7 +364,7 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
             '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
           const canvasElement = document.querySelector('#root');
           return story?.play?.({ canvasElement });
-        }, storyRef);
+        }, storyRefWithoutProps);
 
         return mountResult;
       });
@@ -415,5 +423,14 @@ async function runStory<TRenderer extends Renderer>(
     await playFunction(context);
   }
 
+  let cleanUp: CleanupCallback | undefined;
+  if (isTestEnvironment()) {
+    cleanUp = pauseAnimations();
+  } else {
+    await waitForAnimations(context.abortSignal);
+  }
+
   await story.applyAfterEach(context);
+
+  await cleanUp?.();
 }

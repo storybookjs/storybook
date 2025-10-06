@@ -28,7 +28,7 @@ We rely on metadata to organize your addon in the catalog. You must add the <cod
 
 | Property      | Description                            | Example                                                                   |
 | ------------- | -------------------------------------- | ------------------------------------------------------------------------- |
-| `name`        | Addon package name                     | storybook-addon-outline                                                   |
+| `name`        | Addon package name                     | storybook-addon-example                                                   |
 | `description` | Addon description                      | Outline all elements with CSS to help with layout placement and alignment |
 | `author`      | Name of the author                     | winkerVSbecks                                                             |
 | `keywords`    | List of keywords to describe the addon | `["storybook-addons","style","debug"]`                                    |
@@ -38,8 +38,8 @@ Customize your addon's appearance by adding the `storybook` property with the fo
 
 | Property                | Description                                               | Example                               |
 | ----------------------- | --------------------------------------------------------- | ------------------------------------- |
-| `displayName`           | Display name                                              | Outline                               |
-| `icon`                  | Link to custom icon for the addon (SVG are not supported) | https://yoursite.com/outline-icon.png |
+| `displayName`           | Display name                                              | Example                               |
+| `icon`                  | Link to custom icon for the addon (SVG are not supported) | https://yoursite.com/addon-icon.png   |
 | `unsupportedFrameworks` | List of unsupported frameworks                            | `["vue"]`                             |
 | `supportedFrameworks`   | List of supported frameworks                              | `["react", "angular"]`                |
 
@@ -61,12 +61,12 @@ Use the list below as a reference when filling in the values for both the `suppo
 
 ```json title="package.json"
 {
-  "name": "storybook-addon-outline",
+  "name": "storybook-addon-example",
   "version": "1.0.0",
   "description": "Outline all elements with CSS to help with layout placement and alignment",
   "repository": {
     "type": "git",
-    "url": "https://github.com/chromaui/storybook-outline"
+    "url": "https://github.com/chromaui/storybook-addon-example"
   },
   "author": "winkerVSbecks",
   "keywords": ["storybook-addons", "style", "debug", "layout", "css"],
@@ -74,7 +74,7 @@ Use the list below as a reference when filling in the values for both the `suppo
     "displayName": "Outline",
     "unsupportedFrameworks": ["vue"],
     "supportedFrameworks": ["react", "angular"],
-    "icon": "https://yoursite.com/outline-icon.png"
+    "icon": "https://yoursite.com/addon-icon.png"
   }
 }
 ```

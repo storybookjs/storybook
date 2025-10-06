@@ -11,3 +11,6 @@ core/report
 
 # This file contains imports with an order that must be preserved.
 core/src/core-server/presets/common-manager.ts
+
+# This file is modified by build/check, causing errors when changed in CI jobs.
+lib/eslint-plugin/docs/rules/no-stories-of.md

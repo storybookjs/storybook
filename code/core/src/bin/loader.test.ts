@@ -245,5 +245,44 @@ describe('loader', () => {
 
       expect(result).toBe(`// This is a comment\nimport foo from './utils.ts'; // inline comment`);
     });
+
+    it('should handle multi-line imports with named exports on separate lines', () => {
+      const source = `import {
+  foo,
+  bar,
+  baz
+} from './utils';`;
+      const result = addExtensionsToRelativeImports(source, '/project/src/file.ts');
+
+      expect(result).toBe(`import {
+  foo,
+  bar,
+  baz
+} from './utils.ts';`);
+    });
+
+    it('should handle multi-line exports with named exports on separate lines', () => {
+      const source = `export {
+  foo,
+  bar
+} from '../module';`;
+      const result = addExtensionsToRelativeImports(source, '/project/src/file.ts');
+
+      expect(result).toBe(`export {
+  foo,
+  bar
+} from '../module.ts';`);
+    });
+
+    it('should handle multi-line dynamic imports', () => {
+      const source = `const module = await import(
+  './utils'
+);`;
+      const result = addExtensionsToRelativeImports(source, '/project/src/file.ts');
+
+      expect(result).toBe(`const module = await import(
+  './utils.ts'
+);`);
+    });
   });
 });

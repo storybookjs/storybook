@@ -87,16 +87,19 @@ export default async function postInstall(options: PostinstallOptions) {
     ? satisfies(vitestVersionSpecifier, '>=3.2.0')
     : false;
   const isVitest4OrNewer = vitestVersionSpecifier
-    ? satisfies(vitestVersionSpecifier, '>=4.0.0')
+    ? // TODO: Remove beta specifier, just there for testing purposes
+      satisfies(vitestVersionSpecifier, '>=4.0.0 || beta')
     : true;
 
   const info = await getStorybookInfo(options);
   const allDeps = packageManager.getAllDependencies();
   // only install these dependencies if they are not already installed
+  // TODO: Remove beta specifier, just there for testing purposes
   const dependencies = [
-    'vitest',
+    'vitest@beta',
     'playwright',
-    isVitest4OrNewer ? '@vitest/browser-playwright' : '@vitest/browser',
+    '@vitest/browser@beta',
+    ...(isVitest4OrNewer ? ['@vitest/browser-playwright@beta'] : []),
   ];
 
   const uniqueDependencies = dependencies.filter((p) => !allDeps[p]);
@@ -289,7 +292,8 @@ export default async function postInstall(options: PostinstallOptions) {
         Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
       `
     );
-    uniqueDependencies.push(`@vitest/coverage-v8`); // Version specifier is added below
+    // TODO: Remove beta specifier, just there for testing purposes
+    uniqueDependencies.push(`@vitest/coverage-v8@beta`); // Version specifier is added below
   }
 
   const versionedDependencies = uniqueDependencies.map((p) => {

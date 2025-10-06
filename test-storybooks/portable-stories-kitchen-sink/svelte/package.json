@@ -17,7 +17,6 @@
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "portal:../../../code/addons/a11y",
     "@storybook/addon-docs": "portal:../../../code/addons/docs",
-    "@storybook/addon-jest": "portal:../../../code/addons/jest",
     "@storybook/addon-links": "portal:../../../code/addons/links",
     "@storybook/addon-themes": "portal:../../../code/addons/themes",
     "@storybook/angular": "portal:../../../code/frameworks/angular",

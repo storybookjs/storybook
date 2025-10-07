@@ -40,6 +40,7 @@ export const frameworkPackages: Record<string, SupportedFrameworks> = {
   '@storybook/sveltekit': 'sveltekit',
   '@storybook/vue3-vite': 'vue3-vite',
   '@storybook/nextjs-vite': 'nextjs-vite',
+  '@storybook/nextjs-vite-rsc': 'nextjs-vite-rsc',
   '@storybook/react-native-web-vite': 'react-native-web-vite',
   '@storybook/web-components-vite': 'web-components-vite',
   // community (outside of monorepo)

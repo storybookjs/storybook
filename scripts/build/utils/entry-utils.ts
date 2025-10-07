@@ -71,6 +71,12 @@ export const getExternal = async (cwd: string) => {
     packageJson.name,
     ...Object.keys(packageJson.dependencies || {}),
     ...Object.keys(packageJson.peerDependencies || {}),
+    // TODO where to place this
+    '@storybook/nextjs-vite-rsc/rsc/client',
+    '@storybook/nextjs-vite-rsc/preview',
+    'virtual:vite-rsc-browser-mode/load-client',
+    'virtual:vite-rsc-browser-mode/build-server-references',
+    'virtual:vite-rsc-browser-mode/build-client-references'
   ];
   const runtimeExternalExclude = [
     '@testing-library/jest-dom',

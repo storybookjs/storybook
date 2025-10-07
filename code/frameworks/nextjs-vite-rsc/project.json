@@ -1,5 +1,5 @@
 {
-  "name": "nextjs-vite",
+  "name": "nextjs-vite-rsc",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "targets": {

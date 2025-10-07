@@ -1,23 +1,30 @@
-import type * as React from 'react';
+import * as React from 'react';
 
-import type { Addon_DecoratorFunction, LoaderFunction } from 'storybook/internal/types';
+import type { DecoratorFunction, LegacyStoryFn, LoaderFunction } from 'storybook/internal/types';
+import { type RenderContext } from 'storybook/internal/types';
 
-import type { ReactRenderer, StoryFn } from '@storybook/react';
+import type { Decorator, Preview, ReactRenderer } from '@storybook/react';
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { createNavigation } from '@storybook/nextjs-vite/navigation.mock';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore we must ignore types here as during compilation they are not generated yet
-import { createRouter } from '@storybook/nextjs-vite/router.mock';
+import { NextRouter } from '@storybook/nextjs-vite-rsc/rsc/client';
 
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
+import { defaultDecorateStory } from 'storybook/preview-api';
+import { type Mock, fn } from 'storybook/test';
 
-import './config/preview';
-import { HeadManagerDecorator } from './head-manager/decorator';
-import { ImageDecorator } from './images/decorator';
-import { RouterDecorator } from './routing/decorator';
-import { StyledJsxDecorator } from './styledJsx/decorator';
+import { initialize, renderServer } from './testing-library';
+
+// TODO renable
+// import './config/preview';
+// import { HeadManagerDecorator } from './head-manager/decorator';
+// import { ImageDecorator } from './images/decorator';
+// import { StyledJsxDecorator } from './styledJsx/decorator';
+
+declare global {
+  // eslint-disable-next-line no-var
+  var onNavigate: Mock<(url: URL) => void>;
+}
+
+globalThis.onNavigate = fn<(url: URL) => void>().mockName('onNavigate');
 
 function addNextHeadCount() {
   const meta = document.createElement('meta');
@@ -54,27 +61,20 @@ globalThis.addEventListener('error', (ev: WindowEventMap['error']): void => {
   }
 });
 
-// Type assertion to handle the decorator type mismatch
-const asDecorator = (decorator: (Story: React.FC, context?: any) => React.ReactNode) =>
-  decorator as unknown as Addon_DecoratorFunction<ReactRenderer>;
-
-export const decorators: Addon_DecoratorFunction<ReactRenderer>[] = [
-  asDecorator(StyledJsxDecorator),
-  asDecorator(ImageDecorator),
-  asDecorator(RouterDecorator),
-  asDecorator(HeadManagerDecorator),
+export const decorators: Decorator[] = [
+  (Story, context) => (
+    <NextRouter url={context.parameters?.nextjs?.pathname ?? ''}>
+      <Story />
+    </NextRouter>
+  ),
+  // TODO
+  // StyledJsxDecorator,
+  // ImageDecorator,
+  // HeadManagerDecorator,
 ];
 
 export const loaders: LoaderFunction<ReactRenderer> = async ({ globals, parameters }) => {
-  const { router, appDirectory } = parameters.nextjs ?? {};
-  if (appDirectory) {
-    createNavigation(router);
-  } else {
-    createRouter({
-      locale: globals.locale,
-      ...(router as Record<string, unknown>),
-    });
-  }
+  initialize({ rootOptions: parameters.react?.rootOptions });
 };
 
 export const parameters = {
@@ -94,3 +94,46 @@ export const parameters = {
     },
   },
 };
+
+const preview: Preview = {
+  async beforeEach() {
+    return () => {
+      (globalThis as any).onNavigate.mockRestore();
+    };
+  },
+  render: (args, context) => {
+    const { id, component: Component } = context;
+    if (!Component) {
+      throw new Error(
+        `Unable to render story ${id} as the component annotation is missing from the default export`
+      );
+    }
+    return <Component {...args} />;
+  },
+
+  applyDecorators: (
+    storyFn: LegacyStoryFn<ReactRenderer>,
+    decorators: DecoratorFunction<ReactRenderer>[]
+  ): LegacyStoryFn<ReactRenderer> => {
+    return defaultDecorateStory((context) => React.createElement(storyFn, context), decorators);
+  },
+
+  renderToCanvas: async function (
+    { storyContext, unboundStoryFn, showMain }: RenderContext<ReactRenderer>,
+    canvasElement: ReactRenderer['canvasElement']
+  ) {
+    const Story = unboundStoryFn;
+
+    const { unmount } = await renderServer(<Story {...storyContext} />, {
+      container: canvasElement,
+    });
+
+    showMain();
+
+    return async () => {
+      await unmount();
+    };
+  },
+};
+
+export const { render, applyDecorators, renderToCanvas } = preview;

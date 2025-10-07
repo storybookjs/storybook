@@ -34,7 +34,7 @@ import * as nextJsAnnotations from './preview';
  *
  * ```jsx
  * // setup-file.js
- * import { setProjectAnnotations } from '@storybook/nextjs-vite';
+ * import { setProjectAnnotations } from '@storybook/nextjs-vite-rsc';
  * import projectAnnotations from './.storybook/preview';
  *
  * setProjectAnnotations(projectAnnotations);
@@ -70,7 +70,7 @@ const INTERNAL_DEFAULT_PROJECT_ANNOTATIONS: ProjectAnnotations<ReactRenderer> = 
  *
  * ```jsx
  * import { render } from '@testing-library/react';
- * import { composeStory } from '@storybook/nextjs-vite';
+ * import { composeStory } from '@storybook/nextjs-vite-rsc';
  * import Meta, { Primary as PrimaryStory } from './Button.stories';
  *
  * const Primary = composeStory(PrimaryStory, Meta);
@@ -114,7 +114,7 @@ export function composeStory<TArgs extends Args = Args>(
  *
  * ```jsx
  * import { render } from '@testing-library/react';
- * import { composeStories } from '@storybook/nextjs-vite';
+ * import { composeStories } from '@storybook/nextjs-vite-rsc';
  * import * as stories from './Button.stories';
  *
  * const { Primary, Secondary } = composeStories(stories);

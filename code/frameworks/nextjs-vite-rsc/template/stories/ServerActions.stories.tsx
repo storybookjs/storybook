@@ -1,9 +1,9 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/nextjs-vite';
-import { revalidatePath } from '@storybook/nextjs-vite/cache.mock';
-import { cookies } from '@storybook/nextjs-vite/headers.mock';
-import { getRouter, redirect } from '@storybook/nextjs-vite/navigation.mock';
+import type { Meta, StoryObj } from '@storybook/nextjs-vite-rsc';
+import { revalidatePath } from '@storybook/nextjs-vite-rsc/cache.mock';
+import { cookies } from '@storybook/nextjs-vite-rsc/headers.mock';
+import { getRouter, redirect } from '@storybook/nextjs-vite-rsc/navigation.mock';
 
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 

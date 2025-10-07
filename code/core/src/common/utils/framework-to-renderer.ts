@@ -11,6 +11,7 @@ export const frameworkToRenderer: Record<
   'html-vite': 'html',
   nextjs: 'react',
   'nextjs-vite': 'react',
+  'nextjs-vite-rsc': 'react',
   'preact-vite': 'preact',
   qwik: 'qwik',
   'react-vite': 'react',

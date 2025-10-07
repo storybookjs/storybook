@@ -153,7 +153,7 @@ export const shareTool: Addon_BaseType = {
       <Consumer filter={mapper}>
         {({ baseUrl, storyId, queryParams }) => {
           const storyUrl = global.STORYBOOK_NETWORK_ADDRESS
-            ? `${global.STORYBOOK_NETWORK_ADDRESS}${window.location.search}`
+            ? new URL(window.location.search, global.STORYBOOK_NETWORK_ADDRESS).href
             : window.location.href;
 
           return storyId ? (

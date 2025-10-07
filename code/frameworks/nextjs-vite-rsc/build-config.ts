@@ -56,6 +56,10 @@ const config: BuildEntries = {
         exportEntries: ['./rsc/client'],
         entryPoint: './src/rsc/client.tsx',
       },
+      {
+        exportEntries: ['./repro'],
+        entryPoint: './src/repro.tsx',
+      },
     ],
     node: [
       {

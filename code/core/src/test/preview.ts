@@ -113,7 +113,7 @@ const enhanceContext: LoaderFunction = async (context) => {
     let currentFocus = HTMLElement.prototype.focus;
 
     // Use a Set to track elements that are currently undergoing a focus operation
-    const focusingElements = new Set();
+    const focusingElements = new Set<HTMLElement>();
 
     if (!patchedFocus) {
       Object.defineProperties(HTMLElement.prototype, {

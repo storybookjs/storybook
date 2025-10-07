@@ -41,7 +41,13 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   beforeEach: () => {
+    const originalConfigType = global.CONFIG_TYPE;
     global.STORYBOOK_NETWORK_ADDRESS = 'http://127.0.0.1:6006';
+    global.CONFIG_TYPE = 'DEVELOPMENT';
+
+    return () => {
+      global.CONFIG_TYPE = originalConfigType;
+    };
   },
   play: async ({ userEvent, canvas }) => {
     await waitFor(async () => {
@@ -49,4 +55,17 @@ export const Default: Story = {
       await expect(await screen.findByText('Scan me')).toBeVisible();
     });
   },
+};
+
+export const Production: Story = {
+  beforeEach: () => {
+    const originalConfigType = global.CONFIG_TYPE;
+    global.STORYBOOK_NETWORK_ADDRESS = 'http://127.0.0.1:6006';
+    global.CONFIG_TYPE = 'PRODUCTION';
+
+    return () => {
+      global.CONFIG_TYPE = originalConfigType;
+    };
+  },
+  ...Default,
 };

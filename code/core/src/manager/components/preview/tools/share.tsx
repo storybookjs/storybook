@@ -82,11 +82,13 @@ function ShareMenu({
   storyId,
   queryParams,
   qrUrl,
+  isDevelopment,
 }: {
   baseUrl: string;
   storyId: string;
   queryParams: Record<string, any>;
   qrUrl: string;
+  isDevelopment: boolean;
 }) {
   const api = useStorybookApi();
   const shortcutKeys = api.getShortcutKeys();
@@ -121,6 +123,10 @@ function ShareMenu({
       ],
     ];
 
+    const qrSectionText = isDevelopment
+      ? 'Must be on the same network as this device.'
+      : 'View this on another device.';
+
     baseLinks.push([
       {
         id: 'qr-section',
@@ -130,7 +136,7 @@ function ShareMenu({
             <QRImage value={qrUrl} />
             <QRContent>
               <QRTitle>Scan me</QRTitle>
-              <QRDescription>Must be on the same network as this device.</QRDescription>
+              <QRDescription>{qrSectionText}</QRDescription>
             </QRContent>
           </QRContainer>
         ),
@@ -155,12 +161,15 @@ export const shareTool: Addon_BaseType = {
           const storyUrl = global.STORYBOOK_NETWORK_ADDRESS
             ? new URL(window.location.search, global.STORYBOOK_NETWORK_ADDRESS).href
             : window.location.href;
+          const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
 
           return storyId ? (
             <WithTooltip
               hasChrome
               placement="bottom"
-              tooltip={<ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl }} />}
+              tooltip={
+                <ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl, isDevelopment }} />
+              }
             >
               <IconButton title="Share">
                 <ShareIcon />

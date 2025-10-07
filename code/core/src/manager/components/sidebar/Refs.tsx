@@ -16,6 +16,7 @@ import type { Highlight, RefType } from './types';
 export interface RefProps {
   isLoading: boolean;
   isBrowsing: boolean;
+  hasEntries: boolean;
   selectedStoryId: string | null;
   highlightedRef: MutableRefObject<Highlight>;
   setHighlighted: (highlight: Highlight) => void;
@@ -82,6 +83,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
     title = refId,
     isLoading: isLoadingMain,
     isBrowsing,
+    hasEntries,
     selectedStoryId,
     highlightedRef,
     setHighlighted,
@@ -117,12 +119,11 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
 
   const setHighlightedItemId = useCallback(
     (itemId: string) => setHighlighted({ itemId, refId }),
-    [setHighlighted]
+    [setHighlighted, refId]
   );
 
   const onSelectStoryId = useCallback(
-    // @ts-expect-error (non strict)
-    (storyId: string) => api && api.selectStory(storyId, undefined, { ref: !isMain && refId }),
+    (storyId: string) => api?.selectStory(storyId, undefined, { ref: isMain ? undefined : refId }),
     [api, isMain, refId]
   );
 
@@ -147,7 +148,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
           {/* @ts-expect-error (non strict) */}
           {state === 'error' && <ErrorBlock error={indexError} />}
           {state === 'loading' && <LoaderBlock isMain={isMain} />}
-          {state === 'empty' && <EmptyBlock isMain={isMain} />}
+          {state === 'empty' && <EmptyBlock isMain={isMain} hasEntries={hasEntries} />}
           {state === 'ready' && (
             <Tree
               allStatuses={allStatuses}

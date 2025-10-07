@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
 
-import { SbPage, hasVitestIntegration } from './util';
+import { SbPage } from './util';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
@@ -30,7 +30,7 @@ test.describe('preview-api', () => {
     const interactionsTab = page.locator('#tabbutton-storybook-interactions-panel');
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();
-    const runStatusBadge = panel.locator('[aria-label="Status of the test run"]');
+    const runStatusBadge = panel.locator('[aria-label="Story status"]');
     await expect(runStatusBadge).toContainText(/Pass/);
 
     // click outside, to remove focus from the input of the story, then press S to toggle sidebar

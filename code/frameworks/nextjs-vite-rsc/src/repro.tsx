@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 import { NextRouter } from '@storybook/nextjs-vite-rsc/rsc/client';
 

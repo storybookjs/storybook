@@ -3,6 +3,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 import { definePreview } from 'storybook/internal/csf';
 
 import pseudoAddon from '.';
+import '../../../renderers/react/src/typings';
 
 describe('addon parameters are injected to csf factory', () => {
   // Define preview with pseudo addon

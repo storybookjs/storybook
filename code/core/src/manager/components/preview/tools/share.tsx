@@ -123,10 +123,6 @@ function ShareMenu({
       ],
     ];
 
-    const qrSectionText = isDevelopment
-      ? 'Must be on the same network as this device.'
-      : 'View this on another device.';
-
     baseLinks.push([
       {
         id: 'qr-section',
@@ -135,8 +131,12 @@ function ShareMenu({
           <QRContainer>
             <QRImage value={qrUrl} />
             <QRContent>
-              <QRTitle>Scan me</QRTitle>
-              <QRDescription>{qrSectionText}</QRDescription>
+              <QRTitle>Scan to open</QRTitle>
+              <QRDescription>
+                {isDevelopment
+                  ? 'Device must be on the same network.'
+                  : 'View story on another device.'}
+              </QRDescription>
             </QRContent>
           </QRContainer>
         ),
@@ -144,9 +144,9 @@ function ShareMenu({
     ]);
 
     return baseLinks;
-  }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, copyStoryLink]);
+  }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, copyStoryLink, isDevelopment]);
 
-  return <TooltipLinkList links={links} />;
+  return <TooltipLinkList links={links} style={{ width: 210 }} />;
 }
 
 export const shareTool: Addon_BaseType = {
@@ -158,10 +158,10 @@ export const shareTool: Addon_BaseType = {
     return (
       <Consumer filter={mapper}>
         {({ baseUrl, storyId, queryParams }) => {
+          const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
           const storyUrl = global.STORYBOOK_NETWORK_ADDRESS
             ? new URL(window.location.search, global.STORYBOOK_NETWORK_ADDRESS).href
             : window.location.href;
-          const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
 
           return storyId ? (
             <WithTooltip

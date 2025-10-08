@@ -74,6 +74,8 @@ export interface BaseIndexEntry {
 export type StoryIndexEntry = BaseIndexEntry & {
   type: 'story';
   subtype: 'story' | 'test';
+  componentPath?: string;
+  exportName?: string;
   parent?: StoryId; // exists only on tests
   parentName?: StoryName; // exists only on tests
 };
@@ -134,7 +136,7 @@ export type BaseIndexInput = {
 /** The input for indexing a story entry. */
 export type StoryIndexInput = BaseIndexInput & {
   type: 'story';
-  subtype: 'story' | 'test';
+  subtype?: 'story' | 'test';
   parent?: StoryId; // exists only on tests
   parentName?: StoryName; // exists only on tests
 };

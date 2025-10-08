@@ -7,6 +7,14 @@ const config: BuildEntries = {
         exportEntries: ['.'],
         entryPoint: './src/index.ts',
       },
+      {
+        exportEntries: ['./client'],
+        entryPoint: './src/client/index.ts',
+      },
+      {
+        exportEntries: ['./client/config'],
+        entryPoint: './src/client/config.ts',
+      },
     ],
     node: [
       {

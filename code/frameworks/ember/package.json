@@ -29,6 +29,14 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
+    "./client/config": {
+      "types": "./dist/client/config.d.ts",
+      "default": "./dist/client/config.js"
+    },
     "./node": {
       "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
@@ -53,15 +61,16 @@
   },
   "dependencies": {
     "@storybook/builder-vite": "workspace:*",
-    "@storybook/global": "^5.0.0"
+    "@storybook/global": "^5.0.0",
+    "content-tag": "^4.0.0",
+    "object-inspect": "^1.13.4"
   },
   "devDependencies": {
     "@babel/plugin-transform-runtime": "^7.28.3",
     "@babel/plugin-transform-typescript": "^7.28.0",
-    "@embroider/core": "^4.2.1",
-    "@embroider/vite": "^1.2.1",
-    "babel-plugin-ember-template-compilation": "^3.0.1",
-    "content-tag": "^4.0.0",
+    "@embroider/core": "^4.2.3",
+    "@embroider/vite": "^1.2.3",
+    "babel-plugin-ember-template-compilation": "^2.0.0",
     "decorator-transforms": "^2.3.0",
     "ember-source": "beta",
     "lightningcss": "^1.30.1",
@@ -69,9 +78,9 @@
   },
   "peerDependencies": {
     "@babel/core": "*",
-    "@embroider/core": "^4.2.1",
-    "@embroider/vite": "^1.2.1",
-    "babel-plugin-ember-template-compilation": "^3.0.1",
+    "@embroider/core": "^4.2.0",
+    "@embroider/vite": "^1.2.0",
+    "babel-plugin-ember-template-compilation": "^2.0.0 || ^3.0.1",
     "decorator-transforms": "^2.3.0",
     "ember-source": "*",
     "storybook": "workspace:^"

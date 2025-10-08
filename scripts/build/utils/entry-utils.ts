@@ -1,8 +1,8 @@
 import { builtinModules } from 'node:module';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import * as esbuild from 'esbuild';
-import { pathToFileURL } from 'node:url';
 
 export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
 
@@ -60,6 +60,7 @@ export const getExternal = async (cwd: string) => {
     'react-dom',
     'react-dom/client',
     '@storybook/icons',
+    '@ember/renderer', // most `@ember` packages are virtual, so they must be excluded
 
     /**
      * @note This is not a real package, it's a hack to allow `frameworks/nextjs` to be able to alias

@@ -32,6 +32,14 @@ export const emberIndexer: Indexer = {
 
     console.log('EMBER INDEXER', result);
 
-    return [];
+    return [
+      {
+        name: 'Button/Text',
+        type: 'story',
+        subtype: 'story',
+        exportName: 'Text',
+        importPath: fileName,
+      },
+    ];
   },
 };

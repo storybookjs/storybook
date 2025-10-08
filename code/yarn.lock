@@ -2286,14 +2286,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@embroider/core@npm:^4.2.1":
-  version: 4.2.1
-  resolution: "@embroider/core@npm:4.2.1"
+"@embroider/core@npm:^4.2.3":
+  version: 4.2.3
+  resolution: "@embroider/core@npm:4.2.3"
   dependencies:
     "@babel/core": "npm:^7.14.5"
     "@babel/parser": "npm:^7.14.5"
     "@babel/traverse": "npm:^7.14.5"
-    "@embroider/macros": "npm:1.18.2"
+    "@embroider/macros": "npm:1.19.0"
     "@embroider/reverse-exports": "npm:0.1.2"
     "@embroider/shared-internals": "npm:3.0.1"
     assert-never: "npm:^1.2.1"
@@ -2317,13 +2317,13 @@ __metadata:
     semver: "npm:^7.3.5"
     typescript-memoize: "npm:^1.0.1"
     walk-sync: "npm:^3.0.0"
-  checksum: 10c0/95497dbd11828faebaf5a606acfa7b770756f7be85ff6aeb6b08d4da90ac71c7306d083cc373416a73f881ae0ca873f52602e30942877346670a223b88418a78
+  checksum: 10c0/ec01693ba2737bdf2c3a081044a0e630004d816f641fbafa8259c33a99a701abd1472488df39fc3c1897067ecf85a4c0df188c1462c92cdb850da091e0d5c0dc
   languageName: node
   linkType: hard
 
-"@embroider/macros@npm:1.18.2":
-  version: 1.18.2
-  resolution: "@embroider/macros@npm:1.18.2"
+"@embroider/macros@npm:1.19.0":
+  version: 1.19.0
+  resolution: "@embroider/macros@npm:1.19.0"
   dependencies:
     "@embroider/shared-internals": "npm:3.0.1"
     assert-never: "npm:^1.2.1"
@@ -2338,7 +2338,7 @@ __metadata:
   peerDependenciesMeta:
     "@glint/template":
       optional: true
-  checksum: 10c0/be2d6c39597701cfb2c2f3b83994850b6576a8d9fcaa67b5371a5816e82f6eae931504ff28dbf78c6ddb82ebe0c643d43ec6a93f6f3ce231021ec28fe80a080e
+  checksum: 10c0/d3a037cfcce900c035c6519420e3fdf9be4a3255c5d39f7805e2eeb10b56e146685a33a4aa46d6181b59b15b23391415f84b8f0e140347d679ae2cfef4768bb3
   languageName: node
   linkType: hard
 
@@ -2394,12 +2394,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@embroider/vite@npm:^1.2.1":
-  version: 1.2.1
-  resolution: "@embroider/vite@npm:1.2.1"
+"@embroider/vite@npm:^1.2.3":
+  version: 1.2.3
+  resolution: "@embroider/vite@npm:1.2.3"
   dependencies:
     "@babel/core": "npm:^7.22.9"
-    "@embroider/macros": "npm:1.18.2"
+    "@embroider/macros": "npm:1.19.0"
     "@embroider/reverse-exports": "npm:0.1.2"
     "@rollup/pluginutils": "npm:^5.1.0"
     assert-never: "npm:^1.2.1"
@@ -2414,9 +2414,9 @@ __metadata:
     source-map-url: "npm:^0.4.1"
     terser: "npm:^5.7.0"
   peerDependencies:
-    "@embroider/core": ^4.2.1
+    "@embroider/core": ^4.2.3
     vite: ">= 5.2.0"
-  checksum: 10c0/eb9d088763a8c9db1cc1e953a75ff4d34b772b20d8b23be7394e0678a69e1d555fecdcf2a4cc0d560afa40e60c20960fdda76368d1b786fd1176c5ef171852cc
+  checksum: 10c0/2f0c755c8ebbae0a762f02fe67e5dca2e599e2a169a9dc9371e14410985b5d80ebe2602bfe90136e3a3ab75820a65953b6f290cce26a00d49c7b753b34c4caa8
   languageName: node
   linkType: hard
 
@@ -6898,8 +6898,8 @@ __metadata:
   dependencies:
     "@babel/plugin-transform-runtime": "npm:^7.28.3"
     "@babel/plugin-transform-typescript": "npm:^7.28.0"
-    "@embroider/core": "npm:^4.2.1"
-    "@embroider/vite": "npm:^1.2.1"
+    "@embroider/core": "npm:^4.2.3"
+    "@embroider/vite": "npm:^1.2.3"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     babel-plugin-ember-template-compilation: "npm:^3.0.1"
@@ -6907,11 +6907,12 @@ __metadata:
     decorator-transforms: "npm:^2.3.0"
     ember-source: "npm:beta"
     lightningcss: "npm:^1.30.1"
+    object-inspect: "npm:^1.13.4"
     typescript: "npm:^5.8.3"
   peerDependencies:
     "@babel/core": "*"
-    "@embroider/core": ^4.2.1
-    "@embroider/vite": ^1.2.1
+    "@embroider/core": ^4.2.0
+    "@embroider/vite": ^1.2.0
     babel-plugin-ember-template-compilation: ^3.0.1
     decorator-transforms: ^2.3.0
     ember-source: "*"

@@ -622,7 +622,7 @@ export const baseTemplates = {
   'ember/default-ts': {
     name: 'Ember Latest (Vite | TypeScript)',
     script:
-      'npx --package ember-cli@latest ember new {{beforeDir}} -b @ember/app-blueprint -yarn --typescript',
+      'npx --package ember-cli@latest ember new {{beforeDir}} -b @ember/app-blueprint -yarn --typescript --no-ember-data --no-welcome && cd {{beforeDir}} && yarn add -D babel-plugin-ember-template-compilation@^3.0.0',
     inDevelopment: true,
     expected: {
       framework: '@storybook/ember',

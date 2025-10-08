@@ -671,20 +671,20 @@ describe('addon-globals-api', () => {
           };
           export const Default = {};
         `;
-      const expectedContent = dedent`
-          import Button from './Button';
-          export default {
-            component: Button,
-            globals: {
-              backgrounds: {
-                value: 'tweet'
-              }
-            }
-          };
-          export const Default = {};
-        `;
+
       expect(transformFn).toBeDefined();
-      expect(transformFn!('story.js', storyContent)).toBe(expectedContent);
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+        export default {
+          component: Button,
+          globals: {
+            backgrounds: {
+              value: 'tweet'
+            }
+          }
+        };
+        export const Default = {};"
+      `);
     });
 
     it('should return null if no changes are needed', async () => {

@@ -6223,7 +6223,6 @@ __metadata:
     "@types/micromatch": "npm:^4.0.0"
     "@types/node": "npm:^22.0.0"
     "@types/semver": "npm:^7"
-    "@vitest/browser": "npm:^4.0.0-beta.16"
     "@vitest/browser-playwright": "npm:^4.0.0-beta.16"
     "@vitest/runner": "npm:^4.0.0-beta.16"
     boxen: "npm:^8.0.1"
@@ -6247,11 +6246,14 @@ __metadata:
     vitest: "npm:^4.0.0-beta.16"
   peerDependencies:
     "@vitest/browser": ^3.0.0 || ^4.0.0
+    "@vitest/browser-playwright": ^4.0.0
     "@vitest/runner": ^3.0.0 || ^4.0.0
     storybook: "workspace:^"
     vitest: ^3.0.0 || ^4.0.0
   peerDependenciesMeta:
     "@vitest/browser":
+      optional: true
+    "@vitest/browser-playwright":
       optional: true
     "@vitest/runner":
       optional: true
@@ -8633,7 +8635,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/browser@npm:4.0.0-beta.16, @vitest/browser@npm:^4.0.0-beta.16":
+"@vitest/browser@npm:4.0.0-beta.16":
   version: 4.0.0-beta.16
   resolution: "@vitest/browser@npm:4.0.0-beta.16"
   dependencies:

@@ -2,13 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
 import type { ConfigFile, CsfFile } from 'storybook/internal/csf-tools';
-import {
-  formatConfig,
-  formatCsf,
-  loadConfig,
-  loadCsf,
-  writeCsf,
-} from 'storybook/internal/csf-tools';
+import { formatConfig, loadConfig, loadCsf, writeCsf } from 'storybook/internal/csf-tools';
 
 import type { ArrayExpression, Expression, ObjectExpression } from '@babel/types';
 
@@ -232,20 +226,6 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
   },
 };
 
-// Individual story transformation function for testing
-export function transformStoryFileSync(
-  source: string,
-  options: {
-    needsViewportMigration: boolean;
-    needsBackgroundsMigration: boolean;
-    viewportsOptions: any;
-    backgroundsOptions: any;
-  }
-) {
-  const result = transformStoryFile(source, options);
-  return result ? formatCsf(result, {}, source) : null;
-}
-
 // Story transformation function
 async function transformStoryFiles(
   files: string[],
@@ -282,7 +262,7 @@ async function transformStoryFiles(
 }
 
 // Transform a single story file
-function transformStoryFile(
+export function transformStoryFile(
   source: string,
   options: {
     needsViewportMigration: boolean;

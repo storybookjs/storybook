@@ -17,13 +17,13 @@ export default meta;
 type Story = StoryObj<typeof Button>;
 
 // 👇 This story will display the Code panel
-const Primary: Story = {
+export const Primary: Story = {
   args: {
     children: 'Button',
   },
 };
 
-const Secondary: Story = {
+export const Secondary: Story = {
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -56,13 +56,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // 👇 This story will display the Code panel
-const Primary: Story = {
+export const Primary: Story = {
   args: {
     children: 'Button',
   },
 };
 
-const Secondary: Story = {
+export const Secondary: Story = {
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -90,13 +90,13 @@ export default {
 };
 
 // 👇 This story will display the Code panel
-const Primary = {
+export const Primary = {
   args: {
     children: 'Button',
   },
 };
 
-const Secondary = {
+export const Secondary = {
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -169,13 +169,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // 👇 This story will display the Code panel
-const Primary: Story = {
+export const Primary: Story = {
   args: {
     children: 'Button',
   },
 };
 
-const Secondary: Story = {
+export const Secondary: Story = {
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -242,13 +242,13 @@ export default {
 };
 
 // 👇 This story will display the Code panel
-const Primary = {
+export const Primary = {
   args: {
     children: 'Button',
   },
 };
 
-const Secondary = {
+export const Secondary = {
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -281,13 +281,13 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 // 👇 This story will display the Code panel
-const Primary: Story = {
+export const Primary: Story = {
   args: {
     children: 'Button',
   },
 };
 
-const Secondary: Story = {
+export const Secondary: Story = {
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -315,13 +315,13 @@ export default {
 };
 
 // 👇 This story will display the Code panel
-const Primary = {
+export const Primary = {
   args: {
     children: 'Button',
   },
 };
 
-const Secondary = {
+export const Secondary = {
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -352,13 +352,13 @@ export default meta;
 type Story = StoryObj;
 
 // 👇 This story will display the Code panel
-const Primary: Story = {
+export const Primary: Story = {
   args: {
     children: 'Button',
   },
 };
 
-const Secondary: Story = {
+export const Secondary: Story = {
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -384,13 +384,13 @@ export default {
 };
 
 // 👇 This story will display the Code panel
-const Primary = {
+export const Primary = {
   args: {
     children: 'Button',
   },
 };
 
-const Secondary = {
+export const Secondary = {
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -420,13 +420,13 @@ const meta = preview.meta({
 });
 
 // 👇 This story will display the Code panel
-const Primary: Story = {
+export const Primary = meta.story({
   args: {
     children: 'Button',
   },
-};
+});
 
-const Secondary: Story = {
+export const Secondary = meta.story({
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -437,7 +437,7 @@ const Secondary: Story = {
       codePanel: false,
     },
   },
-};
+});
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -457,13 +457,13 @@ const meta = preview.meta({
 });
 
 // 👇 This story will display the Code panel
-const Primary = {
+export const Primary = meta.story({
   args: {
     children: 'Button',
   },
-};
+});
 
-const Secondary = {
+export const Secondary = meta.story({
   args: {
     children: 'Button',
     variant: 'secondary',
@@ -474,5 +474,5 @@ const Secondary = {
       codePanel: false,
     },
   },
-};
+});
 ```

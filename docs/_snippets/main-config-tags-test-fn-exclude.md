@@ -5,7 +5,7 @@ export default {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   tags: {
     // 👇 Adjust the default configuration of this tag
-    'test-fn': {
+    _test: {
       defaultFilterSelection: 'exclude',
     },
   },
@@ -21,7 +21,7 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   tags: {
     // 👇 Adjust the default configuration of this tag
-    'test-fn': {
+    _test: {
       defaultFilterSelection: 'exclude',
     },
   },
@@ -39,12 +39,11 @@ export default defineMain({
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   tags: {
     // 👇 Adjust the default configuration of this tag
-    'test-fn': {
+    _test: {
       defaultFilterSelection: 'exclude',
     },
   },
 });
-
 ```
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
@@ -61,10 +60,9 @@ export default defineMain({
 
   tags: {
     // 👇 Adjust the default configuration of this tag
-    'test-fn': {
+    _test: {
       defaultFilterSelection: 'exclude',
     },
   },
 });
-
 ```

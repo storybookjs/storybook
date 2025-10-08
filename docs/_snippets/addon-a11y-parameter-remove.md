@@ -41,18 +41,6 @@ const meta = {
 export default meta;
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js"
-import { Button } from './Button';
-
-export default {
-  component: Button,
-  parameters: {
-    // 👇 Remove this once all stories pass accessibility tests
-    // a11y: { test: 'todo' },
-  },
-};
-```
-
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';

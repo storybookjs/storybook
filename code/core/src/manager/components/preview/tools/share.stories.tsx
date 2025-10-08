@@ -52,7 +52,7 @@ export const Default: Story = {
   play: async ({ userEvent, canvas }) => {
     await waitFor(async () => {
       await userEvent.click(canvas.getByRole('button'));
-      await expect(await screen.findByText('Scan me')).toBeVisible();
+      await expect(await screen.findByText('Scan to open')).toBeVisible();
     });
   },
 };

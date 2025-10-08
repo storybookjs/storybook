@@ -18,22 +18,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-      - name: Set node version
-        uses: actions/setup-node@v4
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
         with:
-          node-version-file: ".nvmrc"
-          cache: 'yarn'
-          cache-dependency-path: |
-            code/yarn.lock
-            scripts/yarn.lock
-
-      - name: install scripts
-        run: |
-          cd scripts && yarn install
-
-      - name: install code
-        run: |
-          cd code && yarn install
+          install-code-deps: true
 
       - name: compile
         run: yarn task --task compile --start-from=compile

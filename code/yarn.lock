@@ -6245,11 +6245,11 @@ __metadata:
     typescript: "npm:^5.8.3"
     vitest: "npm:^4.0.0-beta.16"
   peerDependencies:
-    "@vitest/browser": ^3.0.0 || ^4.0.0
-    "@vitest/browser-playwright": ^4.0.0
-    "@vitest/runner": ^3.0.0 || ^4.0.0
+    "@vitest/browser": ^3.0.0 || ^4.0.0 || ^4.0.0-beta
+    "@vitest/browser-playwright": ^4.0.0 || ^4.0.0-beta
+    "@vitest/runner": ^3.0.0 || ^4.0.0 || ^4.0.0-beta
     storybook: "workspace:^"
-    vitest: ^3.0.0 || ^4.0.0
+    vitest: ^3.0.0 || ^4.0.0 || ^4.0.0-beta
   peerDependenciesMeta:
     "@vitest/browser":
       optional: true

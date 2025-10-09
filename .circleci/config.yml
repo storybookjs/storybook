@@ -1004,7 +1004,7 @@ workflows:
             - e2e-ui:
                 requires:
                     - build
-            - e2e-ui-vitest3:
+            - e2e-ui-vitest-3:
                 requires:
                     - build
             - test-init-features:
@@ -1096,7 +1096,7 @@ workflows:
             - e2e-ui:
                 requires:
                     - build
-            - e2e-ui-vitest3:
+            - e2e-ui-vitest-3:
                 requires:
                     - build
             - test-init-features:
@@ -1159,7 +1159,7 @@ workflows:
             - e2e-ui:
                 requires:
                     - build
-            - e2e-ui-vitest3:
+            - e2e-ui-vitest-3:
                 requires:
                     - build
             - test-init-features:

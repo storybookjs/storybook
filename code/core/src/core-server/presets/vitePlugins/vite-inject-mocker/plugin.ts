@@ -8,10 +8,10 @@ import type { ResolvedConfig, ViteDevServer } from 'vite';
 
 import { resolvePackageDir } from '../../../../shared/utils/module';
 
-const entryPath = './vite-inject-mocker-entry.js';
+const entryPath = '/vite-inject-mocker-entry.js';
 
 const entryCode = dedent`
-    <script type="module" src="${entryPath}"></script>
+    <script type="module" src=".${entryPath}"></script>
   `;
 
 let server: ViteDevServer;
@@ -33,7 +33,7 @@ export const viteInjectMockerRuntime = (options: {
             'server',
             'mocker-runtime.template.js'
           ),
-          fileName: entryPath.slice(2),
+          fileName: entryPath.slice(1),
         });
       }
     },

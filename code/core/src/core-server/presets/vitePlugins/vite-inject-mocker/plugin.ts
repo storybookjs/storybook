@@ -8,7 +8,7 @@ import type { ResolvedConfig, ViteDevServer } from 'vite';
 const entryPath = '/vite-inject-mocker-entry.js';
 
 const entryCode = dedent`
-    <script type="module" src="${entryPath}"></script>
+    <script type="module" src=".${entryPath}"></script>
   `;
 
 let server: ViteDevServer;

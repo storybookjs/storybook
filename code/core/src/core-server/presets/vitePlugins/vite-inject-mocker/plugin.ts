@@ -33,7 +33,7 @@ export const viteInjectMockerRuntime = (options: {
             'server',
             'mocker-runtime.template.js'
           ),
-          fileName: entryPath.slice(1),
+          fileName: entryPath.slice(2),
         });
       }
     },

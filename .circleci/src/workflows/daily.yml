@@ -39,11 +39,11 @@ jobs:
       requires:
         - create-sandboxes
   - e2e-production:
-      parallelism: 25
+      parallelism: 7
       requires:
         - create-sandboxes
   - e2e-dev:
-      parallelism: 1
+      parallelism: 25
       requires:
         - create-sandboxes
   - test-runner-production:

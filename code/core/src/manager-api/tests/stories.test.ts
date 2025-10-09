@@ -28,6 +28,7 @@ import type { API, State } from '../root';
 import type Store from '../store';
 import { fullStatusStore } from '../stores/status';
 import { docsEntries, mockEntries, navigationEntries, preparedEntries } from './mockStoriesEntries';
+import type { StoryIndex } from '../../types';
 
 const mockGetEntries = vi.fn();
 const fetch = vi.mocked(global.fetch);
@@ -1209,6 +1210,54 @@ describe('stories API', () => {
         api.selectStory('b/e');
         expect(navigate).toHaveBeenCalledWith('/story/custom-id--1');
       });
+    });
+    it('navigates to first visible story when component is selected and first story is filtered out', async () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, store } = moduleArgs;
+
+      const entries: StoryIndex['entries'] = {
+        'component-a--story-1': {
+          type: 'story',
+          subtype: 'story',
+          id: 'component-a--story-1',
+          title: 'Component A',
+          name: 'Story 1',
+          tags: ['dev'],
+          importPath: './component-a.ts',
+        },
+        'component-a--story-2': {
+          type: 'story',
+          subtype: 'story',
+          id: 'component-a--story-2',
+          title: 'Component A',
+          name: 'Story 2',
+          tags: [],
+          importPath: './component-a.ts',
+        },
+        'component-a--story-3': {
+          type: 'story',
+          subtype: 'story',
+          id: 'component-a--story-3',
+          title: 'Component A',
+          name: 'Story 3',
+          tags: [],
+          importPath: './component-a.ts',
+        },
+      };
+
+      await store.setState({
+        filters: {
+          'test-filter': (entry: any) => !entry.tags?.includes('dev'),
+        },
+      });
+
+      await api.setIndex({ v: 5, entries });
+
+      api.selectStory('component-a');
+
+      expect(navigate).toHaveBeenCalledWith('/story/component-a--story-2');
     });
   });
   describe('STORY_PREPARED', () => {

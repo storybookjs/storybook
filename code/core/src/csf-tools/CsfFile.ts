@@ -295,7 +295,7 @@ export class CsfFile {
 
   _metaStatement: t.Statement | undefined;
 
-  _metaNode: t.Expression | undefined;
+  _metaNode: t.ObjectExpression | undefined;
 
   _metaPath: NodePath<t.ExportDefaultDeclaration> | undefined;
 

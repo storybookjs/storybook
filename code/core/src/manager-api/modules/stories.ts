@@ -425,9 +425,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
     selectStory: (titleOrId = undefined, name = undefined, options = {}) => {
       const { ref } = options;
-      const { storyId, index, refs } = store.getState();
+      
+      const { storyId, filteredIndex, refs } = store.getState();
 
-      const hash = ref ? refs[ref].index : index;
+      const hash = ref ? refs[ref].filteredIndex : filteredIndex;
 
       const kindSlug = storyId?.split('--', 2)[0];
 

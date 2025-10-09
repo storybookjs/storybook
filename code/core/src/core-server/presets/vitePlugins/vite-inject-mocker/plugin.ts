@@ -8,7 +8,7 @@ import type { ResolvedConfig, ViteDevServer } from 'vite';
 
 import { resolvePackageDir } from '../../../../shared/utils/module';
 
-const entryPath = '/vite-inject-mocker-entry.js';
+const entryPath = './vite-inject-mocker-entry.js';
 
 const entryCode = dedent`
     <script type="module" src="${entryPath}"></script>

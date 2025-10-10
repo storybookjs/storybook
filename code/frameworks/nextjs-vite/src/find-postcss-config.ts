@@ -102,7 +102,10 @@ export const loadPostCssConfigWithFallback = async (searchPath: string): Promise
     // Second attempt: try with modified config
     try {
       const originalContent = await readFile(configPath, 'utf8');
-      const modifiedContent = originalContent.replace(/FROM/g, 'TO');
+      const modifiedContent = originalContent.replace(
+        'plugins: ["@tailwindcss/postcss"]',
+        'plugins: { "@tailwindcss/postcss": {} }'
+      );
 
       // Write the modified content
       await writeFile(configPath, modifiedContent, 'utf8');

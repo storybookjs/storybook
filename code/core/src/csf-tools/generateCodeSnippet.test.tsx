@@ -305,3 +305,114 @@ test('Inline args.children when used as child expression', () => {
     `"const ChildrenExpr = () => <Button>Click me</Button>;"`
   );
 });
+
+// Deeper tree examples
+
+test('Deeply nested prop replacement (string)', () => {
+  const input = withCSF3(dedent`
+    export const DeepNestedProp: Story = {
+      render: (args) => (
+        <Button>
+          <Level1>
+            <Level2>
+              <Leaf val={args.foo} />
+            </Level2>
+          </Level1>
+        </Button>
+      ),
+      args: { foo: 'bar' }
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `
+    "const DeepNestedProp = () => <Button>
+        <Level1>
+            <Level2>
+                <Leaf val="bar" />
+            </Level2>
+        </Level1>
+    </Button>;"
+  `
+  );
+});
+
+test('Deeply nested prop replacement (boolean)', () => {
+  const input = withCSF3(dedent`
+    export const DeepNestedBoolean: Story = {
+      render: (args) => (
+        <Button>
+          <Level1>
+            <Level2>
+              <Leaf active={args.active} />
+            </Level2>
+          </Level1>
+        </Button>
+      ),
+      args: { active: true }
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `
+    "const DeepNestedBoolean = () => <Button>
+        <Level1>
+            <Level2>
+                <Leaf active />
+            </Level2>
+        </Level1>
+    </Button>;"
+  `
+  );
+});
+
+test('Deeply nested children expression', () => {
+  const input = withCSF3(dedent`
+    export const DeepNestedChildren: Story = {
+      render: (args) => (
+        <Button>
+          <Level1>
+            <Level2>{args.children}</Level2>
+          </Level1>
+        </Button>
+      )
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `
+    "const DeepNestedChildren = () => <Button>
+        <Level1>
+            <Level2>Click me</Level2>
+        </Level1>
+    </Button>;"
+  `
+  );
+});
+
+test('Deeply nested multiple replacements', () => {
+  const input = withCSF3(dedent`
+    export const DeepNestedMultiple: Story = {
+      render: (args) => (
+        <Button>
+          <Level1>
+            <Leaf1 a={args.a} />
+            <Level2>
+              <Leaf2 b={args.b} />
+            </Level2>
+          </Level1>
+        </Button>
+      ),
+      args: { a: 'x', b: 'y' }
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `
+    "const DeepNestedMultiple = () => <Button>
+        <Level1>
+            <Leaf1 a="x" />
+            <Level2>
+                <Leaf2 b="y" />
+            </Level2>
+        </Level1>
+    </Button>;"
+  `
+  );
+});

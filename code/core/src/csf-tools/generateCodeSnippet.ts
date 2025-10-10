@@ -155,14 +155,31 @@ export function getCodeSnippet(
           : (body.closingElement ?? t.jsxClosingElement(opening.name));
         const finalChildren = canInjectChildren ? toJsxChildren(metaChildren) : body.children;
 
-        const newBody = t.jsxElement(finalOpening, finalClosing, finalChildren, shouldSelfClose);
+        let newBody = t.jsxElement(finalOpening, finalClosing, finalChildren, shouldSelfClose);
+        // After handling top-level {...args}, also inline any nested args.* usages and
+        // transform any nested {...args} spreads deeper in the tree.
+        const inlined = inlineArgsInJsx(newBody, merged);
+        const transformed = transformArgsSpreadsInJsx(inlined.node, merged);
+        newBody = transformed.node as t.JSXElement;
+
         const newFn = t.arrowFunctionExpression([], newBody, fn.async);
         return t.variableDeclaration('const', [
           t.variableDeclarator(t.identifier(storyId.node.name), newFn),
         ]);
       }
 
-      // No {...args} at top level; still try to inline any usages of args.* in the entire JSX tree
+      // No {...args} at top level; try to remove any deeper {...args} spreads in the JSX tree
+      const deepSpread = transformArgsSpreadsInJsx(body, merged);
+      if (deepSpread.changed) {
+        // After transforming spreads, also inline any remaining args.* references across the tree
+        const inlined = inlineArgsInJsx(deepSpread.node as any, merged);
+        const newFn = t.arrowFunctionExpression([], inlined.node as any, fn.async);
+        return t.variableDeclaration('const', [
+          t.variableDeclarator(t.identifier(storyId.node.name), newFn),
+        ]);
+      }
+
+      // Still no spreads transformed; inline any usages of args.* in the entire JSX tree
       const { node: transformedBody, changed } = inlineArgsInJsx(body, merged);
       if (changed) {
         const newFn = t.arrowFunctionExpression([], transformedBody, fn.async);
@@ -426,6 +443,109 @@ function inlineArgsInJsx(
       } else {
         fragChildren.push(c);
       }
+    } else {
+      fragChildren.push(c as any);
+    }
+  }
+  const newFrag = t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren);
+  return { node: newFrag, changed };
+}
+
+function transformArgsSpreadsInJsx(
+  node: t.JSXElement | t.JSXFragment,
+  merged: Record<string, t.Node>
+): { node: t.JSXElement | t.JSXFragment; changed: boolean } {
+  let changed = false;
+
+  const makeInjectedPieces = (
+    existingAttrNames: Set<string>
+  ): Array<t.JSXAttribute | t.JSXSpreadAttribute> => {
+    const entries = Object.entries(merged).filter(([k]) => k !== 'children');
+    const validEntries = entries.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
+    const invalidEntries = entries.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
+
+    const injectedAttrs = validEntries
+      .map(([k, v]) => toAttr(k, v))
+      .filter((a): a is t.JSXAttribute => Boolean(a));
+
+    const filteredInjected = injectedAttrs.filter(
+      (a) => t.isJSXIdentifier(a.name) && !existingAttrNames.has(a.name.name)
+    );
+
+    const invalidProps = invalidEntries.filter(([k]) => !existingAttrNames.has(k));
+    const invalidSpread = buildInvalidSpread(invalidProps);
+
+    return [...filteredInjected, ...(invalidSpread ? [invalidSpread] : [])];
+  };
+
+  if (t.isJSXElement(node)) {
+    const opening = node.openingElement;
+    const attrs = opening.attributes;
+
+    // Collect non-args attrs, track first insertion index, and whether we saw any args spreads
+    const nonArgsAttrs: (t.JSXAttribute | t.JSXSpreadAttribute)[] = [];
+    let insertionIndex = 0;
+    let sawArgsSpread = false;
+
+    for (let i = 0; i < attrs.length; i++) {
+      const a = attrs[i]!;
+      const isArgsSpread =
+        t.isJSXSpreadAttribute(a) && t.isIdentifier(a.argument) && a.argument.name === 'args';
+      if (isArgsSpread) {
+        if (!sawArgsSpread) {
+          insertionIndex = nonArgsAttrs.length;
+        }
+        sawArgsSpread = true;
+        continue; // drop all {...args}
+      }
+      nonArgsAttrs.push(a as any);
+    }
+
+    let newAttrs = nonArgsAttrs;
+    if (sawArgsSpread) {
+      const existingAttrNames = new Set(
+        nonArgsAttrs
+          .filter((a) => t.isJSXAttribute(a) && t.isJSXIdentifier(a.name))
+          .map((a) => (a as t.JSXAttribute).name.name)
+      );
+
+      const pieces = makeInjectedPieces(existingAttrNames);
+      newAttrs = [
+        ...nonArgsAttrs.slice(0, insertionIndex),
+        ...pieces,
+        ...nonArgsAttrs.slice(insertionIndex),
+      ];
+      changed = true;
+    }
+
+    // Recurse into children
+    const newChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
+    for (const c of node.children) {
+      if (t.isJSXElement(c) || t.isJSXFragment(c)) {
+        const res = transformArgsSpreadsInJsx(c, merged);
+        changed = changed || res.changed;
+        newChildren.push(res.node as any);
+      } else {
+        newChildren.push(c as any);
+      }
+    }
+
+    const shouldSelfClose = opening.selfClosing && newChildren.length === 0;
+    const newOpening = t.jsxOpeningElement(opening.name, newAttrs, shouldSelfClose);
+    const newClosing = shouldSelfClose
+      ? null
+      : (node.closingElement ?? t.jsxClosingElement(opening.name));
+    const newEl = t.jsxElement(newOpening, newClosing, newChildren, shouldSelfClose);
+    return { node: newEl, changed };
+  }
+
+  // JSXFragment
+  const fragChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
+  for (const c of node.children) {
+    if (t.isJSXElement(c) || t.isJSXFragment(c)) {
+      const res = transformArgsSpreadsInJsx(c, merged);
+      changed = changed || res.changed;
+      fragChildren.push(res.node as any);
     } else {
       fragChildren.push(c as any);
     }

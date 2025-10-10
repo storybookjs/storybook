@@ -416,3 +416,53 @@ test('Deeply nested multiple replacements', () => {
   `
   );
 });
+
+test('Deeply nested multiple replacements and using args spread', () => {
+  const input = withCSF3(dedent`
+    export const DeepNestedMultiple: Story = {
+      render: (args) => (
+        <Button {...args}>
+          <Level1>
+            <Leaf1 a={args.a} />
+            <Level2>
+              <Leaf2 b={args.b} />
+            </Level2>
+          </Level1>
+        </Button>
+      ),
+      args: { a: 'x', b: 'y' }
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `
+    "const DeepNestedMultiple = () => <Button a="x" b="y">
+        <Level1>
+            <Leaf1 a="x" />
+            <Level2>
+                <Leaf2 b="y" />
+            </Level2>
+        </Level1>
+    </Button>;"
+  `
+  );
+});
+
+test('top level args injection and spreading in different places', async () => {
+  const input = withCSF3(dedent`
+    export const MultipleSpreads: Story = {
+      args: { disabled: false, count: 0, empty: '' },
+      render: (args) => (
+        <div count={args.count}>
+          <Button {...args} />
+          <Button {...args} />
+        </div>
+      ),
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const MultipleSpreads = () => <div count={0}>
+        <Button count={0} empty="" />
+        <Button count={0} empty="" />
+    </div>;"
+  `);
+});

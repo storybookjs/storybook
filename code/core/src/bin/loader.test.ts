@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs';
+import * as path from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -20,11 +21,14 @@ describe('loader', () => {
     });
 
     it('should resolve extensionless import to .ts extension when file exists', () => {
+      const currentFile = '/project/src/file.ts';
+      const expectedPath = path.resolve(path.dirname(currentFile), './utils.ts');
+
       vi.mocked(existsSync).mockImplementation((filePath) => {
-        return filePath === '/project/src/utils.ts';
+        return filePath === expectedPath;
       });
 
-      const result = resolveWithExtension('./utils', '/project/src/file.ts');
+      const result = resolveWithExtension('./utils', currentFile);
 
       expect(result).toBe('./utils.ts');
       expect(deprecate).toHaveBeenCalledWith(
@@ -38,11 +42,14 @@ describe('loader', () => {
     });
 
     it('should resolve extensionless import to .js extension when file exists', () => {
+      const currentFile = '/project/src/file.ts';
+      const expectedPath = path.resolve(path.dirname(currentFile), './utils.js');
+
       vi.mocked(existsSync).mockImplementation((filePath) => {
-        return filePath === '/project/src/utils.js';
+        return filePath === expectedPath;
       });
 
-      const result = resolveWithExtension('./utils', '/project/src/file.ts');
+      const result = resolveWithExtension('./utils', currentFile);
 
       expect(result).toBe('./utils.js');
       expect(deprecate).toHaveBeenCalledWith(
@@ -75,11 +82,14 @@ describe('loader', () => {
     });
 
     it('should resolve relative to parent directory', () => {
+      const currentFile = '/project/src/file.ts';
+      const expectedPath = path.resolve(path.dirname(currentFile), '../utils.ts');
+
       vi.mocked(existsSync).mockImplementation((filePath) => {
-        return filePath === '/project/utils.ts';
+        return filePath === expectedPath;
       });
 
-      const result = resolveWithExtension('../utils', '/project/src/file.ts');
+      const result = resolveWithExtension('../utils', currentFile);
 
       expect(result).toBe('../utils.ts');
       expect(deprecate).toHaveBeenCalledWith(

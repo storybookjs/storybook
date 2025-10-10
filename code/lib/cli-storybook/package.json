@@ -45,7 +45,6 @@
     "@types/semver": "^7.3.4",
     "commander": "^14.0.1",
     "create-storybook": "workspace:*",
-    "giget": "^2.0.0",
     "jscodeshift": "^0.15.1",
     "storybook": "workspace:*",
     "ts-dedent": "^2.0.0"

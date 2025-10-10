@@ -31,7 +31,7 @@ export const LogIn: Story = {
 };
 ```
 
-```ts filename="AuthButton.stories.ts" renderer="common" language="ts"
+```ts filename="AuthButton.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework (e.g. react-vite, vue3-vite, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect, mocked } from 'storybook/test';
@@ -65,7 +65,7 @@ export const LogIn: Story = {
 };
 ```
 
-```js filename="AuthButton.stories.js" renderer="common" language="js"
+```js filename="AuthButton.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { expect } from 'storybook/test';
 
 import { AuthButton } from './AuthButton';
@@ -279,4 +279,66 @@ export const LogIn = {
     expect(getUserFromSession).toHaveBeenCalled();
   },
 };
+```
+
+```ts filename="AuthButton.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect, mocked } from 'storybook/test';
+
+import { AuthButton } from './AuthButton';
+
+import { v4 as uuidv4 } from 'uuid';
+import { getUserFromSession } from '../lib/session';
+
+const meta = preview.meta({
+  component: AuthButton,
+  // 👇 This will run before each story is rendered
+  beforeEach: async () => {
+    // 👇 Force known, consistent behavior for mocked modules
+    mocked(uuidv4).mockReturnValue('1234-5678-90ab-cdef');
+    mocked(getUserFromSession).mockReturnValue({ name: 'John Doe' });
+  },
+});
+
+export const LogIn = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Sign in' });
+    userEvent.click(button);
+
+    // Assert that the getUserFromSession function was called
+    expect(getUserFromSession).toHaveBeenCalled();
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="AuthButton.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
+
+import { AuthButton } from './AuthButton';
+
+import { v4 as uuidv4 } from 'uuid';
+import { getUserFromSession } from '../lib/session';
+
+const meta = preview.meta({
+  component: AuthButton,
+  // 👇 This will run before each story is rendered
+  beforeEach: async () => {
+    // 👇 Force known, consistent behavior for mocked modules
+    uuidv4.mockReturnValue('1234-5678-90ab-cdef');
+    getUserFromSession.mockReturnValue({ name: 'John Doe' });
+  },
+});
+
+export const LogIn = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Sign in' });
+    userEvent.click(button);
+
+    // Assert that the getUserFromSession function was called
+    expect(getUserFromSession).toHaveBeenCalled();
+  },
+});
 ```

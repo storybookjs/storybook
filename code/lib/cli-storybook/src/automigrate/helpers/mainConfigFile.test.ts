@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  type BannerConfig,
+  analyzeCompatibilityNeeds,
+  containsDirnameUsage,
+  containsESMUsage,
+  containsRequireUsage,
   getBuilderPackageName,
   getFrameworkPackageName,
   getRendererName,
   getRendererPackageNameFromFramework,
+  getRequireBanner,
+  getRequireBannerFromContent,
+  hasDirnameDefined,
+  hasImport,
 } from './mainConfigFile';
 
 describe('getBuilderPackageName', () => {
@@ -214,5 +223,332 @@ describe('getRendererPackageNameFromFramework', () => {
     const frameworkPackageName = '@storybook/unknown';
     const packageName = getRendererPackageNameFromFramework(frameworkPackageName);
     expect(packageName).toBeNull();
+  });
+});
+
+describe('containsDirnameUsage', () => {
+  it('should detect __dirname usage', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(__dirname, 'config.js');
+    `;
+    expect(containsDirnameUsage(content)).toBe(true);
+  });
+
+  it('should not detect __dirname in comments', () => {
+    const content = `
+      // This is __dirname in a comment
+      const path = require('path');
+    `;
+    expect(containsDirnameUsage(content)).toBe(false);
+  });
+
+  it('should not detect __dirname in strings', () => {
+    const content = `
+      const message = "This is __dirname in a string";
+      const path = require('path');
+    `;
+    expect(containsDirnameUsage(content)).toBe(false);
+  });
+
+  it('should return false when __dirname is not used', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(process.cwd(), 'config.js');
+    `;
+    expect(containsDirnameUsage(content)).toBe(false);
+  });
+});
+
+describe('hasDirnameDefined', () => {
+  it('should detect const __dirname definition', () => {
+    const content = `
+      const __dirname = dirname(__filename);
+      const path = require('path');
+    `;
+    expect(hasDirnameDefined(content)).toBe(true);
+  });
+
+  it('should detect let __dirname definition', () => {
+    const content = `
+      let __dirname = dirname(__filename);
+      const path = require('path');
+    `;
+    expect(hasDirnameDefined(content)).toBe(true);
+  });
+
+  it('should detect var __dirname definition', () => {
+    const content = `
+      var __dirname = dirname(__filename);
+      const path = require('path');
+    `;
+    expect(hasDirnameDefined(content)).toBe(true);
+  });
+
+  it('should return false when __dirname is not defined', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(__dirname, 'config.js');
+    `;
+    expect(hasDirnameDefined(content)).toBe(false);
+  });
+});
+
+describe('hasImport', () => {
+  it('should detect named import', () => {
+    const content = `import { dirname } from "node:path";`;
+    expect(hasImport(content, 'dirname', 'node:path')).toBe(true);
+  });
+
+  it('should detect default import', () => {
+    const content = `import path from "node:path";`;
+    expect(hasImport(content, 'path', 'node:path')).toBe(true);
+  });
+
+  it('should detect namespace import', () => {
+    const content = `import * as path from "node:path";`;
+    expect(hasImport(content, 'path', 'node:path')).toBe(true);
+  });
+
+  it('should detect import with multiple named imports', () => {
+    const content = `import { dirname, join } from "node:path";`;
+    expect(hasImport(content, 'dirname', 'node:path')).toBe(true);
+    expect(hasImport(content, 'join', 'node:path')).toBe(true);
+  });
+
+  it('should return false when import does not exist', () => {
+    const content = `import { join } from "node:path";`;
+    expect(hasImport(content, 'dirname', 'node:path')).toBe(false);
+  });
+
+  it('should handle single quotes', () => {
+    const content = `import { dirname } from 'node:path';`;
+    expect(hasImport(content, 'dirname', 'node:path')).toBe(true);
+  });
+});
+
+describe('analyzeCompatibilityNeeds', () => {
+  it('should detect require usage', () => {
+    const content = `
+      import { addons } from '@storybook/addon-essentials';
+      const config = require('./config');
+      export default { addons: ['@storybook/addon-essentials'] };
+    `;
+    const config = analyzeCompatibilityNeeds(content);
+    expect(config.needsRequire).toBe(true);
+    expect(config.needsDirname).toBe(false);
+    expect(config.needsFilename).toBe(false);
+  });
+
+  it('should detect __dirname usage', () => {
+    const content = `
+      import { addons } from '@storybook/addon-essentials';
+      const configPath = path.join(__dirname, 'config.js');
+      export default { addons: ['@storybook/addon-essentials'] };
+    `;
+    const config = analyzeCompatibilityNeeds(content);
+    expect(config.needsRequire).toBe(false);
+    expect(config.needsDirname).toBe(true);
+    expect(config.needsFilename).toBe(true);
+  });
+
+  it('should detect existing imports', () => {
+    const content = `
+      import { createRequire } from "node:module";
+      import { dirname } from "node:path";
+      import { fileURLToPath } from "node:url";
+      const config = require('./config');
+      const configPath = path.join(__dirname, 'config.js');
+      export default { addons: ['@storybook/addon-essentials'] };
+    `;
+    const config = analyzeCompatibilityNeeds(content);
+    expect(config.needsRequire).toBe(true);
+    expect(config.needsDirname).toBe(true);
+    expect(config.existingImports.createRequire).toBe(true);
+    expect(config.existingImports.dirname).toBe(true);
+    expect(config.existingImports.fileURLToPath).toBe(true);
+  });
+
+  it('should not detect __dirname when already defined', () => {
+    const content = `
+      import { addons } from '@storybook/addon-essentials';
+      const __dirname = dirname(__filename);
+      const configPath = path.join(__dirname, 'config.js');
+      export default { addons: ['@storybook/addon-essentials'] };
+    `;
+    const config = analyzeCompatibilityNeeds(content);
+    expect(config.needsRequire).toBe(false);
+    expect(config.needsDirname).toBe(false);
+    expect(config.needsFilename).toBe(false);
+  });
+});
+
+describe('getRequireBanner', () => {
+  it('should generate minimal banner for require-only usage', () => {
+    const config: BannerConfig = {
+      needsRequire: true,
+      needsDirname: false,
+      needsFilename: false,
+      existingImports: {
+        createRequire: false,
+        dirname: false,
+        fileURLToPath: false,
+      },
+    };
+    const banner = getRequireBanner(config);
+    expect(banner).toContain('import { createRequire } from "node:module"');
+    expect(banner).toContain('const require = createRequire(import.meta.url)');
+    expect(banner).not.toContain('dirname');
+    expect(banner).not.toContain('fileURLToPath');
+    expect(banner).not.toContain('__dirname');
+  });
+
+  it('should generate full banner for __dirname usage', () => {
+    const config: BannerConfig = {
+      needsRequire: true,
+      needsDirname: true,
+      needsFilename: true,
+      existingImports: {
+        createRequire: false,
+        dirname: false,
+        fileURLToPath: false,
+      },
+    };
+    const banner = getRequireBanner(config);
+    expect(banner).toContain('import { createRequire } from "node:module"');
+    expect(banner).toContain('import { dirname } from "node:path"');
+    expect(banner).toContain('import { fileURLToPath } from "node:url"');
+    expect(banner).toContain('const require = createRequire(import.meta.url)');
+    expect(banner).toContain('const __filename = fileURLToPath(import.meta.url)');
+    expect(banner).toContain('const __dirname = dirname(__filename)');
+  });
+
+  it('should not add duplicate dirname import', () => {
+    const config: BannerConfig = {
+      needsRequire: true,
+      needsDirname: true,
+      needsFilename: true,
+      existingImports: {
+        createRequire: false,
+        dirname: true,
+        fileURLToPath: false,
+      },
+    };
+    const banner = getRequireBanner(config);
+    expect(banner).toContain('import { createRequire } from "node:module"');
+    expect(banner).not.toContain('import { dirname } from "node:path"');
+    expect(banner).toContain('import { fileURLToPath } from "node:url"');
+    expect(banner).toContain('const __dirname = dirname(__filename)');
+  });
+
+  it('should not add duplicate fileURLToPath import', () => {
+    const config: BannerConfig = {
+      needsRequire: true,
+      needsDirname: true,
+      needsFilename: true,
+      existingImports: {
+        createRequire: false,
+        dirname: false,
+        fileURLToPath: true,
+      },
+    };
+    const banner = getRequireBanner(config);
+    expect(banner).toContain('import { createRequire } from "node:module"');
+    expect(banner).toContain('import { dirname } from "node:path"');
+    expect(banner).not.toContain('import { fileURLToPath } from "node:url"');
+    expect(banner).toContain('const __dirname = dirname(__filename)');
+  });
+
+  it('should return empty string when no imports needed', () => {
+    const config: BannerConfig = {
+      needsRequire: false,
+      needsDirname: false,
+      needsFilename: false,
+      existingImports: {
+        createRequire: true,
+        dirname: true,
+        fileURLToPath: true,
+      },
+    };
+    const banner = getRequireBanner(config);
+    expect(banner).toBe('');
+  });
+});
+
+describe('getRequireBannerFromContent', () => {
+  it('should generate minimal banner for require-only usage', () => {
+    const content = `
+      import { addons } from '@storybook/addon-essentials';
+      const config = require('./config');
+      export default { addons: ['@storybook/addon-essentials'] };
+    `;
+    const banner = getRequireBannerFromContent(content);
+    expect(banner).toContain('import { createRequire } from "node:module"');
+    expect(banner).toContain('const require = createRequire(import.meta.url)');
+    expect(banner).not.toContain('dirname');
+    expect(banner).not.toContain('fileURLToPath');
+    expect(banner).not.toContain('__dirname');
+  });
+
+  it('should generate full banner for __dirname usage', () => {
+    const content = `
+      import { addons } from '@storybook/addon-essentials';
+      const config = require('./config');
+      const configPath = path.join(__dirname, 'config.js');
+      export default { addons: ['@storybook/addon-essentials'] };
+    `;
+    const banner = getRequireBannerFromContent(content);
+    expect(banner).toContain('import { createRequire } from "node:module"');
+    expect(banner).toContain('import { dirname } from "node:path"');
+    expect(banner).toContain('import { fileURLToPath } from "node:url"');
+    expect(banner).toContain('const require = createRequire(import.meta.url)');
+    expect(banner).toContain('const __filename = fileURLToPath(import.meta.url)');
+    expect(banner).toContain('const __dirname = dirname(__filename)');
+  });
+
+  it('should not add duplicate dirname import', () => {
+    const content = `
+      import { dirname } from "node:path";
+      import { addons } from '@storybook/addon-essentials';
+      const config = require('./config');
+      const configPath = path.join(__dirname, 'config.js');
+      export default { addons: ['@storybook/addon-essentials'] };
+    `;
+    const banner = getRequireBannerFromContent(content);
+    expect(banner).toContain('import { createRequire } from "node:module"');
+    expect(banner).not.toContain('import { dirname } from "node:path"');
+    expect(banner).toContain('import { fileURLToPath } from "node:url"');
+    expect(banner).toContain('const __dirname = dirname(__filename)');
+  });
+
+  it('should not add duplicate fileURLToPath import', () => {
+    const content = `
+      import { fileURLToPath } from "node:url";
+      import { addons } from '@storybook/addon-essentials';
+      const config = require('./config');
+      const configPath = path.join(__dirname, 'config.js');
+      export default { addons: ['@storybook/addon-essentials'] };
+    `;
+    const banner = getRequireBannerFromContent(content);
+    expect(banner).toContain('import { createRequire } from "node:module"');
+    expect(banner).toContain('import { dirname } from "node:path"');
+    expect(banner).not.toContain('import { fileURLToPath } from "node:url"');
+    expect(banner).toContain('const __dirname = dirname(__filename)');
+  });
+
+  it('should not add __dirname when already defined', () => {
+    const content = `
+      import { addons } from '@storybook/addon-essentials';
+      const config = require('./config');
+      const __dirname = dirname(__filename);
+      const configPath = path.join(__dirname, 'config.js');
+      export default { addons: ['@storybook/addon-essentials'] };
+    `;
+    const banner = getRequireBannerFromContent(content);
+    expect(banner).toContain('import { createRequire } from "node:module"');
+    expect(banner).toContain('const require = createRequire(import.meta.url)');
+    expect(banner).not.toContain('dirname');
+    expect(banner).not.toContain('fileURLToPath');
+    expect(banner).not.toContain('__dirname');
   });
 });

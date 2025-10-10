@@ -3,9 +3,10 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { dedent } from 'ts-dedent';
 
 import {
+  type BannerConfig,
+  analyzeCompatibilityNeeds,
   bannerComment,
   containsESMUsage,
-  containsRequireUsage,
   getRequireBanner,
   hasRequireBanner,
 } from '../helpers/mainConfigFile';
@@ -24,7 +25,6 @@ export const fixFauxEsmRequire = {
     const content = await readFile(mainConfigPath, 'utf-8');
 
     const isESM = containsESMUsage(content);
-    const isWithRequire = containsRequireUsage(content);
     const isWithBanner = hasRequireBanner(content);
 
     // Check if the file is ESM format based on content
@@ -37,16 +37,19 @@ export const fixFauxEsmRequire = {
       return null;
     }
 
-    // Check if the file contains require usage
-    if (!isWithRequire) {
-      return null;
+    // Analyze what compatibility features are needed
+    const compatibilityNeeds = analyzeCompatibilityNeeds(content);
+
+    // Check if any compatibility features are needed
+    if (compatibilityNeeds.needsRequire || compatibilityNeeds.needsDirname) {
+      return compatibilityNeeds;
     }
 
-    return true;
+    return null;
   },
 
   prompt() {
-    return dedent`Main config is ESM but uses 'require'. This will break in Storybook 10; Adding compatibility banner`;
+    return dedent`Main config is ESM but uses 'require' or '__dirname'. This will break in Storybook 10; Adding compatibility banner`;
   },
 
   async run({ dryRun, mainConfigPath }) {
@@ -55,11 +58,12 @@ export const fixFauxEsmRequire = {
     }
 
     const content = await readFile(mainConfigPath, 'utf-8');
-    const banner = getRequireBanner();
+    const compatibilityNeeds = analyzeCompatibilityNeeds(content);
+    const banner = getRequireBanner(compatibilityNeeds);
     const comment = bannerComment;
 
     const newContent = [banner, comment, content].join('\n');
 
     await writeFile(mainConfigPath, newContent);
   },
-} satisfies Fix<true>;
+} satisfies Fix<BannerConfig>;

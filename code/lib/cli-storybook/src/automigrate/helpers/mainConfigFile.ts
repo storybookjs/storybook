@@ -255,6 +255,79 @@ export function containsRequireUsage(content: string): boolean {
   return requireCallRegex.test(content) || requireDotRegex.test(content);
 }
 
+/** Check if the file content contains __dirname usage */
+export function containsDirnameUsage(content: string): boolean {
+  // Remove comments and strings to avoid false positives
+  const lines = content.split('\n');
+  const codeLines = lines.map((line) => {
+    // Remove single-line comments
+    const withoutSingleComment = line.split('//')[0];
+    // Remove multi-line comments (simple approach)
+    const withoutMultiComment = withoutSingleComment.replace(/\/\*[\s\S]*?\*\//g, '');
+    // Remove string literals (simple approach for double quotes)
+    const withoutStrings = withoutMultiComment.replace(/"[^"]*"/g, '""');
+    return withoutStrings;
+  });
+
+  const cleanContent = codeLines.join('\n');
+
+  // Check for __dirname usage in the cleaned content
+  const dirnameRegex = /\b__dirname\b/;
+  return dirnameRegex.test(cleanContent);
+}
+
+/** Check if __dirname is already defined in the file */
+export function hasDirnameDefined(content: string): boolean {
+  // Check if __dirname is already defined as a const/let/var
+  const dirnameDefinedRegex = /(?:const|let|var)\s+__dirname\s*=/;
+  return dirnameDefinedRegex.test(content);
+}
+
+/** Check if a specific import already exists in the file */
+export function hasImport(content: string, importName: string, fromModule: string): boolean {
+  // Check for various import patterns
+  const patterns = [
+    // import { name } from "module"
+    new RegExp(`import\\s*{\\s*[^}]*\\b${importName}\\b[^}]*}\\s*from\\s*["']${fromModule}["']`),
+    // import name from "module"
+    new RegExp(`import\\s+${importName}\\s+from\\s*["']${fromModule}["']`),
+    // import * as name from "module"
+    new RegExp(`import\\s*\\*\\s*as\\s+${importName}\\s+from\\s*["']${fromModule}["']`),
+  ];
+
+  return patterns.some((pattern) => pattern.test(content));
+}
+
+/** Configuration for what should be included in the compatibility banner */
+export interface BannerConfig {
+  needsRequire: boolean;
+  needsDirname: boolean;
+  needsFilename: boolean;
+  existingImports: {
+    createRequire: boolean;
+    dirname: boolean;
+    fileURLToPath: boolean;
+  };
+}
+
+/** Analyze file content and determine what compatibility features are needed */
+export function analyzeCompatibilityNeeds(content: string): BannerConfig {
+  const needsRequire = containsRequireUsage(content);
+  const needsDirname = containsDirnameUsage(content) && !hasDirnameDefined(content);
+  const needsFilename = needsDirname; // __filename is only needed if __dirname is needed
+
+  return {
+    needsRequire,
+    needsDirname,
+    needsFilename,
+    existingImports: {
+      createRequire: hasImport(content, 'createRequire', 'node:module'),
+      dirname: hasImport(content, 'dirname', 'node:path'),
+      fileURLToPath: hasImport(content, 'fileURLToPath', 'node:url'),
+    },
+  };
+}
+
 /** Check if the file already has the require banner */
 export const bannerComment =
   '// end of Storybook 10 migration assistant header, You can delete the above code';
@@ -262,15 +335,51 @@ export function hasRequireBanner(content: string): boolean {
   return content.includes(bannerComment);
 }
 
-/** Generate the require compatibility banner */
-export function getRequireBanner(): string {
+/** Generate the require compatibility banner based on configuration */
+export function getRequireBanner(config: BannerConfig): string {
+  const imports: string[] = [];
+  const constants: string[] = [];
+
+  // Add createRequire import and require constant if needed
+  if (config.needsRequire && !config.existingImports.createRequire) {
+    imports.push('import { createRequire } from "node:module";');
+    constants.push('const require = createRequire(import.meta.url);');
+  }
+
+  // Add dirname import if needed and not already present
+  if (config.needsDirname && !config.existingImports.dirname) {
+    imports.push('import { dirname } from "node:path";');
+  }
+
+  // Add fileURLToPath import if needed and not already present
+  if (config.needsFilename && !config.existingImports.fileURLToPath) {
+    imports.push('import { fileURLToPath } from "node:url";');
+  }
+
+  // Add __filename constant if needed
+  if (config.needsFilename) {
+    constants.push('const __filename = fileURLToPath(import.meta.url);');
+  }
+
+  // Add __dirname constant if needed
+  if (config.needsDirname) {
+    constants.push('const __dirname = dirname(__filename);');
+  }
+
+  // If no imports or constants are needed, return empty string
+  if (imports.length === 0 && constants.length === 0) {
+    return '';
+  }
+
   return dedent`
-    import { createRequire } from "node:module";
-    import { dirname } from "node:path";
-    import { fileURLToPath } from "node:url";
-  
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-    const require = createRequire(import.meta.url);
+    ${imports.join('\n')}
+
+    ${constants.join('\n')}
   `;
+}
+
+/** Generate the require compatibility banner based on file content (convenience method) */
+export function getRequireBannerFromContent(content: string): string {
+  const config = analyzeCompatibilityNeeds(content);
+  return getRequireBanner(config);
 }

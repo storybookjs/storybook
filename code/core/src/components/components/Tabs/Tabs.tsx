@@ -47,7 +47,7 @@ const Wrapper = styled.div<WrapperProps>(
         }
 );
 
-const TabBar = styled.div({
+const StyledTabBar = styled.div({
   overflow: 'hidden',
 
   '&:first-of-type': {
@@ -58,6 +58,10 @@ const TabBar = styled.div({
   flexGrow: 1,
 });
 
+export const TabBar = () => {
+  deprecate('The `TabBar` component is deprecated. Use `TabsView` instead.');
+  return <StyledTabBar />;
+};
 TabBar.displayName = 'TabBar';
 
 export interface ContentProps {

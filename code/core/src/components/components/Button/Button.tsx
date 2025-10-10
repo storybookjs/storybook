@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
+import { deprecate, logger } from 'storybook/internal/client-logger';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
@@ -17,6 +17,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   padding?: 'small' | 'medium' | 'none';
   variant?: 'outline' | 'solid' | 'ghost';
   onClick?: (event: SyntheticEvent) => void;
+  active?: boolean;
   disabled?: boolean;
   animation?: 'none' | 'rotate360' | 'glow' | 'jiggle';
 
@@ -26,7 +27,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
    * Button's content is already accessible to all. When a string is passed, it is also used as the
    * default tooltip text.
    */
-  ariaLabel: string | false;
+  ariaLabel?: string | false;
 
   /**
    * An optional tooltip to display when the Button is hovered. If the Button has no text content,
@@ -64,6 +65,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'outline',
       padding = 'medium',
       disabled = false,
+      active,
       onClick,
       ariaLabel,
       ariaDescription = undefined,
@@ -76,16 +78,28 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     let Comp: 'button' | 'a' | typeof Slot = 'button';
 
+    // FIXME / TODO : reenable this but its too verbose and i cant work rn
+    // if (ariaLabel === undefined || ariaLabel === '') {
+    //   logger.warn(ariaLabel, props.children);
+    //   logger.warn(
+    //     'The `ariaLabel` prop on `Button` will become mandatory in Storybook 11. Buttons with text content should set `ariaLabel={false}` to indicate that they are accessible as-is. Buttons without text content must provide a meaningful `ariaLabel` for accessibility.'
+    //   );
+    //   // TODO in Storybook 11
+    //   // throw new Error(
+    //   //   'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
+    //   // );
+    // }
+
+    if (active !== undefined) {
+      deprecate(
+        'The `active` prop on `Button` is deprecated and will be removed in Storybook 11. Use specialized components like `ToggleButton` or `Select` instead.'
+      );
+    }
+
     if (asChild) {
       Comp = Slot;
     }
     const { ariaDescriptionAttrs, AriaDescription } = useAriaDescription(ariaDescription);
-
-    if (ariaLabel === '') {
-      throw new Error(
-        'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
-      );
-    }
 
     const shortcutAttribute = useMemo(() => {
       return shortcut ? shortcutToAriaKeyshortcuts(shortcut) : undefined;
@@ -129,6 +143,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             size={size}
             padding={padding}
             disabled={disabled}
+            active={active}
             animating={isAnimating}
             animation={animation}
             onClick={handleClick}
@@ -153,7 +168,7 @@ const StyledButton = styled('button', {
     animating: boolean;
     animation: ButtonProps['animation'];
   }
->(({ theme, variant, size, disabled, animating, animation = 'none', padding }) => ({
+>(({ theme, variant, size, disabled, active, animating, animation = 'none', padding }) => ({
   border: 0,
   cursor: disabled ? 'not-allowed' : 'pointer',
   display: 'inline-flex',
@@ -203,6 +218,10 @@ const StyledButton = styled('button', {
       return theme.button.background;
     }
 
+    if (variant === 'ghost' && active) {
+      return transparentize(0.93, theme.barSelectedColor);
+    }
+
     return 'transparent';
   })(),
   color: (() => {
@@ -212,6 +231,10 @@ const StyledButton = styled('button', {
 
     if (variant === 'outline') {
       return theme.input.color;
+    }
+
+    if (variant === 'ghost' && active) {
+      return theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary;
     }
 
     if (variant === 'ghost') {

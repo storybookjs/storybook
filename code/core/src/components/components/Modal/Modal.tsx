@@ -1,7 +1,9 @@
 import React, { type HTMLAttributes, createContext, useEffect, useState } from 'react';
 
+import { deprecate, logger } from 'storybook/internal/client-logger';
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
+import { useKeyboard } from '@react-aria/interactions';
 import { UNSAFE_PortalProvider } from '@react-aria/overlays';
 import { Dialog } from 'react-aria-components/patched-dist/Dialog';
 import { ModalOverlay, Modal as ModalUpstream } from 'react-aria-components/patched-dist/Modal';
@@ -29,11 +31,17 @@ interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   /** Uncontrolled state: whether the Modal is initially open on the first. */
   defaultOpen?: boolean;
 
+  /** Deprecated. Use `dismissOnEscape` instead. */
+  onEscapeKeyDown?: (event: KeyboardEvent) => void;
+
+  /** Deprecated. Use `dismissOnInteractOutside` instead. */
+  onInteractOutside?: (event: FocusEvent | MouseEvent | TouchEvent) => void;
+
   /** Handler called when visibility of the Modal changes. */
   onOpenChange?: (isOpen: boolean) => void;
 
   /** The accessible name for the modal. */
-  ariaLabel: string;
+  ariaLabel?: string;
 
   /** Whether the modal can be dismissed by clicking outside. Defaults to `true`. */
   dismissOnClickOutside?: boolean;
@@ -60,12 +68,46 @@ function BaseModal({
   dismissOnEscape = true,
   className,
   open,
+  onEscapeKeyDown,
+  onInteractOutside,
   onOpenChange,
   defaultOpen,
   transitionDuration = 200,
   variant = 'dialog',
   ...props
 }: ModalProps) {
+  if (ariaLabel === undefined || ariaLabel === '') {
+    logger.warn('The `ariaLabel` prop on `Modal` will become mandatory in Storybook 11.');
+    // TODO in Storybook 11
+    // throw new Error(
+    //   'Modal requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
+    // );
+  }
+
+  if (onEscapeKeyDown !== undefined) {
+    deprecate(
+      'The `onEscapeKeyDown` prop is deprecated and will be removed in Storybook 11. Use `dismissOnEscape` instead.'
+    );
+  }
+
+  if (onInteractOutside !== undefined) {
+    deprecate(
+      'The `onInteractOutside` prop is deprecated and will be removed in Storybook 11. Use `dismissOnInteractOutside` instead.'
+    );
+  }
+
+  const { keyboardProps } = useKeyboard({
+    onKeyDown: (e) => {
+      if (e.key === 'Escape' && dismissOnEscape) {
+        console.log('we closing ourselves');
+        onEscapeKeyDown?.(e.nativeEvent);
+        if (!e.nativeEvent.defaultPrevented) {
+          close();
+        }
+      }
+    },
+  });
+
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [{ status, isMounted }, toggle] = useTransitionState({
     timeout: reducedMotion ? 0 : transitionDuration,
@@ -110,7 +152,23 @@ function BaseModal({
       isOpen={open || isMounted}
       onOpenChange={handleOpenChange}
       isDismissable={dismissOnClickOutside}
+      // TODO in Storybook 11: switch back to using the prop
+      // In SB10, we call useKeyboard to support the deprecated `onEscapeKeyDown` prop
+      // isKeyboardDismissDisabled={true}
       isKeyboardDismissDisabled={!dismissOnEscape}
+      shouldCloseOnInteractOutside={
+        onInteractOutside
+          ? (element) => {
+              const mockedEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                relatedTarget: element,
+              });
+              onInteractOutside(mockedEvent);
+              return !mockedEvent.defaultPrevented;
+            }
+          : undefined
+      }
     >
       <Components.Overlay $status={status} $transitionDuration={transitionDuration} />
       <ModalUpstream>

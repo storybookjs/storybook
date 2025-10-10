@@ -13,7 +13,7 @@
       - [Added: ariaLabel](#added-arialabel)
       - [Added: shortcut](#added-shortcut)
       - [Added: tooltip](#added-tooltip)
-      - [Removed: active](#removed-active)
+      - [Deprecated: active](#deprecated-active)
     - [IconButton is deprecated](#iconbutton-is-deprecated)
     - [Bar Component API Changes](#bar-component-api-changes)
       - [Added: innerStyle](#added-innerstyle)
@@ -22,7 +22,7 @@
     - [TabsState is deprecated](#tabsstate-is-deprecated)
     - [TabWrapper is deprecated](#tabwrapper-is-deprecated)
     - [TabButton is deprecated](#tabbutton-is-deprecated)
-    - [TabBar is removed](#tabbar-is-removed)
+    - [TabBar is deprecated](#tabbar-is-deprecated)
     - [Modal Component API Changes](#modal-component-api-changes)
       - [Removed: container and portalSelector](#removed-container-and-portalselector)
       - [Removed: onInteractOutside](#removed-oninteractoutside)
@@ -629,7 +629,7 @@ During development of Storybook [Tags](https://storybook.js.org/docs/writing-sto
 #### Button Component API Changes
 
 ##### Added: ariaLabel
-The Button component now has a mandatory `ariaLabel` prop, to ensure that Storybook UI code is accessible to screenreader users.
+The Button component now has an `ariaLabel` prop, to ensure that Storybook UI code is accessible to screenreader users. The prop will become mandatory in Storybook 11.
 
 When buttons have text content as children, and when that text content does not rely on visual context to be understood, you may pass `false` to the `ariaLabel` prop to indicate that an ARIA label is not necessary.
 
@@ -643,13 +643,11 @@ An optional `shortcut` prop was added for internal use. When `shortcut` is set, 
 
 Button now displays a tooltip whenever `ariaLabel` or `shortcut` is set. The tooltip can be customised by passing a string to the optional `tooltip` prop.
 
-##### Removed: active
+##### Deprecated: active
 
-The `active` prop was removed from Button.
+The `active` prop is deprecated and will be removed in Storybook 11.
 
-The Button component has historically been used to implement Toggle and Select interactions. When you need a Button to have an active state, use ToggleButton if the active state denotes that a state or feature is enabled after pressing the Button.
-
-Use Select if the active state denotes that the Button is open while a selection is being made, or that the Button currently has a selected value.
+The Button component has historically been used to implement Toggle and Select interactions. When you need a Button to have an active state, use ToggleButton if the active state denotes that a state or feature is enabled after pressing the Button. Use Select if the active state denotes that the Button is open while a selection is being made, or that the Button currently has a selected value.
 
 #### IconButton is deprecated
 
@@ -695,9 +693,9 @@ The `TabWrapper` component is deprecated as it was not accessible. Instead, use 
 
 The `TabButton` class is deprecated as it was not accessible. It does not have a replacement, as the new `TabList` component handles tab buttons internally.
 
-#### TabBar is removed
+#### TabBar is deprecated
 
-The `TabBar` component, a styled bar used inside `Tabs` and not intended to be public, has been removed. It has no replacement.
+The `TabBar` component, a styled bar used inside `Tabs` and not intended to be public, is deprecated and will be hidden in Storybook 11. Use `TabsView` instead.
 
 #### Modal Component API Changes
 
@@ -711,10 +709,10 @@ The `onInteractOutside` prop is removed in favor of `dismissOnClickOutside`, bec
 The `onEscapeKeyDown` prop is removed in favor of `dismissOnEscape`, because it was only used to close the modal when pressing Escape. Use `dismissOnEscape` to control whether pressing Escape should close it or not.
 
 ##### Added: `ariaLabel`
-Modal elements must have a title to be accessible. Set that title through the mandatory `ariaLabel` prop.
+Modal elements must have a title to be accessible. Set that title through the `ariaLabel` prop. It will become mandatory in Storybook 11.
 
 ##### Renamed: Modal.Dialog.Close and Modal.CloseButton
-The `Modal.Dialog.Close` component and `Modal.CloseButton` components are replaced by `Modal.Close` for consistency with other components. Those names are deprecated and will be removed in a future version. You may call `<Modal.Close />` for a default close button, or `<Modal.Close asChild>...</Modal.Close>` to wrap your own custom button.
+The `Modal.Dialog.Close` component and `Modal.CloseButton` components are replaced by `Modal.Close` for consistency with other components. Those names are deprecated and will be removed in Storybook 11. You may call `<Modal.Close />` for a default close button, or `<Modal.Close asChild>...</Modal.Close>` to wrap your own custom button.
 
 The `Modal.Close` component no longer requires an `onClick` handler to close the modal. It will automatically close the modal when clicked. If you need to perform additional actions when the close button is clicked, you can still provide an `onClick` handler, and it will be called in addition to closing the modal.
 #### ListItem, TooltipLinkList and TooltipMessage are deprecated

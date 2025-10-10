@@ -532,6 +532,7 @@ export default {
     'StorybookLogo',
     'SyntaxHighlighter',
     'TT',
+    'TabBar',
     'TabButton',
     'TabList',
     'TabPanel',

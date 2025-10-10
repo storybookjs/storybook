@@ -116,6 +116,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "lilconfig": "^3.0.0",
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",
     "typescript": "^5.8.3"

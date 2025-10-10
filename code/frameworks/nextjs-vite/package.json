@@ -91,8 +91,7 @@
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",
     "semver": "^7.3.5",
-    "typescript": "^5.8.3",
-    "yaml": "^2.8.1"
+    "typescript": "^5.8.3"
   },
   "peerDependencies": {
     "next": "^14.1.0 || ^15.0.0",

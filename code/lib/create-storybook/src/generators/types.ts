@@ -1,6 +1,7 @@
 import type { Builder, NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 
+import type { DependencyCollector } from '../dependency-collector';
 import type { FrameworkPreviewParts } from './configure';
 
 export type GeneratorOptions = {
@@ -13,6 +14,7 @@ export type GeneratorOptions = {
   // skip prompting the user
   yes: boolean;
   features: Array<GeneratorFeature>;
+  dependencyCollector: DependencyCollector;
 };
 
 export interface FrameworkOptions {

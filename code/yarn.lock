@@ -2104,24 +2104,24 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@clack/core@npm:1.0.0-alpha.4":
-  version: 1.0.0-alpha.4
-  resolution: "@clack/core@npm:1.0.0-alpha.4"
+"@clack/core@npm:1.0.0-alpha.6":
+  version: 1.0.0-alpha.6
+  resolution: "@clack/core@npm:1.0.0-alpha.6"
   dependencies:
     picocolors: "npm:^1.0.0"
     sisteransi: "npm:^1.0.5"
-  checksum: 10c0/94a6d617dcc74796e7f882bf5027d3d7de653bc8312568669514c11806c350c62801b910268bd87a59ad2da9084fb475ddc6e76308ba93f84fb52c1b1516e3f0
+  checksum: 10c0/5d8949d74bccda55d31510f481a93828f8341e2ecfde1c5809cdd3e5b4d9f2c8fd74e34a3a38062b73fcf8897178edceaa3f884b48943b6473991e878e69eda2
   languageName: node
   linkType: hard
 
-"@clack/prompts@npm:^1.0.0-alpha.0":
-  version: 1.0.0-alpha.4
-  resolution: "@clack/prompts@npm:1.0.0-alpha.4"
+"@clack/prompts@npm:^1.0.0-alpha.6":
+  version: 1.0.0-alpha.6
+  resolution: "@clack/prompts@npm:1.0.0-alpha.6"
   dependencies:
-    "@clack/core": "npm:1.0.0-alpha.4"
+    "@clack/core": "npm:1.0.0-alpha.6"
     picocolors: "npm:^1.0.0"
     sisteransi: "npm:^1.0.5"
-  checksum: 10c0/ee9b296024680ea0b4359165a948c590449e8e09836d9678c83b1f629027e3283079412684c940e60a884fe3469b41f2b8e51f26d743424a5a970f55d4523d23
+  checksum: 10c0/c6a18a805aba72ffc879d7870dda28596f5081ccba30808e0e1d7f7cd9c3fad93101ff252de3e0001de564fbe8d162ebd637de2c7c06c39c12301d2d876c9544
   languageName: node
   linkType: hard
 
@@ -11955,7 +11955,6 @@ __metadata:
     commander: "npm:^14.0.1"
     empathic: "npm:^2.0.0"
     execa: "npm:^5.0.0"
-    ora: "npm:^5.4.1"
     picocolors: "npm:^1.1.0"
     process-ancestry: "npm:^0.0.2"
     prompts: "npm:^2.4.0"
@@ -20552,7 +20551,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ora@npm:5.4.1, ora@npm:^5.4.1":
+"ora@npm:5.4.1":
   version: 5.4.1
   resolution: "ora@npm:5.4.1"
   dependencies:
@@ -24459,7 +24458,7 @@ __metadata:
     "@babel/parser": "npm:^7.26.9"
     "@babel/traverse": "npm:^7.26.9"
     "@babel/types": "npm:^7.26.8"
-    "@clack/prompts": "npm:^1.0.0-alpha.0"
+    "@clack/prompts": "npm:^1.0.0-alpha.6"
     "@devtools-ds/object-inspector": "npm:^1.1.2"
     "@discoveryjs/json-ext": "npm:^0.5.3"
     "@emotion/cache": "npm:^11.14.0"

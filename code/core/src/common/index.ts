@@ -24,7 +24,6 @@ export * from './utils/interpret-require';
 export * from './utils/load-main-config';
 export * from './utils/load-manager-or-addons-file';
 export * from './utils/load-preview-or-config-file';
-export * from './utils/log';
 export * from './utils/log-config';
 export * from './utils/normalize-stories';
 export * from './utils/paths';

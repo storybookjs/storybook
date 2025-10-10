@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
-import { HandledError, commandLog, getProjectRoot } from 'storybook/internal/common';
+import { HandledError, getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -117,7 +117,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
-    commandLog('Detected Vite project. Setting builder to Vite')();
+    logger.log('Detected Vite project. Setting builder to Vite');
     return CoreBuilder.Vite;
   }
 
@@ -127,7 +127,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
     ((dependencies.webpack || dependencies['@nuxt/webpack-builder']) &&
       dependencies.vite !== undefined)
   ) {
-    commandLog('Detected webpack project. Setting builder to webpack')();
+    logger.log('Detected webpack project. Setting builder to webpack');
     return CoreBuilder.Webpack5;
   }
 
@@ -243,7 +243,7 @@ export async function detect(
 
     const { packageJson } = packageManager.primaryPackageJson;
     return detectFrameworkPreset(packageJson);
-  } catch (e) {
+  } catch {
     return ProjectType.UNDETECTED;
   }
 }

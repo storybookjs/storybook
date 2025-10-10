@@ -8,7 +8,7 @@ import {
   copyTemplate,
   promptForCompoDocs,
 } from 'storybook/internal/cli';
-import { commandLog } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
@@ -37,7 +37,7 @@ const generator: Generator<{ projectName: string }> = async (
   }
 
   const angularProjectName = await angularJSON.getProjectName();
-  commandLog(`Adding Storybook support to your "${angularProjectName}" project`);
+  logger.log(`Adding Storybook support to your "${angularProjectName}" project`);
 
   const angularProject = angularJSON.getProjectSettingsByName(angularProjectName);
 

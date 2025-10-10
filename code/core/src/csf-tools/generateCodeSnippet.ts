@@ -4,6 +4,17 @@ import invariant from 'tiny-invariant';
 
 import { type CsfFile } from './CsfFile';
 
+function buildInvalidSpread(entries: Array<[string, t.Node]>): t.JSXSpreadAttribute | null {
+  if (entries.length === 0) return null;
+  const objectProps = entries.map(([k, v]) =>
+    t.objectProperty(
+      t.stringLiteral(k),
+      t.isExpression(v) ? v : (t.identifier('undefined') as t.Expression)
+    )
+  );
+  return t.jsxSpreadAttribute(t.objectExpression(objectProps));
+}
+
 export function getCodeSnippet(
   storyExportPath: NodePath<t.ExportNamedDeclaration>,
   metaObj: t.ObjectExpression | null | undefined,
@@ -65,24 +76,20 @@ export function getCodeSnippet(
   // Merge (story overrides meta)
   const merged: Record<string, t.Node> = { ...metaArgs, ...storyArgs };
 
+  const entries = Object.entries(merged).filter(([k]) => k !== 'children');
+  const validEntries = entries.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
+  const invalidEntries = entries.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
+
+  const injectedAttrs = validEntries
+    .map(([k, v]) => toAttr(k, v))
+    .filter((a): a is t.JSXAttribute => Boolean(a));
+
   if (storyFn?.isArrowFunctionExpression() || storyFn?.isFunctionExpression()) {
     const fn = storyFn.node;
 
-    // Collect args from meta only (no story-level args in CSF2 function form)
-    const metaArgs = metaArgsRecord(metaObj ?? null);
-
-    // Split merged args (excluding children) into valid JSX attributes and invalid-key entries
-    const entries = Object.entries(merged).filter(([k]) => k !== 'children');
-    const validEntries = entries.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
-    const invalidEntries = entries.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
-
-    const injectedAttrs = validEntries
-      .map(([k, v]) => toAttr(k, v))
-      .filter((a): a is t.JSXAttribute => Boolean(a));
-
     // Only handle arrow function with direct JSX expression body for now
     if (t.isArrowFunctionExpression(fn) && t.isJSXElement(fn.body)) {
-      const body = fn.body as t.JSXElement;
+      const body = fn.body;
       const opening = body.openingElement;
       const attrs = opening.attributes;
       const firstSpreadIndex = attrs.findIndex(
@@ -119,16 +126,7 @@ export function getCodeSnippet(
 
         // Build a spread containing only invalid-key props, if any, and also exclude keys already explicitly present
         const invalidProps = invalidEntries.filter(([k]) => !existingAttrNames.has(k));
-        let invalidSpread: t.JSXSpreadAttribute | null = null;
-        if (invalidProps.length > 0) {
-          const objectProps = invalidProps.map(([k, v]) =>
-            t.objectProperty(
-              t.stringLiteral(k),
-              t.isExpression(v) ? v : (t.identifier('undefined') as t.Expression)
-            )
-          );
-          invalidSpread = t.jsxSpreadAttribute(t.objectExpression(objectProps));
-        }
+        const invalidSpread: t.JSXSpreadAttribute | null = buildInvalidSpread(invalidProps);
 
         // Handle children injection from meta if the element currently has no children
         const metaChildren =
@@ -170,33 +168,14 @@ export function getCodeSnippet(
     ]);
   }
 
-  // Split children from attrs
-  const childrenNode = merged['children'];
-  const entries2 = Object.entries(merged).filter(([k]) => k !== 'children');
-  const validEntries2 = entries2.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
-  const invalidEntries2 = entries2.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
-
-  const attrs = validEntries2
-    .map(([k, v]) => toAttr(k, v))
-    .filter((a): a is t.JSXAttribute => Boolean(a));
-
   // Build spread for invalid-only props, if any
-  let invalidSpread2: t.JSXSpreadAttribute | null = null;
-  if (invalidEntries2.length > 0) {
-    const objectProps = invalidEntries2.map(([k, v]) =>
-      t.objectProperty(
-        t.stringLiteral(k),
-        t.isExpression(v) ? v : (t.identifier('undefined') as t.Expression)
-      )
-    );
-    invalidSpread2 = t.jsxSpreadAttribute(t.objectExpression(objectProps));
-  }
+  const invalidSpread = buildInvalidSpread(invalidEntries);
 
   const name = t.jsxIdentifier(componentName);
 
   const openingElAttrs: Array<t.JSXAttribute | t.JSXSpreadAttribute> = [
-    ...attrs,
-    ...(invalidSpread2 ? [invalidSpread2] : []),
+    ...injectedAttrs,
+    ...(invalidSpread ? [invalidSpread] : []),
   ];
 
   const arrow = t.arrowFunctionExpression(
@@ -204,7 +183,7 @@ export function getCodeSnippet(
     t.jsxElement(
       t.jsxOpeningElement(name, openingElAttrs, false),
       t.jsxClosingElement(name),
-      toJsxChildren(childrenNode),
+      toJsxChildren(merged.children),
       false
     )
   );

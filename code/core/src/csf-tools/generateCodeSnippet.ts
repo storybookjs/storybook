@@ -458,8 +458,15 @@ function transformArgsSpreadsInJsx(
   let changed = false;
 
   const makeInjectedPieces = (
-    existingAttrNames: Set<string>
+    existingAttrNames: Set<string | t.JSXIdentifier>
   ): Array<t.JSXAttribute | t.JSXSpreadAttribute> => {
+    // Normalize incoming set to a set of plain string names for reliable membership checks
+    const existingNames = new Set<string>(
+      Array.from(existingAttrNames).map((n) =>
+        typeof n === 'string' ? n : t.isJSXIdentifier(n) ? n.name : ''
+      )
+    );
+
     const entries = Object.entries(merged).filter(([k]) => k !== 'children');
     const validEntries = entries.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
     const invalidEntries = entries.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
@@ -469,10 +476,10 @@ function transformArgsSpreadsInJsx(
       .filter((a): a is t.JSXAttribute => Boolean(a));
 
     const filteredInjected = injectedAttrs.filter(
-      (a) => t.isJSXIdentifier(a.name) && !existingAttrNames.has(a.name.name)
+      (a) => t.isJSXIdentifier(a.name) && !existingNames.has(a.name.name)
     );
 
-    const invalidProps = invalidEntries.filter(([k]) => !existingAttrNames.has(k));
+    const invalidProps = invalidEntries.filter(([k]) => !existingNames.has(k));
     const invalidSpread = buildInvalidSpread(invalidProps);
 
     return [...filteredInjected, ...(invalidSpread ? [invalidSpread] : [])];

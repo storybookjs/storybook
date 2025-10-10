@@ -85,10 +85,12 @@ export default async function postInstall(options: PostinstallOptions) {
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
   const isVitest3_2OrNewer = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=3.2.0')
-    : false;
+    : // TODO: Set to false once we have a stable release of Vitest 4
+      true;
   const isVitest4OrNewer = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=4.0.0')
-    : true;
+    : // TODO: Set to true once we have a stable release of Vitest 4
+      false;
 
   const info = await getStorybookInfo(options);
   const allDeps = packageManager.getAllDependencies();

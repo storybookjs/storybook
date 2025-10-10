@@ -12,11 +12,6 @@ import { ListItem } from './list-item.component';
 import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
   decorators: [
     moduleMetadata({
@@ -60,7 +55,7 @@ export const OneItem: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -68,11 +63,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -108,7 +98,7 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -119,11 +109,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -158,7 +143,7 @@ export const OneItem = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -166,11 +151,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -216,11 +196,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -266,11 +241,6 @@ export const OneItem = {
   import { Unchecked } from './ListItem.stories.svelte';
 
   const { Story } = defineMeta({
-    /* 👇 The title prop is optional.
-     * See https://storybook.js.org/docs/configure/#configure-story-loading
-     * to learn how to generate automatic titles
-    */
-    title: 'List',
     component: List,
   });
 </script>
@@ -309,11 +279,6 @@ export const OneItem = {
   import { Unchecked } from './ListItem.stories.svelte';
 
   const { Story } = defineMeta({
-    /* 👇 The title prop is optional.
-     * See https://storybook.js.org/docs/configure/#configure-story-loading
-     * to learn how to generate automatic titles
-    */
-    title: 'List',
     component: List,
   });
 </script>
@@ -349,11 +314,6 @@ import ListItem from './ListItem.vue';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -402,11 +362,6 @@ import ListItem from './ListItem.vue';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -455,7 +410,6 @@ import { repeat } from 'lit/directives/repeat.js';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  title: 'List',
   component: 'demo-list',
 };
 
@@ -495,7 +449,6 @@ import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
 const meta: Meta = {
-  title: 'List',
   component: 'demo-list',
 };
 
@@ -530,4 +483,83 @@ export const OneItem: Story = {
     ],
   },
 };
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [
+      {
+        ...Unchecked.input.args,
+      },
+    ],
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [
+      {
+        ...Unchecked.input.args,
+      },
+    ],
+  },
+});
 ```

@@ -67,7 +67,7 @@ const withLoaders = (options: Options = {}) => {
  * @param {Object} options Config Options
  * @returns {Promise<string | null>} Config file path or null if not found
  */
-export async function postCssFindConfig(path: string, options: Options = {}) {
+async function postCssFindConfig(path: string, options: Options = {}) {
   const result = await config.lilconfig('postcss', withLoaders(options)).search(path);
 
   return result ? result.filepath : null;
@@ -75,21 +75,45 @@ export async function postCssFindConfig(path: string, options: Options = {}) {
 
 export { postCssLoadConfig };
 
-/** Handle PostCSS config loading with fallback mechanism */
-export const loadPostCssConfigWithFallback = async (searchPath: string): Promise<boolean> => {
+/**
+ * Normalizes PostCSS configuration for NextJS compatibility.
+ *
+ * This function handles the incompatibility between NextJS's PostCSS plugin format and Storybook's
+ * requirements. NextJS uses array format for plugins while Storybook expects object format.
+ *
+ * Process:
+ *
+ * 1. First attempts to load the config as-is
+ * 2. If that fails due to "Invalid PostCSS Plugin found" error, modifies the config file to convert
+ *    array format to object format (e.g., ["@tailwindcss/postcss"] becomes {
+ *    "@tailwindcss/postcss": {} })
+ * 3. Retries loading with the modified config
+ *
+ * @param searchPath - Directory path to search for PostCSS config
+ * @returns Promise<boolean> - true if config loads successfully (or no config found), false if
+ *   config exists but cannot be loaded
+ * @throws {IncompatiblePostCssConfigError} - When config cannot be fixed automatically
+ * @sideEffect Modifies the PostCSS config file on disk when fixing plugin format
+ */ export const normalizePostCssConfig = async (searchPath: string): Promise<boolean> => {
   const configPath = await postCssFindConfig(searchPath);
   if (!configPath) {
     return true;
   }
 
-  let error: any;
+  let error: Error | undefined;
 
   // First attempt: try loading config as-is
   try {
     await postCssLoadConfig({}, searchPath, { stopDir: getProjectRoot() });
     return true; // Success!
-  } catch (e: any) {
-    error = e;
+  } catch (e: unknown) {
+    if (e instanceof Error) {
+      error = e;
+    }
+  }
+
+  if (!error) {
+    return true;
   }
 
   // No config found is not an error we need to handle

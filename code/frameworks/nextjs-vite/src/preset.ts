@@ -10,7 +10,7 @@ import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import semver from 'semver';
 
-import { loadPostCssConfigWithFallback } from './find-postcss-config';
+import { normalizePostCssConfig } from './find-postcss-config';
 import type { FrameworkOptions } from './types';
 import { getNextjsVersion } from './utils';
 
@@ -65,7 +65,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, option
   const searchPath = typeof inlineOptions === 'string' ? inlineOptions : config.root;
 
   if (searchPath) {
-    await loadPostCssConfigWithFallback(searchPath);
+    await normalizePostCssConfig(searchPath);
   }
 
   const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');

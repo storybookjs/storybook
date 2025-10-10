@@ -11,12 +11,11 @@ function generateExample(code: string) {
   return recast.print(getAllCodeSnippets(csf)).code;
 }
 
-test('CSF3', async () => {
-  const input = dedent`
-    // Button.stories.tsx
-    import type { Meta, StoryObj, StoryFn } from '@storybook/react';
+function withCSF3(body: string) {
+  return dedent`
+    import type { Meta } from '@storybook/react';
     import { Button } from '@design-system/button';
-    
+
     const meta: Meta<typeof Button> = {
       component: Button,
       args: {
@@ -24,71 +23,13 @@ test('CSF3', async () => {
       }
     };
     export default meta;
-    
-    type Story = StoryObj<typeof Button>;
-    
-    export const Default: Story = {};
-    
-    export const WithEmoji: Story = {
-      args: {
-        children: '🚀Launch'
-      }
-    };
-    
-    export const Disabled: Story = {
-      args: {
-        disabled: true,
-      }
-    };
-    
-    export const LinkButton: Story = {
-      args: {
-        children: <a href="/some-link">This is a link</a>,
-      }
-    };
-    
-    export const ObjectArgs: Story = {
-      args: {
-        string: 'string',
-        number: 1,
-        object: { an: 'object'},
-        complexObjet: {...{a: 1}, an: 'object'},
-        array: [1,2,3]
-      }
-    };
-    
-    export const CSF1: StoryFn = () => <Button label="String"></Button>
-    
-    export const CSF2: StoryFn = (args) => <Button {...args} label="String"></Button>    
-    
-    export const CustomRender: Story = {
-      render: () => <Button>Render</Button>
-    };
+
+    ${body}
   `;
+}
 
-  expect(generateExample(input)).toMatchInlineSnapshot(`
-    "const Default = () => <Button>Click me</Button>;
-    const WithEmoji = () => <Button>🚀Launch</Button>;
-    const Disabled = () => <Button disabled>Click me</Button>;
-    const LinkButton = () => <Button><a href="/some-link">This is a link</a></Button>;
-
-    const ObjectArgs = () => <Button
-        string="string"
-        number={1}
-        object={{ an: 'object'}}
-        complexObjet={{...{a: 1}, an: 'object'}}
-        array={[1,2,3]}>Click me</Button>;
-
-    const CSF1 = () => <Button label="String"></Button>;
-    const CSF2 = (args) => <Button {...args} label="String"></Button>;
-    const CustomRender = () => <Button>Render</Button>;"
-  `);
-});
-
-
-test('CSF4', async () => {
-  const input = dedent`
-    // Button.stories.tsx
+function withCSF4(body: string) {
+  return dedent`
     import preview from './preview';
     import { Button } from '@design-system/button';
     
@@ -99,27 +40,70 @@ test('CSF4', async () => {
       }
     });
     
+    ${body}
+  `;
+}
+
+test('Default', () => {
+  const input = withCSF3(`
+    export const Default: Story = {};
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Default = () => <Button>Click me</Button>;"`
+  );
+});
+
+test('Default- CSF4', () => {
+  const input = withCSF4(`
     export const Default = meta.story({});
-    
-    export const WithEmoji = meta.story({
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Default = () => <Button>Click me</Button>;"`
+  );
+});
+
+test('Replace children', () => {
+  const input = withCSF3(dedent`
+    export const WithEmoji: Story = {
       args: {
         children: '🚀Launch'
       }
-    });
-    
-    export const Disabled = meta.story({
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const WithEmoji = () => <Button>🚀Launch</Button>;"`
+  );
+});
+
+test('Boolean', () => {
+  const input = withCSF3(dedent`
+    export const Disabled: Story = {
       args: {
-        disabled: true,
+        disabled: true
       }
-    });
-    
-    export const LinkButton = meta.story({
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Disabled = () => <Button disabled>Click me</Button>;"`
+  );
+});
+
+test('JSX Children', () => {
+  const input = withCSF3(dedent`
+    export const LinkButton: Story = {
       args: {
         children: <a href="/some-link">This is a link</a>,
       }
-    });
-    
-    export const ObjectArgs = meta.story({
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const LinkButton = () => <Button><a href="/some-link">This is a link</a></Button>;"`
+  );
+});
+
+test('Object', () => {
+  const input = withCSF3(dedent`
+    export const ObjectArgs: Story = {
       args: {
         string: 'string',
         number: 1,
@@ -127,32 +111,150 @@ test('CSF4', async () => {
         complexObjet: {...{a: 1}, an: 'object'},
         array: [1,2,3]
       }
-    });
-    
-    export const CSF1 = meta.story(() => <Button label="String"></Button>)
-    
-    export const CSF2 = meta.story((args) => <Button {...args} label="String"></Button>)    
-    
-    export const CustomRender = meta.story({
-      render: () => <Button>Render</Button>
-    });
-  `;
-
+    };
+  `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
-    "const Default = () => <Button>Click me</Button>;
-    const WithEmoji = () => <Button>🚀Launch</Button>;
-    const Disabled = () => <Button disabled>Click me</Button>;
-    const LinkButton = () => <Button><a href="/some-link">This is a link</a></Button>;
-
-    const ObjectArgs = () => <Button
+    "const ObjectArgs = () => <Button
         string="string"
         number={1}
         object={{ an: 'object'}}
         complexObjet={{...{a: 1}, an: 'object'}}
-        array={[1,2,3]}>Click me</Button>;
+        array={[1,2,3]}>Click me</Button>;"
+  `);
+});
 
-    const CSF1 = () => <Button label="String"></Button>;
-    const CSF2 = (args) => <Button {...args} label="String"></Button>;
-    const CustomRender = () => <Button>Render</Button>;"
+test('CSF1', () => {
+  const input = withCSF3(dedent`
+    export const CSF1: StoryFn = () => <Button label="String"></Button>;
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CSF1 = () => <Button label="String"></Button>;"`
+  );
+});
+
+test('CSF2', () => {
+  const input = withCSF3(dedent`
+    export const CSF2: StoryFn = (args) => <Button {...args} label="String"></Button>;
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CSF2 = () => <Button label="String">Click me</Button>;"`
+  );
+});
+
+test('Custom Render', () => {
+  const input = withCSF3(dedent`
+    export const CustomRender: Story = { render: () => <Button label="String"></Button> }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRender = () => <Button label="String"></Button>;"`
+  );
+});
+
+test('CustomRenderWithOverideArgs only', async () => {
+  const input = withCSF3(
+    `export const CustomRenderWithOverideArgs = {
+      render: (args) => <Button {...args} override="overide">Render</Button>,
+      args: { foo: 'bar', override: 'value' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRenderWithOverideArgs = () => <Button foo="bar" override="overide">Render</Button>;"`
+  );
+});
+
+test('CustomRenderWithNoArgs only', async () => {
+  const input = withCSF3(
+    `export const CustomRenderWithNoArgs = {
+      render: (args) => <Button {...args}>Render</Button>
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRenderWithNoArgs = () => <Button>Render</Button>;"`
+  );
+});
+
+test('CustomRenderWithDuplicateOnly only', async () => {
+  const input = withCSF3(
+    `export const CustomRenderWithDuplicateOnly = {
+      render: (args) => <Button {...args} override="overide">Render</Button>,
+      args: { override: 'value' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRenderWithDuplicateOnly = () => <Button override="overide">Render</Button>;"`
+  );
+});
+
+test('CustomRenderWithMultipleSpreads only', async () => {
+  const input = withCSF3(
+    `export const CustomRenderWithMultipleSpreads = {
+      render: (args) => <Button foo="a" {...args} bar="b" {...args} baz="c">Render</Button>,
+      args: { qux: 'q' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRenderWithMultipleSpreads = () => <Button foo="a" qux="q" bar="b" baz="c">Render</Button>;"`
+  );
+});
+
+test('CustomRenderBlockBody only', async () => {
+  const input = withCSF3(
+    `export const CustomRenderBlockBody = {
+      render: (args) => { return <Button {...args}>Render</Button> },
+      args: { foo: 'bar' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRenderBlockBody = (args) => { return <Button {...args}>Render</Button> };"`
+  );
+});
+
+test('ObjectFalsyArgs only', async () => {
+  const input = withCSF3(
+    `export const ObjectFalsyArgs = {
+      args: { disabled: false, count: 0, empty: '' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const ObjectFalsyArgs = () => <Button count={0} empty="">Click me</Button>;"`
+  );
+});
+
+test('ObjectUndefinedNull only', async () => {
+  const input = withCSF3(
+    `export const ObjectUndefinedNull = {
+      args: { thing: undefined, nada: null }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const ObjectUndefinedNull = () => <Button>Click me</Button>;"`
+  );
+});
+
+test('ObjectDataAttr only', async () => {
+  const input = withCSF3(
+    `export const ObjectDataAttr = {
+      args: { 'data-test-id': 'x' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const ObjectDataAttr = () => <Button data-test-id="x">Click me</Button>;"`
+  );
+});
+
+test('ObjectInvalidAttr only', async () => {
+  const input = withCSF3(
+    `export const ObjectInvalidAttr = {
+      args: { '1x': 'a', 'bad key': 'b', '@foo': 'c', '-dash': 'd' }
+    };`
+  );
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const ObjectInvalidAttr = () => <Button
+        {...{
+            "1x": 'a',
+            "bad key": 'b',
+            "@foo": 'c',
+            "-dash": 'd'
+        }}>Click me</Button>;"
   `);
 });

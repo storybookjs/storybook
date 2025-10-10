@@ -31,16 +31,11 @@ export function getCodeSnippet(
     story = storyArgument;
   }
 
-  // If the story is already a function, keep it as-is.
-  if (story?.isArrowFunctionExpression() || story?.isFunctionExpression()) {
-    const expr = story.node; // This is already a t.Expression
-    return t.variableDeclaration('const', [
-      t.variableDeclarator(t.identifier(storyId.node.name), expr),
-    ]);
-  }
+  // If the story is already a function, try to inline args like in render() when using `{...args}`
 
   // Otherwise it must be an object story
-  const storyObjPath = story;
+  const storyObjPath =
+    story?.isArrowFunctionExpression() || story?.isFunctionExpression() ? null : story;
   invariant(
     storyObjPath === null || storyObjPath.isObjectExpression(),
     'Expected story init to be object or function'
@@ -54,12 +49,7 @@ export function getCodeSnippet(
     .map((p) => p.get('value'))
     .find((value) => value.isExpression());
 
-  if (renderPath) {
-    const expr = renderPath.node; // t.Expression
-    return t.variableDeclaration('const', [
-      t.variableDeclarator(t.identifier(storyId.node.name), expr),
-    ]);
-  }
+  const storyFn = renderPath ?? story;
 
   // Collect args: meta.args and story.args as Record<string, t.Node>
   const metaArgs = metaArgsRecord(metaObj ?? null);
@@ -75,19 +65,144 @@ export function getCodeSnippet(
   // Merge (story overrides meta)
   const merged: Record<string, t.Node> = { ...metaArgs, ...storyArgs };
 
+  if (storyFn?.isArrowFunctionExpression() || storyFn?.isFunctionExpression()) {
+    const fn = storyFn.node;
+
+    // Collect args from meta only (no story-level args in CSF2 function form)
+    const metaArgs = metaArgsRecord(metaObj ?? null);
+
+    // Split merged args (excluding children) into valid JSX attributes and invalid-key entries
+    const entries = Object.entries(merged).filter(([k]) => k !== 'children');
+    const validEntries = entries.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
+    const invalidEntries = entries.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
+
+    const injectedAttrs = validEntries
+      .map(([k, v]) => toAttr(k, v))
+      .filter((a): a is t.JSXAttribute => Boolean(a));
+
+    // Only handle arrow function with direct JSX expression body for now
+    if (t.isArrowFunctionExpression(fn) && t.isJSXElement(fn.body)) {
+      const body = fn.body as t.JSXElement;
+      const opening = body.openingElement;
+      const attrs = opening.attributes;
+      const firstSpreadIndex = attrs.findIndex(
+        (a) => t.isJSXSpreadAttribute(a) && t.isIdentifier(a.argument) && a.argument.name === 'args'
+      );
+      if (firstSpreadIndex !== -1) {
+        // Build a list of non-args attributes and compute insertion index at the position of the first args spread
+        const nonArgsAttrs: (t.JSXAttribute | t.JSXSpreadAttribute)[] = [];
+        let insertionIndex = 0;
+        for (let i = 0; i < attrs.length; i++) {
+          const a = attrs[i]!;
+          const isArgsSpread =
+            t.isJSXSpreadAttribute(a) && t.isIdentifier(a.argument) && a.argument.name === 'args';
+          if (isArgsSpread) {
+            if (i === firstSpreadIndex) {
+              insertionIndex = nonArgsAttrs.length;
+            }
+            continue; // drop all {...args}
+          }
+          nonArgsAttrs.push(a as any);
+        }
+
+        // Determine names of explicitly set attributes (excluding any args spreads)
+        const existingAttrNames = new Set(
+          nonArgsAttrs
+            .filter((a) => t.isJSXAttribute(a) && t.isJSXIdentifier(a.name))
+            .map((a) => (a as t.JSXAttribute).name.name)
+        );
+
+        // Filter out any injected attrs that would duplicate an existing explicit attribute
+        const filteredInjected = injectedAttrs.filter(
+          (a) => t.isJSXIdentifier(a.name) && !existingAttrNames.has(a.name.name)
+        );
+
+        // Build a spread containing only invalid-key props, if any, and also exclude keys already explicitly present
+        const invalidProps = invalidEntries.filter(([k]) => !existingAttrNames.has(k));
+        let invalidSpread: t.JSXSpreadAttribute | null = null;
+        if (invalidProps.length > 0) {
+          const objectProps = invalidProps.map(([k, v]) =>
+            t.objectProperty(
+              t.stringLiteral(k),
+              t.isExpression(v) ? v : (t.identifier('undefined') as t.Expression)
+            )
+          );
+          invalidSpread = t.jsxSpreadAttribute(t.objectExpression(objectProps));
+        }
+
+        // Handle children injection from meta if the element currently has no children
+        const metaChildren =
+          metaArgs && Object.prototype.hasOwnProperty.call(metaArgs, 'children')
+            ? (metaArgs as Record<string, t.Node>)['children']
+            : undefined;
+        const canInjectChildren =
+          !!metaChildren && (body.children == null || body.children.length === 0);
+
+        // Always transform when `{...args}` exists: remove spreads and empty params
+        const pieces = [...filteredInjected, ...(invalidSpread ? [invalidSpread] : [])];
+        const newAttrs = [
+          ...nonArgsAttrs.slice(0, insertionIndex),
+          ...pieces,
+          ...nonArgsAttrs.slice(insertionIndex),
+        ];
+
+        const willHaveChildren = canInjectChildren ? true : (body.children?.length ?? 0) > 0;
+        const shouldSelfClose = opening.selfClosing && !willHaveChildren;
+
+        const finalOpening = t.jsxOpeningElement(opening.name, newAttrs, shouldSelfClose);
+        const finalClosing = shouldSelfClose
+          ? null
+          : (body.closingElement ?? t.jsxClosingElement(opening.name));
+        const finalChildren = canInjectChildren ? toJsxChildren(metaChildren) : body.children;
+
+        const newBody = t.jsxElement(finalOpening, finalClosing, finalChildren, shouldSelfClose);
+        const newFn = t.arrowFunctionExpression([], newBody, fn.async);
+        return t.variableDeclaration('const', [
+          t.variableDeclarator(t.identifier(storyId.node.name), newFn),
+        ]);
+      }
+    }
+
+    // Fallback: keep the function as-is
+    const expr = storyFn.node; // This is already a t.Expression
+    return t.variableDeclaration('const', [
+      t.variableDeclarator(t.identifier(storyId.node.name), expr),
+    ]);
+  }
+
   // Split children from attrs
   const childrenNode = merged['children'];
-  const attrs = Object.entries(merged)
-    .filter(([k, v]) => k !== 'children' && isValidJsxAttrName(k) && v != null)
+  const entries2 = Object.entries(merged).filter(([k]) => k !== 'children');
+  const validEntries2 = entries2.filter(([k, v]) => isValidJsxAttrName(k) && v != null);
+  const invalidEntries2 = entries2.filter(([k, v]) => !isValidJsxAttrName(k) && v != null);
+
+  const attrs = validEntries2
     .map(([k, v]) => toAttr(k, v))
     .filter((a): a is t.JSXAttribute => Boolean(a));
 
+  // Build spread for invalid-only props, if any
+  let invalidSpread2: t.JSXSpreadAttribute | null = null;
+  if (invalidEntries2.length > 0) {
+    const objectProps = invalidEntries2.map(([k, v]) =>
+      t.objectProperty(
+        t.stringLiteral(k),
+        t.isExpression(v) ? v : (t.identifier('undefined') as t.Expression)
+      )
+    );
+    invalidSpread2 = t.jsxSpreadAttribute(t.objectExpression(objectProps));
+  }
+
   const name = t.jsxIdentifier(componentName);
+
+  const openingElAttrs: Array<t.JSXAttribute | t.JSXSpreadAttribute> = [
+    ...attrs,
+    ...(invalidSpread2 ? [invalidSpread2] : []),
+  ];
 
   const arrow = t.arrowFunctionExpression(
     [],
     t.jsxElement(
-      t.jsxOpeningElement(name, attrs, false),
+      t.jsxOpeningElement(name, openingElAttrs, false),
       t.jsxClosingElement(name),
       toJsxChildren(childrenNode),
       false

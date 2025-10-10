@@ -35,13 +35,34 @@ export function getCodeSnippet(
   let story: NodePath<t.Expression> | null = init;
 
   if (init.isCallExpression()) {
-    const args = init.get('arguments');
-    if (args.length === 0) {
-      story = null;
+    const callee = init.get('callee');
+    // Handle Template.bind({}) pattern by resolving the identifier's initialization
+    if (callee.isMemberExpression()) {
+      const obj = callee.get('object');
+      const prop = callee.get('property');
+      const isBind =
+        (prop.isIdentifier() && prop.node.name === 'bind') ||
+        (t.isStringLiteral((prop as any).node) &&
+          ((prop as any).node as t.StringLiteral).value === 'bind');
+      if (obj.isIdentifier() && isBind) {
+        const resolved = resolveBindIdentifierInit(storyExportPath, obj);
+        if (resolved) {
+          story = resolved;
+        }
+      }
     }
-    const storyArgument = args[0];
-    invariant(storyArgument.isExpression());
-    story = storyArgument;
+
+    // Fallback: treat call expression as story factory and use first argument
+    if (story === init) {
+      const args = init.get('arguments');
+      if (args.length === 0) {
+        story = null;
+      } else {
+        const storyArgument = args[0];
+        invariant(storyArgument.isExpression());
+        story = storyArgument;
+      }
+    }
   }
 
   // If the story is already a function, try to inline args like in render() when using `{...args}`
@@ -559,4 +580,45 @@ function transformArgsSpreadsInJsx(
   }
   const newFrag = t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren);
   return { node: newFrag, changed };
+}
+
+// Resolve the initializer path for an identifier used in a `.bind(...)` call
+function resolveBindIdentifierInit(
+  storyExportPath: NodePath<t.ExportNamedDeclaration>,
+  identifier: NodePath<t.Identifier>
+): NodePath<t.Expression> | null {
+  const programPath = storyExportPath.findParent((p) => p.isProgram());
+
+  if (!programPath) {
+    return null;
+  }
+
+  const declarators = (programPath.get('body') as NodePath[]) // statements
+    .flatMap((stmt) => {
+      if ((stmt as NodePath<t.VariableDeclaration>).isVariableDeclaration()) {
+        return (stmt as NodePath<t.VariableDeclaration>).get(
+          'declarations'
+        ) as NodePath<t.VariableDeclarator>[];
+      }
+      if ((stmt as NodePath<t.ExportNamedDeclaration>).isExportNamedDeclaration()) {
+        const decl = (stmt as NodePath<t.ExportNamedDeclaration>).get(
+          'declaration'
+        ) as NodePath<t.Declaration>;
+        if (decl && decl.isVariableDeclaration()) {
+          return decl.get('declarations') as NodePath<t.VariableDeclarator>[];
+        }
+      }
+      return [] as NodePath<t.VariableDeclarator>[];
+    });
+
+  const match = declarators.find((d) => {
+    const id = d.get('id');
+    return id.isIdentifier() && id.node.name === identifier.node.name;
+  });
+
+  if (!match) {
+    return null;
+  }
+  const init = match.get('init') as NodePath<t.Expression> | null;
+  return init && init.isExpression() ? init : null;
 }

@@ -141,6 +141,16 @@ test('CSF2', () => {
   );
 });
 
+test('CSF2 - Template.bind', () => {
+  const input = withCSF3(dedent`
+    const Template = (args) => <Button {...args} label="String"></Button>
+    export const CSF2: StoryFn = Template.bind({});
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CSF2 = () => <Button label="String">Click me</Button>;"`
+  );
+});
+
 test('Custom Render', () => {
   const input = withCSF3(dedent`
     export const CustomRender: Story = { render: () => <Button label="String"></Button> }

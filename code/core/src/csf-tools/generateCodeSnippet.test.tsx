@@ -258,3 +258,50 @@ test('ObjectInvalidAttr only', async () => {
         }}>Click me</Button>;"
   `);
 });
+
+test('Inline nested args in child element (string)', () => {
+  const input = withCSF3(dedent`
+    export const NestedInline: Story = {
+      render: (args) => <Button><OtherElement prop={args.foo} /></Button>,
+      args: { foo: 'bar' }
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const NestedInline = () => <Button><OtherElement prop="bar" /></Button>;"`
+  );
+});
+
+test('Inline nested args in child element (boolean)', () => {
+  const input = withCSF3(dedent`
+    export const NestedBoolean: Story = {
+      render: (args) => <Button><OtherElement active={args.active} /></Button>,
+      args: { active: true }
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const NestedBoolean = () => <Button><OtherElement active /></Button>;"`
+  );
+});
+
+test('Remove nested attr when arg is null/undefined', () => {
+  const input = withCSF3(dedent`
+    export const NestedRemove: Story = {
+      render: (args) => <Button><OtherElement gone={args.gone} /></Button>,
+      args: { gone: null }
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const NestedRemove = () => <Button><OtherElement /></Button>;"`
+  );
+});
+
+test('Inline args.children when used as child expression', () => {
+  const input = withCSF3(dedent`
+    export const ChildrenExpr: Story = {
+      render: (args) => <Button>{args.children}</Button>
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const ChildrenExpr = () => <Button>Click me</Button>;"`
+  );
+});

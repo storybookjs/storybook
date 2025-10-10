@@ -5,7 +5,9 @@ import invariant from 'tiny-invariant';
 import { type CsfFile } from './CsfFile';
 
 function buildInvalidSpread(entries: Array<[string, t.Node]>): t.JSXSpreadAttribute | null {
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {
+    return null;
+  }
   const objectProps = entries.map(([k, v]) =>
     t.objectProperty(
       t.stringLiteral(k),
@@ -159,6 +161,15 @@ export function getCodeSnippet(
           t.variableDeclarator(t.identifier(storyId.node.name), newFn),
         ]);
       }
+
+      // No {...args} at top level; still try to inline any usages of args.* in the entire JSX tree
+      const { node: transformedBody, changed } = inlineArgsInJsx(body, merged);
+      if (changed) {
+        const newFn = t.arrowFunctionExpression([], transformedBody, fn.async);
+        return t.variableDeclaration('const', [
+          t.variableDeclarator(t.identifier(storyId.node.name), newFn),
+        ]);
+      }
     }
 
     // Fallback: keep the function as-is
@@ -297,3 +308,128 @@ const toJsxChildren = (
   }
   return []; // ignore non-expressions
 };
+
+// Detects {args.key} member usage
+function getArgsMemberKey(expr: t.Node): string | null {
+  if (t.isMemberExpression(expr) && t.isIdentifier(expr.object) && expr.object.name === 'args') {
+    if (t.isIdentifier(expr.property) && !expr.computed) {
+      return expr.property.name;
+    }
+
+    if (t.isStringLiteral(expr.property) && expr.computed) {
+      return expr.property.value;
+    }
+  }
+  // Optional chaining: args?.key
+  // In Babel types, this can still be a MemberExpression with optional: true or OptionalMemberExpression
+  // Handle both just in case
+  if (
+    t.isOptionalMemberExpression?.(expr) &&
+    t.isIdentifier(expr.object) &&
+    expr.object.name === 'args'
+  ) {
+    const prop = expr.property;
+
+    if (t.isIdentifier(prop) && !expr.computed) {
+      return prop.name;
+    }
+
+    if (t.isStringLiteral(prop) && expr.computed) {
+      return prop.value;
+    }
+  }
+  return null;
+}
+
+function inlineAttrValueFromArg(
+  attrName: string,
+  argValue: t.Node
+): t.JSXAttribute | null | undefined {
+  // Reuse toAttr, but keep the original attribute name
+  return toAttr(attrName, argValue);
+}
+
+function inlineArgsInJsx(
+  node: t.JSXElement | t.JSXFragment,
+  merged: Record<string, t.Node>
+): { node: t.JSXElement | t.JSXFragment; changed: boolean } {
+  let changed = false;
+
+  if (t.isJSXElement(node)) {
+    const opening = node.openingElement;
+    // Process attributes
+    const newAttrs: Array<t.JSXAttribute | t.JSXSpreadAttribute> = [];
+    for (const a of opening.attributes) {
+      if (t.isJSXAttribute(a)) {
+        const attrName = t.isJSXIdentifier(a.name) ? a.name.name : null;
+        if (attrName && a.value && t.isJSXExpressionContainer(a.value)) {
+          const key = getArgsMemberKey(a.value.expression);
+          if (key && Object.prototype.hasOwnProperty.call(merged, key)) {
+            const repl = inlineAttrValueFromArg(attrName, merged[key]!);
+            changed = true;
+            if (repl) {
+              newAttrs.push(repl);
+            }
+            continue;
+          }
+        }
+        newAttrs.push(a);
+      } else {
+        // Keep spreads as-is (they might not be args)
+        newAttrs.push(a);
+      }
+    }
+
+    // Process children
+    const newChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
+    for (const c of node.children) {
+      if (t.isJSXElement(c) || t.isJSXFragment(c)) {
+        const res = inlineArgsInJsx(c, merged);
+        changed = changed || res.changed;
+        newChildren.push(res.node as any);
+      } else if (t.isJSXExpressionContainer(c)) {
+        const key = getArgsMemberKey(c.expression);
+        if (key === 'children' && Object.prototype.hasOwnProperty.call(merged, 'children')) {
+          const injected = toJsxChildren(merged['children']);
+          newChildren.push(...injected);
+          changed = true;
+        } else {
+          newChildren.push(c);
+        }
+      } else {
+        newChildren.push(c as any);
+      }
+    }
+
+    const shouldSelfClose = opening.selfClosing && newChildren.length === 0;
+    const newOpening = t.jsxOpeningElement(opening.name, newAttrs, shouldSelfClose);
+    const newClosing = shouldSelfClose
+      ? null
+      : (node.closingElement ?? t.jsxClosingElement(opening.name));
+    const newEl = t.jsxElement(newOpening, newClosing, newChildren, shouldSelfClose);
+    return { node: newEl, changed };
+  }
+
+  // JSXFragment
+  const fragChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
+  for (const c of node.children) {
+    if (t.isJSXElement(c) || t.isJSXFragment(c)) {
+      const res = inlineArgsInJsx(c, merged);
+      changed = changed || res.changed;
+      fragChildren.push(res.node as any);
+    } else if (t.isJSXExpressionContainer(c)) {
+      const key = getArgsMemberKey(c.expression);
+      if (key === 'children' && Object.prototype.hasOwnProperty.call(merged, 'children')) {
+        const injected = toJsxChildren(merged['children']);
+        fragChildren.push(...injected);
+        changed = true;
+      } else {
+        fragChildren.push(c);
+      }
+    } else {
+      fragChildren.push(c as any);
+    }
+  }
+  const newFrag = t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren);
+  return { node: newFrag, changed };
+}

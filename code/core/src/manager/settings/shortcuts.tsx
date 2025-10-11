@@ -230,7 +230,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
   onBlur = async () => {
     const { shortcutKeys, activeFeature } = this.state;
-
+    
     if (shortcutKeys[activeFeature]) {
       const { shortcut, error } = shortcutKeys[activeFeature];
       if (!shortcut || error) {
@@ -288,28 +288,33 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
   renderKeyInput = () => {
     const { shortcutKeys, addonsShortcutLabels } = this.state;
     // @ts-expect-error (non strict)
-    const arr = Object.entries(shortcutKeys).map(([feature, { shortcut }]: [Feature, any]) => (
-      <Row key={feature}>
-        {/* @ts-expect-error (non strict) */}
-        <Description>{shortcutLabels[feature] || addonsShortcutLabels[feature]}</Description>
+    const arr = Object.entries(shortcutKeys).map(([feature, { shortcut }]: [Feature, any]) => {
+      if (shortcutLabels[feature] === undefined && (!addonsShortcutLabels || !addonsShortcutLabels[feature])) {
+        return;
+      }
+      return (
+        <Row key={feature}>
+          {/* @ts-expect-error (non strict) */}
+          <Description>{shortcutLabels[feature] || addonsShortcutLabels[feature]}</Description>
 
-        <TextInput
-          spellCheck="false"
-          valid={this.displayError(feature)}
-          className="modalInput"
-          onBlur={this.onBlur}
-          onFocus={this.onFocus(feature)}
-          // @ts-expect-error (Converted from ts-ignore)
-          onKeyDown={this.onKeyDown}
-          value={shortcut ? shortcutToHumanString(shortcut) : ''}
-          placeholder="Type keys"
-          readOnly
-        />
+          <TextInput
+            spellCheck="false"
+            valid={this.displayError(feature)}
+            className="modalInput"
+            onBlur={this.onBlur}
+            onFocus={this.onFocus(feature)}
+            // @ts-expect-error (Converted from ts-ignore)
+            onKeyDown={this.onKeyDown}
+            value={shortcut ? shortcutToHumanString(shortcut) : ''}
+            placeholder="Type keys"
+            readOnly
+          />
 
-        {/* @ts-expect-error (non strict) */}
-        <SuccessIcon valid={this.displaySuccessMessage(feature)} />
-      </Row>
-    ));
+          {/* @ts-expect-error (non strict) */}
+          <SuccessIcon valid={this.displaySuccessMessage(feature)} />
+        </Row>
+      );
+    });
 
     return arr;
   };

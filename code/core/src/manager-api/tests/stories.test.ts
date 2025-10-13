@@ -1106,6 +1106,47 @@ describe('stories API', () => {
       api.selectStory('a--1');
       expect(store.getState().settings.lastTrackedStoryId).toBe('a--1');
     });
+    it('selects first visible child when component is clicked with filtered index', () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, store } = moduleArgs;
+
+      // Create index with component having children
+      const indexWithComponent = {
+        v: 5,
+        entries: {
+          ...navigationEntries,
+          a: {
+            id: 'a',
+            type: 'component',
+            title: 'A',
+            name: 'A',
+            importPath: './a.ts',
+            children: ['a--1', 'a--2'],
+          },
+        },
+      };
+
+      // Set up filtered index where first child is hidden
+      const filteredIndex = {
+        a: { ...indexWithComponent.entries.a, type: 'component' as const },
+        'a--2': {
+          ...navigationEntries['a--2'],
+          type: 'story' as const,
+          subtype: 'story' as const,
+          parent: 'a',
+        },
+        // Note: 'a--1' is missing from filtered index (hidden)
+      };
+
+      api.setIndex(indexWithComponent);
+      store.setState({ filteredIndex });
+
+      // When selecting the component, it should select the first visible child (a--2)
+      api.selectStory('a');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+    });
     describe('deprecated api', () => {
       it('allows navigating to a combination of title + name', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };

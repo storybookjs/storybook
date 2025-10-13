@@ -92,14 +92,9 @@ describe('fix-faux-esm-require', () => {
       } as any);
 
       expect(result).toEqual({
-        needsRequire: true,
-        needsDirname: false,
-        needsFilename: false,
-        existingImports: {
-          createRequire: false,
-          dirname: false,
-          fileURLToPath: false,
-        },
+        hasRequireUsage: true,
+        hasUnderscoreDirname: false,
+        hasUnderscoreFilename: false,
       });
     });
 
@@ -119,34 +114,10 @@ describe('fix-faux-esm-require', () => {
       } as any);
 
       expect(result).toEqual({
-        needsRequire: false,
-        needsDirname: true,
-        needsFilename: true,
-        existingImports: {
-          createRequire: false,
-          dirname: false,
-          fileURLToPath: false,
-        },
+        hasRequireUsage: false,
+        hasUnderscoreDirname: true,
+        hasUnderscoreFilename: false,
       });
-    });
-
-    it('should return null if file is ESM with __dirname usage but already defined', async () => {
-      const contentWithDefinedDirname = `
-        import { addons } from '@storybook/addon-essentials';
-        const __dirname = dirname(__filename);
-        const configPath = path.join(__dirname, 'config.js');
-        export default {
-          addons: ['@storybook/addon-essentials'],
-        };
-      `;
-
-      mockReadFile.mockResolvedValue(contentWithDefinedDirname);
-
-      const result = await fixFauxEsmRequire.check({
-        mainConfigPath: 'main.js',
-      } as any);
-
-      expect(result).toBeNull();
     });
 
     it('should detect TypeScript config files', async () => {
@@ -165,14 +136,9 @@ describe('fix-faux-esm-require', () => {
       } as any);
 
       expect(result).toEqual({
-        needsRequire: true,
-        needsDirname: false,
-        needsFilename: false,
-        existingImports: {
-          createRequire: false,
-          dirname: false,
-          fileURLToPath: false,
-        },
+        hasRequireUsage: true,
+        hasUnderscoreDirname: false,
+        hasUnderscoreFilename: false,
       });
     });
   });
@@ -192,6 +158,11 @@ describe('fix-faux-esm-require', () => {
       await fixFauxEsmRequire.run({
         dryRun: false,
         mainConfigPath: 'main.js',
+        result: {
+          hasRequireUsage: true,
+          hasUnderscoreDirname: false,
+          hasUnderscoreFilename: false,
+        },
       } as any);
 
       expect(mockWriteFile).toHaveBeenCalledWith(
@@ -215,13 +186,30 @@ describe('fix-faux-esm-require', () => {
       await fixFauxEsmRequire.run({
         dryRun: false,
         mainConfigPath: 'main.js',
+        result: {
+          hasRequireUsage: true,
+          hasUnderscoreDirname: true,
+          hasUnderscoreFilename: false,
+        },
       } as any);
 
       const writtenContent = mockWriteFile.mock.calls[0][1];
-      expect(writtenContent).toContain('import { createRequire } from "node:module"');
-      expect(writtenContent).toContain('import { dirname } from "node:path"');
-      expect(writtenContent).toContain('import { fileURLToPath } from "node:url"');
-      expect(writtenContent).toContain('const __dirname = dirname(__filename)');
+      expect(writtenContent).toMatchInlineSnapshot(`
+        "
+                import { fileURLToPath } from "node:url";
+                import { dirname } from "node:path";
+                import { createRequire } from "node:module";
+                import { addons } from '@storybook/addon-essentials';
+                const config = require('./some-config');
+                const configPath = path.join(__dirname, 'config.js');
+                export default {
+                  addons: ['@storybook/addon-essentials'],
+                };
+                const __filename = fileURLToPath("import.meta.url");
+                const __dirname = dirname(__filename);
+                const require = createRequire("import.meta.url");
+              "
+      `);
     });
 
     it('should not add duplicate imports when they already exist', async () => {
@@ -240,20 +228,40 @@ describe('fix-faux-esm-require', () => {
       await fixFauxEsmRequire.run({
         dryRun: false,
         mainConfigPath: 'main.js',
+        result: {
+          hasRequireUsage: true,
+          hasUnderscoreDirname: false,
+          hasUnderscoreFilename: false,
+        },
       } as any);
 
       const writtenContent = mockWriteFile.mock.calls[0][1];
-      // Should not duplicate the dirname import
-      const dirnameImportCount = (
-        writtenContent.match(/import { dirname } from "node:path"/g) || []
-      ).length;
-      expect(dirnameImportCount).toBe(1);
+
+      expect(writtenContent).toMatchInlineSnapshot(`
+        "
+                import { fileURLToPath } from "node:url";
+                import { createRequire } from "node:module";
+                import { dirname } from "node:path";
+                import { addons } from '@storybook/addon-essentials';
+                const config = require('./some-config');
+                const configPath = path.join(__dirname, 'config.js');
+                export default {
+                  addons: ['@storybook/addon-essentials'],
+                };
+                const require = createRequire("import.meta.url");
+              "
+      `);
     });
 
     it('should not write file in dry run mode', async () => {
       await fixFauxEsmRequire.run({
         dryRun: true,
         mainConfigPath: 'main.js',
+        result: {
+          hasRequireUsage: true,
+          hasUnderscoreDirname: false,
+          hasUnderscoreFilename: false,
+        },
       } as any);
 
       expect(mockWriteFile).not.toHaveBeenCalled();

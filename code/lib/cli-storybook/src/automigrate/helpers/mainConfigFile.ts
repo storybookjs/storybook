@@ -300,86 +300,14 @@ export function hasImport(content: string, importName: string, fromModule: strin
 
 /** Configuration for what should be included in the compatibility banner */
 export interface BannerConfig {
-  needsRequire: boolean;
-  needsDirname: boolean;
-  needsFilename: boolean;
-  existingImports: {
-    createRequire: boolean;
-    dirname: boolean;
-    fileURLToPath: boolean;
-  };
+  hasRequireUsage: boolean;
+  hasUnderscoreDirname: boolean;
+  hasUnderscoreFilename: boolean;
 }
 
-/** Analyze file content and determine what compatibility features are needed */
-export function analyzeCompatibilityNeeds(content: string): BannerConfig {
-  const needsRequire = containsRequireUsage(content);
-  const needsDirname = containsDirnameUsage(content) && !hasDirnameDefined(content);
-  const needsFilename = needsDirname; // __filename is only needed if __dirname is needed
-
-  return {
-    needsRequire,
-    needsDirname,
-    needsFilename,
-    existingImports: {
-      createRequire: hasImport(content, 'createRequire', 'node:module'),
-      dirname: hasImport(content, 'dirname', 'node:path'),
-      fileURLToPath: hasImport(content, 'fileURLToPath', 'node:url'),
-    },
-  };
-}
-
-/** Check if the file already has the require banner */
 export const bannerComment =
-  '// end of Storybook 10 migration assistant header, You can delete the above code';
-export function hasRequireBanner(content: string): boolean {
+  '// This file has been automatically migrated to valid ESM format by Storybook.';
+
+export const hasRequireBanner = (content: string): boolean => {
   return content.includes(bannerComment);
-}
-
-/** Generate the require compatibility banner based on configuration */
-export function getRequireBanner(config: BannerConfig): string {
-  const imports: string[] = [];
-  const constants: string[] = [];
-
-  // Add createRequire import and require constant if needed
-  if (config.needsRequire && !config.existingImports.createRequire) {
-    imports.push('import { createRequire } from "node:module";');
-    constants.push('const require = createRequire(import.meta.url);');
-  }
-
-  // Add dirname import if needed and not already present
-  if (config.needsDirname && !config.existingImports.dirname) {
-    imports.push('import { dirname } from "node:path";');
-  }
-
-  // Add fileURLToPath import if needed and not already present
-  if (config.needsFilename && !config.existingImports.fileURLToPath) {
-    imports.push('import { fileURLToPath } from "node:url";');
-  }
-
-  // Add __filename constant if needed
-  if (config.needsFilename) {
-    constants.push('const __filename = fileURLToPath(import.meta.url);');
-  }
-
-  // Add __dirname constant if needed
-  if (config.needsDirname) {
-    constants.push('const __dirname = dirname(__filename);');
-  }
-
-  // If no imports or constants are needed, return empty string
-  if (imports.length === 0 && constants.length === 0) {
-    return '';
-  }
-
-  return dedent`
-    ${imports.join('\n')}
-
-    ${constants.join('\n')}
-  `;
-}
-
-/** Generate the require compatibility banner based on file content (convenience method) */
-export function getRequireBannerFromContent(content: string): string {
-  const config = analyzeCompatibilityNeeds(content);
-  return getRequireBanner(config);
-}
+};

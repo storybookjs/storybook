@@ -1,14 +1,16 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+import { types as t } from 'storybook/internal/babel';
+
 import { dedent } from 'ts-dedent';
 
 import {
   type BannerConfig,
-  analyzeCompatibilityNeeds,
   bannerComment,
   containsESMUsage,
-  getRequireBanner,
+  containsRequireUsage,
   hasRequireBanner,
+  updateMainConfig,
 } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
@@ -38,11 +40,19 @@ export const fixFauxEsmRequire = {
     }
 
     // Analyze what compatibility features are needed
-    const compatibilityNeeds = analyzeCompatibilityNeeds(content);
+    const hasRequireUsage = containsRequireUsage(content);
+    const hasUnderscoreFilename = !!content.includes('__filename');
+    const hasUnderscoreDirname = !!content.includes('__dirname');
+
+    const hasBanner = !!content.includes(bannerComment);
 
     // Check if any compatibility features are needed
-    if (compatibilityNeeds.needsRequire || compatibilityNeeds.needsDirname) {
-      return compatibilityNeeds;
+    if (hasRequireUsage || hasUnderscoreFilename || hasUnderscoreDirname) {
+      return {
+        hasRequireUsage,
+        hasUnderscoreDirname,
+        hasUnderscoreFilename,
+      };
     }
 
     return null;
@@ -52,18 +62,53 @@ export const fixFauxEsmRequire = {
     return dedent`Main config is ESM but uses 'require' or '__dirname'. This will break in Storybook 10; Adding compatibility banner`;
   },
 
-  async run({ dryRun, mainConfigPath }) {
+  async run({ dryRun, mainConfigPath, result }) {
     if (dryRun) {
       return;
     }
 
+    const { hasRequireUsage, hasUnderscoreDirname, hasUnderscoreFilename } = result;
+
+    await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, (mainConfig) => {
+      mainConfig.setImport(['createRequire'], 'node:module');
+      mainConfig.setImport(['dirname'], 'node:path');
+      mainConfig.setImport(['fileURLToPath'], 'node:url');
+
+      // Add __filename and __dirname if used
+      if (hasUnderscoreFilename || hasUnderscoreDirname) {
+        mainConfig.setBodyDeclaration(
+          t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier('__filename'),
+              t.callExpression(t.identifier('fileURLToPath'), [t.stringLiteral('import.meta.url')])
+            ),
+          ])
+        );
+        mainConfig.setBodyDeclaration(
+          t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier('__dirname'),
+              t.callExpression(t.identifier('dirname'), [t.identifier('__filename')])
+            ),
+          ])
+        );
+      }
+
+      // add require if used
+      if (hasRequireUsage) {
+        mainConfig.setBodyDeclaration(
+          t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier('require'),
+              t.callExpression(t.identifier('createRequire'), [t.stringLiteral('import.meta.url')])
+            ),
+          ])
+        );
+      }
+    });
+
     const content = await readFile(mainConfigPath, 'utf-8');
-    const compatibilityNeeds = analyzeCompatibilityNeeds(content);
-    const banner = getRequireBanner(compatibilityNeeds);
-    const comment = bannerComment;
-
-    const newContent = [banner, comment, content].join('\n');
-
+    const newContent = [bannerComment, content].join('\n');
     await writeFile(mainConfigPath, newContent);
   },
 } satisfies Fix<BannerConfig>;

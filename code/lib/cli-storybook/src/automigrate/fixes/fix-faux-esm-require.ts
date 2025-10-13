@@ -118,9 +118,16 @@ export const fixFauxEsmRequire = {
     const { hasRequireUsage, hasUnderscoreDirname, hasUnderscoreFilename } = result;
 
     await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, (mainConfig) => {
-      mainConfig.setImport(['createRequire'], 'node:module');
-      mainConfig.setImport(['dirname'], 'node:path');
-      mainConfig.setImport(['fileURLToPath'], 'node:url');
+      // Only add imports for symbols that are actually used
+      if (hasRequireUsage) {
+        mainConfig.setImport(['createRequire'], 'node:module');
+      }
+      if (hasUnderscoreDirname) {
+        mainConfig.setImport(['dirname'], 'node:path');
+      }
+      if (hasUnderscoreFilename || hasUnderscoreDirname) {
+        mainConfig.setImport(['fileURLToPath'], 'node:url');
+      }
 
       // Find the index after the last import declaration
       const body = mainConfig._ast.program.body;

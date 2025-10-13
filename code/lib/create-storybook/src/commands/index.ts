@@ -8,7 +8,11 @@ export { PreflightCheckCommand } from './PreflightCheckCommand';
 export type { PreflightCheckResult } from './PreflightCheckCommand';
 
 export { UserPreferencesCommand } from './UserPreferencesCommand';
-export type { InstallType, UserPreferencesOptions, UserPreferencesResult } from './UserPreferencesCommand';
+export type {
+  InstallType,
+  UserPreferencesOptions,
+  UserPreferencesResult,
+} from './UserPreferencesCommand';
 
 export { ProjectDetectionCommand } from './ProjectDetectionCommand';
 
@@ -20,4 +24,3 @@ export { AddonConfigurationCommand } from './AddonConfigurationCommand';
 export { DependencyInstallationCommand } from './DependencyInstallationCommand';
 
 export { FinalizationCommand } from './FinalizationCommand';
-

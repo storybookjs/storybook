@@ -1,5 +1,5 @@
 import type { DependencyCollector } from '../dependency-collector';
-import { PackageManagerService } from '../services/PackageManagerService';
+import type { PackageManagerService } from '../services/PackageManagerService';
 
 /**
  * Command for installing all collected dependencies
@@ -28,4 +28,3 @@ export class DependencyInstallationCommand {
     }
   }
 }
-

@@ -2,12 +2,15 @@ import type { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { DependencyCollector } from '../dependency-collector';
 import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
 import { getAddonVitestDependencies } from '../addon-dependencies/addon-vitest';
+import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import type { CommandOptions, GeneratorFeature } from '../generators/types';
-import { FeatureCompatibilityService, ONBOARDING_PROJECT_TYPES } from '../services/FeatureCompatibilityService';
+import {
+  FeatureCompatibilityService,
+  ONBOARDING_PROJECT_TYPES,
+} from '../services/FeatureCompatibilityService';
 
 export interface GeneratorExecutionResult {
   installResult: any;
@@ -68,19 +71,18 @@ export class GeneratorExecutionCommand {
     return { installResult, storybookCommand };
   }
 
-  /**
-   * Filter features based on project type compatibility
-   */
+  /** Filter features based on project type compatibility */
   private filterFeatures(projectType: ProjectType, selectedFeatures: Set<GeneratorFeature>): void {
     // Remove onboarding if not supported
-    if (selectedFeatures.has('onboarding') && !ONBOARDING_PROJECT_TYPES.includes(projectType as any)) {
+    if (
+      selectedFeatures.has('onboarding') &&
+      !ONBOARDING_PROJECT_TYPES.includes(projectType as any)
+    ) {
       selectedFeatures.delete('onboarding');
     }
   }
 
-  /**
-   * Collect addon dependencies without installing them
-   */
+  /** Collect addon dependencies without installing them */
   private async collectAddonDependencies(
     projectType: ProjectType,
     packageManager: JsPackageManager,
@@ -88,8 +90,7 @@ export class GeneratorExecutionCommand {
   ): Promise<void> {
     try {
       // Determine framework package name for Next.js detection
-      const frameworkPackageName =
-        projectType === 'NEXTJS' ? '@storybook/nextjs' : undefined;
+      const frameworkPackageName = projectType === 'NEXTJS' ? '@storybook/nextjs' : undefined;
 
       const vitestDeps = await getAddonVitestDependencies(packageManager, frameworkPackageName);
       const a11yDeps = getAddonA11yDependencies();
@@ -100,9 +101,7 @@ export class GeneratorExecutionCommand {
     }
   }
 
-  /**
-   * Execute the project-specific generator
-   */
+  /** Execute the project-specific generator */
   private async executeProjectGenerator(
     projectType: ProjectType,
     packageManager: JsPackageManager,
@@ -134,9 +133,7 @@ export class GeneratorExecutionCommand {
     return generator(packageManager, npmOptions, generatorOptions as any, options);
   }
 
-  /**
-   * Get the appropriate Storybook command for the project type
-   */
+  /** Get the appropriate Storybook command for the project type */
   private getStorybookCommand(
     projectType: ProjectType,
     packageManager: JsPackageManager,
@@ -149,4 +146,3 @@ export class GeneratorExecutionCommand {
     return packageManager.getRunCommand('storybook');
   }
 }
-

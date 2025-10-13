@@ -4,9 +4,9 @@ import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { DependencyCollector } from '../dependency-collector';
 import * as addonA11y from '../addon-dependencies/addon-a11y';
 import * as addonVitest from '../addon-dependencies/addon-vitest';
+import { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import { GeneratorExecutionCommand } from './GeneratorExecutionCommand';
 
@@ -31,7 +31,10 @@ describe('GeneratorExecutionCommand', () => {
     mockGenerator = vi.fn().mockResolvedValue({ success: true });
 
     vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
-    vi.mocked(addonVitest.getAddonVitestDependencies).mockResolvedValue(['vitest', '@vitest/browser']);
+    vi.mocked(addonVitest.getAddonVitestDependencies).mockResolvedValue([
+      'vitest',
+      '@vitest/browser',
+    ]);
     vi.mocked(addonA11y.getAddonA11yDependencies).mockReturnValue([]);
     vi.mocked(logger.warn).mockImplementation(() => {});
 
@@ -230,4 +233,3 @@ describe('GeneratorExecutionCommand', () => {
     });
   });
 });
-

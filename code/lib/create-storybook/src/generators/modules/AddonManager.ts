@@ -8,13 +8,9 @@ export interface AddonConfiguration {
   addonPackages: string[];
 }
 
-/**
- * Module for managing Storybook addons
- */
+/** Module for managing Storybook addons */
 export class AddonManager {
-  /**
-   * Determine webpack compiler addon if needed
-   */
+  /** Determine webpack compiler addon if needed */
   getWebpackCompilerAddon(
     builder: Builder,
     webpackCompiler?: ({ builder }: { builder: Builder }) => 'babel' | 'swc' | undefined
@@ -27,9 +23,7 @@ export class AddonManager {
     return compiler ? `@storybook/addon-webpack5-compiler-${compiler}` : undefined;
   }
 
-  /**
-   * Get addons based on selected features
-   */
+  /** Get addons based on selected features */
   getAddonsForFeatures(features: GeneratorFeature[], extraAddons: string[] = []): string[] {
     const addons = [...extraAddons];
 
@@ -48,16 +42,12 @@ export class AddonManager {
     return addons;
   }
 
-  /**
-   * Strip version numbers from addon names
-   */
+  /** Strip version numbers from addon names */
   stripVersions(addons: string[]): string[] {
     return addons.map((addon) => getPackageDetails(addon)[0]);
   }
 
-  /**
-   * Configure addons for the project
-   */
+  /** Configure addons for the project */
   configureAddons(
     features: GeneratorFeature[],
     extraAddons: string[] = [],
@@ -84,4 +74,3 @@ export class AddonManager {
     };
   }
 }
-

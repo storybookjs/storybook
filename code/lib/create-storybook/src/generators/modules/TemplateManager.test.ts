@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { copyTemplateFiles, SupportedLanguage } from 'storybook/internal/cli';
+import { SupportedLanguage, copyTemplateFiles } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 
 import { TemplateManager } from './TemplateManager';
@@ -69,9 +69,11 @@ describe('TemplateManager', () => {
 
     beforeEach(() => {
       mockPackageManager = {} as any;
-      
+
       // Mock the private getCommonAssetsDir method
-      vi.spyOn(manager as any, 'getCommonAssetsDir').mockReturnValue('/test/path/rendererAssets/common');
+      vi.spyOn(manager as any, 'getCommonAssetsDir').mockReturnValue(
+        '/test/path/rendererAssets/common'
+      );
     });
 
     it('should copy templates using framework location when available', async () => {
@@ -171,4 +173,3 @@ describe('TemplateManager', () => {
     });
   });
 });
-

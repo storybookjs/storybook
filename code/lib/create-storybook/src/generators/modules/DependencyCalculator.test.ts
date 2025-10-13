@@ -130,7 +130,10 @@ describe('DependencyCalculator', () => {
       vi.mocked(isCI).mockReturnValue(true);
       const packagesToInstall: string[] = [];
 
-      const result = await calculator.configureEslintIfNeeded(mockPackageManager, packagesToInstall);
+      const result = await calculator.configureEslintIfNeeded(
+        mockPackageManager,
+        packagesToInstall
+      );
 
       expect(result).toBeNull();
       expect(extractEslintInfo).not.toHaveBeenCalled();
@@ -148,7 +151,10 @@ describe('DependencyCalculator', () => {
 
       const packagesToInstall: string[] = [];
 
-      const result = await calculator.configureEslintIfNeeded(mockPackageManager, packagesToInstall);
+      const result = await calculator.configureEslintIfNeeded(
+        mockPackageManager,
+        packagesToInstall
+      );
 
       expect(result).toBe('eslint-plugin-storybook');
       expect(packagesToInstall).toContain('eslint-plugin-storybook');
@@ -169,7 +175,10 @@ describe('DependencyCalculator', () => {
 
       const packagesToInstall: string[] = [];
 
-      const result = await calculator.configureEslintIfNeeded(mockPackageManager, packagesToInstall);
+      const result = await calculator.configureEslintIfNeeded(
+        mockPackageManager,
+        packagesToInstall
+      );
 
       expect(result).toBeNull();
       expect(packagesToInstall).not.toContain('eslint-plugin-storybook');
@@ -185,7 +194,10 @@ describe('DependencyCalculator', () => {
 
       const packagesToInstall: string[] = [];
 
-      const result = await calculator.configureEslintIfNeeded(mockPackageManager, packagesToInstall);
+      const result = await calculator.configureEslintIfNeeded(
+        mockPackageManager,
+        packagesToInstall
+      );
 
       expect(result).toBeNull();
       expect(packagesToInstall).not.toContain('eslint-plugin-storybook');
@@ -196,7 +208,10 @@ describe('DependencyCalculator', () => {
 
       const packagesToInstall: string[] = [];
 
-      const result = await calculator.configureEslintIfNeeded(mockPackageManager, packagesToInstall);
+      const result = await calculator.configureEslintIfNeeded(
+        mockPackageManager,
+        packagesToInstall
+      );
 
       expect(result).toBeNull();
       expect(logger.warn).toHaveBeenCalledWith(
@@ -257,4 +272,3 @@ describe('DependencyCalculator', () => {
     });
   });
 });
-

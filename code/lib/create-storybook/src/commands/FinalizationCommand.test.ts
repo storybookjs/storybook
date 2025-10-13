@@ -93,7 +93,10 @@ describe('FinalizationCommand', () => {
 
       await command.execute(ProjectType.REACT, selectedFeatures, 'npm run storybook');
 
-      expect(fs.appendFile).toHaveBeenCalledWith('/test/project/.gitignore', '\nstorybook-static\n');
+      expect(fs.appendFile).toHaveBeenCalledWith(
+        '/test/project/.gitignore',
+        '\nstorybook-static\n'
+      );
     });
 
     it('should print features as "none" when no features selected', async () => {
@@ -125,10 +128,7 @@ describe('FinalizationCommand', () => {
 
       await command.execute(ProjectType.ANGULAR, selectedFeatures, 'ng run my-app:storybook');
 
-      expect(logger.log).toHaveBeenCalledWith(
-        expect.stringContaining('ng run my-app:storybook')
-      );
+      expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('ng run my-app:storybook'));
     });
   });
 });
-

@@ -37,9 +37,7 @@ export class AddonConfigurationCommand {
     }
   }
 
-  /**
-   * Configure test addons (a11y and vitest)
-   */
+  /** Configure test addons (a11y and vitest) */
   private async configureTestAddons(
     packageManager: JsPackageManager,
     options: CommandOptions
@@ -75,4 +73,3 @@ export class AddonConfigurationCommand {
     });
   }
 }
-

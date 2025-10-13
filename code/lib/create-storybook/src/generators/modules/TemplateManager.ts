@@ -8,13 +8,9 @@ import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal
 
 import type { GeneratorFeature } from '../types';
 
-/**
- * Module for managing Storybook templates
- */
+/** Module for managing Storybook templates */
 export class TemplateManager {
-  /**
-   * Check if a framework has custom templates
-   */
+  /** Check if a framework has custom templates */
   hasFrameworkTemplates(framework?: string): boolean {
     if (!framework) {
       return false;
@@ -47,9 +43,7 @@ export class TemplateManager {
     return frameworksWithTemplates.includes(framework as SupportedFrameworks);
   }
 
-  /**
-   * Copy template files to the destination
-   */
+  /** Copy template files to the destination */
   async copyTemplates(
     framework: string | undefined,
     frameworkPackage: string | undefined,
@@ -72,9 +66,7 @@ export class TemplateManager {
     });
   }
 
-  /**
-   * Get the common assets directory path
-   */
+  /** Get the common assets directory path */
   private getCommonAssetsDir(): string {
     return join(
       dirname(fileURLToPath(import.meta.resolve('create-storybook/package.json'))),
@@ -83,16 +75,16 @@ export class TemplateManager {
     );
   }
 
-  /**
-   * Determine the template location to use
-   */
+  /** Determine the template location to use */
   getTemplateLocation(
     framework: string | undefined,
     frameworkPackage: string | undefined,
     rendererId: SupportedRenderers
   ): string {
     const finalFramework = framework || frameworkPackages[frameworkPackage!] || frameworkPackage;
-    const templateLocation = this.hasFrameworkTemplates(finalFramework) ? finalFramework : rendererId;
+    const templateLocation = this.hasFrameworkTemplates(finalFramework)
+      ? finalFramework
+      : rendererId;
 
     if (!templateLocation) {
       throw new Error(`Could not find template location for ${framework} or ${rendererId}`);
@@ -101,4 +93,3 @@ export class TemplateManager {
     return templateLocation;
   }
 }
-

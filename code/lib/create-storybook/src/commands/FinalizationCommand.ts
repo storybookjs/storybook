@@ -33,9 +33,7 @@ export class FinalizationCommand {
     this.printSuccessMessage(selectedFeatures, storybookCommand);
   }
 
-  /**
-   * Update .gitignore with Storybook-specific entries
-   */
+  /** Update .gitignore with Storybook-specific entries */
   private async updateGitignore(): Promise<void> {
     const foundGitIgnoreFile = find.up('.gitignore');
     const rootDirectory = getProjectRoot();
@@ -60,9 +58,7 @@ export class FinalizationCommand {
     }
   }
 
-  /**
-   * Print success message with feature summary
-   */
+  /** Print success message with feature summary */
   private printSuccessMessage(
     selectedFeatures: Set<GeneratorFeature>,
     storybookCommand: string
@@ -86,4 +82,3 @@ export class FinalizationCommand {
     logger.outro('');
   }
 }
-

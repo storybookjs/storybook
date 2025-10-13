@@ -4,46 +4,31 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { getPackageDetails, isCI } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-/**
- * Module for calculating which dependencies need to be installed
- */
+/** Module for calculating which dependencies need to be installed */
 export class DependencyCalculator {
-  /**
-   * Filter out already installed dependencies
-   */
-  filterInstalledPackages(
-    packages: string[],
-    installedDependencies: Set<string>
-  ): string[] {
+  /** Filter out already installed dependencies */
+  filterInstalledPackages(packages: string[], installedDependencies: Set<string>): string[] {
     return packages.filter(
-      (packageToInstall) => !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
+      (packageToInstall) =>
+        !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
     );
   }
 
-  /**
-   * Get installed dependencies from package.json
-   */
+  /** Get installed dependencies from package.json */
   getInstalledDependencies(packageManager: JsPackageManager): Set<string> {
     const { packageJson } = packageManager.primaryPackageJson;
     return new Set(Object.keys({ ...packageJson.dependencies, ...packageJson.devDependencies }));
   }
 
-  /**
-   * Calculate packages that need to be installed
-   */
-  calculatePackagesToInstall(
-    allPackages: string[],
-    packageManager: JsPackageManager
-  ): string[] {
+  /** Calculate packages that need to be installed */
+  calculatePackagesToInstall(allPackages: string[], packageManager: JsPackageManager): string[] {
     const installedDependencies = this.getInstalledDependencies(packageManager);
     const uniquePackages = [...new Set(allPackages)].filter(Boolean);
 
     return this.filterInstalledPackages(uniquePackages, installedDependencies);
   }
 
-  /**
-   * Configure ESLint plugin if applicable
-   */
+  /** Configure ESLint plugin if applicable */
   async configureEslintIfNeeded(
     packageManager: JsPackageManager,
     packagesToInstall: string[]
@@ -76,9 +61,7 @@ export class DependencyCalculator {
     return null;
   }
 
-  /**
-   * Consolidate all packages from different sources
-   */
+  /** Consolidate all packages from different sources */
   consolidatePackages(
     frameworkPackages: string[],
     addonPackages: string[],
@@ -93,4 +76,3 @@ export class DependencyCalculator {
     ].filter(Boolean);
   }
 }
-

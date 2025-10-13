@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DependencyCollector } from '../dependency-collector';
-import { PackageManagerService } from '../services/PackageManagerService';
+import type { PackageManagerService } from '../services/PackageManagerService';
 import { DependencyInstallationCommand } from './DependencyInstallationCommand';
 
 describe('DependencyInstallationCommand', () => {
@@ -79,4 +79,3 @@ describe('DependencyInstallationCommand', () => {
     });
   });
 });
-

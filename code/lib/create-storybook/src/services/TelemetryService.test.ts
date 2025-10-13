@@ -3,9 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectType } from 'storybook/internal/cli';
 import { telemetry } from 'storybook/internal/telemetry';
 
+import { getProcessAncestry } from 'process-ancestry';
+
 import { TelemetryService } from './TelemetryService';
 
 vi.mock('storybook/internal/telemetry', { spy: true });
+vi.mock('process-ancestry', { spy: true });
 
 describe('TelemetryService', () => {
   beforeEach(() => {
@@ -153,6 +156,83 @@ describe('TelemetryService', () => {
         test: true,
         onboarding: false,
       });
+    });
+  });
+
+  describe('trackInitWithContext', () => {
+    it('should track init with version and CLI integration from ancestry', async () => {
+      const telemetryService = new TelemetryService(false);
+      const selectedFeatures = new Set(['docs', 'test'] as const);
+
+      vi.mocked(getProcessAncestry).mockReturnValue([
+        { command: 'npx storybook@8.0.5 init' },
+      ] as any);
+
+      await telemetryService.trackInitWithContext(ProjectType.REACT, selectedFeatures, true);
+
+      expect(getProcessAncestry).toHaveBeenCalled();
+      expect(telemetry).toHaveBeenCalledWith('init', {
+        projectType: ProjectType.REACT,
+        features: {
+          dev: true,
+          docs: true,
+          test: true,
+          onboarding: false,
+        },
+        newUser: true,
+        versionSpecifier: '8.0.5',
+        cliIntegration: undefined,
+      });
+    });
+
+    it('should handle ancestry errors gracefully', async () => {
+      const telemetryService = new TelemetryService(false);
+      const selectedFeatures = new Set([]);
+
+      vi.mocked(getProcessAncestry).mockImplementation(() => {
+        throw new Error('Ancestry error');
+      });
+
+      await telemetryService.trackInitWithContext(ProjectType.VUE3, selectedFeatures, false);
+
+      expect(telemetry).toHaveBeenCalledWith('init', {
+        projectType: ProjectType.VUE3,
+        features: {
+          dev: true,
+          docs: false,
+          test: false,
+          onboarding: false,
+        },
+        newUser: false,
+        versionSpecifier: undefined,
+        cliIntegration: undefined,
+      });
+    });
+
+    it('should not track when telemetry is disabled', async () => {
+      const telemetryService = new TelemetryService(true);
+      const selectedFeatures = new Set(['docs'] as const);
+
+      await telemetryService.trackInitWithContext(ProjectType.ANGULAR, selectedFeatures, true);
+
+      expect(getProcessAncestry).not.toHaveBeenCalled();
+      expect(telemetry).not.toHaveBeenCalled();
+    });
+
+    it('should detect CLI integration from ancestry', async () => {
+      const telemetryService = new TelemetryService(false);
+      const selectedFeatures = new Set([]);
+
+      vi.mocked(getProcessAncestry).mockReturnValue([{ command: 'sv create my-app' }] as any);
+
+      await telemetryService.trackInitWithContext(ProjectType.NEXTJS, selectedFeatures, false);
+
+      expect(telemetry).toHaveBeenCalledWith(
+        'init',
+        expect.objectContaining({
+          cliIntegration: 'sv create',
+        })
+      );
     });
   });
 });

@@ -8,6 +8,7 @@
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
     - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
+    - [Extensionless imports in JS-based preset files are no longer supported](#extensionless-imports-in-js-based-preset-files-are-no-longer-supported)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -584,6 +585,24 @@ export const core = {
 #### Removed x-only builtin tags
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
+
+#### Extensionless imports in JS-based preset files are no longer supported
+
+Storybook 10 no longer supports extensionless relative imports in JavaScript-based preset and configuration files (e.g., `.storybook/main.js`). All relative imports must now include explicit file extensions.
+
+**Before (no longer works):**
+```js
+// .storybook/main.js
+import myPreset from './my-file';
+```
+
+**After:**
+```js
+// .storybook/main.js
+import myPreset from './my-file.js';
+```
+
+This change aligns with Node.js ESM requirements, where relative imports must specify the full file extension. While TypeScript-based files (`.storybook/main.ts`) will continue to work with extensionless imports for now through automatic resolution, we recommend migrating to explicit extensions for consistency and better compatibility.
 
 ## From version 8.x to 9.0.0
 

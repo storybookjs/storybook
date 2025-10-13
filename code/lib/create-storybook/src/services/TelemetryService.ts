@@ -18,11 +18,7 @@ export class TelemetryService {
 
   /** Track a new user check step */
   async trackNewUserCheck(newUser: boolean): Promise<void> {
-    if (this.disableTelemetry) {
-      return;
-    }
-
-    await telemetry('init-step', {
+    this.runTelemetryIfEnabled('init-step', {
       step: 'new-user-check',
       newUser,
     });
@@ -30,11 +26,7 @@ export class TelemetryService {
 
   /** Track install type selection */
   async trackInstallType(installType: 'recommended' | 'light'): Promise<void> {
-    if (this.disableTelemetry) {
-      return;
-    }
-
-    await telemetry('init-step', {
+    await this.runTelemetryIfEnabled('init-step', {
       step: 'install-type',
       installType,
     });
@@ -53,35 +45,12 @@ export class TelemetryService {
     versionSpecifier?: string;
     cliIntegration?: string;
   }): Promise<void> {
-    if (this.disableTelemetry) {
-      return;
-    }
-
-    await telemetry('init', data);
+    await this.runTelemetryIfEnabled('init', data);
   }
 
   /** Track empty directory scaffolding event */
   async trackScaffolded(data: { packageManager: string; projectType: string }): Promise<void> {
-    if (this.disableTelemetry) {
-      return;
-    }
-
-    await telemetry('scaffolded-empty', data);
-  }
-
-  /** Create a features object from the selected features set */
-  createFeaturesObject(selectedFeatures: Set<GeneratorFeature>): {
-    dev: boolean;
-    docs: boolean;
-    test: boolean;
-    onboarding: boolean;
-  } {
-    return {
-      dev: true, // Always true during init
-      docs: selectedFeatures.has('docs'),
-      test: selectedFeatures.has('test'),
-      onboarding: selectedFeatures.has('onboarding'),
-    };
+    await this.runTelemetryIfEnabled('scaffolded-empty', data);
   }
 
   /**
@@ -110,7 +79,12 @@ export class TelemetryService {
     }
 
     // Create features object and track
-    const telemetryFeatures = this.createFeaturesObject(selectedFeatures);
+    const telemetryFeatures = {
+      dev: true, // Always true during init
+      docs: selectedFeatures.has('docs'),
+      test: selectedFeatures.has('test'),
+      onboarding: selectedFeatures.has('onboarding'),
+    };
 
     await telemetry('init', {
       projectType,
@@ -119,5 +93,13 @@ export class TelemetryService {
       versionSpecifier,
       cliIntegration,
     });
+  }
+
+  private runTelemetryIfEnabled(...args: Parameters<typeof telemetry>): Promise<void> {
+    if (this.disableTelemetry) {
+      return Promise.resolve();
+    }
+
+    return telemetry(...args);
   }
 }

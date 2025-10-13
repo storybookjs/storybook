@@ -115,50 +115,6 @@ describe('TelemetryService', () => {
     });
   });
 
-  describe('createFeaturesObject', () => {
-    it('should create features object with all features enabled', () => {
-      const telemetryService = new TelemetryService();
-      const selectedFeatures = new Set(['docs', 'test', 'onboarding'] as const);
-
-      const features = telemetryService.createFeaturesObject(selectedFeatures);
-
-      expect(features).toEqual({
-        dev: true,
-        docs: true,
-        test: true,
-        onboarding: true,
-      });
-    });
-
-    it('should create features object with only dev enabled', () => {
-      const telemetryService = new TelemetryService();
-      const selectedFeatures = new Set([]);
-
-      const features = telemetryService.createFeaturesObject(selectedFeatures);
-
-      expect(features).toEqual({
-        dev: true,
-        docs: false,
-        test: false,
-        onboarding: false,
-      });
-    });
-
-    it('should create features object with partial features', () => {
-      const telemetryService = new TelemetryService();
-      const selectedFeatures = new Set(['docs', 'test'] as const);
-
-      const features = telemetryService.createFeaturesObject(selectedFeatures);
-
-      expect(features).toEqual({
-        dev: true,
-        docs: true,
-        test: true,
-        onboarding: false,
-      });
-    });
-  });
-
   describe('trackInitWithContext', () => {
     it('should track init with version and CLI integration from ancestry', async () => {
       const telemetryService = new TelemetryService(false);

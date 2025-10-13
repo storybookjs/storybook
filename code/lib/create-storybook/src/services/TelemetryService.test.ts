@@ -1,0 +1,158 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ProjectType } from 'storybook/internal/cli';
+import { telemetry } from 'storybook/internal/telemetry';
+
+import { TelemetryService } from './TelemetryService';
+
+vi.mock('storybook/internal/telemetry', { spy: true });
+
+describe('TelemetryService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe('when telemetry is enabled', () => {
+    let telemetryService: TelemetryService;
+
+    beforeEach(() => {
+      telemetryService = new TelemetryService(false);
+    });
+
+    it('should track new user check', async () => {
+      await telemetryService.trackNewUserCheck(true);
+
+      expect(telemetry).toHaveBeenCalledWith('init-step', {
+        step: 'new-user-check',
+        newUser: true,
+      });
+    });
+
+    it('should track install type', async () => {
+      await telemetryService.trackInstallType('recommended');
+
+      expect(telemetry).toHaveBeenCalledWith('init-step', {
+        step: 'install-type',
+        installType: 'recommended',
+      });
+    });
+
+    it('should track init event', async () => {
+      const data = {
+        projectType: ProjectType.REACT,
+        features: {
+          dev: true,
+          docs: true,
+          test: false,
+          onboarding: true,
+        },
+        newUser: true,
+        versionSpecifier: '8.0.0',
+        cliIntegration: 'sv create',
+      };
+
+      await telemetryService.trackInit(data);
+
+      expect(telemetry).toHaveBeenCalledWith('init', data);
+    });
+
+    it('should track scaffolded event', async () => {
+      const data = {
+        packageManager: 'npm',
+        projectType: 'react-vite-ts',
+      };
+
+      await telemetryService.trackScaffolded(data);
+
+      expect(telemetry).toHaveBeenCalledWith('scaffolded-empty', data);
+    });
+  });
+
+  describe('when telemetry is disabled', () => {
+    let telemetryService: TelemetryService;
+
+    beforeEach(() => {
+      telemetryService = new TelemetryService(true);
+    });
+
+    it('should not track new user check', async () => {
+      await telemetryService.trackNewUserCheck(true);
+
+      expect(telemetry).not.toHaveBeenCalled();
+    });
+
+    it('should not track install type', async () => {
+      await telemetryService.trackInstallType('light');
+
+      expect(telemetry).not.toHaveBeenCalled();
+    });
+
+    it('should not track init event', async () => {
+      await telemetryService.trackInit({
+        projectType: ProjectType.VUE3,
+        features: {
+          dev: true,
+          docs: false,
+          test: false,
+          onboarding: false,
+        },
+        newUser: false,
+      });
+
+      expect(telemetry).not.toHaveBeenCalled();
+    });
+
+    it('should not track scaffolded event', async () => {
+      await telemetryService.trackScaffolded({
+        packageManager: 'yarn',
+        projectType: 'vue-vite-ts',
+      });
+
+      expect(telemetry).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createFeaturesObject', () => {
+    it('should create features object with all features enabled', () => {
+      const telemetryService = new TelemetryService();
+      const selectedFeatures = new Set(['docs', 'test', 'onboarding'] as const);
+
+      const features = telemetryService.createFeaturesObject(selectedFeatures);
+
+      expect(features).toEqual({
+        dev: true,
+        docs: true,
+        test: true,
+        onboarding: true,
+      });
+    });
+
+    it('should create features object with only dev enabled', () => {
+      const telemetryService = new TelemetryService();
+      const selectedFeatures = new Set([]);
+
+      const features = telemetryService.createFeaturesObject(selectedFeatures);
+
+      expect(features).toEqual({
+        dev: true,
+        docs: false,
+        test: false,
+        onboarding: false,
+      });
+    });
+
+    it('should create features object with partial features', () => {
+      const telemetryService = new TelemetryService();
+      const selectedFeatures = new Set(['docs', 'test'] as const);
+
+      const features = telemetryService.createFeaturesObject(selectedFeatures);
+
+      expect(features).toEqual({
+        dev: true,
+        docs: true,
+        test: true,
+        onboarding: false,
+      });
+    });
+  });
+});

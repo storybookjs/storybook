@@ -82,11 +82,13 @@ function ShareMenu({
   storyId,
   queryParams,
   qrUrl,
+  isDevelopment,
 }: {
   baseUrl: string;
   storyId: string;
   queryParams: Record<string, any>;
   qrUrl: string;
+  isDevelopment: boolean;
 }) {
   const api = useStorybookApi();
   const shortcutKeys = api.getShortcutKeys();
@@ -129,8 +131,12 @@ function ShareMenu({
           <QRContainer>
             <QRImage value={qrUrl} />
             <QRContent>
-              <QRTitle>Scan me</QRTitle>
-              <QRDescription>Must be on the same network as this device.</QRDescription>
+              <QRTitle>Scan to open</QRTitle>
+              <QRDescription>
+                {isDevelopment
+                  ? 'Device must be on the same network.'
+                  : 'View story on another device.'}
+              </QRDescription>
             </QRContent>
           </QRContainer>
         ),
@@ -138,9 +144,9 @@ function ShareMenu({
     ]);
 
     return baseLinks;
-  }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, copyStoryLink]);
+  }, [baseUrl, storyId, queryParams, copied, qrUrl, enableShortcuts, copyStoryLink, isDevelopment]);
 
-  return <TooltipLinkList links={links} />;
+  return <TooltipLinkList links={links} style={{ width: 210 }} />;
 }
 
 export const shareTool: Addon_BaseType = {
@@ -152,15 +158,18 @@ export const shareTool: Addon_BaseType = {
     return (
       <Consumer filter={mapper}>
         {({ baseUrl, storyId, queryParams }) => {
+          const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
           const storyUrl = global.STORYBOOK_NETWORK_ADDRESS
-            ? `${global.STORYBOOK_NETWORK_ADDRESS}${window.location.search}`
+            ? new URL(window.location.search, global.STORYBOOK_NETWORK_ADDRESS).href
             : window.location.href;
 
           return storyId ? (
             <WithTooltip
               hasChrome
               placement="bottom"
-              tooltip={<ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl }} />}
+              tooltip={
+                <ShareMenu {...{ baseUrl, storyId, queryParams, qrUrl: storyUrl, isDevelopment }} />
+              }
             >
               <IconButton title="Share">
                 <ShareIcon />

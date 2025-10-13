@@ -1,3 +1,17 @@
+## 10.0.0-beta.10
+
+- Core: Make `subtype` an optional property on an index input - [#32602](https://github.com/storybookjs/storybook/pull/32602), thanks @JReinhold!
+- Core: Various QA fixes - [#32629](https://github.com/storybookjs/storybook/pull/32629), thanks @ghengeveld!
+- Fix: Incorrect URLS for the upgrade command - [#32624](https://github.com/storybookjs/storybook/pull/32624), thanks @jonniebigodes!
+- Onboarding: Prevent confetti overlay from intercepting pointer events - [#32660](https://github.com/storybookjs/storybook/pull/32660), thanks @ghengeveld!
+- Telemetry: Add metadata for react routers - [#32615](https://github.com/storybookjs/storybook/pull/32615), thanks @shilman!
+
+## 10.0.0-beta.9
+
+- Automigrations: Add automigration for viewport and backgrounds - [#31614](https://github.com/storybookjs/storybook/pull/31614), thanks @valentinpalkovic!
+- Svelte: Simplify public types - use modern `Component` - [#31394](https://github.com/storybookjs/storybook/pull/31394), thanks @xeho91!
+- Telemetry: Log userAgent in onboarding - [#32566](https://github.com/storybookjs/storybook/pull/32566), thanks @shilman!
+
 ## 10.0.0-beta.8
 
 - Addon-docs: Add eject button to canvas toolbar - [#29825](https://github.com/storybookjs/storybook/pull/29825), thanks @mihkeleidast!

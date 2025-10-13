@@ -22,6 +22,7 @@ const empty = {
 const PositionedWithTooltip = styled(WithTooltip)({
   position: 'absolute',
   right: 0,
+  zIndex: 1,
 });
 
 const FloatingStatusButton = styled(StatusButton)({

@@ -82,6 +82,20 @@ If you need, you can also configure Storybook's Vite builder using TypeScript. R
 
 ## Troubleshooting
 
+### Migrating from Webpack
+
+Vite generally handles more use cases out of the box than Webpack. For example, loading styles just works for most projects. So, when migrating a Webpack-based project to Vite, you may find that you don't need all of your previous configuration.
+
+We recommend starting with no Storybook-specific Vite configuration and only adding what you determine your project actually requires.
+
+For reference, here is a Webpack configuration to handle loading graphql queries and its equivalent, using a plugin, in Vite:
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="webpack-final-to-vite-final.md" />
+
+{/* prettier-ignore-end */}
+
 ### Working directory not being detected
 
 By default, the Vite builder enables Vite's [`server.fs.strict`](https://vitejs.dev/config/#server-fs-strict) option for increased security, defining the project's `root` to Storybook's configuration directory.

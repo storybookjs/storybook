@@ -21,11 +21,19 @@ import { esbuild } from './tools';
 
 /* TYPES */
 
+/**
+ * A NodeEntry can be a string or an object with a file and format property. If it's a string, it's
+ * the path to the entry file and will be built for CJS. If it's an object, 'file' is the path to
+ * the entry file and the 'formats' to build it in. The formats property can be 'esm', 'cjs', or
+ * both.
+ */
+type NodeEntry = string | { file: string; formats: Formats[] };
+
 type Formats = 'esm' | 'cjs';
 type BundlerConfig = {
   previewEntries: string[];
   managerEntries: string[];
-  nodeEntries: string[];
+  nodeEntries: NodeEntry[];
   exportEntries: string[];
   externals: string[];
   pre: string;
@@ -211,34 +219,51 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
   }
 
   if (nodeEntries.length > 0) {
-    const { dtsConfig, tsConfigExists } = await getDTSConfigs({
-      formats: ['esm'],
-      entries: nodeEntries,
-      optimized,
-    });
     tasks.push(async () => {
-      await Promise.all([
-        build({
-          ...commonOptions,
-          entry: nodeEntries.map((e: string) => slash(join(cwd, e))),
-          format: ['cjs'],
-          target: 'node18',
-          platform: 'node',
-          external: commonExternals,
-          esbuildOptions: (c) => {
-            c.platform = 'node';
-            Object.assign(c, getESBuildOptions(optimized));
-          },
-        }),
-        build({
-          ...commonOptions,
-          ...(optimized ? dtsConfig : {}),
-          entry: nodeEntries.map((e: string) => slash(join(cwd, e))),
-          format: ['esm'],
-          target: 'node18',
-          platform: 'neutral',
-          banner: {
-            js: dedent`
+      const cjsEntries = nodeEntries.filter(
+        (n) => typeof n === 'string' || n.formats.includes('cjs')
+      );
+
+      const esmEntries = nodeEntries.filter(
+        (n) => typeof n !== 'string' && n.formats.includes('esm')
+      ) as (NodeEntry & object)[];
+
+      const builds = [];
+
+      if (cjsEntries.length > 0) {
+        builds.push(() =>
+          build({
+            ...commonOptions,
+            entry: cjsEntries.map((e) => slash(join(cwd, typeof e === 'string' ? e : e.file))),
+            format: ['cjs'],
+            target: 'node18',
+            platform: 'node',
+            external: commonExternals,
+            esbuildOptions: (c) => {
+              c.platform = 'node';
+              Object.assign(c, getESBuildOptions(optimized));
+            },
+          })
+        );
+      }
+
+      if (esmEntries.length > 0) {
+        const { dtsConfig, tsConfigExists } = await getDTSConfigs({
+          formats: ['esm'],
+          entries: esmEntries.map((e) => e.file),
+          optimized,
+        });
+
+        builds.push(() =>
+          build({
+            ...commonOptions,
+            ...(optimized ? dtsConfig : {}),
+            entry: esmEntries.map((e) => slash(join(cwd, e.file))),
+            format: ['esm'],
+            target: 'node18',
+            platform: 'neutral',
+            banner: {
+              js: dedent`
               import ESM_COMPAT_Module from "node:module";
               import { fileURLToPath as ESM_COMPAT_fileURLToPath } from 'node:url';
               import { dirname as ESM_COMPAT_dirname } from 'node:path';
@@ -246,24 +271,37 @@ const run = async ({ cwd, flags }: { cwd: string; flags: string[] }) => {
               const __dirname = ESM_COMPAT_dirname(__filename);
               const require = ESM_COMPAT_Module.createRequire(import.meta.url);
             `,
-          },
-          external: [...commonExternals, ...nodeInternals],
-          esbuildOptions: (c) => {
-            c.mainFields = ['main', 'module', 'node'];
-            c.conditions = ['node', 'module', 'import', 'require'];
-            c.platform = 'neutral';
-            Object.assign(c, getESBuildOptions(optimized));
-          },
-        }),
-      ]);
+            },
+            external: [...commonExternals, ...nodeInternals],
+            esbuildOptions: (c) => {
+              c.mainFields = ['main', 'module', 'node'];
+              c.conditions = ['node', 'module', 'import', 'require'];
+              c.platform = 'neutral';
+              Object.assign(c, getESBuildOptions(optimized));
+            },
+          })
+        );
+
+        if (tsConfigExists && !optimized) {
+          tasks.push(...esmEntries.map((entry) => () => generateDTSMapperFile(entry.file)));
+        }
+      }
+
+      await Promise.all(builds.map((b) => b()));
+
       if (!watch) {
-        await readMetafiles({ formats: ['esm', 'cjs'] });
+        const metafileFormats: Formats[] = [];
+
+        if (cjsEntries.length > 0) {
+          metafileFormats.push('cjs');
+        }
+
+        if (esmEntries.length > 0) {
+          metafileFormats.push('esm');
+        }
+        await readMetafiles({ formats: metafileFormats });
       }
     });
-
-    if (tsConfigExists && !optimized) {
-      tasks.push(...nodeEntries.map((entry) => () => generateDTSMapperFile(entry)));
-    }
   }
 
   for (const task of tasks) {

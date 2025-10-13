@@ -256,8 +256,6 @@ jobs:
                   yarn bench-packages --upload
       - store_artifacts:
           path: bench/packages/results.json
-      - store_artifacts:
-          path: bench/packages/compare-with-<< pipeline.parameters.ghBaseBranch >>.json
       - report-workflow-on-failure
       - cancel-workflow-on-failure
   check:

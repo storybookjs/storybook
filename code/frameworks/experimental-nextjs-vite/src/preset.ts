@@ -36,12 +36,13 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 
 export const viteFinal: StorybookConfigVite['viteFinal'] = async (config, options) => {
   const reactConfig = await reactViteFinal(config, options);
-  const { plugins = [] } = reactConfig;
 
   const { nextConfigPath } = await options.presets.apply<FrameworkOptions>('frameworkOptions');
 
   const nextDir = nextConfigPath ? path.dirname(nextConfigPath) : undefined;
-  plugins.push(vitePluginStorybookNextjs({ dir: nextDir }));
 
-  return reactConfig;
+  return {
+    ...reactConfig,
+    plugins: [...(reactConfig?.plugins ?? []), vitePluginStorybookNextjs({ dir: nextDir })],
+  };
 };

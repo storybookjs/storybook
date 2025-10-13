@@ -5,8 +5,10 @@ import { Button } from './button.component';
 
 const meta: Meta<Button> = {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 
 export default meta;
@@ -14,8 +16,10 @@ export default meta;
 
 ```js filename="Button.stories.js" renderer="html" language="js"
 export default {
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 ```
 
@@ -24,8 +28,10 @@ import { Button } from './Button';
 
 export default {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 ```
 
@@ -37,8 +43,10 @@ import { Button } from './Button';
 
 const meta = {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -52,8 +60,10 @@ import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 
 export default meta;
@@ -64,8 +74,10 @@ import { Button } from './Button';
 
 export default {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 ```
 
@@ -76,8 +88,10 @@ import { Button } from './Button';
 
 const meta = {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -90,8 +104,10 @@ import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 
 export default meta;
@@ -105,8 +121,10 @@ export default meta;
 
   const { Story } = defineMeta({
     component: Button,
-    // 👇 Re-apply the a11ytest tag for this component's stories
-    tags: ['a11ytest'],
+    // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
   });
 </script>
 ```
@@ -116,8 +134,10 @@ import Button from './Button.svelte';
 
 export default {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 ```
 
@@ -129,8 +149,10 @@ export default {
 
   const { Story } = defineMeta({
     component: Button,
-    // 👇 Re-apply the a11ytest tag for this component's stories
-    tags: ['a11ytest'],
+    // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
   });
 </script>
 ```
@@ -142,8 +164,10 @@ import Button from './Button.svelte';
 
 const meta = {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -157,8 +181,10 @@ export default meta;
 
   const { Story } = defineMeta({
     component: Button,
-    // 👇 Re-apply the a11ytest tag for this component's stories
-    tags: ['a11ytest'],
+    // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
   });
 </script>
 ```
@@ -170,8 +196,10 @@ import Button from './Button.svelte';
 
 const meta: Meta<typeof Button> = {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 
 export default meta;
@@ -182,8 +210,10 @@ import Button from './Button.vue';
 
 export default {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 ```
 
@@ -194,8 +224,10 @@ import Button from './Button.vue';
 
 const meta = {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 } satisfies Meta<typeof Button>;
 
 export default meta;
@@ -208,8 +240,10 @@ import Button from './Button.vue';
 
 const meta: Meta<typeof Button> = {
   component: Button,
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 
 export default meta;
@@ -218,8 +252,10 @@ export default meta;
 ```js filename="Button.stories.js" renderer="web-components" language="js"
 export default {
   component: 'demo-button',
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 ```
 
@@ -228,8 +264,10 @@ import type { Meta, StoryObj } from '@storybook/web-components';
 
 const meta: Meta = {
   component: 'demo-button',
-  // 👇 Re-apply the a11ytest tag for this component's stories
-  tags: ['a11ytest'],
+  // 👇 Re-include this component's stories in a11y testing by removing the `!ally-test` tag
+  tags: [
+    // '!ally-test'
+  ],
 };
 
 export default meta;

@@ -7,5 +7,8 @@
   <br />
   <slot name="named" str="str"></slot>
   <br />
-  <slot name="vbind" v-bind="{ num: 123, str: 'str' }"></slot>
+  <slot
+    name="vbind"
+    v-bind="{ num: 123, str: 'str', obj: { title: 'see me', style: { color: 'blue' } } }"
+  ></slot>
 </template>

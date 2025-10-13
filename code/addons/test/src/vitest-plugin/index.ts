@@ -24,7 +24,10 @@ import picocolors from 'picocolors';
 import sirv from 'sirv';
 import { convertPathToPattern } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
+import type { PluginOption } from 'vite';
 
+// ! Relative import to prebundle it without needing to depend on the Vite builder
+import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/without-vite-plugins';
 import type { InternalOptions, UserOptions } from './types';
 
 const WORKING_DIR = process.cwd();
@@ -64,9 +67,9 @@ const getStoryGlobsAndFiles = async (
   };
 };
 
-const packageDir = dirname(require.resolve('@storybook/experimental-addon-test/package.json'));
+const PACKAGE_DIR = dirname(require.resolve('@storybook/experimental-addon-test/package.json'));
 
-export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
+export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> => {
   const finalOptions = {
     ...defaultOptions,
     ...options,
@@ -109,14 +112,27 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
     getStoryGlobsAndFiles(presets, directories),
     presets.apply('framework', undefined),
     presets.apply('env', {}),
-    presets.apply('viteFinal', {}),
+    presets.apply<{ plugins?: Plugin[] }>('viteFinal', {}),
     presets.apply('staticDirs', []),
     extractTagsFromPreview(finalOptions.configDir),
   ]);
 
-  return {
+  // filter out plugins that we know are unnecesary for tests, eg. docgen plugins
+  const plugins = (await withoutVitePlugins(
+    (viteConfigFromStorybook.plugins as unknown as PluginOption[]) ?? [],
+    [
+      'storybook:package-deduplication', // addon-docs
+      'storybook:mdx-plugin', // addon-docs
+      'storybook:react-docgen-plugin',
+      'vite:react-docgen-typescript', // aka @joshwooding/vite-plugin-react-docgen-typescript
+      'storybook:svelte-docgen-plugin',
+      'storybook:vue-component-meta-plugin',
+      'storybook:vue-docgen-plugin',
+    ]
+  )) as unknown as Plugin[];
+
+  const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
-    enforce: 'pre',
     async transformIndexHtml(html) {
       const [headHtmlSnippet, bodyHtmlSnippet] = await Promise.all([
         presets.apply('previewHead'),
@@ -153,7 +169,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         test: {
           setupFiles: [
-            join(packageDir, 'dist/vitest-plugin/setup-file.mjs'),
+            join(PACKAGE_DIR, 'dist/vitest-plugin/setup-file.mjs'),
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
             typeof inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test
               ?.setupFiles === 'string' &&
@@ -162,7 +178,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
 
           ...(finalOptions.storybookScript
             ? {
-                globalSetup: [join(packageDir, 'dist/vitest-plugin/global-setup.mjs')],
+                globalSetup: [join(PACKAGE_DIR, 'dist/vitest-plugin/global-setup.mjs')],
               }
             : {}),
 
@@ -193,22 +209,30 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
               }
             : {}),
 
-          // @ts-expect-error: TODO
           browser: {
             ...inputConfig_ONLY_MUTATE_WHEN_STRICTLY_NEEDED_OR_YOU_WILL_BE_FIRED.test?.browser,
             commands: {
               getInitialGlobals: () => {
                 const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
 
-                const isA11yEnabled = process.env.VITEST_STORYBOOK
+                const shouldRunA11yTests = process.env.VITEST_STORYBOOK
                   ? (envConfig.a11y ?? false)
                   : true;
 
                 return {
                   a11y: {
-                    manual: !isA11yEnabled,
+                    manual: !shouldRunA11yTests,
                   },
                 };
+              },
+              getTags: () => {
+                const envConfig = JSON.parse(process.env.VITEST_STORYBOOK_CONFIG ?? '{}');
+
+                const shouldSetTag = process.env.VITEST_STORYBOOK
+                  ? (envConfig.a11y ?? false)
+                  : false;
+
+                return shouldSetTag ? ['a11y-test'] : [];
               },
             },
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
@@ -245,7 +269,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
 
         optimizeDeps: {
           include: [
-            '@storybook/experimental-addon-test/**',
+            '@storybook/experimental-addon-test/internal/setup-file',
+            '@storybook/experimental-addon-test/internal/global-setup',
+            '@storybook/experimental-addon-test/internal/test-utils',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),
@@ -323,6 +349,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin> => {
       }
     },
   };
+
+  plugins.push(storybookTestPlugin);
+  return plugins;
 };
 
 export default storybookTest;

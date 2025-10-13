@@ -274,21 +274,31 @@ export const TestingModule = ({
           )}
           <Filters>
             {hasTestProviders && (
-              <CollapseToggle
-                variant="ghost"
-                padding="small"
-                onClick={toggleCollapsed}
-                id="testing-module-collapse-toggle"
-                aria-label={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
+              <WithTooltip
+                hasChrome={false}
+                tooltip={
+                  <TooltipNote
+                    note={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
+                  />
+                }
+                trigger="hover"
               >
-                <ChevronSmallUpIcon
-                  style={{
-                    transform: isCollapsed ? 'none' : 'rotate(180deg)',
-                    transition: 'transform 250ms',
-                    willChange: 'auto',
-                  }}
-                />
-              </CollapseToggle>
+                <CollapseToggle
+                  variant="ghost"
+                  padding="small"
+                  onClick={toggleCollapsed}
+                  id="testing-module-collapse-toggle"
+                  aria-label={isCollapsed ? 'Expand testing module' : 'Collapse testing module'}
+                >
+                  <ChevronSmallUpIcon
+                    style={{
+                      transform: isCollapsed ? 'none' : 'rotate(180deg)',
+                      transition: 'transform 250ms',
+                      willChange: 'auto',
+                    }}
+                  />
+                </CollapseToggle>
+              </WithTooltip>
             )}
 
             {errorCount > 0 && (

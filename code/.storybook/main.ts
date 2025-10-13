@@ -160,6 +160,12 @@ const config: StorybookConfig = {
         // disable sourcemaps in CI to not run out of memory
         sourcemap: process.env.CI !== 'true',
       },
+      server: {
+        watch: {
+          // Something odd happens with tsconfig and nx which causes Storybook to keep reloading, so we ignore them
+          ignored: ['**/.nx/cache/**', '**/tsconfig.json'],
+        },
+      },
     } satisfies typeof viteConfig);
   },
   // logLevel: 'debug',

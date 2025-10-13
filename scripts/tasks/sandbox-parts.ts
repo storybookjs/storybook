@@ -381,34 +381,6 @@ async function linkPackageStories(
   );
 }
 
-const getVitestPluginInfo = (details: TemplateDetails) => {
-  let frameworkPluginImport = '';
-  let frameworkPluginCall = '';
-
-  const framework = details.template.expected.framework;
-  const isNextjs = framework.includes('nextjs');
-  const isSveltekit = framework.includes('sveltekit');
-
-  if (isNextjs) {
-    frameworkPluginImport =
-      "import { storybookNextJsPlugin } from '@storybook/experimental-nextjs-vite/vite-plugin'";
-    frameworkPluginCall = 'storybookNextJsPlugin()';
-  }
-
-  if (isSveltekit) {
-    frameworkPluginImport =
-      "import { storybookSveltekitPlugin } from '@storybook/sveltekit/vite-plugin'";
-    frameworkPluginCall = 'storybookSveltekitPlugin()';
-  }
-
-  if (framework === '@storybook/vue3-vite') {
-    frameworkPluginImport = "import { storybookVuePlugin } from '@storybook/vue3-vite/vite-plugin'";
-    frameworkPluginCall = 'storybookVuePlugin()';
-  }
-
-  return { frameworkPluginImport, frameworkPluginCall };
-};
-
 export async function setupVitest(details: TemplateDetails, options: PassedOptionValues) {
   const { sandboxDir, template } = details;
   const packageJsonPath = join(sandboxDir, 'package.json');
@@ -433,7 +405,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
 
   const isVue = template.expected.renderer === '@storybook/vue3';
   const isNextjs = template.expected.framework.includes('nextjs');
-  const { frameworkPluginCall, frameworkPluginImport } = getVitestPluginInfo(details);
   // const isAngular = template.expected.framework === '@storybook/angular';
 
   const portableStoriesFrameworks = [
@@ -480,19 +451,25 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
     dedent`
       import { defineWorkspace, defaultExclude } from "vitest/config";
       import { storybookTest } from "@storybook/experimental-addon-test/vitest-plugin";
-      ${frameworkPluginImport}
+      import path from 'node:path';
+      import { fileURLToPath } from 'node:url';
+
+      import viteConfig from './vite.config';
+
+      const dirname =
+        typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
       export default defineWorkspace([
         {
           ${!isNextjs ? `extends: "${viteConfigPath}",` : ''}
           plugins: [
             storybookTest({
+              configDir: path.join(dirname, '.storybook'),
               storybookScript: "yarn storybook --ci",
               tags: {
                 include: ["vitest"],
               },
             }),
-           ${frameworkPluginCall}
           ],
           ${
             isNextjs
@@ -517,7 +494,6 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
               ...defaultExclude,
               // TODO: investigate TypeError: Cannot read properties of null (reading 'useContext')
               "**/*argtypes*",
-              ${template.expected.renderer === '@storybook/svelte' ? '"**/*.stories.svelte",' : ''}
             ],
             /**
              * TODO: Either fix or acknowledge limitation of:
@@ -823,7 +799,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
 
   if (template.expected.builder.includes('vite')) {
-    previewConfig.setFieldValue(['tags'], ['vitest', '!a11ytest']);
+    previewConfig.setFieldValue(['tags'], ['vitest', '!a11y-test']);
   }
 
   await writeConfig(previewConfig);

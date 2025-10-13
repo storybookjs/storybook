@@ -42,6 +42,12 @@ export const viteConfigFile = {
       return null;
     }
     const frameworkName = frameworkPackages[frameworkPackageName];
+
+    if (frameworkName === 'react-native-web-vite') {
+      // we don't expect a vite config file for this framework
+      return null;
+    }
+
     const isUsingViteBuilder =
       mainConfig.core?.builder === 'vite' ||
       frameworkPackageName?.includes('vite') ||

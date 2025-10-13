@@ -96,7 +96,9 @@ export abstract class AbstractRenderer {
 
     const analyzedMetadata = new PropertyExtractor(storyFnAngular.moduleMetadata, component);
 
-    const storyUid = targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE);
+    const storyUid = this.generateStoryUIdFromRawStoryUid(
+      targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE)
+    );
     const componentSelector = storyUid !== null ? `${targetSelector}[${storyUid}]` : targetSelector;
     if (storyUid !== null) {
       const element = targetDOMNode.querySelector(targetSelector);
@@ -141,6 +143,27 @@ export abstract class AbstractRenderer {
     const invalidHtmlTag = /[^A-Za-z0-9-]/g;
     const storyIdIsInvalidHtmlTagName = invalidHtmlTag.test(id);
     return storyIdIsInvalidHtmlTagName ? `sb-${id.replace(invalidHtmlTag, '')}-component` : id;
+  }
+
+  /**
+   * Angular is unable to handle components that have selectors with accented attributes.
+   *
+   * Therefore, stories break when meta's title contains accents.
+   * https://github.com/storybookjs/storybook/issues/29132
+   *
+   * This method filters accents from a given raw id. For example, this method converts
+   * 'Example/Button with an "é" accent' into 'Example/Button with an "e" accent'.
+   *
+   * @memberof AbstractRenderer
+   * @protected
+   */
+  protected generateStoryUIdFromRawStoryUid(rawStoryUid: string | null) {
+    if (rawStoryUid === null) {
+      return rawStoryUid;
+    }
+
+    const accentCharacters = /[\u0300-\u036f]/g;
+    return rawStoryUid.normalize('NFD').replace(accentCharacters, '');
   }
 
   /** Adds DOM element that angular will use as bootstrap component. */

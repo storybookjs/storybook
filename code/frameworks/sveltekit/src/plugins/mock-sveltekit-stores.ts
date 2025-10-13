@@ -7,7 +7,7 @@ import type { Plugin } from 'vite';
 const filename = __filename ?? fileURLToPath(import.meta.url);
 const dir = dirname(filename);
 
-export async function mockSveltekitStores() {
+export function mockSveltekitStores() {
   return {
     name: 'storybook:sveltekit-mock-stores',
     config: () => ({

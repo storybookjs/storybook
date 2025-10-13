@@ -1,5 +1,6 @@
+import type { JsPackageManager } from 'storybook/internal/common';
+
 import type { DependencyCollector } from '../dependency-collector';
-import type { PackageManagerService } from '../services/PackageManagerService';
 
 /**
  * Command for installing all collected dependencies
@@ -13,7 +14,7 @@ import type { PackageManagerService } from '../services/PackageManagerService';
 export class DependencyInstallationCommand {
   /** Execute dependency installation */
   async execute(
-    packageManagerService: PackageManagerService,
+    packageManager: JsPackageManager,
     dependencyCollector: DependencyCollector,
     skipInstall: boolean = false
   ): Promise<void> {
@@ -22,9 +23,39 @@ export class DependencyInstallationCommand {
     }
 
     try {
-      await packageManagerService.installCollectedDependencies(dependencyCollector, skipInstall);
+      const { dependencies, devDependencies } = dependencyCollector.getAllPackages();
+
+      if (dependencies.length > 0) {
+        await packageManager.addDependencies(
+          { type: 'dependencies', skipInstall: true },
+          dependencies
+        );
+      }
+
+      if (devDependencies.length > 0) {
+        await packageManager.addDependencies(
+          { type: 'devDependencies', skipInstall: true },
+          devDependencies
+        );
+      }
+
+      if (!skipInstall && dependencyCollector.hasPackages()) {
+        await packageManager.installDependencies();
+      }
     } catch (err) {
       throw err;
     }
   }
 }
+
+export const executeDependencyInstallation = (
+  packageManager: JsPackageManager,
+  dependencyCollector: DependencyCollector,
+  skipInstall: boolean = false
+) => {
+  return new DependencyInstallationCommand().execute(
+    packageManager,
+    dependencyCollector,
+    skipInstall
+  );
+};

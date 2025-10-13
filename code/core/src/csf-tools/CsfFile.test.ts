@@ -1913,6 +1913,38 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('mount in method', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          export const A = {
+            play({ mount, context }) {},
+          };
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              factory: false
+              play: true
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: true
+              moduleMock: false
+            tags:
+              - play-fn
+      `);
+    });
+
     it('mount meta', () => {
       expect(
         parse(

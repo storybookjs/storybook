@@ -175,7 +175,11 @@ const sortExports = (exportByName: Record<string, any>, order: string[]) => {
 };
 
 const hasMount = (play: t.Node | undefined) => {
-  if (t.isArrowFunctionExpression(play) || t.isFunctionDeclaration(play)) {
+  if (
+    t.isArrowFunctionExpression(play) ||
+    t.isFunctionDeclaration(play) ||
+    t.isObjectMethod(play)
+  ) {
     const params = play.params;
     if (params.length >= 1) {
       const [arg] = params;

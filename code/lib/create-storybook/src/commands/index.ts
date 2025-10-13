@@ -4,7 +4,7 @@
  * Each command represents a discrete step in the init process with clear responsibilities
  */
 
-export { PreflightCheckCommand } from './PreflightCheckCommand';
+export { executePreflightCheck } from './PreflightCheckCommand';
 export type { PreflightCheckResult } from './PreflightCheckCommand';
 
 export { executeUserPreferences } from './UserPreferencesCommand';

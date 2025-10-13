@@ -56,3 +56,10 @@ export class PreflightCheckCommand {
     return { packageManager, isEmptyProject: isEmptyDirProject };
   }
 }
+
+export const executePreflightCheck = async (
+  options: CommandOptions
+): Promise<PreflightCheckResult> => {
+  const command = new PreflightCheckCommand();
+  return command.execute(options);
+};

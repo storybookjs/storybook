@@ -6,11 +6,11 @@ import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { dedent } from 'ts-dedent';
 
 import {
-  PreflightCheckCommand,
   executeAddonConfiguration,
   executeDependencyInstallation,
   executeFinalization,
   executeGeneratorExecution,
+  executePreflightCheck,
   executeProjectDetection,
   executeUserPreferences,
 } from './commands';
@@ -42,8 +42,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   registerAllGenerators();
 
   // Step 1: Run preflight checks
-  const preflightCommand = new PreflightCheckCommand();
-  const { packageManager } = await preflightCommand.execute(options);
+  const { packageManager } = await executePreflightCheck(options);
 
   // Step 2: Get user preferences and feature selections
   const { newUser, selectedFeatures } = await executeUserPreferences(packageManager, {

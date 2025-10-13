@@ -213,3 +213,10 @@ export class UserPreferencesCommand {
     return true;
   }
 }
+
+export const executeUserPreferences = (
+  packageManager: JsPackageManager,
+  options: UserPreferencesOptions
+) => {
+  return new UserPreferencesCommand(options.disableTelemetry).execute(packageManager, options);
+};

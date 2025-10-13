@@ -146,3 +146,19 @@ export class GeneratorExecutionCommand {
     return packageManager.getRunCommand('storybook');
   }
 }
+
+export const executeGeneratorExecution = (
+  projectType: ProjectType,
+  packageManager: JsPackageManager,
+  options: CommandOptions,
+  selectedFeatures: Set<GeneratorFeature>,
+  dependencyCollector: DependencyCollector
+) => {
+  return new GeneratorExecutionCommand().execute(
+    projectType,
+    packageManager,
+    options,
+    selectedFeatures,
+    dependencyCollector
+  );
+};

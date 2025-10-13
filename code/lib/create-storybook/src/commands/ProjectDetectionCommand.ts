@@ -128,3 +128,10 @@ export class ProjectDetectionCommand {
     }
   }
 }
+
+export const executeProjectDetection = (
+  packageManager: JsPackageManager,
+  options: CommandOptions
+) => {
+  return new ProjectDetectionCommand().execute(packageManager, options);
+};

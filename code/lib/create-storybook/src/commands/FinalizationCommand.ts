@@ -82,3 +82,11 @@ export class FinalizationCommand {
     logger.outro('');
   }
 }
+
+export const executeFinalization = (
+  projectType: ProjectType,
+  selectedFeatures: Set<GeneratorFeature>,
+  storybookCommand: string
+) => {
+  return new FinalizationCommand().execute(projectType, selectedFeatures, storybookCommand);
+};

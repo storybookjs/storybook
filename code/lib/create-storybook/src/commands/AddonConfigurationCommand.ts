@@ -73,3 +73,11 @@ export class AddonConfigurationCommand {
     });
   }
 }
+
+export const executeAddonConfiguration = (
+  packageManager: JsPackageManager,
+  selectedFeatures: Set<GeneratorFeature>,
+  options: CommandOptions
+) => {
+  return new AddonConfigurationCommand().execute(packageManager, selectedFeatures, options);
+};

@@ -7,20 +7,20 @@
 export { PreflightCheckCommand } from './PreflightCheckCommand';
 export type { PreflightCheckResult } from './PreflightCheckCommand';
 
-export { UserPreferencesCommand } from './UserPreferencesCommand';
+export { executeUserPreferences } from './UserPreferencesCommand';
 export type {
   InstallType,
   UserPreferencesOptions,
   UserPreferencesResult,
 } from './UserPreferencesCommand';
 
-export { ProjectDetectionCommand } from './ProjectDetectionCommand';
+export { executeProjectDetection } from './ProjectDetectionCommand';
 
-export { GeneratorExecutionCommand } from './GeneratorExecutionCommand';
+export { executeGeneratorExecution } from './GeneratorExecutionCommand';
 export type { GeneratorExecutionResult } from './GeneratorExecutionCommand';
 
-export { AddonConfigurationCommand } from './AddonConfigurationCommand';
+export { executeAddonConfiguration } from './AddonConfigurationCommand';
 
-export { DependencyInstallationCommand } from './DependencyInstallationCommand';
+export { executeDependencyInstallation } from './DependencyInstallationCommand';
 
-export { FinalizationCommand } from './FinalizationCommand';
+export { executeFinalization } from './FinalizationCommand';

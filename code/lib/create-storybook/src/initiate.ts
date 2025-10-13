@@ -3,24 +3,21 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
-import { getProcessAncestry } from 'process-ancestry';
 import { dedent } from 'ts-dedent';
 
 import {
-  AddonConfigurationCommand,
-  DependencyInstallationCommand,
-  FinalizationCommand,
-  GeneratorExecutionCommand,
   PreflightCheckCommand,
-  ProjectDetectionCommand,
-  UserPreferencesCommand,
+  executeAddonConfiguration,
+  executeDependencyInstallation,
+  executeFinalization,
+  executeGeneratorExecution,
+  executeProjectDetection,
+  executeUserPreferences,
 } from './commands';
 import { DependencyCollector } from './dependency-collector';
 import { registerAllGenerators } from './generators';
 import type { CommandOptions } from './generators/types';
-import { PackageManagerService } from './services/PackageManagerService';
 import { TelemetryService } from './services/TelemetryService';
-import { VersionService } from './services/VersionService';
 
 /**
  * Main entry point for Storybook initialization (refactored)
@@ -39,7 +36,6 @@ export async function doInitiate(options: CommandOptions): Promise<
   | { shouldRunDev: false }
 > {
   // Initialize services
-  const versionService = new VersionService();
   const telemetryService = new TelemetryService(options.disableTelemetry);
 
   // Register all framework generators
@@ -48,49 +44,27 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Step 1: Run preflight checks
   const preflightCommand = new PreflightCheckCommand();
   const { packageManager } = await preflightCommand.execute(options);
-  const packageManagerService = new PackageManagerService(packageManager);
 
   // Step 2: Get user preferences and feature selections
-  const userPrefsCommand = new UserPreferencesCommand(options.disableTelemetry);
-  const { newUser, selectedFeatures } = await userPrefsCommand.execute(packageManager, {
+  const { newUser, selectedFeatures } = await executeUserPreferences(packageManager, {
     yes: options.yes,
     disableTelemetry: options.disableTelemetry,
   });
 
   // Step 3: Detect project type
-  const detectionCommand = new ProjectDetectionCommand();
-  const projectType = await detectionCommand.execute(packageManager, options);
+  const projectType = await executeProjectDetection(packageManager, options);
 
-  // Get telemetry info
-  let versionSpecifier: string | undefined;
-  let cliIntegration: string | undefined;
-  try {
-    const ancestry = getProcessAncestry();
-    versionSpecifier = versionService.getStorybookVersionFromAncestry(ancestry);
-    cliIntegration = versionService.getCliIntegrationFromAncestry(ancestry);
-  } catch {
-    // Ignore errors getting ancestry
-  }
-
-  // Send telemetry
-  const telemetryFeatures = telemetryService.createFeaturesObject(selectedFeatures);
-  await telemetryService.trackInit({
-    projectType,
-    features: telemetryFeatures,
-    newUser,
-    versionSpecifier,
-    cliIntegration,
-  });
+  // Step 4: Track telemetry with complete context
+  await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
 
   // Handle React Native special case (exit early)
   if ([ProjectType.REACT_NATIVE, ProjectType.REACT_NATIVE_AND_RNW].includes(projectType)) {
     return handleReactNativeInstallation(projectType, packageManager);
   }
 
-  // Step 4: Execute generator with dependency collector
+  // Step 5: Execute generator with dependency collector
   const dependencyCollector = new DependencyCollector();
-  const executionCommand = new GeneratorExecutionCommand();
-  const { storybookCommand } = await executionCommand.execute(
+  const { storybookCommand } = await executeGeneratorExecution(
     projectType,
     packageManager,
     options,
@@ -98,17 +72,14 @@ export async function doInitiate(options: CommandOptions): Promise<
     dependencyCollector
   );
 
-  // Step 5: Configure addons (run postinstall scripts for configuration only)
-  const addonConfigCommand = new AddonConfigurationCommand();
-  await addonConfigCommand.execute(packageManager, selectedFeatures, options);
+  // Step 6: Configure addons (run postinstall scripts for configuration only)
+  await executeAddonConfiguration(packageManager, selectedFeatures, options);
 
-  // Step 6: Install all dependencies in a single operation
-  const installCommand = new DependencyInstallationCommand();
-  await installCommand.execute(packageManagerService, dependencyCollector, options.skipInstall);
+  // Step 7: Install all dependencies in a single operation
+  await executeDependencyInstallation(packageManager, dependencyCollector, options.skipInstall);
 
-  // Step 7: Print final summary
-  const finalizationCommand = new FinalizationCommand();
-  await finalizationCommand.execute(projectType, selectedFeatures, storybookCommand);
+  // Step 8: Print final summary
+  await executeFinalization(projectType, selectedFeatures, storybookCommand);
 
   return {
     shouldRunDev: !!options.dev && !options.skipInstall,

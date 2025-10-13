@@ -8,8 +8,6 @@ import { getProjectRoot } from 'storybook/internal/common';
 import * as find from 'empathic/find';
 import { coerce, satisfies } from 'semver';
 
-import type { CompatibilityResult } from '../ink/steps/checks/CompatibilityType';
-import { CompatibilityType } from '../ink/steps/checks/CompatibilityType';
 import type { GeneratorFeature } from '../generators/types';
 
 /** Project types that support the onboarding feature */
@@ -178,11 +176,10 @@ export class FeatureCompatibilityService {
     const parsedFile = babel.babelParse(fileContents);
 
     babel.traverse(parsedFile, {
-      ExportDefaultDeclaration(path: any) {
+      ExportDefaultDeclaration: (path: any) => {
         const declaration = path.node.declaration;
         isValid =
-          this.isWorkspaceConfigArray(declaration) ||
-          this.isDefineWorkspaceExpression(declaration);
+          this.isWorkspaceConfigArray(declaration) || this.isDefineWorkspaceExpression(declaration);
       },
     });
 
@@ -195,7 +192,7 @@ export class FeatureCompatibilityService {
     const parsedConfig = babel.babelParse(configContent);
 
     babel.traverse(parsedConfig, {
-      ExportDefaultDeclaration(path: any) {
+      ExportDefaultDeclaration: (path: any) => {
         if (
           this.isDefineConfigExpression(path.node.declaration) &&
           this.isSafeToExtendWorkspace(path.node.declaration)
@@ -256,8 +253,7 @@ export class FeatureCompatibilityService {
           p.key?.name !== 'test' ||
           (this.isObjectExpression(p.value) &&
             p.value.properties.every(
-              ({ key, value }: any) =>
-                key?.name !== 'workspace' || this.isArrayExpression(value)
+              ({ key, value }: any) => key?.name !== 'workspace' || this.isArrayExpression(value)
             ))
       )
     );

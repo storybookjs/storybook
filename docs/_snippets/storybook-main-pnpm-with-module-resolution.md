@@ -1,31 +1,33 @@
-```js filename=".storybook/main.js" renderer="common" language="js"
-import path from 'path';
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const getAbsolutePath = (packageName) =>
-  path.dirname(require.resolve(path.join(packageName, 'package.json')));
+  dirname(fileURLToPath(import.meta.resolve(`${packageName}/package.json`)));
 
 export default {
   framework: {
-    // Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+    // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
     name: getAbsolutePath('@storybook/your-framework'),
     options: {},
   },
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
-    getAbsolutePath('@storybook/addon-essentials'),
+    getAbsolutePath('@storybook/addon-docs'),
   ],
 };
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
 
-import path from 'path';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const getAbsolutePath = (packageName: string): any =>
-  path.dirname(require.resolve(path.join(packageName, 'package.json')));
+const getAbsolutePath = (packageName: string) =>
+  dirname(fileURLToPath(import.meta.resolve(`${packageName}/package.json`)));
 
 const config: StorybookConfig = {
   framework: {
@@ -36,9 +38,58 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   addons: [
     //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
-    getAbsolutePath('@storybook/addon-essentials'),
+    getAbsolutePath('@storybook/addon-docs'),
   ],
 };
 
 export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+const getAbsolutePath = (packageName: string) =>
+  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
+
+export default defineMain({
+  framework: {
+    // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+    name: getAbsolutePath('@storybook/your-framework'),
+    options: {},
+  },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
+    getAbsolutePath('@storybook/addon-docs'),
+  ],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+const getAbsolutePath = (packageName) =>
+  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
+
+export default defineMain({
+  framework: {
+    name: getAbsolutePath('@storybook/your-framework'),
+    options: {},
+  },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
+    getAbsolutePath('@storybook/addon-docs'),
+  ],
+});
 ```

@@ -1,0 +1,18 @@
+{
+  "title": "Example/Header",
+  "parameters": {
+    "server": {
+      "url": "https://storybook-server-demo.netlify.app/api",
+      "id": "header"
+    }
+  },
+  "stories": [
+    {
+      "name": "LoggedIn",
+      "args": { "user": {} }
+    },
+    {
+      "name": "LoggedOut"
+    }
+  ]
+}

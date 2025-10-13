@@ -1,18 +1,13 @@
-import { hasDocsOrControls } from 'storybook/internal/docs-tools';
+import { fileURLToPath } from 'node:url';
 
 import type { Configuration } from 'webpack';
 
-import { requirer } from './requirer';
 import type { StorybookConfig } from './types';
 
 export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   config,
   options
 ): Promise<Configuration> => {
-  if (!hasDocsOrControls(options)) {
-    return config;
-  }
-
   const typescriptOptions = await options.presets.apply('typescript', {} as any);
   const debug = options.loglevel === 'debug';
 
@@ -32,9 +27,8 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
           {
             test: /\.(cjs|mjs|tsx?|jsx?)$/,
             enforce: 'pre',
-            loader: requirer(
-              require.resolve,
-              '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader'
+            loader: fileURLToPath(
+              import.meta.resolve('@storybook/preset-react-webpack/react-docgen-loader')
             ),
             options: {
               debug,
@@ -57,9 +51,8 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
         {
           test: /\.(cjs|mjs|jsx?)$/,
           enforce: 'pre',
-          loader: requirer(
-            require.resolve,
-            '@storybook/preset-react-webpack/dist/loaders/react-docgen-loader'
+          loader: fileURLToPath(
+            import.meta.resolve('@storybook/preset-react-webpack/react-docgen-loader')
           ),
           options: {
             debug,

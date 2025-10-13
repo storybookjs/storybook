@@ -1,7 +1,7 @@
+import { readFile } from 'node:fs/promises';
+
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-// eslint-disable-next-line depend/ban-dependencies
-import { readJson } from 'fs-extra';
 import { join } from 'path';
 
 import { CODE_DIRECTORY } from './utils/constants';
@@ -17,7 +17,8 @@ const getFooter = async (branch: Branch, workflow: Workflow, job: string) => {
 
   // The CI workflows can run on release branches and we should display the version number
   if (branch === 'next-release' || branch === 'latest-release') {
-    const packageJson = await readJson(join(CODE_DIRECTORY, 'package.json'));
+    const content = await readFile(join(CODE_DIRECTORY, 'package.json'), 'utf8');
+    const packageJson = JSON.parse(content);
 
     // running in alpha branch we should just show the version which failed
     return `\n**Version: ${packageJson.version}**`;

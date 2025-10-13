@@ -24,7 +24,7 @@ export default {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="react" language="js"
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -32,26 +32,15 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta } from '@storybook/react';
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
 const meta = {
   component: Button,
 } satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta } from '@storybook/react';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
 
 export default meta;
 ```
@@ -64,26 +53,14 @@ export default {
 };
 ```
 
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta } from 'storybook-solidjs';
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta } from 'storybook-solidjs-vite';
 
 import { Button } from './Button';
 
 const meta = {
   component: Button,
 } satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta } from 'storybook-solidjs';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
 
 export default meta;
 ```
@@ -108,30 +85,6 @@ export default {
 };
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-  });
-</script>
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-const meta = {
-  component: Button,
-} satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -145,13 +98,14 @@ export default meta;
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 ```
@@ -164,26 +118,14 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta } from '@storybook/vue3';
+```ts filename="Button.stories.ts" renderer="vue" language="ts"
+import type { Meta } from '@storybook/vue3-vite';
 
 import Button from './Button.vue';
 
 const meta = {
   component: Button,
 } satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts" renderer="vue" language="ts"
-import type { Meta } from '@storybook/vue3';
-
-import Button from './Button.vue';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-};
 
 export default meta;
 ```
@@ -195,7 +137,7 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta } from '@storybook/web-components';
+import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   title: 'Button',
@@ -203,4 +145,25 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
 ```

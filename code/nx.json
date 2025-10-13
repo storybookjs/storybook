@@ -11,12 +11,6 @@
       "options": {
         "testTargetName": "test"
       }
-    },
-    {
-      "plugin": "@nx/eslint/plugin",
-      "options": {
-        "targetName": "lint"
-      }
     }
   ],
   "tasksRunnerOptions": {
@@ -40,11 +34,7 @@
           "args": "--reset --optimized"
         }
       },
-      "inputs": [
-        "production",
-        "^production",
-        "{workspaceRoot}/../scripts/prepare/{bundle,addon-bundle,esm-bundle}.ts"
-      ],
+      "inputs": ["production", "^production"],
       "dependsOn": ["^build"],
       "outputs": ["{projectRoot}/dist", "{workspaceRoot}/bench/esbuild-metafiles/{projectName}"],
       "cache": true
@@ -69,17 +59,6 @@
       },
       "inputs": ["default", "^production", "{workspaceRoot}/../scripts/prepare/check.ts"],
       "dependsOn": ["build"],
-      "cache": true
-    },
-    "lint": {
-      "executor": "nx:run-commands",
-      "options": {
-        "cwd": "{workspaceRoot}",
-        "command": "yarn lint:js:cmd {projectRoot}",
-        "args": "--quiet"
-      },
-      "dependsOn": ["build"],
-      "inputs": ["default", "{workspaceRoot}/{.eslintignore,.eslintrc.js}"],
       "cache": true
     },
     "sandbox": {

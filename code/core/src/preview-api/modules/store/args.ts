@@ -1,3 +1,4 @@
+import { once } from 'storybook/internal/client-logger';
 import type {
   ArgTypes,
   Args,
@@ -5,11 +6,9 @@ import type {
   Renderer,
   SBType,
   StoryContext,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
-import { once } from '@storybook/core/client-logger';
-
-import { isEqual as deepEqual, isPlainObject } from 'es-toolkit';
+import { isEqual as deepEqual, isPlainObject } from 'es-toolkit/predicate';
 import { dedent } from 'ts-dedent';
 
 const INCOMPATIBLE = Symbol('incompatible');
@@ -55,6 +54,18 @@ const map = (arg: unknown, argType: InputType): any => {
         const mapped = map(val, { type: type.value[key] });
         return mapped === INCOMPATIBLE ? acc : Object.assign(acc, { [key]: mapped });
       }, {} as Args);
+    case 'other': {
+      const isPrimitiveArg =
+        typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean';
+
+      // Only proceed if `argType.value` is a `ReactNode`.
+      // Only permit primitives: they are included in `ReactNode` type, making them easily applicable.
+      if (type.value === 'ReactNode' && isPrimitiveArg) {
+        return arg;
+      }
+
+      return INCOMPATIBLE;
+    }
     default:
       return INCOMPATIBLE;
   }
@@ -120,7 +131,7 @@ export const validateOptions = (args: Args, argTypes: ArgTypes): Args => {
       once.error(dedent`
         Invalid argType: '${key}.options' should be an array.
 
-        More info: https://storybook.js.org/docs/api/arg-types
+        More info: https://storybook.js.org/docs/api/arg-types?ref=error
       `);
       return allowArg();
     }
@@ -129,7 +140,7 @@ export const validateOptions = (args: Args, argTypes: ArgTypes): Args => {
       once.error(dedent`
         Invalid argType: '${key}.options' should only contain primitives. Use a 'mapping' for complex values.
 
-        More info: https://storybook.js.org/docs/writing-stories/args#mapping-to-complex-arg-values
+        More info: https://storybook.js.org/docs/writing-stories/args?ref=error#mapping-to-complex-arg-values
       `);
       return allowArg();
     }

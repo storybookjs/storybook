@@ -11,7 +11,29 @@ const meta: Meta<Button> = {
 export default meta;
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    parameters: { actions: { argTypesRegex: '^on.*' } },
+  });
+</script>
+```
+
+```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF"
+import Button from './Button.svelte';
+
+export default {
+  component: Button,
+  parameters: { actions: { argTypesRegex: '^on.*' } },
+};
+```
+
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -20,8 +42,35 @@ export default {
 };
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    parameters: { actions: { argTypesRegex: '^on.*' } },
+  });
+</script>
+```
+
+```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
+
+import Button from './Button.svelte';
+
+const meta = {
+  component: Button,
+  parameters: { actions: { argTypesRegex: '^on.*' } },
+} satisfies Meta<typeof Button>;
+
+export default meta;
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
 import { Button } from './Button';
@@ -34,20 +83,6 @@ const meta = {
 export default meta;
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
-import type { Meta } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta: Meta<typeof Button> = {
-  component: Button,
-  parameters: { actions: { argTypesRegex: '^on.*' } },
-};
-
-export default meta;
-```
-
 ```js filename="Button.stories.js" renderer="web-components" language="js"
 export default {
   component: 'demo-button',
@@ -56,7 +91,7 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-button',
@@ -64,4 +99,27 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: { actions: { argTypesRegex: '^on.*' } },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: { actions: { argTypesRegex: '^on.*' } },
+});
 ```

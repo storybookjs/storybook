@@ -1,16 +1,15 @@
 <script>
-  /**
-   * Callback for when the form succeeds
-   */
-  export let onSuccess;
+  const { onSuccess } = $props();
 
-  let value = '';
+  let value = $state('');
+  let complete = $state(false);
+
   function handleClick(event) {
     value = event.target.value;
   }
 
-  let complete = false;
-  function handleSubmit() {
+  function handleSubmit(event) {
+    event.preventDefault();
     onSuccess(value);
 
     setTimeout(() => {
@@ -23,10 +22,10 @@
   }
 </script>
 
-<form id="interaction-test-form" on:submit|preventDefault={handleSubmit}>
+<form id="interaction-test-form" onsubmit={handleSubmit}>
   <label>
     Enter Value
-    <input type="text" data-testid="value" bind:value required on:click={handleClick} />
+    <input type="text" data-testid="value" bind:value required onclick={handleClick} />
   </label>
   <button type="submit">Submit</button>
   {#if complete}<p>Completed!!</p>{/if}

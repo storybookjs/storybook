@@ -1,7 +1,10 @@
 export function enhance(form: HTMLFormElement) {
-  const listener = (e: Event) => {
+  const listener = (...args: any[]) => {
+    const e = args[0];
     e.preventDefault();
-    const event = new CustomEvent('storybook:enhance');
+    const event = new CustomEvent('storybook:enhance', {
+      detail: args,
+    });
     window.dispatchEvent(event);
   };
   form.addEventListener('submit', listener);

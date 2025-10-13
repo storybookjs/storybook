@@ -1,12 +1,13 @@
-import type { IndexEntry, StoryIndexEntry } from '@storybook/core/types';
 import type {
   Addon_Comparator,
   Addon_StorySortParameter,
   Addon_StorySortParameterV7,
+  IndexEntry,
   IndexEntryLegacy,
-} from '@storybook/core/types';
-import type { Parameters, Path, Renderer } from '@storybook/core/types';
-import type { PreparedStory } from '@storybook/core/types';
+  StoryIndexEntry,
+} from 'storybook/internal/types';
+import type { Parameters, Path, Renderer } from 'storybook/internal/types';
+import type { PreparedStory } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -45,7 +46,7 @@ export const sortStoriesV7 = (
     Error sorting stories with sort parameter ${storySortParameter}:
 
     > ${(err as Error).message}
-    
+
     Are you using a V6-style sort function in V7 mode?
 
     More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#v7-style-story-sort
@@ -54,8 +55,8 @@ export const sortStoriesV7 = (
 };
 
 const toIndexEntry = (story: any): StoryIndexEntry => {
-  const { id, title, name, parameters, type } = story;
-  return { id, title, name, importPath: parameters.fileName, type };
+  const { id, title, name, parameters, type, subtype, parent } = story;
+  return { id, title, name, importPath: parameters.fileName, type, subtype, parent };
 };
 
 export const sortStoriesV6 = <TRenderer extends Renderer>(

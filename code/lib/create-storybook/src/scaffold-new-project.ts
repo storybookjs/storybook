@@ -36,7 +36,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template react-ts',
-      yarn: 'yarn create vite@latest . --template react-ts',
+      yarn: 'yarn create vite . --template react-ts',
       pnpm: 'pnpm create vite@latest . --template react-ts',
     },
   },
@@ -46,10 +46,10 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
       language: 'TS',
     },
     createScript: {
-      npm: 'npm create next-app@^14 . -- --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      npm: 'npm create next-app . -- --turbopack --typescript --use-npm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
       // yarn doesn't support version ranges, so we have to use npx
-      yarn: 'npx create-next-app@^14 . --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
-      pnpm: 'pnpm create next-app^14 . --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      yarn: 'npx create-next-app . --turbopack --typescript --use-yarn --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
+      pnpm: 'pnpm create next-app . --turbopack --typescript --use-pnpm --eslint --tailwind --no-app --import-alias="@/*" --src-dir',
     },
   },
   'vue-vite-ts': {
@@ -60,7 +60,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template vue-ts',
-      yarn: 'yarn create vite@latest . --template vue-ts',
+      yarn: 'yarn create vite . --template vue-ts',
       pnpm: 'pnpm create vite@latest . --template vue-ts',
     },
   },
@@ -83,7 +83,7 @@ const SUPPORTED_PROJECTS: Record<string, SupportedProject> = {
     },
     createScript: {
       npm: 'npm create vite@latest . -- --template lit-ts',
-      yarn: 'yarn create vite@latest . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
+      yarn: 'yarn create vite . --template lit-ts && touch yarn.lock && yarn set version berry && yarn config set nodeLinker pnp',
       pnpm: 'pnpm create vite@latest . --template lit-ts',
     },
   },
@@ -178,7 +178,18 @@ export const scaffoldNewProject = async (
     // If target directory has a .cache folder, remove it
     // so that it does not block the creation of the new project
     await rm(`${targetDir}/.cache`, { recursive: true, force: true });
+  } catch (e) {
+    //
+  }
+  try {
+    // If target directory has a node_modules folder, remove it
+    // so that it does not block the creation of the new project
+    await rm(`${targetDir}/node_modules`, { recursive: true, force: true });
+  } catch (e) {
+    //
+  }
 
+  try {
     // Create new project in temp directory
     await execa.command(createScript, {
       stdio: 'pipe',
@@ -221,22 +232,21 @@ export const scaffoldNewProject = async (
   logger.line(1);
 };
 
-const BASE_IGNORED_FILES = ['.git', '.gitignore', '.DS_Store', '.cache'];
+const FILES_TO_IGNORE = [
+  '.git',
+  '.gitignore',
+  '.DS_Store',
+  '.cache',
+  'node_modules',
+  '.yarnrc.yml',
+  '.yarn',
+];
 
-const IGNORED_FILES_BY_PACKAGE_MANAGER: Record<CoercedPackageManagerName, string[]> = {
-  npm: [...BASE_IGNORED_FILES],
-  yarn: [...BASE_IGNORED_FILES, '.yarnrc.yml', '.yarn'],
-  pnpm: [...BASE_IGNORED_FILES],
-};
-
-export const currentDirectoryIsEmpty = (packageManager: PackageManagerName) => {
-  const packageManagerName = packageManagerToCoercedName(packageManager);
+export const currentDirectoryIsEmpty = () => {
   const cwdFolderEntries = readdirSync(process.cwd());
-
-  const filesToIgnore = IGNORED_FILES_BY_PACKAGE_MANAGER[packageManagerName];
 
   return (
     cwdFolderEntries.length === 0 ||
-    cwdFolderEntries.every((entry) => filesToIgnore.includes(entry))
+    cwdFolderEntries.every((entry) => FILES_TO_IGNORE.includes(entry))
   );
 };

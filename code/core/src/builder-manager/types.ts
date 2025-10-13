@@ -3,7 +3,7 @@ import type {
   BuilderStats,
   Builder_Unpromise,
   Builder_WithRequiredProperty,
-} from '@storybook/core/types';
+} from 'storybook/internal/types';
 
 import type { BuildOptions, BuildResult } from 'esbuild';
 

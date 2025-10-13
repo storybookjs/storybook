@@ -68,7 +68,7 @@ export const Empty: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { List } from './List';
 
 export default {
@@ -79,8 +79,9 @@ export default {
 export const Empty = {};
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { List } from './List';
 
@@ -90,22 +91,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-// Always an empty list, not super interesting
-export const Empty: Story = {};
-```
-
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { List } from './List';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 // Always an empty list, not super interesting
 export const Empty: Story = {};
@@ -122,8 +107,8 @@ export default {
 export const Empty = {};
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 
@@ -133,22 +118,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-// Always an empty list, not super interesting
-export const Empty: Story = {};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { List } from './List';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 // Always an empty list, not super interesting
 export const Empty: Story = {};
@@ -180,37 +149,6 @@ export default {
 export const Empty = {};
 ```
 
-```svelte filename="List.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import List from './List.svelte';
-
-  const { Story } = defineMeta({
-    component: List,
-  });
-</script>
-
-<!-- Always an empty list, not super interesting -->
-<Story name="Empty" />
-```
-
-```ts filename="List.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import List from './List.svelte';
-
-const meta = {
-  component: List,
-} satisfies Meta<typeof List>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-// Always an empty list, not super interesting
-export const Empty: Story = {};
-```
-
 ```svelte filename="List.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
 <script module>
   import { defineMeta } from '@storybook/addon-svelte-csf';
@@ -227,16 +165,17 @@ export const Empty: Story = {};
 ```
 
 ```ts filename="List.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import List from './List.svelte';
 
-const meta: Meta<typeof List> = {
+const meta = {
   component: List,
-};
+} satisfies Meta<typeof List>;
 
 export default meta;
-type Story = StoryObj<typeof List>;
+type Story = StoryObj<typeof meta>;
 
 // Always an empty list, not super interesting
 export const Empty: Story = {};
@@ -258,8 +197,8 @@ export const Empty = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="List.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './ListComponent.vue';
 
@@ -269,27 +208,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-// Always an empty list, not super interesting
-export const Empty: Story = {
-  render: () => ({
-    components: { List },
-    template: '<List/>',
-  }),
-};
-```
-
-```ts filename="List.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import List from './ListComponent.vue';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 // Always an empty list, not super interesting
 export const Empty: Story = {
@@ -314,7 +232,7 @@ export const Empty = {
 ```
 
 ```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-list',
@@ -327,4 +245,31 @@ type Story = StoryObj;
 export const Empty: Story = {
   render: () => html`<demo-list></demo-list>`,
 };
+```
+
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story();
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { List } from './List';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story();
 ```

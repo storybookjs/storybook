@@ -1,4 +1,4 @@
-```js filename=".storybook/preview.js" renderer="common" language="js"
+```js filename=".storybook/preview.js" renderer="common" language="js" tabTitle="CSF 3"
 import { withThemeByClassName } from '@storybook/addon-themes';
 
 import '../src/index.css'; // Your application's global CSS file
@@ -18,9 +18,10 @@ const preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="common" language="ts-4-9"
-// Replace your-renderer with the framework you are using (e.g., react, vue3)
-import { Preview, Renderer } from '@storybook/your-renderer';
+```ts filename=".storybook/preview.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { Preview, Renderer } from '@storybook/your-framework';
+
 import { withThemeByClassName } from '@storybook/addon-themes';
 
 import '../src/index.css'; // Your application's global CSS file
@@ -40,14 +41,15 @@ const preview: Preview = {
 export default preview;
 ```
 
-```ts filename=".storybook/preview.ts" renderer="common" language="ts"
-// Replace your-renderer with the framework you are using (e.g., react, vue3)
-import { Preview, Renderer } from '@storybook/your-renderer';
+```ts filename=".storybook/preview.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { Renderer, definePreview } from '@storybook/your-framework';
+
 import { withThemeByClassName } from '@storybook/addon-themes';
 
 import '../src/index.css'; // Your application's global CSS file
 
-const preview: Preview = {
+export default definePreview({
   decorators: [
     withThemeByClassName<Renderer>({
       themes: {
@@ -57,7 +59,28 @@ const preview: Preview = {
       defaultTheme: 'light',
     }),
   ],
-};
+});
+```
 
-export default preview;
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/preview.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
+
+import { withThemeByClassName } from '@storybook/addon-themes';
+
+import '../src/index.css'; // Your application's global CSS file
+
+export default definePreview({
+  decorators: [
+    withThemeByClassName({
+      themes: {
+        light: '',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+    }),
+  ],
+});
 ```

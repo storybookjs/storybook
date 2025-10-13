@@ -1,4 +1,4 @@
-import { logger } from '@storybook/core/client-logger';
+import { logger } from 'storybook/internal/client-logger';
 
 export const getEventSourceUrl = (event: MessageEvent) => {
   const frames: HTMLIFrameElement[] = Array.from(

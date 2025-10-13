@@ -1,18 +1,26 @@
-import { ApplicationRef, NgModule, enableProdMode } from '@angular/core';
+import type { ApplicationRef, NgModule } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { BehaviorSubject, Subject } from 'rxjs';
+import type { Subject } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { stringify } from 'telejson';
 
-import { ICollection, StoryFnAngularReturnType } from '../types';
+import type { ICollection, StoryFnAngularReturnType } from '../types';
 import { getApplication } from './StorybookModule';
 import { storyPropsProvider } from './StorybookProvider';
 import { queueBootstrapping } from './utils/BootstrapQueue';
 import { PropertyExtractor } from './utils/PropertyExtractor';
+import { getProvideZonelessChangeDetectionFn } from './utils/Zoneless';
 
 type StoryRenderInfo = {
   storyFnAngular: StoryFnAngularReturnType;
   moduleMetadataSnapshot: string;
 };
+
+declare global {
+  const STORYBOOK_ANGULAR_OPTIONS: {
+    experimentalZoneless: boolean;
+  };
+}
 
 const applicationRefs = new Map<HTMLElement, ApplicationRef>();
 
@@ -95,6 +103,7 @@ export abstract class AbstractRenderer {
     this.initAngularRootElement(targetDOMNode, targetSelector);
 
     const analyzedMetadata = new PropertyExtractor(storyFnAngular.moduleMetadata, component);
+    await analyzedMetadata.init();
 
     const storyUid = this.generateStoryUIdFromRawStoryUid(
       targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE)
@@ -112,14 +121,26 @@ export abstract class AbstractRenderer {
       analyzedMetadata,
     });
 
+    const providers = [
+      storyPropsProvider(newStoryProps$),
+      ...analyzedMetadata.applicationProviders,
+      ...(storyFnAngular.applicationConfig?.providers ?? []),
+    ];
+
+    if (STORYBOOK_ANGULAR_OPTIONS?.experimentalZoneless) {
+      const provideZonelessChangeDetectionFn = await getProvideZonelessChangeDetectionFn();
+
+      if (!provideZonelessChangeDetectionFn) {
+        throw new Error('Zoneless change detection requires Angular 18 or higher');
+      } else {
+        providers.unshift(provideZonelessChangeDetectionFn());
+      }
+    }
+
     const applicationRef = await queueBootstrapping(() => {
       return bootstrapApplication(application, {
         ...storyFnAngular.applicationConfig,
-        providers: [
-          storyPropsProvider(newStoryProps$),
-          ...analyzedMetadata.applicationProviders,
-          ...(storyFnAngular.applicationConfig?.providers ?? []),
-        ],
+        providers,
       });
     });
 
@@ -187,7 +208,7 @@ export abstract class AbstractRenderer {
 
     const currentStoryRender = {
       storyFnAngular,
-      moduleMetadataSnapshot: stringify(moduleMetadata, { allowFunction: false }),
+      moduleMetadataSnapshot: stringify(moduleMetadata, { maxDepth: 50 }),
     };
 
     this.previousStoryRenderInfo.set(targetDOMNode, currentStoryRender);

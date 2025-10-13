@@ -1,12 +1,11 @@
-```js filename="RouterBasedComponent.stories.js" renderer="react" language="js"
+```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import RouterBasedComponent from './RouterBasedComponent';
 
 export default {
   component: RouterBasedComponent,
 };
 
-// If you have the actions addon,
-// you can interact with the links and see the route change events there
+// Interact with the links to see the route change events in the Actions panel.
 export const Example = {
   parameters: {
     nextjs: {
@@ -22,20 +21,20 @@ export const Example = {
 };
 ```
 
-```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts-4-9"
-import { Meta, StoryObj } from '@storybook/react';
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with nextjs or nextjs-vite
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import RouterBasedComponent from './RouterBasedComponent';
 
 const meta = {
   component: RouterBasedComponent,
 } satisfies Meta<typeof RouterBasedComponent>;
-export default meta;
 
+export default meta;
 type Story = StoryObj<typeof meta>;
 
-// If you have the actions addon,
-// you can interact with the links and see the route change events there
+// Interact with the links to see the route change events in the Actions panel.
 export const Example: Story = {
   parameters: {
     nextjs: {
@@ -51,21 +50,17 @@ export const Example: Story = {
 };
 ```
 
-```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts"
-import { Meta, StoryObj } from '@storybook/react';
+```ts filename="RouterBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
 
 import RouterBasedComponent from './RouterBasedComponent';
 
-const meta: Meta<typeof RouterBasedComponent> = {
+const meta = preview.meta({
   component: RouterBasedComponent,
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof RouterBasedComponent>;
-
-// If you have the actions addon,
-// you can interact with the links and see the route change events there
-export const Example: Story = {
+// Interact with the links to see the route change events in the Actions panel.
+export const Example = meta.story({
   parameters: {
     nextjs: {
       router: {
@@ -77,5 +72,31 @@ export const Example: Story = {
       },
     },
   },
-};
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="RouterBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import RouterBasedComponent from './RouterBasedComponent';
+
+const meta = preview.meta({
+  component: RouterBasedComponent,
+});
+
+// Interact with the links to see the route change events in the Actions panel.
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      router: {
+        pathname: '/profile/[id]',
+        asPath: '/profile/1',
+        query: {
+          id: '1',
+        },
+      },
+    },
+  },
+});
 ```

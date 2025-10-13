@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, findByText, fireEvent, fn } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect, findByText, fireEvent, fn } from 'storybook/test';
 
 import { WithResults } from './FileSearchList.stories';
 import { FileSearchModal } from './FileSearchModal';
@@ -22,13 +23,11 @@ const meta = {
   // This decorator is used to show the modal in the side by side view
   decorators: [
     (Story, context) => {
-      const [container, setContainer] = useState<HTMLElement | null>(null);
+      const [container, setContainer] = useState<HTMLElement | undefined>(undefined);
 
       return (
         <div
-          ref={(element) => {
-            setContainer(element);
-          }}
+          ref={(element) => setContainer(element ?? undefined)}
           style={{
             width: '100%',
             height: '100%',
@@ -36,8 +35,7 @@ const meta = {
             transform: 'translateZ(0)',
           }}
         >
-          {/* @ts-expect-error (non strict) */}
-          {Story({ args: { ...context.args, container } })}
+          <Story args={{ ...context.args, container }} />
         </div>
       );
     },
@@ -102,7 +100,7 @@ export const WithSearchResults: Story = {
     const moduleSingleExport = await findByText(parent, 'module-single-export.js');
     await fireEvent.click(moduleSingleExport);
 
-    expect(args.onCreateNewStory).toHaveBeenCalledWith({
+    await expect(args.onCreateNewStory).toHaveBeenCalledWith({
       componentExportCount: 1,
       componentExportName: 'default',
       componentFilePath: 'src/module-single-export.js',

@@ -35,7 +35,7 @@ export default {
 };
 ```
 
-```js filename="Page.stories.js" renderer="common" language="js"
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { Page } from './Page';
 
 export default {
@@ -43,47 +43,6 @@ export default {
   // 👇 Disable auto-generated documentation for this component
   tags: ['!autodocs'],
 };
-```
-
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Page from './Page.svelte';
-
-  const { Story } = defineMeta({
-    component: Page,
-    // 👇 Disable auto-generated documentation for this component
-    tags: ['!autodocs'],
-  });
-</script>
-```
-
-```ts filename="Page.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
-
-import Page from './Page.svelte';
-
-const meta = {
-  component: Page,
-  // 👇 Disable auto-generated documentation for this component
-  tags: ['!autodocs'],
-} satisfies Meta<typeof Page>;
-export default meta;
-```
-
-```ts filename="Page.stories.ts" renderer="common" language="ts-4-9"
-// Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
-import type { Meta } from '@storybook/your-framework';
-
-import { Page } from './Page';
-
-const meta = {
-  component: Page,
-  // 👇 Disable auto-generated documentation for this component
-  tags: ['!autodocs'],
-} satisfies Meta<typeof Page>;
-export default meta;
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -101,29 +60,30 @@ export default meta;
 ```
 
 ```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
 
 import Page from './Page.svelte';
 
-const meta: Meta<typeof Page> = {
+const meta = {
   component: Page,
   // 👇 Disable auto-generated documentation for this component
   tags: ['!autodocs'],
-};
+} satisfies Meta<typeof Page>;
 export default meta;
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
 import { Page } from './Page';
 
-const meta: Meta<typeof Page> = {
+const meta = {
   component: Page,
   // 👇 Disable auto-generated documentation for this component
   tags: ['!autodocs'],
-};
+} satisfies Meta<typeof Page>;
 export default meta;
 ```
 
@@ -137,7 +97,7 @@ export default {
 ```
 
 ```ts filename="Page.stories.ts" renderer="web-components" language="ts"
-import type { Meta } from '@storybook/web-components';
+import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   title: 'Page',
@@ -146,4 +106,30 @@ const meta: Meta = {
   tags: ['!autodocs'],
 };
 export default meta;
+```
+
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
 ```

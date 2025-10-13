@@ -1,11 +1,12 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
-import { Link } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
+import { Link } from 'storybook/internal/components';
+
 import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybook/icons';
 
 import { Transition, type TransitionStatus } from 'react-transition-group';
+import { styled } from 'storybook/theming';
 
 import { MOBILE_TRANSITION_DURATION } from '../../../constants';
 import { useLayout } from '../../layout/LayoutProvider';
@@ -39,7 +40,7 @@ export const MobileAbout: FC = () => {
               <ShareAltIcon width={12} />
             </LinkLine>
             <LinkLine
-              href="https://storybook.js.org/docs/react/get-started/install/"
+              href="https://storybook.js.org/docs/get-started/install/?ref=ui"
               target="_blank"
             >
               <LinkLeft>

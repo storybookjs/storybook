@@ -4,8 +4,8 @@ import * as glob from 'glob';
 
 import { describe, test, expect } from '@jest/globals';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 const compose = (entry) => {
   try {
@@ -20,7 +20,7 @@ const compose = (entry) => {
 function getAllStoryFiles() {
   // Place the glob you want to match your stories files
   const storyFiles = glob.sync(
-    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}'),
+    path.join(process.cwd(), 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}'),
   );
 
   return storyFiles.map((filePath) => {
@@ -68,8 +68,8 @@ import * as glob from 'glob';
 
 import { describe, test, expect } from '@jest/globals';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 type StoryFile = {
   default: Meta;
@@ -89,7 +89,7 @@ const compose = (entry: StoryFile): ReturnType<typeof composeStories<StoryFile>>
 function getAllStoryFiles() {
   // Place the glob you want to match your stories files
   const storyFiles = glob.sync(
-    path.join(__dirname, 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}'),
+    path.join(process.cwd(), 'stories/**/*.{stories,story}.{js,jsx,mjs,ts,tsx}'),
   );
 
   return storyFiles.map((filePath) => {
@@ -134,8 +134,8 @@ describe('Stories Snapshots', () => {
 import path from 'path';
 import { describe, expect, test } from 'vitest';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 const compose = (entry) => {
   try {
@@ -196,8 +196,8 @@ import type { Meta, StoryFn } from '@storybook/your-framework';
 import path from 'path';
 import { describe, expect, test } from 'vitest';
 
-// Replace your-renderer with the renderer you are using (e.g., react, vue3, svelte, etc.)
-import { composeStories } from '@storybook/your-renderer';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
+import { composeStories } from '@storybook/your-framework';
 
 type StoryFile = {
   default: Meta;

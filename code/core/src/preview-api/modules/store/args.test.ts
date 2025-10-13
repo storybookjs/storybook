@@ -1,8 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { SBType } from '@storybook/core/types';
-
-import { once } from '@storybook/core/client-logger';
+import { once } from 'storybook/internal/client-logger';
+import type { SBType } from 'storybook/internal/types';
 
 import {
   UNTARGETED,
@@ -19,8 +18,9 @@ const enumType: SBType = { name: 'enum', value: [1, 2, 3] };
 const functionType: SBType = { name: 'function' };
 const numArrayType: SBType = { name: 'array', value: numberType };
 const boolObjectType: SBType = { name: 'object', value: { bool: booleanType } };
+const reactNodeType: SBType = { name: 'other', value: 'ReactNode' };
 
-vi.mock('@storybook/core/client-logger');
+vi.mock('storybook/internal/client-logger');
 
 enum ArgsMapTestEnumWithoutInitializer {
   EnumValue,
@@ -122,6 +122,17 @@ describe('mapArgsToTypes', () => {
 
   it('passes number for object type', () => {
     expect(mapArgsToTypes({ a: 1.2 }, { a: { type: boolObjectType } })).toStrictEqual({ a: 1.2 });
+  });
+
+  it('passes only primitives for ReactNode type', () => {
+    expect(mapArgsToTypes({ a: 'foo bar' }, { a: { type: reactNodeType } })).toStrictEqual({
+      a: 'foo bar',
+    });
+    expect(mapArgsToTypes({ a: 1.2 }, { a: { type: reactNodeType } })).toStrictEqual({ a: 1.2 });
+    expect(mapArgsToTypes({ a: true }, { a: { type: reactNodeType } })).toStrictEqual({ a: true });
+    expect(mapArgsToTypes({ a: new Date() }, { a: { type: reactNodeType } })).toStrictEqual({});
+    expect(mapArgsToTypes({ a: { foo: 'bar' } }, { a: { type: reactNodeType } })).toStrictEqual({});
+    expect(mapArgsToTypes({ a: Symbol('foo') }, { a: { type: reactNodeType } })).toStrictEqual({});
   });
 
   it('deeply maps objects', () => {

@@ -1,14 +1,14 @@
 import {
   setProjectAnnotations as originalSetProjectAnnotations,
   setDefaultProjectAnnotations,
-} from 'storybook/internal/preview-api';
-import {
+} from 'storybook/preview-api';
+import type {
   NamedOrDefaultProjectAnnotations,
   NormalizedProjectAnnotations,
 } from 'storybook/internal/types';
 
 import * as INTERNAL_DEFAULT_PROJECT_ANNOTATIONS from './render';
-import { AngularRenderer } from './types';
+import type { AngularRenderer } from './types';
 
 /**
  * Function that sets the globalConfig of your storybook. The global config is the preview module of

@@ -50,7 +50,7 @@ export const UndocumentedStory = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js"
+```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -60,64 +60,6 @@ export default {
 };
 
 export const UndocumentedStory = {
-  // 👇 Removes this story from auto-generated documentation
-  tags: ['!autodocs'],
-};
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    //👇 Enables auto-generated documentation for this component and includes all stories in this file
-    tags: ['autodocs'],
-  });
-</script>
-
-<!--👇 Removes this story from auto-generated documentation -->
-<Story name="UndocumentedStory" tags={['!autodocs']} />
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-const meta = {
-  component: Button,
-  //👇 Enables auto-generated documentation for this component and includes all stories in this file
-  tags: ['autodocs'],
-} satisfies Meta<typeof Button>;
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const UndocumentedStory: Story = {
-  // 👇 Removes this story from auto-generated documentation
-  tags: ['!autodocs'],
-};
-```
-
-```ts filename="Button.stories.ts" renderer="common" language="ts-4-9"
-// Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-  //👇 Enables auto-generated documentation for this component and includes all stories in this file
-  tags: ['autodocs'],
-} satisfies Meta<typeof Button>;
-export default meta;
-
-type Story = StoryObj<typeof meta>;
-
-export const UndocumentedStory: Story = {
   // 👇 Removes this story from auto-generated documentation
   tags: ['!autodocs'],
 };
@@ -141,18 +83,19 @@ export const UndocumentedStory: Story = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
   //👇 Enables auto-generated documentation for this component and includes all stories in this file
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Button>;
 export default meta;
 
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 export const UndocumentedStory: Story = {
   // 👇 Removes this story from auto-generated documentation
@@ -160,20 +103,20 @@ export const UndocumentedStory: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
+```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
   //👇 Enables auto-generated documentation for this component and includes all stories in this file
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Button>;
 export default meta;
 
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 export const UndocumentedStory: Story = {
   // 👇 Removes this story from auto-generated documentation
@@ -196,7 +139,7 @@ export const UndocumentedStory = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   title: 'Button',
@@ -212,4 +155,40 @@ export const UndocumentedStory: Story = {
   // 👇 Removes this story from auto-generated documentation
   tags: ['!autodocs'],
 };
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+
+export const UndocumentedStory = meta.story({
+  // 👇 Removes this story from auto-generated documentation
+  tags: ['!autodocs'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+
+export const UndocumentedStory = meta.story({
+  // 👇 Removes this story from auto-generated documentation
+  tags: ['!autodocs'],
+});
 ```

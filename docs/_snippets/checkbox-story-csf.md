@@ -50,7 +50,7 @@ export const Unchecked = {
 };
 ```
 
-```js filename="Checkbox.stories.js|jsx" renderer="common" language="js"
+```js filename="Checkbox.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Checkbox } from './Checkbox';
 
 export default {
@@ -58,64 +58,6 @@ export default {
 };
 
 export const Unchecked = {
-  args: {
-    label: 'Unchecked',
-  },
-};
-```
-
-```svelte filename="Checkbox.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Checkbox from './Checkbox.svelte';
-
-  const { Story } = defineMeta({
-    component: Checkbox,
-  });
-</script>
-
-<Story
-  name="Unchecked"
-  args={{
-    label: 'Unchecked',
-  }}
-/>
-```
-
-```ts filename="Checkbox.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import Checkbox from './Checkbox.svelte';
-
-const meta = {
-  component: Checkbox,
-} satisfies Meta<typeof Checkbox>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Unchecked: Story = {
-  args: {
-    label: 'Unchecked',
-  },
-};
-```
-
-```ts filename="Checkbox.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Checkbox } from './Checkbox';
-
-const meta = {
-  component: Checkbox,
-} satisfies Meta<typeof Checkbox>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const Unchecked: Story = {
   args: {
     label: 'Unchecked',
   },
@@ -142,16 +84,17 @@ export const Unchecked: Story = {
 ```
 
 ```ts filename="Checkbox.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Checkbox from './Checkbox.svelte';
 
-const meta: Meta<typeof Checkbox> = {
+const meta = {
   component: Checkbox,
-};
+} satisfies Meta<typeof Checkbox>;
 
 export default meta;
-type Story = StoryObj<typeof Checkbox>;
+type Story = StoryObj<typeof meta>;
 
 export const Unchecked: Story = {
   args: {
@@ -160,18 +103,18 @@ export const Unchecked: Story = {
 };
 ```
 
-```ts filename="Checkbox.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
+```ts filename="Checkbox.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Checkbox } from './Checkbox';
 
-const meta: Meta<typeof Checkbox> = {
+const meta = {
   component: Checkbox,
-};
+} satisfies Meta<typeof Checkbox>;
 
 export default meta;
-type Story = StoryObj<typeof Checkbox>;
+type Story = StoryObj<typeof meta>;
 
 export const Unchecked: Story = {
   args: {
@@ -194,7 +137,7 @@ export const Unchecked = {
 ```
 
 ```ts filename="Checkbox.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'checkbox-element',
@@ -208,4 +151,37 @@ export const Unchecked: Story = {
     label: 'Unchecked',
   },
 };
+```
+
+```ts filename="Checkbox.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  component: Checkbox,
+});
+
+export const Unchecked = meta.story({
+  args: {
+    label: 'Unchecked',
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Checkbox.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  component: Checkbox,
+});
+
+export const Unchecked = meta.story({
+  args: {
+    label: 'Unchecked',
+  },
+});
 ```

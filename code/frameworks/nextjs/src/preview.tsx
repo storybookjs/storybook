@@ -14,7 +14,6 @@ import { createRouter } from '@storybook/nextjs/router.mock';
 
 import { isNextRouterError } from 'next/dist/client/components/is-next-router-error';
 
-import './config/preview';
 import { HeadManagerDecorator } from './head-manager/decorator';
 import { ImageDecorator } from './images/decorator';
 import { RouterDecorator } from './routing/decorator';
@@ -30,7 +29,8 @@ function addNextHeadCount() {
 function isAsyncClientComponentError(error: unknown) {
   return (
     typeof error === 'string' &&
-    (error.includes('A component was suspended by an uncached promise.') ||
+    (error.includes('Only Server Components can be async at the moment.') ||
+      error.includes('A component was suspended by an uncached promise.') ||
       error.includes('async/await is not yet supported in Client Components'))
   );
 }

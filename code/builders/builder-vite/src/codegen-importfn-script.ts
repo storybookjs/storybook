@@ -1,6 +1,6 @@
 import type { Options } from 'storybook/internal/types';
 
-import { genDynamicImport, genImport, genObjectFromRawEntries } from 'knitwork';
+import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
 import { normalize, relative } from 'pathe';
 import { dedent } from 'ts-dedent';
 
@@ -50,6 +50,6 @@ export async function generateImportFnScriptCode(options: Options): Promise<stri
   const stories = await listStories(options);
 
   // We can then call toImportFn to create a function that can be used to load each story dynamically.
-  // eslint-disable-next-line @typescript-eslint/return-await
+
   return await toImportFn(stories);
 }

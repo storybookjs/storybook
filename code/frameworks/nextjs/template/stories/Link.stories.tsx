@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/nextjs';
 
 import Link from 'next/link';
 
@@ -37,16 +37,6 @@ const Component = () => (
     <li>
       <Link href="/replace-url" replace>
         Replace the URL instead of push
-      </Link>
-    </li>
-    <li>
-      <Link href="/legacy-behaviour" legacyBehavior>
-        <a>Legacy behavior</a>
-      </Link>
-    </li>
-    <li>
-      <Link href="/child-is-functional-component" passHref legacyBehavior>
-        <MyButton>child is a functional component</MyButton>
       </Link>
     </li>
     <li>

@@ -1,11 +1,10 @@
 ```ts filename="vitest.workspace.ts" renderer="react"
 import { defineWorkspace } from 'vitest/config';
-import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const dirname =
-  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineWorkspace([
   // This is the path to your existing Vitest config file
@@ -27,10 +26,10 @@ export default defineWorkspace([
       // Enable browser mode
       browser: {
         enabled: true,
-        name: 'chromium',
         // Make sure to install Playwright
         provider: 'playwright',
         headless: true,
+        instances: [{ browser: 'chromium' }],
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
@@ -40,14 +39,13 @@ export default defineWorkspace([
 
 ```ts filename="vitest.config.ts" renderer="vue"
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import viteConfig from './vite.config';
 
-const dirname =
-  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineWorkspace([
   // This is the path to your existing Vitest config file
@@ -69,10 +67,10 @@ export default defineWorkspace([
       // Enable browser mode
       browser: {
         enabled: true,
-        name: 'chromium',
         // Make sure to install Playwright
         provider: 'playwright',
         headless: true,
+        instances: [{ browser: 'chromium' }],
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },
@@ -82,14 +80,13 @@ export default defineWorkspace([
 
 ```ts filename="vitest.config.ts" renderer="svelte"
 import { defineConfig, mergeConfig } from 'vitest/config';
-import { storybookTest } from '@storybook/experimental-addon-test/vitest-plugin';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import viteConfig from './vite.config';
 
-const dirname =
-  typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineWorkspace([
   // This is the path to your existing Vitest config file
@@ -111,10 +108,10 @@ export default defineWorkspace([
       // Enable browser mode
       browser: {
         enabled: true,
-        name: 'chromium',
         // Make sure to install Playwright
         provider: 'playwright',
         headless: true,
+        instances: [{ browser: 'chromium' }],
       },
       setupFiles: ['./.storybook/vitest.setup.ts'],
     },

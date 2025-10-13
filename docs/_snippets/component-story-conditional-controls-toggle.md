@@ -54,7 +54,7 @@ export default {
 };
 ```
 
-```js filename="Button.stories.js|jsx" renderer="common" language="js"
+```js filename="Button.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -68,67 +68,6 @@ export default {
     cornerRadius: { control: 'number', if: { arg: 'advanced' } },
   },
 };
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    argTypes: {
-      label: { control: 'text' }, // Always shows the control
-      advanced: { control: 'boolean' },
-      // Only enabled if advanced is true
-      margin: { control: 'number', if: { arg: 'advanced' } },
-      padding: { control: 'number', if: { arg: 'advanced' } },
-      cornerRadius: { control: 'number', if: { arg: 'advanced' } },
-    },
-  });
-</script>
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-const meta = {
-  component: Button,
-  argTypes: {
-    label: { control: 'text' }, // Always shows the control
-    advanced: { control: 'boolean' },
-    // Only enabled if advanced is true
-    margin: { control: 'number', if: { arg: 'advanced' } },
-    padding: { control: 'number', if: { arg: 'advanced' } },
-    cornerRadius: { control: 'number', if: { arg: 'advanced' } },
-  },
-} satisfies Meta<typeof Button>;
-
-export default meta;
-```
-
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts-4-9"
-// Replace your-framework with the name of your framework
-import type { Meta } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-  argTypes: {
-    label: { control: 'text' }, // Always shows the control
-    advanced: { control: 'boolean' },
-    // Only enabled if advanced is true
-    margin: { control: 'number', if: { arg: 'advanced' } },
-    padding: { control: 'number', if: { arg: 'advanced' } },
-    cornerRadius: { control: 'number', if: { arg: 'advanced' } },
-  },
-} satisfies Meta<typeof Button>;
-
-export default meta;
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -152,11 +91,12 @@ export default meta;
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
   argTypes: {
     label: { control: 'text' }, // Always shows the control
@@ -166,18 +106,18 @@ const meta: Meta<typeof Button> = {
     padding: { control: 'number', if: { arg: 'advanced' } },
     cornerRadius: { control: 'number', if: { arg: 'advanced' } },
   },
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 ```
 
-```ts filename="Button.stories.ts|tsx" renderer="common" language="ts"
-// Replace your-framework with the name of your framework
+```ts filename="Button.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
   argTypes: {
     label: { control: 'text' }, // Always shows the control
@@ -187,7 +127,7 @@ const meta: Meta<typeof Button> = {
     padding: { control: 'number', if: { arg: 'advanced' } },
     cornerRadius: { control: 'number', if: { arg: 'advanced' } },
   },
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 ```
@@ -207,7 +147,7 @@ export default {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta } from '@storybook/web-components';
+import type { Meta } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   component: 'demo-button',
@@ -222,4 +162,41 @@ const meta: Meta = {
 };
 
 export default meta;
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    label: { control: 'text' }, // Always shows the control
+    advanced: { control: 'boolean' },
+    // Only enabled if advanced is true
+    margin: { control: 'number', if: { arg: 'advanced' } },
+    padding: { control: 'number', if: { arg: 'advanced' } },
+    cornerRadius: { control: 'number', if: { arg: 'advanced' } },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    label: { control: 'text' }, // Always shows the control
+    advanced: { control: 'boolean' },
+    // Only enabled if advanced is true
+    margin: { control: 'number', if: { arg: 'advanced' } },
+    padding: { control: 'number', if: { arg: 'advanced' } },
+    cornerRadius: { control: 'number', if: { arg: 'advanced' } },
+  },
+});
 ```

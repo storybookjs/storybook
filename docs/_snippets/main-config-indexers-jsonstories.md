@@ -1,4 +1,4 @@
-```js filename=".storybook/main.js" renderer="common" language="js"
+```js filename=".storybook/main.js" renderer="common" language="js" tabTitle="CSF 3"
 import fs from 'fs/promises';
 
 const jsonStoriesIndexer = {
@@ -8,11 +8,11 @@ const jsonStoriesIndexer = {
 
     const stories = generateStoryIndexesFromJson(content);
 
-    return stories.map((story) => {
+    return stories.map((story) => ({
       type: 'story',
       importPath: `virtual:jsonstories--${fileName}--${story.componentName}`,
-      exportName: story.name
-    });
+      exportName: story.name,
+    }));
   },
 };
 
@@ -24,16 +24,16 @@ const config = {
     // 👇 Make sure files to index are included in `stories`
     '../src/**/*.stories.json',
   ],
-  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer];
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
 };
 
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts-4-9"
-// Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
+```ts filename=".storybook/main.ts" renderer="common" language="ts" tabTitle="CSF 3"
+import type { Indexer } from 'storybook/internal/types';
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { StorybookConfig } from '@storybook/your-framework';
-import type { Indexer } from '@storybook/types';
 
 import fs from 'fs/promises';
 
@@ -44,11 +44,11 @@ const jsonStoriesIndexer: Indexer = {
 
     const stories = generateStoryIndexesFromJson(content);
 
-    return stories.map((story) => {
+    return stories.map((story) => ({
       type: 'story',
       importPath: `virtual:jsonstories--${fileName}--${story.componentName}`,
-      exportName: story.name
-    });
+      exportName: story.name,
+    }));
   },
 };
 
@@ -60,16 +60,16 @@ const config: StorybookConfig = {
     // 👇 Make sure files to index are included in `stories`
     '../src/**/*.stories.json',
   ],
-  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer];
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
 };
 
 export default config;
 ```
 
-```ts filename=".storybook/main.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., react-webpack5, vue3-vite)
-import type { StorybookConfig } from '@storybook/your-framework';
-import type { Indexer } from '@storybook/types';
+```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import type { Indexer } from 'storybook/internal/types';
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
 
 import fs from 'fs/promises';
 
@@ -80,15 +80,15 @@ const jsonStoriesIndexer: Indexer = {
 
     const stories = generateStoryIndexesFromJson(content);
 
-    return stories.map((story) => {
+    return stories.map((story) => ({
       type: 'story',
       importPath: `virtual:jsonstories--${fileName}--${story.componentName}`,
-      exportName: story.name
-    });
+      exportName: story.name,
+    }));
   },
 };
 
-const config: StorybookConfig = {
+export default defineMain({
   framework: '@storybook/your-framework',
   stories: [
     '../src/**/*.mdx',
@@ -96,8 +96,41 @@ const config: StorybookConfig = {
     // 👇 Make sure files to index are included in `stories`
     '../src/**/*.stories.json',
   ],
-  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer];
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
+import { defineMain } from '@storybook/your-framework/node';
+
+import fs from 'fs/promises';
+
+const jsonStoriesIndexer = {
+  test: /stories\.json$/,
+  createIndex: async (fileName) => {
+    const content = JSON.parse(fs.readFileSync(fileName));
+
+    const stories = generateStoryIndexesFromJson(content);
+
+    return stories.map((story) => ({
+      type: 'story',
+      importPath: `virtual:jsonstories--${fileName}--${story.componentName}`,
+      exportName: story.name,
+    }));
+  },
 };
 
-export default config;
+export default defineMain({
+  framework: '@storybook/your-framework',
+  stories: [
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    // 👇 Make sure files to index are included in `stories`
+    '../src/**/*.stories.json',
+  ],
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
+});
 ```

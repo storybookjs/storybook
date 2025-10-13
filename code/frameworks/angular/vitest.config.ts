@@ -7,6 +7,7 @@ export default mergeConfig(
   defineConfig({
     // Add custom config here
     test: {
+      globals: true,
       setupFiles: ['src/test-setup.ts'],
     },
   })

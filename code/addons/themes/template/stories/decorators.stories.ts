@@ -1,5 +1,3 @@
-import { useEffect } from 'storybook/internal/preview-api';
-
 import { global as globalThis } from '@storybook/global';
 
 import {
@@ -7,6 +5,8 @@ import {
   withThemeByDataAttribute,
   withThemeFromJSXProvider,
 } from '@storybook/addon-themes';
+
+import { useEffect } from 'storybook/preview-api';
 
 const cleanup = () => {
   const existing = globalThis.document.querySelector('style[data-theme-css]');
@@ -41,7 +41,7 @@ const addStyleSheetDecorator = (storyFn: any) => {
 };
 
 export default {
-  component: globalThis.Components.Pre,
+  component: globalThis.__TEMPLATE_COMPONENTS__.Pre,
   args: {
     text: 'Testing the themes',
   },

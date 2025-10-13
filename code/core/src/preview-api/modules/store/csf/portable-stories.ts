@@ -1,6 +1,6 @@
-/* eslint-disable no-underscore-dangle */
-
-/* eslint-disable @typescript-eslint/naming-convention */
+import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
+import { getCoreAnnotations } from 'storybook/internal/csf';
+import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
   Canvas,
@@ -18,16 +18,20 @@ import type {
   Store_CSFExports,
   StoryContext,
   StrictArgTypes,
-} from '@storybook/core/types';
-import { type CleanupCallback, isExportStory } from '@storybook/csf';
+} from 'storybook/internal/types';
 
-import { MountMustBeDestructuredError } from '@storybook/core/preview-errors';
-
+import type { UserEventObject } from 'storybook/test';
 import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons';
+import {
+  isTestEnvironment,
+  pauseAnimations,
+  waitForAnimations,
+} from '../../preview-web/render/animation-utils';
 import { ReporterAPI } from '../reporter-api';
 import { composeConfigs } from './composeConfigs';
+import { getCsfFactoryAnnotations } from './csf-factory-utils';
 import { getValuesFromArgTypes } from './getValuesFromArgTypes';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
@@ -72,19 +76,13 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
-  globalThis.globalProjectAnnotations = composeConfigs(annotations.map(extractAnnotation));
-
-  /*
-    We must return the composition of default and global annotations here
-    To ensure that the user has the full project annotations, eg. when running
-
-    const projectAnnotations = setProjectAnnotations(...);
-    beforeAll(projectAnnotations.beforeAll)
-  */
-  return composeConfigs([
+  globalThis.globalProjectAnnotations = composeConfigs([
+    ...getCoreAnnotations(),
     globalThis.defaultProjectAnnotations ?? {},
-    globalThis.globalProjectAnnotations ?? {},
+    composeConfigs(annotations.map(extractAnnotation)),
   ]);
+
+  return globalThis.globalProjectAnnotations ?? {};
 }
 
 const cleanups: CleanupCallback[] = [];
@@ -122,10 +120,7 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
 
   const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
     composeConfigs([
-      defaultConfig && Object.keys(defaultConfig).length > 0
-        ? defaultConfig
-        : (globalThis.defaultProjectAnnotations ?? {}),
-      globalThis.globalProjectAnnotations ?? {},
+      defaultConfig ?? globalThis.globalProjectAnnotations ?? {},
       projectAnnotations ?? {},
     ])
   );
@@ -137,8 +132,8 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
   );
 
   const globalsFromGlobalTypes = getValuesFromArgTypes(normalizedProjectAnnotations.globalTypes);
+
   const globals = {
-    // TODO: remove loading from globalTypes in 9.0
     ...globalsFromGlobalTypes,
     ...normalizedProjectAnnotations.initialGlobals,
     ...story.storyGlobals,
@@ -158,17 +153,23 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
       step: (label, play) => story.runStep(label, play, context),
       canvasElement: null!,
       canvas: {} as Canvas,
+      userEvent: {} as UserEventObject,
       globalTypes: normalizedProjectAnnotations.globalTypes,
       ...story,
       context: null!,
       mount: null!,
     });
 
+    context.parameters.__isPortableStory = true;
+
     context.context = context;
 
     if (story.renderToCanvas) {
       context.renderToCanvas = async () => {
-        // Consolidate this renderContext with Context in SB 9.0
+        // TODO: Consolidate this renderContext with Context in SB 10.0
+        // Change renderToCanvas function to only use the context object
+        // and to make the renderContext an internal implementation detail
+        // wasnt'possible so far because showError and showException are not part of the story context (yet)
         const unmount = await story.renderToCanvas?.(
           {
             componentId: story.componentId,
@@ -275,27 +276,34 @@ export function composeStories<TModule extends Store_CSFExports>(
   globalConfig: ProjectAnnotations<Renderer>,
   composeStoryFn: ComposeStoryFn = defaultComposeStory
 ) {
-  const { default: meta, __esModule, __namedExportsOrder, ...stories } = storiesImport;
-  const composedStories = Object.entries(stories).reduce((storiesMap, [exportsName, story]) => {
-    if (!isExportStory(exportsName, meta)) {
-      return storiesMap;
-    }
+  const { default: metaExport, __esModule, __namedExportsOrder, ...stories } = storiesImport;
+  let meta = metaExport;
 
-    const result = Object.assign(storiesMap, {
-      [exportsName]: composeStoryFn(
-        story as LegacyStoryAnnotationsOrFn,
-        meta,
-        globalConfig,
-        exportsName
-      ),
-    });
-    return result;
-  }, {});
+  const composedStories = Object.entries(stories).reduce(
+    (storiesMap, [exportsName, story]: [string, any]) => {
+      const { story: storyAnnotations, meta: componentAnnotations } =
+        getCsfFactoryAnnotations(story);
+      if (!meta && componentAnnotations) {
+        meta = componentAnnotations;
+      }
+
+      if (!isExportStory(exportsName, meta)) {
+        return storiesMap;
+      }
+      const result = Object.assign(storiesMap, {
+        [exportsName]: composeStoryFn(storyAnnotations, meta, globalConfig, exportsName),
+      });
+      return result;
+    },
+    {}
+  );
 
   return composedStories;
 }
 
-type WrappedStoryRef = { __pw_type: 'jsx' | 'importRef' };
+type WrappedStoryRef =
+  | { __pw_type: 'jsx'; props: Record<string, any> }
+  | { __pw_type: 'importRef' };
 type UnwrappedJSXStoryRef = {
   __pw_type: 'jsx';
   type: UnwrappedImportStoryRef;
@@ -331,16 +339,20 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
               do:
               await mount(<MyComponent foo="bar"/>)
 
-              More info: https://storybook.js.org/docs/api/portable-stories-playwright
+              More info: https://storybook.js.org/docs/api/portable-stories/portable-stories-playwright?ref=error
             `);
         }
+
+        // Props are not necessarily serialisable and so can't be passed to browser via
+        // `page.evaluate`. Regardless they are not needed for storybook load/play steps.
+        const { props, ...storyRefWithoutProps } = storyRef;
 
         await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
           const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
           const story =
             '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
           return story?.load?.();
-        }, storyRef);
+        }, storyRefWithoutProps);
 
         // mount the story
         const mountResult = await mount(storyRef, ...restArgs);
@@ -352,7 +364,7 @@ export function createPlaywrightTest<TFixture extends { extend: any }>(
             '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
           const canvasElement = document.querySelector('#root');
           return story?.play?.({ canvasElement });
-        }, storyRef);
+        }, storyRefWithoutProps);
 
         return mountResult;
       });
@@ -411,5 +423,14 @@ async function runStory<TRenderer extends Renderer>(
     await playFunction(context);
   }
 
+  let cleanUp: CleanupCallback | undefined;
+  if (isTestEnvironment()) {
+    cleanUp = pauseAnimations();
+  } else {
+    await waitForAnimations(context.abortSignal);
+  }
+
   await story.applyAfterEach(context);
+
+  await cleanUp?.();
 }

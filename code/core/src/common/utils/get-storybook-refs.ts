@@ -1,15 +1,16 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import type { Options, Ref } from '@storybook/core/types';
+import { logger } from 'storybook/internal/node-logger';
+import type { Options, Ref } from 'storybook/internal/types';
 
-import { logger } from '@storybook/core/node-logger';
+import * as pkg from 'empathic/package';
+import * as resolve from 'empathic/resolve';
 
-import { findUp } from 'find-up';
-import resolveFrom from 'resolve-from';
+import { getProjectRoot } from './paths';
 
 export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>> => {
-  const location = await findUp('package.json', { cwd: options.configDir });
+  const location = pkg.up({ cwd: options.configDir, last: getProjectRoot() });
   if (!location) {
     return {};
   }
@@ -22,7 +23,7 @@ export const getAutoRefs = async (options: Options): Promise<Record<string, Ref>
   const list = await Promise.all(
     deps.map(async (d) => {
       try {
-        const l = resolveFrom(directory, join(d, 'package.json'));
+        const l = resolve.from(directory, join(d, 'package.json'));
 
         const { storybook, name, version } =
           JSON.parse(await readFile(l, { encoding: 'utf8' })) || {};
@@ -114,7 +115,7 @@ export async function getRefs(options: Options) {
     };
   });
 
-  // verify the refs are publicly reachable, if they are not we'll require stories.json at runtime, otherwise the ref won't work
+  // verify the refs are publicly reachable, if they are not we'll fetch stories.json at runtime, otherwise the ref won't work
   await Promise.all(
     Object.entries(refs).map(async ([k, value]) => {
       const ok = await checkRef(value.url);

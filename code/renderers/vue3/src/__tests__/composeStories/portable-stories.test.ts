@@ -1,13 +1,12 @@
 // @vitest-environment happy-dom
 /// <reference types="@testing-library/jest-dom" />;
-import { render, screen } from '@testing-library/vue';
-import { describe, expect, it, vi } from 'vitest';
-
-import { addons } from 'storybook/internal/preview-api';
+import { cleanup, render, screen } from '@testing-library/vue';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Meta } from '@storybook/vue3';
 
 import { expectTypeOf } from 'expect-type';
+import { addons } from 'storybook/preview-api';
 
 import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
 import * as stories from './Button.stories';
@@ -20,6 +19,10 @@ const { CSF3Primary, LoaderStory } = composeStories(stories);
 
 // example with composeStory, returns a single story composed with args/decorators
 const Secondary = composeStory(stories.CSF2Secondary, stories.default);
+
+afterEach(() => {
+  cleanup();
+});
 
 describe('renders', () => {
   it('renders primary button', () => {
@@ -63,9 +66,7 @@ describe('projectAnnotations', () => {
     setProjectAnnotations([
       {
         parameters: { injected: true },
-        globalTypes: {
-          locale: { defaultValue: 'en' },
-        },
+        initialGlobals: { locale: 'en' },
       },
     ]);
     const WithEnglishText = composeStory(stories.CSF2StoryWithLocale, stories.default);

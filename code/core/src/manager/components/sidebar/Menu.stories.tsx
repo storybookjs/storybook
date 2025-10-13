@@ -1,12 +1,14 @@
 import React from 'react';
 
-import { TooltipLinkList } from '@storybook/core/components';
-import { styled } from '@storybook/core/theming';
-import { LinkIcon } from '@storybook/icons';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, screen, userEvent, within } from '@storybook/test';
+import { TooltipLinkList } from 'storybook/internal/components';
 
-import type { State } from '@storybook/core/manager-api';
+import { LinkIcon } from '@storybook/icons';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import type { State } from 'storybook/manager-api';
+import { expect, screen, userEvent, within } from 'storybook/test';
+import { styled } from 'storybook/theming';
 
 import { useMenu } from '../../container/Menu';
 import { LayoutProvider } from '../layout/LayoutProvider';
@@ -54,13 +56,13 @@ export const Expanded: Story = {
   globals: { sb_theme: 'light' },
   render: () => {
     const menu = useMenu(
-      { whatsNewData: { status: 'SUCCESS', disableWhatsNewNotifications: false } } as State,
+      { whatsNewData: undefined } as State,
       {
         // @ts-expect-error (Converted from ts-ignore)
         getShortcutKeys: () => ({}),
         getAddonsShortcuts: () => ({}),
         versionUpdateAvailable: () => false,
-        isWhatsNewUnread: () => true,
+        isWhatsNewUnread: () => false,
         getDocsUrl: () => 'https://storybook.js.org/docs/',
       },
       false,
@@ -71,7 +73,7 @@ export const Expanded: Story = {
     );
     return (
       <DoubleThemeRenderingHack>
-        <SidebarMenu menu={menu} isHighlighted />
+        <SidebarMenu menu={menu} />
       </DoubleThemeRenderingHack>
     );
   },
@@ -94,17 +96,68 @@ export const Expanded: Story = {
   ],
 };
 
-export const ExpandedWithoutWhatsNew: Story = {
+export const ExpandedWithShortcuts: Story = {
   ...Expanded,
   render: () => {
     const menu = useMenu(
       { whatsNewData: undefined } as State,
       {
         // @ts-expect-error (invalid)
-        getShortcutKeys: () => ({}),
+        getShortcutKeys: () => ({
+          shortcutsPage: ['⌘', '⇧​', ','],
+          toggleNav: ['⌥', 'S'],
+          togglePanel: ['⌥', 'A'],
+          toolbar: ['⌥', 'T'],
+          panelPosition: ['⌥', 'D'],
+          fullScreen: ['⌥', 'F'],
+          search: ['⌥', 'K'],
+          prevComponent: ['⌥', '↑'],
+          nextComponent: ['⌥', '↓'],
+          prevStory: ['⌥', '←'],
+          nextStory: ['⌥', '→'],
+          collapseAll: ['⌥', '⇧', '↑'],
+        }),
         getAddonsShortcuts: () => ({}),
         versionUpdateAvailable: () => false,
         isWhatsNewUnread: () => false,
+        getDocsUrl: () => 'https://storybook.js.org/docs/',
+      },
+      false,
+      false,
+      false,
+      false,
+      true
+    );
+
+    return (
+      <DoubleThemeRenderingHack>
+        <SidebarMenu menu={menu} />
+      </DoubleThemeRenderingHack>
+    );
+  },
+  play: async (context) => {
+    const canvas = within(context.canvasElement);
+    await new Promise((res) => {
+      setTimeout(res, 500);
+    });
+    // @ts-expect-error (non strict)
+    await Expanded.play(context);
+    const releaseNotes = await canvas.queryByText(/What's new/);
+    await expect(releaseNotes).not.toBeInTheDocument();
+  },
+};
+
+export const ExpandedWithWhatsNew: Story = {
+  ...Expanded,
+  render: () => {
+    const menu = useMenu(
+      { whatsNewData: { status: 'SUCCESS', disableWhatsNewNotifications: false } } as State,
+      {
+        // @ts-expect-error (invalid)
+        getShortcutKeys: () => ({}),
+        getAddonsShortcuts: () => ({}),
+        versionUpdateAvailable: () => false,
+        isWhatsNewUnread: () => true,
         getDocsUrl: () => 'https://storybook.js.org/docs/',
       },
       false,
@@ -116,7 +169,7 @@ export const ExpandedWithoutWhatsNew: Story = {
 
     return (
       <DoubleThemeRenderingHack>
-        <SidebarMenu menu={menu} />
+        <SidebarMenu menu={menu} isHighlighted />
       </DoubleThemeRenderingHack>
     );
   },

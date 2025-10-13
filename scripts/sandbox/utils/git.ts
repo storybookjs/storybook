@@ -10,11 +10,11 @@ const getTheLastCommitHashThatUpdatedTheSandboxRepo = async (branch: string) => 
   const repo = 'sandboxes';
 
   try {
-    const branchData = await (
+    const branchData: any = await (
       await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${branch}`)
     ).json();
     const latestCommitSha = branchData.commit.sha;
-    const commitData = await (
+    const commitData: any = await (
       await fetch(`https://api.github.com/repos/${owner}/${repo}/commits/${latestCommitSha}`)
     ).json();
     const latestCommitMessage = commitData.commit.message;

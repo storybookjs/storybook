@@ -1,5 +1,5 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
-import { toId } from '@storybook/csf';
+import { toId } from 'storybook/internal/csf';
 
 import type { Expect, Page } from '@playwright/test';
 
@@ -30,10 +30,10 @@ export class SbPage {
   }
 
   /** Visit a story via the URL instead of selecting from the sidebar. */
-  async deepLinkToStory(baseURL: string, title: string, name: 'docs' | string) {
+  async deepLinkToStory(baseURL: string, title: string, name: 'docs' | string, testName?: string) {
     const titleId = toId(title);
     const storyId = toId(name);
-    const storyLinkId = `${titleId}--${storyId}`;
+    const storyLinkId = testName ? `${titleId}--${storyId}:${testName}` : `${titleId}--${storyId}`;
     const viewMode = name === 'docs' ? 'docs' : 'story';
     await this.page.goto(`${baseURL}/?path=/${viewMode}/${storyLinkId}`);
 
@@ -42,7 +42,12 @@ export class SbPage {
   }
 
   /** Visit a story by selecting it from the sidebar. */
-  async navigateToStory(title: string, name: string, viewMode?: 'docs' | 'story') {
+  async navigateToStory(
+    title: string,
+    name: string,
+    viewMode?: 'docs' | 'story',
+    skipWaitUntilLoaded = false
+  ) {
     await this.openComponent(title);
 
     const titleId = toId(title);
@@ -54,7 +59,7 @@ export class SbPage {
 
     await this.page.waitForURL((url) =>
       url.search.includes(
-        `path=/${(viewMode ?? name === 'docs') ? 'docs' : 'story'}/${titleId}--${storyId}`
+        `path=/${viewMode ?? (name === 'docs' ? 'docs' : 'story')}/${titleId}--${storyId}`
       )
     );
 
@@ -62,7 +67,10 @@ export class SbPage {
     await this.expect(selected).toHaveAttribute('data-selected', 'true');
 
     await this.previewRoot();
-    await this.waitUntilLoaded();
+
+    if (!skipWaitUntilLoaded) {
+      await this.waitUntilLoaded();
+    }
   }
 
   async navigateToUnattachedDocs(title: string, name = 'docs') {
@@ -87,6 +95,9 @@ export class SbPage {
 
   async waitForStoryLoaded() {
     try {
+      // wait for the story to be visited
+      await this.page.waitForURL((url) => url.search.includes(`path`));
+
       const root = this.previewRoot();
       // Wait until there is at least one child (a story element) in the preview iframe
       await root.locator(':scope > *').first().waitFor({
@@ -162,6 +173,58 @@ export class SbPage {
     }
   }
 
+  async expandAllSidebarNodes() {
+    await this.page.keyboard.press('Escape');
+    await this.page.keyboard.press(
+      `${process.platform === 'darwin' ? 'Meta' : 'Control'}+Shift+ArrowDown`
+    );
+  }
+
+  async openTagsFilter() {
+    const tagFiltersButton = this.page.locator('[title="Tag filters"]');
+    const tooltip = this.page.locator('[data-testid="tooltip"]');
+    const isTooltipVisible = await tooltip.isVisible();
+
+    if (!isTooltipVisible) {
+      await tagFiltersButton.click();
+      await this.expect(tooltip).toBeVisible();
+    }
+
+    return tooltip;
+  }
+
+  async clearTagsFilter() {
+    const tooltip = await this.openTagsFilter();
+    await this.expect(tooltip.locator('#deselect-all')).toBeVisible();
+    await tooltip.locator('#deselect-all').click();
+    return tooltip;
+  }
+
+  async toggleTagFilter(tag: string, toggleExclusion?: boolean) {
+    await this.openTagsFilter();
+
+    if (toggleExclusion) {
+      await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).hover();
+      await this.page.getByLabel(new RegExp(`(Exclude|Include) tag: ${tag}`)).click();
+    } else {
+      await this.page.getByLabel(new RegExp(`tag filter: ${tag}`)).click();
+    }
+  }
+
+  async toggleStoryTypeFilter(
+    type: 'Documentation' | 'Play' | 'Testing',
+    toggleExclusion?: boolean
+  ) {
+    await this.openTagsFilter();
+
+    if (toggleExclusion) {
+      await this.page.getByLabel(new RegExp(`filter: ${type}`)).hover();
+      await this.page.getByLabel(new RegExp(`(Exclude|Include) built-in: ${type}`, 'i')).click();
+    } else {
+      await this.page.getByLabel(new RegExp(`(Add|Remove) built-in filter: ${type}`)).click();
+    }
+  }
+
   getCanvasBodyElement() {
     return this.previewIframe().locator('body');
   }
@@ -194,5 +257,24 @@ export class SbPage {
 const templateName: keyof typeof allTemplates = process.env.STORYBOOK_TEMPLATE_NAME || ('' as any);
 
 const templates = allTemplates;
+
+export const isReactSandbox = (templateName: string) =>
+  templates[templateName as keyof typeof templates]?.expected.renderer === '@storybook/react';
+
 export const hasVitestIntegration =
   !templates[templateName]?.skipTasks?.includes('vitest-integration');
+
+export const checkTemplate = (
+  templateName: string,
+  predicate: (template: (typeof templates)[keyof typeof templates]) => boolean
+) => {
+  return (
+    templates[templateName as keyof typeof templates] &&
+    predicate(templates[templateName as keyof typeof templates])
+  );
+};
+
+export const hasOnboardingFeature = (templateName: string) =>
+  ['@storybook/react', '@storybook/vue3', '@storybook/angular'].includes(
+    templates[templateName as keyof typeof templates]?.expected.renderer
+  );

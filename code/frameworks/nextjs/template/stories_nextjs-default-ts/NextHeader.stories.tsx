@@ -1,6 +1,7 @@
+import type { Meta, StoryObj } from '@storybook/nextjs';
 import { cookies, headers } from '@storybook/nextjs/headers.mock';
-import type { Meta, StoryObj } from '@storybook/react';
-import { expect, userEvent, within } from '@storybook/test';
+
+import { expect, userEvent, within } from 'storybook/test';
 
 import NextHeader from './NextHeader';
 

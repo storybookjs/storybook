@@ -1,4 +1,5 @@
 import { join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   getBuilderOptions,
@@ -33,7 +34,6 @@ export const getVirtualModules = async (options: Options) => {
         // If entry is an object, use the absolute import specifier.
         // This is to maintain back-compat with community addons that bundle other addons
         // and package managers that "hide" sub dependencies (e.g. pnpm / yarn pnp)
-        // The vite builder uses the bare import specifier.
         if (typeof entry === 'object') {
           return entry.absolute;
         }
@@ -52,7 +52,9 @@ export const getVirtualModules = async (options: Options) => {
   const configEntryPath = resolve(join(workingDir, 'storybook-config-entry.js'));
   virtualModules[configEntryPath] = (
     await readTemplate(
-      require.resolve('@storybook/builder-webpack5/templates/virtualModuleModernEntry.js')
+      fileURLToPath(
+        import.meta.resolve('@storybook/builder-webpack5/templates/virtualModuleModernEntry.js')
+      )
     )
   )
     .replaceAll(`'{{storiesFilename}}'`, `'./${storiesFilename}'`)

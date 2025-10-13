@@ -1,0 +1,42 @@
+diff --git a/dist/index.js b/dist/index.js
+index db037119d94c99375829ae8b8c91e9a67a3ca845..4ebf87ff561d9d94af71e61cc52afe37f40a3c62 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -6,7 +6,9 @@ import { processError } from '@vitest/utils/error';
+ import { use, util } from 'chai';
+ 
+ const MATCHERS_OBJECT = Symbol.for("matchers-object");
+-const JEST_MATCHERS_OBJECT = Symbol.for("$$jest-matchers-object");
++// Patched this symbol for storybook, so that storybook/test can be used in a jest environment as well.
++// Otherwise, vitest will override global jest matchers, and crash.
++const JEST_MATCHERS_OBJECT = Symbol.for("$$jest-matchers-object-storybook");
+ const GLOBAL_EXPECT = Symbol.for("expect-global");
+ const ASYMMETRIC_MATCHERS_OBJECT = Symbol.for("asymmetric-matchers-object");
+ 
+@@ -660,18 +662,22 @@ function getObjectSubset(object, subset, customTesters) {
+ 
+ if (!Object.prototype.hasOwnProperty.call(globalThis, MATCHERS_OBJECT)) {
+ 	const globalState = new WeakMap();
+-	const matchers = Object.create(null);
+-	const customEqualityTesters = [];
+-	const asymmetricMatchers = Object.create(null);
+ 	Object.defineProperty(globalThis, MATCHERS_OBJECT, { get: () => globalState });
++}
++if (!Object.prototype.hasOwnProperty.call(globalThis, JEST_MATCHERS_OBJECT)) {
++  const matchers = Object.create(null);
++  const customEqualityTesters = [];
+ 	Object.defineProperty(globalThis, JEST_MATCHERS_OBJECT, {
+ 		configurable: true,
+ 		get: () => ({
+-			state: globalState.get(globalThis[GLOBAL_EXPECT]),
++			state: globalThis[MATCHERS_OBJECT].get(globalThis[GLOBAL_EXPECT]),
+ 			matchers,
+ 			customEqualityTesters
+ 		})
+ 	});
++}
++if (!Object.prototype.hasOwnProperty.call(globalThis, ASYMMETRIC_MATCHERS_OBJECT)) {
++  const asymmetricMatchers = Object.create(null);
+ 	Object.defineProperty(globalThis, ASYMMETRIC_MATCHERS_OBJECT, { get: () => asymmetricMatchers });
+ }
+ function getState(expect) {

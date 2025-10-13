@@ -83,7 +83,7 @@ export const ExperimentalFeatureStory = {
 };
 ```
 
-```js filename="Button.stories.js" renderer="common" language="js"
+```js filename="Button.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { Button } from './Button';
 
 export default {
@@ -98,97 +98,6 @@ export default {
 };
 
 export const ExperimentalFeatureStory = {
-  /*
-   * This particular story will have these tags applied:
-   * - experimental
-   * - autodocs (inherited from meta)
-   * - dev (inherited from meta)
-   * - test (inherited from meta)
-   */
-  tags: ['experimental'],
-};
-```
-
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts-4-9" tabTitle="Svelte CSF"
-<script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
-
-  import Button from './Button.svelte';
-
-  const { Story } = defineMeta({
-    component: Button,
-    /*
-     * All stories in this file will have these tags applied:
-     * - autodocs
-     * - dev (implicit default, inherited from preview)
-     * - test (implicit default, inherited from preview)
-     */
-    tags: ['autodocs'],
-  });
-</script>
-
-<!--
-  This particular story will have these tags applied:
-  - experimental
-  - autodocs (inherited from meta)
-  - dev (inherited from meta)
-  - test (inherited from meta)
--->
-<Story name="ExperimentalFeatureStory" tags={['experimental']} />
-```
-
-```ts filename="Button.stories.ts" renderer="svelte" language="ts-4-9" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
-
-import Button from './Button.svelte';
-
-const meta = {
-  component: Button,
-  /*
-   * All stories in this file will have these tags applied:
-   * - autodocs
-   * - dev (implicit default, inherited from preview)
-   * - test (implicit default, inherited from preview)
-   */
-  tags: ['autodocs'],
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ExperimentalFeatureStory: Story = {
-  /*
-   * This particular story will have these tags applied:
-   * - experimental
-   * - autodocs (inherited from meta)
-   * - dev (inherited from meta)
-   * - test (inherited from meta)
-   */
-  tags: ['experimental'],
-};
-```
-
-```ts filename="Button.stories.ts" renderer="common" language="ts-4-9"
-// Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
-import { Button } from './Button';
-
-const meta = {
-  component: Button,
-  /*
-   * All stories in this file will have these tags applied:
-   * - autodocs
-   * - dev (implicit default, inherited from preview)
-   * - test (implicit default, inherited from preview)
-   */
-  tags: ['autodocs'],
-} satisfies Meta<typeof Button>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ExperimentalFeatureStory: Story = {
   /*
    * This particular story will have these tags applied:
    * - experimental
@@ -229,11 +138,12 @@ export const ExperimentalFeatureStory: Story = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF"
-import type { Meta, StoryObj } from '@storybook/svelte';
+// Replace your-framework with svelte-vite or sveltekit
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import Button from './Button.svelte';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
   /*
    * All stories in this file will have these tags applied:
@@ -242,10 +152,10 @@ const meta: Meta<typeof Button> = {
    * - test (implicit default, inherited from preview)
    */
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 export const ExperimentalFeatureStory: Story = {
   /*
@@ -259,13 +169,13 @@ export const ExperimentalFeatureStory: Story = {
 };
 ```
 
-```ts filename="Button.stories.ts" renderer="common" language="ts"
-// Replace your-framework with the framework you are using (e.g., nextjs, vue3-vite)
+```ts filename="Button.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { Button } from './Button';
 
-const meta: Meta<typeof Button> = {
+const meta = {
   component: Button,
   /*
    * All stories in this file will have these tags applied:
@@ -274,10 +184,10 @@ const meta: Meta<typeof Button> = {
    * - test (implicit default, inherited from preview)
    */
   tags: ['autodocs'],
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
-type Story = StoryObj<typeof Button>;
+type Story = StoryObj<typeof meta>;
 
 export const ExperimentalFeatureStory: Story = {
   /*
@@ -317,7 +227,7 @@ export const ExperimentalFeatureStory = {
 ```
 
 ```ts filename="Button.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 const meta: Meta = {
   title: 'Button',
@@ -344,4 +254,62 @@ export const ExperimentalFeatureStory: Story = {
    */
   tags: ['experimental'],
 };
+```
+
+```ts filename="Button.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  /*
+   * All stories in this file will have these tags applied:
+   * - autodocs
+   * - dev (implicit default, inherited from preview)
+   * - test (implicit default, inherited from preview)
+   */
+  tags: ['autodocs'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  /*
+   * This particular story will have these tags applied:
+   * - experimental
+   * - autodocs (inherited from meta)
+   * - dev (inherited from meta)
+   * - test (inherited from meta)
+   */
+  tags: ['experimental'],
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+
+  /*
+   * All stories in this file will have these tags applied:
+   * - autodocs
+   * - dev (implicit default, inherited from preview)
+   * - test (implicit default, inherited from preview)
+   */
+  tags: ['autodocs'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  /*
+   * This particular story will have these tags applied:
+   * - experimental
+   * - autodocs (inherited from meta)
+   * - dev (inherited from meta)
+   * - test (inherited from meta)
+   */
+  tags: ['experimental'],
+});
 ```

@@ -12,11 +12,6 @@ import { ListItem } from './list-item.component';
 import { Unchecked } from './ListItem.stories';
 
 const meta: Meta<List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
   decorators: [
     moduleMetadata({
@@ -60,7 +55,7 @@ export const OneItem: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -68,11 +63,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -108,8 +98,9 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -118,11 +109,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 const meta = {
-  /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 } satisfies Meta<typeof List>;
 
@@ -157,56 +143,7 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-//👇 Imports a specific story from ListItem stories
-import { Unchecked } from './ListItem.stories';
-
-const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
-
-//👇 The ListTemplate construct will be spread to the existing stories.
-const ListTemplate: Story = {
-  render: ({ items, ...args }) => {
-    return (
-      <List>
-        {items.map((item) => (
-          <ListItem {...item} />
-        ))}
-      </List>
-    );
-  },
-};
-
-export const Empty = {
-  ...ListTemplate,
-  args: {
-    items: [],
-  },
-};
-
-export const OneItem = {
-  ...ListTemplate,
-  args: {
-    items: [{ ...Unchecked.args }],
-  },
-};
-```
-
-```js filename="List.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -214,11 +151,6 @@ import { ListItem } from './ListItem';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -250,61 +182,12 @@ export const OneItem = {
         ...Unchecked.args,
       },
     ],
-  },
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-//👇 Imports a specific story from ListItem stories
-import { Unchecked } from './ListItem.stories';
-
-const meta = {
-  /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-} satisfies Meta<typeof List>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-//👇 The ListTemplate construct will be spread to the existing stories.
-const ListTemplate: Story = {
-  render: ({ items, ...args }) => {
-    return (
-      <List>
-        {items.map((item) => (
-          <ListItem {...item} />
-        ))}
-      </List>
-    );
-  },
-};
-
-export const Empty = {
-  ...ListTemplate,
-  args: {
-    items: [],
-  },
-};
-
-export const OneItem = {
-  ...ListTemplate,
-  args: {
-    items: [{ ...Unchecked.args }],
   },
 };
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -312,17 +195,12 @@ import { ListItem } from './ListItem';
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
-const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * Seehttps://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
+const meta = {
   component: List,
-};
+} satisfies Meta<typeof List>;
 
 export default meta;
-type Story = StoryObj<typeof List>;
+type Story = StoryObj<typeof meta>;
 
 //👇 The ListTemplate construct will be spread to the existing stories.
 const ListTemplate: Story = {
@@ -350,6 +228,82 @@ export const OneItem = {
     items: [{ ...Unchecked.args }],
   },
 };
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 Imports a specific story from ListItem stories
+  import { Unchecked } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<!--
+  The template construct will be spread to the existing stories.
+  It's based on Svelte's snippet syntax allowing you share the same UI with small variations.
+-->
+{#snippet template(args)}
+  <List {...args}>
+    {#each args.items as item}
+      <ListItem {...item} />
+    {/each}
+  </List>
+{/snippet}
+
+<Story name="Empty" args={{ items: [] }} {template} />
+
+<Story
+  name="One Item"
+  args={{
+    items: [{ ...Unchecked.args }],
+  }}
+  {template}
+/>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 Imports a specific story from ListItem stories
+  import { Unchecked } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<!--
+  The template construct will be spread to the existing stories.
+  It's based on Svelte's snippet syntax allowing you share the same UI with small variations.
+-->
+{#snippet template(args)}
+  <List {...args}>
+    {#each args.items as item}
+      <ListItem {...item} />
+    {/each}
+  </List>
+{/snippet}
+
+<Story name="Empty" args={{ items: [] }} {template} />
+
+<Story
+  name="One Item"
+  args={{
+    items: [{ ...Unchecked.args }],
+  }}
+  {template}
+/>
 ```
 
 ```js filename="List.stories.js" renderer="vue" language="js"
@@ -360,11 +314,6 @@ import ListItem from './ListItem.vue';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
   component: List,
 };
 
@@ -392,62 +341,6 @@ export const Empty = {
   },
 };
 export const OneItem = {
-  ...ListTemplate,
-  args: {
-    items: [
-      {
-        ...Unchecked.args,
-      },
-    ],
-  },
-};
-```
-
-```ts filename="List.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import List from './List.vue';
-import ListItem from './ListItem.vue';
-
-//👇 Imports a specific story from ListItem stories
-import { Unchecked } from './ListItem.stories';
-
-const meta = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-} satisfies Meta<typeof List>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-//👇 The ListTemplate construct will be spread to the existing stories.
-export const ListTemplate: Story = {
-  render: (args) => ({
-    components: { List, ListItem },
-    setup() {
-      return { ...args };
-    },
-    template: `
-      <List v-bind="args">
-        <div v-for="item in items" :key="item.title">
-          <ListItem :item="item"/>
-        </div>
-      </List>
-    `,
-  }),
-};
-
-export const Empty: Story = {
-  ...ListTemplate,
-  args: {
-    items: [],
-  },
-};
-export const OneItem: Story = {
   ...ListTemplate,
   args: {
     items: [
@@ -460,7 +353,7 @@ export const OneItem: Story = {
 ```
 
 ```ts filename="List.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
 import ListItem from './ListItem.vue';
@@ -468,17 +361,12 @@ import ListItem from './ListItem.vue';
 //👇 Imports a specific story from ListItem stories
 import { Unchecked } from './ListItem.stories';
 
-const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
+const meta = {
   component: List,
-};
+} satisfies Meta<typeof List>;
 
 export default meta;
-type Story = StoryObj<typeof List>;
+type Story = StoryObj<typeof meta>;
 
 //👇 The ListTemplate construct will be spread to the existing stories.
 export const ListTemplate: Story = {
@@ -522,7 +410,6 @@ import { repeat } from 'lit/directives/repeat.js';
 import { Unchecked } from './ListItem.stories';
 
 export default {
-  title: 'List',
   component: 'demo-list',
 };
 
@@ -556,13 +443,12 @@ export const OneItem = {
 ```
 
 ```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 import { repeat } from 'lit/directives/repeat.js';
 
 const meta: Meta = {
-  title: 'List',
   component: 'demo-list',
 };
 
@@ -597,4 +483,83 @@ export const OneItem: Story = {
     ],
   },
 };
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [
+      {
+        ...Unchecked.input.args,
+      },
+    ],
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [
+      {
+        ...Unchecked.input.args,
+      },
+    ],
+  },
+});
 ```

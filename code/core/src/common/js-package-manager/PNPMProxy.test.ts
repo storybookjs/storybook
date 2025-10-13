@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { prompt } from 'storybook/internal/node-logger';
+
+import { JsPackageManager } from './JsPackageManager';
 import { PNPMProxy } from './PNPMProxy';
 
 describe('PNPM Proxy', () => {
@@ -7,47 +10,41 @@ describe('PNPM Proxy', () => {
 
   beforeEach(() => {
     pnpmProxy = new PNPMProxy();
+    JsPackageManager.clearLatestVersionCache();
+    vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
   });
 
   it('type should be pnpm', () => {
     expect(pnpmProxy.type).toEqual('pnpm');
   });
 
-  describe('initPackageJson', () => {
-    it('should run `pnpm init`', async () => {
-      const executeCommandSpy = vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await pnpmProxy.initPackageJson();
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'pnpm', args: ['init'] })
-      );
-    });
-  });
-
   describe('installDependencies', () => {
     it('should run `pnpm install`', async () => {
+      // sort of un-mock part of the function so executeCommand (also mocked) is called
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('7.1.0');
+        .mockResolvedValue({ stdout: '7.1.0' } as any);
 
       await pnpmProxy.installDependencies();
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({ command: 'pnpm', args: ['install'] })
       );
     });
   });
 
   describe('runScript', () => {
-    it('should execute script `pnpm exec compodoc -- -e json -d .`', async () => {
+    it('should execute script `pnpm exec compodoc -- -e json -d .`', () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('7.1.0');
+        .mockResolvedValue({ stdout: '7.1.0' } as any);
 
-      await pnpmProxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
+      pnpmProxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
           args: ['exec', 'compodoc', '-e', 'json', '-d', '.'],
@@ -57,67 +54,51 @@ describe('PNPM Proxy', () => {
   });
 
   describe('addDependencies', () => {
-    it('with devDep it should run `pnpm add -D @storybook/core`', async () => {
+    it('with devDep it should run `pnpm add -D storybook`', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('6.0.0');
+        .mockResolvedValue({ stdout: '6.0.0' } as any);
 
-      await pnpmProxy.addDependencies({ installAsDevDependencies: true }, ['@storybook/core']);
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+      expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          args: ['add', '-D', '@storybook/core'],
+          args: ['add', '-D', 'storybook'],
         })
       );
     });
   });
 
   describe('removeDependencies', () => {
-    it('with devDep it should run `npm uninstall @storybook/core`', async () => {
+    it('should only change package.json without running install', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('6.0.0');
+        .mockResolvedValue({ stdout: '7.0.0' } as any);
+      const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
 
-      await pnpmProxy.removeDependencies({}, ['@storybook/core']);
-
-      expect(executeCommandSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({
-          command: 'pnpm',
-          args: ['remove', '@storybook/core'],
-        })
-      );
-    });
-
-    describe('skipInstall', () => {
-      it('should only change package.json without running install', async () => {
-        const executeCommandSpy = vi
-          .spyOn(pnpmProxy, 'executeCommand')
-          .mockResolvedValueOnce('7.0.0');
-        const writePackageSpy = vi
-          .spyOn(pnpmProxy, 'writePackageJson')
-          .mockImplementation(vi.fn<any>());
-
-        await pnpmProxy.removeDependencies(
-          {
-            skipInstall: true,
-            packageJson: {
-              devDependencies: {
-                '@storybook/manager-webpack5': 'x.x.x',
-                '@storybook/react': 'x.x.x',
-              },
-            },
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
+        return {
+          dependencies: {},
+          devDependencies: {
+            '@storybook/manager-webpack5': 'x.x.x',
+            '@storybook/react': 'x.x.x',
           },
-          ['@storybook/manager-webpack5']
-        );
+        };
+      });
 
-        expect(writePackageSpy).toHaveBeenCalledWith({
+      await pnpmProxy.removeDependencies(['@storybook/manager-webpack5']);
+
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          dependencies: {},
           devDependencies: {
             '@storybook/react': 'x.x.x',
           },
-        });
-        expect(executeCommandSpy).not.toHaveBeenCalled();
-      });
+        },
+        expect.any(String)
+      );
+      expect(executeCommandSpy).not.toHaveBeenCalled();
     });
   });
 
@@ -125,14 +106,14 @@ describe('PNPM Proxy', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('"5.3.19"');
+        .mockResolvedValue({ stdout: '5.3.19' } as any);
 
-      const version = await pnpmProxy.latestVersion('@storybook/core');
+      const version = await pnpmProxy.latestVersion('storybook');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          args: ['info', '@storybook/core', 'version', '--json'],
+          args: ['info', 'storybook', 'version'],
         })
       );
       expect(version).toEqual('5.3.19');
@@ -141,23 +122,23 @@ describe('PNPM Proxy', () => {
     it('with constraint it returns the latest version satisfying the constraint', async () => {
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('["4.25.3","5.3.19","6.0.0-beta.23"]');
+        .mockResolvedValue({ stdout: '["4.25.3","5.3.19","6.0.0-beta.23"]' } as any);
 
-      const version = await pnpmProxy.latestVersion('@storybook/core', '5.X');
+      const version = await pnpmProxy.latestVersion('storybook', '5.X');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          args: ['info', '@storybook/core', 'versions', '--json'],
+          args: ['info', 'storybook', 'versions', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
     });
 
-    it('throws an error if command output is not a valid JSON', async () => {
-      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
+    it('with constraint it throws an error if command output is not a valid JSON', async () => {
+      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValue({ stdout: 'NOT A JSON' } as any);
 
-      await expect(pnpmProxy.latestVersion('@storybook/core')).rejects.toThrow();
+      await expect(pnpmProxy.latestVersion('storybook', '5.X')).resolves.toBe(null);
     });
   });
 
@@ -166,14 +147,14 @@ describe('PNPM Proxy', () => {
       const storybookAngularVersion = (await import('../versions')).default['@storybook/angular'];
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce('"5.3.19"');
+        .mockResolvedValue({ stdout: '5.3.19' } as any);
 
       const version = await pnpmProxy.getVersion('@storybook/angular');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          args: ['info', '@storybook/angular', 'version', '--json'],
+          args: ['info', '@storybook/angular', 'version'],
         })
       );
       expect(version).toEqual(`^${storybookAngularVersion}`);
@@ -183,14 +164,14 @@ describe('PNPM Proxy', () => {
       const packageVersion = '5.3.19';
       const executeCommandSpy = vi
         .spyOn(pnpmProxy, 'executeCommand')
-        .mockResolvedValueOnce(`"${packageVersion}"`);
+        .mockResolvedValue({ stdout: `${packageVersion}` } as any);
 
       const version = await pnpmProxy.getVersion('@storybook/react-native');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          args: ['info', '@storybook/react-native', 'version', '--json'],
+          args: ['info', '@storybook/react-native', 'version'],
         })
       );
       expect(version).toEqual(`^${packageVersion}`);
@@ -199,43 +180,44 @@ describe('PNPM Proxy', () => {
 
   describe('addPackageResolutions', () => {
     it('adds resolutions to package.json and account for existing resolutions', async () => {
-      const writePackageSpy = vi
-        .spyOn(pnpmProxy, 'writePackageJson')
-        .mockImplementation(vi.fn<any>());
-
       const basePackageAttributes = {
         dependencies: {},
         devDependencies: {},
       };
 
-      vi.spyOn(pnpmProxy, 'retrievePackageJson').mockImplementation(
-        vi.fn(async () => ({
-          ...basePackageAttributes,
-          overrides: {
-            bar: 'x.x.x',
-          },
-        }))
-      );
+      const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => ({
+        dependencies: {},
+        devDependencies: {},
+        overrides: {
+          bar: 'x.x.x',
+        },
+      }));
 
       const versions = {
         foo: 'x.x.x',
       };
-      await pnpmProxy.addPackageResolutions(versions);
+      pnpmProxy.addPackageResolutions(versions);
 
-      expect(writePackageSpy).toHaveBeenCalledWith({
-        ...basePackageAttributes,
-        overrides: {
-          ...versions,
-          bar: 'x.x.x',
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          ...basePackageAttributes,
+          overrides: {
+            ...versions,
+            bar: 'x.x.x',
+          },
         },
-      });
+        expect.any(String)
+      );
     });
   });
 
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on pnpm output', async () => {
       // pnpm list "@storybook/*" "storybook" --depth 10 --json
-      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValueOnce(`
+      vi.spyOn(pnpmProxy, 'executeCommand').mockResolvedValue({
+        stdout: `
         [
           {
             "peerDependencies": {
@@ -246,15 +228,15 @@ describe('PNPM Proxy', () => {
               }
             },
             "dependencies": {
-              "@storybook/addon-interactions": {
-                "from": "@storybook/addon-interactions",
+              "@storybook/addon-example": {
+                "from": "@storybook/addon-example",
                 "version": "7.0.0-beta.13",
-                "resolved": "https://registry.npmjs.org/@storybook/addon-interactions/-/addon-interactions-7.0.0-beta.13.tgz",
+                "resolved": "https://registry.npmjs.org/@storybook/addon-example/-/addon-example-7.0.0-beta.13.tgz",
                 "dependencies": {
-                  "@storybook/instrumenter": {
-                    "from": "@storybook/instrumenter",
+                  "@storybook/package": {
+                    "from": "@storybook/package",
                     "version": "7.0.0-beta.13",
-                    "resolved": "https://registry.npmjs.org/@storybook/instrumenter/-/instrumenter-7.0.0-beta.13.tgz"
+                    "resolved": "https://registry.npmjs.org/@storybook/package/-/package-7.0.0-beta.13.tgz"
                   }
                 }
               }
@@ -265,10 +247,10 @@ describe('PNPM Proxy', () => {
                 "version": "0.0.11-next.0",
                 "resolved": "https://registry.npmjs.org/@storybook/jest/-/jest-0.0.11-next.0.tgz",
                 "dependencies": {
-                  "@storybook/instrumenter": {
-                    "from": "@storybook/instrumenter",
+                  "@storybook/package": {
+                    "from": "@storybook/package",
                     "version": "7.0.0-rc.7",
-                    "resolved": "https://registry.npmjs.org/@storybook/instrumenter/-/instrumenter-7.0.0-rc.7.tgz"
+                    "resolved": "https://registry.npmjs.org/@storybook/package/-/package-7.0.0-rc.7.tgz"
                   }
                 }
               },
@@ -277,10 +259,10 @@ describe('PNPM Proxy', () => {
                 "version": "0.0.14-next.1",
                 "resolved": "https://registry.npmjs.org/@storybook/testing-library/-/testing-library-0.0.14-next.1.tgz",
                 "dependencies": {
-                  "@storybook/instrumenter": {
-                    "from": "@storybook/instrumenter",
+                  "@storybook/package": {
+                    "from": "@storybook/package",
                     "version": "7.0.0-rc.7",
-                    "resolved": "https://registry.npmjs.org/@storybook/instrumenter/-/instrumenter-7.0.0-rc.7.tgz"
+                    "resolved": "https://registry.npmjs.org/@storybook/package/-/package-7.0.0-rc.7.tgz"
                   }
                 }
               },
@@ -306,7 +288,8 @@ describe('PNPM Proxy', () => {
             }
           }
         ]      
-      `);
+      `,
+      } as any);
 
       const installations = await pnpmProxy.findInstallations(['@storybook/*']);
 
@@ -314,7 +297,7 @@ describe('PNPM Proxy', () => {
         {
           "dedupeCommand": "pnpm dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
+            "@storybook/addon-example": [
               {
                 "location": "",
                 "version": "7.0.0-beta.13",
@@ -332,16 +315,6 @@ describe('PNPM Proxy', () => {
                 "version": "7.0.0-beta.13",
               },
             ],
-            "@storybook/instrumenter": [
-              {
-                "location": "",
-                "version": "7.0.0-rc.7",
-              },
-              {
-                "location": "",
-                "version": "7.0.0-beta.13",
-              },
-            ],
             "@storybook/jest": [
               {
                 "location": "",
@@ -349,6 +322,16 @@ describe('PNPM Proxy', () => {
               },
             ],
             "@storybook/nextjs": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.13",
+              },
+            ],
+            "@storybook/package": [
+              {
+                "location": "",
+                "version": "7.0.0-rc.7",
+              },
               {
                 "location": "",
                 "version": "7.0.0-beta.13",
@@ -362,7 +345,7 @@ describe('PNPM Proxy', () => {
             ],
           },
           "duplicatedDependencies": {
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               "7.0.0-rc.7",
               "7.0.0-beta.13",
             ],

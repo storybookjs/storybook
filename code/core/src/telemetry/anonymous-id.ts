@@ -1,6 +1,6 @@
 import { relative } from 'node:path';
 
-import { getProjectRoot } from '@storybook/core/common';
+import { getProjectRoot } from 'storybook/internal/common';
 
 import { execSync } from 'child_process';
 import slash from 'slash';
@@ -38,9 +38,7 @@ export const getAnonymousProjectId = () => {
   }
 
   try {
-    const projectRoot = getProjectRoot();
-
-    const projectRootPath = relative(projectRoot, process.cwd());
+    const projectRootPath = relative(getProjectRoot(), process.cwd());
 
     const originBuffer = execSync(`git config --local --get remote.origin.url`, {
       timeout: 1000,

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { StoryIndex } from '@storybook/core/types';
+import type { StoryIndex } from 'storybook/internal/types';
+
 import { global } from '@storybook/global';
 
 import { transformStoryIndexToStoriesHash } from '../lib/stories';
@@ -1226,6 +1227,7 @@ describe('Refs API', () => {
             name: '1',
             importPath: './path/to/a1.ts',
             type: 'story',
+            subtype: 'story',
           },
           'a--2': {
             id: 'a--2',
@@ -1233,6 +1235,7 @@ describe('Refs API', () => {
             name: '2',
             importPath: './path/to/a2.ts',
             type: 'story',
+            subtype: 'story',
           },
         },
       };
@@ -1241,7 +1244,7 @@ describe('Refs API', () => {
         provider: provider as any,
         docsOptions: {},
         filters: {},
-        status: {},
+        allStatuses: {},
       };
       const initialState: Partial<State> = {
         refs: {
@@ -1255,7 +1258,7 @@ describe('Refs API', () => {
           },
         },
       };
-      // eslint-disable-next-line @typescript-eslint/no-shadow
+
       const store = createMockStore(initialState);
       const { api } = initRefs({ provider, store } as any, { runCheck: false });
 

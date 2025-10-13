@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactElement } from 'react';
 import React from 'react';
 
-import { styled } from '@storybook/core/theming';
+import { styled } from 'storybook/theming';
 
 const Container = styled.div(({ theme }) => ({
   position: 'absolute',
@@ -45,6 +45,10 @@ export const ActionButton = styled.button<{ disabled: boolean }>(
     '&:focus': {
       boxShadow: `${theme.color.secondary} 0 -3px 0 0 inset`,
       outline: '0 none',
+
+      '@media (forced-colors: active)': {
+        outline: '1px solid highlight',
+      },
     },
   }),
   ({ disabled }) =>

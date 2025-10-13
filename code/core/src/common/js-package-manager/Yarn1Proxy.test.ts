@@ -1,35 +1,48 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { prompt } from 'storybook/internal/node-logger';
+
 import { dedent } from 'ts-dedent';
 
+import { JsPackageManager } from './JsPackageManager';
 import { Yarn1Proxy } from './Yarn1Proxy';
+
+vi.mock('node:process', async (importOriginal) => {
+  const original: any = await importOriginal();
+  return {
+    ...original,
+    default: {
+      ...original.default,
+      env: {
+        ...original.default.env,
+        CI: false,
+      },
+    },
+  };
+});
 
 describe('Yarn 1 Proxy', () => {
   let yarn1Proxy: Yarn1Proxy;
 
   beforeEach(() => {
     yarn1Proxy = new Yarn1Proxy();
+    JsPackageManager.clearLatestVersionCache();
+    vi.spyOn(yarn1Proxy, 'writePackageJson').mockImplementation(vi.fn());
   });
 
   it('type should be yarn1', () => {
     expect(yarn1Proxy.type).toEqual('yarn1');
   });
 
-  describe('initPackageJson', () => {
-    it('should run `yarn init -y`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce('');
-
-      await yarn1Proxy.initPackageJson();
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ command: 'yarn', args: ['init', '-y'] })
-      );
-    });
-  });
-
   describe('installDependencies', () => {
     it('should run `yarn`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce('');
+      // sort of un-mock part of the function so executeCommand (also mocked) is called
+      vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      const executeCommandSpy = vi
+        .spyOn(yarn1Proxy, 'executeCommand')
+        .mockReturnValue(Promise.resolve({ stdout: '' }) as any);
 
       await yarn1Proxy.installDependencies();
 
@@ -43,74 +56,67 @@ describe('Yarn 1 Proxy', () => {
   });
 
   describe('runScript', () => {
-    it('should execute script `yarn compodoc -- -e json -d .`', async () => {
+    it('should execute script `yarn compodoc -- -e json -d .`', () => {
       const executeCommandSpy = vi
         .spyOn(yarn1Proxy, 'executeCommand')
-        .mockResolvedValueOnce('7.1.0');
+        .mockReturnValue(Promise.resolve({ stdout: '7.1.0' }) as any);
 
-      await yarn1Proxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
+      yarn1Proxy.runPackageCommand('compodoc', ['-e', 'json', '-d', '.']);
 
       expect(executeCommandSpy).toHaveBeenLastCalledWith(
-        expect.objectContaining({ command: 'yarn', args: ['compodoc', '-e', 'json', '-d', '.'] })
+        expect.objectContaining({
+          command: 'yarn',
+          args: ['exec', 'compodoc', '-e', 'json', '-d', '.'],
+        })
       );
     });
   });
 
   describe('addDependencies', () => {
-    it('with devDep it should run `yarn install -D --ignore-workspace-root-check @storybook/core`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce('');
+    it('with devDep it should run `yarn install -D --ignore-workspace-root-check storybook`', async () => {
+      const executeCommandSpy = vi
+        .spyOn(yarn1Proxy, 'executeCommand')
+        .mockReturnValue(Promise.resolve({ stdout: '' }) as any);
 
-      await yarn1Proxy.addDependencies({ installAsDevDependencies: true }, ['@storybook/core']);
+      await yarn1Proxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['add', '--ignore-workspace-root-check', '-D', '@storybook/core'],
+          args: ['add', '--ignore-workspace-root-check', '-D', 'storybook'],
         })
       );
     });
   });
 
   describe('removeDependencies', () => {
-    it('should run `yarn remove --ignore-workspace-root-check @storybook/core`', async () => {
-      const executeCommandSpy = vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce('');
-
-      yarn1Proxy.removeDependencies({}, ['@storybook/core']);
-
-      expect(executeCommandSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          command: 'yarn',
-          args: ['remove', '--ignore-workspace-root-check', '@storybook/core'],
-        })
-      );
-    });
-
     it('skipInstall should only change package.json without running install', async () => {
       const executeCommandSpy = vi
         .spyOn(yarn1Proxy, 'executeCommand')
-        .mockResolvedValueOnce('7.0.0');
-      const writePackageSpy = vi
-        .spyOn(yarn1Proxy, 'writePackageJson')
-        .mockImplementation(vi.fn<any>());
+        .mockReturnValue(Promise.resolve({ stdout: '7.0.0' }) as any);
+      const writePackageSpy = vi.spyOn(yarn1Proxy, 'writePackageJson').mockImplementation(vi.fn());
 
-      await yarn1Proxy.removeDependencies(
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
+        return {
+          dependencies: {},
+          devDependencies: {
+            '@storybook/manager-webpack5': 'x.x.x',
+            '@storybook/react': 'x.x.x',
+          },
+        };
+      });
+
+      await yarn1Proxy.removeDependencies(['@storybook/manager-webpack5']);
+
+      expect(writePackageSpy).toHaveBeenCalledWith(
         {
-          skipInstall: true,
-          packageJson: {
-            devDependencies: {
-              '@storybook/manager-webpack5': 'x.x.x',
-              '@storybook/react': 'x.x.x',
-            },
+          dependencies: {},
+          devDependencies: {
+            '@storybook/react': 'x.x.x',
           },
         },
-        ['@storybook/manager-webpack5']
+        expect.any(String)
       );
-
-      expect(writePackageSpy).toHaveBeenCalledWith({
-        devDependencies: {
-          '@storybook/react': 'x.x.x',
-        },
-      });
       expect(executeCommandSpy).not.toHaveBeenCalled();
     });
   });
@@ -119,78 +125,82 @@ describe('Yarn 1 Proxy', () => {
     it('without constraint it returns the latest version', async () => {
       const executeCommandSpy = vi
         .spyOn(yarn1Proxy, 'executeCommand')
-        .mockResolvedValueOnce('{"type":"inspect","data":"5.3.19"}');
+        .mockReturnValue(Promise.resolve({ stdout: '{"type":"inspect","data":"5.3.19"}' }) as any);
 
-      const version = await yarn1Proxy.latestVersion('@storybook/core');
+      const version = await yarn1Proxy.latestVersion('storybook');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['info', '@storybook/core', 'version', '--json'],
+          args: ['info', 'storybook', 'version', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
     });
 
     it('with constraint it returns the latest version satisfying the constraint', async () => {
-      const executeCommandSpy = vi
-        .spyOn(yarn1Proxy, 'executeCommand')
-        .mockResolvedValueOnce('{"type":"inspect","data":["4.25.3","5.3.19","6.0.0-beta.23"]}');
+      const executeCommandSpy = vi.spyOn(yarn1Proxy, 'executeCommand').mockReturnValue(
+        Promise.resolve({
+          stdout: '{"type":"inspect","data":["4.25.3","5.3.19","6.0.0-beta.23"]}',
+        }) as any
+      );
 
-      const version = await yarn1Proxy.latestVersion('@storybook/core', '5.X');
+      const version = await yarn1Proxy.latestVersion('storybook', '5.X');
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'yarn',
-          args: ['info', '@storybook/core', 'versions', '--json'],
+          args: ['info', 'storybook', 'versions', '--json'],
         })
       );
       expect(version).toEqual('5.3.19');
     });
 
     it('throws an error if command output is not a valid JSON', async () => {
-      vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce('NOT A JSON');
+      vi.spyOn(yarn1Proxy, 'executeCommand').mockReturnValue(
+        Promise.resolve({ stdout: 'NOT A JSON' }) as any
+      );
 
-      await expect(yarn1Proxy.latestVersion('@storybook/core')).rejects.toThrow();
+      await expect(yarn1Proxy.latestVersion('storybook')).resolves.toBe(null);
     });
   });
 
   describe('addPackageResolutions', () => {
     it('adds resolutions to package.json and account for existing resolutions', async () => {
-      const writePackageSpy = vi
-        .spyOn(yarn1Proxy, 'writePackageJson')
-        .mockImplementation(vi.fn<any>());
+      const writePackageSpy = vi.spyOn(yarn1Proxy, 'writePackageJson').mockImplementation(vi.fn());
 
-      vi.spyOn(yarn1Proxy, 'retrievePackageJson').mockImplementation(
-        vi.fn(async () => ({
-          dependencies: {},
-          devDependencies: {},
-          resolutions: {
-            bar: 'x.x.x',
-          },
-        }))
-      );
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => ({
+        dependencies: {},
+        devDependencies: {},
+        resolutions: {
+          bar: 'x.x.x',
+        },
+      }));
 
       const versions = {
         foo: 'x.x.x',
       };
-      await yarn1Proxy.addPackageResolutions(versions);
+      yarn1Proxy.addPackageResolutions(versions);
 
-      expect(writePackageSpy).toHaveBeenCalledWith({
-        dependencies: {},
-        devDependencies: {},
-        resolutions: {
-          ...versions,
-          bar: 'x.x.x',
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          dependencies: {},
+          devDependencies: {},
+          resolutions: {
+            ...versions,
+            bar: 'x.x.x',
+          },
         },
-      });
+        expect.any(String)
+      );
     });
   });
 
   describe('mapDependencies', () => {
     it('should display duplicated dependencies based on yarn output', async () => {
       // yarn list --pattern "@storybook/*" "@storybook/react" --recursive --json
-      vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce(`
+      vi.spyOn(yarn1Proxy, 'executeCommand').mockResolvedValueOnce({
+        stdout: `
         {
           "type": "tree",
           "data": {
@@ -201,7 +211,7 @@ describe('Yarn 1 Proxy', () => {
                 "children": []
               },
               {
-                "name": "@storybook/instrumenter@7.0.0-beta.12",
+                "name": "@storybook/package@7.0.0-beta.12",
                 "children": [
                   {
                     "name": "@storybook/types@7.0.0-beta.12",
@@ -210,10 +220,10 @@ describe('Yarn 1 Proxy', () => {
                 ]
               },
               {
-                "name": "@storybook/addon-interactions@7.0.0-beta.19",
+                "name": "@storybook/addon-example@7.0.0-beta.19",
                 "children": [
                   {
-                    "name": "@storybook/instrumenter@7.0.0-beta.19",
+                    "name": "@storybook/package@7.0.0-beta.19",
                     "children": []
                   }
                 ]
@@ -221,7 +231,8 @@ describe('Yarn 1 Proxy', () => {
             ]
           }
         }
-      `);
+      `,
+      } as any);
 
       const installations = await yarn1Proxy.findInstallations(['@storybook/*']);
 
@@ -229,13 +240,13 @@ describe('Yarn 1 Proxy', () => {
         {
           "dedupeCommand": "yarn dedupe",
           "dependencies": {
-            "@storybook/addon-interactions": [
+            "@storybook/addon-example": [
               {
                 "location": "",
                 "version": "7.0.0-beta.19",
               },
             ],
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               {
                 "location": "",
                 "version": "7.0.0-beta.12",
@@ -253,7 +264,7 @@ describe('Yarn 1 Proxy', () => {
             ],
           },
           "duplicatedDependencies": {
-            "@storybook/instrumenter": [
+            "@storybook/package": [
               "7.0.0-beta.12",
               "7.0.0-beta.19",
             ],

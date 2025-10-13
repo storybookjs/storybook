@@ -1,21 +1,17 @@
 import type { Configuration } from 'webpack';
 
 export function configureNextFont(baseConfig: Configuration, isSWC?: boolean) {
-  const fontLoaderPath = require.resolve(
-    '@storybook/nextjs/font/webpack/loader/storybook-nextjs-font-loader'
-  );
-
   if (isSWC) {
     baseConfig.module?.rules?.push({
       test: /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css$/,
-      loader: fontLoaderPath,
+      loader: '@storybook/nextjs/storybook-nextjs-font-loader',
     });
   } else {
     baseConfig.resolveLoader = {
       ...baseConfig.resolveLoader,
       alias: {
         ...baseConfig.resolveLoader?.alias,
-        'storybook-nextjs-font-loader': fontLoaderPath,
+        'storybook-nextjs-font-loader': '@storybook/nextjs/storybook-nextjs-font-loader',
       },
     };
   }

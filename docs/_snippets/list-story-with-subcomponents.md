@@ -37,8 +37,8 @@ export const OneItem: Story = {
 };
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="react" language="js"
-import React from 'react';
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+import * as React from 'react';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -59,9 +59,11 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
-import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+import * as React from 'react';
+
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -85,33 +87,7 @@ export const OneItem: Story = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
-import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-const meta: Meta<typeof List> = {
-  component: List,
-  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
-};
-export default meta;
-
-type Story = StoryObj<typeof List>;
-
-export const Empty: Story = {};
-
-export const OneItem: Story = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem />
-    </List>
-  ),
-};
-```
-
-```js filename="List.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -136,8 +112,8 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -167,34 +143,52 @@ export const OneItem: Story = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
 
-import { List } from './List';
-import { ListItem } from './ListItem';
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
 
-const meta: Meta<typeof List> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/configure/#configure-story-loading
-   * to learn how to generate automatic titles
-   */
-  title: 'List',
-  component: List,
-  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
-};
+  const { Story } = defineMeta({
+    component: List,
+    subcomponents: { ListItem },
+  });
+</script>
 
-export default meta;
-type Story = StoryObj<typeof List>;
+<Story name="Empty" />
 
-export const Empty: Story = {};
-
-export const OneItem: Story = {
-  render: (args) => (
+<Story name="One Item">
+  {#snippet children(args)}
     <List {...args}>
       <ListItem />
     </List>
-  ),
-};
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+    subcomponents: { ListItem },
+  });
+</script>
+
+<Story name="Empty" />
+
+<Story name="One Item">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem />
+    </List>
+  {/snippet}
+</Story>
 ```
 
 ```js filename="List.stories.js" renderer="web-components" language="js"
@@ -218,7 +212,7 @@ export const OneItem = {
 ```
 
 ```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -269,8 +263,8 @@ export const OneItem = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="List.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './List.vue';
 import ListItem from './ListItem.vue';
@@ -301,34 +295,52 @@ export const OneItem: Story = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
 
-import List from './List.vue';
-import ListItem from './ListItem.vue';
+import preview from '../.storybook/preview';
 
-const meta: Meta<typeof List> = {
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+const meta = preview.meta({
   component: List,
   subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
-};
-export default meta;
+});
 
-type Story = StoryObj<typeof List>;
+export const Empty = meta.story();
 
-export const Empty: Story = {
-  render: () => ({
-    components: { List },
-    template: '<List />',
-  }),
-};
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+    </List>
+  ),
+});
+```
 
-export const OneItem: Story = {
-  render: (args) => ({
-    components: { List, ListItem },
-    setup() {
-      return { args }
-    }
-    template: '<List v-bind="args"><ListItem /></List>',
-  }),
-};
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, // 👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story();
+
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+    </List>
+  ),
+});
 ```

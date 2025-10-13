@@ -91,8 +91,8 @@ export const ManyItems: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
-import React from 'react';
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+import * as React from 'react';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -115,8 +115,11 @@ export const ManyItems = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/react';
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+import * as React from 'react';
+
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -142,34 +145,7 @@ export const ManyItems: Story = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
-import type { Meta, StoryObj } from '@storybook/react';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-//👇 We're importing the necessary stories from ListItem
-import { Selected, Unselected } from './ListItem.stories';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
-
-export const ManyItems: Story = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem {...Selected.args} />
-      <ListItem {...Unselected.args} />
-      <ListItem {...Unselected.args} />
-    </List>
-  ),
-};
-```
-
-```js filename="List.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -181,33 +157,6 @@ export default {
 };
 
 export const ManyItems = {
-  render: (args) => (
-    <List {...args}>
-      <ListItem {...Selected.args} />
-      <ListItem {...Unselected.args} />
-      <ListItem {...Unselected.args} />
-    </List>
-  ),
-};
-```
-
-```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts-4-9"
-import type { Meta, StoryObj } from 'storybook-solidjs';
-
-import { List } from './List';
-import { ListItem } from './ListItem';
-
-//👇 We're importing the necessary stories from ListItem
-import { Selected, Unselected } from './ListItem.stories';
-
-const meta = {
-  component: List,
-} satisfies Meta<typeof List>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const ManyItems: Story = {
   render: (args) => (
     <List {...args}>
       <ListItem {...Selected.args} />
@@ -219,20 +168,20 @@ export const ManyItems: Story = {
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
 
-//👇 All ListItem stories are imported
+//👇 We're importing the necessary stories from ListItem
 import { Selected, Unselected } from './ListItem.stories';
 
-const meta: Meta<typeof List> = {
+const meta = {
   component: List,
-};
+} satisfies Meta<typeof List>;
 
 export default meta;
-type Story = StoryObj<typeof List>;
+type Story = StoryObj<typeof meta>;
 
 export const ManyItems: Story = {
   render: (args) => (
@@ -243,6 +192,58 @@ export const ManyItems: Story = {
     </List>
   ),
 };
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="js"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 We're importing the necessary stories from ListItem
+  import { Selected, Unselected } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem {...Selected.args} />
+      <ListItem {...Unselected.args} />
+      <ListItem {...Unselected.args} />
+    </List>
+  {/snippet}
+</Story>
+```
+
+```svelte filename="List.stories.svelte" renderer="svelte" language="ts"
+<script module>
+  import { defineMeta } from '@storybook/addon-svelte-csf';
+
+  import List from './List.svelte';
+  import ListItem from './ListItem.svelte';
+
+  //👇 We're importing the necessary stories from ListItem
+  import { Selected, Unselected } from './ListItem.stories.svelte';
+
+  const { Story } = defineMeta({
+    component: List,
+  });
+</script>
+
+<Story name="Many Items">
+  {#snippet children(args)}
+    <List {...args}>
+      <ListItem {...Selected.args} />
+      <ListItem {...Unselected.args} />
+      <ListItem {...Unselected.args} />
+    </List>
+  {/snippet}
+</Story>
 ```
 
 ```js filename="List.stories.js" renderer="vue" language="js"
@@ -276,8 +277,8 @@ export const ManyItems = {
 };
 ```
 
-```ts filename="List.stories.ts" renderer="vue" language="ts-4-9"
-import type { Meta, StoryObj } from '@storybook/vue3';
+```ts filename="List.stories.ts" renderer="vue" language="ts"
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import List from './ListComponent.vue';
 import ListItem from './ListItem.vue';
@@ -291,42 +292,6 @@ const meta = {
 
 export default meta;
 type Story = StoryObj<typeof meta>;
-
-export const ManyItems: Story = {
-  render: (args) => ({
-    components: { List, ListItem },
-    setup() {
-      return { ...args };
-    },
-    template: `
-      <List v-bind="args">
-        <list-item :isSelected="Selected"/>
-        <list-item :isSelected="Unselected"/>
-        <list-item :isSelected="Unselected"/>
-      </List>`,
-  }),
-  args: {
-    Selected: Selected.args.isSelected,
-    Unselected: Unselected.args.isSelected,
-  },
-};
-```
-
-```ts filename="List.stories.ts" renderer="vue" language="ts"
-import type { Meta, StoryObj } from '@storybook/vue3';
-
-import List from './ListComponent.vue';
-import ListItem from './ListItem.vue';
-
-//👇 We're importing the necessary stories from ListItem
-import { Selected, Unselected } from './ListItem.stories';
-
-const meta: Meta<typeof List> = {
-  component: List,
-};
-
-export default meta;
-type Story = StoryObj<typeof List>;
 
 export const ManyItems: Story = {
   render: (args) => ({
@@ -369,7 +334,7 @@ export const ManyItems = {
 ```
 
 ```ts filename="List.stories.ts" renderer="web-components" language="ts"
-import type { Meta, StoryObj } from '@storybook/web-components';
+import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
 import { html } from 'lit';
 
@@ -391,4 +356,58 @@ export const ManyItems: Story = {
     </demo-list>
   `,
 };
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Unselected.input.args} />
+    </List>
+  ),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Unselected.input.args} />
+    </List>
+  ),
+});
 ```

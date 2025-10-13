@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { API_PreparedStoryIndex, StoryIndexV2, StoryIndexV3 } from '@storybook/core/types';
+import {
+  type API_PreparedStoryIndex,
+  type StatusesByStoryIdAndTypeId,
+  type StoryIndexV2,
+  type StoryIndexV3,
+} from 'storybook/internal/types';
 
 import type { State } from '../root';
 import { mockEntries } from '../tests/mockStoriesEntries';
@@ -186,6 +191,7 @@ describe('transformStoryIndexV4toV5', () => {
             "id": "component-a--story-1",
             "importPath": "./path/to/component-a.ts",
             "name": "Story 1",
+            "subtype": "story",
             "tags": [
               "dev",
             ],
@@ -196,6 +202,7 @@ describe('transformStoryIndexV4toV5', () => {
             "id": "component-a--story-2",
             "importPath": "./path/to/component-a.ts",
             "name": "Story 2",
+            "subtype": "story",
             "tags": [
               "dev",
             ],
@@ -206,6 +213,7 @@ describe('transformStoryIndexV4toV5', () => {
             "id": "component-b--story-3",
             "importPath": "./path/to/component-b.ts",
             "name": "Story 3",
+            "subtype": "story",
             "tags": [
               "dev",
             ],
@@ -228,6 +236,7 @@ describe('transformStoryIndexToStoriesHash', () => {
         '1': {
           id: '1',
           type: 'story',
+          subtype: 'story',
           title: 'Story 1',
           name: 'Story 1',
           importPath: './path/to/story-1.ts',
@@ -237,6 +246,7 @@ describe('transformStoryIndexToStoriesHash', () => {
         '2': {
           id: '2',
           type: 'story',
+          subtype: 'story',
           title: 'Story 2',
           name: 'Story 2',
           importPath: './path/to/story-2.ts',
@@ -250,9 +260,25 @@ describe('transformStoryIndexToStoriesHash', () => {
       someFilter: () => false,
     };
 
-    const status: State['status'] = {
-      '1': { someStatus: { status: 'error', title: 'broken', description: 'very bad' } },
-      '2': { someStatus: { status: 'success', title: 'perfect', description: 'nice' } },
+    const allStatuses: StatusesByStoryIdAndTypeId = {
+      '1': {
+        someStatus: {
+          typeId: 'someStatus',
+          storyId: '1',
+          value: 'status-value:error',
+          title: 'broken',
+          description: 'very bad',
+        },
+      },
+      '2': {
+        someStatus: {
+          typeId: 'someStatus',
+          storyId: '2',
+          value: 'status-value:success',
+          title: 'perfect',
+          description: 'nice',
+        },
+      },
     };
 
     const options = {
@@ -261,7 +287,7 @@ describe('transformStoryIndexToStoriesHash', () => {
       } as any,
       docsOptions: { docsMode: false },
       filters,
-      status,
+      allStatuses,
     };
 
     // Act - transform the index to hashes

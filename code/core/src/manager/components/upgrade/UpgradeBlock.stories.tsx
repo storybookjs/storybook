@@ -1,9 +1,9 @@
 import React from 'react';
 
-import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { ManagerContext } from '@storybook/core/manager-api';
+import { ManagerContext } from 'storybook/manager-api';
+import { fn } from 'storybook/test';
 
 import { UpgradeBlock } from './UpgradeBlock';
 

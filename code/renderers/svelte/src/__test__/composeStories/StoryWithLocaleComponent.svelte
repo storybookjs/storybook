@@ -1,11 +1,16 @@
-<script>
+<script lang="ts">
   import Button from './Button.svelte';
-  
-  export let locale;
-  export let label;
+
+  let {
+    locale,
+    label,
+  }: {
+    locale: string;
+    label: string;
+  } = $props();
 </script>
 
 <div>
   <p>locale: {locale}</p>
-  <Button label={label} />
+  <Button {label} />
 </div>

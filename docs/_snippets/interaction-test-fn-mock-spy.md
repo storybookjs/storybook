@@ -27,7 +27,7 @@ export const FilledForm: Story = {
 };
 ```
 
-```ts filename="LoginForm.stories.ts" renderer="common" language="ts"
+```ts filename="LoginForm.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework (e.g. react-vite, vue3-vite, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { fn, expect } from 'storybook/test';
@@ -57,7 +57,7 @@ export const FilledForm: Story = {
 };
 ```
 
-```js filename="LoginForm.stories.js" renderer="common" language="js"
+```js filename="LoginForm.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { fn, expect } from 'storybook/test';
 
 import { LoginForm } from './LoginForm';
@@ -241,4 +241,58 @@ export const FilledForm = {
     await expect(args.onSubmit).toHaveBeenCalled();
   },
 };
+```
+
+```ts filename="LoginForm.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { fn, expect } from 'storybook/test';
+
+import { LoginForm } from './LoginForm';
+
+const meta = preview.meta({
+  component: LoginForm,
+  args: {
+    // 👇 Use `fn` to spy on the onSubmit arg
+    onSubmit: fn(),
+  },
+});
+
+export const FilledForm = meta.story({
+  play: async ({ args, canvas, userEvent }) => {
+    await userEvent.type(canvas.getByLabelText('Email'), 'email@provider.com');
+    await userEvent.type(canvas.getByLabelText('Password'), 'a-random-password');
+    await userEvent.click(canvas.getByRole('button', { name: 'Log in' }));
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await expect(args.onSubmit).toHaveBeenCalled();
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="LoginForm.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { fn, expect } from 'storybook/test';
+
+import { LoginForm } from './LoginForm';
+
+const meta = preview.meta({
+  component: LoginForm,
+  args: {
+    // 👇 Use `fn` to spy on the onSubmit arg
+    onSubmit: fn(),
+  },
+});
+
+export const FilledForm = meta.story({
+  play: async ({ args, canvas, userEvent }) => {
+    await userEvent.type(canvas.getByLabelText('Email'), 'email@provider.com');
+    await userEvent.type(canvas.getByLabelText('Password'), 'a-random-password');
+    await userEvent.click(canvas.getByRole('button', { name: 'Log in' }));
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await expect(args.onSubmit).toHaveBeenCalled();
+  },
+});
 ```

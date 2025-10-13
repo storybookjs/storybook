@@ -16,6 +16,54 @@ import {
 } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
+/**
+ * Checks if a variable declaration with the given identifier name exists in the program body.
+ * Covers var/let/const declarations and assignment patterns.
+ */
+function hasExistingDeclaration(program: t.Program, identifierName: string): boolean {
+  return program.body.some((node) => {
+    // Check variable declarations (const, let, var)
+    if (t.isVariableDeclaration(node)) {
+      return node.declarations.some((decl) => {
+        if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
+          return decl.id.name === identifierName;
+        }
+        return false;
+      });
+    }
+
+    // Check export named declarations with variable declarations
+    if (
+      t.isExportNamedDeclaration(node) &&
+      node.declaration &&
+      t.isVariableDeclaration(node.declaration)
+    ) {
+      return node.declaration.declarations.some((decl) => {
+        if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
+          return decl.id.name === identifierName;
+        }
+        return false;
+      });
+    }
+
+    // Check function declarations
+    if (t.isFunctionDeclaration(node) && t.isIdentifier(node.id)) {
+      return node.id.name === identifierName;
+    }
+
+    // Check export named declarations with function declarations
+    if (
+      t.isExportNamedDeclaration(node) &&
+      node.declaration &&
+      t.isFunctionDeclaration(node.declaration)
+    ) {
+      return t.isIdentifier(node.declaration.id) && node.declaration.id.name === identifierName;
+    }
+
+    return false;
+  });
+}
+
 export const fixFauxEsmRequire = {
   id: 'fix-faux-esm-require',
   link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
@@ -84,33 +132,54 @@ export const fixFauxEsmRequire = {
       }
       const insertIndex = lastImportIndex + 1;
 
-      // Add __filename and __dirname if used
-      if (hasUnderscoreFilename || hasUnderscoreDirname) {
-        const filenameDeclaration = t.variableDeclaration('const', [
-          t.variableDeclarator(
-            t.identifier('__filename'),
-            t.callExpression(t.identifier('fileURLToPath'), [
-              t.memberExpression(
-                t.metaProperty(t.identifier('import'), t.identifier('meta')),
-                t.identifier('url')
-              ),
-            ])
-          ),
-        ]);
-        const dirnameDeclaration = t.variableDeclaration('const', [
-          t.variableDeclarator(
-            t.identifier('__dirname'),
-            t.callExpression(t.identifier('dirname'), [t.identifier('__filename')])
-          ),
-        ]);
+      // Check for existing declarations before inserting
+      const hasExistingFilename = hasExistingDeclaration(mainConfig._ast.program, '__filename');
+      const hasExistingDirname = hasExistingDeclaration(mainConfig._ast.program, '__dirname');
+      const hasExistingRequire = hasExistingDeclaration(mainConfig._ast.program, 'require');
 
-        // Insert after imports
-        body.splice(insertIndex, 0, filenameDeclaration);
-        body.splice(insertIndex + 1, 0, dirnameDeclaration);
+      // Add __filename and __dirname if used and not already declared
+      if (hasUnderscoreFilename || hasUnderscoreDirname) {
+        const declarationsToInsert: t.Statement[] = [];
+        let insertOffset = 0;
+
+        // Add __filename declaration if needed and not already exists
+        // Note: __filename is always needed if __dirname is used, since __dirname depends on __filename
+        if ((hasUnderscoreFilename || hasUnderscoreDirname) && !hasExistingFilename) {
+          const filenameDeclaration = t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier('__filename'),
+              t.callExpression(t.identifier('fileURLToPath'), [
+                t.memberExpression(
+                  t.metaProperty(t.identifier('import'), t.identifier('meta')),
+                  t.identifier('url')
+                ),
+              ])
+            ),
+          ]);
+          declarationsToInsert.push(filenameDeclaration);
+          insertOffset++;
+        }
+
+        // Add __dirname declaration if needed and not already exists
+        if (hasUnderscoreDirname && !hasExistingDirname) {
+          const dirnameDeclaration = t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier('__dirname'),
+              t.callExpression(t.identifier('dirname'), [t.identifier('__filename')])
+            ),
+          ]);
+          declarationsToInsert.push(dirnameDeclaration);
+          insertOffset++;
+        }
+
+        // Insert declarations after imports
+        declarationsToInsert.forEach((declaration, index) => {
+          body.splice(insertIndex + index, 0, declaration);
+        });
       }
 
-      // add require if used
-      if (hasRequireUsage) {
+      // add require if used and not already declared
+      if (hasRequireUsage && !hasExistingRequire) {
         const requireDeclaration = t.variableDeclaration('const', [
           t.variableDeclarator(
             t.identifier('require'),
@@ -123,9 +192,12 @@ export const fixFauxEsmRequire = {
           ),
         ]);
 
-        // Insert after imports (and after __filename/__dirname if they were added)
-        const currentInsertIndex =
-          hasUnderscoreFilename || hasUnderscoreDirname ? insertIndex + 2 : insertIndex;
+        // Calculate insert position: after imports and after any __filename/__dirname declarations that were added
+        const filenameAdded =
+          (hasUnderscoreFilename || hasUnderscoreDirname) && !hasExistingFilename;
+        const dirnameAdded = hasUnderscoreDirname && !hasExistingDirname;
+        const declarationsAdded = (filenameAdded ? 1 : 0) + (dirnameAdded ? 1 : 0);
+        const currentInsertIndex = insertIndex + declarationsAdded;
         body.splice(currentInsertIndex, 0, requireDeclaration);
       }
     });

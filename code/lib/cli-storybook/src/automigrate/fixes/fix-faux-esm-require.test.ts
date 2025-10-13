@@ -351,5 +351,86 @@ describe('fix-faux-esm-require', () => {
 
       expect(mockWriteFile).not.toHaveBeenCalled();
     });
+
+    it('should not add duplicate __filename/__dirname declarations when they already exist', async () => {
+      const originalContent = `
+        import { addons } from '@storybook/addon-essentials';
+        const __filename = 'existing-filename';
+        const __dirname = 'existing-dirname';
+        const config = require('./some-config');
+        const configPath = path.join(__dirname, 'config.js');
+        export default {
+          addons: ['@storybook/addon-essentials'],
+        };
+      `;
+
+      mockReadFile.mockResolvedValue(originalContent);
+
+      await fixFauxEsmRequire.run({
+        dryRun: false,
+        mainConfigPath: 'main.js',
+        result: {
+          hasRequireUsage: true,
+          hasUnderscoreDirname: true,
+          hasUnderscoreFilename: true,
+        },
+      } as any);
+
+      const writtenContent = mockWriteFile.mock.calls[0][1];
+      expect(writtenContent).toMatchInlineSnapshot(`
+        "
+                import { fileURLToPath } from "node:url";
+                import { dirname } from "node:path";
+                import { createRequire } from "node:module";
+                import { addons } from '@storybook/addon-essentials';
+                const require = createRequire(import.meta.url);
+                const __filename = 'existing-filename';
+                const __dirname = 'existing-dirname';
+                const config = require('./some-config');
+                const configPath = path.join(__dirname, 'config.js');
+                export default {
+                  addons: ['@storybook/addon-essentials'],
+                };
+              "
+      `);
+    });
+
+    it('should not add duplicate require declaration when it already exists', async () => {
+      const originalContent = `
+        import { addons } from '@storybook/addon-essentials';
+        const require = createRequire(import.meta.url);
+        const config = require('./some-config');
+        export default {
+          addons: ['@storybook/addon-essentials'],
+        };
+      `;
+
+      mockReadFile.mockResolvedValue(originalContent);
+
+      await fixFauxEsmRequire.run({
+        dryRun: false,
+        mainConfigPath: 'main.js',
+        result: {
+          hasRequireUsage: true,
+          hasUnderscoreDirname: false,
+          hasUnderscoreFilename: false,
+        },
+      } as any);
+
+      const writtenContent = mockWriteFile.mock.calls[0][1];
+      expect(writtenContent).toMatchInlineSnapshot(`
+        "
+                import { fileURLToPath } from "node:url";
+                import { dirname } from "node:path";
+                import { createRequire } from "node:module";
+                import { addons } from '@storybook/addon-essentials';
+                const require = createRequire(import.meta.url);
+                const config = require('./some-config');
+                export default {
+                  addons: ['@storybook/addon-essentials'],
+                };
+              "
+      `);
+    });
   });
 });

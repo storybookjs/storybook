@@ -13,7 +13,7 @@ We sincerely appreciate the dedication and effort addon creators put into keepin
 
 ## Dependency updates
 
-You will need to update your Storybook dependencies. Peer dependencies must point to `^10.0.0` to ensure broad compatibility for your end users. Development dependencies can be set to `^10.0.0`, or to `next` toif you want to try the latest prerelease all year round.
+You will need to update your Storybook dependencies. Peer dependencies must point to `^10.0.0` to ensure broad compatibility for your end users. Development dependencies can be set to `^10.0.0`, or to `next` if you want to try the latest prerelease all year round.
 
 ```diff title="package.json"
 {
@@ -177,7 +177,7 @@ export default defineConfig(async (options) => {
 -      format: ["esm", "cjs"],
       platform: "browser",
 -      target: BROWSER_TARGETS,
-+      target: "esnext", // we can use esnext for preview entries since Storybook will bundle the addon's manager entries again anyway
++      target: "esnext", // we can use esnext for preview entries since Storybook will bundle the addon's preview entries again anyway
 -      external: globalPreviewPackages,
 +      dts: true,
     });

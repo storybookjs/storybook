@@ -43,7 +43,7 @@ export class AddonConfigurationCommand {
     options: CommandOptions
   ): Promise<void> {
     // Import postinstallAddon from cli-storybook package
-    const { postinstallAddon } = await import('../../cli-storybook/src/postinstallAddon');
+    const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
     const configDir = '.storybook';
 
     // Get versioned addon packages

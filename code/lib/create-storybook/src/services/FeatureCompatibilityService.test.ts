@@ -1,18 +1,28 @@
+import fs from 'node:fs/promises';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as babel from 'storybook/internal/babel';
 import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
+
+import * as find from 'empathic/find';
 
 import { FeatureCompatibilityService } from './FeatureCompatibilityService';
 
-vi.mock('../ink/steps/checks/packageVersions', { spy: true });
-vi.mock('../ink/steps/checks/vitestConfigFiles', { spy: true });
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('storybook/internal/babel', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('empathic/find', { spy: true });
 
 describe('FeatureCompatibilityService', () => {
   let service: FeatureCompatibilityService;
 
   beforeEach(() => {
     service = new FeatureCompatibilityService();
+    vi.mocked(getProjectRoot).mockReturnValue('/test/project');
+    vi.clearAllMocks();
   });
 
   describe('supportsOnboarding', () => {
@@ -59,12 +69,15 @@ describe('FeatureCompatibilityService', () => {
     let mockPackageManager: JsPackageManager;
 
     beforeEach(() => {
-      mockPackageManager = {} as any;
+      mockPackageManager = {
+        getInstalledVersion: vi.fn(),
+      } as any;
     });
 
     it('should return compatible when check passes', async () => {
-      const { packageVersions } = await import('../ink/steps/checks/packageVersions');
-      vi.mocked(packageVersions.condition).mockResolvedValue({ type: 'compatible' } as any);
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('2.1.0') // vitest
+        .mockResolvedValueOnce('2.0.0'); // msw
 
       const result = await service.validatePackageVersions(mockPackageManager);
 
@@ -73,41 +86,49 @@ describe('FeatureCompatibilityService', () => {
     });
 
     it('should return incompatible with reasons when check fails', async () => {
-      const { packageVersions } = await import('../ink/steps/checks/packageVersions');
-      vi.mocked(packageVersions.condition).mockResolvedValue({
-        type: 'incompatible',
-        reasons: ['React version is too old'],
-      } as any);
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('2.0.0') // vitest < 2.1.0
+        .mockResolvedValueOnce(null); // msw
 
       const result = await service.validatePackageVersions(mockPackageManager);
 
       expect(result.compatible).toBe(false);
-      expect(result.reasons).toEqual(['React version is too old']);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.length).toBeGreaterThan(0);
     });
   });
 
   describe('validateVitestConfigFiles', () => {
-    it('should return compatible when check passes', async () => {
-      const { vitestConfigFiles } = await import('../ink/steps/checks/vitestConfigFiles');
-      vi.mocked(vitestConfigFiles.condition).mockResolvedValue({ type: 'compatible' } as any);
+    beforeEach(() => {
+      vi.mocked(find.any).mockReturnValue(undefined);
+    });
 
+    it('should return compatible when no config files found', async () => {
       const result = await service.validateVitestConfigFiles('/test/dir');
 
       expect(result.compatible).toBe(true);
       expect(result.reasons).toBeUndefined();
     });
 
-    it('should return incompatible with reasons when check fails', async () => {
-      const { vitestConfigFiles } = await import('../ink/steps/checks/vitestConfigFiles');
-      vi.mocked(vitestConfigFiles.condition).mockResolvedValue({
-        type: 'incompatible',
-        reasons: ['Multiple vitest config files found'],
-      } as any);
+    it('should detect JSON workspace file', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.json');
 
       const result = await service.validateVitestConfigFiles('/test/dir');
 
       expect(result.compatible).toBe(false);
-      expect(result.reasons).toEqual(['Multiple vitest config files found']);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.some((r) => r.includes('JSON workspace file'))).toBe(true);
+    });
+
+    it('should detect CommonJS config file', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // no workspace
+        .mockReturnValueOnce('vitest.config.cts'); // CJS config
+
+      const result = await service.validateVitestConfigFiles('/test/dir');
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('CommonJS config file'))).toBe(true);
     });
   });
 
@@ -163,15 +184,15 @@ describe('FeatureCompatibilityService', () => {
     let mockPackageManager: JsPackageManager;
 
     beforeEach(() => {
-      mockPackageManager = {} as any;
+      mockPackageManager = {
+        getInstalledVersion: vi.fn(),
+      } as any;
     });
 
     it('should return compatible when all checks pass', async () => {
-      const { packageVersions } = await import('../ink/steps/checks/packageVersions');
-      const { vitestConfigFiles } = await import('../ink/steps/checks/vitestConfigFiles');
-
-      vi.mocked(packageVersions.condition).mockResolvedValue({ type: 'compatible' } as any);
-      vi.mocked(vitestConfigFiles.condition).mockResolvedValue({ type: 'compatible' } as any);
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('2.1.0') // vitest
+        .mockResolvedValueOnce('2.0.0'); // msw
 
       const result = await service.validateTestFeatureCompatibility(mockPackageManager, '/test');
 
@@ -179,33 +200,27 @@ describe('FeatureCompatibilityService', () => {
     });
 
     it('should return incompatible if package versions check fails', async () => {
-      const { packageVersions } = await import('../ink/steps/checks/packageVersions');
-
-      vi.mocked(packageVersions.condition).mockResolvedValue({
-        type: 'incompatible',
-        reasons: ['Version mismatch'],
-      } as any);
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('2.0.0') // vitest < 2.1.0
+        .mockResolvedValueOnce(null); // msw
 
       const result = await service.validateTestFeatureCompatibility(mockPackageManager, '/test');
 
       expect(result.compatible).toBe(false);
-      expect(result.reasons).toEqual(['Version mismatch']);
+      expect(result.reasons).toBeDefined();
     });
 
     it('should return incompatible if vitest config check fails', async () => {
-      const { packageVersions } = await import('../ink/steps/checks/packageVersions');
-      const { vitestConfigFiles } = await import('../ink/steps/checks/vitestConfigFiles');
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('2.1.0') // vitest ok
+        .mockResolvedValueOnce('2.0.0'); // msw ok
 
-      vi.mocked(packageVersions.condition).mockResolvedValue({ type: 'compatible' } as any);
-      vi.mocked(vitestConfigFiles.condition).mockResolvedValue({
-        type: 'incompatible',
-        reasons: ['Config error'],
-      } as any);
+      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.json'); // JSON workspace
 
       const result = await service.validateTestFeatureCompatibility(mockPackageManager, '/test');
 
       expect(result.compatible).toBe(false);
-      expect(result.reasons).toEqual(['Config error']);
+      expect(result.reasons).toBeDefined();
     });
   });
 });

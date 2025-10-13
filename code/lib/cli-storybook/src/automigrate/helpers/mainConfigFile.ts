@@ -287,19 +287,6 @@ export function hasDirnameDefined(content: string): boolean {
 }
 
 /** Check if a specific import already exists in the file */
-export function hasImport(content: string, importName: string, fromModule: string): boolean {
-  // Check for various import patterns
-  const patterns = [
-    // import { name } from "module"
-    new RegExp(`import\\s*{\\s*[^}]*\\b${importName}\\b[^}]*}\\s*from\\s*["']${fromModule}["']`),
-    // import name from "module"
-    new RegExp(`import\\s+${importName}\\s+from\\s*["']${fromModule}["']`),
-    // import * as name from "module"
-    new RegExp(`import\\s*\\*\\s*as\\s+${importName}\\s+from\\s*["']${fromModule}["']`),
-  ];
-
-  return patterns.some((pattern) => pattern.test(content));
-}
 
 /** Configuration for what should be included in the compatibility banner */
 export interface BannerConfig {

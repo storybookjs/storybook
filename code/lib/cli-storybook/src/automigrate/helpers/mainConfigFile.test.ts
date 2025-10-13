@@ -8,7 +8,6 @@ import {
   getRendererName,
   getRendererPackageNameFromFramework,
   hasDirnameDefined,
-  hasImport,
 } from './mainConfigFile';
 
 describe('getBuilderPackageName', () => {
@@ -329,38 +328,5 @@ describe('hasDirnameDefined', () => {
       const configPath = path.join(__dirname, 'config.js');
     `;
     expect(hasDirnameDefined(content)).toBe(false);
-  });
-});
-
-describe('hasImport', () => {
-  it('should detect named import', () => {
-    const content = `import { dirname } from "node:path";`;
-    expect(hasImport(content, 'dirname', 'node:path')).toBe(true);
-  });
-
-  it('should detect default import', () => {
-    const content = `import path from "node:path";`;
-    expect(hasImport(content, 'path', 'node:path')).toBe(true);
-  });
-
-  it('should detect namespace import', () => {
-    const content = `import * as path from "node:path";`;
-    expect(hasImport(content, 'path', 'node:path')).toBe(true);
-  });
-
-  it('should detect import with multiple named imports', () => {
-    const content = `import { dirname, join } from "node:path";`;
-    expect(hasImport(content, 'dirname', 'node:path')).toBe(true);
-    expect(hasImport(content, 'join', 'node:path')).toBe(true);
-  });
-
-  it('should return false when import does not exist', () => {
-    const content = `import { join } from "node:path";`;
-    expect(hasImport(content, 'dirname', 'node:path')).toBe(false);
-  });
-
-  it('should handle single quotes', () => {
-    const content = `import { dirname } from 'node:path';`;
-    expect(hasImport(content, 'dirname', 'node:path')).toBe(true);
   });
 });

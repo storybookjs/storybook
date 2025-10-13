@@ -89,7 +89,12 @@ export const fixFauxEsmRequire = {
         const filenameDeclaration = t.variableDeclaration('const', [
           t.variableDeclarator(
             t.identifier('__filename'),
-            t.callExpression(t.identifier('fileURLToPath'), [t.stringLiteral('import.meta.url')])
+            t.callExpression(t.identifier('fileURLToPath'), [
+              t.memberExpression(
+                t.metaProperty(t.identifier('import'), t.identifier('meta')),
+                t.identifier('url')
+              ),
+            ])
           ),
         ]);
         const dirnameDeclaration = t.variableDeclaration('const', [
@@ -109,7 +114,12 @@ export const fixFauxEsmRequire = {
         const requireDeclaration = t.variableDeclaration('const', [
           t.variableDeclarator(
             t.identifier('require'),
-            t.callExpression(t.identifier('createRequire'), [t.stringLiteral('import.meta.url')])
+            t.callExpression(t.identifier('createRequire'), [
+              t.memberExpression(
+                t.metaProperty(t.identifier('import'), t.identifier('meta')),
+                t.identifier('url')
+              ),
+            ])
           ),
         ]);
 

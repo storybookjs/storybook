@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { bannerComment } from '../helpers/mainConfigFile';
+import { bannerComment, containsDirnameUsage } from '../helpers/mainConfigFile';
 import { fixFauxEsmRequire } from './fix-faux-esm-require';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
@@ -200,9 +200,9 @@ describe('fix-faux-esm-require', () => {
                 import { dirname } from "node:path";
                 import { createRequire } from "node:module";
                 import { addons } from '@storybook/addon-essentials';
-                const __filename = fileURLToPath("import.meta.url");
+                const __filename = fileURLToPath(import.meta.url);
                 const __dirname = dirname(__filename);
-                const require = createRequire("import.meta.url");
+                const require = createRequire(import.meta.url);
                 const config = require('./some-config');
                 const configPath = path.join(__dirname, 'config.js');
                 export default {
@@ -243,7 +243,7 @@ describe('fix-faux-esm-require', () => {
                 import { createRequire } from "node:module";
                 import { dirname } from "node:path";
                 import { addons } from '@storybook/addon-essentials';
-                const require = createRequire("import.meta.url");
+                const require = createRequire(import.meta.url);
                 const config = require('./some-config');
                 const configPath = path.join(__dirname, 'config.js');
                 export default {

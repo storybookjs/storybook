@@ -7,6 +7,13 @@ interface PackageInfo {
   version?: string;
 }
 
+export interface VersionConflict {
+  packageName: string;
+  existingVersion: string;
+  newVersion: string;
+  type: DependencyType;
+}
+
 /**
  * Collects all dependencies that need to be installed during the init process. This allows us to
  * gather all packages first and then install them in a single operation.
@@ -40,6 +47,73 @@ export class DependencyCollector {
     return (
       this.packages.get('dependencies')!.size > 0 || this.packages.get('devDependencies')!.size > 0
     );
+  }
+
+  /** Get all version conflicts across all dependency types */
+  getVersionConflicts(): VersionConflict[] {
+    const conflicts: VersionConflict[] = [];
+
+    for (const [type, typeMap] of this.packages.entries()) {
+      const packageNames = new Map<string, string[]>();
+
+      // Group packages by name to find conflicts
+      typeMap.forEach((version, name) => {
+        const versions = packageNames.get(name) || [];
+        versions.push(version);
+        packageNames.set(name, versions);
+      });
+
+      // Find packages with multiple versions
+      packageNames.forEach((versions, name) => {
+        if (versions.length > 1 && new Set(versions).size > 1) {
+          conflicts.push({
+            packageName: name,
+            existingVersion: versions[0],
+            newVersion: versions[versions.length - 1],
+            type,
+          });
+        }
+      });
+    }
+
+    return conflicts;
+  }
+
+  /** Merge dependencies from another collector */
+  merge(other: DependencyCollector): void {
+    const { dependencies, devDependencies } = other.getAllPackages();
+    this.addDependencies(dependencies);
+    this.addDevDependencies(devDependencies);
+  }
+
+  /** Validate that all packages have valid version specifiers */
+  validate(): { valid: boolean; errors: string[] } {
+    const errors: string[] = [];
+
+    for (const [type, typeMap] of this.packages.entries()) {
+      typeMap.forEach((version, name) => {
+        if (!name || name.trim() === '') {
+          errors.push(`Invalid package name in ${type}: empty or whitespace`);
+        }
+
+        if (version === '') {
+          errors.push(`Package ${name} in ${type} has empty version`);
+        }
+      });
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+    };
+  }
+
+  /** Get count of packages by type */
+  getPackageCount(type?: DependencyType): number {
+    if (type) {
+      return this.packages.get(type)!.size;
+    }
+    return this.packages.get('dependencies')!.size + this.packages.get('devDependencies')!.size;
   }
 
   /**

@@ -18,8 +18,6 @@ export {
   TEST_SUPPORTED_PROJECT_TYPES,
 } from './FeatureCompatibilityService';
 
-export { PackageManagerService } from './PackageManagerService';
-
 export { TelemetryService } from './TelemetryService';
 
 export { VersionService } from './VersionService';

@@ -200,14 +200,14 @@ describe('fix-faux-esm-require', () => {
                 import { dirname } from "node:path";
                 import { createRequire } from "node:module";
                 import { addons } from '@storybook/addon-essentials';
+                const __filename = fileURLToPath("import.meta.url");
+                const __dirname = dirname(__filename);
+                const require = createRequire("import.meta.url");
                 const config = require('./some-config');
                 const configPath = path.join(__dirname, 'config.js');
                 export default {
                   addons: ['@storybook/addon-essentials'],
                 };
-                const __filename = fileURLToPath("import.meta.url");
-                const __dirname = dirname(__filename);
-                const require = createRequire("import.meta.url");
               "
       `);
     });
@@ -243,12 +243,12 @@ describe('fix-faux-esm-require', () => {
                 import { createRequire } from "node:module";
                 import { dirname } from "node:path";
                 import { addons } from '@storybook/addon-essentials';
+                const require = createRequire("import.meta.url");
                 const config = require('./some-config');
                 const configPath = path.join(__dirname, 'config.js');
                 export default {
                   addons: ['@storybook/addon-essentials'],
                 };
-                const require = createRequire("import.meta.url");
               "
       `);
     });

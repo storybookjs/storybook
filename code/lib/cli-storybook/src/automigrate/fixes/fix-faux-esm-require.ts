@@ -74,36 +74,49 @@ export const fixFauxEsmRequire = {
       mainConfig.setImport(['dirname'], 'node:path');
       mainConfig.setImport(['fileURLToPath'], 'node:url');
 
+      // Find the index after the last import declaration
+      const body = mainConfig._ast.program.body;
+      let lastImportIndex = -1;
+      for (let i = 0; i < body.length; i++) {
+        if (t.isImportDeclaration(body[i])) {
+          lastImportIndex = i;
+        }
+      }
+      const insertIndex = lastImportIndex + 1;
+
       // Add __filename and __dirname if used
       if (hasUnderscoreFilename || hasUnderscoreDirname) {
-        mainConfig.setBodyDeclaration(
-          t.variableDeclaration('const', [
-            t.variableDeclarator(
-              t.identifier('__filename'),
-              t.callExpression(t.identifier('fileURLToPath'), [t.stringLiteral('import.meta.url')])
-            ),
-          ])
-        );
-        mainConfig.setBodyDeclaration(
-          t.variableDeclaration('const', [
-            t.variableDeclarator(
-              t.identifier('__dirname'),
-              t.callExpression(t.identifier('dirname'), [t.identifier('__filename')])
-            ),
-          ])
-        );
+        const filenameDeclaration = t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier('__filename'),
+            t.callExpression(t.identifier('fileURLToPath'), [t.stringLiteral('import.meta.url')])
+          ),
+        ]);
+        const dirnameDeclaration = t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier('__dirname'),
+            t.callExpression(t.identifier('dirname'), [t.identifier('__filename')])
+          ),
+        ]);
+
+        // Insert after imports
+        body.splice(insertIndex, 0, filenameDeclaration);
+        body.splice(insertIndex + 1, 0, dirnameDeclaration);
       }
 
       // add require if used
       if (hasRequireUsage) {
-        mainConfig.setBodyDeclaration(
-          t.variableDeclaration('const', [
-            t.variableDeclarator(
-              t.identifier('require'),
-              t.callExpression(t.identifier('createRequire'), [t.stringLiteral('import.meta.url')])
-            ),
-          ])
-        );
+        const requireDeclaration = t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier('require'),
+            t.callExpression(t.identifier('createRequire'), [t.stringLiteral('import.meta.url')])
+          ),
+        ]);
+
+        // Insert after imports (and after __filename/__dirname if they were added)
+        const currentInsertIndex =
+          hasUnderscoreFilename || hasUnderscoreDirname ? insertIndex + 2 : insertIndex;
+        body.splice(currentInsertIndex, 0, requireDeclaration);
       }
     });
 

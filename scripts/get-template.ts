@@ -344,7 +344,7 @@ if (esMain(import.meta.url)) {
     .option('--cadence <cadence>', 'Which cadence you want to run the script for')
     .option('--task <task>', 'Which task you want to run the script for')
     .option('--check', 'Throws an error when the parallelism counts for tasks are incorrect', false)
-    .option('--fix', 'Automatically fix parallelism counts in .circleci/config.yml', false);
+    .option('--fix', 'Automatically fix parallelism counts in workflow files', false);
 
   program.parse(process.argv);
 

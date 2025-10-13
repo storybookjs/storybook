@@ -280,7 +280,7 @@ Next, update your `main.ts` to reference the new preset file:
 The following changes are not strictly required yet, but we recommend making them to improve your users' experience.
 
 ### CSF 4 annotation support
-To support CSF 4 annotations in your addon, you will need to update your `src/index.ts` file to use the new `definePreviewAddon`. This change is  highly recommended, as it will help your own users reap the benefits of CSF 4.
+To support CSF 4 annotations in your addon, you will need to update your `src/index.ts` file to use the new `definePreviewAddon`. This change is highly recommended, as it will help your own users reap the benefits of CSF 4.
 
 With CSF 4, users can chain their preview configuration and benefit from better typing and more flexibility. Addons must export annotations to be compatible with this new syntax. CSF 4 will be the default way to write stories in Storybook 11.
 
@@ -295,7 +295,7 @@ With CSF 4, users can chain their preview configuration and benefit from better 
 
 ### Removal of exportEntries
 
-The `exportEntries` property in `package.json`s `bundler` was used to produce the `index.js` build output from `src/index.ts`. It was compatible with Node.js, rather than strictly with browsers. This build configuration could cause subtle bugs when addon authors exported code in `index.js` for use in the Storybook preview or manager.
+The `exportEntries` property in `package.json`'s `bundler` was used to produce the `index.js` build output from `src/index.ts`. It was compatible with Node.js, rather than strictly with browsers. This build configuration could cause subtle bugs when addon authors exported code in `index.js` for use in the Storybook preview or manager.
 
 In the Storybook 10 [addon-kit](https://github.com/storybookjs/addon-kit), we removed `exportEntries` from the `bundler` config, and we moved `src/index.ts` to be part of `previewEntries` instead. This way, any code exported from `src/index.ts` is bundled for browsers and usable with CSF 4. If you need to export additional code to run in the preview (such as optional decorators), you can add them to `src/index.ts`.
 

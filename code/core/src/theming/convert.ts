@@ -15,7 +15,7 @@ const lightSyntaxColors = {
   red4: '#ff0000',
   gray1: '#393A34',
   cyan1: '#36acaa',
-  cyan2: '#24659F',
+  cyan2: '#2B91AF',
   blue1: '#0000ff',
   blue2: '#00009f',
 };

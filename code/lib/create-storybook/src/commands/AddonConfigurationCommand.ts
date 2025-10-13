@@ -1,6 +1,7 @@
 import type { JsPackageManager } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
+import type { DependencyCollector } from '../dependency-collector';
 import type { CommandOptions, GeneratorFeature } from '../generators/types';
 
 /**
@@ -13,6 +14,8 @@ import type { CommandOptions, GeneratorFeature } from '../generators/types';
  * - Handle configuration errors gracefully
  */
 export class AddonConfigurationCommand {
+  constructor(private dependencyCollector: DependencyCollector) {}
+
   /** Execute addon configuration */
   async execute(
     packageManager: JsPackageManager,
@@ -52,6 +55,8 @@ export class AddonConfigurationCommand {
       '@storybook/addon-vitest',
     ]);
 
+    this.dependencyCollector.addDevDependencies(addons);
+
     // Note: Dependencies are added by the dependency collector, not here
 
     // Run a11y addon postinstall (runs automigration)
@@ -76,8 +81,13 @@ export class AddonConfigurationCommand {
 
 export const executeAddonConfiguration = (
   packageManager: JsPackageManager,
+  dependencyCollector: DependencyCollector,
   selectedFeatures: Set<GeneratorFeature>,
   options: CommandOptions
 ) => {
-  return new AddonConfigurationCommand().execute(packageManager, selectedFeatures, options);
+  return new AddonConfigurationCommand(dependencyCollector).execute(
+    packageManager,
+    selectedFeatures,
+    options
+  );
 };

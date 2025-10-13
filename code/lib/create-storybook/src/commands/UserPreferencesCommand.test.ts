@@ -1,23 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
-import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
-import { TelemetryService } from '../services/TelemetryService';
-import { VersionService } from '../services/VersionService';
 import { UserPreferencesCommand } from './UserPreferencesCommand';
 
-vi.mock('storybook/internal/common', async () => {
-  const actual = await vi.importActual('storybook/internal/common');
-  return {
-    ...actual,
-    isCI: vi.fn(),
-  };
-});
-
+vi.mock('storybook/internal/cli', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
+
+interface CommandWithPrivates {
+  versionService: { getVersionInfo: ReturnType<typeof vi.fn> };
+  telemetryService: {
+    trackNewUserCheck: ReturnType<typeof vi.fn>;
+    trackInstallType: ReturnType<typeof vi.fn>;
+  };
+  featureService: { validateTestFeatureCompatibility: ReturnType<typeof vi.fn> };
+}
 
 describe('UserPreferencesCommand', () => {
   let command: UserPreferencesCommand;
@@ -25,7 +26,17 @@ describe('UserPreferencesCommand', () => {
 
   beforeEach(() => {
     command = new UserPreferencesCommand(false);
-    mockPackageManager = {} as any;
+    mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
+
+    // Mock globalSettings
+    const mockSettings = {
+      value: { init: {} },
+      save: vi.fn().mockResolvedValue(undefined),
+      filePath: 'test-config.json',
+    };
+    vi.mocked(globalSettings).mockResolvedValue(
+      mockSettings as unknown as Awaited<ReturnType<typeof globalSettings>>
+    );
 
     // Create mock services
     const mockVersionService = {
@@ -42,18 +53,19 @@ describe('UserPreferencesCommand', () => {
     };
 
     // Inject mocked services
-    (command as any).versionService = mockVersionService;
-    (command as any).telemetryService = mockTelemetryService;
-    (command as any).featureService = mockFeatureService;
+    (command as unknown as CommandWithPrivates).versionService = mockVersionService;
+    (command as unknown as CommandWithPrivates).telemetryService = mockTelemetryService;
+    (command as unknown as CommandWithPrivates).featureService = mockFeatureService;
 
     // Mock logger and prompt
     vi.mocked(logger.intro).mockImplementation(() => {});
     vi.mocked(logger.info).mockImplementation(() => {});
     vi.mocked(logger.warn).mockImplementation(() => {});
+    vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(isCI).mockReturnValue(false);
 
     // Default version info
-    const versionService = (command as any).versionService;
+    const versionService = (command as unknown as CommandWithPrivates).versionService;
     vi.mocked(versionService.getVersionInfo).mockResolvedValue({
       currentVersion: '8.0.0',
       latestVersion: '8.0.0',
@@ -62,7 +74,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     // Default feature validation (compatible)
-    const featureService = (command as any).featureService;
+    const featureService = (command as unknown as CommandWithPrivates).featureService;
     vi.mocked(featureService.validateTestFeatureCompatibility).mockResolvedValue({
       compatible: true,
     });
@@ -95,7 +107,7 @@ describe('UserPreferencesCommand', () => {
         })
       );
       expect(result.newUser).toBe(true);
-      const telemetryService = (command as any).telemetryService;
+      const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
       expect(telemetryService.trackNewUserCheck).toHaveBeenCalledWith(true);
     });
 
@@ -111,7 +123,7 @@ describe('UserPreferencesCommand', () => {
       expect(prompt.select).toHaveBeenCalledTimes(2);
       expect(result.newUser).toBe(false);
       expect(result.installType).toBe('light');
-      const telemetryService = (command as any).telemetryService;
+      const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
       expect(telemetryService.trackInstallType).toHaveBeenCalledWith('light');
     });
 
@@ -142,7 +154,7 @@ describe('UserPreferencesCommand', () => {
       Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
-      const featureService = (command as any).featureService;
+      const featureService = (command as unknown as CommandWithPrivates).featureService;
       vi.mocked(featureService.validateTestFeatureCompatibility).mockResolvedValue({
         compatible: true,
       });
@@ -159,7 +171,7 @@ describe('UserPreferencesCommand', () => {
       Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
-      const featureService = (command as any).featureService;
+      const featureService = (command as unknown as CommandWithPrivates).featureService;
       vi.mocked(featureService.validateTestFeatureCompatibility).mockResolvedValue({
         compatible: false,
         reasons: ['React version is too old'],
@@ -174,7 +186,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should display outdated version warning', async () => {
-      const versionService = (command as any).versionService;
+      const versionService = (command as unknown as CommandWithPrivates).versionService;
       vi.mocked(versionService.getVersionInfo).mockResolvedValue({
         currentVersion: '7.0.0',
         latestVersion: '8.0.0',
@@ -190,7 +202,7 @@ describe('UserPreferencesCommand', () => {
     });
 
     it('should display prerelease warning', async () => {
-      const versionService = (command as any).versionService;
+      const versionService = (command as unknown as CommandWithPrivates).versionService;
       vi.mocked(versionService.getVersionInfo).mockResolvedValue({
         currentVersion: '8.0.0-alpha.1',
         latestVersion: '8.0.0',

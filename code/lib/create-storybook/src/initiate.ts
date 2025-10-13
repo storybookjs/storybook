@@ -72,7 +72,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 6: Configure addons (run postinstall scripts for configuration only)
-  await executeAddonConfiguration(packageManager, selectedFeatures, options);
+  await executeAddonConfiguration(packageManager, dependencyCollector, selectedFeatures, options);
 
   // Step 7: Install all dependencies in a single operation
   await executeDependencyInstallation(packageManager, dependencyCollector, options.skipInstall);

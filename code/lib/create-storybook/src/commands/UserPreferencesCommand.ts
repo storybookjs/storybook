@@ -1,3 +1,4 @@
+import { globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
@@ -55,25 +56,15 @@ export class UserPreferencesCommand {
     await this.displayVersionInfo(packageManager);
 
     const isInteractive = process.stdout.isTTY && !isCI();
-    const skipPrompt = !isInteractive || options.yes;
+    const skipPrompt = !isInteractive || !!options.yes;
 
     // Get new user preference
     const newUser = await this.promptNewUser(skipPrompt);
-    if (typeof newUser === 'undefined') {
-      logger.log('Canceling...');
-      process.exit(0);
-    }
 
     // Get install type
-    let installType: InstallType = 'recommended';
-    if (!newUser) {
-      const install = await this.promptInstallType(skipPrompt);
-      if (typeof install === 'undefined') {
-        logger.log('Canceling...');
-        process.exit(0);
-      }
-      installType = install;
-    }
+    const installType: InstallType = !newUser
+      ? await this.promptInstallType(skipPrompt)
+      : 'recommended';
 
     // Determine selected features
     const selectedFeatures = this.determineFeatures(installType, newUser);
@@ -98,11 +89,11 @@ export class UserPreferencesCommand {
 
     if (isOutdated && !isPrerelease) {
       logger.warn(dedent`
-        This version is behind the latest release, which is: ${picocolors.bold(latestVersion)}!
+        This version is behind the latest release, which is: ${latestVersion}!
         You likely ran the init command through npx, which can use a locally cached version.
         
-        To get the latest, please run: ${picocolors.bold('npx storybook@latest init')}
-        You may want to CTRL+C to stop, and run with the latest version instead.
+        To get the latest, please run: ${CLI_COLORS.cta('npx storybook@latest init')}
+        You may want to ${CLI_COLORS.cta('CTRL+C')} to stop, and run with the latest version instead.
       `);
     } else if (isPrerelease) {
       logger.warn(`This is a pre-release version: ${picocolors.bold(currentVersion)}`);
@@ -112,34 +103,48 @@ export class UserPreferencesCommand {
   }
 
   /** Prompt user about onboarding */
-  private async promptNewUser(skipPrompt: boolean): Promise<boolean | undefined> {
-    if (skipPrompt) {
-      return true;
+  private async promptNewUser(skipPrompt: boolean): Promise<boolean> {
+    const settings = await globalSettings();
+    const { skipOnboarding } = settings.value.init || {};
+    let isNewUser = skipOnboarding !== undefined ? !skipOnboarding : true;
+
+    if (skipPrompt || skipOnboarding) {
+      settings.value.init ||= {};
+      settings.value.init.skipOnboarding = !!skipOnboarding;
+    } else {
+      isNewUser = await prompt.select({
+        message: 'New to Storybook?',
+        options: [
+          {
+            label: `${picocolors.bold('Yes:')} Help me with onboarding`,
+            value: true,
+          },
+          {
+            label: `${picocolors.bold('No:')} Skip onboarding & don't ask again`,
+            value: false,
+          },
+        ],
+      });
+
+      settings.value.init ||= {};
+      settings.value.init.skipOnboarding = !isNewUser;
+
+      if (typeof isNewUser !== 'undefined') {
+        await this.telemetryService.trackNewUserCheck(isNewUser);
+      }
     }
 
-    const newUser = await prompt.select({
-      message: 'New to Storybook?',
-      options: [
-        {
-          label: `${picocolors.bold('Yes:')} Help me with onboarding`,
-          value: true,
-        },
-        {
-          label: `${picocolors.bold('No:')} Skip onboarding & don't ask again`,
-          value: false,
-        },
-      ],
-    });
-
-    if (typeof newUser !== 'undefined') {
-      await this.telemetryService.trackNewUserCheck(newUser);
+    try {
+      await settings.save();
+    } catch (err) {
+      logger.warn(`Failed to save user settings: ${err}`);
     }
 
-    return newUser;
+    return isNewUser;
   }
 
   /** Prompt user for install type */
-  private async promptInstallType(skipPrompt: boolean): Promise<InstallType | undefined> {
+  private async promptInstallType(skipPrompt: boolean): Promise<InstallType> {
     let installType: InstallType = 'recommended';
 
     if (!skipPrompt) {
@@ -147,11 +152,11 @@ export class UserPreferencesCommand {
         message: 'What configuration should we install?',
         options: [
           {
-            label: `${picocolors.bold('Recommended:')} Includes component development, docs, and testing features.`,
+            label: `Recommended: Includes component development, docs, and testing features.`,
             value: 'recommended',
           },
           {
-            label: `${picocolors.bold('Minimal:')} Just the essentials for component development.`,
+            label: `Minimal: Just the essentials for component development.`,
             value: 'light',
           },
         ],

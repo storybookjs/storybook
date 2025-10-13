@@ -224,6 +224,27 @@ export const PrimaryDisabled = Primary.extend({
 });
 ```
 
+#### `<Story>.test`
+
+(⚠️ **Experimental**)
+
+A more ergonomic way to define [tests for your stories](../../writing-tests/index.mdx). While this API is still experimental, it is [documented in the RFC to gather feedback](https://github.com/storybookjs/storybook/discussions/30119) and must be enabled via the [`experimentalTestSyntax` feature flag](../main-config/main-config-features.mdx#experimentaltestsyntax).
+
+```ts title="Button.stories.js|ts"
+// ...from above
+export const PrimaryDisabled = Primary.extend({ args: { disabled: true } });
+
+// 👇 .test method: Attach tests to a story
+//    The test function can run the same code as the play function
+PrimaryDisabled.test('should be disabled', async ({ canvas, userEvent, args }) => {
+  const button = await canvas.findByRole('button');
+  await userEvent.click(button);
+
+  await expect(button).toBeDisabled();
+  await expect(args.onClick).not.toHaveBeenCalled();
+});
+```
+
 ## Upgrade to CSF Next
 
 You can upgrade your stories to CSF Next either automatically (from CSF 3) or manually (from CSF 1, 2, or 3). CSF Next is designed to be usable incrementally; you do not have to upgrade all of your story files at once. However, you cannot mix story formats within the same file.

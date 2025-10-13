@@ -255,25 +255,28 @@ export function containsRequireUsage(content: string): boolean {
   return requireCallRegex.test(content) || requireDotRegex.test(content);
 }
 
+/** Check if the file content contains a pattern matching the given regex */
+export function containsPatternUsage(content: string, pattern: RegExp): boolean {
+  // Remove strings first, then comments
+  const stripStrings = (s: string) => s.replace(/(['"`])(?:\\.|(?!\1)[\s\S])*?\1/g, '""');
+  const withoutStrings = stripStrings(content);
+  const withoutBlock = withoutStrings.replace(/\/\*[\s\S]*?\*\//g, '');
+  const cleanContent = withoutBlock
+    .split('\n')
+    .map((line) => line.split('//')[0])
+    .join('\n');
+
+  // Check for pattern usage in the cleaned content
+  return pattern.test(cleanContent);
+}
+
 /** Check if the file content contains __dirname usage */
 export function containsDirnameUsage(content: string): boolean {
-  // Remove comments and strings to avoid false positives
-  const lines = content.split('\n');
-  const codeLines = lines.map((line) => {
-    // Remove single-line comments
-    const withoutSingleComment = line.split('//')[0];
-    // Remove multi-line comments (simple approach)
-    const withoutMultiComment = withoutSingleComment.replace(/\/\*[\s\S]*?\*\//g, '');
-    // Remove string literals (simple approach for double quotes)
-    const withoutStrings = withoutMultiComment.replace(/"[^"]*"/g, '""');
-    return withoutStrings;
-  });
+  return containsPatternUsage(content, /\b__dirname\b/);
+}
 
-  const cleanContent = codeLines.join('\n');
-
-  // Check for __dirname usage in the cleaned content
-  const dirnameRegex = /\b__dirname\b/;
-  return dirnameRegex.test(cleanContent);
+export function containsFilenameUsage(content: string): boolean {
+  return containsPatternUsage(content, /\b__filename\b/);
 }
 
 /** Check if __dirname is already defined in the file */

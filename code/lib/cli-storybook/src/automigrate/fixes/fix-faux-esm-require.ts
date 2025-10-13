@@ -7,7 +7,9 @@ import { dedent } from 'ts-dedent';
 import {
   type BannerConfig,
   bannerComment,
+  containsDirnameUsage,
   containsESMUsage,
+  containsFilenameUsage,
   containsRequireUsage,
   hasRequireBanner,
   updateMainConfig,
@@ -41,10 +43,8 @@ export const fixFauxEsmRequire = {
 
     // Analyze what compatibility features are needed
     const hasRequireUsage = containsRequireUsage(content);
-    const hasUnderscoreFilename = !!content.includes('__filename');
-    const hasUnderscoreDirname = !!content.includes('__dirname');
-
-    const hasBanner = !!content.includes(bannerComment);
+    const hasUnderscoreFilename = containsFilenameUsage(content);
+    const hasUnderscoreDirname = containsDirnameUsage(content);
 
     // Check if any compatibility features are needed
     if (hasRequireUsage || hasUnderscoreFilename || hasUnderscoreDirname) {

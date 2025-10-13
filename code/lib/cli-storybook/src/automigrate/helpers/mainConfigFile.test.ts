@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   containsDirnameUsage,
+  containsPatternUsage,
   getBuilderPackageName,
   getFrameworkPackageName,
   getRendererName,
@@ -217,6 +218,49 @@ describe('getRendererPackageNameFromFramework', () => {
     const frameworkPackageName = '@storybook/unknown';
     const packageName = getRendererPackageNameFromFramework(frameworkPackageName);
     expect(packageName).toBeNull();
+  });
+});
+
+describe('containsPatternUsage', () => {
+  it('should detect __dirname usage with hardcoded regex', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(__dirname, 'config.js');
+    `;
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(true);
+  });
+
+  it('should not detect __dirname in comments', () => {
+    const content = `
+      // This is __dirname in a comment
+      const path = require('path');
+    `;
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(false);
+  });
+
+  it('should not detect __dirname in strings', () => {
+    const content = `
+      const message = "This is __dirname in a string";
+      const path = require('path');
+    `;
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(false);
+  });
+
+  it('should return false when __dirname is not used', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(process.cwd(), 'config.js');
+    `;
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(false);
+  });
+
+  it('should work with other regex patterns', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(__filename, 'config.js');
+    `;
+    expect(containsPatternUsage(content, /\b__filename\b/)).toBe(true);
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(false);
   });
 });
 

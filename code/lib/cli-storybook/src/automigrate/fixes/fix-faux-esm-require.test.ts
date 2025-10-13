@@ -143,6 +143,91 @@ describe('fix-faux-esm-require', () => {
     });
   });
 
+  describe('containsDirnameUsage', () => {
+    it('should detect __dirname in actual code', () => {
+      const content = `
+        const path = require('path');
+        const configPath = path.join(__dirname, 'config.js');
+      `;
+      expect(containsDirnameUsage(content)).toBe(true);
+    });
+
+    it('should not detect __dirname in double-quoted strings', () => {
+      const content = `
+        const message = "This is __dirname in a string";
+        const another = "path/to/__dirname/file.js";
+      `;
+      expect(containsDirnameUsage(content)).toBe(false);
+    });
+
+    it('should not detect __dirname in single-quoted strings', () => {
+      const content = `
+        const message = 'This is __dirname in a string';
+        const another = 'path/to/__dirname/file.js';
+      `;
+      expect(containsDirnameUsage(content)).toBe(false);
+    });
+
+    it('should not detect __dirname in backtick strings', () => {
+      const content = `
+        const message = \`This is __dirname in a string\`;
+        const another = \`path/to/__dirname/file.js\`;
+      `;
+      expect(containsDirnameUsage(content)).toBe(false);
+    });
+
+    it('should not detect __dirname in single-line comments', () => {
+      const content = `
+        // This is __dirname in a comment
+        const config = { addons: [] };
+      `;
+      expect(containsDirnameUsage(content)).toBe(false);
+    });
+
+    it('should not detect __dirname in multi-line comments', () => {
+      const content = `
+        /* This is __dirname in a 
+           multi-line comment */
+        const config = { addons: [] };
+      `;
+      expect(containsDirnameUsage(content)).toBe(false);
+    });
+
+    it('should handle // inside strings correctly', () => {
+      const content = `
+        const url = "https://example.com//path";
+        const config = { addons: [] };
+      `;
+      expect(containsDirnameUsage(content)).toBe(false);
+    });
+
+    it('should detect __dirname when it appears after string with //', () => {
+      const content = `
+        const url = "https://example.com//path";
+        const configPath = path.join(__dirname, 'config.js');
+      `;
+      expect(containsDirnameUsage(content)).toBe(true);
+    });
+
+    it('should handle escaped quotes in strings', () => {
+      const content = `
+        const message = "This is \\"__dirname\\" in a string";
+        const config = { addons: [] };
+      `;
+      expect(containsDirnameUsage(content)).toBe(false);
+    });
+
+    it('should handle mixed quote types', () => {
+      const content = `
+        const double = "This is __dirname in double quotes";
+        const single = 'This is __dirname in single quotes';
+        const backtick = \`This is __dirname in backticks\`;
+        const actual = path.join(__dirname, 'config.js');
+      `;
+      expect(containsDirnameUsage(content)).toBe(true);
+    });
+  });
+
   describe('run', () => {
     it('should add require banner to file', async () => {
       const originalContent = `

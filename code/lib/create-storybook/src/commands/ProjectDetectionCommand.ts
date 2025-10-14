@@ -42,7 +42,8 @@ export class ProjectDetectionCommand {
       projectType = await this.autoDetectProjectType(packageManager, options, task);
     }
 
-    task.success(`Project type: ${projectType}`);
+    task.message(projectType);
+    task.success('Project type', { showLog: true });
 
     // Check for existing installation
     await this.checkExistingInstallation(projectType, options);

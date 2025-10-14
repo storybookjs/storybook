@@ -1,4 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 
 import type { DependencyCollector } from '../dependency-collector';
 
@@ -25,7 +26,14 @@ export class DependencyInstallationCommand {
     try {
       const { dependencies, devDependencies } = dependencyCollector.getAllPackages();
 
+      const task = prompt.taskLog({
+        id: 'adding-dependencies',
+        title: 'Adding dependencies to package.json',
+      });
+
       if (dependencies.length > 0) {
+        task.message('Adding dependencies:\n' + dependencies.map((dep) => `- ${dep}`).join('\n'));
+
         await packageManager.addDependencies(
           { type: 'dependencies', skipInstall: true },
           dependencies
@@ -33,11 +41,17 @@ export class DependencyInstallationCommand {
       }
 
       if (devDependencies.length > 0) {
+        task.message(
+          'Adding devDependencies:\n' + devDependencies.map((dep) => `- ${dep}`).join('\n')
+        );
+
         await packageManager.addDependencies(
           { type: 'devDependencies', skipInstall: true },
           devDependencies
         );
       }
+
+      task.success('Dependencies added to package.json', { showLog: true });
 
       if (!skipInstall && dependencyCollector.hasPackages()) {
         await packageManager.installDependencies();

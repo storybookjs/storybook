@@ -197,11 +197,11 @@ export class UserPreferencesCommand {
     );
 
     if (!result.compatible && result.reasons) {
+      logger.warn(dedent`Due to the following reasons, Storybook's testing features cannot be installed:
+        ${result.reasons.map((reason) => `- ${CLI_COLORS.warning(reason)}`).join('\n')}
+        `);
       const shouldContinue = await prompt.confirm({
-        message: dedent`
-          ${result.reasons.join('\n')}
-          Do you want to continue without Storybook's testing features?
-        `,
+        message: "Do you want to continue without Storybook's testing features?",
       });
 
       if (shouldContinue) {

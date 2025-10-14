@@ -132,7 +132,6 @@ const StyledButton = styled('button', {
   whiteSpace: 'nowrap',
   userSelect: 'none',
   opacity: disabled ? 0.5 : 1,
-  opacity: disabled ? 0.5 : 1,
   margin: 0,
   fontSize: `${theme.typography.size.s1}px`,
   fontWeight: theme.typography.weight.bold,

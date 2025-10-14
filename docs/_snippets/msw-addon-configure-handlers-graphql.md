@@ -128,7 +128,8 @@ export function createApollo(httpLink: HttpLink): ApolloClientOptions<any> {
 export class MockGraphQLModule {}
 ```
 
-```js filename="YourPage.stories.js|jsx" renderer="react" language="js"
+```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
 
@@ -223,12 +224,13 @@ export const MockedError = {
 };
 ```
 
-```ts filename="YourPage.stories.ts|tsx" renderer="react" language="ts"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
-import type { Meta, StoryObj } from '@storybook/your-framework';
-
+```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+import * as React from 'react';
 import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import { graphql, HttpResponse, delay } from 'msw';
+
+// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
+import type { Meta, StoryObj } from '@storybook/your-framework';
 
 import { DocumentScreen } from './YourPage';
 
@@ -926,4 +928,201 @@ export const MockedError: Story = {
     },
   });
 </script>
+```
+
+```tsx filename="YourPage.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+import { graphql, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
+
+import { DocumentScreen } from './YourPage';
+
+const mockedClient = new ApolloClient({
+  uri: 'https://your-graphql-endpoint',
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+    query: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+  },
+});
+
+//👇The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+const meta = preview.meta({
+  component: DocumentScreen,
+  decorators: [
+    (Story) => (
+      <ApolloProvider client={mockedClient}>
+        <Story />
+      </ApolloProvider>
+    ),
+  ],
+});
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', () => {
+          return HttpResponse.json({
+            data: {
+              allInfo: {
+                ...TestData,
+              },
+            },
+          });
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', async () => {
+          await delay(800);
+          return HttpResponse.json({
+            errors: [
+              {
+                message: 'Access denied',
+              },
+            ],
+          });
+        }),
+      ],
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="YourPage.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
+import { graphql, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
+
+import { DocumentScreen } from './YourPage';
+
+const mockedClient = new ApolloClient({
+  uri: 'https://your-graphql-endpoint',
+  cache: new InMemoryCache(),
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+    query: {
+      fetchPolicy: 'no-cache',
+      errorPolicy: 'all',
+    },
+  },
+});
+
+//👇The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+const meta = preview.meta({
+  component: DocumentScreen,
+  decorators: [
+    (Story) => (
+      <ApolloProvider client={mockedClient}>
+        <Story />
+      </ApolloProvider>
+    ),
+  ],
+});
+
+export const MockedSuccess = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', () => {
+          return HttpResponse.json({
+            data: {
+              allInfo: {
+                ...TestData,
+              },
+            },
+          });
+        }),
+      ],
+    },
+  },
+});
+
+export const MockedError = meta.story({
+  parameters: {
+    msw: {
+      handlers: [
+        graphql.query('AllInfoQuery', async () => {
+          await delay(800);
+          return HttpResponse.json({
+            errors: [
+              {
+                message: 'Access denied',
+              },
+            ],
+          });
+        }),
+      ],
+    },
+  },
+});
 ```

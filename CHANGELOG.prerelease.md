@@ -1,3 +1,14 @@
+## 10.0.0-beta.11
+
+- Automigration: Improve the viewport/backgrounds automigration - [#32619](https://github.com/storybookjs/storybook/pull/32619), thanks @valentinpalkovic!
+- CSF: Enhance config-to-csf-factory to support type wrappers - [#32543](https://github.com/storybookjs/storybook/pull/32543), thanks @yannbf!
+- Core: Ensure valid QR code URL - [#32661](https://github.com/storybookjs/storybook/pull/32661), thanks @ghengeveld!
+- Mocking: Fix `sb.mock` usage in Storybook's deployed in subpaths - [#32678](https://github.com/storybookjs/storybook/pull/32678), thanks @valentinpalkovic!
+- NextJS-Vite: Automatically fix bad PostCSS configuration - [#32691](https://github.com/storybookjs/storybook/pull/32691), thanks @ndelangen!
+- Nextjs: Fix Nextjs version detection with prereleases - [#32724](https://github.com/storybookjs/storybook/pull/32724), thanks @yannbf!
+- Presets: Support extensionless imports in TS-based presets - [#32641](https://github.com/storybookjs/storybook/pull/32641), thanks @JReinhold!
+- React Native Web: Fix REACT_NATIVE_AND_RNW should detect vite builder - [#32718](https://github.com/storybookjs/storybook/pull/32718), thanks @dannyhw!
+
 ## 10.0.0-beta.10
 
 - Core: Make `subtype` an optional property on an index input - [#32602](https://github.com/storybookjs/storybook/pull/32602), thanks @JReinhold!

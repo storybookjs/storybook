@@ -55,7 +55,7 @@ export const ExampleStory = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="common" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="common" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -113,7 +113,7 @@ export const ExampleStory: Story = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -166,4 +166,41 @@ export const ExampleStory: Story = {
     await userEvent.click(canvas.getByRole('button'));
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const ExampleStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // Starts querying from the component's root element
+    await userEvent.type(canvas.getByTestId('example-element'), 'something');
+    await userEvent.click(canvas.getByRole('button'));
+  },
+});
 ```

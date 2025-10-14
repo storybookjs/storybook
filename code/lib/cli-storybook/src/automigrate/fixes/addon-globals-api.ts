@@ -2,13 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
 import type { ConfigFile, CsfFile } from 'storybook/internal/csf-tools';
-import {
-  formatConfig,
-  formatCsf,
-  loadConfig,
-  loadCsf,
-  writeCsf,
-} from 'storybook/internal/csf-tools';
+import { formatConfig, loadConfig, loadCsf, writeCsf } from 'storybook/internal/csf-tools';
 
 import type { ArrayExpression, Expression, ObjectExpression } from '@babel/types';
 
@@ -232,20 +226,6 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
   },
 };
 
-// Individual story transformation function for testing
-export function transformStoryFileSync(
-  source: string,
-  options: {
-    needsViewportMigration: boolean;
-    needsBackgroundsMigration: boolean;
-    viewportsOptions: any;
-    backgroundsOptions: any;
-  }
-) {
-  const result = transformStoryFile(source, options);
-  return result ? formatCsf(result, {}, source) : null;
-}
-
 // Story transformation function
 async function transformStoryFiles(
   files: string[],
@@ -282,7 +262,7 @@ async function transformStoryFiles(
 }
 
 // Transform a single story file
-function transformStoryFile(
+export function transformStoryFile(
   source: string,
   options: {
     needsViewportMigration: boolean;
@@ -310,24 +290,58 @@ function transformStoryFile(
       viewportParams = getObjectProperty(parameters, 'viewport') as ObjectExpression;
       if (viewportParams) {
         const defaultViewport = getObjectProperty(viewportParams, 'defaultViewport');
-        if (defaultViewport && t.isStringLiteral(defaultViewport)) {
+        const defaultOrientation = getObjectProperty(viewportParams, 'defaultOrientation');
+        const disableViewport = getObjectProperty(viewportParams, 'disable');
+
+        // Handle both string literals and member expressions for defaultViewport
+        let viewportValue: t.StringLiteral | t.MemberExpression | null = null;
+        if (defaultViewport) {
+          if (t.isStringLiteral(defaultViewport)) {
+            viewportValue = defaultViewport;
+          } else if (t.isMemberExpression(defaultViewport)) {
+            // Preserve the member expression as-is
+            viewportValue = defaultViewport;
+          }
+        }
+
+        if (viewportValue) {
           // Create globals.viewport
           if (!newGlobals) {
             newGlobals = t.objectExpression([]);
+          }
+
+          // Determine isRotated based on defaultOrientation
+          let isRotated = false;
+          if (defaultOrientation && t.isStringLiteral(defaultOrientation)) {
+            isRotated = defaultOrientation.value === 'portrait';
           }
 
           newGlobals.properties.push(
             t.objectProperty(
               t.identifier('viewport'),
               t.objectExpression([
-                t.objectProperty(t.identifier('value'), t.stringLiteral(defaultViewport.value)),
-                t.objectProperty(t.identifier('isRotated'), t.booleanLiteral(false)),
+                t.objectProperty(t.identifier('value'), viewportValue),
+                t.objectProperty(t.identifier('isRotated'), t.booleanLiteral(isRotated)),
               ])
             )
           );
 
           // Remove defaultViewport from parameters
           removeProperty(viewportParams, 'defaultViewport');
+          storyHasChanges = true;
+        }
+
+        // Handle defaultOrientation removal
+        if (defaultOrientation) {
+          removeProperty(viewportParams, 'defaultOrientation');
+          storyHasChanges = true;
+        }
+
+        // Handle disable -> disabled rename
+        if (disableViewport && t.isBooleanLiteral(disableViewport)) {
+          removeProperty(viewportParams, 'disable');
+          // Rename disable to disabled (preserve both true and false values)
+          addProperty(viewportParams, 'disabled', disableViewport);
           storyHasChanges = true;
         }
       }
@@ -339,6 +353,18 @@ function transformStoryFile(
       if (backgroundsParams) {
         const defaultBackground = getObjectProperty(backgroundsParams, 'default');
         const disableBackground = getObjectProperty(backgroundsParams, 'disable');
+        const valuesBackground = getObjectProperty(backgroundsParams, 'values');
+
+        // Handle values -> options transformation
+        if (valuesBackground && t.isArrayExpression(valuesBackground)) {
+          // Transform values array to options object
+          const optionsObject = transformValuesToOptions(valuesBackground);
+
+          // Remove the old values property
+          removeProperty(backgroundsParams, 'values');
+          addProperty(backgroundsParams, 'options', optionsObject);
+          storyHasChanges = true;
+        }
 
         if (defaultBackground && t.isStringLiteral(defaultBackground)) {
           // Create globals.backgrounds

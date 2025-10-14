@@ -593,11 +593,9 @@ export default async function postInstall(options: PostinstallOptions) {
       '🎉 All done!',
       dedent`
         @storybook/addon-vitest is now configured and you're ready to run your tests!
-  
         Here are a couple of tips to get you started:
         • You can run tests with "${runCommand}"
         • When using the Vitest extension in your editor, all of your stories will be shown as tests!
-  
         Check the documentation for more information about its features and options at:
         https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}
       `
@@ -607,14 +605,11 @@ export default async function postInstall(options: PostinstallOptions) {
       '⚠️ Done, but with errors!',
       dedent`
         @storybook/addon-vitest was installed successfully, but there were some errors during the setup process.
-
         Please refer to the documentation to complete the setup manually and check the errors above:
         https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
       `
     );
   }
-
-  logger.line(1);
 }
 
 async function getPackageNameFromPath(input: string): Promise<string> {

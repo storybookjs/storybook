@@ -356,8 +356,6 @@ export async function baseGenerator(
       !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
   );
 
-  logger.log(`Getting the correct version of ${packagesToInstall.length} packages`);
-
   let eslintPluginPackage: string | null = null;
   try {
     if (!isCI()) {

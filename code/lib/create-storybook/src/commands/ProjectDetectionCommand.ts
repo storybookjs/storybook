@@ -42,7 +42,7 @@ export class ProjectDetectionCommand {
       projectType = await this.autoDetectProjectType(packageManager, options, task);
     }
 
-    task.success(`Detected project type: ${projectType}`);
+    task.success(`Project type: ${projectType}`);
 
     // Check for existing installation
     await this.checkExistingInstallation(projectType, options);
@@ -59,7 +59,8 @@ export class ProjectDetectionCommand {
       return projectTypeProvided.toUpperCase() as ProjectType;
     }
 
-    task.error(`The provided project type was not recognized by Storybook: ${projectTypeProvided}`);
+    task.error(`The provided project type ${projectTypeProvided} was not recognized by Storybook`);
+
     throw new HandledError(`Unknown project type supplied: ${projectTypeProvided}`);
   }
 
@@ -75,6 +76,11 @@ export class ProjectDetectionCommand {
       // Handle React Native special case
       if (detectedType === ProjectType.REACT_NATIVE && !options.yes) {
         return await this.promptReactNativeVariant();
+      }
+
+      if (detectedType === ProjectType.UNDETECTED) {
+        task.error('Storybook failed to detect your project type');
+        throw new HandledError('Storybook failed to detect your project type');
       }
 
       return detectedType;

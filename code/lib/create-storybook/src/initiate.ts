@@ -138,8 +138,15 @@ export async function initiate(options: CommandOptions): Promise<void> {
       cliOptions: options,
       printError: (err) => !err.handled && logger.error(err),
     },
-    () => {
-      return doInitiate(options);
+    async () => {
+      try {
+        const result = await doInitiate(options);
+        return result;
+      } catch (err) {
+        logger.outro(CLI_COLORS.error(`Storybook failed to initialize your project.`));
+
+        process.exit(1);
+      }
     }
   );
 

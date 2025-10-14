@@ -148,7 +148,7 @@ export class UserPreferencesCommand {
     let installType: InstallType = 'recommended';
 
     if (!skipPrompt) {
-      const configuration = await prompt.select({
+      installType = await prompt.select({
         message: 'What configuration should we install?',
         options: [
           {
@@ -161,14 +161,10 @@ export class UserPreferencesCommand {
           },
         ],
       });
-
-      if (typeof configuration === 'undefined') {
-        return configuration;
-      }
-      installType = configuration as InstallType;
     }
 
     await this.telemetryService.trackInstallType(installType);
+
     return installType;
   }
 

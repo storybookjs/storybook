@@ -1,5 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, prompt } from 'storybook/internal/node-logger';
 
 import type { DependencyCollector } from '../dependency-collector';
 import type { CommandOptions, GeneratorFeature } from '../generators/types';
@@ -26,18 +26,7 @@ export class AddonConfigurationCommand {
       return;
     }
 
-    const task = prompt.taskLog({
-      id: 'configure-addons',
-      title: 'Configuring test addons...',
-    });
-
-    try {
-      await this.configureTestAddons(packageManager, options);
-      task.success('Test addons configured');
-    } catch (err) {
-      task.error(`Failed to configure test addons: ${String(err)}`);
-      // Don't throw - addon configuration failures shouldn't fail the entire init
-    }
+    await this.configureTestAddons(packageManager, options);
   }
 
   /** Configure test addons (a11y and vitest) */
@@ -59,23 +48,52 @@ export class AddonConfigurationCommand {
 
     // Note: Dependencies are added by the dependency collector, not here
 
-    // Run a11y addon postinstall (runs automigration)
-    await postinstallAddon('@storybook/addon-a11y', {
-      packageManager: packageManager.type,
-      configDir,
-      yes: options.yes,
-      skipInstall: true,
-      skipDependencyManagement: true,
+    const task = prompt.taskLog({
+      id: 'configure-addons',
+      title: 'Configuring test addons...',
     });
 
+    let failed = false;
+
+    try {
+      // Run a11y addon postinstall (runs automigration)
+      task.message('Configuring a11y addon...');
+
+      await postinstallAddon('@storybook/addon-a11y', {
+        packageManager: packageManager.type,
+        configDir,
+        yes: options.yes,
+        skipInstall: true,
+        skipDependencyManagement: true,
+      });
+
+      task.message('A11y addon configured');
+    } catch (err) {
+      task.message(CLI_COLORS.error(`Failed to configure test addons`));
+      failed = true;
+      // Don't throw - addon configuration failures shouldn't fail the entire init
+    }
+
     // Run vitest addon postinstall (configuration only)
-    await postinstallAddon('@storybook/addon-vitest', {
-      packageManager: packageManager.type,
-      configDir,
-      yes: options.yes,
-      skipInstall: true,
-      skipDependencyManagement: true,
-    });
+    try {
+      await postinstallAddon('@storybook/addon-vitest', {
+        packageManager: packageManager.type,
+        configDir,
+        yes: options.yes,
+        skipInstall: true,
+        skipDependencyManagement: true,
+      });
+    } catch (err) {
+      task.message(CLI_COLORS.error(`Failed to configure test addons`));
+      failed = true;
+      // Don't throw - addon configuration failures shouldn't fail the entire init
+    }
+
+    if (failed) {
+      task.error('Failed to configure test addons');
+    } else {
+      task.success('Test addons configured');
+    }
   }
 }
 

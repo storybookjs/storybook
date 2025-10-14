@@ -97,7 +97,6 @@ const StyledButton = styled('button', {
 >(({ theme, variant, size, disabled, active, animating, animation = 'none', padding }) => ({
   border: 0,
   cursor: disabled ? 'not-allowed' : 'pointer',
-  cursor: disabled ? 'not-allowed' : 'pointer',
   display: 'inline-flex',
   gap: '6px',
   alignItems: 'center',

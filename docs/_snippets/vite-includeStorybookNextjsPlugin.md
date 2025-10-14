@@ -1,5 +1,4 @@
-```tsx
-// vitest.config.ts
+```ts filename="vitest.config.ts" renderer="react" language="ts"
 import { defineConfig } from "vite";
 import { storybookNextJsPlugin } from '@storybook/nextjs-vite/vite-plugin'
 

@@ -2,17 +2,23 @@ import * as clack from '@clack/prompts';
 import boxen from 'boxen';
 
 import { isClackEnabled } from '../prompts/prompt-config';
-import { currentTaskLog } from '../prompts/prompt-provider-clack';
+import { getCurrentTaskLog } from '../prompts/prompt-provider-clack';
 import { wrapTextForClack } from '../wrap-utils';
 import { CLI_COLORS } from './colors';
 import { logTracker } from './log-tracker';
 
 const createLogFunction =
-  (clackFn: (message: string) => void, consoleFn: (...args: any[]) => void) => () =>
+  (
+    clackFn: (message: string) => void,
+    consoleFn: (...args: any[]) => void,
+    cliColors?: (typeof CLI_COLORS)[keyof typeof CLI_COLORS]
+  ) =>
+  () =>
     isClackEnabled()
       ? (message: string) => {
+          const currentTaskLog = getCurrentTaskLog();
           if (currentTaskLog) {
-            currentTaskLog.message(message);
+            currentTaskLog.message(cliColors ? cliColors(message) : message);
           } else {
             clackFn(wrapTextForClack(message));
           }
@@ -22,8 +28,8 @@ const createLogFunction =
 const LOG_FUNCTIONS = {
   log: createLogFunction(clack.log.message, console.log),
   info: createLogFunction(clack.log.info, console.log),
-  warn: createLogFunction(clack.log.warn, console.warn),
-  error: createLogFunction(clack.log.error, console.error),
+  warn: createLogFunction(clack.log.warn, console.warn, CLI_COLORS.warning),
+  error: createLogFunction(clack.log.error, console.error, CLI_COLORS.error),
   intro: createLogFunction(clack.intro, console.log),
   outro: createLogFunction(clack.outro, console.log),
   step: createLogFunction(clack.log.step, console.log),

@@ -117,7 +117,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
-    logger.log('Detected Vite project. Setting builder to Vite');
+    logger.log('Setting builder to Vite');
     return CoreBuilder.Vite;
   }
 
@@ -127,7 +127,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
     ((dependencies.webpack || dependencies['@nuxt/webpack-builder']) &&
       dependencies.vite !== undefined)
   ) {
-    logger.log('Detected webpack project. Setting builder to webpack');
+    logger.log('Setting builder to webpack');
     return CoreBuilder.Webpack5;
   }
 

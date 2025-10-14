@@ -25,7 +25,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       variant = 'outline',
       padding = 'medium',
       disabled = false,
-      disabled = false,
       active = false,
       onClick,
       ...restProps
@@ -72,8 +71,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         variant={variant}
         size={size}
         padding={padding}
-        aria-disabled={disabled}
-        disabled={disabled}
+        aria-disabled={disabled ? 'true' : 'false'}
         active={active}
         animating={isAnimating}
         animation={animation}
@@ -93,7 +91,6 @@ const StyledButton = styled('button', {
     animating: boolean;
     animation: ButtonProps['animation'];
   }
->(({ theme, variant, size, active, disabled, animating, animation = 'none', padding }) => ({
 >(({ theme, variant, size, disabled, active, animating, animation = 'none', padding }) => ({
   border: 0,
   cursor: disabled ? 'not-allowed' : 'pointer',

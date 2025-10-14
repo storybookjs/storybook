@@ -54,6 +54,6 @@ test.describe('addon-viewport', () => {
 
     const toolbar = page.getByTitle('Change the size of the preview');
 
-    await expect(toolbar).toHaveAttribute('aria-disabled');
+    await expect(toolbar).toHaveAttribute('aria-disabled', 'true');
   });
 });

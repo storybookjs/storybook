@@ -160,13 +160,6 @@ export const Disabled = meta.story({
     children: 'Disabled Button',
     onClick: () => {},
   } satisfies ButtonProps,
-  render: (args) => (
-    <Row>
-      <Button variant="solid" {...args}>
-        Disabled Button
-      </Button>
-    </Row>
-  ),
 });
 
 export const WithHref = meta.story({

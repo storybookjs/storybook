@@ -14,6 +14,7 @@ import nextBabelPreset from './babel/preset';
 import { configureConfig } from './config/webpack';
 import TransformFontImports from './font/babel';
 import type { FrameworkOptions, StorybookConfig } from './types';
+import { isNextVersionGte } from './utils';
 
 export const addons: PresetProperty<'addons'> = [
   dirname(require.resolve(join('@storybook/preset-react-webpack', 'package.json'))),
@@ -51,6 +52,15 @@ export const core: PresetProperty<'core'> = async (config, options) => {
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
   const nextDir = dirname(require.resolve('@storybook/nextjs/package.json'));
   const result = [...entry, join(nextDir, 'dist/preview.mjs')];
+  const annotations = [...entry, result];
+
+  const isNext16orNewer = isNextVersionGte('16.0.0');
+
+  // TODO: Remove this once we only support Next.js v16 and above
+  if (!isNext16orNewer) {
+    annotations.push(join(nextDir, 'config/preview'));
+  }
+
   return result;
 };
 

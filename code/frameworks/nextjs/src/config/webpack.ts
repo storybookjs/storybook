@@ -1,7 +1,9 @@
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { addScopedAlias, resolveNextConfig } from '../utils';
+import { addScopedAlias, isNextVersionGte, resolveNextConfig } from '../utils';
+
+const isNext16orNewer = isNextVersionGte('16.0.0');
 
 const tryResolve = (path: string) => {
   try {
@@ -20,7 +22,9 @@ export const configureConfig = async ({
 }): Promise<NextConfig> => {
   const nextConfig = await resolveNextConfig({ nextConfigPath });
 
-  addScopedAlias(baseConfig, 'next/config');
+  if (isNext16orNewer) {
+    addScopedAlias(baseConfig, 'next/config');
+  }
 
   // @ts-expect-error We know that alias is an object
   if (baseConfig.resolve?.alias?.['react-dom']) {

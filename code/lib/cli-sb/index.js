@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require('storybook/bin/index.cjs');
+import('storybook/internal/bin/dispatcher');

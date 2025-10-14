@@ -1,15 +1,17 @@
+import { readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import {
   getStorybookConfiguration,
   getStorybookInfo,
+  isCI,
   loadMainConfig,
   versions,
 } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
-import { findPackage, findPackagePath } from 'fd-package-json';
+import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
 import { globalSettings } from '../cli/globalSettings';
@@ -32,6 +34,9 @@ export const metaFrameworks = {
   '@nrwl/storybook': 'nx',
   '@vue/cli-service': 'vue-cli',
   '@sveltejs/kit': 'sveltekit',
+  '@tanstack/react-router': 'tanstack-react',
+  '@react-router/dev': 'react-router',
+  '@remix-run/dev': 'remix',
 } as Record<string, string>;
 
 export const sanitizeAddonName = (name: string) => {
@@ -56,10 +61,10 @@ export const computeStorybookMetadata = async ({
   mainConfig?: StorybookConfig & Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
-  const settings = await globalSettings();
+  const settings = isCI() ? undefined : await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
-    userSince: settings.value.userSince,
+    userSince: settings?.value.userSince,
     hasCustomBabel: false,
     hasCustomWebpack: false,
     hasStaticDirs: false,
@@ -212,7 +217,7 @@ export const computeStorybookMetadata = async ({
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
-  const storybookInfo = getStorybookInfo(configDir);
+  const storybookInfo = await getStorybookInfo(configDir);
 
   try {
     const { previewConfigPath: previewConfig } = storybookInfo;
@@ -245,11 +250,11 @@ export const computeStorybookMetadata = async ({
 };
 
 async function getPackageJsonDetails() {
-  const packageJsonPath = await findPackagePath(process.cwd());
+  const packageJsonPath = pkg.up();
   if (packageJsonPath) {
     return {
       packageJsonPath,
-      packageJson: (await findPackage(packageJsonPath)) || {},
+      packageJson: JSON.parse(await readFile(packageJsonPath, 'utf8')),
     };
   }
 

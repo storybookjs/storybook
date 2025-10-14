@@ -37,8 +37,8 @@ export const OneItem: Story = {
 };
 ```
 
-```jsx filename="List.stories.js|jsx" renderer="react" language="js"
-import React from 'react';
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
+import * as React from 'react';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -59,8 +59,8 @@ export const OneItem = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
-import React from 'react';
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
+import * as React from 'react';
 
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
@@ -87,7 +87,7 @@ export const OneItem: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="solid" language="js"
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -113,7 +113,7 @@ export const OneItem = {
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -293,4 +293,54 @@ export const OneItem: Story = {
     template: '<List v-bind="args"><ListItem /></List>',
   }),
 };
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, //👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story();
+
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+    </List>
+  ),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+const meta = preview.meta({
+  component: List,
+  subcomponents: { ListItem }, // 👈 Adds the ListItem component as a subcomponent
+});
+
+export const Empty = meta.story();
+
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+    </List>
+  ),
+});
 ```

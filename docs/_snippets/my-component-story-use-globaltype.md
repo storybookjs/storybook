@@ -35,7 +35,7 @@ export const StoryWithLocale: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -65,7 +65,7 @@ export const StoryWithLocale = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -132,7 +132,7 @@ export const StoryWithLocale = {
 ```
 
 ```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { MyComponent } from './MyComponent';
 
@@ -453,4 +453,69 @@ export const StoryWithLocale: Story = {
     return html`<p>${caption}</p>`;
   },
 };
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const getCaptionForLocale = (locale) => {
+  switch (locale) {
+    case 'es':
+      return 'Hola!';
+    case 'fr':
+      return 'Bonjour!';
+    case 'kr':
+      return '안녕하세요!';
+    case 'zh':
+      return '你好!';
+    default:
+      return 'Hello!';
+  }
+};
+
+export const StoryWithLocale = meta.story({
+  render: (args, { globals: { locale } }) => {
+    const caption = getCaptionForLocale(locale);
+    return <p>{caption}</p>;
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const getCaptionForLocale = (locale) => {
+  switch (locale) {
+    case 'es':
+      return 'Hola!';
+    case 'fr':
+      return 'Bonjour!';
+    case 'kr':
+      return '안녕하세요!';
+    case 'zh':
+      return '你好!';
+    default:
+      return 'Hello!';
+  }
+};
+
+export const StoryWithLocale = meta.story({
+  render: (args, { globals: { locale } }) => {
+    const caption = getCaptionForLocale(locale);
+    return <p>{caption}</p>;
+  },
+});
 ```

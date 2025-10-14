@@ -68,7 +68,7 @@ export const Empty: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { List } from './List';
 
 export default {
@@ -79,7 +79,7 @@ export default {
 export const Empty = {};
 ```
 
-```ts filename="List.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -108,7 +108,7 @@ export const Empty = {};
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 
@@ -245,4 +245,31 @@ type Story = StoryObj;
 export const Empty: Story = {
   render: () => html`<demo-list></demo-list>`,
 };
+```
+
+```ts filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story();
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { List } from './List';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story();
 ```

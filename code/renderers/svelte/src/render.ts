@@ -3,7 +3,7 @@ import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 
 /*
 ! DO NOT change these PreviewRender and createSvelte5Props imports to relative paths, it will break them.
-! Relative imports will be compiled at build time by tsup, but we need Svelte to compile them
+! Relative imports will be compiled at build time by the bundler, but we need Svelte to compile them
 ! when compiling the rest of the Svelte files.
 */
 import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
@@ -35,7 +35,7 @@ const componentsByDomElement = new Map<
   { mountedComponent: ReturnType<(typeof svelte)['mount']>; props: RenderContext }
 >();
 
-export function renderToCanvas(
+export async function renderToCanvas(
   {
     storyFn,
     title,
@@ -81,6 +81,7 @@ export function renderToCanvas(
       props,
     });
     componentsByDomElement.set(canvasElement, { mountedComponent, props });
+    await svelte.tick();
   } else {
     // We need to mutate the existing props for Svelte reactivity to work, we can't just re-assign them
     Object.assign(existingComponent.props, {
@@ -90,6 +91,7 @@ export function renderToCanvas(
       title,
       showError,
     });
+    await svelte.tick();
   }
 
   showMain();

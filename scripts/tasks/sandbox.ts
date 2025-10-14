@@ -1,15 +1,22 @@
-import path from 'node:path';
-import { join } from 'node:path';
+import { access, rm } from 'node:fs/promises';
+import path, { join } from 'node:path';
 import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
-// eslint-disable-next-line depend/ban-dependencies
-import { pathExists, remove } from 'fs-extra';
 
 import { now, saveBench } from '../bench/utils';
 import type { Task, TaskKey } from '../task';
 
 const logger = console;
+
+const pathExists = async (path: string) => {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
@@ -54,7 +61,7 @@ export const sandbox: Task = {
 
     if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');
-      await remove(details.sandboxDir);
+      await rm(details.sandboxDir, { force: true, recursive: true });
     }
 
     const {
@@ -77,6 +84,7 @@ export const sandbox: Task = {
       // Adding the dep makes sure that even npx will use the linked workspace version.
       '@storybook/cli',
       'lodash-es',
+      'uuid',
     ];
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
@@ -154,11 +162,13 @@ export const sandbox: Task = {
 
     await setImportMap(details.sandboxDir);
 
-    const { JsPackageManagerFactory } = await import('../../code/core/src/common');
+    const { JsPackageManagerFactory } = await import(
+      '../../code/core/src/common/js-package-manager/JsPackageManagerFactory'
+    );
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 
-    await remove(path.join(details.sandboxDir, 'node_modules'));
+    await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
     await packageManager.installDependencies();
 
     await runMigrations(details, options);

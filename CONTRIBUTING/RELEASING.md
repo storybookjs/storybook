@@ -442,7 +442,7 @@ Before you start you should make sure that your working tree is clean and the re
 
 It's possible to release any pull request as a canary release multiple times during development. This is an effective way to try out changes in standalone projects without linking projects together via package managers.
 
-To create a canary release, a core team member (or anyone else with administrator privileges) must manually trigger the canary release workflow.
+To create a canary release, a core team member (or anyone else with administrator privileges) must manually trigger the publish workflow with the pull request number.
 
 **Before creating a canary release from contributors, the core team member must ensure that the code being released is not malicious.**
 
@@ -450,7 +450,7 @@ Creating a canary release can either be done via GitHub's UI or the [CLI](https:
 
 ### With GitHub UI
 
-1. Open the workflow UI at https://github.com/storybookjs/storybook/actions/workflows/canary-release-pr.yml
+1. Open the workflow UI at https://github.com/storybookjs/storybook/actions/workflows/publish.yml
 2. On the top right corner, click "Run workflow"
 3. For "branch", **always select `next`**, regardless of which branch your pull request is on
 4. For the pull request number, input the number for the pull request **without a leading #**
@@ -460,7 +460,7 @@ Creating a canary release can either be done via GitHub's UI or the [CLI](https:
 The following command will trigger a workflow run - replace `<PR_NUMBER>` with the actual pull request number:
 
 ```bash
-gh workflow run --repo storybookjs/storybook canary-release-pr.yml --field pr=<PR_NUMBER>
+gh workflow run --repo storybookjs/storybook publish.yml --field pr=<PR_NUMBER>
 ```
 
 When the release succeeds, it will update the "Canary release" section of the pull request with information about the release and how to use it (see example [here](https://github.com/storybookjs/storybook/pull/23508)). If it fails, it will create a comment on the pull request, tagging the triggering actor to let them know that it failed (see example [here](https://github.com/storybookjs/storybook/pull/23508#issuecomment-1642850467)).

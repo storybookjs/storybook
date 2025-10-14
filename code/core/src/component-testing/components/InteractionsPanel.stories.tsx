@@ -30,6 +30,11 @@ const managerContext: any = {
   api: {
     getDocsUrl: fn().mockName('api::getDocsUrl'),
     emit: fn().mockName('api::emit'),
+    getData: fn()
+      .mockName('api::getData')
+      .mockImplementation(() => ({
+        importPath: 'core/src/component-testing/components/InteractionsPanel.stories.tsx',
+      })),
   },
 };
 
@@ -54,7 +59,6 @@ const meta = {
     interactions,
     fileName: 'addon-interactions.stories.tsx',
     hasException: false,
-    isPlaying: false,
     onScrollToEnd: () => {},
     endRef: null,
     // prop for the AddonPanel used as wrapper of Panel
@@ -108,7 +112,6 @@ export const Paused: Story = {
   args: {
     status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
-    isPlaying: true,
     interactions: getInteractions(CallStates.WAITING),
     controlStates: {
       detached: false,
@@ -126,7 +129,6 @@ export const Playing: Story = {
   args: {
     status: 'playing',
     browserTestStatus: CallStates.ACTIVE,
-    isPlaying: true,
     interactions: getInteractions(CallStates.ACTIVE),
   },
 };
@@ -182,5 +184,13 @@ export const RenderOnly: Story = {
 export const Empty: Story = {
   args: {
     interactions: [],
+    controlStates: {
+      detached: false,
+      start: false,
+      back: false,
+      goto: false,
+      next: false,
+      end: false,
+    },
   },
 };

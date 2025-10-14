@@ -134,7 +134,7 @@ export const ManyItems: Story = {
 };
 ```
 
-```js filename="List.stories.js|jsx" renderer="react" language="js"
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { List } from './List';
 import { ListItem } from './ListItem';
 
@@ -168,7 +168,7 @@ export const ManyItems = {
 };
 ```
 
-```tsx filename="List.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -243,7 +243,7 @@ export const ManyItems = {
 ```
 
 ```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { List } from './List';
 import { ListItem } from './ListItem';
@@ -501,4 +501,77 @@ export const ManyItems: Story = {
     </demo-list>
   `,
 };
+```
+
+```tsx filename="List.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story();
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+    </List>
+  ),
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+      <ListItem />
+      <ListItem />
+    </List>
+  ),
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="List.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story();
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+    </List>
+  ),
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem />
+      <ListItem />
+      <ListItem />
+    </List>
+  ),
+});
 ```

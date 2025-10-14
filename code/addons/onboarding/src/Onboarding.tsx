@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 
 import { SyntaxHighlighter } from 'storybook/internal/components';
-import { ADDON_ID as CONTROLS_ADDON_ID } from 'storybook/internal/controls';
 import { SAVE_STORY_RESPONSE } from 'storybook/internal/core-events';
 
 import type { Step } from 'react-joyride';
@@ -11,7 +10,7 @@ import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
 import { Confetti } from './components/Confetti/Confetti';
 import { HighlightElement } from './components/HighlightElement/HighlightElement';
 import type { STORYBOOK_ADDON_ONBOARDING_STEPS } from './constants';
-import { STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
+import { ADDON_CONTROLS_ID, STORYBOOK_ADDON_ONBOARDING_CHANNEL } from './constants';
 import { GuidedTour } from './features/GuidedTour/GuidedTour';
 import { IntentSurvey } from './features/IntentSurvey/IntentSurvey';
 import { SplashScreen } from './features/SplashScreen/SplashScreen';
@@ -83,6 +82,9 @@ export default function Onboarding({ api }: { api: API }) {
     sourceFileName: string;
   } | null>();
 
+  // eslint-disable-next-line compat/compat
+  const userAgent = globalThis?.navigator?.userAgent;
+
   const selectStory = useCallback(
     (storyId: string) => {
       try {
@@ -112,15 +114,17 @@ export default function Onboarding({ api }: { api: API }) {
       api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
         step: '7:FinishedOnboarding' satisfies StepKey,
         type: 'telemetry',
+        userAgent,
       });
       api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
         answers,
         type: 'survey',
+        userAgent,
       });
       selectStory('configure-your-project--docs');
       disableOnboarding();
     },
-    [api, selectStory, disableOnboarding]
+    [api, selectStory, disableOnboarding, userAgent]
   );
 
   useEffect(() => {
@@ -128,7 +132,7 @@ export default function Onboarding({ api }: { api: API }) {
     selectStory('example-button--primary');
     api.togglePanel(true);
     api.togglePanelPosition('bottom');
-    api.setSelectedPanel(CONTROLS_ADDON_ID);
+    api.setSelectedPanel(ADDON_CONTROLS_ID);
   }, [api, selectStory]);
 
   useEffect(() => {
@@ -174,12 +178,13 @@ export default function Onboarding({ api }: { api: API }) {
       setShowConfetti(true);
       setStep('5:StoryCreated');
       setTimeout(() => api.clearNotification('save-story-success'));
+      setTimeout(() => setShowConfetti(false), 10000);
     });
   }, [api]);
 
   useEffect(
-    () => api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, { step, type: 'telemetry' }),
-    [api, step]
+    () => api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, { step, type: 'telemetry', userAgent }),
+    [api, step, userAgent]
   );
 
   if (!enabled) {

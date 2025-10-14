@@ -1,4 +1,4 @@
-```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js"
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF 3"
 import NavigationBasedComponent from './NavigationBasedComponent';
 
 export default {
@@ -10,8 +10,7 @@ export default {
   },
 };
 
-// If you have the actions addon,
-// you can interact with the links and see the route change events there
+// Interact with the links to see the route change events in the Actions panel.
 export const Example = {
   parameters: {
     nextjs: {
@@ -26,7 +25,7 @@ export const Example = {
 };
 ```
 
-```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts"
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with nextjs or nextjs-vite
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -44,8 +43,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-// If you have the actions addon,
-// you can interact with the links and see the route change events there
+// Interact with the links to see the route change events in the Actions panel.
 export const Example: Story = {
   parameters: {
     nextjs: {
@@ -58,4 +56,63 @@ export const Example: Story = {
     },
   },
 };
+```
+
+```ts filename="NavigationBasedComponent.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+    },
+  },
+});
+
+// Interact with the links to see the route change events in the Actions panel.
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: '/profile',
+        query: {
+          user: '1',
+        },
+      },
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="NavigationBasedComponent.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import NavigationBasedComponent from './NavigationBasedComponent';
+
+const meta = preview.meta({
+  component: NavigationBasedComponent,
+  parameters: {
+    nextjs: {
+      appDirectory: true,
+    },
+  },
+});
+
+// Interact with the links to see the route change events in the Actions panel.
+export const Example = meta.story({
+  parameters: {
+    nextjs: {
+      navigation: {
+        pathname: '/profile',
+        query: {
+          user: '1',
+        },
+      },
+    },
+  },
+});
 ```

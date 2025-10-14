@@ -21,7 +21,7 @@ export const WithProp: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -35,7 +35,7 @@ export const WithProp = {
 };
 ```
 
-```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -55,7 +55,7 @@ export const WithProp: Story = {
 };
 ```
 
-```js filename="MyComponent.story.js|jsx" renderer="solid" language="js"
+```jsx filename="MyComponent.story.js|jsx" renderer="solid" language="js"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -70,7 +70,7 @@ export const WithProp = {
 ```
 
 ```tsx filename="MyComponent.story.ts|tsx" renderer="solid" language="ts"
-import type { Meta, StoryObj } from 'storybook-solidjs';
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
 
 import { MyComponent } from './MyComponent';
 
@@ -263,4 +263,37 @@ export const Basic: Story = {};
 export const WithProp: Story = {
   render: () => html`<my-component prop="value" />`,
 };
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => <MyComponent prop="value" />,
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => <MyComponent prop="value" />,
+});
 ```

@@ -1112,35 +1112,33 @@ describe('stories API', () => {
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { navigate, store } = moduleArgs;
 
-      // Create index with component having children
-      const indexWithComponent = {
-        v: 5,
-        entries: {
-          ...navigationEntries,
-          a: {
-            id: 'a',
-            type: 'component',
-            title: 'A',
-            name: 'A',
-            importPath: './a.ts',
-            children: ['a--1', 'a--2'],
-          },
-        },
-      };
+      // Set index with stories
+      api.setIndex({ v: 5, entries: navigationEntries });
 
-      // Set up filtered index where first child is hidden
+      // Set up filtered index where first child (a--1) is hidden
       const filteredIndex = {
-        a: { ...indexWithComponent.entries.a, type: 'component' as const },
+        a: {
+          id: 'a',
+          type: 'component' as const,
+          name: 'a',
+          depth: 0,
+          tags: [],
+          children: ['a--1', 'a--2'],
+          importPath: './a.ts',
+        },
         'a--2': {
           ...navigationEntries['a--2'],
           type: 'story' as const,
           subtype: 'story' as const,
           parent: 'a',
+          depth: 1,
+          tags: [],
+          prepared: false,
+          exportName: '2',
         },
         // Note: 'a--1' is missing from filtered index (hidden)
       };
 
-      api.setIndex(indexWithComponent);
       store.setState({ filteredIndex });
 
       // When selecting the component, it should select the first visible child (a--2)

@@ -1,5 +1,4 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { IncompatiblePostCssConfigError } from 'storybook/internal/server-errors';
@@ -9,12 +8,8 @@ import postCssLoadConfig from 'postcss-load-config';
 
 type Options = import('lilconfig').Options;
 
-// Handle both ESM and CJS environments
-const requireFn =
-  typeof globalThis.require !== 'undefined' ? globalThis.require : createRequire(import.meta.url);
-
 async function loader(filepath: string) {
-  return requireFn(filepath);
+  return require(filepath);
 }
 
 const withLoaders = (options: Options = {}) => {

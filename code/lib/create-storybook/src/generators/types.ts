@@ -34,12 +34,12 @@ export interface FrameworkOptions {
   installFrameworkPackages?: boolean;
 }
 
-export type Generator<T = void> = (
+export type Generator<T = Record<string, any>> = (
   packageManagerInstance: JsPackageManager,
   npmOptions: NpmOptions,
   generatorOptions: GeneratorOptions,
   commandOptions?: CommandOptions
-) => Promise<T>;
+) => Promise<{ rendererPackage: string; builderPackage: string; frameworkPackage: string } & T>;
 
 export type GeneratorFeature = 'docs' | 'test' | 'onboarding';
 

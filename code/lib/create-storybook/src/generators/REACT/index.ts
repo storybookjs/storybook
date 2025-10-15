@@ -8,7 +8,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
   const language = await detectLanguage(packageManager as any);
   const extraPackages = language === SupportedLanguage.JAVASCRIPT ? ['prop-types'] : [];
 
-  await baseGenerator(packageManager, npmOptions, options, 'react', {
+  return baseGenerator(packageManager, npmOptions, options, 'react', {
     extraPackages,
     webpackCompiler: ({ builder }) => (builder === CoreBuilder.Webpack5 ? 'swc' : undefined),
   });

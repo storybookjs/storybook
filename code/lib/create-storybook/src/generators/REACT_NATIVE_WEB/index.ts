@@ -14,7 +14,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     extraPackages.push('prop-types');
   }
 
-  await baseGenerator(
+  const generatorResult = await baseGenerator(
     packageManager,
     npmOptions,
     options,
@@ -27,6 +27,8 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
   const targetPath = await cliStoriesTargetPath();
   const cssFiles = (await readdir(targetPath)).filter((f) => f.endsWith('.css'));
   await Promise.all(cssFiles.map((f) => rm(join(targetPath, f))));
+
+  return generatorResult;
 };
 
 export default generator;

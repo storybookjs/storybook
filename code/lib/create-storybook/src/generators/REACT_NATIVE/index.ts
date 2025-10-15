@@ -66,6 +66,12 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     destination: storybookConfigFolder,
     features: options.features,
   });
+
+  return {
+    rendererPackage: '@storybook/react',
+    builderPackage: '@storybook/builder-webpack5',
+    frameworkPackage: '@storybook/react-native',
+  };
 };
 
 export default generator;

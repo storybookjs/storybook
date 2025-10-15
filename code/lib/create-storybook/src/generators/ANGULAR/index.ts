@@ -13,12 +13,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { baseGenerator } from '../baseGenerator';
 import type { Generator } from '../types';
 
-const generator: Generator<{ projectName: string }> = async (
-  packageManager,
-  npmOptions,
-  options,
-  commandOptions
-) => {
+const generator: Generator = async (packageManager, npmOptions, options, commandOptions) => {
   const angularJSON = new AngularJSON();
 
   if (
@@ -62,7 +57,7 @@ const generator: Generator<{ projectName: string }> = async (
 
   const angularVersion = packageManager.getDependencyVersion('@angular/core');
 
-  await baseGenerator(
+  const generatorResult = await baseGenerator(
     packageManager,
     npmOptions,
     {
@@ -116,6 +111,7 @@ const generator: Generator<{ projectName: string }> = async (
   return {
     projectName: angularProjectName,
     configDir: storybookFolder,
+    ...generatorResult,
   };
 };
 

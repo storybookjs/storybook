@@ -51,7 +51,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
 
   const extraAddons = [`@storybook/preset-create-react-app`];
 
-  await baseGenerator(
+  return baseGenerator(
     packageManager,
     npmOptions,
     { ...options, builder: CoreBuilder.Webpack5 },

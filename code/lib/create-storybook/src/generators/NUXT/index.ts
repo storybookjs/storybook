@@ -6,7 +6,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
 
   extraStories.push('../components/**/*.stories.@(js|jsx|ts|tsx|mdx)');
 
-  await baseGenerator(
+  const generatorResult = await baseGenerator(
     packageManager,
     {
       ...npmOptions,
@@ -40,6 +40,8 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     '@nuxtjs/storybook',
     '--skipInstall',
   ]);
+
+  return generatorResult;
 };
 
 export default generator;

@@ -13,7 +13,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     staticDir = 'public';
   }
 
-  await baseGenerator(
+  return baseGenerator(
     packageManager,
     npmOptions,
     { ...options, builder: CoreBuilder.Webpack5 },

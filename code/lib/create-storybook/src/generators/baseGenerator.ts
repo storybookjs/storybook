@@ -133,7 +133,9 @@ const getFrameworkDetails = (
   frameworkPackagePath?: string;
   renderer?: string;
   rendererId: SupportedRenderers;
-  frameworkPackage?: string;
+  frameworkPackage: string;
+  rendererPackage: string;
+  builderPackage: string;
 } => {
   const frameworkPackage = getFrameworkPackage(framework, renderer, builder);
   invariant(frameworkPackage, 'Missing framework package.');
@@ -162,6 +164,8 @@ const getFrameworkDetails = (
       packages: [frameworkPackage],
       frameworkPackagePath,
       frameworkPackage,
+      rendererPackage,
+      builderPackage,
       rendererId: renderer,
       type: 'framework',
     };
@@ -170,6 +174,9 @@ const getFrameworkDetails = (
   if (isKnownRenderer) {
     return {
       packages: [rendererPackage, builderPackage],
+      rendererPackage,
+      builderPackage,
+      frameworkPackage,
       builder: builderPackagePath,
       renderer: rendererPackagePath,
       rendererId: renderer,
@@ -481,4 +488,10 @@ export async function baseGenerator(
   }
 
   taskLog.success('Storybook configuration generated', { showLog: true });
+
+  return {
+    frameworkPackage,
+    rendererPackage: packages[0],
+    builderPackage: packages[1],
+  };
 }

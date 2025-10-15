@@ -22,7 +22,7 @@ export const configureConfig = async ({
 }): Promise<NextConfig> => {
   const nextConfig = await resolveNextConfig({ nextConfigPath });
 
-  if (isNext16orNewer) {
+  if (!isNext16orNewer) {
     addScopedAlias(baseConfig, 'next/config');
   }
 

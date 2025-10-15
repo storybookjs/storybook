@@ -123,6 +123,7 @@ export const getConfigInfo = (configDir?: string) => {
 export const getStorybookInfo = (configDir = '.storybook') => {
   const rendererInfo = getRendererInfo(configDir);
   const configInfo = getConfigInfo(configDir);
+  const builderInfo = getBuilderOptions(configDir);
 
   return {
     ...rendererInfo,

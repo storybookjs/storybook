@@ -94,6 +94,15 @@ export class FeatureCompatibilityService {
       return packageVersionsResult;
     }
 
+    // Check compatibility using AddonVitestService
+    // TODO: add this back in
+    // const compatibilityResult = await addonVitestService.validateCompatibility({
+    //   packageManager,
+    //   frameworkPackageName: info.frameworkPackage,
+    //   builderPackageName: info.builderPackage,
+    //   hasCustomWebpackConfig: false,
+    // });
+
     // Check vitest config files using AddonVitestService
     const vitestConfigResult = await addonVitestService.validateConfigFiles(directory);
     if (!vitestConfigResult.compatible) {

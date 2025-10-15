@@ -1,19 +1,13 @@
 import type { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
 
-import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
-import { getAddonVitestDependencies } from '../addon-dependencies/addon-vitest';
 import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
-import type { CommandOptions, GeneratorFeature } from '../generators/types';
-import {
-  FeatureCompatibilityService,
-  ONBOARDING_PROJECT_TYPES,
-} from '../services/FeatureCompatibilityService';
+import type { CommandOptions, Generator, GeneratorFeature } from '../generators/types';
+import { ONBOARDING_PROJECT_TYPES } from '../services/FeatureCompatibilityService';
 
 export interface GeneratorExecutionResult {
-  installResult: any;
+  generatorResult: Awaited<ReturnType<Generator>>;
   storybookCommand: string;
 }
 
@@ -29,12 +23,6 @@ export interface GeneratorExecutionResult {
  * - Determine Storybook command
  */
 export class GeneratorExecutionCommand {
-  private featureService: FeatureCompatibilityService;
-
-  constructor() {
-    this.featureService = new FeatureCompatibilityService();
-  }
-
   /** Execute generator for the detected project type */
   async execute(
     projectType: ProjectType,
@@ -49,13 +37,8 @@ export class GeneratorExecutionCommand {
     // Update options with final selected features
     options.features = Array.from(selectedFeatures);
 
-    // Collect addon dependencies for test feature
-    if (selectedFeatures.has('test')) {
-      await this.collectAddonDependencies(projectType, packageManager, dependencyCollector);
-    }
-
     // Get and execute generator
-    const installResult = await this.executeProjectGenerator(
+    const generatorResult = await this.executeProjectGenerator(
       projectType,
       packageManager,
       options,
@@ -66,9 +49,13 @@ export class GeneratorExecutionCommand {
     Object.assign(selectedFeatures, new Set(options.features));
 
     // Determine Storybook command
-    const storybookCommand = this.getStorybookCommand(projectType, packageManager, installResult);
+    const storybookCommand = this.getStorybookCommand(
+      projectType,
+      packageManager,
+      generatorResult as any
+    );
 
-    return { installResult, storybookCommand };
+    return { generatorResult, storybookCommand };
   }
 
   /** Filter features based on project type compatibility */
@@ -82,32 +69,13 @@ export class GeneratorExecutionCommand {
     }
   }
 
-  /** Collect addon dependencies without installing them */
-  private async collectAddonDependencies(
-    projectType: ProjectType,
-    packageManager: JsPackageManager,
-    dependencyCollector: DependencyCollector
-  ): Promise<void> {
-    try {
-      // Determine framework package name for Next.js detection
-      const frameworkPackageName = projectType === 'NEXTJS' ? '@storybook/nextjs' : undefined;
-
-      const vitestDeps = await getAddonVitestDependencies(packageManager, frameworkPackageName);
-      const a11yDeps = getAddonA11yDependencies();
-
-      dependencyCollector.addDevDependencies([...vitestDeps, ...a11yDeps]);
-    } catch (err) {
-      logger.warn(`Failed to collect addon dependencies: ${err}`);
-    }
-  }
-
   /** Execute the project-specific generator */
   private async executeProjectGenerator(
     projectType: ProjectType,
     packageManager: JsPackageManager,
     options: CommandOptions,
     dependencyCollector: DependencyCollector
-  ): Promise<any> {
+  ) {
     const generator = generatorRegistry.get(projectType);
 
     if (!generator) {
@@ -130,14 +98,14 @@ export class GeneratorExecutionCommand {
       dependencyCollector,
     };
 
-    return generator(packageManager, npmOptions, generatorOptions as any, options);
+    return await generator(packageManager, npmOptions, generatorOptions as any, options);
   }
 
   /** Get the appropriate Storybook command for the project type */
   private getStorybookCommand(
     projectType: ProjectType,
     packageManager: JsPackageManager,
-    installResult: any
+    installResult: Awaited<ReturnType<Generator<{ projectName: string }>>>
   ): string {
     if (projectType === 'ANGULAR') {
       return `ng run ${installResult.projectName}:storybook`;

@@ -8,6 +8,14 @@ import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 import type { GeneratorFeature } from '../generators/types';
+import type { ExecuteAddonConfigurationResult } from './AddonConfigurationCommand';
+
+type ExecuteFinalizationParams = {
+  projectType: ProjectType;
+  selectedFeatures: Set<GeneratorFeature>;
+  storybookCommand: string;
+  addonConfigurationResult: ExecuteAddonConfigurationResult;
+};
 
 /**
  * Command for finalizing Storybook installation
@@ -21,16 +29,21 @@ import type { GeneratorFeature } from '../generators/types';
  */
 export class FinalizationCommand {
   /** Execute finalization steps */
-  async execute(
-    projectType: ProjectType,
-    selectedFeatures: Set<GeneratorFeature>,
-    storybookCommand: string
-  ): Promise<void> {
+  async execute({
+    selectedFeatures,
+    storybookCommand,
+    addonConfigurationResult,
+  }: ExecuteFinalizationParams): Promise<void> {
     // Update .gitignore
     await this.updateGitignore();
 
+    if (addonConfigurationResult.status === 'failed') {
+      this.printFailureMessage();
+    } else {
+      this.printSuccessMessage(selectedFeatures, storybookCommand);
+    }
+
     // Print success message
-    this.printSuccessMessage(selectedFeatures, storybookCommand);
   }
 
   /** Update .gitignore with Storybook-specific entries */
@@ -58,6 +71,12 @@ export class FinalizationCommand {
     }
   }
 
+  private printFailureMessage(): void {
+    logger.warn('Storybook was setup but failed to configure addons');
+    logger.log('Please take a look at the logs above for more information');
+    logger.outro('');
+  }
+
   /** Print success message with feature summary */
   private printSuccessMessage(
     selectedFeatures: Set<GeneratorFeature>,
@@ -83,10 +102,6 @@ export class FinalizationCommand {
   }
 }
 
-export const executeFinalization = (
-  projectType: ProjectType,
-  selectedFeatures: Set<GeneratorFeature>,
-  storybookCommand: string
-) => {
-  return new FinalizationCommand().execute(projectType, selectedFeatures, storybookCommand);
+export const executeFinalization = (params: ExecuteFinalizationParams) => {
+  return new FinalizationCommand().execute(params);
 };

@@ -1,7 +1,7 @@
 import { ProjectType } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { HandledError, type JsPackageManager } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
@@ -63,7 +63,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 5: Execute generator with dependency collector
   const dependencyCollector = new DependencyCollector();
-  const { storybookCommand } = await executeGeneratorExecution(
+  const { storybookCommand, generatorResult } = await executeGeneratorExecution(
     projectType,
     packageManager,
     options,
@@ -72,13 +72,25 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 6: Configure addons (run postinstall scripts for configuration only)
-  await executeAddonConfiguration(packageManager, dependencyCollector, selectedFeatures, options);
+  const addonConfigurationResult = await executeAddonConfiguration({
+    packageManager,
+    projectType,
+    dependencyCollector,
+    selectedFeatures,
+    generatorResult,
+    options,
+  });
 
   // Step 7: Install all dependencies in a single operation
   await executeDependencyInstallation(packageManager, dependencyCollector, options.skipInstall);
 
   // Step 8: Print final summary
-  await executeFinalization(projectType, selectedFeatures, storybookCommand);
+  await executeFinalization({
+    projectType,
+    selectedFeatures,
+    storybookCommand,
+    addonConfigurationResult,
+  });
 
   return {
     shouldRunDev: !!options.dev && !options.skipInstall,
@@ -142,9 +154,17 @@ export async function initiate(options: CommandOptions): Promise<void> {
       try {
         const result = await doInitiate(options);
         return result;
-      } catch (err) {
-        logger.outro(CLI_COLORS.error(`Storybook failed to initialize your project.`));
+      } catch (error) {
+        if (!(error instanceof HandledError)) {
+          if (error && typeof error === 'object' && 'stack' in error && error.stack) {
+            logger.debug(String(error.stack));
+          }
+          logger.error(String(error));
+        }
 
+        const logFile = await logTracker.writeToFile();
+        logger.log(`Storybook debug logs can be found at: ${logFile}`);
+        logger.outro('Storybook failed to initialize your project.');
         process.exit(1);
       }
     }

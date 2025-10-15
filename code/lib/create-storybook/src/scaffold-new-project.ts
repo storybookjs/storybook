@@ -118,7 +118,7 @@ export const scaffoldNewProject = async (
 ) => {
   const packageManagerName = packageManagerToCoercedName(packageManager);
 
-  logger.plain(
+  logger.log(
     boxen(
       dedent`
         Would you like to generate a new project from the following list?
@@ -167,7 +167,7 @@ export const scaffoldNewProject = async (
   const createScript = projectStrategyConfig.createScript[packageManagerName];
 
   logger.line(1);
-  logger.plain(
+  logger.log(
     `Creating a new "${projectDisplayName}" project with ${picocolors.bold(packageManagerName)}...`
   );
   logger.line(1);
@@ -212,7 +212,7 @@ export const scaffoldNewProject = async (
     });
   }
 
-  logger.plain(
+  logger.log(
     boxen(
       dedent`
       "${projectDisplayName}" project with ${picocolors.bold(

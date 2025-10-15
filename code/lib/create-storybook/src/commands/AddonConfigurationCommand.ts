@@ -1,8 +1,23 @@
+import type { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
+import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
+import { getAddonVitestDependencies } from '../addon-dependencies/addon-vitest';
 import type { DependencyCollector } from '../dependency-collector';
-import type { CommandOptions, GeneratorFeature } from '../generators/types';
+import type { CommandOptions, Generator, GeneratorFeature } from '../generators/types';
+
+type ExecuteAddonConfigurationParams = {
+  packageManager: JsPackageManager;
+  projectType: ProjectType;
+  selectedFeatures: Set<GeneratorFeature>;
+  generatorResult: Awaited<ReturnType<Generator>>;
+  options: CommandOptions;
+};
+
+export type ExecuteAddonConfigurationResult = {
+  status: 'failed' | 'success';
+};
 
 /**
  * Command for configuring Storybook addons
@@ -17,16 +32,41 @@ export class AddonConfigurationCommand {
   constructor(private dependencyCollector: DependencyCollector) {}
 
   /** Execute addon configuration */
-  async execute(
-    packageManager: JsPackageManager,
-    selectedFeatures: Set<GeneratorFeature>,
-    options: CommandOptions
-  ): Promise<void> {
+  async execute({
+    projectType,
+    packageManager,
+    options,
+    selectedFeatures,
+  }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
     if (!selectedFeatures.has('test')) {
-      return;
+      return { status: 'success' };
     }
 
-    await this.configureTestAddons(packageManager, options);
+    try {
+      await this.collectAddonDependencies(projectType, packageManager);
+      await this.configureTestAddons(packageManager, options);
+      return { status: 'success' };
+    } catch (e) {
+      return { status: 'failed' };
+    }
+  }
+
+  /** Collect addon dependencies without installing them */
+  private async collectAddonDependencies(
+    projectType: ProjectType,
+    packageManager: JsPackageManager
+  ): Promise<void> {
+    try {
+      // Determine framework package name for Next.js detection
+      const frameworkPackageName = projectType === 'NEXTJS' ? '@storybook/nextjs' : undefined;
+
+      const vitestDeps = await getAddonVitestDependencies(packageManager, frameworkPackageName);
+      const a11yDeps = getAddonA11yDependencies();
+
+      this.dependencyCollector.addDevDependencies([...vitestDeps, ...a11yDeps]);
+    } catch (err) {
+      logger.warn(`Failed to collect addon dependencies: ${err}`);
+    }
   }
 
   /** Configure test addons (a11y and vitest) */
@@ -59,7 +99,7 @@ export class AddonConfigurationCommand {
 
     try {
       // Run a11y addon postinstall (runs automigration)
-      task.message('Configuring a11y addon...');
+      task.message('Configuring @storybook/addon-a11y...');
 
       await postinstallAddon('@storybook/addon-a11y', {
         packageManager: packageManager.type,
@@ -69,29 +109,28 @@ export class AddonConfigurationCommand {
         skipDependencyManagement: true,
       });
 
-      task.message('A11y addon configured');
+      task.message('A11y addon configured\n');
     } catch (err) {
       task.message(CLI_COLORS.error(`Failed to configure test addons`));
       failed = true;
       addonA11yFailed = true;
-      // Don't throw - addon configuration failures shouldn't fail the entire init
     }
 
     // Run vitest addon postinstall (configuration only)
-    // try {
-    //   await postinstallAddon('@storybook/addon-vitest', {
-    //     packageManager: packageManager.type,
-    //     configDir,
-    //     yes: options.yes,
-    //     skipInstall: true,
-    //     skipDependencyManagement: true,
-    //   });
-    // } catch (err) {
-    //   task.message(CLI_COLORS.error(`Failed to configure test addons`));
-    //   failed = true;
-    //   addonVitestFailed = true;
-    //   // Don't throw - addon configuration failures shouldn't fail the entire init
-    // }
+    try {
+      task.message('Configuring @storybook/addon-vitest...');
+      await postinstallAddon('@storybook/addon-vitest', {
+        packageManager: packageManager.type,
+        configDir,
+        yes: options.yes,
+        skipInstall: true,
+        skipDependencyManagement: true,
+      });
+      task.message('Vitest addon configured\n');
+    } catch (err) {
+      task.message(CLI_COLORS.error(`Failed to configure test addons`));
+      failed = true;
+    }
 
     if (failed) {
       task.error('Failed to configure test addons');
@@ -115,15 +154,9 @@ export class AddonConfigurationCommand {
   }
 }
 
-export const executeAddonConfiguration = (
-  packageManager: JsPackageManager,
-  dependencyCollector: DependencyCollector,
-  selectedFeatures: Set<GeneratorFeature>,
-  options: CommandOptions
-) => {
-  return new AddonConfigurationCommand(dependencyCollector).execute(
-    packageManager,
-    selectedFeatures,
-    options
-  );
+export const executeAddonConfiguration = ({
+  dependencyCollector,
+  ...params
+}: ExecuteAddonConfigurationParams & { dependencyCollector: DependencyCollector }) => {
+  return new AddonConfigurationCommand(dependencyCollector).execute(params);
 };

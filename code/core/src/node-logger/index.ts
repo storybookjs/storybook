@@ -49,10 +49,11 @@ export const colors = {
 export const logger = {
   ...newLogger,
   verbose: (message: string): void => newLogger.debug(message),
+  /** Logs information that should catch the user's attention */
   info: (message: string): void =>
     isClackEnabled() ? newLogger.info(message) : npmLog.info('', message),
-  plain: (message: string): void => newLogger.log(message),
   line: (count = 1): void => newLogger.log(`${Array(count - 1).fill('\n')}`),
+  /** For non-critical issues or warnings */
   warn: (message: string): void => newLogger.warn(message),
   trace: ({ message, time }: { message: string; time: [number, number] }): void =>
     newLogger.debug(`${message} (${colors.purple(prettyTime(time))})`),
@@ -60,6 +61,7 @@ export const logger = {
     npmLog.level = level;
     newLogger.setLogLevel(level);
   },
+  /** Logs an error */
   error: (message: Error | string): void => {
     let msg: string;
     if (message instanceof Error && message.stack) {

@@ -107,7 +107,24 @@ command('add <addon>')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
   .option('-y --yes', 'Skip prompting the user')
   .option('--skip-doctor', 'Skip doctor check')
-  .action((addonName: string, options: any) => add(addonName, options));
+  .action((addonName: string, options: any) => {
+    withTelemetry('add', { cliOptions: options }, async () => {
+      prompt.setPromptLibrary('clack');
+      logger.intro(`Setting up your project for ${addonName}`);
+
+      try {
+        await add(addonName, options);
+        logger.outro('Addon setup complete');
+      } catch (e) {
+        handleCommandFailure(e);
+        throw e;
+      }
+
+      if (!options.disableTelemetry) {
+        await telemetry('add', { addon: addonName, source: 'cli' });
+      }
+    });
+  });
 
 command('remove <addon>')
   .description('Remove an addon from your Storybook')

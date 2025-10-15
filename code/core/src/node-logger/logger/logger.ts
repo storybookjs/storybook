@@ -121,7 +121,10 @@ function createLogger(
   };
 }
 
-// Create all logging functions using the factory
+/**
+ * For detailed information useful for debugging, which is hidden by default and only appears in log
+ * files or when the log level is set to debug
+ */
 export const debug = createLogger(
   'debug',
   function logFunction(message) {
@@ -133,9 +136,11 @@ export const debug = createLogger(
   '[DEBUG]'
 );
 
+/** For general information that should always be visible to the user */
 export const log = createLogger('info', (...args) => {
   return LOG_FUNCTIONS.log()(...args);
 });
+/** For general information that should catch the user's attention */
 export const info = createLogger('info', (...args) => {
   return LOG_FUNCTIONS.info()(...args);
 });

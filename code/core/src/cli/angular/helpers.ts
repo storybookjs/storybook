@@ -17,7 +17,7 @@ export const compoDocPreviewPrefix = dedent`
 `.trimStart();
 
 export const promptForCompoDocs = async (): Promise<boolean> => {
-  logger.plain(
+  logger.log(
     // Create a text which explains the user why compodoc is necessary
     boxen(
       dedent`

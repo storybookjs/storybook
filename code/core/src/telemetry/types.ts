@@ -6,6 +6,7 @@ import type { MonorepoType } from './get-monorepo-type';
 
 export type EventType =
   | 'boot'
+  | 'add'
   | 'dev'
   | 'build'
   | 'index'

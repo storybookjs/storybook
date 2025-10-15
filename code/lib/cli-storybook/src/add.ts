@@ -1,8 +1,6 @@
-import { isAbsolute, join } from 'node:path';
-
 import {
   type PackageManagerName,
-  serverRequire,
+  loadMainConfig,
   syncStorybookAddons,
   versions,
 } from 'storybook/internal/common';
@@ -182,7 +180,8 @@ export async function add(
 
   // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
   try {
-    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
+    const newMainConfig = await loadMainConfig({ configDir, skipCache: true });
+    await syncStorybookAddons(newMainConfig, previewConfigPath!, configDir);
   } catch (e) {
     //
   }

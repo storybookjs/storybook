@@ -11,7 +11,7 @@ on:
     # Manual canary releases on PRs
     inputs:
       pr:
-        description: '⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for'
+        description: "⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for"
         required: true
         type: number
   pull_request:
@@ -56,22 +56,7 @@ jobs:
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
         with:
-          node-version-file: '.nvmrc'
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.yarn/berry/cache
-          key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-          restore-keys: |
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
-            yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
-            yarn-v1
-
-      - name: Install script dependencies
-        run: |
-          yarn install
+          install-code-deps: true
 
       - name: Cancel all release preparation runs
         env:
@@ -230,4 +215,4 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554
         with:
-          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          args: "The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"

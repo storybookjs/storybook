@@ -26,7 +26,7 @@ describe('stories codemod', () => {
       'Component.stories.tsx',
       await storyToCsfFactory(
         { source, path: 'Component.stories.tsx' },
-        { previewConfigPath: '#.storybook/preview', useSubPathImports: false }
+        { previewConfigPath: '#.storybook/preview', useSubPathImports: true }
       )
     );
   describe('javascript', () => {
@@ -361,7 +361,7 @@ describe('stories codemod', () => {
                 `,
                 path: 'Component.stories.tsx',
               },
-              { previewConfigPath: '#.storybook/preview', useSubPathImports: false }
+              { previewConfigPath: '#.storybook/preview', useSubPathImports: true }
             )
           )
         ).resolves.toMatchInlineSnapshot(`
@@ -383,7 +383,7 @@ describe('stories codemod', () => {
                 `,
                 path: 'Component.stories.tsx',
               },
-              { previewConfigPath: '#.storybook/preview', useSubPathImports: true }
+              { previewConfigPath: '#.storybook/preview', useSubPathImports: false }
             )
           )
         ).resolves.toMatchInlineSnapshot(`

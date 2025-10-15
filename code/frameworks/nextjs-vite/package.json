@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs-vite",
-  "version": "10.0.0-beta.8",
+  "version": "10.0.0-beta.11",
   "description": "Storybook for Next.js and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -87,6 +87,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "lilconfig": "^3.0.0",
     "next": "^15.2.3",
     "postcss-load-config": "^6.0.1",
     "semver": "^7.3.5",

@@ -1,3 +1,11 @@
+## 10.0.0-beta.12
+
+- CLI: Avoid mixed CSF in files with unconventional stories - [#32716](https://github.com/storybookjs/storybook/pull/32716), thanks @yannbf!
+- CLI: Fix CSF factories addon syncing in storybook add command - [#32728](https://github.com/storybookjs/storybook/pull/32728), thanks @yannbf!
+- CLI: Make relative imports default in csf-factories codemod - [#32610](https://github.com/storybookjs/storybook/pull/32610), thanks @copilot-swe-agent!
+- Core: Prevent navigating to hidden (filtered) item - [#32715](https://github.com/storybookjs/storybook/pull/32715), thanks @ghengeveld!
+- Fix: Allow proceeding without selecting automigrations in upgrade command - [#32597](https://github.com/storybookjs/storybook/pull/32597), thanks @copilot-swe-agent!
+
 ## 10.0.0-beta.11
 
 - Automigration: Improve the viewport/backgrounds automigration - [#32619](https://github.com/storybookjs/storybook/pull/32619), thanks @valentinpalkovic!

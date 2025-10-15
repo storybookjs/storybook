@@ -14,16 +14,18 @@ import { validateConfigurationFiles } from './validate-configuration-files';
 export async function loadMainConfig({
   configDir = '.storybook',
   cwd,
+  skipCache,
 }: {
   configDir: string;
   cwd?: string;
+  skipCache?: boolean;
 }): Promise<StorybookConfig> {
   await validateConfigurationFiles(configDir, cwd);
 
   const mainPath = getInterpretedFile(resolve(configDir, 'main')) as string;
 
   try {
-    const out = await importModule(mainPath, { skipCache: true });
+    const out = await importModule(mainPath, { skipCache });
     return out;
   } catch (e) {
     if (!(e instanceof Error)) {

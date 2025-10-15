@@ -180,7 +180,7 @@ export async function add(
 
   // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
   try {
-    const newMainConfig = await loadMainConfig({ configDir });
+    const newMainConfig = await loadMainConfig({ configDir, skipCache: true });
     await syncStorybookAddons(newMainConfig, previewConfigPath!, configDir);
   } catch (e) {
     //

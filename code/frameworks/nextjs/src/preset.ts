@@ -51,17 +51,16 @@ export const core: PresetProperty<'core'> = async (config, options) => {
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
   const nextDir = dirname(require.resolve('@storybook/nextjs/package.json'));
-  const result = [...entry, join(nextDir, 'dist/preview.mjs')];
-  const annotations = [...entry, result];
+  const annotations = [...entry, join(nextDir, 'dist/preview.mjs')];
 
   const isNext16orNewer = isNextVersionGte('16.0.0');
 
   // TODO: Remove this once we only support Next.js v16 and above
   if (!isNext16orNewer) {
-    annotations.push(join(nextDir, 'config/preview'));
+    annotations.push(join(nextDir, 'dist/config/preview.mjs'));
   }
 
-  return result;
+  return annotations;
 };
 
 export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {

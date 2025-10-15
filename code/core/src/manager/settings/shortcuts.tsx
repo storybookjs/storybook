@@ -287,6 +287,7 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
   renderKeyInput = () => {
     const { shortcutKeys, addonsShortcutLabels } = this.state;
+    // Filter out keyboard shortcuts from localStorage that no longer exist in code
     const availableShortcuts = (Object.entries(shortcutKeys) as [Feature, any][]).filter(
       ([feature]: [Feature, any]) =>
         shortcutLabels[feature] !== undefined ||

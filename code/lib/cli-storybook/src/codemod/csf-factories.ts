@@ -67,25 +67,28 @@ export const csfFactories: CommandFix = {
     if (!optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)) {
       // prompt whether the user wants to use imports map
       logger.logBox(dedent`
-        The CSF Factories format can benefit from using absolute imports of your .storybook/preview.js|ts file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
+        The CSF Factories format can benefit from using absolute imports of your ${picocolors.cyan(previewConfigPath)} file. We can configure that for you, using subpath imports (a node standard), by adjusting the imports property of your package.json.
         
         However, we cannot broadly recommend it for all projects, because it might not work in some monorepo setups or if you have an outdated tsconfig, use custom paths, or have type alias plugins configured in your project. You can always rerun this codemod and select another option to update your code later.
         
-        More info: ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next#subpath-imports')}
+        More info: ${picocolors.yellow('https://storybook.js.org/docs/10/api/csf/csf-next#subpath-imports?ref=upgrade')}
       `);
 
       useSubPathImports = await prompt.select<boolean>({
         message: 'Which import type would you like to use for your story files?',
         options: [
-          { label: "Relative imports (import preview from '../../.storybook/preview')", value: true },
-          { label: "Subpath imports (import preview from '#.storybook/preview')", value: false },
+          {
+            label: "Relative imports (import preview from '../../.storybook/preview')",
+            value: false,
+          },
+          { label: "Subpath imports (import preview from '#.storybook/preview')", value: true },
         ],
       });
     }
 
     const { packageJson } = packageManager.primaryPackageJson;
 
-    if (!useSubPathImports && !packageJson.imports?.['#*']) {
+    if (useSubPathImports && !packageJson.imports?.['#*']) {
       logger.log(
         `🗺️ Adding imports map in ${picocolors.cyan(packageManager.primaryPackageJson.packageJsonPath)}`
       );

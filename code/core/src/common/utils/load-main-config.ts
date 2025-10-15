@@ -23,7 +23,7 @@ export async function loadMainConfig({
   const mainPath = getInterpretedFile(resolve(configDir, 'main')) as string;
 
   try {
-    const out = await importModule(mainPath);
+    const out = await importModule(mainPath, { skipCache: true });
     return out;
   } catch (e) {
     if (!(e instanceof Error)) {

@@ -5,8 +5,8 @@ import { isAbsolute, posix, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
+import { AddonVitestService } from 'storybook/internal/cli';
 import {
-  type JsPackageManager,
   JsPackageManagerFactory,
   formatFileContent,
   getInterpretedFile,
@@ -26,7 +26,7 @@ import * as pkg from 'empathic/package';
 import { execa } from 'execa';
 import { dirname, relative, resolve } from 'pathe';
 import prompts from 'prompts';
-import { coerce, satisfies } from 'semver';
+import { satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
@@ -68,80 +68,6 @@ const findFile = (basename: string, extensions = EXTENSIONS) =>
     { last: getProjectRoot() }
   );
 
-/**
- * Collect all dependencies needed for the addon
- *
- * - Base packages: vitest, @vitest/browser, playwright
- * - Next.js specific: @storybook/nextjs-vite
- * - Coverage reporter: @vitest/coverage-v8
- * - Returns versioned package strings ready for installation
- */
-async function collectAddonDependencies(
-  packageManager: JsPackageManager,
-  frameworkPackageName: string
-): Promise<string[]> {
-  const allDeps = packageManager.getAllDependencies();
-  const dependencies: string[] = [];
-
-  // Only install these dependencies if they are not already installed
-  const basePackages = ['vitest', '@vitest/browser', 'playwright'];
-  for (const pkg of basePackages) {
-    if (!allDeps[pkg]) {
-      dependencies.push(pkg);
-    }
-  }
-
-  // Add Next.js specific dependency
-  if (frameworkPackageName === '@storybook/nextjs') {
-    printInfo(
-      '🍿 Just so you know...',
-      dedent`
-        It looks like you're using Next.js.
-
-        Adding "@storybook/nextjs-vite/vite-plugin" so you can use it with Vitest.
-
-        More info about the plugin at https://github.com/storybookjs/vite-plugin-storybook-nextjs
-      `
-    );
-    try {
-      const storybookVersion = await packageManager.getInstalledVersion('storybook');
-      if (storybookVersion) {
-        dependencies.push(`@storybook/nextjs-vite@^${storybookVersion}`);
-      }
-    } catch {
-      console.error('Failed to resolve @storybook/nextjs-vite version. Skipping...');
-    }
-  }
-
-  // Check for coverage reporters
-  const v8Version = await packageManager.getInstalledVersion('@vitest/coverage-v8');
-  const istanbulVersion = await packageManager.getInstalledVersion('@vitest/coverage-istanbul');
-
-  if (!v8Version && !istanbulVersion) {
-    printInfo(
-      '🙈 Let me cover this for you',
-      dedent`
-        You don't seem to have a coverage reporter installed. Vitest needs either V8 or Istanbul to generate coverage reports.
-
-        Adding "@vitest/coverage-v8" to enable coverage reporting.
-        Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
-      `
-    );
-    dependencies.push('@vitest/coverage-v8');
-  }
-
-  // Apply version specifiers to vitest-related packages
-  const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
-  const versionedDependencies = dependencies.map((pkg) => {
-    if (pkg.includes('vitest') && vitestVersionSpecifier) {
-      return `${pkg}@${vitestVersionSpecifier}`;
-    }
-    return pkg;
-  });
-
-  return versionedDependencies;
-}
-
 export default async function postInstall(options: PostinstallOptions) {
   printSuccess(
     '👋 Howdy!',
@@ -161,7 +87,6 @@ export default async function postInstall(options: PostinstallOptions) {
 
   // Get vitest version info for config template compatibility
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
-  const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
   const isVitest3_2OrNewer = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=3.2.0')
     : true;
@@ -232,103 +157,94 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const isRendererSupported = !!annotationsImport;
 
-  const prerequisiteCheck = async () => {
-    const reasons = [];
+  // Use AddonVitestService for compatibility validation
+  const addonVitestService = new AddonVitestService();
+  const compatibilityResult = await addonVitestService.validateCompatibility({
+    packageManager,
+    frameworkPackageName: info.frameworkPackageName,
+    builderPackageName: info.builderPackageName,
+    hasCustomWebpackConfig,
+    configDir: options.configDir,
+  });
 
-    if (hasCustomWebpackConfig) {
-      reasons.push('• The addon can not be used with a custom Webpack configuration.');
-    }
-
-    if (
-      !nameMatches(info.frameworkPackageName, '@storybook/nextjs') &&
-      !nameMatches(info.builderPackageName, '@storybook/builder-vite')
-    ) {
-      reasons.push(
-        '• The addon can only be used with a Vite-based Storybook framework or Next.js.'
-      );
-    }
+  let result: string | null = null;
+  if (!compatibilityResult.compatible && compatibilityResult.reasons) {
+    const reasons = compatibilityResult.reasons.map((r) => `• ${r}`);
+    reasons.unshift(
+      `@storybook/addon-vitest's automated setup failed due to the following package incompatibilities:`
+    );
+    reasons.push('--------------------------------');
+    reasons.push(
+      dedent`
+        You can fix these issues and rerun the command to reinstall. If you wish to roll back the installation, remove ${ADDON_NAME} from the "addons" array
+        in your main Storybook config file and remove the dependency from your package.json file.
+      `
+    );
 
     if (!isRendererSupported) {
-      reasons.push(dedent`
-        • The addon cannot yet be used with ${info.frameworkPackageName}
-      `);
-    }
-
-    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0')) {
-      reasons.push(dedent`
-        • The addon requires Vitest 3.0.0 or higher. You are currently using ${vitestVersionSpecifier}.
-          Please update all of your Vitest dependencies and try again.
-      `);
-    }
-
-    const mswVersionSpecifier = await packageManager.getInstalledVersion('msw');
-    const coercedMswVersion = mswVersionSpecifier ? coerce(mswVersionSpecifier) : null;
-
-    if (coercedMswVersion && !satisfies(coercedMswVersion, '>=2.0.0')) {
-      reasons.push(dedent`
-        • The addon uses Vitest behind the scenes, which supports only version 2 and above of MSW. However, we have detected version ${coercedMswVersion.version} in this project.
-        Please update the 'msw' package and try again.
-      `);
-    }
-
-    if (nameMatches(info.frameworkPackageName, '@storybook/nextjs')) {
-      const nextVersion = await packageManager.getInstalledVersion('next');
-      if (!nextVersion) {
-        reasons.push(dedent`
-          • You are using @storybook/nextjs without having "next" installed.
-            Please install "next" or use a different Storybook framework integration and try again.
-        `);
-      }
-    }
-
-    if (reasons.length > 0) {
-      reasons.unshift(
-        `@storybook/addon-vitest's automated setup failed due to the following package incompatibilities:`
-      );
-      reasons.push('--------------------------------');
       reasons.push(
         dedent`
-          You can fix these issues and rerun the command to reinstall. If you wish to roll back the installation, remove ${ADDON_NAME} from the "addons" array
-          in your main Storybook config file and remove the dependency from your package.json file.
+          Please check the documentation for more information about its requirements and installation:
+          https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}
         `
       );
-
-      if (!isRendererSupported) {
-        reasons.push(
-          dedent`
-            Please check the documentation for more information about its requirements and installation:
-            https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}
-          `
-        );
-      } else {
-        reasons.push(
-          dedent`
-            Fear not, however, you can follow the manual installation process instead at:
-            https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
-          `
-        );
-      }
-
-      return reasons.map((r) => r.trim()).join('\n\n');
+    } else {
+      reasons.push(
+        dedent`
+          Fear not, however, you can follow the manual installation process instead at:
+          https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
+        `
+      );
     }
 
-    return null;
-  };
-
-  const result = await prerequisiteCheck();
+    result = reasons.map((r) => r.trim()).join('\n\n');
+  }
 
   if (result) {
     logErrors('⛔️ Sorry!', result);
     logger.line(1);
-    return;
+    throw new Error(result);
   }
 
   // Skip all dependency management when flag is set (called from init command)
   if (!options.skipDependencyManagement) {
-    const versionedDependencies = await collectAddonDependencies(
+    // Use AddonVitestService for dependency collection
+    const versionedDependencies = await addonVitestService.collectDependencies(
       packageManager,
       info.frameworkPackageName
     );
+
+    // Print informational messages for Next.js
+    if (info.frameworkPackageName === '@storybook/nextjs') {
+      const allDeps = packageManager.getAllDependencies();
+      if (!allDeps['@storybook/nextjs-vite']) {
+        printInfo(
+          '🍿 Just so you know...',
+          dedent`
+            It looks like you're using Next.js.
+
+            Adding "@storybook/nextjs-vite/vite-plugin" so you can use it with Vitest.
+
+            More info about the plugin at https://github.com/storybookjs/vite-plugin-storybook-nextjs
+          `
+        );
+      }
+    }
+
+    // Print informational message for coverage reporter
+    const v8Version = await packageManager.getInstalledVersion('@vitest/coverage-v8');
+    const istanbulVersion = await packageManager.getInstalledVersion('@vitest/coverage-istanbul');
+    if (!v8Version && !istanbulVersion) {
+      printInfo(
+        '🙈 Let me cover this for you',
+        dedent`
+          You don't seem to have a coverage reporter installed. Vitest needs either V8 or Istanbul to generate coverage reports.
+
+          Adding "@vitest/coverage-v8" to enable coverage reporting.
+          Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
+        `
+      );
+    }
 
     if (versionedDependencies.length > 0) {
       await packageManager.addDependencies(

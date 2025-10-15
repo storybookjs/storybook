@@ -117,7 +117,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
-    logger.log('Setting builder to Vite');
+    logger.log('- Setting builder to Vite');
     return CoreBuilder.Vite;
   }
 

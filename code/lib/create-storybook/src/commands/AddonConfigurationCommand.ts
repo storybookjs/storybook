@@ -1,5 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { CLI_COLORS, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
 import type { DependencyCollector } from '../dependency-collector';
 import type { CommandOptions, GeneratorFeature } from '../generators/types';
@@ -55,7 +55,7 @@ export class AddonConfigurationCommand {
 
     let failed = false;
     let addonA11yFailed = false;
-    let addonVitestFailed = false;
+    const addonVitestFailed = false;
 
     try {
       // Run a11y addon postinstall (runs automigration)
@@ -78,20 +78,20 @@ export class AddonConfigurationCommand {
     }
 
     // Run vitest addon postinstall (configuration only)
-    try {
-      await postinstallAddon('@storybook/addon-vitest', {
-        packageManager: packageManager.type,
-        configDir,
-        yes: options.yes,
-        skipInstall: true,
-        skipDependencyManagement: true,
-      });
-    } catch (err) {
-      task.message(CLI_COLORS.error(`Failed to configure test addons`));
-      failed = true;
-      addonVitestFailed = true;
-      // Don't throw - addon configuration failures shouldn't fail the entire init
-    }
+    // try {
+    //   await postinstallAddon('@storybook/addon-vitest', {
+    //     packageManager: packageManager.type,
+    //     configDir,
+    //     yes: options.yes,
+    //     skipInstall: true,
+    //     skipDependencyManagement: true,
+    //   });
+    // } catch (err) {
+    //   task.message(CLI_COLORS.error(`Failed to configure test addons`));
+    //   failed = true;
+    //   addonVitestFailed = true;
+    //   // Don't throw - addon configuration failures shouldn't fail the entire init
+    // }
 
     if (failed) {
       task.error('Failed to configure test addons');
@@ -100,28 +100,18 @@ export class AddonConfigurationCommand {
       task.success('Configuring test addons...');
     }
 
-    const taskAddonsInstalled = prompt.taskLog({
-      id: 'addons-installed',
-      title: 'Test addons configured:',
-    });
-
-    if (addonA11yFailed) {
-      taskAddonsInstalled.message(CLI_COLORS.error('x Failed to install a11y addon'));
-    } else {
-      taskAddonsInstalled.message('- @storybook/a11y-addon');
-    }
-
-    if (addonVitestFailed) {
-      taskAddonsInstalled.message(CLI_COLORS.error('x Failed to install vitest addon'));
-    } else {
-      taskAddonsInstalled.message('- @storybook/addon-vitest');
-    }
-
-    if (addonA11yFailed || addonVitestFailed) {
-      taskAddonsInstalled.error('Failed to install test addons');
-    } else {
-      taskAddonsInstalled.success('Test addons installed', { showLog: true });
-    }
+    logger.log(
+      CLI_COLORS.dimmed(
+        [
+          addonA11yFailed
+            ? CLI_COLORS.error('x Failed to install a11y addon')
+            : '- @storybook/a11y-addon',
+          addonVitestFailed
+            ? CLI_COLORS.error('x Failed to install vitest addon')
+            : '- @storybook/addon-vitest',
+        ].join('\n')
+      )
+    );
   }
 }
 

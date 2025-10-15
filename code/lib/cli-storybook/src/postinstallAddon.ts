@@ -8,6 +8,7 @@ import type { PostinstallOptions } from './add';
 
 const DIR_CWD = process.cwd();
 const require = createRequire(DIR_CWD);
+
 export const postinstallAddon = async (addonName: string, options: PostinstallOptions) => {
   const hookPath = `${addonName}/postinstall`;
   let modulePath: string;
@@ -42,7 +43,6 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
   }
 
   try {
-    logger.log(`Running postinstall script for ${addonName}`);
     await postinstall(options);
   } catch (e) {
     logger.error(`Error running postinstall script for ${addonName}`);

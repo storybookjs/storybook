@@ -362,7 +362,7 @@ export async function baseGenerator(
       if (hasEslint && !isStorybookPluginInstalled) {
         eslintPluginPackage = 'eslint-plugin-storybook';
         packagesToInstall.push(eslintPluginPackage);
-        taskLog.message(`Configuring ESLint plugin`);
+        taskLog.message(`- Configuring ESLint plugin`);
         await configureEslintPlugin({
           eslintConfigFile,
           // TODO: Investigate why packageManager type does not match on CI
@@ -415,7 +415,7 @@ export async function baseGenerator(
         ]
       : [];
 
-    taskLog.message(`Configuring main.js`);
+    taskLog.message(`- Configuring main.js`);
     await configureMain({
       framework: {
         name: frameworkPackagePath,
@@ -443,7 +443,7 @@ export async function baseGenerator(
   }
 
   if (addPreviewFile) {
-    taskLog.message(`Configuring preview.js`);
+    taskLog.message(`- Configuring preview.js`);
     await configurePreview({
       frameworkPreviewParts,
       storybookConfigFolder: storybookConfigFolder as string,
@@ -453,7 +453,7 @@ export async function baseGenerator(
   }
 
   if (addScripts) {
-    taskLog.message(`Adding Storybook command to package.json`);
+    taskLog.message(`- Adding Storybook command to package.json`);
     packageManager.addStorybookCommandInScripts({
       port: 6006,
     });
@@ -465,7 +465,7 @@ export async function baseGenerator(
     if (!templateLocation) {
       throw new Error(`Could not find template location for ${framework} or ${rendererId}`);
     }
-    taskLog.message(`Copying framework templates`);
+    taskLog.message(`- Copying framework templates`);
     await copyTemplateFiles({
       templateLocation,
       packageManager: packageManager as any,

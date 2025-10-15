@@ -6,3 +6,4 @@ export * from './project_types';
 export * from './NpmOptions';
 export * from './eslintPlugin';
 export * from './globalSettings';
+export * from './AddonVitestService';

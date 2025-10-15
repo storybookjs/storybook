@@ -18,7 +18,7 @@ import {
 } from 'storybook/internal/common';
 import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 import * as pkg from 'empathic/package';
@@ -31,7 +31,6 @@ import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
 import { DOCUMENTATION_LINK, SUPPORTED_FRAMEWORKS } from './constants';
-import { printError, printInfo, printSuccess, printWarning, step } from './postinstall-logger';
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
 import { getAddonNames } from './utils';
 
@@ -57,9 +56,9 @@ function nameMatches(name: string, pattern: string) {
   return false;
 }
 
-const logErrors = (...args: Parameters<typeof printError>) => {
+const logErrors = (message: string) => {
+  logger.error(message);
   hasErrors = true;
-  printError(...args);
 };
 
 const findFile = (basename: string, extensions = EXTENSIONS) =>
@@ -69,15 +68,6 @@ const findFile = (basename: string, extensions = EXTENSIONS) =>
   );
 
 export default async function postInstall(options: PostinstallOptions) {
-  printSuccess(
-    '👋 Howdy!',
-    dedent`
-      I'm the installation helper for ${ADDON_NAME}
-
-      Hold on for a moment while I look at your project and get it set up...
-    `
-  );
-
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: options.packageManager,
   });
@@ -169,11 +159,11 @@ export default async function postInstall(options: PostinstallOptions) {
 
   let result: string | null = null;
   if (!compatibilityResult.compatible && compatibilityResult.reasons) {
-    const reasons = compatibilityResult.reasons.map((r) => `• ${r}`);
-    reasons.unshift(
-      `@storybook/addon-vitest's automated setup failed due to the following package incompatibilities:`
-    );
-    reasons.push('--------------------------------');
+    const reasons = compatibilityResult.reasons.map((r) => `• ${CLI_COLORS.error(r)}`);
+    reasons.unshift(dedent`
+      Automated setup failed
+      We have found incompatibilities due to the following package incompatibilities:
+    `);
     reasons.push(
       dedent`
         You can fix these issues and rerun the command to reinstall. If you wish to roll back the installation, remove ${ADDON_NAME} from the "addons" array
@@ -201,8 +191,7 @@ export default async function postInstall(options: PostinstallOptions) {
   }
 
   if (result) {
-    logErrors('⛔️ Sorry!', result);
-    logger.line(1);
+    logErrors(result);
     throw new Error(result);
   }
 
@@ -218,15 +207,12 @@ export default async function postInstall(options: PostinstallOptions) {
     if (info.frameworkPackageName === '@storybook/nextjs') {
       const allDeps = packageManager.getAllDependencies();
       if (!allDeps['@storybook/nextjs-vite']) {
-        printInfo(
-          '🍿 Just so you know...',
+        logger.step(
           dedent`
-            It looks like you're using Next.js.
-
-            Adding "@storybook/nextjs-vite/vite-plugin" so you can use it with Vitest.
-
-            More info about the plugin at https://github.com/storybookjs/vite-plugin-storybook-nextjs
-          `
+          It looks like you're using Next.js.
+          Adding "@storybook/nextjs-vite/vite-plugin" so you can use it with Vitest.
+          More info about the plugin at https://github.com/storybookjs/vite-plugin-storybook-nextjs
+        `
         );
       }
     }
@@ -235,8 +221,7 @@ export default async function postInstall(options: PostinstallOptions) {
     const v8Version = await packageManager.getInstalledVersion('@vitest/coverage-v8');
     const istanbulVersion = await packageManager.getInstalledVersion('@vitest/coverage-istanbul');
     if (!v8Version && !istanbulVersion) {
-      printInfo(
-        '🙈 Let me cover this for you',
+      logger.step(
         dedent`
           You don't seem to have a coverage reporter installed. Vitest needs either V8 or Istanbul to generate coverage reports.
 
@@ -247,38 +232,41 @@ export default async function postInstall(options: PostinstallOptions) {
     }
 
     if (versionedDependencies.length > 0) {
+      logger.step('Adding dependencies to your package.json');
+      logger.log('  ' + versionedDependencies.join(', '));
+
       await packageManager.addDependencies(
         { type: 'devDependencies', skipInstall: true },
         versionedDependencies
       );
-      logger.line(1);
-      logger.plain(`${step} Installing dependencies:`);
-      logger.plain('  ' + versionedDependencies.join(', '));
     }
 
     if (!options.skipInstall) {
       await packageManager.installDependencies();
     }
-
-    logger.line(1);
   }
 
   // Skip Playwright installation when dependency management is handled externally
   if (!options.skipDependencyManagement) {
     if (options.skipInstall) {
-      logger.plain('Skipping Playwright installation, please run this command manually:');
-      logger.plain('  npx playwright install chromium --with-deps');
+      logger.info(dedent`
+        Skipping Playwright installation, please run this command manually:
+        ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
+      `);
     } else {
-      logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
-      logger.plain('  npx playwright install chromium --with-deps');
-      try {
-        await packageManager.executeCommand({
-          command: 'npx',
-          args: ['playwright', 'install', 'chromium', '--with-deps'],
-        });
-      } catch {
-        console.error('Failed to install Playwright. Please install it manually');
-      }
+      await prompt.executeTask(
+        () =>
+          packageManager.executeCommand({
+            command: 'npx',
+            args: ['playwright', 'install', 'chromium', '--with-deps'],
+          }),
+        {
+          id: 'playwright-installation',
+          intro: 'Configuring Playwright with Chromium',
+          error: 'An error occurred while installing Playwright browser binaries.',
+          success: 'Playwright installed successfully',
+        }
+      );
     }
   }
 
@@ -287,23 +275,18 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
   if (existsSync(vitestSetupFile)) {
-    logErrors(
-      '🚨 Oh no!',
-      dedent`
-        Found an existing Vitest setup file:
-        ${vitestSetupFile}
+    logErrors(dedent`
+      Found an existing Vitest setup file:
+      ${vitestSetupFile}
 
-        Please refer to the documentation to complete the setup manually:
-        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
-      `
-    );
-    logger.line(1);
-    return;
+      Please refer to the documentation to complete the setup manually:
+      https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
+    `);
+    throw new Error('Aborting Vitest setup due to an existing Vitest setup file');
   }
 
-  logger.line(1);
-  logger.plain(`${step} Creating a Vitest setup file for Storybook:`);
-  logger.plain(`  ${vitestSetupFile}`);
+  logger.step(`Creating a Vitest setup file for Storybook:`);
+  logger.log(`${vitestSetupFile}`);
 
   const previewExists = EXTENSIONS.map((ext) => resolve(options.configDir, `preview${ext}`)).some(
     existsSync
@@ -368,15 +351,14 @@ export default async function postInstall(options: PostinstallOptions) {
 
     const updated = updateWorkspaceFile(source, target);
     if (updated) {
-      logger.line(1);
-      logger.plain(`${step} Updating your Vitest workspace file:`);
-      logger.plain(`  ${vitestWorkspaceFile}`);
+      logger.step(`Updating your Vitest workspace file...`);
+
+      logger.log(`${vitestWorkspaceFile}`);
 
       const formattedContent = await formatFileContent(vitestWorkspaceFile, generate(target).code);
       await writeFile(vitestWorkspaceFile, formattedContent);
     } else {
       logErrors(
-        '🚨 Oh no!',
         dedent`
           Could not update existing Vitest workspace file:
           ${vitestWorkspaceFile}
@@ -388,8 +370,7 @@ export default async function postInstall(options: PostinstallOptions) {
           https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
         `
       );
-      logger.line(1);
-      return;
+      throw new Error('Aborting Vitest setup due to an existing Vitest workspace file');
     }
   }
   // If there's an existing Vite/Vitest config with workspaces, we update it to include the Storybook Addon Vitest plugin.
@@ -419,9 +400,8 @@ export default async function postInstall(options: PostinstallOptions) {
     }
 
     if (target && updated) {
-      logger.line(1);
-      logger.plain(`${step} Updating your ${vitestConfigFile ? 'Vitest' : 'Vite'} config file:`);
-      logger.plain(`  ${rootConfig}`);
+      logger.step(`Updating your ${vitestConfigFile ? 'Vitest' : 'Vite'} config file:`);
+      logger.log(`  ${rootConfig}`);
 
       const formattedContent = await formatFileContent(rootConfig, generate(target).code);
       await writeFile(
@@ -431,15 +411,13 @@ export default async function postInstall(options: PostinstallOptions) {
           : '/// <reference types="vitest/config" />\n' + formattedContent
       );
     } else {
-      logErrors(
-        '🚨 Oh no!',
-        dedent`
+      logErrors(dedent`
         We were unable to update your existing ${vitestConfigFile ? 'Vitest' : 'Vite'} config file.
 
         Please refer to the documentation to complete the setup manually:
         https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup
-      `
-      );
+      `);
+      throw new Error('Aborting Vitest setup due to an existing Vitest config file');
     }
   }
   // If there's no existing Vitest/Vite config, we create a new Vitest config file.
@@ -454,9 +432,8 @@ export default async function postInstall(options: PostinstallOptions) {
       }
     );
 
-    logger.line(1);
-    logger.plain(`${step} Creating a Vitest config file:`);
-    logger.plain(`  ${newConfigFile}`);
+    logger.step(`Creating a Vitest config file:`);
+    logger.log(`${newConfigFile}`);
 
     const formattedContent = await formatFileContent(newConfigFile, configTemplate);
     await writeFile(newConfigFile, formattedContent);
@@ -466,7 +443,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (a11yAddon) {
     try {
-      logger.plain(`${step} Setting up ${addonA11yName} for @storybook/addon-vitest:`);
+      logger.step(`Setting up ${addonA11yName} for @storybook/addon-vitest:`);
       const command = ['automigrate', 'addon-a11y-addon-test'];
 
       command.push('--loglevel', 'silent');
@@ -488,44 +465,43 @@ export default async function postInstall(options: PostinstallOptions) {
         stdio: 'inherit',
       });
     } catch (e: unknown) {
-      logErrors(
-        '🚨 Oh no!',
-        dedent`
+      logErrors(dedent`
         We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-vitest:
 
         ${e instanceof Error ? e.message : String(e)}
 
         Please refer to the documentation to complete the setup manually:
         https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration
-      `
-      );
+      `);
+      throw new Error('Aborting Vitest setup due to an existing a11y addon');
     }
   }
 
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
 
   if (!hasErrors) {
-    printSuccess(
-      '🎉 All done!',
-      dedent`
+    logger.step(CLI_COLORS.success('All done!'));
+    logger.log(dedent`
         @storybook/addon-vitest is now configured and you're ready to run your tests!
         Here are a couple of tips to get you started:
-        • You can run tests with "${runCommand}"
-        • When using the Vitest extension in your editor, all of your stories will be shown as tests!
+
+        • You can run tests with "${CLI_COLORS.cta(runCommand)}"
+        • Vitest IDE extension shows all stories as tests in your editor!
+
         Check the documentation for more information about its features and options at:
         https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}
-      `
-    );
+      `);
   } else {
-    printWarning(
-      '⚠️ Done, but with errors!',
+    logger.warn(
       dedent`
+        ${CLI_COLORS.warning('⚠️ Done, but with errors!')}
         @storybook/addon-vitest was installed successfully, but there were some errors during the setup process.
         Please refer to the documentation to complete the setup manually and check the errors above:
         https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
       `
     );
   }
+  logger.outro('');
 }
 
 async function getPackageNameFromPath(input: string): Promise<string> {

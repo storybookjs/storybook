@@ -9,10 +9,12 @@ import postCssLoadConfig from 'postcss-load-config';
 
 type Options = import('lilconfig').Options;
 
-const require = createRequire(import.meta.url);
+// Handle both ESM and CJS environments
+const requireFn =
+  typeof globalThis.require !== 'undefined' ? globalThis.require : createRequire(import.meta.url);
 
 async function loader(filepath: string) {
-  return require(filepath);
+  return requireFn(filepath);
 }
 
 const withLoaders = (options: Options = {}) => {
@@ -127,7 +129,7 @@ export { postCssLoadConfig };
       // Retry loading the config
       await postCssLoadConfig({}, searchPath, { stopDir: getProjectRoot() });
       return true; // Success with modified config!
-    } catch (e: any) {
+    } catch {
       // We were unable to fix the config, so we change the file back to the original content
       await writeFile(configPath, originalContent, 'utf8');
       // and throw an error

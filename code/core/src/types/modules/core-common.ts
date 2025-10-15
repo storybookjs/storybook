@@ -6,6 +6,7 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
+import { type StoryIndexGenerator } from '../../core-server';
 import type { Indexer, StoriesEntry } from './indexer';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
@@ -343,6 +344,16 @@ export type TagsOptions = Record<Tag, Partial<TagOptions>>;
  * The interface for Storybook configuration used internally in presets The difference is that these
  * values are the raw values, AKA, not wrapped with `PresetValue<>`
  */
+
+export interface ComponentManifest {
+  id: string;
+  examples: { name: string; snippet: string }[];
+}
+
+export type ComponentManifestGenerator = (
+  storyIndexGenerator: StoryIndexGenerator
+) => Promise<Record<string, ComponentManifest>>;
+
 export interface StorybookConfigRaw {
   /**
    * Sets the addons you want to use with Storybook.
@@ -356,6 +367,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
+  componentManifestGenerator?: ComponentManifestGenerator;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -453,6 +465,8 @@ export interface StorybookConfigRaw {
     developmentModeForBuild?: boolean;
     /** Only show input controls in Angular */
     angularFilterNonInputControls?: boolean;
+
+    componentManifestGenerator?: boolean;
   };
 
   build?: TestBuildConfig;

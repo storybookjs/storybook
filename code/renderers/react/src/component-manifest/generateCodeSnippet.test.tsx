@@ -1,14 +1,25 @@
 import { expect, test } from 'vitest';
 
+import { recast } from 'storybook/internal/babel';
+import type { NodePath } from 'storybook/internal/babel';
+import { types as t } from 'storybook/internal/babel';
+import { loadCsf } from 'storybook/internal/csf-tools';
+
 import { dedent } from 'ts-dedent';
 
-import { recast } from '../babel';
-import { loadCsf } from './CsfFile';
-import { getAllCodeSnippets } from './generateCodeSnippet';
+import { getCodeSnippet } from './generateCodeSnippet';
 
 function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
-  return recast.print(getAllCodeSnippets(csf)).code;
+  const component = csf._meta?.component ?? 'Unknown';
+
+  const snippets = Object.values(csf._storyPaths)
+    .map((path: NodePath<t.ExportNamedDeclaration>) =>
+      getCodeSnippet(path, csf._metaNode ?? null, component)
+    )
+    .filter(Boolean);
+
+  return recast.print(t.program(snippets)).code;
 }
 
 function withCSF3(body: string) {
@@ -108,7 +119,7 @@ test('Object', () => {
         string: 'string',
         number: 1,
         object: { an: 'object'},
-        complexObjet: {...{a: 1}, an: 'object'},
+        complexObject: {...{a: 1}, an: 'object'},
         array: [1,2,3]
       }
     };
@@ -118,7 +129,7 @@ test('Object', () => {
         string="string"
         number={1}
         object={{ an: 'object'}}
-        complexObjet={{...{a: 1}, an: 'object'}}
+        complexObject={{...{a: 1}, an: 'object'}}
         array={[1,2,3]}>Click me</Button>;"
   `);
 });

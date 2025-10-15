@@ -1,4 +1,4 @@
-import { cp, mkdir } from 'node:fs/promises';
+import { cp, mkdir, writeFile } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 import { join, relative, resolve } from 'node:path';
 
@@ -18,6 +18,7 @@ import { global } from '@storybook/global';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';
+import { type ComponentManifestGenerator } from '../types';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
@@ -163,6 +164,19 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
         initializedStoryIndexGenerator as Promise<StoryIndexGenerator>
       )
     );
+
+    const features = await presets.apply('features');
+
+    if (features?.componentManifestGenerator) {
+      const componentManifestGenerator: ComponentManifestGenerator = await presets.apply(
+        'componentManifestGenerator'
+      );
+      const indexGenerator = await initializedStoryIndexGenerator;
+      if (componentManifestGenerator && indexGenerator) {
+        const manifests = await componentManifestGenerator(indexGenerator);
+        await writeFile(join(options.outputDir, 'components.json'), JSON.stringify(manifests));
+      }
+    }
   }
 
   if (!core?.disableProjectJson) {

@@ -2,8 +2,6 @@ import { type NodePath, types as t } from 'storybook/internal/babel';
 
 import invariant from 'tiny-invariant';
 
-import { type CsfFile } from './CsfFile';
-
 function buildInvalidSpread(entries: Array<[string, t.Node]>): t.JSXSpreadAttribute | null {
   if (entries.length === 0) {
     return null;
@@ -240,18 +238,6 @@ export function getCodeSnippet(
   return t.variableDeclaration('const', [
     t.variableDeclarator(t.identifier(storyId.node.name), arrow),
   ]);
-}
-
-export function getAllCodeSnippets(csf: CsfFile) {
-  const component = csf._meta?.component ?? 'Unknown';
-
-  const snippets = Object.values(csf._storyPaths)
-    .map((path: NodePath<t.ExportNamedDeclaration>) =>
-      getCodeSnippet(path, csf._metaNode ?? null, component)
-    )
-    .filter(Boolean);
-
-  return t.program(snippets);
 }
 
 const keyOf = (p: t.ObjectProperty): string | null =>

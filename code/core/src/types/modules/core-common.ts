@@ -466,7 +466,7 @@ export interface StorybookConfigRaw {
     /** Only show input controls in Angular */
     angularFilterNonInputControls?: boolean;
 
-    componentManifestGenerator?: boolean;
+    experimental_componentsManifest?: boolean;
   };
 
   build?: TestBuildConfig;

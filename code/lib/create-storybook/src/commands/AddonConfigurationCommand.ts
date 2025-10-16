@@ -1,5 +1,5 @@
 import type { ProjectType } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
 import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
@@ -40,6 +40,7 @@ export class AddonConfigurationCommand {
     packageManager,
     options,
     selectedFeatures,
+    generatorResult,
   }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
     if (!selectedFeatures.has('test')) {
       return { status: 'success' };
@@ -48,7 +49,11 @@ export class AddonConfigurationCommand {
     try {
       await this.collectAddonDependencies(projectType, packageManager);
 
-      const { hasFailures } = await this.configureTestAddons(packageManager, options);
+      const { hasFailures } = await this.configureTestAddons(
+        packageManager,
+        generatorResult,
+        options
+      );
       return { status: hasFailures ? 'failed' : 'success' };
     } catch {
       return { status: 'failed' };
@@ -76,11 +81,11 @@ export class AddonConfigurationCommand {
   /** Configure test addons (a11y and vitest) */
   private async configureTestAddons(
     packageManager: JsPackageManager,
+    generatorResult: Awaited<ReturnType<Generator>>,
     options: CommandOptions
   ): Promise<{ hasFailures: boolean }> {
     // Import postinstallAddon from cli-storybook package
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
-    const configDir = '.storybook';
 
     // Get versioned addon packages
     const addons = await packageManager.getVersionedPackages(this.addonsToConfig);
@@ -99,8 +104,14 @@ export class AddonConfigurationCommand {
 
     // Configure each addon
     for (const addon of this.addonsToConfig) {
+      // const taskGroup = task.group(`Configuring ${addon}...`);
+
       try {
         task.message(`Configuring ${addon}...`);
+
+        const { configDir } = generatorResult;
+
+        task.message(`Running postinstall for ${addon}...`);
 
         await postinstallAddon(addon, {
           packageManager: packageManager.type,
@@ -113,7 +124,6 @@ export class AddonConfigurationCommand {
         task.message(`${addon} configured\n`);
         addonResults.set(addon, null);
       } catch (e) {
-        task.message(CLI_COLORS.error(`Failed to configure ${addon}`));
         ErrorCollectionService.addError(e);
         addonResults.set(addon, e);
       }

@@ -40,6 +40,8 @@ export * from './utils/get-story-id';
 export * from './utils/posix';
 export * from './utils/get-addon-names';
 export * from './utils/sync-main-preview-addons';
+export * from './utils/setup-addon-in-config';
+export * from './utils/wrap-getAbsolutePath-utils';
 export * from './js-package-manager';
 export * from './utils/scan-and-transform-files';
 export * from './utils/transform-imports';

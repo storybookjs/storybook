@@ -104,17 +104,19 @@ export async function configureMain({
   const mainPath = `./${storybookConfigFolder}/main.${isTypescript ? 'ts' : 'js'}`;
 
   await writeFile(mainPath, mainJsContents, { encoding: 'utf8' });
+
+  return { mainPath };
 }
 
 export async function configurePreview(options: ConfigurePreviewOptions) {
   const { prefix: frameworkPrefix = '' } = options.frameworkPreviewParts || {};
   const isTypescript = options.language === SupportedLanguage.TYPESCRIPT;
 
-  const previewPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
+  const previewConfigPath = `./${options.storybookConfigFolder}/preview.${isTypescript ? 'ts' : 'js'}`;
 
   // If the framework template included a preview then we have nothing to do
-  if (await pathExists(previewPath)) {
-    return;
+  if (await pathExists(previewConfigPath)) {
+    return { previewConfigPath };
   }
 
   const frameworkPackage = options.frameworkPackage;
@@ -149,5 +151,7 @@ export async function configurePreview(options: ConfigurePreviewOptions) {
     .replace('  \n', '')
     .trim();
 
-  await writeFile(previewPath, preview, { encoding: 'utf8' });
+  await writeFile(previewConfigPath, preview, { encoding: 'utf8' });
+
+  return { previewConfigPath };
 }

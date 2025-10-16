@@ -29,6 +29,8 @@ export class AddonManager {
 
     if (features.includes('test')) {
       addons.push('@chromatic-com/storybook');
+      addons.push('@storybook/addon-vitest');
+      addons.push('@storybook/addon-a11y');
     }
 
     if (features.includes('docs')) {

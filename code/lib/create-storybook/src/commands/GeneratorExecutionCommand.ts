@@ -1,5 +1,5 @@
 import type { ProjectType } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager } from 'storybook/internal/common';
 
 import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
@@ -98,7 +98,7 @@ export class GeneratorExecutionCommand {
       dependencyCollector,
     };
 
-    return await generator(packageManager, npmOptions, generatorOptions as any, options);
+    return generator(packageManager, npmOptions, generatorOptions as any, options);
   }
 
   /** Get the appropriate Storybook command for the project type */

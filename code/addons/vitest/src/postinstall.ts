@@ -288,15 +288,15 @@ export default async function postInstall(options: PostinstallOptions) {
     const errorMessage = dedent`
     Found an existing Vitest setup file:
     ${vitestSetupFile}
-
     Please refer to the documentation to complete the setup manually:
     https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
   `;
-    logger.error(errorMessage);
+    logger.line();
+    logger.error(`${errorMessage}\n`);
     errors.push('Found existing Vitest setup file');
   } else {
     logger.step(`Creating a Vitest setup file for Storybook:`);
-    logger.log(`${vitestSetupFile}`);
+    logger.log(`${vitestSetupFile}\n`);
 
     const previewExists = EXTENSIONS.map((ext) => resolve(options.configDir, `preview${ext}`)).some(
       existsSync
@@ -476,11 +476,9 @@ export default async function postInstall(options: PostinstallOptions) {
         stdio: 'inherit',
       });
     } catch (e: unknown) {
+      logger.line();
       logger.error(dedent`
-        We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-vitest:
-
-        ${e instanceof Error ? e.message : String(e)}
-
+        Could not automatically set up ${addonA11yName} for @storybook/addon-vitest.
         Please refer to the documentation to complete the setup manually:
         https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration
       `);
@@ -493,6 +491,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
 
+  logger.line();
   if (errors.length === 0) {
     logger.step(CLI_COLORS.success('All done!'));
     logger.log(dedent`
@@ -508,7 +507,7 @@ export default async function postInstall(options: PostinstallOptions) {
   } else {
     logger.warn(
       dedent`
-        ${CLI_COLORS.warning('⚠️ Done, but with errors!')}
+        Done, but with errors!
         @storybook/addon-vitest was installed successfully, but there were some errors during the setup process.
         Please refer to the documentation to complete the setup manually and check the errors above:
         https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup

@@ -13,7 +13,6 @@ import type {
   TaskLogOptions,
   TextPromptOptions,
 } from './prompt-provider-base';
-import { asyncLocalStorage } from './storage';
 
 // Re-export types for convenience
 export type {
@@ -140,6 +139,20 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
       activeTaskLog = null;
       restoreConsoleLog();
       task.error(message);
+    },
+    group: function (title: string) {
+      this.message(`\n${title}\n`);
+      return {
+        message: (message: string) => {
+          this.message(message);
+        },
+        success: (message: string) => {
+          this.success(message);
+        },
+        error: (message: string) => {
+          this.error(message);
+        },
+      };
     },
   };
 

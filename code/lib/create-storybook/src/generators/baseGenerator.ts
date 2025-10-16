@@ -18,9 +18,11 @@ import {
   frameworkPackages,
   getPackageDetails,
   isCI,
+  loadMainConfig,
   optionalEnvToBoolean,
   versions,
 } from 'storybook/internal/common';
+import { readConfig } from 'storybook/internal/csf-tools';
 import { prompt } from 'storybook/internal/node-logger';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
@@ -28,15 +30,14 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import { configureMain, configurePreview } from './configure';
+import { AddonManager } from './modules/AddonManager';
 import type { FrameworkOptions, GeneratorOptions } from './types';
 
-const defaultOptions: FrameworkOptions = {
+const defaultOptions = {
   extraPackages: [],
   extraAddons: [],
   staticDir: undefined,
   addScripts: true,
-  addMainFile: true,
-  addPreviewFile: true,
   addComponents: true,
   webpackCompiler: () => undefined,
   extraMain: undefined,
@@ -45,7 +46,7 @@ const defaultOptions: FrameworkOptions = {
   componentsDestinationPath: undefined,
   storybookConfigFolder: '.storybook',
   installFrameworkPackages: true,
-};
+} satisfies FrameworkOptions;
 
 const getBuilderDetails = (builder: string) => {
   const map = versions as Record<string, string>;
@@ -189,8 +190,6 @@ const getFrameworkDetails = (
   );
 };
 
-const stripVersions = (addons: string[]) => addons.map((addon) => getPackageDetails(addon)[0]);
-
 const hasFrameworkTemplates = (framework?: string) => {
   if (!framework) {
     return false;
@@ -235,9 +234,10 @@ export async function baseGenerator(
     dependencyCollector,
   }: GeneratorOptions,
   renderer: SupportedRenderers,
-  options: FrameworkOptions = defaultOptions,
+  _options: FrameworkOptions,
   framework?: SupportedFrameworks
 ) {
+  const options = { ...defaultOptions, ..._options };
   const isStorybookInMonorepository = packageManager.isStorybookInMonorepo();
   const shouldApplyRequireWrapperOnPackageNames = isStorybookInMonorepository || pnp;
 
@@ -284,8 +284,6 @@ export async function baseGenerator(
     extraPackages,
     staticDir,
     addScripts,
-    addMainFile,
-    addPreviewFile,
     addComponents,
     extraMain,
     extensions,
@@ -298,31 +296,14 @@ export async function baseGenerator(
     ...options,
   };
 
-  const compiler = webpackCompiler ? webpackCompiler({ builder }) : undefined;
-
-  if (features.includes('test')) {
-    extraAddons.push('@chromatic-com/storybook');
-  }
-
-  if (features.includes('docs')) {
-    extraAddons.push('@storybook/addon-docs');
-  }
-
-  if (features.includes('onboarding')) {
-    extraAddons.push('@storybook/addon-onboarding');
-  }
-
-  // added to main.js
-  const addons = [
-    ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
-    ...stripVersions(extraAddons),
-  ].filter(Boolean);
-
-  // added to package.json
-  const addonPackages = [
-    ...(compiler ? [`@storybook/addon-webpack5-compiler-${compiler}`] : []),
-    ...extraAddons,
-  ].filter(Boolean);
+  // Configure addons using AddonManager
+  const addonManager = new AddonManager();
+  const { addonsForMain: addons, addonPackages } = addonManager.configureAddons(
+    features,
+    extraAddons,
+    builder,
+    webpackCompiler
+  );
 
   const { packageJson } = packageManager.primaryPackageJson;
   const installedDependencies = new Set(
@@ -395,69 +376,63 @@ export async function baseGenerator(
     }
   }
 
-  if (addMainFile || addPreviewFile) {
-    await mkdir(`./${storybookConfigFolder}`, { recursive: true });
-  }
+  await mkdir(`./${storybookConfigFolder}`, { recursive: true });
 
-  if (addMainFile) {
-    const prefixes = shouldApplyRequireWrapperOnPackageNames
-      ? [
-          'import { dirname } from "path"',
-          'import { fileURLToPath } from "url"',
-          language === SupportedLanguage.JAVASCRIPT
-            ? dedent`/**
+  const prefixes = shouldApplyRequireWrapperOnPackageNames
+    ? [
+        'import { dirname } from "path"',
+        'import { fileURLToPath } from "url"',
+        language === SupportedLanguage.JAVASCRIPT
+          ? dedent`/**
             * This function is used to resolve the absolute path of a package.
             * It is needed in projects that use Yarn PnP or are set up within a monorepo.
             */
             function getAbsolutePath(value) {
               return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)))
             }`
-            : dedent`/**
+          : dedent`/**
           * This function is used to resolve the absolute path of a package.
           * It is needed in projects that use Yarn PnP or are set up within a monorepo.
           */
           function getAbsolutePath(value: string): any {
             return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)))
           }`,
-        ]
-      : [];
+      ]
+    : [];
 
-    taskLog.message(`- Configuring main.js`);
-    await configureMain({
-      framework: {
-        name: frameworkPackagePath,
-        options: options.framework || {},
-      },
-      features,
-      frameworkPackage,
-      prefixes,
-      storybookConfigFolder,
-      addons: shouldApplyRequireWrapperOnPackageNames
-        ? addons.map((addon) => applyAddonGetAbsolutePathWrapper(addon))
-        : addons,
-      extensions,
-      language,
-      ...(staticDir ? { staticDirs: [join('..', staticDir)] } : null),
-      ...extraMain,
-      ...(type !== 'framework'
-        ? {
-            core: {
-              builder: builderInclude,
-            },
-          }
-        : {}),
-    });
-  }
+  taskLog.message(`- Configuring main.js`);
+  const { mainPath } = await configureMain({
+    framework: {
+      name: frameworkPackagePath,
+      options: options.framework || {},
+    },
+    features,
+    frameworkPackage,
+    prefixes,
+    storybookConfigFolder,
+    addons: shouldApplyRequireWrapperOnPackageNames
+      ? addons.map((addon) => applyAddonGetAbsolutePathWrapper(addon))
+      : addons,
+    extensions,
+    language,
+    ...(staticDir ? { staticDirs: [join('..', staticDir)] } : null),
+    ...extraMain,
+    ...(type !== 'framework'
+      ? {
+          core: {
+            builder: builderInclude,
+          },
+        }
+      : {}),
+  });
 
-  if (addPreviewFile) {
-    taskLog.message(`- Configuring preview.js`);
-    await configurePreview({
-      frameworkPreviewParts,
-      storybookConfigFolder: storybookConfigFolder as string,
-      language,
-      frameworkPackage,
-    });
-  }
+  taskLog.message(`- Configuring preview.js`);
+  const { previewConfigPath } = await configurePreview({
+    frameworkPreviewParts,
+    storybookConfigFolder: storybookConfigFolder as string,
+    language,
+    frameworkPackage,
+  });
 
   if (addScripts) {
     taskLog.message(`- Adding Storybook command to package.json`);
@@ -489,9 +464,16 @@ export async function baseGenerator(
 
   taskLog.success('Storybook configuration generated', { showLog: true });
 
+  const mainConfig = await loadMainConfig({ configDir: storybookConfigFolder });
+  const mainConfigCSFFile = await readConfig(mainPath);
+
   return {
     frameworkPackage,
     rendererPackage: packages[0],
     builderPackage: packages[1],
+    mainConfig,
+    mainConfigCSFFile,
+    configDir: storybookConfigFolder,
+    previewConfigPath,
   };
 }

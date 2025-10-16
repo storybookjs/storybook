@@ -1,5 +1,7 @@
 import type { Builder, NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import type { ConfigFile } from 'storybook/internal/csf-tools';
+import type { StorybookConfig } from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector';
 import type { FrameworkPreviewParts } from './configure';
@@ -22,8 +24,6 @@ export interface FrameworkOptions {
   extraAddons?: string[];
   staticDir?: string;
   addScripts?: boolean;
-  addMainFile?: boolean;
-  addPreviewFile?: boolean;
   addComponents?: boolean;
   webpackCompiler?: ({ builder }: { builder: Builder }) => 'babel' | 'swc' | undefined;
   extraMain?: any;
@@ -39,7 +39,17 @@ export type Generator<T = Record<string, any>> = (
   npmOptions: NpmOptions,
   generatorOptions: GeneratorOptions,
   commandOptions?: CommandOptions
-) => Promise<{ rendererPackage: string; builderPackage: string; frameworkPackage: string } & T>;
+) => Promise<
+  {
+    rendererPackage: string;
+    builderPackage: string;
+    frameworkPackage: string;
+    mainConfigCSFFile: ConfigFile;
+    mainConfig: StorybookConfig;
+    configDir: string;
+    previewConfigPath: string;
+  } & T
+>;
 
 export type GeneratorFeature = 'docs' | 'test' | 'onboarding';
 

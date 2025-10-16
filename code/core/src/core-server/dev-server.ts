@@ -155,7 +155,7 @@ export async function storybookDevServer(options: Options) {
       res.end('No component manifest generator configured.');
       return;
     } catch (e) {
-      console.error(e);
+      logger.error(e);
       res.statusCode = 500;
       res.end(e instanceof Error ? e.toString() : String(e));
       return;

@@ -136,10 +136,10 @@ export async function storybookDevServer(options: Options) {
     throw indexError;
   }
 
-  app.use('/components.json', async (req, res) => {
+  app.use('/mainfests/components.json', async (req, res) => {
     try {
       const features = await options.presets.apply('features');
-      if (!features?.componentManifestGenerator) {
+      if (!features?.experimental_componentsManifest) {
         const componentManifestGenerator: ComponentManifestGenerator = await options.presets.apply(
           'componentManifestGenerator'
         );

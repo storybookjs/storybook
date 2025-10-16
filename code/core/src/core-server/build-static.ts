@@ -167,14 +167,14 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
     const features = await presets.apply('features');
 
-    if (features?.componentManifestGenerator) {
+    if (features?.experimental_componentsManifest) {
       const componentManifestGenerator: ComponentManifestGenerator = await presets.apply(
         'componentManifestGenerator'
       );
       const indexGenerator = await initializedStoryIndexGenerator;
       if (componentManifestGenerator && indexGenerator) {
         const manifests = await componentManifestGenerator(indexGenerator);
-        await writeFile(join(options.outputDir, 'components.json'), JSON.stringify(manifests));
+        await writeFile(join(options.outputDir, 'mainfests', 'components.json'), JSON.stringify(manifests));
       }
     }
   }

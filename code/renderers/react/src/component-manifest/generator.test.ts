@@ -143,6 +143,8 @@ beforeEach(() => {
         import type { Meta, StoryObj } from '@storybook/react';
         import { fn } from 'storybook/test';
         import { Header } from './Header';
+        
+        /** Meta description */
         const meta = {
           component: Header,
           args: {
@@ -191,7 +193,7 @@ beforeEach(() => {
   return () => vol.reset();
 });
 
-test('generates correct id, name and examples ', async () => {
+test('componentManifestGenerator generates correct id, name, description and examples ', async () => {
   const generator = await componentManifestGenerator();
   const manifest = await generator({
     getIndex: async () => indexJson,
@@ -200,6 +202,7 @@ test('generates correct id, name and examples ', async () => {
   expect(manifest).toMatchInlineSnapshot(`
     {
       "example-button": {
+        "description": "Primary UI component for user interaction",
         "examples": [
           {
             "name": "Primary",
@@ -222,6 +225,7 @@ test('generates correct id, name and examples ', async () => {
         "name": "Button",
       },
       "example-header": {
+        "description": "Meta description",
         "examples": [
           {
             "name": "LoggedIn",

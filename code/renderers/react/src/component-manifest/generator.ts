@@ -2,11 +2,13 @@ import { readFile } from 'node:fs/promises';
 
 import { recast } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
+import { extractDescription } from 'storybook/internal/csf-tools';
 import { type ComponentManifestGenerator } from 'storybook/internal/types';
 
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
+import { getMatchingDocgen, parseWithReactDocgen } from './react-docgen';
 
 export const componentManifestGenerator = async () => {
   return (async (storyIndexGenerator) => {
@@ -22,12 +24,24 @@ export const componentManifestGenerator = async () => {
     );
     const components = await Promise.all(
       singleEntryPerComponent.map(async (entry) => {
-        const code = await readFile(path.join(process.cwd(), entry.importPath), 'utf-8');
-        const csf = loadCsf(code, { makeTitle: (title) => title ?? 'No title' }).parse();
+        const storyFile = await readFile(path.join(process.cwd(), entry.importPath), 'utf-8');
+        const componentFile = await readFile(
+          path.join(process.cwd(), entry.componentPath!),
+          'utf-8'
+        );
+        const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
         const componentName = csf._meta?.component;
+        const docgens = await parseWithReactDocgen({
+          code: componentFile,
+          filename: path.join(process.cwd(), entry.importPath),
+        });
+        const docgen = getMatchingDocgen(docgens, componentName);
+
+        const metaDescription = extractDescription(csf._metaStatement);
         return {
           id: entry.id.split('--')[0],
           name: componentName,
+          description: metaDescription || docgen?.description,
           examples: !componentName
             ? []
             : Object.entries(csf._storyPaths)

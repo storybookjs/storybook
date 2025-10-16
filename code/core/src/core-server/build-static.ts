@@ -174,7 +174,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       const indexGenerator = await initializedStoryIndexGenerator;
       if (componentManifestGenerator && indexGenerator) {
         const manifests = await componentManifestGenerator(indexGenerator);
-        await writeFile(join(options.outputDir, 'mainfests', 'components.json'), JSON.stringify(manifests));
+        await writeFile(
+          join(options.outputDir, 'mainfests', 'components.json'),
+          JSON.stringify(manifests)
+        );
       }
     }
   }

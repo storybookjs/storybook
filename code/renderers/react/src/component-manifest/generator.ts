@@ -7,6 +7,7 @@ import { type ComponentManifestGenerator } from 'storybook/internal/types';
 
 import path from 'pathe';
 
+import { convertReactDocgenToJSONSchemas } from './docgen-to-json-schema';
 import { getCodeSnippet } from './generateCodeSnippet';
 import { extractJSDocTags, removeTags } from './jsdoc-tags';
 import { getMatchingDocgen, parseWithReactDocgen } from './react-docgen';
@@ -42,6 +43,7 @@ export const componentManifestGenerator = async () => {
         const metaDescription = extractDescription(csf._metaStatement);
         const description = metaDescription || docgen?.description;
         const tags = description ? extractJSDocTags(description) : {};
+
         return {
           id: entry.id.split('--')[0],
           name: componentName,
@@ -49,6 +51,7 @@ export const componentManifestGenerator = async () => {
           jsdocTag: tags,
           summary: tags.summary ? tags.summary[0] : undefined,
           import: tags.import ? tags.import[0] : undefined,
+          props: docgen?.props ? convertReactDocgenToJSONSchemas(docgen) : undefined,
           examples: !componentName
             ? []
             : Object.entries(csf._storyPaths)

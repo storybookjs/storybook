@@ -21,7 +21,7 @@ import {
   defaultLookupModule,
 } from './docgen-resolver';
 
-type DocObj = Documentation & { actualName: string; definedInFile: string };
+export type DocObj = Documentation & { actualName: string; definedInFile: string };
 
 // TODO: None of these are able to be overridden, so `default` is aspirational here.
 const defaultHandlers = Object.values(docgenHandlers).map((handler) => handler);

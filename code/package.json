@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "9.1.10",
+  "version": "9.1.11",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -239,10 +239,7 @@
       "built": false
     }
   },
-  "packageManager": "yarn@4.9.1",
-  "engines": {
-    "node": ">=20.0.0"
-  },
+  "packageManager": "yarn@4.10.3",
   "collective": {
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"

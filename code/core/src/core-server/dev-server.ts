@@ -137,18 +137,28 @@ export async function storybookDevServer(options: Options) {
   }
 
   app.use('/components.json', async (req, res) => {
-    const componentManifestGenerator: ComponentManifestGenerator = await options.presets.apply(
-      'componentManifestGenerator'
-    );
-    const indexGenerator = await initializedStoryIndexGenerator;
-    const features = await options.presets.apply('features');
-    if (features?.componentManifestGenerator && componentManifestGenerator && indexGenerator) {
-      const manifest = await componentManifestGenerator(indexGenerator);
-      res.setHeader('Content-Type', 'application/json');
-      res.end(JSON.stringify(manifest));
-    } else {
-      res.statusCode = 500;
+    try {
+      const features = await options.presets.apply('features');
+      if (!features?.componentManifestGenerator) {
+        const componentManifestGenerator: ComponentManifestGenerator = await options.presets.apply(
+          'componentManifestGenerator'
+        );
+        const indexGenerator = await initializedStoryIndexGenerator;
+        if (componentManifestGenerator && indexGenerator) {
+          const manifest = await componentManifestGenerator(indexGenerator);
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(manifest));
+          return;
+        }
+      }
+      res.statusCode = 400;
       res.end('No component manifest generator configured.');
+      return;
+    } catch (e) {
+      console.error(e);
+      res.statusCode = 500;
+      res.end(e instanceof Error ? e.toString() : String(e));
+      return;
     }
   });
 

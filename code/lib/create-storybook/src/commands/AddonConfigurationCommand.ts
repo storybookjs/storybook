@@ -115,7 +115,6 @@ export class AddonConfigurationCommand {
     }
 
     // Log results for each addon
-    logger.log('Addon configuration results:');
     logger.log(
       CLI_COLORS.dimmed(
         this.addonsToConfig

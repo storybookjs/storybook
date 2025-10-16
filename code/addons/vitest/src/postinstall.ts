@@ -247,34 +247,32 @@ export default async function postInstall(options: PostinstallOptions) {
   }
 
   // Skip Playwright installation when dependency management is handled externally
-  if (!options.skipDependencyManagement) {
-    if (options.skipInstall) {
-      logger.info(dedent`
+  if (options.skipInstall) {
+    logger.info(dedent`
         Skipping Playwright installation, please run this command manually:
         ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
       `);
-    } else {
-      try {
-        const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
-        await prompt.executeTask(
-          () =>
-            packageManager.executeCommand({
-              command: 'npx',
-              args: playwrightCommand,
-            }),
-          {
-            id: 'playwright-installation',
-            intro: 'Configuring Playwright with Chromium',
-            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommand.join(' ')}`,
-            success: 'Playwright installed successfully',
-          }
-        );
-      } catch (e) {
-        if (e instanceof Error) {
-          errors.push(e.stack ?? e.message);
-        } else {
-          errors.push(String(e));
+  } else {
+    try {
+      const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
+      await prompt.executeTask(
+        () =>
+          packageManager.executeCommand({
+            command: 'npx',
+            args: playwrightCommand,
+          }),
+        {
+          id: 'playwright-installation',
+          intro: 'Configuring Playwright with Chromium',
+          error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommand.join(' ')}`,
+          success: 'Playwright installed successfully',
         }
+      );
+    } catch (e) {
+      if (e instanceof Error) {
+        errors.push(e.stack ?? e.message);
+      } else {
+        errors.push(String(e));
       }
     }
   }
@@ -454,7 +452,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (a11yAddon) {
     try {
-      const command = ['automigrate', 'addon-a11y-addon-test'];
+      const command = ['storybook', 'automigrate', 'addon-a11y-addon-test'];
 
       command.push('--loglevel', 'silent');
       command.push('--yes', '--skip-doctor');
@@ -471,13 +469,17 @@ export default async function postInstall(options: PostinstallOptions) {
         command.push('--config-dir', `"${options.configDir}"`);
       }
 
-      await prompt.executeTask(() => execa('storybook', command, { stdio: 'inherit' }), {
-        id: 'a11y-addon-setup',
-        intro: 'Setting up a11y addon for @storybook/addon-vitest',
-        error: 'Failed to setup a11y addon for @storybook/addon-vitest',
-        success: 'a11y addon setup successfully',
-      });
+      await prompt.executeTask(
+        () => packageManager.executeCommand({ command: 'npx', args: command }),
+        {
+          id: 'a11y-addon-setup',
+          intro: 'Setting up a11y addon for @storybook/addon-vitest',
+          error: 'Failed to setup a11y addon for @storybook/addon-vitest',
+          success: 'a11y addon setup successfully',
+        }
+      );
     } catch (e: unknown) {
+      console.log(e);
       logger.line();
       logger.error(dedent`
         Could not automatically set up ${addonA11yName} for @storybook/addon-vitest.

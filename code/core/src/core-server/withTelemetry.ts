@@ -6,6 +6,8 @@ import type { CLIOptions } from 'storybook/internal/types';
 
 import prompts from 'prompts';
 
+import { StorybookError } from '../storybook-error';
+
 type TelemetryOptions = {
   cliOptions: CLIOptions;
   presetOptions?: Parameters<typeof loadAllPresets>[0];
@@ -132,14 +134,16 @@ export async function sendTelemetryError(
   }
 }
 
+export function isTelemetryEnabled(options: TelemetryOptions) {
+  return !(options.cliOptions.disableTelemetry || options.cliOptions.test === true);
+}
+
 export async function withTelemetry<T>(
   eventType: EventType,
   options: TelemetryOptions,
   run: () => Promise<T>
 ): Promise<T | undefined> {
-  const enableTelemetry = !(
-    options.cliOptions.disableTelemetry || options.cliOptions.test === true
-  );
+  const enableTelemetry = isTelemetryEnabled(options);
 
   let canceled = false;
 
@@ -168,7 +172,10 @@ export async function withTelemetry<T>(
       return undefined;
     }
 
-    if (!(error instanceof HandledError)) {
+    const isHandledError =
+      error instanceof HandledError || (error instanceof StorybookError && error.isHandledError);
+
+    if (!isHandledError) {
       const { printError = logger.error } = options;
       printError(error);
     }

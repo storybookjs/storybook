@@ -19,6 +19,10 @@ import {
 import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
+import {
+  AddonVitestPostinstallError,
+  AddonVitestPostinstallPrerequisiteCheckError,
+} from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
 import * as pkg from 'empathic/package';
@@ -39,8 +43,6 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 
 const addonA11yName = '@storybook/addon-a11y';
 
-let hasErrors = false;
-
 function nameMatches(name: string, pattern: string) {
   if (name === pattern) {
     return true;
@@ -56,11 +58,6 @@ function nameMatches(name: string, pattern: string) {
   return false;
 }
 
-const logErrors = (message: string) => {
-  logger.error(message);
-  hasErrors = true;
-};
-
 const findFile = (basename: string, extensions = EXTENSIONS) =>
   find.any(
     extensions.map((ext) => basename + ext),
@@ -68,6 +65,7 @@ const findFile = (basename: string, extensions = EXTENSIONS) =>
   );
 
 export default async function postInstall(options: PostinstallOptions) {
+  const errors: string[] = [];
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: options.packageManager,
   });
@@ -191,8 +189,10 @@ export default async function postInstall(options: PostinstallOptions) {
   }
 
   if (result) {
-    logErrors(result);
-    throw new Error(result);
+    logger.error(result);
+    throw new AddonVitestPostinstallPrerequisiteCheckError({
+      reasons: compatibilityResult.reasons!,
+    });
   }
 
   // Skip all dependency management when flag is set (called from init command)
@@ -254,19 +254,28 @@ export default async function postInstall(options: PostinstallOptions) {
         ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
       `);
     } else {
-      await prompt.executeTask(
-        () =>
-          packageManager.executeCommand({
-            command: 'npx',
-            args: ['playwright', 'install', 'chromium', '--with-deps'],
-          }),
-        {
-          id: 'playwright-installation',
-          intro: 'Configuring Playwright with Chromium',
-          error: 'An error occurred while installing Playwright browser binaries.',
-          success: 'Playwright installed successfully',
+      try {
+        const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
+        await prompt.executeTask(
+          () =>
+            packageManager.executeCommand({
+              command: 'npx',
+              args: playwrightCommand,
+            }),
+          {
+            id: 'playwright-installation',
+            intro: 'Configuring Playwright with Chromium',
+            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommand.join(' ')}`,
+            success: 'Playwright installed successfully',
+          }
+        );
+      } catch (e) {
+        if (e instanceof Error) {
+          errors.push(e.stack ?? e.message);
+        } else {
+          errors.push(String(e));
         }
-      );
+      }
     }
   }
 
@@ -274,43 +283,45 @@ export default async function postInstall(options: PostinstallOptions) {
     allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
 
   const vitestSetupFile = resolve(options.configDir, `vitest.setup.${fileExtension}`);
+
   if (existsSync(vitestSetupFile)) {
-    logErrors(dedent`
-      Found an existing Vitest setup file:
-      ${vitestSetupFile}
+    const errorMessage = dedent`
+    Found an existing Vitest setup file:
+    ${vitestSetupFile}
 
-      Please refer to the documentation to complete the setup manually:
-      https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
-    `);
-    throw new Error('Aborting Vitest setup due to an existing Vitest setup file');
-  }
+    Please refer to the documentation to complete the setup manually:
+    https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
+  `;
+    logger.error(errorMessage);
+    errors.push('Found existing Vitest setup file');
+  } else {
+    logger.step(`Creating a Vitest setup file for Storybook:`);
+    logger.log(`${vitestSetupFile}`);
 
-  logger.step(`Creating a Vitest setup file for Storybook:`);
-  logger.log(`${vitestSetupFile}`);
+    const previewExists = EXTENSIONS.map((ext) => resolve(options.configDir, `preview${ext}`)).some(
+      existsSync
+    );
 
-  const previewExists = EXTENSIONS.map((ext) => resolve(options.configDir, `preview${ext}`)).some(
-    existsSync
-  );
+    const imports = [`import { setProjectAnnotations } from '${annotationsImport}';`];
 
-  const imports = [`import { setProjectAnnotations } from '${annotationsImport}';`];
+    const projectAnnotations = [];
 
-  const projectAnnotations = [];
+    if (previewExists) {
+      imports.push(`import * as projectAnnotations from './preview';`);
+      projectAnnotations.push('projectAnnotations');
+    }
 
-  if (previewExists) {
-    imports.push(`import * as projectAnnotations from './preview';`);
-    projectAnnotations.push('projectAnnotations');
-  }
-
-  await writeFile(
-    vitestSetupFile,
-    dedent`
+    await writeFile(
+      vitestSetupFile,
+      dedent`
       ${imports.join('\n')}
 
       // This is an important step to apply the right configuration when testing your stories.
       // More info at: https://storybook.js.org/docs/api/portable-stories/portable-stories-vitest#setprojectannotations
       setProjectAnnotations([${projectAnnotations.join(', ')}]);
     `
-  );
+    );
+  }
 
   const vitestWorkspaceFile =
     findFile('vitest.workspace', ['.ts', '.js', '.json']) ||
@@ -358,7 +369,7 @@ export default async function postInstall(options: PostinstallOptions) {
       const formattedContent = await formatFileContent(vitestWorkspaceFile, generate(target).code);
       await writeFile(vitestWorkspaceFile, formattedContent);
     } else {
-      logErrors(
+      logger.error(
         dedent`
           Could not update existing Vitest workspace file:
           ${vitestWorkspaceFile}
@@ -370,7 +381,7 @@ export default async function postInstall(options: PostinstallOptions) {
           https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
         `
       );
-      throw new Error('Aborting Vitest setup due to an existing Vitest workspace file');
+      errors.push('Unable to update existing Vitest workspace file');
     }
   }
   // If there's an existing Vite/Vitest config with workspaces, we update it to include the Storybook Addon Vitest plugin.
@@ -411,13 +422,13 @@ export default async function postInstall(options: PostinstallOptions) {
           : '/// <reference types="vitest/config" />\n' + formattedContent
       );
     } else {
-      logErrors(dedent`
+      logger.error(dedent`
         We were unable to update your existing ${vitestConfigFile ? 'Vitest' : 'Vite'} config file.
 
         Please refer to the documentation to complete the setup manually:
         https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup
       `);
-      throw new Error('Aborting Vitest setup due to an existing Vitest config file');
+      errors.push('Unable to update existing Vitest config file');
     }
   }
   // If there's no existing Vitest/Vite config, we create a new Vitest config file.
@@ -465,7 +476,7 @@ export default async function postInstall(options: PostinstallOptions) {
         stdio: 'inherit',
       });
     } catch (e: unknown) {
-      logErrors(dedent`
+      logger.error(dedent`
         We have detected that you have ${addonA11yName} installed but could not automatically set it up for @storybook/addon-vitest:
 
         ${e instanceof Error ? e.message : String(e)}
@@ -473,13 +484,16 @@ export default async function postInstall(options: PostinstallOptions) {
         Please refer to the documentation to complete the setup manually:
         https://storybook.js.org/docs/writing-tests/accessibility-testing#test-addon-integration
       `);
-      throw new Error('Aborting Vitest setup due to an existing a11y addon');
+      errors.push(
+        "The @storybook/addon-a11y couldn't be set up for the Vitest addon" +
+          (e instanceof Error ? e.stack : String(e))
+      );
     }
   }
 
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
 
-  if (!hasErrors) {
+  if (errors.length === 0) {
     logger.step(CLI_COLORS.success('All done!'));
     logger.log(dedent`
         @storybook/addon-vitest is now configured and you're ready to run your tests!
@@ -500,8 +514,8 @@ export default async function postInstall(options: PostinstallOptions) {
         https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
       `
     );
+    throw new AddonVitestPostinstallError({ errors });
   }
-  logger.outro('');
 }
 
 async function getPackageNameFromPath(input: string): Promise<string> {

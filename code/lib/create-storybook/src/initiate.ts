@@ -1,6 +1,6 @@
 import { ProjectType } from 'storybook/internal/cli';
 import { HandledError, type JsPackageManager } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
+import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
@@ -17,6 +17,7 @@ import {
 import { DependencyCollector } from './dependency-collector';
 import { registerAllGenerators } from './generators';
 import type { CommandOptions } from './generators/types';
+import { ErrorCollectionService } from './services/ErrorCollectionService';
 import { TelemetryService } from './services/TelemetryService';
 
 /**
@@ -72,7 +73,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 6: Configure addons (run postinstall scripts for configuration only)
-  const addonConfigurationResult = await executeAddonConfiguration({
+  await executeAddonConfiguration({
     packageManager,
     projectType,
     dependencyCollector,
@@ -89,7 +90,6 @@ export async function doInitiate(options: CommandOptions): Promise<
     projectType,
     selectedFeatures,
     storybookCommand,
-    addonConfigurationResult,
   });
 
   return {
@@ -142,6 +142,17 @@ function handleReactNativeInstallation(
   return { shouldRunDev: false };
 }
 
+const handleCommandFailure = async (error: unknown): Promise<never> => {
+  if (!(error instanceof HandledError)) {
+    logger.error(String(error));
+  }
+
+  const logFile = await logTracker.writeToFile();
+  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.outro('');
+  process.exit(1);
+};
+
 /** Main initiate function with telemetry wrapper */
 export async function initiate(options: CommandOptions): Promise<void> {
   const initiateResult = await withTelemetry(
@@ -152,23 +163,15 @@ export async function initiate(options: CommandOptions): Promise<void> {
     },
     async () => {
       try {
-        const result = await doInitiate(options);
-        return result;
-      } catch (error) {
-        if (!(error instanceof HandledError)) {
-          if (error && typeof error === 'object' && 'stack' in error && error.stack) {
-            logger.debug(String(error.stack));
-          }
-          logger.error(String(error));
+        return await doInitiate(options);
+      } finally {
+        const errors = ErrorCollectionService.getErrors();
+        for (const error of errors) {
+          await sendTelemetryError(error, 'init', { cliOptions: options });
         }
-
-        const logFile = await logTracker.writeToFile();
-        logger.log(`Storybook debug logs can be found at: ${logFile}`);
-        logger.outro('Storybook failed to initialize your project.');
-        process.exit(1);
       }
     }
-  );
+  ).catch(handleCommandFailure);
 
   if (initiateResult?.shouldRunDev) {
     await runStorybookDev(initiateResult);

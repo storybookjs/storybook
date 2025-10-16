@@ -112,18 +112,12 @@ command('add <addon>')
       prompt.setPromptLibrary('clack');
       logger.intro(`Setting up your project for ${addonName}`);
 
-      try {
-        await add(addonName, options);
-        logger.outro('Addon setup complete');
-      } catch (e) {
-        handleCommandFailure(e);
-        throw e;
-      }
+      await add(addonName, options);
 
       if (!options.disableTelemetry) {
         await telemetry('add', { addon: addonName, source: 'cli' });
       }
-    });
+    }).catch(handleCommandFailure);
   });
 
 command('remove <addon>')

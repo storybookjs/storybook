@@ -8,13 +8,12 @@ import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 import type { GeneratorFeature } from '../generators/types';
-import type { ExecuteAddonConfigurationResult } from './AddonConfigurationCommand';
+import { ErrorCollectionService } from '../services/ErrorCollectionService';
 
 type ExecuteFinalizationParams = {
   projectType: ProjectType;
   selectedFeatures: Set<GeneratorFeature>;
   storybookCommand: string;
-  addonConfigurationResult: ExecuteAddonConfigurationResult;
 };
 
 /**
@@ -29,21 +28,19 @@ type ExecuteFinalizationParams = {
  */
 export class FinalizationCommand {
   /** Execute finalization steps */
-  async execute({
-    selectedFeatures,
-    storybookCommand,
-    addonConfigurationResult,
-  }: ExecuteFinalizationParams): Promise<void> {
+  async execute({ selectedFeatures, storybookCommand }: ExecuteFinalizationParams): Promise<void> {
     // Update .gitignore
     await this.updateGitignore();
 
-    if (addonConfigurationResult.status === 'failed') {
+    const errors = ErrorCollectionService.getErrors();
+
+    if (errors.length > 0) {
       this.printFailureMessage();
     } else {
       this.printSuccessMessage(selectedFeatures, storybookCommand);
     }
 
-    // Print success message
+    logger.outro('');
   }
 
   /** Update .gitignore with Storybook-specific entries */
@@ -72,9 +69,8 @@ export class FinalizationCommand {
   }
 
   private printFailureMessage(): void {
-    logger.warn('Storybook was setup but failed to configure addons');
-    logger.log('Please take a look at the logs above for more information');
-    logger.outro('');
+    logger.warn('Storybook setup completed, but some non-blocking errors occurred.');
+    logger.log('Please review the logs above or review the storybook-debug logs for more details.');
   }
 
   /** Print success message with feature summary */
@@ -97,8 +93,6 @@ export class FinalizationCommand {
         Having trouble or want to chat? Join us at ${CLI_COLORS.cta('https://discord.gg/storybook/')}
       `
     );
-
-    logger.outro('');
   }
 }
 

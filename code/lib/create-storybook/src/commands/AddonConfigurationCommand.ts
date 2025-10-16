@@ -30,6 +30,8 @@ export type ExecuteAddonConfigurationResult = {
  * - Handle configuration errors gracefully
  */
 export class AddonConfigurationCommand {
+  private readonly addonsToConfig = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
+
   constructor(private dependencyCollector: DependencyCollector) {}
 
   /** Execute addon configuration */
@@ -80,16 +82,8 @@ export class AddonConfigurationCommand {
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
     const configDir = '.storybook';
 
-    // Define addons to configure - add new addons here
-    const addonsToConfig = [
-      { name: '@storybook/addon-a11y', displayName: 'A11y addon' },
-      { name: '@storybook/addon-vitest', displayName: 'Vitest addon' },
-    ];
-
     // Get versioned addon packages
-    const addons = await packageManager.getVersionedPackages(
-      addonsToConfig.map((addon) => addon.name)
-    );
+    const addons = await packageManager.getVersionedPackages(this.addonsToConfig);
 
     this.dependencyCollector.addDevDependencies(addons);
 
@@ -104,11 +98,11 @@ export class AddonConfigurationCommand {
     const addonResults = new Map<string, null | any>();
 
     // Configure each addon
-    for (const addon of addonsToConfig) {
+    for (const addon of this.addonsToConfig) {
       try {
-        task.message(`Configuring ${addon.name}...`);
+        task.message(`Configuring ${addon}...`);
 
-        await postinstallAddon(addon.name, {
+        await postinstallAddon(addon, {
           packageManager: packageManager.type,
           configDir,
           yes: options.yes,
@@ -116,12 +110,12 @@ export class AddonConfigurationCommand {
           skipDependencyManagement: true,
         });
 
-        task.message(`${addon.displayName} configured\n`);
-        addonResults.set(addon.name, null);
+        task.message(`${addon} configured\n`);
+        addonResults.set(addon, null);
       } catch (e) {
-        task.message(CLI_COLORS.error(`Failed to configure ${addon.name}`));
+        task.message(CLI_COLORS.error(`Failed to configure ${addon}`));
         ErrorCollectionService.addError(e);
-        addonResults.set(addon.name, e);
+        addonResults.set(addon, e);
       }
     }
 
@@ -136,14 +130,13 @@ export class AddonConfigurationCommand {
     }
 
     // Log results for each addon
+    logger.log('Addon configuration results:');
     logger.log(
       CLI_COLORS.dimmed(
-        addonsToConfig
+        this.addonsToConfig
           .map((addon) => {
-            const success = addonResults.get(addon.name);
-            return success
-              ? `- ${addon.name}`
-              : CLI_COLORS.error(`x Failed to install ${addon.displayName}`);
+            const success = addonResults.get(addon);
+            return success ? `✅ ${addon}` : `❌ ${addon}`;
           })
           .join('\n')
       )

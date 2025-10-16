@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { babelParse, generate, traverse } from 'storybook/internal/babel';
 import {
+  type JsPackageManager,
   JsPackageManagerFactory,
   formatFileContent,
   getInterpretedFile,
@@ -67,6 +68,80 @@ const findFile = (basename: string, extensions = EXTENSIONS) =>
     { last: getProjectRoot() }
   );
 
+/**
+ * Collect all dependencies needed for the addon
+ *
+ * - Base packages: vitest, @vitest/browser, playwright
+ * - Next.js specific: @storybook/nextjs-vite
+ * - Coverage reporter: @vitest/coverage-v8
+ * - Returns versioned package strings ready for installation
+ */
+async function collectAddonDependencies(
+  packageManager: JsPackageManager,
+  frameworkPackageName: string
+): Promise<string[]> {
+  const allDeps = packageManager.getAllDependencies();
+  const dependencies: string[] = [];
+
+  // Only install these dependencies if they are not already installed
+  const basePackages = ['vitest', '@vitest/browser', 'playwright'];
+  for (const pkg of basePackages) {
+    if (!allDeps[pkg]) {
+      dependencies.push(pkg);
+    }
+  }
+
+  // Add Next.js specific dependency
+  if (frameworkPackageName === '@storybook/nextjs') {
+    printInfo(
+      '🍿 Just so you know...',
+      dedent`
+        It looks like you're using Next.js.
+
+        Adding "@storybook/nextjs-vite/vite-plugin" so you can use it with Vitest.
+
+        More info about the plugin at https://github.com/storybookjs/vite-plugin-storybook-nextjs
+      `
+    );
+    try {
+      const storybookVersion = await packageManager.getInstalledVersion('storybook');
+      if (storybookVersion) {
+        dependencies.push(`@storybook/nextjs-vite@^${storybookVersion}`);
+      }
+    } catch {
+      console.error('Failed to resolve @storybook/nextjs-vite version. Skipping...');
+    }
+  }
+
+  // Check for coverage reporters
+  const v8Version = await packageManager.getInstalledVersion('@vitest/coverage-v8');
+  const istanbulVersion = await packageManager.getInstalledVersion('@vitest/coverage-istanbul');
+
+  if (!v8Version && !istanbulVersion) {
+    printInfo(
+      '🙈 Let me cover this for you',
+      dedent`
+        You don't seem to have a coverage reporter installed. Vitest needs either V8 or Istanbul to generate coverage reports.
+
+        Adding "@vitest/coverage-v8" to enable coverage reporting.
+        Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
+      `
+    );
+    dependencies.push('@vitest/coverage-v8');
+  }
+
+  // Apply version specifiers to vitest-related packages
+  const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+  const versionedDependencies = dependencies.map((pkg) => {
+    if (pkg.includes('vitest') && vitestVersionSpecifier) {
+      return `${pkg}@${vitestVersionSpecifier}`;
+    }
+    return pkg;
+  });
+
+  return versionedDependencies;
+}
+
 export default async function postInstall(options: PostinstallOptions) {
   printSuccess(
     '👋 Howdy!',
@@ -83,8 +158,8 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const info = await getStorybookInfo(options);
   const allDeps = packageManager.getAllDependencies();
-  // only install these dependencies if they are not already installed
-  const dependencies = ['vitest', '@vitest/browser', 'playwright'].filter((p) => !allDeps[p]);
+
+  // Get vitest version info for config template compatibility
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
   const isVitest3_2OrNewer = vitestVersionSpecifier
@@ -248,75 +323,46 @@ export default async function postInstall(options: PostinstallOptions) {
     return;
   }
 
-  if (info.frameworkPackageName === '@storybook/nextjs') {
-    printInfo(
-      '🍿 Just so you know...',
-      dedent`
-        It looks like you're using Next.js.
-
-        Adding "@storybook/nextjs-vite/vite-plugin" so you can use it with Vitest.
-
-        More info about the plugin at https://github.com/storybookjs/vite-plugin-storybook-nextjs
-      `
+  // Skip all dependency management when flag is set (called from init command)
+  if (!options.skipDependencyManagement) {
+    const versionedDependencies = await collectAddonDependencies(
+      packageManager,
+      info.frameworkPackageName
     );
-    try {
-      const storybookVersion = await packageManager.getInstalledVersion('storybook');
-      dependencies.push(`@storybook/nextjs-vite@^${storybookVersion}`);
-    } catch (e) {
-      console.error('Failed to install @storybook/nextjs-vite. Please install it manually');
-    }
-  }
 
-  const v8Version = await packageManager.getInstalledVersion('@vitest/coverage-v8');
-  const istanbulVersion = await packageManager.getInstalledVersion('@vitest/coverage-istanbul');
-  if (!v8Version && !istanbulVersion) {
-    printInfo(
-      '🙈 Let me cover this for you',
-      dedent`
-        You don't seem to have a coverage reporter installed. Vitest needs either V8 or Istanbul to generate coverage reports.
-
-        Adding "@vitest/coverage-v8" to enable coverage reporting.
-        Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
-      `
-    );
-    dependencies.push(`@vitest/coverage-v8`); // Version specifier is added below
-  }
-
-  const versionedDependencies = dependencies.map((p) => {
-    if (p.includes('vitest')) {
-      return vitestVersionSpecifier ? `${p}@${vitestVersionSpecifier}` : p;
+    if (versionedDependencies.length > 0) {
+      await packageManager.addDependencies(
+        { type: 'devDependencies', skipInstall: true },
+        versionedDependencies
+      );
+      logger.line(1);
+      logger.plain(`${step} Installing dependencies:`);
+      logger.plain('  ' + versionedDependencies.join(', '));
     }
 
-    return p;
-  });
+    if (!options.skipInstall) {
+      await packageManager.installDependencies();
+    }
 
-  if (versionedDependencies.length > 0) {
-    await packageManager.addDependencies(
-      { type: 'devDependencies', skipInstall: true },
-      versionedDependencies
-    );
     logger.line(1);
-    logger.plain(`${step} Installing dependencies:`);
-    logger.plain('  ' + versionedDependencies.join(', '));
   }
 
-  await packageManager.installDependencies();
-
-  logger.line(1);
-
-  if (options.skipInstall) {
-    logger.plain('Skipping Playwright installation, please run this command manually:');
-    logger.plain('  npx playwright install chromium --with-deps');
-  } else {
-    logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
-    logger.plain('  npx playwright install chromium --with-deps');
-    try {
-      await packageManager.executeCommand({
-        command: 'npx',
-        args: ['playwright', 'install', 'chromium', '--with-deps'],
-      });
-    } catch (e) {
-      console.error('Failed to install Playwright. Please install it manually');
+  // Skip Playwright installation when dependency management is handled externally
+  if (!options.skipDependencyManagement) {
+    if (options.skipInstall) {
+      logger.plain('Skipping Playwright installation, please run this command manually:');
+      logger.plain('  npx playwright install chromium --with-deps');
+    } else {
+      logger.plain(`${step} Configuring Playwright with Chromium (this might take some time):`);
+      logger.plain('  npx playwright install chromium --with-deps');
+      try {
+        await packageManager.executeCommand({
+          command: 'npx',
+          args: ['playwright', 'install', 'chromium', '--with-deps'],
+        });
+      } catch {
+        console.error('Failed to install Playwright. Please install it manually');
+      }
     }
   }
 

@@ -1,4 +1,5 @@
 import { isCI, optionalEnvToBoolean } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
@@ -50,6 +51,7 @@ const createStorybookProgram = program
 
 createStorybookProgram
   .action(async (options) => {
+    prompt.setPromptLibrary('clack');
     const isNeitherCiNorSandbox =
       !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
     options.debug = options.debug ?? false;

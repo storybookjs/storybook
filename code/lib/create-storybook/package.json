@@ -52,7 +52,6 @@
     "commander": "^14.0.1",
     "empathic": "^2.0.0",
     "execa": "^5.0.0",
-    "ora": "^5.4.1",
     "picocolors": "^1.1.0",
     "process-ancestry": "^0.0.2",
     "prompts": "^2.4.0",

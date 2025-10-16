@@ -23,6 +23,11 @@ export interface PostinstallOptions {
   configDir: string;
   yes?: boolean;
   skipInstall?: boolean;
+  /**
+   * Skip all dependency management (collecting, adding to package.json, installing). Used when the
+   * caller (e.g., init command) has already handled dependencies.
+   */
+  skipDependencyManagement?: boolean;
 }
 
 /**

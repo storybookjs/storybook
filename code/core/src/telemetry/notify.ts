@@ -23,6 +23,5 @@ export const notify = async () => {
   logger.log(
     `You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:`
   );
-  logger.log(picocolors.cyan('https://storybook.js.org/telemetry'));
-  logger.log('');
+  logger.log('https://storybook.js.org/telemetry');
 };

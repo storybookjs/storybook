@@ -24,8 +24,6 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
-// eslint-disable-next-line depend/ban-dependencies
-import ora from 'ora';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
@@ -222,7 +220,15 @@ const hasFrameworkTemplates = (framework?: string) => {
 export async function baseGenerator(
   packageManager: JsPackageManager,
   npmOptions: NpmOptions,
-  { language, builder, pnp, frameworkPreviewParts, projectType, features }: GeneratorOptions,
+  {
+    language,
+    builder,
+    pnp,
+    frameworkPreviewParts,
+    projectType,
+    features,
+    dependencyCollector,
+  }: GeneratorOptions,
   renderer: SupportedRenderers,
   options: FrameworkOptions = defaultOptions,
   framework?: SupportedFrameworks
@@ -350,13 +356,9 @@ export async function baseGenerator(
       !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
   );
 
-  logger.log('');
+  logger.log(`Getting the correct version of ${packagesToInstall.length} packages`);
 
-  const versionedPackagesSpinner = ora({
-    indent: 2,
-    text: `Getting the correct version of ${packagesToInstall.length} packages`,
-  }).start();
-
+  let eslintPluginPackage: string | null = null;
   try {
     if (!isCI()) {
       const { hasEslint, isStorybookPluginInstalled, isFlatConfig, eslintConfigFile } =
@@ -364,7 +366,8 @@ export async function baseGenerator(
         await extractEslintInfo(packageManager as any);
 
       if (hasEslint && !isStorybookPluginInstalled) {
-        packagesToInstall.push('eslint-plugin-storybook');
+        eslintPluginPackage = 'eslint-plugin-storybook';
+        packagesToInstall.push(eslintPluginPackage);
         await configureEslintPlugin({
           eslintConfigFile,
           // TODO: Investigate why packageManager type does not match on CI
@@ -380,16 +383,14 @@ export async function baseGenerator(
   const versionedPackages = await packageManager.getVersionedPackages(
     packagesToInstall as string[]
   );
-  versionedPackagesSpinner.succeed();
 
   if (versionedPackages.length > 0) {
-    const addDependenciesSpinner = ora({
-      indent: 2,
-      text: 'Installing Storybook dependencies',
-    }).start();
-
-    await packageManager.addDependencies({ ...npmOptions }, versionedPackages);
-    addDependenciesSpinner.succeed();
+    // When using the dependency collector, just collect the packages
+    if (npmOptions.type === 'devDependencies') {
+      dependencyCollector.addDevDependencies(versionedPackages);
+    } else {
+      dependencyCollector.addDependencies(versionedPackages);
+    }
   }
 
   if (addMainFile || addPreviewFile) {

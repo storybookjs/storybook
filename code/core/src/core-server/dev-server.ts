@@ -8,6 +8,7 @@ import polka from 'polka';
 import invariant from 'tiny-invariant';
 
 import { telemetry } from '../telemetry';
+import { type ComponentManifestGenerator } from '../types';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
@@ -135,6 +136,31 @@ export async function storybookDevServer(options: Options) {
     throw indexError;
   }
 
+  const features = await options.presets.apply('features');
+  if (features?.experimental_componentsManifest) {
+    app.use('/manifests/components.json', async (req, res) => {
+      try {
+        const componentManifestGenerator: ComponentManifestGenerator = await options.presets.apply(
+          'componentManifestGenerator'
+        );
+        const indexGenerator = await initializedStoryIndexGenerator;
+        if (componentManifestGenerator && indexGenerator) {
+          const manifest = await componentManifestGenerator(indexGenerator);
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(manifest));
+          return;
+        }
+        res.statusCode = 400;
+        res.end('No component manifest generator configured.');
+        return;
+      } catch (e) {
+        logger.error(e instanceof Error ? e : String(e));
+        res.statusCode = 500;
+        res.end(e instanceof Error ? e.toString() : String(e));
+        return;
+      }
+    });
+  }
   // Now the preview has successfully started, we can count this as a 'dev' event.
   doTelemetry(app, core, initializedStoryIndexGenerator, options);
 

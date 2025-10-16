@@ -142,7 +142,7 @@ export async function storybookDevServer(options: Options) {
     );
     const indexGenerator = await initializedStoryIndexGenerator;
     const features = await options.presets.apply('features');
-    if (features?.componentManifestGenerator && componentManifestGenerator && indexGenerator) {
+    if (features?.experimental_componentsManifest && componentManifestGenerator && indexGenerator) {
       const manifest = await componentManifestGenerator(indexGenerator);
       res.setHeader('Content-Type', 'application/json');
       res.end(JSON.stringify(manifest));

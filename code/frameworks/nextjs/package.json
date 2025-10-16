@@ -212,13 +212,13 @@
       "./src/swc/next-swc-loader-patch.ts",
       "./src/node/index.ts",
       "./src/font/webpack/loader/storybook-nextjs-font-loader.ts",
-      "./src/export-mocks/index.ts",
-      "./src/export-mocks/cache/index.ts",
-      "./src/export-mocks/headers/index.ts",
-      "./src/export-mocks/router/index.ts",
-      "./src/export-mocks/navigation/index.ts"
+      "./src/export-mocks/index.ts"
     ],
     "exportEntries": [
+      "./src/export-mocks/cache/index.ts",
+      "./src/export-mocks/router/index.ts",
+      "./src/export-mocks/headers/index.ts",
+      "./src/export-mocks/navigation/index.ts",
       "./src/image-context.ts",
       "./src/index.ts",
       "./src/compatibility/draft-mode.compat.ts",

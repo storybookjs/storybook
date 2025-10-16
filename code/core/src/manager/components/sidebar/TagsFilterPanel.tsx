@@ -213,7 +213,7 @@ export const TagsFilterPanel = ({
         title: 'Learn how to add tags',
         icon: <DocumentIcon />,
         right: <ShareAltIcon />,
-        href: api.getDocsUrl({ subpath: 'writing-stories/tags#filtering-by-custom-tags' }),
+        href: api.getDocsUrl({ subpath: 'writing-stories/tags#custom-tags' }),
       },
     ]);
   }

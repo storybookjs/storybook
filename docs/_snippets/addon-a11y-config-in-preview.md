@@ -22,7 +22,7 @@ export default {
       options: {},
     },
   },
-  globals: {
+  initialGlobals: {
     a11y: {
       // Optional flag to prevent the automatic check
       manual: true,
@@ -58,7 +58,7 @@ const preview: Preview = {
       options: {},
     },
   },
-  globals: {
+  initialGlobals: {
     a11y: {
       // Optional flag to prevent the automatic check
       manual: true,
@@ -96,7 +96,7 @@ export default definePreview({
       options: {},
     },
   },
-  globals: {
+  initialGlobals: {
     a11y: {
       // Optional flag to prevent the automatic check
       manual: true,
@@ -134,7 +134,7 @@ export default definePreview({
       options: {},
     },
   },
-  globals: {
+  initialGlobals: {
     a11y: {
       // Optional flag to prevent the automatic check
       manual: true,

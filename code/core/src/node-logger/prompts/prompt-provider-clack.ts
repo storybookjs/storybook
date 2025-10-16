@@ -53,7 +53,10 @@ export class ClackPromptProvider extends PromptProvider {
     options: MultiSelectPromptOptions<T>,
     promptOptions?: PromptOptions
   ): Promise<T[]> {
-    const result = await clack.multiselect<T>(options);
+    const result = await clack.multiselect<T>({
+      ...options,
+      required: options.required,
+    });
     this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return result as T[];

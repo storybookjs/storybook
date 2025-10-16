@@ -310,6 +310,47 @@ cd code && yarn storybook:vitest
 - TypeScript strict mode is enabled
 - Follow existing patterns in the codebase
 
+### Code Quality Checks
+After making file changes, always run both formatting and linting checks:
+1. **Prettier**: Format code with `yarn prettier --write <file>`
+2. **ESLint**: Check for linting issues with `yarn lint:js:cmd <file>`
+   - The full eslint command is: `cross-env NODE_ENV=production eslint --cache --cache-location=../.cache/eslint --ext .js,.jsx,.json,.html,.ts,.tsx,.mjs --report-unused-disable-directives`
+   - Use the `lint:js:cmd` script for convenience
+   - Fix any errors or warnings before committing
+
+### Testing Guidelines
+When writing unit tests:
+1. **Export functions for testing**: If functions need to be tested, export them from the module
+2. **Write meaningful tests**: Tests should actually import and call the functions being tested, not just verify syntax patterns
+3. **Use coverage reports**: Run tests with coverage to identify untested code
+   - Run coverage: `yarn vitest run --coverage <test-file>`
+   - Aim for high coverage of business logic (75%+ for statements/lines)
+   - Use coverage reports to identify missing test cases
+   - Focus on covering:
+     - All branches and conditions
+     - Edge cases and error paths
+     - Different input variations
+4. **Mock external dependencies**: Use `vi.mock()` to mock file system, loggers, and other external dependencies
+5. **Run tests before committing**: Ensure all tests pass with `yarn test` or `yarn vitest run`
+
+### Logging
+When adding logging to code, always use the appropriate logger:
+- **Server-side code** (Node.js): Use `logger` from `storybook/internal/node-logger`
+  ```typescript
+  import { logger } from 'storybook/internal/node-logger';
+  logger.info('Server message');
+  logger.warn('Warning message');
+  logger.error('Error message');
+  ```
+- **Client-side code** (browser): Use `logger` from `storybook/internal/client-logger`
+  ```typescript
+  import { logger } from 'storybook/internal/client-logger';
+  logger.info('Client message');
+  logger.warn('Warning message');
+  logger.error('Error message');
+  ```
+- **DO NOT** use `console.log`, `console.warn`, or `console.error` directly unless in isolated files where importing loggers would significantly increase bundle size
+
 ### Git Workflow
 - Work on feature branches
 - Ensure all builds and tests pass before submitting PRs

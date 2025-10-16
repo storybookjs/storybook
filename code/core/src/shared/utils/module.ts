@@ -51,7 +51,10 @@ let isTypescriptLoaderRegistered = false;
  * // Returns the default export or the entire module
  * ```
  */
-export async function importModule(path: string) {
+export async function importModule(
+  path: string,
+  { skipCache = false }: { skipCache?: boolean } = {}
+) {
   if (!isTypescriptLoaderRegistered) {
     const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
     register(typescriptLoaderUrl, import.meta.url);
@@ -61,12 +64,17 @@ export async function importModule(path: string) {
   let mod;
   try {
     const resolvedPath = win32.isAbsolute(path) ? pathToFileURL(path).href : path;
-    mod = await import(resolvedPath);
+    // When applicable, add a hash to the import URL to bypass cache
+    const importUrl = skipCache ? `${resolvedPath}?${Date.now()}` : resolvedPath;
+    mod = await import(importUrl);
   } catch (importError) {
     try {
       // fallback to require to support older behavior
       // this is relevant for presets that are only available with the "require" condition in a package's export map
       const require = createRequire(import.meta.url);
+      if (skipCache) {
+        delete require.cache[require.resolve(path)];
+      }
       mod = require(path);
     } catch (requireError) {
       /*

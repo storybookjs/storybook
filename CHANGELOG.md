@@ -1,3 +1,7 @@
+## 9.1.12
+
+- Maintenance: Hotfix for missing nextjs dts files, thanks @ndelangen!
+
 ## 9.1.11
 
 - Automigration: Improve the viewport/backgrounds automigration - [#32619](https://github.com/storybookjs/storybook/pull/32619), thanks @valentinpalkovic!

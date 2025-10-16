@@ -1,16 +1,12 @@
-import type { ProjectType } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 
-import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
-import { getAddonVitestDependencies } from '../addon-dependencies/addon-vitest';
 import type { DependencyCollector } from '../dependency-collector';
 import type { CommandOptions, Generator, GeneratorFeature } from '../generators/types';
 import { ErrorCollectionService } from '../services/ErrorCollectionService';
 
 type ExecuteAddonConfigurationParams = {
   packageManager: JsPackageManager;
-  projectType: ProjectType;
   selectedFeatures: Set<GeneratorFeature>;
   generatorResult: Awaited<ReturnType<Generator>>;
   options: CommandOptions;
@@ -36,7 +32,6 @@ export class AddonConfigurationCommand {
 
   /** Execute addon configuration */
   async execute({
-    projectType,
     packageManager,
     options,
     selectedFeatures,
@@ -47,8 +42,6 @@ export class AddonConfigurationCommand {
     }
 
     try {
-      await this.collectAddonDependencies(projectType, packageManager);
-
       const { hasFailures } = await this.configureTestAddons(
         packageManager,
         generatorResult,
@@ -57,24 +50,6 @@ export class AddonConfigurationCommand {
       return { status: hasFailures ? 'failed' : 'success' };
     } catch {
       return { status: 'failed' };
-    }
-  }
-
-  /** Collect addon dependencies without installing them */
-  private async collectAddonDependencies(
-    projectType: ProjectType,
-    packageManager: JsPackageManager
-  ): Promise<void> {
-    try {
-      // Determine framework package name for Next.js detection
-      const frameworkPackageName = projectType === 'NEXTJS' ? '@storybook/nextjs' : undefined;
-
-      const vitestDeps = await getAddonVitestDependencies(packageManager, frameworkPackageName);
-      const a11yDeps = getAddonA11yDependencies();
-
-      this.dependencyCollector.addDevDependencies([...vitestDeps, ...a11yDeps]);
-    } catch (err) {
-      logger.warn(`Failed to collect addon dependencies: ${err}`);
     }
   }
 
@@ -145,8 +120,8 @@ export class AddonConfigurationCommand {
       CLI_COLORS.dimmed(
         this.addonsToConfig
           .map((addon) => {
-            const success = addonResults.get(addon);
-            return success ? `✅ ${addon}` : `❌ ${addon}`;
+            const error = addonResults.get(addon);
+            return error ? `❌ ${addon}` : `✅ ${addon}`;
           })
           .join('\n')
       )

@@ -454,7 +454,6 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (a11yAddon) {
     try {
-      logger.step(`Setting up ${addonA11yName} for @storybook/addon-vitest:`);
       const command = ['automigrate', 'addon-a11y-addon-test'];
 
       command.push('--loglevel', 'silent');
@@ -472,8 +471,11 @@ export default async function postInstall(options: PostinstallOptions) {
         command.push('--config-dir', `"${options.configDir}"`);
       }
 
-      await execa('storybook', command, {
-        stdio: 'inherit',
+      await prompt.executeTask(() => execa('storybook', command, { stdio: 'inherit' }), {
+        id: 'a11y-addon-setup',
+        intro: 'Setting up a11y addon for @storybook/addon-vitest',
+        error: 'Failed to setup a11y addon for @storybook/addon-vitest',
+        success: 'a11y addon setup successfully',
       });
     } catch (e: unknown) {
       logger.line();

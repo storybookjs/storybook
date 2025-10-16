@@ -1,7 +1,16 @@
+import type { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
+import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
+import { getAddonVitestDependencies } from '../addon-dependencies/addon-vitest';
 import type { DependencyCollector } from '../dependency-collector';
+
+type DependencyInstallationCommandParams = {
+  packageManager: JsPackageManager;
+  skipInstall: boolean;
+  projectType: ProjectType;
+};
 
 /**
  * Command for installing all collected dependencies
@@ -13,18 +22,21 @@ import type { DependencyCollector } from '../dependency-collector';
  * - Handle skipInstall option
  */
 export class DependencyInstallationCommand {
+  constructor(private dependencyCollector: DependencyCollector) {}
   /** Execute dependency installation */
-  async execute(
-    packageManager: JsPackageManager,
-    dependencyCollector: DependencyCollector,
-    skipInstall: boolean = false
-  ): Promise<void> {
-    if (!dependencyCollector.hasPackages() && skipInstall) {
+  async execute({
+    packageManager,
+    skipInstall = false,
+    projectType,
+  }: DependencyInstallationCommandParams): Promise<void> {
+    await this.collectAddonDependencies(projectType, packageManager);
+
+    if (!this.dependencyCollector.hasPackages() && skipInstall) {
       return;
     }
 
     try {
-      const { dependencies, devDependencies } = dependencyCollector.getAllPackages();
+      const { dependencies, devDependencies } = this.dependencyCollector.getAllPackages();
 
       const task = prompt.taskLog({
         id: 'adding-dependencies',
@@ -53,23 +65,35 @@ export class DependencyInstallationCommand {
 
       task.success('Dependencies added to package.json', { showLog: true });
 
-      if (!skipInstall && dependencyCollector.hasPackages()) {
+      if (!skipInstall && this.dependencyCollector.hasPackages()) {
         await packageManager.installDependencies();
       }
     } catch (err) {
       throw err;
     }
   }
+
+  /** Collect addon dependencies without installing them */
+  private async collectAddonDependencies(
+    projectType: ProjectType,
+    packageManager: JsPackageManager
+  ): Promise<void> {
+    try {
+      // Determine framework package name for Next.js detection
+      const frameworkPackageName = projectType === 'NEXTJS' ? '@storybook/nextjs' : undefined;
+
+      const vitestDeps = await getAddonVitestDependencies(packageManager, frameworkPackageName);
+      const a11yDeps = getAddonA11yDependencies();
+
+      this.dependencyCollector.addDevDependencies([...vitestDeps, ...a11yDeps]);
+    } catch (err) {
+      logger.warn(`Failed to collect addon dependencies: ${err}`);
+    }
+  }
 }
 
 export const executeDependencyInstallation = (
-  packageManager: JsPackageManager,
-  dependencyCollector: DependencyCollector,
-  skipInstall: boolean = false
+  params: DependencyInstallationCommandParams & { dependencyCollector: DependencyCollector }
 ) => {
-  return new DependencyInstallationCommand().execute(
-    packageManager,
-    dependencyCollector,
-    skipInstall
-  );
+  return new DependencyInstallationCommand(params.dependencyCollector).execute(params);
 };

@@ -72,18 +72,22 @@ export async function doInitiate(options: CommandOptions): Promise<
     dependencyCollector
   );
 
-  // Step 6: Configure addons (run postinstall scripts for configuration only)
+  // Step 6: Install all dependencies in a single operation
+  await executeDependencyInstallation({
+    packageManager,
+    dependencyCollector,
+    skipInstall: !!options.skipInstall,
+    projectType,
+  });
+
+  // Step 7: Configure addons (run postinstall scripts for configuration only)
   await executeAddonConfiguration({
     packageManager,
-    projectType,
     dependencyCollector,
     selectedFeatures,
     generatorResult,
     options,
   });
-
-  // Step 7: Install all dependencies in a single operation
-  await executeDependencyInstallation(packageManager, dependencyCollector, options.skipInstall);
 
   // Step 8: Print final summary
   await executeFinalization({

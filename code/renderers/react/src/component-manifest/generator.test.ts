@@ -144,7 +144,11 @@ beforeEach(() => {
         import { fn } from 'storybook/test';
         import { Header } from './Header';
         
-        /** Meta description */
+        /** 
+          * Description from meta and very long. 
+          * @summary Component summary
+          * @import import { Header } from '@design-system/components/Header';
+          */
         const meta = {
           component: Header,
           args: {
@@ -222,10 +226,13 @@ test('componentManifestGenerator generates correct id, name, description and exa
           },
         ],
         "id": "example-button",
+        "import": undefined,
+        "jsdocTag": {},
         "name": "Button",
+        "summary": undefined,
       },
       "example-header": {
-        "description": "Meta description",
+        "description": "Description from meta and very long. ",
         "examples": [
           {
             "name": "LoggedIn",
@@ -241,7 +248,17 @@ test('componentManifestGenerator generates correct id, name, description and exa
           },
         ],
         "id": "example-header",
+        "import": "import { Header } from '@design-system/components/Header';",
+        "jsdocTag": {
+          "import": [
+            "import { Header } from '@design-system/components/Header';",
+          ],
+          "summary": [
+            "Component summary",
+          ],
+        },
         "name": "Header",
+        "summary": "Component summary",
       },
     }
   `);

@@ -8,7 +8,9 @@ import { type ComponentManifestGenerator } from 'storybook/internal/types';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
+import { extractJSDocTags, removeTags } from './jsdoc-tags';
 import { getMatchingDocgen, parseWithReactDocgen } from './react-docgen';
+import { groupBy } from './utils';
 
 export const componentManifestGenerator = async () => {
   return (async (storyIndexGenerator) => {
@@ -38,10 +40,15 @@ export const componentManifestGenerator = async () => {
         const docgen = getMatchingDocgen(docgens, componentName);
 
         const metaDescription = extractDescription(csf._metaStatement);
+        const description = metaDescription || docgen?.description;
+        const tags = description ? extractJSDocTags(description) : {};
         return {
           id: entry.id.split('--')[0],
           name: componentName,
-          description: metaDescription || docgen?.description,
+          description: description ? removeTags(description) : undefined,
+          jsdocTag: tags,
+          summary: tags.summary ? tags.summary[0] : undefined,
+          import: tags.import ? tags.import[0] : undefined,
           examples: !componentName
             ? []
             : Object.entries(csf._storyPaths)
@@ -57,17 +64,4 @@ export const componentManifestGenerator = async () => {
 
     return Object.fromEntries(components.map((component) => [component.id, component]));
   }) satisfies ComponentManifestGenerator;
-};
-
-// Object.groupBy polyfill
-const groupBy = <K extends PropertyKey, T>(
-  items: T[],
-  keySelector: (item: T, index: number) => K
-) => {
-  return items.reduce<Partial<Record<K, T[]>>>((acc = {}, item, index) => {
-    const key = keySelector(item, index);
-    acc[key] ??= [];
-    acc[key].push(item);
-    return acc;
-  }, {});
 };

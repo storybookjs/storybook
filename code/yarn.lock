@@ -6841,6 +6841,7 @@ __metadata:
     acorn-jsx: "npm:^5.3.1"
     acorn-walk: "npm:^7.2.0"
     babel-plugin-react-docgen: "npm:^4.2.1"
+    comment-parser: "npm:^1.4.1"
     es-toolkit: "npm:^1.36.0"
     escodegen: "npm:^2.1.0"
     expect-type: "npm:^0.15.0"

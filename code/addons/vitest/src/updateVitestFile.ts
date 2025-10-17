@@ -78,6 +78,66 @@ const mergeProperties = (
  */
 export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['ast']) => {
   let updated = false;
+
+  // First, check if we can actually modify the configuration
+  const sourceExportDefault = source.program.body.find(
+    (n) => n.type === 'ExportDefaultDeclaration'
+  );
+  if (!sourceExportDefault || sourceExportDefault.declaration.type !== 'CallExpression') {
+    return false;
+  }
+
+  const targetExportDefault = target.program.body.find(
+    (n) => n.type === 'ExportDefaultDeclaration'
+  );
+  if (!targetExportDefault) {
+    return false;
+  }
+
+  // Check if this is a function notation that we don't support
+  if (
+    targetExportDefault.declaration.type === 'CallExpression' &&
+    targetExportDefault.declaration.callee.type === 'Identifier' &&
+    targetExportDefault.declaration.callee.name === 'defineConfig' &&
+    targetExportDefault.declaration.arguments.length > 0 &&
+    targetExportDefault.declaration.arguments[0].type === 'ArrowFunctionExpression'
+  ) {
+    // This is function notation that we don't support
+    return false;
+  }
+
+  // Check if we can handle mergeConfig patterns
+  let canHandleConfig = false;
+  if (targetExportDefault.declaration.type === 'ObjectExpression') {
+    canHandleConfig = true;
+  } else if (
+    targetExportDefault.declaration.type === 'CallExpression' &&
+    targetExportDefault.declaration.callee.type === 'Identifier' &&
+    targetExportDefault.declaration.callee.name === 'defineConfig' &&
+    targetExportDefault.declaration.arguments[0]?.type === 'ObjectExpression'
+  ) {
+    canHandleConfig = true;
+  } else if (
+    targetExportDefault.declaration.type === 'CallExpression' &&
+    targetExportDefault.declaration.callee.type === 'Identifier' &&
+    targetExportDefault.declaration.callee.name === 'mergeConfig' &&
+    targetExportDefault.declaration.arguments.length >= 2
+  ) {
+    const defineConfigNodes = targetExportDefault.declaration.arguments.filter(
+      (arg): arg is t.CallExpression =>
+        arg?.type === 'CallExpression' &&
+        arg.callee.type === 'Identifier' &&
+        arg.callee.name === 'defineConfig' &&
+        arg.arguments[0]?.type === 'ObjectExpression'
+    );
+    canHandleConfig = defineConfigNodes.length > 0;
+  }
+
+  if (!canHandleConfig) {
+    return false;
+  }
+
+  // If we get here, we can modify the configuration, so add imports and variables first
   for (const sourceNode of source.program.body) {
     if (sourceNode.type === 'ImportDeclaration') {
       // Insert imports that don't already exist (according to their local specifier name)

@@ -25,7 +25,13 @@ import type { Report } from 'storybook/preview-api';
 import { convert, themes } from 'storybook/theming';
 
 import { getFriendlySummaryForAxeResult, getTitleForAxeResult } from '../axeRuleMappingHelper';
-import { ADDON_ID, EVENTS, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from '../constants';
+import {
+  ADDON_ID,
+  EVENTS,
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  UI_STATE_ID,
+} from '../constants';
 import type { A11yParameters } from '../params';
 import type { A11YReport, EnhancedResult, EnhancedResults } from '../types';
 import { RuleType } from '../types';
@@ -107,15 +113,24 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, [api]);
 
   const [results, setResults] = useAddonState<EnhancedResults | undefined>(ADDON_ID);
-  const [tab, setTab] = useState(() => {
+  const [uiState, setUiState] = useAddonState<{ highlighted: boolean; tab: RuleType }>(
+    UI_STATE_ID,
+    {
+      highlighted: false,
+      tab: RuleType.VIOLATION,
+    }
+  );
+  const [tab, setTabState] = useState<RuleType>(() => {
     const [type] = a11ySelection?.split('.') ?? [];
     return type && Object.values(RuleType).includes(type as RuleType)
       ? (type as RuleType)
-      : RuleType.VIOLATION;
+      : uiState.tab;
   });
   const [error, setError] = useState<unknown>(undefined);
   const [status, setStatus] = useState<Status>(getInitialStatus(manual));
-  const [highlighted, setHighlighted] = useState(!!a11ySelection);
+  const [highlighted, setHighlighted] = useState<boolean>(() =>
+    a11ySelection ? true : uiState.highlighted
+  );
 
   const { storyId } = useStorybookState();
   const currentStoryA11yStatusValue = experimental_useStatusStore(
@@ -135,9 +150,19 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     return unsubscribe;
   }, [storyId]);
 
-  const handleToggleHighlight = useCallback(
-    () => setHighlighted((prevHighlighted) => !prevHighlighted),
-    []
+  const handleToggleHighlight = useCallback(() => {
+    setHighlighted((prevHighlighted) => {
+      const next = !prevHighlighted;
+      setUiState((prev) => ({ ...prev, highlighted: next }));
+      return next;
+    });
+  }, [setUiState]);
+  const setTab = useCallback(
+    (type: RuleType) => {
+      setTabState(type);
+      setUiState((prev) => ({ ...prev, tab: type }));
+    },
+    [setUiState]
   );
 
   const [selectedItems, setSelectedItems] = useState<Map<string, string>>(() => {
@@ -296,6 +321,21 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
   }, [getInitialStatus, manual]);
 
   const isInitial = status === 'initial';
+
+  // If a deep link is provided, prefer it once on mount and persist UI state accordingly
+  useEffect(() => {
+    if (!a11ySelection) {
+      return;
+    }
+    setHighlighted(true);
+    const [type] = a11ySelection.split('.') ?? [];
+    if (type && Object.values(RuleType).includes(type as RuleType)) {
+      setTab(type as RuleType);
+    }
+    setUiState((prev) => ({ ...prev, highlighted: true }));
+    // We intentionally do not include setHighlighted/setTab/setUiState in deps to avoid loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [a11ySelection]);
 
   useEffect(() => {
     emit(REMOVE_HIGHLIGHT, `${ADDON_ID}/selected`);

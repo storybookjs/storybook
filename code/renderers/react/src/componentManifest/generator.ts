@@ -35,7 +35,7 @@ export const componentManifestGenerator = async () => {
         const componentName = csf._meta?.component;
         const docgens = await parseWithReactDocgen({
           code: componentFile,
-          filename: path.join(process.cwd(), entry.importPath),
+          filename: path.join(process.cwd(), entry.componentPath!),
         });
         const docgen = getMatchingDocgen(docgens, csf);
 

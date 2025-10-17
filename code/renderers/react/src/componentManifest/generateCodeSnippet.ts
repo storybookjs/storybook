@@ -149,13 +149,12 @@ export function getCodeSnippet(
         const invalidProps = invalidEntries.filter(([k]) => !existingAttrNames.has(k));
         const invalidSpread: t.JSXSpreadAttribute | null = buildInvalidSpread(invalidProps);
 
-        // Handle children injection from meta if the element currently has no children
-        const metaChildren =
-          metaArgs && Object.prototype.hasOwnProperty.call(metaArgs, 'children')
-            ? (metaArgs as Record<string, t.Node>)['children']
-            : undefined;
+        // Handle children injection if the element currently has no children, using merged children (story overrides meta)
+        const mergedChildren = Object.prototype.hasOwnProperty.call(merged, 'children')
+          ? merged['children']
+          : undefined;
         const canInjectChildren =
-          !!metaChildren && (body.children == null || body.children.length === 0);
+          !!mergedChildren && (body.children == null || body.children.length === 0);
 
         // Always transform when `{...args}` exists: remove spreads and empty params
         const pieces = [...filteredInjected, ...(invalidSpread ? [invalidSpread] : [])];
@@ -172,7 +171,7 @@ export function getCodeSnippet(
         const finalClosing = shouldSelfClose
           ? null
           : (body.closingElement ?? t.jsxClosingElement(opening.name));
-        const finalChildren = canInjectChildren ? toJsxChildren(metaChildren) : body.children;
+        const finalChildren = canInjectChildren ? toJsxChildren(mergedChildren) : body.children;
 
         let newBody = t.jsxElement(finalOpening, finalClosing, finalChildren, shouldSelfClose);
         // After handling top-level {...args}, also inline any nested args.* usages and

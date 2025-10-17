@@ -128,6 +128,111 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
         ) {
           mergeProperties(properties, exportDefault.declaration.arguments[0].properties);
           updated = true;
+        } else if (
+          exportDefault.declaration.type === 'CallExpression' &&
+          exportDefault.declaration.callee.type === 'Identifier' &&
+          exportDefault.declaration.callee.name === 'mergeConfig' &&
+          exportDefault.declaration.arguments.length >= 2
+        ) {
+          const defineConfigNodes = exportDefault.declaration.arguments.filter(
+            (arg): arg is t.CallExpression =>
+              arg?.type === 'CallExpression' &&
+              arg.callee.type === 'Identifier' &&
+              arg.callee.name === 'defineConfig' &&
+              arg.arguments[0]?.type === 'ObjectExpression'
+          );
+
+          const defineConfigNodeWithTest = defineConfigNodes.find(
+            (node) =>
+              node.arguments[0].type === 'ObjectExpression' &&
+              node.arguments[0].properties.some(
+                (p) =>
+                  p.type === 'ObjectProperty' &&
+                  p.key.type === 'Identifier' &&
+                  p.key.name === 'test'
+              )
+          );
+
+          // Give precedence for the defineConfig expression which contains a test config property
+          // As with mergeConfig you never know where the test could be e.g. mergeConfig(viteConfig, defineConfig({}), defineConfig({ test: {...} }))
+          const defineConfigNode = defineConfigNodeWithTest || defineConfigNodes[0];
+
+          if (!defineConfigNode) {
+            return false;
+          }
+
+          const defineConfigProps = defineConfigNode.arguments[0] as t.ObjectExpression;
+
+          // Check if there's already a test property in the defineConfig
+          const existingTestProp = defineConfigProps.properties.find(
+            (p) =>
+              p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === 'test'
+          ) as t.ObjectProperty | undefined;
+
+          if (existingTestProp && existingTestProp.value.type === 'ObjectExpression') {
+            // Find the test property from the template (either workspace or projects)
+            const templateTestProp = properties.find(
+              (p) =>
+                p.type === 'ObjectProperty' && p.key.type === 'Identifier' && p.key.name === 'test'
+            ) as t.ObjectProperty | undefined;
+
+            if (templateTestProp && templateTestProp.value.type === 'ObjectExpression') {
+              // Find the workspace/projects array in the template
+              const workspaceOrProjectsProp = templateTestProp.value.properties.find(
+                (p) =>
+                  p.type === 'ObjectProperty' &&
+                  p.key.type === 'Identifier' &&
+                  (p.key.name === 'workspace' || p.key.name === 'projects')
+              ) as t.ObjectProperty | undefined;
+
+              if (
+                workspaceOrProjectsProp &&
+                workspaceOrProjectsProp.value.type === 'ArrayExpression'
+              ) {
+                // Create the existing test project
+                const existingTestProject: t.ObjectExpression = {
+                  type: 'ObjectExpression',
+                  properties: [
+                    {
+                      type: 'ObjectProperty',
+                      key: { type: 'Identifier', name: 'extends' },
+                      value: { type: 'BooleanLiteral', value: true },
+                      computed: false,
+                      shorthand: false,
+                    },
+                    {
+                      type: 'ObjectProperty',
+                      key: { type: 'Identifier', name: 'test' },
+                      value: existingTestProp.value,
+                      computed: false,
+                      shorthand: false,
+                    },
+                  ],
+                };
+
+                // Add the existing test project to the template's array
+                workspaceOrProjectsProp.value.elements.unshift(existingTestProject);
+
+                // Remove the existing test property from defineConfig since we're moving it to the array
+                defineConfigProps.properties = defineConfigProps.properties.filter(
+                  (p) => p !== existingTestProp
+                );
+
+                // Merge the template properties (which now include our existing test project in the array)
+                mergeProperties(properties, defineConfigProps.properties);
+              } else {
+                // Fallback to original behavior if template structure is unexpected
+                mergeProperties(properties, defineConfigProps.properties);
+              }
+            } else {
+              // Fallback to original behavior if template doesn't have expected structure
+              mergeProperties(properties, defineConfigProps.properties);
+            }
+          } else {
+            // No existing test config, just merge normally
+            mergeProperties(properties, defineConfigProps.properties);
+          }
+          updated = true;
         }
       }
     }

@@ -55,6 +55,9 @@ const isDefineConfigExpression = (path: Declaration) =>
   path.callee.name === 'defineConfig' &&
   isObjectExpression(path.arguments[0]);
 
+const isMergeConfigExpression = (path: Declaration) =>
+  isCallExpression(path) && path.callee.name === 'mergeConfig';
+
 const isSafeToExtendWorkspace = (path: CallExpression) =>
   isObjectExpression(path.arguments[0]) &&
   path.arguments[0]?.properties.every(
@@ -118,11 +121,14 @@ export const vitestConfigFiles: Check = {
       const parsedConfig = babel.babelParse(configContent);
       babel.traverse(parsedConfig, {
         ExportDefaultDeclaration(path) {
-          if (
-            isDefineConfigExpression(path.node.declaration) &&
-            isSafeToExtendWorkspace(path.node.declaration as CallExpression)
-          ) {
-            isValidVitestConfig = true;
+          if (isDefineConfigExpression(path.node.declaration)) {
+            isValidVitestConfig = isSafeToExtendWorkspace(path.node.declaration as CallExpression);
+          } else if (isMergeConfigExpression(path.node.declaration)) {
+            // the config could be anywhere in the mergeConfig call, so we need to check each argument
+            const mergeCall = path.node.declaration as CallExpression;
+            isValidVitestConfig = mergeCall.arguments.some((arg) =>
+              isSafeToExtendWorkspace(arg as CallExpression)
+            );
           }
         },
       });

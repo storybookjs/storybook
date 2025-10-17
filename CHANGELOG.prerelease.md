@@ -1,3 +1,7 @@
+## 10.0.0-beta.14
+
+- Addon Vitest: Support modifying mergeConfig on addon setup - [#32753](https://github.com/storybookjs/storybook/pull/32753), thanks @yannbf!
+
 ## 10.0.0-beta.13
 
 - CLI: CSF factories codemod - support annotations in npx context - [#32741](https://github.com/storybookjs/storybook/pull/32741), thanks @yannbf!

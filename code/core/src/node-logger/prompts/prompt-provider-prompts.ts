@@ -171,6 +171,21 @@ export class PromptsPromptProvider extends PromptProvider {
         logger.error(message);
         logTracker.addLog('error', `${taskId}-error: ${message}`);
       },
+      group(title) {
+        logTracker.addLog('info', `${taskId}-group: ${title}`);
+
+        return {
+          message: (message) => {
+            this.message(message);
+          },
+          success: (message) => {
+            this.success(message);
+          },
+          error: (message) => {
+            this.error(message);
+          },
+        };
+      },
     };
   }
 }

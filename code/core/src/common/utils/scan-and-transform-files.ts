@@ -1,4 +1,4 @@
-import prompts from 'prompts';
+import { prompt } from 'storybook/internal/node-logger';
 
 import { commonGlobOptions } from './common-glob-options';
 import { getProjectRoot } from './paths';
@@ -30,13 +30,11 @@ export async function scanAndTransformFiles<T extends Record<string, unknown>>({
   transformOptions: T;
 }): Promise<Array<{ file: string; error: Error }>> {
   // Ask for glob pattern
-  const { glob } = force
-    ? { glob: defaultGlob }
-    : await prompts({
-        type: 'text',
-        name: 'glob',
+  const glob = force
+    ? defaultGlob
+    : await prompt.text({
         message: promptMessage,
-        initial: defaultGlob,
+        initialValue: defaultGlob,
       });
 
   console.log('Scanning for affected files...');

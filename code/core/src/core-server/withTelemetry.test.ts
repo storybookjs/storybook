@@ -1,15 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cache, loadAllPresets } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
-
-import prompts from 'prompts';
 
 import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry';
 
-vi.mock('prompts');
 vi.mock('storybook/internal/common');
 vi.mock('storybook/internal/telemetry');
+vi.mock('storybook/internal/node-logger');
 
 const cliOptions = {};
 
@@ -211,7 +210,7 @@ describe('withTelemetry', () => {
         apply: async () => ({}) as any,
       });
       vi.mocked(cache.get).mockResolvedValueOnce(undefined);
-      vi.mocked(prompts).mockResolvedValueOnce({ enableCrashReports: false });
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(false);
 
       await expect(async () =>
         withTelemetry(
@@ -234,7 +233,7 @@ describe('withTelemetry', () => {
         apply: async () => ({}) as any,
       });
       vi.mocked(cache.get).mockResolvedValueOnce(undefined);
-      vi.mocked(prompts).mockResolvedValueOnce({ enableCrashReports: true });
+      vi.mocked(prompt.confirm).mockResolvedValueOnce(true);
 
       await expect(async () =>
         withTelemetry(

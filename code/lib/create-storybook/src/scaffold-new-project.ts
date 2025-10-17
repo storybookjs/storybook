@@ -2,15 +2,13 @@ import { readdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import { GenerateNewProjectOnInitError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import boxen from 'boxen';
 // eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
 import picocolors from 'picocolors';
-import prompts from 'prompts';
 import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from './generators/types';
@@ -118,27 +116,6 @@ export const scaffoldNewProject = async (
 ) => {
   const packageManagerName = packageManagerToCoercedName(packageManager);
 
-  logger.log(
-    boxen(
-      dedent`
-        Would you like to generate a new project from the following list?
-
-        ${picocolors.bold('Note:')}
-        Storybook supports many more frameworks and bundlers than listed below. If you don't see your
-        preferred setup, you can still generate a project then rerun this command to add Storybook.
-
-        ${picocolors.bold('Press ^C at any time to quit.')}
-      `,
-      {
-        title: picocolors.bold('🔎 Empty directory detected'),
-        padding: 1,
-        borderStyle: 'double',
-        borderColor: 'yellow',
-      }
-    )
-  );
-  logger.line(1);
-
   let projectStrategy;
 
   if (process.env.STORYBOOK_INIT_EMPTY_TYPE) {
@@ -146,31 +123,26 @@ export const scaffoldNewProject = async (
   }
 
   if (!projectStrategy) {
-    const { project } = await prompts(
-      {
-        type: 'select',
-        name: 'project',
-        message: 'Choose a project template',
-        choices: Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
-          title: buildProjectDisplayNameForPrint(value),
-          value: key,
-        })),
-      },
-      { onCancel: () => process.exit(0) }
-    );
-
-    projectStrategy = project;
+    projectStrategy = await prompt.select({
+      message: dedent`
+        Empty directory detected:
+        Would you like to generate a new project from the following list?
+        Storybook supports many more frameworks and bundlers than listed below. If you don't see your preferred setup, you can still generate a project then rerun this command to add Storybook.
+      `,
+      options: Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
+        label: buildProjectDisplayNameForPrint(value),
+        value: key,
+      })),
+    });
   }
 
   const projectStrategyConfig = SUPPORTED_PROJECTS[projectStrategy];
   const projectDisplayName = buildProjectDisplayNameForPrint(projectStrategyConfig);
   const createScript = projectStrategyConfig.createScript[packageManagerName];
 
-  logger.line(1);
   logger.log(
     `Creating a new "${projectDisplayName}" project with ${picocolors.bold(packageManagerName)}...`
   );
-  logger.line(1);
 
   const targetDir = process.cwd();
 

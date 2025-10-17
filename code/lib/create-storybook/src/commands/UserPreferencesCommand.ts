@@ -85,8 +85,6 @@ export class UserPreferencesCommand {
     const { currentVersion, latestVersion, isPrerelease, isOutdated } =
       await this.versionService.getVersionInfo(packageManager);
 
-    logger.intro(CLI_COLORS.info(`Initializing Storybook`));
-
     if (isOutdated && !isPrerelease) {
       logger.warn(dedent`
         This version is behind the latest release, which is: ${latestVersion}!

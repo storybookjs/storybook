@@ -11,12 +11,6 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('prompts', () => {
-  return {
-    default: mocks.prompts,
-  };
-});
-
 vi.mock('./common-glob-options', () => ({
   commonGlobOptions: mocks.commonGlobOptions,
 }));

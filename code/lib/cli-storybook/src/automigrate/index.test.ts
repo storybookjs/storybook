@@ -50,12 +50,6 @@ const promptMocks = vi.hoisted(() => {
   };
 });
 
-vi.mock('prompts', () => {
-  return {
-    default: promptMocks.default,
-  };
-});
-
 class PackageManager implements Partial<JsPackageManager> {
   async getModulePackageJSON(
     packageName: string,

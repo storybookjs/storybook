@@ -161,7 +161,11 @@ export async function initiate(options: CommandOptions): Promise<void> {
       cliOptions: options,
       printError: (err) => !err.handled && logger.error(err),
     },
-    async () => await doInitiate(options)
+    async () => {
+      logger.intro(CLI_COLORS.info(`Initializing Storybook`));
+
+      return await doInitiate(options);
+    }
   ).catch(handleCommandFailure);
 
   if (initiateResult?.shouldRunDev) {

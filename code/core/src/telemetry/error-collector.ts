@@ -1,15 +1,15 @@
 /** Service for collecting errors during Storybook initialization */
-export class ErrorCollectionService {
-  private static instance: ErrorCollectionService;
+export class ErrorCollector {
+  private static instance: ErrorCollector;
   private errors: unknown[] = [];
 
   private constructor() {}
 
-  public static getInstance(): ErrorCollectionService {
-    if (!ErrorCollectionService.instance) {
-      ErrorCollectionService.instance = new ErrorCollectionService();
+  public static getInstance(): ErrorCollector {
+    if (!ErrorCollector.instance) {
+      ErrorCollector.instance = new ErrorCollector();
     }
-    return ErrorCollectionService.instance;
+    return ErrorCollector.instance;
   }
 
   public static addError(error: unknown) {

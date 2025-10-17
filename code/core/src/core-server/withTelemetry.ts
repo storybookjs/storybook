@@ -1,6 +1,11 @@
 import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { getPrecedingUpgrade, oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import {
+  ErrorCollector,
+  getPrecedingUpgrade,
+  oneWayHash,
+  telemetry,
+} from 'storybook/internal/telemetry';
 import type { EventType } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
@@ -188,6 +193,10 @@ export async function withTelemetry<T>(
 
     throw error;
   } finally {
+    const errors = ErrorCollector.getErrors();
+    for (const error of errors) {
+      await sendTelemetryError(error, eventType, options, false);
+    }
     process.off('SIGINT', cancelTelemetry);
   }
 }

@@ -2,13 +2,13 @@ import fs from 'node:fs/promises';
 
 import type { ProjectType } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
-import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
 import type { GeneratorFeature } from '../generators/types';
-import { ErrorCollectionService } from '../services/ErrorCollectionService';
 
 type ExecuteFinalizationParams = {
   projectType: ProjectType;
@@ -32,10 +32,10 @@ export class FinalizationCommand {
     // Update .gitignore
     await this.updateGitignore();
 
-    const errors = ErrorCollectionService.getErrors();
+    const errors = ErrorCollector.getErrors();
 
     if (errors.length > 0) {
-      this.printFailureMessage();
+      await this.printFailureMessage();
     } else {
       this.printSuccessMessage(selectedFeatures, storybookCommand);
     }
@@ -68,9 +68,10 @@ export class FinalizationCommand {
     }
   }
 
-  private printFailureMessage(): void {
+  private async printFailureMessage(): Promise<void> {
     logger.warn('Storybook setup completed, but some non-blocking errors occurred.');
-    logger.log('Please review the logs above or review the storybook-debug logs for more details.');
+    const logFile = await logTracker.writeToFile();
+    logger.log(`Storybook debug logs can be found at: ${logFile}`);
   }
 
   /** Print success message with feature summary */

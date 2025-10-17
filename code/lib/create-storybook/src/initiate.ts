@@ -2,6 +2,7 @@ import { ProjectType } from 'storybook/internal/cli';
 import { HandledError, type JsPackageManager } from 'storybook/internal/common';
 import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import { dedent } from 'ts-dedent';
 
@@ -17,7 +18,6 @@ import {
 import { DependencyCollector } from './dependency-collector';
 import { registerAllGenerators } from './generators';
 import type { CommandOptions } from './generators/types';
-import { ErrorCollectionService } from './services/ErrorCollectionService';
 import { TelemetryService } from './services/TelemetryService';
 
 /**
@@ -165,16 +165,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
       cliOptions: options,
       printError: (err) => !err.handled && logger.error(err),
     },
-    async () => {
-      try {
-        return await doInitiate(options);
-      } finally {
-        const errors = ErrorCollectionService.getErrors();
-        for (const error of errors) {
-          await sendTelemetryError(error, 'init', { cliOptions: options }, false);
-        }
-      }
-    }
+    async () => await doInitiate(options)
   ).catch(handleCommandFailure);
 
   if (initiateResult?.shouldRunDev) {

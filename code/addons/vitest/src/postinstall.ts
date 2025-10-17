@@ -512,8 +512,7 @@ export default async function postInstall(options: PostinstallOptions) {
     logger.warn(
       dedent`
         Done, but with errors!
-        @storybook/addon-vitest was installed successfully, but there were some errors during the setup process.
-        Please refer to the documentation to complete the setup manually and check the errors above:
+        @storybook/addon-vitest was installed successfully, but there were some errors during the setup process. Please refer to the documentation to complete the setup manually and check the errors above:
         https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
       `
     );

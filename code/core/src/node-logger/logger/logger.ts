@@ -18,7 +18,7 @@ const createLogFunction =
       ? (message: string) => {
           const currentTaskLog = getCurrentTaskLog();
           if (currentTaskLog) {
-            currentTaskLog.message(cliColors ? cliColors(message) : message);
+            currentTaskLog.message(wrapTextForClack(cliColors ? cliColors(message) : message));
           } else {
             clackFn(wrapTextForClack(message));
           }

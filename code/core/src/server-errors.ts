@@ -575,3 +575,15 @@ export class CommonJsConfigNotSupportedError extends StorybookError {
     });
   }
 }
+
+export class AutomigrateError extends StorybookError {
+  constructor(public data: { errors: Array<Error | unknown> }) {
+    super({
+      category: Category.CLI_AUTOMIGRATE,
+      code: 2,
+      message: dedent`
+        An error occurred while running the automigrate command.
+      `,
+    });
+  }
+}

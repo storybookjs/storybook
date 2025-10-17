@@ -1,5 +1,6 @@
 import { type JsPackageManager } from 'storybook/internal/common';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { AutomigrateError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
@@ -90,7 +91,14 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
   }
 
   if (hasFailures(outcome?.fixResults)) {
-    throw new Error('Some migrations failed');
+    const failedMigrations = Object.entries(outcome?.fixResults ?? {})
+      .filter(([, status]) => status === FixStatus.FAILED || status === FixStatus.CHECK_FAILED)
+      .map(([id, status]) => {
+        const statusLabel = status === FixStatus.CHECK_FAILED ? 'check failed' : 'failed';
+        return `${picocolors.cyan(id)} (${statusLabel})`;
+      });
+
+    throw new AutomigrateError({ errors: failedMigrations });
   }
 };
 

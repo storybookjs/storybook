@@ -240,8 +240,10 @@ command('automigrate [fixId]')
   )
   .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
-    prompt.setPromptLibrary('clack');
-    await doAutomigrate({ fixId, ...options }).catch(handleCommandFailure);
+    withTelemetry('automigrate', { cliOptions: options }, async () => {
+      prompt.setPromptLibrary('clack');
+      await doAutomigrate({ fixId, ...options });
+    }).catch(handleCommandFailure);
   });
 
 command('doctor')
@@ -249,6 +251,7 @@ command('doctor')
   .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options) => {
+    // TODO: Add telemetry
     await doctor(options).catch(handleCommandFailure);
   });
 

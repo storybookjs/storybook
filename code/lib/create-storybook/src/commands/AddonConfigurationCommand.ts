@@ -1,9 +1,9 @@
 import { type JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import type { DependencyCollector } from '../dependency-collector';
 import type { CommandOptions, Generator, GeneratorFeature } from '../generators/types';
-import { ErrorCollectionService } from '../services/ErrorCollectionService';
 
 type ExecuteAddonConfigurationParams = {
   packageManager: JsPackageManager;
@@ -99,7 +99,7 @@ export class AddonConfigurationCommand {
         task.message(`${addon} configured\n`);
         addonResults.set(addon, null);
       } catch (e) {
-        ErrorCollectionService.addError(e);
+        ErrorCollector.addError(e);
         addonResults.set(addon, e);
       }
     }
@@ -111,7 +111,7 @@ export class AddonConfigurationCommand {
       task.error('Failed to configure test addons');
     } else {
       // TODO: CHANGE BACK TO SUCCESS
-      task.success('Test addons configured successfully');
+      task.success('Test addons configured successfully', { showLog: true });
     }
 
     // Log results for each addon

@@ -40,10 +40,10 @@ describe('setupAddonInConfig', () => {
 
     await setupAddonInConfig({
       addonName: '@storybook/addon-docs',
-      mainConfig: mockMain,
+      mainConfigCSFFile: mockMain,
       previewConfigPath: '.storybook/preview.ts',
       configDir: '.storybook',
-      mainConfigRaw: mockMainConfig,
+      mainConfig: mockMainConfig,
     });
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
@@ -67,10 +67,10 @@ describe('setupAddonInConfig', () => {
 
     await setupAddonInConfig({
       addonName: '@storybook/addon-docs',
-      mainConfig: mockMain,
+      mainConfigCSFFile: mockMain,
       previewConfigPath: '.storybook/preview.ts',
       configDir: '.storybook',
-      mainConfigRaw: mockMainConfig,
+      mainConfig: mockMainConfig,
     });
 
     expect(mockMain.valueToNode).toHaveBeenCalledWith('@storybook/addon-docs');
@@ -93,10 +93,10 @@ describe('setupAddonInConfig', () => {
 
     await setupAddonInConfig({
       addonName: '@storybook/addon-docs',
-      mainConfig: mockMain,
+      mainConfigCSFFile: mockMain,
       previewConfigPath: '.storybook/preview.ts',
       configDir: '.storybook',
-      mainConfigRaw: mockMainConfig,
+      mainConfig: mockMainConfig,
     });
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
@@ -110,10 +110,10 @@ describe('setupAddonInConfig', () => {
     await expect(
       setupAddonInConfig({
         addonName: '@storybook/addon-docs',
-        mainConfig: mockMain,
+        mainConfigCSFFile: mockMain,
         previewConfigPath: '.storybook/preview.ts',
         configDir: '.storybook',
-        mainConfigRaw: mockMainConfig,
+        mainConfig: mockMainConfig,
       })
     ).resolves.not.toThrow();
 
@@ -126,10 +126,10 @@ describe('setupAddonInConfig', () => {
 
     await setupAddonInConfig({
       addonName: '@storybook/addon-docs',
-      mainConfig: mockMain,
+      mainConfigCSFFile: mockMain,
       previewConfigPath: undefined,
       configDir: '.storybook',
-      mainConfigRaw: mockMainConfig,
+      mainConfig: mockMainConfig,
     });
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');

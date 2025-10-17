@@ -73,17 +73,13 @@ export class AngularJSON {
 
   async getProjectName() {
     if (this.projectsWithoutStorybook.length > 1) {
-      const { projectName } = await prompts({
-        type: 'select',
-        name: 'projectName',
+      return prompt.select({
         message: 'For which project do you want to generate Storybook configuration?',
-        choices: this.projectsWithoutStorybook.map((name) => ({
-          title: name,
+        options: this.projectsWithoutStorybook.map((name) => ({
+          label: name,
           value: name,
         })),
       });
-
-      return projectName;
     }
 
     return this.projectsWithoutStorybook[0];

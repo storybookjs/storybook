@@ -541,7 +541,7 @@ export async function addExtraDependencies({
   debug: boolean;
   extraDeps?: string[];
 }) {
-  const extraDevDeps = ['@storybook/test-runner@0.23.1--canary.8ec6db1.0'];
+  const extraDevDeps = ['@storybook/test-runner@0.23.1--canary.fe81472.0'];
 
   if (debug) {
     logger.log('\uD83C\uDF81 Adding extra dev deps', extraDevDeps);

@@ -239,12 +239,16 @@ export async function storyToCsfFactory(
     },
   });
 
+  // If no stories were transformed, bail early to avoid having a mixed CSF syntax and therefore a broken indexer.
+  if (transformedStoryExports.size === 0) {
+    logger.warn(
+      `Skipping codemod for ${info.path}: no stories were transformed. Either there are no stories, file has been already transformed or some stories are written in an unsupported format.`
+    );
+    return info.source;
+  }
+
   // If some stories were detected but not all could be transformed, we skip the codemod to avoid mixed csf syntax and therefore a broken indexer.
-  if (
-    detectedStoryNames.length > 0 &&
-    transformedStoryExports.size > 0 &&
-    transformedStoryExports.size !== detectedStoryNames.length
-  ) {
+  if (detectedStoryNames.length > 0 && transformedStoryExports.size !== detectedStoryNames.length) {
     logger.warn(
       `Skipping codemod for ${info.path}:\nSome of the detected stories [${detectedStoryNames
         .map((name) => `"${name}"`)

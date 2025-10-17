@@ -1,3 +1,30 @@
+## 10.0.0-beta.12
+
+- CLI: Avoid mixed CSF in files with unconventional stories - [#32716](https://github.com/storybookjs/storybook/pull/32716), thanks @yannbf!
+- CLI: Fix CSF factories addon syncing in storybook add command - [#32728](https://github.com/storybookjs/storybook/pull/32728), thanks @yannbf!
+- CLI: Make relative imports default in csf-factories codemod - [#32610](https://github.com/storybookjs/storybook/pull/32610), thanks @copilot-swe-agent!
+- Core: Prevent navigating to hidden (filtered) item - [#32715](https://github.com/storybookjs/storybook/pull/32715), thanks @ghengeveld!
+- Fix: Allow proceeding without selecting automigrations in upgrade command - [#32597](https://github.com/storybookjs/storybook/pull/32597), thanks @copilot-swe-agent!
+
+## 10.0.0-beta.11
+
+- Automigration: Improve the viewport/backgrounds automigration - [#32619](https://github.com/storybookjs/storybook/pull/32619), thanks @valentinpalkovic!
+- CSF: Enhance config-to-csf-factory to support type wrappers - [#32543](https://github.com/storybookjs/storybook/pull/32543), thanks @yannbf!
+- Core: Ensure valid QR code URL - [#32661](https://github.com/storybookjs/storybook/pull/32661), thanks @ghengeveld!
+- Mocking: Fix `sb.mock` usage in Storybook's deployed in subpaths - [#32678](https://github.com/storybookjs/storybook/pull/32678), thanks @valentinpalkovic!
+- NextJS-Vite: Automatically fix bad PostCSS configuration - [#32691](https://github.com/storybookjs/storybook/pull/32691), thanks @ndelangen!
+- Nextjs: Fix Nextjs version detection with prereleases - [#32724](https://github.com/storybookjs/storybook/pull/32724), thanks @yannbf!
+- Presets: Support extensionless imports in TS-based presets - [#32641](https://github.com/storybookjs/storybook/pull/32641), thanks @JReinhold!
+- React Native Web: Fix REACT_NATIVE_AND_RNW should detect vite builder - [#32718](https://github.com/storybookjs/storybook/pull/32718), thanks @dannyhw!
+
+## 10.0.0-beta.10
+
+- Core: Make `subtype` an optional property on an index input - [#32602](https://github.com/storybookjs/storybook/pull/32602), thanks @JReinhold!
+- Core: Various QA fixes - [#32629](https://github.com/storybookjs/storybook/pull/32629), thanks @ghengeveld!
+- Fix: Incorrect URLS for the upgrade command - [#32624](https://github.com/storybookjs/storybook/pull/32624), thanks @jonniebigodes!
+- Onboarding: Prevent confetti overlay from intercepting pointer events - [#32660](https://github.com/storybookjs/storybook/pull/32660), thanks @ghengeveld!
+- Telemetry: Add metadata for react routers - [#32615](https://github.com/storybookjs/storybook/pull/32615), thanks @shilman!
+
 ## 10.0.0-beta.9
 
 - Automigrations: Add automigration for viewport and backgrounds - [#31614](https://github.com/storybookjs/storybook/pull/31614), thanks @valentinpalkovic!

@@ -1788,6 +1788,67 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('play method', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          export const A = {
+            play({ context }) {},
+          };
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              factory: false
+              play: true
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+            tags:
+              - play-fn
+      `);
+    });
+
+    it('meta play method', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar', play({ context }) {} };
+          export const A = {};`
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+          tags:
+            - play-fn
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              factory: false
+              play: true
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+      `);
+    });
+
     it('mount', () => {
       expect(
         parse(
@@ -1827,6 +1888,38 @@ describe('CsfFile', () => {
           export default { title: 'foo/bar' };
           export const A = {
             play: ({ mount: mountRenamed, context }) => {},
+          };
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            __stats:
+              factory: false
+              play: true
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: true
+              moduleMock: false
+            tags:
+              - play-fn
+      `);
+    });
+
+    it('mount in method', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          export const A = {
+            play({ mount, context }) {},
           };
         `
         )

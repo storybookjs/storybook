@@ -175,7 +175,11 @@ const sortExports = (exportByName: Record<string, any>, order: string[]) => {
 };
 
 const hasMount = (play: t.Node | undefined) => {
-  if (t.isArrowFunctionExpression(play) || t.isFunctionDeclaration(play)) {
+  if (
+    t.isArrowFunctionExpression(play) ||
+    t.isFunctionDeclaration(play) ||
+    t.isObjectMethod(play)
+  ) {
     const params = play.params;
     if (params.length >= 1) {
       const [arg] = params;
@@ -348,7 +352,8 @@ export class CsfFile {
     const meta: StaticMeta = {};
     (declaration.properties as t.ObjectProperty[]).forEach((p) => {
       if (t.isIdentifier(p.key)) {
-        this._metaAnnotations[p.key.name] = p.value;
+        const value = t.isObjectMethod(p) ? p : p.value;
+        this._metaAnnotations[p.key.name] = value;
 
         if (p.key.name === 'title') {
           meta.title = this._parseTitle(p.value);
@@ -598,30 +603,35 @@ export class CsfFile {
                   // CSF3 object export
                   (storyNode.properties as t.ObjectProperty[]).forEach((p) => {
                     if (t.isIdentifier(p.key)) {
-                      if (p.key.name === 'render') {
-                        parameters.__isArgsStory = isArgsStory(
-                          p.value as t.Expression,
-                          parent,
-                          self
-                        );
-                      } else if (p.key.name === 'name' && t.isStringLiteral(p.value)) {
-                        name = p.value.value;
-                      } else if (p.key.name === 'storyName' && t.isStringLiteral(p.value)) {
-                        logger.warn(
-                          `Unexpected usage of "storyName" in "${exportName}". Please use "name" instead.`
-                        );
-                      } else if (p.key.name === 'parameters' && t.isObjectExpression(p.value)) {
-                        const idProperty = p.value.properties.find(
-                          (property) =>
-                            t.isObjectProperty(property) &&
-                            t.isIdentifier(property.key) &&
-                            property.key.name === '__id'
-                        ) as t.ObjectProperty | undefined;
-                        if (idProperty) {
-                          parameters.__id = (idProperty.value as t.StringLiteral).value;
+                      const key = p.key.name;
+                      if (t.isObjectMethod(p)) {
+                        self._storyAnnotations[exportName][key] = p;
+                      } else {
+                        if (p.key.name === 'render') {
+                          parameters.__isArgsStory = isArgsStory(
+                            p.value as t.Expression,
+                            parent,
+                            self
+                          );
+                        } else if (p.key.name === 'name' && t.isStringLiteral(p.value)) {
+                          name = p.value.value;
+                        } else if (p.key.name === 'storyName' && t.isStringLiteral(p.value)) {
+                          logger.warn(
+                            `Unexpected usage of "storyName" in "${exportName}". Please use "name" instead.`
+                          );
+                        } else if (p.key.name === 'parameters' && t.isObjectExpression(p.value)) {
+                          const idProperty = p.value.properties.find(
+                            (property) =>
+                              t.isObjectProperty(property) &&
+                              t.isIdentifier(property.key) &&
+                              property.key.name === '__id'
+                          ) as t.ObjectProperty | undefined;
+                          if (idProperty) {
+                            parameters.__id = (idProperty.value as t.StringLiteral).value;
+                          }
                         }
+                        self._storyAnnotations[exportName][p.key.name] = p.value;
                       }
-                      self._storyAnnotations[exportName][p.key.name] = p.value;
                     }
                   });
                 } else {

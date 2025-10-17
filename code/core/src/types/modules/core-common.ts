@@ -6,7 +6,7 @@ import type { Server as NetServer } from 'net';
 import type { Options as TelejsonOptions } from 'telejson';
 import type { PackageJson as PackageJsonFromTypeFest } from 'type-fest';
 
-import { type StoryIndexGenerator } from '../../core-server';
+import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Indexer, StoriesEntry } from './indexer';
 
 /** ⚠️ This file contains internal WIP types they MUST NOT be exported outside this package for now! */
@@ -352,7 +352,7 @@ export interface ComponentManifest {
   import?: string;
   summary?: string;
   examples: { name: string; snippet: string }[];
-  jsdocTags: Record<string, string>;
+  jsDocTags: Record<string, string[]>;
 }
 
 export type ComponentManifestGenerator = (

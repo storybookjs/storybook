@@ -11,7 +11,8 @@ export function extractJSDocTags(description: string) {
   return Object.fromEntries(
     Object.entries(groupBy(parsed[0].tags, (it) => it.tag)).map(([key, tags]) => [
       key,
-      tags?.map((tag) => (tag.type ? `{${tag.type}} ` : '') + `${tag.name} ${tag.description}`),
+      tags?.map((tag) => (tag.type ? `{${tag.type}} ` : '') + `${tag.name} ${tag.description}`) ??
+        [],
     ])
   );
 }

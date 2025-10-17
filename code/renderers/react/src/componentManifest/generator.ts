@@ -58,7 +58,7 @@ export const componentManifestGenerator = async () => {
           summary: tags.summary ? tags.summary[0] : undefined,
           import: tags.import ? tags.import[0] : undefined,
           reactDocgen: docgen,
-          jsdocTag: tags,
+          jsDocTags: tags,
           examples: !componentName
             ? []
             : Object.entries(csf._storyPaths)

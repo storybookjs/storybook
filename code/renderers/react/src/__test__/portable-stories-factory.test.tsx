@@ -102,6 +102,15 @@ describe('CSF3', () => {
   });
 });
 
+describe('Story extend', () => {
+  it('extended story should render with combined args', () => {
+    const ExtendedStory = CSF3Primary.extend({ args: { children: 'Hello world 2' } });
+    render(<ExtendedStory.Component />);
+    const buttonElement = screen.getByText(/Hello world 2/i);
+    expect(buttonElement).not.toBeNull();
+  });
+});
+
 const testCases = Object.entries({
   CSF2StoryWithLocale,
   CSF3Button,

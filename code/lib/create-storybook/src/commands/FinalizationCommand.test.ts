@@ -37,7 +37,11 @@ describe('FinalizationCommand', () => {
 
       const selectedFeatures = new Set(['docs', 'test'] as const);
 
-      await command.execute(ProjectType.REACT, selectedFeatures, 'npm run storybook');
+      await command.execute({
+        projectType: ProjectType.REACT,
+        selectedFeatures,
+        storybookCommand: 'npm run storybook',
+      });
 
       expect(fs.appendFile).toHaveBeenCalledWith(
         '/test/project/.gitignore',
@@ -52,7 +56,11 @@ describe('FinalizationCommand', () => {
 
       const selectedFeatures = new Set([]);
 
-      await command.execute(ProjectType.VUE3, selectedFeatures, 'yarn storybook');
+      await command.execute({
+        projectType: ProjectType.VUE3,
+        selectedFeatures,
+        storybookCommand: 'yarn storybook',
+      });
 
       expect(fs.readFile).not.toHaveBeenCalled();
       expect(fs.appendFile).not.toHaveBeenCalled();
@@ -65,7 +73,11 @@ describe('FinalizationCommand', () => {
 
       const selectedFeatures = new Set([]);
 
-      await command.execute(ProjectType.REACT, selectedFeatures, 'npm run storybook');
+      await command.execute({
+        projectType: ProjectType.REACT,
+        selectedFeatures,
+        storybookCommand: 'npm run storybook',
+      });
 
       expect(fs.readFile).not.toHaveBeenCalled();
       expect(fs.appendFile).not.toHaveBeenCalled();
@@ -79,7 +91,11 @@ describe('FinalizationCommand', () => {
 
       const selectedFeatures = new Set([]);
 
-      await command.execute(ProjectType.REACT, selectedFeatures, 'npm run storybook');
+      await command.execute({
+        projectType: ProjectType.REACT,
+        selectedFeatures,
+        storybookCommand: 'npm run storybook',
+      });
 
       expect(fs.appendFile).not.toHaveBeenCalled();
     });
@@ -91,7 +107,11 @@ describe('FinalizationCommand', () => {
 
       const selectedFeatures = new Set([]);
 
-      await command.execute(ProjectType.REACT, selectedFeatures, 'npm run storybook');
+      await command.execute({
+        projectType: ProjectType.REACT,
+        selectedFeatures,
+        storybookCommand: 'npm run storybook',
+      });
 
       expect(fs.appendFile).toHaveBeenCalledWith(
         '/test/project/.gitignore',
@@ -104,7 +124,11 @@ describe('FinalizationCommand', () => {
 
       const selectedFeatures = new Set([]);
 
-      await command.execute(ProjectType.REACT, selectedFeatures, 'npm run storybook');
+      await command.execute({
+        projectType: ProjectType.REACT,
+        selectedFeatures,
+        storybookCommand: 'npm run storybook',
+      });
 
       expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('Additional features: none'));
     });
@@ -114,7 +138,11 @@ describe('FinalizationCommand', () => {
 
       const selectedFeatures = new Set(['docs', 'test', 'onboarding'] as const);
 
-      await command.execute(ProjectType.NEXTJS, selectedFeatures, 'npm run storybook');
+      await command.execute({
+        projectType: ProjectType.NEXTJS,
+        selectedFeatures,
+        storybookCommand: 'npm run storybook',
+      });
 
       expect(logger.log).toHaveBeenCalledWith(
         expect.stringContaining('Additional features: docs, test, onboarding')
@@ -126,7 +154,11 @@ describe('FinalizationCommand', () => {
 
       const selectedFeatures = new Set([]);
 
-      await command.execute(ProjectType.ANGULAR, selectedFeatures, 'ng run my-app:storybook');
+      await command.execute({
+        projectType: ProjectType.ANGULAR,
+        selectedFeatures,
+        storybookCommand: 'ng run my-app:storybook',
+      });
 
       expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('ng run my-app:storybook'));
     });

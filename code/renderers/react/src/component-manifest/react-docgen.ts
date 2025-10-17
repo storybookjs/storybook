@@ -19,7 +19,7 @@ import {
   RESOLVE_EXTENSIONS,
   ReactDocgenResolveError,
   defaultLookupModule,
-} from './docgen-resolver';
+} from './docgenResolver';
 
 export type DocObj = Documentation & { actualName: string; definedInFile: string };
 

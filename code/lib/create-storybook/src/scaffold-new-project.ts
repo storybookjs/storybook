@@ -8,7 +8,6 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 // eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
-import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from './generators/types';
@@ -102,7 +101,7 @@ const packageManagerToCoercedName = (
 
 const buildProjectDisplayNameForPrint = ({ displayName }: SupportedProject) => {
   const { type, builder, language } = displayName;
-  return `${picocolors.bold(picocolors.blue(type))} ${builder ? `+ ${builder} ` : ''}(${language})`;
+  return `${type} ${builder ? `+ ${builder} ` : ''}(${language})`;
 };
 
 /**
@@ -140,9 +139,7 @@ export const scaffoldNewProject = async (
   const projectDisplayName = buildProjectDisplayNameForPrint(projectStrategyConfig);
   const createScript = projectStrategyConfig.createScript[packageManagerName];
 
-  logger.log(
-    `Creating a new "${projectDisplayName}" project with ${picocolors.bold(packageManagerName)}...`
-  );
+  logger.log(`Creating a new "${projectDisplayName}" project with ${packageManagerName}...`);
 
   const targetDir = process.cwd();
 
@@ -184,24 +181,7 @@ export const scaffoldNewProject = async (
     });
   }
 
-  logger.log(
-    boxen(
-      dedent`
-      "${projectDisplayName}" project with ${picocolors.bold(
-        packageManagerName
-      )} created successfully!
-
-      Continuing with Storybook installation...
-    `,
-      {
-        title: picocolors.bold('✅ Success!'),
-        padding: 1,
-        borderStyle: 'double',
-        borderColor: 'green',
-      }
-    )
-  );
-  logger.line(1);
+  logger.log(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
 };
 
 const FILES_TO_IGNORE = [

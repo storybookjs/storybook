@@ -1,7 +1,6 @@
-import { colors } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import type { VersionCheck } from 'storybook/internal/types';
 
-import boxen from 'boxen';
 import Table from 'cli-table3';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
@@ -60,17 +59,14 @@ export function outputStartupInformation(options: {
     .filter(Boolean)
     .join(' and ');
 
-  console.log(
-    boxen(
-      dedent`
-          ${colors.green(
-            `Storybook ${picocolors.bold(version)} for ${picocolors.bold(name)} started`
-          )}
-          ${picocolors.gray(timeStatement)}
+  logger.log(
+    dedent`
+      ${CLI_COLORS.success(
+        `Storybook ${picocolors.bold(version)} for ${picocolors.bold(name)} started`
+      )}
+      ${timeStatement}
 
-          ${serveMessage.toString()}${updateMessage ? `\n\n${updateMessage}` : ''}
-        `,
-      { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
-    )
+      ${serveMessage.toString()}${updateMessage ? `\n\n${updateMessage}` : ''}
+    `
   );
 }

@@ -1,8 +1,7 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { HandledError, type JsPackageManager } from 'storybook/internal/common';
-import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
+import { type JsPackageManager } from 'storybook/internal/common';
+import { withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
-import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import { dedent } from 'ts-dedent';
 

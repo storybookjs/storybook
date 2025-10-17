@@ -1,5 +1,4 @@
 import * as clack from '@clack/prompts';
-import boxen from 'boxen';
 
 import { isClackEnabled } from '../prompts/prompt-config';
 import { getCurrentTaskLog } from '../prompts/prompt-provider-clack';
@@ -151,7 +150,7 @@ export const error = createLogger('error', (...args) => {
   return LOG_FUNCTIONS.error()(...args);
 });
 
-type BoxenOptions = {
+type BoxOptions = {
   borderStyle?: 'round' | 'none';
   padding?: number;
   title?: string;
@@ -160,21 +159,14 @@ type BoxenOptions = {
   backgroundColor?: string;
 };
 
-export const logBox = (message: string, options?: BoxenOptions) => {
+export const logBox = (message: string, options?: BoxOptions) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
     if (isClackEnabled()) {
       log('');
       clack.box(message, options?.title);
     } else {
-      console.log(
-        boxen(message, {
-          borderStyle: 'round',
-          padding: 1,
-          borderColor: '#F1618C', // pink
-          ...options,
-        })
-      );
+      console.log(message);
     }
   }
 };

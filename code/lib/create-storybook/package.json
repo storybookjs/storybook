@@ -48,7 +48,6 @@
   "devDependencies": {
     "@types/prompts": "^2.0.9",
     "@types/semver": "^7.3.4",
-    "boxen": "^8.0.1",
     "commander": "^14.0.1",
     "empathic": "^2.0.0",
     "execa": "^5.0.0",

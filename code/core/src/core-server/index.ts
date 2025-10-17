@@ -9,7 +9,6 @@ export * from './withTelemetry';
 export { default as build } from './standalone';
 export { mapStaticDir } from './utils/server-statics';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator';
-export { getStoryIndexGenerator } from './utils/getStoryIndexGenerator';
 
 export { loadStorybook as experimental_loadStorybook } from './load';
 

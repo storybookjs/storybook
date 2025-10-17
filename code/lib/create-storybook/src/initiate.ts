@@ -53,11 +53,6 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Step 3: Detect project type
   const projectType = await executeProjectDetection(packageManager, options);
 
-  // Handle React Native special case (exit early)
-  if ([ProjectType.REACT_NATIVE, ProjectType.REACT_NATIVE_AND_RNW].includes(projectType)) {
-    return handleReactNativeInstallation(projectType, packageManager);
-  }
-
   // Step 4: Execute generator with dependency collector
   const dependencyCollector = new DependencyCollector();
   const { storybookCommand, generatorResult } = await executeGeneratorExecution(
@@ -94,6 +89,11 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 8: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
+
+  // Handle React Native special case (exit early)
+  if ([ProjectType.REACT_NATIVE, ProjectType.REACT_NATIVE_AND_RNW].includes(projectType)) {
+    return handleReactNativeInstallation(projectType, packageManager);
+  }
 
   return {
     shouldRunDev: !!options.dev && !options.skipInstall,

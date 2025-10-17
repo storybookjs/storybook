@@ -1,1 +1,1 @@
-{"version":"9.1.13","info":{"plain":"- Telemetry: Add metadata for react routers - [#32615](https://github.com/storybookjs/storybook/pull/32615), thanks @shilman!"}}
+{"version":"9.1.13","info":{"plain":"- Nextjs: Fix config access for Vite - [#32759](https://github.com/storybookjs/storybook/pull/32759), thanks @valentinpalkovic!"}}

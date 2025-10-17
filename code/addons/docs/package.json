@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-docs",
-  "version": "9.1.12",
+  "version": "9.1.13",
   "description": "Storybook Docs: Document UI components automatically with stories and MDX",
   "keywords": [
     "docs",

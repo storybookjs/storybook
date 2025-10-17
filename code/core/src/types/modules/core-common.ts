@@ -340,24 +340,25 @@ export interface TagOptions {
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
-/**
- * The interface for Storybook configuration used internally in presets The difference is that these
- * values are the raw values, AKA, not wrapped with `PresetValue<>`
- */
-
 export interface ComponentManifest {
-  id: string;
-  name?: string;
-  description?: string;
-  import?: string;
-  summary?: string;
-  examples: { name: string; snippet: string }[];
-  jsDocTags: Record<string, string[]>;
+  v: number;
+  components: Record<
+    string,
+    {
+      id: string;
+      name?: string;
+      description?: string;
+      import?: string;
+      summary?: string;
+      examples: { name: string; snippet: string }[];
+      jsDocTags: Record<string, string[]>;
+    }
+  >;
 }
 
 export type ComponentManifestGenerator = (
   storyIndexGenerator: StoryIndexGenerator
-) => Promise<Record<string, ComponentManifest>>;
+) => Promise<ComponentManifest>;
 
 export interface StorybookConfigRaw {
   /**

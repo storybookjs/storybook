@@ -72,6 +72,9 @@ export const componentManifestGenerator = async () => {
       })
     );
 
-    return Object.fromEntries(components.map((component) => [component.id, component]));
+    return {
+      v: 0,
+      components: Object.fromEntries(components.map((component) => [component.id, component])),
+    };
   }) satisfies ComponentManifestGenerator;
 };

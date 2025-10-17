@@ -1,5 +1,5 @@
 import { HandledError, cache, isCI, loadAllPresets } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   ErrorCollector,
   getPrecedingUpgrade,
@@ -9,7 +9,7 @@ import {
 import type { EventType } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
-import prompts from 'prompts';
+import { dedent } from 'ts-dedent';
 
 import { StorybookError } from '../storybook-error';
 
@@ -25,11 +25,12 @@ const promptCrashReports = async () => {
     return undefined;
   }
 
-  const { enableCrashReports } = await prompts({
-    type: 'confirm',
-    name: 'enableCrashReports',
-    message: `Would you like to help improve Storybook by sending anonymous crash reports?`,
-    initial: true,
+  const enableCrashReports = await prompt.confirm({
+    message: dedent`
+      Send anonymous crash reports to help improve Storybook?
+      This helps us improve Storybook and fix bugs faster.
+    `,
+    initialValue: true,
   });
 
   await cache.set('enableCrashReports', enableCrashReports);

@@ -2,12 +2,12 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
-import { HandledError, getProjectRoot } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
-import prompts from 'prompts';
 import semver from 'semver';
+import { dedent } from 'ts-dedent';
 
 import { isNxProject } from './helpers';
 import type { TemplateConfiguration, TemplateMatcher } from './project_types';
@@ -144,25 +144,16 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
     case ProjectType.NUXT:
       return CoreBuilder.Vite;
     default:
-      const { builder } = await prompts(
-        {
-          type: 'select',
-          name: 'builder',
-          message:
-            '\nWe were not able to detect the right builder for your project. Please select one:',
-          choices: [
-            { title: 'Vite', value: CoreBuilder.Vite },
-            { title: 'Webpack 5', value: CoreBuilder.Webpack5 },
-          ],
-        },
-        {
-          onCancel: () => {
-            throw new HandledError('Canceled by the user');
-          },
-        }
-      );
-
-      return builder;
+      return prompt.select({
+        message: dedent`
+          We were not able to detect the right builder for your project. 
+          Please select one:
+          `,
+        options: [
+          { label: 'Vite', value: CoreBuilder.Vite },
+          { label: 'Webpack 5', value: CoreBuilder.Webpack5 },
+        ],
+      });
   }
 }
 

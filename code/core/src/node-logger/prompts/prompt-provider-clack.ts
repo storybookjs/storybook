@@ -1,6 +1,7 @@
 import * as clack from '@clack/prompts';
 
 import { logTracker } from '../logger/log-tracker';
+import { wrapTextForClackHint } from '../wrap-utils';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
@@ -52,14 +53,20 @@ export class ClackPromptProvider extends PromptProvider {
   }
 
   async confirm(options: ConfirmPromptOptions, promptOptions?: PromptOptions): Promise<boolean> {
-    const result = await clack.confirm(options);
+    const result = await clack.confirm({
+      ...options,
+      message: wrapTextForClackHint(options.message, undefined, undefined, 2),
+    });
     this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return Boolean(result);
   }
 
   async select<T>(options: SelectPromptOptions<T>, promptOptions?: PromptOptions): Promise<T> {
-    const result = await clack.select<T>(options);
+    const result = await clack.select<T>({
+      ...options,
+      message: wrapTextForClackHint(options.message, undefined, undefined, 2),
+    });
     this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return result as T;

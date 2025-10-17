@@ -26,10 +26,7 @@ import {
 
 import * as find from 'empathic/find';
 import * as pkg from 'empathic/package';
-// eslint-disable-next-line depend/ban-dependencies
-import { execa } from 'execa';
 import { dirname, relative, resolve } from 'pathe';
-import prompts from 'prompts';
 import { satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -87,22 +84,22 @@ export default async function postInstall(options: PostinstallOptions) {
   const isInteractive = process.stdout.isTTY && !isCI();
 
   if (nameMatches(info.frameworkPackageName, '@storybook/nextjs') && !hasCustomWebpackConfig) {
-    const out =
-      options.yes || !isInteractive
-        ? { migrateToNextjsVite: !!options.yes }
-        : await prompts({
-            type: 'confirm',
-            name: 'migrateToNextjsVite',
-            message: dedent`
-            The addon requires the use of @storybook/nextjs-vite to work with Next.js.
-            https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#install-and-set-up
+    let isMigrateToNextjsVite;
 
-            Do you want to migrate?
-          `,
-            initial: true,
-          });
+    if (options.yes || !isInteractive) {
+      isMigrateToNextjsVite = !!options.yes;
+    } else {
+      isMigrateToNextjsVite = await prompt.confirm({
+        message: dedent`
+        The addon requires @storybook/nextjs-vite to work with Next.js.
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#install-and-set-up
+        Do you want to migrate?
+      `,
+        initialValue: true,
+      });
+    }
 
-    if (out.migrateToNextjsVite) {
+    if (isMigrateToNextjsVite) {
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         '@storybook/nextjs-vite',
       ]);

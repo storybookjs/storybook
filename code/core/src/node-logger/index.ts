@@ -70,9 +70,8 @@ export const logger = {
       msg = message.toString();
     }
 
-    newLogger.error(
-      msg.replace(message.toString(), colors.red(message.toString())).replaceAll(process.cwd(), '.')
-    );
+    newLogger.debug(msg);
+    newLogger.error(message.toString().replaceAll(process.cwd(), '.'));
   },
 };
 

@@ -164,10 +164,8 @@ export const logBox = (message: string, options?: BoxenOptions) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
     if (isClackEnabled()) {
-      if (options?.title) {
-        log(options.title);
-      }
-      log(message);
+      log('');
+      clack.box(message, options?.title);
     } else {
       console.log(
         boxen(message, {

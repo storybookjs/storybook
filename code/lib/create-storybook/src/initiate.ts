@@ -146,11 +146,7 @@ function handleReactNativeInstallation(
   return { shouldRunDev: false };
 }
 
-const handleCommandFailure = async (error: unknown): Promise<never> => {
-  if (!(error instanceof HandledError)) {
-    logger.error(String(error));
-  }
-
+const handleCommandFailure = async (): Promise<never> => {
   const logFile = await logTracker.writeToFile();
   logger.log(`Storybook debug logs can be found at: ${logFile}`);
   logger.outro('');

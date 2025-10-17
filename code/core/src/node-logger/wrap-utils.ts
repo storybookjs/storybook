@@ -218,7 +218,13 @@ export { getTerminalWidth, supportsHyperlinks };
  * Specialized wrapper for hint text that adds stroke characters (│) to continuation lines to
  * maintain visual consistency with clack's multiselect prompts
  */
-export function wrapTextForClackHint(text: string, width?: number, label?: string): string {
+export function wrapTextForClackHint(
+  text: string,
+  width?: number,
+  label?: string,
+  // Total chars before hint text starts: "│  " + "◼ "
+  _indentSpaces = 3 + 1
+): string {
   const terminalWidth = width || getTerminalWidth();
 
   // Calculate the space taken by the label
@@ -235,7 +241,7 @@ export function wrapTextForClackHint(text: string, width?: number, label?: strin
 
   // For continuation lines, we only need to account for the indentation
   // Format: "│    continuation text..."
-  const indentSpaces = 3 + 1; // Total chars before hint text starts: "│  " + "◼ "
+  const indentSpaces = _indentSpaces;
   const continuationLineWidth = getOptimalWidth(Math.max(terminalWidth - indentSpaces, 30));
 
   // First, try wrapping with the continuation line width for optimal wrapping

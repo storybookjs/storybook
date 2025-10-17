@@ -171,14 +171,19 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       );
       const indexGenerator = await initializedStoryIndexGenerator;
       if (componentManifestGenerator && indexGenerator) {
-        const manifests = await componentManifestGenerator(
-          indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
-        );
-        await mkdir(join(options.outputDir, 'manifests'), { recursive: true });
-        await writeFile(
-          join(options.outputDir, 'manifests', 'components.json'),
-          JSON.stringify(manifests)
-        );
+        try {
+          const manifests = await componentManifestGenerator(
+            indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
+          );
+          await mkdir(join(options.outputDir, 'manifests'), { recursive: true });
+          await writeFile(
+            join(options.outputDir, 'manifests', 'components.json'),
+            JSON.stringify(manifests)
+          );
+        } catch (e) {
+          logger.error('Failed to generate manifests/components.json');
+          logger.error(e instanceof Error ? e : String(e));
+        }
       }
     }
   }

@@ -1,3 +1,7 @@
+## 9.1.13
+
+- Telemetry: Add metadata for react routers - [#32615](https://github.com/storybookjs/storybook/pull/32615), thanks @shilman!
+
 ## 9.1.12
 
 - Maintenance: Hotfix for missing nextjs dts files, thanks @ndelangen!

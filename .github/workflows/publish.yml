@@ -39,6 +39,7 @@ jobs:
     name: Publish normal version
     runs-on: ubuntu-latest
     if: |
+      github.repository_owner == 'storybookjs' &&
       github.event_name == 'push' &&
       (github.ref_name == 'latest-release' || github.ref_name == 'next-release') &&
       contains(github.event.head_commit.message, '[skip ci]') != true
@@ -221,6 +222,7 @@ jobs:
     name: Publish canary version
     runs-on: ubuntu-latest
     if: |
+      github.repository_owner == 'storybookjs' &&
       (
         github.event_name == 'workflow_dispatch' ||
         (github.event_name == 'pull_request' && endsWith(github.head_ref, 'with-canary-release'))

@@ -5,6 +5,7 @@ on:
 
 jobs:
   branch-checks:
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
       - id: get-branch
@@ -68,7 +69,7 @@ jobs:
       branch: ${{ needs.get-next-release-branch.outputs.branch }}
 
   next-release-branch-check:
-    if: ${{ always() }}
+    if: ${{ always() && github.repository_owner == 'storybookjs' }}
     needs: [branch-checks, get-next-release-branch]
     runs-on: ubuntu-latest
     steps:
@@ -87,7 +88,7 @@ jobs:
       check: ${{ env.is-next-release-branch }}
 
   request-create-frontpage-branch:
-    if: ${{ always() }}
+    if: ${{ always() && github.repository_owner == 'storybookjs' }}
     needs:
       [branch-checks, next-release-branch-check, create-next-release-branch]
     runs-on: ubuntu-latest

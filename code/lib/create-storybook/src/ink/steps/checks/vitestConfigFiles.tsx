@@ -59,6 +59,8 @@ const isMergeConfigExpression = (path: Declaration) =>
   isCallExpression(path) && path.callee.name === 'mergeConfig';
 
 const isSafeToExtendWorkspace = (path: CallExpression) =>
+  isCallExpression(path) &&
+  path.arguments.length > 0 &&
   isObjectExpression(path.arguments[0]) &&
   path.arguments[0]?.properties.every(
     (p) =>

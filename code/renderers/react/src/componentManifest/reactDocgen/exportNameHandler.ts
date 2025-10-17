@@ -62,8 +62,6 @@ function getLocalName(
   }
 
   // Named class/function declarations
-
-  // Named class/function declarations
   if (
     (componentDefinition.isClassDeclaration() || componentDefinition.isFunctionDeclaration()) &&
     componentDefinition.has('id')

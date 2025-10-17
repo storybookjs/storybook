@@ -35,41 +35,37 @@ export class DependencyInstallationCommand {
       return;
     }
 
-    try {
-      const { dependencies, devDependencies } = this.dependencyCollector.getAllPackages();
+    const { dependencies, devDependencies } = this.dependencyCollector.getAllPackages();
 
-      const task = prompt.taskLog({
-        id: 'adding-dependencies',
-        title: 'Adding dependencies to package.json',
-      });
+    const task = prompt.taskLog({
+      id: 'adding-dependencies',
+      title: 'Adding dependencies to package.json',
+    });
 
-      if (dependencies.length > 0) {
-        task.message('Adding dependencies:\n' + dependencies.map((dep) => `- ${dep}`).join('\n'));
+    if (dependencies.length > 0) {
+      task.message('Adding dependencies:\n' + dependencies.map((dep) => `- ${dep}`).join('\n'));
 
-        await packageManager.addDependencies(
-          { type: 'dependencies', skipInstall: true },
-          dependencies
-        );
-      }
+      await packageManager.addDependencies(
+        { type: 'dependencies', skipInstall: true },
+        dependencies
+      );
+    }
 
-      if (devDependencies.length > 0) {
-        task.message(
-          'Adding devDependencies:\n' + devDependencies.map((dep) => `- ${dep}`).join('\n')
-        );
+    if (devDependencies.length > 0) {
+      task.message(
+        'Adding devDependencies:\n' + devDependencies.map((dep) => `- ${dep}`).join('\n')
+      );
 
-        await packageManager.addDependencies(
-          { type: 'devDependencies', skipInstall: true },
-          devDependencies
-        );
-      }
+      await packageManager.addDependencies(
+        { type: 'devDependencies', skipInstall: true },
+        devDependencies
+      );
+    }
 
-      task.success('Dependencies added to package.json', { showLog: true });
+    task.success('Dependencies added to package.json', { showLog: true });
 
-      if (!skipInstall && this.dependencyCollector.hasPackages()) {
-        await packageManager.installDependencies();
-      }
-    } catch (err) {
-      throw err;
+    if (!skipInstall && this.dependencyCollector.hasPackages()) {
+      await packageManager.installDependencies();
     }
   }
 

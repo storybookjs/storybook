@@ -1,11 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import {
-  ProjectType,
-  detect,
-  installableProjectTypes,
-  isStorybookInstantiated,
-} from 'storybook/internal/cli';
+import { ProjectType, detect, isStorybookInstantiated } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { HandledError } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
@@ -18,7 +13,6 @@ vi.mock('storybook/internal/cli', async () => {
     ...actual,
     detect: vi.fn(),
     isStorybookInstantiated: vi.fn(),
-    installableProjectTypes: ['react', 'vue3', 'angular', 'nextjs'],
   };
 });
 
@@ -44,6 +38,7 @@ describe('ProjectDetectionCommand', () => {
     mockTask = {
       success: vi.fn(),
       error: vi.fn(),
+      message: vi.fn(),
     };
 
     vi.mocked(prompt.taskLog).mockReturnValue(mockTask);
@@ -59,7 +54,7 @@ describe('ProjectDetectionCommand', () => {
       const result = await command.execute(mockPackageManager, options);
 
       expect(result).toBe(ProjectType.REACT);
-      expect(mockTask.success).toHaveBeenCalledWith('Detected project type: REACT');
+      expect(mockTask.success).toHaveBeenCalledWith('Project type', { showLog: true });
       expect(detect).not.toHaveBeenCalled();
     });
 
@@ -71,7 +66,7 @@ describe('ProjectDetectionCommand', () => {
 
       expect(result).toBe(ProjectType.VUE3);
       expect(detect).toHaveBeenCalledWith(mockPackageManager, options);
-      expect(mockTask.success).toHaveBeenCalledWith('Detected project type: VUE3');
+      expect(mockTask.success).toHaveBeenCalledWith('Project type', { showLog: true });
     });
 
     it('should throw error for invalid provided type', async () => {

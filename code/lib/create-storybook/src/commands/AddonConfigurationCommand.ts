@@ -111,7 +111,7 @@ export class AddonConfigurationCommand {
       task.error('Failed to configure test addons');
     } else {
       // TODO: CHANGE BACK TO SUCCESS
-      task.success('Test addons configured successfully', { showLog: true });
+      task.success('Test addons configured successfully');
     }
 
     // Log results for each addon

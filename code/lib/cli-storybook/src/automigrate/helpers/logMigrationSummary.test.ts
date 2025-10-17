@@ -48,9 +48,7 @@ describe('logMigrationSummary', () => {
     });
 
     expect(loggerMock.logBox.mock.calls[0][1]).toEqual(
-      expect.objectContaining({
-        title: 'No migrations were applicable to your project',
-      })
+      'No migrations were applicable to your project'
     );
   });
 
@@ -69,11 +67,7 @@ describe('logMigrationSummary', () => {
       },
     });
 
-    expect(loggerMock.logBox.mock.calls[0][1]).toEqual(
-      expect.objectContaining({
-        title: 'Migration check ran with failures',
-      })
-    );
+    expect(loggerMock.logBox.mock.calls[0][1]).toEqual('Migration check ran with failures');
   });
 
   it('renders a summary with successful, manual, failed, and skipped migrations', () => {
@@ -82,11 +76,7 @@ describe('logMigrationSummary', () => {
       fixSummary,
     });
 
-    expect(loggerMock.logBox.mock.calls[0][1]).toEqual(
-      expect.objectContaining({
-        title: 'Migration check ran with failures',
-      })
-    );
+    expect(loggerMock.logBox.mock.calls[0][1]).toEqual('Migration check ran with failures');
     expect(normalizeLineBreaks(loggerMock.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
       "Successful migrations:
 
@@ -123,9 +113,7 @@ describe('logMigrationSummary', () => {
     });
 
     expect(loggerMock.logBox.mock.calls[0][1]).toEqual(
-      expect.objectContaining({
-        title: 'No migrations were applicable to your project',
-      })
+      'No migrations were applicable to your project'
     );
     expect(normalizeLineBreaks(loggerMock.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
       "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'
@@ -144,9 +132,7 @@ describe('logMigrationSummary', () => {
     });
 
     expect(loggerMock.logBox.mock.calls[0][1]).toEqual(
-      expect.objectContaining({
-        title: 'No migrations were applicable to your project',
-      })
+      'No migrations were applicable to your project'
     );
     expect(normalizeLineBreaks(loggerMock.logBox.mock.calls[0][0])).toMatchInlineSnapshot(`
       "If you'd like to run the migrations again, you can do so by running 'npx storybook automigrate'

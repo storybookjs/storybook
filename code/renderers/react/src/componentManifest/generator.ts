@@ -8,8 +8,8 @@ import { type ComponentManifestGenerator } from 'storybook/internal/types';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
-import { extractJSDocTags, removeTags } from './jsdoc-tags';
-import { getMatchingDocgen, parseWithReactDocgen } from './react-docgen';
+import { extractJSDocTags, removeTags } from './jsdocTags';
+import { getMatchingDocgen, parseWithReactDocgen } from './reactDocgen';
 import { groupBy } from './utils';
 
 export const componentManifestGenerator = async () => {

@@ -14,12 +14,12 @@ import {
 } from 'react-docgen';
 import * as TsconfigPaths from 'tsconfig-paths';
 
-import actualNameHandler from './docgen-handlers/actualNameHandler';
+import actualNameHandler from './reactDocgen/actualNameHandler';
 import {
   RESOLVE_EXTENSIONS,
   ReactDocgenResolveError,
   defaultLookupModule,
-} from './docgenResolver';
+} from './reactDocgen/docgenResolver';
 
 export type DocObj = Documentation & { actualName: string; definedInFile: string };
 

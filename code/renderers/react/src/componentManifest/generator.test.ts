@@ -112,6 +112,7 @@ beforeEach(() => {
     ['./src/stories/Button.tsx']: dedent`
         import React from 'react';
         export interface ButtonProps {
+          /** Description of primary */
           primary?: boolean;
           backgroundColor?: string;
           size?: 'small' | 'medium' | 'large';
@@ -229,6 +230,81 @@ test('componentManifestGenerator generates correct id, name, description and exa
         "import": undefined,
         "jsdocTag": {},
         "name": "Button",
+        "reactDocgen": {
+          "actualName": "Button",
+          "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Button.stories.ts",
+          "description": "Primary UI component for user interaction",
+          "displayName": "Button",
+          "methods": [],
+          "props": {
+            "backgroundColor": {
+              "description": "",
+              "required": false,
+              "tsType": {
+                "name": "string",
+              },
+            },
+            "label": {
+              "description": "",
+              "required": true,
+              "tsType": {
+                "name": "string",
+              },
+            },
+            "onClick": {
+              "description": "",
+              "required": false,
+              "tsType": {
+                "name": "signature",
+                "raw": "() => void",
+                "signature": {
+                  "arguments": [],
+                  "return": {
+                    "name": "void",
+                  },
+                },
+                "type": "function",
+              },
+            },
+            "primary": {
+              "defaultValue": {
+                "computed": false,
+                "value": "false",
+              },
+              "description": "Description of primary",
+              "required": false,
+              "tsType": {
+                "name": "boolean",
+              },
+            },
+            "size": {
+              "defaultValue": {
+                "computed": false,
+                "value": "'medium'",
+              },
+              "description": "",
+              "required": false,
+              "tsType": {
+                "elements": [
+                  {
+                    "name": "literal",
+                    "value": "'small'",
+                  },
+                  {
+                    "name": "literal",
+                    "value": "'medium'",
+                  },
+                  {
+                    "name": "literal",
+                    "value": "'large'",
+                  },
+                ],
+                "name": "union",
+                "raw": "'small' | 'medium' | 'large'",
+              },
+            },
+          },
+        },
         "summary": undefined,
       },
       "example-header": {
@@ -258,6 +334,67 @@ test('componentManifestGenerator generates correct id, name, description and exa
           ],
         },
         "name": "Header",
+        "reactDocgen": {
+          "actualName": "Header",
+          "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Header.stories.ts",
+          "description": "",
+          "displayName": "Header",
+          "methods": [],
+          "props": {
+            "onCreateAccount": {
+              "description": "",
+              "required": false,
+              "tsType": {
+                "name": "signature",
+                "raw": "() => void",
+                "signature": {
+                  "arguments": [],
+                  "return": {
+                    "name": "void",
+                  },
+                },
+                "type": "function",
+              },
+            },
+            "onLogin": {
+              "description": "",
+              "required": false,
+              "tsType": {
+                "name": "signature",
+                "raw": "() => void",
+                "signature": {
+                  "arguments": [],
+                  "return": {
+                    "name": "void",
+                  },
+                },
+                "type": "function",
+              },
+            },
+            "onLogout": {
+              "description": "",
+              "required": false,
+              "tsType": {
+                "name": "signature",
+                "raw": "() => void",
+                "signature": {
+                  "arguments": [],
+                  "return": {
+                    "name": "void",
+                  },
+                },
+                "type": "function",
+              },
+            },
+            "user": {
+              "description": "",
+              "required": false,
+              "tsType": {
+                "name": "User",
+              },
+            },
+          },
+        },
         "summary": "Component summary",
       },
     }

@@ -164,12 +164,7 @@ export async function storybookDevServer(options: Options) {
     });
   }
   // Now the preview has successfully started, we can count this as a 'dev' event.
-  doTelemetry(
-    app,
-    core,
-    initializedStoryIndexGenerator as Promise<StoryIndexGenerator>,
-    options
-  );
+  doTelemetry(app, core, initializedStoryIndexGenerator as Promise<StoryIndexGenerator>, options);
 
   async function cancelTelemetry() {
     const payload = { eventType: 'dev' };

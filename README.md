@@ -124,7 +124,7 @@ For additional help, share your issue in [the repo's GitHub Discussions](https:/
 | [events](https://github.com/storybookjs/addon-events)                     | Interactively fire events to components that respond to EventEmitter       |
 | [google-analytics](https://github.com/storybookjs/addon-google-analytics) | Reports google analytics on stories                                        |
 | [graphql](https://github.com/storybookjs/addon-graphql)                   | Query a GraphQL server within Storybook stories                            |
-| [jest](code/addons/jest/)                                                 | View the results of components' unit tests in Storybook                    |
+| [jest](https://github.com/storybookjs/addon-jest)                         | View the results of components' unit tests in Storybook                    |
 | [links](code/addons/links/)                                               | Create links between stories                                               |
 | [measure](code/core/src/measure/)                                         | Visually inspect the layout and box model within the Storybook UI          |
 | [outline](code/core/src/outline/)                                         | Visually debug the CSS layout and alignment within the Storybook UI        |

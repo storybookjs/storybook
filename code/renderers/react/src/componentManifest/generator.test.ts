@@ -7,7 +7,7 @@ import { dedent } from 'ts-dedent';
 
 import { componentManifestGenerator } from './generator';
 
-vi.mock('node:fs/promises');
+vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
 
 // Use the provided indexJson from this file
 const indexJson = {
@@ -232,7 +232,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
         "name": "Button",
         "reactDocgen": {
           "actualName": "Button",
-          "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Button.stories.ts",
+          "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Button.tsx",
           "description": "Primary UI component for user interaction",
           "displayName": "Button",
           "exportName": "Button",
@@ -337,7 +337,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
         "name": "Header",
         "reactDocgen": {
           "actualName": "",
-          "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Header.stories.ts",
+          "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Header.tsx",
           "description": "",
           "exportName": "default",
           "methods": [],

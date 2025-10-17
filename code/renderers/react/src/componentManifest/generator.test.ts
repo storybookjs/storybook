@@ -217,198 +217,201 @@ test('componentManifestGenerator generates correct id, name, description and exa
 
   expect(manifest).toMatchInlineSnapshot(`
     {
-      "example-button": {
-        "description": "Primary UI component for user interaction",
-        "examples": [
-          {
-            "name": "Primary",
-            "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button"></Button>;",
-          },
-          {
-            "name": "Secondary",
-            "snippet": "const Secondary = () => <Button onClick={fn()} label="Button"></Button>;",
-          },
-          {
-            "name": "Large",
-            "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button"></Button>;",
-          },
-          {
-            "name": "Small",
-            "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button"></Button>;",
-          },
-        ],
-        "id": "example-button",
-        "import": undefined,
-        "jsDocTags": {},
-        "name": "Button",
-        "reactDocgen": {
-          "actualName": "Button",
-          "definedInFile": "/app/src/stories/Button.tsx",
+      "components": {
+        "example-button": {
           "description": "Primary UI component for user interaction",
-          "displayName": "Button",
-          "exportName": "Button",
-          "methods": [],
-          "props": {
-            "backgroundColor": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "string",
-              },
+          "examples": [
+            {
+              "name": "Primary",
+              "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button"></Button>;",
             },
-            "label": {
-              "description": "",
-              "required": true,
-              "tsType": {
-                "name": "string",
-              },
+            {
+              "name": "Secondary",
+              "snippet": "const Secondary = () => <Button onClick={fn()} label="Button"></Button>;",
             },
-            "onClick": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
-                  },
+            {
+              "name": "Large",
+              "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button"></Button>;",
+            },
+            {
+              "name": "Small",
+              "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button"></Button>;",
+            },
+          ],
+          "id": "example-button",
+          "import": undefined,
+          "jsDocTags": {},
+          "name": "Button",
+          "reactDocgen": {
+            "actualName": "Button",
+            "definedInFile": "/app/src/stories/Button.tsx",
+            "description": "Primary UI component for user interaction",
+            "displayName": "Button",
+            "exportName": "Button",
+            "methods": [],
+            "props": {
+              "backgroundColor": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "string",
                 },
-                "type": "function",
               },
-            },
-            "primary": {
-              "defaultValue": {
-                "computed": false,
-                "value": "false",
+              "label": {
+                "description": "",
+                "required": true,
+                "tsType": {
+                  "name": "string",
+                },
               },
-              "description": "Description of primary",
-              "required": false,
-              "tsType": {
-                "name": "boolean",
-              },
-            },
-            "size": {
-              "defaultValue": {
-                "computed": false,
-                "value": "'medium'",
-              },
-              "description": "",
-              "required": false,
-              "tsType": {
-                "elements": [
-                  {
-                    "name": "literal",
-                    "value": "'small'",
+              "onClick": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
                   },
-                  {
-                    "name": "literal",
-                    "value": "'medium'",
-                  },
-                  {
-                    "name": "literal",
-                    "value": "'large'",
-                  },
-                ],
-                "name": "union",
-                "raw": "'small' | 'medium' | 'large'",
+                  "type": "function",
+                },
+              },
+              "primary": {
+                "defaultValue": {
+                  "computed": false,
+                  "value": "false",
+                },
+                "description": "Description of primary",
+                "required": false,
+                "tsType": {
+                  "name": "boolean",
+                },
+              },
+              "size": {
+                "defaultValue": {
+                  "computed": false,
+                  "value": "'medium'",
+                },
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "elements": [
+                    {
+                      "name": "literal",
+                      "value": "'small'",
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'medium'",
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'large'",
+                    },
+                  ],
+                  "name": "union",
+                  "raw": "'small' | 'medium' | 'large'",
+                },
               },
             },
           },
+          "summary": undefined,
         },
-        "summary": undefined,
-      },
-      "example-header": {
-        "description": "Description from meta and very long. ",
-        "examples": [
-          {
-            "name": "LoggedIn",
-            "snippet": "const LoggedIn = () => <Header
+        "example-header": {
+          "description": "Description from meta and very long. ",
+          "examples": [
+            {
+              "name": "LoggedIn",
+              "snippet": "const LoggedIn = () => <Header
         onLogin={fn()}
         onLogout={fn()}
         onCreateAccount={fn()}
         user={{ name: 'Jane Doe' }}></Header>;",
-          },
-          {
-            "name": "LoggedOut",
-            "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()}></Header>;",
-          },
-        ],
-        "id": "example-header",
-        "import": "import { Header } from '@design-system/components/Header';",
-        "jsDocTags": {
-          "import": [
-            "import { Header } from '@design-system/components/Header';",
+            },
+            {
+              "name": "LoggedOut",
+              "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()}></Header>;",
+            },
           ],
-          "summary": [
-            "Component summary",
-          ],
-        },
-        "name": "Header",
-        "reactDocgen": {
-          "actualName": "",
-          "definedInFile": "/app/src/stories/Header.tsx",
-          "description": "",
-          "exportName": "default",
-          "methods": [],
-          "props": {
-            "onCreateAccount": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
+          "id": "example-header",
+          "import": "import { Header } from '@design-system/components/Header';",
+          "jsDocTags": {
+            "import": [
+              "import { Header } from '@design-system/components/Header';",
+            ],
+            "summary": [
+              "Component summary",
+            ],
+          },
+          "name": "Header",
+          "reactDocgen": {
+            "actualName": "",
+            "definedInFile": "/app/src/stories/Header.tsx",
+            "description": "",
+            "exportName": "default",
+            "methods": [],
+            "props": {
+              "onCreateAccount": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
                   },
+                  "type": "function",
                 },
-                "type": "function",
               },
-            },
-            "onLogin": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
+              "onLogin": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
                   },
+                  "type": "function",
                 },
-                "type": "function",
               },
-            },
-            "onLogout": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "signature",
-                "raw": "() => void",
-                "signature": {
-                  "arguments": [],
-                  "return": {
-                    "name": "void",
+              "onLogout": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "signature",
+                  "raw": "() => void",
+                  "signature": {
+                    "arguments": [],
+                    "return": {
+                      "name": "void",
+                    },
                   },
+                  "type": "function",
                 },
-                "type": "function",
               },
-            },
-            "user": {
-              "description": "",
-              "required": false,
-              "tsType": {
-                "name": "User",
+              "user": {
+                "description": "",
+                "required": false,
+                "tsType": {
+                  "name": "User",
+                },
               },
             },
           },
+          "summary": "Component summary",
         },
-        "summary": "Component summary",
       },
+      "v": 0,
     }
   `);
 });

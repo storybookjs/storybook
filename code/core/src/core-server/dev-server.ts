@@ -167,9 +167,7 @@ export async function storybookDevServer(options: Options) {
   doTelemetry(
     app,
     core,
-    initializedStoryIndexGenerator as unknown as Promise<
-      import('storybook/internal/core-server').StoryIndexGenerator
-    >,
+    initializedStoryIndexGenerator as Promise<StoryIndexGenerator>,
     options
   );
 

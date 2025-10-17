@@ -1,0 +1,21 @@
+{
+  "extends": ["recommended", "react"],
+  "rules": {
+    "typescript/no-explicit-any": "warn",
+    "typescript/no-unused-vars": "warn",
+    "typescript/ban-ts-comment": "error",
+    "no-unused-vars": "off",
+    "no-use-before-define": "off",
+    "react/no-unescaped-entities": "off",
+    "react/react-in-jsx-scope": "off",
+    "no-console": "warn",
+    "no-debugger": "error",
+    "prefer-const": "error",
+    "no-var": "error",
+    "eqeqeq": "error"
+  },
+  "env": {
+    "browser": true,
+    "node": true
+  }
+}

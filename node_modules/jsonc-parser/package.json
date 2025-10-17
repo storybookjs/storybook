@@ -1,0 +1,37 @@
+{
+  "name": "jsonc-parser",
+  "version": "3.3.1",
+  "description": "Scanner and parser for JSON with comments.",
+  "main": "./lib/umd/main.js",
+  "typings": "./lib/umd/main.d.ts",
+  "module": "./lib/esm/main.js",
+  "author": "Microsoft Corporation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/microsoft/node-jsonc-parser"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/microsoft/node-jsonc-parser/issues"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.7",
+    "@types/node": "^18.x",
+    "@typescript-eslint/eslint-plugin": "^7.13.1",
+    "@typescript-eslint/parser": "^7.13.1",
+    "eslint": "^8.57.0",
+    "mocha": "^10.4.0",
+    "rimraf": "^5.0.7",
+    "typescript": "^5.4.2"
+  },
+  "scripts": {
+    "prepack": "npm run clean && npm run compile-esm && npm run test && npm run remove-sourcemap-refs",
+    "compile": "tsc -p ./src && npm run lint",
+    "compile-esm": "tsc -p ./src/tsconfig.esm.json",
+    "remove-sourcemap-refs": "node ./build/remove-sourcemap-refs.js",
+    "clean": "rimraf lib",
+    "watch": "tsc -w -p ./src",
+    "test": "npm run compile && mocha ./lib/umd/test",
+    "lint": "eslint src/**/*.ts"
+  }
+}

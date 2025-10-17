@@ -243,7 +243,7 @@ export function getCodeSnippet(
 const keyOf = (p: t.ObjectProperty): string | null =>
   t.isIdentifier(p.key) ? p.key.name : t.isStringLiteral(p.key) ? p.key.value : null;
 
-const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_.:-]*$/.test(n);
+const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_:-]*$/.test(n);
 
 const argsRecordFromObjectPath = (
   objPath?: NodePath<t.ObjectExpression> | null

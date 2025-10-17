@@ -54,15 +54,12 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Step 3: Detect project type
   const projectType = await executeProjectDetection(packageManager, options);
 
-  // Step 4: Track telemetry with complete context
-  await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
-
   // Handle React Native special case (exit early)
   if ([ProjectType.REACT_NATIVE, ProjectType.REACT_NATIVE_AND_RNW].includes(projectType)) {
     return handleReactNativeInstallation(projectType, packageManager);
   }
 
-  // Step 5: Execute generator with dependency collector
+  // Step 4: Execute generator with dependency collector
   const dependencyCollector = new DependencyCollector();
   const { storybookCommand, generatorResult } = await executeGeneratorExecution(
     projectType,
@@ -72,7 +69,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     dependencyCollector
   );
 
-  // Step 6: Install all dependencies in a single operation
+  // Step 5: Install all dependencies in a single operation
   await executeDependencyInstallation({
     packageManager,
     dependencyCollector,
@@ -80,7 +77,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     projectType,
   });
 
-  // Step 7: Configure addons (run postinstall scripts for configuration only)
+  // Step 6: Configure addons (run postinstall scripts for configuration only)
   await executeAddonConfiguration({
     packageManager,
     dependencyCollector,
@@ -89,12 +86,15 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
   });
 
-  // Step 8: Print final summary
+  // Step 7: Print final summary
   await executeFinalization({
     projectType,
     selectedFeatures,
     storybookCommand,
   });
+
+  // Step 8: Track telemetry
+  await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
 
   return {
     shouldRunDev: !!options.dev && !options.skipInstall,
@@ -171,7 +171,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
       } finally {
         const errors = ErrorCollectionService.getErrors();
         for (const error of errors) {
-          await sendTelemetryError(error, 'init', { cliOptions: options });
+          await sendTelemetryError(error, 'init', { cliOptions: options }, false);
         }
       }
     }

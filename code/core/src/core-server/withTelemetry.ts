@@ -87,7 +87,8 @@ export async function getErrorLevel({
 export async function sendTelemetryError(
   _error: unknown,
   eventType: EventType,
-  options: TelemetryOptions
+  options: TelemetryOptions,
+  blocking = true
 ) {
   try {
     let errorLevel = 'error';
@@ -116,6 +117,7 @@ export async function sendTelemetryError(
           name,
           category,
           eventType,
+          blocking,
           precedingUpgrade,
           error: errorLevel === 'full' ? error : undefined,
           errorHash,

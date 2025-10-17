@@ -10,4 +10,3 @@ export const groupBy = <K extends PropertyKey, T>(
     return acc;
   }, {});
 };
-

@@ -16,9 +16,9 @@ export const componentManifestGenerator = async () => {
   return (async (storyIndexGenerator) => {
     const index = await storyIndexGenerator.getIndex();
     const groupByComponentId = groupBy(
-      Object.values(index.entries).filter(
-        (entry) => entry.type === 'story' && entry.subtype === 'story' && entry.componentPath
-      ),
+      Object.values(index.entries)
+        .filter((entry) => entry.type === 'story')
+        .filter((entry) => entry.subtype === 'story' && entry.componentPath),
       (it) => it.id.split('--')[0]
     );
     const singleEntryPerComponent = Object.values(groupByComponentId).flatMap((group) =>

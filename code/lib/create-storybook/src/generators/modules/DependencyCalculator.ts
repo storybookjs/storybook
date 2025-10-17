@@ -1,4 +1,3 @@
-import type { Builder } from 'storybook/internal/cli';
 import { configureEslintPlugin, extractEslintInfo } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getPackageDetails, isCI } from 'storybook/internal/common';
@@ -76,6 +75,3 @@ export class DependencyCalculator {
     ].filter(Boolean);
   }
 }
-
-
-

@@ -46,6 +46,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
 
   const extraPackages = [];
   extraPackages.push('webpack');
+  // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
   // Miscellaneous dependency to add to be sure Storybook + CRA is working fine with Yarn PnP mode
   extraPackages.push('prop-types');
 

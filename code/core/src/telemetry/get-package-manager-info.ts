@@ -11,6 +11,7 @@ export const getPackageManagerInfo = async () => {
     return undefined;
   }
 
+  // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
   let nodeLinker: 'node_modules' | 'pnp' | 'pnpm' | 'isolated' | 'hoisted' = 'node_modules';
 
   if (packageManagerType.name === 'yarn') {

@@ -26,7 +26,7 @@ import {
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
+import { deprecate, logger } from 'storybook/internal/node-logger';
 import { NxProjectDetectedError } from 'storybook/internal/server-errors';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -83,7 +83,17 @@ const installStorybook = async <Project extends ProjectType>(
   };
 
   const language = await detectLanguage(packageManager as any);
+
+  // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
   const pnp = await detectPnp();
+  if (pnp) {
+    deprecate(dedent`
+      As of Storybook 10.0, PnP is deprecated.
+      If you are using PnP, you can continue to use Storybook 10.0, but we recommend migrating to a different package manager or linker-mode.
+
+      In future versions, PnP compatibility will be removed.
+    `);
+  }
 
   const generatorOptions: GeneratorOptions = {
     language,

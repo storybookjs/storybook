@@ -287,8 +287,14 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
 
   renderKeyInput = () => {
     const { shortcutKeys, addonsShortcutLabels } = this.state;
-    // @ts-expect-error (non strict)
-    const arr = Object.entries(shortcutKeys).map(([feature, { shortcut }]: [Feature, any]) => (
+    // Filter out keyboard shortcuts from localStorage that no longer exist in code
+    const availableShortcuts = (Object.entries(shortcutKeys) as [Feature, any][]).filter(
+      ([feature]: [Feature, any]) =>
+        shortcutLabels[feature] !== undefined ||
+        (addonsShortcutLabels && addonsShortcutLabels[feature])
+    );
+
+    const arr = availableShortcuts.map(([feature, { shortcut }]: [Feature, any]) => (
       <Row key={feature}>
         {/* @ts-expect-error (non strict) */}
         <Description>{shortcutLabels[feature] || addonsShortcutLabels[feature]}</Description>

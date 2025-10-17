@@ -92,7 +92,7 @@ export const sandbox: Task = {
     options.addon.push('@storybook/addon-a11y');
 
     if (shouldAddVitestIntegration) {
-      extraDeps.push('happy-dom', 'vitest', 'playwright', '@vitest/browser');
+      extraDeps.push('happy-dom');
 
       if (details.template.expected.framework.includes('nextjs')) {
         extraDeps.push('@storybook/nextjs-vite', 'jsdom');

@@ -224,7 +224,7 @@ function defineStory<
       return test as unknown as void;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
-      return defineStory(
+      const extendedStory = defineStory(
         {
           ...this.input,
           ...input,
@@ -252,6 +252,14 @@ function defineStory<
         },
         this.meta
       );
+
+      // @ts-expect-error For React renderer, ensure Component property is properly set on extended story
+      if (this.Component) {
+        // @ts-expect-error same as above
+        extendedStory.Component = extendedStory.__compose();
+      }
+
+      return extendedStory;
     },
   };
 }

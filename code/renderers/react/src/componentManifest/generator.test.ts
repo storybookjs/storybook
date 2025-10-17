@@ -4,10 +4,13 @@ import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
+import * as TsconfigPaths from 'tsconfig-paths';
 
 import { componentManifestGenerator } from './generator';
 
+vi.mock('tsconfig-paths', { spy: true });
 vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
+vi.mock('node:fs', async () => (await import('memfs')).fs);
 
 // Use the provided indexJson from this file
 const indexJson = {
@@ -92,8 +95,14 @@ const indexJson = {
 };
 
 beforeEach(() => {
-  vol.fromJSON({
-    ['./src/stories/Button.stories.ts']: dedent`
+  vi.mocked(TsconfigPaths.loadConfig).mockImplementation(() => ({
+    resultType: null!,
+    message: null!,
+  }));
+  vi.spyOn(process, 'cwd').mockReturnValue('/app');
+  vol.fromJSON(
+    {
+      ['./src/stories/Button.stories.ts']: dedent`
         import type { Meta, StoryObj } from '@storybook/react';
         import { fn } from 'storybook/test';
         import { Button } from './Button';
@@ -109,7 +118,7 @@ beforeEach(() => {
         export const Secondary: Story = { args: { label: 'Button' } };
         export const Large: Story = { args: { size: 'large', label: 'Button' } };
         export const Small: Story = { args: { size: 'small', label: 'Button' } };`,
-    ['./src/stories/Button.tsx']: dedent`
+      ['./src/stories/Button.tsx']: dedent`
         import React from 'react';
         export interface ButtonProps {
           /** Description of primary */
@@ -140,7 +149,7 @@ beforeEach(() => {
             </button>
           );
         };`,
-    ['./src/stories/Header.stories.ts']: dedent`
+      ['./src/stories/Header.stories.ts']: dedent`
         import type { Meta, StoryObj } from '@storybook/react';
         import { fn } from 'storybook/test';
         import Header from './Header';
@@ -163,7 +172,7 @@ beforeEach(() => {
         export const LoggedIn: Story = { args: { user: { name: 'Jane Doe' } } };
         export const LoggedOut: Story = {};
         `,
-    ['./src/stories/Header.tsx']: dedent`
+      ['./src/stories/Header.tsx']: dedent`
         import { Button } from './Button';
         
         export interface HeaderProps {
@@ -194,7 +203,9 @@ beforeEach(() => {
             </div>
           </header>
       );`,
-  });
+    },
+    '/app'
+  );
   return () => vol.reset();
 });
 
@@ -232,7 +243,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
         "name": "Button",
         "reactDocgen": {
           "actualName": "Button",
-          "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Button.tsx",
+          "definedInFile": "/app/src/stories/Button.tsx",
           "description": "Primary UI component for user interaction",
           "displayName": "Button",
           "exportName": "Button",
@@ -337,7 +348,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
         "name": "Header",
         "reactDocgen": {
           "actualName": "",
-          "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Header.tsx",
+          "definedInFile": "/app/src/stories/Header.tsx",
           "description": "",
           "exportName": "default",
           "methods": [],

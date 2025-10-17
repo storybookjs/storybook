@@ -147,6 +147,7 @@
       "./src/vite-plugin/index.ts",
       "./src/preset.ts",
       "./src/node/index.ts",
+      "./src/config/preview.ts",
       "./src/preview.tsx",
       "./src/export-mocks/cache/index.ts",
       "./src/export-mocks/headers/index.ts",

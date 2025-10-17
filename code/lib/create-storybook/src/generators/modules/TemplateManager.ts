@@ -80,7 +80,7 @@ export class TemplateManager {
     framework: string | undefined,
     frameworkPackage: string | undefined,
     rendererId: SupportedRenderers
-  ): string {
+  ): SupportedFrameworks | SupportedRenderers {
     const finalFramework = framework || frameworkPackages[frameworkPackage!] || frameworkPackage;
     const templateLocation = this.hasFrameworkTemplates(finalFramework)
       ? finalFramework
@@ -90,6 +90,6 @@ export class TemplateManager {
       throw new Error(`Could not find template location for ${framework} or ${rendererId}`);
     }
 
-    return templateLocation;
+    return templateLocation as SupportedFrameworks | SupportedRenderers;
   }
 }

@@ -71,6 +71,7 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
     rendererPackage: '@storybook/react',
     builderPackage: '@storybook/builder-webpack5',
     frameworkPackage: '@storybook/react-native',
+    configDir: storybookConfigFolder,
   };
 };
 

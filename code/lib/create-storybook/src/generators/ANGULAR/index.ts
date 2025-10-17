@@ -110,7 +110,6 @@ const generator: Generator = async (packageManager, npmOptions, options, command
 
   return {
     projectName: angularProjectName,
-    configDir: storybookFolder,
     ...generatorResult,
   };
 };

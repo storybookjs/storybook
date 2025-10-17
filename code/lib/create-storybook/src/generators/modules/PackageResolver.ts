@@ -72,7 +72,7 @@ export class PackageResolver {
     return (
       externalFramework.frameworks?.find((item) =>
         item.match(new RegExp(`-${storybookBuilder}`))
-      ) ?? externalFramework.packageName
+      ) ?? externalFramework.packageName!
     );
   }
 
@@ -81,7 +81,7 @@ export class PackageResolver {
     const externalFramework = this.getExternalFramework(framework);
 
     if (externalFramework !== undefined) {
-      return externalFramework.renderer || externalFramework.packageName;
+      return externalFramework.renderer || externalFramework.packageName!;
     }
 
     return `@storybook/${renderer}`;

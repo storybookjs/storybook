@@ -3,18 +3,31 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
+import { DependencyCollector } from '../dependency-collector';
 import { AddonConfigurationCommand } from './AddonConfigurationCommand';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
+
+vi.mock('../../../cli-storybook/src/postinstallAddon', () => ({
+  postinstallAddon: vi.fn(),
+}));
 
 describe('AddonConfigurationCommand', () => {
   let command: AddonConfigurationCommand;
   let mockPackageManager: JsPackageManager;
   let mockTask: any;
   let mockPostinstallAddon: any;
+  let dependencyCollector: DependencyCollector;
+  let mockGeneratorResult: any;
 
-  beforeEach(() => {
-    command = new AddonConfigurationCommand();
+  beforeEach(async () => {
+    const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
+    mockPostinstallAddon = vi.mocked(postinstallAddon);
+    mockPostinstallAddon.mockResolvedValue(undefined);
+
+    dependencyCollector = new DependencyCollector();
+    command = new AddonConfigurationCommand(dependencyCollector);
+
     mockPackageManager = {
       type: 'npm',
       getVersionedPackages: vi.fn(),
@@ -23,9 +36,12 @@ describe('AddonConfigurationCommand', () => {
     mockTask = {
       success: vi.fn(),
       error: vi.fn(),
+      message: vi.fn(),
     };
 
-    mockPostinstallAddon = vi.fn().mockResolvedValue(undefined);
+    mockGeneratorResult = {
+      configDir: '.storybook',
+    };
 
     vi.mocked(prompt.taskLog).mockReturnValue(mockTask);
     vi.mocked(mockPackageManager.getVersionedPackages).mockResolvedValue([
@@ -41,8 +57,14 @@ describe('AddonConfigurationCommand', () => {
       const selectedFeatures = new Set(['docs'] as const);
       const options = {} as any;
 
-      await command.execute(mockPackageManager, selectedFeatures, options);
+      const result = await command.execute({
+        packageManager: mockPackageManager,
+        selectedFeatures,
+        generatorResult: mockGeneratorResult,
+        options,
+      });
 
+      expect(result.status).toBe('success');
       expect(prompt.taskLog).not.toHaveBeenCalled();
       expect(mockPackageManager.getVersionedPackages).not.toHaveBeenCalled();
     });
@@ -51,13 +73,14 @@ describe('AddonConfigurationCommand', () => {
       const selectedFeatures = new Set(['test'] as const);
       const options = { yes: true } as any;
 
-      // Mock the dynamic import
-      vi.doMock('../../cli-storybook/src/postinstallAddon', () => ({
-        postinstallAddon: mockPostinstallAddon,
-      }));
+      const result = await command.execute({
+        packageManager: mockPackageManager,
+        selectedFeatures,
+        generatorResult: mockGeneratorResult,
+        options,
+      });
 
-      await command.execute(mockPackageManager, selectedFeatures, options);
-
+      expect(result.status).toBe('success');
       expect(prompt.taskLog).toHaveBeenCalledWith({
         id: 'configure-addons',
         title: 'Configuring test addons...',
@@ -68,11 +91,12 @@ describe('AddonConfigurationCommand', () => {
       const selectedFeatures = new Set(['test'] as const);
       const options = {} as any;
 
-      vi.doMock('../../cli-storybook/src/postinstallAddon', () => ({
-        postinstallAddon: mockPostinstallAddon,
-      }));
-
-      await command.execute(mockPackageManager, selectedFeatures, options);
+      await command.execute({
+        packageManager: mockPackageManager,
+        selectedFeatures,
+        generatorResult: mockGeneratorResult,
+        options,
+      });
 
       expect(mockPackageManager.getVersionedPackages).toHaveBeenCalledWith([
         '@storybook/addon-a11y',
@@ -85,15 +109,16 @@ describe('AddonConfigurationCommand', () => {
       const options = {} as any;
       const error = new Error('Configuration failed');
 
-      vi.doMock('../../cli-storybook/src/postinstallAddon', () => ({
-        postinstallAddon: vi.fn().mockRejectedValue(error),
-      }));
+      mockPostinstallAddon.mockRejectedValue(error);
 
-      // Should not throw
-      await expect(
-        command.execute(mockPackageManager, selectedFeatures, options)
-      ).resolves.not.toThrow();
+      const result = await command.execute({
+        packageManager: mockPackageManager,
+        selectedFeatures,
+        generatorResult: mockGeneratorResult,
+        options,
+      });
 
+      expect(result.status).toBe('failed');
       expect(mockTask.error).toHaveBeenCalledWith(
         expect.stringContaining('Failed to configure test addons')
       );
@@ -109,19 +134,37 @@ describe('AddonConfigurationCommand', () => {
         '@storybook/addon-vitest@8.0.0',
       ]);
 
-      await command.execute(mockPackageManager, selectedFeatures, options);
+      const result = await command.execute({
+        packageManager: mockPackageManager,
+        selectedFeatures,
+        generatorResult: mockGeneratorResult,
+        options,
+      });
 
+      expect(result.status).toBe('success');
       expect(mockPackageManager.getVersionedPackages).toHaveBeenCalled();
     });
 
     it('should work with different package managers', async () => {
-      mockPackageManager.type = 'yarn';
+      const yarnPackageManager = {
+        type: 'yarn',
+        getVersionedPackages: vi
+          .fn()
+          .mockResolvedValue(['@storybook/addon-a11y@8.0.0', '@storybook/addon-vitest@8.0.0']),
+      } as any;
+
       const selectedFeatures = new Set(['test'] as const);
       const options = { yes: false } as any;
 
-      await command.execute(mockPackageManager, selectedFeatures, options);
+      const result = await command.execute({
+        packageManager: yarnPackageManager,
+        selectedFeatures,
+        generatorResult: mockGeneratorResult,
+        options,
+      });
 
-      expect(mockPackageManager.getVersionedPackages).toHaveBeenCalled();
+      expect(result.status).toBe('success');
+      expect(yarnPackageManager.getVersionedPackages).toHaveBeenCalled();
     });
   });
 });

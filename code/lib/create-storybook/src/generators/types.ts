@@ -44,10 +44,10 @@ export type Generator<T = Record<string, any>> = (
     rendererPackage: string;
     builderPackage: string;
     frameworkPackage: string;
-    mainConfigCSFFile: ConfigFile;
-    mainConfig: StorybookConfig;
     configDir: string;
-    previewConfigPath: string;
+    mainConfig?: StorybookConfig;
+    mainConfigCSFFile?: ConfigFile;
+    previewConfigPath?: string;
   } & T
 >;
 
@@ -61,6 +61,7 @@ export type CommandOptions = {
   force?: any;
   html?: boolean;
   skipInstall?: boolean;
+  language?: SupportedLanguage;
   parser?: string;
   // Automatically answer yes to prompts
   yes?: boolean;

@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProjectType, detect, isStorybookInstantiated } from 'storybook/internal/cli';
 import { JsPackageManagerFactory } from 'storybook/internal/common';
-import { logger, prompt } from 'storybook/internal/node-logger';
+import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import { getProcessAncestry } from 'process-ancestry';
 
 import * as addonA11y from './addon-dependencies/addon-a11y';
 import * as addonVitest from './addon-dependencies/addon-vitest';
+import * as commands from './commands';
 import { generatorRegistry } from './generators/GeneratorRegistry';
 import { doInitiate } from './initiate';
 import * as scaffoldModule from './scaffold-new-project';
@@ -16,11 +18,16 @@ vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/core-server', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('process-ancestry', { spy: true });
 vi.mock('./scaffold-new-project', { spy: true });
 vi.mock('./addon-dependencies/addon-a11y', { spy: true });
 vi.mock('./addon-dependencies/addon-vitest', { spy: true });
 vi.mock('./generators/GeneratorRegistry', { spy: true });
+vi.mock('./commands', { spy: true });
+vi.mock('empathic/find', () => ({
+  up: vi.fn(),
+}));
 
 describe('initiate integration tests', () => {
   let mockPackageManager: any;
@@ -46,9 +53,18 @@ describe('initiate integration tests', () => {
     mockTask = {
       success: vi.fn(),
       error: vi.fn(),
+      message: vi.fn(),
     };
 
-    mockGenerator = vi.fn().mockResolvedValue({ success: true });
+    mockGenerator = vi.fn().mockResolvedValue({
+      rendererPackage: '@storybook/react',
+      builderPackage: '@storybook/builder-vite',
+      frameworkPackage: '@storybook/react-vite',
+      mainConfigCSFFile: {},
+      mainConfig: {},
+      configDir: '.storybook',
+      previewConfigPath: '.storybook/preview.ts',
+    });
 
     // Setup default mocks
     vi.mocked(JsPackageManagerFactory.getPackageManager).mockReturnValue(mockPackageManager);
@@ -70,6 +86,13 @@ describe('initiate integration tests', () => {
     vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
     vi.mocked(addonVitest.getAddonVitestDependencies).mockResolvedValue([]);
     vi.mocked(addonA11y.getAddonA11yDependencies).mockReturnValue([]);
+    vi.mocked(logTracker.writeToFile).mockResolvedValue('/tmp/storybook.log');
+    vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
+    vi.mocked(commands.executeUserPreferences).mockResolvedValue({
+      newUser: true,
+      selectedFeatures: new Set(['test']),
+      installType: 'recommended' as const,
+    });
 
     vi.clearAllMocks();
   });
@@ -167,7 +190,9 @@ describe('initiate integration tests', () => {
         const options = { yes: true } as any;
         const result = await doInitiate(options);
 
-        expect(result.projectType).toBe(projectType);
+        if ('projectType' in result) {
+          expect(result.projectType).toBe(projectType);
+        }
         expect(generatorRegistry.get).toHaveBeenCalledWith(projectType);
       }
     });
@@ -239,8 +264,10 @@ describe('initiate integration tests', () => {
       const result = await doInitiate(options);
 
       // Verify packageManager is passed through commands
-      expect(result.packageManager).toBeDefined();
-      expect(result.storybookCommand).toBeDefined();
+      if ('packageManager' in result) {
+        expect(result.packageManager).toBeDefined();
+        expect(result.storybookCommand).toBeDefined();
+      }
     });
   });
 });

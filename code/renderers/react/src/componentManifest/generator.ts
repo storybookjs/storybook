@@ -37,7 +37,7 @@ export const componentManifestGenerator = async () => {
           code: componentFile,
           filename: path.join(process.cwd(), entry.importPath),
         });
-        const docgen = getMatchingDocgen(docgens, componentName);
+        const docgen = getMatchingDocgen(docgens, csf);
 
         const metaDescription = extractDescription(csf._metaStatement);
         const description = metaDescription || docgen?.description;

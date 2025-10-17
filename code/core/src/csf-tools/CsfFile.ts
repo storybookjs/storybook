@@ -283,6 +283,8 @@ export class CsfFile {
 
   _rawComponentPath?: string;
 
+  _componentImportSpecifier?: t.ImportSpecifier | t.ImportDefaultSpecifier;
+
   _meta?: StaticMeta;
 
   _stories: Record<string, StaticStory> = {};
@@ -365,8 +367,12 @@ export class CsfFile {
             ) as t.ImportDeclaration;
             if (importStmt) {
               const { source } = importStmt;
-              if (t.isStringLiteral(source)) {
+              const specifier = importStmt.specifiers.find((spec) => spec.local.name === id);
+              if (t.isStringLiteral(source) && specifier) {
                 this._rawComponentPath = source.value;
+                if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
+                  this._componentImportSpecifier = specifier;
+                }
               }
             }
           }

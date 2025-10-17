@@ -1,3 +1,4 @@
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
@@ -5,7 +6,6 @@ import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
 import { sendTelemetryError } from '../withTelemetry';
-import type { StoryIndexGenerator } from './StoryIndexGenerator';
 import { useStorybookMetadata } from './metadata';
 import { summarizeIndex } from './summarizeIndex';
 import { versionStatus } from './versionStatus';

@@ -143,7 +143,7 @@ beforeEach(() => {
     ['./src/stories/Header.stories.ts']: dedent`
         import type { Meta, StoryObj } from '@storybook/react';
         import { fn } from 'storybook/test';
-        import { Header } from './Header';
+        import Header from './Header';
         
         /** 
           * Description from meta and very long. 
@@ -173,7 +173,7 @@ beforeEach(() => {
           onCreateAccount?: () => void;
         }
         
-        export const Header = ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps) => (
+        export default ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps) => (
           <header>
             <div className="storybook-header">
               <div>
@@ -228,13 +228,14 @@ test('componentManifestGenerator generates correct id, name, description and exa
         ],
         "id": "example-button",
         "import": undefined,
-        "jsdocTag": {},
+        "jsDocTags": {},
         "name": "Button",
         "reactDocgen": {
           "actualName": "Button",
           "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Button.stories.ts",
           "description": "Primary UI component for user interaction",
           "displayName": "Button",
+          "exportName": "Button",
           "methods": [],
           "props": {
             "backgroundColor": {
@@ -325,7 +326,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
         ],
         "id": "example-header",
         "import": "import { Header } from '@design-system/components/Header';",
-        "jsdocTag": {
+        "jsDocTags": {
           "import": [
             "import { Header } from '@design-system/components/Header';",
           ],
@@ -335,10 +336,10 @@ test('componentManifestGenerator generates correct id, name, description and exa
         },
         "name": "Header",
         "reactDocgen": {
-          "actualName": "Header",
+          "actualName": "",
           "definedInFile": "/Users/kasperpeulen/code/storybook/storybook/code/renderers/react/src/stories/Header.stories.ts",
           "description": "",
-          "displayName": "Header",
+          "exportName": "default",
           "methods": [],
           "props": {
             "onCreateAccount": {

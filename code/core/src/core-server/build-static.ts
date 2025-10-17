@@ -12,13 +12,13 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+import { type ComponentManifestGenerator } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';
-import { type ComponentManifestGenerator } from '../types';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
@@ -171,7 +171,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       );
       const indexGenerator = await initializedStoryIndexGenerator;
       if (componentManifestGenerator && indexGenerator) {
-        const manifests = await componentManifestGenerator(indexGenerator);
+        const manifests = await componentManifestGenerator(
+          indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
+        );
         await mkdir(join(options.outputDir, 'manifests'), { recursive: true });
         await writeFile(
           join(options.outputDir, 'manifests', 'components.json'),

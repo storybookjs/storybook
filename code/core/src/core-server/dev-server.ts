@@ -2,14 +2,14 @@ import { logConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
+import { type ComponentManifestGenerator } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
 import invariant from 'tiny-invariant';
 
 import { telemetry } from '../telemetry';
-import { type ComponentManifestGenerator } from '../types';
-import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { type StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
@@ -145,7 +145,9 @@ export async function storybookDevServer(options: Options) {
         );
         const indexGenerator = await initializedStoryIndexGenerator;
         if (componentManifestGenerator && indexGenerator) {
-          const manifest = await componentManifestGenerator(indexGenerator);
+          const manifest = await componentManifestGenerator(
+            indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
+          );
           res.setHeader('Content-Type', 'application/json');
           res.end(JSON.stringify(manifest));
           return;
@@ -162,7 +164,14 @@ export async function storybookDevServer(options: Options) {
     });
   }
   // Now the preview has successfully started, we can count this as a 'dev' event.
-  doTelemetry(app, core, initializedStoryIndexGenerator, options);
+  doTelemetry(
+    app,
+    core,
+    initializedStoryIndexGenerator as unknown as Promise<
+      import('storybook/internal/core-server').StoryIndexGenerator
+    >,
+    options
+  );
 
   async function cancelTelemetry() {
     const payload = { eventType: 'dev' };

@@ -6,21 +6,19 @@ import {
   type JsPackageManager,
   type PackageJson,
   frameworkToRenderer,
+  getProjectRoot,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import {
-  type SupportedFramework,
-  SupportedLanguage,
-  type SupportedRenderer,
-} from 'storybook/internal/types';
-import { Feature } from 'storybook/internal/types';
+import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
 
+import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs';
+import { CommunityBuilder, CoreBuilder, SupportedLanguage } from './project_types';
 
 export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   const filePath = resolve(jsonPath);
@@ -131,11 +129,38 @@ export function copyTemplate(templateRoot: string, destination = '.') {
 
 type CopyTemplateFilesOptions = {
   packageManager: JsPackageManager;
-  templateLocation: SupportedFramework | SupportedRenderer;
+  templateLocation: SupportedFrameworks | SupportedRenderers;
   language: SupportedLanguage;
   commonAssetsDir?: string;
   destination?: string;
-  features: Set<Feature>;
+  features: string[];
+};
+
+export const frameworkToDefaultBuilder: Record<
+  SupportedFrameworks,
+  CoreBuilder | CommunityBuilder
+> = {
+  angular: CoreBuilder.Webpack5,
+  ember: CoreBuilder.Webpack5,
+  'html-vite': CoreBuilder.Vite,
+  nextjs: CoreBuilder.Webpack5,
+  nuxt: CoreBuilder.Vite,
+  'nextjs-vite': CoreBuilder.Vite,
+  'preact-vite': CoreBuilder.Vite,
+  qwik: CoreBuilder.Vite,
+  'react-native-web-vite': CoreBuilder.Vite,
+  'react-vite': CoreBuilder.Vite,
+  'react-webpack5': CoreBuilder.Webpack5,
+  'server-webpack5': CoreBuilder.Webpack5,
+  solid: CoreBuilder.Vite,
+  stencil: CoreBuilder.Vite,
+  'svelte-vite': CoreBuilder.Vite,
+  sveltekit: CoreBuilder.Vite,
+  'vue3-vite': CoreBuilder.Vite,
+  'web-components-vite': CoreBuilder.Vite,
+  // Only to pass type checking, will never be used
+  'react-rsbuild': CommunityBuilder.Rsbuild,
+  'vue3-rsbuild': CommunityBuilder.Rsbuild,
 };
 
 /**
@@ -179,11 +204,6 @@ export async function copyTemplateFiles({
   };
   const templatePath = async () => {
     const baseDir = await getRendererDir(packageManager, templateLocation);
-
-    if (!baseDir) {
-      return null;
-    }
-
     const assetsDir = join(baseDir, 'template', 'cli');
 
     const assetsLanguage = join(assetsDir, languageFolderMapping[language]);
@@ -210,19 +230,19 @@ export async function copyTemplateFiles({
   };
 
   const destinationPath = destination ?? (await cliStoriesTargetPath());
-  const filter = (file: string) => features.has(Feature.DOCS) || !file.endsWith('.mdx');
+  const filter = (file: string) => features.includes('docs') || !file.endsWith('.mdx');
   if (commonAssetsDir) {
     await cp(commonAssetsDir, destinationPath, { recursive: true, filter });
   }
-  const tmpPath = await templatePath();
+  await cp(await templatePath(), destinationPath, { recursive: true, filter });
 
-  if (tmpPath) {
-    await cp(tmpPath, destinationPath, { recursive: true, filter });
-  }
+  if (commonAssetsDir && features.includes('docs')) {
+    let rendererType = frameworkToRenderer[templateLocation] || 'react';
 
-  if (commonAssetsDir && features.has(Feature.DOCS)) {
-    const rendererType = frameworkToRenderer[templateLocation] || 'react';
-
+    // This is only used for docs links and the docs site uses `vue` for both `vue` & `vue3` renderers
+    if (rendererType === 'vue3') {
+      rendererType = 'vue';
+    }
     await adjustTemplate(join(destinationPath, 'Configure.mdx'), { renderer: rendererType });
   }
 }
@@ -237,6 +257,10 @@ export async function adjustTemplate(templatePath: string, templateData: Record<
   });
 
   await writeFile(templatePath, template);
+}
+
+export async function isNxProject() {
+  return find.up('nx.json', { last: getProjectRoot() });
 }
 
 export function coerceSemver(version: string) {

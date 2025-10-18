@@ -255,6 +255,13 @@ export const supportedTemplates: TemplateConfiguration[] = [
       return dependencies?.every(Boolean) ?? true;
     },
   },
+  {
+    preset: ProjectType.STENCIL,
+    dependencies: ['@stencil/core'],
+    matcherFunction: ({ dependencies }) => {
+      return dependencies?.some(Boolean) ?? false;
+    },
+  },
 ];
 
 // A TemplateConfiguration that matches unsupported frameworks

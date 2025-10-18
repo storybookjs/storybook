@@ -18,4 +18,5 @@ export type SupportedFrameworks =
   | 'solid'
   | 'nuxt'
   | 'react-rsbuild'
-  | 'vue3-rsbuild';
+  | 'vue3-rsbuild'
+  | 'stencil';

@@ -44,7 +44,7 @@ export const componentManifestGenerator = async () => {
         const tags = jsdocComment ? extractJSDocTags(jsdocComment) : {};
 
         const manifestDescription = jsdocComment
-          ? removeTags(tags.describe?.[0] || tags.desc?.[0] || jsdocComment)
+          ? removeTags(tags.describe?.[0] || tags.desc?.[0] || jsdocComment).trim()
           : undefined;
 
         return {

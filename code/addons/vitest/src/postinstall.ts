@@ -243,35 +243,12 @@ export default async function postInstall(options: PostinstallOptions) {
     }
   }
 
-  // Skip Playwright installation when dependency management is handled externally
-  if (options.skipInstall) {
-    logger.info(dedent`
-        Skipping Playwright installation, please run this command manually:
-        ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
-      `);
-  } else {
-    try {
-      const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
-      await prompt.executeTask(
-        () =>
-          packageManager.executeCommand({
-            command: 'npx',
-            args: playwrightCommand,
-          }),
-        {
-          id: 'playwright-installation',
-          intro: 'Configuring Playwright with Chromium',
-          error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommand.join(' ')}`,
-          success: 'Playwright installed successfully',
-        }
-      );
-    } catch (e) {
-      if (e instanceof Error) {
-        errors.push(e.stack ?? e.message);
-      } else {
-        errors.push(String(e));
-      }
-    }
+  // Install Playwright browser binaries using AddonVitestService
+  if (!options.skipDependencyManagement) {
+    const playwrightErrors = await addonVitestService.installPlaywright(packageManager, {
+      skipInstall: options.skipInstall,
+    });
+    errors.push(...playwrightErrors);
   }
 
   const fileExtension =

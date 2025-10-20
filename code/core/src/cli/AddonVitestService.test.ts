@@ -1,18 +1,18 @@
-import fs from 'node:fs/promises';
+import * as fs from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as babel from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 
 import { AddonVitestService } from './AddonVitestService';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('storybook/internal/babel', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('empathic/find', { spy: true });
 
 describe('AddonVitestService', () => {
@@ -27,7 +27,12 @@ describe('AddonVitestService', () => {
     mockPackageManager = {
       getAllDependencies: vi.fn(),
       getInstalledVersion: vi.fn(),
+      executeCommand: vi.fn(),
     } as Partial<JsPackageManager> as JsPackageManager;
+
+    // Setup default mocks for logger and prompt
+    vi.mocked(logger.info).mockImplementation(() => {});
+    vi.mocked(prompt.executeTask).mockResolvedValue(undefined);
   });
 
   describe('collectDeps', () => {
@@ -190,6 +195,16 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
+    it('should return compatible when vitest is not installed', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce(null) // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions(mockPackageManager);
+
+      expect(result.compatible).toBe(true);
+    });
+
     it('should handle multiple validation failures', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce('2.0.0') // vitest <3.0.0
@@ -336,108 +351,218 @@ describe('AddonVitestService', () => {
     });
   });
 
-  describe.skip('config validation', () => {
+  describe('installPlaywright', () => {
+    it('should skip installation when skipInstall is true', async () => {
+      const errors = await service.installPlaywright(mockPackageManager, { skipInstall: true });
+
+      expect(errors).toEqual([]);
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.stringContaining('Skipping Playwright installation')
+      );
+      expect(prompt.executeTask).not.toHaveBeenCalled();
+    });
+
+    it('should install Playwright successfully', async () => {
+      vi.mocked(prompt.executeTask).mockResolvedValue(undefined);
+
+      const errors = await service.installPlaywright(mockPackageManager);
+
+      expect(errors).toEqual([]);
+      expect(prompt.executeTask).toHaveBeenCalledWith(expect.any(Function), {
+        id: 'playwright-installation',
+        intro: 'Configuring Playwright with Chromium',
+        error: expect.stringContaining('An error occurred'),
+        success: 'Playwright installed successfully',
+      });
+    });
+
+    it('should execute playwright install command', async () => {
+      let commandFactory: any;
+      vi.mocked(prompt.executeTask).mockImplementation(async (factory: any) => {
+        commandFactory = Array.isArray(factory) ? factory[0] : factory;
+        const result = commandFactory();
+        // Simulate the child process completion
+        return result;
+      });
+
+      await service.installPlaywright(mockPackageManager);
+
+      expect(mockPackageManager.executeCommand).toHaveBeenCalledWith({
+        command: 'npx',
+        args: ['playwright', 'install', 'chromium', '--with-deps'],
+      });
+    });
+
+    it('should capture error stack when installation fails', async () => {
+      const error = new Error('Installation failed');
+      error.stack = 'Error stack trace';
+      vi.mocked(prompt.executeTask).mockRejectedValue(error);
+
+      const errors = await service.installPlaywright(mockPackageManager);
+
+      expect(errors).toEqual(['Error stack trace']);
+    });
+
+    it('should capture error message when installation fails without stack', async () => {
+      const error = new Error('Installation failed');
+      error.stack = undefined;
+      vi.mocked(prompt.executeTask).mockRejectedValue(error);
+
+      const errors = await service.installPlaywright(mockPackageManager);
+
+      expect(errors).toEqual(['Installation failed']);
+    });
+
+    it('should convert non-Error exceptions to string', async () => {
+      vi.mocked(prompt.executeTask).mockRejectedValue('String error');
+
+      const errors = await service.installPlaywright(mockPackageManager);
+
+      expect(errors).toEqual(['String error']);
+    });
+
+    it('should not skip installation by default', async () => {
+      await service.installPlaywright(mockPackageManager);
+
+      expect(prompt.executeTask).toHaveBeenCalled();
+      expect(logger.info).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('validateConfigFiles', () => {
     beforeEach(() => {
+      vi.mocked(find.any).mockReset();
       vi.mocked(find.any).mockReturnValue(undefined);
-      vi.mocked(getProjectRoot).mockReturnValue('/test/project');
     });
 
-    // TODO: These tests need to be fixed - they have issues with the mock setup
-    it('passes without files', async () => {
-      const result = await (service as any).validateConfigFiles('/test/dir');
+    it('should return compatible when no config files found', async () => {
+      vi.mocked(find.any).mockReturnValue(undefined);
+
+      const result = await service.validateConfigFiles('.storybook');
 
       expect(result.compatible).toBe(true);
     });
 
-    it('should detect JSON workspace file as incompatible', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.workspace.json')
-        .mockReturnValueOnce(undefined);
+    it('should reject JSON workspace files', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.json');
 
-      const result = await (service as any).validateConfigFiles('/test/dir');
+      const result = await service.validateConfigFiles('.storybook');
 
       expect(result.compatible).toBe(false);
-      expect(result.reasons!.some((r: string) => r.includes('JSON workspace'))).toBe(true);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.some((r) => r.includes('JSON workspace'))).toBe(true);
     });
 
-    it('should validate workspace file content', async () => {
-      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.ts').mockReturnValueOnce(undefined);
-      vi.mocked(fs.readFile).mockResolvedValueOnce('export default []');
+    it('should validate non-JSON workspace files', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.ts');
+      vi.mocked(fs.readFile).mockResolvedValue('export default ["project1", "project2"]');
 
-      const mockAst = {
-        type: 'File',
-        program: { type: 'Program', body: [] },
-      };
-      vi.mocked(babel.babelParse).mockReturnValue(mockAst as any);
-
-      const mockPath = {
-        node: {
-          declaration: {
-            type: 'ArrayExpression',
-            elements: [],
-          },
-        },
-      };
-
-      vi.mocked(babel.traverse).mockImplementation((ast: any, visitor: any) => {
-        if (visitor.ExportDefaultDeclaration) {
-          visitor.ExportDefaultDeclaration(mockPath);
-        }
-      });
-
-      const result = await (service as any).validateConfigFiles('/test/dir');
+      const result = await service.validateConfigFiles('.storybook');
 
       expect(result.compatible).toBe(true);
+      expect(fs.readFile).toHaveBeenCalledWith('vitest.workspace.ts', 'utf8');
     });
 
-    it('should detect CommonJS config file as incompatible', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // no workspace
-        .mockReturnValueOnce('vitest.config.cts'); // CommonJS config
+    it('should reject invalid workspace config', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.ts');
+      vi.mocked(fs.readFile).mockResolvedValue('export default "invalid"');
 
-      const result = await (service as any).validateConfigFiles('/test/dir');
+      const result = await service.validateConfigFiles('.storybook');
 
       expect(result.compatible).toBe(false);
-      expect(result.reasons!.some((r: string) => r.includes('CommonJS'))).toBe(true);
+      expect(result.reasons!.some((r) => r.includes('invalid workspace'))).toBe(true);
     });
 
-    it('should validate vitest config file content', async () => {
+    it('should reject CommonJS config files (.cts)', async () => {
+      vi.mocked(find.any).mockReset();
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // no workspace
-        .mockReturnValueOnce('vitest.config.ts');
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.cts'); // config
 
-      vi.mocked(fs.readFile).mockResolvedValueOnce('export default defineConfig({})');
+      const result = await service.validateConfigFiles('.storybook');
 
-      const mockAst = {
-        type: 'File',
-        program: { type: 'Program', body: [] },
-      };
-      vi.mocked(babel.babelParse).mockReturnValue(mockAst as any);
+      expect(result.compatible).toBe(false);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.length).toBeGreaterThan(0);
+      expect(result.reasons!.some((r) => r.includes('CommonJS config'))).toBe(true);
+    });
 
-      const mockPath = {
-        node: {
-          declaration: {
-            type: 'CallExpression',
-            callee: { name: 'defineConfig' },
-            arguments: [
-              {
-                type: 'ObjectExpression',
-                properties: [],
-              },
-            ],
-          },
-        },
-      };
+    it('should reject CommonJS config files (.cjs)', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.cjs'); // config
 
-      vi.mocked(babel.traverse).mockImplementation((ast: any, visitor: any) => {
-        if (visitor.ExportDefaultDeclaration) {
-          visitor.ExportDefaultDeclaration(mockPath);
-        }
-      });
+      const result = await service.validateConfigFiles('.storybook');
 
-      const result = await (service as any).validateConfigFiles('/test/dir');
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('CommonJS config'))).toBe(true);
+    });
+
+    it('should validate non-CommonJS config files', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue('export default defineConfig({ test: {} })');
+
+      const result = await service.validateConfigFiles('.storybook');
 
       expect(result.compatible).toBe(true);
+    });
+
+    it('should reject invalid vitest config', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue('export default {}');
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('invalid Vitest config'))).toBe(true);
+    });
+
+    it('should validate defineWorkspace expression', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.ts');
+      vi.mocked(fs.readFile).mockResolvedValue('export default defineWorkspace(["project1"])');
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should validate workspace config with object expressions', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.ts');
+      vi.mocked(fs.readFile).mockResolvedValue('export default [{ test: {} }, "project"]');
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should validate config with workspace array in test', async () => {
+      vi.mocked(find.any)
+        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        'export default defineConfig({ test: { workspace: [] } })'
+      );
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accumulate multiple config validation errors', async () => {
+      vi.mocked(find.any).mockReset();
+      vi.mocked(find.any)
+        .mockReturnValueOnce('vitest.workspace.json') // workspace JSON
+        .mockReturnValueOnce('vitest.config.cjs'); // config CJS
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.length).toBe(2);
     });
   });
 });

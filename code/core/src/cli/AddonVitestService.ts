@@ -4,9 +4,12 @@ import { posix, sep } from 'node:path';
 import * as babel from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
+import { CLI_COLORS } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 import { coerce, satisfies } from 'semver';
+import { dedent } from 'ts-dedent';
 
 type Result = {
   compatible: boolean;
@@ -120,6 +123,57 @@ export class AddonVitestService {
     });
 
     return versionedDependencies;
+  }
+
+  /**
+   * Install Playwright browser binaries for @storybook/addon-vitest
+   *
+   * Installs Chromium with dependencies via `npx playwright install chromium --with-deps`
+   *
+   * @param packageManager - The package manager to use for installation
+   * @param prompt - The prompt instance for displaying progress
+   * @param logger - The logger instance for displaying messages
+   * @param options - Installation options
+   * @returns Array of error messages if installation fails
+   */
+  async installPlaywright(
+    packageManager: JsPackageManager,
+    options: { skipInstall?: boolean } = {}
+  ): Promise<string[]> {
+    const errors: string[] = [];
+
+    // Skip Playwright installation when dependency management is handled externally
+    if (options.skipInstall) {
+      logger.info(dedent`
+        Skipping Playwright installation, please run this command manually:
+        ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
+      `);
+    } else {
+      try {
+        const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
+        await prompt.executeTask(
+          () =>
+            packageManager.executeCommand({
+              command: 'npx',
+              args: playwrightCommand,
+            }),
+          {
+            id: 'playwright-installation',
+            intro: 'Configuring Playwright with Chromium',
+            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommand.join(' ')}`,
+            success: 'Playwright installed successfully',
+          }
+        );
+      } catch (e) {
+        if (e instanceof Error) {
+          errors.push(e.stack ?? e.message);
+        } else {
+          errors.push(String(e));
+        }
+      }
+    }
+
+    return errors;
   }
 
   /**

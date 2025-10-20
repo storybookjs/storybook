@@ -15,7 +15,7 @@ We sincerely appreciate the dedication and effort addon creators put into keepin
 
 You will need to update your Storybook dependencies. Peer dependencies must point to `^10.0.0` to ensure broad compatibility for your end users. Development dependencies can be set to `^10.0.0`, or to `next` if you want to try the latest prerelease all year round.
 
-```diff title="package.json"
+```jsonc title="package.json"
 {
   "devDependencies": {
     "@storybook/addon-docs": "next",
@@ -279,10 +279,10 @@ Next, update your `main.ts` to reference the new preset file:
 
 The following changes are not strictly required yet, but we recommend making them to improve your users' experience.
 
-### CSF 4 annotation support
-To support CSF 4 annotations in your addon, you will need to update your `src/index.ts` file to use the new `definePreviewAddon`. This change is highly recommended, as it will help your own users reap the benefits of CSF 4.
+### CSF Factories support
+To support CSF Factories annotations in your addon, you will need to update your `src/index.ts` file to use the new `definePreviewAddon`. This feature will be part of [CSF Next](../api/csf/csf-next.mdx). This change is highly recommended, as it will help your own users reap the benefits of CSF Factories.
 
-With CSF 4, users can chain their preview configuration and benefit from better typing and more flexibility. Addons must export annotations to be compatible with this new syntax. CSF 4 will be the default way to write stories in Storybook 11.
+With CSF Factories, users can chain their preview configuration and benefit from better typing and more flexibility. Addons must export annotations to be compatible with this new syntax. CSF Factories will be the default way to write stories in Storybook 11.
 
 ```diff title="src/index.ts"
 - // make it work with --isolatedModules
@@ -297,7 +297,7 @@ With CSF 4, users can chain their preview configuration and benefit from better 
 
 The `exportEntries` property in `package.json`'s `bundler` was used to produce the `index.js` build output from `src/index.ts`. It was compatible with Node.js, rather than strictly with browsers. This build configuration could cause subtle bugs when addon authors exported code in `index.js` for use in the Storybook preview or manager.
 
-In the Storybook 10 [addon-kit](https://github.com/storybookjs/addon-kit), we removed `exportEntries` from the `bundler` config, and we moved `src/index.ts` to be part of `previewEntries` instead. This way, any code exported from `src/index.ts` is bundled for browsers and usable with CSF 4. If you need to export additional code to run in the preview (such as optional decorators), you can add them to `src/index.ts`.
+In the Storybook 10 [addon-kit](https://github.com/storybookjs/addon-kit), we removed `exportEntries` from the `bundler` config, and we moved `src/index.ts` to be part of `previewEntries` instead. This way, any code exported from `src/index.ts` is bundled for browsers and usable with CSF Next. If you need to export additional code to run in the preview (such as optional decorators), you can add them to `src/index.ts`.
 
 If you need to export code for the manager (such as a `renderLabel` function for the sidebar), you can create a new `src/manager-helpers.ts` file and add it to `managerEntries`, like so:
 
@@ -362,4 +362,4 @@ To support Storybook 10.0, we encourage you to release a new major version of yo
 
 ## Support
 
-If you're having issues with your addon after following this guide, please open a [new discussion](https://github.com/storybookjs/storybook/discussions/new?category=migrations) in our GitHub repository or come talk to us in our [dedicated addon developer channel](https://discord.gg/KKXFQy9sFc) on Discord. 
+If you're having issues with your addon after following this guide, please open a [new discussion](https://github.com/storybookjs/storybook/discussions/new?category=migrations) in our GitHub repository or come talk to us in our [dedicated addon developer channel, `#addons`](https://discord.gg/KKXFQy9sFc) on Discord.

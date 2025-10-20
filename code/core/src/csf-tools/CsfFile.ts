@@ -366,6 +366,11 @@ export class CsfFile {
                 stmt.specifiers.find((spec) => spec.local.name === id)
             ) as t.ImportDeclaration;
             if (importStmt) {
+              // Example: `import { ComponentImport } from './path-to-component'`
+              // const meta = { component: ComponentImport };
+              // Sets:
+              // - _rawComponentPath = './path-to-component'
+              // - _componentImportSpecifier = ComponentImport
               const { source } = importStmt;
               const specifier = importStmt.specifiers.find((spec) => spec.local.name === id);
               if (t.isStringLiteral(source) && specifier) {

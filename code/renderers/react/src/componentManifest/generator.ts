@@ -27,12 +27,22 @@ export const componentManifestGenerator = async () => {
     const components = await Promise.all(
       singleEntryPerComponent.map(async (entry) => {
         const storyFile = await readFile(path.join(process.cwd(), entry.importPath), 'utf-8');
-        const componentFile = await readFile(
-          path.join(process.cwd(), entry.componentPath!),
-          'utf-8'
-        );
         const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
         const componentName = csf._meta?.component;
+
+        let componentFile;
+        try {
+          componentFile = await readFile(path.join(process.cwd(), entry.componentPath!), 'utf-8');
+        } catch (e) {
+          // TODO find out when and why this happens
+          return {
+            id: entry.id.split('--')[0],
+            name: componentName,
+            jsDocTags: {},
+            examples: [],
+          };
+        }
+
         const docgens = await parseWithReactDocgen({
           code: componentFile,
           filename: path.join(process.cwd(), entry.componentPath!),

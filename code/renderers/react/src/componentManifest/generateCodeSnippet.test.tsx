@@ -64,6 +64,28 @@ test('Default', () => {
   );
 });
 
+test('Default satisfies or as', () => {
+  const input = withCSF3(`
+    export const Default = {} satisfies Story;
+    export const Other = {} as Story;
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `
+    "const Default = () => <Button>Click me</Button>;
+    const Other = () => <Button>Click me</Button>;"
+  `
+  );
+});
+
+test('Edge case identifier we can not find', () => {
+  const input = withCSF3(`
+    export const Default = someImportOrWhatever;
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Default = () => <Button>Click me</Button>;"`
+  );
+});
+
 test('Default- CSF4', () => {
   const input = withCSF4(`
     export const Default = meta.story({});

@@ -4,10 +4,9 @@ import { sep } from 'node:path';
 import { types as t } from 'storybook/internal/babel';
 import { getProjectRoot } from 'storybook/internal/common';
 import { type CsfFile } from 'storybook/internal/csf-tools';
-import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
-import type { Documentation } from 'react-docgen';
+import { type Documentation, ERROR_CODES } from 'react-docgen';
 import {
   builtinHandlers as docgenHandlers,
   builtinResolvers as docgenResolver,
@@ -66,7 +65,6 @@ export async function parseWithReactDocgen({ code, filename }: { code: string; f
   let matchPath: TsconfigPaths.MatchPath | undefined;
 
   if (tsconfig.resultType === 'success') {
-    logger.info('Using tsconfig paths for react-docgen');
     matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
       'browser',
       'module',
@@ -82,7 +80,10 @@ export async function parseWithReactDocgen({ code, filename }: { code: string; f
       filename,
     }) as DocObj[];
   } catch (e) {
-    console.error(e);
+    // Ignore the error when react-docgen cannot find a react component
+    if (!(e instanceof Error && 'code' in e && e.code === ERROR_CODES.MISSING_DEFINITION)) {
+      console.error(e);
+    }
     return [];
   }
 }

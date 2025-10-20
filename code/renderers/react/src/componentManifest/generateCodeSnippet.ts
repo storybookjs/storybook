@@ -1,6 +1,11 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 
-import invariant from 'tiny-invariant';
+function invariant(condition: any, message?: string | (() => string)): asserts condition {
+  if (condition) {
+    return;
+  }
+  throw new Error(typeof message === 'function' ? message() : message);
+}
 
 function buildInvalidSpread(entries: Array<[string, t.Node]>): t.JSXSpreadAttribute | null {
   if (entries.length === 0) {
@@ -67,16 +72,20 @@ export function getCodeSnippet(
 
   // Otherwise it must be an object story
   const storyObjPath =
-    story?.isArrowFunctionExpression() || story?.isFunctionExpression() ? null : story;
-  invariant(
-    storyObjPath === null || storyObjPath.isObjectExpression(),
-    'Expected story init to be object or function'
-  );
+    story == null || story.isArrowFunctionExpression() || story.isFunctionExpression()
+      ? null
+      : story.isTSSatisfiesExpression()
+        ? story.get('expression')
+        : story.isTSAsExpression()
+          ? story.get('expression')
+          : story;
+
+  const storyProperties = storyObjPath?.isObjectExpression()
+    ? storyObjPath.get('properties').filter((p) => p.isObjectProperty())
+    : [];
 
   // Prefer an explicit render() when it is a function (arrow/function)
-  const renderPath = storyObjPath
-    ?.get('properties')
-    .filter((p) => p.isObjectProperty())
+  const renderPath = storyProperties
     .filter((p) => keyOf(p.node) === 'render')
     .map((p) => p.get('value'))
     .find((value) => value.isExpression());
@@ -85,9 +94,7 @@ export function getCodeSnippet(
 
   // Collect args: meta.args and story.args as Record<string, t.Node>
   const metaArgs = metaArgsRecord(metaObj ?? null);
-  const storyArgsPath = storyObjPath
-    ?.get('properties')
-    .filter((p) => p.isObjectProperty())
+  const storyArgsPath = storyProperties
     .filter((p) => keyOf(p.node) === 'args')
     .map((p) => p.get('value'))
     .find((value) => value.isObjectExpression());

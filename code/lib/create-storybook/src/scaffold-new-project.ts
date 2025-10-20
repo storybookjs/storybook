@@ -139,7 +139,11 @@ export const scaffoldNewProject = async (
   const projectDisplayName = buildProjectDisplayNameForPrint(projectStrategyConfig);
   const createScript = projectStrategyConfig.createScript[packageManagerName];
 
-  logger.log(`Creating a new "${projectDisplayName}" project with ${packageManagerName}...`);
+  const spinner = prompt.spinner({
+    id: 'create-new-project',
+  });
+
+  spinner.start(`Creating a new "${projectDisplayName}" project with ${packageManagerName}...`);
 
   const targetDir = process.cwd();
 
@@ -160,6 +164,7 @@ export const scaffoldNewProject = async (
 
   try {
     // Create new project in temp directory
+    spinner.message(`Executing ${createScript}`);
     await execa.command(createScript, {
       stdio: 'pipe',
       shell: true,
@@ -167,6 +172,9 @@ export const scaffoldNewProject = async (
       cleanup: true,
     });
   } catch (e) {
+    spinner.stop(
+      `Failed to create a new "${projectDisplayName}" project with ${packageManagerName}`
+    );
     throw new GenerateNewProjectOnInitError({
       error: e,
       packageManager: packageManagerName,
@@ -181,7 +189,7 @@ export const scaffoldNewProject = async (
     });
   }
 
-  logger.log(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
+  spinner.stop(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
 };
 
 const FILES_TO_IGNORE = [

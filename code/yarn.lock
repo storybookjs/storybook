@@ -6153,22 +6153,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-jest@workspace:*, @storybook/addon-jest@workspace:addons/jest":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-jest@workspace:addons/jest"
-  dependencies:
-    "@storybook/icons": "npm:^1.6.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    react-resize-detector: "npm:^7.1.2"
-    tiny-invariant: "npm:^1.3.1"
-    typescript: "npm:^5.8.3"
-    upath: "npm:^2.0.1"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-links@workspace:*, @storybook/addon-links@workspace:addons/links":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-links@workspace:addons/links"
@@ -6873,7 +6857,6 @@ __metadata:
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-designs": "npm:10.0.3--canary.67522d1.0"
     "@storybook/addon-docs": "workspace:*"
-    "@storybook/addon-jest": "workspace:*"
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-onboarding": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
@@ -26070,13 +26053,6 @@ __metadata:
   version: 4.0.0
   resolution: "untildify@npm:4.0.0"
   checksum: 10c0/d758e624c707d49f76f7511d75d09a8eda7f2020d231ec52b67ff4896bcf7013be3f9522d8375f57e586e9a2e827f5641c7e06ee46ab9c435fc2b2b2e9de517a
-  languageName: node
-  linkType: hard
-
-"upath@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "upath@npm:2.0.1"
-  checksum: 10c0/79e8e1296b00e24a093b077cfd7a238712d09290c850ce59a7a01458ec78c8d26dcc2ab50b1b9d6a84dabf6511fb4969afeb8a5c9a001aa7272b9cc74c34670f
   languageName: node
   linkType: hard
 

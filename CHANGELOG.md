@@ -1,3 +1,15 @@
+## 9.1.12
+
+- Maintenance: Hotfix for missing nextjs dts files, thanks @ndelangen!
+
+## 9.1.11
+
+- Automigration: Improve the viewport/backgrounds automigration - [#32619](https://github.com/storybookjs/storybook/pull/32619), thanks @valentinpalkovic!
+- Mocking: Fix `sb.mock` usage in Storybook's deployed in subpaths - [#32678](https://github.com/storybookjs/storybook/pull/32678), thanks @valentinpalkovic!
+- NextJS-Vite: Automatically fix bad PostCSS configuration - [#32691](https://github.com/storybookjs/storybook/pull/32691), thanks @ndelangen!
+- React Native Web: Fix REACT_NATIVE_AND_RNW should detect vite builder - [#32718](https://github.com/storybookjs/storybook/pull/32718), thanks @dannyhw!
+- Telemetry: Add metadata for react routers - [#32615](https://github.com/storybookjs/storybook/pull/32615), thanks @shilman!
+
 ## 9.1.10
 
 - Automigrations: Add automigration for viewport and backgrounds - [#31614](https://github.com/storybookjs/storybook/pull/31614), thanks @valentinpalkovic!

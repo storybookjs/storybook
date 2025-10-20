@@ -82,7 +82,7 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     (r) => r === FixStatus.SUCCEEDED || r === FixStatus.MANUAL_SUCCEEDED
   );
 
-  if (hasAppliedFixes) {
+  if (hasAppliedFixes && !options.skipInstall) {
     packageManager.installDependencies();
   }
 

@@ -9,6 +9,9 @@ vi.mock('./logger/logger', () => ({
   log: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  setLogLevel: vi.fn(),
 }));
 
 const loggerMock = vi.mocked(loggerRaw);

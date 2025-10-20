@@ -45,7 +45,7 @@ export const executeTask = async (
   } catch (err) {
     const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
     logTracker.addLog('error', error, { error: errorMessage });
-    task.error(error);
+    task.error(String((err as any).message ?? err));
     throw err;
   }
 };
@@ -75,8 +75,9 @@ export const executeTaskWithSpinner = async (
     logTracker.addLog('info', success);
     task.stop(success);
   } catch (err) {
-    logTracker.addLog('error', error, { error: err });
-    task.stop(error);
+    const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
+    logTracker.addLog('error', error, { error: errorMessage });
+    task.stop(String((err as any).message ?? err));
     throw err;
   }
 };

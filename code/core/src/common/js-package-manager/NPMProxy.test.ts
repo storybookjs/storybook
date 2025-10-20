@@ -5,6 +5,18 @@ import { prompt } from 'storybook/internal/node-logger';
 import { JsPackageManager } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 
+vi.mock('storybook/internal/node-logger', () => ({
+  prompt: {
+    executeTaskWithSpinner: vi.fn(),
+    getPreferredStdio: vi.fn(() => 'inherit'),
+  },
+  logger: {
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 describe('NPM Proxy', () => {
   let npmProxy: NPMProxy;
 
@@ -22,7 +34,7 @@ describe('NPM Proxy', () => {
     describe('npm6', () => {
       it('should run `npm install`', async () => {
         // sort of un-mock part of the function so executeCommand (also mocked) is called
-        vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
           await Promise.resolve(fn());
         });
         const executeCommandSpy = vi
@@ -39,7 +51,7 @@ describe('NPM Proxy', () => {
     describe('npm7', () => {
       it('should run `npm install`', async () => {
         // sort of un-mock part of the function so executeCommand (also mocked) is called
-        vi.mocked(prompt.executeTask).mockImplementationOnce(async (fn: any) => {
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
           await Promise.resolve(fn());
         });
         const executeCommandSpy = vi

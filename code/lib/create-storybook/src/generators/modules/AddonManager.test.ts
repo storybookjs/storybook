@@ -146,8 +146,8 @@ describe('AddonManager', () => {
         webpackCompiler
       );
 
-      expect(config.addonsForMain).toHaveLength(5); // compiler + links + docs + chromatic + onboarding
-      expect(config.addonPackages).toHaveLength(5);
+      expect(config.addonsForMain).toHaveLength(7); // compiler + links + docs + chromatic + vitest + a11y + onboarding
+      expect(config.addonPackages).toHaveLength(7);
     });
 
     it('should filter out falsy values', () => {

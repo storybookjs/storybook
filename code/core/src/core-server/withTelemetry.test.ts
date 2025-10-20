@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cache, loadAllPresets } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import { oneWayHash, telemetry } from 'storybook/internal/telemetry';
+import { ErrorCollector, oneWayHash, telemetry } from 'storybook/internal/telemetry';
 
 import { getErrorLevel, sendTelemetryError, withTelemetry } from './withTelemetry';
 
@@ -13,6 +13,10 @@ vi.mock('storybook/internal/node-logger');
 const cliOptions = {};
 
 describe('withTelemetry', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
+  });
   it('works in happy path', async () => {
     const run = vi.fn();
 
@@ -275,6 +279,11 @@ describe('withTelemetry', () => {
 });
 
 describe('sendTelemetryError', () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
+  });
+
   it('handles error instances and sends telemetry', async () => {
     const options: any = {
       cliOptions: {},
@@ -347,6 +356,7 @@ describe('sendTelemetryError', () => {
 describe('getErrorLevel', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
   });
 
   it('returns "none" when cliOptions.disableTelemetry is true', async () => {

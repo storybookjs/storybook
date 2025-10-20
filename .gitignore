@@ -30,7 +30,6 @@ tsconfig.vitest-temp.json
 
 # test-storybooks
 test-storybooks/ember-cli/ember-output
-test-storybooks/angular-cli/addon-jest.testresults.json
 
 
 npm-shrinkwrap.json

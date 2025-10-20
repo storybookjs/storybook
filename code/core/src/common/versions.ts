@@ -2,7 +2,6 @@
 export default {
   '@storybook/addon-a11y': '9.1.12',
   '@storybook/addon-docs': '9.1.12',
-  '@storybook/addon-jest': '9.1.12',
   '@storybook/addon-links': '9.1.12',
   '@storybook/addon-onboarding': '9.1.12',
   'storybook-addon-pseudo-states': '9.1.12',

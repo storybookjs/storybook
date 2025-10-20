@@ -125,6 +125,10 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
+  '@storybook/addon-jest':
+    access: $all
+    publish: $all
+    proxy: npmjs
   '@storybook/addon-coverage':
     access: $all
     publish: $all

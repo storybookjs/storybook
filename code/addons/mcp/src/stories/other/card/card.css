@@ -1,0 +1,50 @@
+.storybook-card {
+  font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  border: 1px solid #e1e5e9;
+  border-radius: 8px;
+  padding: 16px;
+  max-width: 300px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.storybook-card__title {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+}
+
+.storybook-card__image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.storybook-card__content {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #666;
+}
+
+.storybook-card__button {
+  font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 11px 20px;
+  border: 0;
+  border-radius: 3em;
+  cursor: pointer;
+  display: inline-block;
+  line-height: 1;
+  color: white;
+  background-color: #1ea7fd;
+  transition: background-color 0.2s ease;
+}
+
+.storybook-card__button:hover {
+  background-color: #1890d4;
+}

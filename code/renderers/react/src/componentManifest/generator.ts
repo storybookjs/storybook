@@ -55,8 +55,8 @@ export const componentManifestGenerator = async () => {
           id: entry.id.split('--')[0],
           name: componentName,
           description: manifestDescription,
-          summary: tags.summary ? tags.summary[0] : undefined,
-          import: tags.import ? tags.import[0] : undefined,
+          summary: tags.summary?.[0],
+          import: tags.import?.[0],
           reactDocgen: docgen,
           jsDocTags: tags,
           examples: !componentName

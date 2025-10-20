@@ -155,7 +155,7 @@ beforeEach(() => {
         import Header from './Header';
         
         /** 
-          * Description from meta and very long. 
+          * Description from meta and very long.
           * @summary Component summary
           * @import import { Header } from '@design-system/components/Header';
           */
@@ -321,7 +321,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "summary": undefined,
         },
         "example-header": {
-          "description": "Description from meta and very long. ",
+          "description": "Description from meta and very long.",
           "examples": [
             {
               "name": "LoggedIn",

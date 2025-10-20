@@ -1,4 +1,6 @@
 # Contributors Guide
+> Tip: If you want to make a fast contribution, check the “good first issue” label in the Issues tab for small frontend and docs tasks that are easy to fix directly on GitHub.
+
 
 We welcome contributions of any type and skill level. As an open-source project, we believe in the power of community and welcome any contributions that help us improve Storybook. Whether you are a developer, designer, writer, or someone who wants to help, we'd love to have you on board. If you are interested in contributing, please read the following guidelines.
 

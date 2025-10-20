@@ -242,7 +242,9 @@ command('automigrate [fixId]')
   .action(async (fixId, options) => {
     withTelemetry('automigrate', { cliOptions: options }, async () => {
       prompt.setPromptLibrary('clack');
+      logger.intro(`Running ${fixId} automigration`);
       await doAutomigrate({ fixId, ...options });
+      logger.outro('Done');
     }).catch(handleCommandFailure);
   });
 

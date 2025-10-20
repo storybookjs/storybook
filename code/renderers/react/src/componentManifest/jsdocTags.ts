@@ -2,8 +2,8 @@ import { parse } from 'comment-parser';
 
 import { groupBy } from './utils';
 
-export function extractJSDocTags(description: string) {
-  const lines = description.split('\n');
+export function extractJSDocTags(jsdocComment: string) {
+  const lines = jsdocComment.split('\n');
   const jsDoc = ['/**', ...lines.map((line) => ` * ${line}`), ' */'].join('\n');
 
   const parsed = parse(jsDoc);
@@ -17,8 +17,8 @@ export function extractJSDocTags(description: string) {
   );
 }
 
-export function removeTags(description: string) {
-  return description
+export function removeTags(jsdocComment: string) {
+  return jsdocComment
     .split('\n')
     .filter((line) => !line.trim().startsWith('@'))
     .join('\n');

@@ -40,15 +40,11 @@ export const componentManifestGenerator = async () => {
         const docgen = getMatchingDocgen(docgens, csf);
 
         const metaDescription = extractDescription(csf._metaStatement);
-        const description = metaDescription || docgen?.description;
-        const tags = description ? extractJSDocTags(description) : {};
+        const jsdocComment = metaDescription || docgen?.description;
+        const tags = jsdocComment ? extractJSDocTags(jsdocComment) : {};
 
-        const manifestDescription = description
-          ? removeTags(
-              (tags.describe ? tags.describe[0] : undefined) ||
-                (tags.desc ? tags.desc[0] : undefined) ||
-                description
-            )
+        const manifestDescription = jsdocComment
+          ? removeTags(tags.describe?.[0] || tags.desc?.[0] || jsdocComment)
           : undefined;
 
         return {

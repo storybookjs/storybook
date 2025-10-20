@@ -42,33 +42,13 @@ jobs:
       - name: prettier
         run: cd code && yarn lint:prettier --check .
 
-  test-windows:
-    name: Core Unit Tests, windows-latest
+  test:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    name: Core Unit Tests, ${{ matrix.os }}
     if: github.repository_owner != 'storybookjs'
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
-        with:
-          install-code-deps: true
-
-      - name: compile
-        run: yarn task --task compile --start-from=compile
-
-      - name: Install Playwright Dependencies
-        run: cd code && yarn exec playwright install chromium --with-deps
-
-      - name: test
-        run: yarn test
-
-  test-ubuntu:
-    name: Core Unit Tests, ubuntu-latest
-    if: github.repository_owner != 'storybookjs'
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:

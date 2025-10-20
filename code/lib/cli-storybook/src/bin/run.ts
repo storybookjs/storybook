@@ -109,7 +109,6 @@ command('add <addon>')
   .option('--skip-doctor', 'Skip doctor check')
   .action((addonName: string, options: any) => {
     withTelemetry('add', { cliOptions: options }, async () => {
-      prompt.setPromptLibrary('clack');
       logger.intro(`Setting up your project for ${addonName}`);
 
       await add(addonName, options);
@@ -160,7 +159,6 @@ command('upgrade')
     'Directory(ies) where to load Storybook configurations from'
   )
   .action(async (options: UpgradeOptions) => {
-    prompt.setPromptLibrary('clack');
     await upgrade(options).catch(handleCommandFailure);
   });
 
@@ -241,7 +239,6 @@ command('automigrate [fixId]')
   .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
     withTelemetry('automigrate', { cliOptions: options }, async () => {
-      prompt.setPromptLibrary('clack');
       logger.intro(`Running ${fixId} automigration`);
       await doAutomigrate({ fixId, ...options });
       logger.outro('Done');

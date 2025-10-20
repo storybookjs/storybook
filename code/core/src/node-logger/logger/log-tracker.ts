@@ -3,7 +3,6 @@ import path, { join } from 'node:path';
 
 import { isCI } from 'storybook/internal/common';
 
-import { cleanLog } from '../../../../lib/cli-storybook/src/automigrate/helpers/cleanLog';
 import type { LogLevel } from './logger';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,7 +67,7 @@ class LogTracker {
     this.#logs.push({
       timestamp: new Date(),
       level,
-      message: cleanLog(message),
+      message,
       metadata,
     });
   }

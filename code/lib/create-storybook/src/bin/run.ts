@@ -51,7 +51,6 @@ const createStorybookProgram = program
 
 createStorybookProgram
   .action(async (options) => {
-    prompt.setPromptLibrary('clack');
     const isNeitherCiNorSandbox =
       !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
     options.debug = options.debug ?? false;

@@ -90,7 +90,7 @@ export async function storybookDevServer(options: Options) {
 
   if (!options.ignorePreview) {
     if (!options.quiet) {
-      logger.info('=> Starting preview..');
+      logger.info('Starting preview..');
     }
     previewResult = await previewBuilder
       .start({

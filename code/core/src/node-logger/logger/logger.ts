@@ -152,19 +152,22 @@ export const error = createLogger('error', (...args) => {
 
 type BoxOptions = {
   borderStyle?: 'round' | 'none';
-  padding?: number;
+  contentPadding?: number;
   title?: string;
-  titleAlignment?: 'left' | 'center' | 'right';
+  titleAlign?: 'left' | 'center' | 'right';
   borderColor?: string;
   backgroundColor?: string;
+  width?: number | 'auto';
 };
 
-export const logBox = (message: string, options?: BoxOptions) => {
+export const logBox = (message: string, { title, ...options }: BoxOptions = {}) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
     if (isClackEnabled()) {
-      log('');
-      clack.box(message, options?.title);
+      clack.box(message, title, {
+        ...options,
+        width: options.width ?? 'auto',
+      });
     } else {
       console.log(message);
     }

@@ -1,7 +1,7 @@
 import { ProjectType } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
@@ -181,7 +181,6 @@ async function runStorybookDev(result: {
 }): Promise<void> {
   const { projectType, packageManager, storybookCommand, shouldOnboard } = result;
 
-  prompt.setPromptLibrary('prompts');
   logger.log('\nRunning Storybook');
 
   try {

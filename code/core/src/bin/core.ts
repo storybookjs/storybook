@@ -103,9 +103,7 @@ command('dev')
       with: { type: 'json' },
     });
 
-    logger.log(
-      picocolors.bold(`${packageJson.name} v${packageJson.version}`) + picocolors.reset('\n')
-    );
+    logger.intro(`${packageJson.name} v${packageJson.version}`);
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.

@@ -59,7 +59,7 @@ export function outputStartupInformation(options: {
     .filter(Boolean)
     .join(' and ');
 
-  logger.log(
+  logger.logBox(
     dedent`
       ${CLI_COLORS.success(
         `Storybook ${picocolors.bold(version)} for ${picocolors.bold(name)} started`

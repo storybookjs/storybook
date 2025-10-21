@@ -1,5 +1,4 @@
 import fs from 'node:fs/promises';
-import { posix, sep } from 'node:path';
 
 import * as babel from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
@@ -11,6 +10,9 @@ import * as find from 'empathic/find';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
+import type { SupportedFrameworks } from '../types';
+import { CoreBuilder } from './project_types';
+
 type Result = {
   compatible: boolean;
   reasons?: string[];
@@ -18,42 +20,22 @@ type Result = {
 
 // Import SUPPORTED_FRAMEWORKS from addon constants
 const SUPPORTED_FRAMEWORKS = [
-  '@storybook/nextjs',
-  '@storybook/nextjs-vite',
-  '@storybook/react-vite',
-  '@storybook/svelte-vite',
-  '@storybook/vue3-vite',
-  '@storybook/html-vite',
-  '@storybook/web-components-vite',
-  '@storybook/sveltekit',
-  '@storybook/react-native-web-vite',
-];
-
-/**
- * Utility function to check if a name matches a pattern Handles both unix and windows path
- * separators
- */
-function nameMatches(name: string, pattern: string): boolean {
-  if (name === pattern) {
-    return true;
-  }
-
-  if (name.includes(`${pattern}${sep}`)) {
-    return true;
-  }
-  if (name.includes(`${pattern}${posix.sep}`)) {
-    return true;
-  }
-
-  return false;
-}
+  'nextjs',
+  'nextjs-vite',
+  'react-vite',
+  'svelte-vite',
+  'vue3-vite',
+  'html-vite',
+  'web-components-vite',
+  'sveltekit',
+  'react-native-web-vite',
+] satisfies SupportedFrameworks[];
 
 export interface AddonVitestCompatibilityOptions {
   packageManager: JsPackageManager;
-  frameworkPackageName: string;
-  builderPackageName: string;
-  hasCustomWebpackConfig?: boolean;
-  configDir?: string;
+  framework: SupportedFrameworks;
+  builderPackageName: CoreBuilder;
+  projectRoot?: string;
 }
 
 /**
@@ -76,10 +58,7 @@ export class AddonVitestService {
    * - Next.js specific: @storybook/nextjs-vite
    * - Coverage reporter: @vitest/coverage-v8
    */
-  async collectDependencies(
-    packageManager: JsPackageManager,
-    frameworkPackageName?: string
-  ): Promise<string[]> {
+  async collectDependencies(packageManager: JsPackageManager): Promise<string[]> {
     const allDeps = packageManager.getAllDependencies();
     const dependencies: string[] = [];
 
@@ -88,18 +67,6 @@ export class AddonVitestService {
     for (const pkg of basePackages) {
       if (!allDeps[pkg]) {
         dependencies.push(pkg);
-      }
-    }
-
-    // Add Next.js specific dependency
-    if (frameworkPackageName === '@storybook/nextjs') {
-      try {
-        const storybookVersion = await packageManager.getInstalledVersion('storybook');
-        if (storybookVersion) {
-          dependencies.push(`@storybook/nextjs-vite@^${storybookVersion}`);
-        }
-      } catch {
-        // If we can't get version, skip this package
       }
     }
 
@@ -192,26 +159,18 @@ export class AddonVitestService {
   async validateCompatibility(options: AddonVitestCompatibilityOptions): Promise<Result> {
     const reasons: string[] = [];
 
-    // Check webpack configuration
-    if (options.hasCustomWebpackConfig) {
-      reasons.push('The addon cannot be used with a custom Webpack configuration.');
-    }
-
     // Check builder compatibility
-    if (
-      !nameMatches(options.frameworkPackageName, '@storybook/nextjs') &&
-      !nameMatches(options.builderPackageName, '@storybook/builder-vite')
-    ) {
-      reasons.push('The addon can only be used with a Vite-based Storybook framework or Next.js.');
+    if (options.builderPackageName !== CoreBuilder.Vite) {
+      reasons.push('The addon can only be used with a Vite-based Storybook framework');
     }
 
     // Check renderer/framework support
-    const isRendererSupported = SUPPORTED_FRAMEWORKS.some((framework) =>
-      nameMatches(options.frameworkPackageName, framework)
+    const isFrameworkSupported = SUPPORTED_FRAMEWORKS.some(
+      (framework) => options.framework === framework
     );
 
-    if (!isRendererSupported) {
-      reasons.push(`The addon cannot yet be used with ${options.frameworkPackageName}`);
+    if (!isFrameworkSupported) {
+      reasons.push(`The addon cannot yet be used with ${options.framework}`);
     }
 
     // Check package versions
@@ -220,17 +179,9 @@ export class AddonVitestService {
       reasons.push(...packageVersionResult.reasons);
     }
 
-    // Check Next.js installation if using Next.js framework
-    if (nameMatches(options.frameworkPackageName, '@storybook/nextjs')) {
-      const nextjsResult = await this.validateNextjsInstallation(options.packageManager);
-      if (!nextjsResult.compatible && nextjsResult.reasons) {
-        reasons.push(...nextjsResult.reasons);
-      }
-    }
-
     // Check vitest config files if configDir provided
-    if (options.configDir) {
-      const configResult = await this.validateConfigFiles(options.configDir);
+    if (options.projectRoot) {
+      const configResult = await this.validateConfigFiles(options.projectRoot);
       if (!configResult.compatible && configResult.reasons) {
         reasons.push(...configResult.reasons);
       }
@@ -267,21 +218,6 @@ export class AddonVitestService {
     }
 
     return reasons.length > 0 ? { compatible: false, reasons } : { compatible: true };
-  }
-
-  /** Validate that Next.js is installed when using @storybook/nextjs */
-  private async validateNextjsInstallation(packageManager: JsPackageManager): Promise<Result> {
-    const nextVersion = await packageManager.getInstalledVersion('next');
-    if (!nextVersion) {
-      return {
-        compatible: false,
-        reasons: [
-          'You are using @storybook/nextjs without having "next" installed. Please install "next" or use a different Storybook framework integration and try again.',
-        ],
-      };
-    }
-
-    return { compatible: true };
   }
 
   /**

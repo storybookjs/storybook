@@ -36,6 +36,10 @@ vi.mock('npmlog', () => ({
   },
 }));
 
+vi.mock('./prompts/prompt-config', () => ({
+  isClackEnabled: vi.fn(() => false),
+}));
+
 //
 
 describe('node-logger', () => {

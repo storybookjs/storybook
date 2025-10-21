@@ -3,13 +3,13 @@ import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import type { DependencyCollector } from '../dependency-collector';
-import type { CommandOptions, Generator, GeneratorFeature } from '../generators/types';
+import type { CommandOptions, GeneratorFeature } from '../generators/types';
 
 type ExecuteAddonConfigurationParams = {
   packageManager: JsPackageManager;
   selectedFeatures: Set<GeneratorFeature>;
-  generatorResult: Awaited<ReturnType<Generator>>;
   options: CommandOptions;
+  configDir?: string;
 };
 
 export type ExecuteAddonConfigurationResult = {
@@ -35,18 +35,14 @@ export class AddonConfigurationCommand {
     packageManager,
     options,
     selectedFeatures,
-    generatorResult,
+    configDir,
   }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
-    if (!selectedFeatures.has('test')) {
+    if (!selectedFeatures.has('test') || !configDir) {
       return { status: 'success' };
     }
 
     try {
-      const { hasFailures } = await this.configureTestAddons(
-        packageManager,
-        generatorResult,
-        options
-      );
+      const { hasFailures } = await this.configureTestAddons(packageManager, configDir, options);
       return { status: hasFailures ? 'failed' : 'success' };
     } catch {
       return { status: 'failed' };
@@ -56,7 +52,7 @@ export class AddonConfigurationCommand {
   /** Configure test addons (a11y and vitest) */
   private async configureTestAddons(
     packageManager: JsPackageManager,
-    generatorResult: Awaited<ReturnType<Generator>>,
+    configDir: string,
     options: CommandOptions
   ): Promise<{ hasFailures: boolean }> {
     // Import postinstallAddon from cli-storybook package
@@ -83,10 +79,6 @@ export class AddonConfigurationCommand {
 
       try {
         task.message(`Configuring ${addon}...`);
-
-        const { configDir } = generatorResult;
-
-        task.message(`Running postinstall for ${addon}...`);
 
         await postinstallAddon(addon, {
           packageManager: packageManager.type,

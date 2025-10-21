@@ -1,7 +1,17 @@
-import type { Builder, NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
+import type {
+  Builder,
+  CoreBuilder,
+  NpmOptions,
+  ProjectType,
+  SupportedLanguage,
+} from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import type { StorybookConfig } from 'storybook/internal/types';
+import type {
+  StorybookConfig,
+  SupportedFrameworks,
+  SupportedRenderers,
+} from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector';
 import type { FrameworkPreviewParts } from './configure';
@@ -11,7 +21,6 @@ export type GeneratorOptions = {
   builder: Builder;
   linkable: boolean;
   pnp: boolean;
-  projectType: ProjectType;
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
   yes: boolean;
@@ -28,10 +37,12 @@ export interface FrameworkOptions {
   webpackCompiler?: ({ builder }: { builder: Builder }) => 'babel' | 'swc' | undefined;
   extraMain?: any;
   extensions?: string[];
-  framework?: Record<string, any>;
   storybookConfigFolder?: string;
   componentsDestinationPath?: string;
   installFrameworkPackages?: boolean;
+  skipGenerator?: boolean;
+  storybookCommand?: string;
+  shouldRunDev?: boolean;
 }
 
 export type Generator<T = Record<string, any>> = (
@@ -52,6 +63,52 @@ export type Generator<T = Record<string, any>> = (
 >;
 
 export type GeneratorFeature = 'docs' | 'test' | 'onboarding';
+
+// New generator interface for configuration-based generators
+
+export interface GeneratorMetadata {
+  projectType: ProjectType;
+  framework?: SupportedFrameworks;
+  renderer: SupportedRenderers;
+  /**
+   * If the builder is a function, it will be called to determine the builder. This is useful for
+   * generators that need to determine the builder based on the project type in cases where the
+   * builder cannot be detected (Webpack and Vite are both non-existent dependencies).
+   */
+  builderOverride?: CoreBuilder | (() => CoreBuilder);
+}
+
+export interface GeneratorContext {
+  framework: SupportedFrameworks | undefined;
+  renderer: SupportedRenderers;
+  builder: CoreBuilder;
+  language: SupportedLanguage;
+  features: GeneratorFeature[];
+  linkable?: boolean;
+}
+
+export interface GeneratorModule {
+  /** Metadata about the generator This is used to register the generator with the generator registry */
+  metadata: GeneratorMetadata;
+  /**
+   * The function that configures the generator This is used to configure the generator It returns a
+   * promise that resolves to the framework options
+   */
+  configure: (
+    packageManager: JsPackageManager,
+    context: GeneratorContext
+    // Return undefined if the base generator shouldn't be executed
+  ) => Promise<FrameworkOptions>;
+  /**
+   * The function that runs after the generator is configured This is used to run any
+   * post-configuration tasks
+   */
+  postConfigure?: ({
+    packageManager,
+  }: {
+    packageManager: JsPackageManager;
+  }) => Promise<void> | void;
+}
 
 export type CommandOptions = {
   packageManager: PackageManagerName;

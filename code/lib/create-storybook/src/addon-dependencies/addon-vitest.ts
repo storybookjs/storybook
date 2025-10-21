@@ -8,9 +8,8 @@ import type { JsPackageManager } from 'storybook/internal/common';
  * needed: vitest, @vitest/browser, playwright, coverage reporter, and nextjs-vite if applicable
  */
 export async function getAddonVitestDependencies(
-  packageManager: JsPackageManager,
-  frameworkPackageName?: string
+  packageManager: JsPackageManager
 ): Promise<string[]> {
   const service = new AddonVitestService();
-  return service.collectDependencies(packageManager, frameworkPackageName);
+  return service.collectDependencies(packageManager);
 }

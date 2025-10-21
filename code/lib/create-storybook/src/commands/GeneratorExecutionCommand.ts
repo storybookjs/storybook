@@ -1,15 +1,16 @@
-import type { ProjectType } from 'storybook/internal/cli';
+import type { ProjectType, SupportedLanguage } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
 
 import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
-import type { CommandOptions, Generator, GeneratorFeature } from '../generators/types';
+import { baseGenerator } from '../generators/baseGenerator';
+import type { CommandOptions, GeneratorFeature, GeneratorModule } from '../generators/types';
 import { ONBOARDING_PROJECT_TYPES } from '../services/FeatureCompatibilityService';
+import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 
-export interface GeneratorExecutionResult {
-  generatorResult: Awaited<ReturnType<Generator>>;
-  storybookCommand: string;
-}
+export type GeneratorExecutionResult =
+  | ReturnType<typeof baseGenerator>
+  | { shouldRunDev?: boolean; configDir?: string; storybookCommand?: string };
 
 /**
  * Command for executing the project-specific generator
@@ -17,9 +18,9 @@ export interface GeneratorExecutionResult {
  * Responsibilities:
  *
  * - Filter features based on project type compatibility
- * - Get generator from registry
- * - Execute generator with dependency collector
- * - Collect addon dependencies (vitest, a11y)
+ * - Get generator module from registry
+ * - Call generator's configure() to get framework-specific options
+ * - Execute baseGenerator with complete configuration
  * - Determine Storybook command
  */
 export class GeneratorExecutionCommand {
@@ -27,6 +28,7 @@ export class GeneratorExecutionCommand {
   async execute(
     projectType: ProjectType,
     packageManager: JsPackageManager,
+    frameworkInfo: FrameworkDetectionResult,
     options: CommandOptions,
     selectedFeatures: Set<GeneratorFeature>,
     dependencyCollector: DependencyCollector
@@ -37,25 +39,18 @@ export class GeneratorExecutionCommand {
     // Update options with final selected features
     options.features = Array.from(selectedFeatures);
 
-    // Get and execute generator
+    // Get and execute generator (supports both old and new style)
     const generatorResult = await this.executeProjectGenerator(
       projectType,
       packageManager,
+      frameworkInfo,
       options,
       dependencyCollector
     );
 
-    // Sync features back because they may have been mutated by the generator
-    Object.assign(selectedFeatures, new Set(options.features));
-
     // Determine Storybook command
-    const storybookCommand = this.getStorybookCommand(
-      projectType,
-      packageManager,
-      generatorResult as any
-    );
 
-    return { generatorResult, storybookCommand };
+    return generatorResult;
   }
 
   /** Filter features based on project type compatibility */
@@ -73,6 +68,7 @@ export class GeneratorExecutionCommand {
   private async executeProjectGenerator(
     projectType: ProjectType,
     packageManager: JsPackageManager,
+    frameworkInfo: FrameworkDetectionResult,
     options: CommandOptions,
     dependencyCollector: DependencyCollector
   ) {
@@ -87,9 +83,11 @@ export class GeneratorExecutionCommand {
       skipInstall: options.skipInstall,
     };
 
+    const language: SupportedLanguage = options.language || ('typescript' as SupportedLanguage);
+
     const generatorOptions = {
-      language: options.language || 'typescript',
-      builder: options.builder,
+      language,
+      builder: frameworkInfo.builder,
       linkable: !!options.linkable,
       pnp: options.usePnp as boolean,
       yes: options.yes as boolean,
@@ -98,26 +96,41 @@ export class GeneratorExecutionCommand {
       dependencyCollector,
     };
 
-    return generator(packageManager, npmOptions, generatorOptions as any, options);
-  }
+    // All generators must be new-style modules with metadata + configure
+    const generatorModule = generator as GeneratorModule;
 
-  /** Get the appropriate Storybook command for the project type */
-  private getStorybookCommand(
-    projectType: ProjectType,
-    packageManager: JsPackageManager,
-    installResult: Awaited<ReturnType<Generator<{ projectName: string }>>>
-  ): string {
-    if (projectType === 'ANGULAR') {
-      return `ng run ${installResult.projectName}:storybook`;
+    // Call configure function to get framework-specific options
+    const frameworkOptions = await generatorModule.configure(packageManager, {
+      framework: frameworkInfo.framework,
+      renderer: frameworkInfo.renderer,
+      builder: frameworkInfo.builder,
+      language,
+      linkable: !!options.linkable,
+      features: options.features || [],
+    });
+
+    if (frameworkOptions.skipGenerator) {
+      return {
+        shouldRunDev: frameworkOptions.shouldRunDev,
+      };
     }
 
-    return packageManager.getRunCommand('storybook');
+    // Call baseGenerator with complete configuration
+    return baseGenerator(
+      packageManager,
+      npmOptions,
+      generatorOptions,
+      frameworkInfo.renderer,
+      frameworkOptions,
+      frameworkInfo.framework
+    );
   }
 }
 
 export const executeGeneratorExecution = (
   projectType: ProjectType,
   packageManager: JsPackageManager,
+  frameworkInfo: FrameworkDetectionResult,
   options: CommandOptions,
   selectedFeatures: Set<GeneratorFeature>,
   dependencyCollector: DependencyCollector
@@ -125,6 +138,7 @@ export const executeGeneratorExecution = (
   return new GeneratorExecutionCommand().execute(
     projectType,
     packageManager,
+    frameworkInfo,
     options,
     selectedFeatures,
     dependencyCollector

@@ -18,7 +18,6 @@ describe('AddonConfigurationCommand', () => {
   let mockTask: any;
   let mockPostinstallAddon: any;
   let dependencyCollector: DependencyCollector;
-  let mockGeneratorResult: any;
 
   beforeEach(async () => {
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
@@ -39,10 +38,6 @@ describe('AddonConfigurationCommand', () => {
       message: vi.fn(),
     };
 
-    mockGeneratorResult = {
-      configDir: '.storybook',
-    };
-
     vi.mocked(prompt.taskLog).mockReturnValue(mockTask);
     vi.mocked(mockPackageManager.getVersionedPackages).mockResolvedValue([
       '@storybook/addon-a11y@8.0.0',
@@ -60,7 +55,7 @@ describe('AddonConfigurationCommand', () => {
       const result = await command.execute({
         packageManager: mockPackageManager,
         selectedFeatures,
-        generatorResult: mockGeneratorResult,
+        configDir: '.storybook',
         options,
       });
 
@@ -76,7 +71,7 @@ describe('AddonConfigurationCommand', () => {
       const result = await command.execute({
         packageManager: mockPackageManager,
         selectedFeatures,
-        generatorResult: mockGeneratorResult,
+        configDir: '.storybook',
         options,
       });
 
@@ -94,7 +89,7 @@ describe('AddonConfigurationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         selectedFeatures,
-        generatorResult: mockGeneratorResult,
+        configDir: '.storybook',
         options,
       });
 
@@ -114,7 +109,7 @@ describe('AddonConfigurationCommand', () => {
       const result = await command.execute({
         packageManager: mockPackageManager,
         selectedFeatures,
-        generatorResult: mockGeneratorResult,
+        configDir: '.storybook',
         options,
       });
 
@@ -137,7 +132,7 @@ describe('AddonConfigurationCommand', () => {
       const result = await command.execute({
         packageManager: mockPackageManager,
         selectedFeatures,
-        generatorResult: mockGeneratorResult,
+        configDir: '.storybook',
         options,
       });
 
@@ -159,7 +154,7 @@ describe('AddonConfigurationCommand', () => {
       const result = await command.execute({
         packageManager: yarnPackageManager,
         selectedFeatures,
-        generatorResult: mockGeneratorResult,
+        configDir: '.storybook',
         options,
       });
 

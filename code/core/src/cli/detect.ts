@@ -48,7 +48,7 @@ const hasPeerDependency = (
 
 type SearchTuple = [string, ((version: string) => boolean) | undefined];
 
-const getFrameworkPreset = (
+const getProjectType = (
   packageJson: PackageJsonWithMaybeDeps,
   framework: TemplateConfiguration
 ): ProjectType | null => {
@@ -99,7 +99,7 @@ export function detectFrameworkPreset(
   packageJson = {} as PackageJsonWithMaybeDeps
 ): ProjectType | null {
   const result = [...supportedTemplates, unsupportedTemplate].find((framework) => {
-    return getFrameworkPreset(packageJson, framework) !== null;
+    return getProjectType(packageJson, framework) !== null;
   });
 
   return result ? result.preset : ProjectType.UNDETECTED;
@@ -111,7 +111,7 @@ export function detectFrameworkPreset(
  *
  * @returns CoreBuilder
  */
-export async function detectBuilder(packageManager: JsPackageManager, projectType: ProjectType) {
+export async function detectBuilder(packageManager: JsPackageManager) {
   const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
   const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
   const dependencies = packageManager.getAllDependencies();
@@ -122,39 +122,21 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
   }
 
   // REWORK
-  if (
-    webpackConfig ||
-    ((dependencies.webpack || dependencies['@nuxt/webpack-builder']) &&
-      dependencies.vite !== undefined)
-  ) {
+  if (webpackConfig || (dependencies.webpack && dependencies.vite !== undefined)) {
     logger.log('Setting builder to webpack');
     return CoreBuilder.Webpack5;
   }
 
-  // Fallback to Vite or Webpack based on project type
-  switch (projectType) {
-    case ProjectType.REACT_NATIVE_WEB:
-      return CoreBuilder.Vite;
-    case ProjectType.REACT_SCRIPTS:
-    case ProjectType.ANGULAR:
-    case ProjectType.REACT_NATIVE: // technically react native doesn't use webpack, we just want to set something
-    case ProjectType.NEXTJS:
-    case ProjectType.EMBER:
-      return CoreBuilder.Webpack5;
-    case ProjectType.NUXT:
-      return CoreBuilder.Vite;
-    default:
-      return prompt.select({
-        message: dedent`
-          We were not able to detect the right builder for your project. 
-          Please select one:
-          `,
-        options: [
-          { label: 'Vite', value: CoreBuilder.Vite },
-          { label: 'Webpack 5', value: CoreBuilder.Webpack5 },
-        ],
-      });
-  }
+  return prompt.select({
+    message: dedent`
+      We were not able to detect the right builder for your project. 
+      Please select one:
+      `,
+    options: [
+      { label: 'Vite', value: CoreBuilder.Vite },
+      { label: 'Webpack 5', value: CoreBuilder.Webpack5 },
+    ],
+  });
 }
 
 export function isStorybookInstantiated(configDir = resolve(process.cwd(), '.storybook')) {

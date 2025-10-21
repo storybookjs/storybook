@@ -5,11 +5,9 @@ import { fileURLToPath } from 'node:url';
 import {
   type Builder,
   type NpmOptions,
-  ProjectType,
   SupportedLanguage,
   configureEslintPlugin,
   copyTemplateFiles,
-  detectBuilder,
   externalFrameworks,
   extractEslintInfo,
 } from 'storybook/internal/cli';
@@ -41,7 +39,6 @@ const defaultOptions = {
   addComponents: true,
   webpackCompiler: () => undefined,
   extraMain: undefined,
-  framework: undefined,
   extensions: undefined,
   componentsDestinationPath: undefined,
   storybookConfigFolder: '.storybook',
@@ -229,7 +226,6 @@ export async function baseGenerator(
     builder,
     pnp,
     frameworkPreviewParts,
-    projectType,
     features,
     dependencyCollector,
   }: GeneratorOptions,
@@ -245,30 +241,6 @@ export async function baseGenerator(
     id: 'base-generator',
     title: 'Generating Storybook configuration',
   });
-
-  if (!builder) {
-    builder = await detectBuilder(packageManager as any, projectType);
-  }
-
-  if (features.includes('test')) {
-    const supportedFrameworks: ProjectType[] = [
-      ProjectType.REACT,
-      ProjectType.VUE3,
-      ProjectType.NEXTJS,
-      ProjectType.NUXT,
-      ProjectType.PREACT,
-      ProjectType.SVELTE,
-      ProjectType.SVELTEKIT,
-      ProjectType.WEB_COMPONENTS,
-      ProjectType.REACT_NATIVE_WEB,
-    ];
-    const supportsTestAddon =
-      projectType === ProjectType.NEXTJS ||
-      (builder !== 'webpack5' && supportedFrameworks.includes(projectType));
-    if (!supportsTestAddon) {
-      features.splice(features.indexOf('test'), 1);
-    }
-  }
 
   const {
     packages,
@@ -404,7 +376,6 @@ export async function baseGenerator(
   const { mainPath } = await configureMain({
     framework: {
       name: frameworkPackagePath,
-      options: options.framework || {},
     },
     features,
     frameworkPackage,
@@ -475,5 +446,7 @@ export async function baseGenerator(
     mainConfigCSFFile,
     configDir: storybookConfigFolder,
     previewConfigPath,
+    storybookCommand: _options.storybookCommand,
+    shouldRunDev: _options.shouldRunDev,
   };
 }

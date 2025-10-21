@@ -13,7 +13,7 @@ import type { GeneratorFeature } from '../generators/types';
 type ExecuteFinalizationParams = {
   projectType: ProjectType;
   selectedFeatures: Set<GeneratorFeature>;
-  storybookCommand: string;
+  storybookCommand?: string;
 };
 
 /**
@@ -77,23 +77,25 @@ export class FinalizationCommand {
   /** Print success message with feature summary */
   private printSuccessMessage(
     selectedFeatures: Set<GeneratorFeature>,
-    storybookCommand: string
+    storybookCommand?: string
   ): void {
     const printFeatures = (features: Set<GeneratorFeature>) =>
       Array.from(features).join(', ') || 'none';
 
     logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
 
-    logger.log(
-      dedent`
-        Additional features: ${printFeatures(selectedFeatures)}
+    logger.log(`Additional features: ${printFeatures(selectedFeatures)}`);
 
-        To run Storybook manually, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.
+    if (storybookCommand) {
+      logger.log(
+        `        To run Storybook manually, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`
+      );
+    }
 
-        Wanna know more about Storybook? Check out ${CLI_COLORS.cta('https://storybook.js.org/')}
-        Having trouble or want to chat? Join us at ${CLI_COLORS.cta('https://discord.gg/storybook/')}
-      `
-    );
+    logger.log(dedent`
+      Wanna know more about Storybook? Check out ${CLI_COLORS.cta('https://storybook.js.org/')}
+      Having trouble or want to chat? Join us at ${CLI_COLORS.cta('https://discord.gg/storybook/')}
+    `);
   }
 }
 

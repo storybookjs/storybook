@@ -1,26 +1,27 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { CoreBuilder } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
 
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-const generator: Generator = async (packageManager, npmOptions, options) => {
-  let staticDir;
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.NEXTJS,
+    renderer: 'react',
+    framework: 'nextjs',
+  },
+  configure: async () => {
+    let staticDir;
 
-  if (existsSync(join(process.cwd(), 'public'))) {
-    staticDir = 'public';
-  }
+    if (existsSync(join(process.cwd(), 'public'))) {
+      staticDir = 'public';
+    }
 
-  return baseGenerator(
-    packageManager,
-    npmOptions,
-    { ...options, builder: CoreBuilder.Webpack5 },
-    'react',
-    { staticDir, webpackCompiler: () => undefined },
-    'nextjs'
-  );
-};
+    // TODO: Add nextjs-vite support (prompt for it)
 
-export default generator;
+    return {
+      staticDir,
+    };
+  },
+});

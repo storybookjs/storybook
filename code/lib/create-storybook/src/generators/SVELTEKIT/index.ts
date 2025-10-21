@@ -1,19 +1,18 @@
-import { CoreBuilder } from 'storybook/internal/cli';
+import { CoreBuilder, ProjectType } from 'storybook/internal/cli';
 
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-const generator: Generator = async (packageManager, npmOptions, options) =>
-  baseGenerator(
-    packageManager,
-    npmOptions,
-    { ...options, builder: CoreBuilder.Vite },
-    'svelte',
-    {
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.SVELTEKIT,
+    renderer: 'svelte',
+    framework: 'sveltekit',
+    builderOverride: CoreBuilder.Vite,
+  },
+  configure: async () => {
+    return {
       extensions: ['js', 'ts', 'svelte'],
       extraAddons: ['@storybook/addon-svelte-csf'],
-    },
-    'sveltekit'
-  );
-
-export default generator;
+    };
+  },
+});

@@ -3,13 +3,15 @@ import { expect, test } from 'vitest';
 const { run, cleanLog } = require('../helpers.cjs');
 
 test('suggests the closest match to an unknown command', () => {
-  const { status, stderr } = run(['upgraed']);
+  const { status, stdout } = run(['upgraed']);
 
   // Assertions
   expect(status).toBe(1);
-  const stderrString = cleanLog(stderr.toString());
-  expect(stderrString).toContain('Invalid command: upgraed.');
-  expect(stderrString).toContain('Did you mean upgrade?');
+  const stdoutString = cleanLog(stdout.toString());
+
+  // Error messages are now written to stdout
+  expect(stdoutString).toContain('Invalid command: upgraed.');
+  expect(stdoutString).toContain('Did you mean upgrade?');
 });
 
 test('help command', () => {

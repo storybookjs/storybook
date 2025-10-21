@@ -4,33 +4,45 @@ import { ProjectType } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
 
 import { GeneratorRegistry } from './GeneratorRegistry';
-import type { Generator } from './types';
+import type { GeneratorModule } from './types';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
 describe('GeneratorRegistry', () => {
   let registry: GeneratorRegistry;
-  let mockGenerator: Generator;
+  let mockGeneratorModule: GeneratorModule;
 
   beforeEach(() => {
     registry = new GeneratorRegistry();
-    mockGenerator = vi.fn();
+    mockGeneratorModule = {
+      metadata: {
+        projectType: ProjectType.REACT,
+        renderer: 'react',
+      },
+      configure: vi.fn(),
+    };
     vi.clearAllMocks();
   });
 
   describe('register', () => {
     it('should register a generator for a project type', () => {
-      registry.register({ projectType: ProjectType.REACT }, mockGenerator);
+      registry.register(mockGeneratorModule);
 
       expect(registry.has(ProjectType.REACT)).toBe(true);
-      expect(registry.get(ProjectType.REACT)).toBe(mockGenerator);
+      expect(registry.get(ProjectType.REACT)).toBe(mockGeneratorModule.configure);
     });
 
     it('should register multiple generators', () => {
-      const vueGenerator = vi.fn();
+      const vueGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.VUE3,
+          renderer: 'vue3',
+        },
+        configure: vi.fn(),
+      };
 
-      registry.register({ projectType: ProjectType.REACT }, mockGenerator);
-      registry.register({ projectType: ProjectType.VUE3 }, vueGenerator);
+      registry.register(mockGeneratorModule);
+      registry.register(vueGeneratorModule);
 
       expect(registry.has(ProjectType.REACT)).toBe(true);
       expect(registry.has(ProjectType.VUE3)).toBe(true);
@@ -38,37 +50,46 @@ describe('GeneratorRegistry', () => {
     });
 
     it('should warn when overwriting an existing generator', () => {
-      const newGenerator = vi.fn();
+      const newGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.REACT,
+          renderer: 'react',
+        },
+        configure: vi.fn(),
+      };
 
       // Mock logger.warn to prevent throwing in vitest-setup
       vi.mocked(logger.warn).mockImplementation(() => {});
 
-      registry.register({ projectType: ProjectType.REACT }, mockGenerator);
-      registry.register({ projectType: ProjectType.REACT }, newGenerator);
+      registry.register(mockGeneratorModule);
+      registry.register(newGeneratorModule);
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('already registered. Overwriting')
       );
-      expect(registry.get(ProjectType.REACT)).toBe(newGenerator);
+      expect(registry.get(ProjectType.REACT)).toBe(newGeneratorModule.configure);
     });
 
     it('should store metadata with generator', () => {
-      const metadata = {
-        projectType: ProjectType.REACT,
-        supportedFeatures: ['docs', 'test', 'onboarding'],
+      const customGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.REACT,
+          renderer: 'react',
+        },
+        configure: vi.fn(),
       };
 
-      registry.register(metadata, mockGenerator);
+      registry.register(customGeneratorModule);
 
-      expect(registry.getMetadata(ProjectType.REACT)).toEqual(metadata);
+      expect(registry.getMetadata(ProjectType.REACT)).toEqual(customGeneratorModule.metadata);
     });
   });
 
   describe('get', () => {
     it('should return generator for registered project type', () => {
-      registry.register({ projectType: ProjectType.REACT }, mockGenerator);
+      registry.register(mockGeneratorModule);
 
-      expect(registry.get(ProjectType.REACT)).toBe(mockGenerator);
+      expect(registry.get(ProjectType.REACT)).toBe(mockGeneratorModule.configure);
     });
 
     it('should return undefined for unregistered project type', () => {
@@ -78,7 +99,7 @@ describe('GeneratorRegistry', () => {
 
   describe('has', () => {
     it('should return true for registered project type', () => {
-      registry.register({ projectType: ProjectType.REACT }, mockGenerator);
+      registry.register(mockGeneratorModule);
 
       expect(registry.has(ProjectType.REACT)).toBe(true);
     });
@@ -90,14 +111,17 @@ describe('GeneratorRegistry', () => {
 
   describe('getMetadata', () => {
     it('should return metadata for registered project type', () => {
-      const metadata = {
-        projectType: ProjectType.ANGULAR,
-        supportedFeatures: ['docs', 'onboarding'],
+      const angularGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.ANGULAR,
+          renderer: 'angular',
+        },
+        configure: vi.fn(),
       };
 
-      registry.register(metadata, mockGenerator);
+      registry.register(angularGeneratorModule);
 
-      expect(registry.getMetadata(ProjectType.ANGULAR)).toEqual(metadata);
+      expect(registry.getMetadata(ProjectType.ANGULAR)).toEqual(angularGeneratorModule.metadata);
     });
 
     it('should return undefined for unregistered project type', () => {
@@ -111,12 +135,24 @@ describe('GeneratorRegistry', () => {
     });
 
     it('should return all registered project types', () => {
-      const vueGenerator = vi.fn();
-      const angularGenerator = vi.fn();
+      const vueGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.VUE3,
+          renderer: 'vue3',
+        },
+        configure: vi.fn(),
+      };
+      const angularGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.ANGULAR,
+          renderer: 'angular',
+        },
+        configure: vi.fn(),
+      };
 
-      registry.register({ projectType: ProjectType.REACT }, mockGenerator);
-      registry.register({ projectType: ProjectType.VUE3 }, vueGenerator);
-      registry.register({ projectType: ProjectType.ANGULAR }, angularGenerator);
+      registry.register(mockGeneratorModule);
+      registry.register(vueGeneratorModule);
+      registry.register(angularGeneratorModule);
 
       const types = registry.getRegisteredProjectTypes();
 
@@ -135,23 +171,37 @@ describe('GeneratorRegistry', () => {
     });
 
     it('should return all generators as a map', () => {
-      const vueGenerator = vi.fn();
+      const vueGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.VUE3,
+          renderer: 'vue3',
+        },
+        configure: vi.fn(),
+      };
 
-      registry.register({ projectType: ProjectType.REACT }, mockGenerator);
-      registry.register({ projectType: ProjectType.VUE3 }, vueGenerator);
+      registry.register(mockGeneratorModule);
+      registry.register(vueGeneratorModule);
 
       const generators = registry.getAllGenerators();
 
       expect(generators.size).toBe(2);
-      expect(generators.get(ProjectType.REACT)).toBe(mockGenerator);
-      expect(generators.get(ProjectType.VUE3)).toBe(vueGenerator);
+      expect(generators.get(ProjectType.REACT)).toBe(mockGeneratorModule.configure);
+      expect(generators.get(ProjectType.VUE3)).toBe(vueGeneratorModule.configure);
     });
   });
 
   describe('clear', () => {
     it('should remove all registered generators', () => {
-      registry.register({ projectType: ProjectType.REACT }, mockGenerator);
-      registry.register({ projectType: ProjectType.VUE3 }, vi.fn());
+      const vueGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.VUE3,
+          renderer: 'vue3',
+        },
+        configure: vi.fn(),
+      };
+
+      registry.register(mockGeneratorModule);
+      registry.register(vueGeneratorModule);
 
       expect(registry.size()).toBe(2);
 
@@ -169,13 +219,28 @@ describe('GeneratorRegistry', () => {
     });
 
     it('should return correct count of registered generators', () => {
-      registry.register({ projectType: ProjectType.REACT }, mockGenerator);
+      const vueGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.VUE3,
+          renderer: 'vue3',
+        },
+        configure: vi.fn(),
+      };
+      const angularGeneratorModule: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.ANGULAR,
+          renderer: 'angular',
+        },
+        configure: vi.fn(),
+      };
+
+      registry.register(mockGeneratorModule);
       expect(registry.size()).toBe(1);
 
-      registry.register({ projectType: ProjectType.VUE3 }, vi.fn());
+      registry.register(vueGeneratorModule);
       expect(registry.size()).toBe(2);
 
-      registry.register({ projectType: ProjectType.ANGULAR }, vi.fn());
+      registry.register(angularGeneratorModule);
       expect(registry.size()).toBe(3);
     });
   });

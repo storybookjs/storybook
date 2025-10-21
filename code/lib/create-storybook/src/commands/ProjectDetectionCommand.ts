@@ -92,6 +92,7 @@ export class ProjectDetectionCommand {
   }
 
   /** Prompt user to select React Native variant */
+  // TODO: Extract into generator
   private async promptReactNativeVariant(): Promise<ProjectType> {
     const manualType = await prompt.select({
       message: "We've detected a React Native project. Install:",

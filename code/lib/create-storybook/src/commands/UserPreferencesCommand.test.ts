@@ -84,7 +84,11 @@ describe('UserPreferencesCommand', () => {
 
   describe('execute', () => {
     it('should return recommended config for new users in non-interactive mode', async () => {
-      const result = await command.execute(mockPackageManager, { yes: true });
+      const result = await command.execute(mockPackageManager, {
+        yes: true,
+        framework: undefined,
+        builder: 'vite' as any,
+      });
 
       expect(result.newUser).toBe(true);
       expect(result.installType).toBe('recommended');
@@ -99,7 +103,10 @@ describe('UserPreferencesCommand', () => {
 
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
 
-      const result = await command.execute(mockPackageManager, {});
+      const result = await command.execute(mockPackageManager, {
+        framework: undefined,
+        builder: 'vite' as any,
+      });
 
       expect(prompt.select).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -118,7 +125,10 @@ describe('UserPreferencesCommand', () => {
         .mockResolvedValueOnce(false) // not new user
         .mockResolvedValueOnce('light'); // minimal install
 
-      const result = await command.execute(mockPackageManager, {});
+      const result = await command.execute(mockPackageManager, {
+        framework: undefined,
+        builder: 'vite' as any,
+      });
 
       expect(prompt.select).toHaveBeenCalledTimes(2);
       expect(result.newUser).toBe(false);
@@ -134,7 +144,10 @@ describe('UserPreferencesCommand', () => {
         .mockResolvedValueOnce(false) // not new user
         .mockResolvedValueOnce('light'); // minimal install
 
-      const result = await command.execute(mockPackageManager, {});
+      const result = await command.execute(mockPackageManager, {
+        framework: undefined,
+        builder: 'vite' as any,
+      });
 
       expect(result.selectedFeatures.has('test')).toBe(false);
       expect(result.selectedFeatures.has('docs')).toBe(false);
@@ -144,7 +157,11 @@ describe('UserPreferencesCommand', () => {
     it('should not include test feature in CI environment', async () => {
       vi.mocked(isCI).mockReturnValue(true);
 
-      const result = await command.execute(mockPackageManager, { yes: true });
+      const result = await command.execute(mockPackageManager, {
+        yes: true,
+        framework: undefined,
+        builder: 'vite' as any,
+      });
 
       expect(result.selectedFeatures.has('docs')).toBe(true);
       expect(result.selectedFeatures.has('test')).toBe(false);
@@ -159,10 +176,15 @@ describe('UserPreferencesCommand', () => {
         compatible: true,
       });
 
-      await command.execute(mockPackageManager, {});
+      await command.execute(mockPackageManager, {
+        framework: undefined,
+        builder: 'vite' as any,
+      });
 
       expect(featureService.validateTestFeatureCompatibility).toHaveBeenCalledWith(
         mockPackageManager,
+        undefined,
+        'vite',
         process.cwd()
       );
     });
@@ -178,7 +200,10 @@ describe('UserPreferencesCommand', () => {
       });
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // continue without test
 
-      const result = await command.execute(mockPackageManager, {});
+      const result = await command.execute(mockPackageManager, {
+        framework: undefined,
+        builder: 'vite' as any,
+      });
 
       expect(result.selectedFeatures.has('test')).toBe(false);
       expect(result.selectedFeatures.has('docs')).toBe(true);
@@ -194,7 +219,11 @@ describe('UserPreferencesCommand', () => {
         isOutdated: true,
       });
 
-      await command.execute(mockPackageManager, { yes: true });
+      await command.execute(mockPackageManager, {
+        yes: true,
+        framework: undefined,
+        builder: 'vite' as any,
+      });
 
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('behind the latest release')
@@ -210,7 +239,11 @@ describe('UserPreferencesCommand', () => {
         isOutdated: false,
       });
 
-      await command.execute(mockPackageManager, { yes: true });
+      await command.execute(mockPackageManager, {
+        yes: true,
+        framework: undefined,
+        builder: 'vite' as any,
+      });
 
       expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('pre-release version'));
     });

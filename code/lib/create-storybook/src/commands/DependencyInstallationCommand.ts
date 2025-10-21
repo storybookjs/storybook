@@ -1,4 +1,3 @@
-import type { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
@@ -9,7 +8,6 @@ import type { DependencyCollector } from '../dependency-collector';
 type DependencyInstallationCommandParams = {
   packageManager: JsPackageManager;
   skipInstall: boolean;
-  projectType: ProjectType;
 };
 
 /**
@@ -27,9 +25,8 @@ export class DependencyInstallationCommand {
   async execute({
     packageManager,
     skipInstall = false,
-    projectType,
   }: DependencyInstallationCommandParams): Promise<void> {
-    await this.collectAddonDependencies(projectType, packageManager);
+    await this.collectAddonDependencies(packageManager);
 
     if (!this.dependencyCollector.hasPackages() && skipInstall) {
       return;
@@ -70,15 +67,9 @@ export class DependencyInstallationCommand {
   }
 
   /** Collect addon dependencies without installing them */
-  private async collectAddonDependencies(
-    projectType: ProjectType,
-    packageManager: JsPackageManager
-  ): Promise<void> {
+  private async collectAddonDependencies(packageManager: JsPackageManager): Promise<void> {
     try {
-      // Determine framework package name for Next.js detection
-      const frameworkPackageName = projectType === 'NEXTJS' ? '@storybook/nextjs' : undefined;
-
-      const vitestDeps = await getAddonVitestDependencies(packageManager, frameworkPackageName);
+      const vitestDeps = await getAddonVitestDependencies(packageManager);
       const a11yDeps = getAddonA11yDependencies();
 
       this.dependencyCollector.addDevDependencies([...vitestDeps, ...a11yDeps]);

@@ -4,20 +4,15 @@ import { writeFile } from 'node:fs/promises';
 import { isAbsolute, posix, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { babelParse, generate, traverse } from 'storybook/internal/babel';
+import { babelParse, generate } from 'storybook/internal/babel';
 import { AddonVitestService } from 'storybook/internal/cli';
 import {
   JsPackageManagerFactory,
   formatFileContent,
-  getInterpretedFile,
   getProjectRoot,
-  isCI,
   loadMainConfig,
-  scanAndTransformFiles,
-  transformImportFiles,
 } from 'storybook/internal/common';
 import { experimental_loadStorybook } from 'storybook/internal/core-server';
-import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import {
   AddonVitestPostinstallError,
@@ -76,62 +71,6 @@ export default async function postInstall(options: PostinstallOptions) {
     ? satisfies(vitestVersionSpecifier, '>=3.2.0')
     : true;
 
-  const mainJsPath = getInterpretedFile(resolve(options.configDir, 'main')) as string;
-  const config = await readConfig(mainJsPath);
-
-  const hasCustomWebpackConfig = !!config.getFieldNode(['webpackFinal']);
-
-  const isInteractive = process.stdout.isTTY && !isCI();
-
-  if (nameMatches(info.frameworkPackageName, '@storybook/nextjs') && !hasCustomWebpackConfig) {
-    let isMigrateToNextjsVite;
-
-    if (options.yes || !isInteractive) {
-      isMigrateToNextjsVite = !!options.yes;
-    } else {
-      isMigrateToNextjsVite = await prompt.confirm({
-        message: dedent`
-        The addon requires @storybook/nextjs-vite to work with Next.js.
-        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#install-and-set-up
-        Do you want to migrate?
-      `,
-        initialValue: true,
-      });
-    }
-
-    if (isMigrateToNextjsVite) {
-      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
-        '@storybook/nextjs-vite',
-      ]);
-
-      await packageManager.removeDependencies(['@storybook/nextjs']);
-
-      traverse(config._ast, {
-        StringLiteral(path) {
-          if (path.node.value === '@storybook/nextjs') {
-            path.node.value = '@storybook/nextjs-vite';
-          }
-        },
-      });
-
-      await writeConfig(config, mainJsPath);
-
-      info.frameworkPackageName = '@storybook/nextjs-vite';
-      info.builderPackageName = '@storybook/builder-vite';
-
-      await scanAndTransformFiles({
-        promptMessage:
-          'Enter a glob to scan for all @storybook/nextjs imports to substitute with @storybook/nextjs-vite:',
-        force: options.yes,
-        dryRun: false,
-        transformFn: (files, options, dryRun) => transformImportFiles(files, options, dryRun),
-        transformOptions: {
-          '@storybook/nextjs': '@storybook/nextjs-vite',
-        },
-      });
-    }
-  }
-
   const annotationsImport = SUPPORTED_FRAMEWORKS.find((f) =>
     nameMatches(info.frameworkPackageName, f)
   )
@@ -148,7 +87,6 @@ export default async function postInstall(options: PostinstallOptions) {
     packageManager,
     frameworkPackageName: info.frameworkPackageName,
     builderPackageName: info.builderPackageName,
-    hasCustomWebpackConfig,
     configDir: options.configDir,
   });
 

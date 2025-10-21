@@ -1,27 +1,24 @@
 import type { ProjectType } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { Generator } from './types';
-
-export interface GeneratorMetadata {
-  projectType: ProjectType;
-  supportedFeatures?: string[];
-}
+import type { GeneratorMetadata, GeneratorModule } from './types';
 
 interface GeneratorEntry {
-  generator: Generator;
+  generator: GeneratorModule | any;
   metadata: GeneratorMetadata;
 }
 
 /**
- * Registry for managing Storybook project generators Provides a centralized way to register and
- * retrieve generators for different project types
+ * Registry for managing Storybook project generators
+ *
+ * All new generators should use the GeneratorModule format with metadata + configure. Legacy
+ * generators (not yet refactored) can still be registered with LegacyGeneratorMetadata.
  */
 export class GeneratorRegistry {
   private generators: Map<ProjectType, GeneratorEntry> = new Map();
 
   /** Register a generator for a specific project type */
-  register(metadata: GeneratorMetadata, generator: Generator): void {
+  register({ metadata, configure }: GeneratorModule): void {
     if (this.generators.has(metadata.projectType)) {
       logger.warn(
         `Generator for project type ${metadata.projectType} is already registered. Overwriting.`
@@ -29,13 +26,13 @@ export class GeneratorRegistry {
     }
 
     this.generators.set(metadata.projectType, {
-      generator,
+      generator: configure,
       metadata,
     });
   }
 
   /** Get a generator for a specific project type */
-  get(projectType: ProjectType): Generator | undefined {
+  get(projectType: ProjectType): GeneratorModule | any | undefined {
     return this.generators.get(projectType)?.generator;
   }
 
@@ -55,8 +52,8 @@ export class GeneratorRegistry {
   }
 
   /** Get all generators as a map */
-  getAllGenerators(): Map<ProjectType, Generator> {
-    const map = new Map<ProjectType, Generator>();
+  getAllGenerators(): Map<ProjectType, GeneratorModule | any> {
+    const map = new Map<ProjectType, GeneratorModule | any>();
     this.generators.forEach((entry, projectType) => {
       map.set(projectType, entry.generator);
     });
@@ -76,3 +73,6 @@ export class GeneratorRegistry {
 
 // Create and export a singleton instance
 export const generatorRegistry = new GeneratorRegistry();
+
+// Re-export types for convenience
+export type { GeneratorMetadata, GeneratorModule };

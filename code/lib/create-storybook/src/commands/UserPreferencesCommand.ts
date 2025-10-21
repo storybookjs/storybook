@@ -1,7 +1,8 @@
-import { globalSettings } from 'storybook/internal/cli';
+import { type CoreBuilder, globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
+import type { SupportedFrameworks } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -23,6 +24,8 @@ export interface UserPreferencesOptions {
   skipPrompt?: boolean;
   disableTelemetry?: boolean;
   yes?: boolean;
+  framework: SupportedFrameworks | undefined;
+  builder: CoreBuilder;
 }
 
 /**
@@ -69,12 +72,14 @@ export class UserPreferencesCommand {
     // Determine selected features
     const selectedFeatures = this.determineFeatures(installType, newUser);
 
-    // Validate test feature compatibility
+    // Validate test feature compatibility with framework/builder info
     if (selectedFeatures.has('test') && isInteractive) {
-      const isCompatible = await this.validateTestFeature(packageManager, selectedFeatures);
-      if (!isCompatible) {
-        process.exit(0);
-      }
+      await this.validateTestFeature(
+        packageManager,
+        selectedFeatures,
+        options.framework,
+        options.builder
+      );
     }
 
     return { newUser, installType, selectedFeatures };
@@ -187,10 +192,14 @@ export class UserPreferencesCommand {
   /** Validate test feature compatibility and prompt user if issues found */
   private async validateTestFeature(
     packageManager: JsPackageManager,
-    selectedFeatures: Set<GeneratorFeature>
+    selectedFeatures: Set<GeneratorFeature>,
+    framework: SupportedFrameworks | undefined,
+    builder: CoreBuilder
   ): Promise<boolean> {
     const result = await this.featureService.validateTestFeatureCompatibility(
       packageManager,
+      framework,
+      builder,
       process.cwd()
     );
 
@@ -202,14 +211,15 @@ export class UserPreferencesCommand {
         message: "Do you want to continue without Storybook's testing features?",
       });
 
-      if (shouldContinue) {
-        selectedFeatures.delete('test');
-        return true;
+      if (!shouldContinue) {
+        process.exit(0);
       }
-      return false;
+
+      // Remove test feature if user chose to continue without it
+      selectedFeatures.delete('test');
     }
 
-    return true;
+    return result.compatible;
   }
 }
 

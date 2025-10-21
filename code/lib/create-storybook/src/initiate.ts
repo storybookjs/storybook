@@ -3,12 +3,11 @@ import { type JsPackageManager } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 
-import { dedent } from 'ts-dedent';
-
 import {
   executeAddonConfiguration,
   executeDependencyInstallation,
   executeFinalization,
+  executeFrameworkDetection,
   executeGeneratorExecution,
   executePreflightCheck,
   executeProjectDetection,
@@ -17,6 +16,7 @@ import {
 import { DependencyCollector } from './dependency-collector';
 import { registerAllGenerators } from './generators';
 import type { CommandOptions } from './generators/types';
+import { ONBOARDING_PROJECT_TYPES } from './services/FeatureCompatibilityService';
 import { TelemetryService } from './services/TelemetryService';
 
 /**
@@ -31,7 +31,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       shouldOnboard: boolean;
       projectType: ProjectType;
       packageManager: JsPackageManager;
-      storybookCommand: string;
+      storybookCommand?: string;
     }
   | { shouldRunDev: false }
 > {
@@ -44,105 +44,64 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Step 1: Run preflight checks
   const { packageManager } = await executePreflightCheck(options);
 
-  // Step 2: Get user preferences and feature selections
+  // Step 2: Detect project type
+  const projectType = await executeProjectDetection(packageManager, options);
+
+  // Step 3: Detect framework, renderer, and builder (NEW)
+  const frameworkInfo = await executeFrameworkDetection(projectType, packageManager, options);
+
+  // Step 4: Get user preferences and feature selections (with framework/builder for validation)
   const { newUser, selectedFeatures } = await executeUserPreferences(packageManager, {
     yes: options.yes,
     disableTelemetry: options.disableTelemetry,
+    framework: frameworkInfo.framework,
+    builder: frameworkInfo.builder,
   });
 
-  // Step 3: Detect project type
-  const projectType = await executeProjectDetection(packageManager, options);
-
-  // Step 4: Execute generator with dependency collector
+  // Step 5: Execute generator with dependency collector (now with frameworkInfo)
   const dependencyCollector = new DependencyCollector();
-  const { storybookCommand, generatorResult } = await executeGeneratorExecution(
+  const generatorResult = await executeGeneratorExecution(
     projectType,
     packageManager,
+    frameworkInfo,
     options,
     selectedFeatures,
     dependencyCollector
   );
 
-  // Step 5: Install all dependencies in a single operation
+  // Step 6: Install all dependencies in a single operation
   await executeDependencyInstallation({
     packageManager,
     dependencyCollector,
     skipInstall: !!options.skipInstall,
-    projectType,
   });
 
-  // Step 6: Configure addons (run postinstall scripts for configuration only)
+  // Step 7: Configure addons (run postinstall scripts for configuration only)
   await executeAddonConfiguration({
     packageManager,
     dependencyCollector,
     selectedFeatures,
-    generatorResult,
+    configDir: generatorResult.configDir,
     options,
   });
 
-  // Step 7: Print final summary
+  // Step 8: Print final summary
   await executeFinalization({
     projectType,
     selectedFeatures,
-    storybookCommand,
+    storybookCommand: generatorResult?.storybookCommand,
   });
 
-  // Step 8: Track telemetry
+  // Step 9: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
-
-  // Handle React Native special case (exit early)
-  if ([ProjectType.REACT_NATIVE, ProjectType.REACT_NATIVE_AND_RNW].includes(projectType)) {
-    return handleReactNativeInstallation(projectType, packageManager);
-  }
 
   return {
     shouldRunDev: !!options.dev && !options.skipInstall,
     shouldOnboard: newUser,
     projectType,
     packageManager,
-    storybookCommand,
+    storybookCommand: generatorResult?.storybookCommand,
   };
-}
-
-/** Handle React Native installation special case */
-function handleReactNativeInstallation(
-  projectType: ProjectType,
-  packageManager: JsPackageManager
-): { shouldRunDev: false } {
-  logger.log(dedent`
-    ${CLI_COLORS.warning('React Native (RN) Storybook installation is not 100% automated.')}
-
-    To run RN Storybook, you will need to:
-
-    1. Replace the contents of your app entry with the following
-
-    ${CLI_COLORS.info(' ' + "export {default} from './.rnstorybook';" + ' ')}
-
-    2. Wrap your metro config with the withStorybook enhancer function like this:
-
-    ${CLI_COLORS.info(' ' + "const withStorybook = require('@storybook/react-native/metro/withStorybook');" + ' ')}
-    ${CLI_COLORS.info(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
-
-    For more details go to:
-    https://github.com/storybookjs/react-native#getting-started
-
-    Then to start RN Storybook, run:
-
-    ${CLI_COLORS.cta(' ' + packageManager.getRunCommand('start') + ' ')}
-  `);
-
-  if (projectType === ProjectType.REACT_NATIVE_AND_RNW) {
-    logger.log(dedent`
-
-      ${CLI_COLORS.success('React Native Web (RNW) Storybook is fully installed.')}
-
-      To start RNW Storybook, run:
-
-      ${CLI_COLORS.cta(' ' + packageManager.getRunCommand('storybook') + ' ')}
-    `);
-  }
-
-  return { shouldRunDev: false };
 }
 
 const handleCommandFailure = async (): Promise<never> => {
@@ -176,23 +135,19 @@ export async function initiate(options: CommandOptions): Promise<void> {
 async function runStorybookDev(result: {
   projectType: ProjectType;
   packageManager: JsPackageManager;
-  storybookCommand: string;
+  storybookCommand?: string;
   shouldOnboard: boolean;
 }): Promise<void> {
   const { projectType, packageManager, storybookCommand, shouldOnboard } = result;
 
-  logger.log('\nRunning Storybook');
+  if (!storybookCommand) {
+    return;
+  }
+
+  logger.log('Running Storybook');
 
   try {
-    const supportsOnboarding = [
-      ProjectType.REACT_SCRIPTS,
-      ProjectType.REACT,
-      ProjectType.WEBPACK_REACT,
-      ProjectType.REACT_PROJECT,
-      ProjectType.NEXTJS,
-      ProjectType.VUE3,
-      ProjectType.ANGULAR,
-    ].includes(projectType);
+    const supportsOnboarding = ONBOARDING_PROJECT_TYPES.includes(projectType);
 
     const flags = [];
 

@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 
 import { DependencyCollector } from '../dependency-collector';
@@ -44,7 +43,6 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: false,
-        projectType: ProjectType.REACT,
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -58,7 +56,6 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: true,
-        projectType: ProjectType.REACT,
       });
 
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
@@ -71,7 +68,6 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: true,
-        projectType: ProjectType.REACT,
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -87,7 +83,6 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: true,
-        projectType: ProjectType.REACT,
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -106,7 +101,6 @@ describe('DependencyInstallationCommand', () => {
         command.execute({
           packageManager: mockPackageManager,
           skipInstall: false,
-          projectType: ProjectType.REACT,
         })
       ).rejects.toThrow('Installation failed');
     });
@@ -115,7 +109,6 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: false,
-        projectType: ProjectType.REACT,
       });
 
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();

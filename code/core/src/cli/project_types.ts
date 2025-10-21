@@ -55,7 +55,6 @@ export enum ProjectType {
   REACT_NATIVE_WEB = 'REACT_NATIVE_WEB',
   REACT_NATIVE_AND_RNW = 'REACT_NATIVE_AND_RNW',
   REACT_PROJECT = 'REACT_PROJECT',
-  WEBPACK_REACT = 'WEBPACK_REACT',
   NEXTJS = 'NEXTJS',
   VUE3 = 'VUE3',
   NUXT = 'NUXT',
@@ -234,13 +233,6 @@ export const supportedTemplates: TemplateConfiguration[] = [
   },
   // DO NOT MOVE ANY TEMPLATES BELOW THIS LINE
   // React is part of every Template, after Storybook is initialized once
-  {
-    preset: ProjectType.WEBPACK_REACT,
-    dependencies: ['react', 'webpack'],
-    matcherFunction: ({ dependencies }) => {
-      return dependencies?.every(Boolean) ?? true;
-    },
-  },
   {
     preset: ProjectType.REACT,
     dependencies: ['react'],

@@ -1,11 +1,15 @@
-import { CoreBuilder } from 'storybook/internal/cli';
+import { CoreBuilder, ProjectType } from 'storybook/internal/cli';
 
-import { baseGenerator } from '../baseGenerator';
-import type { Generator } from '../types';
+import { defineGeneratorModule } from '../modules/GeneratorModule';
 
-const generator: Generator = async (packageManager, npmOptions, options) =>
-  baseGenerator(packageManager, npmOptions, options, 'preact', {
-    webpackCompiler: ({ builder }) => (builder === CoreBuilder.Webpack5 ? 'swc' : undefined),
-  });
-
-export default generator;
+export default defineGeneratorModule({
+  metadata: {
+    projectType: ProjectType.PREACT,
+    renderer: 'preact',
+  },
+  configure: async () => {
+    return {
+      webpackCompiler: ({ builder }) => (builder === CoreBuilder.Webpack5 ? 'swc' : undefined),
+    };
+  },
+});

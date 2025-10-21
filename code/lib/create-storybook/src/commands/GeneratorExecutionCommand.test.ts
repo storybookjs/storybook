@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ProjectType } from 'storybook/internal/cli';
+import { CoreBuilder, ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -8,10 +8,21 @@ import * as addonA11y from '../addon-dependencies/addon-a11y';
 import * as addonVitest from '../addon-dependencies/addon-vitest';
 import { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
+import { baseGenerator } from '../generators/baseGenerator';
+import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 import { GeneratorExecutionCommand } from './GeneratorExecutionCommand';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../generators/GeneratorRegistry', { spy: true });
+vi.mock('../generators/baseGenerator', () => ({
+  baseGenerator: vi.fn().mockResolvedValue({
+    frameworkPackage: '@storybook/react-vite',
+    rendererPackage: '@storybook/react',
+    builderPackage: '@storybook/builder-vite',
+    configDir: '.storybook',
+    success: true,
+  }),
+}));
 vi.mock('../addon-dependencies/addon-a11y', { spy: true });
 vi.mock('../addon-dependencies/addon-vitest', { spy: true });
 
@@ -20,6 +31,7 @@ describe('GeneratorExecutionCommand', () => {
   let mockPackageManager: JsPackageManager;
   let dependencyCollector: DependencyCollector;
   let mockGenerator: any;
+  let mockFrameworkInfo: FrameworkDetectionResult;
 
   beforeEach(() => {
     command = new GeneratorExecutionCommand();
@@ -28,7 +40,27 @@ describe('GeneratorExecutionCommand', () => {
     } as any;
     dependencyCollector = new DependencyCollector();
 
-    mockGenerator = vi.fn().mockResolvedValue({ success: true });
+    mockFrameworkInfo = {
+      framework: undefined,
+      renderer: 'react',
+      builder: CoreBuilder.Vite,
+      frameworkPackage: '@storybook/react-vite',
+      rendererPackage: '@storybook/react',
+      builderPackage: '@storybook/builder-vite',
+    };
+
+    // Mock new-style generator module
+    mockGenerator = {
+      metadata: {
+        projectType: ProjectType.REACT,
+        renderer: 'react',
+        framework: undefined,
+      },
+      configure: vi.fn().mockResolvedValue({
+        extraPackages: [],
+        extraAddons: [],
+      }),
+    };
 
     vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
     vi.mocked(addonVitest.getAddonVitestDependencies).mockResolvedValue([
@@ -46,17 +78,18 @@ describe('GeneratorExecutionCommand', () => {
       const selectedFeatures = new Set(['docs', 'test', 'onboarding'] as const);
       const options = { skipInstall: false } as any;
 
-      const result = await command.execute(
+      await command.execute(
         ProjectType.REACT,
         mockPackageManager,
+        mockFrameworkInfo,
         options,
         selectedFeatures,
         dependencyCollector
       );
 
       expect(generatorRegistry.get).toHaveBeenCalledWith(ProjectType.REACT);
-      expect(mockGenerator).toHaveBeenCalled();
-      expect(result.storybookCommand).toBe('npm run storybook');
+      expect(mockGenerator.configure).toHaveBeenCalled();
+      expect(baseGenerator).toHaveBeenCalled();
     });
 
     it('should remove onboarding for unsupported project types', async () => {
@@ -66,6 +99,7 @@ describe('GeneratorExecutionCommand', () => {
       await command.execute(
         ProjectType.SVELTE,
         mockPackageManager,
+        mockFrameworkInfo,
         options,
         selectedFeatures,
         dependencyCollector
@@ -83,28 +117,13 @@ describe('GeneratorExecutionCommand', () => {
       await command.execute(
         ProjectType.REACT,
         mockPackageManager,
+        mockFrameworkInfo,
         options,
         selectedFeatures,
         dependencyCollector
       );
 
       expect(selectedFeatures.has('onboarding')).toBe(true);
-    });
-
-    it('should return Angular-specific command for Angular projects', async () => {
-      const selectedFeatures = new Set([]);
-      const options = {} as any;
-      mockGenerator.mockResolvedValue({ projectName: 'my-app' });
-
-      const result = await command.execute(
-        ProjectType.ANGULAR,
-        mockPackageManager,
-        options,
-        selectedFeatures,
-        dependencyCollector
-      );
-
-      expect(result.storybookCommand).toBe('ng run my-app:storybook');
     });
 
     it('should throw error if generator not found', async () => {
@@ -116,6 +135,7 @@ describe('GeneratorExecutionCommand', () => {
         command.execute(
           ProjectType.UNSUPPORTED,
           mockPackageManager,
+          mockFrameworkInfo,
           options,
           selectedFeatures,
           dependencyCollector
@@ -136,24 +156,36 @@ describe('GeneratorExecutionCommand', () => {
       await command.execute(
         ProjectType.VUE3,
         mockPackageManager,
+        mockFrameworkInfo,
         options,
         selectedFeatures,
         dependencyCollector
       );
 
-      expect(mockGenerator).toHaveBeenCalledWith(
+      expect(mockGenerator.configure).toHaveBeenCalledWith(
+        mockPackageManager,
+        expect.objectContaining({
+          framework: mockFrameworkInfo.framework,
+          renderer: mockFrameworkInfo.renderer,
+          builder: mockFrameworkInfo.builder,
+          features: ['docs', 'test'],
+        })
+      );
+
+      expect(baseGenerator).toHaveBeenCalledWith(
         mockPackageManager,
         { type: 'devDependencies', skipInstall: true },
         expect.objectContaining({
-          builder: 'vite',
+          builder: CoreBuilder.Vite,
           linkable: true,
           pnp: true,
           yes: true,
           projectType: ProjectType.VUE3,
           features: ['docs', 'test'],
-          dependencyCollector,
         }),
-        options
+        mockFrameworkInfo.renderer,
+        expect.any(Object),
+        mockFrameworkInfo.framework
       );
     });
   });

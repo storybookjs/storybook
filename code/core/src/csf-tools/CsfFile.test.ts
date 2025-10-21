@@ -1423,6 +1423,40 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('Object export with args render method', () => {
+      expect(
+        parse(
+          dedent`
+          export default { title: 'foo/bar' };
+          export const A = {
+            render(args) {}
+          }
+        `,
+          true
+        )
+      ).toMatchInlineSnapshot(`
+        meta:
+          title: foo/bar
+        stories:
+          - id: foo-bar--a
+            name: A
+            parameters:
+              __isArgsStory: true
+              __id: foo-bar--a
+            __stats:
+              factory: false
+              play: false
+              render: true
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+      `);
+    });
+
     it('Object export with default render', () => {
       expect(
         parse(

@@ -34,11 +34,12 @@ export const emberIndexer: Indexer = {
 
     return [
       {
-        name: 'Button/Text',
+        name: 'Text',
         type: 'story',
         subtype: 'story',
         exportName: 'Text',
         importPath: fileName,
+        title: 'Button',
       },
     ];
   },

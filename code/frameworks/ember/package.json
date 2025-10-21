@@ -6,6 +6,7 @@
     "storybook",
     "storybook-framework",
     "ember",
+    "ember-addon",
     "component",
     "components"
   ],
@@ -50,6 +51,7 @@
   "files": [
     "dist/**/*",
     "template/cli/**/*",
+    "addon-main.cjs",
     "README.md",
     "*.js",
     "*.d.ts",
@@ -72,7 +74,6 @@
     "@embroider/vite": "^1.2.3",
     "babel-plugin-ember-template-compilation": "^2.0.0",
     "decorator-transforms": "^2.3.0",
-    "ember-source": "beta",
     "lightningcss": "^1.30.1",
     "typescript": "^5.8.3"
   },
@@ -87,6 +88,11 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "ember-addon": {
+    "type": "addon",
+    "version": 2,
+    "main": "addon-main.cjs"
   },
   "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
 }

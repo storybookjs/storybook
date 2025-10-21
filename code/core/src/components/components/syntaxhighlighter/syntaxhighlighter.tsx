@@ -57,7 +57,7 @@ const themedSyntax = memoize(2)((theme) =>
   Object.entries(theme.code || {}).reduce((acc, [key, val]) => ({ ...acc, [`* .${key}`]: val }), {})
 );
 
-const copyToClipboard: (text: string) => Promise<void> = createCopToClipboardFunction();
+const copyToClipboard: (text: string) => Promise<void> = createCopyToClipboardFunction();
 
 export interface WrapperProps {
   bordered?: boolean;

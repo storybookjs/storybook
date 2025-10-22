@@ -6,6 +6,7 @@ import { darken, lighten, rgba, transparentize } from 'polished';
 import { isPropValid, styled } from 'storybook/theming';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  as?: 'button' | 'a' | 'label' | typeof Slot;
   asChild?: boolean;
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
@@ -19,6 +20,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
+      as = 'button',
       asChild = false,
       animation = 'none',
       size = 'small',
@@ -31,11 +33,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    let Comp: 'button' | 'a' | typeof Slot = 'button';
-
-    if (asChild) {
-      Comp = Slot;
-    }
+    const Comp = asChild ? Slot : as;
 
     const [isAnimating, setIsAnimating] = useState(false);
 

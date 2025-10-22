@@ -36,7 +36,6 @@ export interface AddonVitestCompatibilityOptions {
  */
 export class AddonVitestService {
   readonly supportedFrameworks: SupportedFramework[] = [
-    SupportedFramework.NEXTJS,
     SupportedFramework.NEXTJS_VITE,
     SupportedFramework.REACT_VITE,
     SupportedFramework.SVELTE_VITE,
@@ -158,7 +157,7 @@ export class AddonVitestService {
 
     // Check builder compatibility
     if (options.builder !== SupportedBuilder.VITE) {
-      reasons.push('The addon can only be used with a Vite-based Storybook framework');
+      reasons.push('Non-Vite builder is not supported');
     }
 
     // Check renderer/framework support
@@ -167,7 +166,7 @@ export class AddonVitestService {
     );
 
     if (!isFrameworkSupported) {
-      reasons.push(`The addon cannot yet be used with ${options.framework}`);
+      reasons.push(`Test feature cannot yet be used with ${options.framework}`);
     }
 
     // Check package versions

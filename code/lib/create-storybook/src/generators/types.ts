@@ -64,6 +64,7 @@ export type GeneratorFeature = 'docs' | 'test' | 'onboarding';
 export interface GeneratorMetadata {
   projectType: ProjectType;
   renderer: SupportedRenderer;
+  framework?: SupportedFramework;
   /**
    * If the builder is a function, it will be called to determine the builder. This is useful for
    * generators that need to determine the builder based on the project type in cases where the

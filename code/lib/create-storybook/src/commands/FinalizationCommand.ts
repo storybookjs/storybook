@@ -39,8 +39,6 @@ export class FinalizationCommand {
     } else {
       this.printSuccessMessage(selectedFeatures, storybookCommand);
     }
-
-    logger.outro('');
   }
 
   /** Update .gitignore with Storybook-specific entries */

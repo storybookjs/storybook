@@ -50,7 +50,11 @@ export class GeneratorExecutionCommand {
 
     // Determine Storybook command
 
-    return generatorResult;
+    return {
+      ...generatorResult,
+      storybookCommand:
+        generatorResult.storybookCommand ?? packageManager.getRunCommand('storybook'),
+    };
   }
 
   /** Filter features based on project type compatibility */
@@ -112,6 +116,7 @@ export class GeneratorExecutionCommand {
     if (frameworkOptions.skipGenerator) {
       return {
         shouldRunDev: frameworkOptions.shouldRunDev,
+        storybookCommand: frameworkOptions.storybookCommand,
       };
     }
 

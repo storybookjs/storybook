@@ -64,7 +64,8 @@ export async function doInitiate(options: CommandOptions): Promise<
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
   const dependencyCollector = new DependencyCollector();
-  const generatorResult = await executeGeneratorExecution(
+
+  const { configDir, storybookCommand, shouldRunDev } = await executeGeneratorExecution(
     projectType,
     packageManager,
     { builder, framework, renderer },
@@ -85,7 +86,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     packageManager,
     dependencyCollector,
     selectedFeatures,
-    configDir: generatorResult.configDir,
+    configDir,
     options,
   });
 
@@ -93,18 +94,18 @@ export async function doInitiate(options: CommandOptions): Promise<
   await executeFinalization({
     projectType,
     selectedFeatures,
-    storybookCommand: generatorResult?.storybookCommand,
+    storybookCommand,
   });
 
   // Step 9: Track telemetry
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
 
   return {
-    shouldRunDev: !!options.dev && !options.skipInstall,
+    shouldRunDev: !!options.dev && !options.skipInstall && shouldRunDev !== false,
     shouldOnboard: newUser,
     projectType,
     packageManager,
-    storybookCommand: generatorResult?.storybookCommand,
+    storybookCommand,
   };
 }
 
@@ -126,7 +127,11 @@ export async function initiate(options: CommandOptions): Promise<void> {
     async () => {
       logger.intro(CLI_COLORS.info(`Initializing Storybook`));
 
-      return await doInitiate(options);
+      const result = await doInitiate(options);
+
+      logger.outro('Initiation completed');
+
+      return result;
     }
   ).catch(handleCommandFailure);
 

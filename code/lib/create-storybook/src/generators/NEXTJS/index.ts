@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { ProjectType } from 'storybook/internal/cli';
-import { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -11,6 +11,7 @@ export default defineGeneratorModule({
     projectType: ProjectType.NEXTJS,
     renderer: SupportedRenderer.REACT,
     framework: SupportedFramework.NEXTJS,
+    builderOverride: SupportedBuilder.WEBPACK5,
   },
   configure: async () => {
     let staticDir;
@@ -18,8 +19,6 @@ export default defineGeneratorModule({
     if (existsSync(join(process.cwd(), 'public'))) {
       staticDir = 'public';
     }
-
-    // TODO: Add nextjs-vite support (prompt for it)
 
     return {
       staticDir,

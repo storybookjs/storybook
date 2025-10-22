@@ -53,7 +53,7 @@ export class FrameworkDetectionCommand {
     // Get framework and renderer from metadata
     const renderer = metadata.renderer;
 
-    const framework = this.getFramework(renderer, builder);
+    const framework = metadata.framework ?? this.getFramework(renderer, builder);
 
     return {
       framework,

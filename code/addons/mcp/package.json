@@ -9,7 +9,8 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/storybookjs/addon-mcp"
+		"url": "https://github.com/storybookjs/mcp.git",
+		"directory": "packages/addon-mcp"
 	},
 	"license": "MIT",
 	"author": "Storybook Core Team",

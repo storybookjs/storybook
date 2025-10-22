@@ -117,9 +117,9 @@ http://localhost:6006/?path=/story/example-button--primary
 
 We welcome contributions to improve Storybook's agent integration, within or outside of this addon! Here's how you can help:
 
-1. **Ideas and feature requests**: If you have ideas for what else we could do to improve the Storybook experience when using agents, please [start a discussion](https://github.com/storybookjs/addon-mcp/discussions/new?category=ideas) in this repository.
+1. **Ideas and feature requests**: If you have ideas for what else we could do to improve the Storybook experience when using agents, please [start a discussion](https://github.com/storybookjs/mcp/discussions/new?category=ideas) in this repository.
 
-2. **Report Issues**: If you find bugs, please open an issue on our [GitHub repository](https://github.com/storybookjs/addon-mcp), but keep in mind that this is currently highly experimental, explorative and probably filled with bugs.
+2. **Report Issues**: If you find bugs, please open an issue on our [GitHub repository](https://github.com/storybookjs/mcp), but keep in mind that this is currently highly experimental, explorative and probably filled with bugs.
 
 3. **Development Setup**:
 
@@ -127,7 +127,7 @@ We welcome contributions to improve Storybook's agent integration, within or out
 
    ```bash
    # Clone the repository
-   git clone https://github.com/storybookjs/addon-mcp.git
+   git clone https://github.com/storybookjs/mcp.git
    cd addon-mcp
 
    # Install dependencies (installs for all packages in the workspace)

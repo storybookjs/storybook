@@ -259,7 +259,7 @@ test('ObjectFalsyArgs only', async () => {
     };`
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
-    `"const ObjectFalsyArgs = () => <Button count={0} empty="">Click me</Button>;"`
+    `"const ObjectFalsyArgs = () => <Button disabled={false} count={0} empty="">Click me</Button>;"`
   );
 });
 
@@ -270,7 +270,7 @@ test('ObjectUndefinedNull only', async () => {
     };`
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
-    `"const ObjectUndefinedNull = () => <Button>Click me</Button>;"`
+    `"const ObjectUndefinedNull = () => <Button thing={undefined} nada={null}>Click me</Button>;"`
   );
 });
 
@@ -334,7 +334,7 @@ test('Remove nested attr when arg is null/undefined', () => {
     };
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(
-    `"const NestedRemove = () => <Button><OtherElement /></Button>;"`
+    `"const NestedRemove = () => <Button><OtherElement gone={null} /></Button>;"`
   );
 });
 
@@ -504,8 +504,8 @@ test('top level args injection and spreading in different places', async () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "const MultipleSpreads = () => <div count={0}>
-        <Button count={0} empty="" />
-        <Button count={0} empty="" />
+        <Button disabled={false} count={0} empty="" />
+        <Button disabled={false} count={0} empty="" />
     </div>;"
   `);
 });

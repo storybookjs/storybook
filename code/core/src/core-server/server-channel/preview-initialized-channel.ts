@@ -19,8 +19,8 @@ export function initPreviewInitializedChannel(
         const lastInit = lastEvents.init;
         const lastPreviewFirstLoad = lastEvents['preview-first-load'];
         if (!lastPreviewFirstLoad) {
-          const isInitSession = lastInit?.sessionId === sessionId;
-          const timeSinceInit = lastInit ? Date.now() - lastInit.timestamp : undefined;
+          const isInitSession = lastInit?.body.sessionId === sessionId;
+          const timeSinceInit = lastInit ? Date.now() - lastInit.body.timestamp : undefined;
           telemetry('preview-first-load', { timeSinceInit, isInitSession, userAgent });
         }
       } catch (e) {

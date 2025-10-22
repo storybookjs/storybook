@@ -547,6 +547,26 @@ jobs:
           template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task smoke-test)
       - store_test_results:
           path: test-results
+  stories-tests:
+    executor:
+      class: xlarge
+      name: sb_playwright
+    parallelism: 2
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: --depth 1 --verbose
+      - attach_workspace:
+          at: .
+      - run:
+          command: |
+            cd code
+            TEST_FILES=$(circleci tests glob "**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
+            echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
+          name: Run tests
+      - store_test_results:
+          path: test-results
+      - report-workflow-on-failure
+      - cancel-workflow-on-failure
   test-init-empty:
     executor:
       class: small
@@ -852,27 +872,7 @@ jobs:
       - run:
           command: |
             cd code
-            TEST_FILES=$(circleci tests glob "**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
-            echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
-          name: Run tests
-      - store_test_results:
-          path: test-results
-      - report-workflow-on-failure
-      - cancel-workflow-on-failure
-  stories-tests:
-    executor:
-      class: xlarge
-      name: sb_playwright
-    parallelism: 2
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: --depth 1 --verbose
-      - attach_workspace:
-          at: .
-      - run:
-          command: |
-            cd code
-            TEST_FILES=$(circleci tests glob "**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
+            TEST_FILES=$(circleci tests glob "**/*.{test,spec,stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
             echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
           name: Run tests
       - store_test_results:
@@ -956,9 +956,6 @@ workflows:
       - unit-tests:
           requires:
             - build
-      - stories-tests:
-          requires:
-            - build
       - script-checks:
           requires:
             - build
@@ -974,11 +971,11 @@ workflows:
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 7
+          parallelism: 25
           requires:
             - create-sandboxes
       - e2e-dev:
-          parallelism: 25
+          parallelism: 1
           requires:
             - create-sandboxes
       - test-runner-production:
@@ -1045,9 +1042,6 @@ workflows:
       - unit-tests:
           requires:
             - build
-      - stories-tests:
-          requires:
-            - build
       - script-checks:
           requires:
             - build
@@ -1066,11 +1060,11 @@ workflows:
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 6
+          parallelism: 12
           requires:
             - create-sandboxes
       - e2e-dev:
-          parallelism: 12
+          parallelism: 1
           requires:
             - create-sandboxes
       - test-runner-production:
@@ -1118,9 +1112,6 @@ workflows:
       - unit-tests:
           requires:
             - build
-      - stories-tests:
-          requires:
-            - build
       - script-checks:
           requires:
             - build
@@ -1139,11 +1130,11 @@ workflows:
           requires:
             - create-sandboxes
       - e2e-production:
-          parallelism: 6
+          parallelism: 8
           requires:
             - create-sandboxes
       - e2e-dev:
-          parallelism: 8
+          parallelism: 1
           requires:
             - create-sandboxes
       - test-runner-production:

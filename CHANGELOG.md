@@ -1,3 +1,7 @@
+## 9.1.13
+
+- CSF: Fix `play-fn` tag for methods - [#32695](https://github.com/storybookjs/storybook/pull/32695), thanks @shilman!
+
 ## 9.1.12
 
 - Maintenance: Hotfix for missing nextjs dts files, thanks @ndelangen!

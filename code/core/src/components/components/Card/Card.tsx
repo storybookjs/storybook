@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import React, { type ComponentProps } from 'react';
 
 import type { CSSObject, color } from 'storybook/theming';
 import { keyframes, styled } from 'storybook/theming';

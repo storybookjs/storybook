@@ -1,0 +1,173 @@
+import React from 'react';
+
+import { Link } from 'storybook/internal/components';
+
+import type { ChecklistData } from './Checklist';
+
+export const checklistData: ChecklistData = {
+  sections: [
+    {
+      id: 'build',
+      title: 'Build',
+      items: [
+        {
+          id: 'whats-new-sb-9',
+          label: "See what's new",
+          start: ({ api }) => api.navigate('/settings/whats-new'),
+        },
+        {
+          id: 'add-component',
+          label: 'Add component',
+          predicate: ({ complete }) => complete(),
+        },
+        {
+          id: 'add-5-10-components',
+          label: 'Add 5-10 total components',
+          predicate: ({ complete }) => complete(),
+        },
+        {
+          id: 'check-improve-coverage',
+          label: 'Check + improve coverage',
+          predicate: ({ complete }) => setTimeout(complete, 3000),
+        },
+      ],
+    },
+    {
+      id: 'test',
+      title: 'Test',
+      items: [
+        {
+          id: 'run-tests',
+          label: 'Run tests',
+          predicate: ({ complete }) => complete(),
+          content: (
+            <>
+              <p>
+                In the Storybook UI, you can run interaction tests by clicking the{' '}
+                <b>Run component tests</b> button in the expanded testing widget in the sidebar or
+                by opening the context menu (three dots) on a story or folder and selecting{' '}
+                <b>Run component tests</b>.
+              </p>
+              <Link
+                href="https://storybook.js.org/docs/writing-tests/interaction-testing#running-interaction-tests"
+                target="_blank"
+                withArrow
+              >
+                Learn more
+              </Link>
+            </>
+          ),
+        },
+        {
+          id: 'write-interactions',
+          label: 'Write interactions',
+          content: (
+            <>
+              <p>
+                Play functions are small snippets of code executed after the story renders. They
+                enable you to interact with your components and test scenarios that otherwise
+                require user intervention.
+              </p>
+              <Link
+                href="https://storybook.js.org/docs/writing-stories/play-function"
+                target="_blank"
+                withArrow
+              >
+                Learn more
+              </Link>
+            </>
+          ),
+        },
+        {
+          id: 'accessibility-tests',
+          label: 'Accessibility tests',
+          predicate: ({ complete }) => complete(),
+          content: (
+            <>
+              <p>
+                To run accessibility tests in the Storybook UI, first expand the testing widget in
+                the sidebar and check the Accessibility checkbox. Now, when you press the Run
+                component tests button, the accessibility tests will be run along with any other
+                tests you have configured.
+              </p>
+              <Link
+                href="https://storybook.js.org/docs/writing-tests/accessibility-testing#run-accessibility-tests"
+                target="_blank"
+                withArrow
+              >
+                Learn more
+              </Link>
+            </>
+          ),
+        },
+        {
+          id: 'visual-tests',
+          label: 'Visual tests',
+          predicate: ({ complete }) => complete(),
+          content: (
+            <>
+              <p>
+                Visual tests are the most efficient way to test your components. With the click of a
+                button you can take snapshots of every story in your Storybook and compare those
+                snapshots to baselines — last known “good” snapshots. Not only does this allow you
+                to check the appearance of your components, but they are also able to check a large
+                subset of component functionality without having to write or maintain any test code!
+              </p>
+              <Link
+                href="https://storybook.js.org/docs/writing-tests/visual-testing"
+                target="_blank"
+                withArrow
+              >
+                Learn more
+              </Link>
+            </>
+          ),
+        },
+        {
+          id: 'viewports',
+          label: 'Viewports',
+          content: (
+            <>
+              <p>
+                The viewport feature allows you to adjust the dimensions of the iframe your story is
+                rendered in. It makes it easy to develop responsive UIs. The Viewport module enables
+                you to change the viewport applied to a story by selecting from the list of
+                predefined viewports in the toolbar. If needed, you can set a story to default to a
+                specific viewport by using the globals option.
+              </p>
+              <Link
+                href="https://storybook.js.org/docs/essentials/viewport#defining-the-viewport-for-a-story"
+                target="_blank"
+                withArrow
+              >
+                Learn more
+              </Link>
+            </>
+          ),
+        },
+      ],
+    },
+    {
+      id: 'document',
+      title: 'Document',
+      items: [
+        {
+          id: 'controls',
+          label: 'Controls',
+        },
+        {
+          id: 'autodocs',
+          label: 'Autodocs',
+        },
+        {
+          id: 'comments',
+          label: 'Comments',
+        },
+        {
+          id: 'share-story',
+          label: 'Share story',
+        },
+      ],
+    },
+  ],
+};

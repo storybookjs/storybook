@@ -1,7 +1,7 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { writeConfig } from 'storybook/internal/csf-tools';
-import type { StorybookConfig } from 'storybook/internal/types';
 
+import { loadMainConfig } from './load-main-config';
 import { syncStorybookAddons } from './sync-main-preview-addons';
 import {
   getAbsolutePathWrapperName,
@@ -13,7 +13,6 @@ export interface SetupAddonInConfigOptions {
   mainConfigCSFFile: ConfigFile;
   previewConfigPath: string | undefined;
   configDir: string;
-  mainConfig: StorybookConfig;
 }
 
 /**
@@ -27,7 +26,6 @@ export async function setupAddonInConfig({
   previewConfigPath,
   configDir,
   mainConfigCSFFile,
-  mainConfig,
 }: SetupAddonInConfigOptions): Promise<void> {
   const mainConfigAddons = mainConfigCSFFile.getFieldNode(['addons']);
   if (mainConfigAddons && getAbsolutePathWrapperName(mainConfigCSFFile) !== null) {
@@ -42,7 +40,9 @@ export async function setupAddonInConfig({
 
   // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
   try {
-    await syncStorybookAddons(mainConfig, previewConfigPath!, configDir);
+    const newMainConfig = await loadMainConfig({ configDir, skipCache: true });
+
+    await syncStorybookAddons(newMainConfig, previewConfigPath!, configDir);
   } catch (e) {
     //
   }

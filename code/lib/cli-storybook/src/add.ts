@@ -167,7 +167,6 @@ export async function add(
       mainConfigCSFFile: main,
       previewConfigPath,
       configDir,
-      mainConfig,
     });
   }
 

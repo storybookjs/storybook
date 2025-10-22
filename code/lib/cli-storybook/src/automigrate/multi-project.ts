@@ -244,6 +244,7 @@ export async function promptForAutomigrations(
     message: 'Select automigrations to run',
     options: choices,
     initialValues: choices.filter((c) => c.defaultSelected).map((c) => c.value),
+    required: false,
   });
 
   return automigrations.filter((am) => selectedIds.includes(am.fix.id));

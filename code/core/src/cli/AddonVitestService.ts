@@ -6,6 +6,7 @@ import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
+import type { CallExpression } from '@babel/types';
 import * as find from 'empathic/find';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
@@ -278,21 +279,26 @@ export class AddonVitestService {
 
   /** Validate Vitest config file structure */
   private isValidVitestConfig(configContent: string): boolean {
-    let isValidConfig = false;
     const parsedConfig = babel.babelParse(configContent);
+    let isValidVitestConfig = false;
 
     babel.traverse(parsedConfig, {
       ExportDefaultDeclaration: (path: any) => {
-        if (
-          this.isDefineConfigExpression(path.node.declaration) &&
-          this.isSafeToExtendWorkspace(path.node.declaration)
-        ) {
-          isValidConfig = true;
+        if (this.isDefineConfigExpression(path.node.declaration)) {
+          isValidVitestConfig = this.isSafeToExtendWorkspace(
+            path.node.declaration as CallExpression
+          );
+        } else if (this.isMergeConfigExpression(path.node.declaration)) {
+          // the config could be anywhere in the mergeConfig call, so we need to check each argument
+          const mergeCall = path.node.declaration as CallExpression;
+          isValidVitestConfig = mergeCall.arguments.some((arg) =>
+            this.isSafeToExtendWorkspace(arg as CallExpression)
+          );
         }
       },
     });
 
-    return isValidConfig;
+    return isValidVitestConfig;
   }
 
   private isWorkspaceConfigArray(node: any): boolean {
@@ -321,8 +327,14 @@ export class AddonVitestService {
     );
   }
 
-  private isSafeToExtendWorkspace(node: any): boolean {
+  private isMergeConfigExpression(path: babel.types.Node): boolean {
+    return babel.types.isCallExpression(path) && (path.callee as any)?.name === 'mergeConfig';
+  }
+
+  private isSafeToExtendWorkspace(node: CallExpression): boolean {
     return (
+      babel.types.isCallExpression(node) &&
+      node.arguments.length > 0 &&
       babel.types.isObjectExpression(node.arguments?.[0]) &&
       node.arguments[0]?.properties.every(
         (p: any) =>

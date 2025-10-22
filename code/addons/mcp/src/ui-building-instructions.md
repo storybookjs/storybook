@@ -45,7 +45,7 @@ Instead of `parameters.docs.autodocs` in main.js, use tags:
 ```js
 // .storybook/preview.js or in individual stories
 export default {
-  tags: ["autodocs"], // generates autodocs for all stories
+	tags: ['autodocs'], // generates autodocs for all stories
 };
 ```
 
@@ -57,10 +57,10 @@ To mock imports in Storybook, use Storybook's mocking features. ALWAYS mock exte
    To mock dependendencies, you MUST register a module mock in `.storybook/preview.ts` (or equivalent):
 
 ```js
-import { sb } from "storybook/test";
+import { sb } from 'storybook/test';
 
 // Full mock (replaces with empty fn functions)
-sb.mock(import("some-library"));
+sb.mock(import('some-library'));
 ```
 
 2. **Specify mock values in stories**:

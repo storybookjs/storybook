@@ -1,74 +1,74 @@
 {
-  "name": "@storybook/addon-mcp",
-  "version": "0.0.5",
-  "description": "Help agents automatically write and test stories for your UI components",
-  "keywords": [
-    "storybook-addon",
-    "mcp",
-    "ai"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/storybookjs/addon-mcp"
-  },
-  "license": "MIT",
-  "author": "Jeppe Reinhold <jeppe@chromatic.com>, Tom Coleman <tom@chromatic.com>",
-  "type": "module",
-  "exports": {
-    "./preset": "./dist/preset.js",
-    "./package.json": "./package.json"
-  },
-  "files": [
-    "dist/**/*",
-    "README.md",
-    "*.js",
-    "*.d.ts"
-  ],
-  "scripts": {
-    "prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
-    "build": "tsup",
-    "build:watch": "pnpm run build -- --watch",
-    "inspect": "mcp-inspector --transport streamable-http --server-url http://localhost:6006/mcp",
-    "release": "pnpm run build && pnpm changeset publish",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.3"
-  },
-  "devDependencies": {
-    "@modelcontextprotocol/inspector": "^0.16.5",
-    "@types/node": "^20",
-    "storybook": "^10.0.0-0",
-    "ts-dedent": "^2.2.0",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.3",
-    "vite": "^7.0.5",
-    "zod": "^3.25.76"
-  },
-  "peerDependencies": {
-    "storybook": "*"
-  },
-  "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b",
-  "publishConfig": {
-    "access": "public"
-  },
-  "bundler": {
-    "nodeEntries": [
-      "src/preset.ts"
-    ]
-  },
-  "storybook": {
-    "displayName": "Addon MCP",
-    "supportedFrameworks": [
-      "react",
-      "vue3",
-      "angular",
-      "web-components",
-      "html",
-      "svelte",
-      "preact",
-      "react-native"
-    ],
-    "icon": "https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png"
-  }
+	"name": "@storybook/addon-mcp",
+	"version": "0.0.5",
+	"description": "Help agents automatically write and test stories for your UI components",
+	"keywords": [
+		"storybook-addon",
+		"mcp",
+		"ai"
+	],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/storybookjs/addon-mcp"
+	},
+	"license": "MIT",
+	"author": "Jeppe Reinhold <jeppe@chromatic.com>, Tom Coleman <tom@chromatic.com>",
+	"type": "module",
+	"exports": {
+		"./preset": "./dist/preset.js",
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist/**/*",
+		"README.md",
+		"*.js",
+		"*.d.ts"
+	],
+	"scripts": {
+		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
+		"build": "tsup",
+		"build:watch": "pnpm run build -- --watch",
+		"inspect": "mcp-inspector --transport streamable-http --server-url http://localhost:6006/mcp",
+		"release": "pnpm run build && pnpm changeset publish",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.17.3"
+	},
+	"devDependencies": {
+		"@modelcontextprotocol/inspector": "^0.16.5",
+		"@types/node": "^20",
+		"storybook": "^10.0.0-0",
+		"ts-dedent": "^2.2.0",
+		"tsup": "^8.5.0",
+		"typescript": "^5.8.3",
+		"vite": "^7.0.5",
+		"zod": "^3.25.76"
+	},
+	"peerDependencies": {
+		"storybook": "*"
+	},
+	"packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b",
+	"publishConfig": {
+		"access": "public"
+	},
+	"bundler": {
+		"nodeEntries": [
+			"src/preset.ts"
+		]
+	},
+	"storybook": {
+		"displayName": "Addon MCP",
+		"supportedFrameworks": [
+			"react",
+			"vue3",
+			"angular",
+			"web-components",
+			"html",
+			"svelte",
+			"preact",
+			"react-native"
+		],
+		"icon": "https://user-images.githubusercontent.com/321738/63501763-88dbf600-c4cc-11e9-96cd-94adadc2fd72.png"
+	}
 }

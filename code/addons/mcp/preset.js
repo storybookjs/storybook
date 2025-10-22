@@ -1,1 +1,1 @@
-export * from "./dist/preset.js";
+export * from './dist/preset.js';

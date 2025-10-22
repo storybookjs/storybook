@@ -1,24 +1,24 @@
 {
-  "compilerOptions": {
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "target": "es2023", // Node 20 according to https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-20
-    "allowJs": true,
-    "resolveJsonModule": true,
-    "moduleDetection": "force",
-    "moduleResolution": "bundler",
-    "module": "esnext",
-    "jsx": "react",
-    "isolatedModules": true,
-    "verbatimModuleSyntax": true,
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noImplicitAny": true,
-    "lib": ["esnext", "dom", "dom.iterable"],
-    "baseUrl": ".",
-    "rootDir": "./src",
-    "types": ["./src/types.d.ts"]
-  },
-  "include": ["src/**/*", "tsup.config.ts", "../../stories"]
+	"compilerOptions": {
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"target": "es2023", // Node 20 according to https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-20
+		"allowJs": true,
+		"resolveJsonModule": true,
+		"moduleDetection": "force",
+		"moduleResolution": "bundler",
+		"module": "esnext",
+		"jsx": "react",
+		"isolatedModules": true,
+		"verbatimModuleSyntax": true,
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+		"noImplicitAny": true,
+		"lib": ["esnext", "dom", "dom.iterable"],
+		"baseUrl": ".",
+		"rootDir": "./src",
+		"types": ["./src/types.d.ts"]
+	},
+	"include": ["src/**/*", "tsup.config.ts"]
 }

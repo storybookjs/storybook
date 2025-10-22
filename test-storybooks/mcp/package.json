@@ -1,0 +1,25 @@
+{
+	"name": "@storybook/mcp-internal-storybook",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The Storybook used to test the MCP packages in the MCP monorepo",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/storybookjs/addon-mcp"
+	},
+	"scripts": {
+		"build-storybook": "storybook build",
+		"storybook": "storybook dev --port 6006 --loglevel debug"
+	},
+	"devDependencies": {
+		"@storybook/addon-docs": "^10.0.0-0",
+		"@storybook/addon-mcp": "workspace:*",
+		"@storybook/react-vite": "^10.0.0-0",
+		"@types/react": "^18.2.65",
+		"@types/react-dom": "^18.2.21",
+		"@vitejs/plugin-react": "^4.7.0",
+		"react": "^18.2.0",
+		"react-dom": "^18.2.0",
+		"storybook": "^10.0.0-0"
+	}
+}

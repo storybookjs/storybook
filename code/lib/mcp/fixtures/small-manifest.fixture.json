@@ -1,0 +1,41 @@
+{
+	"v": 1,
+	"components": {
+		"button": {
+			"id": "button",
+			"name": "Button",
+			"summary": "A simple button component",
+			"examples": [
+				{
+					"name": "Primary",
+					"description": "The primary button variant.",
+					"snippet": "const Primary = () => <Button variant=\"primary\">Click Me</Button>"
+				}
+			]
+		},
+		"card": {
+			"id": "card",
+			"name": "Card",
+			"description": "A container component for grouping related content.",
+			"examples": [
+				{
+					"name": "Basic",
+					"description": "A basic card with content.",
+					"snippet": "const Basic = () => (\n  <Card>\n    <h3>Title</h3>\n    <p>Content</p>\n  </Card>\n)"
+				}
+			]
+		},
+		"input": {
+			"id": "input",
+			"name": "Input",
+			"description": "A text input component with validation support.",
+			"examples": [
+				{
+					"name": "Basic",
+					"description": "A basic text input.",
+					"snippet": "const Basic = () => <Input label=\"Name\" placeholder=\"Enter name\" />"
+				}
+			]
+		}
+	}
+}

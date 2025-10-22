@@ -1,0 +1,148 @@
+{
+	"input": {
+		"id": "input",
+		"name": "Input",
+		"description": "A flexible text input component that supports various input types, validation states, and accessibility features.\n\nThe Input component is a foundational form element that wraps the native HTML input with consistent styling and behavior. It includes support for labels, error messages, helper text, and different visual states.\n\n## Accessibility\n\nThe Input component automatically manages ARIA attributes for labels, descriptions, and error messages to ensure screen reader compatibility.",
+		"summary": "A flexible text input component with validation support",
+		"import": "import { Input } from '@storybook/design-system';",
+		"props": {
+			"type": "object",
+			"properties": {
+				"type": {
+					"type": "string",
+					"enum": ["text", "email", "password", "number", "tel", "url"],
+					"default": "text",
+					"description": "The type of input field"
+				},
+				"label": {
+					"type": "string",
+					"description": "The label text for the input"
+				},
+				"placeholder": {
+					"type": "string",
+					"description": "Placeholder text shown when the input is empty"
+				},
+				"value": {
+					"type": "string",
+					"description": "The controlled value of the input"
+				},
+				"defaultValue": {
+					"type": "string",
+					"description": "The initial value for an uncontrolled input"
+				},
+				"disabled": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether the input is disabled"
+				},
+				"required": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether the input is required"
+				},
+				"error": {
+					"type": "string",
+					"description": "Error message to display below the input"
+				},
+				"helperText": {
+					"type": "string",
+					"description": "Helper text to display below the input"
+				},
+				"onChange": {
+					"type": "function",
+					"description": "Callback function when the input value changes"
+				}
+			}
+		},
+		"examples": [
+			{
+				"id": "input--basic",
+				"name": "Basic",
+				"description": "A basic text input with a label.\n\nThis is the most common use case for the Input component. Always include a label for accessibility, even if it's visually hidden in your design.",
+				"summary": "Basic text input with label",
+				"import": "import { Input } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Basic Input"
+					}
+				],
+				"snippet": "const Basic = () => <Input label=\"Full Name\" placeholder=\"Enter your name\" />"
+			},
+			{
+				"id": "input--with-error",
+				"name": "WithError",
+				"description": "An input displaying an error state with an error message.\n\nError messages should be clear, concise, and provide actionable guidance to help users fix the issue. The input border and message text are styled in red to indicate the error state.",
+				"summary": "Input with validation error",
+				"import": "import { Input } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Input with Error"
+					}
+				],
+				"snippet": "const WithError = () => <Input label=\"Email\" type=\"email\" value=\"invalid-email\" error=\"Please enter a valid email address\" />"
+			},
+			{
+				"id": "input--with-helper-text",
+				"name": "WithHelperText",
+				"description": "An input with helper text providing additional context or instructions.\n\nHelper text appears below the input and provides guidance without being an error. Use it to clarify format expectations, character limits, or provide helpful hints.",
+				"summary": "Input with helper text for guidance",
+				"import": "import { Input } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Input with Helper Text"
+					}
+				],
+				"snippet": "const WithHelperText = () => <Input label=\"Password\" type=\"password\" helperText=\"Must be at least 8 characters with one uppercase letter and one number\" />"
+			},
+			{
+				"id": "input--types",
+				"name": "Types",
+				"description": "Different input types for various data formats.\n\nUsing the correct input type improves the user experience by showing appropriate mobile keyboards and enabling browser validation features.",
+				"summary": "Various input types (email, tel, url, number)",
+				"import": "import { Input } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Input Types"
+					}
+				],
+				"snippet": "const Types = () => (\n  <>\n    <Input label=\"Email\" type=\"email\" placeholder=\"user@example.com\" />\n    <Input label=\"Phone\" type=\"tel\" placeholder=\"(555) 123-4567\" />\n    <Input label=\"Website\" type=\"url\" placeholder=\"https://example.com\" />\n    <Input label=\"Age\" type=\"number\" placeholder=\"18\" />\n  </>\n)"
+			},
+			{
+				"id": "input--disabled",
+				"name": "Disabled",
+				"description": "A disabled input that cannot be interacted with.\n\nDisabled inputs are useful for displaying non-editable data in forms or for inputs that become available only after certain conditions are met.",
+				"summary": "Disabled input state",
+				"import": "import { Input } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Disabled Input"
+					}
+				],
+				"snippet": "const Disabled = () => <Input label=\"Username\" value=\"john_doe\" disabled />"
+			}
+		],
+		"jsDocTag": [
+			{
+				"key": "summary",
+				"value": "A flexible text input component with validation support"
+			},
+			{
+				"key": "since",
+				"value": "1.0.0"
+			},
+			{
+				"key": "component",
+				"value": "Input"
+			},
+			{
+				"key": "accessibility",
+				"value": "WCAG 2.1 Level AA compliant"
+			}
+		]
+	}
+}

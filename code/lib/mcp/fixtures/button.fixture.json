@@ -1,0 +1,140 @@
+{
+	"button": {
+		"id": "button",
+		"name": "Button",
+		"description": "A versatile button component that supports multiple variants, sizes, and states.\n\nThe Button component is a fundamental building block for user interactions. It can be styled as primary, secondary, or tertiary actions, and supports disabled and loading states.\n\n## Usage\n\nButtons should be used for actions that affect the current page or trigger operations. For navigation, consider using a Link component instead.",
+		"summary": "A versatile button component for user interactions",
+		"import": "import { Button } from '@storybook/design-system';",
+		"props": {
+			"type": "object",
+			"properties": {
+				"variant": {
+					"type": "string",
+					"enum": ["primary", "secondary", "tertiary", "danger"],
+					"default": "primary",
+					"description": "The visual style variant of the button"
+				},
+				"size": {
+					"type": "string",
+					"enum": ["small", "medium", "large"],
+					"default": "medium",
+					"description": "The size of the button"
+				},
+				"disabled": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether the button is disabled"
+				},
+				"loading": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether the button is in a loading state"
+				},
+				"fullWidth": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether the button should take up the full width of its container"
+				},
+				"onClick": {
+					"type": "function",
+					"description": "Callback function when the button is clicked"
+				},
+				"children": {
+					"type": "string",
+					"description": "The content of the button"
+				}
+			},
+			"required": ["children"]
+		},
+		"examples": [
+			{
+				"id": "button--primary",
+				"name": "Primary",
+				"description": "The primary button variant is used for the main call-to-action on a page. It has the highest visual prominence and should be used sparingly to guide users toward the most important action.\n\n## Best Practices\n\n- Use only one primary button per section\n- Keep button text concise and action-oriented\n- Ensure sufficient contrast for accessibility",
+				"summary": "Primary button with high visual prominence",
+				"import": "import { Button } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Primary Button"
+					}
+				],
+				"snippet": "const Primary = () => <Button variant=\"primary\">Click Me</Button>"
+			},
+			{
+				"id": "button--secondary",
+				"name": "Secondary",
+				"description": "The secondary button variant is used for secondary actions that are still important but not the primary focus of the page.\n\nSecondary buttons have less visual weight than primary buttons and can be used multiple times on a page.",
+				"summary": "Secondary button for supporting actions",
+				"import": "import { Button } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Secondary Button"
+					}
+				],
+				"snippet": "const Secondary = () => <Button variant=\"secondary\">Cancel</Button>"
+			},
+			{
+				"id": "button--with-sizes",
+				"name": "WithSizes",
+				"description": "Buttons are available in three sizes: small, medium (default), and large.\n\nChoose the appropriate size based on the context and hierarchy of actions. Larger buttons are more prominent and easier to tap on mobile devices.",
+				"summary": "Button size variations",
+				"import": "import { Button } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Button Sizes"
+					}
+				],
+				"snippet": "const WithSizes = () => (\n  <>\n    <Button size=\"small\">Small</Button>\n    <Button size=\"medium\">Medium</Button>\n    <Button size=\"large\">Large</Button>\n  </>\n)"
+			},
+			{
+				"id": "button--loading",
+				"name": "Loading",
+				"description": "The loading state provides visual feedback when an async operation is in progress.\n\nWhen loading is true, the button displays a spinner and is automatically disabled to prevent multiple submissions. The button text remains visible to maintain layout stability.",
+				"summary": "Button in loading state during async operations",
+				"import": "import { Button } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Loading Button"
+					}
+				],
+				"snippet": "const Loading = () => <Button loading onClick={() => console.log('clicked')}>Submit</Button>"
+			},
+			{
+				"id": "button--danger",
+				"name": "Danger",
+				"description": "The danger variant is used for destructive actions that cannot be easily undone, such as deleting data or canceling subscriptions.\n\nUse this variant to draw attention to the serious nature of the action. Consider adding a confirmation dialog for critical operations.",
+				"summary": "Danger button for destructive actions",
+				"import": "import { Button } from '@storybook/design-system';",
+				"jsDocTag": [
+					{
+						"key": "example",
+						"value": "Danger Button"
+					},
+					{
+						"key": "warning",
+						"value": "Use with caution for destructive actions"
+					}
+				],
+				"snippet": "const Danger = () => <Button variant=\"danger\" onClick={() => confirm('Are you sure?')}>Delete Account</Button>"
+			}
+		],
+		"jsDocTag": [
+			{
+				"key": "summary",
+				"value": "A versatile button component for user interactions"
+			},
+			{
+				"key": "since",
+				"value": "1.0.0"
+			},
+			{
+				"key": "component",
+				"value": "Button"
+			}
+		]
+	}
+}

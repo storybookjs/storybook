@@ -1,0 +1,429 @@
+{
+	"v": 1,
+	"components": {
+		"button": {
+			"id": "button",
+			"name": "Button",
+			"description": "A versatile button component that supports multiple variants, sizes, and states.\n\nThe Button component is a fundamental building block for user interactions. It can be styled as primary, secondary, or tertiary actions, and supports disabled and loading states.\n\n## Usage\n\nButtons should be used for actions that affect the current page or trigger operations. For navigation, consider using a Link component instead.",
+			"summary": "A versatile button component for user interactions",
+			"import": "import { Button } from '@storybook/design-system';",
+			"props": {
+				"type": "object",
+				"properties": {
+					"variant": {
+						"type": "string",
+						"enum": ["primary", "secondary", "tertiary", "danger"],
+						"default": "primary",
+						"description": "The visual style variant of the button"
+					},
+					"size": {
+						"type": "string",
+						"enum": ["small", "medium", "large"],
+						"default": "medium",
+						"description": "The size of the button"
+					},
+					"disabled": {
+						"type": "boolean",
+						"default": false,
+						"description": "Whether the button is disabled"
+					},
+					"loading": {
+						"type": "boolean",
+						"default": false,
+						"description": "Whether the button is in a loading state"
+					},
+					"fullWidth": {
+						"type": "boolean",
+						"default": false,
+						"description": "Whether the button should take up the full width of its container"
+					},
+					"onClick": {
+						"type": "function",
+						"description": "Callback function when the button is clicked"
+					},
+					"children": {
+						"type": "string",
+						"description": "The content of the button"
+					}
+				},
+				"required": ["children"]
+			},
+			"examples": [
+				{
+					"id": "button--primary",
+					"name": "Primary",
+					"description": "The primary button variant is used for the main call-to-action on a page. It has the highest visual prominence and should be used sparingly to guide users toward the most important action.\n\n## Best Practices\n\n- Use only one primary button per section\n- Keep button text concise and action-oriented\n- Ensure sufficient contrast for accessibility",
+					"summary": "Primary button with high visual prominence",
+					"import": "import { Button } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Primary Button"
+						}
+					],
+					"snippet": "const Primary = () => <Button variant=\"primary\">Click Me</Button>"
+				},
+				{
+					"id": "button--secondary",
+					"name": "Secondary",
+					"description": "The secondary button variant is used for secondary actions that are still important but not the primary focus of the page.\n\nSecondary buttons have less visual weight than primary buttons and can be used multiple times on a page.",
+					"summary": "Secondary button for supporting actions",
+					"import": "import { Button } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Secondary Button"
+						}
+					],
+					"snippet": "const Secondary = () => <Button variant=\"secondary\">Cancel</Button>"
+				},
+				{
+					"id": "button--with-sizes",
+					"name": "WithSizes",
+					"description": "Buttons are available in three sizes: small, medium (default), and large.\n\nChoose the appropriate size based on the context and hierarchy of actions. Larger buttons are more prominent and easier to tap on mobile devices.",
+					"summary": "Button size variations",
+					"import": "import { Button } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Button Sizes"
+						}
+					],
+					"snippet": "const WithSizes = () => (\n  <>\n    <Button size=\"small\">Small</Button>\n    <Button size=\"medium\">Medium</Button>\n    <Button size=\"large\">Large</Button>\n  </>\n)"
+				},
+				{
+					"id": "button--loading",
+					"name": "Loading",
+					"description": "The loading state provides visual feedback when an async operation is in progress.\n\nWhen loading is true, the button displays a spinner and is automatically disabled to prevent multiple submissions. The button text remains visible to maintain layout stability.",
+					"summary": "Button in loading state during async operations",
+					"import": "import { Button } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Loading Button"
+						}
+					],
+					"snippet": "const Loading = () => <Button loading onClick={() => console.log('clicked')}>Submit</Button>"
+				},
+				{
+					"id": "button--danger",
+					"name": "Danger",
+					"description": "The danger variant is used for destructive actions that cannot be easily undone, such as deleting data or canceling subscriptions.\n\nUse this variant to draw attention to the serious nature of the action. Consider adding a confirmation dialog for critical operations.",
+					"summary": "Danger button for destructive actions",
+					"import": "import { Button } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Danger Button"
+						},
+						{
+							"key": "warning",
+							"value": "Use with caution for destructive actions"
+						}
+					],
+					"snippet": "const Danger = () => <Button variant=\"danger\" onClick={() => confirm('Are you sure?')}>Delete Account</Button>"
+				}
+			],
+			"jsDocTag": [
+				{
+					"key": "summary",
+					"value": "A versatile button component for user interactions"
+				},
+				{
+					"key": "since",
+					"value": "1.0.0"
+				},
+				{
+					"key": "component",
+					"value": "Button"
+				}
+			]
+		},
+		"card": {
+			"id": "card",
+			"name": "Card",
+			"description": "A flexible container component for grouping related content with optional header, footer, and action areas.\n\nThe Card component provides a consistent way to present information in a contained, elevated surface. It's commonly used for displaying articles, products, user profiles, or any grouped content that benefits from visual separation.\n\n## Design Principles\n\n- Cards should contain a single subject or action\n- Maintain consistent padding and spacing\n- Use elevation to indicate interactive vs static cards\n- Keep content hierarchy clear with proper use of typography",
+			"summary": "A flexible container component for grouping related content",
+			"import": "import { Card } from '@storybook/design-system';",
+			"props": {
+				"type": "object",
+				"properties": {
+					"variant": {
+						"type": "string",
+						"enum": ["elevated", "outlined", "flat"],
+						"default": "elevated",
+						"description": "The visual style variant of the card"
+					},
+					"padding": {
+						"type": "string",
+						"enum": ["none", "small", "medium", "large"],
+						"default": "medium",
+						"description": "The amount of internal padding"
+					},
+					"clickable": {
+						"type": "boolean",
+						"default": false,
+						"description": "Whether the entire card is clickable/interactive"
+					},
+					"header": {
+						"type": "node",
+						"description": "Content to display in the card header"
+					},
+					"footer": {
+						"type": "node",
+						"description": "Content to display in the card footer"
+					},
+					"children": {
+						"type": "node",
+						"description": "The main content of the card"
+					},
+					"onClick": {
+						"type": "function",
+						"description": "Callback function when the card is clicked (requires clickable=true)"
+					}
+				},
+				"required": ["children"]
+			},
+			"examples": [
+				{
+					"id": "card--basic",
+					"name": "Basic",
+					"description": "A basic card with just content.\n\nThe default elevated variant provides subtle depth through shadow, making the card appear to float above the page. This is ideal for creating visual hierarchy and grouping related information.",
+					"summary": "Basic card with content only",
+					"import": "import { Card } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Basic Card"
+						}
+					],
+					"snippet": "const Basic = () => (\n  <Card>\n    <h3>Card Title</h3>\n    <p>This is some card content that provides information to the user.</p>\n  </Card>\n)"
+				},
+				{
+					"id": "card--with-header-and-footer",
+					"name": "WithHeaderAndFooter",
+					"description": "A card with distinct header and footer sections.\n\nHeaders typically contain titles, subtitles, or avatars. Footers often contain actions like buttons or metadata like timestamps. The header and footer are visually separated from the main content area.",
+					"summary": "Card with header and footer sections",
+					"import": "import { Card } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Card with Header and Footer"
+						}
+					],
+					"snippet": "const WithHeaderAndFooter = () => (\n  <Card\n    header={<h3>Article Title</h3>}\n    footer={<Button variant=\"tertiary\">Read More</Button>}\n  >\n    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>\n  </Card>\n)"
+				},
+				{
+					"id": "card--clickable",
+					"name": "Clickable",
+					"description": "An interactive card that responds to clicks.\n\nClickable cards add hover effects and cursor changes to indicate interactivity. This pattern is useful for navigation cards, product cards, or any scenario where the entire card acts as a single interactive element.\n\n## Accessibility\n\nClickable cards are rendered as buttons with proper keyboard support and ARIA attributes.",
+					"summary": "Interactive clickable card",
+					"import": "import { Card } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Clickable Card"
+						}
+					],
+					"snippet": "const Clickable = () => (\n  <Card clickable onClick={() => alert('Card clicked!')}>\n    <h3>Product Name</h3>\n    <p>Click anywhere on this card to view details.</p>\n  </Card>\n)"
+				},
+				{
+					"id": "card--variants",
+					"name": "Variants",
+					"description": "Different visual variants of the card component.\n\n- **Elevated**: Default variant with shadow for depth\n- **Outlined**: Border-only variant without shadow\n- **Flat**: No border or shadow, minimal visual separation\n\nChoose variants based on your design system and the level of emphasis needed.",
+					"summary": "Card visual variants (elevated, outlined, flat)",
+					"import": "import { Card } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Card Variants"
+						}
+					],
+					"snippet": "const Variants = () => (\n  <>\n    <Card variant=\"elevated\">\n      <p>Elevated card with shadow</p>\n    </Card>\n    <Card variant=\"outlined\">\n      <p>Outlined card with border</p>\n    </Card>\n    <Card variant=\"flat\">\n      <p>Flat card without border or shadow</p>\n    </Card>\n  </>\n)"
+				},
+				{
+					"id": "card--user-profile",
+					"name": "UserProfile",
+					"description": "A real-world example of a user profile card.\n\nThis example demonstrates how to compose the Card component with other design system components to create a complete, functional UI element. It includes an avatar, user information, stats, and action buttons.",
+					"summary": "Complete user profile card example",
+					"import": "import { Card, Avatar, Button } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "User Profile Card"
+						},
+						{
+							"key": "composition",
+							"value": "Uses Avatar and Button components"
+						}
+					],
+					"snippet": "const UserProfile = () => (\n  <Card\n    header={\n      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>\n        <Avatar src=\"/user.jpg\" alt=\"Jane Doe\" />\n        <div>\n          <h3>Jane Doe</h3>\n          <p>Senior Developer</p>\n        </div>\n      </div>\n    }\n    footer={\n      <div style={{ display: 'flex', gap: '0.5rem' }}>\n        <Button variant=\"primary\" size=\"small\">Follow</Button>\n        <Button variant=\"secondary\" size=\"small\">Message</Button>\n      </div>\n    }\n  >\n    <div style={{ display: 'flex', justifyContent: 'space-around' }}>\n      <div><strong>1.2K</strong><br/>Followers</div>\n      <div><strong>342</strong><br/>Following</div>\n      <div><strong>89</strong><br/>Posts</div>\n    </div>\n  </Card>\n)"
+				}
+			],
+			"jsDocTag": [
+				{
+					"key": "summary",
+					"value": "A flexible container component for grouping related content"
+				},
+				{
+					"key": "since",
+					"value": "1.0.0"
+				},
+				{
+					"key": "component",
+					"value": "Card"
+				},
+				{
+					"key": "pattern",
+					"value": "Container"
+				}
+			]
+		},
+		"input": {
+			"id": "input",
+			"name": "Input",
+			"description": "A flexible text input component that supports various input types, validation states, and accessibility features.\n\nThe Input component is a foundational form element that wraps the native HTML input with consistent styling and behavior. It includes support for labels, error messages, helper text, and different visual states.\n\n## Accessibility\n\nThe Input component automatically manages ARIA attributes for labels, descriptions, and error messages to ensure screen reader compatibility.",
+			"summary": "A flexible text input component with validation support",
+			"import": "import { Input } from '@storybook/design-system';",
+			"props": {
+				"type": "object",
+				"properties": {
+					"type": {
+						"type": "string",
+						"enum": ["text", "email", "password", "number", "tel", "url"],
+						"default": "text",
+						"description": "The type of input field"
+					},
+					"label": {
+						"type": "string",
+						"description": "The label text for the input"
+					},
+					"placeholder": {
+						"type": "string",
+						"description": "Placeholder text shown when the input is empty"
+					},
+					"value": {
+						"type": "string",
+						"description": "The controlled value of the input"
+					},
+					"defaultValue": {
+						"type": "string",
+						"description": "The initial value for an uncontrolled input"
+					},
+					"disabled": {
+						"type": "boolean",
+						"default": false,
+						"description": "Whether the input is disabled"
+					},
+					"required": {
+						"type": "boolean",
+						"default": false,
+						"description": "Whether the input is required"
+					},
+					"error": {
+						"type": "string",
+						"description": "Error message to display below the input"
+					},
+					"helperText": {
+						"type": "string",
+						"description": "Helper text to display below the input"
+					},
+					"onChange": {
+						"type": "function",
+						"description": "Callback function when the input value changes"
+					}
+				}
+			},
+			"examples": [
+				{
+					"id": "input--basic",
+					"name": "Basic",
+					"description": "A basic text input with a label.\n\nThis is the most common use case for the Input component. Always include a label for accessibility, even if it's visually hidden in your design.",
+					"summary": "Basic text input with label",
+					"import": "import { Input } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Basic Input"
+						}
+					],
+					"snippet": "const Basic = () => <Input label=\"Full Name\" placeholder=\"Enter your name\" />"
+				},
+				{
+					"id": "input--with-error",
+					"name": "WithError",
+					"description": "An input displaying an error state with an error message.\n\nError messages should be clear, concise, and provide actionable guidance to help users fix the issue. The input border and message text are styled in red to indicate the error state.",
+					"summary": "Input with validation error",
+					"import": "import { Input } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Input with Error"
+						}
+					],
+					"snippet": "const WithError = () => <Input label=\"Email\" type=\"email\" value=\"invalid-email\" error=\"Please enter a valid email address\" />"
+				},
+				{
+					"id": "input--with-helper-text",
+					"name": "WithHelperText",
+					"description": "An input with helper text providing additional context or instructions.\n\nHelper text appears below the input and provides guidance without being an error. Use it to clarify format expectations, character limits, or provide helpful hints.",
+					"summary": "Input with helper text for guidance",
+					"import": "import { Input } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Input with Helper Text"
+						}
+					],
+					"snippet": "const WithHelperText = () => <Input label=\"Password\" type=\"password\" helperText=\"Must be at least 8 characters with one uppercase letter and one number\" />"
+				},
+				{
+					"id": "input--types",
+					"name": "Types",
+					"description": "Different input types for various data formats.\n\nUsing the correct input type improves the user experience by showing appropriate mobile keyboards and enabling browser validation features.",
+					"summary": "Various input types (email, tel, url, number)",
+					"import": "import { Input } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Input Types"
+						}
+					],
+					"snippet": "const Types = () => (\n  <>\n    <Input label=\"Email\" type=\"email\" placeholder=\"user@example.com\" />\n    <Input label=\"Phone\" type=\"tel\" placeholder=\"(555) 123-4567\" />\n    <Input label=\"Website\" type=\"url\" placeholder=\"https://example.com\" />\n    <Input label=\"Age\" type=\"number\" placeholder=\"18\" />\n  </>\n)"
+				},
+				{
+					"id": "input--disabled",
+					"name": "Disabled",
+					"description": "A disabled input that cannot be interacted with.\n\nDisabled inputs are useful for displaying non-editable data in forms or for inputs that become available only after certain conditions are met.",
+					"summary": "Disabled input state",
+					"import": "import { Input } from '@storybook/design-system';",
+					"jsDocTag": [
+						{
+							"key": "example",
+							"value": "Disabled Input"
+						}
+					],
+					"snippet": "const Disabled = () => <Input label=\"Username\" value=\"john_doe\" disabled />"
+				}
+			],
+			"jsDocTag": [
+				{
+					"key": "summary",
+					"value": "A flexible text input component with validation support"
+				},
+				{
+					"key": "since",
+					"value": "1.0.0"
+				},
+				{
+					"key": "component",
+					"value": "Input"
+				},
+				{
+					"key": "accessibility",
+					"value": "WCAG 2.1 Level AA compliant"
+				}
+			]
+		}
+	}
+}

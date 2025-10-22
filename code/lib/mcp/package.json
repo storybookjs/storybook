@@ -1,0 +1,46 @@
+{
+	"name": "@storybook/mcp",
+	"version": "0.0.0",
+	"description": "MCP server that serves knowledge about your components based on your Storybook stories and documentation",
+	"keywords": [
+		"storybook",
+		"mcp"
+	],
+	"homepage": "https://github.com/storybookjs/addon-mcp/blob/main/packages/mcp/README.md",
+	"repository": "github:storybookjs/addon-mcp",
+	"license": "MIT",
+	"author": "Storybook Core Team",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsdown",
+		"dev": "node --watch ./serve.ts",
+		"test": "vitest",
+		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-mcp"
+	},
+	"dependencies": {
+		"@tmcp/adapter-valibot": "^0.1.4",
+		"@tmcp/transport-http": "^0.7.0",
+		"tmcp": "^1.15.2",
+		"valibot": "^1.1.0"
+	},
+	"devDependencies": {
+		"@tsconfig/node-ts": "^23.6.1",
+		"@tsconfig/node24": "^24.0.1",
+		"@types/node": "^24.7.2",
+		"@vitest/coverage-v8": "3.2.4",
+		"srvx": "^0.8.16",
+		"tsdown": "^0.15.7",
+		"typescript": "^5.9.3",
+		"vitest": "^3.2.4"
+	}
+}

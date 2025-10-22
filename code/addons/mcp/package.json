@@ -12,7 +12,7 @@
 		"url": "https://github.com/storybookjs/addon-mcp"
 	},
 	"license": "MIT",
-	"author": "Jeppe Reinhold <jeppe@chromatic.com>, Tom Coleman <tom@chromatic.com>",
+	"author": "Storybook Core Team",
 	"type": "module",
 	"exports": {
 		"./preset": "./dist/preset.js",
@@ -27,16 +27,13 @@
 	"scripts": {
 		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
 		"build": "tsup",
-		"build:watch": "pnpm run build -- --watch",
-		"inspect": "mcp-inspector --transport streamable-http --server-url http://localhost:6006/mcp",
-		"release": "pnpm run build && pnpm changeset publish",
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"dev": "pnpm run build -- --watch",
+		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.17.3"
 	},
 	"devDependencies": {
-		"@modelcontextprotocol/inspector": "^0.16.5",
 		"@types/node": "^20",
 		"storybook": "^10.0.0-0",
 		"ts-dedent": "^2.2.0",

@@ -45,15 +45,13 @@ export const {
   useUniversalStore: experimental_useUniversalStore,
 });
 
-export const universalChecklistStore = testUtils.mocked(
-  new experimental_MockUniversalStore<StoreState, StoreEvent>(
-    {
-      ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
-      leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
-      debug: true,
-    },
-    testUtils
-  )
-);
+export const universalChecklistStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
+  {
+    ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
+    leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
+    debug: true,
+  },
+  testUtils
+) as unknown as UniversalStore<StoreState, StoreEvent>;
 
 export const checklistStore = createChecklistStore(universalChecklistStore);

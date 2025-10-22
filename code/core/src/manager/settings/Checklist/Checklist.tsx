@@ -35,7 +35,7 @@ const Sections = styled.ol(({ theme }) => ({
   listStyle: 'none',
   display: 'flex',
   flexDirection: 'column',
-  gap: 32,
+  gap: 20,
   margin: 0,
   padding: 0,
 
@@ -87,6 +87,7 @@ const SectionSummary = styled.div<{ progress: number; isCollapsed: boolean }>(
       flex: 1,
       margin: 0,
       fontSize: 'inherit',
+      fontWeight: theme.typography.weight.bold,
     },
 
     '&::after': {

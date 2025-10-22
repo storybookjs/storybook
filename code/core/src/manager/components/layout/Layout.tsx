@@ -258,6 +258,8 @@ const ContentContainer = styled.div<{ shown: boolean }>(({ theme, shown }) => ({
 }));
 
 const PagesContainer = styled.div(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
   gridRowStart: 'sidebar-start',
   gridRowEnd: '-1',
   gridColumnStart: 'sidebar-end',

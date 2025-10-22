@@ -6,8 +6,12 @@
 		"storybook",
 		"mcp"
 	],
-	"homepage": "https://github.com/storybookjs/addon-mcp/blob/main/packages/mcp/README.md",
-	"repository": "github:storybookjs/addon-mcp",
+	"homepage": "https://github.com/storybookjs/mcp/blob/main/packages/mcp/README.md",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/storybookjs/mcp.git",
+		"directory": "packages/mcp"
+	},
 	"license": "MIT",
 	"author": "Storybook Core Team",
 	"type": "module",

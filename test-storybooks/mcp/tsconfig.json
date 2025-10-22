@@ -18,5 +18,5 @@
 		"lib": ["esnext", "dom", "dom.iterable"],
 		"baseUrl": "."
 	},
-	"include": ["apps/internal-storybook/stories/**/*"]
+	"include": ["stories/**/*"]
 }

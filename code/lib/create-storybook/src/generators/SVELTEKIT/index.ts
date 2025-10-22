@@ -1,5 +1,5 @@
 import { ProjectType } from 'storybook/internal/cli';
-import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -7,7 +7,7 @@ export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.SVELTEKIT,
     renderer: SupportedRenderer.SVELTE,
-    framework: 'sveltekit',
+    framework: SupportedFramework.SVELTEKIT,
     builderOverride: SupportedBuilder.VITE,
   },
   configure: async () => {

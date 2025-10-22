@@ -1,11 +1,10 @@
 import { globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
-import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { dedent } from 'ts-dedent';
 
 import type { GeneratorFeature } from '../generators/types';
 import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
@@ -56,53 +55,26 @@ export class UserPreferencesCommand {
     options: UserPreferencesOptions
   ): Promise<UserPreferencesResult> {
     // Display version information
-    await this.displayVersionInfo(packageManager);
-
     const isInteractive = process.stdout.isTTY && !isCI();
     const skipPrompt = !isInteractive || !!options.yes;
+
+    const isTestFeatureAvailable = await this.isTestFeatureAvailable(
+      packageManager,
+      options.framework,
+      options.builder
+    );
 
     // Get new user preference
     const newUser = await this.promptNewUser(skipPrompt);
 
     // Get install type
     const installType: InstallType = !newUser
-      ? await this.promptInstallType(skipPrompt)
+      ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
       : 'recommended';
 
-    // Determine selected features
-    const selectedFeatures = this.determineFeatures(installType, newUser);
-
-    // Validate test feature compatibility with framework/builder info
-    if (selectedFeatures.has('test') && isInteractive) {
-      await this.validateTestFeature(
-        packageManager,
-        selectedFeatures,
-        options.framework,
-        options.builder
-      );
-    }
+    const selectedFeatures = this.determineFeatures(installType, newUser, isTestFeatureAvailable);
 
     return { newUser, installType, selectedFeatures };
-  }
-
-  /** Display version information and warnings */
-  private async displayVersionInfo(packageManager: JsPackageManager): Promise<void> {
-    const { currentVersion, latestVersion, isPrerelease, isOutdated } =
-      await this.versionService.getVersionInfo(packageManager);
-
-    if (isOutdated && !isPrerelease) {
-      logger.warn(dedent`
-        This version is behind the latest release, which is: ${latestVersion}!
-        You likely ran the init command through npx, which can use a locally cached version.
-        
-        To get the latest, please run: ${CLI_COLORS.cta('npx storybook@latest init')}
-        You may want to ${CLI_COLORS.cta('CTRL+C')} to stop, and run with the latest version instead.
-      `);
-    } else if (isPrerelease) {
-      logger.warn(`This is a pre-release version: ${picocolors.bold(currentVersion)}`);
-    } else {
-      logger.info(`Adding Storybook version ${picocolors.bold(currentVersion)} to your project`);
-    }
   }
 
   /** Prompt user about onboarding */
@@ -147,15 +119,22 @@ export class UserPreferencesCommand {
   }
 
   /** Prompt user for install type */
-  private async promptInstallType(skipPrompt: boolean): Promise<InstallType> {
+  private async promptInstallType(
+    skipPrompt: boolean,
+    isTestFeatureAvailable: boolean
+  ): Promise<InstallType> {
     let installType: InstallType = 'recommended';
+
+    const recommendedLabel = isTestFeatureAvailable
+      ? `Recommended: Includes component development, docs and testing features.`
+      : `Recommended: Includes component development and docs`;
 
     if (!skipPrompt) {
       installType = await prompt.select({
         message: 'What configuration should we install?',
         options: [
           {
-            label: `Recommended: Includes component development, docs, and testing features.`,
+            label: recommendedLabel,
             value: 'recommended',
           },
           {
@@ -172,13 +151,18 @@ export class UserPreferencesCommand {
   }
 
   /** Determine features based on install type and user status */
-  private determineFeatures(installType: InstallType, newUser: boolean): Set<GeneratorFeature> {
+  private determineFeatures(
+    installType: InstallType,
+    newUser: boolean,
+    isTestFeatureAvailable: boolean
+  ): Set<GeneratorFeature> {
     const features = new Set<GeneratorFeature>();
 
     if (installType === 'recommended') {
       features.add('docs');
+      features.add('a11y');
       // Don't install test in CI but install in non-TTY environments like agentic installs
-      if (!isCI()) {
+      if (!isCI() && isTestFeatureAvailable) {
         features.add('test');
       }
       if (newUser) {
@@ -190,9 +174,8 @@ export class UserPreferencesCommand {
   }
 
   /** Validate test feature compatibility and prompt user if issues found */
-  private async validateTestFeature(
+  private async isTestFeatureAvailable(
     packageManager: JsPackageManager,
-    selectedFeatures: Set<GeneratorFeature>,
     framework: SupportedFramework | undefined,
     builder: SupportedBuilder
   ): Promise<boolean> {
@@ -202,22 +185,6 @@ export class UserPreferencesCommand {
       builder,
       process.cwd()
     );
-
-    if (!result.compatible && result.reasons) {
-      logger.warn(dedent`Due to the following reasons, Storybook's testing features cannot be installed:
-        ${result.reasons.map((reason) => `- ${CLI_COLORS.warning(reason)}`).join('\n')}
-        `);
-      const shouldContinue = await prompt.confirm({
-        message: "Do you want to continue without Storybook's testing features?",
-      });
-
-      if (!shouldContinue) {
-        process.exit(0);
-      }
-
-      // Remove test feature if user chose to continue without it
-      selectedFeatures.delete('test');
-    }
 
     return result.compatible;
   }

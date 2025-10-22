@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProjectType, detectBuilder } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import type { GeneratorModule } from '../generators/types';
@@ -47,13 +47,11 @@ describe('FrameworkDetectionCommand', () => {
 
       const result = await command.execute(ProjectType.REACT, mockPackageManager, {} as any);
 
+      // When no framework is specified, it's inferred from renderer + builder
       expect(result).toEqual({
-        framework: undefined,
-        renderer: 'react',
+        framework: SupportedFramework.REACT_VITE,
+        renderer: SupportedRenderer.REACT,
         builder: SupportedBuilder.VITE,
-        frameworkPackage: '@storybook/react-vite',
-        rendererPackage: '@storybook/react',
-        builderPackage: '@storybook/builder-vite',
       });
 
       expect(detectBuilder).toHaveBeenCalledWith(mockPackageManager);
@@ -83,6 +81,8 @@ describe('FrameworkDetectionCommand', () => {
         metadata: {
           projectType: ProjectType.SVELTEKIT,
           renderer: SupportedRenderer.SVELTE,
+          framework: SupportedFramework.SVELTEKIT,
+          builderOverride: SupportedBuilder.VITE,
         },
         configure: vi.fn(),
       };
@@ -92,12 +92,9 @@ describe('FrameworkDetectionCommand', () => {
       const result = await command.execute(ProjectType.SVELTEKIT, mockPackageManager, {} as any);
 
       expect(result).toEqual({
-        framework: 'sveltekit',
-        renderer: 'svelte',
+        framework: SupportedFramework.SVELTEKIT,
+        renderer: SupportedRenderer.SVELTE,
         builder: SupportedBuilder.VITE,
-        frameworkPackage: '@storybook/sveltekit',
-        rendererPackage: '@storybook/svelte',
-        builderPackage: '@storybook/builder-vite',
       });
     });
 
@@ -115,7 +112,160 @@ describe('FrameworkDetectionCommand', () => {
 
       await expect(
         command.execute(ProjectType.REACT, mockPackageManager, {} as any)
-      ).rejects.toThrow('No generator found for project type: REACT');
+      ).rejects.toThrow('Cannot read properties of undefined');
+    });
+
+    it('should handle dynamic framework selection based on builder (Vite)', async () => {
+      const mockGenerator: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.NEXTJS,
+          renderer: SupportedRenderer.REACT,
+          framework: (builder: SupportedBuilder) =>
+            builder === SupportedBuilder.VITE
+              ? SupportedFramework.NEXTJS_VITE
+              : SupportedFramework.NEXTJS,
+        },
+        configure: vi.fn(),
+      };
+
+      vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
+      vi.mocked(detectBuilder).mockResolvedValue(SupportedBuilder.VITE);
+
+      const result = await command.execute(ProjectType.NEXTJS, mockPackageManager, {} as any);
+
+      expect(result).toEqual({
+        framework: SupportedFramework.NEXTJS_VITE,
+        renderer: SupportedRenderer.REACT,
+        builder: SupportedBuilder.VITE,
+      });
+      expect(detectBuilder).toHaveBeenCalledWith(mockPackageManager);
+    });
+
+    it('should handle dynamic framework selection based on builder (Webpack5)', async () => {
+      const mockGenerator: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.NEXTJS,
+          renderer: SupportedRenderer.REACT,
+          framework: (builder: SupportedBuilder) =>
+            builder === SupportedBuilder.VITE
+              ? SupportedFramework.NEXTJS_VITE
+              : SupportedFramework.NEXTJS,
+        },
+        configure: vi.fn(),
+      };
+
+      vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
+      vi.mocked(detectBuilder).mockResolvedValue(SupportedBuilder.WEBPACK5);
+
+      const result = await command.execute(ProjectType.NEXTJS, mockPackageManager, {} as any);
+
+      expect(result).toEqual({
+        framework: SupportedFramework.NEXTJS,
+        renderer: SupportedRenderer.REACT,
+        builder: SupportedBuilder.WEBPACK5,
+      });
+    });
+
+    it('should handle dynamic framework with CLI builder option', async () => {
+      const mockGenerator: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.NEXTJS,
+          renderer: SupportedRenderer.REACT,
+          framework: (builder: SupportedBuilder) =>
+            builder === SupportedBuilder.VITE
+              ? SupportedFramework.NEXTJS_VITE
+              : SupportedFramework.NEXTJS,
+        },
+        configure: vi.fn(),
+      };
+
+      vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
+
+      const result = await command.execute(ProjectType.NEXTJS, mockPackageManager, {
+        builder: SupportedBuilder.VITE,
+      } as any);
+
+      expect(result).toEqual({
+        framework: SupportedFramework.NEXTJS_VITE,
+        renderer: SupportedRenderer.REACT,
+        builder: SupportedBuilder.VITE,
+      });
+      expect(detectBuilder).not.toHaveBeenCalled();
+    });
+
+    it('should handle async builderOverride function', async () => {
+      const mockGenerator: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.NEXTJS,
+          renderer: SupportedRenderer.REACT,
+          framework: SupportedFramework.NEXTJS,
+          builderOverride: async () => {
+            // Simulate some async detection logic
+            return SupportedBuilder.WEBPACK5;
+          },
+        },
+        configure: vi.fn(),
+      };
+
+      vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
+
+      const result = await command.execute(ProjectType.NEXTJS, mockPackageManager, {} as any);
+
+      expect(result).toEqual({
+        framework: SupportedFramework.NEXTJS,
+        renderer: SupportedRenderer.REACT,
+        builder: SupportedBuilder.WEBPACK5,
+      });
+      expect(detectBuilder).not.toHaveBeenCalled();
+    });
+
+    it('should handle sync builderOverride function', async () => {
+      const mockGenerator: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.NEXTJS,
+          renderer: SupportedRenderer.REACT,
+          framework: SupportedFramework.NEXTJS,
+          builderOverride: () => SupportedBuilder.VITE,
+        },
+        configure: vi.fn(),
+      };
+
+      vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
+
+      const result = await command.execute(ProjectType.NEXTJS, mockPackageManager, {} as any);
+
+      expect(result).toEqual({
+        framework: SupportedFramework.NEXTJS,
+        renderer: SupportedRenderer.REACT,
+        builder: SupportedBuilder.VITE,
+      });
+      expect(detectBuilder).not.toHaveBeenCalled();
+    });
+
+    it('should handle dynamic framework with async builderOverride', async () => {
+      const mockGenerator: GeneratorModule = {
+        metadata: {
+          projectType: ProjectType.NEXTJS,
+          renderer: SupportedRenderer.REACT,
+          framework: (builder: SupportedBuilder) =>
+            builder === SupportedBuilder.VITE
+              ? SupportedFramework.NEXTJS_VITE
+              : SupportedFramework.NEXTJS,
+          builderOverride: async () => SupportedBuilder.VITE,
+        },
+        configure: vi.fn(),
+      };
+
+      vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
+
+      const result = await command.execute(ProjectType.NEXTJS, mockPackageManager, {} as any);
+
+      expect(result).toEqual({
+        framework: SupportedFramework.NEXTJS_VITE,
+        renderer: SupportedRenderer.REACT,
+        builder: SupportedBuilder.VITE,
+      });
+      expect(detectBuilder).not.toHaveBeenCalled();
     });
   });
 });

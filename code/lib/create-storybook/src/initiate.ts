@@ -79,6 +79,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     packageManager,
     dependencyCollector,
     skipInstall: !!options.skipInstall,
+    selectedFeatures,
   });
 
   // Step 7: Configure addons (run postinstall scripts for configuration only)
@@ -111,8 +112,9 @@ export async function doInitiate(options: CommandOptions): Promise<
 
 const handleCommandFailure = async (): Promise<never> => {
   const logFile = await logTracker.writeToFile();
+  logger.error('Storybook encountered an error during initialization');
   logger.log(`Storybook debug logs can be found at: ${logFile}`);
-  logger.outro('');
+  logger.outro('Storybook exited with an error');
   process.exit(1);
 };
 

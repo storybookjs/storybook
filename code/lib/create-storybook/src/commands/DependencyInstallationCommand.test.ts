@@ -43,6 +43,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: false,
+        selectedFeatures: new Set(['test']),
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -56,6 +57,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: true,
+        selectedFeatures: new Set(['test']),
       });
 
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
@@ -68,6 +70,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: true,
+        selectedFeatures: new Set(['test']),
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -83,6 +86,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: true,
+        selectedFeatures: new Set(['test']),
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -101,6 +105,7 @@ describe('DependencyInstallationCommand', () => {
         command.execute({
           packageManager: mockPackageManager,
           skipInstall: false,
+          selectedFeatures: new Set(['test']),
         })
       ).rejects.toThrow('Installation failed');
     });
@@ -109,10 +114,21 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: false,
+        selectedFeatures: new Set(['test']),
       });
 
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
       expect(mockPackageManager.installDependencies).not.toHaveBeenCalled();
+    });
+
+    it('should not collect test dependencies if test feature is not selected', async () => {
+      await command.execute({
+        packageManager: mockPackageManager,
+        skipInstall: false,
+        selectedFeatures: new Set(['docs']),
+      });
+
+      expect(dependencyCollector.getAllPackages()).not.toContain('vitest');
     });
   });
 });

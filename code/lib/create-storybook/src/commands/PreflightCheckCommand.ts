@@ -3,9 +3,13 @@ import {
   JsPackageManagerFactory,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
+
+import dedent from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project';
+import { VersionService } from '../services';
 
 export interface PreflightCheckResult {
   packageManager: JsPackageManager;
@@ -23,6 +27,7 @@ export interface PreflightCheckResult {
  */
 export class PreflightCheckCommand {
   /** Execute preflight checks */
+  constructor(private readonly versionService = new VersionService()) {}
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
     const { packageManager: pkgMgr, force } = options;
 
@@ -53,7 +58,29 @@ export class PreflightCheckCommand {
       await packageManager.installDependencies();
     }
 
+    await this.displayVersionInfo(packageManager);
+
     return { packageManager, isEmptyProject: isEmptyDirProject };
+  }
+
+  /** Display version information and warnings */
+  private async displayVersionInfo(packageManager: JsPackageManager): Promise<void> {
+    const { currentVersion, latestVersion, isPrerelease, isOutdated } =
+      await this.versionService.getVersionInfo(packageManager);
+
+    if (isOutdated && !isPrerelease) {
+      logger.warn(dedent`
+          This version is behind the latest release, which is: ${latestVersion}!
+          You likely ran the init command through npx, which can use a locally cached version.
+          
+          To get the latest, please run: ${CLI_COLORS.cta('npx storybook@latest init')}
+          You may want to ${CLI_COLORS.cta('CTRL+C')} to stop, and run with the latest version instead.
+        `);
+    } else if (isPrerelease) {
+      logger.warn(`This is a pre-release version: ${currentVersion}`);
+    } else {
+      logger.info(`Adding Storybook version ${currentVersion} to your project`);
+    }
   }
 }
 

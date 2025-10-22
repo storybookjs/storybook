@@ -4,10 +4,12 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
 import { getAddonVitestDependencies } from '../addon-dependencies/addon-vitest';
 import type { DependencyCollector } from '../dependency-collector';
+import type { GeneratorFeature } from '../generators/types';
 
 type DependencyInstallationCommandParams = {
   packageManager: JsPackageManager;
   skipInstall: boolean;
+  selectedFeatures: Set<GeneratorFeature>;
 };
 
 /**
@@ -25,8 +27,9 @@ export class DependencyInstallationCommand {
   async execute({
     packageManager,
     skipInstall = false,
+    selectedFeatures,
   }: DependencyInstallationCommandParams): Promise<void> {
-    await this.collectAddonDependencies(packageManager);
+    await this.collectAddonDependencies(packageManager, selectedFeatures);
 
     if (!this.dependencyCollector.hasPackages() && skipInstall) {
       return;
@@ -67,12 +70,18 @@ export class DependencyInstallationCommand {
   }
 
   /** Collect addon dependencies without installing them */
-  private async collectAddonDependencies(packageManager: JsPackageManager): Promise<void> {
+  private async collectAddonDependencies(
+    packageManager: JsPackageManager,
+    selectedFeatures: Set<GeneratorFeature>
+  ): Promise<void> {
     try {
-      const vitestDeps = await getAddonVitestDependencies(packageManager);
-      const a11yDeps = getAddonA11yDependencies();
+      if (selectedFeatures.has('test')) {
+        const vitestDeps = await getAddonVitestDependencies(packageManager);
+        this.dependencyCollector.addDevDependencies(vitestDeps);
+      }
 
-      this.dependencyCollector.addDevDependencies([...vitestDeps, ...a11yDeps]);
+      const a11yDeps = getAddonA11yDependencies();
+      this.dependencyCollector.addDevDependencies(a11yDeps);
     } catch (err) {
       logger.warn(`Failed to collect addon dependencies: ${err}`);
     }

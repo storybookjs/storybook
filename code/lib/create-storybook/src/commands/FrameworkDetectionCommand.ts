@@ -41,7 +41,7 @@ export class FrameworkDetectionCommand {
       builder = options.builder as SupportedBuilder;
     } else if (metadata.builderOverride) {
       if (typeof metadata.builderOverride === 'function') {
-        builder = metadata.builderOverride();
+        builder = await metadata.builderOverride();
       } else {
         builder = metadata.builderOverride;
       }
@@ -53,7 +53,17 @@ export class FrameworkDetectionCommand {
     // Get framework and renderer from metadata
     const renderer = metadata.renderer;
 
-    const framework = metadata.framework ?? this.getFramework(renderer, builder);
+    // Handle dynamic framework selection based on builder
+    let framework: SupportedFramework | undefined;
+    if (metadata.framework) {
+      if (typeof metadata.framework === 'function') {
+        framework = metadata.framework(builder);
+      } else {
+        framework = metadata.framework;
+      }
+    } else {
+      framework = this.getFramework(renderer, builder);
+    }
 
     return {
       framework,
@@ -66,10 +76,6 @@ export class FrameworkDetectionCommand {
     renderer: SupportedRenderer,
     builder: SupportedBuilder
   ): SupportedFramework | undefined {
-    // map renderer to framework
-    // if successful, return the framework
-    // if not successful, merge renderer and builder to get the framework
-    // if renderer is one of the SupportedFramework enum
     if (Object.values(SupportedFramework).includes(renderer as any)) {
       return renderer as any as SupportedFramework;
     }

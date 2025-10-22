@@ -26,8 +26,6 @@ export type ExecuteAddonConfigurationResult = {
  * - Handle configuration errors gracefully
  */
 export class AddonConfigurationCommand {
-  private readonly addonsToConfig = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
-
   constructor(private dependencyCollector: DependencyCollector) {}
 
   /** Execute addon configuration */
@@ -37,12 +35,17 @@ export class AddonConfigurationCommand {
     selectedFeatures,
     configDir,
   }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
-    if (!selectedFeatures.has('test') || !configDir) {
+    if (!configDir) {
       return { status: 'success' };
     }
 
     try {
-      const { hasFailures } = await this.configureTestAddons(packageManager, configDir, options);
+      const { hasFailures } = await this.configureAddons(
+        packageManager,
+        configDir,
+        selectedFeatures,
+        options
+      );
       return { status: hasFailures ? 'failed' : 'success' };
     } catch {
       return { status: 'failed' };
@@ -50,16 +53,21 @@ export class AddonConfigurationCommand {
   }
 
   /** Configure test addons (a11y and vitest) */
-  private async configureTestAddons(
+  private async configureAddons(
     packageManager: JsPackageManager,
     configDir: string,
+    selectedFeatures: Set<GeneratorFeature>,
     options: CommandOptions
   ): Promise<{ hasFailures: boolean }> {
     // Import postinstallAddon from cli-storybook package
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
 
+    const addonsToConfig = selectedFeatures.has('test')
+      ? ['@storybook/addon-a11y', '@storybook/addon-vitest']
+      : ['@storybook/addon-a11y'];
+
     // Get versioned addon packages
-    const addons = await packageManager.getVersionedPackages(this.addonsToConfig);
+    const addons = await packageManager.getVersionedPackages(addonsToConfig);
 
     this.dependencyCollector.addDevDependencies(addons);
 
@@ -67,14 +75,14 @@ export class AddonConfigurationCommand {
 
     const task = prompt.taskLog({
       id: 'configure-addons',
-      title: 'Configuring test addons...',
+      title: 'Configuring addons...',
     });
 
     // Track failures for each addon
     const addonResults = new Map<string, null | any>();
 
     // Configure each addon
-    for (const addon of this.addonsToConfig) {
+    for (const addon of addonsToConfig) {
       // const taskGroup = task.group(`Configuring ${addon}...`);
 
       try {
@@ -109,7 +117,7 @@ export class AddonConfigurationCommand {
     // Log results for each addon
     logger.log(
       CLI_COLORS.dimmed(
-        this.addonsToConfig
+        addonsToConfig
           .map((addon) => {
             const error = addonResults.get(addon);
             return error ? `❌ ${addon}` : `✅ ${addon}`;

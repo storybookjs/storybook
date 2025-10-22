@@ -53,6 +53,8 @@ export function formatComponentManifest(
 	return parts.join('\n');
 }
 
+const MAX_SUMMARY_LENGTH = 90;
+
 export function formatComponentManifestMapToList(
 	manifest: ComponentManifestMap,
 ): string {
@@ -68,8 +70,8 @@ export function formatComponentManifestMapToList(
 		const summary =
 			component.summary ??
 			(component.description
-				? component.description.length > 90
-					? `${component.description.slice(0, 90)}...`
+				? component.description.length > MAX_SUMMARY_LENGTH
+					? `${component.description.slice(0, MAX_SUMMARY_LENGTH)}...`
 					: component.description
 				: undefined);
 

@@ -50,9 +50,12 @@ export async function addGetComponentDocumentationTool(
 
 				const allNotFound = notFoundIds.length === input.componentIds.length;
 				if (notFoundIds.length > 0) {
+					const componentWord =
+						notFoundIds.length > 1 ? 'Components' : 'Component';
+					const severity = allNotFound ? 'Error' : 'Warning';
 					content.push({
 						type: 'text' as const,
-						text: `${allNotFound ? 'Error' : 'Warning'}: Component${notFoundIds.length > 1 ? 's' : ''} not found: ${notFoundIds.join(', ')}`,
+						text: `${severity}: ${componentWord} not found: ${notFoundIds.join(', ')}`,
 					});
 				}
 

@@ -106,6 +106,9 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
+
+  /** The second and third parameter are not needed. And make type inference easier. */
+  apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
   apply<T>(extension: string, config?: T, args?: unknown): Promise<T>;
 }
 
@@ -359,6 +362,8 @@ export type ComponentManifestGenerator = (
   storyIndexGenerator: StoryIndexGenerator
 ) => Promise<ComponentsManifest>;
 
+export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
+
 export interface StorybookConfigRaw {
   /**
    * Sets the addons you want to use with Storybook.
@@ -373,6 +378,7 @@ export interface StorybookConfigRaw {
   addons?: Preset[];
   core?: CoreConfig;
   componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -472,6 +478,8 @@ export interface StorybookConfigRaw {
     angularFilterNonInputControls?: boolean;
 
     experimentalComponentsManifest?: boolean;
+
+    experimentalCodeExamples?: boolean;
   };
 
   build?: TestBuildConfig;

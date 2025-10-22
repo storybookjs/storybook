@@ -10,6 +10,8 @@ export const addons: PresetProperty<'addons'> = [
 
 export { componentManifestGenerator as experimental_componentManifestGenerator } from './componentManifest/generator';
 
+export { enrichCsf as experimental_enrichCsf } from './enrichCsf';
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options

@@ -321,7 +321,7 @@ export async function getPresets(
   const loadedPresets: LoadedPreset[] = await loadPresets(presets, 0, storybookOptions);
 
   return {
-    apply: async (extension: string, config: any, args = {}) =>
+    apply: async (extension: string, config?: any, args = {}) =>
       applyPresets(loadedPresets, extension, config, args, storybookOptions),
   };
 }

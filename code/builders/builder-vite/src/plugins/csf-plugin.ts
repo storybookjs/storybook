@@ -12,6 +12,11 @@ export async function csfPlugin(config: Options): Promise<Plugin> {
     // @ts-expect-error - not sure what type to use here
     addons.find((a) => [a, a.name].includes('@storybook/addon-docs'))?.options ?? {};
 
+  const enrichCsf = await presets.apply('experimental_enrichCsf');
+
   // TODO: looks like unplugin can return an array of plugins
-  return vite(docsOptions?.csfPluginOptions) as Plugin;
+  return vite({
+    ...docsOptions?.csfPluginOptions,
+    enrichCsf,
+  }) as Plugin;
 }

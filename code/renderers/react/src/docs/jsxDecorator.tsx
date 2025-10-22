@@ -4,6 +4,7 @@ import React, { createElement, isValidElement } from 'react';
 import { logger } from 'storybook/internal/client-logger';
 import { SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
 import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
+import { type StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { Options } from 'react-element-to-jsx-string';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';
@@ -230,6 +231,9 @@ const mdxToJsx = (node: any) => {
   }
   return createElement(originalType, rest, ...jsxChildren);
 };
+
+// eslint-disable-next-line no-var
+declare var FEATURES: NonNullable<StorybookConfigRaw['features']>;
 
 export const jsxDecorator = (
   storyFn: PartialStoryFn<ReactRenderer>,

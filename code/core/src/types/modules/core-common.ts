@@ -341,24 +341,23 @@ export interface TagOptions {
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
 export interface ComponentManifest {
+  id: string;
+  name: string;
+  description?: string;
+  import?: string;
+  summary?: string;
+  examples: { name: string; snippet: string }[];
+  jsDocTags: Record<string, string[]>;
+}
+
+export interface ComponentsManifest {
   v: number;
-  components: Record<
-    string,
-    {
-      id: string;
-      name?: string;
-      description?: string;
-      import?: string;
-      summary?: string;
-      examples: { name: string; snippet: string }[];
-      jsDocTags: Record<string, string[]>;
-    }
-  >;
+  components: Record<string, ComponentManifest>;
 }
 
 export type ComponentManifestGenerator = (
   storyIndexGenerator: StoryIndexGenerator
-) => Promise<ComponentManifest>;
+) => Promise<ComponentsManifest>;
 
 export interface StorybookConfigRaw {
   /**

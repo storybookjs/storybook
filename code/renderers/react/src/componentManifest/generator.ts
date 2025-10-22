@@ -4,13 +4,18 @@ import { recast } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { extractDescription } from 'storybook/internal/csf-tools';
 import { type ComponentManifestGenerator } from 'storybook/internal/types';
+import { type ComponentManifest } from 'storybook/internal/types';
 
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
 import { extractJSDocTags, removeTags } from './jsdocTags';
-import { getMatchingDocgen, parseWithReactDocgen } from './reactDocgen';
+import { type DocObj, getMatchingDocgen, parseWithReactDocgen } from './reactDocgen';
 import { groupBy } from './utils';
+
+interface ReactComponentManifest extends ComponentManifest {
+  reactDocgen?: DocObj;
+}
 
 export const componentManifestGenerator = async () => {
   return (async (storyIndexGenerator) => {
@@ -25,27 +30,42 @@ export const componentManifestGenerator = async () => {
       group && group?.length > 0 ? [group[0]] : []
     );
     const components = await Promise.all(
-      singleEntryPerComponent.map(async (entry) => {
+      singleEntryPerComponent.flatMap(async (entry) => {
         const storyFile = await readFile(path.join(process.cwd(), entry.importPath), 'utf-8');
         const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
         const componentName = csf._meta?.component;
 
-        let componentFile;
-        try {
-          componentFile = await readFile(path.join(process.cwd(), entry.componentPath!), 'utf-8');
-        } catch (e) {
-          // TODO find out when and why this happens
-          return {
-            id: entry.id.split('--')[0],
-            name: componentName,
-            jsDocTags: {},
-            examples: [],
-          };
+        if (!componentName) {
+          return;
+        }
+
+        const examples = !componentName
+          ? []
+          : Object.entries(csf._storyPaths)
+              .map(([name, path]) => ({
+                name,
+                snippet: recast.print(getCodeSnippet(path, csf._metaNode ?? null, componentName))
+                  .code,
+              }))
+              .filter(Boolean);
+
+        const id = entry.id.split('--')[0];
+
+        const componentFile = await readFile(
+          path.join(process.cwd(), entry.componentPath!),
+          'utf-8'
+        ).catch(() => {
+          // TODO This happens too often. We should improve the componentPath resolution.
+          return null;
+        });
+
+        if (!componentFile || !entry.componentPath) {
+          return { id, name: componentName, examples, jsDocTags: {} };
         }
 
         const docgens = await parseWithReactDocgen({
           code: componentFile,
-          filename: path.join(process.cwd(), entry.componentPath!),
+          filename: path.join(process.cwd(), entry.componentPath),
         });
         const docgen = getMatchingDocgen(docgens, csf);
 
@@ -58,29 +78,25 @@ export const componentManifestGenerator = async () => {
           : undefined;
 
         return {
-          id: entry.id.split('--')[0],
+          id,
           name: componentName,
           description: manifestDescription,
           summary: tags.summary?.[0],
           import: tags.import?.[0],
           reactDocgen: docgen,
           jsDocTags: tags,
-          examples: !componentName
-            ? []
-            : Object.entries(csf._storyPaths)
-                .map(([name, path]) => ({
-                  name,
-                  snippet: recast.print(getCodeSnippet(path, csf._metaNode ?? null, componentName))
-                    .code,
-                }))
-                .filter(Boolean),
-        };
+          examples,
+        } satisfies ReactComponentManifest;
       })
     );
 
     return {
       v: 0,
-      components: Object.fromEntries(components.map((component) => [component.id, component])),
+      components: Object.fromEntries(
+        components
+          .filter((component) => component != null)
+          .map((component) => [component.id, component])
+      ),
     };
   }) satisfies ComponentManifestGenerator;
 };

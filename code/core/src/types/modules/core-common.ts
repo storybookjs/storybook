@@ -478,7 +478,13 @@ export interface StorybookConfigRaw {
     angularFilterNonInputControls?: boolean;
 
     experimentalComponentsManifest?: boolean;
-
+    /**
+     * @experimental This feature is experimental and may change in future versions.
+     * 
+     * Enable experimental code examples generation for components.
+     * 
+     * @default false
+     */
     experimentalCodeExamples?: boolean;
   };
 

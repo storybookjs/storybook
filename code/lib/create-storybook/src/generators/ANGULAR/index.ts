@@ -1,8 +1,9 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { AngularJSON, CoreBuilder, ProjectType, copyTemplate } from 'storybook/internal/cli';
+import { AngularJSON, ProjectType, copyTemplate } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import dedent from 'ts-dedent';
 
@@ -11,9 +12,9 @@ import { defineGeneratorModule } from '../modules/GeneratorModule';
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.ANGULAR,
-    renderer: 'angular',
-    framework: 'angular',
-    builderOverride: CoreBuilder.Webpack5,
+    renderer: SupportedRenderer.ANGULAR,
+    framework: SupportedFramework.ANGULAR,
+    builderOverride: SupportedBuilder.WEBPACK5,
   },
   configure: async (packageManager, context) => {
     const angularJSON = new AngularJSON();

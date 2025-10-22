@@ -1,4 +1,5 @@
-import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
+import type { SupportedBuilder } from 'storybook/internal/types';
+import { SupportedFramework } from 'storybook/internal/types';
 
 import { minVersion, validRange } from 'semver';
 
@@ -12,38 +13,26 @@ function eqMajor(versionRange: string, major: number) {
 
 /** A list of all frameworks that are supported, but use a package outside the storybook monorepo */
 export type ExternalFramework = {
-  name: SupportedFrameworks;
+  name: SupportedFramework;
   packageName?: string;
   frameworks?: string[];
   renderer?: string;
 };
 
 export const externalFrameworks: ExternalFramework[] = [
-  { name: 'qwik', packageName: 'storybook-framework-qwik' },
+  { name: SupportedFramework.QWIK, packageName: 'storybook-framework-qwik' },
   {
-    name: 'solid',
+    name: SupportedFramework.SOLID,
     packageName: 'storybook-solidjs-vite',
     frameworks: ['storybook-solidjs-vite'],
     renderer: 'storybook-solidjs-vite',
   },
   {
-    name: 'nuxt',
+    name: SupportedFramework.NUXT,
     packageName: '@storybook-vue/nuxt',
     frameworks: ['@storybook-vue/nuxt'],
     renderer: '@storybook/vue3',
   },
-];
-
-export const SUPPORTED_RENDERERS: SupportedRenderers[] = [
-  'react',
-  'react-native',
-  'vue3',
-  'angular',
-  'ember',
-  'preact',
-  'svelte',
-  'qwik',
-  'solid',
 ];
 
 export enum ProjectType {
@@ -71,32 +60,8 @@ export enum ProjectType {
   SOLID = 'SOLID',
 }
 
-export enum CoreBuilder {
-  Webpack5 = 'webpack5',
-  Vite = 'vite',
-}
-
-export enum CoreWebpackCompilers {
-  Babel = 'babel',
-  SWC = 'swc',
-}
-
-export enum CommunityBuilder {
-  Rsbuild = 'rsbuild',
-}
-
-export const compilerNameToCoreCompiler: Record<string, CoreWebpackCompilers> = {
-  '@storybook/addon-webpack5-compiler-babel': CoreWebpackCompilers.Babel,
-  '@storybook/addon-webpack5-compiler-swc': CoreWebpackCompilers.SWC,
-};
-
-export const builderNameToCoreBuilder: Record<string, CoreBuilder> = {
-  '@storybook/builder-webpack5': CoreBuilder.Webpack5,
-  '@storybook/builder-vite': CoreBuilder.Vite,
-};
-
 // The `& {}` bit allows for auto-complete, see: https://github.com/microsoft/TypeScript/issues/29729
-export type Builder = CoreBuilder | (string & {});
+export type Builder = SupportedBuilder | (string & {});
 
 export enum SupportedLanguage {
   JAVASCRIPT = 'javascript',

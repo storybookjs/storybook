@@ -1,4 +1,4 @@
-import { formatFileContent, getAddonNames } from 'storybook/internal/common';
+import { formatFileContent, frameworkPackages, getAddonNames } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
@@ -8,7 +8,6 @@ import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 // Relative path import to avoid dependency to storybook/test
-import { SUPPORTED_FRAMEWORKS } from '../../../../../addons/vitest/src/constants';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile';
 import type { Fix } from '../types';
 
@@ -53,7 +52,9 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
     const hasA11yAddon = !!addons.find((addon) => addon.includes('@storybook/addon-a11y'));
     const hasTestAddon = !!addons.find((addon) => addon.includes('@storybook/addon-vitest'));
 
-    if (!SUPPORTED_FRAMEWORKS.find((framework) => frameworkPackageName?.includes(framework))) {
+    if (
+      !Object.keys(frameworkPackages).find((framework) => frameworkPackageName?.includes(framework))
+    ) {
       return null;
     }
 

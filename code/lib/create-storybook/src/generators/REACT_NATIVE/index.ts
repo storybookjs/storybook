@@ -1,11 +1,11 @@
 import {
-  CoreBuilder,
   ProjectType,
   SupportedLanguage,
   copyTemplateFiles,
   getBabelDependencies,
 } from 'storybook/internal/cli';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
+import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
 import dedent from 'ts-dedent';
 
@@ -14,8 +14,8 @@ import { defineGeneratorModule } from '../modules/GeneratorModule';
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.REACT_NATIVE,
-    renderer: 'react',
-    builderOverride: CoreBuilder.Webpack5,
+    renderer: SupportedRenderer.REACT,
+    builderOverride: SupportedBuilder.WEBPACK5,
   },
   configure: async (packageManager, context) => {
     const missingReactDom = !packageManager.getDependencyVersion('react-dom');
@@ -62,7 +62,7 @@ export default defineGeneratorModule({
     // Copy React Native templates
     await copyTemplateFiles({
       packageManager: packageManager as any,
-      templateLocation: 'react-native',
+      templateLocation: SupportedRenderer.REACT_NATIVE,
       language: SupportedLanguage.TYPESCRIPT,
       destination: storybookConfigFolder,
       features: context.features,

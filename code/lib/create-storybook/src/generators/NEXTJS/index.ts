@@ -2,14 +2,15 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { ProjectType } from 'storybook/internal/cli';
+import { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.NEXTJS,
-    renderer: 'react',
-    framework: 'nextjs',
+    renderer: SupportedRenderer.REACT,
+    framework: SupportedFramework.NEXTJS,
   },
   configure: async () => {
     let staticDir;

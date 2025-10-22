@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SupportedLanguage, copyTemplateFiles } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
+import { SupportedRenderer } from 'storybook/internal/types';
 
 import { TemplateManager } from './TemplateManager';
 
@@ -80,7 +81,7 @@ describe('TemplateManager', () => {
       await manager.copyTemplates(
         'react-vite',
         '@storybook/react-vite',
-        'react',
+        SupportedRenderer.REACT,
         mockPackageManager,
         SupportedLanguage.TYPESCRIPT,
         './src/stories',
@@ -102,7 +103,7 @@ describe('TemplateManager', () => {
       await manager.copyTemplates(
         undefined,
         '@storybook/react',
-        'react',
+        SupportedRenderer.REACT,
         mockPackageManager,
         SupportedLanguage.JAVASCRIPT,
         undefined,
@@ -121,7 +122,7 @@ describe('TemplateManager', () => {
       await manager.copyTemplates(
         undefined,
         '@storybook/react-vite',
-        'react',
+        SupportedRenderer.REACT,
         mockPackageManager,
         SupportedLanguage.TYPESCRIPT,
         undefined,
@@ -152,17 +153,25 @@ describe('TemplateManager', () => {
 
   describe('getTemplateLocation', () => {
     it('should return framework location when templates exist', () => {
-      const location = manager.getTemplateLocation('nextjs', '@storybook/nextjs', 'react');
+      const location = manager.getTemplateLocation(
+        'nextjs',
+        '@storybook/nextjs',
+        SupportedRenderer.REACT
+      );
       expect(location).toBe('nextjs');
     });
 
     it('should return renderer when framework has no templates', () => {
-      const location = manager.getTemplateLocation(undefined, undefined, 'react');
+      const location = manager.getTemplateLocation(undefined, undefined, SupportedRenderer.REACT);
       expect(location).toBe('react');
     });
 
     it('should use frameworkPackages mapping', () => {
-      const location = manager.getTemplateLocation(undefined, '@storybook/react-vite', 'react');
+      const location = manager.getTemplateLocation(
+        undefined,
+        '@storybook/react-vite',
+        SupportedRenderer.REACT
+      );
       expect(location).toBe('react-vite');
     });
 

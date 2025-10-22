@@ -9,10 +9,10 @@ import * as find from 'empathic/find';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
+import { SupportedBuilder } from '../types';
 import { isNxProject } from './helpers';
 import type { TemplateConfiguration, TemplateMatcher } from './project_types';
 import {
-  CoreBuilder,
   ProjectType,
   SupportedLanguage,
   supportedTemplates,
@@ -109,7 +109,7 @@ export function detectFrameworkPreset(
  * Attempts to detect which builder to use, by searching for a vite config file or webpack
  * installation. If neither are found it will choose the default builder based on the project type.
  *
- * @returns CoreBuilder
+ * @returns SupportedBuilder
  */
 export async function detectBuilder(packageManager: JsPackageManager) {
   const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
@@ -117,14 +117,14 @@ export async function detectBuilder(packageManager: JsPackageManager) {
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
-    logger.log('- Setting builder to Vite');
-    return CoreBuilder.Vite;
+    logger.step('Builder detected: Vite');
+    return SupportedBuilder.VITE;
   }
 
   // REWORK
   if (webpackConfig || (dependencies.webpack && dependencies.vite !== undefined)) {
-    logger.log('Setting builder to webpack');
-    return CoreBuilder.Webpack5;
+    logger.step('Builder detected: Webpack 5');
+    return SupportedBuilder.WEBPACK5;
   }
 
   return prompt.select({
@@ -133,8 +133,8 @@ export async function detectBuilder(packageManager: JsPackageManager) {
       Please select one:
       `,
     options: [
-      { label: 'Vite', value: CoreBuilder.Vite },
-      { label: 'Webpack 5', value: CoreBuilder.Webpack5 },
+      { label: 'Vite', value: SupportedBuilder.VITE },
+      { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
     ],
   });
 }

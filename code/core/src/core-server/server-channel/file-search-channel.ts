@@ -2,11 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import type { Channel } from 'storybook/internal/channels';
-import {
-  extractProperRendererNameFromFramework,
-  getFrameworkName,
-  getProjectRoot,
-} from 'storybook/internal/common';
+import { extractRenderer, getFrameworkName, getProjectRoot } from 'storybook/internal/common';
 import type {
   FileComponentSearchRequestPayload,
   FileComponentSearchResponsePayload,
@@ -18,7 +14,7 @@ import {
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from 'storybook/internal/core-events';
 import { telemetry } from 'storybook/internal/telemetry';
-import type { CoreConfig, Options, SupportedRenderers } from 'storybook/internal/types';
+import type { CoreConfig, Options, SupportedRenderer } from 'storybook/internal/types';
 
 import { doesStoryFileExist, getStoryMetadata } from '../utils/get-new-story-file';
 import { getParser } from '../utils/parser';
@@ -41,9 +37,7 @@ export async function initFileSearchChannel(
 
         const frameworkName = await getFrameworkName(options);
 
-        const rendererName = (await extractProperRendererNameFromFramework(
-          frameworkName
-        )) as SupportedRenderers;
+        const rendererName = (await extractRenderer(frameworkName)) as SupportedRenderer;
 
         const files = await searchFiles({
           searchQuery,

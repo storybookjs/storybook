@@ -1,14 +1,15 @@
-import { CoreBuilder, ProjectType } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.NUXT,
-    renderer: 'vue3',
-    framework: 'nuxt',
-    builderOverride: CoreBuilder.Vite,
+    renderer: SupportedRenderer.VUE3,
+    framework: SupportedFramework.NUXT,
+    builderOverride: SupportedBuilder.VITE,
   },
   configure: async (packageManager, context) => {
     const extraStories = context.features.includes('docs') ? ['../components/**/*.mdx'] : [];

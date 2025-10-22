@@ -1,8 +1,8 @@
-import { type CoreBuilder, globalSettings } from 'storybook/internal/cli';
+import { globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
-import type { SupportedFrameworks } from 'storybook/internal/types';
+import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -24,8 +24,8 @@ export interface UserPreferencesOptions {
   skipPrompt?: boolean;
   disableTelemetry?: boolean;
   yes?: boolean;
-  framework: SupportedFrameworks | undefined;
-  builder: CoreBuilder;
+  framework: SupportedFramework | undefined;
+  builder: SupportedBuilder;
 }
 
 /**
@@ -193,8 +193,8 @@ export class UserPreferencesCommand {
   private async validateTestFeature(
     packageManager: JsPackageManager,
     selectedFeatures: Set<GeneratorFeature>,
-    framework: SupportedFrameworks | undefined,
-    builder: CoreBuilder
+    framework: SupportedFramework | undefined,
+    builder: SupportedBuilder
   ): Promise<boolean> {
     const result = await this.featureService.validateTestFeatureCompatibility(
       packageManager,

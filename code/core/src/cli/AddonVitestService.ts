@@ -10,31 +10,17 @@ import * as find from 'empathic/find';
 import { coerce, satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import type { SupportedFrameworks } from '../types';
-import { CoreBuilder } from './project_types';
+import { SupportedBuilder, SupportedFramework } from '../types';
 
 type Result = {
   compatible: boolean;
   reasons?: string[];
 };
 
-// Import SUPPORTED_FRAMEWORKS from addon constants
-const SUPPORTED_FRAMEWORKS = [
-  'nextjs',
-  'nextjs-vite',
-  'react-vite',
-  'svelte-vite',
-  'vue3-vite',
-  'html-vite',
-  'web-components-vite',
-  'sveltekit',
-  'react-native-web-vite',
-] satisfies SupportedFrameworks[];
-
 export interface AddonVitestCompatibilityOptions {
   packageManager: JsPackageManager;
-  framework: SupportedFrameworks;
-  builderPackageName: CoreBuilder;
+  builder?: SupportedBuilder;
+  framework?: SupportedFramework;
   projectRoot?: string;
 }
 
@@ -49,6 +35,17 @@ export interface AddonVitestCompatibilityOptions {
  * - Code/lib/create-storybook/src/services/FeatureCompatibilityService.ts
  */
 export class AddonVitestService {
+  readonly supportedFrameworks: SupportedFramework[] = [
+    SupportedFramework.NEXTJS,
+    SupportedFramework.NEXTJS_VITE,
+    SupportedFramework.REACT_VITE,
+    SupportedFramework.SVELTE_VITE,
+    SupportedFramework.VUE3_VITE,
+    SupportedFramework.HTML_VITE,
+    SupportedFramework.WEB_COMPONENTS_VITE,
+    SupportedFramework.SVELTEKIT,
+    SupportedFramework.REACT_NATIVE_WEB_VITE,
+  ];
   /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
@@ -160,12 +157,12 @@ export class AddonVitestService {
     const reasons: string[] = [];
 
     // Check builder compatibility
-    if (options.builderPackageName !== CoreBuilder.Vite) {
+    if (options.builder !== SupportedBuilder.VITE) {
       reasons.push('The addon can only be used with a Vite-based Storybook framework');
     }
 
     // Check renderer/framework support
-    const isFrameworkSupported = SUPPORTED_FRAMEWORKS.some(
+    const isFrameworkSupported = this.supportedFrameworks.some(
       (framework) => options.framework === framework
     );
 

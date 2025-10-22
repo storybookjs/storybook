@@ -22,7 +22,8 @@ import {
 } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import { prompt } from 'storybook/internal/node-logger';
-import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
+import type { SupportedRenderer } from 'storybook/internal/types';
+import { SupportedFramework } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -120,9 +121,9 @@ const applyAddonGetAbsolutePathWrapper = (pkg: string | { name: string }) => {
 };
 
 const getFrameworkDetails = (
-  renderer: SupportedRenderers,
+  renderer: SupportedRenderer,
   builder: Builder,
-  framework?: SupportedFrameworks,
+  framework?: SupportedFramework,
   shouldApplyRequireWrapperOnPackageNames?: boolean
 ): {
   type: 'framework' | 'renderer';
@@ -130,7 +131,7 @@ const getFrameworkDetails = (
   builder?: string;
   frameworkPackagePath?: string;
   renderer?: string;
-  rendererId: SupportedRenderers;
+  rendererId: SupportedRenderer;
   frameworkPackage: string;
   rendererPackage: string;
   builderPackage: string;
@@ -198,24 +199,24 @@ const hasFrameworkTemplates = (framework?: string) => {
     return !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
   }
 
-  const frameworksWithTemplates: SupportedFrameworks[] = [
-    'angular',
-    'ember',
-    'html-vite',
-    'nextjs',
-    'nextjs-vite',
-    'preact-vite',
-    'react-native-web-vite',
-    'react-vite',
-    'react-webpack5',
-    'server-webpack5',
-    'svelte-vite',
-    'sveltekit',
-    'vue3-vite',
-    'web-components-vite',
+  const frameworksWithTemplates: SupportedFramework[] = [
+    SupportedFramework.ANGULAR,
+    SupportedFramework.EMBER,
+    SupportedFramework.HTML_VITE,
+    SupportedFramework.NEXTJS,
+    SupportedFramework.NEXTJS_VITE,
+    SupportedFramework.PREACT_VITE,
+    SupportedFramework.REACT_NATIVE_WEB_VITE,
+    SupportedFramework.REACT_VITE,
+    SupportedFramework.REACT_WEBPACK5,
+    SupportedFramework.SERVER_WEBPACK5,
+    SupportedFramework.SVELTE_VITE,
+    SupportedFramework.SVELTEKIT,
+    SupportedFramework.VUE3_VITE,
+    SupportedFramework.WEB_COMPONENTS_VITE,
   ];
 
-  return frameworksWithTemplates.includes(framework as SupportedFrameworks);
+  return frameworksWithTemplates.includes(framework as SupportedFramework);
 };
 
 export async function baseGenerator(
@@ -229,9 +230,9 @@ export async function baseGenerator(
     features,
     dependencyCollector,
   }: GeneratorOptions,
-  renderer: SupportedRenderers,
+  renderer: SupportedRenderer,
   _options: FrameworkOptions,
-  framework?: SupportedFrameworks
+  framework?: SupportedFramework
 ) {
   const options = { ...defaultOptions, ..._options };
   const isStorybookInMonorepository = packageManager.isStorybookInMonorepo();

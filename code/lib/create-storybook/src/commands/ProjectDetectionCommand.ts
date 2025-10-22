@@ -6,7 +6,7 @@ import {
 } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { HandledError } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
@@ -28,22 +28,17 @@ export class ProjectDetectionCommand {
     let projectType: ProjectType;
     const projectTypeProvided = options.type;
 
-    const task = prompt.taskLog({
-      id: 'detect-project',
-      title: projectTypeProvided
-        ? `Installing Storybook for user specified project type: ${projectTypeProvided}`
-        : 'Detecting project type...',
-    });
+    if (projectTypeProvided) {
+    }
 
     // Use provided type or auto-detect
     if (projectTypeProvided) {
-      projectType = await this.validateProvidedType(projectTypeProvided, task);
+      projectType = await this.validateProvidedType(projectTypeProvided);
+      logger.step(`Installing Storybook for user specified project type: ${projectTypeProvided}`);
     } else {
-      projectType = await this.autoDetectProjectType(packageManager, options, task);
+      projectType = await this.autoDetectProjectType(packageManager, options);
+      logger.step(`Project type detected: ${projectType}`);
     }
-
-    task.message(projectType);
-    task.success('Project type', { showLog: true });
 
     // Check for existing installation
     await this.checkExistingInstallation(projectType, options);
@@ -52,15 +47,14 @@ export class ProjectDetectionCommand {
   }
 
   /** Validate user-provided project type */
-  private async validateProvidedType(
-    projectTypeProvided: string,
-    task: ReturnType<typeof prompt.taskLog>
-  ): Promise<ProjectType> {
+  private async validateProvidedType(projectTypeProvided: string): Promise<ProjectType> {
     if (installableProjectTypes.includes(projectTypeProvided)) {
       return projectTypeProvided.toUpperCase() as ProjectType;
     }
 
-    task.error(`The provided project type ${projectTypeProvided} was not recognized by Storybook`);
+    logger.error(
+      `The provided project type ${projectTypeProvided} was not recognized by Storybook`
+    );
 
     throw new HandledError(`Unknown project type supplied: ${projectTypeProvided}`);
   }
@@ -68,8 +62,7 @@ export class ProjectDetectionCommand {
   /** Auto-detect project type */
   private async autoDetectProjectType(
     packageManager: JsPackageManager,
-    options: CommandOptions,
-    task: ReturnType<typeof prompt.taskLog>
+    options: CommandOptions
   ): Promise<ProjectType> {
     try {
       const detectedType = (await detect(packageManager as any, options)) as ProjectType;
@@ -80,13 +73,13 @@ export class ProjectDetectionCommand {
       }
 
       if (detectedType === ProjectType.UNDETECTED) {
-        task.error('Storybook failed to detect your project type');
+        logger.error('Storybook failed to detect your project type');
         throw new HandledError('Storybook failed to detect your project type');
       }
 
       return detectedType;
     } catch (err) {
-      task.error(String(err));
+      logger.error(String(err));
       throw new HandledError(err);
     }
   }

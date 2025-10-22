@@ -4,7 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { type SupportedLanguage, copyTemplateFiles } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { frameworkPackages, optionalEnvToBoolean } from 'storybook/internal/common';
-import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
+import type { SupportedRenderer } from 'storybook/internal/types';
+import { SupportedFramework } from 'storybook/internal/types';
 
 import type { GeneratorFeature } from '../types';
 
@@ -23,31 +24,31 @@ export class TemplateManager {
       return !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX);
     }
 
-    const frameworksWithTemplates: SupportedFrameworks[] = [
-      'angular',
-      'ember',
-      'html-vite',
-      'nextjs',
-      'nextjs-vite',
-      'preact-vite',
-      'react-native-web-vite',
-      'react-vite',
-      'react-webpack5',
-      'server-webpack5',
-      'svelte-vite',
-      'sveltekit',
-      'vue3-vite',
-      'web-components-vite',
+    const frameworksWithTemplates: SupportedFramework[] = [
+      SupportedFramework.ANGULAR,
+      SupportedFramework.EMBER,
+      SupportedFramework.HTML_VITE,
+      SupportedFramework.NEXTJS,
+      SupportedFramework.NEXTJS_VITE,
+      SupportedFramework.PREACT_VITE,
+      SupportedFramework.REACT_NATIVE_WEB_VITE,
+      SupportedFramework.REACT_VITE,
+      SupportedFramework.REACT_WEBPACK5,
+      SupportedFramework.SERVER_WEBPACK5,
+      SupportedFramework.SVELTE_VITE,
+      SupportedFramework.SVELTEKIT,
+      SupportedFramework.VUE3_VITE,
+      SupportedFramework.WEB_COMPONENTS_VITE,
     ];
 
-    return frameworksWithTemplates.includes(framework as SupportedFrameworks);
+    return frameworksWithTemplates.includes(framework as SupportedFramework);
   }
 
   /** Copy template files to the destination */
   async copyTemplates(
     framework: string | undefined,
     frameworkPackage: string | undefined,
-    rendererId: SupportedRenderers,
+    rendererId: SupportedRenderer,
     packageManager: JsPackageManager,
     language: SupportedLanguage,
     destination: string | undefined,
@@ -79,8 +80,8 @@ export class TemplateManager {
   getTemplateLocation(
     framework: string | undefined,
     frameworkPackage: string | undefined,
-    rendererId: SupportedRenderers
-  ): SupportedFrameworks | SupportedRenderers {
+    rendererId: SupportedRenderer
+  ): SupportedFramework | SupportedRenderer {
     const finalFramework = framework || frameworkPackages[frameworkPackage!] || frameworkPackage;
     const templateLocation = this.hasFrameworkTemplates(finalFramework)
       ? finalFramework
@@ -90,6 +91,6 @@ export class TemplateManager {
       throw new Error(`Could not find template location for ${framework} or ${rendererId}`);
     }
 
-    return templateLocation as SupportedFrameworks | SupportedRenderers;
+    return templateLocation as SupportedFramework | SupportedRenderer;
   }
 }

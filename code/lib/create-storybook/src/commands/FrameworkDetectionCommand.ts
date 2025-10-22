@@ -1,17 +1,15 @@
-import { CoreBuilder, type ProjectType, detectBuilder } from 'storybook/internal/cli';
+import { type ProjectType, detectBuilder } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
+import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import { SupportedFramework } from 'storybook/internal/types';
 
 import { generatorRegistry } from '../generators/GeneratorRegistry';
-import type { CommandOptions, GeneratorModule } from '../generators/types';
+import type { CommandOptions } from '../generators/types';
 
 export interface FrameworkDetectionResult {
-  framework: SupportedFrameworks | undefined;
-  renderer: SupportedRenderers;
-  builder: CoreBuilder;
-  frameworkPackage: string;
-  rendererPackage: string;
-  builderPackage: string;
+  renderer: SupportedRenderer;
+  builder: SupportedBuilder;
+  framework?: SupportedFramework;
 }
 
 /**
@@ -28,7 +26,7 @@ export class FrameworkDetectionCommand {
     options: CommandOptions
   ): Promise<FrameworkDetectionResult> {
     // Get generator for the project type
-    const generatorModule = this.getGeneratorModule(projectType);
+    const generatorModule = generatorRegistry.get(projectType);
 
     if (!generatorModule) {
       throw new Error(`No generator found for project type: ${projectType}`);
@@ -37,10 +35,10 @@ export class FrameworkDetectionCommand {
     const { metadata } = generatorModule;
 
     // Determine builder - use override if specified, otherwise detect
-    let builder: CoreBuilder;
+    let builder: SupportedBuilder;
     if (options.builder) {
       // CLI option takes precedence
-      builder = options.builder as CoreBuilder;
+      builder = options.builder as SupportedBuilder;
     } else if (metadata.builderOverride) {
       if (typeof metadata.builderOverride === 'function') {
         builder = metadata.builderOverride();
@@ -53,75 +51,36 @@ export class FrameworkDetectionCommand {
     }
 
     // Get framework and renderer from metadata
-    const framework = metadata.framework;
     const renderer = metadata.renderer;
 
-    // Resolve package names
-    const { frameworkPackage, rendererPackage, builderPackage } = this.resolvePackageNames(
-      framework,
-      renderer,
-      builder
-    );
+    const framework = this.getFramework(renderer, builder);
 
     return {
       framework,
       renderer,
       builder,
-      frameworkPackage,
-      rendererPackage,
-      builderPackage,
     };
   }
 
-  /** Get generator module from registry */
-  private getGeneratorModule(projectType: ProjectType): GeneratorModule | undefined {
-    const generator = generatorRegistry.get(projectType);
-
-    // Check if it's a new-style generator module
-    if (generator && typeof generator === 'object' && 'metadata' in generator) {
-      return generator as GeneratorModule;
+  private getFramework(
+    renderer: SupportedRenderer,
+    builder: SupportedBuilder
+  ): SupportedFramework | undefined {
+    // map renderer to framework
+    // if successful, return the framework
+    // if not successful, merge renderer and builder to get the framework
+    // if renderer is one of the SupportedFramework enum
+    if (Object.values(SupportedFramework).includes(renderer as any)) {
+      return renderer as any as SupportedFramework;
     }
 
-    // For backward compatibility, we still support old-style generators
-    // but we can't extract metadata from them
+    const maybeFramework = `${renderer}-${builder}`;
+
+    if (Object.values(SupportedFramework).includes(maybeFramework as SupportedFramework)) {
+      return maybeFramework as SupportedFramework;
+    }
+
     return undefined;
-  }
-
-  /** Resolve package names from framework/renderer/builder */
-  private resolvePackageNames(
-    framework: SupportedFrameworks | undefined,
-    renderer: SupportedRenderers,
-    builder: CoreBuilder
-  ): {
-    frameworkPackage: string;
-    rendererPackage: string;
-    builderPackage: string;
-  } {
-    // Construct framework package name
-    // If framework is specified, use @storybook/{framework}
-    // Otherwise, construct from renderer-builder (e.g., @storybook/react-vite)
-    const storybookFramework = framework?.replace(/^@storybook\//, '');
-    const storybookBuilder = this.getBuilderString(builder);
-
-    const frameworkPackage = framework
-      ? `@storybook/${storybookFramework}`
-      : `@storybook/${renderer}-${storybookBuilder}`;
-
-    const rendererPackage = `@storybook/${renderer}`;
-
-    const builderPackage =
-      builder === CoreBuilder.Vite ? '@storybook/builder-vite' : '@storybook/builder-webpack5';
-
-    return {
-      frameworkPackage,
-      rendererPackage,
-      builderPackage,
-    };
-  }
-
-  /** Convert CoreBuilder enum to string for package name construction */
-  private getBuilderString(builder: CoreBuilder): string {
-    return builder === CoreBuilder.Vite ? 'vite' : 'webpack5';
   }
 }
 

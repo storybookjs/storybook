@@ -1,6 +1,6 @@
 import angularGenerator from './ANGULAR';
 import emberGenerator from './EMBER';
-import { type GeneratorModule, generatorRegistry } from './GeneratorRegistry';
+import { generatorRegistry } from './GeneratorRegistry';
 import htmlGenerator from './HTML';
 import nextjsGenerator from './NEXTJS';
 import nuxtGenerator from './NUXT';
@@ -16,6 +16,7 @@ import svelteGenerator from './SVELTE';
 import svelteKitGenerator from './SVELTEKIT';
 import vue3Generator from './VUE3';
 import webComponentsGenerator from './WEB-COMPONENTS';
+import type { GeneratorModule } from './types';
 
 const setOfGenerators = new Set<GeneratorModule>([
   reactGenerator,

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SupportedLanguage } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { PackageResolver } from './PackageResolver';
 
@@ -144,11 +144,9 @@ describe('PackageResolver', () => {
   describe('getFrameworkDetails', () => {
     it('should return framework type details for known framework', () => {
       const details = resolver.getFrameworkDetails(
-        'react',
-        'vite',
-        false,
-        SupportedLanguage.TYPESCRIPT,
-        'react-vite',
+        SupportedRenderer.REACT,
+        SupportedBuilder.VITE,
+        SupportedFramework.REACT_VITE,
         false
       );
 
@@ -160,11 +158,9 @@ describe('PackageResolver', () => {
 
     it('should apply getAbsolutePath wrapper for PnP projects', () => {
       const details = resolver.getFrameworkDetails(
-        'react',
-        'vite',
-        true,
-        SupportedLanguage.TYPESCRIPT,
-        'react-vite',
+        SupportedRenderer.REACT,
+        SupportedBuilder.VITE,
+        SupportedFramework.REACT_VITE,
         true
       );
 
@@ -175,10 +171,8 @@ describe('PackageResolver', () => {
     it('should return renderer type details for known renderer', () => {
       // Force renderer mode by using non-framework package
       const details = resolver.getFrameworkDetails(
-        'react',
-        'vite',
-        false,
-        SupportedLanguage.TYPESCRIPT,
+        SupportedRenderer.REACT,
+        SupportedBuilder.VITE,
         undefined,
         false
       );
@@ -191,9 +185,7 @@ describe('PackageResolver', () => {
       expect(() => {
         resolver.getFrameworkDetails(
           'unknown' as any,
-          'vite',
-          false,
-          SupportedLanguage.TYPESCRIPT,
+          SupportedBuilder.VITE,
           'unknown-framework' as any,
           false
         );
@@ -202,11 +194,9 @@ describe('PackageResolver', () => {
 
     it('should handle all renderer types', () => {
       const details = resolver.getFrameworkDetails(
-        'vue3',
-        'vite',
-        false,
-        SupportedLanguage.TYPESCRIPT,
-        'vue3-vite',
+        SupportedRenderer.VUE3,
+        SupportedBuilder.VITE,
+        SupportedFramework.VUE3_VITE,
         false
       );
 

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CoreBuilder, ProjectType } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import * as addonA11y from '../addon-dependencies/addon-a11y';
 import * as addonVitest from '../addon-dependencies/addon-vitest';
@@ -41,12 +42,9 @@ describe('GeneratorExecutionCommand', () => {
     dependencyCollector = new DependencyCollector();
 
     mockFrameworkInfo = {
-      framework: undefined,
-      renderer: 'react',
-      builder: CoreBuilder.Vite,
-      frameworkPackage: '@storybook/react-vite',
-      rendererPackage: '@storybook/react',
-      builderPackage: '@storybook/builder-vite',
+      renderer: SupportedRenderer.REACT,
+      builder: SupportedBuilder.VITE,
+      framework: SupportedFramework.REACT_VITE,
     };
 
     // Mock new-style generator module
@@ -176,7 +174,7 @@ describe('GeneratorExecutionCommand', () => {
         mockPackageManager,
         { type: 'devDependencies', skipInstall: true },
         expect.objectContaining({
-          builder: CoreBuilder.Vite,
+          builder: SupportedBuilder.VITE,
           linkable: true,
           pnp: true,
           yes: true,

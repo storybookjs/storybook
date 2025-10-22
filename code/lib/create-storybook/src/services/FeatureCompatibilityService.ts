@@ -1,21 +1,20 @@
-import { AddonVitestService, type CoreBuilder, ProjectType } from 'storybook/internal/cli';
+import { AddonVitestService, ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
-import type { SupportedFrameworks } from 'storybook/internal/types';
+import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 
 /** Project types that support the onboarding feature */
-export const ONBOARDING_PROJECT_TYPES = [
+export const ONBOARDING_PROJECT_TYPES: ProjectType[] = [
   ProjectType.REACT,
   ProjectType.REACT_SCRIPTS,
   ProjectType.REACT_NATIVE_WEB,
   ProjectType.REACT_PROJECT,
-  ProjectType.WEBPACK_REACT,
   ProjectType.NEXTJS,
   ProjectType.VUE3,
   ProjectType.ANGULAR,
-] satisfies ProjectType[];
+];
 
 /** Project types that support the test addon feature */
-export const TEST_SUPPORTED_PROJECT_TYPES = [
+export const TEST_SUPPORTED_PROJECT_TYPES: ProjectType[] = [
   ProjectType.REACT,
   ProjectType.VUE3,
   ProjectType.NEXTJS,
@@ -25,7 +24,7 @@ export const TEST_SUPPORTED_PROJECT_TYPES = [
   ProjectType.SVELTEKIT,
   ProjectType.WEB_COMPONENTS,
   ProjectType.REACT_NATIVE_WEB,
-] satisfies ProjectType[];
+];
 
 export interface FeatureCompatibilityResult {
   compatible: boolean;
@@ -46,26 +45,22 @@ export class FeatureCompatibilityService {
    *
    * @param packageManager - Package manager instance
    * @param framework - Detected framework (e.g., 'nextjs', 'react-vite')
-   * @param builder - Detected builder (CoreBuilder.Vite or CoreBuilder.Webpack5)
+   * @param builder - Detected builder (e.g. SupportedBuilder.Vite)
    * @param directory - Project root directory
    * @returns Compatibility result with reasons if incompatible
    */
   async validateTestFeatureCompatibility(
     packageManager: JsPackageManager,
-    framework: SupportedFrameworks | undefined,
-    builder: CoreBuilder,
+    framework: SupportedFramework | undefined,
+    builder: SupportedBuilder,
     directory: string
   ): Promise<FeatureCompatibilityResult> {
     const addonVitestService = new AddonVitestService();
 
-    // If no specific framework, construct from renderer-builder combo
-    // The AddonVitestService expects a SupportedFrameworks value
-    const frameworkForValidation = framework || ('react-vite' as SupportedFrameworks);
-
     const compatibilityResult = await addonVitestService.validateCompatibility({
       packageManager,
-      framework: frameworkForValidation,
-      builderPackageName: builder,
+      framework,
+      builder,
       projectRoot: directory,
     });
 

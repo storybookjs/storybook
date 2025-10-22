@@ -27,11 +27,11 @@ export async function getFrameworkName(options: Options) {
  * @example
  *
  * ```ts
- * ExtractProperFrameworkName('/path/to/@storybook/angular'); // => '@storybook/angular'
- * extractProperFrameworkName('@third-party/framework'); // => '@third-party/framework'
+ * extractFrameworkPackageName('/path/to/@storybook/angular'); // => '@storybook/angular'
+ * extractFrameworkPackageName('@third-party/framework'); // => '@third-party/framework'
  * ```
  */
-export const extractProperFrameworkName = (framework: string) => {
+export const extractFrameworkPackageName = (framework: string) => {
   const normalizedPath = normalizePath(framework);
   const frameworkName = Object.keys(frameworkPackages).find((pkg) => normalizedPath.endsWith(pkg));
 

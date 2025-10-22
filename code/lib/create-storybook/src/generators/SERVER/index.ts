@@ -1,4 +1,5 @@
-import { CoreBuilder, ProjectType } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -6,8 +7,8 @@ import { defineGeneratorModule } from '../modules/GeneratorModule';
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.SERVER,
-    renderer: 'server',
-    builderOverride: CoreBuilder.Webpack5,
+    renderer: SupportedRenderer.SERVER,
+    builderOverride: SupportedBuilder.WEBPACK5,
   },
   configure: async () => {
     return {

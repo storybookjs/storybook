@@ -1,9 +1,5 @@
-import {
-  CoreBuilder,
-  ProjectType,
-  SupportedLanguage,
-  detectLanguage,
-} from 'storybook/internal/cli';
+import { ProjectType, SupportedLanguage, detectLanguage } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -11,7 +7,7 @@ import { defineGeneratorModule } from '../modules/GeneratorModule';
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.REACT,
-    renderer: 'react',
+    renderer: SupportedRenderer.REACT,
   },
   configure: async (packageManager) => {
     // Add prop-types dependency if not using TypeScript
@@ -20,7 +16,7 @@ export default defineGeneratorModule({
 
     return {
       extraPackages,
-      webpackCompiler: ({ builder }) => (builder === CoreBuilder.Webpack5 ? 'swc' : undefined),
+      webpackCompiler: ({ builder }) => (builder === SupportedBuilder.WEBPACK5 ? 'swc' : undefined),
     };
   },
 });

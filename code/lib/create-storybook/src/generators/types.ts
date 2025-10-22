@@ -1,16 +1,11 @@
-import type {
-  Builder,
-  CoreBuilder,
-  NpmOptions,
-  ProjectType,
-  SupportedLanguage,
-} from 'storybook/internal/cli';
+import type { Builder, NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import type {
   StorybookConfig,
-  SupportedFrameworks,
-  SupportedRenderers,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
 } from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector';
@@ -68,20 +63,19 @@ export type GeneratorFeature = 'docs' | 'test' | 'onboarding';
 
 export interface GeneratorMetadata {
   projectType: ProjectType;
-  framework?: SupportedFrameworks;
-  renderer: SupportedRenderers;
+  renderer: SupportedRenderer;
   /**
    * If the builder is a function, it will be called to determine the builder. This is useful for
    * generators that need to determine the builder based on the project type in cases where the
    * builder cannot be detected (Webpack and Vite are both non-existent dependencies).
    */
-  builderOverride?: CoreBuilder | (() => CoreBuilder);
+  builderOverride?: SupportedBuilder | (() => SupportedBuilder);
 }
 
 export interface GeneratorContext {
-  framework: SupportedFrameworks | undefined;
-  renderer: SupportedRenderers;
-  builder: CoreBuilder;
+  framework: SupportedFramework | undefined;
+  renderer: SupportedRenderer;
+  builder: SupportedBuilder;
   language: SupportedLanguage;
   features: GeneratorFeature[];
   linkable?: boolean;

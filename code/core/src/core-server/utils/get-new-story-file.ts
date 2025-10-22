@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 
 import {
-  extractProperFrameworkName,
+  extractFrameworkPackageName,
   findConfigFile,
   getFrameworkName,
   getProjectRoot,
@@ -27,7 +27,7 @@ export async function getNewStoryFile(
   options: Options
 ) {
   const frameworkPackageName = await getFrameworkName(options);
-  const sanitizedFrameworkPackageName = extractProperFrameworkName(frameworkPackageName);
+  const sanitizedFrameworkPackageName = extractFrameworkPackageName(frameworkPackageName);
 
   const base = basename(componentFilePath);
   const extension = extname(componentFilePath);

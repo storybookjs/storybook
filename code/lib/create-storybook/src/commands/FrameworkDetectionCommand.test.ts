@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CoreBuilder, ProjectType, detectBuilder } from 'storybook/internal/cli';
+import { ProjectType, detectBuilder } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
+import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import type { GeneratorModule } from '../generators/types';
@@ -36,21 +37,20 @@ describe('FrameworkDetectionCommand', () => {
       const mockGenerator: GeneratorModule = {
         metadata: {
           projectType: ProjectType.REACT,
-          renderer: 'react',
-          framework: undefined,
+          renderer: SupportedRenderer.REACT,
         },
         configure: vi.fn(),
       };
 
       vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
-      vi.mocked(detectBuilder).mockResolvedValue(CoreBuilder.Vite);
+      vi.mocked(detectBuilder).mockResolvedValue(SupportedBuilder.VITE);
 
       const result = await command.execute(ProjectType.REACT, mockPackageManager, {} as any);
 
       expect(result).toEqual({
         framework: undefined,
         renderer: 'react',
-        builder: CoreBuilder.Vite,
+        builder: SupportedBuilder.VITE,
         frameworkPackage: '@storybook/react-vite',
         rendererPackage: '@storybook/react',
         builderPackage: '@storybook/builder-vite',
@@ -63,8 +63,7 @@ describe('FrameworkDetectionCommand', () => {
       const mockGenerator: GeneratorModule = {
         metadata: {
           projectType: ProjectType.VUE3,
-          renderer: 'vue3',
-          framework: undefined,
+          renderer: SupportedRenderer.VUE3,
         },
         configure: vi.fn(),
       };
@@ -72,10 +71,10 @@ describe('FrameworkDetectionCommand', () => {
       vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
 
       const result = await command.execute(ProjectType.VUE3, mockPackageManager, {
-        builder: CoreBuilder.Webpack5,
+        builder: SupportedBuilder.WEBPACK5,
       } as any);
 
-      expect(result.builder).toBe(CoreBuilder.Webpack5);
+      expect(result.builder).toBe(SupportedBuilder.WEBPACK5);
       expect(detectBuilder).not.toHaveBeenCalled();
     });
 
@@ -83,8 +82,7 @@ describe('FrameworkDetectionCommand', () => {
       const mockGenerator: GeneratorModule = {
         metadata: {
           projectType: ProjectType.SVELTEKIT,
-          renderer: 'svelte',
-          framework: 'sveltekit',
+          renderer: SupportedRenderer.SVELTE,
         },
         configure: vi.fn(),
       };
@@ -96,7 +94,7 @@ describe('FrameworkDetectionCommand', () => {
       expect(result).toEqual({
         framework: 'sveltekit',
         renderer: 'svelte',
-        builder: CoreBuilder.Vite,
+        builder: SupportedBuilder.VITE,
         frameworkPackage: '@storybook/sveltekit',
         rendererPackage: '@storybook/svelte',
         builderPackage: '@storybook/builder-vite',
@@ -118,48 +116,6 @@ describe('FrameworkDetectionCommand', () => {
       await expect(
         command.execute(ProjectType.REACT, mockPackageManager, {} as any)
       ).rejects.toThrow('No generator found for project type: REACT');
-    });
-  });
-
-  describe('package name resolution', () => {
-    it('should construct correct package names for Vite builder', async () => {
-      const mockGenerator: GeneratorModule = {
-        metadata: {
-          projectType: ProjectType.VUE3,
-          renderer: 'vue3',
-          framework: undefined,
-        },
-        configure: vi.fn(),
-      };
-
-      vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
-      vi.mocked(detectBuilder).mockResolvedValue(CoreBuilder.Vite);
-
-      const result = await command.execute(ProjectType.VUE3, mockPackageManager, {} as any);
-
-      expect(result.frameworkPackage).toBe('@storybook/vue3-vite');
-      expect(result.rendererPackage).toBe('@storybook/vue3');
-      expect(result.builderPackage).toBe('@storybook/builder-vite');
-    });
-
-    it('should construct correct package names for Webpack5 builder', async () => {
-      const mockGenerator: GeneratorModule = {
-        metadata: {
-          projectType: ProjectType.VUE3,
-          renderer: 'vue3',
-          framework: undefined,
-        },
-        configure: vi.fn(),
-      };
-
-      vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
-      vi.mocked(detectBuilder).mockResolvedValue(CoreBuilder.Webpack5);
-
-      const result = await command.execute(ProjectType.VUE3, mockPackageManager, {} as any);
-
-      expect(result.frameworkPackage).toBe('@storybook/vue3-webpack5');
-      expect(result.rendererPackage).toBe('@storybook/vue3');
-      expect(result.builderPackage).toBe('@storybook/builder-webpack5');
     });
   });
 });

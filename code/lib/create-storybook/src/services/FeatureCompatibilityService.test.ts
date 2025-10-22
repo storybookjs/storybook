@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AddonVitestService, CoreBuilder, ProjectType } from 'storybook/internal/cli';
+import { AddonVitestService, ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
+import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 
 import { FeatureCompatibilityService } from './FeatureCompatibilityService';
 
@@ -62,8 +63,8 @@ describe('FeatureCompatibilityService', () => {
 
       const result = await service.validateTestFeatureCompatibility(
         mockPackageManager,
-        'react-vite',
-        CoreBuilder.Vite,
+        SupportedFramework.REACT_VITE,
+        SupportedBuilder.VITE,
         '/test'
       );
 
@@ -71,7 +72,7 @@ describe('FeatureCompatibilityService', () => {
       expect(mockValidateCompatibility).toHaveBeenCalledWith({
         packageManager: mockPackageManager,
         framework: 'react-vite',
-        builderPackageName: CoreBuilder.Vite,
+        builderPackageName: SupportedBuilder.VITE,
         projectRoot: '/test',
       });
     });
@@ -84,8 +85,8 @@ describe('FeatureCompatibilityService', () => {
 
       const result = await service.validateTestFeatureCompatibility(
         mockPackageManager,
-        'react-vite',
-        CoreBuilder.Vite,
+        SupportedFramework.REACT_VITE,
+        SupportedBuilder.VITE,
         '/test'
       );
 

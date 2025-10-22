@@ -1,13 +1,14 @@
-import { CoreBuilder, ProjectType } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.EMBER,
-    renderer: 'ember',
-    framework: 'ember',
-    builderOverride: CoreBuilder.Webpack5,
+    renderer: SupportedRenderer.EMBER,
+    framework: SupportedFramework.EMBER,
+    builderOverride: SupportedBuilder.WEBPACK5,
   },
   configure: async () => {
     return {

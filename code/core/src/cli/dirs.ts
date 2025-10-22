@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { temporaryDirectory, versions } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
-import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
+import type { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import downloadTarballDefault from '@ndelangen/get-tarball';
 import getNpmTarballUrlDefault from 'get-npm-tarball-url';
@@ -36,7 +36,7 @@ const resolveUsingBranchInstall = async (packageManager: JsPackageManager, reque
 
 export async function getRendererDir(
   packageManager: JsPackageManager,
-  renderer: SupportedFrameworks | SupportedRenderers
+  renderer: SupportedFramework | SupportedRenderer
 ) {
   const externalFramework = externalFrameworks.find((framework) => framework.name === renderer);
   const frameworkPackageName =

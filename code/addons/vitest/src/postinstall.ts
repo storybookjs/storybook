@@ -1,8 +1,6 @@
 import { existsSync } from 'node:fs';
 import * as fs from 'node:fs/promises';
 import { writeFile } from 'node:fs/promises';
-import { isAbsolute, posix, sep } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { babelParse, generate } from 'storybook/internal/babel';
 import { AddonVitestService } from 'storybook/internal/cli';
@@ -10,45 +8,28 @@ import {
   JsPackageManagerFactory,
   formatFileContent,
   getProjectRoot,
-  loadMainConfig,
+  getStorybookInfo,
 } from 'storybook/internal/common';
-import { experimental_loadStorybook } from 'storybook/internal/core-server';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import {
   AddonVitestPostinstallError,
   AddonVitestPostinstallPrerequisiteCheckError,
 } from 'storybook/internal/server-errors';
+import { SupportedFramework } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
-import * as pkg from 'empathic/package';
 import { dirname, relative, resolve } from 'pathe';
 import { satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add';
-import { DOCUMENTATION_LINK, SUPPORTED_FRAMEWORKS } from './constants';
+import { DOCUMENTATION_LINK } from './constants';
 import { loadTemplate, updateConfigFile, updateWorkspaceFile } from './updateVitestFile';
-import { getAddonNames } from './utils';
 
 const ADDON_NAME = '@storybook/addon-vitest' as const;
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
 
 const addonA11yName = '@storybook/addon-a11y';
-
-function nameMatches(name: string, pattern: string) {
-  if (name === pattern) {
-    return true;
-  }
-
-  if (name.includes(`${pattern}${sep}`)) {
-    return true;
-  }
-  if (name.includes(`${pattern}${posix.sep}`)) {
-    return true;
-  }
-
-  return false;
-}
 
 const findFile = (basename: string, extensions = EXTENSIONS) =>
   find.any(
@@ -62,7 +43,8 @@ export default async function postInstall(options: PostinstallOptions) {
     force: options.packageManager,
   });
 
-  const info = await getStorybookInfo(options);
+  const info = await getStorybookInfo(options.configDir);
+
   const allDeps = packageManager.getAllDependencies();
 
   // Get vitest version info for config template compatibility
@@ -71,23 +53,13 @@ export default async function postInstall(options: PostinstallOptions) {
     ? satisfies(vitestVersionSpecifier, '>=3.2.0')
     : true;
 
-  const annotationsImport = SUPPORTED_FRAMEWORKS.find((f) =>
-    nameMatches(info.frameworkPackageName, f)
-  )
-    ? info.frameworkPackageName === '@storybook/nextjs'
-      ? '@storybook/nextjs-vite'
-      : info.frameworkPackageName
-    : null;
-
-  const isRendererSupported = !!annotationsImport;
+  const addonVitestService = new AddonVitestService();
 
   // Use AddonVitestService for compatibility validation
-  const addonVitestService = new AddonVitestService();
   const compatibilityResult = await addonVitestService.validateCompatibility({
     packageManager,
-    frameworkPackageName: info.frameworkPackageName,
-    builderPackageName: info.builderPackageName,
-    configDir: options.configDir,
+    framework: info.framework,
+    builder: info.builder,
   });
 
   let result: string | null = null;
@@ -101,24 +73,11 @@ export default async function postInstall(options: PostinstallOptions) {
       dedent`
         You can fix these issues and rerun the command to reinstall. If you wish to roll back the installation, remove ${ADDON_NAME} from the "addons" array
         in your main Storybook config file and remove the dependency from your package.json file.
+
+        Please check the documentation for more information about its requirements and installation:
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}
       `
     );
-
-    if (!isRendererSupported) {
-      reasons.push(
-        dedent`
-          Please check the documentation for more information about its requirements and installation:
-          https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}
-        `
-      );
-    } else {
-      reasons.push(
-        dedent`
-          Fear not, however, you can follow the manual installation process instead at:
-          https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup
-        `
-      );
-    }
 
     result = reasons.map((r) => r.trim()).join('\n\n');
   }
@@ -133,22 +92,13 @@ export default async function postInstall(options: PostinstallOptions) {
   // Skip all dependency management when flag is set (called from init command)
   if (!options.skipDependencyManagement) {
     // Use AddonVitestService for dependency collection
-    const versionedDependencies = await addonVitestService.collectDependencies(
-      packageManager,
-      info.frameworkPackageName
-    );
+    const versionedDependencies = await addonVitestService.collectDependencies(packageManager);
 
     // Print informational messages for Next.js
-    if (info.frameworkPackageName === '@storybook/nextjs') {
+    if (info.framework === SupportedFramework.NEXTJS) {
       const allDeps = packageManager.getAllDependencies();
       if (!allDeps['@storybook/nextjs-vite']) {
-        logger.step(
-          dedent`
-          It looks like you're using Next.js.
-          Adding "@storybook/nextjs-vite/vite-plugin" so you can use it with Vitest.
-          More info about the plugin at https://github.com/storybookjs/vite-plugin-storybook-nextjs
-        `
-        );
+        // TODO: Tell people to migrate first to nextjs-vite
       }
     }
 
@@ -211,6 +161,8 @@ export default async function postInstall(options: PostinstallOptions) {
     const previewExists = EXTENSIONS.map((ext) => resolve(options.configDir, `preview${ext}`)).some(
       existsSync
     );
+
+    const annotationsImport = info.frameworkPackage;
 
     const imports = [`import { setProjectAnnotations } from '${annotationsImport}';`];
 
@@ -430,62 +382,4 @@ export default async function postInstall(options: PostinstallOptions) {
     );
     throw new AddonVitestPostinstallError({ errors });
   }
-}
-
-async function getPackageNameFromPath(input: string): Promise<string> {
-  const path = input.startsWith('file://') ? fileURLToPath(input) : input;
-  if (!isAbsolute(path)) {
-    return path;
-  }
-
-  const packageJsonPath = pkg.up({ cwd: path });
-  if (!packageJsonPath) {
-    throw new Error(`Could not find package.json in path: ${path}`);
-  }
-
-  const { default: packageJson } = await import(pathToFileURL(packageJsonPath).href, {
-    with: { type: 'json' },
-  });
-  return packageJson.name;
-}
-
-async function getStorybookInfo({ configDir, packageManager: pkgMgr }: PostinstallOptions) {
-  const packageManager = JsPackageManagerFactory.getPackageManager({ force: pkgMgr, configDir });
-  const { packageJson } = packageManager.primaryPackageJson;
-
-  const config = await loadMainConfig({ configDir });
-
-  const { presets } = await experimental_loadStorybook({
-    configDir,
-    packageJson,
-  });
-
-  const framework = await presets.apply('framework', {});
-  const core = await presets.apply('core', {});
-
-  const { builder, renderer } = core;
-  if (!builder) {
-    throw new Error('Could not detect your Storybook builder.');
-  }
-
-  const frameworkPackageName = await getPackageNameFromPath(
-    typeof framework === 'string' ? framework : framework.name
-  );
-
-  const builderPackageName = await getPackageNameFromPath(
-    typeof builder === 'string' ? builder : builder.name
-  );
-
-  let rendererPackageName: string | undefined;
-
-  if (renderer) {
-    rendererPackageName = await getPackageNameFromPath(renderer);
-  }
-
-  return {
-    frameworkPackageName,
-    builderPackageName,
-    rendererPackageName,
-    addons: getAddonNames(config),
-  };
 }

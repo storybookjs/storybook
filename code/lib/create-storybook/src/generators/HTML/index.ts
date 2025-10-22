@@ -1,15 +1,17 @@
-import { CoreBuilder, ProjectType } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedRenderer } from 'storybook/internal/types';
 
+import { SupportedBuilder } from '../../../../../core/src/types/modules/builders';
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.HTML,
-    renderer: 'html',
+    renderer: SupportedRenderer.HTML,
   },
   configure: async () => {
     return {
-      webpackCompiler: ({ builder }) => (builder === CoreBuilder.Webpack5 ? 'swc' : undefined),
+      webpackCompiler: ({ builder }) => (builder === SupportedBuilder.WEBPACK5 ? 'swc' : undefined),
     };
   },
 });

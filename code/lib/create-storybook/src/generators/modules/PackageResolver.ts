@@ -1,7 +1,10 @@
-import type { Builder, SupportedLanguage } from 'storybook/internal/cli';
 import { externalFrameworks } from 'storybook/internal/cli';
 import { versions } from 'storybook/internal/common';
-import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
+import type {
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -13,7 +16,7 @@ export interface FrameworkDetails {
   builder?: string;
   frameworkPackagePath?: string;
   renderer?: string;
-  rendererId: SupportedRenderers;
+  rendererId: SupportedRenderer;
   frameworkPackage?: string;
 }
 
@@ -104,11 +107,9 @@ export class PackageResolver {
 
   /** Get complete framework details including packages and paths */
   getFrameworkDetails(
-    renderer: SupportedRenderers,
-    builder: Builder,
-    pnp: boolean,
-    language: SupportedLanguage,
-    framework?: SupportedFrameworks,
+    renderer: SupportedRenderer,
+    builder: SupportedBuilder,
+    framework?: SupportedFramework,
     shouldApplyRequireWrapperOnPackageNames?: boolean
   ): FrameworkDetails {
     const frameworkPackage = this.getFrameworkPackage(framework, renderer, builder);

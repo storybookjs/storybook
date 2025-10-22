@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { CoreBuilder, ProjectType } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
+import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
@@ -12,8 +13,8 @@ import { defineGeneratorModule } from '../modules/GeneratorModule';
 export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.REACT_SCRIPTS,
-    renderer: 'react',
-    builderOverride: CoreBuilder.Webpack5,
+    renderer: SupportedRenderer.REACT,
+    builderOverride: SupportedBuilder.WEBPACK5,
   },
   configure: async (packageManager, context) => {
     const monorepoRootPath = fileURLToPath(new URL('../../../../../../..', import.meta.url));

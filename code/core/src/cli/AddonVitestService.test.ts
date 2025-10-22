@@ -8,8 +8,8 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 
+import { SupportedBuilder, SupportedFramework } from '../types';
 import { AddonVitestService } from './AddonVitestService';
-import { CoreBuilder } from './project_types';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -234,8 +234,8 @@ describe('AddonVitestService', () => {
     it('should return compatible for valid Vite-based framework', async () => {
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: 'react-vite',
-        builderPackageName: CoreBuilder.Vite,
+        framework: SupportedFramework.REACT_VITE,
+        builder: SupportedBuilder.VITE,
       });
 
       expect(result.compatible).toBe(true);
@@ -244,8 +244,8 @@ describe('AddonVitestService', () => {
     it('should return compatible for react-vite with Vite builder', async () => {
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: 'react-vite',
-        builderPackageName: CoreBuilder.Vite,
+        framework: SupportedFramework.REACT_VITE,
+        builder: SupportedBuilder.VITE,
       });
 
       expect(result.compatible).toBe(true);
@@ -254,8 +254,8 @@ describe('AddonVitestService', () => {
     it('should return incompatible for non-Vite builder (except Next.js)', async () => {
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: 'react-webpack5',
-        builderPackageName: CoreBuilder.Webpack5,
+        framework: SupportedFramework.REACT_WEBPACK5,
+        builder: SupportedBuilder.WEBPACK5,
       });
 
       expect(result.compatible).toBe(false);
@@ -270,8 +270,8 @@ describe('AddonVitestService', () => {
 
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: 'nextjs',
-        builderPackageName: CoreBuilder.Webpack5,
+        framework: SupportedFramework.NEXTJS,
+        builder: SupportedBuilder.WEBPACK5,
       });
 
       // Test addon requires Vite builder, even for Next.js
@@ -282,8 +282,8 @@ describe('AddonVitestService', () => {
     it('should return incompatible for unsupported framework', async () => {
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: 'angular',
-        builderPackageName: CoreBuilder.Vite,
+        framework: SupportedFramework.ANGULAR,
+        builder: SupportedBuilder.VITE,
       });
 
       expect(result.compatible).toBe(false);
@@ -299,8 +299,8 @@ describe('AddonVitestService', () => {
 
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: 'nextjs',
-        builderPackageName: CoreBuilder.Vite,
+        framework: SupportedFramework.NEXTJS,
+        builder: SupportedBuilder.VITE,
       });
 
       // Next.js framework is in SUPPORTED_FRAMEWORKS and Vite builder is compatible
@@ -312,8 +312,8 @@ describe('AddonVitestService', () => {
 
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: 'react-vite',
-        builderPackageName: CoreBuilder.Vite,
+        framework: SupportedFramework.REACT_VITE,
+        builder: SupportedBuilder.VITE,
         projectRoot: '.storybook',
       });
 
@@ -326,8 +326,8 @@ describe('AddonVitestService', () => {
 
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: 'react-vite',
-        builderPackageName: CoreBuilder.Vite,
+        framework: SupportedFramework.REACT_VITE,
+        builder: SupportedBuilder.VITE,
       });
 
       expect(result.compatible).toBe(true);
@@ -341,8 +341,8 @@ describe('AddonVitestService', () => {
 
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: 'angular',
-        builderPackageName: CoreBuilder.Webpack5,
+        framework: SupportedFramework.ANGULAR,
+        builder: SupportedBuilder.WEBPACK5,
       });
 
       expect(result.compatible).toBe(false);

@@ -48,14 +48,18 @@ export async function doInitiate(options: CommandOptions): Promise<
   const projectType = await executeProjectDetection(packageManager, options);
 
   // Step 3: Detect framework, renderer, and builder (NEW)
-  const frameworkInfo = await executeFrameworkDetection(projectType, packageManager, options);
+  const { framework, builder, renderer } = await executeFrameworkDetection(
+    projectType,
+    packageManager,
+    options
+  );
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
   const { newUser, selectedFeatures } = await executeUserPreferences(packageManager, {
     yes: options.yes,
     disableTelemetry: options.disableTelemetry,
-    framework: frameworkInfo.framework,
-    builder: frameworkInfo.builder,
+    framework,
+    builder,
   });
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
@@ -63,7 +67,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   const generatorResult = await executeGeneratorExecution(
     projectType,
     packageManager,
-    frameworkInfo,
+    { builder, framework, renderer },
     options,
     selectedFeatures,
     dependencyCollector

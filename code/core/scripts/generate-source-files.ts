@@ -95,16 +95,26 @@ async function generateFrameworksFile(prettierConfig: prettier.Options | null): 
   const readFrameworks = (await readdir(frameworksDirectory)).filter((framework) =>
     existsSync(join(frameworksDirectory, framework, 'package.json'))
   );
-  const frameworks = [...readFrameworks.sort(), ...thirdPartyFrameworks]
-    .map((framework) => `'${framework}'`)
-    .join(' | ');
+
+  const formatFramework = (framework: string) => {
+    const typedName = framework.replace(/-/g, '_').toUpperCase();
+    return `${typedName} = '${framework}'`;
+  };
+
+  const coreFrameworks = readFrameworks.sort().map(formatFramework).join(',\n');
+  const communityFrameworks = thirdPartyFrameworks.map(formatFramework).join(',\n');
 
   await writeFile(
     destination,
     await prettier.format(
       dedent`
         // auto generated file, do not edit
-        export type SupportedFrameworks = ${frameworks};
+        export enum SupportedFramework {
+          // CORE
+          ${coreFrameworks},
+          // COMMUNITY
+          ${communityFrameworks}
+        }
       `,
       {
         ...prettierConfig,

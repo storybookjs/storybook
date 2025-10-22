@@ -41,6 +41,8 @@ export { createCopyToClipboardFunction } from './components/syntaxhighlighter/cl
 
 // UI
 export { ActionBar } from './components/ActionBar/ActionBar';
+export { Collapsible } from './components/Collapsible/Collapsible';
+export { FocusProxy } from './components/FocusProxy/FocusProxy';
 export { Modal } from './components/Modal/Modal';
 export { Spaced } from './components/spaced/Spaced';
 export { Placeholder } from './components/placeholder/placeholder';

@@ -36,6 +36,7 @@ export const componentManifestGenerator = async () => {
         const componentName = csf._meta?.component;
 
         if (!componentName) {
+          // TODO when there is not component name we could generate snippets based on the meta.render
           return;
         }
 

@@ -289,7 +289,7 @@
     "leven": "^4.0.0",
     "memfs": "^4.11.1",
     "memoizerific": "^1.11.3",
-    "modern-tar": "^0.5.4",
+    "modern-tar": "^0.5.5",
     "nanoid": "^4.0.2",
     "npmlog": "^7.0.0",
     "open": "^10.2.0",

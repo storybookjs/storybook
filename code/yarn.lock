@@ -19573,10 +19573,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"modern-tar@npm:^0.5.4":
-  version: 0.5.4
-  resolution: "modern-tar@npm:0.5.4"
-  checksum: 10c0/f784ba0edd341bb3b5990c6acd8b5a793036365d513bf239c0ea5818be835f1fe43a4aea20972db047eeab89b61c02cacad721b69b5a13a402dcbd07905b7c7f
+"modern-tar@npm:^0.5.5":
+  version: 0.5.5
+  resolution: "modern-tar@npm:0.5.5"
+  checksum: 10c0/e34b60e735941c53a9786cf0d9c6835e24af24860dc848c1fb8a8e2f477421d6bff19ae6d68361a2955ea8a83692ed098b3e946342670b9ff6cc8ea6f30ca6e8
   languageName: node
   linkType: hard
 
@@ -24434,7 +24434,7 @@ __metadata:
     leven: "npm:^4.0.0"
     memfs: "npm:^4.11.1"
     memoizerific: "npm:^1.11.3"
-    modern-tar: "npm:^0.5.4"
+    modern-tar: "npm:^0.5.5"
     nanoid: "npm:^4.0.2"
     npmlog: "npm:^7.0.0"
     open: "npm:^10.2.0"

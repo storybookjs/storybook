@@ -4,7 +4,7 @@ This Storybook addon runs an MCP (Model Context Protocol) server to help develop
 
 It enables a workflow where for each UI component created, the agent will automatically generate and link to example stories. These stories let you visually verify the new UI in each of its key states, and provide documentation and component tests.
 
-The server currently exposes two tools: one to provide UI development instructions to the agent, and the other to retrieve story URLs directly from your runnng Storybook.
+The server currently exposes two tools: one to provide UI development instructions to the agent, and the other to retrieve story URLs directly from your running Storybook.
 
 > [!IMPORTANT]
 > This addon currently only supports Vite-based Storybook setups, such as [`@storybook/react-vite`](https://storybook.js.org/docs/get-started/frameworks/react-vite), [`@storybook/nextjs-vite`](https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite), and [`@storybook/sveltekit`](https://storybook.js.org/docs/get-started/frameworks/sveltekit).

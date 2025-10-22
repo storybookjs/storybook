@@ -165,9 +165,9 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
       )
     );
 
-    if (features?.experimental_componentsManifest) {
+    if (features?.experimentalComponentsManifest) {
       const componentManifestGenerator: ComponentManifestGenerator = await presets.apply(
-        'componentManifestGenerator'
+        'experimental_componentManifestGenerator'
       );
       const indexGenerator = await initializedStoryIndexGenerator;
       if (componentManifestGenerator && indexGenerator) {

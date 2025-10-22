@@ -20,5 +20,5 @@
     "rootDir": "./src",
     "types": ["./src/types.d.ts"]
   },
-  "include": ["src/**/*", "tsup.config.ts"]
+  "include": ["src/**/*", "tsup.config.ts", "../../stories"]
 }

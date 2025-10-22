@@ -27,52 +27,30 @@
   "scripts": {
     "prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
     "build": "tsup",
-    "build-storybook": "storybook build",
     "build:watch": "pnpm run build -- --watch",
-    "changeset": "changeset",
     "inspect": "mcp-inspector --transport streamable-http --server-url http://localhost:6006/mcp",
     "release": "pnpm run build && pnpm changeset publish",
-    "start": "run-p build:watch \"storybook --quiet\"",
-    "storybook": "storybook dev --port 6006 --loglevel debug",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.3"
   },
   "devDependencies": {
-    "@changesets/changelog-github": "^0.5.1",
-    "@changesets/cli": "^2.29.6",
     "@modelcontextprotocol/inspector": "^0.16.5",
-    "@storybook/addon-docs": "^10.0.0-0",
-    "@storybook/icons": "^1.4.0",
-    "@storybook/react-vite": "^10.0.0-0",
     "@types/node": "^20",
-    "@types/react": "^18.2.65",
-    "@types/react-dom": "^18.2.21",
-    "@vitejs/plugin-react": "^4.7.0",
-    "auto": "^11.3.0",
-    "boxen": "^8.0.1",
-    "npm-run-all2": "^8.0.4",
-    "pkg-pr-new": "^0.0.57",
-    "prettier": "^3.6.2",
-    "prompts": "^2.4.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "storybook": "^10.0.0-0",
     "ts-dedent": "^2.2.0",
     "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "vite": "^7.0.5",
-    "zod": "^3.25.76",
-    "zx": "^8.7.1"
+    "zod": "^3.25.76"
   },
   "peerDependencies": {
     "storybook": "*"
   },
   "packageManager": "pnpm@10.15.0+sha512.486ebc259d3e999a4e8691ce03b5cac4a71cbeca39372a9b762cb500cfdf0873e2cb16abe3d951b1ee2cf012503f027b98b6584e4df22524e0c7450d9ec7aa7b",
   "publishConfig": {
-    "access": "public",
-    "provenance": true
+    "access": "public"
   },
   "bundler": {
     "nodeEntries": [

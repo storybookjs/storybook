@@ -4061,10 +4061,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/env@npm:15.5.3, @next/env@npm:^15.0.3":
+"@next/env@npm:15.5.3":
   version: 15.5.3
   resolution: "@next/env@npm:15.5.3"
   checksum: 10c0/00f5541f8d23ddb0758247fae90440b66aa5eb49568bf24e0952d5a417bd47c3610ede61b6658d3f861c13a2c07685a5f1e6d13af2fe5101d2575b3ba2d9e432
+  languageName: node
+  linkType: hard
+
+"@next/env@npm:^16.0.0":
+  version: 16.0.0
+  resolution: "@next/env@npm:16.0.0"
+  checksum: 10c0/bc6b85d48373a207f95373c5b350e0766774a8453982c8e045539393e165bc25ef3f6aaaf44036c8f2f4a98e857e0ccc7f84da6ea92116bd50f672e06f987750
   languageName: node
   linkType: hard
 
@@ -6554,7 +6561,7 @@ __metadata:
     semver: "npm:^7.3.5"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.8.3"
-    vite-plugin-storybook-nextjs: "npm:2.1.0--canary.62.972e98b.0"
+    vite-plugin-storybook-nextjs: "npm:2.1.0--canary.62.ddf2350.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -26391,11 +26398,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:2.1.0--canary.62.972e98b.0":
-  version: 2.1.0--canary.62.972e98b.0
-  resolution: "vite-plugin-storybook-nextjs@npm:2.1.0--canary.62.972e98b.0"
+"vite-plugin-storybook-nextjs@npm:2.1.0--canary.62.ddf2350.0":
+  version: 2.1.0--canary.62.ddf2350.0
+  resolution: "vite-plugin-storybook-nextjs@npm:2.1.0--canary.62.ddf2350.0"
   dependencies:
-    "@next/env": "npm:^15.0.3"
+    "@next/env": "npm:^16.0.0"
     image-size: "npm:^2.0.0"
     magic-string: "npm:^0.30.11"
     module-alias: "npm:^2.2.3"
@@ -26405,7 +26412,7 @@ __metadata:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
     storybook: ^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
-  checksum: 10c0/6a9fc957ee6d9957138883d78573aa79222806fa8e66e6baea0ce2c8e2cac5cc89c0bf97a31baa24abaaa5f965c28f9d1e313ed7f2d7acc7f9d019b20ecea5e0
+  checksum: 10c0/7b05f8d749bd45998a698fe8228088f75cb60c007e46378b1a9714b75b5f070dec93ce292a60285d639cccd2ae5ad1c2a8b6b774c40aa1ea189103ba6b6024c2
   languageName: node
   linkType: hard
 

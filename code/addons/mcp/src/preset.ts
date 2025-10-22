@@ -1,5 +1,5 @@
 import type { Plugin } from 'vite';
-import { mcpServerHandler } from './mcp-handler';
+import { mcpServerHandler } from './mcp-handler.ts';
 import type { Options } from 'storybook/internal/types';
 
 // This is a workaround for Storybook not having an API for addons to register server middlewares/handlers

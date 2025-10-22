@@ -3,32 +3,23 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 export async function collectTelemetry({
 	event,
-	mcpSessionId,
+	sessionId,
+	client,
 	...payload
 }: {
 	event: string;
-	mcpSessionId: string;
+	sessionId?: string;
+	client?: string;
 	[key: string]: any;
 }) {
-	if (disableTelemetry) {
-		return;
-	}
-
 	try {
 		return await telemetry('addon-mcp' as any, {
 			event,
-			mcpSessionId,
-			client: mcpSessionIdToClientMap[mcpSessionId!],
+			sessionId,
+			client,
 			...payload,
 		});
 	} catch (error) {
 		logger.debug('Error collecting telemetry:', error);
 	}
 }
-
-export const mcpSessionIdToClientMap: Record<string, string> = {};
-
-let disableTelemetry = false;
-export const setDisableTelemetry = (value = false) => {
-	disableTelemetry = value;
-};

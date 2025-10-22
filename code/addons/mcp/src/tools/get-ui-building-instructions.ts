@@ -1,56 +1,77 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls';
-import { collectTelemetry } from '../telemetry';
+import type { McpServer } from 'tmcp';
+import * as v from 'valibot';
+import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
+import { collectTelemetry } from '../telemetry.ts';
 import uiInstructionsTemplate from '../ui-building-instructions.md';
-import type { Options } from 'storybook/internal/types';
 import { logger } from 'storybook/internal/node-logger';
+import { errorToMCPContent } from '../utils/errors.ts';
+import type { AddonContext } from '../types.ts';
 
-export function registerUIBuildingTool({
-	server,
-	options,
-}: {
-	server: McpServer;
-	options: Options;
-}) {
-	server.registerTool(
-		'get_ui_building_instructions',
+export const GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME =
+	'get_ui_building_instructions';
+
+const GetUIBuildingInstructionsInput = v.object({});
+
+type GetUIBuildingInstructionsInput = v.InferOutput<
+	typeof GetUIBuildingInstructionsInput
+>;
+
+export async function addGetUIBuildingInstructionsTool(
+	server: McpServer<any, AddonContext>,
+) {
+	server.tool(
 		{
+			name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
 			title: 'UI Component Building Instructions',
 			description: `Instructions on how to do UI component development. 
       
       ALWAYS call this tool before doing any UI/frontend/React/component development, including but not
       limited to adding or updating new components, pages, screens or layouts.`,
-			inputSchema: {},
+			schema: GetUIBuildingInstructionsInput,
 		},
-		async (_, { sessionId }) => {
-			await collectTelemetry({
-				event: 'tool:getUIBuildingInstructions',
-				mcpSessionId: sessionId!,
-			});
+		async (_input: GetUIBuildingInstructionsInput) => {
+			try {
+				const { options, client, disableTelemetry } = server.ctx.custom ?? {};
+				const sessionId = server.ctx.sessionId;
 
-			const frameworkPreset = await options.presets.apply('framework');
-			const framework =
-				typeof frameworkPreset === 'string'
-					? frameworkPreset
-					: frameworkPreset?.name;
-			const renderer = frameworkToRendererMap[framework!];
+				if (!options) {
+					throw new Error('Options are required in addon context');
+				}
 
-			if (!framework || !renderer) {
-				logger.debug('Unable to determine framework or renderer', {
-					frameworkPreset,
-					framework,
-					renderer,
-				});
+				if (!disableTelemetry) {
+					await collectTelemetry({
+						event: 'tool:getUIBuildingInstructions',
+						sessionId,
+						client: client ?? 'unknown',
+					});
+				}
+
+				const frameworkPreset = await options.presets.apply('framework');
+				const framework =
+					typeof frameworkPreset === 'string'
+						? frameworkPreset
+						: frameworkPreset?.name;
+				const renderer = frameworkToRendererMap[framework!];
+
+				if (!framework || !renderer) {
+					logger.debug('Unable to determine framework or renderer', {
+						frameworkPreset,
+						framework,
+						renderer,
+					});
+				}
+
+				const uiInstructions = uiInstructionsTemplate
+					.replace('{{FRAMEWORK}}', framework)
+					.replace('{{RENDERER}}', renderer ?? framework)
+					.replace('{{GET_STORY_URLS_TOOL_NAME}}', GET_STORY_URLS_TOOL_NAME);
+
+				return {
+					content: [{ type: 'text' as const, text: uiInstructions }],
+				};
+			} catch (error) {
+				return errorToMCPContent(error);
 			}
-
-			const uiInstructions = uiInstructionsTemplate
-				.replace('{{FRAMEWORK}}', framework)
-				.replace('{{RENDERER}}', renderer ?? framework)
-				.replace('{{GET_STORY_URLS_TOOL_NAME}}', GET_STORY_URLS_TOOL_NAME);
-
-			return {
-				content: [{ type: 'text', text: uiInstructions }],
-			};
 		},
 	);
 }

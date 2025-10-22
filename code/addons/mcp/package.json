@@ -32,7 +32,10 @@
 		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp"
 	},
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.17.3"
+		"@tmcp/adapter-valibot": "^0.1.4",
+		"@tmcp/transport-http": "^0.7.0",
+		"tmcp": "^1.15.2",
+		"valibot": "^1.1.0"
 	},
 	"devDependencies": {
 		"@types/node": "^20",
@@ -40,8 +43,7 @@
 		"ts-dedent": "^2.2.0",
 		"tsup": "^8.5.0",
 		"typescript": "^5.8.3",
-		"vite": "^7.0.5",
-		"zod": "^3.25.76"
+		"vite": "^7.0.5"
 	},
 	"peerDependencies": {
 		"storybook": "*"

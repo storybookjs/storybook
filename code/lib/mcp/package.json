@@ -29,7 +29,8 @@
 		"build": "tsdown",
 		"dev": "node --watch ./serve.ts",
 		"test": "vitest",
-		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-mcp"
+		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-mcp",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@tmcp/adapter-valibot": "^0.1.4",

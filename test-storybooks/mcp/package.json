@@ -5,7 +5,8 @@
 	"description": "The Storybook used to test the MCP packages in the MCP monorepo",
 	"scripts": {
 		"build-storybook": "storybook build",
-		"storybook": "storybook dev --port 6006 --loglevel debug"
+		"storybook": "storybook dev --port 6006 --loglevel debug",
+		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
 		"@storybook/addon-docs": "^10.0.0-0",

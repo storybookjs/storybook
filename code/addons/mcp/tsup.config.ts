@@ -17,8 +17,18 @@ export default defineConfig(async (options) => {
 	).default;
 
 	const {
-		bundler: { managerEntries = [], previewEntries = [], nodeEntries = [] },
-	} = packageJson;
+		bundler: {
+			managerEntries = [],
+			previewEntries = [],
+			nodeEntries = [],
+		} = {},
+	} = packageJson as {
+		bundler?: {
+			managerEntries?: string[];
+			previewEntries?: string[];
+			nodeEntries?: string[];
+		};
+	};
 
 	const commonConfig: Options = {
 		/*

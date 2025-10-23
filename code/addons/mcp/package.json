@@ -29,7 +29,8 @@
 		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
 		"build": "tsup",
 		"dev": "pnpm run build -- --watch",
-		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp"
+		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@tmcp/adapter-valibot": "^0.1.4",

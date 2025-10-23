@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { errorToMCPContent, ManifestFetchError } from './fetch-manifest.ts';
+import { errorToMCPContent, ManifestGetError } from './get-manifest.ts';
 
 describe('errorToMCPContent', () => {
-	it('should convert ManifestFetchError to MCP error content', () => {
-		const error = new ManifestFetchError(
-			'Failed to fetch',
+	it('should convert ManifestGetError to MCP error content', () => {
+		const error = new ManifestGetError(
+			'Failed to get',
 			'https://example.com',
 		);
 
@@ -14,7 +14,7 @@ describe('errorToMCPContent', () => {
 			content: [
 				{
 					type: 'text',
-					text: 'Error fetching manifest: Failed to fetch',
+					text: 'Error getting manifest: Failed to get',
 				},
 			],
 			isError: true,
@@ -37,10 +37,10 @@ describe('errorToMCPContent', () => {
 		});
 	});
 
-	it('should handle ManifestFetchError with cause', () => {
+	it('should handle ManifestGetError with cause', () => {
 		const cause = new Error('Network error');
-		const error = new ManifestFetchError(
-			'Failed to fetch manifest',
+		const error = new ManifestGetError(
+			'Failed to get manifest',
 			'https://example.com',
 			cause,
 		);
@@ -51,15 +51,15 @@ describe('errorToMCPContent', () => {
 			content: [
 				{
 					type: 'text',
-					text: 'Error fetching manifest: Failed to fetch manifest\nCaused by: Network error',
+					text: 'Error getting manifest: Failed to get manifest\nCaused by: Network error',
 				},
 			],
 			isError: true,
 		});
 	});
 
-	it('should handle ManifestFetchError without URL', () => {
-		const error = new ManifestFetchError('Failed to fetch');
+	it('should handle ManifestGetError without URL', () => {
+		const error = new ManifestGetError('Failed to get');
 
 		const result = errorToMCPContent(error);
 
@@ -67,7 +67,7 @@ describe('errorToMCPContent', () => {
 			content: [
 				{
 					type: 'text',
-					text: 'Error fetching manifest: Failed to fetch',
+					text: 'Error getting manifest: Failed to get',
 				},
 			],
 			isError: true,

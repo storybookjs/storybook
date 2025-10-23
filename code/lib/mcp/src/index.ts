@@ -8,22 +8,8 @@ import type { StorybookContext } from './types.ts';
 
 type Handler = (req: Request, context?: StorybookContext) => Promise<Response>;
 
-type StorybookMcpHandlerOptions = {
-	/**
-	 * The default source URL for fetching component manifests.
-	 * Can be overridden per-request via context parameter.
-	 */
-	source?: string;
-	/**
-	 * Optional function to provide custom manifest retrieval logic.
-	 * If provided, this function will be called instead of using fetch.
-	 * The function receives the source URL and should return the manifest as a string.
-	 */
-	manifestProvider?: (source: string) => Promise<string>;
-};
-
 export const createStorybookMcpHandler = async (
-	options: StorybookMcpHandlerOptions = {},
+	options: StorybookContext = {},
 ): Promise<Handler> => {
 	const adapter = new ValibotJsonSchemaAdapter();
 	const server = new McpServer(

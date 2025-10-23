@@ -1,7 +1,7 @@
 import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
 import type { StorybookContext } from '../types.ts';
-import { fetchManifest, errorToMCPContent } from '../utils/fetch-manifest.ts';
+import { getManifest, errorToMCPContent } from '../utils/get-manifest.ts';
 import { formatComponentManifest } from '../utils/format-manifest.ts';
 
 export const GET_TOOL_NAME = 'get-component-documentation';
@@ -29,7 +29,7 @@ export async function addGetComponentDocumentationTool(
 		},
 		async (input: GetComponentDocumentationInput) => {
 			try {
-				const manifest = await fetchManifest(
+				const manifest = await getManifest(
 					server.ctx.custom?.source,
 					server.ctx.custom?.manifestProvider,
 				);

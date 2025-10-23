@@ -1,29 +1,30 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { fetchManifest, ManifestFetchError } from './fetch-manifest';
+import { getManifest, ManifestGetError } from './get-manifest';
 import type { ComponentManifestMap } from '../types';
 
 global.fetch = vi.fn();
 
-describe('fetchManifest', () => {
+describe('getManifest', () => {
 	beforeEach(() => {
-		vi.clearAllMocks();
+		// Reset the fetch mock between tests since we're checking call counts
+		vi.mocked(global.fetch).mockClear();
 	});
 
 	describe('error cases', () => {
-		it('should throw ManifestFetchError when url is not provided', async () => {
-			await expect(fetchManifest()).rejects.toThrow(ManifestFetchError);
-			await expect(fetchManifest()).rejects.toThrow(
+		it('should throw ManifestGetError when url is not provided', async () => {
+			await expect(getManifest()).rejects.toThrow(ManifestGetError);
+			await expect(getManifest()).rejects.toThrow(
 				'The source URL is required, but was not part of the request context nor was a default source for the server set',
 			);
 		});
 
-		it('should throw ManifestFetchError when url is undefined', async () => {
-			await expect(fetchManifest(undefined)).rejects.toThrow(
-				ManifestFetchError,
+		it('should throw ManifestGetError when url is undefined', async () => {
+			await expect(getManifest(undefined)).rejects.toThrow(
+				ManifestGetError,
 			);
 		});
 
-		it('should throw ManifestFetchError when fetch fails with 404', async () => {
+		it('should throw ManifestGetError when fetch fails with 404', async () => {
 			global.fetch = vi.fn().mockResolvedValue({
 				ok: false,
 				status: 404,
@@ -31,14 +32,14 @@ describe('fetchManifest', () => {
 			});
 
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
-			).rejects.toThrow(ManifestFetchError);
+				getManifest('https://example.com/manifest.json'),
+			).rejects.toThrow(ManifestGetError);
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
-			).rejects.toThrow('Failed to fetch manifest: 404 Not Found');
+				getManifest('https://example.com/manifest.json'),
+			).rejects.toThrow('Failed to get manifest: 404 Not Found');
 		});
 
-		it('should throw ManifestFetchError when fetch fails with 500', async () => {
+		it('should throw ManifestGetError when fetch fails with 500', async () => {
 			global.fetch = vi.fn().mockResolvedValue({
 				ok: false,
 				status: 500,
@@ -46,11 +47,11 @@ describe('fetchManifest', () => {
 			});
 
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
-			).rejects.toThrow('Failed to fetch manifest: 500 Internal Server Error');
+				getManifest('https://example.com/manifest.json'),
+			).rejects.toThrow('Failed to get manifest: 500 Internal Server Error');
 		});
 
-		it('should throw ManifestFetchError when content type is not JSON', async () => {
+		it('should throw ManifestGetError when content type is not JSON', async () => {
 			global.fetch = vi.fn().mockResolvedValue({
 				ok: true,
 				headers: {
@@ -59,16 +60,16 @@ describe('fetchManifest', () => {
 			});
 
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
-			).rejects.toThrow(ManifestFetchError);
+				getManifest('https://example.com/manifest.json'),
+			).rejects.toThrow(ManifestGetError);
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
+				getManifest('https://example.com/manifest.json'),
 			).rejects.toThrow(
 				'Invalid content type: expected application/json, got text/html',
 			);
 		});
 
-		it('should throw ManifestFetchError when response is not valid JSON', async () => {
+		it('should throw ManifestGetError when response is not valid JSON', async () => {
 			global.fetch = vi.fn().mockResolvedValue({
 				ok: true,
 				headers: {
@@ -78,14 +79,14 @@ describe('fetchManifest', () => {
 			});
 
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
-			).rejects.toThrow(ManifestFetchError);
+				getManifest('https://example.com/manifest.json'),
+			).rejects.toThrow(ManifestGetError);
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
-			).rejects.toThrow('Failed to fetch manifest: Invalid JSON');
+				getManifest('https://example.com/manifest.json'),
+			).rejects.toThrow('Failed to get manifest: Invalid JSON');
 		});
 
-		it('should throw ManifestFetchError when manifest schema is invalid', async () => {
+		it('should throw ManifestGetError when manifest schema is invalid', async () => {
 			global.fetch = vi.fn().mockResolvedValue({
 				ok: true,
 				headers: {
@@ -98,13 +99,13 @@ describe('fetchManifest', () => {
 			});
 
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
+				getManifest('https://example.com/manifest.json'),
 			).rejects.toThrowErrorMatchingInlineSnapshot(
-				`[ManifestFetchError: Failed to fetch manifest: Invalid key: Expected "v" but received undefined]`,
+				`[ManifestGetError: Failed to get manifest: Invalid key: Expected "v" but received undefined]`,
 			);
 		});
 
-		it('should throw ManifestFetchError when components object is empty', async () => {
+		it('should throw ManifestGetError when components object is empty', async () => {
 			global.fetch = vi.fn().mockResolvedValue({
 				ok: true,
 				headers: {
@@ -117,27 +118,27 @@ describe('fetchManifest', () => {
 			});
 
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
-			).rejects.toThrow(ManifestFetchError);
+				getManifest('https://example.com/manifest.json'),
+			).rejects.toThrow(ManifestGetError);
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
+				getManifest('https://example.com/manifest.json'),
 			).rejects.toThrow('No components found in the manifest');
 		});
 
-		it('should wrap network errors in ManifestFetchError', async () => {
+		it('should wrap network errors in ManifestGetError', async () => {
 			global.fetch = vi
 				.fn()
 				.mockRejectedValue(new Error('Network connection failed'));
 
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
-			).rejects.toThrow(ManifestFetchError);
+				getManifest('https://example.com/manifest.json'),
+			).rejects.toThrow(ManifestGetError);
 			await expect(
-				fetchManifest('https://example.com/manifest.json'),
-			).rejects.toThrow('Failed to fetch manifest: Network connection failed');
+				getManifest('https://example.com/manifest.json'),
+			).rejects.toThrow('Failed to get manifest: Network connection failed');
 		});
 
-		it('should preserve ManifestFetchError when already thrown', async () => {
+		it('should preserve ManifestGetError when already thrown', async () => {
 			global.fetch = vi.fn().mockResolvedValue({
 				ok: false,
 				status: 404,
@@ -145,10 +146,10 @@ describe('fetchManifest', () => {
 			});
 
 			try {
-				await fetchManifest('https://example.com/manifest.json');
+				await getManifest('https://example.com/manifest.json');
 			} catch (error) {
-				expect(error).toBeInstanceOf(ManifestFetchError);
-				expect((error as ManifestFetchError).url).toBe(
+				expect(error).toBeInstanceOf(ManifestGetError);
+				expect((error as ManifestGetError).url).toBe(
 					'https://example.com/manifest.json',
 				);
 			}
@@ -176,7 +177,7 @@ describe('fetchManifest', () => {
 				json: vi.fn().mockResolvedValue(validManifest),
 			});
 
-			const result = await fetchManifest('https://example.com/manifest.json');
+			const result = await getManifest('https://example.com/manifest.json');
 
 			expect(result).toEqual(validManifest);
 			expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
@@ -202,7 +203,7 @@ describe('fetchManifest', () => {
 				.fn()
 				.mockResolvedValue(JSON.stringify(validManifest));
 
-			const result = await fetchManifest(
+			const result = await getManifest(
 				'./fixtures/manifest.json',
 				manifestProvider,
 			);
@@ -235,7 +236,7 @@ describe('fetchManifest', () => {
 				json: vi.fn().mockResolvedValue(validManifest),
 			});
 
-			const result = await fetchManifest('https://example.com/manifest.json');
+			const result = await getManifest('https://example.com/manifest.json');
 
 			expect(result).toEqual(validManifest);
 			expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
@@ -249,19 +250,19 @@ describe('fetchManifest', () => {
 				.mockRejectedValue(new Error('File not found'));
 
 			await expect(
-				fetchManifest('./fixtures/manifest.json', manifestProvider),
-			).rejects.toThrow(ManifestFetchError);
+				getManifest('./fixtures/manifest.json', manifestProvider),
+			).rejects.toThrow(ManifestGetError);
 			await expect(
-				fetchManifest('./fixtures/manifest.json', manifestProvider),
-			).rejects.toThrow('Failed to fetch manifest: File not found');
+				getManifest('./fixtures/manifest.json', manifestProvider),
+			).rejects.toThrow('Failed to get manifest: File not found');
 		});
 
 		it('should handle invalid JSON from manifestProvider', async () => {
 			const manifestProvider = vi.fn().mockResolvedValue('not valid json{');
 
 			await expect(
-				fetchManifest('./fixtures/manifest.json', manifestProvider),
-			).rejects.toThrow(ManifestFetchError);
+				getManifest('./fixtures/manifest.json', manifestProvider),
+			).rejects.toThrow(ManifestGetError);
 		});
 
 		it('should validate manifest from manifestProvider', async () => {
@@ -280,8 +281,8 @@ describe('fetchManifest', () => {
 				.mockResolvedValue(JSON.stringify(invalidManifest));
 
 			await expect(
-				fetchManifest('./fixtures/manifest.json', manifestProvider),
-			).rejects.toThrow(ManifestFetchError);
+				getManifest('./fixtures/manifest.json', manifestProvider),
+			).rejects.toThrow(ManifestGetError);
 		});
 
 		it('should throw when manifest from manifestProvider has no components', async () => {
@@ -295,7 +296,7 @@ describe('fetchManifest', () => {
 				.mockResolvedValue(JSON.stringify(emptyManifest));
 
 			await expect(
-				fetchManifest('./fixtures/manifest.json', manifestProvider),
+				getManifest('./fixtures/manifest.json', manifestProvider),
 			).rejects.toThrow('No components found in the manifest');
 		});
 	});

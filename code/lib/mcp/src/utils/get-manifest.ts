@@ -2,15 +2,15 @@ import { ComponentManifestMap } from '../types.ts';
 import * as v from 'valibot';
 
 /**
- * Error thrown when fetching or parsing a manifest fails
+ * Error thrown when getting or parsing a manifest fails
  */
-export class ManifestFetchError extends Error {
+export class ManifestGetError extends Error {
 	public readonly url: string;
 	public readonly cause?: Error;
 
 	constructor(message: string, url?: string, cause?: Error) {
 		super(message);
-		this.name = 'ManifestFetchError';
+		this.name = 'ManifestGetError';
 		this.url = url ?? 'No source URL provided';
 		this.cause = cause;
 	}
@@ -32,14 +32,14 @@ type MCPErrorResult = {
  */
 export const errorToMCPContent = (error: unknown): MCPErrorResult => {
 	const errorPrefix =
-		error instanceof ManifestFetchError
-			? 'Error fetching manifest'
+		error instanceof ManifestGetError
+			? 'Error getting manifest'
 			: 'Unexpected error';
 	const errorMessage = error instanceof Error ? error.message : String(error);
 
 	// Include cause information if available
 	let fullMessage = `${errorPrefix}: ${errorMessage}`;
-	if (error instanceof ManifestFetchError && error.cause) {
+	if (error instanceof ManifestGetError && error.cause) {
 		const causeMessage =
 			error.cause instanceof Error ? error.cause.message : String(error.cause);
 		fullMessage += `\nCaused by: ${causeMessage}`;
@@ -57,20 +57,20 @@ export const errorToMCPContent = (error: unknown): MCPErrorResult => {
 };
 
 /**
- * Fetches a component manifest from a remote URL or using a custom provider
+ * Gets a component manifest from a remote URL or using a custom provider
  *
- * @param url - The URL to fetch the manifest from
- * @param manifestProvider - Optional custom function to fetch the manifest
+ * @param url - The URL to get the manifest from
+ * @param manifestProvider - Optional custom function to get the manifest
  * @returns A promise that resolves to the parsed ComponentManifestMap
- * @throws {ManifestFetchError} If the fetch fails or the response is invalid
+ * @throws {ManifestGetError} If getting the manifest fails or the response is invalid
  */
-export async function fetchManifest(
+export async function getManifest(
 	url?: string,
 	manifestProvider?: (source: string) => Promise<string>,
 ): Promise<ComponentManifestMap> {
 	try {
 		if (!url) {
-			throw new ManifestFetchError(
+			throw new ManifestGetError(
 				'The source URL is required, but was not part of the request context nor was a default source for the server set',
 			);
 		}
@@ -85,15 +85,15 @@ export async function fetchManifest(
 			const response = await fetch(url);
 
 			if (!response.ok) {
-				throw new ManifestFetchError(
-					`Failed to fetch manifest: ${response.status} ${response.statusText}`,
+				throw new ManifestGetError(
+					`Failed to get manifest: ${response.status} ${response.statusText}`,
 					url,
 				);
 			}
 
 			const contentType = response.headers.get('content-type');
 			if (!contentType?.includes('application/json')) {
-				throw new ManifestFetchError(
+				throw new ManifestGetError(
 					`Invalid content type: expected application/json, got ${contentType}`,
 					url,
 				);
@@ -105,18 +105,18 @@ export async function fetchManifest(
 		const manifest = v.parse(ComponentManifestMap, data);
 
 		if (Object.keys(manifest.components).length === 0) {
-			throw new ManifestFetchError(`No components found in the manifest`, url);
+			throw new ManifestGetError(`No components found in the manifest`, url);
 		}
 
 		return manifest;
 	} catch (error) {
-		if (error instanceof ManifestFetchError) {
+		if (error instanceof ManifestGetError) {
 			throw error;
 		}
 
 		// Wrap network errors and other unexpected errors
-		throw new ManifestFetchError(
-			`Failed to fetch manifest: ${error instanceof Error ? error.message : String(error)}`,
+		throw new ManifestGetError(
+			`Failed to get manifest: ${error instanceof Error ? error.message : String(error)}`,
 			url,
 			error instanceof Error ? error : undefined,
 		);

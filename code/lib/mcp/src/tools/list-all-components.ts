@@ -1,6 +1,6 @@
 import type { McpServer } from 'tmcp';
 import type { StorybookContext } from '../types.ts';
-import { fetchManifest, errorToMCPContent } from '../utils/fetch-manifest.ts';
+import { getManifest, errorToMCPContent } from '../utils/get-manifest.ts';
 import { formatComponentManifestMapToList } from '../utils/format-manifest.ts';
 
 export const LIST_TOOL_NAME = 'list-all-components';
@@ -17,7 +17,7 @@ export async function addListAllComponentsTool(
 		},
 		async () => {
 			try {
-				const manifest = await fetchManifest(
+				const manifest = await getManifest(
 					server.ctx.custom?.source,
 					server.ctx.custom?.manifestProvider,
 				);

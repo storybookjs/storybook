@@ -2,11 +2,11 @@ import * as v from 'valibot';
 
 /**
  * Custom context passed to MCP server and tools.
- * Contains the source URL for fetching component manifests.
+ * Contains the source URL for getting component manifests.
  */
 export interface StorybookContext extends Record<string, unknown> {
 	/**
-	 * The URL of the remote manifest to fetch component data from.
+	 * The URL of the remote manifest to get component data from.
 	 */
 	source?: string;
 	/**

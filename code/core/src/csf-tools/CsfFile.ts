@@ -287,6 +287,8 @@ export class CsfFile {
 
   _rawComponentPath?: string;
 
+  _componentImportSpecifier?: t.ImportSpecifier | t.ImportDefaultSpecifier;
+
   _meta?: StaticMeta;
 
   _stories: Record<string, StaticStory> = {};
@@ -299,7 +301,7 @@ export class CsfFile {
 
   _metaStatement: t.Statement | undefined;
 
-  _metaNode: t.Expression | undefined;
+  _metaNode: t.ObjectExpression | undefined;
 
   _metaPath: NodePath<t.ExportDefaultDeclaration> | undefined;
 
@@ -369,9 +371,18 @@ export class CsfFile {
                 stmt.specifiers.find((spec) => spec.local.name === id)
             ) as t.ImportDeclaration;
             if (importStmt) {
+              // Example: `import { ComponentImport } from './path-to-component'`
+              // const meta = { component: ComponentImport };
+              // Sets:
+              // - _rawComponentPath = './path-to-component'
+              // - _componentImportSpecifier = ComponentImport
               const { source } = importStmt;
-              if (t.isStringLiteral(source)) {
+              const specifier = importStmt.specifiers.find((spec) => spec.local.name === id);
+              if (t.isStringLiteral(source) && specifier) {
                 this._rawComponentPath = source.value;
+                if (t.isImportSpecifier(specifier) || t.isImportDefaultSpecifier(specifier)) {
+                  this._componentImportSpecifier = specifier;
+                }
               }
             }
           }

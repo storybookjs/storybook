@@ -1,5 +1,6 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { FileSystemCache } from 'storybook/internal/common';
+import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
@@ -339,10 +340,25 @@ export interface TagOptions {
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
-/**
- * The interface for Storybook configuration used internally in presets The difference is that these
- * values are the raw values, AKA, not wrapped with `PresetValue<>`
- */
+export interface ComponentManifest {
+  id: string;
+  name: string;
+  description?: string;
+  import?: string;
+  summary?: string;
+  examples: { name: string; snippet: string }[];
+  jsDocTags: Record<string, string[]>;
+}
+
+export interface ComponentsManifest {
+  v: number;
+  components: Record<string, ComponentManifest>;
+}
+
+export type ComponentManifestGenerator = (
+  storyIndexGenerator: StoryIndexGenerator
+) => Promise<ComponentsManifest>;
+
 export interface StorybookConfigRaw {
   /**
    * Sets the addons you want to use with Storybook.
@@ -356,6 +372,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
+  componentManifestGenerator?: ComponentManifestGenerator;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -453,6 +470,8 @@ export interface StorybookConfigRaw {
     developmentModeForBuild?: boolean;
     /** Only show input controls in Angular */
     angularFilterNonInputControls?: boolean;
+
+    experimentalComponentsManifest?: boolean;
   };
 
   build?: TestBuildConfig;

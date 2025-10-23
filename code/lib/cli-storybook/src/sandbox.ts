@@ -78,7 +78,7 @@ export const sandbox = async ({
       .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
       .concat(isPrerelease ? [messages.prerelease] : [])
       .join('\n'),
-    { borderStyle: 'round', padding: 1, borderColor }
+    { borderStyle: 'round', borderColor }
   );
 
   if (!selectedConfig) {
@@ -259,7 +259,7 @@ export const sandbox = async ({
 
         Having a clean repro helps us solve your issue faster! 🙏
       `.trim(),
-      { borderStyle: 'round', padding: 1, borderColor: '#F1618C' }
+      { borderStyle: 'round', borderColor: '#F1618C' }
     );
   } catch (error) {
     logger.error('🚨 Failed to create sandbox');

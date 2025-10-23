@@ -9,6 +9,7 @@ import {
   formatFileContent,
   getProjectRoot,
   getStorybookInfo,
+  versions,
 } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -328,8 +329,14 @@ export default async function postInstall(options: PostinstallOptions) {
         command.push('--config-dir', `"${options.configDir}"`);
       }
 
-      const remoteCommand = packageManager.getRemoteRunCommand('storybook', command);
+      const remoteCommand = packageManager.getRemoteRunCommand(
+        'storybook',
+        command,
+        versions.storybook
+      );
       const [cmd, ...args] = remoteCommand.split(' ');
+
+      console.log({ cmd, args });
 
       await prompt.executeTask(() => packageManager.executeCommand({ command: cmd, args }), {
         id: 'a11y-addon-setup',

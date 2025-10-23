@@ -43,7 +43,6 @@ describe('setupAddonInConfig', () => {
       mainConfigCSFFile: mockMain,
       previewConfigPath: '.storybook/preview.ts',
       configDir: '.storybook',
-      mainConfig: mockMainConfig,
     });
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
@@ -70,7 +69,6 @@ describe('setupAddonInConfig', () => {
       mainConfigCSFFile: mockMain,
       previewConfigPath: '.storybook/preview.ts',
       configDir: '.storybook',
-      mainConfig: mockMainConfig,
     });
 
     expect(mockMain.valueToNode).toHaveBeenCalledWith('@storybook/addon-docs');
@@ -96,7 +94,6 @@ describe('setupAddonInConfig', () => {
       mainConfigCSFFile: mockMain,
       previewConfigPath: '.storybook/preview.ts',
       configDir: '.storybook',
-      mainConfig: mockMainConfig,
     });
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
@@ -113,7 +110,6 @@ describe('setupAddonInConfig', () => {
         mainConfigCSFFile: mockMain,
         previewConfigPath: '.storybook/preview.ts',
         configDir: '.storybook',
-        mainConfig: mockMainConfig,
       })
     ).resolves.not.toThrow();
 
@@ -129,7 +125,6 @@ describe('setupAddonInConfig', () => {
       mainConfigCSFFile: mockMain,
       previewConfigPath: undefined,
       configDir: '.storybook',
-      mainConfig: mockMainConfig,
     });
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');

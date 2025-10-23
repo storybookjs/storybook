@@ -5,7 +5,7 @@ import { AngularJSON, ProjectType, copyTemplate } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -93,7 +93,6 @@ export default defineGeneratorModule({
         ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
       ],
       addScripts: false, // Handled above based on project count
-      addComponents: false, // Handled above via copyTemplate
       componentsDestinationPath: root ? `${root}/src/stories` : undefined,
       storybookConfigFolder: storybookFolder,
       storybookCommand: `ng run ${angularProjectName}:storybook`,

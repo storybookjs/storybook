@@ -15,7 +15,13 @@ const userSettingSchema = z.object({
   // (we can remove keys once they are deprecated)
   userSince: z.number().optional(),
   init: z.object({ skipOnboarding: z.boolean().optional() }).optional(),
-  checklist: z.object({ completed: z.array(z.string()), skipped: z.array(z.string()) }).optional(),
+  checklist: z
+    .object({
+      muted: z.union([z.boolean(), z.array(z.string())]).optional(),
+      completed: z.array(z.string()),
+      skipped: z.array(z.string()),
+    })
+    .optional(),
 });
 
 let settings: Settings | undefined;

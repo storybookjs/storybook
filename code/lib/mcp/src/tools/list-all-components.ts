@@ -17,7 +17,10 @@ export async function addListAllComponentsTool(
 		},
 		async () => {
 			try {
-				const manifest = await fetchManifest(server.ctx.custom?.source);
+				const manifest = await fetchManifest(
+					server.ctx.custom?.source,
+					server.ctx.custom?.manifestProvider,
+				);
 
 				const componentList = formatComponentManifestMapToList(manifest);
 				return {

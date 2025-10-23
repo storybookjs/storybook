@@ -57,14 +57,16 @@ export const errorToMCPContent = (error: unknown): MCPErrorResult => {
 };
 
 /**
- * Fetches a component manifest from a remote URL
+ * Fetches a component manifest from a remote URL or using a custom provider
  *
  * @param url - The URL to fetch the manifest from
+ * @param manifestProvider - Optional custom function to fetch the manifest
  * @returns A promise that resolves to the parsed ComponentManifestMap
  * @throws {ManifestFetchError} If the fetch fails or the response is invalid
  */
 export async function fetchManifest(
 	url?: string,
+	manifestProvider?: (source: string) => Promise<string>,
 ): Promise<ComponentManifestMap> {
 	try {
 		if (!url) {
@@ -73,24 +75,33 @@ export async function fetchManifest(
 			);
 		}
 
-		const response = await fetch(url);
+		let data: unknown;
 
-		if (!response.ok) {
-			throw new ManifestFetchError(
-				`Failed to fetch manifest: ${response.status} ${response.statusText}`,
-				url,
-			);
+		// Use custom manifestProvider if provided, otherwise fallback to fetch
+		if (manifestProvider) {
+			const manifestString = await manifestProvider(url);
+			data = JSON.parse(manifestString);
+		} else {
+			const response = await fetch(url);
+
+			if (!response.ok) {
+				throw new ManifestFetchError(
+					`Failed to fetch manifest: ${response.status} ${response.statusText}`,
+					url,
+				);
+			}
+
+			const contentType = response.headers.get('content-type');
+			if (!contentType?.includes('application/json')) {
+				throw new ManifestFetchError(
+					`Invalid content type: expected application/json, got ${contentType}`,
+					url,
+				);
+			}
+
+			data = await response.json();
 		}
 
-		const contentType = response.headers.get('content-type');
-		if (!contentType?.includes('application/json')) {
-			throw new ManifestFetchError(
-				`Invalid content type: expected application/json, got ${contentType}`,
-				url,
-			);
-		}
-
-		const data: unknown = await response.json();
 		const manifest = v.parse(ComponentManifestMap, data);
 
 		if (Object.keys(manifest.components).length === 0) {

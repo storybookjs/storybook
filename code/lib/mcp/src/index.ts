@@ -14,6 +14,12 @@ type StorybookMcpHandlerOptions = {
 	 * Can be overridden per-request via context parameter.
 	 */
 	source?: string;
+	/**
+	 * Optional function to provide custom manifest retrieval logic.
+	 * If provided, this function will be called instead of using fetch.
+	 * The function receives the source URL and should return the manifest as a string.
+	 */
+	manifestProvider?: (source: string) => Promise<string>;
 };
 
 export const createStorybookMcpHandler = async (
@@ -43,7 +49,9 @@ export const createStorybookMcpHandler = async (
 
 	return (async (req, context) => {
 		const source = context?.source ?? options.source;
+		const manifestProvider =
+			context?.manifestProvider ?? options.manifestProvider;
 
-		return await transport.respond(req, { source });
+		return await transport.respond(req, { source, manifestProvider });
 	}) as Handler;
 };

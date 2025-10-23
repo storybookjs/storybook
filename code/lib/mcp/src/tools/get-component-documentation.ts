@@ -29,7 +29,10 @@ export async function addGetComponentDocumentationTool(
 		},
 		async (input: GetComponentDocumentationInput) => {
 			try {
-				const manifest = await fetchManifest(server.ctx.custom?.source);
+				const manifest = await fetchManifest(
+					server.ctx.custom?.source,
+					server.ctx.custom?.manifestProvider,
+				);
 
 				const content = [];
 				const notFoundIds: string[] = [];

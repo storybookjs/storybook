@@ -5,6 +5,10 @@ import type { ComponentManifestMap } from '../types';
 global.fetch = vi.fn();
 
 describe('fetchManifest', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
 	describe('error cases', () => {
 		it('should throw ManifestFetchError when url is not provided', async () => {
 			await expect(fetchManifest()).rejects.toThrow(ManifestFetchError);
@@ -178,6 +182,123 @@ describe('fetchManifest', () => {
 			expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
 				'https://example.com/manifest.json',
 			);
+		});
+	});
+
+	describe('manifestProvider', () => {
+		it('should use manifestProvider when provided', async () => {
+			const validManifest: ComponentManifestMap = {
+				v: 1,
+				components: {
+					button: {
+						id: 'button',
+						name: 'Button',
+						description: 'A button component',
+					},
+				},
+			};
+
+			const manifestProvider = vi
+				.fn()
+				.mockResolvedValue(JSON.stringify(validManifest));
+
+			const result = await fetchManifest(
+				'./fixtures/manifest.json',
+				manifestProvider,
+			);
+
+			expect(result).toEqual(validManifest);
+			expect(manifestProvider).toHaveBeenCalledExactlyOnceWith(
+				'./fixtures/manifest.json',
+			);
+			// fetch should not be called when manifestProvider is used
+			expect(global.fetch).not.toHaveBeenCalled();
+		});
+
+		it('should fallback to fetch when manifestProvider is not provided', async () => {
+			const validManifest: ComponentManifestMap = {
+				v: 1,
+				components: {
+					button: {
+						id: 'button',
+						name: 'Button',
+						description: 'A button component',
+					},
+				},
+			};
+
+			global.fetch = vi.fn().mockResolvedValue({
+				ok: true,
+				headers: {
+					get: vi.fn().mockReturnValue('application/json'),
+				},
+				json: vi.fn().mockResolvedValue(validManifest),
+			});
+
+			const result = await fetchManifest('https://example.com/manifest.json');
+
+			expect(result).toEqual(validManifest);
+			expect(global.fetch).toHaveBeenCalledExactlyOnceWith(
+				'https://example.com/manifest.json',
+			);
+		});
+
+		it('should handle errors from manifestProvider', async () => {
+			const manifestProvider = vi
+				.fn()
+				.mockRejectedValue(new Error('File not found'));
+
+			await expect(
+				fetchManifest('./fixtures/manifest.json', manifestProvider),
+			).rejects.toThrow(ManifestFetchError);
+			await expect(
+				fetchManifest('./fixtures/manifest.json', manifestProvider),
+			).rejects.toThrow('Failed to fetch manifest: File not found');
+		});
+
+		it('should handle invalid JSON from manifestProvider', async () => {
+			const manifestProvider = vi
+				.fn()
+				.mockResolvedValue('not valid json{');
+
+			await expect(
+				fetchManifest('./fixtures/manifest.json', manifestProvider),
+			).rejects.toThrow(ManifestFetchError);
+		});
+
+		it('should validate manifest from manifestProvider', async () => {
+			// Missing required 'v' field
+			const invalidManifest = {
+				components: {
+					button: {
+						id: 'button',
+						name: 'Button',
+					},
+				},
+			};
+
+			const manifestProvider = vi
+				.fn()
+				.mockResolvedValue(JSON.stringify(invalidManifest));
+
+			await expect(
+				fetchManifest('./fixtures/manifest.json', manifestProvider),
+			).rejects.toThrow(ManifestFetchError);
+		});
+
+		it('should throw when manifest from manifestProvider has no components', async () => {
+			const emptyManifest = {
+				v: 1,
+				components: {},
+			};
+
+			const manifestProvider = vi
+				.fn()
+				.mockResolvedValue(JSON.stringify(emptyManifest));
+
+			await expect(
+				fetchManifest('./fixtures/manifest.json', manifestProvider),
+			).rejects.toThrow('No components found in the manifest');
 		});
 	});
 });

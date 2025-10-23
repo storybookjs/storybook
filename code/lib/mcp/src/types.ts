@@ -9,6 +9,12 @@ export interface StorybookContext extends Record<string, unknown> {
 	 * The URL of the remote manifest to fetch component data from.
 	 */
 	source?: string;
+	/**
+	 * Optional function to provide custom manifest retrieval logic.
+	 * If provided, this function will be called instead of using fetch.
+	 * The function receives the source URL and should return the manifest as a string.
+	 */
+	manifestProvider?: (source: string) => Promise<string>;
 }
 
 const JSDocTag = v.object({

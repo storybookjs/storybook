@@ -33,6 +33,7 @@ const meta = preview.meta({
   ],
   beforeEach: async () => {
     mockStore.setState({
+      muted: false,
       completed: ['add-component'],
       skipped: ['add-5-10-components'],
     });

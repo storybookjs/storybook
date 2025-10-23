@@ -1,4 +1,4 @@
-import React, { createRef } from 'react';
+import React, { createRef, useMemo } from 'react';
 
 import {
   Card,
@@ -22,51 +22,82 @@ const ItemIcon = styled(StatusFailIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
 }));
 
+const title = (progress: number) => {
+  switch (true) {
+    case progress < 25:
+      return 'Getting started';
+    case progress < 50:
+      return 'Making progress';
+    case progress < 75:
+      return 'Getting close';
+    default:
+      return 'Almost there';
+  }
+};
+
 export const ChecklistModule = () => {
   const api = useStorybookApi();
-  const [{ completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
+  const [{ muted, completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
 
-  const allTasks = checklistData.sections.flatMap(({ items }) => items);
-  const nextTasks = allTasks
-    .filter(({ id }) => !completed.includes(id) && !skipped.includes(id))
-    .map((task) => ({ ...task, nodeRef: createRef<HTMLLIElement>() }));
+  const nextTasks = useMemo(() => {
+    if (muted === true) {
+      return [];
+    }
+    return checklistData.sections
+      .map(({ items }) =>
+        items.find(
+          ({ id, after }) =>
+            !completed.includes(id) &&
+            !skipped.includes(id) &&
+            !(Array.isArray(muted) && muted.includes(id)) &&
+            !after?.some((id) => !completed.includes(id))
+        )
+      )
+      .flatMap((item) => (item ? [{ ...item, nodeRef: createRef<HTMLLIElement>() }] : []));
+  }, [muted, completed, skipped]);
 
   if (nextTasks.length === 0) {
     return null;
   }
+
+  const totalCount = checklistData.sections.reduce((acc, { items }) => acc + items.length, 0);
+  const doneCount = checklistData.sections.reduce(
+    (acc, { items }) =>
+      acc + items.filter(({ id }) => completed.includes(id) || skipped.includes(id)).length,
+    0
+  );
+  const progress = Math.round((doneCount / totalCount) * 100);
 
   return (
     <Card outlineAnimation="rainbow">
       <Listbox>
         <ListboxItem>
           <ListboxText>
-            <strong>Project setup</strong>
+            <strong>{title(progress)}</strong>
           </ListboxText>
-          <ListboxButton onClick={() => api.navigateUrl('/settings/guided-tour', { plain: false })}>
-            {Math.round(((allTasks.length - nextTasks.length) / allTasks.length) * 100)}%
+          <ListboxButton onClick={() => api.navigateUrl('/settings/guide', { plain: false })}>
+            {progress}%
           </ListboxButton>
         </ListboxItem>
       </Listbox>
       <TransitionGroup component={Listbox}>
-        {nextTasks.slice(0, 3).map((task) => (
+        {nextTasks.map((task) => (
           <Transition key={task.id} nodeRef={task.nodeRef} timeout={300}>
             <ListboxItem ref={task.nodeRef}>
               <ListboxAction
-                onClick={() =>
-                  api.navigateUrl(`/settings/guided-tour#${task.id}`, { plain: false })
-                }
+                onClick={() => api.navigateUrl(`/settings/guide#${task.id}`, { plain: false })}
               >
                 <ItemIcon />
                 {task.label}
               </ListboxAction>
-              {task.start && (
+              {task.action && (
                 <ListboxButton
                   onClick={() => {
                     checklistStore.complete(task.id);
-                    task.start?.({ api });
+                    task.action?.onClick({ api });
                   }}
                 >
-                  Start
+                  {task.action.label}
                 </ListboxButton>
               )}
             </ListboxItem>

@@ -34,20 +34,20 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@tmcp/adapter-valibot": "^0.1.4",
-		"@tmcp/transport-http": "^0.7.0",
-		"tmcp": "^1.15.2",
-		"valibot": "^1.1.0"
+		"@tmcp/adapter-valibot": "catalog:",
+		"@tmcp/transport-http": "catalog:",
+		"tmcp": "catalog:",
+		"valibot": "catalog:"
 	},
 	"devDependencies": {
-		"@types/node": "^20",
-		"@vitest/coverage-v8": "3.2.4",
+		"@types/node": "catalog:",
+		"@vitest/coverage-v8": "catalog:",
 		"storybook": "^10.0.0-0",
 		"ts-dedent": "^2.2.0",
-		"tsdown": "^0.15.9",
-		"typescript": "^5.8.3",
+		"tsdown": "catalog:",
+		"typescript": "catalog:",
 		"vite": "^7.0.5",
-		"vitest": "^3.2.4"
+		"vitest": "catalog:"
 	},
 	"peerDependencies": {
 		"storybook": "*"

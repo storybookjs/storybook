@@ -32,8 +32,6 @@ export async function addGetUIBuildingInstructionsTool(
 		async (_input: GetUIBuildingInstructionsInput) => {
 			try {
 				const { options, disableTelemetry } = server.ctx.custom ?? {};
-				const sessionId = server.ctx.sessionId;
-
 				if (!options) {
 					throw new Error('Options are required in addon context');
 				}

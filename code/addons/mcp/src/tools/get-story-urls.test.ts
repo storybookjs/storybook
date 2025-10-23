@@ -182,20 +182,12 @@ describe('getStoryUrlsTool', () => {
 			custom: testContext,
 		});
 
-		expect(response).toMatchInlineSnapshot(`
-			{
-			  "id": 1,
-			  "jsonrpc": "2.0",
-			  "result": {
-			    "content": [
-			      {
-			        "text": "No story found for export name "NonExistent" with absolute file path "/Users/jeppe/dev/work/storybook/mcp/packages/addon-mcp/src/NonExistent.stories.tsx" (did you forget to pass the explicit story name?)",
-			        "type": "text",
-			      },
-			    ],
-			  },
-			}
-		`);
+		expect(response.result?.content[0].type).toBe('text');
+		expect(response.result?.content[0].text).toContain('No story found');
+		expect(response.result?.content[0].text).toContain('NonExistent');
+		expect(response.result?.content[0].text).toContain(
+			'did you forget to pass the explicit story name?',
+		);
 	});
 
 	it('should handle explicit story names', async () => {

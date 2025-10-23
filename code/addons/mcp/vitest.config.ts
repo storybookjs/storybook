@@ -1,5 +1,4 @@
 import { defineConfig } from 'vitest/config';
-import { readFileSync } from 'node:fs';
 
 export default defineConfig({
 	test: {
@@ -8,14 +7,13 @@ export default defineConfig({
 		},
 	},
 	plugins: [
-		// handle markdown files in Vitests
+		// handle markdown files in Vitest
 		{
 			name: 'md-loader',
 			transform(code, id) {
 				if (id.endsWith('.md')) {
-					const content = readFileSync(id, 'utf-8');
 					return {
-						code: `export default ${JSON.stringify(content)};`,
+						code: `export default ${JSON.stringify(code)};`,
 						map: null,
 					};
 				}

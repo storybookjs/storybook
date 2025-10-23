@@ -21,6 +21,9 @@ jobs:
   - unit-tests:
       requires:
         - build
+  - stories-tests:
+      requires:
+        - build
   - script-checks:
       requires:
         - build
@@ -28,14 +31,14 @@ jobs:
       requires:
         - build
   - create-sandboxes:
-      parallelism: 30
+      parallelism: 34
       requires:
         - build
   # - smoke-test-sandboxes: # disabled for now
   #     requires:
   #       - create-sandboxes
   - chromatic-sandboxes:
-      parallelism: 27
+      parallelism: 31
       requires:
         - create-sandboxes
   - e2e-production:
@@ -43,15 +46,15 @@ jobs:
       requires:
         - create-sandboxes
   - e2e-dev:
-      parallelism: 25
+      parallelism: 29
       requires:
         - create-sandboxes
   - test-runner-production:
-      parallelism: 25
+      parallelism: 29
       requires:
         - create-sandboxes
   - vitest-integration:
-      parallelism: 9
+      parallelism: 11
       requires:
         - create-sandboxes
   - test-portable-stories:

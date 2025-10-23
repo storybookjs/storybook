@@ -572,6 +572,26 @@ jobs:
                 template: $(yarn get-template --cadence << pipeline.parameters.workflow >> --task smoke-test)
             - store_test_results:
                 path: test-results
+    stories-tests:
+        executor:
+            class: xlarge
+            name: sb_playwright
+        parallelism: 2
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                clone_options: --depth 1 --verbose
+            - attach_workspace:
+                at: .
+            - run:
+                command: |
+                    cd code
+                    TEST_FILES=$(circleci tests glob "**/*.{stories}.{ts,tsx,js,jsx,cjs}" | sed "/^e2e-tests\//d" | sed "/^node_modules\//d")
+                    echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=../test-results/junit-${CIRCLE_NODE_INDEX}.xml" --verbose
+                name: Run tests
+            - store_test_results:
+                path: test-results
+            - report-workflow-on-failure
+            - cancel-workflow-on-failure
     test-init-empty:
         executor:
             class: small
@@ -961,6 +981,9 @@ workflows:
             - unit-tests:
                 requires:
                     - build
+            - stories-tests:
+                requires:
+                    - build
             - script-checks:
                 requires:
                     - build
@@ -968,11 +991,11 @@ workflows:
                 requires:
                     - build
             - create-sandboxes:
-                parallelism: 30
+                parallelism: 34
                 requires:
                     - build
             - chromatic-sandboxes:
-                parallelism: 27
+                parallelism: 31
                 requires:
                     - create-sandboxes
             - e2e-production:
@@ -980,15 +1003,15 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 25
+                parallelism: 29
                 requires:
                     - create-sandboxes
             - test-runner-production:
-                parallelism: 25
+                parallelism: 29
                 requires:
                     - create-sandboxes
             - vitest-integration:
-                parallelism: 9
+                parallelism: 11
                 requires:
                     - create-sandboxes
             - test-portable-stories:
@@ -1050,6 +1073,9 @@ workflows:
             - unit-tests:
                 requires:
                     - build
+            - stories-tests:
+                requires:
+                    - build
             - script-checks:
                 requires:
                     - build
@@ -1060,11 +1086,11 @@ workflows:
                 requires:
                     - unit-tests
             - create-sandboxes:
-                parallelism: 17
+                parallelism: 19
                 requires:
                     - build
             - chromatic-sandboxes:
-                parallelism: 14
+                parallelism: 16
                 requires:
                     - create-sandboxes
             - e2e-production:
@@ -1072,15 +1098,15 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 12
+                parallelism: 14
                 requires:
                     - create-sandboxes
             - test-runner-production:
-                parallelism: 12
+                parallelism: 14
                 requires:
                     - create-sandboxes
             - vitest-integration:
-                parallelism: 5
+                parallelism: 6
                 requires:
                     - create-sandboxes
             - test-portable-stories:
@@ -1121,6 +1147,9 @@ workflows:
                     - build
             - check
             - unit-tests:
+                requires:
+                    - build
+            - stories-tests:
                 requires:
                     - build
             - script-checks:

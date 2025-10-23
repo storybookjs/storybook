@@ -6820,7 +6820,6 @@ __metadata:
     "@types/escodegen": "npm:^0.0.6"
     "@types/estree": "npm:^1.0.6"
     "@types/node": "npm:^22.0.0"
-    "@types/semver": "npm:^7.3.4"
     acorn: "npm:^7.4.1"
     acorn-jsx: "npm:^5.3.1"
     acorn-walk: "npm:^7.2.0"
@@ -6832,7 +6831,6 @@ __metadata:
     prop-types: "npm:^15.7.2"
     react-element-to-jsx-string: "npm:@7rulnik/react-element-to-jsx-string@15.0.1"
     require-from-string: "npm:^2.0.2"
-    semver: "npm:^7.3.7"
     ts-dedent: "npm:^2.0.0"
     type-fest: "npm:~2.19"
   peerDependencies:

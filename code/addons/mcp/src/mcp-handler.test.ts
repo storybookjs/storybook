@@ -39,17 +39,17 @@ function createMockIncomingMessage(options: {
 }): IncomingMessage {
 	const { method = 'GET', url = '/mcp', headers = {}, body } = options;
 
-	const stream = new PassThrough();
+	const passThrough = new PassThrough();
 
 	// Write body if provided
 	if (body) {
 		const bodyString = typeof body === 'string' ? body : JSON.stringify(body);
-		stream.end(Buffer.from(bodyString));
+		passThrough.end(Buffer.from(bodyString));
 	} else {
-		stream.end();
+		passThrough.end();
 	}
 
-	return Object.assign(stream, {
+	return Object.assign(passThrough, {
 		method,
 		url,
 		headers: {

@@ -17,6 +17,40 @@ let origin: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
 let initialize: Promise<void> | undefined;
 
+const initializeMCPServer = async (options: Options) => {
+	const server = new McpServer(
+		{
+			name: pkgJson.name,
+			version: pkgJson.version,
+			description: pkgJson.description,
+		},
+		{
+			adapter: new ValibotJsonSchemaAdapter(),
+			capabilities: {
+				tools: { listChanged: true },
+			},
+		},
+	).withContext<AddonContext>();
+
+	server.on('initialize', () => {
+		if (!options.disableTelemetry) {
+			collectTelemetry({
+				event: 'session:initialized',
+				server,
+			});
+		}
+	});
+
+	// Register tools
+	await addGetStoryUrlsTool(server);
+	await addGetUIBuildingInstructionsTool(server);
+
+	transport = new HttpTransport(server, { path: null });
+
+	origin = `http://localhost:${options.port}`;
+	logger.debug('MCP server origin:', origin);
+};
+
 /**
  * Vite middleware handler that wraps the MCP handler.
  * This converts Node.js IncomingMessage/ServerResponse to Web API Request/Response.
@@ -34,40 +68,7 @@ export const mcpServerHandler = async (
 
 	// Initialize MCP server and transport on first request, with concurrency safety
 	if (!initialize) {
-		initialize = new Promise(async (resolve) => {
-			const server = new McpServer(
-				{
-					name: pkgJson.name,
-					version: pkgJson.version,
-					description: pkgJson.description,
-				},
-				{
-					adapter: new ValibotJsonSchemaAdapter(),
-					capabilities: {
-						tools: { listChanged: true },
-					},
-				},
-			).withContext<AddonContext>();
-
-			server.on('initialize', () => {
-				if (!disableTelemetry) {
-					collectTelemetry({
-						event: 'session:initialized',
-						server,
-					});
-				}
-			});
-
-			// Register tools
-			await addGetStoryUrlsTool(server);
-			await addGetUIBuildingInstructionsTool(server);
-
-			transport = new HttpTransport(server, { path: null });
-
-			origin = `http://localhost:${options.port}`;
-			logger.debug('MCP server origin:', origin);
-			resolve();
-		});
+		initialize = initializeMCPServer(options);
 	}
 	await initialize;
 

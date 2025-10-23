@@ -17,16 +17,13 @@ export interface StorybookContext extends Record<string, unknown> {
 	manifestProvider?: (source: string) => Promise<string>;
 }
 
-const JSDocTag = v.object({
-	key: v.string(),
-	value: v.union([v.string(), v.number(), v.boolean(), v.null()]),
-});
+const JSDocTag = v.record(v.string(), v.array(v.string()));
 
 const BaseManifest = v.object({
 	name: v.string(),
 	description: v.exactOptional(v.string()),
 	import: v.exactOptional(v.string()),
-	jsDocTags: v.exactOptional(v.array(JSDocTag)),
+	jsDocTags: v.exactOptional(JSDocTag),
 });
 
 const Example = v.object({

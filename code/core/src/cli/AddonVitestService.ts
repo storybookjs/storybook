@@ -59,8 +59,21 @@ export class AddonVitestService {
     const allDeps = packageManager.getAllDependencies();
     const dependencies: string[] = [];
 
+    // Get vitest version for proper version specifiers
+    const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
+
+    const isVitest4OrNewer = vitestVersionSpecifier
+      ? satisfies(vitestVersionSpecifier, '>=4.0.0')
+      : true;
+
+    // only install these dependencies if they are not already installed
+    const basePackages = [
+      'vitest',
+      'playwright',
+      isVitest4OrNewer ? '@vitest/browser-playwright' : '@vitest/browser',
+    ];
+
     // Only install these dependencies if they are not already installed
-    const basePackages = ['vitest', '@vitest/browser', 'playwright'];
     for (const pkg of basePackages) {
       if (!allDeps[pkg]) {
         dependencies.push(pkg);
@@ -74,9 +87,6 @@ export class AddonVitestService {
     if (!v8Version && !istanbulVersion) {
       dependencies.push('@vitest/coverage-v8');
     }
-
-    // Get vitest version for proper version specifiers
-    const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
 
     // Apply version specifiers to vitest-related packages
     const versionedDependencies = dependencies.map((pkg) => {

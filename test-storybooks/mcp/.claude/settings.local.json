@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__storybook-addon-mcp__get-ui-building-instructions",
+      "mcp__storybook-addon-mcp__get-story-urls"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "storybook-addon-mcp",
+    "storybook-mcp"
+  ]
+}

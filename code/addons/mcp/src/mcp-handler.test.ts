@@ -216,157 +216,115 @@ describe('mcp-handler conversion utilities', () => {
 			expect(mockNodeResponse.statusCode).toBe(500);
 		});
 	});
+});
+describe('mcpServerHandler', () => {
+	it('should initialize MCP server and handle requests', async () => {
+		const mockOptions = {
+			port: 6006,
+			presets: {
+				apply: vi.fn().mockResolvedValue({ disableTelemetry: false }),
+			},
+		};
 
-	describe('mcpServerHandler', () => {
-		it('should initialize MCP server and handle requests', async () => {
-			const mockOptions = {
-				port: 6006,
-				presets: {
-					apply: vi.fn().mockResolvedValue({ disableTelemetry: false }),
-				},
-			};
-
-			const stream = new PassThrough();
-			const initRequest = JSON.stringify({
-				jsonrpc: '2.0',
-				id: 1,
-				method: 'initialize',
-				params: {
-					protocolVersion: '2025-06-18',
-					capabilities: {},
-					clientInfo: { name: 'test-client', version: '1.0.0' },
-				},
-			});
-			stream.end(initRequest);
-
-			const mockReq = Object.assign(stream, {
-				method: 'POST',
-				url: '/mcp',
-				headers: {
-					host: 'localhost:6006',
-					'content-type': 'application/json',
-				},
-				socket: {},
-			}) as unknown as IncomingMessage;
-
-			const responseChunks: any[] = [];
-			const mockRes = {
-				statusCode: 0,
-				setHeader: vi.fn(),
-				write: vi.fn((chunk: any) => {
-					responseChunks.push(chunk);
-				}),
-				end: vi.fn(),
-			} as unknown as ServerResponse;
-
-			const mockNext = vi.fn() as Connect.NextFunction;
-
-			await mcpServerHandler(mockReq, mockRes, mockNext, mockOptions as any);
-
-			expect(mockRes.setHeader).toHaveBeenCalled();
-			expect(mockRes.end).toHaveBeenCalled();
+		const stream = new PassThrough();
+		const initRequest = JSON.stringify({
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'initialize',
+			params: {
+				protocolVersion: '2025-06-18',
+				capabilities: {},
+				clientInfo: { name: 'test-client', version: '1.0.0' },
+			},
 		});
+		stream.end(initRequest);
 
-		it('should reuse transport on subsequent requests', async () => {
-			const { logger } = await import('storybook/internal/node-logger');
-			const debugCallsBefore = vi.mocked(logger.debug).mock.calls.length;
+		const mockReq = Object.assign(stream, {
+			method: 'POST',
+			url: '/mcp',
+			headers: {
+				host: 'localhost:6006',
+				'content-type': 'application/json',
+			},
+			socket: {},
+		}) as unknown as IncomingMessage;
+		const responseChunks: any[] = [];
+		const mockRes = {
+			statusCode: 0,
+			setHeader: vi.fn(),
+			write: vi.fn((chunk: any) => {
+				responseChunks.push(chunk);
+			}),
+			end: vi.fn(),
+		} as unknown as ServerResponse;
 
-			const mockOptions = {
-				port: 6006,
-				presets: {
-					apply: vi.fn().mockResolvedValue({ disableTelemetry: true }),
-				},
-			};
+		const mockNext = vi.fn() as Connect.NextFunction;
 
-			const stream = new PassThrough();
-			const listToolsRequest = JSON.stringify({
-				jsonrpc: '2.0',
-				id: 2,
-				method: 'tools/list',
-				params: {},
-			});
-			stream.end(listToolsRequest);
+		await mcpServerHandler(mockReq, mockRes, mockNext, mockOptions as any);
 
-			const mockReq = Object.assign(stream, {
-				method: 'POST',
-				url: '/mcp',
-				headers: {
-					host: 'localhost:6006',
-					'content-type': 'application/json',
-				},
-				socket: {},
-			}) as unknown as IncomingMessage;
+		expect(mockRes.setHeader).toHaveBeenCalled();
+		expect(mockRes.end).toHaveBeenCalled();
+		const responseText = Buffer.concat(responseChunks).toString();
+		expect(responseText).toMatchInlineSnapshot(`
+			"data: {"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","adapter":{},"capabilities":{"tools":{"listChanged":true}},"serverInfo":{"name":"@storybook/addon-mcp","version":"0.0.6","description":"Help agents automatically write and test stories for your UI components"}}}
 
-			const mockRes = {
-				statusCode: 0,
-				setHeader: vi.fn(),
-				write: vi.fn(),
-				end: vi.fn(),
-			} as unknown as ServerResponse;
+			"
+		`);
+	});
 
-			const mockNext = vi.fn() as Connect.NextFunction;
+	it('should respect disableTelemetry setting', async () => {
+		const { collectTelemetry } = await import('./telemetry.ts');
+		vi.mocked(collectTelemetry).mockClear();
 
-			await mcpServerHandler(mockReq, mockRes, mockNext, mockOptions as any);
+		const mockOptions = {
+			port: 6007,
+			presets: {
+				apply: vi.fn().mockResolvedValue({ disableTelemetry: true }),
+			},
+		};
 
-			// Transport should be reused (no new debug log about origin)
-			const debugCallsAfter = vi.mocked(logger.debug).mock.calls.length;
-			expect(debugCallsAfter).toBe(debugCallsBefore);
+		const stream = new PassThrough();
+		const initRequest = JSON.stringify({
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'initialize',
+			params: {
+				protocolVersion: '2025-06-18',
+				capabilities: {},
+				clientInfo: { name: 'test-client', version: '1.0.0' },
+			},
 		});
+		stream.end(initRequest);
 
-		it('should respect disableTelemetry setting', async () => {
-			const { collectTelemetry } = await import('./telemetry.ts');
-			vi.mocked(collectTelemetry).mockClear();
+		const mockReq = Object.assign(stream, {
+			method: 'POST',
+			url: '/mcp',
+			headers: {
+				host: 'localhost:6007',
+				'content-type': 'application/json',
+			},
+			socket: {},
+		}) as unknown as IncomingMessage;
 
-			const mockOptions = {
-				port: 6007,
-				presets: {
-					apply: vi.fn().mockResolvedValue({ disableTelemetry: true }),
-				},
-			};
+		const mockRes = {
+			statusCode: 0,
+			setHeader: vi.fn(),
+			write: vi.fn(),
+			end: vi.fn(),
+		} as unknown as ServerResponse;
 
-			const stream = new PassThrough();
-			const initRequest = JSON.stringify({
-				jsonrpc: '2.0',
-				id: 1,
-				method: 'initialize',
-				params: {
-					protocolVersion: '2025-06-18',
-					capabilities: {},
-					clientInfo: { name: 'test-client', version: '1.0.0' },
-				},
-			});
-			stream.end(initRequest);
+		const mockNext = vi.fn() as Connect.NextFunction;
 
-			const mockReq = Object.assign(stream, {
-				method: 'POST',
-				url: '/mcp',
-				headers: {
-					host: 'localhost:6007',
-					'content-type': 'application/json',
-				},
-				socket: {},
-			}) as unknown as IncomingMessage;
+		// Reset the module state by clearing transport
+		// This is a bit hacky but necessary for testing initialization
+		const handler = await import('./mcp-handler.ts');
+		(handler as any).transport = undefined;
+		(handler as any).origin = undefined;
 
-			const mockRes = {
-				statusCode: 0,
-				setHeader: vi.fn(),
-				write: vi.fn(),
-				end: vi.fn(),
-			} as unknown as ServerResponse;
+		await mcpServerHandler(mockReq, mockRes, mockNext, mockOptions as any);
 
-			const mockNext = vi.fn() as Connect.NextFunction;
-
-			// Reset the module state by clearing transport
-			// This is a bit hacky but necessary for testing initialization
-			const handler = await import('./mcp-handler.ts');
-			(handler as any).transport = undefined;
-			(handler as any).origin = undefined;
-
-			await mcpServerHandler(mockReq, mockRes, mockNext, mockOptions as any);
-
-			// collectTelemetry should not be called when disabled
-			// Note: it might be called from tool registration, so we just verify the handler works
-			expect(mockRes.end).toHaveBeenCalled();
-		});
+		// collectTelemetry should not be called when disabled
+		// Note: it might be called from tool registration, so we just verify the handler works
+		expect(mockRes.end).toHaveBeenCalled();
 	});
 });

@@ -107,14 +107,14 @@ export const csfFactories: CommandFix = {
       previewConfigPath: previewConfigPath!,
     });
 
-    logger.log('\n🛠️  Applying codemod on your main config...');
+    logger.step('Applying codemod on your main config...');
     const frameworkPackage =
       getFrameworkPackageName(mainConfig) || '@storybook/your-framework-here';
     await runCodemod(mainConfigPath, (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'main', frameworkPackage }, { dryRun })
     );
 
-    logger.log('\n🛠️  Applying codemod on your preview config...');
+    logger.step('Applying codemod on your preview config...');
     await runCodemod(previewConfigPath, (fileInfo) =>
       configToCsfFactory(fileInfo, { configType: 'preview', frameworkPackage }, { dryRun })
     );

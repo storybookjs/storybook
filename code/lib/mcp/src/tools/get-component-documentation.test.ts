@@ -7,11 +7,11 @@ import {
 } from './get-component-documentation.ts';
 import type { StorybookContext } from '../types.ts';
 import smallManifestFixture from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
-import * as fetchManifest from '../utils/fetch-manifest.ts';
+import * as getManifest from '../utils/get-manifest.ts';
 
 describe('getComponentDocumentationTool', () => {
 	let server: McpServer<any, StorybookContext>;
-	let fetchManifestSpy: any;
+	let getManifestSpy: any;
 
 	beforeEach(async () => {
 		const adapter = new ValibotJsonSchemaAdapter();
@@ -45,9 +45,9 @@ describe('getComponentDocumentationTool', () => {
 		);
 		await addGetComponentDocumentationTool(server);
 
-		// Mock fetchManifest to return the fixture
-		fetchManifestSpy = vi.spyOn(fetchManifest, 'fetchManifest');
-		fetchManifestSpy.mockResolvedValue(smallManifestFixture);
+		// Mock getManifest to return the fixture
+		getManifestSpy = vi.spyOn(getManifest, 'getManifest');
+		getManifestSpy.mockResolvedValue(smallManifestFixture);
 	});
 
 	it('should return formatted documentation for a single component', async () => {
@@ -266,8 +266,8 @@ describe('getComponentDocumentationTool', () => {
 	});
 
 	it('should handle fetch errors gracefully', async () => {
-		fetchManifestSpy.mockRejectedValue(
-			new fetchManifest.ManifestFetchError(
+		getManifestSpy.mockRejectedValue(
+			new getManifest.ManifestGetError(
 				'Failed to fetch manifest: 404 Not Found',
 				'https://example.com/manifest.json',
 			),
@@ -291,7 +291,7 @@ describe('getComponentDocumentationTool', () => {
 			{
 			  "content": [
 			    {
-			      "text": "Error fetching manifest: Failed to fetch manifest: 404 Not Found",
+			      "text": "Error getting manifest: Failed to fetch manifest: 404 Not Found",
 			      "type": "text",
 			    },
 			  ],

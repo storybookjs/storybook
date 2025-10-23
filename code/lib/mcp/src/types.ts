@@ -2,13 +2,19 @@ import * as v from 'valibot';
 
 /**
  * Custom context passed to MCP server and tools.
- * Contains the source URL for fetching component manifests.
+ * Contains the source URL for getting component manifests.
  */
 export interface StorybookContext extends Record<string, unknown> {
 	/**
-	 * The URL of the remote manifest to fetch component data from.
+	 * The URL of the remote manifest to get component data from.
 	 */
 	source?: string;
+	/**
+	 * Optional function to provide custom manifest retrieval logic.
+	 * If provided, this function will be called instead of using fetch.
+	 * The function receives the source URL and should return the manifest as a string.
+	 */
+	manifestProvider?: (source: string) => Promise<string>;
 }
 
 const JSDocTag = v.record(v.string(), v.array(v.string()));

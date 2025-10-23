@@ -21,16 +21,8 @@ export type { StorybookContext } from './types.ts';
 
 type Handler = (req: Request, context?: StorybookContext) => Promise<Response>;
 
-type StorybookMcpHandlerOptions = {
-	/**
-	 * The default source URL for fetching component manifests.
-	 * Can be overridden per-request via context parameter.
-	 */
-	source?: string;
-};
-
 export const createStorybookMcpHandler = async (
-	options: StorybookMcpHandlerOptions = {},
+	options: StorybookContext = {},
 ): Promise<Handler> => {
 	const adapter = new ValibotJsonSchemaAdapter();
 	const server = new McpServer(
@@ -56,7 +48,9 @@ export const createStorybookMcpHandler = async (
 
 	return (async (req, context) => {
 		const source = context?.source ?? options.source;
+		const manifestProvider =
+			context?.manifestProvider ?? options.manifestProvider;
 
-		return await transport.respond(req, { source });
+		return await transport.respond(req, { source, manifestProvider });
 	}) as Handler;
 };

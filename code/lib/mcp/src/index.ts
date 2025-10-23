@@ -6,6 +6,19 @@ import { addListAllComponentsTool } from './tools/list-all-components.ts';
 import { addGetComponentDocumentationTool } from './tools/get-component-documentation.ts';
 import type { StorybookContext } from './types.ts';
 
+// Export tools for reuse by addon-mcp
+export {
+	addListAllComponentsTool,
+	LIST_TOOL_NAME,
+} from './tools/list-all-components.ts';
+export {
+	addGetComponentDocumentationTool,
+	GET_TOOL_NAME,
+} from './tools/get-component-documentation.ts';
+
+// Export types for reuse
+export type { StorybookContext } from './types.ts';
+
 type Handler = (req: Request, context?: StorybookContext) => Promise<Response>;
 
 type StorybookMcpHandlerOptions = {

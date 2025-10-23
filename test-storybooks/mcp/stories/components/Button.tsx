@@ -26,6 +26,9 @@ interface ButtonProps {
 
 /**
  * Primary UI component for user interaction
+ *
+ * @import import { Button } from '@my-org/my-component-library';
+ * @summary A customizable button component for user interactions.
  */
 export const Button = ({
 	primary = false,

@@ -257,9 +257,7 @@ describe('fetchManifest', () => {
 		});
 
 		it('should handle invalid JSON from manifestProvider', async () => {
-			const manifestProvider = vi
-				.fn()
-				.mockResolvedValue('not valid json{');
+			const manifestProvider = vi.fn().mockResolvedValue('not valid json{');
 
 			await expect(
 				fetchManifest('./fixtures/manifest.json', manifestProvider),

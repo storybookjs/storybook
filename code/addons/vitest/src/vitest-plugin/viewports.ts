@@ -4,6 +4,8 @@ import { UnsupportedViewportDimensionError } from 'storybook/internal/preview-er
 import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 import type { ViewportMap } from 'storybook/viewport';
 
+import { getVitestBrowserContext } from './vitest-context';
+
 declare global {
   // eslint-disable-next-line no-var
   var __vitest_browser__: boolean;
@@ -66,7 +68,7 @@ export const setViewport = async (parameters: Parameters = {}, globals: Globals 
     defaultViewport = viewportsParam.defaultViewport;
   }
 
-  const { page } = await import('@vitest/browser/context').catch(() => ({
+  const { page } = await getVitestBrowserContext().catch(() => ({
     page: null,
   }));
 

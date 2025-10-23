@@ -40,13 +40,15 @@ export const viteInjectMockerRuntime = (options: {
     config() {
       return {
         optimizeDeps: {
-          include: ['@vitest/mocker', '@vitest/mocker/browser'],
+          include: ['@vitest/mocker', '@vitest/mocker/browser', '@vitest/mocker/node'],
+          exclude: ['fsevents'],
         },
         resolve: {
           // Aliasing necessary for package managers like pnpm, since resolving modules from a virtual module
           // leads to errors, if the imported module is not a dependency of the project.
           // By resolving the module to the real path, we can avoid this issue.
           alias: {
+            '@vitest/mocker/node': fileURLToPath(import.meta.resolve('@vitest/mocker/node')),
             '@vitest/mocker/browser': fileURLToPath(import.meta.resolve('@vitest/mocker/browser')),
             '@vitest/mocker': fileURLToPath(import.meta.resolve('@vitest/mocker')),
           },

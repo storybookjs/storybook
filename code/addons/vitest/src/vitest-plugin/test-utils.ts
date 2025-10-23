@@ -3,18 +3,10 @@ import { type RunnerTask, type TaskMeta, type TestContext } from 'vitest';
 import { type Meta, type Story, getStoryChildren, isStory } from 'storybook/internal/csf';
 import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/internal/types';
 
-import { server } from '@vitest/browser/context';
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
 
 import { setViewport } from './viewports';
-
-declare module '@vitest/browser/context' {
-  interface BrowserCommands {
-    getInitialGlobals: () => Promise<Record<string, any>>;
-  }
-}
-
-const { getInitialGlobals } = server.commands;
+import { getVitestBrowserContext } from './vitest-context';
 
 /**
  * Converts a file URL to a file path, handling URL encoding
@@ -48,6 +40,10 @@ export const testStory = (
         : undefined;
 
     const storyAnnotations = test ? test.input : annotations.story;
+
+    const { server } = await getVitestBrowserContext();
+
+    const { getInitialGlobals } = server.commands;
 
     const composedStory = composeStory(
       storyAnnotations,

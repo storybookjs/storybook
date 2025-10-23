@@ -3,6 +3,9 @@ import { type JsPackageManager } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 
+// eslint-disable-next-line depend/ban-dependencies
+import execa from 'execa';
+
 import {
   executeAddonConfiguration,
   executeDependencyInstallation,
@@ -177,12 +180,9 @@ async function runStorybookDev(result: {
     // instead of calling 'dev' automatically, we spawn a subprocess so that it gets
     // executed directly in the user's project directory. This avoid potential issues
     // with packages running in npxs' node_modules
-    packageManager.runPackageCommandSync(
-      storybookCommand.replace(/^yarn /, ''),
-      flags,
-      undefined,
-      'inherit'
-    );
+    execa.command(`${storybookCommand} ${flags.join(' ')}`, {
+      stdio: 'inherit',
+    });
   } catch {
     // Do nothing here, as the command above will spawn a `storybook dev` process which does the error handling already
   }

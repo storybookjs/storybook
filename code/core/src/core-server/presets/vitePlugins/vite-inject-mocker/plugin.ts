@@ -40,8 +40,16 @@ export const viteInjectMockerRuntime = (options: {
     config() {
       return {
         optimizeDeps: {
-          include: ['@vitest/mocker', '@vitest/mocker/browser', '@vitest/mocker/node'],
-          exclude: ['fsevents'],
+          include: [
+            //
+            '@vitest/mocker',
+            '@vitest/mocker/browser',
+            '@vitest/mocker/node',
+          ],
+          exclude: [
+            //
+            'fsevents',
+          ],
         },
         resolve: {
           // Aliasing necessary for package managers like pnpm, since resolving modules from a virtual module

@@ -17,7 +17,7 @@ export const getVitestBrowserContext = async (): Promise<VitestServerContext> =>
   );
 
   if (semver.major(vitestVersion) >= 4) {
-    return import('@vitest/browser') as unknown as Promise<VitestServerContext>;
+    return import('vitest/browser') as unknown as Promise<VitestServerContext>;
   }
 
   return import('@vitest/browser/context') as Promise<VitestServerContext>;

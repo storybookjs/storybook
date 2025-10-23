@@ -87,16 +87,16 @@ export default defineGeneratorModule({
       staticDir = 'public';
     }
 
-    // You can now access context.builder and context.framework for builder-specific config
-    const extraConfig: Record<string, unknown> = {};
+    const extraPackages: string[] = [];
 
     if (context.builder === SupportedBuilder.VITE) {
+      extraPackages.push('vite');
       // Add any Vite-specific configuration here
     }
 
     return {
       staticDir,
-      ...extraConfig,
+      extraPackages,
     };
   },
 });

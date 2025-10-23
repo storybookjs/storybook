@@ -228,6 +228,7 @@ export const sandbox = async ({
         await initiate({
           dev: isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX),
           ...options,
+          ...(selectedConfig.initOptions || {}),
           features: ['docs', 'test'],
         });
         process.chdir(before);

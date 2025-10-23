@@ -42,7 +42,7 @@ export const ChecklistModule = () => {
           <ListboxText>
             <strong>Project setup</strong>
           </ListboxText>
-          <ListboxButton onClick={() => api.navigateUrl('/settings/guided-tour', { plain: false })}>
+          <ListboxButton onClick={() => api.navigateUrl('/settings/guide', { plain: false })}>
             {Math.round(((allTasks.length - nextTasks.length) / allTasks.length) * 100)}%
           </ListboxButton>
         </ListboxItem>
@@ -52,9 +52,7 @@ export const ChecklistModule = () => {
           <Transition key={task.id} nodeRef={task.nodeRef} timeout={300}>
             <ListboxItem ref={task.nodeRef}>
               <ListboxAction
-                onClick={() =>
-                  api.navigateUrl(`/settings/guided-tour#${task.id}`, { plain: false })
-                }
+                onClick={() => api.navigateUrl(`/settings/guide#${task.id}`, { plain: false })}
               >
                 <ItemIcon />
                 {task.label}

@@ -32,11 +32,11 @@ const Intro = styled.div(({ theme }) => ({
   },
 }));
 
-export const GuidedTourPage = () => {
+export const GuidePage = () => {
   return (
     <Container>
       <Intro>
-        <h1>Guided tour</h1>
+        <h1>Guide</h1>
         <p>
           Learn the basics. Set up Storybook. You know the drill. This isn't your first time setting
           up software so get to it!

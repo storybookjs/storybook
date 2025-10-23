@@ -19,11 +19,6 @@ export interface AddonContext extends Record<string, unknown> {
 	origin: string;
 
 	/**
-	 * Optional client name for telemetry tracking.
-	 */
-	client?: string;
-
-	/**
 	 * Whether telemetry collection is disabled.
 	 */
 	disableTelemetry: boolean;

@@ -9,7 +9,7 @@ import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 import { StoryInputArray } from '../types.ts';
 
-export const GET_STORY_URLS_TOOL_NAME = 'get_story_urls';
+export const GET_STORY_URLS_TOOL_NAME = 'get-story-urls';
 
 const GetStoryUrlsInput = v.object({
 	stories: StoryInputArray,
@@ -29,8 +29,7 @@ export async function addGetStoryUrlsTool(
 		},
 		async (input: GetStoryUrlsInput) => {
 			try {
-				const { origin, client, disableTelemetry } = server.ctx.custom ?? {};
-				const sessionId = server.ctx.sessionId;
+				const { origin, disableTelemetry } = server.ctx.custom ?? {};
 
 				if (!origin) {
 					throw new Error('Origin is required in addon context');
@@ -82,8 +81,7 @@ export async function addGetStoryUrlsTool(
 				if (!disableTelemetry) {
 					await collectTelemetry({
 						event: 'tool:getStoryUrls',
-						sessionId,
-						client: client ?? 'unknown',
+						server,
 						inputStoryCount: input.stories.length,
 						outputStoryCount: foundStoryCount,
 					});

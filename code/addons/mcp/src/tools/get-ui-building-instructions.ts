@@ -8,7 +8,7 @@ import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 
 export const GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME =
-	'get_ui_building_instructions';
+	'get-ui-building-instructions';
 
 const GetUIBuildingInstructionsInput = v.object({});
 
@@ -31,7 +31,7 @@ export async function addGetUIBuildingInstructionsTool(
 		},
 		async (_input: GetUIBuildingInstructionsInput) => {
 			try {
-				const { options, client, disableTelemetry } = server.ctx.custom ?? {};
+				const { options, disableTelemetry } = server.ctx.custom ?? {};
 				const sessionId = server.ctx.sessionId;
 
 				if (!options) {
@@ -41,8 +41,7 @@ export async function addGetUIBuildingInstructionsTool(
 				if (!disableTelemetry) {
 					await collectTelemetry({
 						event: 'tool:getUIBuildingInstructions',
-						sessionId,
-						client: client ?? 'unknown',
+						server,
 					});
 				}
 

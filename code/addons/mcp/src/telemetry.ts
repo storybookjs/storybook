@@ -1,22 +1,23 @@
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
+import type { McpServer } from 'tmcp';
+import type { AddonContext } from './types';
 
 export async function collectTelemetry({
 	event,
-	sessionId,
-	client,
+	server,
 	...payload
 }: {
 	event: string;
-	sessionId?: string;
-	client?: string;
+	server: McpServer<any, AddonContext>;
 	[key: string]: any;
 }) {
 	try {
 		return await telemetry('addon-mcp' as any, {
 			event,
-			sessionId,
-			client,
+			mcpSessionId: server.ctx.sessionId,
+			clientInfo: server.currentClientInfo(),
+			clientCapabilities: server.currentClientCapabilities(),
 			...payload,
 		});
 	} catch (error) {

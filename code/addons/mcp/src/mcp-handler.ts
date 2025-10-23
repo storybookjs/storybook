@@ -46,19 +46,14 @@ export const mcpServerHandler = async (
 			},
 		).withContext<AddonContext>();
 
-		if (!disableTelemetry) {
-			server.on('initialize', (data) => {
-				const sessionId = server.ctx.sessionId;
-				const client = server.ctx.custom?.client;
-
+		server.on('initialize', () => {
+			if (!disableTelemetry) {
 				collectTelemetry({
 					event: 'session:initialized',
-					sessionId,
-					client: client ?? 'unknown',
-					clientCapabilities: data.capabilities,
+					server,
 				});
-			});
-		}
+			}
+		});
 
 		// Register tools
 		await addGetStoryUrlsTool(server);
@@ -77,7 +72,6 @@ export const mcpServerHandler = async (
 	const addonContext: AddonContext = {
 		options,
 		origin,
-		client,
 		disableTelemetry,
 	};
 
@@ -93,7 +87,7 @@ export const mcpServerHandler = async (
  * Converts a Node.js IncomingMessage to a Web Request.
  * Also extracts client info from the request body if it's an initialize request.
  */
-async function incomingMessageToWebRequest(
+export async function incomingMessageToWebRequest(
 	req: IncomingMessage,
 ): Promise<{ webRequest: Request; client?: string }> {
 	const url = `http://localhost${req.url}`;
@@ -118,7 +112,7 @@ async function incomingMessageToWebRequest(
 /**
  * Converts a Web Response to a Node.js ServerResponse.
  */
-async function webResponseToServerResponse(
+export async function webResponseToServerResponse(
 	webResponse: Response,
 	nodeResponse: ServerResponse,
 ): Promise<void> {

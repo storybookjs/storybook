@@ -70,6 +70,7 @@ export interface BaseIndexEntry {
   title: ComponentTitle;
   tags?: Tag[];
   importPath: Path;
+  componentPath?: Path;
 }
 export type StoryIndexEntry = BaseIndexEntry & {
   type: 'story';

@@ -34,6 +34,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
+		"@storybook/mcp": "workspace:*",
 		"@tmcp/adapter-valibot": "catalog:",
 		"@tmcp/transport-http": "catalog:",
 		"tmcp": "catalog:",

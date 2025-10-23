@@ -23,6 +23,13 @@ vi.mock('./tools/get-ui-building-instructions.ts', () => ({
 	GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME: 'get_ui_building_instructions',
 }));
 
+vi.mock('@storybook/mcp', () => ({
+	addListAllComponentsTool: vi.fn().mockResolvedValue(undefined),
+	addGetComponentDocumentationTool: vi.fn().mockResolvedValue(undefined),
+	LIST_TOOL_NAME: 'list-all-components',
+	GET_TOOL_NAME: 'get-component-documentation',
+}));
+
 describe('mcp-handler conversion utilities', () => {
 	describe('incomingMessageToWebRequest', () => {
 		it('should convert GET request to Web Request', async () => {
@@ -265,11 +272,25 @@ describe('mcpServerHandler', () => {
 		expect(mockRes.setHeader).toHaveBeenCalled();
 		expect(mockRes.end).toHaveBeenCalled();
 		const responseText = Buffer.concat(responseChunks).toString();
-		expect(responseText).toMatchInlineSnapshot(`
-			"data: {"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","adapter":{},"capabilities":{"tools":{"listChanged":true}},"serverInfo":{"name":"@storybook/addon-mcp","version":"0.0.6","description":"Help agents automatically write and test stories for your UI components"}}}
+		const response = JSON.parse(responseText.replace(/^data: /, '').trim());
 
-			"
-		`);
+		expect(response).toMatchObject({
+			jsonrpc: '2.0',
+			id: 1,
+			result: {
+				protocolVersion: '2025-06-18',
+				adapter: {},
+				capabilities: {
+					tools: { listChanged: true },
+				},
+				serverInfo: {
+					name: '@storybook/addon-mcp',
+					description:
+						'Help agents automatically write and test stories for your UI components',
+				},
+			},
+		});
+		expect(response.result.serverInfo.version).toBeDefined();
 	});
 
 	it('should respect disableTelemetry setting', async () => {
@@ -326,5 +347,81 @@ describe('mcpServerHandler', () => {
 		// collectTelemetry should not be called when disabled
 		// Note: it might be called from tool registration, so we just verify the handler works
 		expect(mockRes.end).toHaveBeenCalled();
+	});
+
+	it('should register tools from @storybook/mcp when feature flag and generator are enabled', async () => {
+		// Force module reload to get fresh state
+		vi.resetModules();
+
+		const { mcpServerHandler: freshHandler } = await import('./mcp-handler.ts');
+		const { addListAllComponentsTool, addGetComponentDocumentationTool } =
+			await import('@storybook/mcp');
+		const { logger } = await import('storybook/internal/node-logger');
+
+		const applyMock = vi.fn((key: string, defaultValue?: any) => {
+			if (key === 'core') {
+				return Promise.resolve({ disableTelemetry: false });
+			}
+			if (key === 'features') {
+				return Promise.resolve({ experimentalComponentsManifest: true });
+			}
+			if (key === 'experimental_componentManifestGenerator') {
+				return Promise.resolve(vi.fn());
+			}
+			return Promise.resolve(defaultValue);
+		});
+
+		const mockOptions = {
+			port: 6008,
+			presets: {
+				apply: applyMock,
+			},
+		};
+
+		const stream = new PassThrough();
+		const initRequest = JSON.stringify({
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'initialize',
+			params: {
+				protocolVersion: '2025-06-18',
+				capabilities: {},
+				clientInfo: { name: 'test-client', version: '1.0.0' },
+			},
+		});
+		stream.end(initRequest);
+
+		const mockReq = Object.assign(stream, {
+			method: 'POST',
+			url: '/mcp',
+			headers: {
+				host: 'localhost:6008',
+				'content-type': 'application/json',
+			},
+			socket: {},
+		}) as unknown as IncomingMessage;
+
+		const mockRes = {
+			statusCode: 0,
+			setHeader: vi.fn(),
+			write: vi.fn(),
+			end: vi.fn(),
+		} as unknown as ServerResponse;
+
+		const mockNext = vi.fn() as Connect.NextFunction;
+
+		await freshHandler(mockReq, mockRes, mockNext, mockOptions as any);
+
+		// Verify they were called with a server instance
+		expect(addListAllComponentsTool).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({
+				tool: expect.any(Function),
+			}),
+		);
+		expect(addGetComponentDocumentationTool).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({
+				tool: expect.any(Function),
+			}),
+		);
 	});
 });

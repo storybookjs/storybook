@@ -5,6 +5,10 @@ import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import { addGetStoryUrlsTool } from './tools/get-story-urls.ts';
 import { addGetUIBuildingInstructionsTool } from './tools/get-ui-building-instructions.ts';
+import {
+	addListAllComponentsTool,
+	addGetComponentDocumentationTool,
+} from '@storybook/mcp';
 import type { Options, CoreConfig } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
@@ -41,9 +45,23 @@ const initializeMCPServer = async (options: Options) => {
 		}
 	});
 
-	// Register tools
+	// Register core addon tools
 	await addGetStoryUrlsTool(server);
 	await addGetUIBuildingInstructionsTool(server);
+
+	// Only register the additional tools if the component manifest feature is enabled
+	const [features, componentManifestGenerator] = await Promise.all([
+		options.presets.apply('features') as any,
+		options.presets.apply('experimental_componentManifestGenerator'),
+	]);
+
+	if (features.experimentalComponentsManifest && componentManifestGenerator) {
+		logger.info(
+			'Experimental components manifest feature detected - registering component tools',
+		);
+		await addListAllComponentsTool(server);
+		await addGetComponentDocumentationTool(server);
+	}
 
 	transport = new HttpTransport(server, { path: null });
 
@@ -80,6 +98,8 @@ export const mcpServerHandler = async (
 		options,
 		origin: origin!,
 		disableTelemetry,
+		// Source URL for component manifest tools - points to the manifest endpoint
+		source: `${origin}/manifests/components.json`,
 	};
 
 	const response = await transport!.respond(webRequest, addonContext);

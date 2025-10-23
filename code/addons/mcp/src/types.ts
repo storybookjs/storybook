@@ -1,11 +1,13 @@
 import * as v from 'valibot';
 import type { Options } from 'storybook/internal/types';
+import type { StorybookContext } from '@storybook/mcp';
 
 /**
  * Custom context passed to MCP server and tools.
  * Contains Storybook-specific configuration and runtime information.
+ * Extends StorybookContext to be compatible with @storybook/mcp tools.
  */
-export interface AddonContext extends Record<string, unknown> {
+export interface AddonContext extends StorybookContext {
 	/**
 	 * The Storybook options object containing configuration,
 	 * port, presets, and other runtime information.

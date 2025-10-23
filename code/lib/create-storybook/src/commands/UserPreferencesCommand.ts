@@ -6,17 +6,25 @@ import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/ty
 
 import picocolors from 'picocolors';
 
+import type { DependencyCollector } from '../dependency-collector';
 import type { GeneratorFeature } from '../generators/types';
 import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
 import { TelemetryService } from '../services/TelemetryService';
-import { VersionService } from '../services/VersionService';
 
 export type InstallType = 'recommended' | 'light';
 
 export interface UserPreferencesResult {
+  /** Whether the user is a new user */
   newUser: boolean;
+  /** The type of installation to perform (recommended vs minimal) */
   installType: InstallType;
+  /**
+   * The features that the user has selected explicitly or implicitly and which can actually be
+   * installed based on the project type or other constraints.
+   */
   selectedFeatures: Set<GeneratorFeature>;
+  /** The addons which should be installed based on the selected features */
+  addons: string[];
 }
 
 export interface UserPreferencesOptions {
@@ -39,14 +47,14 @@ export interface UserPreferencesOptions {
  * - Track telemetry events
  */
 export class UserPreferencesCommand {
-  private versionService: VersionService;
   private telemetryService: TelemetryService;
-  private featureService: FeatureCompatibilityService;
 
-  constructor(disableTelemetry: boolean = false) {
-    this.versionService = new VersionService();
+  constructor(
+    private dependencyCollector: DependencyCollector,
+    private featureService = new FeatureCompatibilityService(),
+    disableTelemetry: boolean = false
+  ) {
     this.telemetryService = new TelemetryService(disableTelemetry);
-    this.featureService = new FeatureCompatibilityService();
   }
 
   /** Execute user preferences gathering */
@@ -74,7 +82,13 @@ export class UserPreferencesCommand {
 
     const selectedFeatures = this.determineFeatures(installType, newUser, isTestFeatureAvailable);
 
-    return { newUser, installType, selectedFeatures };
+    const addons = selectedFeatures.has('test')
+      ? ['@storybook/addon-a11y', '@storybook/addon-vitest']
+      : ['@storybook/addon-a11y'];
+
+    this.dependencyCollector.addDevDependencies(addons);
+
+    return { newUser, installType, selectedFeatures, addons };
   }
 
   /** Prompt user about onboarding */
@@ -192,7 +206,11 @@ export class UserPreferencesCommand {
 
 export const executeUserPreferences = (
   packageManager: JsPackageManager,
-  options: UserPreferencesOptions
+  options: UserPreferencesOptions & { dependencyCollector: DependencyCollector }
 ) => {
-  return new UserPreferencesCommand(options.disableTelemetry).execute(packageManager, options);
+  return new UserPreferencesCommand(
+    options.dependencyCollector,
+    undefined,
+    options.disableTelemetry
+  ).execute(packageManager, options);
 };

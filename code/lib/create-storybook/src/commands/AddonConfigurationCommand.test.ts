@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
 
-import { DependencyCollector } from '../dependency-collector';
 import { AddonConfigurationCommand } from './AddonConfigurationCommand';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
@@ -17,15 +16,13 @@ describe('AddonConfigurationCommand', () => {
   let mockPackageManager: JsPackageManager;
   let mockTask: any;
   let mockPostinstallAddon: any;
-  let dependencyCollector: DependencyCollector;
 
   beforeEach(async () => {
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
     mockPostinstallAddon = vi.mocked(postinstallAddon);
     mockPostinstallAddon.mockResolvedValue(undefined);
 
-    dependencyCollector = new DependencyCollector();
-    command = new AddonConfigurationCommand(dependencyCollector);
+    command = new AddonConfigurationCommand();
 
     mockPackageManager = {
       type: 'npm',
@@ -48,13 +45,13 @@ describe('AddonConfigurationCommand', () => {
   });
 
   describe('execute', () => {
-    it('should skip configuration when test feature is not enabled', async () => {
-      const selectedFeatures = new Set(['docs'] as const);
+    it('should skip configuration when no addons are provided', async () => {
+      const addons: string[] = [];
       const options = {} as any;
 
       const result = await command.execute({
         packageManager: mockPackageManager,
-        selectedFeatures,
+        addons,
         configDir: '.storybook',
         options,
       });
@@ -65,12 +62,12 @@ describe('AddonConfigurationCommand', () => {
     });
 
     it('should configure test addons when test feature is enabled', async () => {
-      const selectedFeatures = new Set(['test'] as const);
+      const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = { yes: true } as any;
 
       const result = await command.execute({
         packageManager: mockPackageManager,
-        selectedFeatures,
+        addons,
         configDir: '.storybook',
         options,
       });
@@ -82,25 +79,8 @@ describe('AddonConfigurationCommand', () => {
       });
     });
 
-    it('should get versioned addon packages', async () => {
-      const selectedFeatures = new Set(['test'] as const);
-      const options = {} as any;
-
-      await command.execute({
-        packageManager: mockPackageManager,
-        selectedFeatures,
-        configDir: '.storybook',
-        options,
-      });
-
-      expect(mockPackageManager.getVersionedPackages).toHaveBeenCalledWith([
-        '@storybook/addon-a11y',
-        '@storybook/addon-vitest',
-      ]);
-    });
-
     it('should handle configuration errors gracefully', async () => {
-      const selectedFeatures = new Set(['test'] as const);
+      const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = {} as any;
       const error = new Error('Configuration failed');
 
@@ -108,7 +88,7 @@ describe('AddonConfigurationCommand', () => {
 
       const result = await command.execute({
         packageManager: mockPackageManager,
-        selectedFeatures,
+        addons,
         configDir: '.storybook',
         options,
       });
@@ -120,7 +100,7 @@ describe('AddonConfigurationCommand', () => {
     });
 
     it('should complete successfully with valid configuration', async () => {
-      const selectedFeatures = new Set(['test'] as const);
+      const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = { yes: true } as any;
 
       // Mock successful execution
@@ -131,35 +111,13 @@ describe('AddonConfigurationCommand', () => {
 
       const result = await command.execute({
         packageManager: mockPackageManager,
-        selectedFeatures,
+        addons,
         configDir: '.storybook',
         options,
       });
 
       expect(result.status).toBe('success');
       expect(mockPackageManager.getVersionedPackages).toHaveBeenCalled();
-    });
-
-    it('should work with different package managers', async () => {
-      const yarnPackageManager = {
-        type: 'yarn',
-        getVersionedPackages: vi
-          .fn()
-          .mockResolvedValue(['@storybook/addon-a11y@8.0.0', '@storybook/addon-vitest@8.0.0']),
-      } as any;
-
-      const selectedFeatures = new Set(['test'] as const);
-      const options = { yes: false } as any;
-
-      const result = await command.execute({
-        packageManager: yarnPackageManager,
-        selectedFeatures,
-        configDir: '.storybook',
-        options,
-      });
-
-      expect(result.status).toBe('success');
-      expect(yarnPackageManager.getVersionedPackages).toHaveBeenCalled();
     });
   });
 });

@@ -44,6 +44,8 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Register all framework generators
   registerAllGenerators();
 
+  let dependencyCollector: DependencyCollector | null = new DependencyCollector();
+
   // Step 1: Run preflight checks
   const { packageManager } = await executePreflightCheck(options);
 
@@ -58,15 +60,15 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
-  const { newUser, selectedFeatures } = await executeUserPreferences(packageManager, {
+  const { newUser, selectedFeatures, addons } = await executeUserPreferences(packageManager, {
     yes: options.yes,
     disableTelemetry: options.disableTelemetry,
     framework,
     builder,
+    dependencyCollector,
   });
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
-  const dependencyCollector = new DependencyCollector();
 
   const { configDir, storybookCommand, shouldRunDev } = await executeGeneratorExecution(
     projectType,
@@ -85,11 +87,13 @@ export async function doInitiate(options: CommandOptions): Promise<
     selectedFeatures,
   });
 
+  // After dependencies are installed, we must not use the dependency collector anymore
+  dependencyCollector = null;
+
   // Step 7: Configure addons (run postinstall scripts for configuration only)
   await executeAddonConfiguration({
     packageManager,
-    dependencyCollector,
-    selectedFeatures,
+    addons,
     configDir,
     options,
   });

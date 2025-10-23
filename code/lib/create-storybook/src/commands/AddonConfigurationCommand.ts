@@ -2,12 +2,11 @@ import { type JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
-import type { DependencyCollector } from '../dependency-collector';
-import type { CommandOptions, GeneratorFeature } from '../generators/types';
+import type { CommandOptions } from '../generators/types';
 
 type ExecuteAddonConfigurationParams = {
   packageManager: JsPackageManager;
-  selectedFeatures: Set<GeneratorFeature>;
+  addons: string[];
   options: CommandOptions;
   configDir?: string;
 };
@@ -26,13 +25,13 @@ export type ExecuteAddonConfigurationResult = {
  * - Handle configuration errors gracefully
  */
 export class AddonConfigurationCommand {
-  constructor(private dependencyCollector: DependencyCollector) {}
+  constructor() {}
 
   /** Execute addon configuration */
   async execute({
     packageManager,
     options,
-    selectedFeatures,
+    addons,
     configDir,
   }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
     if (!configDir) {
@@ -43,7 +42,7 @@ export class AddonConfigurationCommand {
       const { hasFailures } = await this.configureAddons(
         packageManager,
         configDir,
-        selectedFeatures,
+        addons,
         options
       );
       return { status: hasFailures ? 'failed' : 'success' };
@@ -56,20 +55,11 @@ export class AddonConfigurationCommand {
   private async configureAddons(
     packageManager: JsPackageManager,
     configDir: string,
-    selectedFeatures: Set<GeneratorFeature>,
+    addons: string[],
     options: CommandOptions
   ): Promise<{ hasFailures: boolean }> {
     // Import postinstallAddon from cli-storybook package
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
-
-    const addonsToConfig = selectedFeatures.has('test')
-      ? ['@storybook/addon-a11y', '@storybook/addon-vitest']
-      : ['@storybook/addon-a11y'];
-
-    // Get versioned addon packages
-    const addons = await packageManager.getVersionedPackages(addonsToConfig);
-
-    this.dependencyCollector.addDevDependencies(addons);
 
     // Note: Dependencies are added by the dependency collector, not here
 
@@ -82,7 +72,7 @@ export class AddonConfigurationCommand {
     const addonResults = new Map<string, null | any>();
 
     // Configure each addon
-    for (const addon of addonsToConfig) {
+    for (const addon of addons) {
       // const taskGroup = task.group(`Configuring ${addon}...`);
 
       try {
@@ -117,7 +107,7 @@ export class AddonConfigurationCommand {
     // Log results for each addon
     logger.log(
       CLI_COLORS.dimmed(
-        addonsToConfig
+        addons
           .map((addon) => {
             const error = addonResults.get(addon);
             return error ? `❌ ${addon}` : `✅ ${addon}`;
@@ -130,9 +120,6 @@ export class AddonConfigurationCommand {
   }
 }
 
-export const executeAddonConfiguration = ({
-  dependencyCollector,
-  ...params
-}: ExecuteAddonConfigurationParams & { dependencyCollector: DependencyCollector }) => {
-  return new AddonConfigurationCommand(dependencyCollector).execute(params);
+export const executeAddonConfiguration = (params: ExecuteAddonConfigurationParams) => {
+  return new AddonConfigurationCommand().execute(params);
 };

@@ -4,7 +4,7 @@ This Storybook addon runs an MCP (Model Context Protocol) server to help develop
 
 It enables a workflow where for each UI component created, the agent will automatically generate and link to example stories. These stories let you visually verify the new UI in each of its key states, and provide documentation and component tests.
 
-The server currently exposes two tools: one to provide UI development instructions to the agent, and the other to retrieve story URLs directly from your running Storybook.
+The addon provides tools to improve agents' UI development capabilities, retrieve story URLs, and access component documentation.
 
 > [!IMPORTANT]
 > This addon currently only supports Vite-based Storybook setups, such as [`@storybook/react-vite`](https://storybook.js.org/docs/get-started/frameworks/react-vite), [`@storybook/nextjs-vite`](https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite), and [`@storybook/sveltekit`](https://storybook.js.org/docs/get-started/frameworks/sveltekit).
@@ -36,7 +36,7 @@ The MCP server will be available at `<your_storybook_dev_server_origin>/mcp` whe
 ### Configuring Your Agent
 
 > [!NOTE]
-> This addon is primarily tested with Claude Code. While it should work with other MCP clients, Claude Code is our main target for compatibility and testing.
+> This addon is primarily tested with Claude Code and GitHub Copilot. While it should work with other MCP clients, Claude Code is our main target for compatibility and testing.
 
 #### Claude Code Setup
 
@@ -64,6 +64,8 @@ Before doing any UI, frontend or React development, ALWAYS call the storybook MC
 
 #### Other MCP Clients
 
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=storybook-mcp&config=eyJ1cmwiOiJodHRwOi8vbG9jYWxob3N0OjYwMDYvbWNwIn0%3D)
+
 This addon should work with any MCP-compatible client that supports the `tool` capability and the `streamable-http` transport. Here are setup guides for other popular clients:
 
 - [GitHub Copilot](https://docs.github.com/en/copilot/how-tos/provide-context/use-mcp/extend-copilot-chat-with-mcp)
@@ -82,11 +84,15 @@ For clients not listed above, consult their documentation for MCP server configu
 
 ## Usage
 
-This addon provides two main MCP tools that your agent can use. The goal is that the agent uses these tools automatically when doing UI development, but agents are unreliable and unpredictable, so sometimes you might need to explicitly tell it to use the tools.
+This addon provides MCP tools that your agent can use. The goal is that the agent uses these tools automatically when doing UI development, but agents are unreliable and unpredictable, so sometimes you might need to explicitly tell it to use the tools.
 
 **If you are prompting from an IDE like VSCode or Cursor, be sure to use `Agent` mode and `sonnet-4.5` or better.**
 
-### 1. UI Building Instructions (`get_ui_building_instructions`)
+### Core Tools
+
+These tools are always available when the addon is installed:
+
+#### 1. UI Building Instructions (`get_ui_building_instructions`)
 
 Provides agents with standardized instructions for UI component development within your project. This tool returns guidelines for:
 
@@ -96,7 +102,7 @@ Provides agents with standardized instructions for UI component development with
 
 The instructions ensure agents follow your project's conventions when creating or modifying UI components and their corresponding stories.
 
-### 2. Get Story URLs (`get_story_urls`)
+#### 2. Get Story URLs (`get_story_urls`)
 
 Allows agents to retrieve direct URLs to specific stories in your Storybook. The agent can request URLs for multiple stories by providing:
 
@@ -113,6 +119,41 @@ Agent calls tool, gets response:
 http://localhost:6006/?path=/story/example-button--primary
 ```
 
+### Component Documentation Tools (Experimental)
+
+These additional tools are available when the **experimental** component manifest feature is enabled. They provide agents with detailed documentation about your UI components.
+
+**Requirements:**
+
+- Storybook v10.1 or later (prereleases), currently available as [canary version `0.0.0-pr-32810-sha-af0645cd`](https://www.npmjs.com/package/storybook/v/0.0.0-pr-32810-sha-af0645cd)
+- React-based framework (`react-vite`, `nextjs-vite`)
+- Feature flag `features.experimentalComponentsManifest` set to `true` in `.storybook/main.js`
+
+**To enable:**
+
+```javascript
+// .storybook/main.js
+export default {
+	// ... other config
+	features: {
+		experimentalComponentsManifest: true,
+	},
+};
+```
+
+#### 3. List All Components (`list-all-components`)
+
+Returns a list of all available UI components in your component library. Useful for the LLM as discovery and understanding what components are available to use.
+
+#### 4. Get Component Documentation (`get-component-documentation`)
+
+Retrieves detailed documentation for specific components, including:
+
+- Component documentation
+- Usage examples
+
+The agent provides component IDs to retrieve their documentation.
+
 ## Contributing
 
 We welcome contributions to improve Storybook's agent integration, within or outside of this addon! Here's how you can help:
@@ -121,42 +162,6 @@ We welcome contributions to improve Storybook's agent integration, within or out
 
 2. **Report Issues**: If you find bugs, please open an issue on our [GitHub repository](https://github.com/storybookjs/mcp), but keep in mind that this is currently highly experimental, explorative and probably filled with bugs.
 
-3. **Development Setup**:
+3. **Development**:
 
-   This repository uses a monorepo structure with [pnpm workspaces](https://pnpm.io/workspaces) and [Turborepo](https://turborepo.com) for task orchestration.
-
-   ```bash
-   # Clone the repository
-   git clone https://github.com/storybookjs/mcp.git
-   cd addon-mcp
-
-   # Install dependencies (installs for all packages in the workspace)
-   pnpm install
-
-   # Build all packages
-   pnpm build
-
-   # Start development (runs the addon-mcp package)
-   pnpm start
-   ```
-
-   The main addon package is located in `packages/addon-mcp`.
-
-4. **Testing**: Run the MCP inspector to test the server functionality (requires that the Storybook dev server is running):
-
-```bash
-pnpm run inspect
-```
-
-Run the unit test suite:
-
-```bash
-# Run tests in watch mode
-pnpm test
-
-# Run tests once
-pnpm test run
-
-# Run tests with coverage
-pnpm test run --coverage
-```
+See [the monorepo readme](https://github.com/storybookjs/mcp#-quick-start).

@@ -29,9 +29,12 @@ export interface ChecklistData {
       id: string;
       label: string;
       after?: string[];
-      start?: (args: { api: API }) => void;
-      predicate?: (args: { api: API; complete: () => void }) => void;
       content?: React.ReactNode;
+      action?: {
+        label: string;
+        onClick: (args: { api: API }) => void;
+      };
+      predicate?: (args: { api: API; complete: () => void }) => void;
     }[];
   }[];
 }
@@ -381,22 +384,22 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
                                       </Button>
                                     </WithTooltip>
                                   )}
-                                  {!isCompleted && !isSkipped && !isLocked && item.start && (
+                                  {!isCompleted && !isSkipped && !isLocked && item.action && (
                                     <Button
                                       variant="solid"
                                       size="small"
                                       onClick={() => {
                                         checklistStore.complete(item.id);
-                                        item.start?.({ api });
+                                        item.action?.onClick({ api });
                                       }}
                                     >
-                                      Start
+                                      {item.action.label}
                                     </Button>
                                   )}
                                   {!isCompleted &&
                                     !isSkipped &&
                                     !isLocked &&
-                                    !item.start &&
+                                    !item.action &&
                                     !item.predicate && (
                                       <Button
                                         variant="outline"

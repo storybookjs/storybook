@@ -13,7 +13,10 @@ export const checklistData: ChecklistData = {
         {
           id: 'whats-new-sb-9',
           label: "See what's new",
-          start: ({ api }) => api.navigate('/settings/whats-new'),
+          action: {
+            label: 'Start',
+            onClick: ({ api }) => api.navigate('/settings/whats-new'),
+          },
         },
         {
           id: 'add-component',

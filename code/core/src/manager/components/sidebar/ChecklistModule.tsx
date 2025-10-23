@@ -84,14 +84,14 @@ export const ChecklistModule = () => {
                 <ItemIcon />
                 {task.label}
               </ListboxAction>
-              {task.start && (
+              {task.action && (
                 <ListboxButton
                   onClick={() => {
                     checklistStore.complete(task.id);
-                    task.start?.({ api });
+                    task.action?.onClick({ api });
                   }}
                 >
-                  Start
+                  {task.action.label}
                 </ListboxButton>
               )}
             </ListboxItem>

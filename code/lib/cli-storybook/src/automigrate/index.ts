@@ -133,7 +133,7 @@ export const automigrate = async ({
   // if an on-command migration is triggered, run it and bail
   const commandFix = commandFixes.find((f) => f.id === fixId);
   if (commandFix) {
-    logger.log(`🔎 Running migration ${picocolors.magenta(fixId)}..`);
+    logger.step(`Running migration ${picocolors.magenta(fixId)}..`);
 
     await commandFix.run({
       mainConfigPath,

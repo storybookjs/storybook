@@ -52,14 +52,6 @@ export async function addGetUIBuildingInstructionsTool(
 						: frameworkPreset?.name;
 				const renderer = frameworkToRendererMap[framework!];
 
-				if (!framework || !renderer) {
-					logger.debug('Unable to determine framework or renderer', {
-						frameworkPreset,
-						framework,
-						renderer,
-					});
-				}
-
 				const uiInstructions = uiInstructionsTemplate
 					.replace('{{FRAMEWORK}}', framework)
 					.replace('{{RENDERER}}', renderer ?? framework)

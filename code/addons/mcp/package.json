@@ -29,6 +29,7 @@
 		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
 		"build": "tsup",
 		"dev": "pnpm run build -- --watch",
+		"test": "vitest",
 		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp",
 		"typecheck": "tsc --noEmit"
 	},
@@ -40,11 +41,13 @@
 	},
 	"devDependencies": {
 		"@types/node": "^20",
+		"@vitest/coverage-v8": "3.2.4",
 		"storybook": "^10.0.0-0",
 		"ts-dedent": "^2.2.0",
 		"tsup": "^8.5.0",
 		"typescript": "^5.8.3",
-		"vite": "^7.0.5"
+		"vite": "^7.0.5",
+		"vitest": "^3.2.4"
 	},
 	"peerDependencies": {
 		"storybook": "*"

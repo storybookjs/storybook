@@ -17,7 +17,7 @@
 // Import commands.js using ES2015 syntax:
 import "./commands";
 
-import { mount } from "cypress/react18";
+import { mount } from "cypress/react";
 
 import { setProjectAnnotations } from "@storybook/react-vite";
 import sbAnnotations from "../../.storybook/preview";

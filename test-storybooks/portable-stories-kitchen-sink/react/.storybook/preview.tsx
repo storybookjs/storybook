@@ -1,8 +1,5 @@
 import type { Preview } from '@storybook/react-vite';
-import { sb } from 'storybook/test'
 import { getDecoratorString } from './get-decorator-string';
-
-sb.mock('./get-decorator-string.ts', { spy: true });
 
 console.log('preview file is called!');
 

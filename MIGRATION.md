@@ -511,6 +511,32 @@ export default {
 };
 ```
 
+If you are resolving a file path, you may need to convert it into a URL.
+
+For example:
+
+```ts
+// main.ts
+export default {
+  managerEntries(entry = []) {
+    return [...entry, require.resolve("./iframe.js")];
+  },
+};
+```
+
+Would become:
+
+```ts
+// main.ts
+import { fileURLToPath } from "node:url";
+
+export default {
+  managerEntries(entry = []) {
+    return [...entry, fileURLToPath(import.meta.resolve("./iframe.js"))];
+  },
+};
+```
+
 #### The `.storybook/main.*` file and other presets must be valid ESM
 
 Storybook will load the `.storybook/main.*` file and any custom preset files as ESM files.

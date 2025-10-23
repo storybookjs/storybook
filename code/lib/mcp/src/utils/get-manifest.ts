@@ -75,34 +75,13 @@ export async function getManifest(
 			);
 		}
 
-		let data: unknown;
-
 		// Use custom manifestProvider if provided, otherwise fallback to fetch
-		if (manifestProvider) {
-			const manifestString = await manifestProvider(url);
-			data = JSON.parse(manifestString);
-		} else {
-			const response = await fetch(url);
+		const manifestString = await (
+			manifestProvider ?? defaultFetchManifestProvider
+		)(url);
+		const manifestData: unknown = JSON.parse(manifestString);
 
-			if (!response.ok) {
-				throw new ManifestGetError(
-					`Failed to get manifest: ${response.status} ${response.statusText}`,
-					url,
-				);
-			}
-
-			const contentType = response.headers.get('content-type');
-			if (!contentType?.includes('application/json')) {
-				throw new ManifestGetError(
-					`Invalid content type: expected application/json, got ${contentType}`,
-					url,
-				);
-			}
-
-			data = await response.json();
-		}
-
-		const manifest = v.parse(ComponentManifestMap, data);
+		const manifest = v.parse(ComponentManifestMap, manifestData);
 
 		if (Object.keys(manifest.components).length === 0) {
 			throw new ManifestGetError(`No components found in the manifest`, url);
@@ -121,4 +100,24 @@ export async function getManifest(
 			error instanceof Error ? error : undefined,
 		);
 	}
+}
+
+async function defaultFetchManifestProvider(source: string): Promise<string> {
+	const response = await fetch(source);
+
+	if (!response.ok) {
+		throw new ManifestGetError(
+			`Failed to fetch manifest: ${response.status} ${response.statusText}`,
+			source,
+		);
+	}
+
+	const contentType = response.headers.get('content-type');
+	if (!contentType?.includes('application/json')) {
+		throw new ManifestGetError(
+			`Invalid content type: expected application/json, got ${contentType}`,
+			source,
+		);
+	}
+	return response.text();
 }

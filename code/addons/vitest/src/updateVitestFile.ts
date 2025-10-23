@@ -249,6 +249,24 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
                 workspaceOrProjectsProp &&
                 workspaceOrProjectsProp.value.type === 'ArrayExpression'
               ) {
+                // Extract coverage config before creating the test project
+                const coverageProp = existingTestProp.value.properties.find(
+                  (p) =>
+                    p.type === 'ObjectProperty' &&
+                    p.key.type === 'Identifier' &&
+                    p.key.name === 'coverage'
+                ) as t.ObjectProperty | undefined;
+
+                // Create a new test config without the coverage property
+                const testPropsWithoutCoverage = existingTestProp.value.properties.filter(
+                  (p) => p !== coverageProp
+                );
+
+                const testConfigForProject: t.ObjectExpression = {
+                  type: 'ObjectExpression',
+                  properties: testPropsWithoutCoverage,
+                };
+
                 // Create the existing test project
                 const existingTestProject: t.ObjectExpression = {
                   type: 'ObjectExpression',
@@ -263,7 +281,7 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
                     {
                       type: 'ObjectProperty',
                       key: { type: 'Identifier', name: 'test' },
-                      value: existingTestProp.value,
+                      value: testConfigForProject,
                       computed: false,
                       shorthand: false,
                     },
@@ -277,6 +295,12 @@ export const updateConfigFile = (source: BabelFile['ast'], target: BabelFile['as
                 defineConfigProps.properties = defineConfigProps.properties.filter(
                   (p) => p !== existingTestProp
                 );
+
+                // If there was a coverage config, add it to the template's test config (at the top level of the test object)
+                // Insert it at the beginning so it appears before workspace/projects
+                if (coverageProp && templateTestProp.value.type === 'ObjectExpression') {
+                  templateTestProp.value.properties.unshift(coverageProp);
+                }
 
                 // Merge the template properties (which now include our existing test project in the array)
                 mergeProperties(properties, defineConfigProps.properties);

@@ -26,10 +26,24 @@ export const ChecklistModule = () => {
   const api = useStorybookApi();
   const [{ completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
 
-  const allTasks = checklistData.sections.flatMap(({ items }) => items);
-  const nextTasks = allTasks
-    .filter(({ id }) => !completed.includes(id) && !skipped.includes(id))
-    .map((task) => ({ ...task, nodeRef: createRef<HTMLLIElement>() }));
+  const totalCount = checklistData.sections.reduce((acc, { items }) => acc + items.length, 0);
+  const doneCount = checklistData.sections.reduce(
+    (acc, { items }) =>
+      acc + items.filter(({ id }) => completed.includes(id) || skipped.includes(id)).length,
+    0
+  );
+  const progress = Math.round((doneCount / totalCount) * 100);
+
+  const nextTasks = checklistData.sections
+    .map(({ items }) =>
+      items.find(
+        ({ id, after }) =>
+          !completed.includes(id) &&
+          !skipped.includes(id) &&
+          !after?.some((id) => !completed.includes(id))
+      )
+    )
+    .flatMap((item) => (item ? [{ ...item, nodeRef: createRef<HTMLLIElement>() }] : []));
 
   if (nextTasks.length === 0) {
     return null;
@@ -43,12 +57,12 @@ export const ChecklistModule = () => {
             <strong>Project setup</strong>
           </ListboxText>
           <ListboxButton onClick={() => api.navigateUrl('/settings/guide', { plain: false })}>
-            {Math.round(((allTasks.length - nextTasks.length) / allTasks.length) * 100)}%
+            {progress}%
           </ListboxButton>
         </ListboxItem>
       </Listbox>
       <TransitionGroup component={Listbox}>
-        {nextTasks.slice(0, 3).map((task) => (
+        {nextTasks.map((task) => (
           <Transition key={task.id} nodeRef={task.nodeRef} timeout={300}>
             <ListboxItem ref={task.nodeRef}>
               <ListboxAction

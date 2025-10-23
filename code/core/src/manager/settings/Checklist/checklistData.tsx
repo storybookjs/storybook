@@ -18,16 +18,21 @@ export const checklistData: ChecklistData = {
         {
           id: 'add-component',
           label: 'Add component',
+          content: <>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</>,
           predicate: ({ complete }) => complete(),
         },
         {
           id: 'add-5-10-components',
+          after: ['add-component'],
           label: 'Add 5-10 total components',
+          content: <>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</>,
           predicate: ({ complete }) => complete(),
         },
         {
           id: 'check-improve-coverage',
+          after: ['add-component'],
           label: 'Check + improve coverage',
+          content: <>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</>,
           predicate: ({ complete }) => setTimeout(complete, 3000),
         },
       ],
@@ -38,6 +43,7 @@ export const checklistData: ChecklistData = {
       items: [
         {
           id: 'run-tests',
+          after: ['add-component'],
           label: 'Run tests',
           predicate: ({ complete }) => complete(),
           content: (
@@ -60,6 +66,7 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'write-interactions',
+          after: ['add-component'],
           label: 'Write interactions',
           content: (
             <>
@@ -80,6 +87,7 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'accessibility-tests',
+          after: ['add-component'],
           label: 'Accessibility tests',
           predicate: ({ complete }) => complete(),
           content: (
@@ -102,6 +110,7 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'visual-tests',
+          after: ['add-component'],
           label: 'Visual tests',
           predicate: ({ complete }) => complete(),
           content: (
@@ -125,6 +134,7 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'viewports',
+          after: ['add-component'],
           label: 'Viewports',
           content: (
             <>
@@ -153,18 +163,22 @@ export const checklistData: ChecklistData = {
       items: [
         {
           id: 'controls',
+          after: ['add-component'],
           label: 'Controls',
         },
         {
           id: 'autodocs',
+          after: ['add-component'],
           label: 'Autodocs',
         },
         {
           id: 'comments',
+          after: ['add-component'],
           label: 'Comments',
         },
         {
           id: 'share-story',
+          after: ['add-component'],
           label: 'Share story',
         },
       ],

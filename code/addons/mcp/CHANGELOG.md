@@ -1,5 +1,19 @@
 # @storybook/addon-mcp
 
+## 0.0.8
+
+### Patch Changes
+
+- [#33](https://github.com/storybookjs/mcp/pull/33) [`ae6ab44`](https://github.com/storybookjs/mcp/commit/ae6ab44e4c4bdf9797facab69c6748bc7a52ba9a) Thanks [@JReinhold](https://github.com/JReinhold)! - Add tools to get documentation for components, based on the component manifest being generated in the Storybook dev server.
+
+  Requirements:
+  1. That the **experimental** feature flag `features.experimentalComponentsManifest` is set to `true` in the main config.
+  2. Only React-based frameworks supports component manifest generation for now.
+  3. Requires Storybook v10.1 (prereleases), which at the time of writing is available as a canary version `0.0.0-pr-32810-sha-af0645cd`.
+
+- Updated dependencies [[`531a2d4`](https://github.com/storybookjs/mcp/commit/531a2d4be0684c94d516b76d93863337883b2bad), [`ae6ab44`](https://github.com/storybookjs/mcp/commit/ae6ab44e4c4bdf9797facab69c6748bc7a52ba9a)]:
+  - @storybook/mcp@0.0.3
+
 ## 0.0.7
 
 ### Patch Changes

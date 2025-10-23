@@ -9,6 +9,7 @@ import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 import nextJsLoadConfigModule from 'next/dist/server/config.js';
+import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
@@ -23,6 +24,12 @@ export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfi
 
 export const getNextjsVersion = (): string =>
   JSON.parse(readFileSync(join(resolvePackageDir('next'), 'package.json'), 'utf8')).version;
+
+export const isNextVersionGte = (version: string): boolean => {
+  const currentVersion = getNextjsVersion();
+  const coercedVersion = semver.coerce(currentVersion);
+  return coercedVersion ? semver.gte(coercedVersion, version) : false;
+};
 
 export const resolveNextConfig = async ({
   nextConfigPath,

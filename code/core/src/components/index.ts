@@ -37,7 +37,7 @@ export type {
   SupportedLanguage,
 } from './components/syntaxhighlighter/syntaxhighlighter-types';
 export { SyntaxHighlighter } from './components/syntaxhighlighter/lazy-syntaxhighlighter';
-export { createCopyToClipboardFunction } from './components/syntaxhighlighter/syntaxhighlighter';
+export { createCopyToClipboardFunction } from './components/syntaxhighlighter/clipboard';
 
 // UI
 export { ActionBar } from './components/ActionBar/ActionBar';

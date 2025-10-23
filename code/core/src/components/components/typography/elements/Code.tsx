@@ -3,7 +3,7 @@ import React, { Children } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { SyntaxHighlighter } from '../../syntaxhighlighter/syntaxhighlighter';
+import { SyntaxHighlighter } from '../../syntaxhighlighter/lazy-syntaxhighlighter';
 import type { SupportedLanguage } from '../../syntaxhighlighter/syntaxhighlighter-types';
 import { codeCommon } from '../lib/common';
 import { isReactChildString } from '../lib/isReactChildString';

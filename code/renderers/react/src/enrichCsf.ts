@@ -4,7 +4,6 @@ import { type CsfFile } from 'storybook/internal/csf-tools';
 import type { PresetPropertyFn } from 'storybook/internal/types';
 
 import { join } from 'pathe';
-import invariant from 'tiny-invariant';
 
 import { getCodeSnippet } from './componentManifest/generateCodeSnippet';
 
@@ -14,84 +13,103 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
     return;
   }
   return async (csf: CsfFile, csfSource: CsfFile) => {
-    await Promise.all(
-      Object.entries(csf._storyPaths).map(async ([key, storyExport]) => {
-        if (csfSource._meta?.component) {
-          const { format } = await getPrettier();
+    const promises = Object.entries(csf._storyPaths).map(async ([key, storyExport]) => {
+      if (!csfSource._meta?.component) {
+        return;
+      }
+      const { format } = await getPrettier();
 
-          const code = recast.print(
-            getCodeSnippet(storyExport, csfSource._metaNode, csfSource._meta?.component)
-          ).code;
+      let snippet;
+      try {
+        const code = recast.print(
+          getCodeSnippet(storyExport, csfSource._metaNode, csfSource._meta?.component)
+        ).code;
 
-          // TODO read the user config
-          const snippet = await format(code, { filepath: join(process.cwd(), 'component.tsx') });
+        // TODO read the user config
+        snippet = await format(code, { filepath: join(process.cwd(), 'component.tsx') });
+      } catch (e) {
+        // don't bother the user if we can't generate a snippet
+        return;
+      }
 
-          const declaration = storyExport.get('declaration') as NodePath<t.Declaration>;
-          invariant(declaration.isVariableDeclaration(), 'Expected variable declaration');
+      const declaration = storyExport.get('declaration');
+      if (!declaration.isVariableDeclaration()) {
+        return;
+      }
 
-          const declarator = declaration.get('declarations')[0] as NodePath<t.VariableDeclarator>;
-          const init = declarator.get('init') as NodePath<t.Expression>;
-          invariant(init.isExpression(), 'Expected story initializer to be an expression');
+      const declarator = declaration.get('declarations')[0];
+      const init = declarator.get('init') as NodePath<t.Expression>;
 
-          const parameters = [];
-          const isCsfFactory =
-            t.isCallExpression(init.node) &&
-            t.isMemberExpression(init.node.callee) &&
-            t.isIdentifier(init.node.callee.object) &&
-            init.node.callee.object.name === 'meta';
+      if (!init.isExpression()) {
+        return;
+      }
 
-          // in csf 1/2/3 use Story.parameters; CSF factories use Story.input.parameters
-          const baseStoryObject = isCsfFactory
-            ? t.memberExpression(t.identifier(key), t.identifier('input'))
-            : t.identifier(key);
+      const isCsfFactory =
+        t.isCallExpression(init.node) &&
+        t.isMemberExpression(init.node.callee) &&
+        t.isIdentifier(init.node.callee.object) &&
+        init.node.callee.object.name === 'meta';
 
-          const originalParameters = t.memberExpression(
-            baseStoryObject,
-            t.identifier('parameters')
-          );
-          parameters.push(t.spreadElement(originalParameters));
-          const optionalDocs = t.optionalMemberExpression(
+      // e.g. Story.input.parameters
+      const originalParameters = t.memberExpression(
+        isCsfFactory
+          ? t.memberExpression(t.identifier(key), t.identifier('input'))
+          : t.identifier(key),
+        t.identifier('parameters')
+      );
+
+      // e.g. Story.input.parameters?.docs
+      const docsParameter = t.optionalMemberExpression(
+        originalParameters,
+        t.identifier('docs'),
+        false,
+        true
+      );
+
+      // For example:
+      // Story.input.parameters = {
+      //   ...Story.input.parameters,
+      //   docs: {
+      //     ...Story.input.parameters?.docs,
+      //     source: {
+      //       code: "snippet",
+      //       ...Story.input.parameters?.docs?.source
+      //     }
+      //   }
+      // };
+
+      csf._ast.program.body.push(
+        t.expressionStatement(
+          t.assignmentExpression(
+            '=',
             originalParameters,
-            t.identifier('docs'),
-            false,
-            true
-          );
-          const extraDocsParameters = [];
-
-          if (snippet) {
-            const optionalSource = t.optionalMemberExpression(
-              optionalDocs,
-              t.identifier('source'),
-              false,
-              true
-            );
-
-            extraDocsParameters.push(
-              t.objectProperty(
-                t.identifier('source'),
-                t.objectExpression([
-                  t.objectProperty(t.identifier('code'), t.stringLiteral(snippet)),
-                  t.spreadElement(optionalSource),
-                ])
-              )
-            );
-          }
-
-          // docs: { description: { story: %%description%% } },
-          if (extraDocsParameters.length > 0) {
-            parameters.push(
+            t.objectExpression([
+              t.spreadElement(originalParameters),
               t.objectProperty(
                 t.identifier('docs'),
-                t.objectExpression([t.spreadElement(optionalDocs), ...extraDocsParameters])
-              )
-            );
-            const addParameter = t.expressionStatement(
-              t.assignmentExpression('=', originalParameters, t.objectExpression(parameters))
-            );
-            csf._ast.program.body.push(addParameter);
-          }
-        }
-      })
-    );
+                t.objectExpression([
+                  t.spreadElement(docsParameter),
+                  t.objectProperty(
+                    t.identifier('source'),
+                    t.objectExpression([
+                      t.objectProperty(t.identifier('code'), t.stringLiteral(snippet)),
+                      t.spreadElement(
+                        t.optionalMemberExpression(
+                          docsParameter,
+                          t.identifier('source'),
+                          false,
+                          true
+                        )
+                      ),
+                    ])
+                  ),
+                ])
+              ),
+            ])
+          )
+        )
+      );
+    });
+    await Promise.all(promises);
   };
 };

@@ -9,7 +9,7 @@ import { type ComponentManifest } from 'storybook/internal/types';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
-import { extractJSDocTags, removeTags } from './jsdocTags';
+import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj, getMatchingDocgen, parseWithReactDocgen } from './reactDocgen';
 import { groupBy } from './utils';
 
@@ -72,16 +72,14 @@ export const componentManifestGenerator = async () => {
 
         const metaDescription = extractDescription(csf._metaStatement);
         const jsdocComment = metaDescription || docgen?.description;
-        const tags = jsdocComment ? extractJSDocTags(jsdocComment) : {};
+        const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
 
-        const manifestDescription = jsdocComment
-          ? removeTags(tags.describe?.[0] || tags.desc?.[0] || jsdocComment).trim()
-          : undefined;
+        const manifestDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
 
         return {
           id,
           name: componentName,
-          description: manifestDescription,
+          description: manifestDescription?.trim(),
           summary: tags.summary?.[0],
           import: tags.import?.[0],
           reactDocgen: docgen,

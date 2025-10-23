@@ -1,4 +1,4 @@
-import React, { createRef } from 'react';
+import React, { createRef, useMemo } from 'react';
 
 import {
   Card,
@@ -37,7 +37,28 @@ const title = (progress: number) => {
 
 export const ChecklistModule = () => {
   const api = useStorybookApi();
-  const [{ completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
+  const [{ muted, completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
+
+  const nextTasks = useMemo(() => {
+    if (muted === true) {
+      return [];
+    }
+    return checklistData.sections
+      .map(({ items }) =>
+        items.find(
+          ({ id, after }) =>
+            !completed.includes(id) &&
+            !skipped.includes(id) &&
+            !(Array.isArray(muted) && muted.includes(id)) &&
+            !after?.some((id) => !completed.includes(id))
+        )
+      )
+      .flatMap((item) => (item ? [{ ...item, nodeRef: createRef<HTMLLIElement>() }] : []));
+  }, [muted, completed, skipped]);
+
+  if (nextTasks.length === 0) {
+    return null;
+  }
 
   const totalCount = checklistData.sections.reduce((acc, { items }) => acc + items.length, 0);
   const doneCount = checklistData.sections.reduce(
@@ -46,21 +67,6 @@ export const ChecklistModule = () => {
     0
   );
   const progress = Math.round((doneCount / totalCount) * 100);
-
-  const nextTasks = checklistData.sections
-    .map(({ items }) =>
-      items.find(
-        ({ id, after }) =>
-          !completed.includes(id) &&
-          !skipped.includes(id) &&
-          !after?.some((id) => !completed.includes(id))
-      )
-    )
-    .flatMap((item) => (item ? [{ ...item, nodeRef: createRef<HTMLLIElement>() }] : []));
-
-  if (nextTasks.length === 0) {
-    return null;
-  }
 
   return (
     <Card outlineAnimation="rainbow">

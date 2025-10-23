@@ -1,8 +1,21 @@
-import React, { createRef, useEffect, useState } from 'react';
+import React, { createRef, useEffect, useMemo, useState } from 'react';
 
-import { Button, Collapsible, FocusProxy, ListboxItem } from 'storybook/internal/components';
+import {
+  Button,
+  Collapsible,
+  FocusProxy,
+  ListboxItem,
+  TooltipNote,
+  WithTooltip,
+} from 'storybook/internal/components';
 
-import { CheckIcon, ChevronSmallDownIcon, StatusPassIcon, UndoIcon } from '@storybook/icons';
+import {
+  CheckIcon,
+  ChevronSmallDownIcon,
+  LockIcon,
+  StatusPassIcon,
+  UndoIcon,
+} from '@storybook/icons';
 
 import { checklistStore, universalChecklistStore } from '#manager-stores';
 import { type API, experimental_useUniversalStore, useStorybookApi } from 'storybook/manager-api';
@@ -15,21 +28,24 @@ export interface ChecklistData {
     items: {
       id: string;
       label: string;
+      after?: string[];
       start?: (args: { api: API }) => void;
       predicate?: (args: { api: API; complete: () => void }) => void;
       content?: React.ReactNode;
-      nodeRef?: React.RefObject<HTMLLIElement>;
     }[];
   }[];
 }
-export interface ChecklistState {
-  next: number;
+
+type ChecklistSection = Omit<ChecklistData['sections'][number], 'items'> & {
+  itemIds: string[];
   progress: number;
-  sections: (ChecklistData['sections'][number] & {
-    open: boolean;
-    progress: number;
-  })[];
-}
+};
+type ChecklistItem = ChecklistData['sections'][number]['items'][number] & {
+  isCompleted: boolean;
+  isLockedBy: string[];
+  isSkipped: boolean;
+  nodeRef?: React.RefObject<HTMLLIElement>;
+};
 
 const Sections = styled.ol(({ theme }) => ({
   listStyle: 'none',
@@ -220,47 +236,13 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
   const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
   const { completed, skipped } = checklistState;
   const [hash, setHash] = useState(globalThis.window.location.hash ?? '');
+  const targetHash = hash.slice(1);
 
   useEffect(() => {
     const updateHash = () => setHash(globalThis.window.location.hash ?? '');
     const interval = setInterval(updateHash, 100);
     return () => clearInterval(interval);
   }, []);
-
-  // universalChecklistStore.untilReady().then(() => checklistStore.complete('whats-new-sb-9'));
-
-  // useEffect(() => {
-  //   // const componentTestStatusStore = experimental_getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST);
-  //   // const a11yStatusStore = experimental_getStatusStore(STATUS_TYPE_ID_A11Y);
-
-  //   data.sections.forEach((section) => {
-  //     section.items.forEach((item) => {
-  //       const complete = () => setCompleted((completed) => new Set([...completed, item.id]));
-  //       item.predicate?.({ api, complete });
-  //     });
-  //   });
-  // }, [data, api]);
-
-  const state: ChecklistState = {
-    next: 0,
-    progress: 0,
-    sections: data.sections.map((section) => ({
-      ...section,
-      items: section.items.map((item) => ({ ...item, nodeRef: createRef<HTMLLIElement>() })),
-      open: false,
-      progress:
-        (section.items.reduce(
-          (a, b) => (completed.includes(b.id) || skipped.includes(b.id) ? a + 1 : a),
-          0
-        ) /
-          section.items.length) *
-        100,
-    })),
-  };
-
-  const next = state.sections.findIndex(({ progress }) => progress < 100);
-
-  const targetHash = hash.slice(1);
 
   // Focus the target element when the hash changes
   useEffect(() => {
@@ -275,11 +257,46 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
     return () => clearTimeout(timeout);
   }, [targetHash]);
 
+  const sectionsById: Record<ChecklistSection['id'], ChecklistSection> = useMemo(() => {
+    const isDone = (id: string) => completed.includes(id) || skipped.includes(id);
+    return Object.fromEntries(
+      data.sections.map(({ items, ...section }) => {
+        const progress =
+          (items.reduce((a, b) => (isDone(b.id) ? a + 1 : a), 0) / items.length) * 100;
+        const itemIds = items.map(({ id }) => id);
+        return [section.id, { ...section, itemIds, progress }];
+      })
+    );
+  }, [data, completed, skipped]);
+
+  const itemsById: Record<ChecklistItem['id'], ChecklistItem> = useMemo(
+    () =>
+      Object.fromEntries(
+        data.sections.flatMap(({ items, id }) => {
+          const { progress } = sectionsById[id];
+          return items.map((item) => {
+            const isCompleted = progress === 100 || completed.includes(item.id);
+            const isLockedBy = item.after?.filter((id) => !completed.includes(id)) ?? [];
+            const isSkipped = skipped.includes(item.id);
+            const nodeRef = createRef<HTMLLIElement>();
+            return [item.id, { ...item, isCompleted, isLockedBy, isSkipped, nodeRef }];
+          });
+        })
+      ),
+    [data, sectionsById, completed, skipped]
+  );
+
+  const next = Object.values(data.sections).findIndex(({ items }) =>
+    items.some((item) => !completed.includes(item.id) && !skipped.includes(item.id))
+  );
+
   return (
     <Sections>
-      {state.sections.map(({ id, title, items, progress }, index) => {
-        const hasTarget = items.some(({ id }) => id === targetHash);
+      {data.sections.map(({ id }, index) => {
+        const { title, itemIds, progress } = sectionsById[id];
+        const hasTarget = itemIds.some((id) => id === targetHash);
         const collapsed = !hasTarget && (progress === 0 || progress === 100) && next !== index;
+
         return (
           <li key={id}>
             <FocusProxy htmlFor={`toggle-${id}`}>
@@ -310,10 +327,10 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
                 )}
               >
                 <Items>
-                  {items.map((item) => {
-                    const isCompleted = progress === 100 || completed.includes(item.id);
-                    const isCollapsed = item.id !== targetHash && isCompleted;
-                    const isSkipped = skipped.includes(item.id);
+                  {itemIds.map((itemId) => {
+                    const { isCompleted, isLockedBy, isSkipped, ...item } = itemsById[itemId];
+                    const isCollapsed = isCompleted && itemId !== targetHash;
+                    const isLocked = isLockedBy.length > 0;
 
                     return (
                       <ListboxItem key={item.id}>
@@ -347,7 +364,24 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
                                       <ChevronSmallDownIcon />
                                     </ToggleButton>
                                   )}
-                                  {!isCompleted && !isSkipped && item.start && (
+                                  {isLocked && (
+                                    <WithTooltip
+                                      as="div"
+                                      hasChrome={false}
+                                      placement="top"
+                                      trigger="hover"
+                                      tooltip={
+                                        <TooltipNote
+                                          note={`Complete ${isLockedBy.map((id) => `“${itemsById[id].label}”`).join(', ')} first`}
+                                        />
+                                      }
+                                    >
+                                      <Button variant="ghost" padding="small" aria-label="Locked">
+                                        <LockIcon />
+                                      </Button>
+                                    </WithTooltip>
+                                  )}
+                                  {!isCompleted && !isSkipped && !isLocked && item.start && (
                                     <Button
                                       variant="solid"
                                       size="small"
@@ -359,17 +393,21 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
                                       Start
                                     </Button>
                                   )}
-                                  {!isCompleted && !isSkipped && !item.start && !item.predicate && (
-                                    <Button
-                                      variant="outline"
-                                      size="small"
-                                      onClick={() => checklistStore.complete(item.id)}
-                                    >
-                                      <CheckIcon />
-                                      Mark as complete
-                                    </Button>
-                                  )}
-                                  {!isCompleted && !isSkipped && (
+                                  {!isCompleted &&
+                                    !isSkipped &&
+                                    !isLocked &&
+                                    !item.start &&
+                                    !item.predicate && (
+                                      <Button
+                                        variant="outline"
+                                        size="small"
+                                        onClick={() => checklistStore.complete(item.id)}
+                                      >
+                                        <CheckIcon />
+                                        Mark as complete
+                                      </Button>
+                                    )}
+                                  {!isCompleted && !isSkipped && !isLocked && (
                                     <Button
                                       variant="ghost"
                                       size="small"
@@ -379,7 +417,7 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
                                       Skip
                                     </Button>
                                   )}
-                                  {(isCompleted || isSkipped) && (
+                                  {(isCompleted || isSkipped) && !isLocked && (
                                     <Button
                                       variant="ghost"
                                       padding="small"

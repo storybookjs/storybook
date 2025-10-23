@@ -83,14 +83,12 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
   const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
-  const isVitest3_2OrNewer = vitestVersionSpecifier
-    ? satisfies(vitestVersionSpecifier, '>=3.2.0')
-    : // TODO: Set to false once we have a stable release of Vitest 4
-      true;
+  const isVitest3_2To4 = vitestVersionSpecifier
+    ? satisfies(vitestVersionSpecifier, '>=3.2.0 <4.0.0')
+    : false;
   const isVitest4OrNewer = vitestVersionSpecifier
     ? satisfies(vitestVersionSpecifier, '>=4.0.0')
-    : // TODO: Set to true once we have a stable release of Vitest 4
-      false;
+    : true;
 
   const info = await getStorybookInfo(options);
   const allDeps = packageManager.getAllDependencies();
@@ -397,8 +395,7 @@ export default async function postInstall(options: PostinstallOptions) {
   const getTemplateName = () => {
     if (isVitest4OrNewer) {
       return 'vitest.config.4.template.ts';
-    }
-    if (isVitest3_2OrNewer) {
+    } else if (isVitest3_2To4) {
       return 'vitest.config.3.2.template.ts';
     }
     return 'vitest.config.template.ts';

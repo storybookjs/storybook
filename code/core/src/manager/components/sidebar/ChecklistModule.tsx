@@ -22,6 +22,19 @@ const ItemIcon = styled(StatusFailIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
 }));
 
+const title = (progress: number) => {
+  switch (true) {
+    case progress < 25:
+      return 'Getting started';
+    case progress < 50:
+      return 'Making progress';
+    case progress < 75:
+      return 'Getting close';
+    default:
+      return 'Almost there';
+  }
+};
+
 export const ChecklistModule = () => {
   const api = useStorybookApi();
   const [{ completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
@@ -54,7 +67,7 @@ export const ChecklistModule = () => {
       <Listbox>
         <ListboxItem>
           <ListboxText>
-            <strong>Project setup</strong>
+            <strong>{title(progress)}</strong>
           </ListboxText>
           <ListboxButton onClick={() => api.navigateUrl('/settings/guide', { plain: false })}>
             {progress}%

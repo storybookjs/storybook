@@ -66,7 +66,7 @@ export const mcpServerHandler = async (
 	}
 
 	// Convert Node.js request to Web API Request
-	const { webRequest, client } = await incomingMessageToWebRequest(req);
+	const webRequest = await incomingMessageToWebRequest(req);
 
 	// Build the addon context
 	const addonContext: AddonContext = {
@@ -85,28 +85,23 @@ export const mcpServerHandler = async (
 
 /**
  * Converts a Node.js IncomingMessage to a Web Request.
- * Also extracts client info from the request body if it's an initialize request.
  */
 export async function incomingMessageToWebRequest(
 	req: IncomingMessage,
-): Promise<{ webRequest: Request; client?: string }> {
-	const url = `http://localhost${req.url}`;
+): Promise<Request> {
+	// Construct URL from request, using host header if available for accuracy
+	const host = req.headers.host || 'localhost';
+	const protocol =
+		'encrypted' in req.socket && req.socket.encrypted ? 'https' : 'http';
+	const url = new URL(req.url || '/', `${protocol}://${host}`);
+
 	const bodyBuffer = await buffer(req);
 
-	const webRequest = new Request(url, {
+	return new Request(url, {
 		method: req.method,
 		headers: req.headers as HeadersInit,
 		body: bodyBuffer.length > 0 ? new Uint8Array(bodyBuffer) : undefined,
 	});
-
-	if (bodyBuffer.length === 0) {
-		return { webRequest };
-	}
-
-	// Extract client info if this is an initialize request
-	const bodyJson = JSON.parse(bodyBuffer.toString());
-
-	return { webRequest, client: bodyJson.params?.clientInfo?.name };
 }
 
 /**

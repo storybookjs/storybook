@@ -9,14 +9,14 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
-		"@storybook/addon-docs": "^10.0.0-0",
+		"@storybook/addon-docs": "0.0.0-pr-32810-sha-af0645cd",
 		"@storybook/addon-mcp": "workspace:*",
-		"@storybook/react-vite": "^10.0.0-0",
+		"@storybook/react-vite": "0.0.0-pr-32810-sha-af0645cd",
 		"@types/react": "^18.2.65",
 		"@types/react-dom": "^18.2.21",
 		"@vitejs/plugin-react": "^4.7.0",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
-		"storybook": "^10.0.0-0"
+		"storybook": "0.0.0-pr-32810-sha-af0645cd"
 	}
 }

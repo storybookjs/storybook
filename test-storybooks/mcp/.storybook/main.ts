@@ -16,6 +16,9 @@ const config = defineMain({
 	core: {
 		disableTelemetry: true,
 	},
+	features: {
+		experimentalComponentsManifest: true,
+	},
 });
 
 export default config;

@@ -10,12 +10,6 @@ import type { AddonContext } from '../types.ts';
 export const GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME =
 	'get-ui-building-instructions';
 
-const GetUIBuildingInstructionsInput = v.object({});
-
-type GetUIBuildingInstructionsInput = v.InferOutput<
-	typeof GetUIBuildingInstructionsInput
->;
-
 export async function addGetUIBuildingInstructionsTool(
 	server: McpServer<any, AddonContext>,
 ) {
@@ -27,9 +21,8 @@ export async function addGetUIBuildingInstructionsTool(
       
       ALWAYS call this tool before doing any UI/frontend/React/component development, including but not
       limited to adding or updating new components, pages, screens or layouts.`,
-			schema: GetUIBuildingInstructionsInput,
 		},
-		async (_input: GetUIBuildingInstructionsInput) => {
+		async () => {
 			try {
 				const { options, disableTelemetry } = server.ctx.custom ?? {};
 				if (!options) {

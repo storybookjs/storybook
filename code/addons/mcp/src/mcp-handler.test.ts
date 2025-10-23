@@ -9,12 +9,6 @@ import { PassThrough } from 'node:stream';
 import type { Connect } from 'vite';
 
 // Mock dependencies
-vi.mock('storybook/internal/node-logger', () => ({
-	logger: {
-		debug: vi.fn(),
-	},
-}));
-
 vi.mock('./telemetry.ts', () => ({
 	collectTelemetry: vi.fn().mockResolvedValue(undefined),
 }));

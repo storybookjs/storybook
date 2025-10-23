@@ -10,13 +10,6 @@ import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.jso
 import * as fetchStoryIndex from '../utils/fetch-story-index.ts';
 import * as telemetry from '../telemetry.ts';
 
-// Mock the logger
-vi.mock('storybook/internal/node-logger', () => ({
-	logger: {
-		debug: vi.fn(),
-	},
-}));
-
 // Mock CSF utilities
 vi.mock('storybook/internal/csf', () => ({
 	storyNameFromExport: (exportName: string) => exportName,

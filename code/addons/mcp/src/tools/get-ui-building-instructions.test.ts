@@ -9,13 +9,6 @@ import type { AddonContext } from '../types.ts';
 import * as telemetry from '../telemetry.ts';
 import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
 
-// Mock the logger
-vi.mock('storybook/internal/node-logger', () => ({
-	logger: {
-		debug: vi.fn(),
-	},
-}));
-
 describe('getUIBuildingInstructionsTool', () => {
 	let server: McpServer<any, AddonContext>;
 	let collectTelemetrySpy: any;

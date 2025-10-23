@@ -2,13 +2,6 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fetchStoryIndex } from './fetch-story-index.ts';
 import smallStoryIndexFixture from '../../fixtures/small-story-index.fixture.json' with { type: 'json' };
 
-// Mock the logger
-vi.mock('storybook/internal/node-logger', () => ({
-	logger: {
-		debug: vi.fn(),
-	},
-}));
-
 describe('fetchStoryIndex', () => {
 	const originalFetch = global.fetch;
 

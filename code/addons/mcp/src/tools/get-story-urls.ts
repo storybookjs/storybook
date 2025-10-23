@@ -89,7 +89,7 @@ export async function addGetStoryUrlsTool(
 
 				return {
 					content: result.map((text) => ({
-						type: 'text' as const,
+						type: 'text',
 						text,
 					})),
 				};

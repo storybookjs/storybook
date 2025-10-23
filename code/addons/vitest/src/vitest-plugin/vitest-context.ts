@@ -17,6 +17,8 @@ export const getVitestBrowserContext = async (): Promise<VitestServerContext> =>
   );
 
   if (semver.major(vitestVersion) >= 4) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore (vitest/browser is vitest 4 only, and we're using vitest 3 locally)
     return import('vitest/browser') as unknown as Promise<VitestServerContext>;
   }
 

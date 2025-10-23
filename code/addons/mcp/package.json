@@ -27,7 +27,7 @@
 	],
 	"scripts": {
 		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
-		"build": "tsup",
+		"build": "tsdown --config ../../tsdown.config.ts",
 		"dev": "pnpm run build -- --watch",
 		"test": "vitest",
 		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp",
@@ -44,7 +44,7 @@
 		"@vitest/coverage-v8": "3.2.4",
 		"storybook": "^10.0.0-0",
 		"ts-dedent": "^2.2.0",
-		"tsup": "^8.5.0",
+		"tsdown": "^0.15.9",
 		"typescript": "^5.8.3",
 		"vite": "^7.0.5",
 		"vitest": "^3.2.4"

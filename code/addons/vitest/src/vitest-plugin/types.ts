@@ -1,3 +1,22 @@
+import type { BrowserCommands, BrowserPage } from '@vitest/browser/context';
+
+interface GetInitialGlobalsResult {
+  a11y?: {
+    manual?: boolean;
+  };
+}
+
+interface ExtendedBrowserCommands extends BrowserCommands {
+  getInitialGlobals?: () => Promise<GetInitialGlobalsResult>;
+}
+
+export interface VitestBrowserContext {
+  page: BrowserPage;
+  server: {
+    commands: ExtendedBrowserCommands;
+  };
+}
+
 export type UserOptions = {
   /**
    * The directory where the Storybook configuration is located, relative to the vitest

@@ -46,6 +46,8 @@
     "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
     "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
     "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
+    "./internal/vitest-context": "./dist/vitest-plugin/vitest-context.js",
+    "./internal/vitest-context-legacy": "./dist/vitest-plugin/vitest-context-legacy.js",
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
     "./postinstall": "./dist/postinstall.js",
@@ -101,7 +103,7 @@
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^5.8.3",
-    "vitest": "^4.0.1"
+    "vitest": "^3.2.4"
   },
   "peerDependencies": {
     "@vitest/browser": "^3.0.0 || ^4.0.0",

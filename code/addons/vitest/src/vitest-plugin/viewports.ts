@@ -4,7 +4,7 @@ import { UnsupportedViewportDimensionError } from 'storybook/internal/preview-er
 import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 import type { ViewportMap } from 'storybook/viewport';
 
-import { getVitestBrowserContext } from './vitest-context';
+import type { VitestBrowserContext } from './types';
 
 declare global {
   // eslint-disable-next-line no-var
@@ -68,9 +68,10 @@ export const setViewport = async (parameters: Parameters = {}, globals: Globals 
     defaultViewport = viewportsParam.defaultViewport;
   }
 
-  const { page } = await getVitestBrowserContext().catch(() => ({
+  // @ts-expect-error - This is an internal alias that will be resolved by the vitest plugin at runtime
+  const { page } = (await import('@storybook/addon-vitest/internal/vitest-context').catch(() => ({
     page: null,
-  }));
+  }))) as unknown as VitestBrowserContext;
 
   if (!page || !globalThis.__vitest_browser__) {
     return;

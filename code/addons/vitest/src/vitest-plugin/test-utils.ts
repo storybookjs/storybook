@@ -5,8 +5,8 @@ import type { ComponentAnnotations, ComposedStoryFn, Renderer } from 'storybook/
 
 import { type Report, composeStory, getCsfFactoryAnnotations } from 'storybook/preview-api';
 
+import type { VitestBrowserContext } from './types';
 import { setViewport } from './viewports';
-import { getVitestBrowserContext } from './vitest-context';
 
 /**
  * Converts a file URL to a file path, handling URL encoding
@@ -41,7 +41,10 @@ export const testStory = (
 
     const storyAnnotations = test ? test.input : annotations.story;
 
-    const { server } = await getVitestBrowserContext();
+    const { server } = (await import(
+      // @ts-expect-error - This is an internal alias that will be resolved by the vitest plugin at runtime
+      '@storybook/addon-vitest/internal/vitest-context'
+    )) as unknown as VitestBrowserContext;
 
     const { getInitialGlobals } = server.commands;
 

@@ -47,7 +47,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Step 2: Detect project type
   const projectType = await executeProjectDetection(packageManager, options);
 
-  // Step 3: Detect framework, renderer, and builder (NEW)
+  // Step 3: Detect framework, renderer, and builder
   const { framework, builder, renderer } = await executeFrameworkDetection(
     projectType,
     packageManager,

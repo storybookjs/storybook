@@ -100,7 +100,7 @@ export interface GeneratorModule {
     // Return undefined if the base generator shouldn't be executed
   ) => Promise<FrameworkOptions>;
   /**
-   * The function that runs after the generator is configured This is used to run any
+   * The function that runs after the generator is configured. This is used to run any
    * post-configuration tasks
    */
   postConfigure?: ({

@@ -29,22 +29,23 @@
 		"build": "tsdown",
 		"dev": "node --watch ./serve.ts",
 		"test": "vitest",
-		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-mcp"
+		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-mcp",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@tmcp/adapter-valibot": "^0.1.4",
-		"@tmcp/transport-http": "^0.7.0",
-		"tmcp": "^1.15.2",
-		"valibot": "^1.1.0"
+		"@tmcp/adapter-valibot": "catalog:",
+		"@tmcp/transport-http": "catalog:",
+		"tmcp": "catalog:",
+		"valibot": "catalog:"
 	},
 	"devDependencies": {
 		"@tsconfig/node-ts": "^23.6.1",
 		"@tsconfig/node24": "^24.0.1",
-		"@types/node": "^24.7.2",
-		"@vitest/coverage-v8": "3.2.4",
+		"@types/node": "catalog:",
+		"@vitest/coverage-v8": "catalog:",
 		"srvx": "^0.8.16",
-		"tsdown": "^0.15.7",
-		"typescript": "^5.9.3",
-		"vitest": "^3.2.4"
+		"tsdown": "catalog:",
+		"typescript": "catalog:",
+		"vitest": "catalog:"
 	}
 }

@@ -144,6 +144,19 @@ We welcome contributions to improve Storybook's agent integration, within or out
 
 4. **Testing**: Run the MCP inspector to test the server functionality (requires that the Storybook dev server is running):
 
-   ```bash
-   pnpm run inspect
-   ```
+```bash
+pnpm run inspect
+```
+
+Run the unit test suite:
+
+```bash
+# Run tests in watch mode
+pnpm test
+
+# Run tests once
+pnpm test run
+
+# Run tests with coverage
+pnpm test run --coverage
+```

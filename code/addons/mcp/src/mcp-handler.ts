@@ -1,139 +1,143 @@
 import type { Connect } from 'vite';
-import { randomUUID } from 'node:crypto';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { McpServer } from 'tmcp';
+import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
+import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
-import { registerStoryUrlsTool } from './tools/get-story-urls';
-import { registerUIBuildingTool } from './tools/get-ui-building-instructions';
+import { addGetStoryUrlsTool } from './tools/get-story-urls.ts';
+import { addGetUIBuildingInstructionsTool } from './tools/get-ui-building-instructions.ts';
 import type { Options, CoreConfig } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import {
-	collectTelemetry,
-	mcpSessionIdToClientMap,
-	setDisableTelemetry,
-} from './telemetry';
+import { buffer } from 'node:stream/consumers';
+import { collectTelemetry } from './telemetry.ts';
+import type { AddonContext } from './types.ts';
+import { logger } from 'storybook/internal/node-logger';
 
-async function createMcpServer(options: Options, client: string) {
-	// New initialization request
-	const transport = new StreamableHTTPServerTransport({
-		sessionIdGenerator: () => randomUUID(),
-		onsessioninitialized: async (sessionId) => {
-			transports[sessionId] = transport;
+let transport: HttpTransport<AddonContext> | undefined;
+let origin: string | undefined;
+// Promise that ensures single initialization, even with concurrent requests
+let initialize: Promise<void> | undefined;
 
-			const { disableTelemetry } = await options.presets.apply<CoreConfig>(
-				'core',
-				{},
-			);
-			setDisableTelemetry(disableTelemetry);
-			mcpSessionIdToClientMap[sessionId] = client;
-
-			await collectTelemetry({
-				event: 'session:initialized',
-				mcpSessionId: sessionId,
-			});
+const initializeMCPServer = async (options: Options) => {
+	const server = new McpServer(
+		{
+			name: pkgJson.name,
+			version: pkgJson.version,
+			description: pkgJson.description,
 		},
+		{
+			adapter: new ValibotJsonSchemaAdapter(),
+			capabilities: {
+				tools: { listChanged: true },
+			},
+		},
+	).withContext<AddonContext>();
+
+	server.on('initialize', () => {
+		if (!options.disableTelemetry) {
+			collectTelemetry({
+				event: 'session:initialized',
+				server,
+			});
+		}
 	});
 
-	transport.onclose = () => {
-		if (!transport.sessionId) {
-			return;
-		}
+	// Register tools
+	await addGetStoryUrlsTool(server);
+	await addGetUIBuildingInstructionsTool(server);
 
-		delete transports[transport.sessionId];
-		if (mcpSessionIdToClientMap[transport.sessionId]) {
-			delete mcpSessionIdToClientMap[transport.sessionId];
-		}
-	};
+	transport = new HttpTransport(server, { path: null });
 
-	const server = new McpServer({
-		name: pkgJson.name,
-		version: pkgJson.version,
-	});
-
-	registerStoryUrlsTool({ server, options });
-	registerUIBuildingTool({ server, options });
-
-	server.connect(transport);
-	return transport;
-}
-
-// Map to store transports by session ID
-const transports: Record<string, StreamableHTTPServerTransport> = {};
-
-async function getJson(req: Connect.IncomingMessage) {
-	const chunks = [];
-	for await (const chunk of req) chunks.push(chunk);
-	return JSON.parse(Buffer.concat(chunks).toString());
-}
-
-// Handle POST requests for client-to-server communication
-const handlePostRequest = async (
-	req: IncomingMessage,
-	res: ServerResponse,
-	options: Options,
-) => {
-	const sessionId = req.headers['mcp-session-id'] as string | undefined;
-	let transport: StreamableHTTPServerTransport;
-
-	const body = await getJson(req);
-
-	if (sessionId && transports[sessionId]) {
-		// Reuse existing transport
-		transport = transports[sessionId];
-	} else if (!sessionId && isInitializeRequest(body)) {
-		transport = await createMcpServer(options, body.params.clientInfo.name);
-	} else {
-		// Invalid request
-		res.statusCode = 400;
-		res.end(
-			JSON.stringify(
-				{
-					jsonrpc: '2.0',
-					error: {
-						code: -32000,
-						message: 'Bad Request: No valid session ID provided',
-					},
-					id: null,
-				},
-				null,
-				2,
-			),
-		);
-		return;
-	}
-
-	// Handle the request
-	await transport.handleRequest(req, res, body);
+	origin = `http://localhost:${options.port}`;
+	logger.debug('MCP server origin:', origin);
 };
 
-// Reusable handler for GET and DELETE requests
-const handleSessionRequest: Connect.SimpleHandleFunction = async (req, res) => {
-	const sessionId = req.headers['mcp-session-id'] as string | undefined;
-
-	if (!sessionId || !transports[sessionId]) {
-		res.statusCode = 400;
-		res.end('Invalid or missing session ID');
-		return;
-	}
-
-	const transport = transports[sessionId];
-	return await transport.handleRequest(req, res);
-};
-
+/**
+ * Vite middleware handler that wraps the MCP handler.
+ * This converts Node.js IncomingMessage/ServerResponse to Web API Request/Response.
+ */
 export const mcpServerHandler = async (
 	req: IncomingMessage,
 	res: ServerResponse,
 	next: Connect.NextFunction,
 	options: Options,
 ) => {
-	switch (req.method) {
-		case 'POST':
-			return await handlePostRequest(req, res, options);
-		case 'GET':
-		case 'DELETE':
-			return await handleSessionRequest(req, res);
-		default:
-			next();
+	const { disableTelemetry = false } = await options.presets.apply<CoreConfig>(
+		'core',
+		{},
+	);
+
+	// Initialize MCP server and transport on first request, with concurrency safety
+	if (!initialize) {
+		initialize = initializeMCPServer(options);
+	}
+	await initialize;
+
+	// Convert Node.js request to Web API Request
+	const webRequest = await incomingMessageToWebRequest(req);
+
+	// Build the addon context
+	const addonContext: AddonContext = {
+		options,
+		origin: origin!,
+		disableTelemetry,
+	};
+
+	const response = await transport!.respond(webRequest, addonContext);
+
+	// Convert Web API Response to Node.js response
+	if (response) {
+		await webResponseToServerResponse(response, res);
 	}
 };
+
+/**
+ * Converts a Node.js IncomingMessage to a Web Request.
+ */
+export async function incomingMessageToWebRequest(
+	req: IncomingMessage,
+): Promise<Request> {
+	// Construct URL from request, using host header if available for accuracy
+	const host = req.headers.host || 'localhost';
+	const protocol =
+		'encrypted' in req.socket && req.socket.encrypted ? 'https' : 'http';
+	const url = new URL(req.url || '/', `${protocol}://${host}`);
+
+	const bodyBuffer = await buffer(req);
+
+	return new Request(url, {
+		method: req.method,
+		headers: req.headers as HeadersInit,
+		body: bodyBuffer.length > 0 ? new Uint8Array(bodyBuffer) : undefined,
+	});
+}
+
+/**
+ * Converts a Web Response to a Node.js ServerResponse.
+ */
+export async function webResponseToServerResponse(
+	webResponse: Response,
+	nodeResponse: ServerResponse,
+): Promise<void> {
+	nodeResponse.statusCode = webResponse.status;
+
+	// Copy headers
+	webResponse.headers.forEach((value, key) => {
+		nodeResponse.setHeader(key, value);
+	});
+
+	// Stream response body
+	if (webResponse.body) {
+		const reader = webResponse.body.getReader();
+		try {
+			while (true) {
+				const { done, value } = await reader.read();
+				if (done) break;
+				nodeResponse.write(value);
+			}
+		} finally {
+			reader.releaseLock();
+		}
+	}
+
+	nodeResponse.end();
+}

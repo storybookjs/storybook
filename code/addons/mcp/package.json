@@ -27,21 +27,27 @@
 	],
 	"scripts": {
 		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
-		"build": "tsup",
+		"build": "tsdown --config ../../tsdown.config.ts",
 		"dev": "pnpm run build -- --watch",
-		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp"
+		"test": "vitest",
+		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.17.3"
+		"@tmcp/adapter-valibot": "catalog:",
+		"@tmcp/transport-http": "catalog:",
+		"tmcp": "catalog:",
+		"valibot": "catalog:"
 	},
 	"devDependencies": {
-		"@types/node": "^20",
+		"@types/node": "catalog:",
+		"@vitest/coverage-v8": "catalog:",
 		"storybook": "^10.0.0-0",
 		"ts-dedent": "^2.2.0",
-		"tsup": "^8.5.0",
-		"typescript": "^5.8.3",
+		"tsdown": "catalog:",
+		"typescript": "catalog:",
 		"vite": "^7.0.5",
-		"zod": "^3.25.76"
+		"vitest": "catalog:"
 	},
 	"peerDependencies": {
 		"storybook": "*"

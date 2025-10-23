@@ -43,15 +43,18 @@ export default async function postInstall(options: PostinstallOptions) {
     force: options.packageManager,
   });
 
-  const info = await getStorybookInfo(options.configDir);
-
-  const allDeps = packageManager.getAllDependencies();
-
-  // Get vitest version info for config template compatibility
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
-  const isVitest3_2OrNewer = vitestVersionSpecifier
-    ? satisfies(vitestVersionSpecifier, '>=3.2.0')
+  const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
+  const isVitest3_2To4 = vitestVersionSpecifier
+    ? satisfies(vitestVersionSpecifier, '>=3.2.0 <4.0.0')
+    : false;
+  const isVitest4OrNewer = vitestVersionSpecifier
+    ? satisfies(vitestVersionSpecifier, '>=4.0.0')
     : true;
+
+  const info = await getStorybookInfo(options);
+  const allDeps = packageManager.getAllDependencies();
+  // only install these dependencies if they are not already installed
 
   const addonVitestService = new AddonVitestService();
 
@@ -185,27 +188,29 @@ export default async function postInstall(options: PostinstallOptions) {
     );
   }
 
-  const vitestWorkspaceFile =
-    findFile('vitest.workspace', ['.ts', '.js', '.json']) ||
-    findFile('vitest.projects', ['.ts', '.js', '.json']);
+  const vitestWorkspaceFile = findFile('vitest.workspace', ['.ts', '.js', '.json']);
   const viteConfigFile = findFile('vite.config');
   const vitestConfigFile = findFile('vitest.config');
   const vitestShimFile = findFile('vitest.shims.d');
   const rootConfig = vitestConfigFile || viteConfigFile;
 
-  const browserConfig = `{
-        enabled: true,
-        headless: true,
-        provider: 'playwright',
-        instances: [{ browser: 'chromium' }]
-      }`;
-
   if (fileExtension === 'ts' && !vitestShimFile) {
     await writeFile(
       'vitest.shims.d.ts',
-      '/// <reference types="@vitest/browser/providers/playwright" />'
+      isVitest4OrNewer
+        ? '/// <reference types="@vitest/browser-playwright" />'
+        : '/// <reference types="@vitest/browser/providers/playwright" />'
     );
   }
+
+  const getTemplateName = () => {
+    if (isVitest4OrNewer) {
+      return 'vitest.config.4.template.ts';
+    } else if (isVitest3_2To4) {
+      return 'vitest.config.3.2.template.ts';
+    }
+    return 'vitest.config.template.ts';
+  };
 
   // If there's an existing workspace file, we update that file to include the Storybook Addon Vitest plugin.
   // We assume the existing workspaces include the Vite(st) config, so we won't add it.
@@ -215,7 +220,6 @@ export default async function postInstall(options: PostinstallOptions) {
         ? relative(dirname(vitestWorkspaceFile), viteConfigFile)
         : '',
       CONFIG_DIR: options.configDir,
-      BROWSER_CONFIG: browserConfig,
       SETUP_FILE: relative(dirname(vitestWorkspaceFile), vitestSetupFile),
     }).then((t) => t.replace(`\n  'ROOT_CONFIG',`, '').replace(/\s+extends: '',/, ''));
     const workspaceFile = await fs.readFile(vitestWorkspaceFile, 'utf8');
@@ -250,20 +254,15 @@ export default async function postInstall(options: PostinstallOptions) {
   else if (rootConfig) {
     let target, updated;
     const configFile = await fs.readFile(rootConfig, 'utf8');
-    const hasProjectsConfig = configFile.includes('projects:');
     const configFileHasTypeReference = configFile.match(
       /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
     );
 
-    const templateName =
-      hasProjectsConfig || isVitest3_2OrNewer
-        ? 'vitest.config.3.2.template.ts'
-        : 'vitest.config.template.ts';
+    const templateName = getTemplateName();
 
     if (templateName) {
       const configTemplate = await loadTemplate(templateName, {
         CONFIG_DIR: options.configDir,
-        BROWSER_CONFIG: browserConfig,
         SETUP_FILE: relative(dirname(rootConfig), vitestSetupFile),
       });
 
@@ -296,14 +295,11 @@ export default async function postInstall(options: PostinstallOptions) {
   // If there's no existing Vitest/Vite config, we create a new Vitest config file.
   else {
     const newConfigFile = resolve(`vitest.config.${fileExtension}`);
-    const configTemplate = await loadTemplate(
-      isVitest3_2OrNewer ? 'vitest.config.3.2.template.ts' : 'vitest.config.template.ts',
-      {
-        CONFIG_DIR: options.configDir,
-        BROWSER_CONFIG: browserConfig,
-        SETUP_FILE: relative(dirname(newConfigFile), vitestSetupFile),
-      }
-    );
+
+    const configTemplate = await loadTemplate(getTemplateName(), {
+      CONFIG_DIR: options.configDir,
+      SETUP_FILE: relative(dirname(newConfigFile), vitestSetupFile),
+    });
 
     logger.step(`Creating a Vitest config file:`);
     logger.log(`${newConfigFile}`);
@@ -333,15 +329,15 @@ export default async function postInstall(options: PostinstallOptions) {
         command.push('--config-dir', `"${options.configDir}"`);
       }
 
-      await prompt.executeTask(
-        () => packageManager.executeCommand({ command: 'npx', args: command }),
-        {
-          id: 'a11y-addon-setup',
-          intro: 'Setting up a11y addon for @storybook/addon-vitest',
-          error: 'Failed to setup a11y addon for @storybook/addon-vitest',
-          success: 'a11y addon setup successfully',
-        }
-      );
+      const remoteCommand = packageManager.getRemoteRunCommand('storybook', command);
+      const [cmd, ...args] = remoteCommand.split(' ');
+
+      await prompt.executeTask(() => packageManager.executeCommand({ command: cmd, args }), {
+        id: 'a11y-addon-setup',
+        intro: 'Setting up a11y addon for @storybook/addon-vitest',
+        error: 'Failed to setup a11y addon for @storybook/addon-vitest',
+        success: 'a11y addon setup successfully',
+      });
     } catch (e: unknown) {
       console.log(e);
       logger.line();

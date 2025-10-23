@@ -13,7 +13,7 @@ import { styled } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../keybinding';
 import { AboutPage } from './AboutPage';
-import { GuidedTourPage } from './GuidedTourPage';
+import { GuidePage } from './GuidePage';
 import { ShortcutsPage } from './ShortcutsPage';
 import { WhatsNewPage } from './whats_new_page';
 
@@ -89,10 +89,10 @@ const Pages: FC<{
       <Header className="sb-bar">
         <TabBar role="tablist">
           <TabBarButton id="about" title="About" changeTab={changeTab} />
+          <TabBarButton id="guide" title="Guide" changeTab={changeTab} />
           {enableWhatsNew && (
             <TabBarButton id="whats-new" title="What's new?" changeTab={changeTab} />
           )}
-          <TabBarButton id="guided-tour" title="Guided tour" changeTab={changeTab} />
           <TabBarButton id="shortcuts" title="Keyboard shortcuts" changeTab={changeTab} />
         </TabBar>
         <IconButton
@@ -109,11 +109,11 @@ const Pages: FC<{
         <Route path="about">
           <AboutPage key="about" />
         </Route>
+        <Route path="guide">
+          <GuidePage key="guide" />
+        </Route>
         <Route path="whats-new">
           <WhatsNewPage key="whats-new" />
-        </Route>
-        <Route path="guided-tour">
-          <GuidedTourPage key="guided-tour" />
         </Route>
         <Route path="shortcuts">
           <ShortcutsPage key="shortcuts" />

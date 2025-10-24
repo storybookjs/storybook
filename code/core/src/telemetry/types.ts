@@ -35,7 +35,7 @@ export type EventType =
   | 'onboarding-survey'
   | 'mocking'
   | 'automigrate'
-  | 'migrate';
+  | 'migrate'
   | 'preview-first-load';
 
 export interface Dependency {

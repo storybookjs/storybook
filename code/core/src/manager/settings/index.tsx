@@ -13,6 +13,7 @@ import { styled } from 'storybook/theming';
 
 import { matchesKeyCode, matchesModifiers } from '../keybinding';
 import { AboutPage } from './AboutPage';
+import { GuidedTourPage } from './GuidedTourPage';
 import { ShortcutsPage } from './ShortcutsPage';
 import { WhatsNewPage } from './whats_new_page';
 
@@ -91,6 +92,7 @@ const Pages: FC<{
           {enableWhatsNew && (
             <TabBarButton id="whats-new" title="What's new?" changeTab={changeTab} />
           )}
+          <TabBarButton id="guided-tour" title="Guided tour" changeTab={changeTab} />
           <TabBarButton id="shortcuts" title="Keyboard shortcuts" changeTab={changeTab} />
         </TabBar>
         <IconButton
@@ -109,6 +111,9 @@ const Pages: FC<{
         </Route>
         <Route path="whats-new">
           <WhatsNewPage key="whats-new" />
+        </Route>
+        <Route path="guided-tour">
+          <GuidedTourPage key="guided-tour" />
         </Route>
         <Route path="shortcuts">
           <ShortcutsPage key="shortcuts" />

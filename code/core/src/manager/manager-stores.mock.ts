@@ -4,6 +4,8 @@ import {
 } from 'storybook/manager-api';
 import * as testUtils from 'storybook/test';
 
+import type { StoreEvent, StoreState } from '../shared/checklist-store';
+import { UNIVERSAL_CHECKLIST_STORE_OPTIONS, createChecklistStore } from '../shared/checklist-store';
 import {
   type StatusStoreEvent,
   type StatusesByStoryIdAndTypeId,
@@ -42,3 +44,14 @@ export const {
   ) as unknown as UniversalStore<TestProviderStateByProviderId, TestProviderStoreEvent>,
   useUniversalStore: experimental_useUniversalStore,
 });
+
+export const universalChecklistStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
+  {
+    ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
+    leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
+    debug: true,
+  },
+  testUtils
+) as unknown as UniversalStore<StoreState, StoreEvent>;
+
+export const checklistStore = createChecklistStore(universalChecklistStore);

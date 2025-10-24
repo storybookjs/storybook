@@ -1,0 +1,70 @@
+import React, { type ComponentProps } from 'react';
+import { useEffect, useId, useState } from 'react';
+
+import { styled } from 'storybook/theming';
+
+export const Collapsible = ({
+  children,
+  summary,
+  collapsed,
+  initialCollapsed = true,
+}: {
+  children: React.ReactNode | ((state: ReturnType<typeof useCollapsible>) => React.ReactNode);
+  summary?: React.ReactNode | ((state: ReturnType<typeof useCollapsible>) => React.ReactNode);
+  collapsed?: boolean;
+  initialCollapsed?: boolean;
+}) => {
+  const state = useCollapsible(initialCollapsed, collapsed);
+
+  return (
+    <>
+      {typeof summary === 'function' ? summary(state) : summary}
+      <CollapsibleContent
+        id={state.contentId}
+        collapsed={state.isCollapsed}
+        aria-hidden={state.isCollapsed}
+      >
+        {typeof children === 'function' ? children(state) : children}
+      </CollapsibleContent>
+    </>
+  );
+};
+
+export const CollapsibleContent = ({ collapsed, ...props }: ComponentProps<typeof Content>) => (
+  <Content collapsed={collapsed} aria-hidden={collapsed} {...props} />
+);
+
+const Content = styled.div<{ collapsed: boolean }>(({ collapsed }) => ({
+  blockSize: collapsed ? 0 : 'auto',
+  interpolateSize: 'allow-keywords',
+  contentVisibility: collapsed ? 'hidden' : 'visible',
+  transform: collapsed ? 'translateY(-10px)' : 'translateY(0)',
+  opacity: collapsed ? 0 : 1,
+  overflow: 'hidden',
+  transition: 'all var(--transition-duration, 0.2s)',
+  transitionBehavior: 'allow-discrete',
+
+  '@media (prefers-reduced-motion: reduce)': {
+    transition: 'none',
+  },
+}));
+
+export const useCollapsible = (initialCollapsed = true, collapsed?: boolean) => {
+  const [isCollapsed, setCollapsed] = useState(collapsed ?? initialCollapsed);
+
+  useEffect(() => {
+    if (collapsed !== undefined) {
+      setCollapsed(collapsed);
+    }
+  }, [collapsed]);
+
+  const toggleCollapsed = () => setCollapsed(!isCollapsed);
+  const contentId = useId();
+  const toggleProps = {
+    onClick: toggleCollapsed,
+    'aria-controls': contentId,
+    'aria-expanded': !isCollapsed,
+  } as const;
+
+  return { contentId, isCollapsed, setCollapsed, toggleCollapsed, toggleProps };
+};

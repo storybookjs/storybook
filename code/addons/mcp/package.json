@@ -43,7 +43,7 @@
 	"devDependencies": {
 		"@types/node": "catalog:",
 		"@vitest/coverage-v8": "catalog:",
-		"storybook": "^10.0.0-0",
+		"storybook": "catalog:",
 		"ts-dedent": "^2.2.0",
 		"tsdown": "catalog:",
 		"typescript": "catalog:",
@@ -51,7 +51,7 @@
 		"vitest": "catalog:"
 	},
 	"peerDependencies": {
-		"storybook": ">=9.0.0"
+		"storybook": "catalog:"
 	},
 	"publishConfig": {
 		"access": "public"

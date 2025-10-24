@@ -336,8 +336,6 @@ export default async function postInstall(options: PostinstallOptions) {
       );
       const [cmd, ...args] = remoteCommand.split(' ');
 
-      console.log({ cmd, args });
-
       await prompt.executeTask(() => packageManager.executeCommand({ command: cmd, args }), {
         id: 'a11y-addon-setup',
         intro: 'Setting up a11y addon for @storybook/addon-vitest',

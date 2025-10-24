@@ -29,6 +29,7 @@ import { dedent } from 'ts-dedent';
 
 import { initCreateNewStoryChannel } from '../server-channel/create-new-story-channel';
 import { initFileSearchChannel } from '../server-channel/file-search-channel';
+import { initPreviewInitializedChannel } from '../server-channel/preview-initialized-channel';
 import { defaultStaticDirs } from '../utils/constants';
 import { initializeSaveStory } from '../utils/save-story/save-story';
 import { parseStaticDir } from '../utils/server-statics';
@@ -257,6 +258,7 @@ export const experimental_serverChannel = async (
 
   initFileSearchChannel(channel, options, coreOptions);
   initCreateNewStoryChannel(channel, options, coreOptions);
+  initPreviewInitializedChannel(channel, options, coreOptions);
 
   return channel;
 };

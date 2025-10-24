@@ -6,6 +6,7 @@ import { dedent } from 'ts-dedent';
 import type { InlineConfig, ServerOptions } from 'vite';
 
 import { sanitizeEnvVars } from './envs';
+import { createViteLogger } from './logger';
 import { getOptimizeDeps } from './optimizeDeps';
 import { commonConfig } from './vite-config';
 
@@ -48,5 +49,7 @@ export async function createViteServer(options: Options, devServer: Server) {
   const finalConfig = await presets.apply('viteFinal', config, options);
 
   const { createServer } = await import('vite');
+
+  finalConfig.customLogger ??= await createViteLogger();
   return createServer(await sanitizeEnvVars(options, finalConfig));
 }

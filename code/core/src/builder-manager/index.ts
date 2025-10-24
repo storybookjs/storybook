@@ -257,7 +257,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   if (!options.outputDir) {
     throw new Error('outputDir is required');
   }
-  logger.info('=> Building manager..');
+  logger.step('Building manager..');
   const {
     config,
     customHead,

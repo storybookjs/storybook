@@ -282,5 +282,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "10.0.0-rc.1"
 }

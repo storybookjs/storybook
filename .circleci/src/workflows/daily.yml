@@ -21,6 +21,9 @@ jobs:
   - unit-tests:
       requires:
         - build
+  - stories-tests:
+      requires:
+        - build
   - script-checks:
       requires:
         - build
@@ -28,30 +31,30 @@ jobs:
       requires:
         - build
   - create-sandboxes:
-      parallelism: 30
+      parallelism: 34
       requires:
         - build
   # - smoke-test-sandboxes: # disabled for now
   #     requires:
   #       - create-sandboxes
   - chromatic-sandboxes:
-      parallelism: 27
+      parallelism: 31
       requires:
         - create-sandboxes
   - e2e-production:
-      parallelism: 25
+      parallelism: 7
       requires:
         - create-sandboxes
   - e2e-dev:
-      parallelism: 1
+      parallelism: 28
       requires:
         - create-sandboxes
   - test-runner-production:
-      parallelism: 25
+      parallelism: 29
       requires:
         - create-sandboxes
   - vitest-integration:
-      parallelism: 9
+      parallelism: 11
       requires:
         - create-sandboxes
   - test-portable-stories:
@@ -61,6 +64,9 @@ jobs:
         parameters:
           directory: ['react', 'vue3', 'nextjs', 'svelte']
   - e2e-ui:
+      requires:
+        - build
+  - e2e-ui-vitest-3:
       requires:
         - build
   - test-init-features:

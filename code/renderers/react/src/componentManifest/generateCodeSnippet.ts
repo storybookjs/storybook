@@ -297,19 +297,14 @@ const metaArgsRecord = (metaObj?: t.ObjectExpression | null): Record<string, t.N
 
 const toAttr = (key: string, value: t.Node): t.JSXAttribute | null => {
   if (t.isBooleanLiteral(value)) {
-    return value.value ? t.jsxAttribute(t.jsxIdentifier(key), null) : null;
+    // Keep falsy boolean attributes by rendering an explicit expression container
+    return value.value
+      ? t.jsxAttribute(t.jsxIdentifier(key), null)
+      : t.jsxAttribute(t.jsxIdentifier(key), t.jsxExpressionContainer(value));
   }
 
   if (t.isStringLiteral(value)) {
     return t.jsxAttribute(t.jsxIdentifier(key), t.stringLiteral(value.value));
-  }
-
-  if (t.isNullLiteral(value)) {
-    return null;
-  }
-
-  if (t.isIdentifier(value) && value.name === 'undefined') {
-    return null;
   }
 
   if (t.isExpression(value)) {

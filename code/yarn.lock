@@ -6153,22 +6153,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-jest@workspace:*, @storybook/addon-jest@workspace:addons/jest":
-  version: 0.0.0-use.local
-  resolution: "@storybook/addon-jest@workspace:addons/jest"
-  dependencies:
-    "@storybook/icons": "npm:^1.6.0"
-    react: "npm:^18.2.0"
-    react-dom: "npm:^18.2.0"
-    react-resize-detector: "npm:^7.1.2"
-    tiny-invariant: "npm:^1.3.1"
-    typescript: "npm:^5.8.3"
-    upath: "npm:^2.0.1"
-  peerDependencies:
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/addon-links@workspace:*, @storybook/addon-links@workspace:addons/links":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-links@workspace:addons/links"
@@ -6572,7 +6556,7 @@ __metadata:
     typescript: "npm:^5.8.3"
     vite-plugin-storybook-nextjs: "npm:^2.0.7"
   peerDependencies:
-    next: ^14.1.0 || ^15.0.0
+    next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
@@ -6631,7 +6615,7 @@ __metadata:
     typescript: "npm:^5.8.3"
     webpack: "npm:^5.65.0"
   peerDependencies:
-    next: ^14.1.0 || ^15.0.0
+    next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
@@ -6847,6 +6831,7 @@ __metadata:
     expect-type: "npm:^0.15.0"
     html-tags: "npm:^3.1.0"
     prop-types: "npm:^15.7.2"
+    react-docgen: "npm:^8.0.2"
     react-element-to-jsx-string: "npm:@7rulnik/react-element-to-jsx-string@15.0.1"
     require-from-string: "npm:^2.0.2"
     semver: "npm:^7.3.7"
@@ -6874,7 +6859,6 @@ __metadata:
     "@storybook/addon-a11y": "workspace:*"
     "@storybook/addon-designs": "npm:10.0.3--canary.67522d1.0"
     "@storybook/addon-docs": "workspace:*"
-    "@storybook/addon-jest": "workspace:*"
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-onboarding": "workspace:*"
     "@storybook/addon-themes": "workspace:*"
@@ -22222,6 +22206,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-docgen@npm:^8.0.2":
+  version: 8.0.2
+  resolution: "react-docgen@npm:8.0.2"
+  dependencies:
+    "@babel/core": "npm:^7.28.0"
+    "@babel/traverse": "npm:^7.28.0"
+    "@babel/types": "npm:^7.28.2"
+    "@types/babel__core": "npm:^7.20.5"
+    "@types/babel__traverse": "npm:^7.20.7"
+    "@types/doctrine": "npm:^0.0.9"
+    "@types/resolve": "npm:^1.20.2"
+    doctrine: "npm:^3.0.0"
+    resolve: "npm:^1.22.1"
+    strip-indent: "npm:^4.0.0"
+  checksum: 10c0/25e2dd48957c52749cf44bdcf172f3b47d42d8bb8c51000bceb136ff018cbe0a78610d04f12d8bbb882df0d86884e8d05b1d7a1cc39586de356ef5bb9fceab71
+  languageName: node
+  linkType: hard
+
 "react-dom@npm:^18.2.0":
   version: 18.3.1
   resolution: "react-dom@npm:18.3.1"
@@ -26071,13 +26073,6 @@ __metadata:
   version: 4.0.0
   resolution: "untildify@npm:4.0.0"
   checksum: 10c0/d758e624c707d49f76f7511d75d09a8eda7f2020d231ec52b67ff4896bcf7013be3f9522d8375f57e586e9a2e827f5641c7e06ee46ab9c435fc2b2b2e9de517a
-  languageName: node
-  linkType: hard
-
-"upath@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "upath@npm:2.0.1"
-  checksum: 10c0/79e8e1296b00e24a093b077cfd7a238712d09290c850ce59a7a01458ec78c8d26dcc2ab50b1b9d6a84dabf6511fb4969afeb8a5c9a001aa7272b9cc74c34670f
   languageName: node
   linkType: hard
 

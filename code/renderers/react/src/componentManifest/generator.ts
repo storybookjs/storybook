@@ -40,15 +40,12 @@ export const componentManifestGenerator = async () => {
           return;
         }
 
-        const examples = !componentName
-          ? []
-          : Object.entries(csf._storyPaths)
-              .map(([name, path]) => ({
-                name,
-                snippet: recast.print(getCodeSnippet(path, csf._metaNode ?? null, componentName))
-                  .code,
-              }))
-              .filter(Boolean);
+        const examples = Object.entries(csf._storyPaths)
+          .map(([name, path]) => ({
+            name,
+            snippet: recast.print(getCodeSnippet(path, csf._metaNode ?? null, componentName)).code,
+          }))
+          .filter(Boolean);
 
         const id = entry.id.split('--')[0];
 

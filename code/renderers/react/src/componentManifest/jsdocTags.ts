@@ -19,4 +19,3 @@ export function extractJSDocInfo(jsdocComment: string) {
     ),
   };
 }
-

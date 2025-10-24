@@ -17,6 +17,9 @@ The addon provides tools to improve agents' UI development capabilities, retriev
 
 ### Installation and Setup
 
+> [!NOTE]
+> This addon requires Storybook 9.0 or higher.
+
 Use Storybook's CLI to automatically install and configure the addon:
 
 ```bash

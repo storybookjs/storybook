@@ -1,9 +1,8 @@
 import { writeFile } from 'node:fs/promises';
 import { dirname, join, sep } from 'node:path';
 
-import { rollup } from 'rollup';
-import { dts } from 'rollup-plugin-dts';
-import { JsxEmit, ScriptTarget } from 'typescript';
+import { rolldown } from 'rolldown';
+import { dts } from 'rolldown-plugin-dts';
 
 import { getExternal } from './entry-utils';
 
@@ -18,23 +17,24 @@ async function run() {
   const { typesExternal: external } = await getExternal(process.cwd());
 
   const dir = dirname(entryPoint).replace('src', 'dist');
-  const outputFile = entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
-  const out = await rollup({
+  const out = await rolldown({
     input: entryPoint,
     external: (id) => {
       return external.some(
-        (dep) => id === dep || id.startsWith(`${dep}/`) || id.includes(`${sep}node_modules${sep}${dep}${sep}`)
+        (dep) =>
+          id === dep ||
+          id.startsWith(`${dep}/`) ||
+          id.includes(`${sep}node_modules${sep}${dep}${sep}`)
       );
     },
-    output: { file: outputFile, format: 'es' },
     plugins: [
       dts({
-        respectExternal: true,
+        emitDtsOnly: true,
         tsconfig: join(process.cwd(), 'tsconfig.json'),
         compilerOptions: {
           esModuleInterop: true,
           baseUrl: '.',
-          jsx: JsxEmit.React,
+          jsx: 'react',
           declaration: true,
           noEmit: false,
           emitDeclarationOnly: true,
@@ -43,14 +43,14 @@ async function run() {
           declarationMap: false,
           skipLibCheck: true,
           preserveSymlinks: false,
-          target: ScriptTarget.ESNext,
+          target: 'esnext',
         },
       }),
     ],
   });
   const { output } = await out.generate({
     format: 'es',
-    file: outputFile,
+    dir,
   });
 
   await Promise.all(

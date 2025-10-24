@@ -15,7 +15,7 @@ The addon provides tools to improve agents' UI development capabilities, retriev
 ### Installation and Setup
 
 > [!NOTE]
-> This addon requires Storybook 10.1 or higher, currently only available as the canary verison `0.0.0-pr-32816-sha-28f59f53`.
+> This addon requires Storybook 10.1 or higher, currently only available as the canary version `0.0.0-pr-32816-sha-28f59f53`.
 
 Use Storybook's CLI to automatically install and configure the addon:
 

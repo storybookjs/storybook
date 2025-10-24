@@ -3865,10 +3865,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/env@npm:15.3.1, @next/env@npm:^15.0.3":
+"@next/env@npm:15.3.1":
   version: 15.3.1
   resolution: "@next/env@npm:15.3.1"
   checksum: 10c0/edf65ad9d2bb7ccbc784beacf111a6500f79589743e2292a5c505e504ee711aa121cc0ac164b912ab5ea4734ce82f084133d291650de6d589b6ef208f98b4505
+  languageName: node
+  linkType: hard
+
+"@next/env@npm:16.0.0":
+  version: 16.0.0
+  resolution: "@next/env@npm:16.0.0"
+  checksum: 10c0/bc6b85d48373a207f95373c5b350e0766774a8453982c8e045539393e165bc25ef3f6aaaf44036c8f2f4a98e857e0ccc7f84da6ea92116bd50f672e06f987750
   languageName: node
   linkType: hard
 
@@ -6400,9 +6407,9 @@ __metadata:
     semver: "npm:^7.3.5"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.8.3"
-    vite-plugin-storybook-nextjs: "npm:^2.0.7"
+    vite-plugin-storybook-nextjs: "npm:^3.0.0"
   peerDependencies:
-    next: ^14.1.0 || ^15.0.0
+    next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     storybook: "workspace:^"
@@ -6461,7 +6468,7 @@ __metadata:
     typescript: "npm:^5.8.3"
     webpack: "npm:^5.65.0"
   peerDependencies:
-    next: ^14.1.0 || ^15.0.0
+    next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0-beta
     storybook: "workspace:^"
@@ -26535,21 +26542,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:^2.0.7":
-  version: 2.0.7
-  resolution: "vite-plugin-storybook-nextjs@npm:2.0.7"
+"vite-plugin-storybook-nextjs@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "vite-plugin-storybook-nextjs@npm:3.0.0"
   dependencies:
-    "@next/env": "npm:^15.0.3"
+    "@next/env": "npm:16.0.0"
     image-size: "npm:^2.0.0"
     magic-string: "npm:^0.30.11"
     module-alias: "npm:^2.2.3"
     ts-dedent: "npm:^2.2.0"
     vite-tsconfig-paths: "npm:^5.1.4"
   peerDependencies:
-    next: ^14.1.0 || ^15.0.0
-    storybook: ^0.0.0-0 || ^9.0.0 || ^9.1.0-0
+    next: ^14.1.0 || ^15.0.0 || ^16.0.0
+    storybook: ^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
-  checksum: 10c0/a7e482cf11ca2201e82c8613eaece6848ff6634ee48b835e215b5f9e698bbbc2c013286487c0b9c0d8562f5d0bc23170d011471eaec0bdd52a34f2f1b1ff83d7
+  checksum: 10c0/bb460ddab4d46a98bdd1525c7f18117a0a335a3500243534955532b5a209d3e63aad369a96a669618dd13b785cabe74560b4439ce063c953c51b9ab44abb7b10
   languageName: node
   linkType: hard
 

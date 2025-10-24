@@ -6,12 +6,18 @@ import { fn } from 'storybook/test';
 const revalidatePath = fn().mockName('next/cache::revalidatePath');
 const revalidateTag = fn().mockName('next/cache::revalidateTag');
 
+// Next v16.0.0
+const updateTag = fn().mockName('next/cache::updateTag');
+const refresh = fn().mockName('next/cache::refresh');
+
 const cacheExports = {
   unstable_cache,
   revalidateTag,
   revalidatePath,
   unstable_noStore,
+  updateTag,
+  refresh,
 };
 
 export default cacheExports;
-export { unstable_cache, revalidateTag, revalidatePath, unstable_noStore };
+export { unstable_cache, revalidateTag, revalidatePath, unstable_noStore, updateTag, refresh };

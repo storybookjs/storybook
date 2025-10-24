@@ -1,17 +1,12 @@
-import type { CompatibleString } from 'storybook/internal/types';
-
 import type {
-  BuilderOptions,
-  StorybookConfigWebpack,
-  TypescriptOptions as TypescriptOptionsBuilder,
-} from '@storybook/builder-webpack5';
-import type {
+  CompatibleString,
   StorybookConfig as StorybookConfigBase,
-  TypescriptOptions as TypescriptOptionsReact,
-} from '@storybook/core-webpack';
+} from 'storybook/internal/types';
 
-type FrameworkName = CompatibleString<'@storybook/ember-webpack5'>;
-type BuilderName = CompatibleString<'@storybook/builder-webpack5'>;
+import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
+
+type FrameworkName = CompatibleString<'@storybook/ember'>;
+type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
   builder?: BuilderOptions;
@@ -32,19 +27,12 @@ type StorybookConfigFramework = {
           options: BuilderOptions;
         };
   };
-  typescript?: Partial<TypescriptOptionsBuilder & TypescriptOptionsReact> &
-    StorybookConfigBase['typescript'];
 };
 
 /** The interface for Storybook configuration in `main.ts` files. */
 export type StorybookConfig = Omit<
   StorybookConfigBase,
-  keyof StorybookConfigWebpack | keyof StorybookConfigFramework
+  keyof StorybookConfigVite | keyof StorybookConfigFramework
 > &
-  StorybookConfigWebpack &
+  StorybookConfigVite &
   StorybookConfigFramework;
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __EMBER_GENERATED_DOC_JSON__: any;
-}

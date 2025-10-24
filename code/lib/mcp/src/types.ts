@@ -1,4 +1,4 @@
-import type { Documentation } from 'react-docgen/dist/Documentation';
+import type { Documentation } from 'react-docgen';
 import * as v from 'valibot';
 
 /**

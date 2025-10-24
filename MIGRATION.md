@@ -511,7 +511,7 @@ export default {
 };
 ```
 
-If you are resolving a file path, you may need to convert it into a URL.
+When adding managerEntries, ensure you resolve a path, you may need to convert it from a URL:
 
 For example:
 

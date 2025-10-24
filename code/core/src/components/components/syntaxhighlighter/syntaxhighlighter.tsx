@@ -7,7 +7,7 @@ import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
 // @ts-expect-error (Converted from ts-ignore)
-import { createElement } from 'react-syntax-highlighter/dist/esm/index';
+import createElement from 'react-syntax-highlighter/dist/esm/create-element';
 import bash from 'react-syntax-highlighter/dist/esm/languages/prism/bash';
 import css from 'react-syntax-highlighter/dist/esm/languages/prism/css';
 import graphql from 'react-syntax-highlighter/dist/esm/languages/prism/graphql';

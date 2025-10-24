@@ -18,24 +18,26 @@ vi.mock('storybook/internal/cli', async () => {
 
 describe('FeatureCompatibilityService', () => {
   let service: FeatureCompatibilityService;
+  let mockAddonVitestService: AddonVitestService;
 
   beforeEach(() => {
-    service = new FeatureCompatibilityService();
+    mockAddonVitestService = new AddonVitestService();
+    service = new FeatureCompatibilityService(mockAddonVitestService);
   });
 
   describe('supportsOnboarding', () => {
     it('should return true for supported project types', () => {
-      expect(service.supportsOnboarding(ProjectType.REACT)).toBe(true);
-      expect(service.supportsOnboarding(ProjectType.REACT_SCRIPTS)).toBe(true);
-      expect(service.supportsOnboarding(ProjectType.NEXTJS)).toBe(true);
-      expect(service.supportsOnboarding(ProjectType.VUE3)).toBe(true);
-      expect(service.supportsOnboarding(ProjectType.ANGULAR)).toBe(true);
+      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.REACT)).toBe(true);
+      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.REACT_SCRIPTS)).toBe(true);
+      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.NEXTJS)).toBe(true);
+      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.VUE3)).toBe(true);
+      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.ANGULAR)).toBe(true);
     });
 
     it('should return false for unsupported project types', () => {
-      expect(service.supportsOnboarding(ProjectType.SVELTE)).toBe(false);
-      expect(service.supportsOnboarding(ProjectType.EMBER)).toBe(false);
-      expect(service.supportsOnboarding(ProjectType.HTML)).toBe(false);
+      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.SVELTE)).toBe(false);
+      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.EMBER)).toBe(false);
+      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.HTML)).toBe(false);
     });
   });
 
@@ -48,14 +50,8 @@ describe('FeatureCompatibilityService', () => {
         getInstalledVersion: vi.fn(),
       } as Partial<JsPackageManager> as JsPackageManager;
 
-      // Mock AddonVitestService.validateCompatibility
-      mockValidateCompatibility = vi.fn().mockResolvedValue({ compatible: true });
-      vi.mocked(AddonVitestService).mockImplementation(
-        () =>
-          ({
-            validateCompatibility: mockValidateCompatibility,
-          }) as unknown as AddonVitestService
-      );
+      // Get the mocked validateCompatibility method
+      mockValidateCompatibility = vi.mocked(mockAddonVitestService.validateCompatibility);
     });
 
     it('should return compatible when all checks pass', async () => {

@@ -13,10 +13,6 @@ export type {
 
 export { FeatureCompatibilityService } from './FeatureCompatibilityService';
 export type { FeatureCompatibilityResult } from './FeatureCompatibilityService';
-export {
-  ONBOARDING_PROJECT_TYPES,
-  TEST_SUPPORTED_PROJECT_TYPES,
-} from './FeatureCompatibilityService';
 
 export { TelemetryService } from './TelemetryService';
 

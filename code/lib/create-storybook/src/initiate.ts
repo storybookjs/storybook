@@ -19,7 +19,7 @@ import {
 import { DependencyCollector } from './dependency-collector';
 import { registerAllGenerators } from './generators';
 import type { CommandOptions } from './generators/types';
-import { ONBOARDING_PROJECT_TYPES } from './services/FeatureCompatibilityService';
+import { FeatureCompatibilityService } from './services/FeatureCompatibilityService';
 import { TelemetryService } from './services/TelemetryService';
 
 /**
@@ -163,7 +163,7 @@ async function runStorybookDev(result: {
   }
 
   try {
-    const supportsOnboarding = ONBOARDING_PROJECT_TYPES.includes(projectType);
+    const supportsOnboarding = FeatureCompatibilityService.supportsOnboarding(projectType);
 
     const flags = [];
 

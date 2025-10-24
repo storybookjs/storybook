@@ -5,7 +5,7 @@ import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import { baseGenerator } from '../generators/baseGenerator';
 import type { CommandOptions, GeneratorFeature, GeneratorModule } from '../generators/types';
-import { ONBOARDING_PROJECT_TYPES } from '../services/FeatureCompatibilityService';
+import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 
 export type GeneratorExecutionResult =
@@ -62,7 +62,7 @@ export class GeneratorExecutionCommand {
     // Remove onboarding if not supported
     if (
       selectedFeatures.has('onboarding') &&
-      !ONBOARDING_PROJECT_TYPES.includes(projectType as any)
+      !FeatureCompatibilityService.supportsOnboarding(projectType)
     ) {
       selectedFeatures.delete('onboarding');
     }

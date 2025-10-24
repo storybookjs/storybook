@@ -3,7 +3,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 
 /** Project types that support the onboarding feature */
-export const ONBOARDING_PROJECT_TYPES: ProjectType[] = [
+const ONBOARDING_PROJECT_TYPES: ProjectType[] = [
   ProjectType.REACT,
   ProjectType.REACT_SCRIPTS,
   ProjectType.REACT_NATIVE_WEB,
@@ -13,19 +13,6 @@ export const ONBOARDING_PROJECT_TYPES: ProjectType[] = [
   ProjectType.ANGULAR,
 ];
 
-/** Project types that support the test addon feature */
-export const TEST_SUPPORTED_PROJECT_TYPES: ProjectType[] = [
-  ProjectType.REACT,
-  ProjectType.VUE3,
-  ProjectType.NEXTJS,
-  ProjectType.NUXT,
-  ProjectType.PREACT,
-  ProjectType.SVELTE,
-  ProjectType.SVELTEKIT,
-  ProjectType.WEB_COMPONENTS,
-  ProjectType.REACT_NATIVE_WEB,
-];
-
 export interface FeatureCompatibilityResult {
   compatible: boolean;
   reasons?: string[];
@@ -33,8 +20,11 @@ export interface FeatureCompatibilityResult {
 
 /** Service for validating feature compatibility with project configurations */
 export class FeatureCompatibilityService {
+  constructor(private readonly addonVitestService = new AddonVitestService()) {}
+
   /** Check if a project type supports onboarding */
-  supportsOnboarding(projectType: ProjectType): boolean {
+
+  static supportsOnboarding(projectType: ProjectType): boolean {
     return ONBOARDING_PROJECT_TYPES.includes(
       projectType as (typeof ONBOARDING_PROJECT_TYPES)[number]
     );
@@ -55,9 +45,7 @@ export class FeatureCompatibilityService {
     builder: SupportedBuilder,
     directory: string
   ): Promise<FeatureCompatibilityResult> {
-    const addonVitestService = new AddonVitestService();
-
-    const compatibilityResult = await addonVitestService.validateCompatibility({
+    const compatibilityResult = await this.addonVitestService.validateCompatibility({
       packageManager,
       framework,
       builder,

@@ -1,6 +1,7 @@
 ## 9.1.14
 
-- Addon-Vitest: Support Vitest 4 - [#32819](https://github.com/storybookjs/storybook/pull/32819), thanks @yannbf!
+- NextJS: Add NextJS 16 support - [#32791](https://github.com/storybookjs/storybook/pull/32791), thanks @yannbf and @ndelangen!
+- Addon-Vitest: Support Vitest 4 - [#32819](https://github.com/storybookjs/storybook/pull/32819), thanks @yannbf and @ndelangen!
 - CSF: Fix `play-fn` tag for methods - [#32695](https://github.com/storybookjs/storybook/pull/32695), thanks @shilman!
 
 ## 9.1.13

@@ -4,7 +4,6 @@ import React, { createElement, isValidElement } from 'react';
 import { logger } from 'storybook/internal/client-logger';
 import { SourceType, getDocgenSection } from 'storybook/internal/docs-tools';
 import type { PartialStoryFn, StoryContext } from 'storybook/internal/types';
-import { type StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { Options } from 'react-element-to-jsx-string';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';

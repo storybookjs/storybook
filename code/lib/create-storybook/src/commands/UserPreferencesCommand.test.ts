@@ -4,7 +4,9 @@ import { globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import type { SupportedBuilder } from 'storybook/internal/types';
 
+import type { DependencyCollector } from '../dependency-collector';
 import { UserPreferencesCommand } from './UserPreferencesCommand';
 
 vi.mock('storybook/internal/cli', { spy: true });
@@ -12,7 +14,6 @@ vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 
 interface CommandWithPrivates {
-  versionService: { getVersionInfo: ReturnType<typeof vi.fn> };
   telemetryService: {
     trackNewUserCheck: ReturnType<typeof vi.fn>;
     trackInstallType: ReturnType<typeof vi.fn>;
@@ -23,9 +24,21 @@ interface CommandWithPrivates {
 describe('UserPreferencesCommand', () => {
   let command: UserPreferencesCommand;
   let mockPackageManager: JsPackageManager;
+  let mockDependencyCollector: DependencyCollector;
 
   beforeEach(() => {
-    command = new UserPreferencesCommand(false);
+    // Create mock dependency collector
+    mockDependencyCollector = {
+      addDevDependencies: vi.fn(),
+      addDependencies: vi.fn(),
+      getAllPackages: vi.fn().mockReturnValue({ dependencies: [], devDependencies: [] }),
+      hasPackages: vi.fn().mockReturnValue(false),
+      merge: vi.fn(),
+      validate: vi.fn().mockReturnValue({ valid: true, errors: [] }),
+      getVersionConflicts: vi.fn().mockReturnValue([]),
+    } as unknown as DependencyCollector;
+
+    command = new UserPreferencesCommand(mockDependencyCollector, undefined, false);
     mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
 
     // Mock globalSettings
@@ -39,10 +52,6 @@ describe('UserPreferencesCommand', () => {
     );
 
     // Create mock services
-    const mockVersionService = {
-      getVersionInfo: vi.fn(),
-    };
-
     const mockTelemetryService = {
       trackNewUserCheck: vi.fn(),
       trackInstallType: vi.fn(),
@@ -53,7 +62,6 @@ describe('UserPreferencesCommand', () => {
     };
 
     // Inject mocked services
-    (command as unknown as CommandWithPrivates).versionService = mockVersionService;
     (command as unknown as CommandWithPrivates).telemetryService = mockTelemetryService;
     (command as unknown as CommandWithPrivates).featureService = mockFeatureService;
 
@@ -63,15 +71,6 @@ describe('UserPreferencesCommand', () => {
     vi.mocked(logger.warn).mockImplementation(() => {});
     vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(isCI).mockReturnValue(false);
-
-    // Default version info
-    const versionService = (command as unknown as CommandWithPrivates).versionService;
-    vi.mocked(versionService.getVersionInfo).mockResolvedValue({
-      currentVersion: '8.0.0',
-      latestVersion: '8.0.0',
-      isPrerelease: false,
-      isOutdated: false,
-    });
 
     // Default feature validation (compatible)
     const featureService = (command as unknown as CommandWithPrivates).featureService;
@@ -87,7 +86,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute(mockPackageManager, {
         yes: true,
         framework: undefined,
-        builder: 'vite' as any,
+        builder: 'vite' as SupportedBuilder,
       });
 
       expect(result.newUser).toBe(true);
@@ -105,7 +104,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute(mockPackageManager, {
         framework: undefined,
-        builder: 'vite' as any,
+        builder: 'vite' as SupportedBuilder,
       });
 
       expect(prompt.select).toHaveBeenCalledWith(
@@ -127,7 +126,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute(mockPackageManager, {
         framework: undefined,
-        builder: 'vite' as any,
+        builder: 'vite' as SupportedBuilder,
       });
 
       expect(prompt.select).toHaveBeenCalledTimes(2);
@@ -146,7 +145,7 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute(mockPackageManager, {
         framework: undefined,
-        builder: 'vite' as any,
+        builder: 'vite' as SupportedBuilder,
       });
 
       expect(result.selectedFeatures.has('test')).toBe(false);
@@ -160,7 +159,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute(mockPackageManager, {
         yes: true,
         framework: undefined,
-        builder: 'vite' as any,
+        builder: 'vite' as SupportedBuilder,
       });
 
       expect(result.selectedFeatures.has('docs')).toBe(true);
@@ -178,7 +177,7 @@ describe('UserPreferencesCommand', () => {
 
       await command.execute(mockPackageManager, {
         framework: undefined,
-        builder: 'vite' as any,
+        builder: 'vite' as SupportedBuilder,
       });
 
       expect(featureService.validateTestFeatureCompatibility).toHaveBeenCalledWith(
@@ -202,50 +201,12 @@ describe('UserPreferencesCommand', () => {
 
       const result = await command.execute(mockPackageManager, {
         framework: undefined,
-        builder: 'vite' as any,
+        builder: 'vite' as SupportedBuilder,
       });
 
       expect(result.selectedFeatures.has('test')).toBe(false);
       expect(result.selectedFeatures.has('docs')).toBe(true);
       expect(result.selectedFeatures.has('onboarding')).toBe(true);
-    });
-
-    it('should display outdated version warning', async () => {
-      const versionService = (command as unknown as CommandWithPrivates).versionService;
-      vi.mocked(versionService.getVersionInfo).mockResolvedValue({
-        currentVersion: '7.0.0',
-        latestVersion: '8.0.0',
-        isPrerelease: false,
-        isOutdated: true,
-      });
-
-      await command.execute(mockPackageManager, {
-        yes: true,
-        framework: undefined,
-        builder: 'vite' as any,
-      });
-
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('behind the latest release')
-      );
-    });
-
-    it('should display prerelease warning', async () => {
-      const versionService = (command as unknown as CommandWithPrivates).versionService;
-      vi.mocked(versionService.getVersionInfo).mockResolvedValue({
-        currentVersion: '8.0.0-alpha.1',
-        latestVersion: '8.0.0',
-        isPrerelease: true,
-        isOutdated: false,
-      });
-
-      await command.execute(mockPackageManager, {
-        yes: true,
-        framework: undefined,
-        builder: 'vite' as any,
-      });
-
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('pre-release version'));
     });
   });
 });

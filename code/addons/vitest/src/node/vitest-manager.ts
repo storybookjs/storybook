@@ -164,7 +164,6 @@ export class VitestManager {
   }
 
   private updateLastChanged(filepath: string) {
-    // @ts-expect-error `server` only exists in Vitest 3
     this.vitest!.projects.forEach(({ browser, vite, server }) => {
       if (server) {
         const serverMods = server.moduleGraph.getModulesByFile(filepath);

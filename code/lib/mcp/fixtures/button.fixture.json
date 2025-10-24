@@ -5,46 +5,75 @@
 		"description": "A versatile button component that supports multiple variants, sizes, and states.\n\nThe Button component is a fundamental building block for user interactions. It can be styled as primary, secondary, or tertiary actions, and supports disabled and loading states.\n\n## Usage\n\nButtons should be used for actions that affect the current page or trigger operations. For navigation, consider using a Link component instead.",
 		"summary": "A versatile button component for user interactions",
 		"import": "import { Button } from '@storybook/design-system';",
-		"props": {
-			"type": "object",
-			"properties": {
+		"reactDocgen": {
+			"props": {
 				"variant": {
-					"type": "string",
-					"enum": ["primary", "secondary", "tertiary", "danger"],
-					"default": "primary",
-					"description": "The visual style variant of the button"
+					"description": "The visual style variant of the button",
+					"required": false,
+					"tsType": {
+						"name": "union",
+						"raw": "\"primary\" | \"secondary\" | \"tertiary\" | \"danger\"",
+						"elements": [
+							{ "name": "literal", "value": "\"primary\"" },
+							{ "name": "literal", "value": "\"secondary\"" },
+							{ "name": "literal", "value": "\"tertiary\"" },
+							{ "name": "literal", "value": "\"danger\"" }
+						]
+					},
+					"defaultValue": { "value": "\"primary\"", "computed": false }
 				},
 				"size": {
-					"type": "string",
-					"enum": ["small", "medium", "large"],
-					"default": "medium",
-					"description": "The size of the button"
+					"description": "The size of the button",
+					"required": false,
+					"tsType": {
+						"name": "union",
+						"raw": "\"small\" | \"medium\" | \"large\"",
+						"elements": [
+							{ "name": "literal", "value": "\"small\"" },
+							{ "name": "literal", "value": "\"medium\"" },
+							{ "name": "literal", "value": "\"large\"" }
+						]
+					},
+					"defaultValue": { "value": "\"medium\"", "computed": false }
 				},
 				"disabled": {
-					"type": "boolean",
-					"default": false,
-					"description": "Whether the button is disabled"
+					"description": "Whether the button is disabled",
+					"required": false,
+					"tsType": { "name": "boolean" },
+					"defaultValue": { "value": "false", "computed": false }
 				},
 				"loading": {
-					"type": "boolean",
-					"default": false,
-					"description": "Whether the button is in a loading state"
+					"description": "Whether the button is in a loading state",
+					"required": false,
+					"tsType": { "name": "boolean" },
+					"defaultValue": { "value": "false", "computed": false }
 				},
 				"fullWidth": {
-					"type": "boolean",
-					"default": false,
-					"description": "Whether the button should take up the full width of its container"
+					"description": "Whether the button should take up the full width of its container",
+					"required": false,
+					"tsType": { "name": "boolean" },
+					"defaultValue": { "value": "false", "computed": false }
 				},
 				"onClick": {
-					"type": "function",
-					"description": "Callback function when the button is clicked"
+					"description": "Callback function when the button is clicked",
+					"required": false,
+					"tsType": {
+						"name": "signature",
+						"type": "function",
+						"signature": {
+							"arguments": [
+								{ "name": "event", "type": { "name": "MouseEvent" } }
+							],
+							"return": { "name": "void" }
+						}
+					}
 				},
 				"children": {
-					"type": "string",
-					"description": "The content of the button"
+					"description": "The content of the button",
+					"required": true,
+					"tsType": { "name": "ReactNode" }
 				}
-			},
-			"required": ["children"]
+			}
 		},
 		"examples": [
 			{

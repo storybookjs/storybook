@@ -37,6 +37,7 @@ export const ComponentManifest = v.object({
 	summary: v.exactOptional(v.string()),
 	examples: v.exactOptional(v.array(Example)),
 	props: v.exactOptional(v.any()),
+	reactDocgen: v.exactOptional(v.any()),
 });
 export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;
 

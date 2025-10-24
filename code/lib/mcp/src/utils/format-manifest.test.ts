@@ -408,6 +408,211 @@ describe('formatComponentManifest', () => {
 			`);
 		});
 	});
+
+	describe('props section', () => {
+		it('should format props from reactDocgen', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				reactDocgen: {
+					props: {
+						variant: {
+							description: 'The visual style variant',
+							required: false,
+							defaultValue: { value: '"primary"', computed: false },
+							tsType: {
+								name: 'union',
+								raw: '"primary" | "secondary"',
+								elements: [
+									{ name: 'literal', value: '"primary"' },
+									{ name: 'literal', value: '"secondary"' },
+								],
+							},
+						},
+						disabled: {
+							description: 'Whether the button is disabled',
+							required: false,
+							defaultValue: { value: 'false', computed: false },
+							tsType: {
+								name: 'boolean',
+							},
+						},
+						onClick: {
+							description: 'Click handler',
+							required: true,
+							tsType: {
+								name: 'signature',
+								type: 'function',
+								signature: {
+									arguments: [{ name: 'event', type: { name: 'MouseEvent' } }],
+									return: { name: 'void' },
+								},
+							},
+						},
+					},
+				},
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toMatchInlineSnapshot(`
+				"<component>
+				<id>button</id>
+				<name>Button</name>
+				<props>
+				<prop>
+				<prop_name>variant</prop_name>
+				<prop_type>"primary" | "secondary"</prop_type>
+				<prop_required>false</prop_required>
+				<prop_default>"primary"</prop_default>
+				<prop_description>
+				The visual style variant
+				</prop_description>
+				</prop>
+				<prop>
+				<prop_name>disabled</prop_name>
+				<prop_type>boolean</prop_type>
+				<prop_required>false</prop_required>
+				<prop_default>false</prop_default>
+				<prop_description>
+				Whether the button is disabled
+				</prop_description>
+				</prop>
+				<prop>
+				<prop_name>onClick</prop_name>
+				<prop_type>(event: MouseEvent) => void</prop_type>
+				<prop_required>true</prop_required>
+				<prop_description>
+				Click handler
+				</prop_description>
+				</prop>
+				</props>
+				</component>"
+			`);
+		});
+
+		it('should handle props with minimal information', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				reactDocgen: {
+					props: {
+						children: {
+							tsType: {
+								name: 'string',
+							},
+						},
+					},
+				},
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toMatchInlineSnapshot(`
+				"<component>
+				<id>button</id>
+				<name>Button</name>
+				<props>
+				<prop>
+				<prop_name>children</prop_name>
+				<prop_type>string</prop_type>
+				</prop>
+				</props>
+				</component>"
+			`);
+		});
+
+		it('should omit props section when reactDocgen is not present', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				description: 'A button component',
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toMatchInlineSnapshot(`
+				"<component>
+				<id>button</id>
+				<name>Button</name>
+				<description>
+				A button component
+				</description>
+				</component>"
+			`);
+		});
+
+		it('should omit props section when reactDocgen has no props', () => {
+			const manifest: ComponentManifest = {
+				id: 'button',
+				name: 'Button',
+				reactDocgen: {
+					props: {},
+				},
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toMatchInlineSnapshot(`
+				"<component>
+				<id>button</id>
+				<name>Button</name>
+				</component>"
+			`);
+		});
+
+		it('should include all optional fields when present', () => {
+			const manifest: ComponentManifest = {
+				id: 'input',
+				name: 'Input',
+				reactDocgen: {
+					props: {
+						placeholder: {
+							description: 'Placeholder text',
+							required: false,
+							defaultValue: { value: '""', computed: false },
+							tsType: {
+								name: 'string',
+							},
+						},
+						maxLength: {
+							description: 'Maximum input length',
+							tsType: {
+								name: 'number',
+							},
+						},
+					},
+				},
+			};
+
+			const result = formatComponentManifest(manifest);
+
+			expect(result).toMatchInlineSnapshot(`
+				"<component>
+				<id>input</id>
+				<name>Input</name>
+				<props>
+				<prop>
+				<prop_name>placeholder</prop_name>
+				<prop_type>string</prop_type>
+				<prop_required>false</prop_required>
+				<prop_default>""</prop_default>
+				<prop_description>
+				Placeholder text
+				</prop_description>
+				</prop>
+				<prop>
+				<prop_name>maxLength</prop_name>
+				<prop_type>number</prop_type>
+				<prop_description>
+				Maximum input length
+				</prop_description>
+				</prop>
+				</props>
+				</component>"
+			`);
+		});
+	});
 });
 
 describe('formatComponentManifestMapToList', () => {

@@ -6,7 +6,8 @@ import {
   detectBuilder,
   isStorybookInstantiated,
 } from 'storybook/internal/cli';
-import { JsPackageManagerFactory } from 'storybook/internal/common';
+import { JsPackageManagerFactory, loadMainConfig } from 'storybook/internal/common';
+import { readConfig } from 'storybook/internal/csf-tools';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
@@ -24,6 +25,7 @@ import * as scaffoldModule from './scaffold-new-project';
 vi.mock('storybook/internal/cli', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/core-server', { spy: true });
+vi.mock('storybook/internal/csf-tools', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 vi.mock('process-ancestry', { spy: true });
@@ -107,6 +109,15 @@ describe('initiate integration tests', () => {
       installType: 'recommended' as const,
       selectedFeatures: new Set(['test']),
     });
+    vi.mocked(loadMainConfig).mockResolvedValue({
+      stories: [],
+      addons: [],
+      framework: { name: '@storybook/react-vite' },
+    } as any);
+    vi.mocked(readConfig).mockResolvedValue({
+      parse: () => ({}),
+      _exportsObject: {},
+    } as any);
 
     vi.clearAllMocks();
   });
@@ -166,6 +177,8 @@ describe('initiate integration tests', () => {
           extraPackages: [],
           addScripts: true,
           addComponents: false,
+          skipGenerator: true,
+          shouldRunDev: false,
         }),
       };
 
@@ -176,9 +189,7 @@ describe('initiate integration tests', () => {
       const result = await doInitiate(options);
 
       expect(result.shouldRunDev).toBe(false);
-      expect(logger.log).toHaveBeenCalledWith(
-        expect.stringContaining('React Native (RN) Storybook')
-      );
+      expect(generatorRegistry.get).toHaveBeenCalledWith(ProjectType.REACT_NATIVE);
     });
 
     it('should handle React Native and RNW combination', async () => {
@@ -192,6 +203,7 @@ describe('initiate integration tests', () => {
         configure: vi.fn().mockResolvedValue({
           extraPackages: [],
           addScripts: true,
+          addComponents: false, // Avoid import.meta.resolve in tests
         }),
       };
 
@@ -202,7 +214,7 @@ describe('initiate integration tests', () => {
       const result = await doInitiate(options);
 
       expect(result.shouldRunDev).toBe(false);
-      expect(logger.log).toHaveBeenCalledWith(expect.stringContaining('React Native Web (RNW)'));
+      expect(generatorRegistry.get).toHaveBeenCalledWith(ProjectType.REACT_NATIVE_AND_RNW);
     });
 
     it('should set shouldRunDev when dev flag is set', async () => {
@@ -240,7 +252,7 @@ describe('initiate integration tests', () => {
           configure: vi.fn().mockResolvedValue({
             extraPackages: [],
             addScripts: true,
-            addComponents: true,
+            addComponents: false, // Avoid import.meta.resolve in tests
           }),
         };
 
@@ -299,7 +311,7 @@ describe('initiate integration tests', () => {
         return {
           extraPackages: [],
           addScripts: true,
-          addComponents: true,
+          addComponents: false, // Avoid import.meta.resolve in tests
         };
       });
 

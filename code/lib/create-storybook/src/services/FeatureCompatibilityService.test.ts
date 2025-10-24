@@ -54,7 +54,7 @@ describe('FeatureCompatibilityService', () => {
         () =>
           ({
             validateCompatibility: mockValidateCompatibility,
-          }) as any
+          }) as unknown as AddonVitestService
       );
     });
 
@@ -72,7 +72,7 @@ describe('FeatureCompatibilityService', () => {
       expect(mockValidateCompatibility).toHaveBeenCalledWith({
         packageManager: mockPackageManager,
         framework: 'react-vite',
-        builderPackageName: SupportedBuilder.VITE,
+        builder: SupportedBuilder.VITE,
         projectRoot: '/test',
       });
     });

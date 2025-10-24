@@ -16,6 +16,7 @@ describe('PreflightCheckCommand', () => {
     command = new PreflightCheckCommand();
     mockPackageManager = {
       installDependencies: vi.fn(),
+      latestVersion: vi.fn().mockResolvedValue('8.0.0'),
       type: 'npm',
     };
 

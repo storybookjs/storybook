@@ -29,7 +29,7 @@ describe('GeneratorRegistry', () => {
     it('should register a generator for a project type', () => {
       registry.register(mockGeneratorModule);
 
-      expect(registry.get(ProjectType.REACT)).toBe(mockGeneratorModule.configure);
+      expect(registry.get(ProjectType.REACT)).toBe(mockGeneratorModule);
     });
 
     it('should warn when overwriting an existing generator', () => {
@@ -50,7 +50,7 @@ describe('GeneratorRegistry', () => {
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('already registered. Overwriting')
       );
-      expect(registry.get(ProjectType.REACT)).toBe(newGeneratorModule.configure);
+      expect(registry.get(ProjectType.REACT)).toBe(newGeneratorModule);
     });
   });
 
@@ -58,7 +58,7 @@ describe('GeneratorRegistry', () => {
     it('should return generator for registered project type', () => {
       registry.register(mockGeneratorModule);
 
-      expect(registry.get(ProjectType.REACT)).toBe(mockGeneratorModule.configure);
+      expect(registry.get(ProjectType.REACT)).toBe(mockGeneratorModule);
     });
 
     it('should return undefined for unregistered project type', () => {

@@ -34,7 +34,7 @@ export class AddonConfigurationCommand {
     addons,
     configDir,
   }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
-    if (!configDir) {
+    if (!configDir || addons.length === 0) {
       return { status: 'success' };
     }
 
@@ -61,18 +61,19 @@ export class AddonConfigurationCommand {
     // Import postinstallAddon from cli-storybook package
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
 
-    // Note: Dependencies are added by the dependency collector, not here
+    // Get versioned packages to ensure we have the correct versions
+    const versionedAddons = await packageManager.getVersionedPackages(addons);
 
     const task = prompt.taskLog({
       id: 'configure-addons',
-      title: 'Configuring addons...',
+      title: 'Configuring test addons...',
     });
 
     // Track failures for each addon
     const addonResults = new Map<string, null | any>();
 
     // Configure each addon
-    for (const addon of addons) {
+    for (const addon of versionedAddons) {
       // const taskGroup = task.group(`Configuring ${addon}...`);
 
       try {

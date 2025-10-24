@@ -4,6 +4,7 @@ import type { ConfigFile } from 'storybook/internal/csf-tools';
 import * as csfTools from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import * as loadMainConfigModule from './load-main-config';
 import { setupAddonInConfig } from './setup-addon-in-config';
 import * as syncModule from './sync-main-preview-addons';
 import * as wrapUtils from './wrap-getAbsolutePath-utils';
@@ -11,6 +12,7 @@ import * as wrapUtils from './wrap-getAbsolutePath-utils';
 vi.mock('storybook/internal/csf-tools', { spy: true });
 vi.mock('./sync-main-preview-addons', { spy: true });
 vi.mock('./wrap-getAbsolutePath-utils', { spy: true });
+vi.mock('./load-main-config', { spy: true });
 
 describe('setupAddonInConfig', () => {
   let mockMain: ConfigFile;
@@ -32,6 +34,7 @@ describe('setupAddonInConfig', () => {
 
     vi.mocked(csfTools.writeConfig).mockResolvedValue();
     vi.mocked(syncModule.syncStorybookAddons).mockResolvedValue();
+    vi.mocked(loadMainConfigModule.loadMainConfig).mockResolvedValue(mockMainConfig);
   });
 
   it('should add addon to main config when no getAbsolutePath wrapper exists', async () => {
@@ -49,6 +52,10 @@ describe('setupAddonInConfig', () => {
     expect(mockMain.appendNodeToArray).not.toHaveBeenCalled();
     expect(wrapUtils.wrapValueWithGetAbsolutePathWrapper).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
+    expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({
+      configDir: '.storybook',
+      skipCache: true,
+    });
     expect(syncModule.syncStorybookAddons).toHaveBeenCalledWith(
       mockMainConfig,
       '.storybook/preview.ts',
@@ -79,6 +86,10 @@ describe('setupAddonInConfig', () => {
     );
     expect(mockMain.appendValueToArray).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
+    expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({
+      configDir: '.storybook',
+      skipCache: true,
+    });
     expect(syncModule.syncStorybookAddons).toHaveBeenCalledWith(
       mockMainConfig,
       '.storybook/preview.ts',

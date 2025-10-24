@@ -32,17 +32,17 @@ const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'
 
 const addonA11yName = '@storybook/addon-a11y';
 
-const findFile = (basename: string, extensions = EXTENSIONS) =>
-  find.any(
-    extensions.map((ext) => basename + ext),
-    { last: getProjectRoot() }
-  );
-
 export default async function postInstall(options: PostinstallOptions) {
   const errors: string[] = [];
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: options.packageManager,
   });
+
+  const findFile = (basename: string, extensions = EXTENSIONS) =>
+    find.any(
+      extensions.map((ext) => basename + ext),
+      { last: getProjectRoot(), cwd: options.configDir }
+    );
 
   const vitestVersionSpecifier = await packageManager.getInstalledVersion('vitest');
   const isVitest3_2To4 = vitestVersionSpecifier

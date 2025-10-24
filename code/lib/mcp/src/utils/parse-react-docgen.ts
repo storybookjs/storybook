@@ -1,5 +1,4 @@
-import { type Documentation } from 'react-docgen';
-import { type PropDescriptor } from 'react-docgen/dist/Documentation';
+import type { PropDescriptor, Documentation } from 'react-docgen';
 
 export type ParsedDocgen = {
 	props: Record<

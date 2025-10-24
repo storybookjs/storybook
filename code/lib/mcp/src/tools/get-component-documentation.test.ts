@@ -365,20 +365,20 @@ describe('getComponentDocumentationTool', () => {
 			<props>
 			<prop>
 			<prop_name>variant</prop_name>
-			<prop_type>"primary" | "secondary"</prop_type>
-			<prop_required>false</prop_required>
-			<prop_default>"primary"</prop_default>
 			<prop_description>
 			Button style variant
 			</prop_description>
+			<prop_type>"primary" | "secondary"</prop_type>
+			<prop_required>false</prop_required>
+			<prop_default>"primary"</prop_default>
 			</prop>
 			<prop>
 			<prop_name>disabled</prop_name>
-			<prop_type>boolean</prop_type>
-			<prop_required>false</prop_required>
 			<prop_description>
 			Disable the button
 			</prop_description>
+			<prop_type>boolean</prop_type>
+			<prop_required>false</prop_required>
 			</prop>
 			</props>
 			</component>",

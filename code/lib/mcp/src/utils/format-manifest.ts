@@ -47,7 +47,6 @@ export function formatComponentManifest(
 		}
 	}
 
-	// Props section - only if reactDocgen is present
 	if (componentManifest.reactDocgen) {
 		const parsedDocgen = parseReactDocgen(componentManifest.reactDocgen);
 		const propEntries = Object.entries(parsedDocgen.props);
@@ -57,6 +56,12 @@ export function formatComponentManifest(
 			for (const [propName, propInfo] of propEntries) {
 				parts.push(dedent`<prop>
 					<prop_name>${propName}</prop_name>`);
+
+				if (propInfo.description !== undefined) {
+					parts.push(dedent`<prop_description>
+						${propInfo.description}
+						</prop_description>`);
+				}
 
 				if (propInfo.type !== undefined) {
 					parts.push(dedent`<prop_type>${propInfo.type}</prop_type>`);
@@ -72,12 +77,6 @@ export function formatComponentManifest(
 					parts.push(
 						dedent`<prop_default>${propInfo.defaultValue}</prop_default>`,
 					);
-				}
-
-				if (propInfo.description !== undefined) {
-					parts.push(dedent`<prop_description>
-						${propInfo.description}
-						</prop_description>`);
 				}
 
 				parts.push('</prop>');

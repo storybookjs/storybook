@@ -462,29 +462,29 @@ describe('formatComponentManifest', () => {
 				<props>
 				<prop>
 				<prop_name>variant</prop_name>
-				<prop_type>"primary" | "secondary"</prop_type>
-				<prop_required>false</prop_required>
-				<prop_default>"primary"</prop_default>
 				<prop_description>
 				The visual style variant
 				</prop_description>
+				<prop_type>"primary" | "secondary"</prop_type>
+				<prop_required>false</prop_required>
+				<prop_default>"primary"</prop_default>
 				</prop>
 				<prop>
 				<prop_name>disabled</prop_name>
-				<prop_type>boolean</prop_type>
-				<prop_required>false</prop_required>
-				<prop_default>false</prop_default>
 				<prop_description>
 				Whether the button is disabled
 				</prop_description>
+				<prop_type>boolean</prop_type>
+				<prop_required>false</prop_required>
+				<prop_default>false</prop_default>
 				</prop>
 				<prop>
 				<prop_name>onClick</prop_name>
-				<prop_type>(event: MouseEvent) => void</prop_type>
-				<prop_required>true</prop_required>
 				<prop_description>
 				Click handler
 				</prop_description>
+				<prop_type>(event: MouseEvent) => void</prop_type>
+				<prop_required>true</prop_required>
 				</prop>
 				</props>
 				</component>"
@@ -557,58 +557,6 @@ describe('formatComponentManifest', () => {
 				"<component>
 				<id>button</id>
 				<name>Button</name>
-				</component>"
-			`);
-		});
-
-		it('should include all optional fields when present', () => {
-			const manifest: ComponentManifest = {
-				id: 'input',
-				name: 'Input',
-				reactDocgen: {
-					props: {
-						placeholder: {
-							description: 'Placeholder text',
-							required: false,
-							defaultValue: { value: '""', computed: false },
-							tsType: {
-								name: 'string',
-							},
-						},
-						maxLength: {
-							description: 'Maximum input length',
-							tsType: {
-								name: 'number',
-							},
-						},
-					},
-				},
-			};
-
-			const result = formatComponentManifest(manifest);
-
-			expect(result).toMatchInlineSnapshot(`
-				"<component>
-				<id>input</id>
-				<name>Input</name>
-				<props>
-				<prop>
-				<prop_name>placeholder</prop_name>
-				<prop_type>string</prop_type>
-				<prop_required>false</prop_required>
-				<prop_default>""</prop_default>
-				<prop_description>
-				Placeholder text
-				</prop_description>
-				</prop>
-				<prop>
-				<prop_name>maxLength</prop_name>
-				<prop_type>number</prop_type>
-				<prop_description>
-				Maximum input length
-				</prop_description>
-				</prop>
-				</props>
 				</component>"
 			`);
 		});

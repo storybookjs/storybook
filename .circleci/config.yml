@@ -1003,7 +1003,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 29
+                parallelism: 28
                 requires:
                     - create-sandboxes
             - test-runner-production:

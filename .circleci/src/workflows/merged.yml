@@ -39,11 +39,11 @@ jobs:
       requires:
         - create-sandboxes
   - e2e-production:
-      parallelism: 12
+      parallelism: 6
       requires:
         - create-sandboxes
   - e2e-dev:
-      parallelism: 1
+      parallelism: 12
       requires:
         - create-sandboxes
   - test-runner-production:
@@ -61,6 +61,9 @@ jobs:
         parameters:
           directory: ['react', 'vue3', 'nextjs', 'svelte']
   - e2e-ui:
+      requires:
+        - build
+  - e2e-ui-vitest-3:
       requires:
         - build
   - test-init-features:

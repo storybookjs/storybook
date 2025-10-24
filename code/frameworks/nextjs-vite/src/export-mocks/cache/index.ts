@@ -11,12 +11,18 @@ const unstable_cache = fn()
   .mockImplementation((cb: Callback) => cb);
 const unstable_noStore = fn().mockName('next/cache::unstable_noStore');
 
+// Next v16.0.0
+const updateTag = fn().mockName('next/cache::updateTag');
+const refresh = fn().mockName('next/cache::refresh');
+
 const cacheExports = {
   unstable_cache,
   revalidateTag,
   revalidatePath,
   unstable_noStore,
+  updateTag,
+  refresh,
 };
 
 export default cacheExports;
-export { unstable_cache, revalidateTag, revalidatePath, unstable_noStore };
+export { unstable_cache, revalidateTag, revalidatePath, unstable_noStore, updateTag, refresh };

@@ -508,7 +508,7 @@ async function run() {
         const controller = await runTask(task, details, {
           ...optionValues,
           // Always debug the final task so we can see it's output fully
-          debug: process.env.CI ? true : task === finalTask ? true : optionValues.debug,
+          debug: task === finalTask ? true : optionValues.debug,
         });
 
         if (controller) {

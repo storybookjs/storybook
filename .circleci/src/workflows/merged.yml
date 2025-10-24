@@ -66,6 +66,9 @@ jobs:
   - e2e-ui:
       requires:
         - build
+  - e2e-ui-vitest-3:
+      requires:
+        - build
   - test-init-features:
       requires:
         - build

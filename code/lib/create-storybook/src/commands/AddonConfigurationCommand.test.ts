@@ -36,10 +36,6 @@ describe('AddonConfigurationCommand', () => {
     };
 
     vi.mocked(prompt.taskLog).mockReturnValue(mockTask);
-    vi.mocked(mockPackageManager.getVersionedPackages).mockResolvedValue([
-      '@storybook/addon-a11y@8.0.0',
-      '@storybook/addon-vitest@8.0.0',
-    ]);
 
     vi.clearAllMocks();
   });
@@ -103,12 +99,6 @@ describe('AddonConfigurationCommand', () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
       const options = { yes: true } as any;
 
-      // Mock successful execution
-      vi.mocked(mockPackageManager.getVersionedPackages).mockResolvedValue([
-        '@storybook/addon-a11y@8.0.0',
-        '@storybook/addon-vitest@8.0.0',
-      ]);
-
       const result = await command.execute({
         packageManager: mockPackageManager,
         addons,
@@ -117,7 +107,21 @@ describe('AddonConfigurationCommand', () => {
       });
 
       expect(result.status).toBe('success');
-      expect(mockPackageManager.getVersionedPackages).toHaveBeenCalled();
+      expect(mockPostinstallAddon).toHaveBeenCalledTimes(2);
+      expect(mockPostinstallAddon).toHaveBeenCalledWith('@storybook/addon-a11y', {
+        packageManager: 'npm',
+        configDir: '.storybook',
+        yes: true,
+        skipInstall: true,
+        skipDependencyManagement: true,
+      });
+      expect(mockPostinstallAddon).toHaveBeenCalledWith('@storybook/addon-vitest', {
+        packageManager: 'npm',
+        configDir: '.storybook',
+        yes: true,
+        skipInstall: true,
+        skipDependencyManagement: true,
+      });
     });
   });
 });

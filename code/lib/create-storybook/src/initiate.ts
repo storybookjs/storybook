@@ -162,8 +162,6 @@ async function runStorybookDev(result: {
     return;
   }
 
-  logger.log('Running Storybook');
-
   try {
     const supportsOnboarding = ONBOARDING_PROJECT_TYPES.includes(projectType);
 

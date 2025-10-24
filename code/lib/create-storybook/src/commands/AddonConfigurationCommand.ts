@@ -61,9 +61,6 @@ export class AddonConfigurationCommand {
     // Import postinstallAddon from cli-storybook package
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
 
-    // Get versioned packages to ensure we have the correct versions
-    const versionedAddons = await packageManager.getVersionedPackages(addons);
-
     const task = prompt.taskLog({
       id: 'configure-addons',
       title: 'Configuring test addons...',
@@ -73,7 +70,7 @@ export class AddonConfigurationCommand {
     const addonResults = new Map<string, null | any>();
 
     // Configure each addon
-    for (const addon of versionedAddons) {
+    for (const addon of addons) {
       // const taskGroup = task.group(`Configuring ${addon}...`);
 
       try {

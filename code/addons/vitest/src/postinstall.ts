@@ -294,7 +294,8 @@ export default async function postInstall(options: PostinstallOptions) {
   }
   // If there's no existing Vitest/Vite config, we create a new Vitest config file.
   else {
-    const newConfigFile = resolve(`vitest.config.${fileExtension}`);
+    const parentDir = dirname(options.configDir);
+    const newConfigFile = resolve(parentDir, `vitest.config.${fileExtension}`);
 
     const configTemplate = await loadTemplate(getTemplateName(), {
       CONFIG_DIR: options.configDir,

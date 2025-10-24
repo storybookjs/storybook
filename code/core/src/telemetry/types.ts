@@ -36,6 +36,7 @@ export type EventType =
   | 'mocking'
   | 'automigrate'
   | 'migrate';
+  | 'preview-first-load';
 
 export interface Dependency {
   version: string | undefined;

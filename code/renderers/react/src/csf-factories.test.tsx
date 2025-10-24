@@ -41,6 +41,12 @@ test('csf factories', () => {
   });
 
   expect(MyStory.input.args?.label).toBe('Hello world');
+
+  expect(MyStory.Component).toBeDefined();
+
+  const ExtendedMyStory = MyStory.extend({ args: { label: 'Hello world 2' } });
+  expect(ExtendedMyStory.input.args?.label).toBe('Hello world 2');
+  expect(ExtendedMyStory.Component).toBeDefined();
 });
 
 describe('Args can be provided in multiple ways', () => {

@@ -116,4 +116,8 @@ interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations
 export interface ReactStory<T extends ReactTypes, TInput extends StoryAnnotations<T, T['args']>>
   extends Story<T, TInput> {
   Component: ComponentType<Partial<T['args']>>;
+
+  extend<TNewInput extends StoryAnnotations<T, T['args']>>(
+    input: TNewInput
+  ): ReactStory<T, TNewInput>;
 }

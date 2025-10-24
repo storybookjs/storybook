@@ -1,3 +1,7 @@
+## 10.0.0-rc.2
+
+- CLI: Fix Nextjs project creation in empty directories - [#32828](https://github.com/storybookjs/storybook/pull/32828), thanks @yannbf!
+
 ## 10.0.0-rc.1
 
 - Addon-Vitest: Support Vitest 4 - [#32819](https://github.com/storybookjs/storybook/pull/32819), thanks @yannbf!

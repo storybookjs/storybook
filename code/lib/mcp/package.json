@@ -43,6 +43,7 @@
 		"@tsconfig/node24": "^24.0.1",
 		"@types/node": "catalog:",
 		"@vitest/coverage-v8": "catalog:",
+		"react-docgen": "^8.0.2",
 		"srvx": "^0.8.16",
 		"tsdown": "catalog:",
 		"typescript": "catalog:",

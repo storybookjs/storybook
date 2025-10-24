@@ -1,6 +1,6 @@
 {
 	"name": "@storybook/addon-mcp",
-	"version": "0.0.8",
+	"version": "0.0.9",
 	"description": "Help agents automatically write and test stories for your UI components",
 	"keywords": [
 		"storybook-addon",
@@ -51,7 +51,7 @@
 		"vitest": "catalog:"
 	},
 	"peerDependencies": {
-		"storybook": "*"
+		"storybook": ">=9.0.0"
 	},
 	"publishConfig": {
 		"access": "public"

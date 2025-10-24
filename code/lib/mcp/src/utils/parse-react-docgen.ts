@@ -28,29 +28,22 @@ function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
 	if (!tsType.name) return undefined;
 
 	if ('elements' in tsType) {
-		if (tsType.name === 'union') {
-			const parts = (tsType.elements ?? []).map(
+		const serializeElements = () =>
+			(tsType.elements ?? []).map(
 				(el: any) => serializeTsType(el) ?? 'unknown',
 			);
-			return parts.join(' | ');
-		}
-		if (tsType.name === 'intersection') {
-			const parts = (tsType.elements ?? []).map(
-				(el: any) => serializeTsType(el) ?? 'unknown',
-			);
-			return parts.join(' & ');
-		}
-		if (tsType.name === 'Array') {
-			// Prefer raw earlier; here build fallback
-			const el = (tsType.elements ?? [])[0];
-			const inner = serializeTsType(el) ?? 'unknown';
-			return `${inner}[]`;
-		}
-		if (tsType.name === 'tuple') {
-			const parts = (tsType.elements ?? []).map(
-				(el: any) => serializeTsType(el) ?? 'unknown',
-			);
-			return `[${parts.join(', ')}]`;
+
+		switch (tsType.name) {
+			case 'union':
+				return serializeElements().join(' | ');
+			case 'intersection':
+				return serializeElements().join(' & ');
+			case 'Array': {
+				const inner = serializeTsType((tsType.elements ?? [])[0]) ?? 'unknown';
+				return `${inner}[]`;
+			}
+			case 'tuple':
+				return `[${serializeElements().join(', ')}]`;
 		}
 	}
 	if ('value' in tsType && tsType.name === 'literal') {

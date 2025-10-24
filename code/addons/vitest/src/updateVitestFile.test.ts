@@ -84,7 +84,12 @@ describe('updateConfigFile', () => {
       +       test: {
       +         name: 'storybook',
       +         browser: {
-      +           provider: 'playwright'
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
       +         },
       +         setupFiles: ['../.storybook/vitest.setup.ts']
       +       }
@@ -159,7 +164,12 @@ describe('updateConfigFile', () => {
       +       test: {
       +         name: 'storybook',
       +         browser: {
-      +           provider: 'playwright'
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
       +         },
       +         setupFiles: ['../.storybook/vitest.setup.ts']
       +       }
@@ -265,7 +275,12 @@ describe('updateConfigFile', () => {
       +       test: {
       +         name: 'storybook',
       +         browser: {
-      +           provider: 'playwright'
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
       +         },
       +         setupFiles: ['../.storybook/vitest.setup.ts']
       +       }
@@ -340,7 +355,12 @@ describe('updateConfigFile', () => {
       +       test: {
       +         name: 'storybook',
       +         browser: {
-      +           provider: 'playwright'
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
       +         },
       +         setupFiles: ['../.storybook/vitest.setup.ts']
       +       }
@@ -414,7 +434,12 @@ describe('updateConfigFile', () => {
       +       test: {
       +         name: 'storybook',
       +         browser: {
-      +           provider: 'playwright'
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
       +         },
       +         setupFiles: ['../.storybook/vitest.setup.ts']
       +       }
@@ -484,7 +509,12 @@ describe('updateConfigFile', () => {
       +       test: {
       +         name: 'storybook',
       +         browser: {
-      +           provider: 'playwright'
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
       +         },
       +         setupFiles: ['../.storybook/vitest.setup.ts']
       +       }
@@ -566,7 +596,12 @@ describe('updateConfigFile', () => {
       +       test: {
       +         name: 'storybook',
       +         browser: {
-      +           provider: 'playwright'
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
       +         },
       +         setupFiles: ['../.storybook/vitest.setup.ts']
       +       }
@@ -637,7 +672,12 @@ describe('updateConfigFile', () => {
       +       test: {
       +         name: 'storybook',
       +         browser: {
-      +           provider: 'playwright'
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
       +         },
       +         setupFiles: ['../.storybook/vitest.setup.ts']
       +       }
@@ -716,7 +756,12 @@ describe('updateConfigFile', () => {
       +       test: {
       +         name: 'storybook',
       +         browser: {
-      +           provider: 'playwright'
+      +           enabled: true,
+      +           headless: true,
+      +           provider: 'playwright',
+      +           instances: [{
+      +             browser: 'chromium'
+      +           }]
       +         },
       +         setupFiles: ['../.storybook/vitest.setup.ts']
       +       }
@@ -772,7 +817,12 @@ describe('updateWorkspaceFile', () => {
       +   test: {
       +     name: 'storybook',
       +     browser: {
-      +       provider: 'playwright'
+      +       enabled: true,
+      +       headless: true,
+      +       provider: 'playwright',
+      +       instances: [{
+      +         browser: 'chromium'
+      +       }]
       +     },
       +     setupFiles: ['../.storybook/vitest.setup.ts']
       +   }
@@ -826,7 +876,12 @@ describe('updateWorkspaceFile', () => {
       +   test: {
       +     name: 'storybook',
       +     browser: {
-      +       provider: 'playwright'
+      +       enabled: true,
+      +       headless: true,
+      +       provider: 'playwright',
+      +       instances: [{
+      +         browser: 'chromium'
+      +       }]
       +     },
       +     setupFiles: ['../.storybook/vitest.setup.ts']
       +   }

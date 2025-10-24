@@ -2,13 +2,11 @@ import * as fs from 'node:fs/promises';
 
 import type { BabelFile, types as t } from 'storybook/internal/babel';
 
-import { join } from 'pathe';
-
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+import { dirname, join } from 'pathe';
 
 export const loadTemplate = async (name: string, replacements: Record<string, string>) => {
   let template = await fs.readFile(
-    join(resolvePackageDir('@storybook/addon-vitest'), 'templates', name),
+    join(dirname(require.resolve('@storybook/addon-vitest/package.json')), 'templates', name),
     'utf8'
   );
   Object.entries(replacements).forEach(([key, value]) => (template = template.replace(key, value)));

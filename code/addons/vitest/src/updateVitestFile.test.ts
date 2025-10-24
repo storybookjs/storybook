@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-
 import { describe, expect, it, vi } from 'vitest';
 
 import * as babel from 'storybook/internal/babel';
@@ -13,10 +11,6 @@ vi.mock('storybook/internal/node-logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
-}));
-
-vi.mock('../../../core/src/shared/utils/module', () => ({
-  resolvePackageDir: vi.fn().mockImplementation(() => join(__dirname, '..')),
 }));
 
 describe('updateConfigFile', () => {

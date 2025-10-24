@@ -30,7 +30,7 @@ const config: StorybookConfig = {
         ...config.resolve,
         alias: {
           ...config.resolve?.alias,
-          "test-alias": join(import.meta.dirname, "aliased.ts"),
+          "test-alias": join(__dirname, "aliased.ts"),
         },
       },
     };

@@ -1,3 +1,15 @@
+# v3.0.0 (Fri Oct 24 2025)
+
+#### 💥 Breaking Change
+
+- Support next 16 [#62](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/62) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v2.0.8 (Mon Oct 06 2025)
 
 #### 🐛 Bug Fix

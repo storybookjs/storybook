@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
-import { debounce } from 'es-toolkit/compat';
+import debounce from 'es-toolkit/compat/debounce';
 import type { Polka, Request, Response } from 'polka';
 import Watchpack from 'watchpack';
 
@@ -16,7 +16,7 @@ import type { ServerChannel } from './get-server-channel';
 import { DEBOUNCE, useStoriesJson } from './stories-json';
 
 vi.mock('watchpack');
-vi.mock('es-toolkit/compat');
+vi.mock('es-toolkit/compat/debounce');
 vi.mock('storybook/internal/node-logger');
 
 vi.mock('../utils/constants', () => {
@@ -575,7 +575,7 @@ describe('useStoriesJson', () => {
 
     it('debounces invalidation events', async () => {
       vi.mocked(debounce).mockImplementation(
-        (await vi.importActual<typeof import('es-toolkit/compat')>('es-toolkit/compat')).debounce
+        (await vi.importActual<typeof import('es-toolkit/compat/debounce')>('es-toolkit/compat/debounce')).default
       );
 
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;

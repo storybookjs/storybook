@@ -4,7 +4,7 @@ import { basename } from 'node:path';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { NormalizedStoriesSpecifier, StoryIndex } from 'storybook/internal/types';
 
-import { debounce } from 'es-toolkit/compat';
+import debounce from 'es-toolkit/compat/debounce';
 import type { Polka } from 'polka';
 
 import type { StoryIndexGenerator } from './StoryIndexGenerator';

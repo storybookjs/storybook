@@ -31,7 +31,8 @@ export type EventType =
   | 'test-run'
   | 'addon-onboarding'
   | 'onboarding-survey'
-  | 'mocking';
+  | 'mocking'
+  | 'preview-first-load';
 
 export interface Dependency {
   version: string | undefined;

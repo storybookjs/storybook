@@ -232,9 +232,6 @@ const mdxToJsx = (node: any) => {
   return createElement(originalType, rest, ...jsxChildren);
 };
 
-// eslint-disable-next-line no-var
-declare var FEATURES: NonNullable<StorybookConfigRaw['features']>;
-
 export const jsxDecorator = (
   storyFn: PartialStoryFn<ReactRenderer>,
   context: StoryContext<ReactRenderer>

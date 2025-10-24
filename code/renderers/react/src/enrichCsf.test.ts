@@ -11,8 +11,6 @@ import { dedent } from 'ts-dedent';
 import { enrichCsf } from './enrichCsf';
 
 vi.mock('node:module', { spy: true });
-vi.mock('storybook/internal/common', { spy: true });
-
 vi.mock('my-preset', () => ({
   default: { experimental_enrichCsf: enrichCsf, features: { experimentalCodeExamples: true } },
 }));

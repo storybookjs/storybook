@@ -52,7 +52,8 @@ describe('AddonVitestService', () => {
       const deps = await service.collectDependencies(mockPackageManager);
 
       expect(deps).toContain('vitest');
-      expect(deps).toContain('@vitest/browser');
+      // When vitest version is null, defaults to vitest 4+ behavior
+      expect(deps).toContain('@vitest/browser-playwright');
       expect(deps).toContain('playwright');
       expect(deps).toContain('@vitest/coverage-v8');
     });
@@ -80,15 +81,16 @@ describe('AddonVitestService', () => {
     it('should collect base packages without framework-specific additions', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
       vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce(null) // vitest version check
         .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null) // @vitest/coverage-istanbul
-        .mockResolvedValueOnce(null); // vitest version
+        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
       const deps = await service.collectDependencies(mockPackageManager);
 
       // Should only contain base packages, not framework-specific ones
       expect(deps).toContain('vitest');
-      expect(deps).toContain('@vitest/browser');
+      // When vitest version is null, defaults to vitest 4+ behavior
+      expect(deps).toContain('@vitest/browser-playwright');
       expect(deps).toContain('playwright');
       expect(deps).toContain('@vitest/coverage-v8');
       expect(deps.every((d) => !d.includes('nextjs-vite'))).toBe(true);
@@ -133,13 +135,14 @@ describe('AddonVitestService', () => {
     it('applies version', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
       vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('3.2.0') // vitest version check
         .mockResolvedValueOnce(null) // @vitest/coverage-v8
-        .mockResolvedValueOnce(null) // @vitest/coverage-istanbul
-        .mockResolvedValueOnce('3.2.0'); // vitest version
+        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
       const deps = await service.collectDependencies(mockPackageManager);
 
       expect(deps).toContain('vitest@3.2.0');
+      // Version 3.2.0 < 4.0.0, so uses @vitest/browser
       expect(deps).toContain('@vitest/browser@3.2.0');
       expect(deps).toContain('@vitest/coverage-v8@3.2.0');
       expect(deps).toContain('playwright'); // no version for playwright
@@ -259,14 +262,13 @@ describe('AddonVitestService', () => {
       });
 
       expect(result.compatible).toBe(false);
-      expect(result.reasons!.some((r) => r.includes('Vite-based'))).toBe(true);
+      expect(result.reasons!.some((r) => r.includes('Non-Vite builder'))).toBe(true);
     });
 
     it('should return incompatible for Next.js with webpack builder', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce('3.0.0') // vitest
-        .mockResolvedValueOnce(null) // msw
-        .mockResolvedValueOnce('14.0.0'); // next
+        .mockResolvedValueOnce(null); // msw
 
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
@@ -276,7 +278,7 @@ describe('AddonVitestService', () => {
 
       // Test addon requires Vite builder, even for Next.js
       expect(result.compatible).toBe(false);
-      expect(result.reasons!.some((r) => r.includes('Vite-based'))).toBe(true);
+      expect(result.reasons!.some((r) => r.includes('Non-Vite builder'))).toBe(true);
     });
 
     it('should return incompatible for unsupported framework', async () => {
@@ -299,11 +301,11 @@ describe('AddonVitestService', () => {
 
       const result = await service.validateCompatibility({
         packageManager: mockPackageManager,
-        framework: SupportedFramework.NEXTJS,
+        framework: SupportedFramework.NEXTJS_VITE,
         builder: SupportedBuilder.VITE,
       });
 
-      // Next.js framework is in SUPPORTED_FRAMEWORKS and Vite builder is compatible
+      // NEXTJS_VITE framework is in SUPPORTED_FRAMEWORKS and Vite builder is compatible
       expect(result.compatible).toBe(true);
     });
 

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectType, detect, isStorybookInstantiated } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { HandledError } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { ProjectDetectionCommand } from './ProjectDetectionCommand';
 
@@ -29,20 +29,14 @@ vi.mock('storybook/internal/node-logger', { spy: true });
 describe('ProjectDetectionCommand', () => {
   let command: ProjectDetectionCommand;
   let mockPackageManager: JsPackageManager;
-  let mockTask: any;
 
   beforeEach(() => {
     command = new ProjectDetectionCommand();
     mockPackageManager = {} as any;
 
-    mockTask = {
-      success: vi.fn(),
-      error: vi.fn(),
-      message: vi.fn(),
-    };
-
-    vi.mocked(prompt.taskLog).mockReturnValue(mockTask);
     vi.mocked(isStorybookInstantiated).mockReturnValue(false);
+    vi.mocked(logger.step).mockImplementation(() => {});
+    vi.mocked(logger.error).mockImplementation(() => {});
 
     vi.clearAllMocks();
   });
@@ -54,7 +48,9 @@ describe('ProjectDetectionCommand', () => {
       const result = await command.execute(mockPackageManager, options);
 
       expect(result).toBe(ProjectType.REACT);
-      expect(mockTask.success).toHaveBeenCalledWith('Project type', { showLog: true });
+      expect(logger.step).toHaveBeenCalledWith(
+        'Installing Storybook for user specified project type: react'
+      );
       expect(detect).not.toHaveBeenCalled();
     });
 
@@ -66,7 +62,7 @@ describe('ProjectDetectionCommand', () => {
 
       expect(result).toBe(ProjectType.VUE3);
       expect(detect).toHaveBeenCalledWith(mockPackageManager, options);
-      expect(mockTask.success).toHaveBeenCalledWith('Project type', { showLog: true });
+      expect(logger.step).toHaveBeenCalledWith('Project type detected: VUE3');
     });
 
     it('should throw error for invalid provided type', async () => {
@@ -74,8 +70,8 @@ describe('ProjectDetectionCommand', () => {
 
       await expect(command.execute(mockPackageManager, options)).rejects.toThrow(HandledError);
 
-      expect(mockTask.error).toHaveBeenCalledWith(
-        expect.stringContaining('not recognized by Storybook')
+      expect(logger.error).toHaveBeenCalledWith(
+        'The provided project type invalid-framework was not recognized by Storybook'
       );
     });
 
@@ -162,7 +158,7 @@ describe('ProjectDetectionCommand', () => {
 
       await expect(command.execute(mockPackageManager, options)).rejects.toThrow(HandledError);
 
-      expect(mockTask.error).toHaveBeenCalledWith('Error: Detection failed');
+      expect(logger.error).toHaveBeenCalledWith('Error: Detection failed');
     });
   });
 });

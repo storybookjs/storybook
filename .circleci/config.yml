@@ -443,6 +443,31 @@ jobs:
                 destination: playwright
                 path: test-storybooks/portable-stories-kitchen-sink/react/test-results/
             - report-workflow-on-failure
+    e2e-ui-vitest-3:
+        executor:
+            class: medium
+            name: sb_playwright
+        steps:
+            - git-shallow-clone/checkout_advanced:
+                clone_options: --depth 1 --verbose
+            - attach_workspace:
+                at: .
+            - run:
+                command: yarn install --no-immutable
+                environment:
+                    YARN_ENABLE_IMMUTABLE_INSTALLS: false
+                name: Install dependencies
+                working_directory: test-storybooks/portable-stories-kitchen-sink/react-vitest-3
+            - run:
+                command: yarn playwright-e2e
+                name: Run E2E tests
+                working_directory: test-storybooks/portable-stories-kitchen-sink/react-vitest-3
+            - store_test_results:
+                path: test-results
+            - store_artifacts:
+                destination: playwright
+                path: test-storybooks/portable-stories-kitchen-sink/react-vitest-3/test-results/
+            - report-workflow-on-failure
     knip:
         executor:
             class: large
@@ -978,7 +1003,7 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-dev:
-                parallelism: 29
+                parallelism: 28
                 requires:
                     - create-sandboxes
             - test-runner-production:
@@ -1000,6 +1025,9 @@ workflows:
                 requires:
                     - build
             - e2e-ui:
+                requires:
+                    - build
+            - e2e-ui-vitest-3:
                 requires:
                     - build
             - test-init-features:
@@ -1094,6 +1122,9 @@ workflows:
             - e2e-ui:
                 requires:
                     - build
+            - e2e-ui-vitest-3:
+                requires:
+                    - build
             - test-init-features:
                 requires:
                     - build
@@ -1155,6 +1186,9 @@ workflows:
                 requires:
                     - create-sandboxes
             - e2e-ui:
+                requires:
+                    - build
+            - e2e-ui-vitest-3:
                 requires:
                     - build
             - test-init-features:

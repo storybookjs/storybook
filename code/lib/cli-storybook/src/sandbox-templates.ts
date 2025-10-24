@@ -175,7 +175,7 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
   },
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',

@@ -1,14 +1,10 @@
 // Inspired by Vitest fixture implementation:
 // https://github.com/vitest-dev/vitest/blob/200a4349a2f85686bc7005dce686d9d1b48b84d2/packages/runner/src/fixture.ts
-import type { PlayFunction } from 'storybook/internal/csf';
-import { type Renderer } from 'storybook/internal/types';
-
-export function mountDestructured<TRenderer extends Renderer>(
-  playFunction?: PlayFunction<TRenderer>
-): boolean {
+export function mountDestructured(playFunction?: (...args: any[]) => any): boolean {
   return playFunction != null && getUsedProps(playFunction).includes('mount');
 }
-export function getUsedProps(fn: Function) {
+
+export function getUsedProps(fn: (...args: any[]) => any) {
   const match = fn.toString().match(/[^(]*\(([^)]*)/);
 
   if (!match) {

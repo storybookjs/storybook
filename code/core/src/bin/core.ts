@@ -148,7 +148,7 @@ command('build')
       with: { type: 'json' },
     });
 
-    logger.log(picocolors.bold(`${packageJson.name} v${packageJson.version}\n`));
+    logger.intro(`Building ${packageJson.name} v${packageJson.version}`);
 
     // The key is the field created in `options` variable for
     // each command line argument. Value is the env variable.
@@ -162,7 +162,12 @@ command('build')
       ...options,
       packageJson,
       test: !!options.test || optionalEnvToBoolean(process.env.SB_TESTBUILD),
-    }).catch(() => process.exit(1));
+    }).catch(() => {
+      logger.outro('Storybook exited with an error');
+      process.exit(1);
+    });
+
+    logger.outro('Storybook build completed successfully');
   });
 
 command('index')

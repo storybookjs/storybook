@@ -1,3 +1,7 @@
+## 9.1.14
+
+- CSF: Fix `play-fn` tag for methods - [#32695](https://github.com/storybookjs/storybook/pull/32695), thanks @shilman!
+
 ## 9.1.13
 
 - Nextjs: Fix config access for Vite - [#32759](https://github.com/storybookjs/storybook/pull/32759), thanks @valentinpalkovic!

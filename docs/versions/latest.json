@@ -1,1 +1,1 @@
-{"version":"9.1.13","info":{"plain":"- Nextjs: Fix config access for Vite - [#32759](https://github.com/storybookjs/storybook/pull/32759), thanks @valentinpalkovic!"}}
+{"version":"9.1.14","info":{"plain":"- CSF: Fix `play-fn` tag for methods - [#32695](https://github.com/storybookjs/storybook/pull/32695), thanks @shilman!"}}

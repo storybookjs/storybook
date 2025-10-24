@@ -198,14 +198,11 @@ command('migrate [migration]')
     '-r --rename <from-to>',
     'Rename suffix of matching files after codemod has been applied, e.g. ".js:.ts"'
   )
-  .action((migration, { configDir, glob, dryRun, list, rename, parser }) => {
-    migrate(migration, {
-      configDir,
-      glob,
-      dryRun,
-      list,
-      rename,
-      parser,
+  .action((migration, options) => {
+    withTelemetry('migrate', { cliOptions: options }, async () => {
+      logger.intro(`Running ${migration} migration`);
+      await migrate(migration, options);
+      logger.outro('Migration completed');
     }).catch(handleCommandFailure);
   });
 

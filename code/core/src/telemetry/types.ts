@@ -34,7 +34,8 @@ export type EventType =
   | 'addon-onboarding'
   | 'onboarding-survey'
   | 'mocking'
-  | 'automigrate';
+  | 'automigrate'
+  | 'migrate';
 
 export interface Dependency {
   version: string | undefined;

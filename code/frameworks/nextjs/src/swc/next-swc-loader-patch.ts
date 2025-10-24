@@ -153,6 +153,7 @@ export function pitch(this: any) {
   const callback = this.async();
   (async () => {
     if (
+      // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
       // TODO: investigate swc file reading in PnP mode?
       !process.versions.pnp &&
       !EXCLUDED_PATHS.test(this.resourcePath) &&

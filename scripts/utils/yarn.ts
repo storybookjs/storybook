@@ -49,6 +49,7 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
 
+  // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
   const command = [

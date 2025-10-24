@@ -4,13 +4,13 @@ import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
-import * as TsconfigPaths from 'tsconfig-paths';
+import { loadConfig } from 'tsconfig-paths';
 
 import { componentManifestGenerator } from './generator';
 
-vi.mock('tsconfig-paths', { spy: true });
 vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
 vi.mock('node:fs', async () => (await import('memfs')).fs);
+vi.mock('tsconfig-paths', { spy: true });
 
 // Use the provided indexJson from this file
 const indexJson = {
@@ -95,10 +95,7 @@ const indexJson = {
 };
 
 beforeEach(() => {
-  vi.mocked(TsconfigPaths.loadConfig).mockImplementation(() => ({
-    resultType: null!,
-    message: null!,
-  }));
+  vi.mocked(loadConfig).mockImplementation(() => ({ resultType: null!, message: null! }));
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(
     {

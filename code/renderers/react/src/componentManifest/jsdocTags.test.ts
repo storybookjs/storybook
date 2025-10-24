@@ -2,16 +2,19 @@ import { expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { extractJSDocTags } from './jsdocTags';
+import { extractJSDocInfo } from './jsdocTags';
 
 it('should extract @summary tag', () => {
-  const code = dedent`@summary This is the summary`;
-  const tags = extractJSDocTags(code);
+  const code = dedent`description\n@summary\n my summary`;
+  const tags = extractJSDocInfo(code);
   expect(tags).toMatchInlineSnapshot(`
     {
-      "summary": [
-        "This is the summary",
-      ],
+      "description": "description",
+      "tags": {
+        "summary": [
+          " my summary",
+        ],
+      },
     }
   `);
 });
@@ -21,14 +24,17 @@ it('should extract @param tag with type', () => {
  @param {Object} employee - The employee who is responsible for the project.
  @param {string} employee.name - The name of the employee.
  @param {string} employee.department - The employee's department.`;
-  const tags = extractJSDocTags(code);
+  const tags = extractJSDocInfo(code);
   expect(tags).toMatchInlineSnapshot(`
     {
-      "param": [
-        "{Object} employee - The employee who is responsible for the project.",
-        "{string} employee.name - The name of the employee.",
-        "{string} employee.department - The employee's department.",
-      ],
+      "description": "",
+      "tags": {
+        "param": [
+          "{Object} employee - The employee who is responsible for the project.",
+          "{string} employee.name - The name of the employee.",
+          "{string} employee.department - The employee's department.",
+        ],
+      },
     }
   `);
 });

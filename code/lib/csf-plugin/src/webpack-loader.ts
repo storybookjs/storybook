@@ -20,7 +20,7 @@ async function loader(this: LoaderContext, content: string, map: any) {
     const makeTitle = (userTitle: string) => userTitle || 'default';
     const csf = loadCsf(content, { makeTitle }).parse();
     const csfSource = loadCsf(sourceCode, { makeTitle }).parse();
-    enrichCsf(csf, csfSource, options);
+    await enrichCsf(csf, csfSource, options);
     const formattedCsf = formatCsf(
       csf,
       { sourceMaps: true, inputSourceMap: map, sourceFileName: id },

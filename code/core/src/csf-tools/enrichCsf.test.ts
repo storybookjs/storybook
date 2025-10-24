@@ -11,7 +11,7 @@ expect.addSnapshotSerializer({
   test: () => true,
 });
 
-const enrich = (code: string, originalCode: string, options?: EnrichCsfOptions) => {
+const enrich = async (code: string, originalCode: string, options?: EnrichCsfOptions) => {
   // we don't actually care about the title
 
   const csf = loadCsf(code, {
@@ -20,15 +20,15 @@ const enrich = (code: string, originalCode: string, options?: EnrichCsfOptions) 
   const csfSource = loadCsf(originalCode, {
     makeTitle: (userTitle) => userTitle || 'default',
   }).parse();
-  enrichCsf(csf, csfSource, options);
+  await enrichCsf(csf, csfSource, options);
   return formatCsf(csf);
 };
 
 describe('enrichCsf', () => {
   describe('source', () => {
-    it('csf1', () => {
+    it('csf1', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
           // compiled code
           export default {
@@ -62,9 +62,9 @@ describe('enrichCsf', () => {
         };
       `);
     });
-    it('csf2', () => {
+    it('csf2', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -106,9 +106,9 @@ describe('enrichCsf', () => {
         };
       `);
     });
-    it('csf3', () => {
+    it('csf3', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -148,9 +148,9 @@ describe('enrichCsf', () => {
         };
       `);
     });
-    it('csf factories', () => {
+    it('csf factories', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
           // compiled code
           import {config} from "/.storybook/preview.ts";
@@ -193,9 +193,9 @@ describe('enrichCsf', () => {
         };
       `);
     });
-    it('multiple stories', () => {
+    it('multiple stories', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -245,9 +245,9 @@ describe('enrichCsf', () => {
   });
 
   describe('story descriptions', () => {
-    it('skips inline comments', () => {
+    it('skips inline comments', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -285,9 +285,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('skips blocks without jsdoc', () => {
+    it('skips blocks without jsdoc', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
           // compiled code
           export default {
@@ -323,9 +323,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('JSDoc single-line', () => {
+    it('JSDoc single-line', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
           // compiled code
           export default {
@@ -365,9 +365,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('JSDoc multi-line', () => {
+    it('JSDoc multi-line', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -411,9 +411,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('preserves indentation', () => {
+    it('preserves indentation', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
           // compiled code
           export default {
@@ -459,9 +459,9 @@ describe('enrichCsf', () => {
   });
 
   describe('meta descriptions', () => {
-    it('skips inline comments', () => {
+    it('skips inline comments', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -497,9 +497,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('skips blocks without jsdoc', () => {
+    it('skips blocks without jsdoc', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -535,9 +535,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('JSDoc single-line', () => {
+    it('JSDoc single-line', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
           // compiled code
           export default {
@@ -580,9 +580,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('JSDoc multi-line', () => {
+    it('JSDoc multi-line', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -629,9 +629,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('preserves indentation', () => {
+    it('preserves indentation', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -678,9 +678,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('correctly interleaves parameters', () => {
+    it('correctly interleaves parameters', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -734,9 +734,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('respects user component description', () => {
+    it('respects user component description', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         export default {
@@ -793,9 +793,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('respects meta variables', () => {
+    it('respects meta variables', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
         // compiled code
         const meta = {
@@ -844,9 +844,9 @@ describe('enrichCsf', () => {
   });
 
   describe('options', () => {
-    it('disableSource', () => {
+    it('disableSource', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
           // compiled code
           export default {
@@ -883,9 +883,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('disableDescription', () => {
+    it('disableDescription', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
           // compiled code
           export default {
@@ -922,9 +922,9 @@ describe('enrichCsf', () => {
       `);
     });
 
-    it('disable all', () => {
+    it('disable all', async () => {
       expect(
-        enrich(
+        await enrich(
           dedent`
           // compiled code
           export default {

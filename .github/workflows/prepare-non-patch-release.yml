@@ -36,6 +36,7 @@ concurrency:
 jobs:
   prepare-non-patch-pull-request:
     name: Prepare non-patch pull request
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     environment: Release
     defaults:

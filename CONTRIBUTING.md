@@ -131,7 +131,9 @@ Here's a highlight of notable directories and files:
 
 ### Fork the repository 
 
-If you plan to contribute to Storybook's codebase, you should fork the repository to your GitHub account. This will allow you to make changes to the codebase and submit a pull request to the main repository when you're ready to contribute your changes. Once you've forked the repository, you should [disable Github Actions for your forked repository](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository) as most of them (e.g., pushing to sandbox) will fail without proper authorization. In your forked repository, go to Settings > Actions > General > set the Actions Permissions to **Disable actions**. Additionally, adding our codebase as upstream ensures you can rebase against the latest changes in the main repository. To do this, run the following commands:
+If you plan to contribute to Storybook's codebase, you should fork the repository to your GitHub account. This will allow you to make changes to the codebase and submit a pull request to the main repository when you're ready to contribute your changes.
+
+Additionally, adding our codebase as upstream ensures you can rebase against the latest changes in the main repository. To do this, run the following commands:
 
 ```shell
 git remote add upstream https://github.com/storybookjs/storybook.git

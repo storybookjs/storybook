@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   get-branch:
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
       - id: get-branch
@@ -37,6 +38,7 @@ jobs:
       branch: ${{ env.branch }}
 
   get-parameters:
+    if: github.repository_owner == 'storybookjs'
     runs-on: ubuntu-latest
     steps:
       - if: github.event_name == 'pull_request_target' && (contains(github.event.pull_request.labels.*.name, 'ci:normal'))
@@ -55,7 +57,7 @@ jobs:
   trigger-circle-ci-workflow:
     runs-on: ubuntu-latest
     needs: [get-branch, get-parameters]
-    if: needs.get-parameters.outputs.workflow != ''
+    if: github.repository_owner == 'storybookjs' && needs.get-parameters.outputs.workflow != ''
     steps:
       - name: Trigger Normal tests
         uses: fjogeleit/http-request-action@v1

@@ -1,0 +1,69 @@
+name: Fork checks
+
+# This workflow is only for forks, so they can get basic checks in without a CircleCI API key
+on:
+  push:
+
+env:
+  NODE_OPTIONS: '--max_old_space_size=4096'
+
+jobs:
+  check:
+    name: Core Type Checking
+    if: github.repository_owner != 'storybookjs'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: check
+        run: yarn task --task check
+
+  prettier:
+    name: Core Formatting
+    if: github.repository_owner != 'storybookjs'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: prettier
+        run: cd code && yarn lint:prettier --check .
+
+  test:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    name: Core Unit Tests, ${{ matrix.os }}
+    if: github.repository_owner != 'storybookjs'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: compile
+        run: yarn task --task compile --start-from=compile
+
+      - name: Install Playwright Dependencies
+        run: cd code && yarn exec playwright install chromium --with-deps
+
+      - name: test
+        run: yarn test

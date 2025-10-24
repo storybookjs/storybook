@@ -66,9 +66,6 @@ vi.mock('storybook/internal/csf-tools', () => {
 vi.mock('./postinstallAddon', () => {
   return MockedPostInstall;
 });
-vi.mock('./automigrate/fixes/wrap-getAbsolutePath-utils', () => {
-  return MockWrapGetAbsolutePathUtils;
-});
 vi.mock('./automigrate/helpers/mainConfigFile', () => {
   return MockedMainConfigFileHelper;
 });
@@ -81,7 +78,10 @@ vi.mock('storybook/internal/common', () => {
     JsPackageManagerFactory: {
       getPackageManager: vi.fn(() => MockedPackageManager),
     },
-    syncStorybookAddons: vi.fn(),
+    setupAddonInConfig: vi.fn(),
+    getAbsolutePathWrapperName: MockWrapGetAbsolutePathUtils.getAbsolutePathWrapperName,
+    wrapValueWithGetAbsolutePathWrapper:
+      MockWrapGetAbsolutePathUtils.wrapValueWithGetAbsolutePathWrapper,
     getCoercedStorybookVersion: vi.fn(() => '8.0.0'),
     versions: {
       storybook: '8.0.0',
@@ -128,14 +128,7 @@ describe('add', () => {
   ];
 
   test.each(testData)('$input', async ({ input, expected }) => {
-    const [packageName] = getVersionSpecifier(input);
-
     await add(input, { packageManager: 'npm', skipPostinstall: true }, MockedConsole);
-
-    expect(MockedConfig.appendValueToArray).toHaveBeenCalledWith(
-      expect.arrayContaining(['addons']),
-      packageName
-    );
 
     expect(MockedPackageManager.addDependencies).toHaveBeenCalledWith(
       { type: 'devDependencies', writeOutputToFile: false },
@@ -147,32 +140,6 @@ describe('add', () => {
 describe('add (extra)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-  test('should not add a "wrap getAbsolutePath" to the addon when not needed', async () => {
-    MockedConfig.getFieldNode.mockReturnValue({});
-    MockWrapGetAbsolutePathUtils.getAbsolutePathWrapperName.mockReturnValue(null);
-    await add(
-      '@storybook/addon-docs',
-      { packageManager: 'npm', skipPostinstall: true },
-      MockedConsole
-    );
-
-    expect(MockWrapGetAbsolutePathUtils.wrapValueWithGetAbsolutePathWrapper).not.toHaveBeenCalled();
-    expect(MockedConfig.appendValueToArray).toHaveBeenCalled();
-    expect(MockedConfig.appendNodeToArray).not.toHaveBeenCalled();
-  });
-  test('should add a "wrap getAbsolutePath" to the addon when applicable', async () => {
-    MockedConfig.getFieldNode.mockReturnValue({});
-    MockWrapGetAbsolutePathUtils.getAbsolutePathWrapperName.mockReturnValue('getAbsolutePath');
-    await add(
-      '@storybook/addon-docs',
-      { packageManager: 'npm', skipPostinstall: true },
-      MockedConsole
-    );
-
-    expect(MockWrapGetAbsolutePathUtils.wrapValueWithGetAbsolutePathWrapper).toHaveBeenCalled();
-    expect(MockedConfig.appendValueToArray).not.toHaveBeenCalled();
-    expect(MockedConfig.appendNodeToArray).toHaveBeenCalled();
   });
   test('not warning when installing the correct version of storybook', async () => {
     await add(

@@ -1,20 +1,11 @@
-import {
-  type PackageManagerName,
-  loadMainConfig,
-  syncStorybookAddons,
-  versions,
-} from 'storybook/internal/common';
-import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
+import { type PackageManagerName, setupAddonInConfig, versions } from 'storybook/internal/common';
+import { readConfig } from 'storybook/internal/csf-tools';
 import { prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
 
-import {
-  getAbsolutePathWrapperName,
-  wrapValueWithGetAbsolutePathWrapper,
-} from './automigrate/fixes/wrap-getAbsolutePath-utils';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile';
 import { postinstallAddon } from './postinstallAddon';
 
@@ -23,6 +14,11 @@ export interface PostinstallOptions {
   configDir: string;
   yes?: boolean;
   skipInstall?: boolean;
+  /**
+   * Skip all dependency management (collecting, adding to package.json, installing). Used when the
+   * caller (e.g., init command) has already handled dependencies.
+   */
+  skipDependencyManagement?: boolean;
 }
 
 /**
@@ -166,24 +162,12 @@ export async function add(
   if (shouldAddToMain) {
     logger.log(`Adding '${addon}' to the "addons" field in ${mainConfigPath}`);
 
-    const mainConfigAddons = main.getFieldNode(['addons']);
-    if (mainConfigAddons && getAbsolutePathWrapperName(main) !== null) {
-      const addonNode = main.valueToNode(addonName);
-      main.appendNodeToArray(['addons'], addonNode as any);
-      wrapValueWithGetAbsolutePathWrapper(main, addonNode as any);
-    } else {
-      main.appendValueToArray(['addons'], addonName);
-    }
-
-    await writeConfig(main);
-  }
-
-  // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
-  try {
-    const newMainConfig = await loadMainConfig({ configDir, skipCache: true });
-    await syncStorybookAddons(newMainConfig, previewConfigPath!, configDir);
-  } catch (e) {
-    //
+    await setupAddonInConfig({
+      addonName,
+      mainConfigCSFFile: main,
+      previewConfigPath,
+      configDir,
+    });
   }
 
   if (!skipPostinstall && isCoreAddon(addonName)) {

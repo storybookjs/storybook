@@ -82,6 +82,11 @@ export type Template = {
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
   };
+  /** Additional options to pass to the initiate command when initializing Storybook. */
+  initOptions?: {
+    builder?: string;
+    [key: string]: unknown;
+  };
   /**
    * Flag to indicate that this template is a secondary template, which is used mainly to test
    * rather specific features. This means the template might be hidden from the Storybook status
@@ -175,7 +180,10 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
-    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+    initOptions: {
+      builder: 'webpack5',
+    },
+    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',
@@ -196,6 +204,9 @@ export const baseTemplates = {
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
+    },
+    initOptions: {
+      builder: 'webpack5',
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -219,6 +230,9 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
+    initOptions: {
+      builder: 'webpack5',
+    },
     skipTasks: ['bench', 'vitest-integration'],
   },
   'nextjs/prerelease': {
@@ -241,6 +255,9 @@ export const baseTemplates = {
       },
       extraDependencies: ['server-only', 'prop-types'],
     },
+    initOptions: {
+      builder: 'webpack5',
+    },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
   'nextjs-vite/14-ts': {
@@ -262,7 +279,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
+      extraDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -285,7 +302,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
+      extraDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -308,7 +325,7 @@ export const baseTemplates = {
           experimentalTestSyntax: true,
         },
       },
-      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
+      extraDependencies: ['server-only', 'vite', 'prop-types'],
     },
     skipTasks: ['bench'],
   },

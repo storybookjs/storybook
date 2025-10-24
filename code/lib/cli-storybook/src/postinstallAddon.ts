@@ -1,11 +1,14 @@
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { importModule } from '../../../core/src/shared/utils/module';
 import type { PostinstallOptions } from './add';
 
 const DIR_CWD = process.cwd();
 const require = createRequire(DIR_CWD);
+
 export const postinstallAddon = async (addonName: string, options: PostinstallOptions) => {
   const hookPath = `${addonName}/postinstall`;
   let modulePath: string;
@@ -35,15 +38,13 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
   const postinstall = moduledLoaded?.default || moduledLoaded?.postinstall || moduledLoaded;
 
   if (!postinstall || typeof postinstall !== 'function') {
-    console.log(`Error finding postinstall function for ${addonName}`);
+    logger.error(`Error finding postinstall function for ${addonName}`);
     return;
   }
 
   try {
-    console.log(`Running postinstall script for ${addonName}`);
     await postinstall(options);
   } catch (e) {
-    console.error(`Error running postinstall script for ${addonName}`);
-    console.error(e);
+    throw e;
   }
 };

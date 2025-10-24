@@ -124,7 +124,7 @@ const MOCK_FRAMEWORK_FILES: {
     },
   },
   {
-    name: ProjectType.WEBPACK_REACT,
+    name: ProjectType.REACT,
     files: {
       'package.json': {
         dependencies: {

@@ -14,6 +14,8 @@ export * from './types';
 
 export * from './sanitize';
 
+export * from './error-collector';
+
 export { getPrecedingUpgrade } from './event-cache';
 
 export { addToGlobalContext } from './telemetry';

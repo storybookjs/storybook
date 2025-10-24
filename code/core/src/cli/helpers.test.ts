@@ -4,7 +4,7 @@ import fsp from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import type { SupportedRenderers } from 'storybook/internal/types';
+import { SupportedRenderer } from 'storybook/internal/types';
 
 import { sep } from 'path';
 
@@ -162,7 +162,7 @@ describe('Helpers', () => {
           filePath === normalizePath('@storybook/react/template/cli')
       );
       await helpers.copyTemplateFiles({
-        templateLocation: 'react',
+        templateLocation: SupportedRenderer.REACT,
         language,
         packageManager: packageManagerMock,
         commonAssetsDir: normalizePath('create-storybook/rendererAssets/common'),
@@ -186,7 +186,7 @@ describe('Helpers', () => {
       return filePath === normalizePath('@storybook/react/template/cli') || filePath === './src';
     });
     await helpers.copyTemplateFiles({
-      templateLocation: 'react',
+      templateLocation: SupportedRenderer.REACT,
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
       features: ['dev', 'docs', 'test'],
@@ -199,7 +199,7 @@ describe('Helpers', () => {
       return filePath === normalizePath('@storybook/react/template/cli');
     });
     await helpers.copyTemplateFiles({
-      templateLocation: 'react',
+      templateLocation: SupportedRenderer.REACT,
       language: SupportedLanguage.JAVASCRIPT,
       packageManager: packageManagerMock,
       features: ['dev', 'docs', 'test'],
@@ -208,7 +208,7 @@ describe('Helpers', () => {
   });
 
   it(`should throw an error for unsupported renderer`, async () => {
-    const renderer = 'unknown renderer' as SupportedRenderers;
+    const renderer = 'unknown renderer' as unknown as SupportedRenderer;
     const expectedMessage = `Unsupported renderer: ${renderer}`;
     await expect(
       helpers.copyTemplateFiles({

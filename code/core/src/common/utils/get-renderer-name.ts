@@ -1,7 +1,7 @@
 import type { Options } from 'storybook/internal/types';
 
-import { frameworkToRenderer } from './framework-to-renderer';
-import { extractProperFrameworkName, getFrameworkName } from './get-framework-name';
+import { frameworkToRenderer } from './framework';
+import { extractFrameworkPackageName, getFrameworkName } from './get-framework-name';
 import { frameworkPackages } from './get-storybook-info';
 
 /**
@@ -26,16 +26,16 @@ export async function getRendererName(options: Options) {
  * @example
  *
  * ```ts
- * extractProperRendererNameFromFramework('@storybook/react'); // => 'react'
- * extractProperRendererNameFromFramework('@storybook/angular'); // => 'angular'
- * extractProperRendererNameFromFramework('@third-party/framework'); // => null
+ * extractRenderer('@storybook/react'); // => 'react'
+ * extractRenderer('@storybook/angular'); // => 'angular'
+ * extractRenderer('@third-party/framework'); // => null
  * ```
  *
  * @param frameworkName The name of the framework.
  * @returns The name of the renderer.
  */
-export async function extractProperRendererNameFromFramework(frameworkName: string) {
-  const extractedFrameworkName = extractProperFrameworkName(frameworkName);
+export async function extractRenderer(frameworkName: string) {
+  const extractedFrameworkName = extractFrameworkPackageName(frameworkName);
   const framework = frameworkPackages[extractedFrameworkName];
 
   if (!framework) {

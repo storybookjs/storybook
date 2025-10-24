@@ -5,6 +5,7 @@ import { dedent } from 'ts-dedent';
 import type { InlineConfig } from 'vite';
 
 import { sanitizeEnvVars } from './envs';
+import { createViteLogger } from './logger';
 import type { WebpackStatsPlugin } from './plugins';
 import { hasVitePlugins } from './utils/has-vite-plugins';
 import { withoutVitePlugins } from './utils/without-vite-plugins';
@@ -63,6 +64,8 @@ export async function build(options: Options) {
 
     finalConfig.plugins = await withoutVitePlugins(finalConfig.plugins, [turbosnapPluginName]);
   }
+
+  finalConfig.customLogger ??= await createViteLogger();
 
   await viteBuild(await sanitizeEnvVars(options, finalConfig));
 

@@ -9,7 +9,7 @@ import {
   getProjectRoot,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { SupportedFrameworks, SupportedRenderers } from 'storybook/internal/types';
+import type { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import picocolors from 'picocolors';
@@ -18,7 +18,7 @@ import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
 import { getRendererDir } from './dirs';
-import { CommunityBuilder, CoreBuilder, SupportedLanguage } from './project_types';
+import { SupportedLanguage } from './project_types';
 
 export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   const filePath = resolve(jsonPath);
@@ -129,37 +129,11 @@ export function copyTemplate(templateRoot: string, destination = '.') {
 
 type CopyTemplateFilesOptions = {
   packageManager: JsPackageManager;
-  templateLocation: SupportedFrameworks | SupportedRenderers;
+  templateLocation: SupportedFramework | SupportedRenderer;
   language: SupportedLanguage;
   commonAssetsDir?: string;
   destination?: string;
   features: string[];
-};
-
-export const frameworkToDefaultBuilder: Record<
-  SupportedFrameworks,
-  CoreBuilder | CommunityBuilder
-> = {
-  angular: CoreBuilder.Webpack5,
-  ember: CoreBuilder.Webpack5,
-  'html-vite': CoreBuilder.Vite,
-  nextjs: CoreBuilder.Webpack5,
-  nuxt: CoreBuilder.Vite,
-  'nextjs-vite': CoreBuilder.Vite,
-  'preact-vite': CoreBuilder.Vite,
-  qwik: CoreBuilder.Vite,
-  'react-native-web-vite': CoreBuilder.Vite,
-  'react-vite': CoreBuilder.Vite,
-  'react-webpack5': CoreBuilder.Webpack5,
-  'server-webpack5': CoreBuilder.Webpack5,
-  solid: CoreBuilder.Vite,
-  'svelte-vite': CoreBuilder.Vite,
-  sveltekit: CoreBuilder.Vite,
-  'vue3-vite': CoreBuilder.Vite,
-  'web-components-vite': CoreBuilder.Vite,
-  // Only to pass type checking, will never be used
-  'react-rsbuild': CommunityBuilder.Rsbuild,
-  'vue3-rsbuild': CommunityBuilder.Rsbuild,
 };
 
 /**
@@ -236,12 +210,8 @@ export async function copyTemplateFiles({
   await cp(await templatePath(), destinationPath, { recursive: true, filter });
 
   if (commonAssetsDir && features.includes('docs')) {
-    let rendererType = frameworkToRenderer[templateLocation] || 'react';
+    const rendererType = frameworkToRenderer[templateLocation] || 'react';
 
-    // This is only used for docs links and the docs site uses `vue` for both `vue` & `vue3` renderers
-    if (rendererType === 'vue3') {
-      rendererType = 'vue';
-    }
     await adjustTemplate(join(destinationPath, 'Configure.mdx'), { renderer: rendererType });
   }
 }

@@ -4,7 +4,13 @@ import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getStorybookInfo, isCI } from 'storybook/internal/common';
-import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
+import {
+  type PackageJson,
+  type StorybookConfig,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import { detect } from 'package-manager-detector';
 
@@ -35,12 +41,17 @@ const mainJsMock: StorybookConfig = {
 };
 
 beforeEach(() => {
-  vi.mocked(getStorybookInfo).mockImplementation(() => ({
-    version: '9.0.0',
-    framework: 'react',
-    frameworkPackage: '@storybook/react',
-    renderer: 'react',
-    rendererPackage: '@storybook/react',
+  vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+    framework: SupportedFramework.REACT_VITE,
+    renderer: SupportedRenderer.REACT,
+    builder: SupportedBuilder.VITE,
+    addons: [],
+    mainConfig: {
+      stories: [],
+    },
+    mainConfigPath: '',
+    previewConfigPath: '',
+    managerConfigPath: '',
   }));
 
   vi.mocked(detect).mockImplementation(async () => ({

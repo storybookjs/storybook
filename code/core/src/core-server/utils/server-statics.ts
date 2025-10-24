@@ -114,7 +114,7 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
       // Don't log for internal static dirs
       if (!targetEndpoint.startsWith('/sb-') && !staticDir.startsWith(cacheDir)) {
         logger.info(
-          `=> Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
+          `Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
         );
       }
 

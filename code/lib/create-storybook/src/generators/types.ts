@@ -1,6 +1,14 @@
 import type { Builder, NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import type { ConfigFile } from 'storybook/internal/csf-tools';
+import type {
+  StorybookConfig,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
+import type { DependencyCollector } from '../dependency-collector';
 import type { FrameworkPreviewParts } from './configure';
 
 export type GeneratorOptions = {
@@ -8,11 +16,11 @@ export type GeneratorOptions = {
   builder: Builder;
   linkable: boolean;
   pnp: boolean;
-  projectType: ProjectType;
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
   yes: boolean;
   features: Array<GeneratorFeature>;
+  dependencyCollector: DependencyCollector;
 };
 
 export interface FrameworkOptions {
@@ -20,26 +28,87 @@ export interface FrameworkOptions {
   extraAddons?: string[];
   staticDir?: string;
   addScripts?: boolean;
-  addMainFile?: boolean;
-  addPreviewFile?: boolean;
   addComponents?: boolean;
   webpackCompiler?: ({ builder }: { builder: Builder }) => 'babel' | 'swc' | undefined;
   extraMain?: any;
   extensions?: string[];
-  framework?: Record<string, any>;
   storybookConfigFolder?: string;
   componentsDestinationPath?: string;
   installFrameworkPackages?: boolean;
+  skipGenerator?: boolean;
+  storybookCommand?: string;
+  shouldRunDev?: boolean;
 }
 
-export type Generator<T = void> = (
+export type Generator<T = Record<string, any>> = (
   packageManagerInstance: JsPackageManager,
   npmOptions: NpmOptions,
   generatorOptions: GeneratorOptions,
   commandOptions?: CommandOptions
-) => Promise<T>;
+) => Promise<
+  {
+    rendererPackage: string;
+    builderPackage: string;
+    frameworkPackage: string;
+    configDir: string;
+    mainConfig?: StorybookConfig;
+    mainConfigCSFFile?: ConfigFile;
+    previewConfigPath?: string;
+  } & T
+>;
 
-export type GeneratorFeature = 'docs' | 'test' | 'onboarding';
+export type GeneratorFeature = 'docs' | 'test' | 'onboarding' | 'a11y';
+
+// New generator interface for configuration-based generators
+
+export interface GeneratorMetadata {
+  projectType: ProjectType;
+  renderer: SupportedRenderer;
+  /**
+   * If the framework is a function, it will be called with the detected builder to determine the
+   * framework. This is useful for project types that support multiple frameworks based on the
+   * builder (e.g., Next.js with Vite vs Webpack).
+   */
+  framework?: SupportedFramework | ((builder: SupportedBuilder) => SupportedFramework);
+  /**
+   * If the builder is a function, it will be called to determine the builder. This is useful for
+   * generators that need to determine the builder based on the project type in cases where the
+   * builder cannot be detected (Webpack and Vite are both non-existent dependencies).
+   */
+  builderOverride?: SupportedBuilder | (() => SupportedBuilder | Promise<SupportedBuilder>);
+}
+
+export interface GeneratorContext {
+  framework: SupportedFramework | undefined;
+  renderer: SupportedRenderer;
+  builder: SupportedBuilder;
+  language: SupportedLanguage;
+  features: GeneratorFeature[];
+  linkable?: boolean;
+}
+
+export interface GeneratorModule {
+  /** Metadata about the generator This is used to register the generator with the generator registry */
+  metadata: GeneratorMetadata;
+  /**
+   * The function that configures the generator This is used to configure the generator It returns a
+   * promise that resolves to the framework options
+   */
+  configure: (
+    packageManager: JsPackageManager,
+    context: GeneratorContext
+    // Return undefined if the base generator shouldn't be executed
+  ) => Promise<FrameworkOptions>;
+  /**
+   * The function that runs after the generator is configured. This is used to run any
+   * post-configuration tasks
+   */
+  postConfigure?: ({
+    packageManager,
+  }: {
+    packageManager: JsPackageManager;
+  }) => Promise<void> | void;
+}
 
 export type CommandOptions = {
   packageManager: PackageManagerName;
@@ -49,6 +118,7 @@ export type CommandOptions = {
   force?: any;
   html?: boolean;
   skipInstall?: boolean;
+  language?: SupportedLanguage;
   parser?: string;
   // Automatically answer yes to prompts
   yes?: boolean;

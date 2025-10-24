@@ -1,4 +1,5 @@
 import { isCI, optionalEnvToBoolean } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';

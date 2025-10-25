@@ -14,6 +14,7 @@ import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../
 import { DocsContext } from './DocsContext';
 import { useArgs } from './useArgs';
 import { useGlobals } from './useGlobals';
+import { usePrimaryStory } from './usePrimaryStory';
 import { getComponentName } from './utils';
 
 type ControlsParameters = {
@@ -39,12 +40,15 @@ function extractComponentArgTypes(
 
 export const Controls: FC<ControlsProps> = (props) => {
   const { of } = props;
-  if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+  const context = useContext(DocsContext);
+  const primaryStory = usePrimaryStory();
+
+  const story = of ? context.resolveOf(of, ['story']).story : primaryStory;
+
+  if (!story) {
+    return null;
   }
 
-  const context = useContext(DocsContext);
-  const { story } = context.resolveOf(of || 'story', ['story']);
   const { parameters, argTypes, component, subcomponents } = story;
   const controlsParameters = parameters.docs?.controls || ({} as ControlsParameters);
 

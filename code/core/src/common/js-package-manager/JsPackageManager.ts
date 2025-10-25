@@ -605,7 +605,10 @@ export abstract class JsPackageManager {
     ignoreError?: boolean;
   }): string {
     try {
-      const commandResult = execaCommandSync([command, ...args].join(' '), {
+      // `execaSync` shares the same node.js limitation of spawnSync: if `shell: true` is used, the command filename and arguments
+      // must be quoted: https://nodejs.org/api/child_process.html#spawning-bat-and-cmd-files-on-windows
+      // `execa` doesn't seems to offer an helper to do so, so manually quote arguments with spaces
+      const commandResult = execaCommandSync([command, ...args].map(c => c.includes(' ') ? `"${c}"` : c).join(' '), {
         cwd: cwd ?? this.cwd,
         stdio: stdio ?? 'pipe',
         shell: true,

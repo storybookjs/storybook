@@ -1,5 +1,3 @@
-import { join } from 'node:path';
-
 import {
   CouldNotEvaluateFrameworkError,
   InvalidFrameworkNameError,
@@ -35,7 +33,7 @@ export function validateFrameworkName(
 
   // If it's not a known framework, we need to validate that it's a valid package at least
   try {
-    resolveModulePath(join(frameworkName, 'preset'), {
+    resolveModulePath(`${frameworkName}/preset`, {
       extensions: ['.mjs', '.js', '.cjs'],
       conditions: ['node', 'import', 'require'],
     });

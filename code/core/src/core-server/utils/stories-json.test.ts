@@ -575,7 +575,11 @@ describe('useStoriesJson', () => {
 
     it('debounces invalidation events', async () => {
       vi.mocked(debounce).mockImplementation(
-        (await vi.importActual<typeof import('es-toolkit/compat/debounce')>('es-toolkit/compat/debounce')).default
+        (
+          await vi.importActual<typeof import('es-toolkit/compat/debounce')>(
+            'es-toolkit/compat/debounce'
+          )
+        ).default
       );
 
       const mockServerChannel = { emit: vi.fn() } as any as ServerChannel;

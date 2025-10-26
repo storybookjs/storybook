@@ -6,8 +6,8 @@ import {
 } from 'storybook/internal/docs-tools';
 
 import isFunction from 'es-toolkit/compat/isFunction';
-import isString from 'es-toolkit/compat/isString';
 import isPlainObject from 'es-toolkit/compat/isPlainObject';
+import isString from 'es-toolkit/compat/isString';
 import type reactElementToJSXStringType from 'react-element-to-jsx-string';
 // @ts-expect-error (this is needed, because our bundling prefers the `browser` field, but that yields CJS)
 import reactElementToJSXStringRaw from 'react-element-to-jsx-string/dist/esm/index.js';

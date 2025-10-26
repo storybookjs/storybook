@@ -1,3 +1,8 @@
+## 9.1.15
+
+- Core: Add `preview-first-load` telemetry - [#32770](https://github.com/storybookjs/storybook/pull/32770), thanks @shilman!
+- Dependencies: Update `vite-plugin-storybook-nextjs` - [#32821](https://github.com/storybookjs/storybook/pull/32821), thanks @ndelangen!
+
 ## 9.1.14
 
 - NextJS: Add NextJS 16 support - [#32791](https://github.com/storybookjs/storybook/pull/32791), thanks @yannbf and @ndelangen!

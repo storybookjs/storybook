@@ -1,3 +1,19 @@
+## 10.0.0-rc.1
+
+- Addon-Vitest: Support Vitest 4 - [#32819](https://github.com/storybookjs/storybook/pull/32819), thanks @yannbf!
+- CSF: Fix `play-fn` tag for methods - [#32695](https://github.com/storybookjs/storybook/pull/32695), thanks @shilman!
+- Core: Add `preview-first-load` telemetry - [#32770](https://github.com/storybookjs/storybook/pull/32770), thanks @shilman!
+- Dependencies: Update `vite-plugin-storybook-nextjs` - [#32821](https://github.com/storybookjs/storybook/pull/32821), thanks @ndelangen!
+- Maintenance: Fix bundle size bloat caused by `SyntaxHighlighter` (`createElement`) - [#32800](https://github.com/storybookjs/storybook/pull/32800), thanks @mrginglymus!
+- Nextjs: Add Next v16 support - [#32791](https://github.com/storybookjs/storybook/pull/32791), thanks @yannbf!
+- UI: Improve syntax-highlighter bundling - [#32776](https://github.com/storybookjs/storybook/pull/32776), thanks @mrginglymus!
+
+## 10.0.0-rc.0
+
+- A11Y: Bugfix missing `manager.js` entry-file - [#32780](https://github.com/storybookjs/storybook/pull/32780), thanks @ndelangen!
+- Addon Vitest: Support modifying mergeConfig on addon setup - [#32753](https://github.com/storybookjs/storybook/pull/32753), thanks @yannbf!
+- CLI: Change message in downgrade-blocker - [#32745](https://github.com/storybookjs/storybook/pull/32745), thanks @ndelangen!
+
 ## 10.0.0-beta.13
 
 - CLI: CSF factories codemod - support annotations in npx context - [#32741](https://github.com/storybookjs/storybook/pull/32741), thanks @yannbf!

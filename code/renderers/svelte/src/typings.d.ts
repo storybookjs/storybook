@@ -2,8 +2,8 @@ declare var STORYBOOK_ENV: 'svelte';
 declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined;
 
 declare module '*.svelte' {
-  import type { ComponentType } from 'svelte';
+  import type { Component } from 'svelte';
 
-  const component: ComponentType;
+  const component: Component;
   export default component;
 }

@@ -26,7 +26,7 @@ export default defineWorkspace([
     {
       plugins: [
         storybookTest({
-          // ...
+        // ...
          // 👇 Use the environment variable you passed
          storybookUrl: process.env.SB_URL
         }),

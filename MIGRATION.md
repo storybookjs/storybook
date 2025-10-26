@@ -3,12 +3,11 @@
 - [From version 9.x to 10.0.0](#from-version-9x-to-1000)
   - [Core Changes](#core-changes)
     - [Local addons must be fully resolved](#local-addons-must-be-fully-resolved)
-    - [The `.storybook/main.*`-file must be valid ESM](#the-storybookmain-file-must-be-valid-esm)
+    - [The `.storybook/main.*` file and other presets must be valid ESM](#the-storybookmain-file-and-other-presets-must-be-valid-esm)
     - [Node.js 20.19+ or 22.12+ required](#nodejs-2019-or-2212-required)
     - [Require `tsconfig.json` `moduleResolution` set to value that supports `types` condition](#require-tsconfigjson-moduleresolution-set-to-value-that-supports-types-condition)
     - [`core.builder` configuration must be a fully resolved path](#corebuilder-configuration-must-be-a-fully-resolved-path)
     - [Removed x-only builtin tags](#removed-x-only-builtin-tags)
-    - [Extensionless imports in JS-based preset files are no longer supported](#extensionless-imports-in-js-based-preset-files-are-no-longer-supported)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -512,9 +511,35 @@ export default {
 };
 ```
 
-#### The `.storybook/main.*`-file must be valid ESM
+When adding managerEntries, ensure you resolve a path, you may need to convert it from a URL:
 
-Storybook will load the `.storybook/main.*` file as an ESM file.
+For example:
+
+```ts
+// main.ts
+export default {
+  managerEntries(entry = []) {
+    return [...entry, require.resolve("./iframe.js")];
+  },
+};
+```
+
+Would become:
+
+```ts
+// main.ts
+import { fileURLToPath } from "node:url";
+
+export default {
+  managerEntries(entry = []) {
+    return [...entry, fileURLToPath(import.meta.resolve("./iframe.js"))];
+  },
+};
+```
+
+#### The `.storybook/main.*` file and other presets must be valid ESM
+
+Storybook will load the `.storybook/main.*` file and any custom preset files as ESM files.
 Thus CJS constants (`require`, `__dirname`, `__filename`) will not be defined.
 
 You can define these constants yourself, like so:
@@ -529,7 +554,29 @@ const __dirname = dirname(__filename);
 const require = createRequire(import.meta.url);
 ```
 
-A `main.ts` file that's CJS is no longer supported.
+A `main.ts` file that's CJS is no longer supported. The same applies to any custom preset files.
+
+Additionally, **extensionless relative imports are no longer supported** in JavaScript-based configuration files (`.storybook/main.js`) and custom presets. All relative imports must now include explicit file extensions.
+
+**Before (no longer works):**
+```js
+// .storybook/main.js
+import myPreset from './my-file';
+```
+
+**After:**
+```js
+// .storybook/main.js
+import myPreset from './my-file.js';
+```
+
+This change aligns with Node.js ESM requirements, where relative imports must specify the full file extension. This applies to `.storybook/main.js` and any custom preset files. While TypeScript-based files (`.storybook/main.ts`) will continue to work with extensionless imports for now through automatic resolution, we recommend migrating to explicit extensions for consistency and better compatibility.
+
+**Recommended approach for all files:**
+- Use `.js` for JavaScript files
+- Use `.mjs` for ES modules
+- Use `.ts` for TypeScript files
+- Always include the extension in relative imports
 
 #### Node.js 20.19+ or 22.12+ required
 
@@ -585,24 +632,6 @@ export const core = {
 #### Removed x-only builtin tags
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superseded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
 During development of Storybook [Tags](https://storybook.js.org/docs/writing-stories/tags), we created `dev-only`, `docs-only`, and `test-only` built-in tags. These tags were never documented and superceded by the currently-documented `dev`, `autodocs`, and `test` tags which provide more precise control. The outdated `x-only` tags are removed in 10.0.
-
-#### Extensionless imports in JS-based preset files are no longer supported
-
-Storybook 10 no longer supports extensionless relative imports in JavaScript-based preset and configuration files (e.g., `.storybook/main.js`). All relative imports must now include explicit file extensions.
-
-**Before (no longer works):**
-```js
-// .storybook/main.js
-import myPreset from './my-file';
-```
-
-**After:**
-```js
-// .storybook/main.js
-import myPreset from './my-file.js';
-```
-
-This change aligns with Node.js ESM requirements, where relative imports must specify the full file extension. While TypeScript-based files (`.storybook/main.ts`) will continue to work with extensionless imports for now through automatic resolution, we recommend migrating to explicit extensions for consistency and better compatibility.
 
 ## From version 8.x to 9.0.0
 

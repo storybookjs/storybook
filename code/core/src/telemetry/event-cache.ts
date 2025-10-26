@@ -24,8 +24,12 @@ export const set = async (eventType: EventType, body: any) => {
 };
 
 export const get = async (eventType: EventType) => {
-  const lastEvents = await cache.get('lastEvents');
-  return lastEvents?.[eventType];
+  const lastEvents = await getLastEvents();
+  return lastEvents[eventType];
+};
+
+export const getLastEvents = async () => {
+  return (await cache.get('lastEvents')) || {};
 };
 
 const upgradeFields = (event: any): UpgradeSummary => {

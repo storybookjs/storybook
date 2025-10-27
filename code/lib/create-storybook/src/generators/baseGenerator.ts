@@ -265,6 +265,7 @@ export async function baseGenerator(
 
   taskLog.message('storybookConfigFolder created');
 
+  // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
   const prefixes = shouldApplyRequireWrapperOnPackageNames
     ? [
         'import { dirname } from "path"',

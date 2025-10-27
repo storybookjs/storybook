@@ -23,6 +23,7 @@ import { global } from '@storybook/global';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
+import { detectPnp } from '../cli/detect';
 import { resolvePackageDir } from '../shared/utils/module';
 import { storybookDevServer } from './dev-server';
 import { buildOrThrow } from './utils/build-or-throw';
@@ -93,6 +94,17 @@ export async function buildDevStandalone(
   options.cacheKey = cacheKey;
   options.outputDir = outputDir;
   options.serverChannelUrl = getServerChannelUrl(port, options);
+
+  // TODO: Remove in SB11
+  options.pnp = await detectPnp();
+  if (options.pnp) {
+    deprecate(dedent`
+      As of Storybook 10.0, PnP is deprecated.
+      If you are using PnP, you can continue to use Storybook 10.0, but we recommend migrating to a different package manager or linker-mode.
+
+      In future versions, PnP compatibility will be removed.
+    `);
+  }
 
   const config = await loadMainConfig(options);
   const { framework } = config;

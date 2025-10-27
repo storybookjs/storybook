@@ -51,6 +51,8 @@ export default defineGeneratorModule({
       `);
     }
 
+    // TODO: Evaluate if adding prop-types is correct after removing pnp compatibility code in SB11
+    // Miscellaneous dependency to add to be sure Storybook + CRA is working fine with Yarn PnP mode
     const extraPackages = ['webpack', 'prop-types'];
     const extraAddons = ['@storybook/preset-create-react-app'];
 

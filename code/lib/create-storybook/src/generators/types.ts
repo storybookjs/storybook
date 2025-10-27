@@ -17,6 +17,7 @@ export type GeneratorOptions = {
   framework: SupportedFramework;
   renderer: SupportedRenderer;
   linkable: boolean;
+  // TODO: Remove in SB11
   pnp: boolean;
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user

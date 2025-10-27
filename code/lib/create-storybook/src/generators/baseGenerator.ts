@@ -3,7 +3,6 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  type Builder,
   type NpmOptions,
   SupportedLanguage,
   configureEslintPlugin,
@@ -13,16 +12,18 @@ import {
 } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
+  builderPackages,
   frameworkPackages,
   getPackageDetails,
   isCI,
   loadMainConfig,
   optionalEnvToBoolean,
+  rendererPackages,
   versions,
 } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import type { SupportedRenderer } from 'storybook/internal/types';
+import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 import { SupportedFramework } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
@@ -46,21 +47,6 @@ const defaultOptions = {
   installFrameworkPackages: true,
 } satisfies FrameworkOptions;
 
-const getBuilderDetails = (builder: string) => {
-  const map = versions as Record<string, string>;
-
-  if (map[builder]) {
-    return builder;
-  }
-
-  const builderPackage = `@storybook/${builder}`;
-  if (map[builderPackage]) {
-    return builderPackage;
-  }
-
-  return builder;
-};
-
 const getExternalFramework = (framework?: string) =>
   externalFrameworks.find(
     (exFramework) =>
@@ -70,42 +56,25 @@ const getExternalFramework = (framework?: string) =>
         exFramework?.frameworks?.some?.((item) => item === framework))
   );
 
-const getFrameworkPackage = (framework: string | undefined, renderer: string, builder: string) => {
-  const externalFramework = getExternalFramework(framework);
-  const storybookBuilder = builder?.replace(/^@storybook\/builder-/, '');
-  const storybookFramework = framework?.replace(/^@storybook\//, '');
+const getPackageByValue = (
+  type: 'framework' | 'renderer' | 'builder',
+  value: string,
+  packages: Record<string, string>
+) => {
+  const foundPackage = value
+    ? Object.entries(packages).find(([key, pkgValue]) => pkgValue === value)?.[0]
+    : undefined;
 
-  if (externalFramework === undefined) {
-    const frameworkPackage = framework
-      ? `@storybook/${storybookFramework}`
-      : `@storybook/${renderer}-${storybookBuilder}`;
-
-    if (versions[frameworkPackage as keyof typeof versions]) {
-      return frameworkPackage;
-    }
-
-    throw new Error(
-      dedent`
-        Could not find framework package: ${frameworkPackage}.
-        Make sure this package exists, and if it does, please file an issue as this might be a bug in Storybook.
-      `
-    );
+  if (foundPackage) {
+    return foundPackage;
   }
 
-  return (
-    externalFramework.frameworks?.find((item) => item.match(new RegExp(`-${storybookBuilder}`))) ??
-    externalFramework.packageName
+  throw new Error(
+    dedent`
+      Could not find ${type} package for ${value}.
+      Make sure this package exists, and if it does, please file an issue as this might be a bug in Storybook.
+    `
   );
-};
-
-const getRendererPackage = (framework: string | undefined, renderer: string) => {
-  const externalFramework = getExternalFramework(framework);
-
-  if (externalFramework !== undefined) {
-    return externalFramework.renderer || externalFramework.packageName;
-  }
-
-  return `@storybook/${renderer}`;
 };
 
 const applyGetAbsolutePathWrapper = (packageName: string) =>
@@ -122,78 +91,28 @@ const applyAddonGetAbsolutePathWrapper = (pkg: string | { name: string }) => {
 
 const getFrameworkDetails = (
   renderer: SupportedRenderer,
-  builder: Builder,
-  framework?: SupportedFramework,
+  builder: SupportedBuilder,
+  framework: SupportedFramework,
   shouldApplyRequireWrapperOnPackageNames?: boolean
 ): {
-  type: 'framework' | 'renderer';
-  packages: string[];
-  builder?: string;
-  frameworkPackagePath?: string;
-  renderer?: string;
-  rendererId: SupportedRenderer;
   frameworkPackage: string;
-  rendererPackage: string;
-  builderPackage: string;
+  frameworkPackagePath: string;
 } => {
-  const frameworkPackage = getFrameworkPackage(framework, renderer, builder);
-  invariant(frameworkPackage, 'Missing framework package.');
+  logger.debug('getFrameworkDetails', { framework, renderer, builder });
+
+  const frameworkPackage = getPackageByValue('framework', framework, frameworkPackages);
+
+  const [frameworkPackagePath] = [frameworkPackage].map((pkg) =>
+    shouldApplyRequireWrapperOnPackageNames ? applyGetAbsolutePathWrapper(pkg) : pkg
+  );
+
   logger.debug('frameworkPackage', frameworkPackage);
-
-  const frameworkPackagePath = shouldApplyRequireWrapperOnPackageNames
-    ? applyGetAbsolutePathWrapper(frameworkPackage)
-    : frameworkPackage;
-
   logger.debug('frameworkPackagePath', frameworkPackagePath);
 
-  const rendererPackage = getRendererPackage(framework, renderer) as string;
-  const rendererPackagePath = shouldApplyRequireWrapperOnPackageNames
-    ? applyGetAbsolutePathWrapper(rendererPackage)
-    : rendererPackage;
-
-  logger.debug('rendererPackagePath', rendererPackagePath);
-
-  const builderPackage = getBuilderDetails(builder);
-  const builderPackagePath = shouldApplyRequireWrapperOnPackageNames
-    ? applyGetAbsolutePathWrapper(builderPackage)
-    : builderPackage;
-
-  logger.debug('builderPackagePath', builderPackagePath);
-
-  const isExternalFramework = !!getExternalFramework(frameworkPackage);
-  logger.debug('isExternalFramework', isExternalFramework);
-  const isKnownFramework =
-    isExternalFramework || !!(versions as Record<string, string>)[frameworkPackage];
-  const isKnownRenderer = !!(versions as Record<string, string>)[rendererPackage];
-
-  if (isKnownFramework) {
-    return {
-      packages: [frameworkPackage],
-      frameworkPackagePath,
-      frameworkPackage,
-      rendererPackage,
-      builderPackage,
-      rendererId: renderer,
-      type: 'framework',
-    };
-  }
-
-  if (isKnownRenderer) {
-    return {
-      packages: [rendererPackage, builderPackage],
-      rendererPackage,
-      builderPackage,
-      frameworkPackage,
-      builder: builderPackagePath,
-      renderer: rendererPackagePath,
-      rendererId: renderer,
-      type: 'renderer',
-    };
-  }
-
-  throw new Error(
-    `Could not find the framework (${frameworkPackage}) or renderer (${rendererPackage}) package`
-  );
+  return {
+    frameworkPackage,
+    frameworkPackagePath,
+  };
 };
 
 const hasFrameworkTemplates = (framework?: string) => {
@@ -233,14 +152,14 @@ export async function baseGenerator(
   {
     language,
     builder,
+    framework,
+    renderer,
     pnp,
     frameworkPreviewParts,
     features,
     dependencyCollector,
   }: GeneratorOptions,
-  renderer: SupportedRenderer,
-  _options: FrameworkOptions,
-  framework?: SupportedFramework
+  _options: FrameworkOptions
 ) {
   const options = { ...defaultOptions, ..._options };
   const isStorybookInMonorepository = packageManager.isStorybookInMonorepo();
@@ -251,14 +170,12 @@ export async function baseGenerator(
     title: 'Generating Storybook configuration',
   });
 
-  const {
-    packages,
-    type,
-    rendererId,
-    frameworkPackagePath,
-    builder: builderInclude,
-    frameworkPackage,
-  } = getFrameworkDetails(renderer, builder, framework, shouldApplyRequireWrapperOnPackageNames);
+  const { frameworkPackagePath, frameworkPackage } = getFrameworkDetails(
+    renderer,
+    builder,
+    framework,
+    shouldApplyRequireWrapperOnPackageNames
+  );
 
   logger.debug('framework details');
 
@@ -291,31 +208,21 @@ export async function baseGenerator(
   logger.debug('addons', { addons, addonPackages });
 
   const { packageJson } = packageManager.primaryPackageJson;
+
   const installedDependencies = new Set(
     Object.keys({ ...packageJson.dependencies, ...packageJson.devDependencies })
   );
 
-  // TODO: We need to start supporting this at some point
-  if (type === 'renderer') {
-    throw new Error(
-      dedent`
-        Sorry, for now, you can not do this, please use a framework such as @storybook/react-webpack5
-
-        https://github.com/storybookjs/storybook/issues/18360
-      `
-    );
-  }
-
   const extraPackagesToInstall =
     typeof extraPackages === 'function'
       ? await extraPackages({
-          builder: (builder || builderInclude) as string,
+          builder,
         })
       : extraPackages;
 
   const allPackages = [
     'storybook',
-    ...(installFrameworkPackages ? packages : []),
+    ...(installFrameworkPackages ? [frameworkPackage] : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
   ].filter(Boolean);
@@ -394,7 +301,7 @@ export async function baseGenerator(
     : [];
 
   taskLog.message(`- Configuring main.js`);
-  const { mainPath } = await configureMain({
+  await configureMain({
     framework: {
       name: frameworkPackagePath,
     },
@@ -409,17 +316,11 @@ export async function baseGenerator(
     language,
     ...(staticDir ? { staticDirs: [join('..', staticDir)] } : null),
     ...extraMain,
-    ...(type !== 'framework'
-      ? {
-          core: {
-            builder: builderInclude,
-          },
-        }
-      : {}),
   });
 
   taskLog.message(`- Configuring preview.js`);
-  const { previewConfigPath } = await configurePreview({
+
+  await configurePreview({
     frameworkPreviewParts,
     storybookConfigFolder: storybookConfigFolder as string,
     language,
@@ -434,12 +335,11 @@ export async function baseGenerator(
   }
 
   if (addComponents) {
-    const finalFramework = framework || frameworkPackages[frameworkPackage!] || frameworkPackage;
-    const templateLocation = hasFrameworkTemplates(finalFramework) ? finalFramework : rendererId;
-    if (!templateLocation) {
-      throw new Error(`Could not find template location for ${framework} or ${rendererId}`);
-    }
+    const templateLocation = hasFrameworkTemplates(framework) ? framework : renderer;
+    invariant(templateLocation, `Could not find template location for ${framework} or ${renderer}`);
+
     taskLog.message(`- Copying framework templates`);
+
     await copyTemplateFiles({
       templateLocation,
       packageManager: packageManager as any,
@@ -456,17 +356,8 @@ export async function baseGenerator(
 
   taskLog.success('Storybook configuration generated', { showLog: true });
 
-  const mainConfig = await loadMainConfig({ configDir: storybookConfigFolder });
-  const mainConfigCSFFile = await readConfig(mainPath);
-
   return {
-    frameworkPackage,
-    rendererPackage: packages[0],
-    builderPackage: packages[1],
-    mainConfig,
-    mainConfigCSFFile,
     configDir: storybookConfigFolder,
-    previewConfigPath,
     storybookCommand: _options.storybookCommand,
     shouldRunDev: _options.shouldRunDev,
   };

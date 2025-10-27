@@ -13,7 +13,9 @@ import type { FrameworkPreviewParts } from './configure';
 
 export type GeneratorOptions = {
   language: SupportedLanguage;
-  builder: Builder;
+  builder: SupportedBuilder;
+  framework: SupportedFramework;
+  renderer: SupportedRenderer;
   linkable: boolean;
   pnp: boolean;
   frameworkPreviewParts?: FrameworkPreviewParts;

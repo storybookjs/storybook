@@ -30,7 +30,7 @@ export default defineGeneratorModule({
     ]);
 
     return {
-      extraPackages: async () => ['@nuxtjs/storybook'],
+      extraPackages: ['@nuxtjs/storybook'],
       installFrameworkPackages: false,
       componentsDestinationPath: './components',
       extraMain: {

@@ -89,17 +89,6 @@ export class GeneratorExecutionCommand {
 
     const language: SupportedLanguage = options.language || ('typescript' as SupportedLanguage);
 
-    const generatorOptions = {
-      language,
-      builder: frameworkInfo.builder,
-      linkable: !!options.linkable,
-      pnp: options.usePnp as boolean,
-      yes: options.yes as boolean,
-      projectType,
-      features: options.features || [],
-      dependencyCollector,
-    };
-
     // All generators must be new-style modules with metadata + configure
     const generatorModule = generator as GeneratorModule;
 
@@ -113,6 +102,19 @@ export class GeneratorExecutionCommand {
       features: options.features || [],
     });
 
+    const generatorOptions = {
+      language,
+      builder: frameworkInfo.builder,
+      framework: frameworkInfo.framework,
+      renderer: frameworkInfo.renderer,
+      linkable: !!options.linkable,
+      pnp: options.usePnp as boolean,
+      yes: options.yes as boolean,
+      projectType,
+      features: options.features || [],
+      dependencyCollector,
+    };
+
     if (frameworkOptions.skipGenerator) {
       return {
         shouldRunDev: frameworkOptions.shouldRunDev,
@@ -121,14 +123,7 @@ export class GeneratorExecutionCommand {
     }
 
     // Call baseGenerator with complete configuration
-    return baseGenerator(
-      packageManager,
-      npmOptions,
-      generatorOptions,
-      frameworkInfo.renderer,
-      frameworkOptions,
-      frameworkInfo.framework
-    );
+    return baseGenerator(packageManager, npmOptions, generatorOptions, frameworkOptions);
   }
 }
 

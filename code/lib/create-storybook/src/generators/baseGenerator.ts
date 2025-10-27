@@ -21,7 +21,7 @@ import {
   versions,
 } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedRenderer } from 'storybook/internal/types';
 import { SupportedFramework } from 'storybook/internal/types';
 
@@ -138,22 +138,30 @@ const getFrameworkDetails = (
 } => {
   const frameworkPackage = getFrameworkPackage(framework, renderer, builder);
   invariant(frameworkPackage, 'Missing framework package.');
+  logger.debug('frameworkPackage', frameworkPackage);
 
   const frameworkPackagePath = shouldApplyRequireWrapperOnPackageNames
     ? applyGetAbsolutePathWrapper(frameworkPackage)
     : frameworkPackage;
+
+  logger.debug('frameworkPackagePath', frameworkPackagePath);
 
   const rendererPackage = getRendererPackage(framework, renderer) as string;
   const rendererPackagePath = shouldApplyRequireWrapperOnPackageNames
     ? applyGetAbsolutePathWrapper(rendererPackage)
     : rendererPackage;
 
+  logger.debug('rendererPackagePath', rendererPackagePath);
+
   const builderPackage = getBuilderDetails(builder);
   const builderPackagePath = shouldApplyRequireWrapperOnPackageNames
     ? applyGetAbsolutePathWrapper(builderPackage)
     : builderPackage;
 
+  logger.debug('builderPackagePath', builderPackagePath);
+
   const isExternalFramework = !!getExternalFramework(frameworkPackage);
+  logger.debug('isExternalFramework', isExternalFramework);
   const isKnownFramework =
     isExternalFramework || !!(versions as Record<string, string>)[frameworkPackage];
   const isKnownRenderer = !!(versions as Record<string, string>)[rendererPackage];
@@ -252,6 +260,8 @@ export async function baseGenerator(
     frameworkPackage,
   } = getFrameworkDetails(renderer, builder, framework, shouldApplyRequireWrapperOnPackageNames);
 
+  logger.debug('framework details');
+
   const {
     extraAddons = [],
     extraPackages,
@@ -277,6 +287,8 @@ export async function baseGenerator(
     builder,
     webpackCompiler
   );
+
+  logger.debug('addons', { addons, addonPackages });
 
   const { packageJson } = packageManager.primaryPackageJson;
   const installedDependencies = new Set(
@@ -313,6 +325,8 @@ export async function baseGenerator(
       !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
   );
 
+  logger.debug('packagesToInstall', { packagesToInstall });
+
   let eslintPluginPackage: string | null = null;
   try {
     if (!isCI()) {
@@ -340,6 +354,8 @@ export async function baseGenerator(
     packagesToInstall as string[]
   );
 
+  logger.debug('versionedPackages', { versionedPackages });
+
   if (versionedPackages.length > 0) {
     // When using the dependency collector, just collect the packages
     if (npmOptions.type === 'devDependencies') {
@@ -349,7 +365,11 @@ export async function baseGenerator(
     }
   }
 
+  logger.debug('storybookConfigFolder', { storybookConfigFolder });
+
   await mkdir(`./${storybookConfigFolder}`, { recursive: true });
+
+  logger.debug('storybookConfigFolder created');
 
   const prefixes = shouldApplyRequireWrapperOnPackageNames
     ? [

@@ -324,7 +324,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
       return { ...prev, ui: update };
     });
 
-    // We intentionally do not include setHighlighted/setTab/setUiState in deps to avoid loops
+    // We intentionally do not include setState in deps to avoid loops
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [a11ySelection]);
 

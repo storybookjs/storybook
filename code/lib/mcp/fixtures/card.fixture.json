@@ -5,44 +5,73 @@
 		"description": "A flexible container component for grouping related content with optional header, footer, and action areas.\n\nThe Card component provides a consistent way to present information in a contained, elevated surface. It's commonly used for displaying articles, products, user profiles, or any grouped content that benefits from visual separation.\n\n## Design Principles\n\n- Cards should contain a single subject or action\n- Maintain consistent padding and spacing\n- Use elevation to indicate interactive vs static cards\n- Keep content hierarchy clear with proper use of typography",
 		"summary": "A flexible container component for grouping related content",
 		"import": "import { Card } from '@storybook/design-system';",
-		"props": {
-			"type": "object",
-			"properties": {
+		"reactDocgen": {
+			"props": {
 				"variant": {
-					"type": "string",
-					"enum": ["elevated", "outlined", "flat"],
-					"default": "elevated",
-					"description": "The visual style variant of the card"
+					"description": "The visual style variant of the card",
+					"required": false,
+					"tsType": {
+						"name": "union",
+						"raw": "\"elevated\" | \"outlined\" | \"flat\"",
+						"elements": [
+							{ "name": "literal", "value": "\"elevated\"" },
+							{ "name": "literal", "value": "\"outlined\"" },
+							{ "name": "literal", "value": "\"flat\"" }
+						]
+					},
+					"defaultValue": { "value": "\"elevated\"", "computed": false }
 				},
 				"padding": {
-					"type": "string",
-					"enum": ["none", "small", "medium", "large"],
-					"default": "medium",
-					"description": "The amount of internal padding"
+					"description": "The amount of internal padding",
+					"required": false,
+					"tsType": {
+						"name": "union",
+						"raw": "\"none\" | \"small\" | \"medium\" | \"large\"",
+						"elements": [
+							{ "name": "literal", "value": "\"none\"" },
+							{ "name": "literal", "value": "\"small\"" },
+							{ "name": "literal", "value": "\"medium\"" },
+							{ "name": "literal", "value": "\"large\"" }
+						]
+					},
+					"defaultValue": { "value": "\"medium\"", "computed": false }
 				},
 				"clickable": {
-					"type": "boolean",
-					"default": false,
-					"description": "Whether the entire card is clickable/interactive"
+					"description": "Whether the entire card is clickable/interactive",
+					"required": false,
+					"tsType": { "name": "boolean" },
+					"defaultValue": { "value": "false", "computed": false }
 				},
 				"header": {
-					"type": "node",
-					"description": "Content to display in the card header"
+					"description": "Content to display in the card header",
+					"required": false,
+					"tsType": { "name": "ReactNode" }
 				},
 				"footer": {
-					"type": "node",
-					"description": "Content to display in the card footer"
+					"description": "Content to display in the card footer",
+					"required": false,
+					"tsType": { "name": "ReactNode" }
 				},
 				"children": {
-					"type": "node",
-					"description": "The main content of the card"
+					"description": "The main content of the card",
+					"required": true,
+					"tsType": { "name": "ReactNode" }
 				},
 				"onClick": {
-					"type": "function",
-					"description": "Callback function when the card is clicked (requires clickable=true)"
+					"description": "Callback function when the card is clicked (requires clickable=true)",
+					"required": false,
+					"tsType": {
+						"name": "signature",
+						"type": "function",
+						"signature": {
+							"arguments": [
+								{ "name": "event", "type": { "name": "MouseEvent" } }
+							],
+							"return": { "name": "void" }
+						}
+					}
 				}
-			},
-			"required": ["children"]
+			}
 		},
 		"examples": [
 			{

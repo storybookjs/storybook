@@ -5,19 +5,25 @@ import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import { baseGenerator } from '../generators/baseGenerator';
 import type { CommandOptions, GeneratorFeature, GeneratorModule } from '../generators/types';
-import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 
 export type GeneratorExecutionResult =
   | ReturnType<typeof baseGenerator>
   | { shouldRunDev?: boolean; configDir?: string; storybookCommand?: string };
 
+type ExecuteProjectGeneratorOptions = {
+  projectType: ProjectType;
+  packageManager: JsPackageManager;
+  frameworkInfo: FrameworkDetectionResult;
+  options: CommandOptions;
+  selectedFeatures: Set<GeneratorFeature>;
+};
+
 /**
  * Command for executing the project-specific generator
  *
  * Responsibilities:
  *
- * - Filter features based on project type compatibility
  * - Get generator module from registry
  * - Call generator's configure() to get framework-specific options
  * - Execute baseGenerator with complete configuration
@@ -25,28 +31,23 @@ export type GeneratorExecutionResult =
  */
 export class GeneratorExecutionCommand {
   /** Execute generator for the detected project type */
-  async execute(
-    projectType: ProjectType,
-    packageManager: JsPackageManager,
-    frameworkInfo: FrameworkDetectionResult,
-    options: CommandOptions,
-    selectedFeatures: Set<GeneratorFeature>,
-    dependencyCollector: DependencyCollector
-  ): Promise<GeneratorExecutionResult> {
-    // Filter onboarding feature based on project type support
-    this.filterFeatures(projectType, selectedFeatures);
+  constructor(private readonly dependencyCollector: DependencyCollector) {}
 
-    // Update options with final selected features
-    options.features = Array.from(selectedFeatures);
-
+  async execute({
+    projectType,
+    options,
+    packageManager,
+    frameworkInfo,
+    selectedFeatures,
+  }: ExecuteProjectGeneratorOptions): Promise<GeneratorExecutionResult> {
     // Get and execute generator (supports both old and new style)
-    const generatorResult = await this.executeProjectGenerator(
+    const generatorResult = await this.executeProjectGenerator({
       projectType,
       packageManager,
       frameworkInfo,
       options,
-      dependencyCollector
-    );
+      selectedFeatures,
+    });
 
     // Determine Storybook command
 
@@ -57,25 +58,28 @@ export class GeneratorExecutionCommand {
     };
   }
 
-  /** Filter features based on project type compatibility */
-  private filterFeatures(projectType: ProjectType, selectedFeatures: Set<GeneratorFeature>): void {
-    // Remove onboarding if not supported
-    if (
-      selectedFeatures.has('onboarding') &&
-      !FeatureCompatibilityService.supportsOnboarding(projectType)
-    ) {
-      selectedFeatures.delete('onboarding');
+  private readonly getExtraAddons = (selectedFeatures: Set<GeneratorFeature>): string[] => {
+    const addons = [];
+
+    if (selectedFeatures.has('a11y')) {
+      addons.push('@storybook/addon-a11y');
     }
-  }
+
+    if (selectedFeatures.has('test')) {
+      addons.push('@storybook/addon-vitest');
+    }
+
+    return addons;
+  };
 
   /** Execute the project-specific generator */
-  private async executeProjectGenerator(
-    projectType: ProjectType,
-    packageManager: JsPackageManager,
-    frameworkInfo: FrameworkDetectionResult,
-    options: CommandOptions,
-    dependencyCollector: DependencyCollector
-  ) {
+  private readonly executeProjectGenerator = async ({
+    projectType,
+    packageManager,
+    frameworkInfo,
+    options,
+    selectedFeatures,
+  }: ExecuteProjectGeneratorOptions) => {
     const generator = generatorRegistry.get(projectType);
 
     if (!generator) {
@@ -112,35 +116,34 @@ export class GeneratorExecutionCommand {
       yes: options.yes as boolean,
       projectType,
       features: options.features || [],
-      dependencyCollector,
+      dependencyCollector: this.dependencyCollector,
     };
 
     if (frameworkOptions.skipGenerator) {
       return {
         shouldRunDev: frameworkOptions.shouldRunDev,
         storybookCommand: frameworkOptions.storybookCommand,
+        extraAddons: [],
       };
     }
 
+    const extraAddons = this.getExtraAddons(selectedFeatures);
+
     // Call baseGenerator with complete configuration
-    return baseGenerator(packageManager, npmOptions, generatorOptions, frameworkOptions);
-  }
+    const generatorResult = await baseGenerator(packageManager, npmOptions, generatorOptions, {
+      ...frameworkOptions,
+      extraAddons: [...(frameworkOptions.extraAddons ?? []), ...extraAddons],
+    });
+
+    return {
+      ...generatorResult,
+      extraAddons,
+    };
+  };
 }
 
 export const executeGeneratorExecution = (
-  projectType: ProjectType,
-  packageManager: JsPackageManager,
-  frameworkInfo: FrameworkDetectionResult,
-  options: CommandOptions,
-  selectedFeatures: Set<GeneratorFeature>,
-  dependencyCollector: DependencyCollector
+  options: ExecuteProjectGeneratorOptions & { dependencyCollector: DependencyCollector }
 ) => {
-  return new GeneratorExecutionCommand().execute(
-    projectType,
-    packageManager,
-    frameworkInfo,
-    options,
-    selectedFeatures,
-    dependencyCollector
-  );
+  return new GeneratorExecutionCommand(options.dependencyCollector).execute(options);
 };

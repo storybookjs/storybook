@@ -63,7 +63,7 @@ export class AddonConfigurationCommand {
 
     const task = prompt.taskLog({
       id: 'configure-addons',
-      title: 'Configuring test addons...',
+      title: 'Configuring addons...',
     });
 
     // Track failures for each addon
@@ -71,8 +71,6 @@ export class AddonConfigurationCommand {
 
     // Configure each addon
     for (const addon of addons) {
-      // const taskGroup = task.group(`Configuring ${addon}...`);
-
       try {
         task.message(`Configuring ${addon}...`);
 

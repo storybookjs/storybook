@@ -87,6 +87,7 @@ export interface GeneratorContext {
   language: SupportedLanguage;
   features: GeneratorFeature[];
   linkable?: boolean;
+  yes?: boolean;
 }
 
 export interface GeneratorModule {

@@ -1,3 +1,4 @@
+import type { ProjectType } from 'storybook/internal/cli';
 import { globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
@@ -23,8 +24,6 @@ export interface UserPreferencesResult {
    * installed based on the project type or other constraints.
    */
   selectedFeatures: Set<GeneratorFeature>;
-  /** The addons which should be installed based on the selected features */
-  addons: string[];
 }
 
 export interface UserPreferencesOptions {
@@ -33,6 +32,7 @@ export interface UserPreferencesOptions {
   yes?: boolean;
   framework: SupportedFramework | undefined;
   builder: SupportedBuilder;
+  projectType: ProjectType;
 }
 
 /**
@@ -80,15 +80,14 @@ export class UserPreferencesCommand {
       ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
       : 'recommended';
 
-    const selectedFeatures = this.determineFeatures(installType, newUser, isTestFeatureAvailable);
+    const selectedFeatures = this.determineFeatures(
+      installType,
+      newUser,
+      isTestFeatureAvailable,
+      options.projectType
+    );
 
-    const addons = selectedFeatures.has('test')
-      ? ['@storybook/addon-a11y', '@storybook/addon-vitest']
-      : ['@storybook/addon-a11y'];
-
-    this.dependencyCollector.addDevDependencies(addons);
-
-    return { newUser, installType, selectedFeatures, addons };
+    return { newUser, installType, selectedFeatures };
   }
 
   /** Prompt user about onboarding */
@@ -168,7 +167,8 @@ export class UserPreferencesCommand {
   private determineFeatures(
     installType: InstallType,
     newUser: boolean,
-    isTestFeatureAvailable: boolean
+    isTestFeatureAvailable: boolean,
+    projectType: ProjectType
   ): Set<GeneratorFeature> {
     const features = new Set<GeneratorFeature>();
 
@@ -179,7 +179,7 @@ export class UserPreferencesCommand {
       if (isTestFeatureAvailable) {
         features.add('test');
       }
-      if (newUser) {
+      if (newUser && FeatureCompatibilityService.supportsOnboarding(projectType)) {
         features.add('onboarding');
       }
     }

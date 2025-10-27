@@ -21,21 +21,56 @@ export const checklistData: ChecklistData = {
         {
           id: 'add-component',
           label: 'Add component',
-          content: <>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</>,
-          predicate: ({ complete }) => complete(),
+          content: (
+            <>
+              <p>
+                A story captures the rendered state of a UI component. It's an object with
+                annotations that describe the component's behavior and appearance given a set of
+                arguments.
+              </p>
+              <p>
+                Storybook uses the generic term arguments (args for short) when talking about
+                React's props, Vue's props, Angular's @Input, and other similar concepts.
+              </p>
+              <p>
+                We define stories according to the Component Story Format (CSF), an ES6 module-based
+                standard that is easy to write and portable between tools.
+              </p>
+            </>
+          ),
+          // predicate: ({ complete }) => complete(),
         },
         {
           id: 'add-5-10-components',
           after: ['add-component'],
           label: 'Add 5-10 total components',
-          content: <>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</>,
+          content: (
+            <>
+              A story is an object that describes how to render a component. You can have multiple
+              stories per component, and those stories can build upon one another. For example, we
+              can add Secondary and Tertiary stories based on our Primary story from above.
+            </>
+          ),
           predicate: ({ complete }) => complete(),
         },
         {
           id: 'check-improve-coverage',
           after: ['add-component'],
           label: 'Check + improve coverage',
-          content: <>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</>,
+          content: (
+            <>
+              <p>
+                Test coverage is the practice of measuring whether existing tests fully cover your
+                code. It marks which conditions, logic branches, functions and variables in your
+                code are and are not being tested.
+              </p>
+              <p>
+                Coverage tests examine the instrumented code against a set of industry-accepted best
+                practices. They act as the last line of QA to improve the quality of your test
+                suite.
+              </p>
+            </>
+          ),
           predicate: ({ complete }) => setTimeout(complete, 3000),
         },
       ],
@@ -168,21 +203,39 @@ export const checklistData: ChecklistData = {
           id: 'controls',
           after: ['add-component'],
           label: 'Controls',
+          content: (
+            <>
+              Storybook Controls gives you a graphical UI to interact with a component's arguments
+              dynamically without needing to code. Use the Controls panel to edit the inputs to your
+              stories and see the results in real-time. It's a great way to explore your components
+              and test different states.
+            </>
+          ),
         },
         {
           id: 'autodocs',
           after: ['add-component'],
           label: 'Autodocs',
-        },
-        {
-          id: 'comments',
-          after: ['add-component'],
-          label: 'Comments',
+          content: (
+            <>
+              Storybook Autodocs is a powerful tool that can help you quickly generate comprehensive
+              documentation for your UI components. By leveraging Autodocs, you're transforming your
+              stories into living documentation which can be further extended with MDX and Doc
+              Blocks to provide a clear and concise understanding of your components' functionality.
+            </>
+          ),
         },
         {
           id: 'share-story',
           after: ['add-component'],
           label: 'Share story',
+          content: (
+            <>
+              Teams publish Storybook online to review and collaborate on works in progress. That
+              allows developers, designers, PMs, and other stakeholders to check if the UI looks
+              right without touching code or requiring a local dev environment.
+            </>
+          ),
         },
       ],
     },

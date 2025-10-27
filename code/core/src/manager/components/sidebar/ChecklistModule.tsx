@@ -18,6 +18,8 @@ import { styled } from 'storybook/theming';
 import { checklistData } from '../../settings/Checklist/checklistData';
 import { Transition, TransitionGroup } from '../Transition';
 
+type ChecklistItem = (typeof checklistData)['sections'][number]['items'][number];
+
 const ItemIcon = styled(StatusFailIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
 }));
@@ -43,17 +45,23 @@ export const ChecklistModule = () => {
     if (muted === true) {
       return [];
     }
+    const isReady = ({ id, after }: ChecklistItem): boolean =>
+      !completed.includes(id) &&
+      !skipped.includes(id) &&
+      !(Array.isArray(muted) && muted.includes(id)) &&
+      !after?.some((id) => !completed.includes(id));
+
+    // Collect a list of the next 3 tasks that are ready.
+    // Tasks are pulled from each section in a round-robin fashion,
+    // so that users can choose their own adventure.
     return checklistData.sections
-      .map(({ items }) =>
-        items.find(
-          ({ id, after }) =>
-            !completed.includes(id) &&
-            !skipped.includes(id) &&
-            !(Array.isArray(muted) && muted.includes(id)) &&
-            !after?.some((id) => !completed.includes(id))
-        )
+      .flatMap(({ items }, sectionIndex) =>
+        items.filter(isReady).map((item, itemIndex) => ({ item, itemIndex, sectionIndex }))
       )
-      .flatMap((item) => (item ? [{ ...item, nodeRef: createRef<HTMLLIElement>() }] : []));
+      .sort((a, b) => a.itemIndex - b.itemIndex)
+      .slice(0, 3)
+      .sort((a, b) => a.sectionIndex - b.sectionIndex)
+      .flatMap(({ item }) => (item ? [{ ...item, nodeRef: createRef<HTMLLIElement>() }] : []));
   }, [muted, completed, skipped]);
 
   if (nextTasks.length === 0) {

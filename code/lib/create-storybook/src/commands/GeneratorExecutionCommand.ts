@@ -75,6 +75,10 @@ export class GeneratorExecutionCommand {
       addons.push('@storybook/addon-vitest');
     }
 
+    if (selectedFeatures.has('docs')) {
+      addons.push('@storybook/addon-docs');
+    }
+
     return addons;
   };
 

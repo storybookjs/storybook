@@ -12,17 +12,9 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { addons, useEffect, useMemo, useRef } from 'storybook/preview-api';
 
-import type { PseudoState } from '../constants';
 import { PSEUDO_STATES } from '../constants';
+import type { PseudoParameter, PseudoState, PseudoStateConfig } from '../types';
 import { rewriteStyleSheet } from './rewriteStyleSheet';
-
-type PseudoStateConfig = {
-  [P in PseudoState]?: boolean | string | string[];
-};
-
-export interface PseudoParameter extends PseudoStateConfig {
-  rootSelector?: string;
-}
 
 const channel = addons.getChannel();
 const shadowHosts = new Set<Element>();

@@ -9,6 +9,7 @@ import {
   FORCE_REMOUNT,
   FORCE_RE_RENDER,
   GLOBALS_UPDATED,
+  PREVIEW_INITIALIZED,
   RESET_STORY_ARGS,
   type RequestData,
   type ResponseData,
@@ -128,6 +129,9 @@ export class Preview<TRenderer extends Renderer> {
       const projectAnnotations = await this.getProjectAnnotationsOrRenderError();
       await this.runBeforeAllHook(projectAnnotations);
       await this.initializeWithProjectAnnotations(projectAnnotations);
+      // eslint-disable-next-line compat/compat
+      const userAgent = globalThis?.navigator?.userAgent;
+      await this.channel.emit(PREVIEW_INITIALIZED, { userAgent });
     } catch (err) {
       this.rejectStoreInitializationPromise(err as Error);
     }

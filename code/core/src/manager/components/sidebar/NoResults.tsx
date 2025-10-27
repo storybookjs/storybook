@@ -6,7 +6,6 @@ export const NoResults = styled.div(({ theme }) => ({
   textAlign: 'center',
   textWrap: 'balance',
   gap: 4,
-  padding: '20px 0',
   lineHeight: `18px`,
   fontSize: `${theme.typography.size.s2}px`,
   color: theme.color.defaultText,

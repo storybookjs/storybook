@@ -56,8 +56,8 @@ import { useExpanded } from './useExpanded';
 export type ExcludesNull = <T>(x: T | null) => x is T;
 
 const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
-  marginTop: props.hasOrphans ? 20 : 0,
-  marginBottom: 20,
+  marginTop: props.hasOrphans ? 16 : 0,
+  marginBottom: 16,
 }));
 
 const CollapseButton = styled.button({

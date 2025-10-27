@@ -5,6 +5,16 @@ import { FocusProxy } from './FocusProxy';
 
 const meta = preview.meta({
   component: FocusProxy,
+  parameters: {
+    layout: 'fullscreen',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ display: 'inline-block', padding: 20 }}>
+        <Story />
+      </div>
+    ),
+  ],
 });
 
 export const Default = meta.story({

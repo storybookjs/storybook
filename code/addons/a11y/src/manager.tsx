@@ -28,8 +28,8 @@ const Title = () => {
     error: undefined,
     status: 'initial',
   });
-  const violationsNb = results?.violations?.length || 0;
-  const incompleteNb = results?.incomplete?.length || 0;
+  const violationsNb = results?.violations?.length ?? 0;
+  const incompleteNb = results?.incomplete?.length ?? 0;
   const count = violationsNb + incompleteNb;
 
   const suffix =

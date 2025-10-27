@@ -1,15 +1,16 @@
 import { useState } from 'react';
 
 import preview from '../../../../../.storybook/preview';
+import type { useCollapsible } from './Collapsible';
 import { Collapsible } from './Collapsible';
 
 const toggle = ({
   isCollapsed,
-  toggleCollapsed,
+  toggleProps,
 }: {
   isCollapsed: boolean;
-  toggleCollapsed: () => void;
-}) => <button onClick={toggleCollapsed}>{isCollapsed ? 'Open' : 'Close'}</button>;
+  toggleProps: ReturnType<typeof useCollapsible>['toggleProps'];
+}) => <button {...toggleProps}>{isCollapsed ? 'Open' : 'Close'}</button>;
 
 const content = <div style={{ background: 'papayawhip', padding: 16 }}>Peekaboo!</div>;
 
@@ -26,6 +27,12 @@ export const Default = meta.story({});
 export const Collapsed = meta.story({
   args: {
     collapsed: true,
+  },
+});
+
+export const Disabled = meta.story({
+  args: {
+    disabled: true,
   },
 });
 

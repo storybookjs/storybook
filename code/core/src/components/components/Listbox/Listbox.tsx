@@ -46,7 +46,7 @@ export const ListboxItem = styled.li({
     blockSize: 'auto',
     contentVisibility: 'visible',
   },
-  '&.exit-active': {
+  '&.exit-active, &.exit-done': {
     opacity: 0,
     blockSize: 0,
     contentVisibility: 'hidden',

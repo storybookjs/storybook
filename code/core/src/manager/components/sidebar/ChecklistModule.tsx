@@ -1,4 +1,4 @@
-import React, { createRef, useMemo } from 'react';
+import React, { createRef, useMemo, useRef } from 'react';
 
 import {
   Card,
@@ -56,10 +56,12 @@ const title = (progress: number) => {
 
 export const ChecklistModule = () => {
   const api = useStorybookApi();
-  const [{ muted, completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const [{ loaded, muted, completed, skipped }] =
+    experimental_useUniversalStore(universalChecklistStore);
 
   const nextTasks = useMemo(() => {
-    if (muted === true) {
+    if (!loaded || muted === true) {
       return [];
     }
     const isReady = ({ id, after }: ChecklistItem): boolean =>
@@ -79,12 +81,9 @@ export const ChecklistModule = () => {
       .slice(0, 3)
       .sort((a, b) => a.sectionIndex - b.sectionIndex)
       .flatMap(({ item }) => (item ? [{ ...item, nodeRef: createRef<HTMLLIElement>() }] : []));
-  }, [muted, completed, skipped]);
+  }, [loaded, muted, completed, skipped]);
 
-  if (nextTasks.length === 0) {
-    return null;
-  }
-
+  const hasTasks = nextTasks.length > 0;
   const totalCount = checklistData.sections.reduce((acc, { items }) => acc + items.length, 0);
   const doneCount = checklistData.sections.reduce(
     (acc, { items }) =>
@@ -94,74 +93,80 @@ export const ChecklistModule = () => {
   const progress = Math.round((doneCount / totalCount) * 100);
 
   return (
-    <HoverCard outlineAnimation="rainbow">
-      <Collapsible
-        summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
-          <Listbox onClick={toggleCollapsed}>
-            <ListboxItem>
-              <ListboxText>
-                <strong>{title(progress)}</strong>
-              </ListboxText>
-              <WithTooltip
-                hasChrome={false}
-                tooltip={
-                  <TooltipNote
-                    note={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
-                  />
-                }
-                trigger="hover"
-              >
-                <CollapseToggle
-                  {...toggleProps}
-                  id="checklist-module-collapse-toggle"
-                  aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
+    <Transition nodeRef={nodeRef} in={hasTasks} timeout={300}>
+      <HoverCard ref={nodeRef} outlineAnimation={hasTasks ? 'rainbow' : 'none'}>
+        <Collapsible
+          collapsed={!hasTasks}
+          disabled={!hasTasks}
+          summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
+            <Listbox onClick={toggleCollapsed}>
+              <ListboxItem>
+                <ListboxText>
+                  <strong>{loaded && title(progress)}</strong>
+                </ListboxText>
+                <WithTooltip
+                  hasChrome={false}
+                  tooltip={
+                    <TooltipNote
+                      note={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
+                    />
+                  }
+                  trigger="hover"
                 >
-                  <ChevronSmallUpIcon
-                    style={{
-                      transform: isCollapsed ? 'rotate(180deg)' : 'none',
-                      transition: 'transform 250ms',
-                      willChange: 'auto',
-                    }}
-                  />
-                </CollapseToggle>
-              </WithTooltip>
-              <ListboxButton
-                onClick={(e) => {
-                  e.stopPropagation();
-                  api.navigateUrl('/settings/guide', { plain: false });
-                }}
-              >
-                {progress}%
-              </ListboxButton>
-            </ListboxItem>
-          </Listbox>
-        )}
-      >
-        <TransitionGroup component={Listbox}>
-          {nextTasks.map((task) => (
-            <Transition key={task.id} nodeRef={task.nodeRef} timeout={300}>
-              <ListboxItem ref={task.nodeRef}>
-                <ListboxAction
-                  onClick={() => api.navigateUrl(`/settings/guide#${task.id}`, { plain: false })}
-                >
-                  <ItemIcon />
-                  {task.label}
-                </ListboxAction>
-                {task.action && (
+                  <CollapseToggle
+                    {...toggleProps}
+                    id="checklist-module-collapse-toggle"
+                    aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
+                  >
+                    <ChevronSmallUpIcon
+                      style={{
+                        transform: isCollapsed ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 250ms',
+                        willChange: 'auto',
+                      }}
+                    />
+                  </CollapseToggle>
+                </WithTooltip>
+                {loaded && (
                   <ListboxButton
-                    onClick={() => {
-                      checklistStore.complete(task.id);
-                      task.action?.onClick({ api });
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      api.navigateUrl('/settings/guide', { plain: false });
                     }}
                   >
-                    {task.action.label}
+                    {progress}%
                   </ListboxButton>
                 )}
               </ListboxItem>
-            </Transition>
-          ))}
-        </TransitionGroup>
-      </Collapsible>
-    </HoverCard>
+            </Listbox>
+          )}
+        >
+          <TransitionGroup component={Listbox}>
+            {nextTasks.map((task) => (
+              <Transition key={task.id} nodeRef={task.nodeRef} timeout={300}>
+                <ListboxItem ref={task.nodeRef}>
+                  <ListboxAction
+                    onClick={() => api.navigateUrl(`/settings/guide#${task.id}`, { plain: false })}
+                  >
+                    <ItemIcon />
+                    {task.label}
+                  </ListboxAction>
+                  {task.action && (
+                    <ListboxButton
+                      onClick={() => {
+                        checklistStore.complete(task.id);
+                        task.action?.onClick({ api });
+                      }}
+                    >
+                      {task.action.label}
+                    </ListboxButton>
+                  )}
+                </ListboxItem>
+              </Transition>
+            ))}
+          </TransitionGroup>
+        </Collapsible>
+      </HoverCard>
+    </Transition>
   );
 };

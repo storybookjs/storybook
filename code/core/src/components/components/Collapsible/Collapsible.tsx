@@ -1,5 +1,11 @@
-import React, { type ComponentProps } from 'react';
-import { useEffect, useId, useState } from 'react';
+import React, {
+  type ComponentProps,
+  type SyntheticEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useState,
+} from 'react';
 
 import { styled } from 'storybook/theming';
 
@@ -58,7 +64,11 @@ export const useCollapsible = (initialCollapsed = true, collapsed?: boolean) => 
     }
   }, [collapsed]);
 
-  const toggleCollapsed = () => setCollapsed(!isCollapsed);
+  const toggleCollapsed = useCallback((event?: SyntheticEvent<Element, Event>) => {
+    event?.stopPropagation();
+    setCollapsed((value) => !value);
+  }, []);
+
   const contentId = useId();
   const toggleProps = {
     onClick: toggleCollapsed,

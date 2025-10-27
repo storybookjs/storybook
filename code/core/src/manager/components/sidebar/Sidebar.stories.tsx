@@ -2,13 +2,15 @@ import React from 'react';
 
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
+
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import type { IndexHash } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-import { internal_fullStatusStore } from '../../manager-stores.mock';
+import { internal_fullStatusStore, universalChecklistStore } from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { standardData as standardHeaderData } from './Heading.stories';
 import { IconSymbols } from './IconSymbols';
@@ -102,6 +104,12 @@ const meta = {
   globals: { sb_theme: 'side-by-side' },
   beforeEach: () => {
     internal_fullStatusStore.unset();
+    universalChecklistStore.setState({
+      loaded: true,
+      muted: false,
+      completed: ['add-component'],
+      skipped: ['add-5-10-components'],
+    });
   },
 } satisfies Meta<typeof Sidebar>;
 

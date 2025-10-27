@@ -13,14 +13,12 @@ export const Collapsible = ({
   children,
   summary,
   collapsed,
-  initialCollapsed = true,
 }: {
   children: React.ReactNode | ((state: ReturnType<typeof useCollapsible>) => React.ReactNode);
   summary?: React.ReactNode | ((state: ReturnType<typeof useCollapsible>) => React.ReactNode);
   collapsed?: boolean;
-  initialCollapsed?: boolean;
 }) => {
-  const state = useCollapsible(initialCollapsed, collapsed);
+  const state = useCollapsible(collapsed);
 
   return (
     <>
@@ -55,8 +53,8 @@ const Content = styled.div<{ collapsed: boolean }>(({ collapsed }) => ({
   },
 }));
 
-export const useCollapsible = (initialCollapsed = true, collapsed?: boolean) => {
-  const [isCollapsed, setCollapsed] = useState(collapsed ?? initialCollapsed);
+export const useCollapsible = (collapsed?: boolean) => {
+  const [isCollapsed, setCollapsed] = useState(!!collapsed);
 
   useEffect(() => {
     if (collapsed !== undefined) {

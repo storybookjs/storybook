@@ -23,14 +23,14 @@ const meta = preview.meta({
 
 export const Default = meta.story({});
 
-export const Open = meta.story({
-  play: ({ canvas, userEvent }) => userEvent.click(canvas.getByRole('button', { name: 'Open' })),
+export const Collapsed = meta.story({
+  args: {
+    collapsed: true,
+  },
 });
 
-export const InitialOpen = meta.story({
-  args: {
-    initialCollapsed: false,
-  },
+export const Toggled = meta.story({
+  play: ({ canvas, userEvent }) => userEvent.click(canvas.getByRole('button', { name: 'Close' })),
 });
 
 export const Controlled = meta.story({
@@ -43,4 +43,5 @@ export const Controlled = meta.story({
       </>
     );
   },
+  play: ({ canvas, userEvent }) => userEvent.click(canvas.getByRole('button', { name: 'Toggle' })),
 });

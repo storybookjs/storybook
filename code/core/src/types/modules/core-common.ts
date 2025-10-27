@@ -1,6 +1,7 @@
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { FileSystemCache } from 'storybook/internal/common';
 import { type StoryIndexGenerator } from 'storybook/internal/core-server';
+import { type CsfFile } from 'storybook/internal/csf-tools';
 
 import type { Server as HttpServer, IncomingMessage, ServerResponse } from 'http';
 import type { Server as NetServer } from 'net';
@@ -106,6 +107,9 @@ export interface Presets {
     config?: StorybookConfigRaw['staticDirs'],
     args?: any
   ): Promise<StorybookConfigRaw['staticDirs']>;
+
+  /** The second and third parameter are not needed. And make type inference easier. */
+  apply<T extends keyof StorybookConfigRaw>(extension: T): Promise<StorybookConfigRaw[T]>;
   apply<T>(extension: string, config?: T, args?: unknown): Promise<T>;
 }
 
@@ -360,6 +364,8 @@ export type ComponentManifestGenerator = (
   storyIndexGenerator: StoryIndexGenerator
 ) => Promise<ComponentsManifest>;
 
+export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
+
 export interface StorybookConfigRaw {
   /**
    * Sets the addons you want to use with Storybook.
@@ -374,6 +380,7 @@ export interface StorybookConfigRaw {
   addons?: Preset[];
   core?: CoreConfig;
   componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: {
@@ -473,6 +480,19 @@ export interface StorybookConfigRaw {
     angularFilterNonInputControls?: boolean;
 
     experimentalComponentsManifest?: boolean;
+
+    /**
+     * Enables the new code example generation for React components. You can see those examples when
+     * clicking on the "Show code" button in the Storybook UI.
+     *
+     * We refactored the code examples by reading the actual source file. This should make the code
+     * examples a lot faster, more readable and more accurate. They are not dynamic though, it won't
+     * change if you change when using the control panel.
+     *
+     * @default false
+     * @experimental This feature is in early development and may change significantly in future releases.
+     */
+    experimentalCodeExamples?: boolean;
   };
 
   build?: TestBuildConfig;

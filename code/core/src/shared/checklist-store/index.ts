@@ -4,6 +4,7 @@ import type { StoreOptions } from '../universal-store/types';
 export type TaskId = string;
 
 export type StoreState = {
+  loaded: boolean;
   muted: boolean | Array<TaskId>;
   completed: Array<TaskId>;
   skipped: Array<TaskId>;
@@ -17,7 +18,7 @@ export type StoreEvent =
 
 export const UNIVERSAL_CHECKLIST_STORE_OPTIONS: StoreOptions<StoreState> = {
   id: 'storybook/checklist',
-  initialState: { muted: false, completed: [], skipped: [] } as StoreState,
+  initialState: { loaded: false, muted: false, completed: [], skipped: [] } as StoreState,
 } as const;
 
 export type ChecklistStore = {

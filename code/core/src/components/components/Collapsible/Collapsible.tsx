@@ -13,11 +13,13 @@ export const Collapsible = ({
   children,
   summary,
   collapsed,
-  state = useCollapsible(collapsed),
+  disabled,
+  state = useCollapsible(collapsed, disabled),
 }: {
   children: React.ReactNode | ((state: ReturnType<typeof useCollapsible>) => React.ReactNode);
   summary?: React.ReactNode | ((state: ReturnType<typeof useCollapsible>) => React.ReactNode);
   collapsed?: boolean;
+  disabled?: boolean;
   state?: ReturnType<typeof useCollapsible>;
 }) => (
   <>
@@ -51,7 +53,7 @@ const Content = styled.div<{ collapsed: boolean }>(({ collapsed }) => ({
   },
 }));
 
-export const useCollapsible = (collapsed?: boolean) => {
+export const useCollapsible = (collapsed?: boolean, disabled?: boolean) => {
   const [isCollapsed, setCollapsed] = useState(!!collapsed);
 
   useEffect(() => {
@@ -60,17 +62,30 @@ export const useCollapsible = (collapsed?: boolean) => {
     }
   }, [collapsed]);
 
-  const toggleCollapsed = useCallback((event?: SyntheticEvent<Element, Event>) => {
-    event?.stopPropagation();
-    setCollapsed((value) => !value);
-  }, []);
+  const toggleCollapsed = useCallback(
+    (event?: SyntheticEvent<Element, Event>) => {
+      event?.stopPropagation();
+      if (!disabled) {
+        setCollapsed((value) => !value);
+      }
+    },
+    [disabled]
+  );
 
   const contentId = useId();
   const toggleProps = {
+    disabled,
     onClick: toggleCollapsed,
     'aria-controls': contentId,
     'aria-expanded': !isCollapsed,
   } as const;
 
-  return { contentId, isCollapsed, setCollapsed, toggleCollapsed, toggleProps };
+  return {
+    contentId,
+    isCollapsed,
+    isDisabled: !!disabled,
+    setCollapsed,
+    toggleCollapsed,
+    toggleProps,
+  };
 };

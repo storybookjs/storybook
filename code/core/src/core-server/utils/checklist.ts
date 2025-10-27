@@ -15,6 +15,7 @@ export function initializeChecklist() {
 
   globalSettings().then((settings) => {
     store.setState({
+      loaded: true,
       muted: settings.value.checklist?.muted ?? false,
       completed: settings.value.checklist?.completed ?? [],
       skipped: settings.value.checklist?.skipped ?? [],

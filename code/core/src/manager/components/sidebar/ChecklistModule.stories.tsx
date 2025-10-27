@@ -23,6 +23,7 @@ const meta = preview.meta({
   ],
   beforeEach: async () => {
     mockStore.setState({
+      loaded: true,
       muted: false,
       completed: ['add-component'],
       skipped: ['add-5-10-components'],
@@ -31,3 +32,14 @@ const meta = preview.meta({
 });
 
 export const Default = meta.story({});
+
+export const Loading = meta.story({
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: false,
+      muted: false,
+      completed: [],
+      skipped: [],
+    });
+  },
+});

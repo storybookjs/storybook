@@ -7,21 +7,15 @@ import {
   SupportedLanguage,
   configureEslintPlugin,
   copyTemplateFiles,
-  externalFrameworks,
   extractEslintInfo,
 } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
-  builderPackages,
   frameworkPackages,
   getPackageDetails,
   isCI,
-  loadMainConfig,
   optionalEnvToBoolean,
-  rendererPackages,
-  versions,
 } from 'storybook/internal/common';
-import { readConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 import { SupportedFramework } from 'storybook/internal/types';
@@ -46,15 +40,6 @@ const defaultOptions = {
   storybookConfigFolder: '.storybook',
   installFrameworkPackages: true,
 } satisfies FrameworkOptions;
-
-const getExternalFramework = (framework?: string) =>
-  externalFrameworks.find(
-    (exFramework) =>
-      framework !== undefined &&
-      (exFramework.name === framework ||
-        exFramework.packageName === framework ||
-        exFramework?.frameworks?.some?.((item) => item === framework))
-  );
 
 const getPackageByValue = (
   type: 'framework' | 'renderer' | 'builder',
@@ -102,9 +87,9 @@ const getFrameworkDetails = (
 
   const frameworkPackage = getPackageByValue('framework', framework, frameworkPackages);
 
-  const [frameworkPackagePath] = [frameworkPackage].map((pkg) =>
-    shouldApplyRequireWrapperOnPackageNames ? applyGetAbsolutePathWrapper(pkg) : pkg
-  );
+  const frameworkPackagePath = shouldApplyRequireWrapperOnPackageNames
+    ? applyGetAbsolutePathWrapper(frameworkPackage)
+    : frameworkPackage;
 
   logger.debug('frameworkPackage', frameworkPackage);
   logger.debug('frameworkPackagePath', frameworkPackagePath);

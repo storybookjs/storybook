@@ -1,5 +1,11 @@
 # @storybook/mcp
 
+## 0.0.4
+
+### Patch Changes
+
+- [#38](https://github.com/storybookjs/mcp/pull/38) [`fc83cd1`](https://github.com/storybookjs/mcp/commit/fc83cd1c7f50cc0d12bc24ed427c5b38fa52acee) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - include prop types in component documentation tool
+
 ## 0.0.3
 
 ### Patch Changes

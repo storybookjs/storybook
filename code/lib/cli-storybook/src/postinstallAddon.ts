@@ -1,8 +1,6 @@
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
-import { logger } from 'storybook/internal/node-logger';
-
 import { importModule } from '../../../core/src/shared/utils/module';
 import type { PostinstallOptions } from './add';
 
@@ -36,6 +34,7 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
   }
 
   const postinstall = moduledLoaded?.default || moduledLoaded?.postinstall || moduledLoaded;
+  const logger = options.logger;
 
   if (!postinstall || typeof postinstall !== 'function') {
     logger.error(`Error finding postinstall function for ${addonName}`);

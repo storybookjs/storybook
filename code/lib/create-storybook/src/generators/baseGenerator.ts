@@ -155,16 +155,12 @@ export async function baseGenerator(
     title: 'Generating Storybook configuration',
   });
 
-  taskLog.message('Start');
-
   const { frameworkPackagePath, frameworkPackage } = getFrameworkDetails(
     renderer,
     builder,
     framework,
     shouldApplyRequireWrapperOnPackageNames
   );
-
-  taskLog.message('framework details');
 
   const {
     extraAddons = [],
@@ -192,8 +188,6 @@ export async function baseGenerator(
     webpackCompiler
   );
 
-  taskLog.message('addons');
-
   const { packageJson } = packageManager.primaryPackageJson;
 
   const installedDependencies = new Set(
@@ -218,8 +212,6 @@ export async function baseGenerator(
     (packageToInstall) =>
       !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
   );
-
-  taskLog.message('packagesToInstall');
 
   let eslintPluginPackage: string | null = null;
   try {
@@ -248,8 +240,6 @@ export async function baseGenerator(
     packagesToInstall as string[]
   );
 
-  taskLog.message('versionedPackages');
-
   if (versionedPackages.length > 0) {
     // When using the dependency collector, just collect the packages
     if (npmOptions.type === 'devDependencies') {
@@ -259,11 +249,7 @@ export async function baseGenerator(
     }
   }
 
-  taskLog.message('storybookConfigFolder');
-
   await mkdir(`./${storybookConfigFolder}`, { recursive: true });
-
-  taskLog.message('storybookConfigFolder created');
 
   // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
   const prefixes = shouldApplyRequireWrapperOnPackageNames

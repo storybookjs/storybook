@@ -80,6 +80,8 @@ export class AddonConfigurationCommand {
           yes: options.yes,
           skipInstall: true,
           skipDependencyManagement: true,
+          logger,
+          prompt,
         });
 
         task.message(`${addon} configured\n`);

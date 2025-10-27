@@ -1,5 +1,6 @@
 import { type PackageManagerName, setupAddonInConfig, versions } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
+import { logger as nodeLogger } from 'storybook/internal/node-logger';
 import { prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -12,6 +13,8 @@ import { postinstallAddon } from './postinstallAddon';
 export interface PostinstallOptions {
   packageManager: PackageManagerName;
   configDir: string;
+  logger: typeof nodeLogger;
+  prompt: typeof prompt;
   yes?: boolean;
   skipInstall?: boolean;
   /**
@@ -81,7 +84,7 @@ export async function add(
     yes,
     skipInstall,
   }: CLIOptions,
-  logger = console
+  logger = nodeLogger
 ) {
   const [addonName, inputVersion] = getVersionSpecifier(addon);
 
@@ -175,6 +178,8 @@ export async function add(
       packageManager: packageManager.type,
       configDir,
       yes,
+      logger,
+      prompt,
       skipInstall,
     });
   }

@@ -106,7 +106,8 @@ export class ClackPromptProvider extends PromptProvider {
   }
 
   taskLog(options: TaskLogOptions): TaskLogInstance {
-    const task = clack.taskLog(options);
+    const isCurrentTaskActive = !!getCurrentTaskLog();
+    const task = getCurrentTaskLog() || clack.taskLog(options);
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
@@ -124,7 +125,9 @@ export class ClackPromptProvider extends PromptProvider {
       },
       success: (message, options) => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
-        task.success(message, options);
+        if (!isCurrentTaskActive) {
+          task.success(message, options);
+        }
         clearCurrentTaskLog();
       },
       group(title) {

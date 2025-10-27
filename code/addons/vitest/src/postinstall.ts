@@ -11,7 +11,7 @@ import {
   getStorybookInfo,
   versions,
 } from 'storybook/internal/common';
-import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS } from 'storybook/internal/node-logger';
 import {
   AddonVitestPostinstallError,
   AddonVitestPostinstallPrerequisiteCheckError,
@@ -34,6 +34,8 @@ const addonA11yName = '@storybook/addon-a11y';
 
 export default async function postInstall(options: PostinstallOptions) {
   const errors: string[] = [];
+  const { logger, prompt } = options;
+
   const packageManager = JsPackageManagerFactory.getPackageManager({
     force: options.packageManager,
   });

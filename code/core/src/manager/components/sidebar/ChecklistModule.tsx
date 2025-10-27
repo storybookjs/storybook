@@ -2,14 +2,17 @@ import React, { createRef, useMemo } from 'react';
 
 import {
   Card,
+  Collapsible,
   Listbox,
   ListboxAction,
   ListboxButton,
   ListboxItem,
   ListboxText,
+  TooltipNote,
+  WithTooltip,
 } from 'storybook/internal/components';
 
-import { StatusFailIcon } from '@storybook/icons';
+import { ChevronSmallUpIcon, StatusFailIcon } from '@storybook/icons';
 
 import { checklistStore, universalChecklistStore } from '#manager-stores';
 import { experimental_useUniversalStore, useStorybookApi } from 'storybook/manager-api';
@@ -19,6 +22,20 @@ import { checklistData } from '../../settings/Checklist/checklistData';
 import { Transition, TransitionGroup } from '../Transition';
 
 type ChecklistItem = (typeof checklistData)['sections'][number]['items'][number];
+
+const HoverCard = styled(Card)({
+  '&:hover #checklist-module-collapse-toggle': {
+    opacity: 1,
+  },
+});
+
+const CollapseToggle = styled(ListboxButton)({
+  opacity: 0,
+  transition: 'opacity var(--transition-duration, 0.2s)',
+  '&:focus, &:hover': {
+    opacity: 1,
+  },
+});
 
 const ItemIcon = styled(StatusFailIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
@@ -77,41 +94,74 @@ export const ChecklistModule = () => {
   const progress = Math.round((doneCount / totalCount) * 100);
 
   return (
-    <Card outlineAnimation="rainbow">
-      <Listbox>
-        <ListboxItem>
-          <ListboxText>
-            <strong>{title(progress)}</strong>
-          </ListboxText>
-          <ListboxButton onClick={() => api.navigateUrl('/settings/guide', { plain: false })}>
-            {progress}%
-          </ListboxButton>
-        </ListboxItem>
-      </Listbox>
-      <TransitionGroup component={Listbox}>
-        {nextTasks.map((task) => (
-          <Transition key={task.id} nodeRef={task.nodeRef} timeout={300}>
-            <ListboxItem ref={task.nodeRef}>
-              <ListboxAction
-                onClick={() => api.navigateUrl(`/settings/guide#${task.id}`, { plain: false })}
+    <HoverCard outlineAnimation="rainbow">
+      <Collapsible
+        summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
+          <Listbox onClick={toggleCollapsed}>
+            <ListboxItem>
+              <ListboxText>
+                <strong>{title(progress)}</strong>
+              </ListboxText>
+              <WithTooltip
+                hasChrome={false}
+                tooltip={
+                  <TooltipNote
+                    note={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
+                  />
+                }
+                trigger="hover"
               >
-                <ItemIcon />
-                {task.label}
-              </ListboxAction>
-              {task.action && (
-                <ListboxButton
-                  onClick={() => {
-                    checklistStore.complete(task.id);
-                    task.action?.onClick({ api });
-                  }}
+                <CollapseToggle
+                  {...toggleProps}
+                  id="checklist-module-collapse-toggle"
+                  aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
                 >
-                  {task.action.label}
-                </ListboxButton>
-              )}
+                  <ChevronSmallUpIcon
+                    style={{
+                      transform: isCollapsed ? 'rotate(180deg)' : 'none',
+                      transition: 'transform 250ms',
+                      willChange: 'auto',
+                    }}
+                  />
+                </CollapseToggle>
+              </WithTooltip>
+              <ListboxButton
+                onClick={(e) => {
+                  e.stopPropagation();
+                  api.navigateUrl('/settings/guide', { plain: false });
+                }}
+              >
+                {progress}%
+              </ListboxButton>
             </ListboxItem>
-          </Transition>
-        ))}
-      </TransitionGroup>
-    </Card>
+          </Listbox>
+        )}
+      >
+        <TransitionGroup component={Listbox}>
+          {nextTasks.map((task) => (
+            <Transition key={task.id} nodeRef={task.nodeRef} timeout={300}>
+              <ListboxItem ref={task.nodeRef}>
+                <ListboxAction
+                  onClick={() => api.navigateUrl(`/settings/guide#${task.id}`, { plain: false })}
+                >
+                  <ItemIcon />
+                  {task.label}
+                </ListboxAction>
+                {task.action && (
+                  <ListboxButton
+                    onClick={() => {
+                      checklistStore.complete(task.id);
+                      task.action?.onClick({ api });
+                    }}
+                  >
+                    {task.action.label}
+                  </ListboxButton>
+                )}
+              </ListboxItem>
+            </Transition>
+          ))}
+        </TransitionGroup>
+      </Collapsible>
+    </HoverCard>
   );
 };

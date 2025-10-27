@@ -9,7 +9,7 @@ export const Listbox = styled.ul(({ theme }) => ({
   margin: 0,
   padding: 4,
 
-  '& + &': {
+  '& + *': {
     borderTop: `1px solid ${theme.appBorderColor}`,
   },
 }));

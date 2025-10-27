@@ -58,7 +58,7 @@ export const Outline = styled.div<{
   overflow: 'hidden',
   backgroundColor: theme.background.content,
   borderRadius: theme.appBorderRadius + 1,
-  boxShadow: `inset 0 0 0 1px ${(animation === 'none' && color && theme.color[color]) || theme.appBorderColor}, 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0px -5px 20px 10px ${theme.background.app}`,
+  boxShadow: `inset 0 0 0 1px ${(animation === 'none' && color && theme.color[color]) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
   transition: 'box-shadow 1s',
 
   '&:before': {

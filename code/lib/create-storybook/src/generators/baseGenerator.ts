@@ -126,6 +126,7 @@ const applyAddonGetAbsolutePathWrapper = (pkg: string | { name: string }) => {
 const getFrameworkDetails = (
   renderer: SupportedRenderers,
   builder: Builder,
+  // TODO: Remove in SB11
   pnp: boolean,
   language: SupportedLanguage,
   framework?: SupportedFrameworks,
@@ -397,6 +398,7 @@ export async function baseGenerator(
   }
 
   if (addMainFile) {
+    // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
     const prefixes = shouldApplyRequireWrapperOnPackageNames
       ? [
           'import { dirname } from "path"',

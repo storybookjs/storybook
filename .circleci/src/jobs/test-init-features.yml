@@ -1,5 +1,5 @@
 executor:
-  class: medium
+  class: medium+
   name: sb_node_22_browsers
 
 steps:

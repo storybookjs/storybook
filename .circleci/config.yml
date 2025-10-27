@@ -765,7 +765,7 @@ jobs:
             - report-workflow-on-failure
     test-init-features:
         executor:
-            class: medium
+            class: medium+
             name: sb_node_22_browsers
         steps:
             - git-shallow-clone/checkout_advanced:

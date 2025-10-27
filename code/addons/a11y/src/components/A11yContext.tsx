@@ -203,17 +203,23 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
         setState((prev) => ({ ...prev, status: 'ran', results: axeResults }));
 
         setTimeout(() => {
-          if (status === 'ran') {
-            setState((prev) => ({ ...prev, status: 'ready' }));
-          }
-          if (selectedItems.size === 1) {
-            const [key] = selectedItems.values();
-            document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
+          setState((prev) => {
+            if (prev.status === 'ran') {
+              return { ...prev, status: 'ready' };
+            }
+            return prev;
+          });
+          setSelectedItems((prev) => {
+            if (prev.size === 1) {
+              const [key] = prev.values();
+              document.getElementById(key)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return prev;
+          });
         }, 900);
       }
     },
-    [storyId, setState, status, selectedItems]
+    [storyId, setState, setSelectedItems]
   );
 
   const handleSelect = useCallback(

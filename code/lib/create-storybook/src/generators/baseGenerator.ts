@@ -155,6 +155,8 @@ export async function baseGenerator(
     title: 'Generating Storybook configuration',
   });
 
+  taskLog.message('Start');
+
   const { frameworkPackagePath, frameworkPackage } = getFrameworkDetails(
     renderer,
     builder,
@@ -162,7 +164,7 @@ export async function baseGenerator(
     shouldApplyRequireWrapperOnPackageNames
   );
 
-  logger.debug('framework details');
+  taskLog.message('framework details');
 
   const {
     extraAddons = [],
@@ -190,7 +192,7 @@ export async function baseGenerator(
     webpackCompiler
   );
 
-  logger.debug('addons', { addons, addonPackages });
+  taskLog.message('addons');
 
   const { packageJson } = packageManager.primaryPackageJson;
 
@@ -217,7 +219,7 @@ export async function baseGenerator(
       !installedDependencies.has(getPackageDetails(packageToInstall as string)[0])
   );
 
-  logger.debug('packagesToInstall', { packagesToInstall });
+  taskLog.message('packagesToInstall');
 
   let eslintPluginPackage: string | null = null;
   try {
@@ -246,7 +248,7 @@ export async function baseGenerator(
     packagesToInstall as string[]
   );
 
-  logger.debug('versionedPackages', { versionedPackages });
+  taskLog.message('versionedPackages');
 
   if (versionedPackages.length > 0) {
     // When using the dependency collector, just collect the packages
@@ -257,11 +259,11 @@ export async function baseGenerator(
     }
   }
 
-  logger.debug('storybookConfigFolder', { storybookConfigFolder });
+  taskLog.message('storybookConfigFolder');
 
   await mkdir(`./${storybookConfigFolder}`, { recursive: true });
 
-  logger.debug('storybookConfigFolder created');
+  taskLog.message('storybookConfigFolder created');
 
   const prefixes = shouldApplyRequireWrapperOnPackageNames
     ? [

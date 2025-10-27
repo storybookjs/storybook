@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SupportedBuilder } from 'storybook/internal/types';
+
 import { AddonManager } from './AddonManager';
 
 vi.mock('storybook/internal/common', async () => {
@@ -22,25 +24,25 @@ describe('AddonManager', () => {
 
   describe('getWebpackCompilerAddon', () => {
     it('should return undefined when no compiler function provided', () => {
-      const result = manager.getWebpackCompilerAddon('webpack5', undefined);
+      const result = manager.getWebpackCompilerAddon(SupportedBuilder.WEBPACK5, undefined);
       expect(result).toBeUndefined();
     });
 
     it('should return undefined when compiler function returns undefined', () => {
       const webpackCompiler = vi.fn().mockReturnValue(undefined);
-      const result = manager.getWebpackCompilerAddon('webpack5', webpackCompiler);
+      const result = manager.getWebpackCompilerAddon(SupportedBuilder.WEBPACK5, webpackCompiler);
       expect(result).toBeUndefined();
     });
 
     it('should return swc compiler addon', () => {
       const webpackCompiler = vi.fn().mockReturnValue('swc');
-      const result = manager.getWebpackCompilerAddon('webpack5', webpackCompiler);
+      const result = manager.getWebpackCompilerAddon(SupportedBuilder.WEBPACK5, webpackCompiler);
       expect(result).toBe('@storybook/addon-webpack5-compiler-swc');
     });
 
     it('should return babel compiler addon', () => {
       const webpackCompiler = vi.fn().mockReturnValue('babel');
-      const result = manager.getWebpackCompilerAddon('webpack5', webpackCompiler);
+      const result = manager.getWebpackCompilerAddon(SupportedBuilder.WEBPACK5, webpackCompiler);
       expect(result).toBe('@storybook/addon-webpack5-compiler-babel');
     });
   });
@@ -98,7 +100,12 @@ describe('AddonManager', () => {
 
   describe('configureAddons', () => {
     it('should configure addons without compiler', () => {
-      const config = manager.configureAddons(['docs', 'test'], [], 'vite', undefined);
+      const config = manager.configureAddons(
+        ['docs', 'test'],
+        [],
+        SupportedBuilder.VITE,
+        undefined
+      );
 
       expect(config.addonsForMain).toContain('@storybook/addon-docs');
       expect(config.addonsForMain).toContain('@chromatic-com/storybook');
@@ -108,7 +115,12 @@ describe('AddonManager', () => {
 
     it('should include compiler addon when specified', () => {
       const webpackCompiler = vi.fn().mockReturnValue('swc');
-      const config = manager.configureAddons(['docs'], [], 'webpack5', webpackCompiler);
+      const config = manager.configureAddons(
+        ['docs'],
+        [],
+        SupportedBuilder.WEBPACK5,
+        webpackCompiler
+      );
 
       expect(config.addonsForMain).toContain('@storybook/addon-webpack5-compiler-swc');
       expect(config.addonPackages).toContain('@storybook/addon-webpack5-compiler-swc');
@@ -118,7 +130,7 @@ describe('AddonManager', () => {
       const config = manager.configureAddons(
         ['docs'],
         ['@storybook/addon-links@8.0.0'],
-        'vite',
+        SupportedBuilder.VITE,
         undefined
       );
 
@@ -130,7 +142,7 @@ describe('AddonManager', () => {
       const config = manager.configureAddons(
         ['test'],
         ['@storybook/addon-links@8.0.0'],
-        'vite',
+        SupportedBuilder.VITE,
         undefined
       );
 
@@ -142,7 +154,7 @@ describe('AddonManager', () => {
       const config = manager.configureAddons(
         ['docs', 'test', 'onboarding'],
         ['@storybook/addon-links'],
-        'webpack5',
+        SupportedBuilder.WEBPACK5,
         webpackCompiler
       );
 
@@ -151,7 +163,7 @@ describe('AddonManager', () => {
     });
 
     it('should filter out falsy values', () => {
-      const config = manager.configureAddons([], [], 'vite', undefined);
+      const config = manager.configureAddons([], [], SupportedBuilder.VITE, undefined);
 
       expect(config.addonsForMain).not.toContain(undefined);
       expect(config.addonsForMain).not.toContain(null);

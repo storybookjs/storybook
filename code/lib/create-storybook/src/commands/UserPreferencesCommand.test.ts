@@ -9,7 +9,16 @@ import type { SupportedBuilder } from 'storybook/internal/types';
 import type { DependencyCollector } from '../dependency-collector';
 import { UserPreferencesCommand } from './UserPreferencesCommand';
 
-vi.mock('storybook/internal/cli', { spy: true });
+vi.mock('storybook/internal/cli', async () => {
+  const actual = await vi.importActual('storybook/internal/cli');
+  return {
+    ...actual,
+    AddonVitestService: vi.fn().mockImplementation(() => ({
+      validateCompatibility: vi.fn(),
+    })),
+    globalSettings: vi.fn(),
+  };
+});
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 

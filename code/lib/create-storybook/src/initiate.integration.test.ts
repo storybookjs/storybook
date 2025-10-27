@@ -18,6 +18,7 @@ import * as addonA11y from './addon-dependencies/addon-a11y';
 import * as addonVitest from './addon-dependencies/addon-vitest';
 import * as commands from './commands';
 import { generatorRegistry } from './generators/GeneratorRegistry';
+import { baseGenerator } from './generators/baseGenerator';
 import type { GeneratorModule } from './generators/types';
 import { doInitiate } from './initiate';
 import * as scaffoldModule from './scaffold-new-project';
@@ -33,6 +34,11 @@ vi.mock('./scaffold-new-project', { spy: true });
 vi.mock('./addon-dependencies/addon-a11y', { spy: true });
 vi.mock('./addon-dependencies/addon-vitest', { spy: true });
 vi.mock('./generators/GeneratorRegistry', { spy: true });
+vi.mock('./generators/baseGenerator', { spy: true });
+vi.mock('./generators/configure', () => ({
+  configureMain: vi.fn().mockResolvedValue({ mainPath: './.storybook/main.ts' }),
+  configurePreview: vi.fn().mockResolvedValue({ previewConfigPath: './.storybook/preview.ts' }),
+}));
 vi.mock('./commands', { spy: true });
 vi.mock('empathic/find', () => ({
   up: vi.fn(),
@@ -117,6 +123,24 @@ describe('initiate integration tests', () => {
     vi.mocked(readConfig).mockResolvedValue({
       parse: () => ({}),
       _exportsObject: {},
+    } as any);
+    vi.mocked(baseGenerator).mockResolvedValue({
+      frameworkPackage: '@storybook/react-vite',
+      rendererPackage: '@storybook/react',
+      builderPackage: '@storybook/builder-vite',
+      configDir: '.storybook',
+      mainConfig: {
+        stories: [],
+        addons: ['@storybook/addon-a11y', '@storybook/addon-vitest'],
+        framework: { name: '@storybook/react-vite' },
+      },
+      mainConfigCSFFile: {
+        parse: () => ({}),
+        _exportsObject: {},
+      } as any,
+      previewConfigPath: './.storybook/preview.ts',
+      storybookCommand: 'npm run storybook',
+      shouldRunDev: true,
     } as any);
 
     vi.clearAllMocks();

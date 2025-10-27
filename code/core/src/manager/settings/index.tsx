@@ -1,6 +1,7 @@
 import type { FC, SyntheticEvent } from 'react';
 import React, { Fragment } from 'react';
 
+import { global } from '@storybook/global';
 import { IconButton, ScrollArea, TabBar, TabButton } from 'storybook/internal/components';
 import { Location, Route } from 'storybook/internal/router';
 import type { Addon_PageType } from 'storybook/internal/types';
@@ -89,7 +90,9 @@ const Pages: FC<{
       <Header className="sb-bar">
         <TabBar role="tablist">
           <TabBarButton id="about" title="About" changeTab={changeTab} />
-          <TabBarButton id="guide" title="Guide" changeTab={changeTab} />
+          {global.CONFIG_TYPE === 'DEVELOPMENT' && (
+            <TabBarButton id="guide" title="Guide" changeTab={changeTab} />
+          )}
           {enableWhatsNew && (
             <TabBarButton id="whats-new" title="What's new?" changeTab={changeTab} />
           )}
@@ -109,9 +112,11 @@ const Pages: FC<{
         <Route path="about">
           <AboutPage key="about" />
         </Route>
-        <Route path="guide">
-          <GuidePage key="guide" />
-        </Route>
+        {global.CONFIG_TYPE === 'DEVELOPMENT' && (
+          <Route path="guide">
+            <GuidePage key="guide" />
+          </Route>
+        )}
         <Route path="whats-new">
           <WhatsNewPage key="whats-new" />
         </Route>

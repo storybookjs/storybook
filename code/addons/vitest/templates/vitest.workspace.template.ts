@@ -20,7 +20,12 @@ export default defineWorkspace([
     ],
     test: {
       name: 'storybook',
-      browser: BROWSER_CONFIG,
+      browser: {
+        enabled: true,
+        headless: true,
+        provider: 'playwright',
+        instances: [{ browser: 'chromium' }],
+      },
       setupFiles: ['SETUP_FILE'],
     },
   },

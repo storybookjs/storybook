@@ -60,9 +60,6 @@ export enum ProjectType {
   SOLID = 'SOLID',
 }
 
-// The `& {}` bit allows for auto-complete, see: https://github.com/microsoft/TypeScript/issues/29729
-export type Builder = SupportedBuilder | (string & {});
-
 export enum SupportedLanguage {
   JAVASCRIPT = 'javascript',
   TYPESCRIPT = 'typescript',

@@ -9,7 +9,7 @@ import type { CommandOptions } from '../generators/types';
 export interface FrameworkDetectionResult {
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
-  framework?: SupportedFramework;
+  framework: SupportedFramework;
 }
 
 /**
@@ -54,7 +54,7 @@ export class FrameworkDetectionCommand {
     const renderer = metadata.renderer;
 
     // Handle dynamic framework selection based on builder
-    let framework: SupportedFramework | undefined;
+    let framework: SupportedFramework;
     if (metadata.framework) {
       if (typeof metadata.framework === 'function') {
         framework = metadata.framework(builder);
@@ -72,10 +72,7 @@ export class FrameworkDetectionCommand {
     };
   }
 
-  private getFramework(
-    renderer: SupportedRenderer,
-    builder: SupportedBuilder
-  ): SupportedFramework | undefined {
+  private getFramework(renderer: SupportedRenderer, builder: SupportedBuilder): SupportedFramework {
     if (Object.values(SupportedFramework).includes(renderer as any)) {
       return renderer as any as SupportedFramework;
     }
@@ -86,7 +83,7 @@ export class FrameworkDetectionCommand {
       return maybeFramework as SupportedFramework;
     }
 
-    return undefined;
+    throw new Error(`Could not find framework for renderer: ${renderer} and builder: ${builder}`);
   }
 }
 

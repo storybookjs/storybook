@@ -1,4 +1,4 @@
-import React, { createRef, useMemo, useRef } from 'react';
+import React, { createRef, useMemo } from 'react';
 
 import {
   Card,
@@ -22,6 +22,10 @@ import { checklistData } from '../../settings/Checklist/checklistData';
 import { Transition, TransitionGroup } from '../Transition';
 
 type ChecklistItem = (typeof checklistData)['sections'][number]['items'][number];
+
+const CollapsibleWithMargin = styled(Collapsible)(({ collapsed }) => ({
+  marginTop: collapsed ? 0 : 16,
+}));
 
 const HoverCard = styled(Card)({
   '&:hover #checklist-module-collapse-toggle': {
@@ -56,7 +60,6 @@ const title = (progress: number) => {
 
 export const ChecklistModule = () => {
   const api = useStorybookApi();
-  const nodeRef = useRef<HTMLDivElement>(null);
   const [{ loaded, muted, completed, skipped }] =
     experimental_useUniversalStore(universalChecklistStore);
 
@@ -93,8 +96,8 @@ export const ChecklistModule = () => {
   const progress = Math.round((doneCount / totalCount) * 100);
 
   return (
-    <Transition nodeRef={nodeRef} in={hasTasks} timeout={300} mountOnEnter>
-      <HoverCard ref={nodeRef} outlineAnimation={hasTasks ? 'rainbow' : 'none'}>
+    <CollapsibleWithMargin collapsed={!hasTasks}>
+      <HoverCard outlineAnimation="rainbow">
         <Collapsible
           collapsed={!hasTasks}
           disabled={!hasTasks}
@@ -167,6 +170,6 @@ export const ChecklistModule = () => {
           </TransitionGroup>
         </Collapsible>
       </HoverCard>
-    </Transition>
+    </CollapsibleWithMargin>
   );
 };

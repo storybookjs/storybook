@@ -161,15 +161,17 @@ export const Sidebar = React.memo(function Sidebar({
     <Container className="container sidebar-container" aria-label="Global">
       <ScrollArea vertical offset={3} scrollbarSize={6}>
         <Stack>
-          <Heading
-            className="sidebar-header"
-            menuHighlighted={menuHighlighted}
-            menu={menu}
-            skipLinkHref="#storybook-preview-wrapper"
-            isLoading={isLoading}
-            onMenuClick={onMenuClick}
-          />
-          {!isLoading && global.CONFIG_TYPE === 'DEVELOPMENT' && <ChecklistModule />}
+          <div>
+            <Heading
+              className="sidebar-header"
+              menuHighlighted={menuHighlighted}
+              menu={menu}
+              skipLinkHref="#storybook-preview-wrapper"
+              isLoading={isLoading}
+              onMenuClick={onMenuClick}
+            />
+            {!isLoading && global.CONFIG_TYPE === 'DEVELOPMENT' && <ChecklistModule />}
+          </div>
           <Search
             dataset={dataset}
             enableShortcuts={enableShortcuts}

@@ -8,7 +8,8 @@ import { A11YPanel } from './components/A11YPanel';
 import { A11yContextProvider } from './components/A11yContext';
 import { VisionSimulator } from './components/VisionSimulator';
 import { ADDON_ID, PANEL_ID, PARAM_KEY } from './constants';
-import type { EnhancedResults, RuleType, Status } from './types';
+import type { EnhancedResults, Status } from './types';
+import { RuleType } from './types';
 
 const Title = () => {
   const api = useStorybookApi();
@@ -18,7 +19,15 @@ const Title = () => {
     results: EnhancedResults | undefined;
     error: unknown;
     status: Status;
-  }>(ADDON_ID);
+  }>(ADDON_ID, {
+    ui: {
+      highlighted: false,
+      tab: RuleType.VIOLATION,
+    },
+    results: undefined,
+    error: undefined,
+    status: 'initial',
+  });
   const violationsNb = results?.violations?.length || 0;
   const incompleteNb = results?.incomplete?.length || 0;
   const count = violationsNb + incompleteNb;

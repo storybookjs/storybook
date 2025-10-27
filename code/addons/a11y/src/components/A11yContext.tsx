@@ -104,7 +104,7 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     return value;
   }, [api]);
 
-  const [{ results, ui, error, status }, setState] = useAddonState<{
+  const [state, setState] = useAddonState<{
     ui: { highlighted: boolean; tab: RuleType };
     results: EnhancedResults | undefined;
     error: unknown;
@@ -118,6 +118,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     error: undefined,
     status: getInitialStatus(manual),
   });
+
+  const { ui, results, error, status } = state;
 
   const { storyId } = useStorybookState();
   const currentStoryA11yStatusValue = experimental_useStatusStore(

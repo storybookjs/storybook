@@ -11,7 +11,7 @@ import path from 'pathe';
 import { getCodeSnippet } from './generateCodeSnippet';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj, getMatchingDocgen, parseWithReactDocgen } from './reactDocgen';
-import { groupBy } from './utils';
+import { groupBy, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
@@ -30,35 +30,75 @@ export const componentManifestGenerator = async () => {
       group && group?.length > 0 ? [group[0]] : []
     );
     const components = await Promise.all(
-      singleEntryPerComponent.flatMap(async (entry) => {
+      singleEntryPerComponent.flatMap(async (entry): Promise<ReactComponentManifest> => {
         const storyFile = await readFile(path.join(process.cwd(), entry.importPath), 'utf-8');
         const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
         const componentName = csf._meta?.component;
+        const id = entry.id.split('--')[0];
+        const importPath = entry.importPath;
+
+        const base = {
+          id,
+          path: importPath,
+          examples: [],
+          jsDocTags: {},
+        } satisfies Partial<ComponentManifest>;
 
         if (!componentName) {
-          // TODO when there is not component name we could generate snippets based on the meta.render
-          return;
+          const message =
+            'Specify meta.component for the component to be included in the manifest.';
+          return {
+            ...base,
+            error: {
+              message: csf._metaStatementPath?.buildCodeFrameError(message).message ?? message,
+            },
+          };
         }
 
+        const name = componentName;
         const examples = Object.entries(csf._storyPaths)
-          .map(([name, path]) => ({
-            name,
-            snippet: recast.print(getCodeSnippet(path, csf._metaNode ?? null, componentName)).code,
-          }))
+          .map(([storyName, path]) => {
+            try {
+              return {
+                name: storyName,
+                snippet: recast.print(getCodeSnippet(path, csf._metaNode ?? null, name)).code,
+              };
+            } catch (e) {
+              invariant(e instanceof Error);
+              return {
+                name: storyName,
+                error: {
+                  message: e.message,
+                },
+              };
+            }
+          })
           .filter(Boolean);
 
-        const id = entry.id.split('--')[0];
+        if (!entry.componentPath) {
+          const message = `No component file found for the "${name}" component.`;
+          return {
+            ...base,
+            name,
+            examples,
+            error: { message },
+          };
+        }
 
-        const componentFile = await readFile(
-          path.join(process.cwd(), entry.componentPath!),
-          'utf-8'
-        ).catch(() => {
-          // TODO This happens too often. We should improve the componentPath resolution.
-          return null;
-        });
+        let componentFile;
 
-        if (!componentFile || !entry.componentPath) {
-          return { id, name: componentName, examples, jsDocTags: {} };
+        try {
+          componentFile = await readFile(path.join(process.cwd(), entry.componentPath!), 'utf-8');
+        } catch (e) {
+          invariant(e instanceof Error);
+          return {
+            ...base,
+            name,
+            examples,
+            error: {
+              message: `Could not read the component file located at ${entry.componentPath}`,
+            },
+          };
         }
 
         const docgens = await parseWithReactDocgen({
@@ -67,6 +107,8 @@ export const componentManifestGenerator = async () => {
         });
         const docgen = getMatchingDocgen(docgens, csf);
 
+        const error = !docgen ? { message: 'Docgen could not find a component' } : undefined;
+
         const metaDescription = extractDescription(csf._metaStatement);
         const jsdocComment = metaDescription || docgen?.description;
         const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
@@ -74,7 +116,7 @@ export const componentManifestGenerator = async () => {
         const manifestDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
 
         return {
-          id,
+          ...base,
           name: componentName,
           description: manifestDescription?.trim(),
           summary: tags.summary?.[0],
@@ -82,7 +124,8 @@ export const componentManifestGenerator = async () => {
           reactDocgen: docgen,
           jsDocTags: tags,
           examples,
-        } satisfies ReactComponentManifest;
+          error,
+        };
       })
     );
 

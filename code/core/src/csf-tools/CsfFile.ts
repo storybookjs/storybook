@@ -33,7 +33,7 @@ interface BabelFile {
   opts: any;
   hub: any;
   metadata: object;
-  path: any;
+  path: NodePath<t.Program>;
   scope: any;
   inputMap: object | null;
   code: string;
@@ -301,6 +301,8 @@ export class CsfFile {
 
   _metaStatement: t.Statement | undefined;
 
+  _metaStatementPath: NodePath<t.Statement> | undefined;
+
   _metaNode: t.ObjectExpression | undefined;
 
   _metaPath: NodePath<t.ExportDefaultDeclaration> | undefined;
@@ -484,11 +486,22 @@ export class CsfFile {
                 t.isVariableDeclaration(topLevelNode) &&
                 topLevelNode.declarations.find(isVariableDeclarator)
             );
+
+            self._metaStatementPath =
+              self._file.path
+                .get('body')
+                .find(
+                  (topLevelPath) =>
+                    topLevelPath.isVariableDeclaration() &&
+                    topLevelPath.node.declarations.some(isVariableDeclarator)
+                ) ?? undefined;
+
             decl = ((self?._metaStatement as t.VariableDeclaration)?.declarations || []).find(
               isVariableDeclarator
             )?.init;
           } else {
             self._metaStatement = node;
+            self._metaStatementPath = path;
             decl = node.declaration;
           }
 
@@ -1036,7 +1049,10 @@ export const babelParseFile = ({
   filename?: string;
   ast?: t.File;
 }): BabelFile => {
-  return new BabelFileClass({ filename }, { code, ast: ast ?? babelParse(code) });
+  return new BabelFileClass(
+    { filename, highlightCode: false },
+    { code, ast: ast ?? babelParse(code) }
+  );
 };
 
 export const loadCsf = (code: string, options: CsfOptions) => {

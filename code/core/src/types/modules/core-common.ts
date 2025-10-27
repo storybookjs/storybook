@@ -347,12 +347,14 @@ export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
 export interface ComponentManifest {
   id: string;
-  name: string;
+  path: string;
+  name?: string;
   description?: string;
   import?: string;
   summary?: string;
-  examples: { name: string; snippet: string }[];
+  examples: { name: string; snippet?: string; error?: { message: string } }[];
   jsDocTags: Record<string, string[]>;
+  error?: { message: string };
 }
 
 export interface ComponentsManifest {

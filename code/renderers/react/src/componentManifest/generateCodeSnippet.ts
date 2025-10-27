@@ -1,11 +1,6 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 
-function invariant(condition: any, message?: string | (() => string)): asserts condition {
-  if (condition) {
-    return;
-  }
-  throw new Error(typeof message === 'function' ? message() : message);
-}
+import { invariant } from './utils';
 
 function buildInvalidSpread(entries: Array<[string, t.Node]>): t.JSXSpreadAttribute | null {
   if (entries.length === 0) {
@@ -23,19 +18,34 @@ function buildInvalidSpread(entries: Array<[string, t.Node]>): t.JSXSpreadAttrib
 export function getCodeSnippet(
   storyExportPath: NodePath<t.ExportNamedDeclaration>,
   metaObj: t.ObjectExpression | null | undefined,
-  componentName: string
+  componentName?: string
 ): t.VariableDeclaration {
-  const declaration = storyExportPath.get('declaration') as NodePath<t.Declaration>;
-  invariant(declaration.isVariableDeclaration(), 'Expected variable declaration');
+  const declaration = storyExportPath.get('declaration');
+  invariant(
+    declaration.isVariableDeclaration(),
+    () => storyExportPath.buildCodeFrameError('Expected story to be a variable declaration').message
+  );
 
-  const declarator = declaration.get('declarations')[0] as NodePath<t.VariableDeclarator>;
-  const init = declarator.get('init') as NodePath<t.Expression>;
-  invariant(init.isExpression(), 'Expected story initializer to be an expression');
+  const declarations = declaration.get('declarations');
+  invariant(
+    declarations.length === 1,
+    storyExportPath.buildCodeFrameError('Expected one story declaration').message
+  );
+
+  const declarator = declarations[0];
+  const init = declarator.get('init');
+  invariant(
+    init.isExpression(),
+    () => declarator.buildCodeFrameError('Expected story initializer to be an expression').message
+  );
 
   const storyId = declarator.get('id');
-  invariant(storyId.isIdentifier(), 'Expected named const story export');
+  invariant(
+    storyId.isIdentifier(),
+    () => declaration.buildCodeFrameError('Expected story to have a name').message
+  );
 
-  let story: NodePath<t.Expression> | null = init;
+  let normalizedInit: NodePath<t.Expression> = init;
 
   if (init.isCallExpression()) {
     const callee = init.get('callee');
@@ -50,47 +60,63 @@ export function getCodeSnippet(
       if (obj.isIdentifier() && isBind) {
         const resolved = resolveBindIdentifierInit(storyExportPath, obj);
         if (resolved) {
-          story = resolved;
+          normalizedInit = resolved;
         }
       }
     }
 
     // Fallback: treat call expression as story factory and use first argument
-    if (story === init) {
+    if (init === normalizedInit) {
       const args = init.get('arguments');
-      if (args.length === 0) {
-        story = null;
-      } else {
-        const storyArgument = args[0];
-        invariant(storyArgument.isExpression());
-        story = storyArgument;
-      }
+      invariant(
+        args.length === 1,
+        () => init.buildCodeFrameError('Could not evaluate story expression').message
+      );
+      const storyArgument = args[0];
+      invariant(
+        storyArgument.isExpression(),
+        () => init.buildCodeFrameError('Could not evaluate story expression').message
+      );
+      normalizedInit = storyArgument;
     }
   }
 
+  normalizedInit = normalizedInit.isTSSatisfiesExpression()
+    ? normalizedInit.get('expression')
+    : normalizedInit.isTSAsExpression()
+      ? normalizedInit.get('expression')
+      : normalizedInit;
+
   // If the story is already a function, try to inline args like in render() when using `{...args}`
 
-  // Otherwise it must be an object story
-  const storyObjPath =
-    story == null || story.isArrowFunctionExpression() || story.isFunctionExpression()
-      ? null
-      : story.isTSSatisfiesExpression()
-        ? story.get('expression')
-        : story.isTSAsExpression()
-          ? story.get('expression')
-          : story;
+  let story: NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.ObjectExpression>;
+  if (normalizedInit.isArrowFunctionExpression() || normalizedInit.isFunctionExpression()) {
+    story = normalizedInit;
+  } else if (normalizedInit.isObjectExpression()) {
+    story = normalizedInit;
+  } else {
+    throw normalizedInit.buildCodeFrameError(
+      'Expected story to be csf factory, function or an object expression'
+    );
+  }
 
-  const storyProperties = storyObjPath?.isObjectExpression()
-    ? storyObjPath.get('properties').filter((p) => p.isObjectProperty())
-    : [];
+  const storyProperties = story?.isObjectExpression()
+    ? story.get('properties').filter((p) => p.isObjectProperty())
+    : // Find CSF2 properties
+      [];
 
   // Prefer an explicit render() when it is a function (arrow/function)
   const renderPath = storyProperties
     .filter((p) => keyOf(p.node) === 'render')
     .map((p) => p.get('value'))
-    .find((value) => value.isExpression());
+    .find(
+      (value): value is NodePath<t.ArrowFunctionExpression | t.FunctionExpression> =>
+        value.isArrowFunctionExpression() || value.isFunctionExpression()
+    );
 
-  const storyFn = renderPath ?? story;
+  const storyFn =
+    renderPath ??
+    (story.isArrowFunctionExpression() ? story : story.isFunctionExpression() ? story : undefined);
 
   // Collect args: meta.args and story.args as Record<string, t.Node>
   const metaArgs = metaArgsRecord(metaObj ?? null);
@@ -112,7 +138,7 @@ export function getCodeSnippet(
     .map(([k, v]) => toAttr(k, v))
     .filter((a): a is t.JSXAttribute => Boolean(a));
 
-  if (storyFn?.isArrowFunctionExpression() || storyFn?.isFunctionExpression()) {
+  if (storyFn) {
     const fn = storyFn.node;
 
     // Only handle arrow function with direct JSX expression body for now
@@ -223,6 +249,8 @@ export function getCodeSnippet(
 
   // Build spread for invalid-only props, if any
   const invalidSpread = buildInvalidSpread(invalidEntries);
+
+  invariant(componentName, 'Could not generate snippet without component name.');
 
   const name = t.jsxIdentifier(componentName);
 

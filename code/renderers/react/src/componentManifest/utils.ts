@@ -10,3 +10,10 @@ export const groupBy = <K extends PropertyKey, T>(
     return acc;
   }, {});
 };
+
+export function invariant(condition: any, message?: string | (() => string)): asserts condition {
+  if (condition) {
+    return;
+  }
+  throw new Error((typeof message === 'function' ? message() : message) ?? 'Invariant failed');
+}

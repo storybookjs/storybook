@@ -81,8 +81,15 @@ test('Edge case identifier we can not find', () => {
   const input = withCSF3(`
     export const Default = someImportOrWhatever;
   `);
-  expect(generateExample(input)).toMatchInlineSnapshot(
-    `"const Default = () => <Button>Click me</Button>;"`
+  expect(() => generateExample(input)).toThrowErrorMatchingInlineSnapshot(
+    `
+    [SyntaxError: Expected story to be csf factory, function or an object expression
+      11 |
+      12 |
+    > 13 |     export const Default = someImportOrWhatever;
+         |                            ^^^^^^^^^^^^^^^^^^^^
+      14 |   ]
+  `
   );
 });
 

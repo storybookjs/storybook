@@ -30,7 +30,8 @@ const Loadingitem = styled.div<{
 export const Contained = styled.div({
   display: 'flex',
   flexDirection: 'column',
-  padding: '16px 12px',
+  paddingLeft: 20,
+  paddingRight: 20,
 });
 
 interface LoaderProps {

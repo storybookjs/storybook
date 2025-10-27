@@ -157,4 +157,23 @@ describe('listAllComponentsTool', () => {
 			}
 		`);
 	});
+
+	it('should call onListAllComponents handler when provided', async () => {
+		const handler = vi.fn();
+
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 2,
+			method: 'tools/call',
+			params: {
+				name: LIST_TOOL_NAME,
+				arguments: {},
+			},
+		};
+
+		// Pass the handler in the context for this specific request
+		await server.receive(request, { custom: { onListAllComponents: handler } });
+
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
 });

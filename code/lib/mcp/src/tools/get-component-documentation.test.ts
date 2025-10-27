@@ -299,4 +299,38 @@ describe('getComponentDocumentationTool', () => {
 			}
 		`);
 	});
+
+	it('should call onGetComponentDocumentation handler when provided', async () => {
+		const handler = vi.fn();
+
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 2,
+			method: 'tools/call',
+			params: {
+				name: GET_TOOL_NAME,
+				arguments: {
+					componentIds: ['button', 'card', 'non-existent'],
+				},
+			},
+		};
+
+		// Pass the handler in the context for this specific request
+		await server.receive(request, {
+			custom: { onGetComponentDocumentation: handler },
+		});
+
+		expect(handler).toHaveBeenCalledTimes(1);
+		expect(handler).toHaveBeenCalledWith({
+			context: expect.objectContaining({
+				onGetComponentDocumentation: handler,
+			}),
+			input: { componentIds: ['button', 'card', 'non-existent'] },
+			foundComponents: [
+				expect.objectContaining({ id: 'button', name: 'Button' }),
+				expect.objectContaining({ id: 'card', name: 'Card' }),
+			],
+			notFoundIds: ['non-existent'],
+		});
+	});
 });

@@ -954,6 +954,8 @@ async function prepareTypeChecking(cwd: string) {
   tsConfigJson.compilerOptions.noUnusedParameters = false;
   // Means we can check our own public types
   tsConfigJson.compilerOptions.skipLibCheck = false;
+  // Add chai global types
+  (tsConfigJson.compilerOptions.types ??= []).push('chai');
   await writeFile(tsConfigPath, JSON.stringify(tsConfigJson, null, 2));
 }
 

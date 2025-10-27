@@ -86,6 +86,7 @@ export const sandbox: Task = {
       '@storybook/cli',
       'lodash-es',
       '@types/lodash-es',
+      '@types/aria-query',
       'uuid',
     ];
 

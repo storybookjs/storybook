@@ -52,16 +52,20 @@ const command = (name: string) =>
     .option('--write-logs', 'Write all debug logs to a file at the end of the run')
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
     .hook('preAction', async (self) => {
+      const options = self.opts();
+      if (options.debug) {
+        logger.setLogLevel('debug');
+      }
+
+      if (options.loglevel) {
+        logger.setLogLevel(options.loglevel);
+      }
+
+      if (options.writeLogs) {
+        logTracker.enableLogWriting();
+      }
+
       try {
-        const options = self.opts();
-        if (options.loglevel) {
-          logger.setLogLevel(options.loglevel);
-        }
-
-        if (options.writeLogs) {
-          logTracker.enableLogWriting();
-        }
-
         await globalSettings();
       } catch (e) {
         logger.error('Error loading global settings:\n' + String(e));

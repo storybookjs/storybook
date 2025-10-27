@@ -111,7 +111,6 @@ describe('initiate integration tests', () => {
     vi.mocked(ErrorCollector.getErrors).mockReturnValue([]);
     vi.mocked(commands.executeUserPreferences).mockResolvedValue({
       newUser: true,
-      addons: ['@storybook/addon-a11y', '@storybook/addon-vitest'],
       installType: 'recommended' as const,
       selectedFeatures: new Set(['test']),
     });

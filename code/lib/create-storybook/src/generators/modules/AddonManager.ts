@@ -1,5 +1,5 @@
-import type { Builder } from 'storybook/internal/cli';
 import { getPackageDetails } from 'storybook/internal/common';
+import type { SupportedBuilder } from 'storybook/internal/types';
 
 import type { GeneratorFeature } from '../types';
 
@@ -12,8 +12,8 @@ export interface AddonConfiguration {
 export class AddonManager {
   /** Determine webpack compiler addon if needed */
   getWebpackCompilerAddon(
-    builder: Builder,
-    webpackCompiler?: ({ builder }: { builder: Builder }) => 'babel' | 'swc' | undefined
+    builder: SupportedBuilder,
+    webpackCompiler?: ({ builder }: { builder: SupportedBuilder }) => 'babel' | 'swc' | undefined
   ): string | undefined {
     if (!webpackCompiler) {
       return undefined;
@@ -53,8 +53,8 @@ export class AddonManager {
   configureAddons(
     features: GeneratorFeature[],
     extraAddons: string[] = [],
-    builder: Builder,
-    webpackCompiler?: ({ builder }: { builder: Builder }) => 'babel' | 'swc' | undefined
+    builder: SupportedBuilder,
+    webpackCompiler?: ({ builder }: { builder: SupportedBuilder }) => 'babel' | 'swc' | undefined
   ): AddonConfiguration {
     const compiler = this.getWebpackCompilerAddon(builder, webpackCompiler);
 

@@ -6,6 +6,7 @@ import { getDirectoryFromWorkingDir, resolvePathInStorybookCache } from 'storybo
 import { logger, once } from 'storybook/internal/node-logger';
 import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 
+import { relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Polka } from 'polka';
 import sirv from 'sirv';
@@ -113,8 +114,9 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
 
       // Don't log for internal static dirs
       if (!targetEndpoint.startsWith('/sb-') && !staticDir.startsWith(cacheDir)) {
+        const relativeStaticDir = relative(process.cwd(), staticDir);
         logger.info(
-          `Serving static files from ${picocolors.cyan(staticDir)} at ${picocolors.cyan(targetEndpoint)}`
+          `Serving static files from ${picocolors.cyan(relativeStaticDir)} at ${picocolors.cyan(targetEndpoint)}`
         );
       }
 

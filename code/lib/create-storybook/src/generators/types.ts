@@ -1,4 +1,4 @@
-import type { Builder, NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
+import type { NpmOptions, ProjectType, SupportedLanguage } from 'storybook/internal/cli';
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import type {
@@ -26,12 +26,12 @@ export type GeneratorOptions = {
 };
 
 export interface FrameworkOptions {
-  extraPackages?: string[] | ((details: { builder: Builder }) => Promise<string[]>);
+  extraPackages?: string[] | ((details: { builder: SupportedBuilder }) => Promise<string[]>);
   extraAddons?: string[];
   staticDir?: string;
   addScripts?: boolean;
   addComponents?: boolean;
-  webpackCompiler?: ({ builder }: { builder: Builder }) => 'babel' | 'swc' | undefined;
+  webpackCompiler?: ({ builder }: { builder: SupportedBuilder }) => 'babel' | 'swc' | undefined;
   extraMain?: any;
   extensions?: string[];
   storybookConfigFolder?: string;
@@ -125,7 +125,7 @@ export type CommandOptions = {
   parser?: string;
   // Automatically answer yes to prompts
   yes?: boolean;
-  builder?: Builder;
+  builder?: SupportedBuilder;
   linkable?: boolean;
   disableTelemetry?: boolean;
   enableCrashReports?: boolean;

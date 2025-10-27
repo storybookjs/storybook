@@ -82,7 +82,6 @@ const RecentlyOpenedTitle = styled.div(({ theme }) => ({
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: theme.textMutedColor,
-  marginTop: 16,
   marginBottom: 4,
   alignItems: 'center',
 

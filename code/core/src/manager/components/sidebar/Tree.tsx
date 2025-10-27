@@ -55,11 +55,6 @@ import { useExpanded } from './useExpanded';
 
 export type ExcludesNull = <T>(x: T | null) => x is T;
 
-const Container = styled.div<{ hasOrphans: boolean }>((props) => ({
-  marginTop: props.hasOrphans ? 20 : 0,
-  marginBottom: 20,
-}));
-
 const CollapseButton = styled.button({
   all: 'unset',
   display: 'flex',
@@ -718,10 +713,10 @@ export const Tree = React.memo<{
   ]);
   return (
     <StatusContext.Provider value={{ data, allStatuses, groupStatus }}>
-      <Container ref={containerRef} hasOrphans={isMain && orphanIds.length > 0}>
+      <div ref={containerRef}>
         <IconSymbols />
         {treeItems}
-      </Container>
+      </div>
     </StatusContext.Provider>
   );
 });

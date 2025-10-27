@@ -1,12 +1,6 @@
 import React, { useMemo, useState } from 'react';
 
-import {
-  IconButton,
-  ScrollArea,
-  Spaced,
-  TooltipNote,
-  WithTooltip,
-} from 'storybook/internal/components';
+import { IconButton, ScrollArea, TooltipNote, WithTooltip } from 'storybook/internal/components';
 import type { API_LoadedRefData, StoryIndex, TagsOptions } from 'storybook/internal/types';
 import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
 
@@ -50,12 +44,11 @@ const Container = styled.nav(({ theme }) => ({
   },
 }));
 
-const Top = styled(Spaced)({
-  paddingLeft: 12,
-  paddingRight: 12,
-  paddingBottom: 20,
-  paddingTop: 16,
-  flex: 1,
+const Stack = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 16,
+  padding: '16px 12px 20px 12px',
 });
 
 const TooltipNoteWrapper = styled(TooltipNote)({
@@ -167,7 +160,7 @@ export const Sidebar = React.memo(function Sidebar({
   return (
     <Container className="container sidebar-container" aria-label="Global">
       <ScrollArea vertical offset={3} scrollbarSize={6}>
-        <Top row={1.6}>
+        <Stack>
           <Heading
             className="sidebar-header"
             menuHighlighted={menuHighlighted}
@@ -249,7 +242,7 @@ export const Sidebar = React.memo(function Sidebar({
               </Swap>
             )}
           </Search>
-        </Top>
+        </Stack>
         {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
       </ScrollArea>
     </Container>

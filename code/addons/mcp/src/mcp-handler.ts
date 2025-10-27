@@ -101,7 +101,7 @@ export const mcpServerHandler = async (
 		// Telemetry handlers for component manifest tools
 		...(!disableTelemetry && {
 			onListAllComponents: async ({ manifest }) => {
-				return await collectTelemetry({
+				await collectTelemetry({
 					event: 'tool:listAllComponents',
 					server,
 					componentCount: Object.keys(manifest.components).length,
@@ -112,7 +112,7 @@ export const mcpServerHandler = async (
 				foundComponents,
 				notFoundIds,
 			}) => {
-				return await collectTelemetry({
+				await collectTelemetry({
 					event: 'tool:getComponentDocumentation',
 					server,
 					inputComponentCount: input.componentIds.length,

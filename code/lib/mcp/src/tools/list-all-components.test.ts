@@ -175,5 +175,11 @@ describe('listAllComponentsTool', () => {
 		await server.receive(request, { custom: { onListAllComponents: handler } });
 
 		expect(handler).toHaveBeenCalledTimes(1);
+		expect(handler).toHaveBeenCalledWith({
+			context: expect.objectContaining({
+				onListAllComponents: handler,
+			}),
+			manifest: smallManifestFixture,
+		});
 	});
 });

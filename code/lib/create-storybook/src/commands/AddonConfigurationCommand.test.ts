@@ -71,7 +71,7 @@ describe('AddonConfigurationCommand', () => {
       expect(result.status).toBe('success');
       expect(prompt.taskLog).toHaveBeenCalledWith({
         id: 'configure-addons',
-        title: 'Configuring test addons...',
+        title: 'Configuring addons...',
       });
     });
 

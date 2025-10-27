@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { globalSettings } from 'storybook/internal/cli';
+import { ProjectType, globalSettings } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -96,6 +96,7 @@ describe('UserPreferencesCommand', () => {
         yes: true,
         framework: undefined,
         builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
       });
 
       expect(result.newUser).toBe(true);
@@ -114,6 +115,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute(mockPackageManager, {
         framework: undefined,
         builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
       });
 
       expect(prompt.select).toHaveBeenCalledWith(
@@ -136,6 +138,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute(mockPackageManager, {
         framework: undefined,
         builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
       });
 
       expect(prompt.select).toHaveBeenCalledTimes(2);
@@ -155,6 +158,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute(mockPackageManager, {
         framework: undefined,
         builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
       });
 
       expect(result.selectedFeatures.has('test')).toBe(false);
@@ -174,6 +178,7 @@ describe('UserPreferencesCommand', () => {
       await command.execute(mockPackageManager, {
         framework: undefined,
         builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
       });
 
       expect(featureService.validateTestFeatureCompatibility).toHaveBeenCalledWith(
@@ -198,6 +203,7 @@ describe('UserPreferencesCommand', () => {
       const result = await command.execute(mockPackageManager, {
         framework: undefined,
         builder: 'vite' as SupportedBuilder,
+        projectType: ProjectType.REACT,
       });
 
       expect(result.selectedFeatures.has('test')).toBe(false);

@@ -60,19 +60,20 @@ describe('FrameworkDetectionCommand', () => {
     it('should use CLI builder option if provided', async () => {
       const mockGenerator: GeneratorModule = {
         metadata: {
-          projectType: ProjectType.VUE3,
-          renderer: SupportedRenderer.VUE3,
+          projectType: ProjectType.REACT,
+          renderer: SupportedRenderer.REACT,
         },
         configure: vi.fn(),
       };
 
       vi.mocked(generatorRegistry.get).mockReturnValue(mockGenerator);
 
-      const result = await command.execute(ProjectType.VUE3, mockPackageManager, {
+      const result = await command.execute(ProjectType.REACT, mockPackageManager, {
         builder: SupportedBuilder.WEBPACK5,
       } as any);
 
       expect(result.builder).toBe(SupportedBuilder.WEBPACK5);
+      expect(result.framework).toBe(SupportedFramework.REACT_WEBPACK5);
       expect(detectBuilder).not.toHaveBeenCalled();
     });
 

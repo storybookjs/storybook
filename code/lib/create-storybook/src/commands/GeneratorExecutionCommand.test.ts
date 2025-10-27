@@ -35,11 +35,11 @@ describe('GeneratorExecutionCommand', () => {
   let mockFrameworkInfo: FrameworkDetectionResult;
 
   beforeEach(() => {
-    command = new GeneratorExecutionCommand();
+    dependencyCollector = new DependencyCollector();
+    command = new GeneratorExecutionCommand(dependencyCollector);
     mockPackageManager = {
       getRunCommand: vi.fn().mockReturnValue('npm run storybook'),
     } as any;
-    dependencyCollector = new DependencyCollector();
 
     mockFrameworkInfo = {
       renderer: SupportedRenderer.REACT,
@@ -74,70 +74,41 @@ describe('GeneratorExecutionCommand', () => {
   describe('execute', () => {
     it('should execute generator with all features', async () => {
       const selectedFeatures = new Set(['docs', 'test', 'onboarding'] as const);
-      const options = { skipInstall: false } as any;
+      const options = {
+        skipInstall: false,
+        features: ['docs', 'test', 'onboarding'],
+        packageManager: 'npm' as any,
+      } as any;
 
-      await command.execute(
-        ProjectType.REACT,
-        mockPackageManager,
-        mockFrameworkInfo,
+      await command.execute({
+        projectType: ProjectType.REACT,
+        packageManager: mockPackageManager,
+        frameworkInfo: mockFrameworkInfo,
         options,
         selectedFeatures,
-        dependencyCollector
-      );
+      });
 
       expect(generatorRegistry.get).toHaveBeenCalledWith(ProjectType.REACT);
       expect(mockGenerator.configure).toHaveBeenCalled();
       expect(baseGenerator).toHaveBeenCalled();
     });
 
-    it('should remove onboarding for unsupported project types', async () => {
-      const selectedFeatures = new Set(['docs', 'test', 'onboarding'] as const);
-      const options = {} as any;
-
-      await command.execute(
-        ProjectType.SVELTE,
-        mockPackageManager,
-        mockFrameworkInfo,
-        options,
-        selectedFeatures,
-        dependencyCollector
-      );
-
-      expect(selectedFeatures.has('onboarding')).toBe(false);
-      expect(selectedFeatures.has('docs')).toBe(true);
-      expect(selectedFeatures.has('test')).toBe(true);
-    });
-
-    it('should keep onboarding for supported project types', async () => {
-      const selectedFeatures = new Set(['docs', 'test', 'onboarding'] as const);
-      const options = {} as any;
-
-      await command.execute(
-        ProjectType.REACT,
-        mockPackageManager,
-        mockFrameworkInfo,
-        options,
-        selectedFeatures,
-        dependencyCollector
-      );
-
-      expect(selectedFeatures.has('onboarding')).toBe(true);
-    });
-
     it('should throw error if generator not found', async () => {
       vi.mocked(generatorRegistry.get).mockReturnValue(undefined);
       const selectedFeatures = new Set([]);
-      const options = {} as any;
+      const options = {
+        features: [],
+        packageManager: 'npm' as any,
+      } as any;
 
       await expect(
-        command.execute(
-          ProjectType.UNSUPPORTED,
-          mockPackageManager,
-          mockFrameworkInfo,
+        command.execute({
+          projectType: ProjectType.UNSUPPORTED,
+          packageManager: mockPackageManager,
+          frameworkInfo: mockFrameworkInfo,
           options,
           selectedFeatures,
-          dependencyCollector
-        )
+        })
       ).rejects.toThrow('No generator found for project type');
     });
 
@@ -149,16 +120,17 @@ describe('GeneratorExecutionCommand', () => {
         linkable: true,
         usePnp: true,
         yes: true,
+        features: ['docs', 'test'],
+        packageManager: 'npm' as any,
       } as any;
 
-      await command.execute(
-        ProjectType.VUE3,
-        mockPackageManager,
-        mockFrameworkInfo,
+      await command.execute({
+        projectType: ProjectType.VUE3,
+        packageManager: mockPackageManager,
+        frameworkInfo: mockFrameworkInfo,
         options,
         selectedFeatures,
-        dependencyCollector
-      );
+      });
 
       expect(mockGenerator.configure).toHaveBeenCalledWith(
         mockPackageManager,
@@ -180,10 +152,12 @@ describe('GeneratorExecutionCommand', () => {
           yes: true,
           projectType: ProjectType.VUE3,
           features: ['docs', 'test'],
+          dependencyCollector: expect.any(Object),
         }),
-        mockFrameworkInfo.renderer,
-        expect.any(Object),
-        mockFrameworkInfo.framework
+        expect.objectContaining({
+          extraAddons: ['@storybook/addon-vitest', '@storybook/addon-docs'],
+          extraPackages: [],
+        })
       );
     });
   });

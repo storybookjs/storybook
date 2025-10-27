@@ -7,9 +7,14 @@ import { baseGenerator } from '../generators/baseGenerator';
 import type { CommandOptions, GeneratorFeature, GeneratorModule } from '../generators/types';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 
-export type GeneratorExecutionResult =
+export type GeneratorExecutionResult = (
   | ReturnType<typeof baseGenerator>
-  | { shouldRunDev?: boolean; configDir?: string; storybookCommand?: string };
+  | {
+      shouldRunDev?: boolean;
+      configDir?: string;
+      storybookCommand?: string;
+    }
+) & { extraAddons: string[] };
 
 type ExecuteProjectGeneratorOptions = {
   projectType: ProjectType;
@@ -39,7 +44,7 @@ export class GeneratorExecutionCommand {
     packageManager,
     frameworkInfo,
     selectedFeatures,
-  }: ExecuteProjectGeneratorOptions): Promise<GeneratorExecutionResult> {
+  }: ExecuteProjectGeneratorOptions) {
     // Get and execute generator (supports both old and new style)
     const generatorResult = await this.executeProjectGenerator({
       projectType,
@@ -53,6 +58,7 @@ export class GeneratorExecutionCommand {
 
     return {
       ...generatorResult,
+      configDir: 'configDir' in generatorResult ? generatorResult.configDir : undefined,
       storybookCommand:
         generatorResult.storybookCommand ?? packageManager.getRunCommand('storybook'),
     };

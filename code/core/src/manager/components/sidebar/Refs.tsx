@@ -40,7 +40,7 @@ const RefHead = styled.div(({ theme }) => ({
   background: 'transparent',
 
   width: '100%',
-  marginTop: 16,
+  marginTop: 20,
   paddingTop: 16,
   paddingBottom: 12,
   borderTop: `1px solid ${theme.appBorderColor}`,

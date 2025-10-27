@@ -62,6 +62,7 @@ export const Outline = styled.div<{
   borderRadius: theme.appBorderRadius + 1,
   boxShadow: `inset 0 0 0 1px ${(animation === 'none' && color && theme.color[color]) || theme.appBorderColor}, var(--card-box-shadow, transparent 0 0)`,
   transition: 'box-shadow 1s',
+  ...styles,
 
   '@supports (interpolate-size: allow-keywords)': {
     interpolateSize: 'allow-keywords',
@@ -127,6 +128,6 @@ export const Outline = styled.div<{
           : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
     }),
 
-    ...styles,
+    ...(styles && typeof styles['&:before'] === 'object' ? styles['&:before'] : {}),
   },
 }));

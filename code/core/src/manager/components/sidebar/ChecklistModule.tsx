@@ -93,7 +93,7 @@ export const ChecklistModule = () => {
   const progress = Math.round((doneCount / totalCount) * 100);
 
   return (
-    <Transition nodeRef={nodeRef} in={hasTasks} timeout={300}>
+    <Transition nodeRef={nodeRef} in={hasTasks} timeout={300} mountOnEnter>
       <HoverCard ref={nodeRef} outlineAnimation={hasTasks ? 'rainbow' : 'none'}>
         <Collapsible
           collapsed={!hasTasks}

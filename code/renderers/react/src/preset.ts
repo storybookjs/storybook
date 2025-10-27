@@ -36,6 +36,8 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
     );
 };
 
+// TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
+
 /**
  * Try to resolve react and react-dom from the root node_modules of the project addon-docs uses this
  * to alias react and react-dom to the project's version when possible If the user doesn't have an

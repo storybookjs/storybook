@@ -171,6 +171,7 @@ export function isStorybookInstantiated(configDir = resolve(process.cwd(), '.sto
   return existsSync(configDir);
 }
 
+// TODO: Remove in SB11
 export async function detectPnp() {
   return !!find.any(['.pnp.js', '.pnp.cjs']);
 }

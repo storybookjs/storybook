@@ -39,7 +39,7 @@ const throwMessage = (type: any, message: any) => {
 const throwWarning = (message: any) => throwMessage('warn: ', message);
 const throwError = (message: any) => throwMessage('error: ', message);
 
-globalThis.FEATURES = {};
+globalThis.FEATURES ??= {};
 
 vi.spyOn(console, 'warn').mockImplementation(throwWarning);
 vi.spyOn(console, 'error').mockImplementation(throwError);

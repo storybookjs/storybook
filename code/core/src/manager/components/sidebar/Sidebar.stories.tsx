@@ -147,6 +147,13 @@ export const SimpleInProduction: Story = {
   args: {
     showCreateStoryButton: false,
   },
+  beforeEach: () => {
+    const configType = global.CONFIG_TYPE;
+    global.CONFIG_TYPE = 'PRODUCTION';
+    return () => {
+      global.CONFIG_TYPE = configType;
+    };
+  },
 };
 
 export const Loading: Story = {

@@ -31,6 +31,7 @@ const createStorybookProgram = program
     '--package-manager <npm|pnpm|yarn1|yarn2|bun>',
     'Force package manager for installing deps'
   )
+  // TODO: Remove in SB11
   .option('--use-pnp', 'Enable pnp mode for Yarn 2+')
   .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
   .option('-t --type <type>', 'Add Storybook for a specific project type')

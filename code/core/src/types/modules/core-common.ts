@@ -157,6 +157,7 @@ export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
 // TODO: This could be exported to the outside world and used in `options.ts` file of each `@storybook/APP`
 // like it's described in docs/api/new-frameworks.md
 export interface LoadOptions {
+  pnp?: boolean;
   packageJson?: PackageJson;
   outputDir?: string;
   configDir?: string;
@@ -229,7 +230,7 @@ export type Middleware<T extends IncomingMessage = IncomingMessage> = (
   next: (err?: string | Error) => Promise<void> | void
 ) => Promise<void> | void;
 
-interface ServerApp<T extends IncomingMessage = IncomingMessage> {
+export interface ServerApp<T extends IncomingMessage = IncomingMessage> {
   server: NetServer;
 
   use(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
@@ -517,6 +518,8 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  experimental_devServer?: ServerApp;
 
   docs?: DocsOptions;
 

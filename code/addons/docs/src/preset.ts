@@ -212,6 +212,11 @@ export const resolvedReact = async (existing: any) => ({
   mdx: existing?.mdx ?? fileURLToPath(import.meta.resolve('@mdx-js/react')),
 });
 
-const optimizeViteDeps = ['@mdx-js/react', '@storybook/addon-docs', 'markdown-to-jsx'];
+const optimizeViteDeps = [
+  '@mdx-js/react',
+  '@storybook/addon-docs',
+  '@storybook/addon-docs/blocks',
+  'markdown-to-jsx',
+];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };

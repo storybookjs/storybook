@@ -20,7 +20,7 @@ export const NonA11yStory: Story = {
 };
 ```
 
-```js filename="MyComponent.stories.js|jsx" renderer="react" language="js"
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF 3"
 import { MyComponent } from './MyComponent';
 
 export default {
@@ -37,7 +37,7 @@ export const NonA11yStory = {
 };
 ```
 
-```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts"
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, nextjs-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -216,4 +216,44 @@ export const ExampleStory: Story = {
     },
   },
 };
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const NonA11yStory = meta.story({
+  globals: {
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const NonA11yStory = meta.story({
+  globals: {
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  },
+});
 ```

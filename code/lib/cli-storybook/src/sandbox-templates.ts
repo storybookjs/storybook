@@ -17,6 +17,13 @@ export type TemplateKey =
   | keyof typeof benchTemplates;
 export type Cadence = keyof typeof templatesByCadence;
 
+// Some properties e.g. experimentalTestSyntax are only available in framework specific types for StorybookConfig, therefore we loosen the type here otherwise it would always fail
+type LoosenedStorybookConfig = Omit<Partial<StorybookConfigRaw>, 'features'> & {
+  features?:
+    | (Partial<NonNullable<StorybookConfigRaw['features']>> & Record<string, unknown>)
+    | undefined;
+};
+
 export type Template = {
   /**
    * Readable name for the template, which will be used for feedback and the status page Follows the
@@ -73,9 +80,7 @@ export type Template = {
    */
   modifications?: {
     skipTemplateStories?: boolean;
-    mainConfig?:
-      | Partial<StorybookConfigRaw>
-      | ((config: ConfigFile) => Partial<StorybookConfigRaw>);
+    mainConfig?: LoosenedStorybookConfig | ((config: ConfigFile) => LoosenedStorybookConfig);
     testBuild?: boolean;
     disableDocs?: boolean;
     extraDependencies?: string[];
@@ -117,6 +122,9 @@ export const baseTemplates = {
       mainConfig: (config) => {
         const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
         return {
+          features: {
+            experimentalTestSyntax: true,
+          },
           stories: stories?.map((s) => {
             if (typeof s === 'string') {
               return s.replace(/\|(tsx?|ts)\b|\b(tsx?|ts)\|/g, '');
@@ -145,6 +153,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
   },
   'nextjs/14-ts': {
@@ -162,6 +175,29 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
+        },
+      },
+      extraDependencies: ['server-only', 'prop-types'],
+    },
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+  },
+  'nextjs/15-ts': {
+    name: 'Next.js v15 (Webpack | TypeScript)',
+    script:
+      'npx create-next-app@^15.5 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    expected: {
+      framework: '@storybook/nextjs',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-webpack5',
+    },
+    modifications: {
+      useCsfFactory: true,
+      mainConfig: {
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -183,6 +219,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -204,6 +241,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', 'prop-types'],
@@ -226,6 +264,30 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
+        },
+      },
+      extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
+  'nextjs-vite/15-ts': {
+    name: 'Next.js v15 (Vite | TypeScript)',
+    script:
+      'npx create-next-app@^15 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    expected: {
+      framework: '@storybook/nextjs-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      useCsfFactory: true,
+      mainConfig: {
+        framework: '@storybook/nextjs-vite',
+        features: {
+          experimentalRSC: true,
+          developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
@@ -248,6 +310,7 @@ export const baseTemplates = {
         features: {
           experimentalRSC: true,
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
       extraDependencies: ['server-only', '@storybook/nextjs-vite', 'vite', 'prop-types'],
@@ -268,6 +331,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -287,6 +351,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -298,15 +363,15 @@ export const baseTemplates = {
     /**
      * 1. Create a Vite project with the React template
      * 2. Add React beta versions
-     * 3. Add resolutions for @types/react and @types/react-dom, see
+     * 3. Add resolutions for react, react-dom,@types/react and @types/react-dom, see
      *    https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
      * 4. Add @types/react and @types/react-dom pointing to the beta packages
      */
     script: `
       npm create vite --yes {{beforeDir}} -- --template react-ts && \
       cd {{beforeDir}} && \
+      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta", "react": "npm:react@beta", "react-dom": "npm:react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
       yarn add react@beta react-dom@beta && \
-      jq '.resolutions += {"@types/react": "npm:types-react@beta", "@types/react-dom": "npm:types-react-dom@beta"}' package.json > tmp.json && mv tmp.json package.json && \
       yarn add --dev @types/react@npm:types-react@beta @types/react-dom@npm:types-react-dom@beta
       `,
     expected: {
@@ -320,6 +385,7 @@ export const baseTemplates = {
       mainConfig: {
         features: {
           developmentModeForBuild: true,
+          experimentalTestSyntax: true,
         },
       },
     },
@@ -336,6 +402,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -351,6 +422,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -376,6 +452,11 @@ export const baseTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
@@ -607,6 +688,11 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['bench', 'vitest-integration'],
   },
@@ -652,6 +738,11 @@ const internalTemplates = {
         [...addons, '@storybook/addon-webpack5-compiler-babel'].filter(
           (a) => a !== '@storybook/addon-webpack5-compiler-swc'
         ),
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     isInternal: true,
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
@@ -668,6 +759,11 @@ const internalTemplates = {
     modifications: {
       useCsfFactory: true,
       extraDependencies: ['prop-types'],
+      mainConfig: {
+        features: {
+          experimentalTestSyntax: true,
+        },
+      },
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
     isInternal: true,
@@ -683,13 +779,6 @@ const internalTemplates = {
     isInternal: true,
     skipTasks: ['bench', 'vitest-integration'],
   },
-  // 'internal/pnp': {
-  //   ...baseTemplates['cra/default-ts'],
-  //   name: 'PNP (cra/default-ts)',
-  //   script: 'yarn create react-app . --use-pnp',
-  //   isInternal: true,
-  //   inDevelopment: true,
-  // },
 } satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
 
 const benchTemplates = {
@@ -809,6 +898,8 @@ export const merged: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
   'react-webpack/17-ts',
+  'nextjs/15-ts',
+  'nextjs-vite/15-ts',
   'preact-vite/default-ts',
   'html-vite/default-ts',
 ];
@@ -821,6 +912,8 @@ export const daily: TemplateKey[] = [
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
+  'nextjs-vite/14-ts',
+  'nextjs/14-ts',
   'vue3-vite/default-js',
   'lit-vite/default-js',
   'svelte-vite/default-js',

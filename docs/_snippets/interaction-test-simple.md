@@ -21,7 +21,7 @@ export const Opens: Story = {
 };
 ```
 
-```ts filename="Dialog.stories.ts" renderer="common" language="ts"
+```ts filename="Dialog.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the name of your framework (e.g. react-vite, vue3-vite, etc.)
 import type { Meta, StoryObj } from '@storybook/your-framework';
 import { expect } from 'storybook/test';
@@ -45,7 +45,7 @@ export const Opens: Story = {
 };
 ```
 
-```js filename="Dialog.stories.js" renderer="common" language="js"
+```js filename="Dialog.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { expect } from 'storybook/test';
 
 import { Dialog } from './Dialog';
@@ -187,4 +187,46 @@ export const Opens = {
     await expect(canvas.getByRole('dialog')).toBeInTheDocument();
   },
 };
+```
+
+```ts filename="Dialog.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
+
+import { Dialog } from './Dialog';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Opens = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // Click on a button and assert that a dialog appears
+    const button = canvas.getByRole('button', { text: 'Open Modal' });
+    await userEvent.click(button);
+    await expect(canvas.getByRole('dialog')).toBeInTheDocument();
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Dialog.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { expect } from 'storybook/test';
+
+import { Dialog } from './Dialog';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Opens = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // Click on a button and assert that a dialog appears
+    const button = canvas.getByRole('button', { text: 'Open Modal' });
+    await userEvent.click(button);
+    await expect(canvas.getByRole('dialog')).toBeInTheDocument();
+  },
+});
 ```

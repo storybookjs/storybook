@@ -127,6 +127,7 @@ describe('stories API', () => {
       });
       expect(index!['component-a--story-1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'component-a--story-1',
         parent: 'component-a',
         title: 'Component A',
@@ -146,6 +147,7 @@ describe('stories API', () => {
         entries: {
           'design-system-some-component--my-story': {
             type: 'story',
+            subtype: 'story',
             id: 'design-system-some-component--my-story',
             title: '  Design System  /  Some Component  ', // note the leading/trailing whitespace around each part of the path
             name: '  My Story  ', // we only trim the path, so this will be kept as-is (it may intentionally have whitespace)
@@ -171,6 +173,7 @@ describe('stories API', () => {
       });
       expect(index!['design-system-some-component--my-story']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         title: '  Design System  /  Some Component  ', // title is kept as-is, because it may be used as identifier
         name: '  My Story  ', // story name is kept as-is, because it's set directly on the story
       });
@@ -184,6 +187,7 @@ describe('stories API', () => {
         entries: {
           'root-first--story-1': {
             type: 'story',
+            subtype: 'story',
             id: 'root-first--story-1',
             title: 'Root/First',
             name: 'Story 1',
@@ -223,6 +227,7 @@ describe('stories API', () => {
         entries: {
           'a-b--1': {
             type: 'story',
+            subtype: 'story',
             id: 'a-b--1',
             title: 'a/b',
             name: '1',
@@ -248,6 +253,7 @@ describe('stories API', () => {
       });
       expect(index!['a-b--1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a-b--1',
         parent: 'a-b',
         name: '1',
@@ -264,6 +270,7 @@ describe('stories API', () => {
         entries: {
           'a--1': {
             type: 'story',
+            subtype: 'story',
             id: 'a--1',
             title: 'a',
             name: '1',
@@ -281,6 +288,7 @@ describe('stories API', () => {
       });
       expect(index!['a--1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a--1',
         parent: 'a',
         title: 'a',
@@ -296,6 +304,7 @@ describe('stories API', () => {
         entries: {
           'a--1': {
             type: 'story',
+            subtype: 'story',
             id: 'a--1',
             title: 'a',
             name: '1',
@@ -304,6 +313,7 @@ describe('stories API', () => {
           },
           'a--2': {
             type: 'story',
+            subtype: 'story',
             id: 'a--2',
             title: 'a',
             name: '2',
@@ -323,6 +333,7 @@ describe('stories API', () => {
       });
       expect(index!['a--1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a--1',
         parent: 'a',
         title: 'a',
@@ -331,6 +342,7 @@ describe('stories API', () => {
       });
       expect(index!['a--2']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'a--2',
         parent: 'a',
         title: 'a',
@@ -348,6 +360,7 @@ describe('stories API', () => {
         entries: {
           'a-sampleone': {
             type: 'story',
+            subtype: 'story',
             id: 'a-sampleone',
             title: 'A/SampleOne',
             name: '1',
@@ -356,6 +369,7 @@ describe('stories API', () => {
           },
           'a-sampletwo': {
             type: 'story',
+            subtype: 'story',
             id: 'a-sampletwo',
             title: 'A/SampleTwo',
             name: '2',
@@ -418,9 +432,30 @@ describe('stories API', () => {
       api.setIndex({
         v: 5,
         entries: {
-          'a--1': { type: 'story', title: 'a', name: '1', id: 'a--1', importPath: './a.ts' },
-          'b--1': { type: 'story', title: 'b', name: '1', id: 'b--1', importPath: './b.ts' },
-          'a--2': { type: 'story', title: 'a', name: '2', id: 'a--2', importPath: './a.ts' },
+          'a--1': {
+            type: 'story',
+            subtype: 'story',
+            title: 'a',
+            name: '1',
+            id: 'a--1',
+            importPath: './a.ts',
+          },
+          'b--1': {
+            type: 'story',
+            subtype: 'story',
+            title: 'b',
+            name: '1',
+            id: 'b--1',
+            importPath: './b.ts',
+          },
+          'a--2': {
+            type: 'story',
+            subtype: 'story',
+            title: 'a',
+            name: '2',
+            id: 'a--2',
+            importPath: './a.ts',
+          },
         },
       });
       const { index } = store.getState();
@@ -447,6 +482,7 @@ describe('stories API', () => {
         entries: {
           'prepared--story': {
             type: 'story',
+            subtype: 'story',
             id: 'prepared--story',
             title: 'Prepared',
             name: 'Story',
@@ -459,6 +495,7 @@ describe('stories API', () => {
       const { index } = store.getState();
       expect(index!['prepared--story']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'prepared--story',
         parent: 'prepared',
         title: 'Prepared',
@@ -594,6 +631,7 @@ describe('stories API', () => {
             entries: {
               'component-a--story-1': {
                 type: 'story',
+                subtype: 'story',
                 id: 'component-a--story-1',
                 title: 'Component A',
                 name: 'Story 1',
@@ -645,6 +683,7 @@ describe('stories API', () => {
             entries: {
               'component-a--story-1': {
                 type: 'story',
+                subtype: 'story',
                 id: 'component-a--story-1',
                 title: 'Component A',
                 name: 'Story 1',
@@ -1067,6 +1106,45 @@ describe('stories API', () => {
       api.selectStory('a--1');
       expect(store.getState().settings.lastTrackedStoryId).toBe('a--1');
     });
+    it('selects first visible child when component is clicked with filtered index', () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, store } = moduleArgs;
+
+      // Set index with stories
+      api.setIndex({ v: 5, entries: navigationEntries });
+
+      // Set up filtered index where first child (a--1) is hidden
+      const filteredIndex = {
+        a: {
+          id: 'a',
+          type: 'component' as const,
+          name: 'a',
+          depth: 0,
+          tags: [],
+          children: ['a--1', 'a--2'],
+          importPath: './a.ts',
+        },
+        'a--2': {
+          ...navigationEntries['a--2'],
+          type: 'story' as const,
+          subtype: 'story' as const,
+          parent: 'a',
+          depth: 1,
+          tags: [],
+          prepared: false,
+          exportName: '2',
+        },
+        // Note: 'a--1' is missing from filtered index (hidden)
+      };
+
+      store.setState({ filteredIndex });
+
+      // When selecting the component, it should select the first visible child (a--2)
+      api.selectStory('a');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+    });
     describe('deprecated api', () => {
       it('allows navigating to a combination of title + name', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
@@ -1190,6 +1268,7 @@ describe('stories API', () => {
       const { index } = store.getState();
       expect(index!['component-a--story-1']).toMatchObject({
         type: 'story',
+        subtype: 'story',
         id: 'component-a--story-1',
         parent: 'component-a',
         title: 'Component A',
@@ -1436,6 +1515,7 @@ describe('stories API', () => {
             "parent": "a",
             "prepared": false,
             "renderLabel": undefined,
+            "subtype": "story",
             "tags": [],
             "title": "a",
             "type": "story",
@@ -1448,6 +1528,7 @@ describe('stories API', () => {
             "parent": "a",
             "prepared": false,
             "renderLabel": undefined,
+            "subtype": "story",
             "tags": [],
             "title": "a",
             "type": "story",
@@ -1515,6 +1596,7 @@ describe('stories API', () => {
               "parent": "a",
               "prepared": false,
               "renderLabel": undefined,
+              "subtype": "story",
               "tags": [],
               "title": "a",
               "type": "story",
@@ -1560,6 +1642,7 @@ describe('stories API', () => {
             "parent": "a",
             "prepared": false,
             "renderLabel": undefined,
+            "subtype": "story",
             "tags": [],
             "title": "a",
             "type": "story",
@@ -1572,6 +1655,7 @@ describe('stories API', () => {
             "parent": "a",
             "prepared": false,
             "renderLabel": undefined,
+            "subtype": "story",
             "tags": [],
             "title": "a",
             "type": "story",

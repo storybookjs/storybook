@@ -126,6 +126,7 @@ const applyAddonGetAbsolutePathWrapper = (pkg: string | { name: string }) => {
 const getFrameworkDetails = (
   renderer: SupportedRenderers,
   builder: Builder,
+  // TODO: Remove in SB11
   pnp: boolean,
   language: SupportedLanguage,
   framework?: SupportedFrameworks,
@@ -397,9 +398,10 @@ export async function baseGenerator(
   }
 
   if (addMainFile) {
+    // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
     const prefixes = shouldApplyRequireWrapperOnPackageNames
       ? [
-          'import { join, dirname } from "path"',
+          'import { dirname } from "path"',
           'import { fileURLToPath } from "url"',
           language === SupportedLanguage.JAVASCRIPT
             ? dedent`/**
@@ -407,14 +409,14 @@ export async function baseGenerator(
             * It is needed in projects that use Yarn PnP or are set up within a monorepo.
             */
             function getAbsolutePath(value) {
-              return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))))
+              return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)))
             }`
             : dedent`/**
           * This function is used to resolve the absolute path of a package.
           * It is needed in projects that use Yarn PnP or are set up within a monorepo.
           */
           function getAbsolutePath(value: string): any {
-            return dirname(fileURLToPath(import.meta.resolve(join(value, 'package.json'))))
+            return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)))
           }`,
         ]
       : [];

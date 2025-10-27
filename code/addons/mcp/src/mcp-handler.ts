@@ -19,7 +19,7 @@ import { logger } from 'storybook/internal/node-logger';
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
-let initialize: Promise<void> | undefined;
+let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 
 const initializeMCPServer = async (options: Options) => {
 	const server = new McpServer(
@@ -67,6 +67,7 @@ const initializeMCPServer = async (options: Options) => {
 
 	origin = `http://localhost:${options.port}`;
 	logger.debug('MCP server origin:', origin);
+	return server;
 };
 
 /**
@@ -79,16 +80,13 @@ export const mcpServerHandler = async (
 	next: Connect.NextFunction,
 	options: Options,
 ) => {
-	const { disableTelemetry = false } = await options.presets.apply<CoreConfig>(
-		'core',
-		{},
-	);
+	const disableTelemetry = options.disableTelemetry ?? false;
 
 	// Initialize MCP server and transport on first request, with concurrency safety
 	if (!initialize) {
 		initialize = initializeMCPServer(options);
 	}
-	await initialize;
+	const server = await initialize;
 
 	// Convert Node.js request to Web API Request
 	const webRequest = await incomingMessageToWebRequest(req);
@@ -100,6 +98,29 @@ export const mcpServerHandler = async (
 		disableTelemetry,
 		// Source URL for component manifest tools - points to the manifest endpoint
 		source: `${origin}/manifests/components.json`,
+		// Telemetry handlers for component manifest tools
+		...(!disableTelemetry && {
+			onListAllComponents: async ({ manifest }) => {
+				return await collectTelemetry({
+					event: 'tool:listAllComponents',
+					server,
+					componentCount: Object.keys(manifest.components).length,
+				});
+			},
+			onGetComponentDocumentation: async ({
+				input,
+				foundComponents,
+				notFoundIds,
+			}) => {
+				return await collectTelemetry({
+					event: 'tool:getComponentDocumentation',
+					server,
+					inputComponentCount: input.componentIds.length,
+					foundCount: foundComponents.length,
+					notFoundCount: notFoundIds.length,
+				});
+			},
+		}),
 	};
 
 	const response = await transport!.respond(webRequest, addonContext);

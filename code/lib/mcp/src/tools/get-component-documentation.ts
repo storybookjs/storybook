@@ -1,6 +1,6 @@
 import * as v from 'valibot';
 import type { McpServer } from 'tmcp';
-import type { StorybookContext } from '../types.ts';
+import type { StorybookContext, ComponentManifest } from '../types.ts';
 import { getManifest, errorToMCPContent } from '../utils/get-manifest.ts';
 import { formatComponentManifest } from '../utils/format-manifest.ts';
 
@@ -36,6 +36,7 @@ export async function addGetComponentDocumentationTool(
 
 				const content = [];
 				const notFoundIds: string[] = [];
+				const foundComponents: ComponentManifest[] = [];
 
 				for (const componentId of input.componentIds) {
 					const component = manifest.components[componentId];
@@ -45,6 +46,7 @@ export async function addGetComponentDocumentationTool(
 						continue;
 					}
 
+					foundComponents.push(component);
 					content.push({
 						type: 'text' as const,
 						text: formatComponentManifest(component),
@@ -61,6 +63,13 @@ export async function addGetComponentDocumentationTool(
 						text: `${severity}: ${componentWord} not found: ${notFoundIds.join(', ')}`,
 					});
 				}
+
+				await server.ctx.custom?.onGetComponentDocumentation?.({
+					context: server.ctx.custom,
+					input: { componentIds: input.componentIds },
+					foundComponents,
+					notFoundIds,
+				});
 
 				return {
 					content,

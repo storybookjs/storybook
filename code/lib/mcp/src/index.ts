@@ -18,6 +18,7 @@ export {
 
 // Export types for reuse
 export type { StorybookContext } from './types.ts';
+export type { ComponentManifest, ComponentManifestMap } from './types.ts';
 
 type Handler = (req: Request, context?: StorybookContext) => Promise<Response>;
 
@@ -47,10 +48,14 @@ export const createStorybookMcpHandler = async (
 	const transport = new HttpTransport(server, { path: null });
 
 	return (async (req, context) => {
-		const source = context?.source ?? options.source;
-		const manifestProvider =
-			context?.manifestProvider ?? options.manifestProvider;
-
-		return await transport.respond(req, { source, manifestProvider });
+		return await transport.respond(req, {
+			source: context?.source ?? options.source,
+			manifestProvider: context?.manifestProvider ?? options.manifestProvider,
+			onListAllComponents:
+				context?.onListAllComponents ?? options.onListAllComponents,
+			onGetComponentDocumentation:
+				context?.onGetComponentDocumentation ??
+				options.onGetComponentDocumentation,
+		});
 	}) as Handler;
 };

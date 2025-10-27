@@ -17,7 +17,7 @@ export const Default = meta.story({
     <Listbox>
       <ListboxItem>
         <ListboxText>Text item</ListboxText>
-        <ListboxButton>
+        <ListboxButton aria-label="Options">
           <EllipsisIcon />
         </ListboxButton>
       </ListboxItem>

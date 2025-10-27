@@ -162,19 +162,6 @@ describe('UserPreferencesCommand', () => {
       expect(result.selectedFeatures.has('onboarding')).toBe(false);
     });
 
-    it('should not include test feature in CI environment', async () => {
-      vi.mocked(isCI).mockReturnValue(true);
-
-      const result = await command.execute(mockPackageManager, {
-        yes: true,
-        framework: undefined,
-        builder: 'vite' as SupportedBuilder,
-      });
-
-      expect(result.selectedFeatures.has('docs')).toBe(true);
-      expect(result.selectedFeatures.has('test')).toBe(false);
-    });
-
     it('should validate test feature compatibility in interactive mode', async () => {
       Object.defineProperty(process.stdout, 'isTTY', { value: true, configurable: true });
 

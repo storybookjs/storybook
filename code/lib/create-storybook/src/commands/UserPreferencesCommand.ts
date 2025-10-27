@@ -176,7 +176,7 @@ export class UserPreferencesCommand {
       features.add('docs');
       features.add('a11y');
       // Don't install test in CI but install in non-TTY environments like agentic installs
-      if (!isCI() && isTestFeatureAvailable) {
+      if (isTestFeatureAvailable) {
         features.add('test');
       }
       if (newUser) {

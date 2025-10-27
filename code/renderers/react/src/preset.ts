@@ -8,6 +8,10 @@ export const addons: PresetProperty<'addons'> = [
   import.meta.resolve('@storybook/react-dom-shim/preset'),
 ];
 
+export { componentManifestGenerator as experimental_componentManifestGenerator } from './componentManifest/generator';
+
+export { enrichCsf as experimental_enrichCsf } from './enrichCsf';
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options
@@ -35,6 +39,8 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
         : []
     );
 };
+
+// TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
 
 /**
  * Try to resolve react and react-dom from the root node_modules of the project addon-docs uses this

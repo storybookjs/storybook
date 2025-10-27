@@ -1,6 +1,6 @@
 /** Use commander and prompts to gather a list of options for a script */
 import { type Command, type Option as CommanderOption, program } from 'commander';
-import { kebabCase } from 'es-toolkit/compat';
+import { kebabCase } from 'es-toolkit/string';
 import picocolors from 'picocolors';
 import prompts from 'prompts';
 import type { Falsy, PrevCaller, PromptObject, PromptType } from 'prompts';

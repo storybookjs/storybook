@@ -114,6 +114,7 @@ export class GeneratorExecutionCommand {
       language,
       linkable: !!options.linkable,
       features: options.features || [],
+      yes: options.yes,
     });
 
     const generatorOptions = {

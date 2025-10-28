@@ -511,7 +511,6 @@ describe('getToolsets', () => {
 
 		const result = getToolsets(request, addonOptions);
 
-		// Empty string is falsy, so it should return addon options
 		expect(result).toEqual({
 			storiesDevelopment: true,
 			componentDocumentation: true,

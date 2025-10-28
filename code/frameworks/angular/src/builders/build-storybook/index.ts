@@ -4,6 +4,7 @@ import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/commo
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
+import { logger } from 'storybook/internal/node-logger';
 
 import type {
   BuilderContext,
@@ -190,7 +191,10 @@ function runInstance(options: StandaloneBuildOptions) {
         presetOptions: { ...options, corePresets: [], overridePresets: [] },
         printError: printErrorDetails,
       },
-      () => buildStaticStandalone(options)
+      () => {
+        logger.intro('Building storybook');
+        return buildStaticStandalone(options);
+      }
     )
   ).pipe(catchError((error: any) => throwError(errorSummary(error))));
 }

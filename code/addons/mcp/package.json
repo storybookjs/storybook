@@ -1,6 +1,6 @@
 {
 	"name": "@storybook/addon-mcp",
-	"version": "0.0.8",
+	"version": "0.1.0",
 	"description": "Help agents automatically write and test stories for your UI components",
 	"keywords": [
 		"storybook-addon",
@@ -43,7 +43,7 @@
 	"devDependencies": {
 		"@types/node": "catalog:",
 		"@vitest/coverage-v8": "catalog:",
-		"storybook": "^10.0.0-0",
+		"storybook": "catalog:",
 		"ts-dedent": "^2.2.0",
 		"tsdown": "catalog:",
 		"typescript": "catalog:",

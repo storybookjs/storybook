@@ -88,6 +88,69 @@ import { Button } from '@storybook/design-system';
 const Danger = () => <Button variant="danger" onClick={() => confirm('Are you sure?')}>Delete Account</Button>
 </example_code>
 </example>
+<props>
+<prop>
+<prop_name>variant</prop_name>
+<prop_description>
+The visual style variant of the button
+</prop_description>
+<prop_type>"primary" | "secondary" | "tertiary" | "danger"</prop_type>
+<prop_required>false</prop_required>
+<prop_default>"primary"</prop_default>
+</prop>
+<prop>
+<prop_name>size</prop_name>
+<prop_description>
+The size of the button
+</prop_description>
+<prop_type>"small" | "medium" | "large"</prop_type>
+<prop_required>false</prop_required>
+<prop_default>"medium"</prop_default>
+</prop>
+<prop>
+<prop_name>disabled</prop_name>
+<prop_description>
+Whether the button is disabled
+</prop_description>
+<prop_type>boolean</prop_type>
+<prop_required>false</prop_required>
+<prop_default>false</prop_default>
+</prop>
+<prop>
+<prop_name>loading</prop_name>
+<prop_description>
+Whether the button is in a loading state
+</prop_description>
+<prop_type>boolean</prop_type>
+<prop_required>false</prop_required>
+<prop_default>false</prop_default>
+</prop>
+<prop>
+<prop_name>fullWidth</prop_name>
+<prop_description>
+Whether the button should take up the full width of its container
+</prop_description>
+<prop_type>boolean</prop_type>
+<prop_required>false</prop_required>
+<prop_default>false</prop_default>
+</prop>
+<prop>
+<prop_name>onClick</prop_name>
+<prop_description>
+Callback function when the button is clicked
+</prop_description>
+<prop_type>(event: MouseEvent) => void</prop_type>
+<prop_required>false</prop_required>
+</prop>
+<prop>
+<prop_name>children</prop_name>
+<prop_description>
+The content of the button
+</prop_description>
+<prop_type>ReactNode</prop_type>
+<prop_required>true</prop_required>
+</prop>
+</props>
 </component>"
 `;
 
@@ -233,6 +296,67 @@ const UserProfile = () => (
 )
 </example_code>
 </example>
+<props>
+<prop>
+<prop_name>variant</prop_name>
+<prop_description>
+The visual style variant of the card
+</prop_description>
+<prop_type>"elevated" | "outlined" | "flat"</prop_type>
+<prop_required>false</prop_required>
+<prop_default>"elevated"</prop_default>
+</prop>
+<prop>
+<prop_name>padding</prop_name>
+<prop_description>
+The amount of internal padding
+</prop_description>
+<prop_type>"none" | "small" | "medium" | "large"</prop_type>
+<prop_required>false</prop_required>
+<prop_default>"medium"</prop_default>
+</prop>
+<prop>
+<prop_name>clickable</prop_name>
+<prop_description>
+Whether the entire card is clickable/interactive
+</prop_description>
+<prop_type>boolean</prop_type>
+<prop_required>false</prop_required>
+<prop_default>false</prop_default>
+</prop>
+<prop>
+<prop_name>header</prop_name>
+<prop_description>
+Content to display in the card header
+</prop_description>
+<prop_type>ReactNode</prop_type>
+<prop_required>false</prop_required>
+</prop>
+<prop>
+<prop_name>footer</prop_name>
+<prop_description>
+Content to display in the card footer
+</prop_description>
+<prop_type>ReactNode</prop_type>
+<prop_required>false</prop_required>
+</prop>
+<prop>
+<prop_name>children</prop_name>
+<prop_description>
+The main content of the card
+</prop_description>
+<prop_type>ReactNode</prop_type>
+<prop_required>true</prop_required>
+</prop>
+<prop>
+<prop_name>onClick</prop_name>
+<prop_description>
+Callback function when the card is clicked (requires clickable=true)
+</prop_description>
+<prop_type>(event: MouseEvent) => void</prop_type>
+<prop_required>false</prop_required>
+</prop>
+</props>
 </component>"
 `;
 
@@ -321,6 +445,91 @@ import { Input } from '@storybook/design-system';
 const Disabled = () => <Input label="Username" value="john_doe" disabled />
 </example_code>
 </example>
+<props>
+<prop>
+<prop_name>type</prop_name>
+<prop_description>
+The type of input field
+</prop_description>
+<prop_type>"text" | "email" | "password" | "number" | "tel" | "url"</prop_type>
+<prop_required>false</prop_required>
+<prop_default>"text"</prop_default>
+</prop>
+<prop>
+<prop_name>label</prop_name>
+<prop_description>
+The label text for the input
+</prop_description>
+<prop_type>string</prop_type>
+<prop_required>false</prop_required>
+</prop>
+<prop>
+<prop_name>placeholder</prop_name>
+<prop_description>
+Placeholder text shown when the input is empty
+</prop_description>
+<prop_type>string</prop_type>
+<prop_required>false</prop_required>
+</prop>
+<prop>
+<prop_name>value</prop_name>
+<prop_description>
+The controlled value of the input
+</prop_description>
+<prop_type>string</prop_type>
+<prop_required>false</prop_required>
+</prop>
+<prop>
+<prop_name>defaultValue</prop_name>
+<prop_description>
+The initial value for an uncontrolled input
+</prop_description>
+<prop_type>string</prop_type>
+<prop_required>false</prop_required>
+</prop>
+<prop>
+<prop_name>disabled</prop_name>
+<prop_description>
+Whether the input is disabled
+</prop_description>
+<prop_type>boolean</prop_type>
+<prop_required>false</prop_required>
+<prop_default>false</prop_default>
+</prop>
+<prop>
+<prop_name>required</prop_name>
+<prop_description>
+Whether the input is required
+</prop_description>
+<prop_type>boolean</prop_type>
+<prop_required>false</prop_required>
+<prop_default>false</prop_default>
+</prop>
+<prop>
+<prop_name>error</prop_name>
+<prop_description>
+Error message to display below the input
+</prop_description>
+<prop_type>string</prop_type>
+<prop_required>false</prop_required>
+</prop>
+<prop>
+<prop_name>helperText</prop_name>
+<prop_description>
+Helper text to display below the input
+</prop_description>
+<prop_type>string</prop_type>
+<prop_required>false</prop_required>
+</prop>
+<prop>
+<prop_name>onChange</prop_name>
+<prop_description>
+Callback function when the input value changes
+</prop_description>
+<prop_type>(event: ChangeEvent<HTMLInputElement>) => void</prop_type>
+<prop_required>false</prop_required>
+</prop>
+</props>
 </component>"
 `;
 

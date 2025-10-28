@@ -252,7 +252,11 @@ test('CustomRenderBlockBody only', async () => {
     };`
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
-    `"const CustomRenderBlockBody = (args) => { return <Button {...args}>Render</Button> };"`
+    `
+    "const CustomRenderBlockBody = () => {
+        return <Button foo="bar">Render</Button>;
+    };"
+  `
   );
 });
 
@@ -508,8 +512,8 @@ test('top level args injection and spreading in different places', async () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "const MultipleSpreads = () => <div count={0}>
-        <Button disabled={false} count={0} empty="" />
-        <Button disabled={false} count={0} empty="" />
+        <Button disabled={false} count={0} empty="">Click me</Button>
+        <Button disabled={false} count={0} empty="">Click me</Button>
     </div>;"
   `);
 });
@@ -525,12 +529,12 @@ test('allow top level export functions', async () => {
     }
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
-    "function Usage(args) {
-      return (
-        <div style={{ padding: 40 }}>
-          <Button {...args}></Button>
-        </div>
-      );
+    "function Usage() {
+        return (
+            <div style={{ padding: 40 }}>
+                <Button>Click me</Button>
+            </div>
+        );
     }"
   `);
 });

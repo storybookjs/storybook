@@ -140,112 +140,70 @@ export function getCodeSnippet(
   if (storyFn) {
     const fn = storyFn.node;
 
-    // Only handle arrow function with direct JSX expression body for now
+    // Handle arrow function returning JSX directly: () => <Button {...args} />
     if (t.isArrowFunctionExpression(fn) && t.isJSXElement(fn.body)) {
       const body = fn.body;
-      const opening = body.openingElement;
-      const attrs = opening.attributes;
-      const firstSpreadIndex = attrs.findIndex(
-        (a) => t.isJSXSpreadAttribute(a) && t.isIdentifier(a.argument) && a.argument.name === 'args'
-      );
-      if (firstSpreadIndex !== -1) {
-        // Build a list of non-args attributes and compute insertion index at the position of the first args spread
-        const nonArgsAttrs: (t.JSXAttribute | t.JSXSpreadAttribute)[] = [];
-        let insertionIndex = 0;
-        for (let i = 0; i < attrs.length; i++) {
-          const a = attrs[i]!;
-          const isArgsSpread =
-            t.isJSXSpreadAttribute(a) && t.isIdentifier(a.argument) && a.argument.name === 'args';
-          if (isArgsSpread) {
-            if (i === firstSpreadIndex) {
-              insertionIndex = nonArgsAttrs.length;
-            }
-            continue; // drop all {...args}
-          }
-          nonArgsAttrs.push(a as any);
-        }
 
-        // Determine names of explicitly set attributes (excluding any args spreads)
-        const existingAttrNames = new Set(
-          nonArgsAttrs
-            .filter((a) => t.isJSXAttribute(a) && t.isJSXIdentifier(a.name))
-            .map((a) => (a as t.JSXAttribute).name.name)
-        );
+      const spreadTransformed = transformArgsSpreadsInJsx(body, merged);
+      const inlined = inlineArgsInJsx(spreadTransformed.node, merged);
 
-        // Filter out any injected attrs that would duplicate an existing explicit attribute
-        const filteredInjected = injectedAttrs.filter(
-          (a) => t.isJSXIdentifier(a.name) && !existingAttrNames.has(a.name.name)
-        );
-
-        // Build a spread containing only invalid-key props, if any, and also exclude keys already explicitly present
-        const invalidProps = invalidEntries.filter(([k]) => !existingAttrNames.has(k));
-        const invalidSpread: t.JSXSpreadAttribute | null = buildInvalidSpread(invalidProps);
-
-        // Handle children injection if the element currently has no children, using merged children (story overrides meta)
-        const mergedChildren = Object.prototype.hasOwnProperty.call(merged, 'children')
-          ? merged['children']
-          : undefined;
-        const canInjectChildren =
-          !!mergedChildren && (body.children == null || body.children.length === 0);
-
-        // Always transform when `{...args}` exists: remove spreads and empty params
-        const pieces = [...filteredInjected, ...(invalidSpread ? [invalidSpread] : [])];
-        const newAttrs = [
-          ...nonArgsAttrs.slice(0, insertionIndex),
-          ...pieces,
-          ...nonArgsAttrs.slice(insertionIndex),
-        ];
-
-        const willHaveChildren = canInjectChildren ? true : (body.children?.length ?? 0) > 0;
-        const shouldSelfClose = opening.selfClosing && !willHaveChildren;
-
-        const finalOpening = t.jsxOpeningElement(opening.name, newAttrs, shouldSelfClose);
-        const finalClosing = shouldSelfClose
-          ? null
-          : (body.closingElement ?? t.jsxClosingElement(opening.name));
-        const finalChildren = canInjectChildren ? toJsxChildren(mergedChildren) : body.children;
-
-        let newBody = t.jsxElement(finalOpening, finalClosing, finalChildren, shouldSelfClose);
-        // After handling top-level {...args}, also inline any nested args.* usages and
-        // transform any nested {...args} spreads deeper in the tree.
-        const inlined = inlineArgsInJsx(newBody, merged);
-        const transformed = transformArgsSpreadsInJsx(inlined.node, merged);
-        newBody = transformed.node as t.JSXElement;
-
-        const newFn = t.arrowFunctionExpression([], newBody, fn.async);
-        return t.variableDeclaration('const', [
-          t.variableDeclarator(t.identifier(storyName), newFn),
-        ]);
-      }
-
-      // No {...args} at top level; try to remove any deeper {...args} spreads in the JSX tree
-      const deepSpread = transformArgsSpreadsInJsx(body, merged);
-      if (deepSpread.changed) {
-        // After transforming spreads, also inline any remaining args.* references across the tree
-        const inlined = inlineArgsInJsx(deepSpread.node as any, merged);
-        const newFn = t.arrowFunctionExpression([], inlined.node as any, fn.async);
-        return t.variableDeclaration('const', [
-          t.variableDeclarator(t.identifier(storyName), newFn),
-        ]);
-      }
-
-      // Still no spreads transformed; inline any usages of args.* in the entire JSX tree
-      const { node: transformedBody, changed } = inlineArgsInJsx(body, merged);
-      if (changed) {
-        const newFn = t.arrowFunctionExpression([], transformedBody, fn.async);
+      if (spreadTransformed.changed || inlined.changed) {
+        const newFn = t.arrowFunctionExpression([], inlined.node as t.Expression, fn.async);
         return t.variableDeclaration('const', [
           t.variableDeclarator(t.identifier(storyName), newFn),
         ]);
       }
     }
 
-    // Fallback: keep the function as-is
-    if (t.isFunctionDeclaration(storyFn.node)) {
-      return storyFn.node;
+    // Handle functions or arrow functions with block bodies
+    const body = t.isFunctionDeclaration(fn)
+      ? fn.body.body
+      : t.isArrowFunctionExpression(fn) && t.isBlockStatement(fn.body)
+        ? fn.body.body
+        : t.isFunctionExpression(fn) && t.isBlockStatement(fn.body)
+          ? fn.body.body
+          : undefined;
+    if (body) {
+      let changed = false;
+
+      const newBody = body.map((stmt) => {
+        // Only transform return statements that return JSX
+        if (t.isReturnStatement(stmt) && stmt.argument && t.isJSXElement(stmt.argument)) {
+          const spreadTransformed = transformArgsSpreadsInJsx(stmt.argument, merged);
+          const inlined = inlineArgsInJsx(spreadTransformed.node, merged);
+
+          if (spreadTransformed.changed || inlined.changed) {
+            changed = true;
+            return t.returnStatement(inlined.node as t.Expression);
+          }
+        }
+        return stmt;
+      });
+
+      if (changed) {
+        if (t.isFunctionDeclaration(fn)) {
+          return t.functionDeclaration(
+            fn.id,
+            [],
+            t.blockStatement(newBody),
+            fn.generator,
+            fn.async
+          );
+        } else {
+          return t.variableDeclaration('const', [
+            t.variableDeclarator(
+              t.identifier(storyName),
+              t.arrowFunctionExpression([], t.blockStatement(newBody), fn.async)
+            ),
+          ]);
+        }
+      }
+    }
+    // Default fallback: wrap whatever function node we have
+    if (t.isFunctionDeclaration(fn)) {
+      return fn;
     } else {
-      return t.variableDeclaration('const', [
-        t.variableDeclarator(t.identifier(storyName), storyFn.node),
-      ]);
+      return t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), fn)]);
     }
   }
 
@@ -496,7 +454,6 @@ function transformArgsSpreadsInJsx(
   const makeInjectedPieces = (
     existingAttrNames: Set<string | t.JSXIdentifier>
   ): Array<t.JSXAttribute | t.JSXSpreadAttribute> => {
-    // Normalize incoming set to a set of plain string names for reliable membership checks
     const existingNames = new Set<string>(
       Array.from(existingAttrNames).map((n) =>
         typeof n === 'string' ? n : t.isJSXIdentifier(n) ? n.name : ''
@@ -521,11 +478,28 @@ function transformArgsSpreadsInJsx(
     return [...filteredInjected, ...(invalidSpread ? [invalidSpread] : [])];
   };
 
+  const toChild = (
+    v: t.Node
+  ): t.JSXElement | t.JSXFragment | t.JSXExpressionContainer | t.JSXText => {
+    if (t.isJSXElement(v) || t.isJSXFragment(v)) {
+      return v;
+    }
+
+    if (t.isJSXText(v)) {
+      return v;
+    }
+
+    if (t.isStringLiteral(v)) {
+      return t.jsxText(v.value);
+    }
+    // pretty print plain strings // pretty print plain strings
+    return t.jsxExpressionContainer(v as any);
+  };
+
   if (t.isJSXElement(node)) {
     const opening = node.openingElement;
     const attrs = opening.attributes;
 
-    // Collect non-args attrs, track first insertion index, and whether we saw any args spreads
     const nonArgsAttrs: (t.JSXAttribute | t.JSXSpreadAttribute)[] = [];
     let insertionIndex = 0;
     let sawArgsSpread = false;
@@ -539,7 +513,7 @@ function transformArgsSpreadsInJsx(
           insertionIndex = nonArgsAttrs.length;
         }
         sawArgsSpread = true;
-        continue; // drop all {...args}
+        continue;
       }
       nonArgsAttrs.push(a as any);
     }
@@ -561,8 +535,9 @@ function transformArgsSpreadsInJsx(
       changed = true;
     }
 
-    // Recurse into children
-    const newChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
+    // --- Recurse into children ---
+    let newChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
+
     for (const c of node.children) {
       if (t.isJSXElement(c) || t.isJSXFragment(c)) {
         const res = transformArgsSpreadsInJsx(c, merged);
@@ -573,7 +548,13 @@ function transformArgsSpreadsInJsx(
       }
     }
 
-    const shouldSelfClose = opening.selfClosing && newChildren.length === 0;
+    // ✅ Only inject children if {...args} was present and no children exist yet
+    if (sawArgsSpread && newChildren.length === 0 && merged.children) {
+      newChildren = [toChild(merged.children)];
+      changed = true;
+    }
+
+    const shouldSelfClose = newChildren.length === 0;
     const newOpening = t.jsxOpeningElement(opening.name, newAttrs, shouldSelfClose);
     const newClosing = shouldSelfClose
       ? null
@@ -582,7 +563,7 @@ function transformArgsSpreadsInJsx(
     return { node: newEl, changed };
   }
 
-  // JSXFragment
+  // --- JSXFragment recursion ---
   const fragChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
   for (const c of node.children) {
     if (t.isJSXElement(c) || t.isJSXFragment(c)) {

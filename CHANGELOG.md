@@ -1,3 +1,7 @@
+## 10.0.0
+
+- Angular: Add fileURLToPath for preview annotation paths - [#32812](https://github.com/storybookjs/storybook/pull/32812), thanks @brandonroberts!
+
 ## 9.1.16
 
 - CLI: Fix Nextjs project creation in empty directories - [#32828](https://github.com/storybookjs/storybook/pull/32828), thanks @yannbf!

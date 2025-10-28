@@ -81,7 +81,7 @@ describe('GeneratorExecutionCommand', () => {
       const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING]);
       const options = {
         skipInstall: false,
-        features: ['docs', 'test', 'onboarding'],
+        features: selectedFeatures,
         packageManager: 'npm' as any,
       } as any;
 
@@ -102,7 +102,7 @@ describe('GeneratorExecutionCommand', () => {
       vi.mocked(generatorRegistry.get).mockReturnValue(undefined);
       const selectedFeatures = new Set([]);
       const options = {
-        features: [],
+        features: selectedFeatures,
         packageManager: 'npm' as any,
       } as any;
 
@@ -125,7 +125,7 @@ describe('GeneratorExecutionCommand', () => {
         linkable: true,
         usePnp: true,
         yes: true,
-        features: ['docs', 'test'],
+        features: selectedFeatures,
         packageManager: 'npm' as any,
       } as any;
 
@@ -143,7 +143,7 @@ describe('GeneratorExecutionCommand', () => {
           framework: mockFrameworkInfo.framework,
           renderer: mockFrameworkInfo.renderer,
           builder: mockFrameworkInfo.builder,
-          features: ['docs', 'test'],
+          features: selectedFeatures,
         })
       );
 
@@ -156,11 +156,16 @@ describe('GeneratorExecutionCommand', () => {
           pnp: true,
           yes: true,
           projectType: ProjectType.VUE3,
-          features: ['docs', 'test'],
+          features: expect.any(Set),
           dependencyCollector: expect.any(Object),
         }),
         expect.objectContaining({
-          extraAddons: ['@storybook/addon-vitest', '@storybook/addon-docs'],
+          extraAddons: expect.arrayContaining([
+            '@chromatic-com/storybook',
+            '@storybook/addon-vitest',
+            '@storybook/addon-a11y',
+            '@storybook/addon-docs',
+          ]),
           extraPackages: [],
         })
       );

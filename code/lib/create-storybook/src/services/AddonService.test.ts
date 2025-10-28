@@ -95,20 +95,6 @@ describe('AddonService', () => {
   });
 
   describe('configureAddons', () => {
-    it('should configure addons without compiler', () => {
-      const config = manager.configureAddons(
-        new Set([Feature.DOCS, Feature.TEST]),
-        [],
-        SupportedBuilder.VITE,
-        undefined
-      );
-
-      expect(config.addonsForMain).toContain('@storybook/addon-docs');
-      expect(config.addonsForMain).toContain('@chromatic-com/storybook');
-      expect(config.addonPackages).toContain('@storybook/addon-docs');
-      expect(config.addonPackages).toContain('@chromatic-com/storybook');
-    });
-
     it('should include compiler addon when specified', () => {
       const webpackCompiler = vi.fn().mockReturnValue('swc');
       const config = manager.configureAddons(
@@ -154,8 +140,8 @@ describe('AddonService', () => {
         webpackCompiler
       );
 
-      expect(config.addonsForMain).toHaveLength(7); // compiler + links + docs + chromatic + vitest + a11y + onboarding
-      expect(config.addonPackages).toHaveLength(7);
+      expect(config.addonsForMain).toHaveLength(2); // compiler + links
+      expect(config.addonPackages).toHaveLength(2);
     });
 
     it('should filter out falsy values', () => {

@@ -145,7 +145,7 @@ describe('framework-preset-angular-cli', () => {
 
       expect(result.tsConfig).toBe('/custom/tsconfig.json');
       expect(mockedLogger.info).toHaveBeenCalledWith(
-        '=> Using angular project with "tsConfig:/custom/tsconfig.json"'
+        'Using angular project with "tsConfig:../../custom/tsconfig.json"'
       );
     });
 

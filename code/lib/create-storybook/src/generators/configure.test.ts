@@ -24,9 +24,7 @@ describe('configureMain', () => {
       addons: [],
       prefixes: [],
       storybookConfigFolder: '.storybook',
-      framework: {
-        name: '@storybook/react-vite',
-      },
+      framework: '@storybook/react-vite',
       frameworkPackage: '@storybook/react-vite',
       features: new Set([]),
     });
@@ -44,9 +42,7 @@ describe('configureMain', () => {
           "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
         ],
         "addons": [],
-        "framework": {
-          "name": "@storybook/react-vite"
-        }
+        "framework": "@storybook/react-vite"
       };
       export default config;"
     `);
@@ -58,9 +54,7 @@ describe('configureMain', () => {
       addons: [],
       prefixes: [],
       storybookConfigFolder: '.storybook',
-      framework: {
-        name: '@storybook/react-vite',
-      },
+      framework: '@storybook/react-vite',
       frameworkPackage: '@storybook/react-vite',
       features: new Set([Feature.DOCS]),
     });
@@ -78,9 +72,7 @@ describe('configureMain', () => {
           "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
         ],
         "addons": [],
-        "framework": {
-          "name": "@storybook/react-vite"
-        }
+        "framework": "@storybook/react-vite"
       };
       export default config;"
     `);
@@ -92,9 +84,7 @@ describe('configureMain', () => {
       addons: [],
       prefixes: [],
       storybookConfigFolder: '.storybook',
-      framework: {
-        name: '@storybook/react-vite',
-      },
+      framework: '@storybook/react-vite',
       frameworkPackage: '@storybook/react-vite',
       features: new Set([]),
     });
@@ -111,9 +101,7 @@ describe('configureMain', () => {
           "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
         ],
         "addons": [],
-        "framework": {
-          "name": "@storybook/react-vite"
-        }
+        "framework": "@storybook/react-vite"
       };
       export default config;"
     `);
@@ -128,9 +116,8 @@ describe('configureMain', () => {
         "%%path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))%%",
       ],
       storybookConfigFolder: '.storybook',
-      framework: {
-        name: "%%path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))%%",
-      },
+      framework:
+        "%%path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))%%",
       frameworkPackage: '@storybook/react-webpack5',
       features: new Set([Feature.DOCS]),
     });
@@ -152,9 +139,7 @@ describe('configureMain', () => {
           path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json'))),
           path.dirname(require.resolve(path.join('@storybook/preset-create-react-app', 'package.json')))
         ],
-        "framework": {
-          "name": path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))
-        }
+        "framework": path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))
       };
       export default config;"
     `);

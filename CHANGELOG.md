@@ -1,3 +1,18 @@
+## 9.1.15
+
+- Core: Add `preview-first-load` telemetry - [#32770](https://github.com/storybookjs/storybook/pull/32770), thanks @shilman!
+- Dependencies: Update `vite-plugin-storybook-nextjs` - [#32821](https://github.com/storybookjs/storybook/pull/32821), thanks @ndelangen!
+
+## 9.1.14
+
+- NextJS: Add NextJS 16 support - [#32791](https://github.com/storybookjs/storybook/pull/32791), thanks @yannbf and @ndelangen!
+- Addon-Vitest: Support Vitest 4 - [#32819](https://github.com/storybookjs/storybook/pull/32819), thanks @yannbf and @ndelangen!
+- CSF: Fix `play-fn` tag for methods - [#32695](https://github.com/storybookjs/storybook/pull/32695), thanks @shilman!
+
+## 9.1.13
+
+- Nextjs: Fix config access for Vite - [#32759](https://github.com/storybookjs/storybook/pull/32759), thanks @valentinpalkovic!
+
 ## 9.1.12
 
 - Maintenance: Hotfix for missing nextjs dts files, thanks @ndelangen!

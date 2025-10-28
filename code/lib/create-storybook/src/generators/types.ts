@@ -7,6 +7,7 @@ export type GeneratorOptions = {
   language: SupportedLanguage;
   builder: Builder;
   linkable: boolean;
+  // TODO: Remove in SB11
   pnp: boolean;
   projectType: ProjectType;
   frameworkPreviewParts?: FrameworkPreviewParts;

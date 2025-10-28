@@ -114,6 +114,8 @@ describe('AddonConfigurationCommand', () => {
         yes: true,
         skipInstall: true,
         skipDependencyManagement: true,
+        logger: expect.any(Object),
+        prompt: expect.any(Object),
       });
       expect(mockPostinstallAddon).toHaveBeenCalledWith('@storybook/addon-vitest', {
         packageManager: 'npm',
@@ -121,6 +123,8 @@ describe('AddonConfigurationCommand', () => {
         yes: true,
         skipInstall: true,
         skipDependencyManagement: true,
+        logger: expect.any(Object),
+        prompt: expect.any(Object),
       });
     });
   });

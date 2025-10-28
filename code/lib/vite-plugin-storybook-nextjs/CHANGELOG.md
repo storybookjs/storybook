@@ -1,3 +1,15 @@
+# v3.0.1 (Tue Oct 28 2025)
+
+#### 🐛 Bug Fix
+
+- Fix `next/config` deprecation warning [#66](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/66) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
 # v3.0.0 (Fri Oct 24 2025)
 
 #### 💥 Breaking Change

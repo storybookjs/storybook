@@ -88,7 +88,7 @@ export const useMenu = ({
       title: 'Onboarding guide',
       onClick: () => api.changeSettingsTab('guide'),
       icon: <ListUnorderedIcon />,
-      right: (
+      right: progress < 100 && (
         <ListboxButton readOnly padding="none">
           <ProgressCircle percentage={progress} running={false} size={16} width={1.5} />
           {progress}%

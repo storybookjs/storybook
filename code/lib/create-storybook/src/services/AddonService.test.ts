@@ -53,9 +53,10 @@ describe('AddonService', () => {
       expect(addons).toEqual([]);
     });
 
-    it('should add chromatic addon for test feature', () => {
+    it('should add chromatic and vitest addons for test feature', () => {
       const addons = manager.getAddonsForFeatures(new Set([Feature.TEST]));
       expect(addons).toContain('@chromatic-com/storybook');
+      expect(addons).toContain('@storybook/addon-vitest');
     });
 
     it('should add docs addon for docs feature', () => {
@@ -68,13 +69,20 @@ describe('AddonService', () => {
       expect(addons).toContain('@storybook/addon-onboarding');
     });
 
+    it('should add a11y addon for a11y feature', () => {
+      const addons = manager.getAddonsForFeatures(new Set([Feature.A11Y]));
+      expect(addons).toContain('@storybook/addon-a11y');
+    });
+
     it('should add all addons for all features', () => {
       const addons = manager.getAddonsForFeatures(
-        new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING])
+        new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING, Feature.A11Y])
       );
       expect(addons).toContain('@storybook/addon-docs');
       expect(addons).toContain('@chromatic-com/storybook');
+      expect(addons).toContain('@storybook/addon-vitest');
       expect(addons).toContain('@storybook/addon-onboarding');
+      expect(addons).toContain('@storybook/addon-a11y');
     });
   });
 
@@ -134,14 +142,16 @@ describe('AddonService', () => {
     it('should handle all features together', () => {
       const webpackCompiler = vi.fn().mockReturnValue('swc');
       const config = manager.configureAddons(
-        new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING]),
+        new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING, Feature.A11Y]),
         ['@storybook/addon-links'],
         SupportedBuilder.WEBPACK5,
         webpackCompiler
       );
 
       expect(config.addonsForMain).toHaveLength(2); // compiler + links
-      expect(config.addonPackages).toHaveLength(2);
+      expect(config.addonPackages).toHaveLength(2); // compiler + links
+      expect(config.addonsForMain).toContain('@storybook/addon-webpack5-compiler-swc');
+      expect(config.addonsForMain).toContain('@storybook/addon-links');
     });
 
     it('should filter out falsy values', () => {

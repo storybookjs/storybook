@@ -29,6 +29,9 @@ export class AddonService {
     if (features.has(Feature.TEST)) {
       addons.push('@chromatic-com/storybook');
       addons.push('@storybook/addon-vitest');
+    }
+
+    if (features.has(Feature.A11Y)) {
       addons.push('@storybook/addon-a11y');
     }
 

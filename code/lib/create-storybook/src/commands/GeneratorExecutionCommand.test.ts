@@ -36,7 +36,14 @@ describe('GeneratorExecutionCommand', () => {
   let command: GeneratorExecutionCommand;
   let mockPackageManager: JsPackageManager;
   let dependencyCollector: DependencyCollector;
-  let mockGenerator: any;
+  let mockGenerator: {
+    metadata: {
+      projectType: ProjectType;
+      renderer: SupportedRenderer;
+      framework?: SupportedFramework;
+    };
+    configure: ReturnType<typeof vi.fn>;
+  };
   let mockFrameworkInfo: FrameworkDetectionResult;
 
   beforeEach(() => {
@@ -44,7 +51,7 @@ describe('GeneratorExecutionCommand', () => {
     command = new GeneratorExecutionCommand(dependencyCollector);
     mockPackageManager = {
       getRunCommand: vi.fn().mockReturnValue('npm run storybook'),
-    } as any;
+    } as unknown as JsPackageManager;
 
     mockFrameworkInfo = {
       renderer: SupportedRenderer.REACT,
@@ -56,7 +63,7 @@ describe('GeneratorExecutionCommand', () => {
     mockGenerator = {
       metadata: {
         projectType: ProjectType.REACT,
-        renderer: 'react',
+        renderer: SupportedRenderer.REACT,
         framework: undefined,
       },
       configure: vi.fn().mockResolvedValue({
@@ -82,8 +89,8 @@ describe('GeneratorExecutionCommand', () => {
       const options = {
         skipInstall: false,
         features: selectedFeatures,
-        packageManager: 'npm' as any,
-      } as any;
+        packageManager: 'npm' as const,
+      };
 
       await command.execute({
         projectType: ProjectType.REACT,
@@ -103,8 +110,8 @@ describe('GeneratorExecutionCommand', () => {
       const selectedFeatures = new Set([]);
       const options = {
         features: selectedFeatures,
-        packageManager: 'npm' as any,
-      } as any;
+        packageManager: 'npm' as const,
+      };
 
       await expect(
         command.execute({
@@ -118,16 +125,16 @@ describe('GeneratorExecutionCommand', () => {
     });
 
     it('should pass correct options to generator', async () => {
-      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
+      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.A11Y]);
       const options = {
         skipInstall: true,
-        builder: 'vite',
+        builder: SupportedBuilder.VITE,
         linkable: true,
         usePnp: true,
         yes: true,
         features: selectedFeatures,
-        packageManager: 'npm' as any,
-      } as any;
+        packageManager: 'npm' as const,
+      };
 
       await command.execute({
         projectType: ProjectType.VUE3,

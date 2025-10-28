@@ -225,7 +225,7 @@ export type Middleware<T extends IncomingMessage = IncomingMessage> = (
   next: (err?: string | Error) => Promise<void> | void
 ) => Promise<void> | void;
 
-interface ServerApp<T extends IncomingMessage = IncomingMessage> {
+export interface ServerApp<T extends IncomingMessage = IncomingMessage> {
   server: NetServer;
 
   use(pattern: RegExp | string, ...handlers: Middleware<T>[]): this;
@@ -479,6 +479,8 @@ export interface StorybookConfigRaw {
   previewAnnotations?: Entry[];
 
   experimental_indexers?: Indexer[];
+
+  experimental_devServer?: ServerApp;
 
   docs?: DocsOptions;
 

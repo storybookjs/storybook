@@ -43,21 +43,21 @@ export const telemetry = async (
       telemetryData.metadata = await getStorybookMetadata(options?.configDir);
     }
   } catch (error: any) {
-    telemetryData.payload.metadataErrorMessage = sanitizeError(error).message;
+    payload.metadataErrorMessage = sanitizeError(error).message;
 
     if (options?.enableCrashReports) {
-      telemetryData.payload.metadataError = sanitizeError(error);
+      payload.metadataError = sanitizeError(error);
     }
   } finally {
-    const { error } = telemetryData.payload;
+    const { error } = payload;
     // make sure to anonymise possible paths from error messages
 
     // make sure to anonymise possible paths from error messages
     if (error) {
-      telemetryData.payload.error = sanitizeError(error);
+      payload.error = sanitizeError(error);
     }
 
-    if (!telemetryData.payload.error || options?.enableCrashReports) {
+    if (!payload.error || options?.enableCrashReports) {
       if (process.env?.STORYBOOK_TELEMETRY_DEBUG) {
         logger.info('\n[telemetry]');
         logger.info(JSON.stringify(telemetryData, null, 2));

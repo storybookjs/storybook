@@ -478,26 +478,20 @@ export class CsfFile {
             // export default meta;
             const variableName = (node.declaration as t.Identifier).name;
             self._metaVariableName = variableName;
-            const isVariableDeclarator = (declaration: t.VariableDeclarator) =>
+            const isMetaVariable = (declaration: t.VariableDeclarator) =>
               t.isIdentifier(declaration.id) && declaration.id.name === variableName;
 
-            self._metaStatement = self._ast.program.body.find(
-              (topLevelNode) =>
-                t.isVariableDeclaration(topLevelNode) &&
-                topLevelNode.declarations.find(isVariableDeclarator)
-            );
+            self._metaStatementPath = self._file.path
+              .get('body')
+              .find(
+                (path) =>
+                  path.isVariableDeclaration() && path.node.declarations.some(isMetaVariable)
+              );
 
-            self._metaStatementPath =
-              self._file.path
-                .get('body')
-                .find(
-                  (topLevelPath) =>
-                    topLevelPath.isVariableDeclaration() &&
-                    topLevelPath.node.declarations.some(isVariableDeclarator)
-                ) ?? undefined;
+            self._metaStatement = self._metaStatementPath?.node;
 
             decl = ((self?._metaStatement as t.VariableDeclaration)?.declarations || []).find(
-              isVariableDeclarator
+              isMetaVariable
             )?.init;
           } else {
             self._metaStatement = node;

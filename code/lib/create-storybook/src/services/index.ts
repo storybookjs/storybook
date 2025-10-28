@@ -4,13 +4,6 @@
  * These services provide centralized, testable functionality for the init process
  */
 
-export { ConfigGenerationService } from './ConfigGenerationService';
-export type {
-  FrameworkPreviewParts,
-  MainConfigOptions,
-  PreviewConfigOptions,
-} from './ConfigGenerationService';
-
 export { FeatureCompatibilityService } from './FeatureCompatibilityService';
 export type { FeatureCompatibilityResult } from './FeatureCompatibilityService';
 

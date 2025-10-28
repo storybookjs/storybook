@@ -632,6 +632,7 @@ export default {
   'storybook/internal/types': [
     'Addon_TypesEnum',
     'CoreWebpackCompiler',
+    'Feature',
     'SupportedBuilder',
     'SupportedFramework',
     'SupportedRenderer',

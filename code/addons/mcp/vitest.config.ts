@@ -1,6 +1,7 @@
-import { defineConfig } from 'vitest/config';
+import sharedVitestConfig from '../../vitest-shared.config.ts';
+import { mergeConfig } from 'vitest/config';
 
-export default defineConfig({
+export default mergeConfig(sharedVitestConfig, {
 	test: {
 		setupFiles: ['./vitest.setup.ts'],
 		coverage: {
@@ -11,7 +12,7 @@ export default defineConfig({
 		// handle markdown files in Vitest
 		{
 			name: 'md-loader',
-			transform(code, id) {
+			transform(code: string, id: string) {
 				if (id.endsWith('.md')) {
 					return {
 						code: `export default ${JSON.stringify(code)};`,

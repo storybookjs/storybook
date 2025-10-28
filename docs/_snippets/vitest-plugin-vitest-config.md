@@ -24,8 +24,8 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --ci flag will skip prompts and not open a browser
-              storybookScript: 'yarn storybook --ci',
+              // The --no-open flag will skip the automatic opening of a browser
+              storybookScript: 'yarn storybook --no-open',
             }),
           ],
           test: {
@@ -72,8 +72,8 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --ci flag will skip prompts and not open a browser
-              storybookScript: 'yarn storybook --ci',
+              // The --no-open flag will skip the automatic opening of a browser
+              storybookScript: 'yarn storybook --no-open',
             }),
           ],
           test: {
@@ -121,8 +121,8 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --ci flag will skip prompts and not open a browser
-              storybookScript: 'yarn storybook --ci',
+              // The --no-open flag will skip the automatic opening of a browser
+              storybookScript: 'yarn storybook --no-open',
             }),
           ],
           test: {
@@ -169,8 +169,8 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --ci flag will skip prompts and not open a browser
-              storybookScript: 'yarn storybook --ci',
+              // The --no-open flag will skip the automatic opening of a browser
+              storybookScript: 'yarn storybook --no-open',
             }),
           ],
           test: {
@@ -218,8 +218,8 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --ci flag will skip prompts and not open a browser
-              storybookScript: 'yarn storybook --ci',
+              // The --no-open flag will skip the automatic opening of a browser
+              storybookScript: 'yarn storybook --no-open',
             }),
           ],
           test: {
@@ -266,8 +266,8 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --ci flag will skip prompts and not open a browser
-              storybookScript: 'yarn storybook --ci',
+              // The --no-open flag will skip the automatic opening of a browser
+              storybookScript: 'yarn storybook --no-open',
             }),
           ],
           test: {
@@ -315,8 +315,8 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --ci flag will skip prompts and not open a browser
-              storybookScript: 'yarn storybook --ci',
+              // The --no-open flag will skip the automatic opening of a browser
+              storybookScript: 'yarn storybook --no-open',
             }),
           ],
           test: {
@@ -363,8 +363,8 @@ export default mergeConfig(
               // The location of your Storybook config, main.js|ts
               configDir: path.join(dirname, '.storybook'),
               // This should match your package.json script to run Storybook
-              // The --ci flag will skip prompts and not open a browser
-              storybookScript: 'yarn storybook --ci',
+              // The --no-open flag will skip the automatic opening of a browser
+              storybookScript: 'yarn storybook --no-open',
             }),
           ],
           test: {

@@ -16,6 +16,24 @@ export interface StorybookContext extends Record<string, unknown> {
 	 * The function receives the source URL and should return the manifest as a string.
 	 */
 	manifestProvider?: (source: string) => Promise<string>;
+	/**
+	 * Optional handler called when list-all-components tool is invoked.
+	 * Receives the context and the component manifest.
+	 */
+	onListAllComponents?: (params: {
+		context: StorybookContext;
+		manifest: ComponentManifestMap;
+	}) => void | Promise<void>;
+	/**
+	 * Optional handler called when get-component-documentation tool is invoked.
+	 * Receives the context, input parameters, and the found components.
+	 */
+	onGetComponentDocumentation?: (params: {
+		context: StorybookContext;
+		input: { componentIds: string[] };
+		foundComponents: ComponentManifest[];
+		notFoundIds: string[];
+	}) => void | Promise<void>;
 }
 
 const JSDocTag = v.record(v.string(), v.array(v.string()));

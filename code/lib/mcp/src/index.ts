@@ -19,10 +19,54 @@ export {
 // Export types for reuse
 export type { StorybookContext } from './types.ts';
 
+// copied from tmcp internals as it's not exposed
+type InitializeRequestParams = {
+	protocolVersion: string;
+	capabilities: {
+		experimental?: {} | undefined;
+		sampling?: {} | undefined;
+		elicitation?: {} | undefined;
+		roots?:
+			| {
+					listChanged?: boolean | undefined;
+			  }
+			| undefined;
+	};
+	clientInfo: {
+		icons?:
+			| {
+					src: string;
+					mimeType?: string | undefined;
+					sizes?: string[] | undefined;
+			  }[]
+			| undefined;
+		version: string;
+		websiteUrl?: string | undefined;
+		name: string;
+		title?: string | undefined;
+	};
+};
+
+/**
+ * Options for creating a Storybook MCP handler.
+ * Extends StorybookContext with server-level configuration.
+ */
+export interface StorybookMcpHandlerOptions extends StorybookContext {
+	/**
+	 * Optional handler called when an MCP session is initialized.
+	 * This is only valid at the handler creation level, not per-request.
+	 * Receives the initialize request parameters from the MCP protocol.
+	 */
+	onSessionInitialize?: (
+		initializeRequestParams: InitializeRequestParams,
+	) => void | Promise<void>;
+}
+export type { ComponentManifest, ComponentManifestMap } from './types.ts';
+
 type Handler = (req: Request, context?: StorybookContext) => Promise<Response>;
 
 export const createStorybookMcpHandler = async (
-	options: StorybookContext = {},
+	options: StorybookMcpHandlerOptions = {},
 ): Promise<Handler> => {
 	const adapter = new ValibotJsonSchemaAdapter();
 	const server = new McpServer(
@@ -41,16 +85,24 @@ export const createStorybookMcpHandler = async (
 		},
 	).withContext<StorybookContext>();
 
+	if (options.onSessionInitialize) {
+		server.on('initialize', options.onSessionInitialize);
+	}
+
 	await addListAllComponentsTool(server);
 	await addGetComponentDocumentationTool(server);
 
 	const transport = new HttpTransport(server, { path: null });
 
 	return (async (req, context) => {
-		const source = context?.source ?? options.source;
-		const manifestProvider =
-			context?.manifestProvider ?? options.manifestProvider;
-
-		return await transport.respond(req, { source, manifestProvider });
+		return await transport.respond(req, {
+			source: context?.source ?? options.source,
+			manifestProvider: context?.manifestProvider ?? options.manifestProvider,
+			onListAllComponents:
+				context?.onListAllComponents ?? options.onListAllComponents,
+			onGetComponentDocumentation:
+				context?.onGetComponentDocumentation ??
+				options.onGetComponentDocumentation,
+		});
 	}) as Handler;
 };

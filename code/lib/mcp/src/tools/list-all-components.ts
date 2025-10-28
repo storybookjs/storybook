@@ -23,6 +23,12 @@ export async function addListAllComponentsTool(
 				);
 
 				const componentList = formatComponentManifestMapToList(manifest);
+
+				await server.ctx.custom?.onListAllComponents?.({
+					context: server.ctx.custom,
+					manifest,
+				});
+
 				return {
 					content: [
 						{

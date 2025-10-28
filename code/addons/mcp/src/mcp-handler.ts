@@ -199,7 +199,7 @@ export function getToolsets(
 	addonOptions: AddonOptionsOutput,
 ): AddonOptionsOutput['toolsets'] {
 	const toolsetHeader = request.headers.get('X-MCP-Toolsets');
-	if (!toolsetHeader) {
+	if (!toolsetHeader || toolsetHeader.trim() === '') {
 		// If no header is present, return the addon options as-is
 		return addonOptions.toolsets;
 	}

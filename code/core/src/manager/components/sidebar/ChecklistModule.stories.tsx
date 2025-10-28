@@ -32,14 +32,3 @@ const meta = preview.meta({
 });
 
 export const Default = meta.story({});
-
-export const Loading = meta.story({
-  beforeEach: async () => {
-    mockStore.setState({
-      loaded: false,
-      muted: false,
-      completed: [],
-      skipped: [],
-    });
-  },
-});

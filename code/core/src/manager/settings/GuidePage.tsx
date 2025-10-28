@@ -1,5 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
+import { Button, Link } from 'storybook/internal/components';
+
+import { universalChecklistStore } from '#manager-stores';
+import { checklistStore } from '#manager-stores';
+import { experimental_useUniversalStore } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { Checklist } from './Checklist/Checklist';
@@ -33,6 +38,10 @@ const Intro = styled.div(({ theme }) => ({
 }));
 
 export const GuidePage = () => {
+  const allTaskIds = checklistData.sections.flatMap(({ items }) => items.map(({ id }) => id));
+  const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
+  const { muted } = checklistState;
+
   return (
     <Container>
       <Intro>
@@ -42,7 +51,18 @@ export const GuidePage = () => {
           up software so get to it!
         </p>
       </Intro>
-      <Checklist data={checklistData} />
+      <Checklist data={checklistData} state={checklistState} store={checklistStore} />
+      {muted ? (
+        <center>
+          Want to see this in the sidebar?{' '}
+          <Link onClick={() => checklistStore.mute(false)}>Show in sidebar</Link>
+        </center>
+      ) : (
+        <center>
+          Don&apos;t want to see this in the sidebar?{' '}
+          <Link onClick={() => checklistStore.mute(allTaskIds)}>Remove from sidebar</Link>
+        </center>
+      )}
     </Container>
   );
 };

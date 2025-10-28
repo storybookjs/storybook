@@ -3,6 +3,7 @@ import {
 	incomingMessageToWebRequest,
 	webResponseToServerResponse,
 	mcpServerHandler,
+	getToolsets,
 } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
@@ -393,5 +394,127 @@ describe('mcpServerHandler', () => {
 			}),
 			expect.any(Function),
 		);
+	});
+});
+
+describe('getToolsets', () => {
+	it('should return addon options when no header is present', () => {
+		const request = new Request('http://localhost:6006/mcp');
+		const addonOptions = {
+			toolsets: {
+				storiesDevelopment: true,
+				componentDocumentation: false,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			storiesDevelopment: true,
+			componentDocumentation: false,
+		});
+	});
+
+	it('should enable only toolsets specified in header', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: { 'X-MCP-Toolsets': 'storiesDevelopment' },
+		});
+		const addonOptions = {
+			toolsets: {
+				storiesDevelopment: true,
+				componentDocumentation: true,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			storiesDevelopment: true,
+			componentDocumentation: false,
+		});
+	});
+
+	it('should enable multiple toolsets from comma-separated header', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: {
+				'X-MCP-Toolsets': 'storiesDevelopment,componentDocumentation',
+			},
+		});
+		const addonOptions = {
+			toolsets: {
+				storiesDevelopment: false,
+				componentDocumentation: false,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			storiesDevelopment: true,
+			componentDocumentation: true,
+		});
+	});
+
+	it('should handle whitespace in header values', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: {
+				'X-MCP-Toolsets': ' storiesDevelopment , componentDocumentation ',
+			},
+		});
+		const addonOptions = {
+			toolsets: {
+				storiesDevelopment: false,
+				componentDocumentation: false,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			storiesDevelopment: true,
+			componentDocumentation: true,
+		});
+	});
+
+	it('should ignore invalid toolset names in header', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: {
+				'X-MCP-Toolsets':
+					'storiesDevelopment,invalidToolset,componentDocumentation',
+			},
+		});
+		const addonOptions = {
+			toolsets: {
+				storiesDevelopment: false,
+				componentDocumentation: false,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			storiesDevelopment: true,
+			componentDocumentation: true,
+		});
+	});
+
+	it('should return addon options when header is present with empty value', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: { 'X-MCP-Toolsets': '' },
+		});
+		const addonOptions = {
+			toolsets: {
+				storiesDevelopment: true,
+				componentDocumentation: true,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		// Empty string is falsy, so it should return addon options
+		expect(result).toEqual({
+			storiesDevelopment: true,
+			componentDocumentation: true,
+		});
 	});
 });

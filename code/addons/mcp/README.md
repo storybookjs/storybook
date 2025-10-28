@@ -33,6 +33,52 @@ npm run storybook
 
 The MCP server will be available at `<your_storybook_dev_server_origin>/mcp` when Storybook is running.
 
+### Configuration
+
+#### Addon Options
+
+You can configure which toolsets are enabled by default in your `.storybook/main.js`:
+
+```javascript
+// .storybook/main.js
+export default {
+	addons: [
+		{
+			name: '@storybook/addon-mcp',
+			options: {
+				toolsets: {
+					storiesDevelopment: true, // Tools for story URL retrieval and UI building instructions (default: true)
+					componentDocumentation: true, // Tools for component manifest and documentation (default: true, requires experimental feature)
+				},
+			},
+		},
+	],
+};
+```
+
+**Available Toolsets:**
+
+- `storiesDevelopment`: Enables [Core Tools](#core-tools)
+- `componentDocumentation`: Enables [Component Documentation Tools](#component-documentation-tools-experimental)
+
+Disabling the Core Tools is useful when you want to try out the same experience that your external component consumers will get, because they only get the Component Documentation Tools.
+
+#### Configuring toolsets with headers
+
+You can also configure the available toolsets when setting up the MCP Server in your MCP Client by setting the `X-MCP-Toolsets` header. The header is a comma-separated list of toolset names, `X-MCP-Toolsets: storiesDevelopment,componentDocumentation`. Eg. to configure your client to only have the Component Documentation Tools, the `.mcp.json`-file could look like this (format depends on the exact client you're using):
+
+```json
+{
+	"storybook-mcp": {
+		"url": "http://localhost:6006/mcp",
+		"type": "http",
+		"headers": {
+			"X-MCP-Toolsets": "componentDocumentation"
+		}
+	}
+}
+```
+
 ### Configuring Your Agent
 
 > [!NOTE]

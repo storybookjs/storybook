@@ -12,14 +12,13 @@ import {
   ShareAltIcon,
 } from '@storybook/icons';
 
-import { universalChecklistStore } from '#manager-stores';
 import type { API } from 'storybook/manager-api';
-import { experimental_useUniversalStore, shortcutToHumanString } from 'storybook/manager-api';
+import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { ListboxButton, ListboxIcon, ProgressSpinner } from '../../components';
 import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList';
-import { checklistData } from '../settings/Checklist/checklistData';
+import { useChecklist } from '../components/sidebar/useChecklist';
 
 const Key = styled.span(({ theme }) => ({
   display: 'inline-flex',
@@ -71,14 +70,7 @@ export const useMenu = ({
   enableShortcuts: boolean;
 }): NormalLink[][] => {
   const shortcutKeys = api.getShortcutKeys();
-  const [{ completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
-  const totalCount = checklistData.sections.reduce((acc, { items }) => acc + items.length, 0);
-  const doneCount = checklistData.sections.reduce(
-    (acc, { items }) =>
-      acc + items.filter(({ id }) => completed.includes(id) || skipped.includes(id)).length,
-    0
-  );
-  const progress = Math.round((doneCount / totalCount) * 100);
+  const { progress } = useChecklist();
 
   const about = useMemo(
     () => ({

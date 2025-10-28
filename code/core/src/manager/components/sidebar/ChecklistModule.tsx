@@ -21,15 +21,13 @@ import {
   StatusFailIcon,
 } from '@storybook/icons';
 
-import { checklistStore, universalChecklistStore } from '#manager-stores';
-import { experimental_useUniversalStore, useStorybookApi } from 'storybook/manager-api';
+import { checklistStore } from '#manager-stores';
+import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { checklistData } from '../../settings/Checklist/checklistData';
 import { TextFlip } from '../TextFlip';
 import { Transition, TransitionGroup } from '../Transition';
-
-type ChecklistItem = (typeof checklistData)['sections'][number]['items'][number];
+import { useChecklist } from './useChecklist';
 
 const CollapsibleWithMargin = styled(Collapsible)(({ collapsed }) => ({
   marginTop: collapsed ? 0 : 16,
@@ -68,44 +66,13 @@ const title = (progress: number) => {
 
 export const ChecklistModule = () => {
   const api = useStorybookApi();
-  const [{ loaded, muted, completed, skipped }] =
-    experimental_useUniversalStore(universalChecklistStore);
+  const { loaded, allItems, nextItems, progress, mute } = useChecklist();
 
-  const allTaskIds = useMemo(() => {
-    return checklistData.sections.flatMap(({ items }) => items.map(({ id }) => id));
-  }, []);
-
-  const nextTasks = useMemo(() => {
-    if (!loaded || muted === true) {
-      return [];
-    }
-    const isReady = ({ id, after }: ChecklistItem): boolean =>
-      !completed.includes(id) &&
-      !skipped.includes(id) &&
-      !(Array.isArray(muted) && muted.includes(id)) &&
-      !after?.some((id) => !completed.includes(id));
-
-    // Collect a list of the next 3 tasks that are ready.
-    // Tasks are pulled from each section in a round-robin fashion,
-    // so that users can choose their own adventure.
-    return checklistData.sections
-      .flatMap(({ items }, sectionIndex) =>
-        items.filter(isReady).map((item, itemIndex) => ({ item, itemIndex, sectionIndex }))
-      )
-      .sort((a, b) => a.itemIndex - b.itemIndex)
-      .slice(0, 3)
-      .sort((a, b) => a.sectionIndex - b.sectionIndex)
-      .flatMap(({ item }) => (item ? [{ ...item, nodeRef: createRef<HTMLLIElement>() }] : []));
-  }, [loaded, muted, completed, skipped]);
-
-  const hasTasks = nextTasks.length > 0;
-  const totalCount = checklistData.sections.reduce((acc, { items }) => acc + items.length, 0);
-  const doneCount = checklistData.sections.reduce(
-    (acc, { items }) =>
-      acc + items.filter(({ id }) => completed.includes(id) || skipped.includes(id)).length,
-    0
+  const next = useMemo(
+    () => nextItems.map((item) => ({ ...item, nodeRef: createRef<HTMLLIElement>() })),
+    [nextItems]
   );
-  const progress = Math.round((doneCount / totalCount) * 100);
+  const hasTasks = next.length > 0;
 
   return (
     <CollapsibleWithMargin collapsed={!hasTasks}>
@@ -176,7 +143,7 @@ export const ChecklistModule = () => {
                             <ListboxAction
                               onClick={(e) => {
                                 e.stopPropagation();
-                                checklistStore.mute(allTaskIds);
+                                mute(allItems.map(({ id }) => id));
                                 onHide();
                               }}
                             >
@@ -206,25 +173,25 @@ export const ChecklistModule = () => {
           )}
         >
           <TransitionGroup component={Listbox}>
-            {nextTasks.map((task) => (
-              <Transition key={task.id} nodeRef={task.nodeRef} timeout={300}>
-                <ListboxItem ref={task.nodeRef}>
+            {next.map((item) => (
+              <Transition key={item.id} nodeRef={item.nodeRef} timeout={300}>
+                <ListboxItem ref={item.nodeRef}>
                   <ListboxAction
-                    onClick={() => api.navigateUrl(`/settings/guide#${task.id}`, { plain: false })}
+                    onClick={() => api.navigateUrl(`/settings/guide#${item.id}`, { plain: false })}
                   >
                     <ListboxIcon>
                       <StatusFailIcon />
                     </ListboxIcon>
-                    <ListboxText>{task.label}</ListboxText>
+                    <ListboxText>{item.label}</ListboxText>
                   </ListboxAction>
-                  {task.action && (
+                  {item.action && (
                     <ListboxButton
                       onClick={() => {
-                        checklistStore.complete(task.id);
-                        task.action?.onClick({ api });
+                        checklistStore.complete(item.id);
+                        item.action?.onClick({ api });
                       }}
                     >
-                      {task.action.label}
+                      {item.action.label}
                     </ListboxButton>
                   )}
                 </ListboxItem>

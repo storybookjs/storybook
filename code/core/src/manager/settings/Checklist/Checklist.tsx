@@ -22,7 +22,7 @@ import {
 import { type API, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { ChecklistStore, StoreState } from '../../../shared/checklist-store';
+import type { useChecklist } from '../../components/sidebar/useChecklist';
 
 export interface ChecklistData {
   sections: {
@@ -241,34 +241,35 @@ const ToggleButton = styled(Button)({
 });
 
 export const Checklist = ({
-  data,
-  store,
-  state,
-}: {
-  data: ChecklistData;
-  store: ChecklistStore;
-  state: StoreState;
-}) => {
+  sections,
+  completed,
+  skipped,
+  complete,
+  skip,
+  reset,
+}: Pick<
+  ReturnType<typeof useChecklist>,
+  'sections' | 'completed' | 'skipped' | 'complete' | 'skip' | 'reset'
+>) => {
   const api = useStorybookApi();
   const locationHash = useLocationHash();
-  const { completed, skipped } = state;
 
   const sectionsById: Record<ChecklistSection['id'], ChecklistSection> = useMemo(() => {
     const isDone = (id: string) => completed.includes(id) || skipped.includes(id);
     return Object.fromEntries(
-      data.sections.map(({ items, ...section }) => {
+      sections.map(({ items, ...section }) => {
         const progress =
           (items.reduce((a, b) => (isDone(b.id) ? a + 1 : a), 0) / items.length) * 100;
         const itemIds = items.map(({ id }) => id);
         return [section.id, { ...section, itemIds, progress }];
       })
     );
-  }, [data, completed, skipped]);
+  }, [sections, completed, skipped]);
 
   const itemsById: Record<ChecklistItem['id'], ChecklistItem> = useMemo(
     () =>
       Object.fromEntries(
-        data.sections.flatMap(({ items, id }) => {
+        sections.flatMap(({ items, id }) => {
           const { progress } = sectionsById[id];
           return items.map((item) => {
             const isCompleted = progress === 100 || completed.includes(item.id);
@@ -279,16 +280,16 @@ export const Checklist = ({
           });
         })
       ),
-    [data, sectionsById, completed, skipped]
+    [sections, sectionsById, completed, skipped]
   );
 
-  const next = Object.values(data.sections).findIndex(({ items }) =>
+  const next = Object.values(sections).findIndex(({ items }) =>
     items.some((item) => !completed.includes(item.id) && !skipped.includes(item.id))
   );
 
   return (
     <Sections>
-      {data.sections.map(({ id }, index) => {
+      {sections.map(({ id }, index) => {
         const { title, itemIds, progress } = sectionsById[id];
         const hasTarget = itemIds.some((id) => id === locationHash);
         const collapsed = !hasTarget && (progress === 0 || progress === 100) && next !== index;
@@ -382,7 +383,7 @@ export const Checklist = ({
                                         variant="solid"
                                         size="small"
                                         onClick={() => {
-                                          store.complete(item.id);
+                                          complete(item.id);
                                           item.action?.onClick({ api });
                                         }}
                                       >
@@ -397,7 +398,7 @@ export const Checklist = ({
                                         <Button
                                           variant="outline"
                                           size="small"
-                                          onClick={() => store.complete(item.id)}
+                                          onClick={() => complete(item.id)}
                                         >
                                           <CheckIcon />
                                           Mark as complete
@@ -407,7 +408,7 @@ export const Checklist = ({
                                       <Button
                                         variant="ghost"
                                         size="small"
-                                        onClick={() => store.skip(item.id)}
+                                        onClick={() => skip(item.id)}
                                         aria-label="Skip"
                                       >
                                         Skip
@@ -417,7 +418,7 @@ export const Checklist = ({
                                       <Button
                                         variant="ghost"
                                         padding="small"
-                                        onClick={() => store.reset(item.id)}
+                                        onClick={() => reset(item.id)}
                                         aria-label="Undo"
                                       >
                                         <UndoIcon />

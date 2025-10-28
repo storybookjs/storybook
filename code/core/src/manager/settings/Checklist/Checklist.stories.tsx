@@ -35,13 +35,11 @@ const meta = preview.meta({
 
 export const Default = meta.story({
   args: {
-    data: checklistData,
-    store: checklistStore,
-    state: {
-      loaded: true,
-      muted: false,
-      completed: ['add-component'],
-      skipped: ['add-5-10-components'],
-    },
+    ...checklistData,
+    ...checklistStore,
+    loaded: true,
+    muted: false,
+    completed: ['add-component'],
+    skipped: ['add-5-10-components'],
   },
 });

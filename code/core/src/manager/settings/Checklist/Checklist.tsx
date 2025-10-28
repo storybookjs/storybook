@@ -19,9 +19,10 @@ import {
   UndoIcon,
 } from '@storybook/icons';
 
-import { checklistStore, universalChecklistStore } from '#manager-stores';
-import { type API, experimental_useUniversalStore, useStorybookApi } from 'storybook/manager-api';
+import { type API, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
+
+import type { ChecklistStore, StoreState } from '../../../shared/checklist-store';
 
 export interface ChecklistData {
   sections: {
@@ -236,11 +237,18 @@ const ToggleButton = styled(Button)({
   },
 });
 
-export const Checklist = ({ data }: { data: ChecklistData }) => {
+export const Checklist = ({
+  data,
+  store,
+  state,
+}: {
+  data: ChecklistData;
+  store: ChecklistStore;
+  state: StoreState;
+}) => {
   const api = useStorybookApi();
   const locationHash = useLocationHash();
-  const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
-  const { completed, skipped } = checklistState;
+  const { completed, skipped } = state;
 
   const sectionsById: Record<ChecklistSection['id'], ChecklistSection> = useMemo(() => {
     const isDone = (id: string) => completed.includes(id) || skipped.includes(id);
@@ -371,7 +379,7 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
                                         variant="solid"
                                         size="small"
                                         onClick={() => {
-                                          checklistStore.complete(item.id);
+                                          store.complete(item.id);
                                           item.action?.onClick({ api });
                                         }}
                                       >
@@ -386,7 +394,7 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
                                         <Button
                                           variant="outline"
                                           size="small"
-                                          onClick={() => checklistStore.complete(item.id)}
+                                          onClick={() => store.complete(item.id)}
                                         >
                                           <CheckIcon />
                                           Mark as complete
@@ -396,7 +404,7 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
                                       <Button
                                         variant="ghost"
                                         size="small"
-                                        onClick={() => checklistStore.skip(item.id)}
+                                        onClick={() => store.skip(item.id)}
                                         aria-label="Skip"
                                       >
                                         Skip
@@ -406,7 +414,7 @@ export const Checklist = ({ data }: { data: ChecklistData }) => {
                                       <Button
                                         variant="ghost"
                                         padding="small"
-                                        onClick={() => checklistStore.reset(item.id)}
+                                        onClick={() => store.reset(item.id)}
                                         aria-label="Undo"
                                       >
                                         <UndoIcon />

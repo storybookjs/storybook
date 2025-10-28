@@ -23,7 +23,7 @@ export const componentManifestGenerator = async () => {
     const groupByComponentId = groupBy(
       Object.values(index.entries)
         .filter((entry) => entry.type === 'story')
-        .filter((entry) => entry.subtype === 'story' && entry.componentPath),
+        .filter((entry) => entry.subtype === 'story'),
       (it) => it.id.split('--')[0]
     );
     const singleEntryPerComponent = Object.values(groupByComponentId).flatMap((group) =>

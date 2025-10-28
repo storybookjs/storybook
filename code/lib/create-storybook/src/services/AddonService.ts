@@ -8,7 +8,7 @@ export interface AddonConfiguration {
 }
 
 /** Module for managing Storybook addons */
-export class AddonManager {
+export class AddonService {
   /** Determine webpack compiler addon if needed */
   getWebpackCompilerAddon(
     builder: SupportedBuilder,
@@ -23,8 +23,8 @@ export class AddonManager {
   }
 
   /** Get addons based on selected features */
-  getAddonsForFeatures(features: Set<Feature>, extraAddons: string[] = []): string[] {
-    const addons = [...extraAddons];
+  getAddonsForFeatures(features: Set<Feature>): string[] {
+    const addons: string[] = [];
 
     if (features.has(Feature.TEST)) {
       addons.push('@chromatic-com/storybook');
@@ -57,17 +57,14 @@ export class AddonManager {
   ): AddonConfiguration {
     const compiler = this.getWebpackCompilerAddon(builder, webpackCompiler);
 
-    // Get feature-based addons
-    const featureAddons = this.getAddonsForFeatures(features, extraAddons);
-
     // Addons added to main.js
     const addonsForMain = [
       ...(compiler ? [compiler] : []),
-      ...this.stripVersions(featureAddons),
+      ...this.stripVersions(extraAddons),
     ].filter(Boolean);
 
     // Packages added to package.json
-    const addonPackages = [...(compiler ? [compiler] : []), ...featureAddons].filter(Boolean);
+    const addonPackages = [...(compiler ? [compiler] : []), ...extraAddons].filter(Boolean);
 
     return {
       addonsForMain,

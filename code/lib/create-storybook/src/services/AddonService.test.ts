@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Feature, SupportedBuilder } from 'storybook/internal/types';
 
-import { AddonManager } from './AddonManager';
+import { AddonService } from './AddonService';
 
 vi.mock('storybook/internal/common', async () => {
   const actual = await vi.importActual('storybook/internal/common');
@@ -15,11 +15,11 @@ vi.mock('storybook/internal/common', async () => {
   };
 });
 
-describe('AddonManager', () => {
-  let manager: AddonManager;
+describe('AddonService', () => {
+  let manager: AddonService;
 
   beforeEach(() => {
-    manager = new AddonManager();
+    manager = new AddonService();
   });
 
   describe('getWebpackCompilerAddon', () => {
@@ -75,14 +75,6 @@ describe('AddonManager', () => {
       expect(addons).toContain('@storybook/addon-docs');
       expect(addons).toContain('@chromatic-com/storybook');
       expect(addons).toContain('@storybook/addon-onboarding');
-    });
-
-    it('should include extra addons', () => {
-      const addons = manager.getAddonsForFeatures(new Set([Feature.DOCS]), [
-        '@storybook/addon-links',
-      ]);
-      expect(addons).toContain('@storybook/addon-links');
-      expect(addons).toContain('@storybook/addon-docs');
     });
   });
 

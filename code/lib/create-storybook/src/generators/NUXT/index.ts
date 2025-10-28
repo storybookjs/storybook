@@ -1,6 +1,11 @@
 import { ProjectType } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
-import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import {
+  Feature,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -12,7 +17,7 @@ export default defineGeneratorModule({
     builderOverride: SupportedBuilder.VITE,
   },
   configure: async (packageManager, context) => {
-    const extraStories = context.features.includes('docs') ? ['../components/**/*.mdx'] : [];
+    const extraStories = context.features.has(Feature.DOCS) ? ['../components/**/*.mdx'] : [];
     extraStories.push('../components/**/*.stories.@(js|jsx|ts|tsx|mdx)');
 
     // Nuxt requires special handling - always install dependencies even with skipInstall

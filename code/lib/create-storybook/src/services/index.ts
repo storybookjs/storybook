@@ -8,5 +8,5 @@ export { FeatureCompatibilityService } from './FeatureCompatibilityService';
 export type { FeatureCompatibilityResult } from './FeatureCompatibilityService';
 
 export { TelemetryService } from './TelemetryService';
-
+export { AddonService } from './AddonService';
 export { VersionService } from './VersionService';

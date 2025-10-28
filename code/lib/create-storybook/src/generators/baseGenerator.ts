@@ -23,8 +23,8 @@ import { SupportedFramework } from 'storybook/internal/types';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
+import { AddonService } from '../services';
 import { configureMain, configurePreview } from './configure';
-import { AddonManager } from './modules/AddonManager';
 import type { FrameworkOptions, GeneratorOptions } from './types';
 
 const defaultOptions = {
@@ -171,7 +171,7 @@ export async function baseGenerator(
   };
 
   // Configure addons using AddonManager
-  const addonManager = new AddonManager();
+  const addonManager = new AddonService();
   const { addonsForMain: addons, addonPackages } = addonManager.configureAddons(
     features,
     extraAddons,

@@ -1,11 +1,12 @@
 import type { ProjectType, SupportedLanguage } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
-import { Feature } from 'storybook/internal/types';
+import type { Feature } from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import { baseGenerator } from '../generators/baseGenerator';
 import type { CommandOptions, GeneratorModule, GeneratorOptions } from '../generators/types';
+import { AddonService } from '../services';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 
 export type GeneratorExecutionResult = (
@@ -37,7 +38,10 @@ type ExecuteProjectGeneratorOptions = {
  */
 export class GeneratorExecutionCommand {
   /** Execute generator for the detected project type */
-  constructor(private readonly dependencyCollector: DependencyCollector) {}
+  constructor(
+    private readonly dependencyCollector: DependencyCollector,
+    private readonly addonService = new AddonService()
+  ) {}
 
   async execute({
     projectType,
@@ -64,24 +68,6 @@ export class GeneratorExecutionCommand {
         generatorResult.storybookCommand ?? packageManager.getRunCommand('storybook'),
     };
   }
-
-  private readonly getExtraAddons = (selectedFeatures: Set<Feature>): string[] => {
-    const addons = [];
-
-    if (selectedFeatures.has(Feature.A11Y)) {
-      addons.push('@storybook/addon-a11y');
-    }
-
-    if (selectedFeatures.has(Feature.TEST)) {
-      addons.push('@storybook/addon-vitest');
-    }
-
-    if (selectedFeatures.has(Feature.DOCS)) {
-      addons.push('@storybook/addon-docs');
-    }
-
-    return addons;
-  };
 
   /** Execute the project-specific generator */
   private readonly executeProjectGenerator = async ({
@@ -139,7 +125,7 @@ export class GeneratorExecutionCommand {
       };
     }
 
-    const extraAddons = this.getExtraAddons(selectedFeatures);
+    const extraAddons = this.addonService.getAddonsForFeatures(selectedFeatures);
 
     // Call baseGenerator with complete configuration
     const generatorResult = await baseGenerator(packageManager, npmOptions, generatorOptions, {

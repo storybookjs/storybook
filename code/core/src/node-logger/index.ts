@@ -10,6 +10,7 @@ export { logTracker } from './logger/log-tracker';
 export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base';
 export { protectUrls, createHyperlink } from './wrap-utils';
 export { CLI_COLORS } from './logger/colors';
+export { ConsoleLogger, StyledConsoleLogger } from './logger/console';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621

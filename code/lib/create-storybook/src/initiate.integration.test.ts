@@ -10,7 +10,7 @@ import { JsPackageManagerFactory, loadMainConfig } from 'storybook/internal/comm
 import { readConfig } from 'storybook/internal/csf-tools';
 import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
-import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import { Feature, SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
 import { getProcessAncestry } from 'process-ancestry';
 
@@ -112,7 +112,7 @@ describe('initiate integration tests', () => {
     vi.mocked(commands.executeUserPreferences).mockResolvedValue({
       newUser: true,
       installType: 'recommended' as const,
-      selectedFeatures: new Set(['test']),
+      selectedFeatures: new Set([Feature.TEST]),
     });
     vi.mocked(loadMainConfig).mockResolvedValue({
       stories: [],

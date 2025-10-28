@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectType } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { Feature } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 
@@ -35,7 +36,7 @@ describe('FinalizationCommand', () => {
       vi.mocked(fs.readFile).mockResolvedValue('node_modules/\n' as any);
       vi.mocked(fs.appendFile).mockResolvedValue(undefined);
 
-      const selectedFeatures = new Set(['docs', 'test'] as const);
+      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
 
       await command.execute({
         projectType: ProjectType.REACT,
@@ -136,7 +137,7 @@ describe('FinalizationCommand', () => {
     it('should print all selected features', async () => {
       vi.mocked(find.up).mockReturnValue(undefined);
 
-      const selectedFeatures = new Set(['docs', 'test', 'onboarding'] as const);
+      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING]);
 
       await command.execute({
         projectType: ProjectType.NEXTJS,

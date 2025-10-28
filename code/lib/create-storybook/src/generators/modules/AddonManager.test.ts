@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { SupportedBuilder } from 'storybook/internal/types';
+import { Feature, SupportedBuilder } from 'storybook/internal/types';
 
 import { AddonManager } from './AddonManager';
 
@@ -49,34 +49,38 @@ describe('AddonManager', () => {
 
   describe('getAddonsForFeatures', () => {
     it('should return empty array for no features', () => {
-      const addons = manager.getAddonsForFeatures([]);
+      const addons = manager.getAddonsForFeatures(new Set([]));
       expect(addons).toEqual([]);
     });
 
     it('should add chromatic addon for test feature', () => {
-      const addons = manager.getAddonsForFeatures(['test']);
+      const addons = manager.getAddonsForFeatures(new Set([Feature.TEST]));
       expect(addons).toContain('@chromatic-com/storybook');
     });
 
     it('should add docs addon for docs feature', () => {
-      const addons = manager.getAddonsForFeatures(['docs']);
+      const addons = manager.getAddonsForFeatures(new Set([Feature.DOCS]));
       expect(addons).toContain('@storybook/addon-docs');
     });
 
     it('should add onboarding addon for onboarding feature', () => {
-      const addons = manager.getAddonsForFeatures(['onboarding']);
+      const addons = manager.getAddonsForFeatures(new Set([Feature.ONBOARDING]));
       expect(addons).toContain('@storybook/addon-onboarding');
     });
 
     it('should add all addons for all features', () => {
-      const addons = manager.getAddonsForFeatures(['docs', 'test', 'onboarding']);
+      const addons = manager.getAddonsForFeatures(
+        new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING])
+      );
       expect(addons).toContain('@storybook/addon-docs');
       expect(addons).toContain('@chromatic-com/storybook');
       expect(addons).toContain('@storybook/addon-onboarding');
     });
 
     it('should include extra addons', () => {
-      const addons = manager.getAddonsForFeatures(['docs'], ['@storybook/addon-links']);
+      const addons = manager.getAddonsForFeatures(new Set([Feature.DOCS]), [
+        '@storybook/addon-links',
+      ]);
       expect(addons).toContain('@storybook/addon-links');
       expect(addons).toContain('@storybook/addon-docs');
     });
@@ -101,7 +105,7 @@ describe('AddonManager', () => {
   describe('configureAddons', () => {
     it('should configure addons without compiler', () => {
       const config = manager.configureAddons(
-        ['docs', 'test'],
+        new Set([Feature.DOCS, Feature.TEST]),
         [],
         SupportedBuilder.VITE,
         undefined
@@ -116,7 +120,7 @@ describe('AddonManager', () => {
     it('should include compiler addon when specified', () => {
       const webpackCompiler = vi.fn().mockReturnValue('swc');
       const config = manager.configureAddons(
-        ['docs'],
+        new Set([Feature.DOCS]),
         [],
         SupportedBuilder.WEBPACK5,
         webpackCompiler
@@ -128,7 +132,7 @@ describe('AddonManager', () => {
 
     it('should strip versions from addons in main config', () => {
       const config = manager.configureAddons(
-        ['docs'],
+        new Set([Feature.DOCS]),
         ['@storybook/addon-links@8.0.0'],
         SupportedBuilder.VITE,
         undefined
@@ -140,7 +144,7 @@ describe('AddonManager', () => {
 
     it('should keep versions in addon packages', () => {
       const config = manager.configureAddons(
-        ['test'],
+        new Set([Feature.TEST]),
         ['@storybook/addon-links@8.0.0'],
         SupportedBuilder.VITE,
         undefined
@@ -152,7 +156,7 @@ describe('AddonManager', () => {
     it('should handle all features together', () => {
       const webpackCompiler = vi.fn().mockReturnValue('swc');
       const config = manager.configureAddons(
-        ['docs', 'test', 'onboarding'],
+        new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING]),
         ['@storybook/addon-links'],
         SupportedBuilder.WEBPACK5,
         webpackCompiler
@@ -163,7 +167,7 @@ describe('AddonManager', () => {
     });
 
     it('should filter out falsy values', () => {
-      const config = manager.configureAddons([], [], SupportedBuilder.VITE, undefined);
+      const config = manager.configureAddons(new Set([]), [], SupportedBuilder.VITE, undefined);
 
       expect(config.addonsForMain).not.toContain(undefined);
       expect(config.addonsForMain).not.toContain(null);

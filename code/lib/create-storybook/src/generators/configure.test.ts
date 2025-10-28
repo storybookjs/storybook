@@ -4,6 +4,7 @@ import * as fsp from 'node:fs/promises';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { SupportedLanguage } from 'storybook/internal/cli';
+import { Feature } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -27,7 +28,7 @@ describe('configureMain', () => {
         name: '@storybook/react-vite',
       },
       frameworkPackage: '@storybook/react-vite',
-      features: [],
+      features: new Set([]),
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -61,7 +62,7 @@ describe('configureMain', () => {
         name: '@storybook/react-vite',
       },
       frameworkPackage: '@storybook/react-vite',
-      features: ['docs'],
+      features: new Set([Feature.DOCS]),
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -95,7 +96,7 @@ describe('configureMain', () => {
         name: '@storybook/react-vite',
       },
       frameworkPackage: '@storybook/react-vite',
-      features: [],
+      features: new Set([]),
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;
@@ -131,7 +132,7 @@ describe('configureMain', () => {
         name: "%%path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))%%",
       },
       frameworkPackage: '@storybook/react-webpack5',
-      features: ['docs'],
+      features: new Set([Feature.DOCS]),
     });
 
     const { calls } = vi.mocked(fsp.writeFile).mock;

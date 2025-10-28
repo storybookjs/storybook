@@ -3,7 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProjectType } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import {
+  Feature,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import * as addonA11y from '../addon-dependencies/addon-a11y';
 import * as addonVitest from '../addon-dependencies/addon-vitest';
@@ -73,7 +78,7 @@ describe('GeneratorExecutionCommand', () => {
 
   describe('execute', () => {
     it('should execute generator with all features', async () => {
-      const selectedFeatures = new Set(['docs', 'test', 'onboarding'] as const);
+      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING]);
       const options = {
         skipInstall: false,
         features: ['docs', 'test', 'onboarding'],
@@ -113,7 +118,7 @@ describe('GeneratorExecutionCommand', () => {
     });
 
     it('should pass correct options to generator', async () => {
-      const selectedFeatures = new Set(['docs', 'test'] as const);
+      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
       const options = {
         skipInstall: true,
         builder: 'vite',

@@ -7,6 +7,4 @@
 export { AddonManager } from './AddonManager';
 export type { AddonConfiguration } from './AddonManager';
 
-export { TemplateManager } from './TemplateManager';
-
 export { DependencyCalculator } from './DependencyCalculator';

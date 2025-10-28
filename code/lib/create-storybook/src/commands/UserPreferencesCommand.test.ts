@@ -5,6 +5,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder } from 'storybook/internal/types';
+import { Feature } from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector';
 import { UserPreferencesCommand } from './UserPreferencesCommand';
@@ -161,9 +162,9 @@ describe('UserPreferencesCommand', () => {
         projectType: ProjectType.REACT,
       });
 
-      expect(result.selectedFeatures.has('test')).toBe(false);
-      expect(result.selectedFeatures.has('docs')).toBe(false);
-      expect(result.selectedFeatures.has('onboarding')).toBe(false);
+      expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(false);
+      expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(false);
     });
 
     it('should validate test feature compatibility in interactive mode', async () => {
@@ -206,9 +207,9 @@ describe('UserPreferencesCommand', () => {
         projectType: ProjectType.REACT,
       });
 
-      expect(result.selectedFeatures.has('test')).toBe(false);
-      expect(result.selectedFeatures.has('docs')).toBe(true);
-      expect(result.selectedFeatures.has('onboarding')).toBe(true);
+      expect(result.selectedFeatures.has(Feature.TEST)).toBe(false);
+      expect(result.selectedFeatures.has(Feature.DOCS)).toBe(true);
+      expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
     });
   });
 });

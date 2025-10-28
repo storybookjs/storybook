@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import { Feature } from 'storybook/internal/types';
 
 import { DependencyCollector } from '../dependency-collector';
 import { DependencyInstallationCommand } from './DependencyInstallationCommand';
@@ -43,7 +44,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: false,
-        selectedFeatures: new Set(['test']),
+        selectedFeatures: new Set([Feature.TEST]),
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -57,7 +58,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: true,
-        selectedFeatures: new Set(['test']),
+        selectedFeatures: new Set([Feature.TEST]),
       });
 
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
@@ -70,7 +71,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: true,
-        selectedFeatures: new Set(['test']),
+        selectedFeatures: new Set([Feature.TEST]),
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -86,7 +87,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: true,
-        selectedFeatures: new Set(['test']),
+        selectedFeatures: new Set([Feature.TEST]),
       });
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
@@ -105,7 +106,7 @@ describe('DependencyInstallationCommand', () => {
         command.execute({
           packageManager: mockPackageManager,
           skipInstall: false,
-          selectedFeatures: new Set(['test']),
+          selectedFeatures: new Set([Feature.TEST]),
         })
       ).rejects.toThrow('Installation failed');
     });
@@ -114,7 +115,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: false,
-        selectedFeatures: new Set(['test']),
+        selectedFeatures: new Set([Feature.TEST]),
       });
 
       expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
@@ -125,7 +126,7 @@ describe('DependencyInstallationCommand', () => {
       await command.execute({
         packageManager: mockPackageManager,
         skipInstall: false,
-        selectedFeatures: new Set(['docs']),
+        selectedFeatures: new Set([Feature.DOCS]),
       });
 
       expect(dependencyCollector.getAllPackages()).not.toContain('vitest');

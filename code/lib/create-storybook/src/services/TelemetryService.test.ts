@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProjectType } from 'storybook/internal/cli';
 import { telemetry } from 'storybook/internal/telemetry';
+import { Feature } from 'storybook/internal/types';
 
 import { getProcessAncestry } from 'process-ancestry';
 
@@ -118,7 +119,7 @@ describe('TelemetryService', () => {
   describe('trackInitWithContext', () => {
     it('should track init with version and CLI integration from ancestry', async () => {
       const telemetryService = new TelemetryService(false);
-      const selectedFeatures = new Set(['docs', 'test'] as const);
+      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
 
       vi.mocked(getProcessAncestry).mockReturnValue([
         { command: 'npx storybook@8.0.5 init' },
@@ -167,7 +168,7 @@ describe('TelemetryService', () => {
 
     it('should not track when telemetry is disabled', async () => {
       const telemetryService = new TelemetryService(true);
-      const selectedFeatures = new Set(['docs'] as const);
+      const selectedFeatures = new Set([Feature.DOCS]);
 
       await telemetryService.trackInitWithContext(ProjectType.ANGULAR, selectedFeatures, true);
 

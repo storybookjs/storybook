@@ -1,14 +1,11 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 
-import { Button, Link } from 'storybook/internal/components';
+import { Link } from 'storybook/internal/components';
 
-import { universalChecklistStore } from '#manager-stores';
-import { checklistStore } from '#manager-stores';
-import { experimental_useUniversalStore } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { useChecklist } from '../components/sidebar/useChecklist';
 import { Checklist } from './Checklist/Checklist';
-import { checklistData } from './Checklist/checklistData';
 
 const Container = styled.div(({ theme }) => ({
   display: 'flex',
@@ -38,9 +35,7 @@ const Intro = styled.div(({ theme }) => ({
 }));
 
 export const GuidePage = () => {
-  const allTaskIds = checklistData.sections.flatMap(({ items }) => items.map(({ id }) => id));
-  const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
-  const { muted } = checklistState;
+  const checklist = useChecklist();
 
   return (
     <Container>
@@ -51,16 +46,18 @@ export const GuidePage = () => {
           up software so get to it!
         </p>
       </Intro>
-      <Checklist data={checklistData} state={checklistState} store={checklistStore} />
-      {muted ? (
+      <Checklist {...checklist} />
+      {checklist.muted ? (
         <center>
           Want to see this in the sidebar?{' '}
-          <Link onClick={() => checklistStore.mute(false)}>Show in sidebar</Link>
+          <Link onClick={() => checklist.mute(false)}>Show in sidebar</Link>
         </center>
       ) : (
         <center>
           Don&apos;t want to see this in the sidebar?{' '}
-          <Link onClick={() => checklistStore.mute(allTaskIds)}>Remove from sidebar</Link>
+          <Link onClick={() => checklist.mute(checklist.allItems.map(({ id }) => id))}>
+            Remove from sidebar
+          </Link>
         </center>
       )}
     </Container>

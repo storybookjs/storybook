@@ -255,7 +255,18 @@ describe('mcpServerHandler', () => {
 		const { response, getResponseData } = createMockServerResponse();
 		const mockNext = vi.fn() as Connect.NextFunction;
 
-		await mcpServerHandler(mockReq, response, mockNext, mockOptions as any);
+		await mcpServerHandler({
+			req: mockReq,
+			res: response,
+			next: mockNext,
+			options: mockOptions as any,
+			addonOptions: {
+				toolsets: {
+					storiesDevelopment: true,
+					componentDocumentation: true,
+				},
+			},
+		});
 
 		const { body } = getResponseData();
 		expect(response.end).toHaveBeenCalled();
@@ -306,7 +317,18 @@ describe('mcpServerHandler', () => {
 		(handler as any).transport = undefined;
 		(handler as any).origin = undefined;
 
-		await mcpServerHandler(mockReq, response, mockNext, mockOptions as any);
+		await mcpServerHandler({
+			req: mockReq,
+			res: response,
+			next: mockNext,
+			options: mockOptions as any,
+			addonOptions: {
+				toolsets: {
+					storiesDevelopment: true,
+					componentDocumentation: true,
+				},
+			},
+		});
 
 		// Verify handler completes successfully when telemetry is disabled
 		expect(response.end).toHaveBeenCalled();
@@ -345,18 +367,31 @@ describe('mcpServerHandler', () => {
 		const { response } = createMockServerResponse();
 		const mockNext = vi.fn() as Connect.NextFunction;
 
-		await freshHandler(mockReq, response, mockNext, mockOptions as any);
+		await freshHandler({
+			req: mockReq,
+			res: response,
+			next: mockNext,
+			options: mockOptions as any,
+			addonOptions: {
+				toolsets: {
+					storiesDevelopment: true,
+					componentDocumentation: true,
+				},
+			},
+		});
 
 		// Verify component tools were registered
 		expect(addListAllComponentsTool).toHaveBeenCalledExactlyOnceWith(
 			expect.objectContaining({
 				tool: expect.any(Function),
 			}),
+			expect.any(Function),
 		);
 		expect(addGetComponentDocumentationTool).toHaveBeenCalledExactlyOnceWith(
 			expect.objectContaining({
 				tool: expect.any(Function),
 			}),
+			expect.any(Function),
 		);
 	});
 });

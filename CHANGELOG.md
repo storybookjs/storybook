@@ -1,3 +1,9 @@
+## 9.1.16
+
+- CLI: Fix Nextjs project creation in empty directories - [#32828](https://github.com/storybookjs/storybook/pull/32828), thanks @yannbf!
+- Core: Add `experimental_devServer` preset - [#32862](https://github.com/storybookjs/storybook/pull/32862), thanks @yannbf!
+- Telemetry: Fix preview-first-load event - [#32859](https://github.com/storybookjs/storybook/pull/32859), thanks @shilman!
+
 ## 9.1.15
 
 - Core: Add `preview-first-load` telemetry - [#32770](https://github.com/storybookjs/storybook/pull/32770), thanks @shilman!

@@ -37,25 +37,8 @@ export const componentManifestGenerator = async () => {
         const id = entry.id.split('--')[0];
         const importPath = entry.importPath;
 
-        const base = {
-          id,
-          path: importPath,
-          examples: [],
-          jsDocTags: {},
-        } satisfies Partial<ComponentManifest>;
-
-        if (!componentName) {
-          const message =
-            'Specify meta.component for the component to be included in the manifest.';
-          return {
-            ...base,
-            error: {
-              message: csf._metaStatementPath?.buildCodeFrameError(message).message ?? message,
-            },
-          };
-        }
-
         const name = componentName;
+
         const examples = Object.entries(csf._storyDeclarationPath)
           .map(([storyName, path]) => {
             try {
@@ -75,6 +58,24 @@ export const componentManifestGenerator = async () => {
             }
           })
           .filter(Boolean);
+
+        const base = {
+          id,
+          path: importPath,
+          examples,
+          jsDocTags: {},
+        } satisfies Partial<ComponentManifest>;
+
+        if (!componentName) {
+          const message =
+            'Specify meta.component for reactDocgen data to be included in the manifest.';
+          return {
+            ...base,
+            error: {
+              message: csf._metaStatementPath?.buildCodeFrameError(message).message ?? message,
+            },
+          };
+        }
 
         if (!entry.componentPath) {
           const message = `No component file found for the "${name}" component.`;

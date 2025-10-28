@@ -26,6 +26,7 @@ export async function addGetStoryUrlsTool(
 			title: "Get stories' URLs",
 			description: `Get the URL for one or more stories.`,
 			schema: GetStoryUrlsInput,
+			enabled: () => server.ctx.custom?.toolsets?.storiesDevelopment ?? true,
 		},
 		async (input: GetStoryUrlsInput) => {
 			try {

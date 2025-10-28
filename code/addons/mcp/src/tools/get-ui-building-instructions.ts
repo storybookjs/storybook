@@ -1,9 +1,7 @@
 import type { McpServer } from 'tmcp';
-import * as v from 'valibot';
 import { GET_STORY_URLS_TOOL_NAME } from './get-story-urls.ts';
 import { collectTelemetry } from '../telemetry.ts';
 import uiInstructionsTemplate from '../ui-building-instructions.md';
-import { logger } from 'storybook/internal/node-logger';
 import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
 
@@ -21,6 +19,7 @@ export async function addGetUIBuildingInstructionsTool(
       
       ALWAYS call this tool before doing any UI/frontend/React/component development, including but not
       limited to adding or updating new components, pages, screens or layouts.`,
+			enabled: () => server.ctx.custom?.toolsets?.storiesDevelopment ?? true,
 		},
 		async () => {
 			try {

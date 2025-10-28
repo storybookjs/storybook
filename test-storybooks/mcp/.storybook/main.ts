@@ -10,7 +10,18 @@ const config = defineMain({
 			files: '**/*.stories.@(js|jsx|ts|tsx)',
 		},
 	],
-	addons: ['@storybook/addon-docs', '@storybook/addon-mcp'],
+	addons: [
+		'@storybook/addon-docs',
+		{
+			name: '@storybook/addon-mcp',
+			options: {
+				toolsets: {
+					// storiesDevelopment: false,
+					// componentDocumentation: false,
+				},
+			},
+		},
+	],
 	framework: '@storybook/react-vite',
 	logLevel: 'debug',
 	core: {

@@ -7,6 +7,7 @@ export const LIST_TOOL_NAME = 'list-all-components';
 
 export async function addListAllComponentsTool(
 	server: McpServer<any, StorybookContext>,
+	enabled?: Parameters<McpServer<any, StorybookContext>['tool']>[0]['enabled'],
 ) {
 	server.tool(
 		{
@@ -14,6 +15,7 @@ export async function addListAllComponentsTool(
 			title: 'List All Components',
 			description:
 				'List all available UI components from the component library',
+			enabled,
 		},
 		async () => {
 			try {

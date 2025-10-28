@@ -94,7 +94,6 @@ export const getVitestSWCTransformConfig = ({
       type: isEsmProject && !useCjsModules ? "es6" : "commonjs",
     },
     disableNextSsg: !isPageFile,
-    disablePageConfig: true,
     isPageFile,
     pagesDir: nextDirectories.pagesDir,
     appDir: nextDirectories.appDir,

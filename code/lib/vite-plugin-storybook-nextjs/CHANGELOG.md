@@ -1,3 +1,27 @@
+# v3.0.0 (Fri Oct 24 2025)
+
+#### 💥 Breaking Change
+
+- Support next 16 [#62](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/62) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
+# v2.0.8 (Mon Oct 06 2025)
+
+#### 🐛 Bug Fix
+
+- Fix when addon-docs isn't installed [#60](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/60) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
 # v2.0.7 (Tue Aug 26 2025)
 
 #### 🐛 Bug Fix

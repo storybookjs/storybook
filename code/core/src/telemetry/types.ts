@@ -37,7 +37,6 @@ export type EventType =
   | 'automigrate'
   | 'migrate'
   | 'preview-first-load';
-
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -93,6 +92,10 @@ export interface Payload {
   [key: string]: any;
 }
 
+export interface Context {
+  [key: string]: any;
+}
+
 export interface Options {
   retryDelay: number;
   immediate: boolean;
@@ -106,4 +109,18 @@ export interface TelemetryData {
   eventType: EventType;
   payload: Payload;
   metadata?: StorybookMetadata;
+}
+
+export interface TelemetryEvent extends TelemetryData {
+  eventId: string;
+  sessionId: string;
+  context: Context;
+}
+
+export interface InitPayload {
+  projectType: string;
+  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean };
+  newUser: boolean;
+  versionSpecifier: string | undefined;
+  cliIntegration: string | undefined;
 }

@@ -6095,9 +6095,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-designs@npm:10.0.3--canary.67522d1.0":
-  version: 10.0.3--canary.67522d1.0
-  resolution: "@storybook/addon-designs@npm:10.0.3--canary.67522d1.0"
+"@storybook/addon-designs@npm:^11.0.0":
+  version: 11.0.0
+  resolution: "@storybook/addon-designs@npm:11.0.0"
   dependencies:
     "@figspec/react": "npm:^1.0.0"
   peerDependencies:
@@ -6112,7 +6112,7 @@ __metadata:
       optional: true
     react-dom:
       optional: true
-  checksum: 10c0/050fa029304f998904944300c19a9fa85393e7177b0a84a2125fbccce55c21c4edd2be58a94ca27d1164d67bee07a5b4b09ca1e933c794987b2426857875e542
+  checksum: 10c0/c3e6ae2b55b6d4bae31af213aa92796c20e419e53e133504f3e1f666d4aff591112ef988748497fdd72fd10e56af32dda5caa3998d9b76b889cee0074f69b407
   languageName: node
   linkType: hard
 
@@ -6548,7 +6548,7 @@ __metadata:
     semver: "npm:^7.3.5"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.8.3"
-    vite-plugin-storybook-nextjs: "npm:^3.0.0"
+    vite-plugin-storybook-nextjs: "npm:^3.0.1"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -6847,7 +6847,7 @@ __metadata:
     "@nx/workspace": "npm:20.8.2"
     "@playwright/test": "npm:1.52.0"
     "@storybook/addon-a11y": "workspace:*"
-    "@storybook/addon-designs": "npm:10.0.3--canary.67522d1.0"
+    "@storybook/addon-designs": "npm:^11.0.0"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-onboarding": "workspace:*"
@@ -26263,9 +26263,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "vite-plugin-storybook-nextjs@npm:3.0.0"
+"vite-plugin-storybook-nextjs@npm:^3.0.1":
+  version: 3.0.1
+  resolution: "vite-plugin-storybook-nextjs@npm:3.0.1"
   dependencies:
     "@next/env": "npm:16.0.0"
     image-size: "npm:^2.0.0"
@@ -26277,7 +26277,7 @@ __metadata:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
     storybook: ^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
-  checksum: 10c0/bb460ddab4d46a98bdd1525c7f18117a0a335a3500243534955532b5a209d3e63aad369a96a669618dd13b785cabe74560b4439ce063c953c51b9ab44abb7b10
+  checksum: 10c0/f3962c8bd403afdcf8d1b1f02f32388733008e9cae35f94e1fdb47a658a4cef622e11e4f86bb66ab99a484a8ce89b519bc432782e0f965a0fd82b223354e6ac0
   languageName: node
   linkType: hard
 
@@ -26349,62 +26349,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:^5.0.0 || ^6.0.0 || ^7.0.0-0, vite@npm:^7.0.4":
-  version: 7.1.5
-  resolution: "vite@npm:7.1.5"
-  dependencies:
-    esbuild: "npm:^0.25.0"
-    fdir: "npm:^6.5.0"
-    fsevents: "npm:~2.3.3"
-    picomatch: "npm:^4.0.3"
-    postcss: "npm:^8.5.6"
-    rollup: "npm:^4.43.0"
-    tinyglobby: "npm:^0.2.15"
-  peerDependencies:
-    "@types/node": ^20.19.0 || >=22.12.0
-    jiti: ">=1.21.0"
-    less: ^4.0.0
-    lightningcss: ^1.21.0
-    sass: ^1.70.0
-    sass-embedded: ^1.70.0
-    stylus: ">=0.54.8"
-    sugarss: ^5.0.0
-    terser: ^5.16.0
-    tsx: ^4.8.1
-    yaml: ^2.4.2
-  dependenciesMeta:
-    fsevents:
-      optional: true
-  peerDependenciesMeta:
-    "@types/node":
-      optional: true
-    jiti:
-      optional: true
-    less:
-      optional: true
-    lightningcss:
-      optional: true
-    sass:
-      optional: true
-    sass-embedded:
-      optional: true
-    stylus:
-      optional: true
-    sugarss:
-      optional: true
-    terser:
-      optional: true
-    tsx:
-      optional: true
-    yaml:
-      optional: true
-  bin:
-    vite: bin/vite.js
-  checksum: 10c0/782d2f20c25541b26d1fb39bef5f194149caff39dc25b7836e25f049ca919f2e2ce186bddb21f3f20f6195354b3579ec637a8ca08d65b117f8b6f81e3e730a9c
-  languageName: node
-  linkType: hard
-
-"vite@npm:^6.0.0 || ^7.0.0":
+"vite@npm:^5.0.0 || ^6.0.0 || ^7.0.0-0, vite@npm:^6.0.0 || ^7.0.0, vite@npm:^7.0.4":
   version: 7.1.12
   resolution: "vite@npm:7.1.12"
   dependencies:

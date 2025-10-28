@@ -278,11 +278,14 @@ export default async function postInstall(options: PostinstallOptions) {
       logger.log(`  ${rootConfig}`);
 
       const formattedContent = await formatFileContent(rootConfig, generate(target).code);
+      // Only add triple slash reference to vite.config files, not vitest.config files
+      // vitest.config files already have the vitest/config types available
+      const shouldAddReference = !configFileHasTypeReference && !vitestConfigFile;
       await writeFile(
         rootConfig,
-        configFileHasTypeReference
-          ? formattedContent
-          : '/// <reference types="vitest/config" />\n' + formattedContent
+        shouldAddReference
+          ? '/// <reference types="vitest/config" />\n' + formattedContent
+          : formattedContent
       );
     } else {
       logger.error(dedent`

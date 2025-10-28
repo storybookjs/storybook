@@ -50,6 +50,9 @@ export async function storybookDevServer(options: Options) {
 
   (await getMiddleware(options.configDir))(app);
 
+  // Apply experimental_devServer preset to allow addons/frameworks to extend the dev server with middlewares, etc.
+  await options.presets.apply('experimental_devServer', app);
+
   const { port, host, initialPath } = options;
   invariant(port, 'expected options to have a port');
   const proto = options.https ? 'https' : 'http';

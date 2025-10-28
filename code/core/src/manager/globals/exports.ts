@@ -497,7 +497,10 @@ export default {
     'EmptyTabContent',
     'ErrorFormatter',
     'FlexBar',
+    'FocusOutline',
     'FocusProxy',
+    'FocusRing',
+    'FocusTarget',
     'Form',
     'H1',
     'H2',
@@ -552,6 +555,7 @@ export default {
     'interleaveSeparators',
     'nameSpaceClassNames',
     'resetComponents',
+    'useLocationHash',
     'withReset',
   ],
   'storybook/internal/core-events': [

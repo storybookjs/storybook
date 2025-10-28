@@ -20,7 +20,11 @@ import {
 import { vitePluginNextDynamic } from "./plugins/next-dynamic/plugin";
 import { vitePluginNextImage } from "./plugins/next-image/plugin";
 import { vitePluginNextMocks } from "./plugins/next-mocks/plugin";
-import { getExecutionEnvironment, isVitestEnv } from "./utils";
+import {
+  getExecutionEnvironment,
+  getNextjsMajorVersion,
+  isVitestEnv,
+} from "./utils";
 
 const require = createRequire(import.meta.url);
 const loadConfig: typeof nextServerConfig =
@@ -33,16 +37,6 @@ type VitePluginOptions = {
    * @default process.cwd()
    */
   dir?: string;
-};
-
-const getNextjsMajorVersion = (): number => {
-  try {
-    const content = readFileSync(require.resolve("next/package.json"), "utf8");
-    const { version } = JSON.parse(content);
-    return Number.parseInt(version.split(".")[0], 10);
-  } catch (error) {
-    return 16;
-  }
 };
 
 function VitePlugin({

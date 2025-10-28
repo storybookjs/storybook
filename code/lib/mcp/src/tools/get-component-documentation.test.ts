@@ -333,4 +333,93 @@ describe('getComponentDocumentationTool', () => {
 			notFoundIds: ['non-existent'],
 		});
 	});
+
+	it('should include props section when reactDocgen is present', async () => {
+		const manifestWithReactDocgen = {
+			v: 1,
+			components: {
+				button: {
+					id: 'button',
+					name: 'Button',
+					description: 'A button component',
+					reactDocgen: {
+						props: {
+							variant: {
+								description: 'Button style variant',
+								required: false,
+								defaultValue: { value: '"primary"', computed: false },
+								tsType: {
+									name: 'union',
+									raw: '"primary" | "secondary"',
+									elements: [
+										{ name: 'literal', value: '"primary"' },
+										{ name: 'literal', value: '"secondary"' },
+									],
+								},
+							},
+							disabled: {
+								description: 'Disable the button',
+								required: false,
+								tsType: {
+									name: 'boolean',
+								},
+							},
+						},
+					},
+				},
+			},
+		};
+
+		getManifestSpy.mockResolvedValue(manifestWithReactDocgen);
+
+		const request = {
+			jsonrpc: '2.0' as const,
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: GET_TOOL_NAME,
+				arguments: {
+					componentIds: ['button'],
+				},
+			},
+		};
+
+		const response = await server.receive(request);
+
+		expect(response.result).toMatchInlineSnapshot(`
+			{
+			  "content": [
+			    {
+			      "text": "<component>
+			<id>button</id>
+			<name>Button</name>
+			<description>
+			A button component
+			</description>
+			<props>
+			<prop>
+			<prop_name>variant</prop_name>
+			<prop_description>
+			Button style variant
+			</prop_description>
+			<prop_type>"primary" | "secondary"</prop_type>
+			<prop_required>false</prop_required>
+			<prop_default>"primary"</prop_default>
+			</prop>
+			<prop>
+			<prop_name>disabled</prop_name>
+			<prop_description>
+			Disable the button
+			</prop_description>
+			<prop_type>boolean</prop_type>
+			<prop_required>false</prop_required>
+			</prop>
+			</props>
+			</component>",
+			      "type": "text",
+			    },
+			  ],
+			}
+		`);
+	});
 });

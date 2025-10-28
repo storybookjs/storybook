@@ -6,9 +6,6 @@ It enables a workflow where for each UI component created, the agent will automa
 
 The addon provides tools to improve agents' UI development capabilities, retrieve story URLs, and access component documentation.
 
-> [!IMPORTANT]
-> This addon currently only supports Vite-based Storybook setups, such as [`@storybook/react-vite`](https://storybook.js.org/docs/get-started/frameworks/react-vite), [`@storybook/nextjs-vite`](https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite), and [`@storybook/sveltekit`](https://storybook.js.org/docs/get-started/frameworks/sveltekit).
-
 <div align="center">
    <img src="https://storybook.js.org/embed/addon-mcp-claude-code-showcase.gif" alt="Storybook MCP Addon Demo" />
 </div>
@@ -18,7 +15,7 @@ The addon provides tools to improve agents' UI development capabilities, retriev
 ### Installation and Setup
 
 > [!NOTE]
-> This addon requires Storybook 9.0 or higher.
+> This addon requires Storybook 10.1 or higher, currently only available as the canary version `0.0.0-pr-32810-sha-6e759c7e`.
 
 Use Storybook's CLI to automatically install and configure the addon:
 
@@ -128,8 +125,7 @@ These additional tools are available when the **experimental** component manifes
 
 **Requirements:**
 
-- Storybook v10.1 or later (prereleases), currently available as [canary version `0.0.0-pr-32810-sha-af0645cd`](https://www.npmjs.com/package/storybook/v/0.0.0-pr-32810-sha-af0645cd)
-- React-based framework (`react-vite`, `nextjs-vite`)
+- React-based framework (`react-vite`, `nextjs-vite`, `nextjs`, `react-webpack5`)
 - Feature flag `features.experimentalComponentsManifest` set to `true` in `.storybook/main.js`
 
 **To enable:**

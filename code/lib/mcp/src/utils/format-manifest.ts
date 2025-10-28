@@ -1,5 +1,6 @@
 import type { ComponentManifest, ComponentManifestMap } from '../types.ts';
 import { dedent } from './dedent.ts';
+import { parseReactDocgen } from './parse-react-docgen.ts';
 
 export function formatComponentManifest(
 	componentManifest: ComponentManifest,
@@ -46,7 +47,43 @@ export function formatComponentManifest(
 		}
 	}
 
-	// TODO: props section
+	if (componentManifest.reactDocgen) {
+		const parsedDocgen = parseReactDocgen(componentManifest.reactDocgen);
+		const propEntries = Object.entries(parsedDocgen.props);
+
+		if (propEntries.length > 0) {
+			parts.push('<props>');
+			for (const [propName, propInfo] of propEntries) {
+				parts.push(dedent`<prop>
+					<prop_name>${propName}</prop_name>`);
+
+				if (propInfo.description !== undefined) {
+					parts.push(dedent`<prop_description>
+						${propInfo.description}
+						</prop_description>`);
+				}
+
+				if (propInfo.type !== undefined) {
+					parts.push(dedent`<prop_type>${propInfo.type}</prop_type>`);
+				}
+
+				if (propInfo.required !== undefined) {
+					parts.push(
+						dedent`<prop_required>${propInfo.required}</prop_required>`,
+					);
+				}
+
+				if (propInfo.defaultValue !== undefined) {
+					parts.push(
+						dedent`<prop_default>${propInfo.defaultValue}</prop_default>`,
+					);
+				}
+
+				parts.push('</prop>');
+			}
+			parts.push('</props>');
+		}
+	}
 
 	parts.push('</component>');
 

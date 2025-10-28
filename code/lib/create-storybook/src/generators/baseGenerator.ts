@@ -267,9 +267,7 @@ export async function baseGenerator(
 
   taskLog.message(`- Configuring main.js`);
   await configureMain({
-    framework: {
-      name: frameworkPackagePath,
-    },
+    framework: frameworkPackagePath,
     features,
     frameworkPackage,
     prefixes,

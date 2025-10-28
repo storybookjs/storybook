@@ -134,16 +134,7 @@ const hasFrameworkTemplates = (framework?: string) => {
 export async function baseGenerator(
   packageManager: JsPackageManager,
   npmOptions: NpmOptions,
-  {
-    language,
-    builder,
-    framework,
-    renderer,
-    pnp,
-    frameworkPreviewParts,
-    features,
-    dependencyCollector,
-  }: GeneratorOptions,
+  { language, builder, framework, renderer, pnp, features, dependencyCollector }: GeneratorOptions,
   _options: FrameworkOptions
 ) {
   const options = { ...defaultOptions, ..._options };
@@ -295,7 +286,7 @@ export async function baseGenerator(
   taskLog.message(`- Configuring preview.js`);
 
   await configurePreview({
-    frameworkPreviewParts,
+    frameworkPreviewParts: _options.frameworkPreviewParts,
     storybookConfigFolder: storybookConfigFolder as string,
     language,
     frameworkPackage,

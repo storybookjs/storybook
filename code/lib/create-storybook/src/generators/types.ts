@@ -41,6 +41,7 @@ export interface FrameworkOptions {
   skipGenerator?: boolean;
   storybookCommand?: string;
   shouldRunDev?: boolean;
+  frameworkPreviewParts?: FrameworkPreviewParts;
 }
 
 export type Generator<T = Record<string, any>> = (

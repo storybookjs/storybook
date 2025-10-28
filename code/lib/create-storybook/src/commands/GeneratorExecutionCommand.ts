@@ -4,7 +4,12 @@ import { type JsPackageManager } from 'storybook/internal/common';
 import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import { baseGenerator } from '../generators/baseGenerator';
-import type { CommandOptions, GeneratorFeature, GeneratorModule } from '../generators/types';
+import type {
+  CommandOptions,
+  GeneratorFeature,
+  GeneratorModule,
+  GeneratorOptions,
+} from '../generators/types';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 
 export type GeneratorExecutionResult = (
@@ -128,7 +133,7 @@ export class GeneratorExecutionCommand {
       projectType,
       features: options.features || [],
       dependencyCollector: this.dependencyCollector,
-    };
+    } as GeneratorOptions;
 
     if (frameworkOptions.skipGenerator) {
       return {

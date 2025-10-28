@@ -48,6 +48,10 @@ const Line = styled.div<{ duration: number }>(({ 'aria-hidden': ariaHidden, dura
     transform: `translateY(0)`,
     opacity: 1,
   },
+
+  '@media (prefers-reduced-motion: reduce)': {
+    transitionDuration: '0ms',
+  },
 }));
 
 export const TextFlip = ({

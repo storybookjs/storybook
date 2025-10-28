@@ -1,4 +1,4 @@
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 
 import { createRequire } from "node:module";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
@@ -10,6 +10,7 @@ import { vitePluginNextFont } from "./plugins/next-font/plugin";
 import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
 
 import "./polyfills/promise-with-resolvers";
+import { readFileSync } from "node:fs";
 import nextServerConfig from "next/dist/server/config.js";
 import {
   PHASE_DEVELOPMENT_SERVER,
@@ -34,6 +35,16 @@ type VitePluginOptions = {
   dir?: string;
 };
 
+const getNextjsMajorVersion = (): number => {
+  try {
+    const content = readFileSync(require.resolve("next/package.json"), "utf8");
+    const { version } = JSON.parse(content);
+    return Number.parseInt(version.split(".")[0], 10);
+  } catch (error) {
+    return 16;
+  }
+};
+
 function VitePlugin({
   dir = process.cwd(),
 }: VitePluginOptions = {}): (Plugin | Promise<Plugin>)[] {
@@ -52,6 +63,8 @@ function VitePlugin({
             : env.mode === "test"
               ? PHASE_TEST
               : PHASE_PRODUCTION_BUILD;
+
+        const isNext16orNewer = getNextjsMajorVersion() >= 16;
 
         nextConfigResolver.resolve(await loadConfig(phase, resolvedDir));
 
@@ -117,7 +130,6 @@ function VitePlugin({
               "next/dist/client/components/redirect-boundary",
               "next/dist/client/head-manager",
               "next/dist/client/components/is-next-router-error",
-              "next/config",
               "next/dist/shared/lib/segment",
               "styled-jsx",
               "styled-jsx/style",
@@ -131,7 +143,7 @@ function VitePlugin({
               // Refer to this pnpm issue for more details:
               // https://github.com/vitejs/vite/issues/16293
               "next > styled-jsx/style",
-            ],
+            ].concat(!isNext16orNewer ? ["next/config"] : []),
           },
           test: {
             alias: {

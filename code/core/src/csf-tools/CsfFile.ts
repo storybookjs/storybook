@@ -297,6 +297,9 @@ export class CsfFile {
 
   _storyExports: Record<string, t.VariableDeclarator | t.FunctionDeclaration> = {};
 
+  _storyDeclarationPath: Record<string, NodePath<t.VariableDeclarator | t.FunctionDeclaration>> =
+    {};
+
   _storyPaths: Record<string, NodePath<t.ExportNamedDeclaration>> = {};
 
   _metaStatement: t.Statement | undefined;
@@ -536,23 +539,28 @@ export class CsfFile {
       ExportNamedDeclaration: {
         enter(path) {
           const { node, parent } = path;
+          const declaration = path.get('declaration');
           let declarations;
-          if (t.isVariableDeclaration(node.declaration)) {
-            declarations = node.declaration.declarations.filter((d) => t.isVariableDeclarator(d));
-          } else if (t.isFunctionDeclaration(node.declaration)) {
-            declarations = [node.declaration];
+          if (declaration.isVariableDeclaration()) {
+            declarations = declaration.get('declarations').filter((d) => d.isVariableDeclarator());
+          } else if (declaration.isFunctionDeclaration()) {
+            declarations = [declaration];
           }
           if (declarations) {
             // export const X = ...;
-            declarations.forEach((decl: t.VariableDeclarator | t.FunctionDeclaration) => {
-              if (t.isIdentifier(decl.id)) {
+            declarations.forEach((declPath) => {
+              const decl = declPath.node;
+              const id = declPath.node.id;
+
+              if (t.isIdentifier(id)) {
                 let storyIsFactory = false;
-                const { name: exportName } = decl.id;
-                if (exportName === '__namedExportsOrder' && t.isVariableDeclarator(decl)) {
-                  self._namedExportsOrder = parseExportsOrder(decl.init as t.Expression);
+                const { name: exportName } = id;
+                if (exportName === '__namedExportsOrder' && declPath.isVariableDeclarator()) {
+                  self._namedExportsOrder = parseExportsOrder(declPath.node.init as t.Expression);
                   return;
                 }
                 self._storyExports[exportName] = decl;
+                self._storyDeclarationPath[exportName] = declPath;
                 self._storyPaths[exportName] = path;
                 self._storyStatements[exportName] = node;
                 let name = storyNameFromExport(exportName);

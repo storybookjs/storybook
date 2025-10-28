@@ -56,12 +56,13 @@ export const componentManifestGenerator = async () => {
         }
 
         const name = componentName;
-        const examples = Object.entries(csf._storyPaths)
+        const examples = Object.entries(csf._storyDeclarationPath)
           .map(([storyName, path]) => {
             try {
               return {
                 name: storyName,
-                snippet: recast.print(getCodeSnippet(path, csf._metaNode ?? null, name)).code,
+                snippet: recast.print(getCodeSnippet(path, storyName, csf._metaNode ?? null, name))
+                  .code,
               };
             } catch (e) {
               invariant(e instanceof Error);

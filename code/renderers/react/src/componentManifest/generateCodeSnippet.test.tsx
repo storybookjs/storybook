@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest';
 
 import { recast } from 'storybook/internal/babel';
-import type { NodePath } from 'storybook/internal/babel';
 import { types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
@@ -13,10 +12,8 @@ function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
   const component = csf._meta?.component ?? 'Unknown';
 
-  const snippets = Object.values(csf._storyPaths)
-    .map((path: NodePath<t.ExportNamedDeclaration>) =>
-      getCodeSnippet(path, csf._metaNode ?? null, component)
-    )
+  const snippets = Object.entries(csf._storyDeclarationPath)
+    .map(([name, path]) => getCodeSnippet(path, name, csf._metaNode ?? null, component))
     .filter(Boolean);
 
   return recast.print(t.program(snippets)).code;
@@ -514,5 +511,26 @@ test('top level args injection and spreading in different places', async () => {
         <Button disabled={false} count={0} empty="" />
         <Button disabled={false} count={0} empty="" />
     </div>;"
+  `);
+});
+
+test('allow top level export functions', async () => {
+  const input = withCSF3(dedent`
+    export function Usage(args) {
+      return (
+        <div style={{ padding: 40 }}>
+          <Button {...args}></Button>
+        </div>
+      );
+    }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "function Usage(args) {
+      return (
+        <div style={{ padding: 40 }}>
+          <Button {...args}></Button>
+        </div>
+      );
+    }"
   `);
 });

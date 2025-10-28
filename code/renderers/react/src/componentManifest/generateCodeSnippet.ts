@@ -16,39 +16,34 @@ function buildInvalidSpread(entries: Array<[string, t.Node]>): t.JSXSpreadAttrib
 }
 
 export function getCodeSnippet(
-  storyExportPath: NodePath<t.ExportNamedDeclaration>,
+  storyDeclaration: NodePath<t.VariableDeclarator | t.FunctionDeclaration>,
+  storyName: string,
   metaObj: t.ObjectExpression | null | undefined,
   componentName?: string
-): t.VariableDeclaration {
-  const declaration = storyExportPath.get('declaration');
-  invariant(
-    declaration.isVariableDeclaration(),
-    () => storyExportPath.buildCodeFrameError('Expected story to be a variable declaration').message
-  );
+): t.VariableDeclaration | t.FunctionDeclaration {
+  let storyPath: NodePath<t.FunctionDeclaration | t.Expression>;
 
-  const declarations = declaration.get('declarations');
-  invariant(
-    declarations.length === 1,
-    storyExportPath.buildCodeFrameError('Expected one story declaration').message
-  );
+  if (storyDeclaration.isFunctionDeclaration()) {
+    storyPath = storyDeclaration;
+  } else if (storyDeclaration.isVariableDeclarator()) {
+    const init = storyDeclaration.get('init');
+    invariant(
+      init.isExpression(),
+      () =>
+        storyDeclaration.buildCodeFrameError('Expected story initializer to be an expression')
+          .message
+    );
+    storyPath = init;
+  } else {
+    throw storyDeclaration.buildCodeFrameError(
+      'Expected story to be a function or variable declaration'
+    );
+  }
 
-  const declarator = declarations[0];
-  const init = declarator.get('init');
-  invariant(
-    init.isExpression(),
-    () => declarator.buildCodeFrameError('Expected story initializer to be an expression').message
-  );
+  let normalizedPath: NodePath<t.FunctionDeclaration | t.Expression> = storyPath;
 
-  const storyId = declarator.get('id');
-  invariant(
-    storyId.isIdentifier(),
-    () => declaration.buildCodeFrameError('Expected story to have a name').message
-  );
-
-  let normalizedInit: NodePath<t.Expression> = init;
-
-  if (init.isCallExpression()) {
-    const callee = init.get('callee');
+  if (storyPath.isCallExpression()) {
+    const callee = storyPath.get('callee');
     // Handle Template.bind({}) pattern by resolving the identifier's initialization
     if (callee.isMemberExpression()) {
       const obj = callee.get('object');
@@ -58,50 +53,54 @@ export function getCodeSnippet(
         (t.isStringLiteral((prop as any).node) &&
           ((prop as any).node as t.StringLiteral).value === 'bind');
       if (obj.isIdentifier() && isBind) {
-        const resolved = resolveBindIdentifierInit(storyExportPath, obj);
+        const resolved = resolveBindIdentifierInit(storyDeclaration, obj);
         if (resolved) {
-          normalizedInit = resolved;
+          normalizedPath = resolved;
         }
       }
     }
 
     // Fallback: treat call expression as story factory and use first argument
-    if (init === normalizedInit) {
-      const args = init.get('arguments');
+    if (storyPath === normalizedPath) {
+      const args = storyPath.get('arguments');
       invariant(
         args.length === 1,
-        () => init.buildCodeFrameError('Could not evaluate story expression').message
+        () => storyPath.buildCodeFrameError('Could not evaluate story expression').message
       );
       const storyArgument = args[0];
       invariant(
         storyArgument.isExpression(),
-        () => init.buildCodeFrameError('Could not evaluate story expression').message
+        () => storyPath.buildCodeFrameError('Could not evaluate story expression').message
       );
-      normalizedInit = storyArgument;
+      normalizedPath = storyArgument;
     }
   }
 
-  normalizedInit = normalizedInit.isTSSatisfiesExpression()
-    ? normalizedInit.get('expression')
-    : normalizedInit.isTSAsExpression()
-      ? normalizedInit.get('expression')
-      : normalizedInit;
+  normalizedPath = normalizedPath.isTSSatisfiesExpression()
+    ? normalizedPath.get('expression')
+    : normalizedPath.isTSAsExpression()
+      ? normalizedPath.get('expression')
+      : normalizedPath;
 
   // If the story is already a function, try to inline args like in render() when using `{...args}`
+  let storyFn:
+    | NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>
+    | undefined;
 
-  let story: NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.ObjectExpression>;
-  if (normalizedInit.isArrowFunctionExpression() || normalizedInit.isFunctionExpression()) {
-    story = normalizedInit;
-  } else if (normalizedInit.isObjectExpression()) {
-    story = normalizedInit;
-  } else {
-    throw normalizedInit.buildCodeFrameError(
+  if (
+    normalizedPath.isArrowFunctionExpression() ||
+    normalizedPath.isFunctionExpression() ||
+    normalizedPath.isFunctionDeclaration()
+  ) {
+    storyFn = normalizedPath;
+  } else if (!normalizedPath.isObjectExpression()) {
+    throw normalizedPath.buildCodeFrameError(
       'Expected story to be csf factory, function or an object expression'
     );
   }
 
-  const storyProperties = story?.isObjectExpression()
-    ? story.get('properties').filter((p) => p.isObjectProperty())
+  const storyProperties = normalizedPath?.isObjectExpression()
+    ? normalizedPath.get('properties').filter((p) => p.isObjectProperty())
     : // Find CSF2 properties
       [];
 
@@ -114,9 +113,9 @@ export function getCodeSnippet(
         value.isArrowFunctionExpression() || value.isFunctionExpression()
     );
 
-  const storyFn =
-    renderPath ??
-    (story.isArrowFunctionExpression() ? story : story.isFunctionExpression() ? story : undefined);
+  if (renderPath) {
+    storyFn = renderPath;
+  }
 
   // Collect args: meta.args and story.args as Record<string, t.Node>
   const metaArgs = metaArgsRecord(metaObj ?? null);
@@ -215,7 +214,7 @@ export function getCodeSnippet(
 
         const newFn = t.arrowFunctionExpression([], newBody, fn.async);
         return t.variableDeclaration('const', [
-          t.variableDeclarator(t.identifier(storyId.node.name), newFn),
+          t.variableDeclarator(t.identifier(storyName), newFn),
         ]);
       }
 
@@ -226,7 +225,7 @@ export function getCodeSnippet(
         const inlined = inlineArgsInJsx(deepSpread.node as any, merged);
         const newFn = t.arrowFunctionExpression([], inlined.node as any, fn.async);
         return t.variableDeclaration('const', [
-          t.variableDeclarator(t.identifier(storyId.node.name), newFn),
+          t.variableDeclarator(t.identifier(storyName), newFn),
         ]);
       }
 
@@ -235,16 +234,19 @@ export function getCodeSnippet(
       if (changed) {
         const newFn = t.arrowFunctionExpression([], transformedBody, fn.async);
         return t.variableDeclaration('const', [
-          t.variableDeclarator(t.identifier(storyId.node.name), newFn),
+          t.variableDeclarator(t.identifier(storyName), newFn),
         ]);
       }
     }
 
     // Fallback: keep the function as-is
-    const expr = storyFn.node; // This is already a t.Expression
-    return t.variableDeclaration('const', [
-      t.variableDeclarator(t.identifier(storyId.node.name), expr),
-    ]);
+    if (t.isFunctionDeclaration(storyFn.node)) {
+      return storyFn.node;
+    } else {
+      return t.variableDeclaration('const', [
+        t.variableDeclarator(t.identifier(storyName), storyFn.node),
+      ]);
+    }
   }
 
   // Build spread for invalid-only props, if any
@@ -269,9 +271,7 @@ export function getCodeSnippet(
     )
   );
 
-  return t.variableDeclaration('const', [
-    t.variableDeclarator(t.identifier(storyId.node.name), arrow),
-  ]);
+  return t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), arrow)]);
 }
 
 const keyOf = (p: t.ObjectProperty): string | null =>
@@ -599,10 +599,10 @@ function transformArgsSpreadsInJsx(
 
 // Resolve the initializer path for an identifier used in a `.bind(...)` call
 function resolveBindIdentifierInit(
-  storyExportPath: NodePath<t.ExportNamedDeclaration>,
+  storyPath: NodePath<t.Node>,
   identifier: NodePath<t.Identifier>
 ): NodePath<t.Expression> | null {
-  const programPath = storyExportPath.findParent((p) => p.isProgram());
+  const programPath = storyPath.findParent((p) => p.isProgram());
 
   if (!programPath) {
     return null;

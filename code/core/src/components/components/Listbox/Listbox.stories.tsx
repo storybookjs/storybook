@@ -1,6 +1,6 @@
 import { CheckIcon, EllipsisIcon, PlayAllHollowIcon } from '@storybook/icons';
 
-import { Form } from '../..';
+import { Badge, Form, ProgressSpinner } from '../..';
 import preview from '../../../../../.storybook/preview';
 import { Shortcut } from '../../../manager/container/Menu';
 import { Listbox, ListboxAction, ListboxButton, ListboxItem, ListboxText } from './Listbox';
@@ -33,13 +33,28 @@ export const Default = meta.story({
         <ListboxButton variant="solid">Go</ListboxButton>
       </ListboxItem>
       <ListboxItem>
-        <ListboxAction as="label">
-          <Form.Checkbox />
-          With a checkbox
+        <ListboxAction>
+          With an inline button
+          <ListboxButton readOnly padding="none">
+            <ProgressSpinner percentage={25} running={false} size={16} width={1.5} />
+            25%
+          </ListboxButton>
         </ListboxAction>
       </ListboxItem>
       <ListboxItem>
-        <ListboxAction active>
+        <ListboxAction>
+          With a badge
+          <Badge status="positive">Check it out</Badge>
+        </ListboxAction>
+      </ListboxItem>
+      <ListboxItem>
+        <ListboxAction as="label">
+          <Form.Checkbox />
+          <ListboxText>With a checkbox</ListboxText>
+        </ListboxAction>
+      </ListboxItem>
+      <ListboxItem active>
+        <ListboxAction>
           <CheckIcon />
           <ListboxText>Active with an icon</ListboxText>
           <Shortcut keys={['⌘', 'A']} />

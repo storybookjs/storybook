@@ -1,35 +1,39 @@
 import type { FC } from 'react';
 import React, { useCallback, useMemo } from 'react';
 
-import { Badge } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
-import { CheckIcon, CommandIcon, InfoIcon, ShareAltIcon, WandIcon } from '@storybook/icons';
+import {
+  CheckIcon,
+  CommandIcon,
+  DocumentIcon,
+  InfoIcon,
+  ListUnorderedIcon,
+  ShareAltIcon,
+} from '@storybook/icons';
 
-import type { API, State } from 'storybook/manager-api';
-import { shortcutToHumanString } from 'storybook/manager-api';
+import { universalChecklistStore } from '#manager-stores';
+import type { API } from 'storybook/manager-api';
+import { experimental_useUniversalStore, shortcutToHumanString } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { Link } from '../../components/components/tooltip/TooltipLinkList';
-
-const focusableUIElements = {
-  storySearchField: 'storybook-explorer-searchfield',
-  storyListMenu: 'storybook-explorer-menu',
-  storyPanelRoot: 'storybook-panel-root',
-};
+import { ListboxButton, ListboxIcon, ProgressSpinner } from '../../components';
+import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList';
+import { checklistData } from '../settings/Checklist/checklistData';
 
 const Key = styled.span(({ theme }) => ({
-  display: 'inline-block',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   height: 16,
-  lineHeight: '16px',
-  textAlign: 'center',
   fontSize: '11px',
+  fontWeight: theme.typography.weight.regular,
   background: theme.base === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)',
   color: theme.base === 'light' ? theme.color.dark : theme.textMutedColor,
   borderRadius: 2,
   userSelect: 'none',
   pointerEvents: 'none',
-  padding: '0 6px',
+  padding: '0 4px',
 }));
 
 const KeyChild = styled.code(({ theme }) => ({
@@ -41,6 +45,10 @@ const KeyChild = styled.code(({ theme }) => ({
   },
 }));
 
+const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
+  color: theme.color.secondary,
+}));
+
 export const Shortcut: FC<{ keys: string[] }> = ({ keys }) => (
   <Key>
     {keys.map((key) => (
@@ -49,16 +57,28 @@ export const Shortcut: FC<{ keys: string[] }> = ({ keys }) => (
   </Key>
 );
 
-export const useMenu = (
-  state: State,
-  api: API,
-  showToolbar: boolean,
-  isFullscreen: boolean,
-  isPanelShown: boolean,
-  isNavShown: boolean,
-  enableShortcuts: boolean
-): Link[][] => {
+export const useMenu = ({
+  api,
+  showToolbar,
+  isPanelShown,
+  isNavShown,
+  enableShortcuts,
+}: {
+  api: API;
+  showToolbar: boolean;
+  isPanelShown: boolean;
+  isNavShown: boolean;
+  enableShortcuts: boolean;
+}): NormalLink[][] => {
   const shortcutKeys = api.getShortcutKeys();
+  const [{ completed, skipped }] = experimental_useUniversalStore(universalChecklistStore);
+  const totalCount = checklistData.sections.reduce((acc, { items }) => acc + items.length, 0);
+  const doneCount = checklistData.sections.reduce(
+    (acc, { items }) =>
+      acc + items.filter(({ id }) => completed.includes(id) || skipped.includes(id)).length,
+    0
+  );
+  const progress = Math.round((doneCount / totalCount) * 100);
 
   const about = useMemo(
     () => ({
@@ -70,32 +90,20 @@ export const useMenu = (
     [api]
   );
 
-  const documentation = useMemo(() => {
-    const docsUrl = api.getDocsUrl({ versioned: true, renderer: true });
-
-    return {
-      id: 'documentation',
-      title: 'Documentation',
-      href: docsUrl,
-      icon: <ShareAltIcon />,
-    };
-  }, [api]);
-
-  const whatsNewNotificationsEnabled =
-    state.whatsNewData?.status === 'SUCCESS' && !state.disableWhatsNewNotifications;
-  const isWhatsNewUnread = api.isWhatsNewUnread();
-
-  const whatsNew = useMemo(
+  const guide = useMemo(
     () => ({
-      id: 'whats-new',
-      title: "What's new?",
-      onClick: () => api.changeSettingsTab('whats-new'),
-      right: whatsNewNotificationsEnabled && isWhatsNewUnread && (
-        <Badge status="positive">Check it out</Badge>
+      id: 'guide',
+      title: 'Onboarding guide',
+      onClick: () => api.changeSettingsTab('guide'),
+      icon: <ListUnorderedIcon />,
+      right: (
+        <ListboxButton readOnly padding="none">
+          <ProgressCircle percentage={progress} running={false} size={16} width={1.5} />
+          {progress}%
+        </ListboxButton>
       ),
-      icon: <WandIcon />,
     }),
-    [api, whatsNewNotificationsEnabled, isWhatsNewUnread]
+    [api, progress]
   );
 
   const shortcuts = useMemo(
@@ -116,7 +124,7 @@ export const useMenu = (
       onClick: () => api.toggleNav(),
       active: isNavShown,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.toggleNav} /> : null,
-      icon: isNavShown ? <CheckIcon /> : null,
+      icon: isNavShown ? <CheckIcon /> : <></>,
     }),
     [api, enableShortcuts, shortcutKeys, isNavShown]
   );
@@ -128,7 +136,7 @@ export const useMenu = (
       onClick: () => api.toggleToolbar(),
       active: showToolbar,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.toolbar} /> : null,
-      icon: showToolbar ? <CheckIcon /> : null,
+      icon: showToolbar ? <CheckIcon /> : <></>,
     }),
     [api, enableShortcuts, shortcutKeys, showToolbar]
   );
@@ -140,41 +148,9 @@ export const useMenu = (
       onClick: () => api.togglePanel(),
       active: isPanelShown,
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.togglePanel} /> : null,
-      icon: isPanelShown ? <CheckIcon /> : null,
+      icon: isPanelShown ? <CheckIcon /> : <></>,
     }),
     [api, enableShortcuts, shortcutKeys, isPanelShown]
-  );
-
-  const addonsOrientationToggle = useMemo(
-    () => ({
-      id: 'D',
-      title: 'Change addons orientation',
-      onClick: () => api.togglePanelPosition(),
-      right: enableShortcuts ? <Shortcut keys={shortcutKeys.panelPosition} /> : null,
-    }),
-    [api, enableShortcuts, shortcutKeys]
-  );
-
-  const fullscreenToggle = useMemo(
-    () => ({
-      id: 'F',
-      title: 'Go full screen',
-      onClick: () => api.toggleFullscreen(),
-      active: isFullscreen,
-      right: enableShortcuts ? <Shortcut keys={shortcutKeys.fullScreen} /> : null,
-      icon: isFullscreen ? <CheckIcon /> : null,
-    }),
-    [api, enableShortcuts, shortcutKeys, isFullscreen]
-  );
-
-  const searchToggle = useMemo(
-    () => ({
-      id: '/',
-      title: 'Search',
-      onClick: () => api.focusOnUIElement(focusableUIElements.storySearchField),
-      right: enableShortcuts ? <Shortcut keys={shortcutKeys.search} /> : null,
-    }),
-    [api, enableShortcuts, shortcutKeys]
   );
 
   const up = useMemo(
@@ -183,6 +159,7 @@ export const useMenu = (
       title: 'Previous component',
       onClick: () => api.jumpToComponent(-1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.prevComponent} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -193,6 +170,7 @@ export const useMenu = (
       title: 'Next component',
       onClick: () => api.jumpToComponent(1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.nextComponent} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -203,6 +181,7 @@ export const useMenu = (
       title: 'Previous story',
       onClick: () => api.jumpToStory(-1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.prevStory} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -213,6 +192,7 @@ export const useMenu = (
       title: 'Next story',
       onClick: () => api.jumpToStory(1),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.nextStory} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
@@ -223,9 +203,26 @@ export const useMenu = (
       title: 'Collapse all',
       onClick: () => api.emit(STORIES_COLLAPSE_ALL),
       right: enableShortcuts ? <Shortcut keys={shortcutKeys.collapseAll} /> : null,
+      icon: <></>,
     }),
     [api, enableShortcuts, shortcutKeys]
   );
+
+  const documentation = useMemo(() => {
+    const docsUrl = api.getDocsUrl({ versioned: true, renderer: true });
+
+    return {
+      id: 'documentation',
+      title: 'Documentation',
+      href: docsUrl,
+      right: (
+        <ListboxIcon>
+          <ShareAltIcon />
+        </ListboxIcon>
+      ),
+      icon: <DocumentIcon />,
+    };
+  }, [api]);
 
   const getAddonsShortcuts = useCallback(() => {
     const addonsShortcuts = api.getAddonsShortcuts();
@@ -243,39 +240,19 @@ export const useMenu = (
   return useMemo(
     () =>
       [
-        [
-          about,
-          ...(state.whatsNewData?.status === 'SUCCESS' ? [whatsNew] : []),
-          documentation,
-          ...(enableShortcuts ? [shortcuts] : []),
-        ],
-        [
-          sidebarToggle,
-          toolbarToogle,
-          addonsToggle,
-          addonsOrientationToggle,
-          fullscreenToggle,
-          searchToggle,
-          up,
-          down,
-          prev,
-          next,
-          collapse,
-        ],
+        [about, guide, ...(enableShortcuts ? [shortcuts] : [])],
+        [sidebarToggle, toolbarToogle, addonsToggle, up, down, prev, next, collapse],
         getAddonsShortcuts(),
-      ] satisfies Link[][],
+        [documentation],
+      ] satisfies NormalLink[][],
     [
       about,
-      state,
-      whatsNew,
+      guide,
       documentation,
       shortcuts,
       sidebarToggle,
       toolbarToogle,
       addonsToggle,
-      addonsOrientationToggle,
-      fullscreenToggle,
-      searchToggle,
       up,
       down,
       prev,

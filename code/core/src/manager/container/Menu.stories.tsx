@@ -6,6 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 
+import { universalChecklistStore as mockStore } from '../manager-stores.mock';
 import { Shortcut } from './Menu';
 
 const onLinkClick = action('onLinkClick');
@@ -25,6 +26,14 @@ export default {
       </div>
     ),
   ],
+  beforeEach: async () => {
+    mockStore.setState({
+      loaded: true,
+      muted: false,
+      completed: ['add-component'],
+      skipped: ['add-5-10-components'],
+    });
+  },
   excludeStories: ['links'],
 } satisfies Meta<typeof TooltipLinkList>;
 

@@ -6,7 +6,9 @@ import {
   Listbox,
   ListboxAction,
   ListboxButton,
+  ListboxIcon,
   ListboxItem,
+  ListboxText,
   ProgressSpinner,
   TooltipNote,
   WithTooltip,
@@ -49,10 +51,6 @@ const CollapseToggle = styled(ListboxButton)({
 
 const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
   color: theme.color.secondary,
-}));
-
-const ItemIcon = styled(StatusFailIcon)(({ theme }) => ({
-  color: theme.color.mediumdark,
 }));
 
 const title = (progress: number) => {
@@ -168,8 +166,10 @@ export const ChecklistModule = () => {
                                 onHide();
                               }}
                             >
-                              <ListUnorderedIcon />
-                              Open full guide
+                              <ListboxIcon>
+                                <ListUnorderedIcon />
+                              </ListboxIcon>
+                              <ListboxText>Open full guide</ListboxText>
                             </ListboxAction>
                           </ListboxItem>
                           <ListboxItem>
@@ -180,8 +180,10 @@ export const ChecklistModule = () => {
                                 onHide();
                               }}
                             >
-                              <EyeCloseIcon />
-                              Remove from sidebar
+                              <ListboxIcon>
+                                <EyeCloseIcon />
+                              </ListboxIcon>
+                              <ListboxText>Remove from sidebar</ListboxText>
                             </ListboxAction>
                           </ListboxItem>
                         </Listbox>
@@ -210,8 +212,10 @@ export const ChecklistModule = () => {
                   <ListboxAction
                     onClick={() => api.navigateUrl(`/settings/guide#${task.id}`, { plain: false })}
                   >
-                    <ItemIcon />
-                    {task.label}
+                    <ListboxIcon>
+                      <StatusFailIcon />
+                    </ListboxIcon>
+                    <ListboxText>{task.label}</ListboxText>
                   </ListboxAction>
                   {task.action && (
                     <ListboxButton

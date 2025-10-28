@@ -18,7 +18,12 @@ export type StoreEvent =
 
 export const UNIVERSAL_CHECKLIST_STORE_OPTIONS: StoreOptions<StoreState> = {
   id: 'storybook/checklist',
-  initialState: { loaded: false, muted: false, completed: [], skipped: [] } as StoreState,
+  initialState: {
+    loaded: false,
+    muted: false,
+    completed: [],
+    skipped: [],
+  } as StoreState,
 } as const;
 
 export type ChecklistStore = {

@@ -263,7 +263,7 @@ describe('mcpServerHandler', () => {
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: {
-					storiesDevelopment: true,
+					core: true,
 					componentDocumentation: true,
 				},
 			},
@@ -325,7 +325,7 @@ describe('mcpServerHandler', () => {
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: {
-					storiesDevelopment: true,
+					core: true,
 					componentDocumentation: true,
 				},
 			},
@@ -375,7 +375,7 @@ describe('mcpServerHandler', () => {
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: {
-					storiesDevelopment: true,
+					core: true,
 					componentDocumentation: true,
 				},
 			},
@@ -402,7 +402,7 @@ describe('getToolsets', () => {
 		const request = new Request('http://localhost:6006/mcp');
 		const addonOptions = {
 			toolsets: {
-				storiesDevelopment: true,
+				core: true,
 				componentDocumentation: false,
 			},
 		};
@@ -410,18 +410,18 @@ describe('getToolsets', () => {
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			storiesDevelopment: true,
+			core: true,
 			componentDocumentation: false,
 		});
 	});
 
 	it('should enable only toolsets specified in header', () => {
 		const request = new Request('http://localhost:6006/mcp', {
-			headers: { 'X-MCP-Toolsets': 'storiesDevelopment' },
+			headers: { 'X-MCP-Toolsets': 'core' },
 		});
 		const addonOptions = {
 			toolsets: {
-				storiesDevelopment: true,
+				core: true,
 				componentDocumentation: true,
 			},
 		};
@@ -429,7 +429,7 @@ describe('getToolsets', () => {
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			storiesDevelopment: true,
+			core: true,
 			componentDocumentation: false,
 		});
 	});
@@ -437,12 +437,12 @@ describe('getToolsets', () => {
 	it('should enable multiple toolsets from comma-separated header', () => {
 		const request = new Request('http://localhost:6006/mcp', {
 			headers: {
-				'X-MCP-Toolsets': 'storiesDevelopment,componentDocumentation',
+				'X-MCP-Toolsets': 'core,componentDocumentation',
 			},
 		});
 		const addonOptions = {
 			toolsets: {
-				storiesDevelopment: false,
+				core: false,
 				componentDocumentation: false,
 			},
 		};
@@ -450,7 +450,7 @@ describe('getToolsets', () => {
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			storiesDevelopment: true,
+			core: true,
 			componentDocumentation: true,
 		});
 	});
@@ -458,12 +458,12 @@ describe('getToolsets', () => {
 	it('should handle whitespace in header values', () => {
 		const request = new Request('http://localhost:6006/mcp', {
 			headers: {
-				'X-MCP-Toolsets': ' storiesDevelopment , componentDocumentation ',
+				'X-MCP-Toolsets': ' core , componentDocumentation ',
 			},
 		});
 		const addonOptions = {
 			toolsets: {
-				storiesDevelopment: false,
+				core: false,
 				componentDocumentation: false,
 			},
 		};
@@ -471,7 +471,7 @@ describe('getToolsets', () => {
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			storiesDevelopment: true,
+			core: true,
 			componentDocumentation: true,
 		});
 	});
@@ -479,13 +479,12 @@ describe('getToolsets', () => {
 	it('should ignore invalid toolset names in header', () => {
 		const request = new Request('http://localhost:6006/mcp', {
 			headers: {
-				'X-MCP-Toolsets':
-					'storiesDevelopment,invalidToolset,componentDocumentation',
+				'X-MCP-Toolsets': 'core,invalidToolset,componentDocumentation',
 			},
 		});
 		const addonOptions = {
 			toolsets: {
-				storiesDevelopment: false,
+				core: false,
 				componentDocumentation: false,
 			},
 		};
@@ -493,7 +492,7 @@ describe('getToolsets', () => {
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			storiesDevelopment: true,
+			core: true,
 			componentDocumentation: true,
 		});
 	});
@@ -504,7 +503,7 @@ describe('getToolsets', () => {
 		});
 		const addonOptions = {
 			toolsets: {
-				storiesDevelopment: true,
+				core: true,
 				componentDocumentation: true,
 			},
 		};
@@ -512,7 +511,7 @@ describe('getToolsets', () => {
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			storiesDevelopment: true,
+			core: true,
 			componentDocumentation: true,
 		});
 	});

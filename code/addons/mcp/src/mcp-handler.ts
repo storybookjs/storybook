@@ -207,12 +207,12 @@ export function getToolsets(
 	// If the toolsets headers are present, default to everything being disabled
 	// except for the ones explicitly enabled in the header
 	const toolsets: AddonOptionsOutput['toolsets'] = {
-		storiesDevelopment: false,
+		core: false,
 		componentDocumentation: false,
 	};
 
 	// The format of the header is a comma-separated list of enabled toolsets
-	// e.g., "storiesDevelopment,componentDocumentation"
+	// e.g., "core,componentDocumentation"
 	const enabledToolsets = toolsetHeader.split(',');
 
 	for (const enabledToolset of enabledToolsets) {

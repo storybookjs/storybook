@@ -5,12 +5,12 @@ import type { StorybookContext } from '@storybook/mcp';
 export const AddonOptions = v.object({
 	toolsets: v.optional(
 		v.object({
-			storiesDevelopment: v.exactOptional(v.boolean(), true),
+			core: v.exactOptional(v.boolean(), true),
 			componentDocumentation: v.exactOptional(v.boolean(), true),
 		}),
 		{
 			// Default values for toolsets
-			storiesDevelopment: true,
+			core: true,
 			componentDocumentation: true,
 		},
 	),

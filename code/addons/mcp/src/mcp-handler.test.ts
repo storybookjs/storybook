@@ -394,6 +394,15 @@ describe('mcpServerHandler', () => {
 			}),
 			expect.any(Function),
 		);
+
+		// Verify the 'enabled' callbacks matches the truthy addon options
+		const listToolEnabledCallback = vi.mocked(addListAllComponentsTool).mock
+			.calls[0]?.[1]!;
+		const getToolEnabledCallback = vi.mocked(addGetComponentDocumentationTool)
+			.mock.calls[0]?.[1]!;
+
+		expect(listToolEnabledCallback()).toBe(true);
+		expect(getToolEnabledCallback()).toBe(true);
 	});
 });
 

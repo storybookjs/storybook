@@ -13,7 +13,7 @@ import type { Options } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
-import type { AddonContext, AddonOptions } from './types.ts';
+import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 
 let transport: HttpTransport<AddonContext> | undefined;
@@ -81,7 +81,7 @@ type McpServerHandlerParams = {
 	res: ServerResponse;
 	next: Connect.NextFunction;
 	options: Options;
-	addonOptions: AddonOptions;
+	addonOptions: AddonOptionsOutput;
 };
 
 export const mcpServerHandler = async ({
@@ -104,7 +104,7 @@ export const mcpServerHandler = async ({
 
 	const addonContext: AddonContext = {
 		options,
-		toolsets: addonOptions.toolsets,
+		toolsets: getToolsets(webRequest, addonOptions),
 		origin: origin!,
 		disableTelemetry,
 		// Source URL for component manifest tools - points to the manifest endpoint
@@ -192,4 +192,34 @@ export async function webResponseToServerResponse(
 	}
 
 	nodeResponse.end();
+}
+
+export function getToolsets(
+	request: Request,
+	addonOptions: AddonOptionsOutput,
+): AddonOptionsOutput['toolsets'] {
+	const toolsetHeader = request.headers.get('X-MCP-Toolsets');
+	if (!toolsetHeader) {
+		// If no header is present, return the addon options as-is
+		return addonOptions.toolsets;
+	}
+
+	// If the toolsets headers are present, default to everything being disabled
+	// except for the ones explicitly enabled in the header
+	const toolsets: AddonOptionsOutput['toolsets'] = {
+		storiesDevelopment: false,
+		componentDocumentation: false,
+	};
+
+	// The format of the header is a comma-separated list of enabled toolsets
+	// e.g., "storiesDevelopment,componentDocumentation"
+	const enabledToolsets = toolsetHeader.split(',');
+
+	for (const enabledToolset of enabledToolsets) {
+		const trimmedToolset = enabledToolset.trim();
+		if (trimmedToolset in toolsets) {
+			toolsets[trimmedToolset as keyof typeof toolsets] = true;
+		}
+	}
+	return toolsets;
 }

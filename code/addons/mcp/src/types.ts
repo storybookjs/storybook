@@ -8,10 +8,16 @@ export const AddonOptions = v.object({
 			storiesDevelopment: v.exactOptional(v.boolean(), true),
 			componentDocumentation: v.exactOptional(v.boolean(), true),
 		}),
+		{
+			// Default values for toolsets
+			storiesDevelopment: true,
+			componentDocumentation: true,
+		},
 	),
 });
 
-export type AddonOptions = v.InferOutput<typeof AddonOptions>;
+export type AddonOptionsInput = v.InferInput<typeof AddonOptions>;
+export type AddonOptionsOutput = v.InferOutput<typeof AddonOptions>;
 /**
  * Custom context passed to MCP server and tools.
  * Contains Storybook-specific configuration and runtime information.
@@ -35,7 +41,7 @@ export interface AddonContext extends StorybookContext {
 	 */
 	disableTelemetry: boolean;
 
-	toolsets?: NonNullable<AddonOptions>['toolsets'];
+	toolsets?: NonNullable<AddonOptionsOutput>['toolsets'];
 }
 
 /**

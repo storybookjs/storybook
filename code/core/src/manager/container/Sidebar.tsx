@@ -30,15 +30,13 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       refs,
     } = state;
 
-    const menu = useMenu(
-      state,
+    const menu = useMenu({
       api,
       showToolbar,
-      api.getIsFullscreen(),
-      api.getIsPanelShown(),
-      api.getIsNavShown(),
-      enableShortcuts
-    );
+      isPanelShown: api.getIsPanelShown(),
+      isNavShown: api.getIsNavShown(),
+      enableShortcuts,
+    });
 
     const whatsNewNotificationsEnabled =
       state.whatsNewData?.status === 'SUCCESS' && !state.disableWhatsNewNotifications;

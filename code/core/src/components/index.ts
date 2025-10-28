@@ -48,6 +48,7 @@ export {
   Listbox,
   ListboxAction,
   ListboxButton,
+  ListboxIcon,
   ListboxItem,
   ListboxText,
 } from './components/Listbox/Listbox';

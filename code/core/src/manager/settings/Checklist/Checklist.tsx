@@ -134,8 +134,9 @@ const SectionHeading = styled.h3({
   cursor: 'default',
 });
 
-const ItemSummary = styled.div<{ isCollapsed: boolean }>(({ isCollapsed }) => ({
-  fontWeight: 'normal',
+const ItemSummary = styled.div<{ isCollapsed: boolean }>(({ theme, isCollapsed }) => ({
+  fontWeight: theme.typography.weight.regular,
+  fontSize: theme.typography.size.s2,
   display: 'flex',
   alignItems: 'center',
   gap: 10,
@@ -160,20 +161,22 @@ const ItemHeading = styled.h4<{ skipped: boolean }>(({ theme, skipped }) => ({
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
+  fontSize: theme.typography.size.s2,
 }));
 
-const ItemContent = styled.div({
+const ItemContent = styled.div(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'flex-start',
   gap: 8,
   padding: '0 15px 15px 15px',
+  fontSize: theme.typography.size.s2,
 
   p: {
     margin: 0,
     lineHeight: 1.4,
   },
-});
+}));
 
 const StatusIcon = styled.div(({ theme }) => ({
   position: 'relative',

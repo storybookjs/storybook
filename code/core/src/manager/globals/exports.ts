@@ -517,6 +517,7 @@ export default {
     'Listbox',
     'ListboxAction',
     'ListboxButton',
+    'ListboxIcon',
     'ListboxItem',
     'ListboxText',
     'Loader',

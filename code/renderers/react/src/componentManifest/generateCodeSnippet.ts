@@ -140,8 +140,8 @@ export function getCodeSnippet(
   if (storyFn) {
     const fn = storyFn.node;
 
-    // Handle arrow function returning JSX directly: () => <Button {...args} />
-    if (t.isArrowFunctionExpression(fn) && t.isJSXElement(fn.body)) {
+    // Handle arrow function returning JSX directly: () => <Button {...args} /> or () => <></>
+    if (t.isArrowFunctionExpression(fn) && (t.isJSXElement(fn.body) || t.isJSXFragment(fn.body))) {
       const body = fn.body;
 
       const spreadTransformed = transformArgsSpreadsInJsx(body, merged);
@@ -167,8 +167,12 @@ export function getCodeSnippet(
       let changed = false;
 
       const newBody = body.map((stmt) => {
-        // Only transform return statements that return JSX
-        if (t.isReturnStatement(stmt) && stmt.argument && t.isJSXElement(stmt.argument)) {
+        // Only transform return statements that return JSX or Fragments
+        if (
+          t.isReturnStatement(stmt) &&
+          stmt.argument &&
+          (t.isJSXElement(stmt.argument) || t.isJSXFragment(stmt.argument))
+        ) {
           const spreadTransformed = transformArgsSpreadsInJsx(stmt.argument, merged);
           const inlined = inlineArgsInJsx(spreadTransformed.node, merged);
 

@@ -7,18 +7,24 @@ import {
   ListboxAction,
   ListboxButton,
   ListboxItem,
-  ListboxText,
+  ProgressSpinner,
   TooltipNote,
   WithTooltip,
 } from 'storybook/internal/components';
 
-import { ChevronSmallUpIcon, StatusFailIcon } from '@storybook/icons';
+import {
+  ChevronSmallUpIcon,
+  EyeCloseIcon,
+  ListUnorderedIcon,
+  StatusFailIcon,
+} from '@storybook/icons';
 
 import { checklistStore, universalChecklistStore } from '#manager-stores';
 import { experimental_useUniversalStore, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { checklistData } from '../../settings/Checklist/checklistData';
+import { TextFlip } from '../TextFlip';
 import { Transition, TransitionGroup } from '../Transition';
 
 type ChecklistItem = (typeof checklistData)['sections'][number]['items'][number];
@@ -41,6 +47,10 @@ const CollapseToggle = styled(ListboxButton)({
   },
 });
 
+const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
+  color: theme.color.secondary,
+}));
+
 const ItemIcon = styled(StatusFailIcon)(({ theme }) => ({
   color: theme.color.mediumdark,
 }));
@@ -62,6 +72,10 @@ export const ChecklistModule = () => {
   const api = useStorybookApi();
   const [{ loaded, muted, completed, skipped }] =
     experimental_useUniversalStore(universalChecklistStore);
+
+  const allTaskIds = useMemo(() => {
+    return checklistData.sections.flatMap(({ items }) => items.map(({ id }) => id));
+  }, []);
 
   const nextTasks = useMemo(() => {
     if (!loaded || muted === true) {
@@ -104,42 +118,87 @@ export const ChecklistModule = () => {
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
             <Listbox onClick={toggleCollapsed}>
               <ListboxItem>
-                <ListboxText>
-                  <strong>{loaded && title(progress)}</strong>
-                </ListboxText>
-                <WithTooltip
-                  hasChrome={false}
-                  tooltip={
-                    <TooltipNote
-                      note={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
-                    />
-                  }
-                  trigger="hover"
-                >
-                  <CollapseToggle
-                    {...toggleProps}
-                    id="checklist-module-collapse-toggle"
-                    aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
-                  >
-                    <ChevronSmallUpIcon
-                      style={{
-                        transform: isCollapsed ? 'rotate(180deg)' : 'none',
-                        transition: 'transform 250ms',
-                        willChange: 'auto',
+                <ListboxItem>
+                  {loaded && (
+                    <ListboxAction
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        api.navigateUrl('/settings/guide', { plain: false });
                       }}
-                    />
-                  </CollapseToggle>
-                </WithTooltip>
-                {loaded && (
-                  <ListboxButton
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      api.navigateUrl('/settings/guide', { plain: false });
-                    }}
+                    >
+                      <strong>{title(progress)}</strong>
+                    </ListboxAction>
+                  )}
+                </ListboxItem>
+                <ListboxItem>
+                  <WithTooltip
+                    hasChrome={false}
+                    tooltip={
+                      <TooltipNote
+                        note={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
+                      />
+                    }
+                    trigger="hover"
                   >
-                    {progress}%
-                  </ListboxButton>
-                )}
+                    <CollapseToggle
+                      {...toggleProps}
+                      id="checklist-module-collapse-toggle"
+                      aria-label={`${isCollapsed ? 'Expand' : 'Collapse'} onboarding checklist`}
+                    >
+                      <ChevronSmallUpIcon
+                        style={{
+                          transform: isCollapsed ? 'rotate(180deg)' : 'none',
+                          transition: 'transform 250ms',
+                          willChange: 'auto',
+                        }}
+                      />
+                    </CollapseToggle>
+                  </WithTooltip>
+                  {loaded && (
+                    <WithTooltip
+                      as="div"
+                      closeOnOutsideClick
+                      tooltip={({ onHide }) => (
+                        <Listbox>
+                          <ListboxItem>
+                            <ListboxAction
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                api.navigateUrl('/settings/guide', { plain: false });
+                                onHide();
+                              }}
+                            >
+                              <ListUnorderedIcon />
+                              Open full guide
+                            </ListboxAction>
+                          </ListboxItem>
+                          <ListboxItem>
+                            <ListboxAction
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                checklistStore.mute(allTaskIds);
+                                onHide();
+                              }}
+                            >
+                              <EyeCloseIcon />
+                              Remove from sidebar
+                            </ListboxAction>
+                          </ListboxItem>
+                        </Listbox>
+                      )}
+                    >
+                      <ListboxButton onClick={(e) => e.stopPropagation()}>
+                        <ProgressCircle
+                          percentage={progress}
+                          running={false}
+                          size={16}
+                          width={1.5}
+                        />
+                        <TextFlip text={`${progress}%`} placeholder="00%" />
+                      </ListboxButton>
+                    </WithTooltip>
+                  )}
+                </ListboxItem>
               </ListboxItem>
             </Listbox>
           )}

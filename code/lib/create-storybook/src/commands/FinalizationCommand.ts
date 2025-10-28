@@ -4,15 +4,14 @@ import type { ProjectType } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
+import type { Feature } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
-import type { GeneratorFeature } from '../generators/types';
-
 type ExecuteFinalizationParams = {
   projectType: ProjectType;
-  selectedFeatures: Set<GeneratorFeature>;
+  selectedFeatures: Set<Feature>;
   storybookCommand?: string;
 };
 
@@ -73,12 +72,8 @@ export class FinalizationCommand {
   }
 
   /** Print success message with feature summary */
-  private printSuccessMessage(
-    selectedFeatures: Set<GeneratorFeature>,
-    storybookCommand?: string
-  ): void {
-    const printFeatures = (features: Set<GeneratorFeature>) =>
-      Array.from(features).join(', ') || 'none';
+  private printSuccessMessage(selectedFeatures: Set<Feature>, storybookCommand?: string): void {
+    const printFeatures = (features: Set<Feature>) => Array.from(features).join(', ') || 'none';
 
     logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
 

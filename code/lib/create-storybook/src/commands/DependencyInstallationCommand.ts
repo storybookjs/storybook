@@ -1,15 +1,15 @@
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { Feature } from 'storybook/internal/types';
 
 import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
 import { getAddonVitestDependencies } from '../addon-dependencies/addon-vitest';
 import type { DependencyCollector } from '../dependency-collector';
-import type { GeneratorFeature } from '../generators/types';
 
 type DependencyInstallationCommandParams = {
   packageManager: JsPackageManager;
   skipInstall: boolean;
-  selectedFeatures: Set<GeneratorFeature>;
+  selectedFeatures: Set<Feature>;
 };
 
 /**
@@ -72,10 +72,10 @@ export class DependencyInstallationCommand {
   /** Collect addon dependencies without installing them */
   private async collectAddonDependencies(
     packageManager: JsPackageManager,
-    selectedFeatures: Set<GeneratorFeature>
+    selectedFeatures: Set<Feature>
   ): Promise<void> {
     try {
-      if (selectedFeatures.has('test')) {
+      if (selectedFeatures.has(Feature.TEST)) {
         const vitestDeps = await getAddonVitestDependencies(packageManager);
         this.dependencyCollector.addDevDependencies(vitestDeps);
       }

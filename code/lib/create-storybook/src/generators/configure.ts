@@ -3,10 +3,9 @@ import { resolve } from 'node:path';
 
 import { SupportedLanguage } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
+import { Feature } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
-
-import type { GeneratorFeature } from './types';
 
 interface ConfigureMainOptions {
   addons: string[];
@@ -16,7 +15,7 @@ interface ConfigureMainOptions {
   language: SupportedLanguage;
   prefixes: string[];
   frameworkPackage: string;
-  features: GeneratorFeature[];
+  features: Set<Feature>;
   /**
    * Extra values for main.js
    *
@@ -52,12 +51,12 @@ export async function configureMain({
   language,
   frameworkPackage,
   prefixes = [],
-  features = [],
+  features,
   ...custom
 }: ConfigureMainOptions) {
   const srcPath = resolve(storybookConfigFolder, '../src');
   const prefix = (await pathExists(srcPath)) ? '../src' : '../stories';
-  const stories = features.includes('docs') ? [`${prefix}/**/*.mdx`] : [];
+  const stories = features.has(Feature.DOCS) ? [`${prefix}/**/*.mdx`] : [];
 
   stories.push(`${prefix}/**/*.stories.@(${extensions.join('|')})`);
 
@@ -84,7 +83,7 @@ export async function configureMain({
   const imports = [];
   const finalPrefixes = [...prefixes];
 
-  if (custom.framework?.name.includes('path.dirname(')) {
+  if (custom.framework.includes('path.dirname(')) {
     imports.push(`import path from 'node:path';`);
   }
 

@@ -1,15 +1,11 @@
 import type { ProjectType, SupportedLanguage } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
+import { Feature } from 'storybook/internal/types';
 
 import type { DependencyCollector } from '../dependency-collector';
 import { generatorRegistry } from '../generators/GeneratorRegistry';
 import { baseGenerator } from '../generators/baseGenerator';
-import type {
-  CommandOptions,
-  GeneratorFeature,
-  GeneratorModule,
-  GeneratorOptions,
-} from '../generators/types';
+import type { CommandOptions, GeneratorModule, GeneratorOptions } from '../generators/types';
 import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
 
 export type GeneratorExecutionResult = (
@@ -26,7 +22,7 @@ type ExecuteProjectGeneratorOptions = {
   packageManager: JsPackageManager;
   frameworkInfo: FrameworkDetectionResult;
   options: CommandOptions;
-  selectedFeatures: Set<GeneratorFeature>;
+  selectedFeatures: Set<Feature>;
 };
 
 /**
@@ -69,18 +65,18 @@ export class GeneratorExecutionCommand {
     };
   }
 
-  private readonly getExtraAddons = (selectedFeatures: Set<GeneratorFeature>): string[] => {
+  private readonly getExtraAddons = (selectedFeatures: Set<Feature>): string[] => {
     const addons = [];
 
-    if (selectedFeatures.has('a11y')) {
+    if (selectedFeatures.has(Feature.A11Y)) {
       addons.push('@storybook/addon-a11y');
     }
 
-    if (selectedFeatures.has('test')) {
+    if (selectedFeatures.has(Feature.TEST)) {
       addons.push('@storybook/addon-vitest');
     }
 
-    if (selectedFeatures.has('docs')) {
+    if (selectedFeatures.has(Feature.DOCS)) {
       addons.push('@storybook/addon-docs');
     }
 
@@ -131,7 +127,7 @@ export class GeneratorExecutionCommand {
       pnp: options.usePnp as boolean,
       yes: options.yes as boolean,
       projectType,
-      features: options.features || [],
+      features: selectedFeatures,
       dependencyCollector: this.dependencyCollector,
     } as GeneratorOptions;
 

@@ -4,11 +4,11 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import type { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
+import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 
 import type { DependencyCollector } from '../dependency-collector';
-import type { GeneratorFeature } from '../generators/types';
 import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
 import { TelemetryService } from '../services/TelemetryService';
 
@@ -23,7 +23,7 @@ export interface UserPreferencesResult {
    * The features that the user has selected explicitly or implicitly and which can actually be
    * installed based on the project type or other constraints.
    */
-  selectedFeatures: Set<GeneratorFeature>;
+  selectedFeatures: Set<Feature>;
 }
 
 export interface UserPreferencesOptions {
@@ -169,18 +169,18 @@ export class UserPreferencesCommand {
     newUser: boolean,
     isTestFeatureAvailable: boolean,
     projectType: ProjectType
-  ): Set<GeneratorFeature> {
-    const features = new Set<GeneratorFeature>();
+  ): Set<Feature> {
+    const features = new Set<Feature>();
 
     if (installType === 'recommended') {
-      features.add('docs');
-      features.add('a11y');
+      features.add(Feature.DOCS);
+      features.add(Feature.A11Y);
       // Don't install test in CI but install in non-TTY environments like agentic installs
       if (isTestFeatureAvailable) {
-        features.add('test');
+        features.add(Feature.TEST);
       }
       if (newUser && FeatureCompatibilityService.supportsOnboarding(projectType)) {
-        features.add('onboarding');
+        features.add(Feature.ONBOARDING);
       }
     }
 

@@ -1,9 +1,9 @@
 import type { ProjectType } from 'storybook/internal/cli';
 import { telemetry } from 'storybook/internal/telemetry';
+import { Feature } from 'storybook/internal/types';
 
 import { getProcessAncestry } from 'process-ancestry';
 
-import type { GeneratorFeature } from '../generators/types';
 import { VersionService } from './VersionService';
 
 /** Service for tracking telemetry events during Storybook initialization */
@@ -59,7 +59,7 @@ export class TelemetryService {
    */
   async trackInitWithContext(
     projectType: ProjectType,
-    selectedFeatures: Set<GeneratorFeature>,
+    selectedFeatures: Set<Feature>,
     newUser: boolean
   ): Promise<void> {
     if (this.disableTelemetry) {
@@ -81,9 +81,9 @@ export class TelemetryService {
     // Create features object and track
     const telemetryFeatures = {
       dev: true, // Always true during init
-      docs: selectedFeatures.has('docs'),
-      test: selectedFeatures.has('test'),
-      onboarding: selectedFeatures.has('onboarding'),
+      docs: selectedFeatures.has(Feature.DOCS),
+      test: selectedFeatures.has(Feature.TEST),
+      onboarding: selectedFeatures.has(Feature.ONBOARDING),
     };
 
     await telemetry('init', {

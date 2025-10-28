@@ -10,6 +10,7 @@ import {
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
+import { Feature } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import picocolors from 'picocolors';
@@ -133,7 +134,7 @@ type CopyTemplateFilesOptions = {
   language: SupportedLanguage;
   commonAssetsDir?: string;
   destination?: string;
-  features: string[];
+  features: Set<Feature>;
 };
 
 /**
@@ -203,13 +204,13 @@ export async function copyTemplateFiles({
   };
 
   const destinationPath = destination ?? (await cliStoriesTargetPath());
-  const filter = (file: string) => features.includes('docs') || !file.endsWith('.mdx');
+  const filter = (file: string) => features.has(Feature.DOCS) || !file.endsWith('.mdx');
   if (commonAssetsDir) {
     await cp(commonAssetsDir, destinationPath, { recursive: true, filter });
   }
   await cp(await templatePath(), destinationPath, { recursive: true, filter });
 
-  if (commonAssetsDir && features.includes('docs')) {
+  if (commonAssetsDir && features.has(Feature.DOCS)) {
     const rendererType = frameworkToRenderer[templateLocation] || 'react';
 
     await adjustTemplate(join(destinationPath, 'Configure.mdx'), { renderer: rendererType });

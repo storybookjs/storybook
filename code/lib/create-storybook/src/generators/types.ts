@@ -2,6 +2,7 @@ import type { NpmOptions, ProjectType, SupportedLanguage } from 'storybook/inter
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import type {
+  Feature,
   StorybookConfig,
   SupportedBuilder,
   SupportedFramework,
@@ -22,7 +23,7 @@ export type GeneratorOptions = {
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
   yes: boolean;
-  features: Array<GeneratorFeature>;
+  features: Set<Feature>;
   dependencyCollector: DependencyCollector;
 };
 
@@ -61,8 +62,6 @@ export type Generator<T = Record<string, any>> = (
   } & T
 >;
 
-export type GeneratorFeature = 'docs' | 'test' | 'onboarding' | 'a11y';
-
 // New generator interface for configuration-based generators
 
 export interface GeneratorMetadata {
@@ -87,7 +86,7 @@ export interface GeneratorContext {
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
   language: SupportedLanguage;
-  features: GeneratorFeature[];
+  features: Set<Feature>;
   linkable?: boolean;
   yes?: boolean;
 }
@@ -118,7 +117,7 @@ export interface GeneratorModule {
 export type CommandOptions = {
   packageManager: PackageManagerName;
   usePnp?: boolean;
-  features: GeneratorFeature[];
+  features: Set<Feature>;
   type?: ProjectType;
   force?: any;
   html?: boolean;

@@ -18,3 +18,4 @@ export * from './modules/test-provider';
 export * from './modules/universal-store';
 export * from './modules/webpack';
 export * from './modules/builders';
+export * from './modules/features';

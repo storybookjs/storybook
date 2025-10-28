@@ -1,7 +1,6 @@
 import { getPackageDetails } from 'storybook/internal/common';
 import type { SupportedBuilder } from 'storybook/internal/types';
-
-import type { GeneratorFeature } from '../types';
+import { Feature } from 'storybook/internal/types';
 
 export interface AddonConfiguration {
   addonsForMain: Array<string | { name: string; [key: string]: any }>;
@@ -24,20 +23,20 @@ export class AddonManager {
   }
 
   /** Get addons based on selected features */
-  getAddonsForFeatures(features: GeneratorFeature[], extraAddons: string[] = []): string[] {
+  getAddonsForFeatures(features: Set<Feature>, extraAddons: string[] = []): string[] {
     const addons = [...extraAddons];
 
-    if (features.includes('test')) {
+    if (features.has(Feature.TEST)) {
       addons.push('@chromatic-com/storybook');
       addons.push('@storybook/addon-vitest');
       addons.push('@storybook/addon-a11y');
     }
 
-    if (features.includes('docs')) {
+    if (features.has(Feature.DOCS)) {
       addons.push('@storybook/addon-docs');
     }
 
-    if (features.includes('onboarding')) {
+    if (features.has(Feature.ONBOARDING)) {
       addons.push('@storybook/addon-onboarding');
     }
 
@@ -51,7 +50,7 @@ export class AddonManager {
 
   /** Configure addons for the project */
   configureAddons(
-    features: GeneratorFeature[],
+    features: Set<Feature>,
     extraAddons: string[] = [],
     builder: SupportedBuilder,
     webpackCompiler?: ({ builder }: { builder: SupportedBuilder }) => 'babel' | 'swc' | undefined

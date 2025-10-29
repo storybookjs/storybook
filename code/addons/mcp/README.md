@@ -15,7 +15,7 @@ The addon provides tools to improve agents' UI development capabilities, retriev
 ### Installation and Setup
 
 > [!NOTE]
-> This addon requires Storybook 10.1 or higher, currently only available as the canary version `0.0.0-pr-32810-sha-6e759c7e`.
+> This addon requires Storybook version 9.1.16 or higher.
 
 Use Storybook's CLI to automatically install and configure the addon:
 
@@ -125,6 +125,7 @@ These additional tools are available when the **experimental** component manifes
 
 **Requirements:**
 
+- Storybook version 10.1.0 or higher (currently only available as prereleases, `storybook@next`)
 - React-based framework (`react-vite`, `nextjs-vite`, `nextjs`, `react-webpack5`)
 - Feature flag `features.experimentalComponentsManifest` set to `true` in `.storybook/main.js`
 

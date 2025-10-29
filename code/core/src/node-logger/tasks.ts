@@ -78,7 +78,7 @@ export const executeTaskWithSpinner = async (
     }
     logTracker.addLog('info', success);
     task.stop(success);
-  } catch (err) {
+  } catch (err: any) {
     if (err.message.includes('Command was killed with SIGINT')) {
       task.error(`${intro} aborted`);
       return;

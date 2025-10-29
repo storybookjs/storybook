@@ -10,10 +10,9 @@ import { getCodeSnippet } from './generateCodeSnippet';
 
 function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
-  const component = csf._meta?.component ?? 'Unknown';
 
-  const snippets = Object.entries(csf._storyDeclarationPath)
-    .map(([name, path]) => getCodeSnippet(path, name, csf._metaNode ?? null, component))
+  const snippets = Object.keys(csf._storyExports)
+    .map((name) => getCodeSnippet(csf, name))
     .filter(Boolean);
 
   return recast.print(t.program(snippets)).code;

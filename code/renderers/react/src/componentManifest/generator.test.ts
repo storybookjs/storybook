@@ -495,7 +495,7 @@ test('no component field', async () => {
   expect(await getManifestForStory(code)).toMatchInlineSnapshot(`
     {
       "error": {
-        "message": "Specify meta.component for the component to be included in the manifest.
+        "message": "Specify meta.component for reactDocgen data to be included in the manifest.
       2 | import { Button } from './Button';
       3 |
     > 4 | export default {
@@ -504,7 +504,14 @@ test('no component field', async () => {
       6 | };
       7 |",
       },
-      "examples": [],
+      "examples": [
+        {
+          "error": {
+            "message": "Could not generate snippet without component name.",
+          },
+          "name": "Primary",
+        },
+      ],
       "id": "example-button",
       "jsDocTags": {},
       "path": "./src/stories/Button.stories.ts",
@@ -523,7 +530,7 @@ test('component exported from other file', async () => {
       "examples": [
         {
           "error": {
-            "message": "Expected story to be a variable declaration
+            "message": "Expected story to be a function or variable declaration
        8 | export default meta;
        9 |
     > 10 | export { Primary } from './other-file';

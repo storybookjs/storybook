@@ -13,14 +13,14 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
     return;
   }
   return async (csf: CsfFile, csfSource: CsfFile) => {
-    const promises = Object.entries(csf._storyDeclarationPath).map(async ([key, storyExport]) => {
+    const promises = Object.keys(csf._stories).map(async (key) => {
       if (!csfSource._meta?.component) {
         return;
       }
       const { format } = await getPrettier();
       let node;
       try {
-        node = getCodeSnippet(storyExport, key, csfSource._metaNode, csfSource._meta?.component);
+        node = getCodeSnippet(csfSource, key);
       } catch (e) {
         // don't bother the user if we can't generate a snippet
         return;

@@ -1,4 +1,5 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
+import { type CsfFile } from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils';
 
@@ -16,11 +17,17 @@ function buildInvalidSpread(entries: Array<[string, t.Node]>): t.JSXSpreadAttrib
 }
 
 export function getCodeSnippet(
-  storyDeclaration: NodePath<t.VariableDeclarator | t.FunctionDeclaration>,
-  storyName: string,
-  metaObj: t.ObjectExpression | null | undefined,
-  componentName?: string
+  csf: CsfFile,
+  storyName: string
 ): t.VariableDeclaration | t.FunctionDeclaration {
+  const storyDeclaration = csf._storyDeclarationPath[storyName];
+  const metaObj = csf._metaNode;
+  const componentName = csf._meta?.component;
+
+  if (!storyDeclaration) {
+    const message = 'Expected story to be a function or variable declaration';
+    throw csf._storyPaths[storyName]?.buildCodeFrameError(message) ?? message;
+  }
   let storyPath: NodePath<t.FunctionDeclaration | t.Expression>;
 
   if (storyDeclaration.isFunctionDeclaration()) {
@@ -50,8 +57,7 @@ export function getCodeSnippet(
       const prop = callee.get('property');
       const isBind =
         (prop.isIdentifier() && prop.node.name === 'bind') ||
-        (t.isStringLiteral((prop as any).node) &&
-          ((prop as any).node as t.StringLiteral).value === 'bind');
+        (t.isStringLiteral(prop.node) && prop.node.value === 'bind');
       if (obj.isIdentifier() && isBind) {
         const resolved = resolveBindIdentifierInit(storyDeclaration, obj);
         if (resolved) {
@@ -379,7 +385,7 @@ function inlineArgsInJsx(
         const attrName = t.isJSXIdentifier(a.name) ? a.name.name : null;
         if (attrName && a.value && t.isJSXExpressionContainer(a.value)) {
           const key = getArgsMemberKey(a.value.expression);
-          if (key && Object.prototype.hasOwnProperty.call(merged, key)) {
+          if (key && key in merged) {
             const repl = inlineAttrValueFromArg(attrName, merged[key]!);
             changed = true;
             if (repl) {
@@ -396,15 +402,21 @@ function inlineArgsInJsx(
     }
 
     // Process children
-    const newChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
+    const newChildren: (
+      | t.JSXText
+      | t.JSXExpressionContainer
+      | t.JSXElement
+      | t.JSXFragment
+      | t.JSXSpreadChild
+    )[] = [];
     for (const c of node.children) {
       if (t.isJSXElement(c) || t.isJSXFragment(c)) {
         const res = inlineArgsInJsx(c, merged);
         changed = changed || res.changed;
-        newChildren.push(res.node as any);
+        newChildren.push(res.node);
       } else if (t.isJSXExpressionContainer(c)) {
         const key = getArgsMemberKey(c.expression);
-        if (key === 'children' && Object.prototype.hasOwnProperty.call(merged, 'children')) {
+        if (key === 'children' && merged.children) {
           const injected = toJsxChildren(merged['children']);
           newChildren.push(...injected);
           changed = true;
@@ -412,7 +424,7 @@ function inlineArgsInJsx(
           newChildren.push(c);
         }
       } else {
-        newChildren.push(c as any);
+        newChildren.push(c);
       }
     }
 
@@ -431,18 +443,16 @@ function inlineArgsInJsx(
     if (t.isJSXElement(c) || t.isJSXFragment(c)) {
       const res = inlineArgsInJsx(c, merged);
       changed = changed || res.changed;
-      fragChildren.push(res.node as any);
+      fragChildren.push(res.node);
     } else if (t.isJSXExpressionContainer(c)) {
       const key = getArgsMemberKey(c.expression);
-      if (key === 'children' && Object.prototype.hasOwnProperty.call(merged, 'children')) {
-        const injected = toJsxChildren(merged['children']);
+      if (key === 'children' && 'children' in merged) {
+        const injected = toJsxChildren(merged.children);
         fragChildren.push(...injected);
         changed = true;
       } else {
         fragChildren.push(c);
       }
-    } else {
-      fragChildren.push(c as any);
     }
   }
   const newFrag = t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren);
@@ -482,9 +492,7 @@ function transformArgsSpreadsInJsx(
     return [...filteredInjected, ...(invalidSpread ? [invalidSpread] : [])];
   };
 
-  const toChild = (
-    v: t.Node
-  ): t.JSXElement | t.JSXFragment | t.JSXExpressionContainer | t.JSXText => {
+  const toChild = (v: t.Node) => {
     if (t.isJSXElement(v) || t.isJSXFragment(v)) {
       return v;
     }
@@ -497,7 +505,7 @@ function transformArgsSpreadsInJsx(
       return t.jsxText(v.value);
     }
     // pretty print plain strings // pretty print plain strings
-    return t.jsxExpressionContainer(v as any);
+    return t.jsxExpressionContainer(v as t.Expression);
   };
 
   if (t.isJSXElement(node)) {
@@ -519,7 +527,7 @@ function transformArgsSpreadsInJsx(
         sawArgsSpread = true;
         continue;
       }
-      nonArgsAttrs.push(a as any);
+      nonArgsAttrs.push(a);
     }
 
     let newAttrs = nonArgsAttrs;
@@ -540,15 +548,21 @@ function transformArgsSpreadsInJsx(
     }
 
     // --- Recurse into children ---
-    let newChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
+    let newChildren: (
+      | t.JSXText
+      | t.JSXExpressionContainer
+      | t.JSXSpreadChild
+      | t.JSXElement
+      | t.JSXFragment
+    )[] = [];
 
     for (const c of node.children) {
       if (t.isJSXElement(c) || t.isJSXFragment(c)) {
         const res = transformArgsSpreadsInJsx(c, merged);
         changed = changed || res.changed;
-        newChildren.push(res.node as any);
+        newChildren.push(res.node);
       } else {
-        newChildren.push(c as any);
+        newChildren.push(c);
       }
     }
 
@@ -568,14 +582,20 @@ function transformArgsSpreadsInJsx(
   }
 
   // --- JSXFragment recursion ---
-  const fragChildren: (t.JSXText | t.JSXExpressionContainer | t.JSXElement | t.JSXFragment)[] = [];
+  const fragChildren: (
+    | t.JSXText
+    | t.JSXExpressionContainer
+    | t.JSXSpreadChild
+    | t.JSXElement
+    | t.JSXFragment
+  )[] = [];
   for (const c of node.children) {
     if (t.isJSXElement(c) || t.isJSXFragment(c)) {
       const res = transformArgsSpreadsInJsx(c, merged);
       changed = changed || res.changed;
-      fragChildren.push(res.node as any);
+      fragChildren.push(res.node);
     } else {
-      fragChildren.push(c as any);
+      fragChildren.push(c);
     }
   }
   const newFrag = t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren);

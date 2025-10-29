@@ -378,13 +378,14 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     matchPath: TsconfigPaths.MatchPath | undefined
   ) {
+    const extensions = ['.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts'];
     let rawPath = rawComponentPath;
     if (matchPath) {
-      rawPath = matchPath(rawPath) ?? rawPath;
+      rawPath = matchPath(rawPath, undefined, undefined, extensions) ?? rawPath;
     }
 
     const absoluteComponentPath = resolve(dirname(absolutePath), rawPath);
-    const existing = ['.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts', '']
+    const existing = [...extensions, '']
       .flatMap((it) => (it === '' ? [it] : ['/index' + it, it]))
       .map((ext) => `${absoluteComponentPath}${ext}`)
       .find((candidate) => existsSync(candidate));

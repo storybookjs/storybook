@@ -49,7 +49,10 @@ export function getCodeSnippet(
 
       if (obj.isIdentifier() && isBind) {
         const resolved = resolveBindIdentifierInit(storyDeclaration, obj);
-        if (resolved) normalizedPath = resolved;
+
+        if (resolved) {
+          normalizedPath = resolved;
+        }
       }
     }
 
@@ -209,7 +212,9 @@ export function getCodeSnippet(
 
 /** Build a spread `{...{k: v}}` for props that aren't valid JSX attributes. */
 function buildInvalidSpread(entries: ReadonlyArray<[string, t.Node]>): t.JSXSpreadAttribute | null {
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {
+    return null;
+  }
   const objectProps = entries.map(([k, v]) =>
     t.objectProperty(t.stringLiteral(k), t.isExpression(v) ? v : t.identifier('undefined'))
   );
@@ -243,7 +248,9 @@ const argsRecordFromObjectNode = (obj?: t.ObjectExpression | null) =>
     : {};
 
 const metaArgsRecord = (meta?: t.ObjectExpression | null) => {
-  if (!meta) return {};
+  if (!meta) {
+    return {};
+  }
   const argsProp = meta.properties.find(
     (p): p is t.ObjectProperty => t.isObjectProperty(p) && keyOf(p) === 'args'
   );
@@ -258,10 +265,14 @@ const toAttr = (key: string, value: t.Node) => {
       ? t.jsxAttribute(t.jsxIdentifier(key), null)
       : t.jsxAttribute(t.jsxIdentifier(key), t.jsxExpressionContainer(value));
   }
-  if (t.isStringLiteral(value))
+
+  if (t.isStringLiteral(value)) {
     return t.jsxAttribute(t.jsxIdentifier(key), t.stringLiteral(value.value));
-  if (t.isExpression(value))
+  }
+
+  if (t.isExpression(value)) {
     return t.jsxAttribute(t.jsxIdentifier(key), t.jsxExpressionContainer(value));
+  }
   return null;
 };
 
@@ -279,8 +290,13 @@ const toJsxChildren = (node: t.Node | null | undefined) =>
 /** Return `key` if expression is `args.key` (incl. optional chaining), else `null`. */
 function getArgsMemberKey(expr: t.Node) {
   if (t.isMemberExpression(expr) && t.isIdentifier(expr.object) && expr.object.name === 'args') {
-    if (t.isIdentifier(expr.property) && !expr.computed) return expr.property.name;
-    if (t.isStringLiteral(expr.property) && expr.computed) return expr.property.value;
+    if (t.isIdentifier(expr.property) && !expr.computed) {
+      return expr.property.name;
+    }
+
+    if (t.isStringLiteral(expr.property) && expr.computed) {
+      return expr.property.value;
+    }
   }
   if (
     t.isOptionalMemberExpression?.(expr) &&
@@ -288,8 +304,14 @@ function getArgsMemberKey(expr: t.Node) {
     expr.object.name === 'args'
   ) {
     const prop = expr.property;
-    if (t.isIdentifier(prop) && !expr.computed) return prop.name;
-    if (t.isStringLiteral(prop) && expr.computed) return prop.value;
+
+    if (t.isIdentifier(prop) && !expr.computed) {
+      return prop.name;
+    }
+
+    if (t.isStringLiteral(prop) && expr.computed) {
+      return prop.value;
+    }
   }
   return null;
 }
@@ -305,12 +327,20 @@ function inlineArgsInJsx(
     const opening = node.openingElement;
 
     const newAttrs = opening.attributes.flatMap<t.JSXAttribute | t.JSXSpreadAttribute>((a) => {
-      if (!t.isJSXAttribute(a)) return [a];
+      if (!t.isJSXAttribute(a)) {
+        return [a];
+      }
       const name = t.isJSXIdentifier(a.name) ? a.name.name : null;
-      if (!(name && a.value && t.isJSXExpressionContainer(a.value))) return [a];
+
+      if (!(name && a.value && t.isJSXExpressionContainer(a.value))) {
+        return [a];
+      }
 
       const key = getArgsMemberKey(a.value.expression);
-      if (!(key && key in merged)) return [a];
+
+      if (!(key && key in merged)) {
+        return [a];
+      }
 
       const repl = toAttr(name, merged[key]);
       changed = true;
@@ -464,13 +494,21 @@ function resolveBindIdentifierInit(
   identifier: NodePath<t.Identifier>
 ) {
   const programPath = storyPath.findParent((p) => p.isProgram()) as NodePath<t.Program> | null;
-  if (!programPath) return null;
+
+  if (!programPath) {
+    return null;
+  }
 
   const declarators = programPath.get('body').flatMap((stmt) => {
-    if (stmt.isVariableDeclaration()) return stmt.get('declarations');
+    if (stmt.isVariableDeclaration()) {
+      return stmt.get('declarations');
+    }
     if (stmt.isExportNamedDeclaration()) {
       const decl = stmt.get('declaration');
-      if (decl && decl.isVariableDeclaration()) return decl.get('declarations');
+
+      if (decl && decl.isVariableDeclaration()) {
+        return decl.get('declarations');
+      }
     }
     return [];
   });
@@ -480,7 +518,9 @@ function resolveBindIdentifierInit(
     return id.isIdentifier() && id.node.name === identifier.node.name;
   });
 
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   const init = match.get('init');
   return init && init.isExpression() ? init : null;
 }
@@ -489,7 +529,9 @@ export function pathForNode<T extends t.Node>(
   program: NodePath<t.Program>,
   target: T | undefined
 ): NodePath<T> | undefined {
-  if (!target) return undefined;
+  if (!target) {
+    return undefined;
+  }
   let found: NodePath<T> | undefined;
 
   program.traverse({

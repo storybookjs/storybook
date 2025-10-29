@@ -210,11 +210,13 @@ function analyzeComponent(c: ComponentManifest) {
   const warns: string[] = [];
 
   if (!c.description?.trim()) {
-    warns.push('Missing description');
+    warns.push('No description found. Write a jsdoc comment such as /** Component description */.');
   }
 
   if (!c.import?.trim()) {
-    warns.push('Missing import');
+    warns.push(
+      `Specify an @import jsdoc tag on your component such as @import import { ${c.name} } from 'my-design-system';`
+    );
   }
 
   const totalExamples = c.examples?.length ?? 0;

@@ -105,7 +105,7 @@ export const configureFlatConfig = async (code: string) => {
         eslintConfigExpression.arguments.push(storybookConfig);
       }
 
-      // Case 3: export default config (resolve to array)
+      // Case 3: export default config (resolve to array or call expression with array)
       if (t.isIdentifier(eslintConfigExpression)) {
         const binding = path.scope.getBinding(eslintConfigExpression.name);
         if (binding && t.isVariableDeclarator(binding.path.node)) {
@@ -113,6 +113,12 @@ export const configureFlatConfig = async (code: string) => {
 
           if (t.isArrayExpression(init)) {
             init.elements.push(t.spreadElement(storybookConfig));
+          } else if (t.isCallExpression(init) && init.arguments.length > 0) {
+            // Handle cases like defineConfig([...]) or similar wrapper functions
+            const firstArg = unwrapTSExpression(init.arguments[0] as t.Expression);
+            if (t.isArrayExpression(firstArg)) {
+              firstArg.elements.push(t.spreadElement(storybookConfig));
+            }
           }
         }
       }

@@ -27,10 +27,7 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
   // This function converts ids which might include ` > ` to a real path, if it exists on disk.
   // See https://github.com/vitejs/vite/blob/67d164392e8e9081dc3f0338c4b4b8eea6c5f7da/packages/vite/src/node/optimizer/index.ts#L182-L199
   const resolve = resolvedConfig.createResolver({ asSrc: false });
-  const include = await asyncFilter(
-    Array.from(new Set([...INCLUDE_CANDIDATES, ...extraOptimizeDeps])),
-    async (id) => Boolean(await resolve(id))
-  );
+  const include = await asyncFilter(INCLUDE_CANDIDATES, async (id) => Boolean(await resolve(id)));
 
   const optimizeDeps: UserConfig['optimizeDeps'] = {
     ...config.optimizeDeps,
@@ -38,7 +35,7 @@ export async function getOptimizeDeps(config: ViteInlineConfig, options: Options
     entries: stories,
     // We need Vite to precompile these dependencies, because they contain non-ESM code that would break
     // if we served it directly to the browser.
-    include: [...include, ...(config.optimizeDeps?.include || [])],
+    include: [...include, ...extraOptimizeDeps, ...(config.optimizeDeps?.include || [])],
   };
 
   return optimizeDeps;

@@ -97,7 +97,11 @@ export const componentManifestGenerator = async () => {
         });
         const docgen = getMatchingDocgen(docgens, csf);
 
-        const error = !docgen ? { message: 'Docgen could not find a component' } : undefined;
+        const error = !docgen
+          ? {
+              message: `Could not parse props information for the located at ${entry.componentPath}`,
+            }
+          : undefined;
 
         const metaDescription = extractDescription(csf._metaStatement);
         const jsdocComment = metaDescription || docgen?.description;

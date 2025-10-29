@@ -97,6 +97,15 @@ test('Default- CSF4', () => {
   );
 });
 
+test('StoryWithoutArguments - CSF4', () => {
+  const input = withCSF4(`
+    export const StoryWithoutArguments = meta.story();
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const StoryWithoutArguments = () => <Button>Click me</Button>;"`
+  );
+});
+
 test('Replace children', () => {
   const input = withCSF3(dedent`
     export const WithEmoji: Story = {

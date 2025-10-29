@@ -58,16 +58,21 @@ export function getCodeSnippet(
 
     if (storyPath === normalizedPath) {
       const args = storyPath.get('arguments');
-      invariant(
-        args.length === 1,
-        () => storyPath.buildCodeFrameError('Could not evaluate story expression').message
-      );
-      const storyArg = args[0];
-      invariant(
-        storyArg.isExpression(),
-        () => storyPath.buildCodeFrameError('Could not evaluate story expression').message
-      );
-      normalizedPath = storyArg;
+      // Allow meta.story() with zero args (CSF4)
+      if (args.length === 0) {
+        // Leave normalizedPath as the CallExpression; we'll treat it as an empty story config later
+      } else {
+        invariant(
+          args.length === 1,
+          () => storyPath.buildCodeFrameError('Could not evaluate story expression').message
+        );
+        const storyArg = args[0];
+        invariant(
+          storyArg.isExpression(),
+          () => storyPath.buildCodeFrameError('Could not evaluate story expression').message
+        );
+        normalizedPath = storyArg;
+      }
     }
   }
 
@@ -90,9 +95,18 @@ export function getCodeSnippet(
   ) {
     storyFn = normalizedPath;
   } else if (!normalizedPath.isObjectExpression()) {
-    throw normalizedPath.buildCodeFrameError(
-      'Expected story to be csf factory, function or an object expression'
-    );
+    // Allow CSF4 meta.story() without arguments, which is equivalent to an empty object story config
+    if (
+      normalizedPath.isCallExpression() &&
+      Array.isArray(normalizedPath.node.arguments) &&
+      normalizedPath.node.arguments.length === 0
+    ) {
+      // No-op: treat as an object story with no properties
+    } else {
+      throw normalizedPath.buildCodeFrameError(
+        'Expected story to be csf factory, function or an object expression'
+      );
+    }
   }
 
   const storyProps = normalizedPath.isObjectExpression()

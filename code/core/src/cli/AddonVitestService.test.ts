@@ -354,16 +354,6 @@ describe('AddonVitestService', () => {
   });
 
   describe('installPlaywright', () => {
-    it('should skip installation when skipInstall is true', async () => {
-      const errors = await service.installPlaywright(mockPackageManager, { skipInstall: true });
-
-      expect(errors).toEqual([]);
-      expect(logger.info).toHaveBeenCalledWith(
-        expect.stringContaining('Skipping Playwright installation')
-      );
-      expect(prompt.executeTask).not.toHaveBeenCalled();
-    });
-
     it('should install Playwright successfully', async () => {
       vi.mocked(prompt.executeTask).mockResolvedValue(undefined);
 

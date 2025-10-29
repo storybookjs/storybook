@@ -133,6 +133,7 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
 
   // Fallback to Vite or Webpack based on project type
   switch (projectType) {
+    case ProjectType.REACT_NATIVE_AND_RNW:
     case ProjectType.REACT_NATIVE_WEB:
       return CoreBuilder.Vite;
     case ProjectType.REACT_SCRIPTS:
@@ -170,6 +171,7 @@ export function isStorybookInstantiated(configDir = resolve(process.cwd(), '.sto
   return existsSync(configDir);
 }
 
+// TODO: Remove in SB11
 export async function detectPnp() {
   return !!find.any(['.pnp.js', '.pnp.cjs']);
 }

@@ -331,23 +331,11 @@ jobs:
 
 Finally, we update the plugin configuration to use that environment variable in the [`storybookUrl` plugin option](./integrations/vitest-addon.mdx#storybookurl).
 
-```diff title="vitest.workspace.ts"
-export default defineWorkspace([
-  // ...
-  {
-    // ...
-    {
-      plugins: [
-        storybookTest({
-          // ...
-+         // 👇 Use the environment variable you passed
-+         storybookUrl: process.env.SB_URL
-        }),
-      ],
-    },
-  },
-])
-```
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="vitest-plugin-vitest-debug-option-ci.md" />
+
+{/* prettier-ignore-end */}
 
 Now, when a test fails in CI, the printed story URL will point to the published Storybook, making debugging that failure a breeze!
 

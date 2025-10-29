@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  containsDirnameUsage,
+  containsPatternUsage,
   getBuilderPackageName,
   getFrameworkPackageName,
   getRendererName,
   getRendererPackageNameFromFramework,
+  hasDirnameDefined,
 } from './mainConfigFile';
 
 describe('getBuilderPackageName', () => {
@@ -214,5 +217,116 @@ describe('getRendererPackageNameFromFramework', () => {
     const frameworkPackageName = '@storybook/unknown';
     const packageName = getRendererPackageNameFromFramework(frameworkPackageName);
     expect(packageName).toBeNull();
+  });
+});
+
+describe('containsPatternUsage', () => {
+  it('should detect __dirname usage with hardcoded regex', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(__dirname, 'config.js');
+    `;
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(true);
+  });
+
+  it('should not detect __dirname in comments', () => {
+    const content = `
+      // This is __dirname in a comment
+      const path = require('path');
+    `;
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(false);
+  });
+
+  it('should not detect __dirname in strings', () => {
+    const content = `
+      const message = "This is __dirname in a string";
+      const path = require('path');
+    `;
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(false);
+  });
+
+  it('should return false when __dirname is not used', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(process.cwd(), 'config.js');
+    `;
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(false);
+  });
+
+  it('should work with other regex patterns', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(__filename, 'config.js');
+    `;
+    expect(containsPatternUsage(content, /\b__filename\b/)).toBe(true);
+    expect(containsPatternUsage(content, /\b__dirname\b/)).toBe(false);
+  });
+});
+
+describe('containsDirnameUsage', () => {
+  it('should detect __dirname usage', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(__dirname, 'config.js');
+    `;
+    expect(containsDirnameUsage(content)).toBe(true);
+  });
+
+  it('should not detect __dirname in comments', () => {
+    const content = `
+      // This is __dirname in a comment
+      const path = require('path');
+    `;
+    expect(containsDirnameUsage(content)).toBe(false);
+  });
+
+  it('should not detect __dirname in strings', () => {
+    const content = `
+      const message = "This is __dirname in a string";
+      const path = require('path');
+    `;
+    expect(containsDirnameUsage(content)).toBe(false);
+  });
+
+  it('should return false when __dirname is not used', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(process.cwd(), 'config.js');
+    `;
+    expect(containsDirnameUsage(content)).toBe(false);
+  });
+});
+
+describe('hasDirnameDefined', () => {
+  it('should detect const __dirname definition', () => {
+    const content = `
+      const __dirname = dirname(__filename);
+      const path = require('path');
+    `;
+    expect(hasDirnameDefined(content)).toBe(true);
+  });
+
+  it('should detect let __dirname definition', () => {
+    const content = `
+      let __dirname = dirname(__filename);
+      const path = require('path');
+    `;
+    expect(hasDirnameDefined(content)).toBe(true);
+  });
+
+  it('should detect var __dirname definition', () => {
+    const content = `
+      var __dirname = dirname(__filename);
+      const path = require('path');
+    `;
+    expect(hasDirnameDefined(content)).toBe(true);
+  });
+
+  it('should return false when __dirname is not defined', () => {
+    const content = `
+      const path = require('path');
+      const configPath = path.join(__dirname, 'config.js');
+    `;
+    expect(hasDirnameDefined(content)).toBe(false);
   });
 });

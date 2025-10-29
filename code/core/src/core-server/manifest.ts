@@ -122,7 +122,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
   .panels{display:grid;gap:10px}
   .panel{display:none}
   .tg-err:checked ~ .panels .panel-err{display:grid}
-  .tg-warn:checked ~ .panels .panel-warn{display:grid}
+  .tg-warn:checked ~ .panels .panel-warn{display:grid; gap: 8px}
   .tg-ex:checked  ~ .panels .panel-ex{display:grid}
 
   /* Colored notes for component error + warnings */

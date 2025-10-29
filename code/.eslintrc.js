@@ -162,6 +162,30 @@ module.exports = {
       },
     },
     {
+      files: [
+        'lib/**/*.ts',
+        'core/src/babel/**/*.ts',
+        'core/src/cli/**/*.ts',
+        'core/src/csf/**/*.ts',
+        'core/src/csf-tools/**/*.ts',
+        'core/src/core-server/**/*.ts',
+        'core/src/common/**/*.ts',
+        'core/src/telemetry/**/*.ts',
+        '!**/*.test.*',
+        '!**/*.spec.*',
+      ],
+      excludedFiles: [
+        'core/node-logger/**/*.ts',
+        'core/client-logger/**/*.ts',
+        '**/*.test.*',
+        '**/*.spec.*',
+        '**/*.mockdata.*',
+      ],
+      rules: {
+        'local-rules/enforce-node-logger': 'error',
+      },
+    },
+    {
       files: ['**/*.ts', '!**/*.test.*', '!**/*.spec.*'],
       excludedFiles: ['**/*.test.*', '**/*.mockdata.*'],
       rules: {

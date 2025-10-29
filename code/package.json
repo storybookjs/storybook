@@ -106,12 +106,12 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@chromatic-com/storybook": "^4.1.1",
+    "@chromatic-com/storybook": "^4.1.2",
     "@nx/vite": "20.8.2",
     "@nx/workspace": "20.8.2",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
-    "@storybook/addon-designs": "^11.0.0",
+    "@storybook/addon-designs": "^11.0.1",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-links": "workspace:*",
     "@storybook/addon-onboarding": "workspace:*",

@@ -751,31 +751,22 @@ export const baseTemplates = {
     // TODO: The community template does not provide standard stories, which is required for e2e tests.
     skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
   },
-  // 'ember/3-js': {
-  //   name: 'Ember v3 (Webpack | JavaScript)',
-  //   script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}}',
-  //   inDevelopment: true,
-  //   expected: {
-  //     framework: '@storybook/ember',
-  //     renderer: '@storybook/ember',
-  //     builder: '@storybook/builder-webpack5',
-  //   },
-  // },
-  // 'ember/default-js': {
-  //   name: 'Ember v4 (Webpack | JavaScript)',
-  //   script:
-  //     'npx --package ember-cli@4.12.1 ember new {{beforeDir}} --yarn && cd {{beforeDir}} && yarn add --dev @storybook/ember-cli-storybook && yarn build',
-  //   inDevelopment: true,
-  //   expected: {
-  //     framework: '@storybook/ember',
-  //     renderer: '@storybook/ember',
-  //     builder: '@storybook/builder-webpack5',
-  //   },
-  // },
+  'ember/default-js': {
+    name: 'Ember Latest (Vite | JavaScript)',
+    script:
+      'npx --package ember-cli ember new {{beforeDir}} -yarn --no-ember-data --no-welcome --skip-git --skip-install && cd {{beforeDir}}',
+    inDevelopment: true,
+    expected: {
+      framework: '@storybook/ember',
+      renderer: '@storybook/ember',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+  },
   'ember/default-ts': {
     name: 'Ember Latest (Vite | TypeScript)',
     script:
-      'npx --package ember-cli@latest ember new {{beforeDir}} -b @ember/app-blueprint -yarn --typescript --no-ember-data --no-welcome && cd {{beforeDir}} && yarn add -D babel-plugin-ember-template-compilation@^3.0.0',
+      'npx --package ember-cli ember new {{beforeDir}} -yarn --typescript --no-ember-data --no-welcome --skip-git --skip-install && cd {{beforeDir}}',
     inDevelopment: true,
     expected: {
       framework: '@storybook/ember',

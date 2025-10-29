@@ -15,6 +15,10 @@ const config: BuildEntries = {
         exportEntries: ['./client/config'],
         entryPoint: './src/client/config.ts',
       },
+      {
+        exportEntries: ['./client/docs/config'],
+        entryPoint: './src/client/docs/config.ts',
+      },
     ],
     node: [
       {

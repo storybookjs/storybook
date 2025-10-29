@@ -1,3 +1,5 @@
+import { dedent } from 'ts-dedent';
+
 import type { ComponentManifest, ComponentsManifest } from '../types';
 
 // AI generated manifests/components.html page
@@ -7,30 +9,14 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
     (a[1].name || a[0]).localeCompare(b[1].name || b[0])
   );
 
-  const totals = entries.reduce(
-    (acc, [, c]) => {
-      const a = analyzeComponent(c);
-      acc.components += 1;
-
-      if (a.hasComponentError) {
-        acc.componentsWithError += 1;
-      }
-
-      if (a.hasWarns) {
-        acc.componentsWithWarnings += 1;
-      }
-      acc.examples += a.totalExamples;
-      acc.exampleErrors += a.exampleErrors;
-      return acc;
-    },
-    {
-      components: 0,
-      componentsWithError: 0,
-      componentsWithWarnings: 0,
-      examples: 0,
-      exampleErrors: 0,
-    }
-  );
+  const analyses = entries.map(([, c]) => analyzeComponent(c));
+  const totals = {
+    components: entries.length,
+    componentsWithError: analyses.filter((a) => a.hasComponentError).length,
+    componentsWithWarnings: analyses.filter((a) => a.hasWarns).length,
+    examples: analyses.reduce((sum, a) => sum + a.totalExamples, 0),
+    exampleErrors: analyses.reduce((sum, a) => sum + a.exampleErrors, 0),
+  };
 
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target
   const allPill = `<a class="filter-pill all" data-k="all" href="#filter-all">All</a>`;
@@ -49,7 +35,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
 
   const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, idx)).join('');
 
-  return `<!doctype html>
+  return dedent`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -199,11 +185,6 @@ const esc = (s: unknown) =>
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string
   );
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
-const slugify = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
 
 function analyzeComponent(c: ComponentManifest) {
   const hasComponentError = !!c.error;
@@ -236,12 +217,8 @@ function analyzeComponent(c: ComponentManifest) {
   };
 }
 
-function badge(label: string, kind: 'ok' | 'warn' | 'err') {
-  return `<span class="badge ${kind}">${esc(label)}</span>`;
-}
-
 function note(title: string, bodyHTML: string, kind: 'warn' | 'err') {
-  return `
+  return dedent`
     <div class="note ${kind}">
       <div class="note-title">${esc(title)}</div>
       <div class="note-body">${bodyHTML}</div>
@@ -282,7 +259,7 @@ function renderComponentCard(key: string, c: ComponentManifest, i: number) {
           .join('')
       : '';
 
-  return `
+  return dedent`
   <article class="card ${a.hasComponentError ? 'has-error' : 'no-error'} ${a.hasWarns ? 'has-warn' : 'no-warn'} ${a.exampleErrors ? 'has-example-error' : 'no-example-error'}" role="listitem" aria-label="${esc(c.name || key)}">
     <div class="head">
       <div class="title">

@@ -51,8 +51,6 @@ export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
   // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
-  await rm(join(cwd, '.yarnrc.yml'), { force: true }).then(() => {});
-
   const command = [
     touch('yarn.lock'),
     touch('.yarnrc.yml'),

@@ -6,7 +6,6 @@
     "storybook",
     "storybook-framework",
     "ember",
-    "ember-addon",
     "component",
     "components"
   ],
@@ -38,6 +37,10 @@
       "types": "./dist/client/config.d.ts",
       "default": "./dist/client/config.js"
     },
+    "./client/docs/config": {
+      "types": "./dist/client/docs/config.d.ts",
+      "default": "./dist/client/docs/config.js"
+    },
     "./node": {
       "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
@@ -61,34 +64,22 @@
     "@storybook/builder-vite": "workspace:*",
     "@storybook/global": "^5.0.0",
     "content-tag": "^4.0.0",
-    "object-inspect": "^1.13.4"
-  },
-  "devDependencies": {
-    "@babel/plugin-transform-runtime": "^7.28.3",
-    "@babel/plugin-transform-typescript": "^7.28.0",
-    "@embroider/core": "^4.2.3",
-    "@embroider/vite": "^1.2.3",
-    "babel-plugin-ember-template-compilation": "^2.0.0",
-    "decorator-transforms": "^2.3.0",
-    "lightningcss": "^1.30.1",
+    "ts-dedent": "^2.0.0",
     "typescript": "^5.8.3"
   },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ember-source": "^6.8.0",
+    "typescript": "^5.8.3",
+    "vite": "^7.0.4"
+  },
   "peerDependencies": {
-    "@babel/core": "*",
-    "@embroider/core": "^4.2.0",
-    "@embroider/vite": "^1.2.0",
-    "babel-plugin-ember-template-compilation": "^2.0.0 || ^3.0.1",
-    "decorator-transforms": "^2.3.0",
-    "ember-source": "*",
-    "storybook": "workspace:^"
+    "ember-source": ">=6.8.0",
+    "storybook": "workspace:^",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "ember-addon": {
-    "type": "addon",
-    "version": 2,
-    "main": "addon-main.cjs"
   },
   "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae1l"
 }

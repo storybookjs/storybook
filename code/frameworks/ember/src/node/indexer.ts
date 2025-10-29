@@ -1,46 +1,25 @@
 import { readFile } from 'node:fs/promises';
 
+import { type CsfOptions, loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexInput, Indexer, IndexerOptions } from 'storybook/internal/types';
 
 import { Preprocessor } from 'content-tag';
 
-async function loadFile(fileName: string): Promise<string> {
-  return (await readFile(fileName, { encoding: 'utf8' })).toString();
+export const readCsf = async (fileName: string, options: CsfOptions) => {
+  const code = (await readFile(fileName, 'utf-8')).toString();
+  const result = parse(fileName, code);
+  return loadCsf(result.code, { ...options, fileName });
+};
+
+function parse(fileName: string, code: string) {
+  const preprocessor = new Preprocessor();
+  return preprocessor.process(code, { filename: fileName });
 }
-
-function parse(code: string) {
-  const p = new Preprocessor();
-
-  return p.parse(code);
-}
-
-// export function indexerCode(
-//   code: string,
-//   { makeTitle, fileName }: IndexerOptions & { fileName: string }
-// ): IndexInput[] {
-//   const result = parse(code);
-
-//   console.log(result);
-// }
 
 export const emberIndexer: Indexer = {
   test: /\.stories\.g[tj]s$/,
   createIndex: async (fileName: string, options: IndexerOptions): Promise<IndexInput[]> => {
-    const code = await loadFile(fileName);
-
-    const result = parse(code);
-
-    console.log('EMBER INDEXER', result);
-
-    return [
-      {
-        name: 'Text',
-        type: 'story',
-        subtype: 'story',
-        exportName: 'Text',
-        importPath: fileName,
-        title: 'Button',
-      },
-    ];
+    const csf = await readCsf(fileName, options);
+    return csf.parse().indexInputs;
   },
 };

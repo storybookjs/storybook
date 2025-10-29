@@ -1,3 +1,4 @@
+import { logger } from '../../client-logger';
 import { wrapTextForClack, wrapTextForClackHint } from '../wrap-utils';
 import { getPromptProvider } from './prompt-config';
 import type {
@@ -32,6 +33,8 @@ export type {
 let activeSpinner: SpinnerInstance | null = null;
 let activeTaskLog: TaskLogInstance | null = null;
 let originalConsoleLog: typeof console.log | null = null;
+
+const isTTY = process.stdout.isTTY;
 
 // Console.log patching functions
 const patchConsoleLog = () => {
@@ -100,65 +103,111 @@ export const multiselect = async <T>(
 };
 
 export const spinner = (options: SpinnerOptions): SpinnerInstance => {
-  const spinnerInstance = getPromptProvider().spinner(options);
+  if (isTTY) {
+    const spinnerInstance = getPromptProvider().spinner(options);
 
-  // Wrap the spinner methods to handle console.log patching
-  const wrappedSpinner: SpinnerInstance = {
-    start: (message?: string) => {
-      activeSpinner = wrappedSpinner;
-      patchConsoleLog();
-      spinnerInstance.start(message);
-    },
-    stop: (message?: string) => {
-      activeSpinner = null;
-      restoreConsoleLog();
-      spinnerInstance.stop(message);
-    },
-    message: (text: string) => {
-      spinnerInstance.message(text);
-    },
-  };
+    // Wrap the spinner methods to handle console.log patching
+    const wrappedSpinner: SpinnerInstance = {
+      start: (message?: string) => {
+        activeSpinner = wrappedSpinner;
+        patchConsoleLog();
+        spinnerInstance.start(message);
+      },
+      stop: (message?: string) => {
+        activeSpinner = null;
+        restoreConsoleLog();
+        spinnerInstance.stop(message);
+      },
+      message: (text: string) => {
+        spinnerInstance.message(text);
+      },
+    };
 
-  return wrappedSpinner;
+    return wrappedSpinner;
+  } else {
+    return {
+      start: (message) => {
+        if (message) {
+          logger.log(message);
+        }
+      },
+      stop: (message) => {
+        if (message) {
+          logger.log(message);
+        }
+      },
+      message: (message) => {
+        logger.log(message);
+      },
+    };
+  }
 };
 
 export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
-  const task = getPromptProvider().taskLog(options);
+  if (isTTY) {
+    const task = getPromptProvider().taskLog(options);
 
-  // Wrap the task log methods to handle console.log patching
-  const wrappedTaskLog: TaskLogInstance = {
-    message: (message: string) => {
-      task.message(wrapTextForClack(message));
-    },
-    success: (message: string, options?: { showLog?: boolean }) => {
-      activeTaskLog = null;
-      restoreConsoleLog();
-      task.success(message, options);
-    },
-    error: (message: string) => {
-      activeTaskLog = null;
-      restoreConsoleLog();
-      task.error(message);
-    },
-    group: function (title: string) {
-      this.message(`\n${title}\n`);
-      return {
-        message: (message: string) => {
-          this.message(message);
-        },
-        success: (message: string) => {
-          this.success(message);
-        },
-        error: (message: string) => {
-          this.error(message);
-        },
-      };
-    },
-  };
+    // Wrap the task log methods to handle console.log patching
+    const wrappedTaskLog: TaskLogInstance = {
+      message: (message: string) => {
+        task.message(wrapTextForClack(message));
+      },
+      success: (message: string, options?: { showLog?: boolean }) => {
+        activeTaskLog = null;
+        restoreConsoleLog();
+        task.success(message, options);
+      },
+      error: (message: string) => {
+        activeTaskLog = null;
+        restoreConsoleLog();
+        task.error(message);
+      },
+      group: function (title: string) {
+        this.message(`\n${title}\n`);
+        return {
+          message: (message: string) => {
+            this.message(message);
+          },
+          success: (message: string) => {
+            this.success(message);
+          },
+          error: (message: string) => {
+            this.error(message);
+          },
+        };
+      },
+    };
 
-  // Activate console.log patching when task log is created
-  activeTaskLog = wrappedTaskLog;
-  patchConsoleLog();
+    // Activate console.log patching when task log is created
+    activeTaskLog = wrappedTaskLog;
+    patchConsoleLog();
 
-  return wrappedTaskLog;
+    return wrappedTaskLog;
+  } else {
+    return {
+      message: (message: string) => {
+        logger.log(message);
+      },
+      success: (message: string) => {
+        logger.log(message);
+      },
+      error: (message: string) => {
+        logger.log(message);
+      },
+      group: (title: string) => {
+        logger.log(`\n${title}\n`);
+        return {
+          message: (message: string) => {
+            logger.log(message);
+          },
+          success: (message: string) => {
+            logger.log(message);
+          },
+          error: (message: string) => {
+            logger.log(message);
+          },
+        };
+      },
+    };
+  }
 };

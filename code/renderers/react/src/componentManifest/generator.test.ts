@@ -481,7 +481,7 @@ function withCSF3(body: string) {
   `;
 }
 
-test('no component field', async () => {
+test('fall back to index title when no component name', async () => {
   const code = dedent`
     import type { Meta } from '@storybook/react';
     import { Button } from './Button';
@@ -494,27 +494,41 @@ test('no component field', async () => {
   `;
   expect(await getManifestForStory(code)).toMatchInlineSnapshot(`
     {
-      "error": {
-        "message": "Specify meta.component for reactDocgen data to be included in the manifest.
-      2 | import { Button } from './Button';
-      3 |
-    > 4 | export default {
-        | ^
-      5 |   args: { onClick: fn() },
-      6 | };
-      7 |",
-      },
+      "description": "Primary UI component for user interaction",
+      "error": undefined,
       "examples": [
         {
-          "error": {
-            "message": "Could not generate snippet without component name.",
-          },
           "name": "Primary",
+          "snippet": "const Primary = () => <Button onClick={fn()}></Button>;",
         },
       ],
       "id": "example-button",
+      "import": undefined,
       "jsDocTags": {},
+      "name": "Button",
       "path": "./src/stories/Button.stories.ts",
+      "reactDocgen": {
+        "actualName": "Button",
+        "definedInFile": "/app/src/stories/Button.tsx",
+        "description": "Primary UI component for user interaction",
+        "displayName": "Button",
+        "exportName": "Button",
+        "methods": [],
+        "props": {
+          "primary": {
+            "defaultValue": {
+              "computed": false,
+              "value": "false",
+            },
+            "description": "Description of primary",
+            "required": false,
+            "tsType": {
+              "name": "boolean",
+            },
+          },
+        },
+      },
+      "summary": undefined,
     }
   `);
 });

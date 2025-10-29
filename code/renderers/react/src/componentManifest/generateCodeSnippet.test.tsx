@@ -11,7 +11,7 @@ function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
 
   const snippets = Object.keys(csf._storyExports)
-    .map((name) => getCodeSnippet(csf, name))
+    .map((name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle'))
     .filter(Boolean);
 
   return recast.print(t.program(snippets)).code;

@@ -5,11 +5,11 @@ import { invariant } from './utils';
 
 export function getCodeSnippet(
   csf: CsfFile,
-  storyName: string
+  storyName: string,
+  componentName?: string
 ): t.VariableDeclaration | t.FunctionDeclaration {
   const storyDeclaration = csf._storyDeclarationPath[storyName];
   const metaObj = csf._metaNode;
-  const componentName = csf._meta?.component;
 
   if (!storyDeclaration) {
     const message = 'Expected story to be a function or variable declaration';

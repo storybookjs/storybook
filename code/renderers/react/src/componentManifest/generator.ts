@@ -20,6 +20,7 @@ interface ReactComponentManifest extends ComponentManifest {
 export const componentManifestGenerator = async () => {
   return (async (storyIndexGenerator) => {
     const index = await storyIndexGenerator.getIndex();
+
     const groupByComponentId = groupBy(
       Object.values(index.entries)
         .filter((entry) => entry.type === 'story')
@@ -33,18 +34,16 @@ export const componentManifestGenerator = async () => {
       singleEntryPerComponent.flatMap(async (entry): Promise<ReactComponentManifest> => {
         const storyFile = await readFile(path.join(process.cwd(), entry.importPath), 'utf-8');
         const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
-        const componentName = csf._meta?.component;
+        const name = csf._meta?.component ?? entry.title.split('/').at(-1)!;
         const id = entry.id.split('--')[0];
         const importPath = entry.importPath;
-
-        const name = componentName;
 
         const examples = Object.keys(csf._stories)
           .map((storyName) => {
             try {
               return {
                 name: storyName,
-                snippet: recast.print(getCodeSnippet(csf, storyName)).code,
+                snippet: recast.print(getCodeSnippet(csf, storyName, name)).code,
               };
             } catch (e) {
               invariant(e instanceof Error);
@@ -60,21 +59,11 @@ export const componentManifestGenerator = async () => {
 
         const base = {
           id,
+          name,
           path: importPath,
           examples,
           jsDocTags: {},
         } satisfies Partial<ComponentManifest>;
-
-        if (!componentName) {
-          const message =
-            'Specify meta.component for reactDocgen data to be included in the manifest.';
-          return {
-            ...base,
-            error: {
-              message: csf._metaStatementPath?.buildCodeFrameError(message).message ?? message,
-            },
-          };
-        }
 
         if (!entry.componentPath) {
           const message = `No component file found for the "${name}" component.`;
@@ -118,7 +107,7 @@ export const componentManifestGenerator = async () => {
 
         return {
           ...base,
-          name: componentName,
+          name,
           description: manifestDescription?.trim(),
           summary: tags.summary?.[0],
           import: tags.import?.[0],

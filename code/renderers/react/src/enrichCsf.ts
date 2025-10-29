@@ -19,20 +19,31 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
       }
       const { format } = await getPrettier();
       let node;
-      try {
-        node = getCodeSnippet(csfSource, key);
-      } catch (e) {
-        // don't bother the user if we can't generate a snippet
-        return;
-      }
-
       let snippet;
       try {
-        // TODO read the user config
-        snippet = await format(recast.print(node).code, {
-          filepath: join(process.cwd(), 'component.tsx'),
-        });
+        node = getCodeSnippet(csfSource, key, csfSource._meta?.component);
       } catch (e) {
+        if (!(e instanceof Error)) {
+          return;
+        }
+        snippet = e.message;
+      }
+
+      try {
+        // TODO read the user config
+        if (!snippet && node) {
+          snippet = await format(recast.print(node).code, {
+            filepath: join(process.cwd(), 'component.tsx'),
+          });
+        }
+      } catch (e) {
+        if (!(e instanceof Error)) {
+          return;
+        }
+        snippet = e.message;
+      }
+
+      if (!snippet) {
         return;
       }
 

@@ -29,6 +29,7 @@ async function run() {
     },
     plugins: [
       dts({
+        resolve: true,
         emitDtsOnly: true,
         tsconfig: join(process.cwd(), 'tsconfig.json'),
         compilerOptions: {

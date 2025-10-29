@@ -118,7 +118,7 @@ export const configureFlatConfig = async (code: string) => {
             const firstArg = init.arguments[0];
             if (t.isExpression(firstArg)) {
               const unwrappedArg = unwrapTSExpression(firstArg);
-              if (t.isArrayExpression(unwrappedArg)) {
+              if (unwrappedArg && t.isArrayExpression(unwrappedArg)) {
                 unwrappedArg.elements.push(t.spreadElement(storybookConfig));
               }
             }

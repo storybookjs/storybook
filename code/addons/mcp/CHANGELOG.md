@@ -1,14 +1,27 @@
 # @storybook/addon-mcp
 
+## 0.1.1
+
+### Patch Changes
+
+- [#42](https://github.com/storybookjs/mcp/pull/42) [`57a1602`](https://github.com/storybookjs/mcp/commit/57a16022dda428ddc303eec615b5b4c73942144c) Thanks [@JReinhold](https://github.com/JReinhold)! - Log telemetry when the additional @storybook/mcp tools are called
+
+- [#44](https://github.com/storybookjs/mcp/pull/44) [`140ecc4`](https://github.com/storybookjs/mcp/commit/140ecc4b7845ba86a3d2a0d6aa4c69a5f4c33a78) Thanks [@JReinhold](https://github.com/JReinhold)! - Support Storybook 9.1.16 and up
+
+- Updated dependencies [[`57a1602`](https://github.com/storybookjs/mcp/commit/57a16022dda428ddc303eec615b5b4c73942144c)]:
+  - @storybook/mcp@0.0.5
+
 ## 0.1.0
 
 ### Minor Changes
 
 - [#36](https://github.com/storybookjs/mcp/pull/36) [`93f88e4`](https://github.com/storybookjs/mcp/commit/93f88e4a28c3dae1b4c02c29839eb5e8b9375146) Thanks [@JReinhold](https://github.com/JReinhold)! - Add support for Webpack (including Webpack-based frameworks like Next.js)
 
-  # Breaking Change
+# Breaking Change
 
-  This requires version 10.1 of Storybook, currently only available as the canary version `0.0.0-pr-32810-sha-6e759c7e`. If you want to continue to use the addon with Storybook 9 or 10.0 (and Vite), stick to [version `0.0.9` of this package](https://github.com/storybookjs/mcp/tree/%40storybook/addon-mcp%400.0.9).
+This requires version 10.1 of Storybook, currently only available as the canary version `0.0.0-pr-32810-sha-6e759c7e`. If you want to continue to use the addon with Storybook 9 or 10.0 (and Vite), stick to [version `0.0.9` of this package](https://github.com/storybookjs/mcp/tree/%40storybook/addon-mcp%400.0.9).
+
+EDIT: The above is not true anymore, see version [0.1.1](#011) of this package.
 
 ### Patch Changes
 

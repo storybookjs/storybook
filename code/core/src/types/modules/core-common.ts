@@ -348,7 +348,7 @@ export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 export interface ComponentManifest {
   id: string;
   path: string;
-  name?: string;
+  name: string;
   description?: string;
   import?: string;
   summary?: string;

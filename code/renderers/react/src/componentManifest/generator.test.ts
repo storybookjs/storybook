@@ -490,7 +490,7 @@ test('fall back to index title when no component name', async () => {
       args: { onClick: fn() },
     };
     
-    export const Primary = {};
+    export const Primary = () => <Button csf1="story" />;
   `;
   expect(await getManifestForStory(code)).toMatchInlineSnapshot(`
     {
@@ -499,7 +499,7 @@ test('fall back to index title when no component name', async () => {
       "examples": [
         {
           "name": "Primary",
-          "snippet": "const Primary = () => <Button onClick={fn()}></Button>;",
+          "snippet": "const Primary = () => <Button csf1="story" />;",
         },
       ],
       "id": "example-button",

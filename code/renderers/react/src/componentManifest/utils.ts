@@ -11,7 +11,11 @@ export const groupBy = <K extends PropertyKey, T>(
   }, {});
 };
 
-export function invariant(condition: any, message?: string | (() => string)): asserts condition {
+// This invariant allows for lazy evaluation of the message, which we need to avoid excessive computation.
+export function invariant(
+  condition: unknown,
+  message?: string | (() => string)
+): asserts condition {
   if (condition) {
     return;
   }

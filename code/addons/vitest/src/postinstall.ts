@@ -138,10 +138,17 @@ export default async function postInstall(options: PostinstallOptions) {
 
   // Install Playwright browser binaries using AddonVitestService
   if (!options.skipDependencyManagement) {
-    const playwrightErrors = await addonVitestService.installPlaywright(packageManager, {
-      skipInstall: options.skipInstall,
-    });
-    errors.push(...playwrightErrors);
+    if (!options.skipInstall) {
+      const playwrightErrors = await addonVitestService.installPlaywright(packageManager, {
+        yes: options.yes,
+      });
+      errors.push(...playwrightErrors);
+    } else {
+      logger.warn(dedent`
+        Playwright browser binaries installation skipped. Please run the following command manually later:
+        ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
+      `);
+    }
   }
 
   const fileExtension =

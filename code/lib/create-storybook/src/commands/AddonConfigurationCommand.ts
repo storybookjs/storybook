@@ -1,3 +1,4 @@
+import { AddonVitestService } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
@@ -25,7 +26,7 @@ export type ExecuteAddonConfigurationResult = {
  * - Handle configuration errors gracefully
  */
 export class AddonConfigurationCommand {
-  constructor() {}
+  constructor(private readonly addonVitestService = new AddonVitestService()) {}
 
   /** Execute addon configuration */
   async execute({
@@ -39,12 +40,19 @@ export class AddonConfigurationCommand {
     }
 
     try {
-      const { hasFailures } = await this.configureAddons(
+      const { hasFailures, addonResults } = await this.configureAddons(
         packageManager,
         configDir,
         addons,
         options
       );
+
+      if (addonResults.has('@storybook/addon-vitest')) {
+        await this.addonVitestService.installPlaywright(packageManager, {
+          yes: options.yes,
+        });
+      }
+
       return { status: hasFailures ? 'failed' : 'success' };
     } catch {
       return { status: 'failed' };
@@ -57,7 +65,7 @@ export class AddonConfigurationCommand {
     configDir: string,
     addons: string[],
     options: CommandOptions
-  ): Promise<{ hasFailures: boolean }> {
+  ) {
     // Import postinstallAddon from cli-storybook package
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
 
@@ -114,7 +122,7 @@ export class AddonConfigurationCommand {
       )
     );
 
-    return { hasFailures };
+    return { hasFailures, addonResults };
   }
 }
 

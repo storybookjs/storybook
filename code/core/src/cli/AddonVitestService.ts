@@ -112,38 +112,52 @@ export class AddonVitestService {
    */
   async installPlaywright(
     packageManager: JsPackageManager,
-    options: { skipInstall?: boolean } = {}
+    options: { yes?: boolean } = {}
   ): Promise<string[]> {
     const errors: string[] = [];
 
-    // Skip Playwright installation when dependency management is handled externally
-    if (options.skipInstall) {
-      logger.info(dedent`
-        Skipping Playwright installation, please run this command manually:
-        ${CLI_COLORS.cta('npx playwright install chromium --with-deps')}
-      `);
-    } else {
-      try {
-        const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
-        await prompt.executeTask(
-          () =>
-            packageManager.executeCommand({
+    const playwrightCommand = ['playwright', 'install', 'chromium', '--with-deps'];
+
+    try {
+      const shouldBeInstalled = options.yes
+        ? true
+        : await (async () => {
+            logger.log(dedent`
+            Playwright browser binaries are necessary for @storybook/addon-vitest. The download can take some time. If you don't want to wait, you can skip the installation and run the following command manually later:
+            ${CLI_COLORS.cta(playwrightCommand.join(' '))}
+            `);
+            return prompt.confirm({
+              message: 'Do you want to install Playwright with Chromium now?',
+              initialValue: true,
+            });
+          })();
+
+      if (shouldBeInstalled) {
+        await prompt.executeTaskWithSpinner(
+          () => {
+            const result = packageManager.executeCommand({
               command: 'npx',
               args: playwrightCommand,
-            }),
+              killSignal: 'SIGINT',
+            });
+
+            return result;
+          },
           {
             id: 'playwright-installation',
-            intro: 'Configuring Playwright with Chromium',
+            intro: 'Installing Playwright browser binaries',
             error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommand.join(' ')}`,
-            success: 'Playwright installed successfully',
+            success: 'Playwright browser binaries installed successfully',
           }
         );
-      } catch (e) {
-        if (e instanceof Error) {
-          errors.push(e.stack ?? e.message);
-        } else {
-          errors.push(String(e));
-        }
+      } else {
+        logger.warn('Playwright installation skipped');
+      }
+    } catch (e) {
+      if (e instanceof Error) {
+        errors.push(e.stack ?? e.message);
+      } else {
+        errors.push(String(e));
       }
     }
 

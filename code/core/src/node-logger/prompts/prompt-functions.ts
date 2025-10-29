@@ -34,7 +34,9 @@ let activeSpinner: SpinnerInstance | null = null;
 let activeTaskLog: TaskLogInstance | null = null;
 let originalConsoleLog: typeof console.log | null = null;
 
-const isTTY = process.stdout.isTTY;
+const isInteractiveTerminal = () => {
+  return process.stdout.isTTY && process.stdin.isTTY && !process.env.CI;
+};
 
 // Console.log patching functions
 const patchConsoleLog = () => {
@@ -103,7 +105,7 @@ export const multiselect = async <T>(
 };
 
 export const spinner = (options: SpinnerOptions): SpinnerInstance => {
-  if (isTTY) {
+  if (isInteractiveTerminal()) {
     const spinnerInstance = getPromptProvider().spinner(options);
 
     // Wrap the spinner methods to handle console.log patching
@@ -144,7 +146,7 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
 };
 
 export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
-  if (isTTY) {
+  if (isInteractiveTerminal()) {
     const task = getPromptProvider().taskLog(options);
 
     // Wrap the task log methods to handle console.log patching

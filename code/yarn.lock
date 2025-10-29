@@ -2089,9 +2089,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@chromatic-com/storybook@npm:^4.1.1":
-  version: 4.1.1
-  resolution: "@chromatic-com/storybook@npm:4.1.1"
+"@chromatic-com/storybook@npm:^4.1.2":
+  version: 4.1.2
+  resolution: "@chromatic-com/storybook@npm:4.1.2"
   dependencies:
     "@neoconfetti/react": "npm:^1.0.0"
     chromatic: "npm:^12.0.0"
@@ -2099,8 +2099,8 @@ __metadata:
     jsonfile: "npm:^6.1.0"
     strip-ansi: "npm:^7.1.0"
   peerDependencies:
-    storybook: ^0.0.0-0 || ^9.0.0 || ^9.1.0-0 || ^9.2.0-0 || ^10.0.0-0
-  checksum: 10c0/7c343305a6feedfddf123b302e5b0aea5bd09fa5722e5d81d6f331d6d8282825002b55e9360d438c71edc7344e622d4f573804255fc779d5dd39d6d09b2fa6ea
+    storybook: ^0.0.0-0 || ^9.0.0 || ^9.1.0-0 || ^9.2.0-0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0
+  checksum: 10c0/1719a79acba4a6e851b0729724f049fae99c904a9619916d877ec05524cd6bc4141908b8d11aef4dfe9724fbeb6d3629ffbc8ea15f1ac5b59d5317b93a70a510
   languageName: node
   linkType: hard
 
@@ -6095,16 +6095,16 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-designs@npm:^11.0.0":
-  version: 11.0.0
-  resolution: "@storybook/addon-designs@npm:11.0.0"
+"@storybook/addon-designs@npm:^11.0.1":
+  version: 11.0.1
+  resolution: "@storybook/addon-designs@npm:11.0.1"
   dependencies:
     "@figspec/react": "npm:^1.0.0"
   peerDependencies:
-    "@storybook/addon-docs": ^10.0.0 || ^10.0.0-0
+    "@storybook/addon-docs": ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    storybook: ^10.0.0 || ^10.0.0-0
+    storybook: ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0
   peerDependenciesMeta:
     "@storybook/addon-docs":
       optional: true
@@ -6112,7 +6112,7 @@ __metadata:
       optional: true
     react-dom:
       optional: true
-  checksum: 10c0/c3e6ae2b55b6d4bae31af213aa92796c20e419e53e133504f3e1f666d4aff591112ef988748497fdd72fd10e56af32dda5caa3998d9b76b889cee0074f69b407
+  checksum: 10c0/69aca21c9be81345c91c782a72d7b2d90633581ef28be582836af1d9a7ddcc7515816391020b0ae947058bc59fd56c439a4b957a46ece6439cfbf8bfd1e0e2e7
   languageName: node
   linkType: hard
 
@@ -6847,12 +6847,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/root@workspace:."
   dependencies:
-    "@chromatic-com/storybook": "npm:^4.1.1"
+    "@chromatic-com/storybook": "npm:^4.1.2"
     "@nx/vite": "npm:20.8.2"
     "@nx/workspace": "npm:20.8.2"
     "@playwright/test": "npm:1.52.0"
     "@storybook/addon-a11y": "workspace:*"
-    "@storybook/addon-designs": "npm:^11.0.0"
+    "@storybook/addon-designs": "npm:^11.0.1"
     "@storybook/addon-docs": "workspace:*"
     "@storybook/addon-links": "workspace:*"
     "@storybook/addon-onboarding": "workspace:*"

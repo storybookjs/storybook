@@ -11,7 +11,7 @@ export default defineGeneratorModule({
   },
   configure: async () => {
     return {
-      staticDir: 'dist',
+      extensions: ['js', 'ts', 'gts', 'gjs'],
     };
   },
 });

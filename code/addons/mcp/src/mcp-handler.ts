@@ -9,11 +9,11 @@ import {
 	addListAllComponentsTool,
 	addGetComponentDocumentationTool,
 } from '@storybook/mcp';
-import type { Options, CoreConfig } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
-import type { AddonContext } from './types.ts';
+import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
 
 let transport: HttpTransport<AddonContext> | undefined;
@@ -45,7 +45,7 @@ const initializeMCPServer = async (options: Options) => {
 		}
 	});
 
-	// Register core addon tools
+	// Register dev addon tools
 	await addGetStoryUrlsTool(server);
 	await addGetUIBuildingInstructionsTool(server);
 
@@ -59,8 +59,9 @@ const initializeMCPServer = async (options: Options) => {
 		logger.info(
 			'Experimental components manifest feature detected - registering component tools',
 		);
-		await addListAllComponentsTool(server);
-		await addGetComponentDocumentationTool(server);
+		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
+		await addListAllComponentsTool(server, contextAwareEnabled);
+		await addGetComponentDocumentationTool(server, contextAwareEnabled);
 	}
 
 	transport = new HttpTransport(server, { path: null });
@@ -74,12 +75,21 @@ const initializeMCPServer = async (options: Options) => {
  * Vite middleware handler that wraps the MCP handler.
  * This converts Node.js IncomingMessage/ServerResponse to Web API Request/Response.
  */
-export const mcpServerHandler = async (
-	req: IncomingMessage,
-	res: ServerResponse,
-	next: Connect.NextFunction,
-	options: Options,
-) => {
+type McpServerHandlerParams = {
+	req: IncomingMessage;
+	res: ServerResponse;
+	next: Connect.NextFunction;
+	options: Options;
+	addonOptions: AddonOptionsOutput;
+};
+
+export const mcpServerHandler = async ({
+	req,
+	res,
+	next,
+	options,
+	addonOptions,
+}: McpServerHandlerParams) => {
 	const disableTelemetry = options.disableTelemetry ?? false;
 
 	// Initialize MCP server and transport on first request, with concurrency safety
@@ -91,9 +101,9 @@ export const mcpServerHandler = async (
 	// Convert Node.js request to Web API Request
 	const webRequest = await incomingMessageToWebRequest(req);
 
-	// Build the addon context
 	const addonContext: AddonContext = {
 		options,
+		toolsets: getToolsets(webRequest, addonOptions),
 		origin: origin!,
 		disableTelemetry,
 		// Source URL for component manifest tools - points to the manifest endpoint
@@ -181,4 +191,34 @@ export async function webResponseToServerResponse(
 	}
 
 	nodeResponse.end();
+}
+
+export function getToolsets(
+	request: Request,
+	addonOptions: AddonOptionsOutput,
+): AddonOptionsOutput['toolsets'] {
+	const toolsetHeader = request.headers.get('X-MCP-Toolsets');
+	if (!toolsetHeader || toolsetHeader.trim() === '') {
+		// If no header is present, return the addon options as-is
+		return addonOptions.toolsets;
+	}
+
+	// If the toolsets headers are present, default to everything being disabled
+	// except for the ones explicitly enabled in the header
+	const toolsets: AddonOptionsOutput['toolsets'] = {
+		dev: false,
+		docs: false,
+	};
+
+	// The format of the header is a comma-separated list of enabled toolsets
+	// e.g., "dev,docs"
+	const enabledToolsets = toolsetHeader.split(',');
+
+	for (const enabledToolset of enabledToolsets) {
+		const trimmedToolset = enabledToolset.trim();
+		if (trimmedToolset in toolsets) {
+			toolsets[trimmedToolset as keyof typeof toolsets] = true;
+		}
+	}
+	return toolsets;
 }

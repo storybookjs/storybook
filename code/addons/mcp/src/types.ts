@@ -2,6 +2,22 @@ import * as v from 'valibot';
 import type { Options } from 'storybook/internal/types';
 import type { StorybookContext } from '@storybook/mcp';
 
+export const AddonOptions = v.object({
+	toolsets: v.optional(
+		v.object({
+			dev: v.exactOptional(v.boolean(), true),
+			docs: v.exactOptional(v.boolean(), true),
+		}),
+		{
+			// Default values for toolsets
+			dev: true,
+			docs: true,
+		},
+	),
+});
+
+export type AddonOptionsInput = v.InferInput<typeof AddonOptions>;
+export type AddonOptionsOutput = v.InferOutput<typeof AddonOptions>;
 /**
  * Custom context passed to MCP server and tools.
  * Contains Storybook-specific configuration and runtime information.
@@ -24,6 +40,8 @@ export interface AddonContext extends StorybookContext {
 	 * Whether telemetry collection is disabled.
 	 */
 	disableTelemetry: boolean;
+
+	toolsets?: NonNullable<AddonOptionsOutput>['toolsets'];
 }
 
 /**

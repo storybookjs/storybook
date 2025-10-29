@@ -3,6 +3,7 @@ import {
 	incomingMessageToWebRequest,
 	webResponseToServerResponse,
 	mcpServerHandler,
+	getToolsets,
 } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
@@ -255,7 +256,18 @@ describe('mcpServerHandler', () => {
 		const { response, getResponseData } = createMockServerResponse();
 		const mockNext = vi.fn() as Connect.NextFunction;
 
-		await mcpServerHandler(mockReq, response, mockNext, mockOptions as any);
+		await mcpServerHandler({
+			req: mockReq,
+			res: response,
+			next: mockNext,
+			options: mockOptions as any,
+			addonOptions: {
+				toolsets: {
+					dev: true,
+					docs: true,
+				},
+			},
+		});
 
 		const { body } = getResponseData();
 		expect(response.end).toHaveBeenCalled();
@@ -306,7 +318,18 @@ describe('mcpServerHandler', () => {
 		(handler as any).transport = undefined;
 		(handler as any).origin = undefined;
 
-		await mcpServerHandler(mockReq, response, mockNext, mockOptions as any);
+		await mcpServerHandler({
+			req: mockReq,
+			res: response,
+			next: mockNext,
+			options: mockOptions as any,
+			addonOptions: {
+				toolsets: {
+					dev: true,
+					docs: true,
+				},
+			},
+		});
 
 		// Verify handler completes successfully when telemetry is disabled
 		expect(response.end).toHaveBeenCalled();
@@ -321,7 +344,7 @@ describe('mcpServerHandler', () => {
 			await import('@storybook/mcp');
 
 		const applyMock = vi.fn((key: string, defaultValue?: any) => {
-			if (key === 'core') {
+			if (key === 'dev') {
 				return Promise.resolve({ disableTelemetry: false });
 			}
 			if (key === 'features') {
@@ -345,18 +368,160 @@ describe('mcpServerHandler', () => {
 		const { response } = createMockServerResponse();
 		const mockNext = vi.fn() as Connect.NextFunction;
 
-		await freshHandler(mockReq, response, mockNext, mockOptions as any);
+		await freshHandler({
+			req: mockReq,
+			res: response,
+			next: mockNext,
+			options: mockOptions as any,
+			addonOptions: {
+				toolsets: {
+					dev: true,
+					docs: true,
+				},
+			},
+		});
 
 		// Verify component tools were registered
 		expect(addListAllComponentsTool).toHaveBeenCalledExactlyOnceWith(
 			expect.objectContaining({
 				tool: expect.any(Function),
 			}),
+			expect.any(Function),
 		);
 		expect(addGetComponentDocumentationTool).toHaveBeenCalledExactlyOnceWith(
 			expect.objectContaining({
 				tool: expect.any(Function),
 			}),
+			expect.any(Function),
 		);
+
+		// Verify the 'enabled' callbacks matches the truthy addon options
+		const listToolEnabledCallback = vi.mocked(addListAllComponentsTool).mock
+			.calls[0]?.[1]!;
+		const getToolEnabledCallback = vi.mocked(addGetComponentDocumentationTool)
+			.mock.calls[0]?.[1]!;
+
+		expect(listToolEnabledCallback()).toBe(true);
+		expect(getToolEnabledCallback()).toBe(true);
+	});
+});
+
+describe('getToolsets', () => {
+	it('should return addon options when no header is present', () => {
+		const request = new Request('http://localhost:6006/mcp');
+		const addonOptions = {
+			toolsets: {
+				dev: true,
+				docs: false,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			dev: true,
+			docs: false,
+		});
+	});
+
+	it('should enable only toolsets specified in header', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: { 'X-MCP-Toolsets': 'dev' },
+		});
+		const addonOptions = {
+			toolsets: {
+				dev: true,
+				docs: true,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			dev: true,
+			docs: false,
+		});
+	});
+
+	it('should enable multiple toolsets from comma-separated header', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: {
+				'X-MCP-Toolsets': 'dev,docs',
+			},
+		});
+		const addonOptions = {
+			toolsets: {
+				dev: false,
+				docs: false,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			dev: true,
+			docs: true,
+		});
+	});
+
+	it('should handle whitespace in header values', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: {
+				'X-MCP-Toolsets': ' dev , docs ',
+			},
+		});
+		const addonOptions = {
+			toolsets: {
+				dev: false,
+				docs: false,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			dev: true,
+			docs: true,
+		});
+	});
+
+	it('should ignore invalid toolset names in header', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: {
+				'X-MCP-Toolsets': 'dev,invalidToolset,docs',
+			},
+		});
+		const addonOptions = {
+			toolsets: {
+				dev: false,
+				docs: false,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			dev: true,
+			docs: true,
+		});
+	});
+
+	it('should return addon options when header is present with empty value', () => {
+		const request = new Request('http://localhost:6006/mcp', {
+			headers: { 'X-MCP-Toolsets': '' },
+		});
+		const addonOptions = {
+			toolsets: {
+				dev: true,
+				docs: true,
+			},
+		};
+
+		const result = getToolsets(request, addonOptions);
+
+		expect(result).toEqual({
+			dev: true,
+			docs: true,
+		});
 	});
 });

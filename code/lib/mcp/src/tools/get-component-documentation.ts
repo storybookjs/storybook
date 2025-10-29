@@ -19,6 +19,7 @@ type GetComponentDocumentationInput = v.InferOutput<
 
 export async function addGetComponentDocumentationTool(
 	server: McpServer<any, StorybookContext>,
+	enabled?: Parameters<McpServer<any, StorybookContext>['tool']>[0]['enabled'],
 ) {
 	server.tool(
 		{
@@ -26,6 +27,7 @@ export async function addGetComponentDocumentationTool(
 			title: 'Get Documentation for Components',
 			description: 'Get detailed documentation for specific UI components',
 			schema: GetComponentDocumentationInput,
+			enabled,
 		},
 		async (input: GetComponentDocumentationInput) => {
 			try {

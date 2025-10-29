@@ -14,6 +14,8 @@ import { listStories } from './list-stories';
 const asyncFilter = async (arr: string[], predicate: (val: string) => Promise<boolean>) =>
   Promise.all(arr.map(predicate)).then((results) => arr.filter((_v, index) => results[index]));
 
+// TODO: This function should be reworked. The code it uses is outdated and we need to investigate
+// More info: https://github.com/storybookjs/storybook/issues/32462#issuecomment-3421326557
 export async function getOptimizeDeps(config: ViteInlineConfig, options: Options) {
   const extraOptimizeDeps = await options.presets.apply('optimizeViteDeps', []);
 

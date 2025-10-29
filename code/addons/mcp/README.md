@@ -47,8 +47,8 @@ export default {
 			name: '@storybook/addon-mcp',
 			options: {
 				toolsets: {
-					core: true, // Tools for story URL retrieval and UI building instructions (default: true)
-					componentDocumentation: true, // Tools for component manifest and documentation (default: true, requires experimental feature)
+					dev: true, // Tools for story URL retrieval and UI building instructions (default: true)
+					docs: true, // Tools for component manifest and documentation (default: true, requires experimental feature)
 				},
 			},
 		},
@@ -58,14 +58,14 @@ export default {
 
 **Available Toolsets:**
 
-- `core`: Enables [Core Tools](#core-tools)
-- `componentDocumentation`: Enables [Component Documentation Tools](#component-documentation-tools-experimental)
+- `dev`: Enables [Dev Tools](#dev-tools)
+- `docs`: Enables [Documentation Tools](#docs-tools-experimental)
 
-Disabling the Core Tools is useful when you want to try out the same experience that your external component consumers will get, because they only get the Component Documentation Tools.
+Disabling the Dev Tools is useful when you want to try out the same experience that your external component consumers will get, because they only get the Component Documentation Tools.
 
 #### Configuring toolsets with headers
 
-You can also configure the available toolsets when setting up the MCP Server in your MCP Client by setting the `X-MCP-Toolsets` header. The header is a comma-separated list of toolset names, `X-MCP-Toolsets: core,componentDocumentation`. Eg. to configure your client to only have the Component Documentation Tools, the `.mcp.json`-file could look like this (format depends on the exact client you're using):
+You can also configure the available toolsets when setting up the MCP Server in your MCP Client by setting the `X-MCP-Toolsets` header. The header is a comma-separated list of toolset names, `X-MCP-Toolsets: dev,docs`. Eg. to configure your client to only have the Component Documentation Tools, the `.mcp.json`-file could look like this (format depends on the exact client you're using):
 
 ```json
 {
@@ -73,7 +73,7 @@ You can also configure the available toolsets when setting up the MCP Server in 
 		"url": "http://localhost:6006/mcp",
 		"type": "http",
 		"headers": {
-			"X-MCP-Toolsets": "componentDocumentation"
+			"X-MCP-Toolsets": "docs"
 		}
 	}
 }
@@ -134,7 +134,7 @@ This addon provides MCP tools that your agent can use. The goal is that the agen
 
 **If you are prompting from an IDE like VSCode or Cursor, be sure to use `Agent` mode and `sonnet-4.5` or better.**
 
-### Core Tools
+### Dev Tools
 
 These tools are always available when the addon is installed:
 
@@ -165,7 +165,7 @@ Agent calls tool, gets response:
 http://localhost:6006/?path=/story/example-button--primary
 ```
 
-### Component Documentation Tools (Experimental)
+### Docs Tools (Experimental)
 
 These additional tools are available when the **experimental** component manifest feature is enabled. They provide agents with detailed documentation about your UI components.
 

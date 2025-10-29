@@ -15,10 +15,10 @@ const config = defineMain({
 		{
 			name: '@storybook/addon-mcp',
 			options: {
-				toolsets: {
-					// core: false,
-					// componentDocumentation: false,
-				},
+				// toolsets: {
+				// 	dev: false,
+				// 	docs: false,
+				// },
 			},
 		},
 	],

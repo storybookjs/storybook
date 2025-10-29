@@ -45,7 +45,7 @@ const initializeMCPServer = async (options: Options) => {
 		}
 	});
 
-	// Register core addon tools
+	// Register dev addon tools
 	await addGetStoryUrlsTool(server);
 	await addGetUIBuildingInstructionsTool(server);
 
@@ -59,8 +59,7 @@ const initializeMCPServer = async (options: Options) => {
 		logger.info(
 			'Experimental components manifest feature detected - registering component tools',
 		);
-		const contextAwareEnabled = () =>
-			server.ctx.custom?.toolsets?.componentDocumentation ?? true;
+		const contextAwareEnabled = () => server.ctx.custom?.toolsets?.docs ?? true;
 		await addListAllComponentsTool(server, contextAwareEnabled);
 		await addGetComponentDocumentationTool(server, contextAwareEnabled);
 	}
@@ -207,12 +206,12 @@ export function getToolsets(
 	// If the toolsets headers are present, default to everything being disabled
 	// except for the ones explicitly enabled in the header
 	const toolsets: AddonOptionsOutput['toolsets'] = {
-		core: false,
-		componentDocumentation: false,
+		dev: false,
+		docs: false,
 	};
 
 	// The format of the header is a comma-separated list of enabled toolsets
-	// e.g., "core,componentDocumentation"
+	// e.g., "dev,docs"
 	const enabledToolsets = toolsetHeader.split(',');
 
 	for (const enabledToolset of enabledToolsets) {

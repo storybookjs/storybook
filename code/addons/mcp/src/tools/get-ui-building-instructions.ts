@@ -19,7 +19,7 @@ export async function addGetUIBuildingInstructionsTool(
       
       ALWAYS call this tool before doing any UI/frontend/React/component development, including but not
       limited to adding or updating new components, pages, screens or layouts.`,
-			enabled: () => server.ctx.custom?.toolsets?.core ?? true,
+			enabled: () => server.ctx.custom?.toolsets?.dev ?? true,
 		},
 		async () => {
 			try {

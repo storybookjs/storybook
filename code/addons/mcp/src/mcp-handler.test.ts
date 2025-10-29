@@ -263,8 +263,8 @@ describe('mcpServerHandler', () => {
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: {
-					core: true,
-					componentDocumentation: true,
+					dev: true,
+					docs: true,
 				},
 			},
 		});
@@ -325,8 +325,8 @@ describe('mcpServerHandler', () => {
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: {
-					core: true,
-					componentDocumentation: true,
+					dev: true,
+					docs: true,
 				},
 			},
 		});
@@ -344,7 +344,7 @@ describe('mcpServerHandler', () => {
 			await import('@storybook/mcp');
 
 		const applyMock = vi.fn((key: string, defaultValue?: any) => {
-			if (key === 'core') {
+			if (key === 'dev') {
 				return Promise.resolve({ disableTelemetry: false });
 			}
 			if (key === 'features') {
@@ -375,8 +375,8 @@ describe('mcpServerHandler', () => {
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: {
-					core: true,
-					componentDocumentation: true,
+					dev: true,
+					docs: true,
 				},
 			},
 		});
@@ -411,98 +411,98 @@ describe('getToolsets', () => {
 		const request = new Request('http://localhost:6006/mcp');
 		const addonOptions = {
 			toolsets: {
-				core: true,
-				componentDocumentation: false,
+				dev: true,
+				docs: false,
 			},
 		};
 
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			core: true,
-			componentDocumentation: false,
+			dev: true,
+			docs: false,
 		});
 	});
 
 	it('should enable only toolsets specified in header', () => {
 		const request = new Request('http://localhost:6006/mcp', {
-			headers: { 'X-MCP-Toolsets': 'core' },
+			headers: { 'X-MCP-Toolsets': 'dev' },
 		});
 		const addonOptions = {
 			toolsets: {
-				core: true,
-				componentDocumentation: true,
+				dev: true,
+				docs: true,
 			},
 		};
 
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			core: true,
-			componentDocumentation: false,
+			dev: true,
+			docs: false,
 		});
 	});
 
 	it('should enable multiple toolsets from comma-separated header', () => {
 		const request = new Request('http://localhost:6006/mcp', {
 			headers: {
-				'X-MCP-Toolsets': 'core,componentDocumentation',
+				'X-MCP-Toolsets': 'dev,docs',
 			},
 		});
 		const addonOptions = {
 			toolsets: {
-				core: false,
-				componentDocumentation: false,
+				dev: false,
+				docs: false,
 			},
 		};
 
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			core: true,
-			componentDocumentation: true,
+			dev: true,
+			docs: true,
 		});
 	});
 
 	it('should handle whitespace in header values', () => {
 		const request = new Request('http://localhost:6006/mcp', {
 			headers: {
-				'X-MCP-Toolsets': ' core , componentDocumentation ',
+				'X-MCP-Toolsets': ' dev , docs ',
 			},
 		});
 		const addonOptions = {
 			toolsets: {
-				core: false,
-				componentDocumentation: false,
+				dev: false,
+				docs: false,
 			},
 		};
 
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			core: true,
-			componentDocumentation: true,
+			dev: true,
+			docs: true,
 		});
 	});
 
 	it('should ignore invalid toolset names in header', () => {
 		const request = new Request('http://localhost:6006/mcp', {
 			headers: {
-				'X-MCP-Toolsets': 'core,invalidToolset,componentDocumentation',
+				'X-MCP-Toolsets': 'dev,invalidToolset,docs',
 			},
 		});
 		const addonOptions = {
 			toolsets: {
-				core: false,
-				componentDocumentation: false,
+				dev: false,
+				docs: false,
 			},
 		};
 
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			core: true,
-			componentDocumentation: true,
+			dev: true,
+			docs: true,
 		});
 	});
 
@@ -512,16 +512,16 @@ describe('getToolsets', () => {
 		});
 		const addonOptions = {
 			toolsets: {
-				core: true,
-				componentDocumentation: true,
+				dev: true,
+				docs: true,
 			},
 		};
 
 		const result = getToolsets(request, addonOptions);
 
 		expect(result).toEqual({
-			core: true,
-			componentDocumentation: true,
+			dev: true,
+			docs: true,
 		});
 	});
 });

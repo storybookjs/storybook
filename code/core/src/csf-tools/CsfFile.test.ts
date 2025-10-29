@@ -2778,6 +2778,317 @@ describe('CsfFile', () => {
         expect(storyTests[3].function).toBeDefined();
       });
 
+      it('story test - tags', () => {
+        const data = loadCsf(
+          dedent`
+            import { config } from '#.storybook/preview'
+            const meta = config.meta({ component: 'foo' });
+            export default meta;
+            export const A = meta.story({ args: { label: 'foo' }})
+            A.test('simple test', { tags: ['test-me'] }, async () => {})
+          `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(1);
+        expect(storyTests[0].tags).toEqual(['test-me']);
+      });
+
+      it('story test each - index snapshot', () => {
+        expect(
+          parse(dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.each(
+            'simple test %s %d',
+            [
+              ['foo', 2],
+              ['bar', 3],
+            ],
+            async () => {}
+          );
+        `)
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                tests: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('story test each - parsing', () => {
+        const data = loadCsf(
+          dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.each(
+            'simple test %s %d',
+            [
+              ['foo', 2],
+              ['bar', 3],
+            ],
+            async () => {}
+          );
+          A.each(
+            'simple test %s %d',
+            [
+              ['foo', 4],
+              ['bar', 5],
+            ],
+            {},
+            async () => {}
+          );
+          A.each(
+            'simple test %s %d',
+            [
+              ['foo', 6],
+              ['bar', 7],
+            ],
+            () => ({}),
+            async () => {}
+          );
+        `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(6);
+
+        expect(storyTests[0].name).toBe('simple test foo 2');
+        expect(storyTests[1].name).toBe('simple test bar 3');
+        expect(storyTests[2].name).toBe('simple test foo 4');
+        expect(storyTests[3].name).toBe('simple test bar 5');
+        expect(storyTests[4].name).toBe('simple test foo 6');
+        expect(storyTests[5].name).toBe('simple test bar 7');
+        expect(storyTests[0].function).toBeDefined();
+        expect(storyTests[1].function).toBeDefined();
+        expect(storyTests[2].function).toBeDefined();
+        expect(storyTests[3].function).toBeDefined();
+        expect(storyTests[4].function).toBeDefined();
+        expect(storyTests[5].function).toBeDefined();
+      });
+
+      it('story test each - tags', () => {
+        const data = loadCsf(
+          dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.each(
+            'simple test %s',
+            [
+              ['static'],
+            ],
+            {
+              tags: ['test-me'],
+            },
+            async () => {}
+          );
+          A.each(
+            'simple test %s',
+            [
+              ['arrow-direct'],
+            ],
+            () => ({
+              tags: ['test-me'],
+            }),
+            async () => {}
+          );
+          A.each(
+            'simple test %s',
+            [
+              ['arrow-indirect'],
+            ],
+            () => {
+              return {
+                tags: ['test-me'],
+              }
+            },
+            async () => {}
+          );
+          A.each(
+            'simple test %s',
+            [
+              ['function'],
+            ],
+            function () {
+              return {
+                tags: ['test-me'],
+              }
+            },
+            async () => {}
+          );
+        `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(4);
+
+        for (const test of storyTests) {
+          expect(test.tags, test.name).toEqual(['test-me']);
+        }
+      });
+
+      it('story test matrix - index snapshot', () => {
+        expect(
+          parse(dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.matrix(
+            'simple test %s %d',
+            [
+              ['foo', 'bar'],
+              [1, 2],
+            ],
+            async () => {}
+          );
+        `)
+        ).toMatchInlineSnapshot(`
+          meta:
+            component: '''foo'''
+            title: Default Title
+          stories:
+            - id: default-title--a
+              name: A
+              __stats:
+                factory: true
+                tests: true
+                play: false
+                render: false
+                loaders: false
+                beforeEach: false
+                globals: false
+                tags: false
+                storyFn: false
+                mount: false
+                moduleMock: false
+        `);
+      });
+
+      it('story test matrix - parsing', () => {
+        const data = loadCsf(
+          dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.matrix(
+            'simple test %s %d',
+            [
+              ['foo', 'bar'],
+              [1, 2],
+            ],
+            async () => {}
+          );
+        `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(4);
+
+        expect(storyTests[0].name).toBe('simple test foo 1');
+        expect(storyTests[1].name).toBe('simple test foo 2');
+        expect(storyTests[2].name).toBe('simple test bar 1');
+        expect(storyTests[3].name).toBe('simple test bar 2');
+        expect(storyTests[0].function).toBeDefined();
+        expect(storyTests[1].function).toBeDefined();
+        expect(storyTests[2].function).toBeDefined();
+        expect(storyTests[3].function).toBeDefined();
+      });
+
+      it('story test matrix - tags', () => {
+        const data = loadCsf(
+          dedent`
+          import { config } from '#.storybook/preview'
+          const meta = config.meta({ component: 'foo' });
+          export default meta;
+          export const A = meta.story({ args: { label: 'foo' } });
+          A.matrix(
+            'simple test %s',
+            [
+              ['static'],
+            ],
+            {
+              tags: ['test-me'],
+            },
+            async () => {}
+          );
+          A.matrix(
+            'simple test %s',
+            [
+              ['arrow-direct'],
+            ],
+            () => ({
+              tags: ['test-me'],
+            }),
+            async () => {}
+          );
+          A.matrix(
+            'simple test %s',
+            [
+              ['arrow-indirect'],
+            ],
+            () => {
+              return {
+                tags: ['test-me'],
+              }
+            },
+            async () => {}
+          );
+          A.matrix(
+            'simple test %s',
+            [
+              ['function'],
+            ],
+            function () {
+              return {
+                tags: ['test-me'],
+              }
+            },
+            async () => {}
+          );
+        `,
+          { makeTitle }
+        ).parse();
+        const story = data._stories['A'];
+        expect(story.__stats.tests).toBe(true);
+        const storyTests = data.getStoryTests('A');
+        expect(storyTests).toHaveLength(4);
+
+        for (const test of storyTests) {
+          expect(test.tags, test.name).toEqual(['test-me']);
+        }
+      });
+
       it('story name', () => {
         expect(
           parse(

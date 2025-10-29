@@ -42,7 +42,7 @@ export const executeTask = async (
     }
     logTracker.addLog('info', success);
     task.success(success);
-  } catch (err) {
+  } catch (err: any) {
     if (err.message.includes('Command was killed with SIGINT')) {
       task.error(`${intro} aborted`);
       return;

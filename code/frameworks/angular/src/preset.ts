@@ -16,14 +16,18 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   const annotations = [...entries, config];
 
   if ((options as any as StandaloneOptions).enableProdMode) {
-    const previewProdPath = import.meta.resolve('@storybook/angular/client/preview-prod');
+    const previewProdPath = fileURLToPath(
+      import.meta.resolve('@storybook/angular/client/preview-prod')
+    );
     annotations.unshift(previewProdPath);
   }
 
   const docsConfig = await options.presets.apply('docs', {}, options);
   const docsEnabled = Object.keys(docsConfig).length > 0;
   if (docsEnabled) {
-    const docsConfigPath = import.meta.resolve('@storybook/angular/client/docs/config');
+    const docsConfigPath = fileURLToPath(
+      import.meta.resolve('@storybook/angular/client/docs/config')
+    );
     annotations.push(docsConfigPath);
   }
   return annotations;

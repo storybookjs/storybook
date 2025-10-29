@@ -101,7 +101,7 @@ export const componentManifestGenerator = async () => {
 
         const error = !docgen
           ? {
-              message: `Could not parse props information for the component file located at "${entry.componentPath}"`,
+              message: `Could not parse props information for the component file located at "${entry.componentPath}".\nAvoid barrel files when importing your component file.`,
             }
           : undefined;
 

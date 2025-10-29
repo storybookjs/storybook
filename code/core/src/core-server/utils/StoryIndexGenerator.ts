@@ -384,8 +384,8 @@ export class StoryIndexGenerator {
     }
 
     const absoluteComponentPath = resolve(dirname(absolutePath), rawPath);
-    const existing = ['', '.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts']
-      .flatMap((it) => [it, 'index' + it])
+    const existing = ['.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts', '']
+      .flatMap((it) => (it === '' ? [it] : ['/index' + it, it]))
       .map((ext) => `${absoluteComponentPath}${ext}`)
       .find((candidate) => existsSync(candidate));
     if (existing) {

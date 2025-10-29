@@ -66,7 +66,11 @@ export const componentManifestGenerator = async () => {
         } satisfies Partial<ComponentManifest>;
 
         if (!entry.componentPath) {
-          const message = `No component file found for the "${name}" component.`;
+          const componentName = csf._meta?.component;
+
+          const message = !componentName
+            ? 'Specify meta.component for the component to be included in the manifest.'
+            : `No component file found for the "${componentName}" component.`;
           return {
             ...base,
             name,

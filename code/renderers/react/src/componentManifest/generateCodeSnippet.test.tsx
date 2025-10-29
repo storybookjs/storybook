@@ -1,7 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { recast } from 'storybook/internal/babel';
-import { types as t } from 'storybook/internal/babel';
+import { recast, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
@@ -205,6 +204,28 @@ test('CustomRenderWithOverideArgs only', async () => {
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
     `"const CustomRenderWithOverideArgs = () => <Button foo="bar" override="overide">Render</Button>;"`
+  );
+});
+
+test('Meta level render', async () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      render: (args) => <Button {...args} override="overide" />,
+      args: {
+        children: 'Click me'
+      }
+    };
+    export default meta;
+
+    export const CustomRenderWithOverideArgs = {
+      args: { foo: 'bar', override: 'value' }
+    };
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRenderWithOverideArgs = () => <Button foo="bar" override="overide">Click me</Button>;"`
   );
 });
 

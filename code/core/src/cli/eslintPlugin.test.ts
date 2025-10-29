@@ -479,6 +479,41 @@ describe('configureEslintPlugin', () => {
       `);
     });
 
+    it('should just add an import if config uses defineConfig from non-eslint/config source', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`import { defineConfig } from "some-other-config-lib";
+        
+        const eslintConfig = defineConfig([
+          { rules: { "no-console": "error" } },
+        ]);
+
+        export default eslintConfig;`;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        import storybook from "eslint-plugin-storybook";
+
+        import { defineConfig } from "some-other-config-lib";
+        
+        const eslintConfig = defineConfig([
+          { rules: { "no-console": "error" } },
+        ]);
+
+        export default eslintConfig;"
+      `);
+    });
+
     it('should just add an import if config is of custom unknown format', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),

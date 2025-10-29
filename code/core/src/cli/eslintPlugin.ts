@@ -56,6 +56,7 @@ export const configureFlatConfig = async (code: string) => {
   const ast = babelParse(code);
 
   let tsEslintLocalName = '';
+  let eslintDefineConfigLocalName = '';
   let eslintConfigExpression: any = null;
 
   /**
@@ -75,6 +76,14 @@ export const configureFlatConfig = async (code: string) => {
         const defaultSpecifier = path.node.specifiers.find((s) => t.isImportDefaultSpecifier(s));
         if (defaultSpecifier) {
           tsEslintLocalName = defaultSpecifier.local.name;
+        }
+      }
+      if (path.node.source.value === 'eslint/config') {
+        const defineConfigSpecifier = path.node.specifiers.find(
+          (s) => t.isImportSpecifier(s) && t.isIdentifier(s.imported, { name: 'defineConfig' })
+        );
+        if (defineConfigSpecifier && t.isImportSpecifier(defineConfigSpecifier)) {
+          eslintDefineConfigLocalName = defineConfigSpecifier.local.name;
         }
       }
     },
@@ -113,8 +122,14 @@ export const configureFlatConfig = async (code: string) => {
 
           if (t.isArrayExpression(init)) {
             init.elements.push(t.spreadElement(storybookConfig));
-          } else if (t.isCallExpression(init) && init.arguments.length > 0) {
-            // Handle cases like defineConfig([...]) or similar wrapper functions
+          } else if (
+            t.isCallExpression(init) &&
+            init.arguments.length > 0 &&
+            t.isIdentifier(init.callee) &&
+            eslintDefineConfigLocalName &&
+            init.callee.name === eslintDefineConfigLocalName
+          ) {
+            // Handle cases like defineConfig([...]) from "eslint/config"
             const firstArg = init.arguments[0];
             if (t.isExpression(firstArg)) {
               const unwrappedArg = unwrapTSExpression(firstArg);

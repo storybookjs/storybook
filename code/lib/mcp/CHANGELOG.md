@@ -1,5 +1,11 @@
 # @storybook/mcp
 
+## 0.0.5
+
+### Patch Changes
+
+- [#42](https://github.com/storybookjs/mcp/pull/42) [`57a1602`](https://github.com/storybookjs/mcp/commit/57a16022dda428ddc303eec615b5b4c73942144c) Thanks [@JReinhold](https://github.com/JReinhold)! - Add optional event handlers to the tool calls, so you can optionally run some functionality on all tool calls
+
 ## 0.0.4
 
 ### Patch Changes

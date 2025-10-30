@@ -1,11 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { prompt } from 'storybook/internal/node-logger';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { AddonConfigurationCommand } from './AddonConfigurationCommand';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
+
+vi.mock('storybook/internal/cli', () => ({
+  AddonVitestService: vi.fn().mockImplementation(() => ({
+    installPlaywright: vi.fn().mockResolvedValue([]),
+  })),
+}));
 
 vi.mock('../../../cli-storybook/src/postinstallAddon', () => ({
   postinstallAddon: vi.fn(),
@@ -14,19 +20,33 @@ vi.mock('../../../cli-storybook/src/postinstallAddon', () => ({
 describe('AddonConfigurationCommand', () => {
   let command: AddonConfigurationCommand;
   let mockPackageManager: JsPackageManager;
-  let mockTask: any;
-  let mockPostinstallAddon: any;
+  let mockTask: {
+    success: ReturnType<typeof vi.fn>;
+    error: ReturnType<typeof vi.fn>;
+    message: ReturnType<typeof vi.fn>;
+  };
+  let mockPostinstallAddon: ReturnType<typeof vi.fn>;
+  let mockAddonVitestService: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     const { postinstallAddon } = await import('../../../cli-storybook/src/postinstallAddon');
     mockPostinstallAddon = vi.mocked(postinstallAddon);
     mockPostinstallAddon.mockResolvedValue(undefined);
 
+    // Mock the AddonVitestService
+    const { AddonVitestService } = await import('storybook/internal/cli');
+    mockAddonVitestService = vi.mocked(AddonVitestService);
+    const mockInstance = {
+      installPlaywright: vi.fn().mockResolvedValue([]),
+    };
+    mockAddonVitestService.mockImplementation(() => mockInstance);
+
     command = new AddonConfigurationCommand();
 
     mockPackageManager = {
       type: 'npm',
       getVersionedPackages: vi.fn(),
+      executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
     } as any;
 
     mockTask = {
@@ -36,6 +56,7 @@ describe('AddonConfigurationCommand', () => {
     };
 
     vi.mocked(prompt.taskLog).mockReturnValue(mockTask);
+    vi.mocked(logger.log).mockImplementation(() => {});
 
     vi.clearAllMocks();
   });

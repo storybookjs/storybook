@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream } from 'node:stream/web';
@@ -53,7 +53,7 @@ export async function getRendererDir(
   const frameworkPackageName =
     externalFramework?.packageName || externalFramework?.renderer || `@storybook/${renderer}`;
 
-  const packageJsonPath = join(frameworkPackageName, 'package.json');
+  const packageJsonPath = posix.join(frameworkPackageName, 'package.json');
 
   const errors: Error[] = [];
 

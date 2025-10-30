@@ -1,6 +1,6 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
+import { join, posix, relative, resolve } from 'node:path';
 
 import {
   loadAllPresets,
@@ -56,7 +56,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
 
   const frameworkName = typeof framework === 'string' ? framework : framework?.name;
   if (frameworkName) {
-    corePresets.push(join(frameworkName, 'preset'));
+    corePresets.push(posix.join(frameworkName, 'preset'));
   } else if (!options.ignorePreview) {
     logger.warn(`you have not specified a framework in your ${options.configDir}/main.js`);
   }

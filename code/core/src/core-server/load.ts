@@ -1,4 +1,4 @@
-import { join, relative, resolve } from 'node:path';
+import { join, posix, relative, resolve } from 'node:path';
 
 import {
   getProjectRoot,
@@ -39,7 +39,7 @@ export async function loadStorybook(
     validateFrameworkName(frameworkName);
   }
   if (frameworkName) {
-    corePresets.push(join(frameworkName, 'preset'));
+    corePresets.push(posix.join(frameworkName, 'preset'));
   }
 
   frameworkName = frameworkName || 'custom';

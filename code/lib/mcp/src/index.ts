@@ -1,7 +1,7 @@
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
-import packageJson from '../package.json' with { type: 'json' };
+import pkgJson from '../package.json' with { type: 'json' };
 import { addListAllComponentsTool } from './tools/list-all-components.ts';
 import { addGetComponentDocumentationTool } from './tools/get-component-documentation.ts';
 import type { StorybookContext } from './types.ts';
@@ -71,11 +71,9 @@ export const createStorybookMcpHandler = async (
 	const adapter = new ValibotJsonSchemaAdapter();
 	const server = new McpServer(
 		{
-			// package.json properties are tree-shaken during build via a rolldown plugin in tsdown.config.ts
-			// If we ever changed the used properties here, we would need to update that plugin as well
-			name: packageJson.name,
-			version: packageJson.version,
-			description: packageJson.description,
+			name: pkgJson.name,
+			version: pkgJson.version,
+			description: pkgJson.description,
 		},
 		{
 			adapter,

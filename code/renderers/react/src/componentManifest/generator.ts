@@ -92,7 +92,7 @@ export const componentManifestGenerator = async () => {
             name,
             examples,
             error: {
-              message: `Could not read the component file located at "${entry.componentPath}". Prefer relative imports.`,
+              message: `Could not read the component file located at "${entry.componentPath}".\nPrefer relative imports.`,
             },
           };
         }
@@ -105,7 +105,7 @@ export const componentManifestGenerator = async () => {
 
         const error = !docgen
           ? {
-              message: `Could not parse props information for the component file located at "${entry.componentPath}".\nAvoid barrel files when importing your component file.`,
+              message: `Could not parse props information for the component file located at "${entry.componentPath}".\nAvoid barrel files when importing your component file.\Prefer relative imports if possible.\nAvoid pointing to transpiled files.`,
             }
           : undefined;
 

@@ -29,6 +29,7 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
+import { resolveImport, supportedExtensions } from '../../common';
 import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle';
 import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories';
 import { IndexingError, MultipleIndexingError } from './IndexingError';
@@ -378,23 +379,11 @@ export class StoryIndexGenerator {
     absolutePath: Path,
     matchPath: TsconfigPaths.MatchPath | undefined
   ) {
-    const extensions = ['.js', '.ts', '.jsx', '.tsx', '.mjs', '.mts'];
-    let rawPath = rawComponentPath;
-    if (matchPath) {
-      rawPath = matchPath(rawPath, undefined, undefined, extensions) ?? rawPath;
-    }
-
-    const absoluteComponentPath = resolve(dirname(absolutePath), rawPath);
-    const existing = [...extensions, '']
-      .flatMap((it) => (it === '' ? [it] : ['/index' + it, it]))
-      .map((ext) => `${absoluteComponentPath}${ext}`)
-      .find((candidate) => existsSync(candidate));
-    if (existing) {
-      const relativePath = relative(this.options.workingDir, existing);
-      return slash(normalizeStoryPath(relativePath));
-    }
-
-    return rawComponentPath;
+    const matchedPath =
+      matchPath?.(rawComponentPath, undefined, undefined, supportedExtensions) ?? rawComponentPath;
+    const resolved = resolveImport(matchedPath, { basedir: dirname(absolutePath) });
+    const relativePath = relative(this.options.workingDir, resolved);
+    return slash(normalizeStoryPath(relativePath));
   }
 
   async extractStories(

@@ -137,7 +137,7 @@ export class InvalidStoriesEntryError extends StorybookError {
         'https://storybook.js.org/docs/faq#can-i-have-a-storybook-with-no-local-stories',
       message: dedent`
         Storybook could not index your stories.
-        Your main configuration somehow does not contain a 'stories' field, or it resolved to an empty array.
+        Your main configuration does not contain a 'stories' field, or it resolved to an empty array.
         
         Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.`,
     });

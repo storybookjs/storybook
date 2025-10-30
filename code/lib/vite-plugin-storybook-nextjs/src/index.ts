@@ -1,4 +1,4 @@
-import { join, resolve } from "node:path";
+import { resolve } from "pathe";
 
 import { createRequire } from "node:module";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";

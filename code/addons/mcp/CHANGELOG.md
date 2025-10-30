@@ -1,5 +1,11 @@
 # @storybook/addon-mcp
 
+## 0.1.4-next.0
+
+### Patch Changes
+
+- [#56](https://github.com/storybookjs/mcp/pull/56) [`edcbf4e`](https://github.com/storybookjs/mcp/commit/edcbf4e7a5d85db1f7aeb1d54b90d0d1801774c1) Thanks [@JReinhold](https://github.com/JReinhold)! - improve html bundling
+
 ## 0.1.3
 
 ### Patch Changes

@@ -1,3 +1,15 @@
+# v3.0.3 (Thu Oct 30 2025)
+
+#### 🐛 Bug Fix
+
+- Improve path handling for Windows [#68](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/68) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v3.0.2 (Thu Oct 30 2025)
 
 #### 🐛 Bug Fix

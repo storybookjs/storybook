@@ -1,10 +1,29 @@
 import type { Channel } from 'storybook/internal/channels';
 import { PREVIEW_INITIALIZED } from 'storybook/internal/core-events';
-import { telemetry } from 'storybook/internal/telemetry';
+import { type InitPayload, telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import { getLastEvents } from '../../telemetry/event-cache';
+import { type CacheEntry, getLastEvents } from '../../telemetry/event-cache';
 import { getSessionId } from '../../telemetry/session-id';
+
+export const makePayload = (
+  userAgent: string,
+  lastInit: CacheEntry | undefined,
+  sessionId: string
+) => {
+  let timeSinceInit: number | undefined;
+  const payload = {
+    userAgent,
+    isNewUser: false,
+    timeSinceInit,
+  };
+
+  if (sessionId && lastInit?.body?.sessionId === sessionId) {
+    payload.timeSinceInit = Date.now() - lastInit.timestamp;
+    payload.isNewUser = !!(lastInit.body.payload as InitPayload).newUser;
+  }
+  return payload;
+};
 
 export function initPreviewInitializedChannel(
   channel: Channel,
@@ -19,9 +38,8 @@ export function initPreviewInitializedChannel(
         const lastInit = lastEvents.init;
         const lastPreviewFirstLoad = lastEvents['preview-first-load'];
         if (!lastPreviewFirstLoad) {
-          const isInitSession = lastInit?.body.sessionId === sessionId;
-          const timeSinceInit = lastInit ? Date.now() - lastInit.body.timestamp : undefined;
-          telemetry('preview-first-load', { timeSinceInit, isInitSession, userAgent });
+          const payload = makePayload(userAgent, lastInit, sessionId);
+          telemetry('preview-first-load', payload);
         }
       } catch (e) {
         // do nothing

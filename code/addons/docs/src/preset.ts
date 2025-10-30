@@ -213,10 +213,9 @@ export const resolvedReact = async (existing: any) => ({
 });
 
 const optimizeViteDeps = [
-  '@mdx-js/react',
   '@storybook/addon-docs',
   '@storybook/addon-docs/blocks',
-  'markdown-to-jsx',
+  '@storybook/addon-docs > @mdx-js/react',
 ];
 
 export { webpackX as webpack, docsX as docs, optimizeViteDeps };

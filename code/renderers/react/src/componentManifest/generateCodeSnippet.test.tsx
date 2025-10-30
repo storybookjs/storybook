@@ -195,6 +195,17 @@ test('CSF2 - Template.bind', () => {
   );
 });
 
+test('CSF2 - with args', () => {
+  const input = withCSF3(dedent`
+    const Template = (args) => <Button {...args} override="overide" />;
+    export const CSF2: StoryFn = Template.bind({});
+    CSF2.args = { foo: 'bar', override: 'value' }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CSF2 = () => <Button foo=\"bar\" override=\"overide\">Click me</Button>;"`
+  );
+});
+
 test('Custom Render', () => {
   const input = withCSF3(dedent`
     export const CustomRender: Story = { render: () => <Button label="String"></Button> }

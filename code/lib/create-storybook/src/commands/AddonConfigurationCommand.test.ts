@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import type { Feature } from 'storybook/internal/types';
 
 import { AddonConfigurationCommand } from './AddonConfigurationCommand';
 
@@ -24,6 +25,7 @@ describe('AddonConfigurationCommand', () => {
     success: ReturnType<typeof vi.fn>;
     error: ReturnType<typeof vi.fn>;
     message: ReturnType<typeof vi.fn>;
+    group: ReturnType<typeof vi.fn>;
   };
   let mockPostinstallAddon: ReturnType<typeof vi.fn>;
   let mockAddonVitestService: ReturnType<typeof vi.fn>;
@@ -47,12 +49,13 @@ describe('AddonConfigurationCommand', () => {
       type: 'npm',
       getVersionedPackages: vi.fn(),
       executeCommand: vi.fn().mockResolvedValue({ stdout: '', stderr: '', exitCode: 0 }),
-    } as any;
+    } as Partial<JsPackageManager> as JsPackageManager;
 
     mockTask = {
       success: vi.fn(),
       error: vi.fn(),
       message: vi.fn(),
+      group: vi.fn(),
     };
 
     vi.mocked(prompt.taskLog).mockReturnValue(mockTask);
@@ -64,7 +67,10 @@ describe('AddonConfigurationCommand', () => {
   describe('execute', () => {
     it('should skip configuration when no addons are provided', async () => {
       const addons: string[] = [];
-      const options = {} as any;
+      const options = {
+        packageManager: 'npm' as const,
+        features: new Set<Feature>(),
+      };
 
       const result = await command.execute({
         packageManager: mockPackageManager,
@@ -80,7 +86,11 @@ describe('AddonConfigurationCommand', () => {
 
     it('should configure test addons when test feature is enabled', async () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
-      const options = { yes: true } as any;
+      const options = {
+        packageManager: 'npm' as const,
+        features: new Set<Feature>(),
+        yes: true,
+      };
 
       const result = await command.execute({
         packageManager: mockPackageManager,
@@ -98,7 +108,10 @@ describe('AddonConfigurationCommand', () => {
 
     it('should handle configuration errors gracefully', async () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
-      const options = {} as any;
+      const options = {
+        packageManager: 'npm' as const,
+        features: new Set<Feature>(),
+      };
       const error = new Error('Configuration failed');
 
       mockPostinstallAddon.mockRejectedValue(error);
@@ -118,7 +131,11 @@ describe('AddonConfigurationCommand', () => {
 
     it('should complete successfully with valid configuration', async () => {
       const addons = ['@storybook/addon-a11y', '@storybook/addon-vitest'];
-      const options = { yes: true } as any;
+      const options = {
+        packageManager: 'npm' as const,
+        features: new Set<Feature>(),
+        yes: true,
+      };
 
       const result = await command.execute({
         packageManager: mockPackageManager,

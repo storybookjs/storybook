@@ -1,3 +1,8 @@
+## 10.0.1
+
+- Presets: Fix incorrect imports - [#32875](https://github.com/storybookjs/storybook/pull/32875), thanks @ndelangen!
+- Upgrade: Satellite compatible with 10.1 prerelease - [#32877](https://github.com/storybookjs/storybook/pull/32877), thanks @ndelangen!
+
 ## 10.0.0
 
 Storybook 10 contains one breaking change: it’s ESM-only. This simplifies our distribution and reduces install size by 29% while simultaneously unminifying dist code for easier debugging.

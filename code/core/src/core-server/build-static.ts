@@ -1,6 +1,5 @@
 import { cp, mkdir } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
 
 import {
   loadAllPresets,
@@ -15,6 +14,7 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
+import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';

@@ -1,5 +1,4 @@
 import { readFile } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
 
 import {
   JsPackageManagerFactory,
@@ -20,6 +19,7 @@ import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook
 
 import { global } from '@storybook/global';
 
+import { join, relative, resolve } from 'pathe';
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 

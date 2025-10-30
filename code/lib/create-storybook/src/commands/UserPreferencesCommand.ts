@@ -9,6 +9,7 @@ import { Feature } from 'storybook/internal/types';
 import picocolors from 'picocolors';
 
 import type { DependencyCollector } from '../dependency-collector';
+import type { CommandOptions } from '../generators/types';
 import { FeatureCompatibilityService } from '../services/FeatureCompatibilityService';
 import { TelemetryService } from '../services/TelemetryService';
 
@@ -17,8 +18,6 @@ export type InstallType = 'recommended' | 'light';
 export interface UserPreferencesResult {
   /** Whether the user is a new user */
   newUser: boolean;
-  /** The type of installation to perform (recommended vs minimal) */
-  installType: InstallType;
   /**
    * The features that the user has selected explicitly or implicitly and which can actually be
    * installed based on the project type or other constraints.
@@ -28,7 +27,6 @@ export interface UserPreferencesResult {
 
 export interface UserPreferencesOptions {
   skipPrompt?: boolean;
-  disableTelemetry?: boolean;
   yes?: boolean;
   framework: SupportedFramework | undefined;
   builder: SupportedBuilder;
@@ -51,10 +49,10 @@ export class UserPreferencesCommand {
 
   constructor(
     private dependencyCollector: DependencyCollector,
-    private featureService = new FeatureCompatibilityService(),
-    disableTelemetry: boolean = false
+    private commandOptions: CommandOptions,
+    private featureService = new FeatureCompatibilityService()
   ) {
-    this.telemetryService = new TelemetryService(disableTelemetry);
+    this.telemetryService = new TelemetryService(commandOptions.disableTelemetry);
   }
 
   /** Execute user preferences gathering */
@@ -76,9 +74,10 @@ export class UserPreferencesCommand {
     const newUser = await this.promptNewUser(skipPrompt);
 
     // Get install type
-    const installType: InstallType = !newUser
-      ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
-      : 'recommended';
+    const installType: InstallType =
+      !newUser && !this.commandOptions.features
+        ? await this.promptInstallType(skipPrompt, isTestFeatureAvailable)
+        : 'recommended';
 
     const selectedFeatures = this.determineFeatures(
       installType,
@@ -87,7 +86,7 @@ export class UserPreferencesCommand {
       options.projectType
     );
 
-    return { newUser, installType, selectedFeatures };
+    return { newUser, selectedFeatures };
   }
 
   /** Prompt user about onboarding */
@@ -172,6 +171,10 @@ export class UserPreferencesCommand {
   ): Set<Feature> {
     const features = new Set<Feature>();
 
+    if (this.commandOptions.features) {
+      return new Set(this.commandOptions.features);
+    }
+
     if (installType === 'recommended') {
       features.add(Feature.DOCS);
       features.add(Feature.A11Y);
@@ -206,11 +209,14 @@ export class UserPreferencesCommand {
 
 export const executeUserPreferences = (
   packageManager: JsPackageManager,
-  options: UserPreferencesOptions & { dependencyCollector: DependencyCollector }
+  {
+    dependencyCollector,
+    options,
+    ...restOptions
+  }: UserPreferencesOptions & { dependencyCollector: DependencyCollector; options: CommandOptions }
 ) => {
-  return new UserPreferencesCommand(
-    options.dependencyCollector,
-    undefined,
-    options.disableTelemetry
-  ).execute(packageManager, options);
+  return new UserPreferencesCommand(dependencyCollector, options).execute(
+    packageManager,
+    restOptions
+  );
 };

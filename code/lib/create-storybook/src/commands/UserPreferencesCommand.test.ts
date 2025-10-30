@@ -48,7 +48,14 @@ describe('UserPreferencesCommand', () => {
       getVersionConflicts: vi.fn().mockReturnValue([]),
     } as unknown as DependencyCollector;
 
-    command = new UserPreferencesCommand(mockDependencyCollector, undefined, false);
+    // Provide required CommandOptions to avoid undefined access
+    const commandOptions = {
+      packageManager: 'npm' as const,
+      features: undefined as unknown as Set<Feature>,
+      disableTelemetry: true,
+    } as any;
+
+    command = new UserPreferencesCommand(mockDependencyCollector, commandOptions, undefined as any);
     mockPackageManager = {} as Partial<JsPackageManager> as JsPackageManager;
 
     // Mock globalSettings
@@ -101,7 +108,6 @@ describe('UserPreferencesCommand', () => {
       });
 
       expect(result.newUser).toBe(true);
-      expect(result.installType).toBe('recommended');
       expect(result.selectedFeatures).toContain('docs');
       expect(result.selectedFeatures).toContain('test');
       expect(result.selectedFeatures).toContain('onboarding');
@@ -144,7 +150,6 @@ describe('UserPreferencesCommand', () => {
 
       expect(prompt.select).toHaveBeenCalledTimes(2);
       expect(result.newUser).toBe(false);
-      expect(result.installType).toBe('light');
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
       expect(telemetryService.trackInstallType).toHaveBeenCalledWith('light');
     });

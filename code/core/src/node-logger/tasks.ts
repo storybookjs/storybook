@@ -80,7 +80,7 @@ export const executeTaskWithSpinner = async (
     task.stop(success);
   } catch (err: any) {
     if (err.message.includes('Command was killed with SIGINT')) {
-      task.error(`${intro} aborted`);
+      task.stop(`${intro} aborted`);
       return;
     }
     const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);

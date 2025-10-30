@@ -1,7 +1,5 @@
 import { groupBy } from 'storybook/internal/common';
 
-import { dedent } from 'ts-dedent';
-
 import type { ComponentManifest, ComponentsManifest } from '../types';
 
 // AI generated manifests/components.html page
@@ -65,7 +63,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
     })
     .join('');
 
-  return dedent`<!doctype html>
+  return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -273,7 +271,7 @@ function analyzeComponent(c: ComponentManifest) {
 }
 
 function note(title: string, bodyHTML: string, kind: 'warn' | 'err') {
-  return dedent`
+  return `
     <div class="note ${kind}">
       <div class="note-title">${esc(title)}</div>
       <div class="note-body">${bodyHTML}</div>
@@ -314,7 +312,8 @@ function renderComponentCard(key: string, c: ComponentManifest, i: number) {
           .join('')
       : '';
 
-  return dedent`
+  esc(c.error?.message || 'Unknown error');
+  return `
   <article class="card ${a.hasComponentError ? 'has-error' : 'no-error'} ${a.hasWarns ? 'has-warn' : 'no-warn'} ${a.exampleErrors ? 'has-example-error' : 'no-example-error'}" role="listitem" aria-label="${esc(c.name || key)}">
     <div class="head">
       <div class="title">

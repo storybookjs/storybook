@@ -549,6 +549,7 @@ test('component exported from other file', async () => {
        9 |
     > 10 | export { Primary } from './other-file';
          | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+            "name": "SyntaxError",
           },
           "name": "Primary",
         },

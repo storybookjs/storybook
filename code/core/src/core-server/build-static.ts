@@ -12,13 +12,14 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-import { type ComponentManifestGenerator } from 'storybook/internal/types';
+import { type ComponentManifestGenerator, type ComponentsManifest } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';
+import { renderManifestComponentsPage } from './manifest';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
@@ -179,6 +180,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
           await writeFile(
             join(options.outputDir, 'manifests', 'components.json'),
             JSON.stringify(manifests)
+          );
+          await writeFile(
+            join(options.outputDir, 'manifests', 'components.html'),
+            renderManifestComponentsPage(manifests)
           );
         } catch (e) {
           logger.error('Failed to generate manifests/components.json');

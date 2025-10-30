@@ -1,9 +1,10 @@
 import * as fs from 'node:fs';
-import { dirname, join } from 'node:path';
 
 import { expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
+
+import { dirname, join } from 'pathe';
 
 import * as m from './common-preset';
 

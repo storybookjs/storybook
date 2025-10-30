@@ -54,7 +54,7 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^4.1.1",
+    "@chromatic-com/storybook": "^4.1.2",
     "@eslint/js": "^9.29.0",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "9.1.0-alpha.6",

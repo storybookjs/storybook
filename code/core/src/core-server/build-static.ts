@@ -1,6 +1,5 @@
 import { cp, mkdir, writeFile } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
 
 import {
   loadAllPresets,
@@ -16,6 +15,7 @@ import { type ComponentManifestGenerator } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
+import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';

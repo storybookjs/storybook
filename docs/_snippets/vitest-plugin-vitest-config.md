@@ -18,7 +18,6 @@ export default mergeConfig(
       // Use `workspace` field in Vitest < 3.2
       projects: [
         defineProject({
-          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -66,7 +65,6 @@ export default mergeConfig(
       // Use `workspace` field in Vitest < 3.2
       projects: [
         defineProject({
-          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -115,7 +113,6 @@ export default mergeConfig(
       // Use `workspace` field in Vitest < 3.2
       projects: [
         defineProject({
-          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -163,7 +160,6 @@ export default mergeConfig(
       // Use `workspace` field in Vitest < 3.2
       projects: [
         defineProject({
-          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -212,7 +208,6 @@ export default mergeConfig(
       // Use `workspace` field in Vitest < 3.2
       projects: [
         defineProject({
-          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -260,7 +255,6 @@ export default mergeConfig(
       // Use `workspace` field in Vitest < 3.2
       projects: [
         defineProject({
-          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -309,7 +303,6 @@ export default mergeConfig(
       // Use `workspace` field in Vitest < 3.2
       projects: [
         defineProject({
-          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts
@@ -357,7 +350,6 @@ export default mergeConfig(
       // Use `workspace` field in Vitest < 3.2
       projects: [
         defineProject({
-          extends: true,
           plugins: [
             storybookTest({
               // The location of your Storybook config, main.js|ts

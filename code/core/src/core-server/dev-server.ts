@@ -2,13 +2,14 @@ import { logConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Options } from 'storybook/internal/types';
+import { type ComponentManifestGenerator } from 'storybook/internal/types';
 
 import compression from '@polka/compression';
 import polka from 'polka';
 import invariant from 'tiny-invariant';
 
 import { telemetry } from '../telemetry';
-import type { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { type StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { doTelemetry } from './utils/doTelemetry';
 import { getManagerBuilder, getPreviewBuilder } from './utils/get-builders';
 import { getCachingMiddleware } from './utils/get-caching-middleware';
@@ -138,8 +139,35 @@ export async function storybookDevServer(options: Options) {
     throw indexError;
   }
 
+  const features = await options.presets.apply('features');
+  if (features?.experimentalComponentsManifest) {
+    app.use('/manifests/components.json', async (req, res) => {
+      try {
+        const componentManifestGenerator: ComponentManifestGenerator = await options.presets.apply(
+          'experimental_componentManifestGenerator'
+        );
+        const indexGenerator = await initializedStoryIndexGenerator;
+        if (componentManifestGenerator && indexGenerator) {
+          const manifest = await componentManifestGenerator(
+            indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
+          );
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(manifest));
+          return;
+        }
+        res.statusCode = 400;
+        res.end('No component manifest generator configured.');
+        return;
+      } catch (e) {
+        logger.error(e instanceof Error ? e : String(e));
+        res.statusCode = 500;
+        res.end(e instanceof Error ? e.toString() : String(e));
+        return;
+      }
+    });
+  }
   // Now the preview has successfully started, we can count this as a 'dev' event.
-  doTelemetry(app, core, initializedStoryIndexGenerator, options);
+  doTelemetry(app, core, initializedStoryIndexGenerator as Promise<StoryIndexGenerator>, options);
 
   async function cancelTelemetry() {
     const payload = { eventType: 'dev' };

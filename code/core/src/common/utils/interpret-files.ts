@@ -4,15 +4,15 @@ import { extname } from 'node:path';
 import resolve from 'resolve';
 
 export const supportedExtensions = [
-  '.ts',
   '.js',
-  '.tsx',
+  '.ts',
   '.jsx',
-  '.mts',
+  '.tsx',
   '.mjs',
+  '.mts',
   '.mtsx',
-  '.cts',
   '.cjs',
+  '.cts',
   '.ctsx',
 ] as const;
 

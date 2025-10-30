@@ -1,3 +1,15 @@
+# v3.0.2 (Thu Oct 30 2025)
+
+#### 🐛 Bug Fix
+
+- Safely encode image paths [#65](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/65) ([@sylvaingi](https://github.com/sylvaingi))
+
+#### Authors: 1
+
+- Sylvain Gizard ([@sylvaingi](https://github.com/sylvaingi))
+
+---
+
 # v3.0.1 (Tue Oct 28 2025)
 
 #### 🐛 Bug Fix

@@ -10,3 +10,14 @@ export const groupBy = <K extends PropertyKey, T>(
     return acc;
   }, {});
 };
+
+// This invariant allows for lazy evaluation of the message, which we need to avoid excessive computation.
+export function invariant(
+  condition: unknown,
+  message?: string | (() => string)
+): asserts condition {
+  if (condition) {
+    return;
+  }
+  throw new Error((typeof message === 'function' ? message() : message) ?? 'Invariant failed');
+}

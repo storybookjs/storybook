@@ -4,13 +4,12 @@ import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
-import { loadConfig } from 'tsconfig-paths';
 
 import { componentManifestGenerator } from './generator';
 
 vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
 vi.mock('node:fs', async () => (await import('memfs')).fs);
-vi.mock('tsconfig-paths', { spy: true });
+vi.mock('tsconfig-paths', () => ({ loadConfig: () => ({ resultType: null!, message: null! }) }));
 
 // Use the provided indexJson from this file
 const indexJson = {
@@ -95,7 +94,6 @@ const indexJson = {
 };
 
 beforeEach(() => {
-  vi.mocked(loadConfig).mockImplementation(() => ({ resultType: null!, message: null! }));
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(
     {
@@ -217,6 +215,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
       "components": {
         "example-button": {
           "description": "Primary UI component for user interaction",
+          "error": undefined,
           "examples": [
             {
               "name": "Primary",
@@ -239,6 +238,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "import": undefined,
           "jsDocTags": {},
           "name": "Button",
+          "path": "./src/stories/Button.stories.ts",
           "reactDocgen": {
             "actualName": "Button",
             "definedInFile": "/app/src/stories/Button.tsx",
@@ -319,6 +319,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
         },
         "example-header": {
           "description": "Description from meta and very long.",
+          "error": undefined,
           "examples": [
             {
               "name": "LoggedIn",
@@ -344,6 +345,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
             ],
           },
           "name": "Header",
+          "path": "./src/stories/Header.stories.ts",
           "reactDocgen": {
             "actualName": "",
             "definedInFile": "/app/src/stories/Header.tsx",
@@ -409,6 +411,226 @@ test('componentManifestGenerator generates correct id, name, description and exa
         },
       },
       "v": 0,
+    }
+  `);
+});
+
+async function getManifestForStory(code: string) {
+  vol.fromJSON(
+    {
+      ['./src/stories/Button.stories.ts']: code,
+      ['./src/stories/Button.tsx']: dedent`
+        import React from 'react';
+        export interface ButtonProps {
+          /** Description of primary */
+          primary?: boolean;
+        }
+        
+        /** Primary UI component for user interaction */
+        export const Button = ({
+          primary = false,
+        }: ButtonProps) => {
+          const mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
+          return (
+            <button
+              type="button"
+            ></button>
+          );
+        };`,
+    },
+    '/app'
+  );
+
+  const generator = await componentManifestGenerator();
+  const indexJson = {
+    v: 5,
+    entries: {
+      'example-button--primary': {
+        type: 'story',
+        subtype: 'story',
+        id: 'example-button--primary',
+        name: 'Primary',
+        title: 'Example/Button',
+        importPath: './src/stories/Button.stories.ts',
+        componentPath: './src/stories/Button.tsx',
+        tags: ['dev', 'test', 'vitest', 'autodocs'],
+        exportName: 'Primary',
+      },
+    },
+  };
+
+  const manifest = await generator({
+    getIndex: async () => indexJson,
+  } as unknown as StoryIndexGenerator);
+
+  return manifest.components['example-button'];
+}
+
+function withCSF3(body: string) {
+  return dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from './Button';
+
+    const meta = {
+      component: Button,
+      args: { onClick: fn() },
+    } satisfies Meta<typeof Button>;
+    export default meta;
+
+    ${body}
+  `;
+}
+
+test('fall back to index title when no component name', async () => {
+  const code = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from './Button';
+
+    export default {
+      args: { onClick: fn() },
+    };
+    
+    export const Primary = () => <Button csf1="story" />;
+  `;
+  expect(await getManifestForStory(code)).toMatchInlineSnapshot(`
+    {
+      "description": "Primary UI component for user interaction",
+      "error": undefined,
+      "examples": [
+        {
+          "name": "Primary",
+          "snippet": "const Primary = () => <Button csf1="story" />;",
+        },
+      ],
+      "id": "example-button",
+      "import": undefined,
+      "jsDocTags": {},
+      "name": "Button",
+      "path": "./src/stories/Button.stories.ts",
+      "reactDocgen": {
+        "actualName": "Button",
+        "definedInFile": "/app/src/stories/Button.tsx",
+        "description": "Primary UI component for user interaction",
+        "displayName": "Button",
+        "exportName": "Button",
+        "methods": [],
+        "props": {
+          "primary": {
+            "defaultValue": {
+              "computed": false,
+              "value": "false",
+            },
+            "description": "Description of primary",
+            "required": false,
+            "tsType": {
+              "name": "boolean",
+            },
+          },
+        },
+      },
+      "summary": undefined,
+    }
+  `);
+});
+
+test('component exported from other file', async () => {
+  const code = withCSF3(dedent`
+    export { Primary } from './other-file';
+  `);
+  expect(await getManifestForStory(code)).toMatchInlineSnapshot(`
+    {
+      "description": "Primary UI component for user interaction",
+      "error": undefined,
+      "examples": [
+        {
+          "error": {
+            "message": "Expected story to be a function or variable declaration
+       8 | export default meta;
+       9 |
+    > 10 | export { Primary } from './other-file';
+         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+          },
+          "name": "Primary",
+        },
+      ],
+      "id": "example-button",
+      "import": undefined,
+      "jsDocTags": {},
+      "name": "Button",
+      "path": "./src/stories/Button.stories.ts",
+      "reactDocgen": {
+        "actualName": "Button",
+        "definedInFile": "/app/src/stories/Button.tsx",
+        "description": "Primary UI component for user interaction",
+        "displayName": "Button",
+        "exportName": "Button",
+        "methods": [],
+        "props": {
+          "primary": {
+            "defaultValue": {
+              "computed": false,
+              "value": "false",
+            },
+            "description": "Description of primary",
+            "required": false,
+            "tsType": {
+              "name": "boolean",
+            },
+          },
+        },
+      },
+      "summary": undefined,
+    }
+  `);
+});
+
+test('unknown expressions', async () => {
+  const code = withCSF3(dedent`
+    export const Primary = someWeirdExpression;
+  `);
+  expect(await getManifestForStory(code)).toMatchInlineSnapshot(`
+    {
+      "description": "Primary UI component for user interaction",
+      "error": undefined,
+      "examples": [
+        {
+          "error": {
+            "message": "Expected story to be csf factory, function or an object expression
+       8 | export default meta;
+       9 |
+    > 10 | export const Primary = someWeirdExpression;
+         |                        ^^^^^^^^^^^^^^^^^^^",
+          },
+          "name": "Primary",
+        },
+      ],
+      "id": "example-button",
+      "import": undefined,
+      "jsDocTags": {},
+      "name": "Button",
+      "path": "./src/stories/Button.stories.ts",
+      "reactDocgen": {
+        "actualName": "Button",
+        "definedInFile": "/app/src/stories/Button.tsx",
+        "description": "Primary UI component for user interaction",
+        "displayName": "Button",
+        "exportName": "Button",
+        "methods": [],
+        "props": {
+          "primary": {
+            "defaultValue": {
+              "computed": false,
+              "value": "false",
+            },
+            "description": "Description of primary",
+            "required": false,
+            "tsType": {
+              "name": "boolean",
+            },
+          },
+        },
+      },
+      "summary": undefined,
     }
   `);
 });

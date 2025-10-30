@@ -33,7 +33,7 @@ interface BabelFile {
   opts: any;
   hub: any;
   metadata: object;
-  path: any;
+  path: NodePath<t.Program>;
   scope: any;
   inputMap: object | null;
   code: string;
@@ -297,9 +297,14 @@ export class CsfFile {
 
   _storyExports: Record<string, t.VariableDeclarator | t.FunctionDeclaration> = {};
 
+  _storyDeclarationPath: Record<string, NodePath<t.VariableDeclarator | t.FunctionDeclaration>> =
+    {};
+
   _storyPaths: Record<string, NodePath<t.ExportNamedDeclaration>> = {};
 
   _metaStatement: t.Statement | undefined;
+
+  _metaStatementPath: NodePath<t.Statement> | undefined;
 
   _metaNode: t.ObjectExpression | undefined;
 
@@ -476,19 +481,24 @@ export class CsfFile {
             // export default meta;
             const variableName = (node.declaration as t.Identifier).name;
             self._metaVariableName = variableName;
-            const isVariableDeclarator = (declaration: t.VariableDeclarator) =>
+            const isMetaVariable = (declaration: t.VariableDeclarator) =>
               t.isIdentifier(declaration.id) && declaration.id.name === variableName;
 
-            self._metaStatement = self._ast.program.body.find(
-              (topLevelNode) =>
-                t.isVariableDeclaration(topLevelNode) &&
-                topLevelNode.declarations.find(isVariableDeclarator)
-            );
+            self._metaStatementPath = self._file.path
+              .get('body')
+              .find(
+                (path) =>
+                  path.isVariableDeclaration() && path.node.declarations.some(isMetaVariable)
+              );
+
+            self._metaStatement = self._metaStatementPath?.node;
+
             decl = ((self?._metaStatement as t.VariableDeclaration)?.declarations || []).find(
-              isVariableDeclarator
+              isMetaVariable
             )?.init;
           } else {
             self._metaStatement = node;
+            self._metaStatementPath = path;
             decl = node.declaration;
           }
 
@@ -529,23 +539,28 @@ export class CsfFile {
       ExportNamedDeclaration: {
         enter(path) {
           const { node, parent } = path;
+          const declaration = path.get('declaration');
           let declarations;
-          if (t.isVariableDeclaration(node.declaration)) {
-            declarations = node.declaration.declarations.filter((d) => t.isVariableDeclarator(d));
-          } else if (t.isFunctionDeclaration(node.declaration)) {
-            declarations = [node.declaration];
+          if (declaration.isVariableDeclaration()) {
+            declarations = declaration.get('declarations').filter((d) => d.isVariableDeclarator());
+          } else if (declaration.isFunctionDeclaration()) {
+            declarations = [declaration];
           }
           if (declarations) {
             // export const X = ...;
-            declarations.forEach((decl: t.VariableDeclarator | t.FunctionDeclaration) => {
-              if (t.isIdentifier(decl.id)) {
+            declarations.forEach((declPath) => {
+              const decl = declPath.node;
+              const id = declPath.node.id;
+
+              if (t.isIdentifier(id)) {
                 let storyIsFactory = false;
-                const { name: exportName } = decl.id;
-                if (exportName === '__namedExportsOrder' && t.isVariableDeclarator(decl)) {
-                  self._namedExportsOrder = parseExportsOrder(decl.init as t.Expression);
+                const { name: exportName } = id;
+                if (exportName === '__namedExportsOrder' && declPath.isVariableDeclarator()) {
+                  self._namedExportsOrder = parseExportsOrder(declPath.node.init as t.Expression);
                   return;
                 }
                 self._storyExports[exportName] = decl;
+                self._storyDeclarationPath[exportName] = declPath;
                 self._storyPaths[exportName] = path;
                 self._storyStatements[exportName] = node;
                 let name = storyNameFromExport(exportName);
@@ -1036,7 +1051,10 @@ export const babelParseFile = ({
   filename?: string;
   ast?: t.File;
 }): BabelFile => {
-  return new BabelFileClass({ filename }, { code, ast: ast ?? babelParse(code) });
+  return new BabelFileClass(
+    { filename, highlightCode: false },
+    { code, ast: ast ?? babelParse(code) }
+  );
 };
 
 export const loadCsf = (code: string, options: CsfOptions) => {

@@ -13,46 +13,43 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
     return;
   }
   return async (csf: CsfFile, csfSource: CsfFile) => {
-    const promises = Object.entries(csf._storyPaths).map(async ([key, storyExport]) => {
+    const promises = Object.keys(csf._stories).map(async (key) => {
       if (!csfSource._meta?.component) {
         return;
       }
       const { format } = await getPrettier();
-
+      let node;
       let snippet;
       try {
-        const code = recast.print(
-          getCodeSnippet(storyExport, csfSource._metaNode, csfSource._meta?.component)
-        ).code;
-
-        // TODO read the user config
-        snippet = await format(code, { filepath: join(process.cwd(), 'component.tsx') });
+        node = getCodeSnippet(csfSource, key, csfSource._meta?.component);
       } catch (e) {
-        // don't bother the user if we can't generate a snippet
-        return;
+        if (!(e instanceof Error)) {
+          return;
+        }
+        snippet = e.message;
       }
 
-      const declaration = storyExport.get('declaration');
-      if (!declaration.isVariableDeclaration()) {
-        return;
+      try {
+        // TODO read the user config
+        if (!snippet && node) {
+          snippet = await format(recast.print(node).code, {
+            filepath: join(process.cwd(), 'component.tsx'),
+          });
+        }
+      } catch (e) {
+        if (!(e instanceof Error)) {
+          return;
+        }
+        snippet = e.message;
       }
 
-      const declarator = declaration.get('declarations')[0];
-      const init = declarator.get('init') as NodePath<t.Expression>;
-
-      if (!init.isExpression()) {
+      if (!snippet) {
         return;
       }
-
-      const isCsfFactory =
-        t.isCallExpression(init.node) &&
-        t.isMemberExpression(init.node.callee) &&
-        t.isIdentifier(init.node.callee.object) &&
-        init.node.callee.object.name === 'meta';
 
       // e.g. Story.input.parameters
       const originalParameters = t.memberExpression(
-        isCsfFactory
+        csf._metaIsFactory
           ? t.memberExpression(t.identifier(key), t.identifier('input'))
           : t.identifier(key),
         t.identifier('parameters')

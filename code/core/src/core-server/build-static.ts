@@ -41,9 +41,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   options.outputDir = resolve(options.outputDir);
   options.configDir = resolve(options.configDir);
 
-  logger.info(
-    `=> Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`
-  );
+  logger.step(`Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`);
   if (options.outputDir === '/') {
     throw new Error("Won't remove directory '/'. Check your outputDir!");
   }
@@ -69,7 +67,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     'storybook/internal/core-server/presets/common-override-preset'
   );
 
-  logger.info('=> Loading presets');
+  logger.step('Loading presets');
   let presets = await loadAllPresets({
     corePresets: [commonPreset, ...corePresets],
     overridePresets: [commonOverridePreset],
@@ -178,7 +176,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   if (options.ignorePreview) {
     logger.info(`=> Not building preview`);
   } else {
-    logger.info('=> Building preview..');
+    logger.info('Building preview..');
   }
 
   const startTime = process.hrtime();
@@ -229,5 +227,5 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     );
   }
 
-  logger.info(`=> Output directory: ${options.outputDir}`);
+  logger.step(`Output directory: ${options.outputDir}`);
 }

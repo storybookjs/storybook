@@ -6,6 +6,7 @@ import type { MonorepoType } from './get-monorepo-type';
 
 export type EventType =
   | 'boot'
+  | 'add'
   | 'dev'
   | 'build'
   | 'index'
@@ -33,6 +34,8 @@ export type EventType =
   | 'addon-onboarding'
   | 'onboarding-survey'
   | 'mocking'
+  | 'automigrate'
+  | 'migrate'
   | 'preview-first-load';
 export interface Dependency {
   version: string | undefined;

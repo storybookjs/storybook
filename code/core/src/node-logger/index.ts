@@ -10,6 +10,7 @@ export { logTracker } from './logger/log-tracker';
 export type { SpinnerInstance, TaskLogInstance } from './prompts/prompt-provider-base';
 export { protectUrls, createHyperlink } from './wrap-utils';
 export { CLI_COLORS } from './logger/colors';
+export { ConsoleLogger, StyledConsoleLogger } from './logger/console';
 
 // The default is stderr, which can cause some tools (like rush.js) to think
 // there are issues with the build: https://github.com/storybookjs/storybook/issues/14621
@@ -49,10 +50,11 @@ export const colors = {
 export const logger = {
   ...newLogger,
   verbose: (message: string): void => newLogger.debug(message),
+  /** Logs information that should catch the user's attention */
   info: (message: string): void =>
     isClackEnabled() ? newLogger.info(message) : npmLog.info('', message),
-  plain: (message: string): void => newLogger.log(message),
   line: (count = 1): void => newLogger.log(`${Array(count - 1).fill('\n')}`),
+  /** For non-critical issues or warnings */
   warn: (message: string): void => newLogger.warn(message),
   trace: ({ message, time }: { message: string; time: [number, number] }): void =>
     newLogger.debug(`${message} (${colors.purple(prettyTime(time))})`),
@@ -60,6 +62,7 @@ export const logger = {
     npmLog.level = level;
     newLogger.setLogLevel(level);
   },
+  /** Logs an error */
   error: (message: Error | string): void => {
     let msg: string;
     if (message instanceof Error && message.stack) {
@@ -68,9 +71,8 @@ export const logger = {
       msg = message.toString();
     }
 
-    newLogger.error(
-      msg.replace(message.toString(), colors.red(message.toString())).replaceAll(process.cwd(), '.')
-    );
+    newLogger.debug(msg);
+    newLogger.error(message.toString().replaceAll(process.cwd(), '.'));
   },
 };
 

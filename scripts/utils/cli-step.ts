@@ -42,6 +42,7 @@ export const steps = {
       yes: { type: 'boolean' },
       type: { type: 'string' },
       debug: { type: 'boolean' },
+      builder: { type: 'string' },
       'skip-install': { type: 'boolean' },
     }),
   },

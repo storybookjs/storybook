@@ -11,7 +11,7 @@ import {
 } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
-import { downloadTemplate } from 'giget';
+import { sync as spawnSync } from 'cross-spawn';
 import { join } from 'pathe';
 import picocolors from 'picocolors';
 import { lt, prerelease } from 'semver';
@@ -78,7 +78,7 @@ export const sandbox = async ({
       .concat(init && (isOutdated || isPrerelease) ? [messages.longInitTime] : [])
       .concat(isPrerelease ? [messages.prerelease] : [])
       .join('\n'),
-    { borderStyle: 'round', padding: 1, borderColor }
+    { borderStyle: 'round', borderColor }
   );
 
   if (!selectedConfig) {
@@ -197,13 +197,9 @@ export const sandbox = async ({
     logger.log(`📦 Downloading sandbox template (${picocolors.bold(downloadType)})...`);
     try {
       // Download the sandbox based on subfolder "after-storybook" and selected branch
-      const gitPath = `github:storybookjs/sandboxes/${templateId}/${downloadType}#${branch}`;
+      const gitPath = `storybookjs/sandboxes/tree/${branch}/${templateId}/${downloadType}`;
       // create templateDestination first (because it errors on Windows if it doesn't exist)
-      await mkdir(templateDestination, { recursive: true });
-      await downloadTemplate(gitPath, {
-        force: true,
-        dir: templateDestination,
-      });
+      spawnSync('npx', ['gitpick', gitPath, templateDestination, '-o']);
       // throw an error if templateDestination is an empty directory
       if ((await readdir(templateDestination)).length === 0) {
         const selected = picocolors.yellow(templateId);
@@ -228,6 +224,7 @@ export const sandbox = async ({
         await initiate({
           dev: isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX),
           ...options,
+          ...(selectedConfig.initOptions || {}),
           features: ['docs', 'test'],
         });
         process.chdir(before);
@@ -259,7 +256,7 @@ export const sandbox = async ({
 
         Having a clean repro helps us solve your issue faster! 🙏
       `.trim(),
-      { borderStyle: 'round', padding: 1, borderColor: '#F1618C' }
+      { borderStyle: 'round', borderColor: '#F1618C' }
     );
   } catch (error) {
     logger.error('🚨 Failed to create sandbox');

@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { logger as loggerRaw } from 'storybook/internal/node-logger';
-
 import { FixStatus } from '../types';
 import { logMigrationSummary } from './logMigrationSummary';
 
@@ -15,7 +13,17 @@ vi.mock('picocolors', () => ({
   },
 }));
 
-const loggerMock = vi.mocked(loggerRaw);
+vi.mock('storybook/internal/node-logger', () => ({
+  logger: {
+    logBox: vi.fn(),
+    log: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
+}));
+
+const loggerMock = await import('storybook/internal/node-logger').then((m) => vi.mocked(m.logger));
 
 // necessary for windows and unix output to match in the assertions
 const normalizeLineBreaks = (str: string) => str.replace(/\r\n|\r|\n/g, '\n').trim();

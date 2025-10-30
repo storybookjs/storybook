@@ -1,18 +1,23 @@
 import * as clack from '@clack/prompts';
-import boxen from 'boxen';
 
 import { isClackEnabled } from '../prompts/prompt-config';
-import { currentTaskLog } from '../prompts/prompt-provider-clack';
+import { getCurrentTaskLog } from '../prompts/prompt-provider-clack';
 import { wrapTextForClack } from '../wrap-utils';
 import { CLI_COLORS } from './colors';
 import { logTracker } from './log-tracker';
 
 const createLogFunction =
-  (clackFn: (message: string) => void, consoleFn: (...args: any[]) => void) => () =>
+  (
+    clackFn: (message: string) => void,
+    consoleFn: (...args: any[]) => void,
+    cliColors?: (typeof CLI_COLORS)[keyof typeof CLI_COLORS]
+  ) =>
+  () =>
     isClackEnabled()
       ? (message: string) => {
+          const currentTaskLog = getCurrentTaskLog();
           if (currentTaskLog) {
-            currentTaskLog.message(message);
+            currentTaskLog.message(wrapTextForClack(cliColors ? cliColors(message) : message));
           } else {
             clackFn(wrapTextForClack(message));
           }
@@ -22,8 +27,8 @@ const createLogFunction =
 const LOG_FUNCTIONS = {
   log: createLogFunction(clack.log.message, console.log),
   info: createLogFunction(clack.log.info, console.log),
-  warn: createLogFunction(clack.log.warn, console.warn),
-  error: createLogFunction(clack.log.error, console.error),
+  warn: createLogFunction(clack.log.warn, console.warn, CLI_COLORS.warning),
+  error: createLogFunction(clack.log.error, console.error, CLI_COLORS.error),
   intro: createLogFunction(clack.intro, console.log),
   outro: createLogFunction(clack.outro, console.log),
   step: createLogFunction(clack.log.step, console.log),
@@ -115,7 +120,10 @@ function createLogger(
   };
 }
 
-// Create all logging functions using the factory
+/**
+ * For detailed information useful for debugging, which is hidden by default and only appears in log
+ * files or when the log level is set to debug
+ */
 export const debug = createLogger(
   'debug',
   function logFunction(message) {
@@ -127,9 +135,11 @@ export const debug = createLogger(
   '[DEBUG]'
 );
 
+/** For general information that should always be visible to the user */
 export const log = createLogger('info', (...args) => {
   return LOG_FUNCTIONS.log()(...args);
 });
+/** For general information that should catch the user's attention */
 export const info = createLogger('info', (...args) => {
   return LOG_FUNCTIONS.info()(...args);
 });
@@ -140,51 +150,51 @@ export const error = createLogger('error', (...args) => {
   return LOG_FUNCTIONS.error()(...args);
 });
 
-type BoxenOptions = {
+type BoxOptions = {
   borderStyle?: 'round' | 'none';
-  padding?: number;
+  contentPadding?: number;
   title?: string;
-  titleAlignment?: 'left' | 'center' | 'right';
+  titleAlign?: 'left' | 'center' | 'right';
   borderColor?: string;
   backgroundColor?: string;
+  width?: number | 'auto';
 };
 
-export const logBox = (message: string, options?: BoxenOptions) => {
+export const logBox = (message: string, { title, ...options }: BoxOptions = {}) => {
   if (shouldLog('info')) {
     logTracker.addLog('info', message);
     if (isClackEnabled()) {
-      if (options?.title) {
-        log(options.title);
-      }
-      log(message);
+      clack.box(message, title, {
+        ...options,
+        width: options.width ?? 'auto',
+      });
     } else {
-      console.log(
-        boxen(message, {
-          borderStyle: 'round',
-          padding: 1,
-          borderColor: '#F1618C', // pink
-          ...options,
-        })
-      );
+      console.log(message);
     }
   }
 };
 
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
-  console.log('\n');
-  LOG_FUNCTIONS.intro()(message);
+  if (shouldLog('info')) {
+    console.log('\n');
+    LOG_FUNCTIONS.intro()(message);
+  }
 };
 
 export const outro = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.outro()(message);
-  console.log('\n');
+  if (shouldLog('info')) {
+    LOG_FUNCTIONS.outro()(message);
+    console.log('\n');
+  }
 };
 
 export const step = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.step()(message);
+  if (shouldLog('info')) {
+    LOG_FUNCTIONS.step()(message);
+  }
 };
 
 export const SYMBOLS = {

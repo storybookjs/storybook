@@ -43,11 +43,11 @@ export async function webpack(config: Configuration, options: Options) {
   const customConfig = await loadCustomWebpackConfig(configDir);
 
   if (typeof customConfig === 'function') {
-    logger.info('=> Loading custom Webpack config (full-control mode).');
+    logger.info('Loading custom Webpack config (full-control mode).');
     return customConfig({ config: finalDefaultConfig, mode: configType });
   }
 
-  logger.info('=> Using default Webpack5 setup');
+  logger.info('Using default Webpack5 setup');
   return finalDefaultConfig;
 }
 

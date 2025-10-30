@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAddonNames } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
@@ -45,8 +44,6 @@ vi.mock('picocolors', async (importOriginal) => {
     },
   };
 });
-
-const loggerMock = vi.mocked(logger);
 
 describe('addonA11yAddonTest', () => {
   const configDir = '/path/to/config';

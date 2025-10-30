@@ -9,6 +9,9 @@ vi.mock('./logger/logger', () => ({
   log: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
+  debug: vi.fn(),
+  info: vi.fn(),
+  setLogLevel: vi.fn(),
 }));
 
 const loggerMock = vi.mocked(loggerRaw);
@@ -31,6 +34,10 @@ vi.mock('npmlog', () => ({
     },
     level: 'info',
   },
+}));
+
+vi.mock('./prompts/prompt-config', () => ({
+  isClackEnabled: vi.fn(() => false),
 }));
 
 //

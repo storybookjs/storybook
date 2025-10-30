@@ -4,6 +4,7 @@ import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/commo
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
+import { logger } from 'storybook/internal/node-logger';
 
 import type {
   BuilderContext,
@@ -215,7 +216,10 @@ function runInstance(options: StandaloneOptions) {
         presetOptions: { ...options, corePresets: [], overridePresets: [] },
         printError: printErrorDetails,
       },
-      () => buildDevStandalone(options)
+      () => {
+        logger.intro('Starting storybook');
+        return buildDevStandalone(options);
+      }
     )
       .then(({ port }) => observer.next(port))
       .catch((error) => {

@@ -42,10 +42,14 @@ export const executeTask = async (
     }
     logTracker.addLog('info', success);
     task.success(success);
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message.includes('Command was killed with SIGINT')) {
+      task.error(`${intro} aborted`);
+      return;
+    }
     const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
     logTracker.addLog('error', error, { error: errorMessage });
-    task.error(error);
+    task.error(String((err as any).message ?? err));
     throw err;
   }
 };
@@ -74,9 +78,14 @@ export const executeTaskWithSpinner = async (
     }
     logTracker.addLog('info', success);
     task.stop(success);
-  } catch (err) {
-    logTracker.addLog('error', error, { error: err });
-    task.stop(error);
+  } catch (err: any) {
+    if (err.message.includes('Command was killed with SIGINT')) {
+      task.stop(`${intro} aborted`);
+      return;
+    }
+    const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
+    logTracker.addLog('error', error, { error: errorMessage });
+    task.stop(String((err as any).message ?? err));
     throw err;
   }
 };

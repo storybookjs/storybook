@@ -52,16 +52,20 @@ const command = (name: string) =>
     .option('--write-logs', 'Write all debug logs to a file at the end of the run')
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
     .hook('preAction', async (self) => {
+      const options = self.opts();
+      if (options.debug) {
+        logger.setLogLevel('debug');
+      }
+
+      if (options.loglevel) {
+        logger.setLogLevel(options.loglevel);
+      }
+
+      if (options.writeLogs) {
+        logTracker.enableLogWriting();
+      }
+
       try {
-        const options = self.opts();
-        if (options.loglevel) {
-          logger.setLogLevel(options.loglevel);
-        }
-
-        if (options.writeLogs) {
-          logTracker.enableLogWriting();
-        }
-
         await globalSettings();
       } catch (e) {
         logger.error('Error loading global settings:\n' + String(e));
@@ -108,7 +112,17 @@ command('add <addon>')
   .option('-s --skip-postinstall', 'Skip package specific postinstall config modifications')
   .option('-y --yes', 'Skip prompting the user')
   .option('--skip-doctor', 'Skip doctor check')
-  .action((addonName: string, options: any) => add(addonName, options));
+  .action((addonName: string, options: any) => {
+    withTelemetry('add', { cliOptions: options }, async () => {
+      logger.intro(`Setting up your project for ${addonName}`);
+
+      await add(addonName, options);
+
+      if (!options.disableTelemetry) {
+        await telemetry('add', { addon: addonName, source: 'cli' });
+      }
+    }).catch(handleCommandFailure);
+  });
 
 command('remove <addon>')
   .description('Remove an addon from your Storybook')
@@ -150,7 +164,6 @@ command('upgrade')
     'Directory(ies) where to load Storybook configurations from'
   )
   .action(async (options: UpgradeOptions) => {
-    prompt.setPromptLibrary('clack');
     await upgrade(options).catch(handleCommandFailure);
   });
 
@@ -190,14 +203,11 @@ command('migrate [migration]')
     '-r --rename <from-to>',
     'Rename suffix of matching files after codemod has been applied, e.g. ".js:.ts"'
   )
-  .action((migration, { configDir, glob, dryRun, list, rename, parser }) => {
-    migrate(migration, {
-      configDir,
-      glob,
-      dryRun,
-      list,
-      rename,
-      parser,
+  .action((migration, options) => {
+    withTelemetry('migrate', { cliOptions: options }, async () => {
+      logger.intro(`Running ${migration} migration`);
+      await migrate(migration, options);
+      logger.outro('Migration completed');
     }).catch(handleCommandFailure);
   });
 
@@ -230,8 +240,11 @@ command('automigrate [fixId]')
   )
   .option('--skip-doctor', 'Skip doctor check')
   .action(async (fixId, options) => {
-    prompt.setPromptLibrary('clack');
-    await doAutomigrate({ fixId, ...options }).catch(handleCommandFailure);
+    withTelemetry('automigrate', { cliOptions: options }, async () => {
+      logger.intro(`Running ${fixId} automigration`);
+      await doAutomigrate({ fixId, ...options });
+      logger.outro('Done');
+    }).catch(handleCommandFailure);
   });
 
 command('doctor')
@@ -239,6 +252,7 @@ command('doctor')
   .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options) => {
+    // TODO: Add telemetry
     await doctor(options).catch(handleCommandFailure);
   });
 

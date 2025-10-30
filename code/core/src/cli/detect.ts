@@ -2,17 +2,17 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { JsPackageManager, PackageJsonWithMaybeDeps } from 'storybook/internal/common';
-import { HandledError, commandLog, getProjectRoot } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
-import prompts from 'prompts';
 import semver from 'semver';
+import { dedent } from 'ts-dedent';
 
+import { SupportedBuilder } from '../types';
 import { isNxProject } from './helpers';
 import type { TemplateConfiguration, TemplateMatcher } from './project_types';
 import {
-  CoreBuilder,
   ProjectType,
   SupportedLanguage,
   supportedTemplates,
@@ -48,7 +48,7 @@ const hasPeerDependency = (
 
 type SearchTuple = [string, ((version: string) => boolean) | undefined];
 
-const getFrameworkPreset = (
+const getProjectType = (
   packageJson: PackageJsonWithMaybeDeps,
   framework: TemplateConfiguration
 ): ProjectType | null => {
@@ -99,7 +99,7 @@ export function detectFrameworkPreset(
   packageJson = {} as PackageJsonWithMaybeDeps
 ): ProjectType | null {
   const result = [...supportedTemplates, unsupportedTemplate].find((framework) => {
-    return getFrameworkPreset(packageJson, framework) !== null;
+    return getProjectType(packageJson, framework) !== null;
   });
 
   return result ? result.preset : ProjectType.UNDETECTED;
@@ -109,62 +109,34 @@ export function detectFrameworkPreset(
  * Attempts to detect which builder to use, by searching for a vite config file or webpack
  * installation. If neither are found it will choose the default builder based on the project type.
  *
- * @returns CoreBuilder
+ * @returns SupportedBuilder
  */
-export async function detectBuilder(packageManager: JsPackageManager, projectType: ProjectType) {
+export async function detectBuilder(packageManager: JsPackageManager) {
   const viteConfig = find.any(viteConfigFiles, { last: getProjectRoot() });
   const webpackConfig = find.any(webpackConfigFiles, { last: getProjectRoot() });
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
-    commandLog('Detected Vite project. Setting builder to Vite')();
-    return CoreBuilder.Vite;
+    logger.step('Builder detected: Vite');
+    return SupportedBuilder.VITE;
   }
 
   // REWORK
-  if (
-    webpackConfig ||
-    ((dependencies.webpack || dependencies['@nuxt/webpack-builder']) &&
-      dependencies.vite !== undefined)
-  ) {
-    commandLog('Detected webpack project. Setting builder to webpack')();
-    return CoreBuilder.Webpack5;
+  if (webpackConfig || (dependencies.webpack && dependencies.vite !== undefined)) {
+    logger.step('Builder detected: Webpack 5');
+    return SupportedBuilder.WEBPACK5;
   }
 
-  // Fallback to Vite or Webpack based on project type
-  switch (projectType) {
-    case ProjectType.REACT_NATIVE_AND_RNW:
-    case ProjectType.REACT_NATIVE_WEB:
-      return CoreBuilder.Vite;
-    case ProjectType.REACT_SCRIPTS:
-    case ProjectType.ANGULAR:
-    case ProjectType.REACT_NATIVE: // technically react native doesn't use webpack, we just want to set something
-    case ProjectType.NEXTJS:
-    case ProjectType.EMBER:
-      return CoreBuilder.Webpack5;
-    case ProjectType.NUXT:
-      return CoreBuilder.Vite;
-    default:
-      const { builder } = await prompts(
-        {
-          type: 'select',
-          name: 'builder',
-          message:
-            '\nWe were not able to detect the right builder for your project. Please select one:',
-          choices: [
-            { title: 'Vite', value: CoreBuilder.Vite },
-            { title: 'Webpack 5', value: CoreBuilder.Webpack5 },
-          ],
-        },
-        {
-          onCancel: () => {
-            throw new HandledError('Canceled by the user');
-          },
-        }
-      );
-
-      return builder;
-  }
+  return prompt.select({
+    message: dedent`
+      We were not able to detect the right builder for your project. 
+      Please select one:
+      `,
+    options: [
+      { label: 'Vite', value: SupportedBuilder.VITE },
+      { label: 'Webpack 5', value: SupportedBuilder.WEBPACK5 },
+    ],
+  });
 }
 
 export function isStorybookInstantiated(configDir = resolve(process.cwd(), '.storybook')) {
@@ -245,7 +217,7 @@ export async function detect(
 
     const { packageJson } = packageManager.primaryPackageJson;
     return detectFrameworkPreset(packageJson);
-  } catch (e) {
+  } catch {
     return ProjectType.UNDETECTED;
   }
 }

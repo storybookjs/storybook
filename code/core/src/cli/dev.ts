@@ -1,6 +1,6 @@
 import { cache } from 'storybook/internal/common';
 import { buildDevStandalone, withTelemetry } from 'storybook/internal/core-server';
-import { logger, instance as npmLog } from 'storybook/internal/node-logger';
+import { logTracker, logger, instance as npmLog } from 'storybook/internal/node-logger';
 import type { CLIOptions, PackageJson } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
@@ -13,12 +13,12 @@ function printError(error: any) {
     if ((error as any).error) {
       logger.error((error as any).error);
     } else if ((error as any).stats && (error as any).stats.compilation.errors) {
-      (error as any).stats.compilation.errors.forEach((e: any) => logger.plain(e));
+      (error as any).stats.compilation.errors.forEach((e: any) => logger.log(e));
     } else {
       logger.error(error as any);
     }
   } else if (error.compilation?.errors) {
-    error.compilation.errors.forEach((e: any) => logger.plain(e));
+    error.compilation.errors.forEach((e: any) => logger.log(e));
   }
 
   logger.line();
@@ -35,6 +35,13 @@ function printError(error: any) {
   );
   logger.line();
 }
+
+const handleCommandFailure = async (): Promise<never> => {
+  const logFile = await logTracker.writeToFile();
+  logger.log(`Storybook debug logs can be found at: ${logFile}`);
+  logger.outro('Storybook exited with an error');
+  process.exit(1);
+};
 
 export const dev = async (cliOptions: CLIOptions) => {
   const { env } = process;
@@ -62,5 +69,5 @@ export const dev = async (cliOptions: CLIOptions) => {
       printError,
     },
     () => buildDevStandalone(options)
-  );
+  ).catch(handleCommandFailure);
 };

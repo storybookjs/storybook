@@ -141,7 +141,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
   router,
 }) {
   if (!options.quiet) {
-    logger.info('=> Starting manager..');
+    logger.info('Starting manager..');
   }
 
   const {
@@ -258,7 +258,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
   if (!options.outputDir) {
     throw new Error('outputDir is required');
   }
-  logger.info('=> Building manager..');
+  logger.step('Building manager..');
   const {
     config,
     customHead,

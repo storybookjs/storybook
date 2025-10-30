@@ -18,7 +18,7 @@ const userSettingSchema = z.object({
   checklist: z
     .object({
       muted: z.union([z.boolean(), z.array(z.string())]).optional(),
-      completed: z.array(z.string()),
+      accepted: z.array(z.string()),
       skipped: z.array(z.string()),
     })
     .optional(),

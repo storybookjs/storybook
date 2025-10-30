@@ -100,7 +100,7 @@ const StyledButton = styled('button', {
     padding,
   }) => ({
     border: 0,
-    cursor: disabled ? 'not-allowed' : readOnly ? 'inherit' : 'pointer',
+    cursor: readOnly ? 'inherit' : disabled ? 'not-allowed' : 'pointer',
     display: 'inline-flex',
     gap: '6px',
     alignItems: 'center',
@@ -134,7 +134,7 @@ const StyledButton = styled('button', {
     verticalAlign: 'top',
     whiteSpace: 'nowrap',
     userSelect: 'none',
-    opacity: disabled ? 0.5 : 1,
+    opacity: disabled && !readOnly ? 0.5 : 1,
     margin: 0,
     fontSize: `${theme.typography.size.s1}px`,
     fontWeight: theme.typography.weight.bold,

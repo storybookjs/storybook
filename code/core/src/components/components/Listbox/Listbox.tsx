@@ -4,7 +4,7 @@ import { styled } from 'storybook/theming';
 
 import { Button } from '../Button/Button';
 
-export const Listbox = styled.ul(({ theme }) => ({
+export const Listbox = styled.div(({ theme }) => ({
   listStyle: 'none',
   margin: 0,
   padding: 4,
@@ -14,7 +14,7 @@ export const Listbox = styled.ul(({ theme }) => ({
   },
 }));
 
-export const ListboxItem = styled.li<{ active?: boolean }>(({ active, theme }) => ({
+export const ListboxItem = styled.div<{ active?: boolean }>(({ active, theme }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',

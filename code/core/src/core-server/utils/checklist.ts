@@ -14,15 +14,11 @@ export function initializeChecklist() {
   });
 
   globalSettings().then((settings) => {
-    store.setState({
-      loaded: true,
-      muted: settings.value.checklist?.muted ?? false,
-      completed: settings.value.checklist?.completed ?? [],
-      skipped: settings.value.checklist?.skipped ?? [],
-    });
+    const { muted = false, accepted = [], skipped = [] } = settings.value.checklist || {};
+    store.setState((value) => ({ ...value, loaded: true, muted, accepted, skipped }));
 
-    store.onStateChange((state) => {
-      settings.value.checklist = state;
+    store.onStateChange(({ muted, accepted, skipped }) => {
+      settings.value.checklist = { muted, accepted, skipped };
       settings.save();
     });
   });

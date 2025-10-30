@@ -37,9 +37,8 @@ export const Default = meta.story({
   args: {
     ...checklistData,
     ...checklistStore,
-    loaded: true,
-    muted: false,
-    completed: ['add-component'],
-    skipped: ['add-5-10-components'],
+    accepted: ['controls'],
+    done: ['add-component'],
+    skipped: ['viewports'],
   },
 });

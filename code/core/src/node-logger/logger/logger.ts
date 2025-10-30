@@ -176,19 +176,25 @@ export const logBox = (message: string, { title, ...options }: BoxOptions = {}) 
 
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
-  console.log('\n');
-  LOG_FUNCTIONS.intro()(message);
+  if (shouldLog('info')) {
+    console.log('\n');
+    LOG_FUNCTIONS.intro()(message);
+  }
 };
 
 export const outro = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.outro()(message);
-  console.log('\n');
+  if (shouldLog('info')) {
+    LOG_FUNCTIONS.outro()(message);
+    console.log('\n');
+  }
 };
 
 export const step = (message: string) => {
   logTracker.addLog('info', message);
-  LOG_FUNCTIONS.step()(message);
+  if (shouldLog('info')) {
+    LOG_FUNCTIONS.step()(message);
+  }
 };
 
 export const SYMBOLS = {

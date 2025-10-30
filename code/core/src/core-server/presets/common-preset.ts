@@ -1,6 +1,5 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
@@ -26,6 +25,7 @@ import type {
   PresetPropertyFn,
 } from 'storybook/internal/types';
 
+import { isAbsolute, join } from 'pathe';
 import * as pathe from 'pathe';
 import { dedent } from 'ts-dedent';
 

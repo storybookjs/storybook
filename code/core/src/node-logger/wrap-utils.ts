@@ -294,7 +294,7 @@ export function wrapTextForClackHint(
     }
 
     // Use reset + cyan to counteract clack's dimming effect on the vertical line
-    const indentation = reset(cyan(S_BAR)) + ' '.repeat(indentSpaces);
+    const indentation = indentSpaces > 0 ? reset(cyan(S_BAR)) + ' '.repeat(indentSpaces) : '';
 
     // Add proper indentation to all lines except the first one
     return finalLines

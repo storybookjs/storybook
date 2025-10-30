@@ -96,7 +96,7 @@ export const multiselect = async <T>(
       options: options.options.map((opt) => ({
         ...opt,
         hint: opt.hint
-          ? wrapTextForClackHint(opt.hint, undefined, opt.label || String(opt.value))
+          ? wrapTextForClackHint(opt.hint, undefined, opt.label || String(opt.value), 0)
           : undefined,
       })),
     },

@@ -1,6 +1,6 @@
 {
 	"name": "@storybook/addon-mcp",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"description": "Help agents automatically write and test stories for your UI components",
 	"keywords": [
 		"storybook-addon",

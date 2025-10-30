@@ -1,5 +1,13 @@
 # @storybook/addon-mcp
 
+## 0.1.3
+
+### Patch Changes
+
+- [#50](https://github.com/storybookjs/mcp/pull/50) [`0334d29`](https://github.com/storybookjs/mcp/commit/0334d2988f7b5be056f458e60bee7eca7a366997) Thanks [@JReinhold](https://github.com/JReinhold)! - Add GET handler that serves HTML when visiting `/mcp`, and redirects to human-readable component manifest when applicable
+
+- [#50](https://github.com/storybookjs/mcp/pull/50) [`0334d29`](https://github.com/storybookjs/mcp/commit/0334d2988f7b5be056f458e60bee7eca7a366997) Thanks [@JReinhold](https://github.com/JReinhold)! - Update manifest format
+
 ## 0.1.2
 
 ### Patch Changes

@@ -40,23 +40,29 @@ const JSDocTag = v.record(v.string(), v.array(v.string()));
 
 const BaseManifest = v.object({
 	name: v.string(),
-	description: v.exactOptional(v.string()),
-	import: v.exactOptional(v.string()),
-	jsDocTags: v.exactOptional(JSDocTag),
+	description: v.optional(v.string()),
+	import: v.optional(v.string()),
+	jsDocTags: v.optional(JSDocTag),
+	error: v.optional(
+		v.object({
+			message: v.string(),
+		}),
+	),
 });
 
 const Example = v.object({
 	...BaseManifest.entries,
-	snippet: v.string(),
+	snippet: v.optional(v.string()),
 });
 
 export const ComponentManifest = v.object({
 	...BaseManifest.entries,
 	id: v.string(),
-	summary: v.exactOptional(v.string()),
-	examples: v.exactOptional(v.array(Example)),
+	path: v.string(),
+	summary: v.optional(v.string()),
+	examples: v.optional(v.array(Example)),
 	// loose schema for react-docgen types, as they are pretty complex
-	reactDocgen: v.exactOptional(v.custom<Documentation>(() => true)),
+	reactDocgen: v.optional(v.custom<Documentation>(() => true)),
 });
 export type ComponentManifest = v.InferOutput<typeof ComponentManifest>;
 

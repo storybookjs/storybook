@@ -1,6 +1,7 @@
 {
 	"card": {
 		"id": "card",
+		"path": "src/components/Card.tsx",
 		"name": "Card",
 		"description": "A flexible container component for grouping related content with optional header, footer, and action areas.\n\nThe Card component provides a consistent way to present information in a contained, elevated surface. It's commonly used for displaying articles, products, user profiles, or any grouped content that benefits from visual separation.\n\n## Design Principles\n\n- Cards should contain a single subject or action\n- Maintain consistent padding and spacing\n- Use elevation to indicate interactive vs static cards\n- Keep content hierarchy clear with proper use of typography",
 		"summary": "A flexible container component for grouping related content",

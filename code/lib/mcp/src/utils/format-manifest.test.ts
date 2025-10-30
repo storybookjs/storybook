@@ -23,6 +23,7 @@ describe('formatComponentManifest', () => {
 		it('should include component name in component_name tag', () => {
 			const manifest: ComponentManifest = {
 				id: 'test-component',
+				path: 'src/components/TestComponent.tsx',
 				name: 'TestComponent',
 			};
 
@@ -41,6 +42,7 @@ describe('formatComponentManifest', () => {
 		it('should include description when provided', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
+				path: 'src/components/Button.tsx',
 				name: 'Button',
 				description: 'A simple button component',
 			};
@@ -61,6 +63,7 @@ describe('formatComponentManifest', () => {
 		it('should handle multi-line descriptions', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
+				path: 'src/components/Button.tsx',
 				name: 'Button',
 				description:
 					'A versatile button component.\n\nSupports multiple variants and sizes.',
@@ -85,6 +88,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 			};
 
 			const result = formatComponentManifest(manifest);
@@ -103,6 +107,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				import: 'import { Button } from "@/components";',
 				examples: [
 					{
@@ -138,6 +143,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				import: 'import { Button } from "@/components";',
 				examples: [
 					{
@@ -181,6 +187,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				examples: [
 					{
 						name: 'WithIcon',
@@ -219,6 +226,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				import: 'import { Button } from "@/components";',
 				examples: [
 					{
@@ -251,6 +259,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				examples: [
 					{
 						name: 'Simple',
@@ -279,6 +288,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				examples: [
 					{
 						name: 'NoImport',
@@ -307,6 +317,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				description: 'A button component',
 			};
 
@@ -327,6 +338,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				examples: [],
 			};
 
@@ -346,6 +358,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				description:
 					'A versatile button component.\n\nSupports multiple variants, sizes, and states.',
 				summary: 'A button for user interactions',
@@ -414,6 +427,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				reactDocgen: {
 					props: {
 						variant: {
@@ -495,6 +509,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				reactDocgen: {
 					props: {
 						children: {
@@ -526,6 +541,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				description: 'A button component',
 			};
 
@@ -546,6 +562,7 @@ describe('formatComponentManifest', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
+				path: 'src/components/Button.tsx',
 				reactDocgen: {
 					props: {},
 				},
@@ -577,6 +594,7 @@ describe('formatComponentManifestMapToList', () => {
 					button: {
 						id: 'button',
 						name: 'Button',
+						path: 'src/components/Button.tsx',
 					},
 				},
 			};
@@ -600,14 +618,17 @@ describe('formatComponentManifestMapToList', () => {
 					button: {
 						id: 'button',
 						name: 'Button',
+						path: 'src/components/Button.tsx',
 					},
 					card: {
 						id: 'card',
 						name: 'Card',
+						path: 'src/components/Card.tsx',
 					},
 					input: {
 						id: 'input',
 						name: 'Input',
+						path: 'src/components/Input.tsx',
 					},
 				},
 			};
@@ -641,6 +662,7 @@ describe('formatComponentManifestMapToList', () => {
 					button: {
 						id: 'button',
 						name: 'Button',
+						path: 'src/components/Button.tsx',
 						summary: 'A versatile button component',
 					},
 				},
@@ -668,6 +690,7 @@ describe('formatComponentManifestMapToList', () => {
 					button: {
 						id: 'button',
 						name: 'Button',
+						path: 'src/components/Button.tsx',
 						summary: 'Short summary',
 						description: 'This is a longer description that should be ignored',
 					},
@@ -687,6 +710,7 @@ describe('formatComponentManifestMapToList', () => {
 					button: {
 						id: 'button',
 						name: 'Button',
+						path: 'src/components/Button.tsx',
 						description: 'A simple button component',
 					},
 				},
@@ -714,6 +738,7 @@ describe('formatComponentManifestMapToList', () => {
 					button: {
 						id: 'button',
 						name: 'Button',
+						path: 'src/components/Button.tsx',
 						description:
 							'This is a very long description that exceeds ninety characters and should be truncated with ellipsis',
 					},
@@ -742,6 +767,7 @@ describe('formatComponentManifestMapToList', () => {
 					button: {
 						id: 'button',
 						name: 'Button',
+						path: 'src/components/Button.tsx',
 						description:
 							'A description with exactly eighty characters is fine and should not be truncated',
 					},
@@ -763,6 +789,7 @@ describe('formatComponentManifestMapToList', () => {
 					button: {
 						id: 'button',
 						name: 'Button',
+						path: 'src/components/Button.tsx',
 					},
 				},
 			};
@@ -789,16 +816,19 @@ describe('formatComponentManifestMapToList', () => {
 					button: {
 						id: 'button',
 						name: 'Button',
+						path: 'src/components/Button.tsx',
 						summary: 'A versatile button component',
 					},
 					card: {
 						id: 'card',
 						name: 'Card',
+						path: 'src/components/Card.tsx',
 						description: 'A flexible container for grouping content',
 					},
 					input: {
 						id: 'input',
 						name: 'Input',
+						path: 'src/components/Input.tsx',
 						summary: 'Text input with validation',
 						description:
 							'A comprehensive input component with validation, error states, and accessibility features',
@@ -806,6 +836,7 @@ describe('formatComponentManifestMapToList', () => {
 					modal: {
 						id: 'modal',
 						name: 'Modal',
+						path: 'src/components/Modal.tsx',
 					},
 				},
 			};

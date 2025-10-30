@@ -3,6 +3,7 @@
 	"components": {
 		"button": {
 			"id": "button",
+			"path": "src/components/Button.tsx",
 			"name": "Button",
 			"summary": "A simple button component",
 			"examples": [
@@ -15,6 +16,7 @@
 		},
 		"card": {
 			"id": "card",
+			"path": "src/components/Card.tsx",
 			"name": "Card",
 			"description": "A container component for grouping related content.",
 			"examples": [
@@ -27,6 +29,7 @@
 		},
 		"input": {
 			"id": "input",
+			"path": "src/components/Input.tsx",
 			"name": "Input",
 			"description": "A text input component with validation support.",
 			"examples": [

@@ -1,6 +1,7 @@
 {
 	"input": {
 		"id": "input",
+		"path": "src/components/Input.tsx",
 		"name": "Input",
 		"description": "A flexible text input component that supports various input types, validation states, and accessibility features.\n\nThe Input component is a foundational form element that wraps the native HTML input with consistent styling and behavior. It includes support for labels, error messages, helper text, and different visual states.\n\n## Accessibility\n\nThe Input component automatically manages ARIA attributes for labels, descriptions, and error messages to ensure screen reader compatibility.",
 		"summary": "A flexible text input component with validation support",

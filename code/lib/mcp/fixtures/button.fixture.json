@@ -1,6 +1,7 @@
 {
 	"button": {
 		"id": "button",
+		"path": "src/components/Button.tsx",
 		"name": "Button",
 		"description": "A versatile button component that supports multiple variants, sizes, and states.\n\nThe Button component is a fundamental building block for user interactions. It can be styled as primary, secondary, or tertiary actions, and supports disabled and loading states.\n\n## Usage\n\nButtons should be used for actions that affect the current page or trigger operations. For navigation, consider using a Link component instead.",
 		"summary": "A versatile button component for user interactions",

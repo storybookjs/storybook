@@ -15,6 +15,7 @@ import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
+import { isManifestAvailable } from './tools/is-manifest-available.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
@@ -50,12 +51,7 @@ const initializeMCPServer = async (options: Options) => {
 	await addGetUIBuildingInstructionsTool(server);
 
 	// Only register the additional tools if the component manifest feature is enabled
-	const [features, componentManifestGenerator] = await Promise.all([
-		options.presets.apply('features') as any,
-		options.presets.apply('experimental_componentManifestGenerator'),
-	]);
-
-	if (features.experimentalComponentsManifest && componentManifestGenerator) {
+	if (await isManifestAvailable(options)) {
 		logger.info(
 			'Experimental components manifest feature detected - registering component tools',
 		);

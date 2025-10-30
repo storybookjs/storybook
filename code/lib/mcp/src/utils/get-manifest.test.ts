@@ -90,10 +90,12 @@ describe('getManifest', () => {
 				headers: {
 					get: vi.fn().mockReturnValue('application/json'),
 				},
-				text: vi.fn().mockResolvedValue(JSON.stringify({
-					// Missing required 'v' field
-					components: {},
-				})),
+				text: vi.fn().mockResolvedValue(
+					JSON.stringify({
+						// Missing required 'v' field
+						components: {},
+					}),
+				),
 			});
 
 			await expect(
@@ -109,10 +111,12 @@ describe('getManifest', () => {
 				headers: {
 					get: vi.fn().mockReturnValue('application/json'),
 				},
-				text: vi.fn().mockResolvedValue(JSON.stringify({
-					v: 1,
-					components: {},
-				})),
+				text: vi.fn().mockResolvedValue(
+					JSON.stringify({
+						v: 1,
+						components: {},
+					}),
+				),
 			});
 
 			await expect(
@@ -161,6 +165,7 @@ describe('getManifest', () => {
 				components: {
 					button: {
 						id: 'button',
+						path: 'src/components/Button.tsx',
 						name: 'Button',
 						description: 'A button component',
 					},
@@ -191,6 +196,7 @@ describe('getManifest', () => {
 				components: {
 					button: {
 						id: 'button',
+						path: 'src/components/Button.tsx',
 						name: 'Button',
 						description: 'A button component',
 					},
@@ -220,6 +226,7 @@ describe('getManifest', () => {
 				components: {
 					button: {
 						id: 'button',
+						path: 'src/components/Button.tsx',
 						name: 'Button',
 						description: 'A button component',
 					},

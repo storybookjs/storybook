@@ -22,6 +22,9 @@ export function formatComponentManifest(
 	// Examples section - only if there are examples
 	if (componentManifest.examples && componentManifest.examples.length > 0) {
 		for (const example of componentManifest.examples) {
+			if (!example.snippet) {
+				continue;
+			}
 			const exampleParts: string[] = [];
 			// Convert PascalCase to Human Readable Case
 			// "WithSizes" -> "With Sizes"

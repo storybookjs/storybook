@@ -3,6 +3,7 @@
 	"components": {
 		"button": {
 			"id": "button",
+			"path": "src/components/Button.tsx",
 			"name": "Button",
 			"description": "A versatile button component that supports multiple variants, sizes, and states.\n\nThe Button component is a fundamental building block for user interactions. It can be styled as primary, secondary, or tertiary actions, and supports disabled and loading states.\n\n## Usage\n\nButtons should be used for actions that affect the current page or trigger operations. For navigation, consider using a Link component instead.",
 			"summary": "A versatile button component for user interactions",
@@ -170,6 +171,7 @@
 		},
 		"card": {
 			"id": "card",
+			"path": "src/components/Card.tsx",
 			"name": "Card",
 			"description": "A flexible container component for grouping related content with optional header, footer, and action areas.\n\nThe Card component provides a consistent way to present information in a contained, elevated surface. It's commonly used for displaying articles, products, user profiles, or any grouped content that benefits from visual separation.\n\n## Design Principles\n\n- Cards should contain a single subject or action\n- Maintain consistent padding and spacing\n- Use elevation to indicate interactive vs static cards\n- Keep content hierarchy clear with proper use of typography",
 			"summary": "A flexible container component for grouping related content",
@@ -339,6 +341,7 @@
 		},
 		"input": {
 			"id": "input",
+			"path": "src/components/Input.tsx",
 			"name": "Input",
 			"description": "A flexible text input component that supports various input types, validation states, and accessibility features.\n\nThe Input component is a foundational form element that wraps the native HTML input with consistent styling and behavior. It includes support for labels, error messages, helper text, and different visual states.\n\n## Accessibility\n\nThe Input component automatically manages ARIA attributes for labels, descriptions, and error messages to ensure screen reader compatibility.",
 			"summary": "A flexible text input component with validation support",

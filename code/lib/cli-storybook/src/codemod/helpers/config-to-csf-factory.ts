@@ -119,8 +119,11 @@ export async function configToCsfFactory(
 
     programNode.body.forEach((node) => {
       // Detect Syntax 1
-      if (t.isExportDefaultDeclaration(node) && t.isIdentifier(node.declaration)) {
-        const declarationName = node.declaration.name;
+      const declaration =
+        t.isExportDefaultDeclaration(node) && config._unwrap(node.declaration as t.Node);
+
+      if (t.isExportDefaultDeclaration(node) && t.isIdentifier(declaration)) {
+        const declarationName = declaration.name;
 
         declarationNodeIndex = findDeclarationNodeIndex(declarationName);
 

@@ -58,6 +58,36 @@ describe('main/preview codemod: general parsing functionality', () => {
       });
     `);
   });
+  it('should wrap defineMain call from const declared default export with different type annotations', async () => {
+    const typedVariants = [
+      'export default config;',
+      'export default config satisfies StorybookConfig;',
+      'export default config as StorybookConfig;',
+      'export default config as unknown as StorybookConfig;',
+    ];
+
+    for (const variant of typedVariants) {
+      await expect(
+        transform(dedent`
+          const config = {
+            stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+            addons: ['@storybook/addon-essentials'],
+            framework: '@storybook/react-vite',
+          };
+
+          ${variant}
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import { defineMain } from '@storybook/react-vite/node';
+
+        export default defineMain({
+          stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
+          addons: ['@storybook/addon-essentials'],
+          framework: '@storybook/react-vite',
+        });
+      `);
+    }
+  });
 
   it('should wrap defineMain call from const declared default export and default export mix', async () => {
     await expect(

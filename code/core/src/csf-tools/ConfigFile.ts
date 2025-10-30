@@ -39,13 +39,6 @@ const propKey = (p: t.ObjectProperty) => {
   return null;
 };
 
-const unwrap = (node: t.Node | undefined | null): any => {
-  if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
-    return unwrap(node.expression);
-  }
-  return node;
-};
-
 const _getPath = (path: string[], node: t.Node): t.Node | undefined => {
   if (path.length === 0) {
     return node;
@@ -184,6 +177,27 @@ export class ConfigFile {
     });
   }
 
+  /** Unwraps TS assertions/satisfies from a node, to get the underlying node. */
+  _unwrap = (node: t.Node | undefined | null): any => {
+    if (t.isTSAsExpression(node) || t.isTSSatisfiesExpression(node)) {
+      return this._unwrap(node.expression);
+    }
+    return node;
+  };
+
+  /**
+   * Resolve a declaration node by unwrapping TS assertions/satisfies and following identifiers to
+   * resolve the correct node in case it's an identifier.
+   */
+  _resolveDeclaration = (node: t.Node, parent: t.Node = this._ast.program) => {
+    const decl = this._unwrap(node);
+    if (t.isIdentifier(decl) && t.isProgram(parent)) {
+      const initialization = _findVarInitialization(decl.name, parent);
+      return initialization ? this._unwrap(initialization) : decl;
+    }
+    return decl;
+  };
+
   parse() {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
@@ -191,12 +205,7 @@ export class ConfigFile {
       ExportDefaultDeclaration: {
         enter({ node, parent }) {
           self.hasDefaultExport = true;
-          let decl =
-            t.isIdentifier(node.declaration) && t.isProgram(parent)
-              ? _findVarInitialization(node.declaration.name, parent)
-              : node.declaration;
-
-          decl = unwrap(decl);
+          let decl = self._resolveDeclaration(node.declaration as t.Node, parent);
 
           // csf factory
           if (t.isCallExpression(decl) && t.isObjectExpression(decl.arguments[0])) {
@@ -284,7 +293,7 @@ export class ConfigFile {
                 exportObject = _findVarInitialization(right.name, parent as t.Program) as any;
               }
 
-              exportObject = unwrap(exportObject);
+              exportObject = self._unwrap(exportObject);
 
               if (t.isObjectExpression(exportObject)) {
                 self._exportsObject = exportObject;
@@ -569,7 +578,7 @@ export class ConfigFile {
             decl = _findVarInitialization(decl.name, this._ast.program);
           }
 
-          decl = unwrap(decl);
+          decl = this._unwrap(decl);
           if (t.isObjectExpression(decl)) {
             const properties = decl.properties as t.ObjectProperty[];
             removeProperty(properties, path[0]);

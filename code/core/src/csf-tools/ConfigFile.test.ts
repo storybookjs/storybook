@@ -1877,5 +1877,23 @@ describe('ConfigFile', () => {
 
       expect(Object.keys(config._exportDecls)).toHaveLength(3);
     });
+
+    it('detects exports object on various TS satisfies/as export syntaxes', () => {
+      const syntaxes = [
+        'const config = { framework: "foo" }; export default config;',
+        'const config = { framework: "foo" }; export default config satisfies StorybookConfig;',
+        'const config = { framework: "foo" }; export default config as StorybookConfig;',
+        'const config = { framework: "foo" }; export default config as unknown as StorybookConfig;',
+        'export default { framework: "foo" };',
+        'export default { framework: "foo" } satisfies StorybookConfig;',
+        'export default { framework: "foo" } as StorybookConfig;',
+        'export default { framework: "foo" } as unknown as StorybookConfig;',
+      ];
+      for (const source of syntaxes) {
+        const config = loadConfig(source).parse();
+        expect(config._exportsObject?.type).toBe('ObjectExpression');
+        expect(config._exportsObject?.properties).toHaveLength(1);
+      }
+    });
   });
 });

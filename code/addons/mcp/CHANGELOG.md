@@ -1,5 +1,16 @@
 # @storybook/addon-mcp
 
+## 0.1.2
+
+### Patch Changes
+
+- [#51](https://github.com/storybookjs/mcp/pull/51) [`2028709`](https://github.com/storybookjs/mcp/commit/20287092a914fb108af1d90d64adf4c604e1a81a) Thanks [@paoloricciuti](https://github.com/paoloricciuti)! - chore: update `tmcp`
+
+- [#48](https://github.com/storybookjs/mcp/pull/48) [`52be338`](https://github.com/storybookjs/mcp/commit/52be33863c62c703826fa915be7eae656c18a6ed) Thanks [@JReinhold](https://github.com/JReinhold)! - Add possibility to configure toolsets (dev tools vs docs tools) either via addon options or request headers
+
+- Updated dependencies [[`52be338`](https://github.com/storybookjs/mcp/commit/52be33863c62c703826fa915be7eae656c18a6ed), [`2028709`](https://github.com/storybookjs/mcp/commit/20287092a914fb108af1d90d64adf4c604e1a81a)]:
+  - @storybook/mcp@0.0.6
+
 ## 0.1.1
 
 ### Patch Changes

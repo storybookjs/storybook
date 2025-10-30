@@ -26,7 +26,7 @@ const meta = preview.meta({
       loaded: true,
       muted: false,
       accepted: ['controls'],
-      done: ['add-component'],
+      done: ['install-storybook', 'first-story', 'whats-new-storybook-10'],
       skipped: ['viewports'],
     });
   },

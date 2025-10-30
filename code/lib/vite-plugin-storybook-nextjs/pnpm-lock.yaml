@@ -52,6 +52,9 @@ importers:
       next:
         specifier: ^16.0.0
         version: 16.0.0(@babel/core@7.28.4)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      pathe:
+        specifier: ^2.0.3
+        version: 2.0.3
       react:
         specifier: 19.2.0
         version: 19.2.0

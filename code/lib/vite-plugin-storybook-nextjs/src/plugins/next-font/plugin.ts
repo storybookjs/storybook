@@ -1,5 +1,5 @@
 import fs from "node:fs/promises";
-import path from "node:path";
+import path from "pathe";
 import type { Plugin } from "vite";
 
 import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from "./google/get-font-face-declarations";

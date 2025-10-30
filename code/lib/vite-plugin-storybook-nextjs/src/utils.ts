@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { resolve, sep } from "node:path/posix";
+import { resolve, sep } from "pathe";
 
 import type { UserConfig } from "vite";
 

@@ -22,7 +22,8 @@ import {
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { ChecklistData, useChecklist } from '../../components/sidebar/useChecklist';
+import type { useChecklist } from '../../components/sidebar/useChecklist';
+import type { ChecklistData } from './checklistData';
 
 type ChecklistSection = Omit<ChecklistData['sections'][number], 'items'> & {
   itemIds: string[];

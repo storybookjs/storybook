@@ -14,7 +14,7 @@ The rule will suggest appropriate framework packages based on which renderer you
 
 - For `@storybook/html`: Use `@storybook/html-vite` or `@storybook/html-webpack5`
 - For `@storybook/preact`: Use `@storybook/preact-vite` or `@storybook/preact-webpack5`
-- For `@storybook/react`: Use `@storybook/nextjs`, `@storybook/react-vite`, `@storybook/react-webpack5`, `@storybook/react-native-web-vite`, or `@storybook/experimental-nextjs-vite`
+- For `@storybook/react`: Use `@storybook/nextjs`, `@storybook/react-vite`, `@storybook/react-webpack5`, `@storybook/react-native-web-vite`, or `@storybook/nextjs-vite`
 - For `@storybook/server`: Use `@storybook/server-webpack5`
 - For `@storybook/svelte`: Use `@storybook/svelte-vite`, `@storybook/svelte-webpack5`, or `@storybook/sveltekit`
 - For `@storybook/vue3`: Use `@storybook/vue3-vite` or `@storybook/vue3-webpack5`

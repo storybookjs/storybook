@@ -24,7 +24,7 @@ const rendererToFrameworks: Record<RendererPackage, string[]> = {
     '@storybook/react-vite',
     '@storybook/react-webpack5',
     '@storybook/react-native-web-vite',
-    '@storybook/experimental-nextjs-vite',
+    '@storybook/nextjs-vite',
   ],
   '@storybook/server': ['@storybook/server-webpack5'],
   '@storybook/svelte': [

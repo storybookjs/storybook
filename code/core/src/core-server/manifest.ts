@@ -191,12 +191,14 @@ function analyzeComponent(c: ComponentManifest) {
   const warns: string[] = [];
 
   if (!c.description?.trim()) {
-    warns.push('No description found. Write a jsdoc comment such as /** Component description */.');
+    warns.push(
+      'No description found. Write a jsdoc comment such as /** Component description */ on your component or on your stories meta.'
+    );
   }
 
   if (!c.import?.trim()) {
     warns.push(
-      `Specify an @import jsdoc tag on your component such as @import import { ${c.name} } from 'my-design-system';`
+      `Specify an @import jsdoc tag on your component or your stories meta such as @import import { ${c.name} } from 'my-design-system';`
     );
   }
 

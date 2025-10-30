@@ -50,6 +50,7 @@ export const componentManifestGenerator = async () => {
               return {
                 name: storyName,
                 error: {
+                  name: e.name,
                   message: e.message,
                 },
               };
@@ -68,15 +69,23 @@ export const componentManifestGenerator = async () => {
         if (!entry.componentPath) {
           const componentName = csf._meta?.component;
 
-          const message = !componentName
-            ? 'Specify meta.component for the component to be included in the manifest.'
-            : `No component file found for the "${componentName}" component.`;
+          const error = !componentName
+            ? {
+                name: 'NoMetaComponentError',
+                message: 'Specify meta.component for the component to be included in the manifest.',
+              }
+            : {
+                name: 'NoComponentImportError',
+                message: `No component file found for the "${componentName}" component.`,
+              };
           return {
             ...base,
             name,
             examples,
             error: {
-              message: csf._metaStatementPath?.buildCodeFrameError(message).message ?? message,
+              name: error.name,
+              message:
+                csf._metaStatementPath?.buildCodeFrameError(error.message).message ?? error.message,
             },
           };
         }
@@ -92,6 +101,7 @@ export const componentManifestGenerator = async () => {
             name,
             examples,
             error: {
+              name: 'ComponentReadError',
               message: `Could not read the component file located at "${entry.componentPath}".\nPrefer relative imports.`,
             },
           };
@@ -105,7 +115,13 @@ export const componentManifestGenerator = async () => {
 
         const error = !docgen
           ? {
-              message: `Could not parse props information for the component file located at "${entry.componentPath}".\nAvoid barrel files when importing your component file.\nPrefer relative imports if possible.\nAvoid pointing to transpiled files.`,
+              name: 'DocgenError',
+              message:
+                `Could not parse props information for the component file located at "${entry.componentPath}"\n` +
+                `Avoid barrel files when importing your component file.\n` +
+                `Prefer relative imports if possible.\n` +
+                `Avoid pointing to transpiled files.\n` +
+                `You can debug your component file in this playground: https://react-docgen.dev/playground`,
             }
           : undefined;
 

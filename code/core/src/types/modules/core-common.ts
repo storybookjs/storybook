@@ -352,9 +352,9 @@ export interface ComponentManifest {
   description?: string;
   import?: string;
   summary?: string;
-  examples: { name: string; snippet?: string; error?: { message: string } }[];
+  examples: { name: string; snippet?: string; error?: { name: string; message: string } }[];
   jsDocTags: Record<string, string[]>;
-  error?: { message: string };
+  error?: { name: string; message: string };
 }
 
 export interface ComponentsManifest {

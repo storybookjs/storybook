@@ -19,37 +19,21 @@ import {
   UndoIcon,
 } from '@storybook/icons';
 
-import { type API, useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { useChecklist } from '../../components/sidebar/useChecklist';
-
-export interface ChecklistData {
-  sections: {
-    id: string;
-    title: string;
-    items: {
-      id: string;
-      label: string;
-      after?: string[];
-      content?: React.ReactNode;
-      action?: {
-        label: string;
-        onClick: (args: { api: API }) => void;
-      };
-      predicate?: (args: { api: API; complete: () => void }) => void;
-    }[];
-  }[];
-}
+import type { ChecklistData, useChecklist } from '../../components/sidebar/useChecklist';
 
 type ChecklistSection = Omit<ChecklistData['sections'][number], 'items'> & {
   itemIds: string[];
   progress: number;
 };
+
 type ChecklistItem = ChecklistData['sections'][number]['items'][number] & {
-  isCompleted: boolean;
-  isLockedBy: string[];
-  isSkipped: boolean;
+  isAccepted: boolean; // was it manually accepted by the user?
+  isDone: boolean; // was it automatically completed by the system?
+  isLockedBy: string[]; // items that must be completed before this item can be completed
+  isSkipped: boolean; // was it skipped by the user?
   nodeRef?: React.RefObject<HTMLLIElement>;
 };
 
@@ -134,30 +118,33 @@ const SectionHeading = styled.h3({
   cursor: 'default',
 });
 
-const ItemSummary = styled.div<{ isCollapsed: boolean }>(({ theme, isCollapsed }) => ({
-  fontWeight: theme.typography.weight.regular,
-  fontSize: theme.typography.size.s2,
-  display: 'flex',
-  alignItems: 'center',
-  gap: 10,
-  padding: isCollapsed ? '6px 10px 6px 15px' : '10px 10px 10px 15px',
-  transition: 'padding var(--transition-duration, 0.2s)',
-  '--toggle-button-rotate': isCollapsed ? '0deg' : '180deg',
+const ItemSummary = styled.div<{ isCollapsed: boolean; onClick?: () => void }>(
+  ({ theme, isCollapsed, onClick }) => ({
+    fontWeight: theme.typography.weight.regular,
+    fontSize: theme.typography.size.s2,
+    display: 'flex',
+    alignItems: 'center',
+    minHeight: 40,
+    gap: 10,
+    padding: isCollapsed ? '6px 10px 6px 15px' : '10px 10px 10px 15px',
+    transition: 'padding var(--transition-duration, 0.2s)',
+    cursor: onClick ? 'pointer' : 'default',
+    '--toggle-button-rotate': isCollapsed ? '0deg' : '180deg',
 
-  '&:focus-visible': {
-    outline: 'none',
-  },
+    '&:focus-visible': {
+      outline: 'none',
+    },
 
-  h4: {
-    flex: 1,
-    margin: 0,
-    fontSize: 'inherit',
-  },
-}));
+    h4: {
+      flex: 1,
+      margin: 0,
+      fontSize: 'inherit',
+    },
+  })
+);
 
 const ItemHeading = styled.h4<{ skipped: boolean }>(({ theme, skipped }) => ({
   color: skipped ? theme.color.mediumdark : theme.color.defaultText,
-  cursor: 'default',
   overflow: 'hidden',
   textOverflow: 'ellipsis',
   whiteSpace: 'nowrap',
@@ -189,7 +176,7 @@ const StatusIcon = styled.div(({ theme }) => ({
   outline: `1px solid ${theme.color.border}`,
   outlineOffset: -1,
 }));
-const Checked = styled(StatusPassIcon)<{ visible: boolean }>(({ theme, visible }) => ({
+const Checked = styled(StatusPassIcon)<{ visible?: boolean }>(({ theme, visible }) => ({
   position: 'absolute',
   width: 'inherit',
   height: 'inherit',
@@ -205,7 +192,7 @@ const Checked = styled(StatusPassIcon)<{ visible: boolean }>(({ theme, visible }
   transform: visible ? 'scale(1)' : 'scale(0.7)',
   transition: 'all var(--transition-duration, 0.2s)',
 }));
-const Skipped = styled.span<{ visible: boolean }>(({ theme, visible }) => ({
+const Skipped = styled.span<{ visible?: boolean }>(({ theme, visible }) => ({
   display: 'flex',
   alignItems: 'center',
   color: theme.textMutedColor,
@@ -242,49 +229,53 @@ const ToggleButton = styled(Button)({
 
 export const Checklist = ({
   sections,
-  completed,
+  accepted,
+  done,
   skipped,
-  complete,
+  accept,
   skip,
   reset,
 }: Pick<
   ReturnType<typeof useChecklist>,
-  'sections' | 'completed' | 'skipped' | 'complete' | 'skip' | 'reset'
+  'sections' | 'accepted' | 'done' | 'skipped' | 'accept' | 'skip' | 'reset'
 >) => {
   const api = useStorybookApi();
   const locationHash = useLocationHash();
 
   const sectionsById: Record<ChecklistSection['id'], ChecklistSection> = useMemo(() => {
-    const isDone = (id: string) => completed.includes(id) || skipped.includes(id);
+    const isCompleted = (id: string) =>
+      accepted.includes(id) || done.includes(id) || skipped.includes(id);
+
     return Object.fromEntries(
       sections.map(({ items, ...section }) => {
         const progress =
-          (items.reduce((a, b) => (isDone(b.id) ? a + 1 : a), 0) / items.length) * 100;
+          (items.reduce((a, b) => (isCompleted(b.id) ? a + 1 : a), 0) / items.length) * 100;
         const itemIds = items.map(({ id }) => id);
         return [section.id, { ...section, itemIds, progress }];
       })
     );
-  }, [sections, completed, skipped]);
+  }, [sections, accepted, done, skipped]);
 
   const itemsById: Record<ChecklistItem['id'], ChecklistItem> = useMemo(
     () =>
       Object.fromEntries(
-        sections.flatMap(({ items, id }) => {
-          const { progress } = sectionsById[id];
-          return items.map((item) => {
-            const isCompleted = progress === 100 || completed.includes(item.id);
-            const isLockedBy = item.after?.filter((id) => !completed.includes(id)) ?? [];
+        sections.flatMap(({ items }) =>
+          items.map((item) => {
+            const isAccepted = accepted.includes(item.id);
+            const isDone = done.includes(item.id);
+            const isLockedBy =
+              item.after?.filter((id) => !accepted.includes(id) && !done.includes(id)) ?? [];
             const isSkipped = skipped.includes(item.id);
             const nodeRef = createRef<HTMLLIElement>();
-            return [item.id, { ...item, isCompleted, isLockedBy, isSkipped, nodeRef }];
-          });
-        })
+            return [item.id, { ...item, isAccepted, isDone, isLockedBy, isSkipped, nodeRef }];
+          })
+        )
       ),
-    [sections, sectionsById, completed, skipped]
+    [sections, accepted, done, skipped]
   );
 
   const next = Object.values(sections).findIndex(({ items }) =>
-    items.some((item) => !completed.includes(item.id) && !skipped.includes(item.id))
+    items.some((item) => !accepted.includes(item.id) && !skipped.includes(item.id))
   );
 
   return (
@@ -306,7 +297,7 @@ export const Checklist = ({
                     onClick={toggleCollapsed}
                   >
                     <StatusIcon>
-                      <Checked visible={progress === 100} />
+                      <Checked visible={progress === 100 || undefined} />
                     </StatusIcon>
                     <SectionHeading>{title}</SectionHeading>
                     <Actions>
@@ -325,12 +316,16 @@ export const Checklist = ({
               >
                 <Items>
                   {itemIds.map((itemId) => {
-                    const { isCompleted, isLockedBy, isSkipped, ...item } = itemsById[itemId];
-                    const isCollapsed = isCompleted && itemId !== locationHash;
+                    const { isAccepted, isDone, isLockedBy, isSkipped, ...item } =
+                      itemsById[itemId];
+
+                    const isChecked = isAccepted || isDone;
+                    const isCompleted = isAccepted || isDone || isSkipped;
+                    const isCollapsed = isChecked && itemId !== locationHash;
                     const isLocked = isLockedBy.length > 0;
 
                     return (
-                      <ListboxItem key={item.id}>
+                      <ListboxItem as="li" key={item.id}>
                         <FocusTarget
                           targetHash={item.id}
                           highlightDuration={2000}
@@ -342,11 +337,11 @@ export const Checklist = ({
                               summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
                                 <ItemSummary
                                   isCollapsed={isCollapsed || !item.content}
-                                  onClick={toggleCollapsed}
+                                  onClick={item.content ? toggleCollapsed : undefined}
                                 >
                                   <StatusIcon>
-                                    <Checked visible={isCompleted && !isSkipped} />
-                                    <Skipped visible={isSkipped}>Skipped</Skipped>
+                                    <Checked visible={isChecked || undefined} />
+                                    <Skipped visible={isSkipped || undefined}>Skipped</Skipped>
                                   </StatusIcon>
                                   <ItemHeading skipped={isSkipped}>{item.label}</ItemHeading>
                                   <Actions>
@@ -373,38 +368,45 @@ export const Checklist = ({
                                           />
                                         }
                                       >
-                                        <Button variant="ghost" padding="small" aria-label="Locked">
+                                        <Button
+                                          variant="ghost"
+                                          padding="small"
+                                          aria-label="Locked"
+                                          disabled
+                                          readOnly
+                                        >
                                           <LockIcon />
                                         </Button>
                                       </WithTooltip>
                                     )}
-                                    {!isCompleted && !isSkipped && !isLocked && item.action && (
+                                    {!isCompleted && !isLocked && item.action && (
                                       <Button
                                         variant="solid"
                                         size="small"
                                         onClick={() => {
-                                          complete(item.id);
-                                          item.action?.onClick({ api });
+                                          item.action?.onClick({
+                                            api,
+                                            accept: () => accept(item.id),
+                                          });
                                         }}
                                       >
                                         {item.action.label}
                                       </Button>
                                     )}
                                     {!isCompleted &&
-                                      !isSkipped &&
                                       !isLocked &&
                                       !item.action &&
-                                      !item.predicate && (
+                                      !item.subscribe && (
                                         <Button
                                           variant="outline"
                                           size="small"
-                                          onClick={() => complete(item.id)}
+                                          onClick={() => accept(item.id)}
                                         >
                                           <CheckIcon />
                                           Mark as complete
                                         </Button>
                                       )}
-                                    {!isCompleted && !isSkipped && !isLocked && (
+                                    {!isCompleted && !isLocked && (
                                       <Button
                                         variant="ghost"
                                         size="small"
@@ -414,7 +416,7 @@ export const Checklist = ({
                                         Skip
                                       </Button>
                                     )}
-                                    {(isCompleted || isSkipped) && !isLocked && (
+                                    {(isAccepted || isSkipped) && !isLocked && (
                                       <Button
                                         variant="ghost"
                                         padding="small"

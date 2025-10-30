@@ -69,7 +69,7 @@ export const ChecklistModule = () => {
   const { loaded, allItems, nextItems, progress, mute } = useChecklist();
 
   const next = useMemo(
-    () => nextItems.map((item) => ({ ...item, nodeRef: createRef<HTMLLIElement>() })),
+    () => nextItems.map((item) => ({ ...item, nodeRef: createRef<HTMLDivElement>() })),
     [nextItems]
   );
   const hasTasks = next.length > 0;
@@ -124,8 +124,8 @@ export const ChecklistModule = () => {
                       as="div"
                       closeOnOutsideClick
                       tooltip={({ onHide }) => (
-                        <Listbox>
-                          <ListboxItem>
+                        <Listbox as="ul">
+                          <ListboxItem as="li">
                             <ListboxAction
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -139,7 +139,7 @@ export const ChecklistModule = () => {
                               <ListboxText>Open full guide</ListboxText>
                             </ListboxAction>
                           </ListboxItem>
-                          <ListboxItem>
+                          <ListboxItem as="li">
                             <ListboxAction
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -172,10 +172,10 @@ export const ChecklistModule = () => {
             </Listbox>
           )}
         >
-          <TransitionGroup component={Listbox}>
+          <TransitionGroup as="ul" component={Listbox}>
             {next.map((item) => (
               <Transition key={item.id} nodeRef={item.nodeRef} timeout={300}>
-                <ListboxItem ref={item.nodeRef}>
+                <ListboxItem as="li" ref={item.nodeRef}>
                   <ListboxAction
                     onClick={() => api.navigateUrl(`/settings/guide#${item.id}`, { plain: false })}
                   >
@@ -187,8 +187,10 @@ export const ChecklistModule = () => {
                   {item.action && (
                     <ListboxButton
                       onClick={() => {
-                        checklistStore.complete(item.id);
-                        item.action?.onClick({ api });
+                        item.action?.onClick({
+                          api,
+                          accept: () => checklistStore.accept(item.id),
+                        });
                       }}
                     >
                       {item.action.label}

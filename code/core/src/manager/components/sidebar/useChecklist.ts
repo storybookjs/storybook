@@ -1,30 +1,73 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 import { checklistStore, universalChecklistStore } from '#manager-stores';
-import { experimental_useUniversalStore } from 'storybook/manager-api';
+import {
+  experimental_useUniversalStore,
+  useStorybookApi,
+  useStorybookState,
+} from 'storybook/manager-api';
 
+import type { ChecklistData } from '../../settings/Checklist/checklistData';
 import { checklistData } from '../../settings/Checklist/checklistData';
 
-export type ChecklistItem = (typeof checklistData)['sections'][number]['items'][number];
+type ChecklistItem = ChecklistData['sections'][number]['items'][number];
 
-const allItems: ChecklistItem[] = checklistData.sections.flatMap(({ items }) => items);
+const subscriptions = new Map<string, void | (() => void)>();
 
 export const useChecklist = () => {
-  const [state] = experimental_useUniversalStore(universalChecklistStore);
-  const { muted, completed, skipped } = state;
+  const api = useStorybookApi();
+  const { index } = useStorybookState();
+  const [checklistState] = experimental_useUniversalStore(universalChecklistStore);
+  const { loaded, muted, accepted, done, skipped } = checklistState;
 
   const isOpen = useCallback(
-    ({ id }: ChecklistItem): boolean => !completed.includes(id) && !skipped.includes(id),
-    [completed, skipped]
+    ({ id }: ChecklistItem) =>
+      !accepted.includes(id) && !done.includes(id) && !skipped.includes(id),
+    [accepted, done, skipped]
   );
 
   const isReady = useCallback(
     (item: ChecklistItem): boolean =>
       isOpen(item) &&
       !(Array.isArray(muted) && muted.includes(item.id)) &&
-      !item.after?.some((id) => !completed.includes(id)),
-    [isOpen, completed, muted]
+      !item.after?.some((id) => !accepted.includes(id) && !done.includes(id)),
+    [isOpen, accepted, done, muted]
   );
+
+  const allItems = useMemo<ChecklistItem[]>(
+    () => checklistData.sections.flatMap(({ items }) => items),
+    []
+  );
+
+  useEffect(() => {
+    if (!index || !loaded) {
+      return;
+    }
+
+    for (const item of allItems) {
+      if (!item.subscribe) {
+        continue;
+      }
+
+      const open = isOpen(item);
+      const subscribed = subscriptions.has(item.id);
+      if (open && !subscribed) {
+        subscriptions.set(
+          item.id,
+          item.subscribe({
+            api,
+            index,
+            item,
+            done: () => checklistStore.done(item.id),
+            skip: () => checklistStore.skip(item.id),
+          })
+        );
+      } else if (subscribed && !open) {
+        subscriptions.get(item.id)?.();
+        subscriptions.delete(item.id);
+      }
+    }
+  }, [api, index, loaded, allItems, isOpen]);
 
   const { openItems, nextItems, progress } = useMemo(() => {
     const openItems = allItems.filter(isOpen);
@@ -43,12 +86,12 @@ export const useChecklist = () => {
       .flatMap(({ item }) => (item ? [item] : []));
 
     return { openItems, nextItems, progress };
-  }, [isOpen, isReady]);
+  }, [allItems, isOpen, isReady]);
 
   return {
     ...checklistData,
     ...checklistStore,
-    ...state,
+    ...checklistState,
     allItems,
     nextItems,
     openItems,

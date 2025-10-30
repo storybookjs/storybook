@@ -1,8 +1,33 @@
 import React from 'react';
 
 import { Link } from 'storybook/internal/components';
+import type { API_IndexHash } from 'storybook/internal/types';
 
-import type { ChecklistData } from './Checklist';
+import { type API } from 'storybook/manager-api';
+
+export interface ChecklistData {
+  sections: {
+    id: string;
+    title: string;
+    items: {
+      id: string;
+      label: string;
+      after?: string[];
+      content?: React.ReactNode;
+      action?: {
+        label: string;
+        onClick: (args: { api: API; accept: () => void }) => void;
+      };
+      subscribe?: (args: {
+        api: API;
+        index: API_IndexHash;
+        item: ChecklistData['sections'][number]['items'][number];
+        done: () => void;
+        skip: () => void;
+      }) => void | (() => void);
+    }[];
+  }[];
+}
 
 export const checklistData: ChecklistData = {
   sections: [
@@ -38,7 +63,7 @@ export const checklistData: ChecklistData = {
               </p>
             </>
           ),
-          // predicate: ({ complete }) => complete(),
+          // subscribe: ({ done }) => done(),
         },
         {
           id: 'add-5-10-components',
@@ -51,7 +76,7 @@ export const checklistData: ChecklistData = {
               can add Secondary and Tertiary stories based on our Primary story from above.
             </>
           ),
-          predicate: ({ complete }) => complete(),
+          subscribe: ({ done }) => done(),
         },
         {
           id: 'check-improve-coverage',
@@ -71,7 +96,7 @@ export const checklistData: ChecklistData = {
               </p>
             </>
           ),
-          predicate: ({ complete }) => setTimeout(complete, 3000),
+          subscribe: ({ done }) => setTimeout(done, 3000),
         },
       ],
     },
@@ -83,7 +108,7 @@ export const checklistData: ChecklistData = {
           id: 'run-tests',
           after: ['add-component'],
           label: 'Run tests',
-          predicate: ({ complete }) => complete(),
+          subscribe: ({ done }) => done(),
           content: (
             <>
               <p>
@@ -127,7 +152,7 @@ export const checklistData: ChecklistData = {
           id: 'accessibility-tests',
           after: ['add-component'],
           label: 'Accessibility tests',
-          predicate: ({ complete }) => complete(),
+          subscribe: ({ done }) => done(),
           content: (
             <>
               <p>
@@ -150,7 +175,7 @@ export const checklistData: ChecklistData = {
           id: 'visual-tests',
           after: ['add-component'],
           label: 'Visual tests',
-          predicate: ({ complete }) => complete(),
+          subscribe: ({ done }) => done(),
           content: (
             <>
               <p>

@@ -77,9 +77,9 @@ const SidebarMenuList: FC<{
       {menu
         .filter((links) => links.length)
         .flatMap((links) => (
-          <Listbox>
+          <Listbox as="ul">
             {links.map((link) => (
-              <ListboxItem key={link.id} onClick={onClick} active={link.active}>
+              <ListboxItem as="li" key={link.id} onClick={onClick} active={link.active}>
                 <ListboxAction
                   onClick={(e) =>
                     link.onClick?.(e, {

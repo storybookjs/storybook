@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "10.0.1",
+  "version": "10.0.2",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -245,7 +245,6 @@
     "type": "opencollective",
     "url": "https://opencollective.com/storybook"
   },
-  "deferredNextVersion": "10.0.2",
   "nx": {
     "name": "root",
     "includedScripts": []

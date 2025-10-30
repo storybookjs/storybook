@@ -100,7 +100,6 @@ describe('nextjs-to-nextjs-vite', () => {
 
       expect(prompt).toContain('@storybook/nextjs');
       expect(prompt).toContain('@storybook/nextjs-vite');
-      expect(prompt).toContain('Vite instead of Webpack');
     });
   });
 

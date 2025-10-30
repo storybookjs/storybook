@@ -7,6 +7,7 @@ import { getProjectRoot } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
+import type { ExecaChildProcess } from 'execa';
 
 import { SupportedBuilder, SupportedFramework } from '../types';
 import { AddonVitestService } from './AddonVitestService';
@@ -33,7 +34,11 @@ describe('AddonVitestService', () => {
 
     // Setup default mocks for logger and prompt
     vi.mocked(logger.info).mockImplementation(() => {});
+    vi.mocked(logger.log).mockImplementation(() => {});
+    vi.mocked(logger.warn).mockImplementation(() => {});
     vi.mocked(prompt.executeTask).mockResolvedValue(undefined);
+    vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
+    vi.mocked(prompt.confirm).mockResolvedValue(true);
   });
 
   describe('collectDeps', () => {
@@ -354,41 +359,56 @@ describe('AddonVitestService', () => {
   });
 
   describe('installPlaywright', () => {
+    beforeEach(() => {
+      // Mock the logger methods used in installPlaywright
+      vi.mocked(logger.log).mockImplementation(() => {});
+      vi.mocked(logger.warn).mockImplementation(() => {});
+    });
+
     it('should install Playwright successfully', async () => {
-      vi.mocked(prompt.executeTask).mockResolvedValue(undefined);
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
 
       const errors = await service.installPlaywright(mockPackageManager);
 
       expect(errors).toEqual([]);
-      expect(prompt.executeTask).toHaveBeenCalledWith(expect.any(Function), {
+      expect(prompt.confirm).toHaveBeenCalledWith({
+        message: 'Do you want to install Playwright with Chromium now?',
+        initialValue: true,
+      });
+      expect(prompt.executeTaskWithSpinner).toHaveBeenCalledWith(expect.any(Function), {
         id: 'playwright-installation',
-        intro: 'Configuring Playwright with Chromium',
+        intro: 'Installing Playwright browser binaries',
         error: expect.stringContaining('An error occurred'),
-        success: 'Playwright installed successfully',
+        success: 'Playwright browser binaries installed successfully',
       });
     });
 
     it('should execute playwright install command', async () => {
-      let commandFactory: any;
-      vi.mocked(prompt.executeTask).mockImplementation(async (factory: any) => {
-        commandFactory = Array.isArray(factory) ? factory[0] : factory;
-        const result = commandFactory();
-        // Simulate the child process completion
-        return result;
-      });
+      let commandFactory: (() => ExecaChildProcess) | (() => ExecaChildProcess)[];
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+        async (factory: (() => ExecaChildProcess) | (() => ExecaChildProcess)[]) => {
+          commandFactory = Array.isArray(factory) ? factory[0] : factory;
+          // Simulate the child process completion
+          commandFactory();
+        }
+      );
 
       await service.installPlaywright(mockPackageManager);
 
       expect(mockPackageManager.executeCommand).toHaveBeenCalledWith({
         command: 'npx',
         args: ['playwright', 'install', 'chromium', '--with-deps'],
+        killSignal: 'SIGINT',
       });
     });
 
     it('should capture error stack when installation fails', async () => {
       const error = new Error('Installation failed');
       error.stack = 'Error stack trace';
-      vi.mocked(prompt.executeTask).mockRejectedValue(error);
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(error);
 
       const errors = await service.installPlaywright(mockPackageManager);
 
@@ -398,7 +418,8 @@ describe('AddonVitestService', () => {
     it('should capture error message when installation fails without stack', async () => {
       const error = new Error('Installation failed');
       error.stack = undefined;
-      vi.mocked(prompt.executeTask).mockRejectedValue(error);
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(error);
 
       const errors = await service.installPlaywright(mockPackageManager);
 
@@ -406,18 +427,32 @@ describe('AddonVitestService', () => {
     });
 
     it('should convert non-Error exceptions to string', async () => {
-      vi.mocked(prompt.executeTask).mockRejectedValue('String error');
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue('String error');
 
       const errors = await service.installPlaywright(mockPackageManager);
 
       expect(errors).toEqual(['String error']);
     });
 
+    it('should skip installation when user declines', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(false);
+
+      const errors = await service.installPlaywright(mockPackageManager);
+
+      expect(errors).toEqual([]);
+      expect(prompt.executeTaskWithSpinner).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith('Playwright installation skipped');
+    });
+
     it('should not skip installation by default', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
+
       await service.installPlaywright(mockPackageManager);
 
-      expect(prompt.executeTask).toHaveBeenCalled();
-      expect(logger.info).not.toHaveBeenCalled();
+      expect(prompt.confirm).toHaveBeenCalled();
+      expect(prompt.executeTaskWithSpinner).toHaveBeenCalled();
     });
   });
 

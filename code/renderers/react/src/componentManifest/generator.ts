@@ -71,11 +71,11 @@ export const componentManifestGenerator = async () => {
 
           const error = !componentName
             ? {
-                name: 'NoMetaComponentError',
+                name: 'No meta.component specified',
                 message: 'Specify meta.component for the component to be included in the manifest.',
               }
             : {
-                name: 'NoComponentImportError',
+                name: 'No component import found',
                 message: `No component file found for the "${componentName}" component.`,
               };
           return {
@@ -101,7 +101,7 @@ export const componentManifestGenerator = async () => {
             name,
             examples,
             error: {
-              name: 'ComponentReadError',
+              name: 'Component file could not be read',
               message: `Could not read the component file located at "${entry.componentPath}".\nPrefer relative imports.`,
             },
           };
@@ -115,7 +115,7 @@ export const componentManifestGenerator = async () => {
 
         const error = !docgen
           ? {
-              name: 'DocgenError',
+              name: 'Docgen evaluation failed',
               message:
                 `Could not parse props information for the component file located at "${entry.componentPath}"\n` +
                 `Avoid barrel files when importing your component file.\n` +

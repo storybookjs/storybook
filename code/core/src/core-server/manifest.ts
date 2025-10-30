@@ -1,3 +1,5 @@
+import { groupBy } from 'storybook/internal/common';
+
 import { dedent } from 'ts-dedent';
 
 import type { ComponentManifest, ComponentsManifest } from '../types';
@@ -34,6 +36,34 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       : `<span class="filter-pill ok" aria-disabled="true">${totals.examples} examples ok</span>`;
 
   const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, idx)).join('');
+
+  const errorGroups = Object.entries(
+    groupBy(
+      entries.map(([, it]) => it).filter((it) => it.error),
+      (manifest) => manifest.error?.name ?? 'Error'
+    )
+  );
+
+  const errorGroupsHTML = errorGroups
+    .map(([error, grouped]) => {
+      const id = error.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const headerText = `${esc(error)}`;
+      const cards = grouped
+        .map((manifest, id) => renderComponentCard(manifest.id, manifest, id))
+        .join('');
+      return `
+        <section class="group">
+          <input id="${id}-toggle" class="group-tg" type="checkbox" hidden />
+          <label for="${id}-toggle" class="group-header">
+            <span class="caret">▸</span>
+            <span class="group-title">${headerText}</span>
+            <span class="group-count">${grouped.length}</span>
+          </label>
+          <div class="group-cards">${cards}</div>
+        </section>
+      `;
+    })
+    .join('');
 
   return dedent`<!doctype html>
 <html lang="en">
@@ -127,12 +157,34 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
   .dot-err{background:var(--err)}
   .ex-name{font-weight:600}
 
+  /* Error groups (visible in errors filter) */
+  .error-groups{display:none; margin-bottom:16px;}
+  .group{border:1px solid var(--border);background:var(--panel);border-radius:14px;overflow:hidden}
+  .group + .group{margin-top:12px}
+  .group-header{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;border-bottom:1px solid var(--border)}
+  .group-header:hover{background:#141722}
+  .group-title{font-weight:600;flex:1}
+  .group-count{font-size:12px;color:var(--muted);}
+  .group-cards{display:none;padding:12px}
+  .group .card{margin:12px 0}
+  .group .card:first-child{margin-top:0}
+  .group .card:last-child{margin-bottom:0}
+  /* caret rotation */
+  .group-tg:checked + label .caret{transform:rotate(90deg)}
+  .caret{transition:transform .15s ease}
+  /* toggle body */
+  .group-tg:checked ~ .group-cards{display:block}
+
   /* CSS-only filtering of cards via top pills */
   #filter-errors:target ~ main .card:not(.has-error):not(.has-example-error){display:none}
   #filter-warnings:target ~ main .card:not(.has-warn){display:none}
   #filter-example-errors:target ~ main .card:not(.has-example-error){display:none}
   #filter-all:target ~ main .card{display:block}
-  
+  /* In errors view, hide standalone component-error cards in the regular grid (they will appear in groups) */
+  #filter-errors:target ~ main .grid .card.has-error{display:none}
+  /* Show grouped section only in errors view */
+  #filter-errors:target ~ main .error-groups{display:block}
+
   /* When a toggle is checked, show the corresponding panel */
   .card > .tg-err:checked ~ .panels .panel-err { display: grid; }
   .card > .tg-warn:checked ~ .panels .panel-warn { display: grid; }
@@ -173,6 +225,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       <div class="grid" role="list">
         ${grid || `<div class="card"><div class="head"><div class="hint">No components.</div></div></div>`}
       </div>
+      ${errorGroups.length ? `<div class="error-groups" role="region" aria-label="Error groups">${errorGroupsHTML}</div>` : ''}
     </div>
   </main>
 </body>

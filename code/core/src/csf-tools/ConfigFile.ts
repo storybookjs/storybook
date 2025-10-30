@@ -168,10 +168,7 @@ export class ConfigFile {
     (exportsObject.properties as t.ObjectProperty[]).forEach((p) => {
       const exportName = propKey(p);
       if (exportName) {
-        let exportVal = p.value;
-        if (t.isIdentifier(exportVal)) {
-          exportVal = _findVarInitialization(exportVal.name, this._ast.program) as any;
-        }
+        const exportVal = this._resolveDeclaration(p.value as t.Node);
         this._exports[exportName] = exportVal as t.Expression;
       }
     });
@@ -232,10 +229,7 @@ export class ConfigFile {
             node.declaration.declarations.forEach((decl) => {
               if (t.isVariableDeclarator(decl) && t.isIdentifier(decl.id)) {
                 const { name: exportName } = decl.id;
-                let exportVal = decl.init as t.Expression;
-                if (t.isIdentifier(exportVal)) {
-                  exportVal = _findVarInitialization(exportVal.name, parent as t.Program) as any;
-                }
+                const exportVal = self._resolveDeclaration(decl.init as t.Node, parent);
                 self._exports[exportName] = exportVal;
                 self._exportDecls[exportName] = decl;
               }
@@ -261,7 +255,7 @@ export class ConfigFile {
                 const decl = _findVarDeclarator(localName, parent as t.Program) as any;
                 // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
                 if (decl) {
-                  self._exports[exportName] = decl.init;
+                  self._exports[exportName] = self._resolveDeclaration(decl.init, parent);
                   self._exportDecls[exportName] = decl;
                 }
               }
@@ -289,24 +283,14 @@ export class ConfigFile {
               left.property.name === 'exports'
             ) {
               let exportObject = right;
-              if (t.isIdentifier(right)) {
-                exportObject = _findVarInitialization(right.name, parent as t.Program) as any;
-              }
-
-              exportObject = self._unwrap(exportObject);
+              exportObject = self._resolveDeclaration(exportObject as t.Node, parent);
 
               if (t.isObjectExpression(exportObject)) {
                 self._exportsObject = exportObject;
                 (exportObject.properties as t.ObjectProperty[]).forEach((p) => {
                   const exportName = propKey(p);
                   if (exportName) {
-                    let exportVal = p.value as t.Expression;
-                    if (t.isIdentifier(exportVal)) {
-                      exportVal = _findVarInitialization(
-                        exportVal.name,
-                        parent as t.Program
-                      ) as any;
-                    }
+                    const exportVal = self._resolveDeclaration(p.value as t.Node, parent);
                     self._exports[exportName] = exportVal as t.Expression;
                   }
                 });
@@ -573,14 +557,9 @@ export class ConfigFile {
         }
         // default export
         if (t.isExportDefaultDeclaration(node)) {
-          let decl: t.Expression | undefined | null = node.declaration as t.Expression;
-          if (t.isIdentifier(decl)) {
-            decl = _findVarInitialization(decl.name, this._ast.program);
-          }
-
-          decl = this._unwrap(decl);
-          if (t.isObjectExpression(decl)) {
-            const properties = decl.properties as t.ObjectProperty[];
+          const resolved = this._resolveDeclaration(node.declaration as t.Node);
+          if (t.isObjectExpression(resolved)) {
+            const properties = resolved.properties as t.ObjectProperty[];
             removeProperty(properties, path[0]);
             removedRootProperty = true;
           }

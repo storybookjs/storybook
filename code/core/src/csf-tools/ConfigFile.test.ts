@@ -99,6 +99,17 @@ describe('ConfigFile', () => {
           )
         ).toEqual('webpack5');
       });
+      it('resolves values through various TS satisfies/as syntaxes', () => {
+        const syntaxes = [
+          'const coreVar = { builder: "webpack5" } as const; export const core = coreVar satisfies any;',
+          'const coreVar = { builder: "webpack5" } as const; export const core = coreVar as any;',
+          'const coreVar = { builder: "webpack5" } as const satisfies Record<string, unknown>; export { coreVar as core };',
+        ];
+
+        for (const source of syntaxes) {
+          expect(getField(['core', 'builder'], source)).toEqual('webpack5');
+        }
+      });
     });
 
     describe('module exports', () => {

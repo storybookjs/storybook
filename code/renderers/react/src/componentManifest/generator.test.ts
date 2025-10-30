@@ -600,6 +600,7 @@ test('unknown expressions', async () => {
        9 |
     > 10 | export const Primary = someWeirdExpression;
          |                        ^^^^^^^^^^^^^^^^^^^",
+            "name": "SyntaxError",
           },
           "name": "Primary",
         },

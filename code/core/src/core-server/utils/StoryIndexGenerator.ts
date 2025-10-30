@@ -381,7 +381,12 @@ export class StoryIndexGenerator {
   ) {
     const matchedPath =
       matchPath?.(rawComponentPath, undefined, undefined, supportedExtensions) ?? rawComponentPath;
-    const resolved = resolveImport(matchedPath, { basedir: dirname(absolutePath) });
+    let resolved;
+    try {
+      resolved = resolveImport(matchedPath, { basedir: dirname(absolutePath) });
+    } catch (_) {
+      return matchedPath;
+    }
     const relativePath = relative(this.options.workingDir, resolved);
     return slash(normalizeStoryPath(relativePath));
   }

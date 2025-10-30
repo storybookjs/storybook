@@ -33,7 +33,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       ? `<a class="filter-pill err" data-k="example-errors" href="#filter-example-errors">${totals.exampleErrors}/${totals.examples} example errors</a>`
       : `<span class="filter-pill ok" aria-disabled="true">${totals.examples} examples ok</span>`;
 
-  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, idx)).join('');
+  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`)).join('');
 
   const errorGroups = Object.entries(
     groupBy(
@@ -47,7 +47,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       const id = error.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       const headerText = `${esc(error)}`;
       const cards = grouped
-        .map((manifest, id) => renderComponentCard(manifest.id, manifest, id))
+        .map((manifest, id) => renderComponentCard(manifest.id, manifest, `error-${id}`))
         .join('');
       return `
         <section class="group">
@@ -278,12 +278,12 @@ function note(title: string, bodyHTML: string, kind: 'warn' | 'err') {
     </div>`;
 }
 
-function renderComponentCard(key: string, c: ComponentManifest, i: number) {
+function renderComponentCard(key: string, c: ComponentManifest, id: string) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
   const errorExamples = (c.examples ?? []).filter((ex) => !!ex?.error);
 
-  const slug = `c-${i}-${(c.id || key)
+  const slug = `c-${id}-${(c.id || key)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')}`;

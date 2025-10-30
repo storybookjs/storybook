@@ -11,6 +11,7 @@ import { eslintPlugin } from './eslint-plugin';
 import { fixFauxEsmRequire } from './fix-faux-esm-require';
 import { initialGlobals } from './initial-globals';
 import { migrateAddonConsole } from './migrate-addon-console';
+import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite';
 import { removeAddonInteractions } from './remove-addon-interactions';
 import { removeDocsAutodocs } from './remove-docs-autodocs';
 import { removeEssentials } from './remove-essentials';
@@ -33,6 +34,7 @@ export const allFixes: Fix[] = [
   addonExperimentalTest,
   rnstorybookConfig,
   migrateAddonConsole,
+  nextjsToNextjsVite,
   removeAddonInteractions,
   rendererToFramework,
   removeEssentials,

@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import { expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
+import { type Presets } from 'storybook/internal/types';
 
 import { dirname, join, normalize } from 'pathe';
 
@@ -42,7 +43,7 @@ const createOptions = (locations: string[]): Parameters<typeof m.favicon>[1] => 
         }
       }
     },
-  },
+  } as Presets,
 });
 
 vi.mock('storybook/internal/node-logger', () => {

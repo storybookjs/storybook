@@ -1,4 +1,4 @@
-import { cp, mkdir } from 'node:fs/promises';
+import { cp, mkdir, writeFile } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
 
 import {
@@ -11,6 +11,7 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+import { type ComponentManifestGenerator } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -163,6 +164,28 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
         initializedStoryIndexGenerator as Promise<StoryIndexGenerator>
       )
     );
+
+    if (features?.experimentalComponentsManifest) {
+      const componentManifestGenerator: ComponentManifestGenerator = await presets.apply(
+        'experimental_componentManifestGenerator'
+      );
+      const indexGenerator = await initializedStoryIndexGenerator;
+      if (componentManifestGenerator && indexGenerator) {
+        try {
+          const manifests = await componentManifestGenerator(
+            indexGenerator as unknown as import('storybook/internal/core-server').StoryIndexGenerator
+          );
+          await mkdir(join(options.outputDir, 'manifests'), { recursive: true });
+          await writeFile(
+            join(options.outputDir, 'manifests', 'components.json'),
+            JSON.stringify(manifests)
+          );
+        } catch (e) {
+          logger.error('Failed to generate manifests/components.json');
+          logger.error(e instanceof Error ? e : String(e));
+        }
+      }
+    }
   }
 
   if (!core?.disableProjectJson) {

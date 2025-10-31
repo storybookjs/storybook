@@ -309,7 +309,6 @@ export async function runFixes({
           fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
           fixSummary.manual.push(f.id);
 
-          logger.log('');
           const shouldContinue = await prompt.confirm(
             {
               message:

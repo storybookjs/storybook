@@ -50,9 +50,7 @@ export const colors = {
 export const logger = {
   ...newLogger,
   verbose: (message: string): void => newLogger.debug(message),
-  /** Logs information that should catch the user's attention */
-  info: (message: string): void =>
-    isClackEnabled() ? newLogger.info(message) : npmLog.info('', message),
+
   line: (count = 1): void => newLogger.log(`${Array(count - 1).fill('\n')}`),
   /** For non-critical issues or warnings */
   warn: (message: string): void => newLogger.warn(message),

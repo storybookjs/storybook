@@ -150,7 +150,6 @@ export abstract class JsPackageManager {
     await prompt.executeTask(
       () => this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
       {
-        id: 'dedupe-dependencies',
         intro: 'Deduplicating dependencies...',
         error: 'An error occurred while deduplicating dependencies.',
         success: 'Dependencies deduplicated',
@@ -648,9 +647,9 @@ export abstract class JsPackageManager {
     cwd?: string;
     ignoreError?: boolean;
   }): ExecaChildProcess {
-    const execaProcess = execa([command, ...args].join(' '), {
+    const execaProcess = execa(command, args, {
       cwd: cwd ?? this.cwd,
-      stdio: stdio ?? 'pipe',
+      stdio: stdio ?? prompt.getPreferredStdio(),
       encoding: 'utf8',
       shell: true,
       cleanup: true,

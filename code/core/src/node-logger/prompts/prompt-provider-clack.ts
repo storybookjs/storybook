@@ -15,22 +15,25 @@ import type {
 } from './prompt-provider-base';
 import { PromptProvider } from './prompt-provider-base';
 
-// @ts-expect-error globalThis is not typed
-globalThis.currentTaskLog = [];
-
 export const getCurrentTaskLog = (): ReturnType<typeof clack.taskLog> | null => {
-  // @ts-expect-error globalThis is not typed
-  return globalThis.currentTaskLog[globalThis.currentTaskLog.length - 1];
+  if (globalThis.STORYBOOK_CURRENT_TASK_LOG) {
+    return globalThis.STORYBOOK_CURRENT_TASK_LOG[globalThis.STORYBOOK_CURRENT_TASK_LOG.length - 1];
+  } else {
+    return null;
+  }
 };
 
 const setCurrentTaskLog = (taskLog: any) => {
-  // @ts-expect-error globalThis is not typed
-  globalThis.currentTaskLog.push(taskLog);
+  globalThis.STORYBOOK_CURRENT_TASK_LOG = [
+    ...(globalThis.STORYBOOK_CURRENT_TASK_LOG || []),
+    taskLog,
+  ];
 };
 
 const clearCurrentTaskLog = () => {
-  // @ts-expect-error globalThis is not typed
-  globalThis.currentTaskLog.pop();
+  if (globalThis.STORYBOOK_CURRENT_TASK_LOG) {
+    globalThis.STORYBOOK_CURRENT_TASK_LOG.pop();
+  }
 };
 
 export class ClackPromptProvider extends PromptProvider {
@@ -111,7 +114,9 @@ export class ClackPromptProvider extends PromptProvider {
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
-    setCurrentTaskLog(task);
+    if (!isCurrentTaskActive) {
+      setCurrentTaskLog(task);
+    }
 
     return {
       message: (message) => {

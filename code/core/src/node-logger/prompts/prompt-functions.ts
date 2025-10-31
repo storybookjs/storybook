@@ -1,4 +1,5 @@
 import { logger } from '../../client-logger';
+import { shouldLog } from '../logger';
 import { wrapTextForClack, wrapTextForClackHint } from '../wrap-utils';
 import { getPromptProvider } from './prompt-config';
 import type {
@@ -48,9 +49,13 @@ const patchConsoleLog = () => {
         .join(' ');
 
       if (activeTaskLog) {
-        activeTaskLog.message(message);
+        if (shouldLog('info')) {
+          activeTaskLog.message(message);
+        }
       } else if (activeSpinner) {
-        activeSpinner.message(message);
+        if (shouldLog('info')) {
+          activeSpinner.message(message);
+        }
       } else {
         originalConsoleLog!(...args);
       }
@@ -113,15 +118,21 @@ export const spinner = (options: SpinnerOptions): SpinnerInstance => {
       start: (message?: string) => {
         activeSpinner = wrappedSpinner;
         patchConsoleLog();
-        spinnerInstance.start(message);
+        if (shouldLog('info')) {
+          spinnerInstance.start(message);
+        }
       },
       stop: (message?: string) => {
         activeSpinner = null;
         restoreConsoleLog();
-        spinnerInstance.stop(message);
+        if (shouldLog('info')) {
+          spinnerInstance.stop(message);
+        }
       },
       message: (text: string) => {
-        spinnerInstance.message(text);
+        if (shouldLog('info')) {
+          spinnerInstance.message(text);
+        }
       },
     };
 
@@ -152,29 +163,41 @@ export const taskLog = (options: TaskLogOptions): TaskLogInstance => {
     // Wrap the task log methods to handle console.log patching
     const wrappedTaskLog: TaskLogInstance = {
       message: (message: string) => {
-        task.message(wrapTextForClack(message));
+        if (shouldLog('info')) {
+          task.message(wrapTextForClack(message));
+        }
       },
       success: (message: string, options?: { showLog?: boolean }) => {
         activeTaskLog = null;
         restoreConsoleLog();
-        task.success(message, options);
+        if (shouldLog('info')) {
+          task.success(message, options);
+        }
       },
       error: (message: string) => {
         activeTaskLog = null;
         restoreConsoleLog();
-        task.error(message);
+        if (shouldLog('error')) {
+          task.error(message);
+        }
       },
       group: function (title: string) {
         this.message(`\n${title}\n`);
         return {
           message: (message: string) => {
-            this.message(message);
+            if (shouldLog('info')) {
+              task.message(wrapTextForClack(message));
+            }
           },
           success: (message: string) => {
-            this.success(message);
+            if (shouldLog('info')) {
+              task.success(message);
+            }
           },
           error: (message: string) => {
-            this.error(message);
+            if (shouldLog('error')) {
+              task.error(message);
+            }
           },
         };
       },

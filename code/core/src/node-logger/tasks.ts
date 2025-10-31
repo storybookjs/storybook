@@ -1,8 +1,9 @@
 // eslint-disable-next-line depend/ban-dependencies
 import type { ExecaChildProcess } from 'execa';
 
+import { CLI_COLORS, log } from './logger';
 import { logTracker } from './logger/log-tracker';
-import { spinner, taskLog } from './prompts/prompt-functions';
+import { spinner } from './prompts/prompt-functions';
 
 /**
  * Given a function that returns a child process or array of functions that return child processes,
@@ -10,21 +11,10 @@ import { spinner, taskLog } from './prompts/prompt-functions';
  */
 export const executeTask = async (
   childProcessFactories: (() => ExecaChildProcess) | (() => ExecaChildProcess)[],
-  {
-    id,
-    intro,
-    error,
-    success,
-    limitLines = 4,
-  }: { id: string; intro: string; error: string; success: string; limitLines?: number }
+  { intro, error, success }: { intro: string; error: string; success: string }
 ) => {
   logTracker.addLog('info', intro);
-  const task = taskLog({
-    id,
-    title: intro,
-    retainLog: false,
-    limit: limitLines,
-  });
+  log(intro);
 
   const factories = Array.isArray(childProcessFactories)
     ? childProcessFactories
@@ -36,20 +26,20 @@ export const executeTask = async (
       childProcess.stdout?.on('data', (data: Buffer) => {
         const message = data.toString().trim();
         logTracker.addLog('info', message);
-        task.message(message);
+        log(message);
       });
       await childProcess;
     }
     logTracker.addLog('info', success);
-    task.success(success);
+    log(CLI_COLORS.success(success));
   } catch (err: any) {
     if (err.message.includes('Command was killed with SIGINT')) {
-      task.error(`${intro} aborted`);
+      log(CLI_COLORS.error(`${intro} aborted`));
       return;
     }
     const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
     logTracker.addLog('error', error, { error: errorMessage });
-    task.error(String((err as any).message ?? err));
+    log(CLI_COLORS.error(String((err as any).message ?? err)));
     throw err;
   }
 };

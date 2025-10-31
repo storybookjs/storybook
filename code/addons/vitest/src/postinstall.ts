@@ -344,14 +344,16 @@ export default async function postInstall(options: PostinstallOptions) {
       const remoteCommand = packageManager.getRemoteRunCommand('storybook', command);
       const [cmd, ...args] = remoteCommand.split(' ');
 
-      await prompt.executeTask(() => packageManager.executeCommand({ command: cmd, args }), {
-        id: 'a11y-addon-setup',
-        intro: 'Setting up a11y addon for @storybook/addon-vitest',
-        error: 'Failed to setup a11y addon for @storybook/addon-vitest',
-        success: 'a11y addon setup successfully',
-      });
+      await prompt.executeTask(
+        // TODO: Remove stdio: 'ignore' once we have a way to log the output of the command properly
+        () => packageManager.executeCommand({ command: cmd, args, stdio: 'ignore' }),
+        {
+          intro: 'Setting up a11y addon for @storybook/addon-vitest',
+          error: 'Failed to setup a11y addon for @storybook/addon-vitest',
+          success: 'a11y addon setup successfully',
+        }
+      );
     } catch (e: unknown) {
-      console.log(e);
       logger.line();
       logger.error(dedent`
         Could not automatically set up ${addonA11yName} for @storybook/addon-vitest.

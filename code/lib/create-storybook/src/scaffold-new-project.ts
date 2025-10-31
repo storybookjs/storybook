@@ -182,14 +182,14 @@ export const scaffoldNewProject = async (
     });
   }
 
+  spinner.stop(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
+
   if (!disableTelemetry) {
-    telemetry('scaffolded-empty', {
+    await telemetry('scaffolded-empty', {
       packageManager: packageManagerName,
       projectType: projectStrategy,
     });
   }
-
-  spinner.stop(`${projectDisplayName} project with ${packageManagerName} created successfully!`);
 };
 
 const FILES_TO_IGNORE = [

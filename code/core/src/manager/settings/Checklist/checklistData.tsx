@@ -1,8 +1,33 @@
 import React from 'react';
 
 import { Link } from 'storybook/internal/components';
+import type { API_IndexHash } from 'storybook/internal/types';
 
-import type { ChecklistData } from './Checklist';
+import { type API } from 'storybook/manager-api';
+
+export interface ChecklistData {
+  sections: {
+    id: string;
+    title: string;
+    items: {
+      id: string;
+      label: string;
+      after?: string[];
+      content?: React.ReactNode;
+      action?: {
+        label: string;
+        onClick: (args: { api: API; accept: () => void }) => void;
+      };
+      subscribe?: (args: {
+        api: API;
+        index: API_IndexHash;
+        item: ChecklistData['sections'][number]['items'][number];
+        done: () => void;
+        skip: () => void;
+      }) => void | (() => void);
+    }[];
+  }[];
+}
 
 export const checklistData: ChecklistData = {
   sections: [
@@ -13,22 +38,65 @@ export const checklistData: ChecklistData = {
         {
           id: 'whats-new-sb-9',
           label: "See what's new",
-          start: ({ api }) => api.navigate('/settings/whats-new'),
+          action: {
+            label: 'Start',
+            onClick: ({ api }) => api.navigate('/settings/whats-new'),
+          },
         },
         {
           id: 'add-component',
           label: 'Add component',
-          predicate: ({ complete }) => complete(),
+          content: (
+            <>
+              <p>
+                A story captures the rendered state of a UI component. It's an object with
+                annotations that describe the component's behavior and appearance given a set of
+                arguments.
+              </p>
+              <p>
+                Storybook uses the generic term arguments (args for short) when talking about
+                React's props, Vue's props, Angular's @Input, and other similar concepts.
+              </p>
+              <p>
+                We define stories according to the Component Story Format (CSF), an ES6 module-based
+                standard that is easy to write and portable between tools.
+              </p>
+            </>
+          ),
+          // subscribe: ({ done }) => done(),
         },
         {
           id: 'add-5-10-components',
+          after: ['add-component'],
           label: 'Add 5-10 total components',
-          predicate: ({ complete }) => complete(),
+          content: (
+            <>
+              A story is an object that describes how to render a component. You can have multiple
+              stories per component, and those stories can build upon one another. For example, we
+              can add Secondary and Tertiary stories based on our Primary story from above.
+            </>
+          ),
+          subscribe: ({ done }) => done(),
         },
         {
           id: 'check-improve-coverage',
+          after: ['add-component'],
           label: 'Check + improve coverage',
-          predicate: ({ complete }) => setTimeout(complete, 3000),
+          content: (
+            <>
+              <p>
+                Test coverage is the practice of measuring whether existing tests fully cover your
+                code. It marks which conditions, logic branches, functions and variables in your
+                code are and are not being tested.
+              </p>
+              <p>
+                Coverage tests examine the instrumented code against a set of industry-accepted best
+                practices. They act as the last line of QA to improve the quality of your test
+                suite.
+              </p>
+            </>
+          ),
+          subscribe: ({ done }) => setTimeout(done, 3000),
         },
       ],
     },
@@ -38,8 +106,9 @@ export const checklistData: ChecklistData = {
       items: [
         {
           id: 'run-tests',
+          after: ['add-component'],
           label: 'Run tests',
-          predicate: ({ complete }) => complete(),
+          subscribe: ({ done }) => done(),
           content: (
             <>
               <p>
@@ -60,6 +129,7 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'write-interactions',
+          after: ['add-component'],
           label: 'Write interactions',
           content: (
             <>
@@ -80,8 +150,9 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'accessibility-tests',
+          after: ['add-component'],
           label: 'Accessibility tests',
-          predicate: ({ complete }) => complete(),
+          subscribe: ({ done }) => done(),
           content: (
             <>
               <p>
@@ -102,8 +173,9 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'visual-tests',
+          after: ['add-component'],
           label: 'Visual tests',
-          predicate: ({ complete }) => complete(),
+          subscribe: ({ done }) => done(),
           content: (
             <>
               <p>
@@ -125,6 +197,7 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'viewports',
+          after: ['add-component'],
           label: 'Viewports',
           content: (
             <>
@@ -153,19 +226,41 @@ export const checklistData: ChecklistData = {
       items: [
         {
           id: 'controls',
+          after: ['add-component'],
           label: 'Controls',
+          content: (
+            <>
+              Storybook Controls gives you a graphical UI to interact with a component's arguments
+              dynamically without needing to code. Use the Controls panel to edit the inputs to your
+              stories and see the results in real-time. It's a great way to explore your components
+              and test different states.
+            </>
+          ),
         },
         {
           id: 'autodocs',
+          after: ['add-component'],
           label: 'Autodocs',
-        },
-        {
-          id: 'comments',
-          label: 'Comments',
+          content: (
+            <>
+              Storybook Autodocs is a powerful tool that can help you quickly generate comprehensive
+              documentation for your UI components. By leveraging Autodocs, you're transforming your
+              stories into living documentation which can be further extended with MDX and Doc
+              Blocks to provide a clear and concise understanding of your components' functionality.
+            </>
+          ),
         },
         {
           id: 'share-story',
+          after: ['add-component'],
           label: 'Share story',
+          content: (
+            <>
+              Teams publish Storybook online to review and collaborate on works in progress. That
+              allows developers, designers, PMs, and other stakeholders to check if the UI looks
+              right without touching code or requiring a local dev environment.
+            </>
+          ),
         },
       ],
     },

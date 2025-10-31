@@ -1,11 +1,11 @@
 import React from 'react';
 
+import { checklistStore } from '#manager-stores';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
-import { universalChecklistStore as mockStore } from '../../manager-stores.mock';
 import { Checklist } from './Checklist';
 import { checklistData } from './checklistData';
 
@@ -31,16 +31,14 @@ const meta = preview.meta({
       </ManagerContext.Provider>
     ),
   ],
-  beforeEach: async () => {
-    mockStore.setState({
-      completed: ['add-component'],
-      skipped: ['add-5-10-components'],
-    });
-  },
 });
 
 export const Default = meta.story({
   args: {
-    data: checklistData,
+    ...checklistData,
+    ...checklistStore,
+    accepted: ['controls'],
+    done: ['add-component'],
+    skipped: ['viewports'],
   },
 });

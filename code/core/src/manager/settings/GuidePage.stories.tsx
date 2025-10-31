@@ -1,9 +1,11 @@
+import React from 'react';
+
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { universalChecklistStore as mockStore } from '../../manager-stores.mock';
-import { ChecklistModule } from './ChecklistModule';
+import preview from '../../../../.storybook/preview';
+import { universalChecklistStore as mockStore } from '../manager-stores.mock';
+import { GuidePage } from './GuidePage';
 
 const managerContext: any = {
   state: {},
@@ -13,11 +15,11 @@ const managerContext: any = {
 };
 
 const meta = preview.meta({
-  component: ChecklistModule,
+  component: GuidePage,
   decorators: [
     (Story) => (
       <ManagerContext.Provider value={managerContext}>
-        <div style={{ width: 250 }}>{Story()}</div>
+        <Story />
       </ManagerContext.Provider>
     ),
   ],

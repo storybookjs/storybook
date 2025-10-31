@@ -105,7 +105,7 @@ export function getComponentImports(
     const isRelToPkg = Boolean(packageName && decl.source.value.startsWith('.'));
     const nextSource = isRelToPkg ? t.stringLiteral(packageName!) : decl.source;
 
-    const bucket = getBucket(nextSource as t.StringLiteral);
+    const bucket = getBucket(nextSource);
 
     // Filter specifiers to only those whose local is referenced by components and not per-specifier type
     specifiers.forEach((s) => {
@@ -187,7 +187,7 @@ export function getComponentImports(
           | t.ImportSpecifier[]
           | (t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier | t.ImportSpecifier)[]
       ) => {
-        const node = t.importDeclaration(specs as any, source);
+        const node = t.importDeclaration(specs, source);
         const code = recast.print(node, {}).code;
         mergedImports.push(code);
       };

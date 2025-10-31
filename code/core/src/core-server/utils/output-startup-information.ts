@@ -1,7 +1,7 @@
 import { colors } from 'storybook/internal/node-logger';
 import type { VersionCheck } from 'storybook/internal/types';
 
-import boxen from 'boxen';
+import * as prompts from '@clack/prompts';
 import Table from 'cli-table3';
 import picocolors from 'picocolors';
 import prettyTime from 'pretty-hrtime';
@@ -60,17 +60,20 @@ export function outputStartupInformation(options: {
     .filter(Boolean)
     .join(' and ');
 
-  console.log(
-    boxen(
-      dedent`
-          ${colors.green(
-            `Storybook ${picocolors.bold(version)} for ${picocolors.bold(name)} started`
-          )}
-          ${picocolors.gray(timeStatement)}
+  prompts.box(
+    dedent`
+        ${colors.green(
+          `Storybook ${picocolors.bold(version)} for ${picocolors.bold(name)} started`
+        )}
+        ${picocolors.gray(timeStatement)}
 
-          ${serveMessage.toString()}${updateMessage ? `\n\n${updateMessage}` : ''}
-        `,
-      { borderStyle: 'round', padding: 1, borderColor: '#F1618C' } as any
-    )
+        ${serveMessage.toString()}${updateMessage ? `\n\n${updateMessage}` : ''}
+      `,
+    '',
+    {
+      rounded: true,
+      contentPadding: 1,
+      formatBorder: (str) => `\x1b[38;2;241;97;140m${str}\x1b[39m`,
+    }
   );
 }

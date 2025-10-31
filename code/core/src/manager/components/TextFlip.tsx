@@ -1,5 +1,5 @@
 import type { ComponentProps } from 'react';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 
 import { keyframes, styled } from 'storybook/theming';
 
@@ -71,6 +71,12 @@ export const TextFlip = ({
   placeholder?: string;
 } & ComponentProps<typeof Container>) => {
   const [staleValue, setStaleValue] = useState(text);
+  const textRef = useRef(text);
+  textRef.current = text;
+
+  const handleAnimationEnd = () => {
+    setStaleValue(textRef.current);
+  };
 
   const isAnimating = text !== staleValue;
   const reverse = isAnimating && staleValue.localeCompare(text, undefined, { numeric: true }) > 0;
@@ -79,11 +85,11 @@ export const TextFlip = ({
     <Container {...props}>
       {isAnimating && (
         <Text
+          aria-hidden
           duration={duration}
           reverse={reverse}
           isExiting
-          aria-hidden
-          onAnimationEnd={() => setStaleValue(text)}
+          onAnimationEnd={handleAnimationEnd}
         >
           {staleValue}
         </Text>

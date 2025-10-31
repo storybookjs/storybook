@@ -31,6 +31,39 @@ Storybook's [`add`](../api/cli-options.mdx#add) command automates the addon's in
 
 Your Storybook will now include some features to check the accessibility of your components, including a button in the toolbar to simulate different vision impairments and an Accessibility addon panel to check for violations.
 
+### Integration with Vitest addon
+
+If you have the Accessibility addon installed and then install the [Vitest addon](./integrations/vitest-addon.mdx), Storybook will automatically configure the Accessibility addon to work with the Vitest addon.
+
+**Automatic configuration:**
+
+When you run `npx storybook add @storybook/addon-vitest` in a project that already has `@storybook/addon-a11y` installed, the `addon-a11y-addon-test` automigration will automatically:
+
+1. Update `.storybook/vitest.setup.ts` to include the Accessibility addon's annotations
+2. Configure accessibility tests to run alongside component tests
+
+This allows you to run accessibility tests automatically with your component tests in both the Storybook UI and in CI environments.
+
+**Manual configuration:**
+
+If you need to configure this manually (for example, if the automigration was skipped), you can add the following to your `.storybook/vitest.setup.ts`:
+
+```ts
+import * as previewAnnotations from '@storybook/preview-api';
+import { setProjectAnnotations } from '@storybook/react';
+import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
+
+const annotations = setProjectAnnotations([
+  previewAnnotations,
+  a11yAddonAnnotations,
+]);
+
+// Run Storybook's beforeAll hook
+beforeAll(annotations.beforeAll);
+```
+
+For more information about running accessibility tests with the Vitest addon, see [Run accessibility tests](#run-accessibility-tests).
+
 ![Storybook UI with accessibility features annotated](../_assets/writing-tests/addon-a11y-annotated.png)
 
 ## Check for violations

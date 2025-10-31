@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { recast } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { extractDescription } from 'storybook/internal/csf-tools';
-import { type ComponentManifestGenerator } from 'storybook/internal/types';
+import { type ComponentManifestGenerator, type PresetPropertyFn } from 'storybook/internal/types';
 import { type ComponentManifest } from 'storybook/internal/types';
 
 import path from 'pathe';
@@ -17,7 +17,9 @@ interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
 }
 
-export const componentManifestGenerator = async () => {
+export const componentManifestGenerator: PresetPropertyFn<
+  'experimental_componentManifestGenerator'
+> = async () => {
   return (async (storyIndexGenerator) => {
     const index = await storyIndexGenerator.getIndex();
 

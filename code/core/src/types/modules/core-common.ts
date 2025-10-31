@@ -381,7 +381,7 @@ export interface StorybookConfigRaw {
    */
   addons?: Preset[];
   core?: CoreConfig;
-  componentManifestGenerator?: ComponentManifestGenerator;
+  experimental_componentManifestGenerator?: ComponentManifestGenerator;
   experimental_enrichCsf?: CsfEnricher;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;

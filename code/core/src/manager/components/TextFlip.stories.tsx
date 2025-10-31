@@ -33,10 +33,6 @@ const meta = preview.meta({
 
 export const Default = meta.story({});
 
-export const Increasing = meta.story({
-  render: () => <Counter placeholder="00" text="1" />,
-});
+export const Increasing = meta.story(() => <Counter placeholder="00" text="-1" />);
 
-export const Decreasing = meta.story({
-  render: () => <Counter placeholder="00" text="99" reverse />,
-});
+export const Decreasing = meta.story(() => <Counter placeholder="00" text="99" reverse />);

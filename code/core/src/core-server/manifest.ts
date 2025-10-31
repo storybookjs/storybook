@@ -31,7 +31,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
   const storiesPill =
     totals.storyErrors > 0
       ? `<a class="filter-pill err" data-k="story-errors" href="#filter-story-errors">${totals.storyErrors}/${totals.stories} story errors</a>`
-      : `<span class="filter-pill ok" aria-disabled="true">${totals.stories} stories ok</span>`;
+      : `<span class="filter-pill ok" aria-disabled="true">${totals.stories} ${plural(totals.stories, 'story', 'stories')} ok</span>`;
 
   const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`)).join('');
 
@@ -633,7 +633,7 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
 
   const storiesBadge =
     a.totalStories > 0
-      ? `<label for="${slug}-stories" class="badge ${a.storyErrors > 0 ? 'err' : 'ok'} as-toggle">${a.storyErrors > 0 ? `${a.storyErrors}/${a.totalStories} story errors` : `${a.totalStories} stories`}</label>`
+      ? `<label for="${slug}-stories" class="badge ${a.storyErrors > 0 ? 'err' : 'ok'} as-toggle">${a.storyErrors > 0 ? `${a.storyErrors}/${a.totalStories} story errors` : `${a.totalStories} ${plural(a.totalStories, 'story', 'stories')}`}</label>`
       : '';
 
   // When there is no prop type error, try to read prop types from reactDocgen if present

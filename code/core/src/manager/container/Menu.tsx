@@ -3,6 +3,7 @@ import React, { useCallback, useMemo } from 'react';
 
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
 
+import { global } from '@storybook/global';
 import {
   CheckIcon,
   CommandIcon,
@@ -232,7 +233,11 @@ export const useMenu = ({
   return useMemo(
     () =>
       [
-        [about, guide, ...(enableShortcuts ? [shortcuts] : [])],
+        [
+          about,
+          ...(global.CONFIG_TYPE === 'DEVELOPMENT' ? [guide] : []),
+          ...(enableShortcuts ? [shortcuts] : []),
+        ],
         [sidebarToggle, toolbarToogle, addonsToggle, up, down, prev, next, collapse],
         getAddonsShortcuts(),
         [documentation],

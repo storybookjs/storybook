@@ -46,9 +46,13 @@ export class PreflightCheckCommand {
       }
 
       // Prompt the user to create a new project from our list
+      logger.intro(CLI_COLORS.info(`Initializing a new project`));
       await scaffoldNewProject(packageManagerType, options);
+      logger.outro(CLI_COLORS.info(`Project created successfully`));
       invalidateProjectRootCache();
     }
+
+    logger.intro(CLI_COLORS.info(`Initializing Storybook`));
 
     const packageManager = JsPackageManagerFactory.getPackageManager({
       force: pkgMgr,

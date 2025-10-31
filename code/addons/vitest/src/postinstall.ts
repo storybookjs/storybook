@@ -9,7 +9,6 @@ import {
   formatFileContent,
   getProjectRoot,
   getStorybookInfo,
-  versions,
 } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import {
@@ -342,11 +341,7 @@ export default async function postInstall(options: PostinstallOptions) {
         command.push('--config-dir', `"${options.configDir}"`);
       }
 
-      const remoteCommand = packageManager.getRemoteRunCommand(
-        'storybook',
-        command,
-        versions.storybook
-      );
+      const remoteCommand = packageManager.getRemoteRunCommand('storybook', command);
       const [cmd, ...args] = remoteCommand.split(' ');
 
       await prompt.executeTask(() => packageManager.executeCommand({ command: cmd, args }), {
@@ -374,7 +369,7 @@ export default async function postInstall(options: PostinstallOptions) {
 
   logger.line();
   if (errors.length === 0) {
-    logger.step(CLI_COLORS.success('All done!'));
+    logger.step(CLI_COLORS.success('@storybook/addon-vitest setup completed successfully'));
     logger.log(dedent`
         @storybook/addon-vitest is now configured and you're ready to run your tests!
         Here are a couple of tips to get you started:

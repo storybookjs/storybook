@@ -37,7 +37,7 @@ export class ProjectDetectionCommand {
       logger.step(`Installing Storybook for user specified project type: ${projectTypeProvided}`);
     } else {
       projectType = await this.autoDetectProjectType(packageManager, options);
-      logger.step(`Project type detected: ${projectType}`);
+      logger.debug(`Project type detected: ${projectType}`);
     }
 
     // Check for existing installation

@@ -172,7 +172,7 @@ export const automigrate = async ({
     return null;
   }
 
-  logger.log('🔎 checking possible migrations..');
+  logger.step('Checking possible migrations..');
 
   const { fixResults, fixSummary, preCheckFailure } = await runFixes({
     fixes,
@@ -197,12 +197,10 @@ export const automigrate = async ({
   }
 
   if (!hideMigrationSummary) {
-    logger.log('');
     logMigrationSummary({
       fixResults,
       fixSummary,
     });
-    logger.log('');
   }
 
   return { fixResults, preCheckFailure };

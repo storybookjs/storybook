@@ -136,8 +136,6 @@ export async function initiate(options: CommandOptions): Promise<void> {
       printError: (err) => !err.handled && logger.error(err),
     },
     async () => {
-      logger.intro(CLI_COLORS.info(`Initializing Storybook`));
-
       const result = await doInitiate(options);
 
       logger.outro('Initiation completed');

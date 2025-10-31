@@ -186,7 +186,6 @@ export const outro = (message: string) => {
   logTracker.addLog('info', message);
   if (shouldLog('info')) {
     LOG_FUNCTIONS.outro()(message);
-    console.log('\n');
   }
 };
 

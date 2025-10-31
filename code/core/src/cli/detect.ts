@@ -117,13 +117,11 @@ export async function detectBuilder(packageManager: JsPackageManager) {
   const dependencies = packageManager.getAllDependencies();
 
   if (viteConfig || (dependencies.vite && dependencies.webpack === undefined)) {
-    logger.step('Builder detected: Vite');
     return SupportedBuilder.VITE;
   }
 
   // REWORK
   if (webpackConfig || (dependencies.webpack && dependencies.vite !== undefined)) {
-    logger.step('Builder detected: Webpack 5');
     return SupportedBuilder.WEBPACK5;
   }
 

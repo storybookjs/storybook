@@ -1,5 +1,6 @@
 import { type ProjectType, detectBuilder } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import type { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 import { SupportedFramework } from 'storybook/internal/types';
 
@@ -64,6 +65,8 @@ export class FrameworkDetectionCommand {
     } else {
       framework = this.getFramework(renderer, builder);
     }
+
+    logger.step(`Framework detected: ${framework}`);
 
     return {
       framework,

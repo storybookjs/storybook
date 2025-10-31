@@ -1,6 +1,9 @@
 ## 10.1.0-alpha.2
 
-- Core: 10.1 features WIP - [#32810](https://github.com/storybookjs/storybook/pull/32810), thanks @JReinhold!
+- A11y: Add aria-selected attribute to tab buttons - [#32656](https://github.com/storybookjs/storybook/pull/32656), thanks @Nischit-Ekbote!
+- React: Experimental code examples - [#32813](https://github.com/storybookjs/storybook/pull/32813), thanks @kasperpeulen!
+- React: Implement manifests/component.json for React - [#32751](https://github.com/storybookjs/storybook/pull/32751), thanks @kasperpeulen!
+- React: Improve error handling of component manifest generation - [#32855](https://github.com/storybookjs/storybook/pull/32855), thanks @kasperpeulen!
 
 ## 10.1.0-alpha.1
 

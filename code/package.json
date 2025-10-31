@@ -102,7 +102,6 @@
     "playwright-core": "1.52.0",
     "react": "^18.2.0",
     "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19",
     "typescript": "^5.8.3"
   },
   "dependencies": {

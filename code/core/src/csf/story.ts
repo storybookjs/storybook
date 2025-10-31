@@ -1,4 +1,4 @@
-import type { RemoveIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
 import type { SBScalarType, SBType } from './SBType';
 import type { CoreTypes } from './core-annotations';
@@ -565,7 +565,7 @@ export type ArgsFromMeta<TRenderer extends Renderer, Meta> = Meta extends {
   decorators?: (infer Decorators)[] | infer Decorators;
 }
   ? Simplify<
-      RemoveIndexSignature<
+      OmitIndexSignature<
         RArgs & DecoratorsArgs<TRenderer, Decorators> & LoaderArgs<TRenderer, Loaders>
       >
     >

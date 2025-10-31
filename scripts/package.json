@@ -58,7 +58,6 @@
   "resolutions": {
     "esbuild": "^0.25.3",
     "serialize-javascript": "^3.1.0",
-    "type-fest": "~2.19",
     "typescript": "^5.8.3"
   },
   "dependencies": {
@@ -173,7 +172,7 @@
     "tinyexec": "^0.3.0",
     "trash": "^7.2.0",
     "ts-dedent": "^2.2.0",
-    "type-fest": "~2.19",
+    "type-fest": "^4.18.1",
     "typescript": "^5.8.3",
     "uuid": "^9.0.1",
     "vitest": "^3.2.4",

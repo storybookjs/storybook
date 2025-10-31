@@ -55,8 +55,7 @@
     "prep": "jiti ../../../scripts/build/build-package.ts"
   },
   "dependencies": {
-    "ts-dedent": "^2.0.0",
-    "type-fest": "~2.19"
+    "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.0",
@@ -64,6 +63,7 @@
     "svelte": "^5.39.5",
     "svelte-check": "^4.3.2",
     "sveltedoc-parser": "^4.2.1",
+    "type-fest": "^4.18.1",
     "typescript": "^5.8.3",
     "vite": "^7.0.4"
   },

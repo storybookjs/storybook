@@ -1,5 +1,11 @@
 # @storybook/addon-mcp
 
+## 0.1.4-next.1
+
+### Patch Changes
+
+- [#59](https://github.com/storybookjs/mcp/pull/59) [`ed0fe09`](https://github.com/storybookjs/mcp/commit/ed0fe09eb2f33b723f50e18fe6e3f6e1ba3d3f80) Thanks [@JReinhold](https://github.com/JReinhold)! - Allow Storybook 10.1.0 prerelases as peer dependencies
+
 ## 0.1.4-next.0
 
 ### Patch Changes

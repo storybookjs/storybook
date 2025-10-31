@@ -44,7 +44,7 @@ export const CollapsibleContent = ({ collapsed, ...props }: ComponentProps<typeo
   <Content collapsed={collapsed} aria-hidden={collapsed} {...props} />
 );
 
-const Content = styled.div<{ collapsed: boolean }>(({ collapsed }) => ({
+const Content = styled.div<{ collapsed?: boolean }>(({ collapsed = false }) => ({
   blockSize: collapsed ? 0 : 'auto',
   interpolateSize: 'allow-keywords',
   contentVisibility: collapsed ? 'hidden' : 'visible',

@@ -107,8 +107,9 @@ const meta = {
     universalChecklistStore.setState({
       loaded: true,
       muted: false,
-      completed: ['add-component'],
-      skipped: ['add-5-10-components'],
+      accepted: ['controls'],
+      done: ['add-component'],
+      skipped: ['viewports'],
     });
   },
 } satisfies Meta<typeof Sidebar>;

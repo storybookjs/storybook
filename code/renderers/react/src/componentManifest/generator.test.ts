@@ -549,6 +549,7 @@ test('component exported from other file', async () => {
        9 |
     > 10 | export { Primary } from './other-file';
          | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+            "name": "SyntaxError",
           },
           "name": "Primary",
         },
@@ -600,6 +601,7 @@ test('unknown expressions', async () => {
        9 |
     > 10 | export const Primary = someWeirdExpression;
          |                        ^^^^^^^^^^^^^^^^^^^",
+            "name": "SyntaxError",
           },
           "name": "Primary",
         },

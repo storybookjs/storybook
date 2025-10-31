@@ -3,6 +3,8 @@ import { sep } from 'node:path';
 
 import { types as t } from 'storybook/internal/babel';
 import { getProjectRoot } from 'storybook/internal/common';
+import { supportedExtensions } from 'storybook/internal/common';
+import { resolveImport } from 'storybook/internal/common';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 
 import * as find from 'empathic/find';
@@ -16,11 +18,7 @@ import {
 import * as TsconfigPaths from 'tsconfig-paths';
 
 import actualNameHandler from './reactDocgen/actualNameHandler';
-import {
-  RESOLVE_EXTENSIONS,
-  ReactDocgenResolveError,
-  defaultLookupModule,
-} from './reactDocgen/docgenResolver';
+import { ReactDocgenResolveError } from './reactDocgen/docgenResolver';
 import exportNameHandler from './reactDocgen/exportNameHandler';
 
 export type DocObj = Documentation & {
@@ -92,14 +90,14 @@ export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | unde
   return makeFsImporter((filename, basedir) => {
     const mappedFilenameByPaths = (() => {
       if (matchPath) {
-        const match = matchPath(filename);
+        const match = matchPath(filename, undefined, undefined, supportedExtensions);
         return match || filename;
       } else {
         return filename;
       }
     })();
 
-    const result = defaultLookupModule(mappedFilenameByPaths, basedir);
+    const result = resolveImport(mappedFilenameByPaths, { basedir });
 
     if (result.includes(`${sep}react-native${sep}index.js`)) {
       const replaced = result.replace(
@@ -107,12 +105,12 @@ export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | unde
         `${sep}react-native-web${sep}dist${sep}index.js`
       );
       if (existsSync(replaced)) {
-        if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
+        if (supportedExtensions.find((ext) => result.endsWith(ext))) {
           return replaced;
         }
       }
     }
-    if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
+    if (supportedExtensions.find((ext) => result.endsWith(ext))) {
       return result;
     }
 

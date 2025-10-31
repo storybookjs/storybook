@@ -550,6 +550,7 @@ export default {
     'UL',
     'WithPopover',
     'WithTooltip',
+    'WithTooltipNew',
     'Zoom',
     'codeCommon',
     'components',

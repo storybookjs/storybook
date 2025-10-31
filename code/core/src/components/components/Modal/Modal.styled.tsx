@@ -78,7 +78,7 @@ export const Overlay = styled.div<{
   $transitionDuration?: number;
 }>(({ $status, $transitionDuration }) => ({
   backdropFilter: 'blur(24px)',
-  position: 'fixed',
+  position: 'absolute',
   inset: 0,
   width: '100%',
   height: '100%',
@@ -103,7 +103,7 @@ export const Container = styled.div<{
     backgroundColor: theme.background.bar,
     borderRadius: 6,
     boxShadow: '0px 4px 67px 0px #00000040',
-    position: 'fixed',
+    position: 'absolute',
     overflow: 'auto',
     zIndex: 100,
 

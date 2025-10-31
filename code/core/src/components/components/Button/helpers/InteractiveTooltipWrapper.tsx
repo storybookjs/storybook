@@ -1,6 +1,6 @@
 import React, { type DOMAttributes, type ReactElement, useMemo } from 'react';
 
-import { TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { TooltipNote, WithTooltipNew } from 'storybook/internal/components';
 
 import { type API_KeyCollection, shortcutToHumanString } from 'storybook/manager-api';
 
@@ -28,13 +28,13 @@ export const InteractiveTooltipWrapper: React.FC<{
   }, [shortcut, tooltip]);
 
   return tooltipLabel ? (
-    <WithTooltip
+    <WithTooltipNew
       placement="top"
       tooltip={<TooltipNote note={tooltipLabel} />}
       visible={!disableAllTooltips ? undefined : false}
     >
       {children}
-    </WithTooltip>
+    </WithTooltipNew>
   ) : (
     <>{children}</>
   );

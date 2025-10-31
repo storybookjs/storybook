@@ -74,7 +74,8 @@ export type { TooltipProps } from './components/tooltip/Tooltip';
 export { TooltipNote } from './components/tooltip/TooltipNote';
 export type { TooltipNoteProps } from './components/tooltip/TooltipNote';
 export { WithTooltip } from './components/tooltip/WithTooltip';
-export type { WithTooltipProps } from './components/tooltip/WithTooltip';
+export { WithTooltipNew } from './components/tooltip/WithTooltipNew';
+export type { WithTooltipNewProps } from './components/tooltip/WithTooltipNew';
 
 // Old tooltips - deprecated and to remove in Storybook 11
 export { TooltipMessage } from './components/tooltip/TooltipMessage';

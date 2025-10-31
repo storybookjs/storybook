@@ -3,7 +3,7 @@ import React from 'react';
 import type { Meta } from '@storybook/react-vite';
 
 import { TooltipMessage } from './TooltipMessage';
-import { WithTooltip } from './WithTooltip';
+import { WithTooltipNew } from './WithTooltipNew';
 
 export default {
   component: TooltipMessage,
@@ -14,9 +14,9 @@ export default {
           height: '300px',
         }}
       >
-        <WithTooltip placement="top" startOpen tooltip={storyFn()}>
+        <WithTooltipNew placement="top" startOpen tooltip={storyFn()}>
           <div>Tooltip</div>
-        </WithTooltip>
+        </WithTooltipNew>
       </div>
     ),
   ],

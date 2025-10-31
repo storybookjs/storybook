@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { forwardRef, useRef, useState } from 'react';
 
 import { Button } from 'storybook/internal/components';
 
@@ -37,6 +37,40 @@ const SampleModalContent = () => (
     </Modal.Actions>
   </Modal.Content>
 );
+
+const MockContainer = forwardRef<
+  HTMLDivElement,
+  {
+    bgColor: string;
+    borderColor: string;
+    id?: string;
+    text: string;
+  }
+>(({ bgColor, borderColor, id, text }, ref) => (
+  <div
+    id={id}
+    ref={ref}
+    style={{
+      position: 'relative',
+      width: '60%',
+      height: '300px',
+      marginTop: '20px',
+      border: `3px dashed ${borderColor}`,
+      borderRadius: '8px',
+      background: bgColor,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}
+  >
+    <div
+      style={{ textAlign: 'center', backgroundColor: '#fff6', color: '#111', fontWeight: 'bold' }}
+    >
+      {text}
+    </div>
+  </div>
+));
+MockContainer.displayName = 'MockContainer';
 
 const meta = preview.meta({
   id: 'overlay-Modal',
@@ -934,6 +968,100 @@ export const BottomDrawerTransitions = meta.story({
         <Button ariaLabel={false} onClick={() => setOpen(true)}>
           Open Bottom Drawer with Transitions
         </Button>
+      </>
+    );
+  },
+});
+
+export const WithContainer = meta.story({
+  args: {
+    children: <SampleModalContent />,
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+    const container = useRef<HTMLDivElement>(null);
+
+    return (
+      <>
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal in Custom Container
+        </Button>
+        <MockContainer
+          bgColor="rgba(255, 71, 133, 0.05"
+          borderColor="#ff4785"
+          text="Custom Container. Modal will appear within this bordered area."
+          ref={container}
+        />
+        <Modal
+          {...args}
+          container={container.current || undefined}
+          open={isOpen}
+          onOpenChange={setOpen}
+        />
+      </>
+    );
+  },
+});
+
+export const WithPortalSelector = meta.story({
+  args: {
+    children: <SampleModalContent />,
+    portalSelector: '#custom-modal-portal-target',
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+
+    return (
+      <>
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal in Portal Target
+        </Button>
+        <MockContainer
+          id="custom-modal-portal-target"
+          bgColor="rgba(30, 167, 253, 0.05)"
+          borderColor="#1EA7FD"
+          text="Portal Selector Target. Modal will appear within this bordered area."
+        />
+        <Modal {...args} open={isOpen} onOpenChange={setOpen} />
+      </>
+    );
+  },
+});
+
+export const WithContainerAndPortalSelector = meta.story({
+  args: {
+    children: <SampleModalContent />,
+    portalSelector: '#ignored-portal-target',
+  },
+  render: (args) => {
+    const [isOpen, setOpen] = useState(false);
+    const [container, setContainer] = useState<HTMLElement | null>(null);
+
+    return (
+      <>
+        <Button ariaLabel={false} onClick={() => setOpen(true)}>
+          Open Modal (Container takes precedence)
+        </Button>
+        <MockContainer
+          id="ignored-portal-target"
+          bgColor="rgba(153, 153, 153, 0.05)"
+          borderColor="#999"
+          text="Ignored Portal Selector Target"
+        />
+        <MockContainer
+          bgColor="rgba(55, 213, 163, 0.05)"
+          borderColor="#37D5A3"
+          text="Active Container (takes precedence)."
+          ref={(element) => setContainer(element ?? null)}
+        />
+        {
+          <Modal
+            {...args}
+            container={container || undefined}
+            open={isOpen}
+            onOpenChange={setOpen}
+          />
+        }
       </>
     );
   },

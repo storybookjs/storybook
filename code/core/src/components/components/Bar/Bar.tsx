@@ -19,7 +19,8 @@ const StyledBar = styled.div<BarProps>(
     width: '100%',
     minHeight: 40,
     flexShrink: 0,
-    scrollbarColor: `${theme.barTextColor} ${backgroundColor || theme.barBg}`,
+    // TODO in Storybook 11: Apply background regardless of border.
+    scrollbarColor: `${theme.barTextColor} ${border ? backgroundColor || theme.barBg : 'transparent'}`,
     scrollbarWidth: 'thin',
     overflow: scrollable ? 'auto' : 'hidden',
     overflowY: 'hidden',
@@ -27,6 +28,7 @@ const StyledBar = styled.div<BarProps>(
     alignItems: 'center',
     gap: scrollable ? 0 : 6,
     paddingInline: scrollable ? 0 : 6,
+    // TODO in Storybook 11: Apply background regardless of border.
     ...(border
       ? {
           boxShadow: `${theme.appBorderColor}  0 -1px 0 0 inset`,

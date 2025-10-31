@@ -14,6 +14,10 @@ import { useMediaQuery } from '../../../manager/hooks/useMedia';
 import * as Components from './Modal.styled';
 
 interface ModalProps extends HTMLAttributes<HTMLDivElement> {
+  container?: HTMLElement;
+
+  portalSelector?: string;
+
   /** Width of the Modal. Defaults to `740`. */
   width?: number | string;
 
@@ -32,15 +36,16 @@ interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   /** Uncontrolled state: whether the Modal is initially open on the first. */
   defaultOpen?: boolean;
 
-  /** Deprecated. Use `dismissOnEscape` instead. */
+  /** @deprecated Use `dismissOnEscape` instead. */
   onEscapeKeyDown?: (event: KeyboardEvent) => void;
 
-  /** Deprecated. Use `dismissOnInteractOutside` instead. */
+  /** @deprecated Use `dismissOnInteractOutside` instead. */
   onInteractOutside?: (event: FocusEvent | MouseEvent | TouchEvent) => void;
 
   /** Handler called when visibility of the Modal changes. */
   onOpenChange?: (isOpen: boolean) => void;
 
+  // TODO: Storybook 11, make this required
   /** The accessible name for the modal. */
   ariaLabel?: string;
 
@@ -61,6 +66,8 @@ interface ModalProps extends HTMLAttributes<HTMLDivElement> {
 export const ModalContext = createContext<{ close?: () => void }>({});
 
 function BaseModal({
+  container,
+  portalSelector,
   children,
   width,
   height,
@@ -177,8 +184,11 @@ function BaseModal({
     },
   });
 
+  const containerElement =
+    container ?? (portalSelector ? document.querySelector<HTMLElement>(portalSelector) : undefined);
+
   return (
-    <Overlay disableFocusManagement>
+    <Overlay disableFocusManagement portalContainer={containerElement || undefined}>
       {/* Overlay won't place focus within the modal on its own, and so its own FocusScope
        starts cycling through focusable elements only after we've clicked or tabbed into the modal.
        So we use our own focus scope and autofocus within on mount. */}
@@ -218,6 +228,10 @@ export const Modal = Object.assign(BaseModal, Components);
  */
 export const ModalDecorator: DecoratorFunction = (Story, { args }) => {
   const [container, setContainer] = useState<HTMLElement | null>(null);
+
+  if (args.container || args.portalSelector) {
+    return <Story {...{ args }} />;
+  }
 
   return (
     <>

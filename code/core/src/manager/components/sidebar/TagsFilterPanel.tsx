@@ -6,7 +6,7 @@ import {
   ListItem,
   TooltipLinkList,
   TooltipNote,
-  WithTooltip,
+  WithTooltipNew,
 } from 'storybook/internal/components';
 import type { API_PreparedIndexEntry } from 'storybook/internal/types';
 
@@ -147,7 +147,7 @@ export const TagsFilterPanel = ({
       id: `filter-${type}-${id}`,
       content: (
         <TagRow>
-          <WithTooltip delayShow={1000} tooltip={<TooltipNote note={toggleTagLabel} />}>
+          <WithTooltipNew delayShow={1000} tooltip={<TooltipNote note={toggleTagLabel} />}>
             <ListItem
               style={{ minWidth: 0, flex: 1 }}
               onClick={() => onToggle(!isChecked)}
@@ -172,7 +172,7 @@ export const TagsFilterPanel = ({
               }
               right={isExcluded ? <s>{count}</s> : <span>{count}</span>}
             />
-          </WithTooltip>
+          </WithTooltipNew>
           <Button
             variant="ghost"
             size="medium"

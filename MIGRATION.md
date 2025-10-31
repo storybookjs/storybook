@@ -24,17 +24,11 @@
     - [TabButton is deprecated](#tabbutton-is-deprecated)
     - [TabBar is deprecated](#tabbar-is-deprecated)
     - [Modal Component API Changes](#modal-component-api-changes)
-      - [Removed: container and portalSelector](#removed-container-and-portalselector)
-      - [Removed: onInteractOutside](#removed-oninteractoutside)
-      - [Removed: onEscapeKeyDown](#removed-onescapekeydown)
+      - [Deprecated: onInteractOutside](#deprecated-oninteractoutside)
+      - [Deprecated: onEscapeKeyDown](#deprecated-onescapekeydown)
       - [Added: `ariaLabel`](#added-arialabel-1)
       - [Renamed: Modal.Dialog.Close and Modal.CloseButton](#renamed-modaldialogclose-and-modalclosebutton)
     - [ListItem, TooltipLinkList and TooltipMessage are deprecated](#listitem-tooltiplinklist-and-tooltipmessage-are-deprecated)
-    - [Tooltip Component API Changes](#tooltip-component-api-changes)
-      - [Renamed: tooltipRef](#renamed-tooltipref)
-      - [Removed: arrowProps and withArrows](#removed-arrowprops-and-witharrows)
-      - [Removed: placement](#removed-placement)
-      - [Changed type: color](#changed-type-color)
     - [WithPopover Component Added](#withpopover-component-added)
     - [WithTooltip Component API Changes](#withtooltip-component-api-changes)
       - [Removed: trigger](#removed-trigger)
@@ -45,7 +39,7 @@
     - [Removed: closeOnTriggerHidden, followCursor, closeOnOutsideClick](#removed-closeontriggerhidden-followcursor-closeonoutsideclick)
     - [Removed: interactive](#removed-interactive)
       - [Other changes](#other-changes)
-    - [WithTooltipPure and WithTooltipState are removed](#withtooltippure-and-withtooltipstate-are-removed)
+    - [WithTooltipPure and WithTooltipState are deprecated](#withtooltippure-and-withtooltipstate-are-deprecated)
 - [From version 8.x to 9.0.0](#from-version-8x-to-900)
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
@@ -657,7 +651,7 @@ IconButton will be removed in future versions.
 
 #### Bar Component API Changes
 
-The `Bar` component's internal layout has changed. It now applies flex positioning and applies a default item gap, that can be controlled with the `innerStyle` prop.
+The `Bar` component's internal layout has changed, to fix a height bug in scrollable bars. It now applies flex positioning and applies a default item gap, that can be controlled with the `innerStyle` prop. You may see slight changes in default padding as a result of this change.
 
 ##### Added: innerStyle
 When `scrollable` is set to `true`, `Bar` now adds an inner container that is used to ensure the scrollbar size does not impact the height of the bar. This inner container displays as 'flex' and has the following default style:
@@ -699,14 +693,11 @@ The `TabBar` component, a styled bar used inside `Tabs` and not intended to be p
 
 #### Modal Component API Changes
 
-##### Removed: container and portalSelector
-The `container` and `portalSelector` props were not used inside Storybook, so they have been removed. The new Modal component does not support custom portal locations, because it is not recommended practice. A single portal at the end of the document ensures modals appear in their order of creation and are never cropped by CSS `overflow` properties.
+##### Deprecated: onInteractOutside
+The `onInteractOutside` prop is deprecated in favor of `dismissOnClickOutside`, because it was only used to close the modal when clicking outside. Use `dismissOnClickOutside` to control whether clicking outside the modal should close it or not.
 
-##### Removed: onInteractOutside
-The `onInteractOutside` prop is removed in favor of `dismissOnClickOutside`, because it was only used to close the modal when clicking outside. Use `dismissOnClickOutside` to control whether clicking outside the modal should close it or not.
-
-##### Removed: onEscapeKeyDown
-The `onEscapeKeyDown` prop is removed in favor of `dismissOnEscape`, because it was only used to close the modal when pressing Escape. Use `dismissOnEscape` to control whether pressing Escape should close it or not.
+##### Deprecated: onEscapeKeyDown
+The `onEscapeKeyDown` prop is deprecated in favor of `dismissOnEscape`, because it was only used to close the modal when pressing Escape. Use `dismissOnEscape` to control whether pressing Escape should close it or not.
 
 ##### Added: `ariaLabel`
 Modal elements must have a title to be accessible. Set that title through the `ariaLabel` prop. It will become mandatory in Storybook 11.
@@ -721,24 +712,6 @@ The ListItem and TooltipLinkList components were used in Storybook to make menus
 
 These components are now deprecated and will be removed in future versions. To replace TooltipMessage, replace WithTooltip with WithPopover, and use Popover as a base component for your popovers. To replace ListItem and TooltipLinkList, a dedicated menu component will be introduced in a future version, and Popover can be used in the meantime.
 
-#### Tooltip Component API Changes
-
-##### Renamed: tooltipRef
-Tooltip's `ref` prop is now named `ref` for consistency.
-
-##### Removed: arrowProps and withArrows
-The `arrowProps` and `withArrows` props were not used in Storybook, so they have been removed.
-
-We recommend you do not use arrows in your addon tooltips for better consistency with the Storybook UI.
-
-##### Removed: placement
-The `placement` prop was passed to help position the arrow. It has also been removed. WithToolip now entirely handles the placement of its tooltip on its own.
-
-##### Changed type: color
-The `color` prop used to accept arbitrary colors and theme background color names. This made it difficult to use.
-
-The prop was to the background color of the tooltip, and it was not possible to set the text color in a consistent fashion. To ensure Tooltip uses accessible colors, the prop has been limited to the following values: `'default'`, `'inverse'`, `'positive'`, `'negative'`, `'warning'` and `'none'`. The prop now controls both background and foreground colors.
-
 #### WithPopover Component Added
 
 The WithPopover component acts as a counterpoint to WithTooltip. When you want an interactive overlay with buttons or inputs, use WithPopover and Popover. When you want a static overlay that shows on focus or hover, use WithTooltip with TooltipNote or Tooltip.
@@ -746,6 +719,8 @@ The WithPopover component acts as a counterpoint to WithTooltip. When you want a
 WithPopover is based on react-aria. It must have a single child that acts as a trigger. This child must have a pressable role (can be clicked or pressed) and must be able to receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your popover.
 
 #### WithTooltip Component API Changes
+
+The WithTooltip component has been reimplemented from the ground up. The new implementation is exported as `WithTooltipNew` in Storybook 10, and will replace `WithTooltip` entirely in Storybook 11. Below is a summary of the changes between both APIs, which will take full effect in Storybook 11.
 
 ##### Removed: trigger
 The `trigger` prop was removed to enforce better accessibility compliance. WithTooltip must not be triggered on click, as it is not reachable by keyboard. Buttons that open a popover, menu or select must use appropriate components instead.
@@ -771,9 +746,9 @@ Thed `interactive` prop has been removed as it does not align with our vision fo
 ##### Other changes
 The underlying implementation was switched from Popper.js to react-aria. Due to these changes, WithTooltip must now have a single child that has a focusable role and that can receive React refs. Wrap your trigger component in `forwardRef` if you notice placement issues for your tooltip.
 
-#### WithTooltipPure and WithTooltipState are removed
+#### WithTooltipPure and WithTooltipState are deprecated
 
-Instead, use WithTooltip. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
+Instead, use `WithTooltipNew` in Storybook 10, or `WithTooltip` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
 
 ## From version 8.x to 9.0.0
 

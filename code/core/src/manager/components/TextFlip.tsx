@@ -1,12 +1,27 @@
-import React, { useEffect, useRef, useState } from 'react';
+import type { ComponentProps } from 'react';
+import React, { useState } from 'react';
 
-import { styled } from 'storybook/theming';
+import { keyframes, styled } from 'storybook/theming';
 
-import { Transition } from './Transition';
+const slideIn = keyframes({
+  from: {
+    transform: 'translateY(var(--slide-in-from))',
+    opacity: 0,
+  },
+});
+
+const slideOut = keyframes({
+  to: {
+    transform: 'translateY(var(--slide-out-to))',
+    opacity: 0,
+  },
+});
 
 const Container = styled.div({
-  display: 'grid',
+  display: 'inline-grid',
   gridTemplateColumns: '1fr',
+  justifyContent: 'center',
+  alignItems: 'center',
 });
 
 const Placeholder = styled.div({
@@ -15,44 +30,35 @@ const Placeholder = styled.div({
   visibility: 'hidden',
 });
 
-const Line = styled.div<{ duration: number }>(({ 'aria-hidden': ariaHidden, duration }) => ({
-  gridArea: '1 / 1',
-  transform: `translateY(0)`,
-  userSelect: ariaHidden ? 'none' : 'text',
+const Text = styled.span<{
+  duration: number;
+  isExiting?: boolean;
+  isEntering?: boolean;
+  reverse?: boolean;
+}>(({ duration, isExiting, isEntering, reverse }) => {
+  let animation: string | undefined;
 
-  '&.old-exit-active': {
-    transition: `all ${duration}ms ease-in-out`,
-    transform: 'translateY(-100%)',
-    opacity: 0,
-  },
-  '&.old-reverse-exit-active': {
-    transition: `all ${duration}ms ease-in-out`,
-    transform: 'translateY(100%)',
-    opacity: 0,
-  },
-  '&.new-enter': {
-    transform: `translateY(100%)`,
-    opacity: 0,
-  },
-  '&.new-enter-active': {
-    transition: `all ${duration}ms ease-in-out`,
-    transform: `translateY(0)`,
-    opacity: 1,
-  },
-  '&.new-reverse-enter': {
-    transform: `translateY(-100%)`,
-    opacity: 0,
-  },
-  '&.new-reverse-enter-active': {
-    transition: `all ${duration}ms ease-in-out`,
-    transform: `translateY(0)`,
-    opacity: 1,
-  },
+  if (isExiting) {
+    animation = `${slideOut} ${duration}ms forwards`;
+  } else if (isEntering) {
+    animation = `${slideIn} ${duration}ms forwards`;
+  }
 
-  '@media (prefers-reduced-motion: reduce)': {
-    transitionDuration: '0ms',
-  },
-}));
+  return {
+    gridArea: '1 / 1',
+    animation,
+    pointerEvents: isExiting ? 'none' : 'auto',
+    userSelect: isExiting ? 'none' : 'text',
+    '--slide-in-from': reverse ? '-100%' : '100%',
+    '--slide-out-to': reverse ? '100%' : '-100%',
+
+    '@media (prefers-reduced-motion: reduce)': {
+      animation: 'none',
+      opacity: isExiting ? 0 : 1,
+      transform: 'translateY(0)',
+    },
+  };
+});
 
 export const TextFlip = ({
   text,
@@ -63,41 +69,28 @@ export const TextFlip = ({
   text: string;
   duration?: number;
   placeholder?: string;
-}) => {
-  const oldRef = useRef<HTMLDivElement>(null);
-  const newRef = useRef<HTMLDivElement>(null);
+} & ComponentProps<typeof Container>) => {
   const [staleValue, setStaleValue] = useState(text);
-  const [updatedValue, setUpdatedValue] = useState(text);
-  const reverse = staleValue.localeCompare(text, undefined, { numeric: true }) > 0;
 
-  useEffect(() => {
-    setUpdatedValue(text);
-    const timeout = setTimeout(() => setStaleValue(text), duration);
-    return () => clearTimeout(timeout);
-  }, [text, duration]);
+  const isAnimating = text !== staleValue;
+  const reverse = isAnimating && staleValue.localeCompare(text, undefined, { numeric: true }) > 0;
 
   return (
     <Container {...props}>
-      <Transition
-        in={updatedValue === text}
-        nodeRef={newRef}
-        timeout={duration}
-        classNames={reverse ? 'new-reverse' : 'new'}
-      >
-        <Line duration={duration} ref={newRef}>
-          {text}
-        </Line>
-      </Transition>
-      <Transition
-        in={updatedValue !== text}
-        nodeRef={oldRef}
-        timeout={duration}
-        classNames={reverse ? 'old-reverse' : 'old'}
-      >
-        <Line duration={duration} ref={oldRef} aria-hidden>
+      {isAnimating && (
+        <Text
+          duration={duration}
+          reverse={reverse}
+          isExiting
+          aria-hidden
+          onAnimationEnd={() => setStaleValue(text)}
+        >
           {staleValue}
-        </Line>
-      </Transition>
+        </Text>
+      )}
+      <Text duration={duration} reverse={reverse} isEntering={isAnimating}>
+        {text}
+      </Text>
       {placeholder && <Placeholder aria-hidden>{placeholder}</Placeholder>}
     </Container>
   );

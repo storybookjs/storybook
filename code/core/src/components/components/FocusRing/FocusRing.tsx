@@ -52,7 +52,7 @@ export const FocusTarget = ({
   const [active, setActive] = useState(locationHash === targetHash);
 
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
 
     setActive(false);
     if (locationHash === targetHash) {

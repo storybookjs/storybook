@@ -146,7 +146,7 @@ export const supportedTemplates: TemplateConfiguration[] = [
   },
   {
     preset: ProjectType.EMBER,
-    dependencies: ['ember-cli'],
+    dependencies: ['ember-source'],
     matcherFunction: ({ dependencies }) => {
       return dependencies?.every(Boolean) ?? true;
     },

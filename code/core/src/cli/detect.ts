@@ -140,7 +140,6 @@ export async function detectBuilder(packageManager: JsPackageManager, projectTyp
     case ProjectType.ANGULAR:
     case ProjectType.REACT_NATIVE: // technically react native doesn't use webpack, we just want to set something
     case ProjectType.NEXTJS:
-    case ProjectType.EMBER:
       return CoreBuilder.Webpack5;
     case ProjectType.NUXT:
       return CoreBuilder.Vite;

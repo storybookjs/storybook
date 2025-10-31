@@ -7,9 +7,9 @@ const generator: Generator = async (packageManager, npmOptions, options) => {
   await baseGenerator(
     packageManager,
     npmOptions,
-    { ...options, builder: CoreBuilder.Webpack5 },
+    { ...options, builder: CoreBuilder.Vite },
     'ember',
-    { staticDir: 'dist' },
+    {},
     'ember'
   );
 };

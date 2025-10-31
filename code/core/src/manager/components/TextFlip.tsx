@@ -70,16 +70,13 @@ export const TextFlip = ({
   duration?: number;
   placeholder?: string;
 } & ComponentProps<typeof Container>) => {
-  const [staleValue, setStaleValue] = useState(text);
   const textRef = useRef(text);
-  textRef.current = text;
-
-  const handleAnimationEnd = () => {
-    setStaleValue(textRef.current);
-  };
+  const [staleValue, setStaleValue] = useState(text);
 
   const isAnimating = text !== staleValue;
-  const reverse = isAnimating && staleValue.localeCompare(text, undefined, { numeric: true }) > 0;
+  const reverse = isAnimating && numericCompare(staleValue, text);
+
+  textRef.current = text;
 
   return (
     <Container {...props}>
@@ -89,7 +86,7 @@ export const TextFlip = ({
           duration={duration}
           reverse={reverse}
           isExiting
-          onAnimationEnd={handleAnimationEnd}
+          onAnimationEnd={() => setStaleValue(textRef.current)}
         >
           {staleValue}
         </Text>
@@ -101,3 +98,11 @@ export const TextFlip = ({
     </Container>
   );
 };
+
+function numericCompare(a: string, b: string): boolean {
+  const na = Number(a);
+  const nb = Number(b);
+  return Number.isNaN(na) || Number.isNaN(nb)
+    ? a.localeCompare(b, undefined, { numeric: true }) > 0
+    : na > nb;
+}

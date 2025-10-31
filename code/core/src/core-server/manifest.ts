@@ -607,7 +607,9 @@ function note(title: string, bodyHTML: string, kind: 'warn' | 'err') {
 function renderComponentCard(key: string, c: ComponentManifest, id: string) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
-  const errorExamples = (c.examples ?? []).filter((ex) => !!ex?.error);
+  const allExamples = c.examples ?? [];
+  const errorExamples = allExamples.filter((ex) => !!ex?.error);
+  const okExamples = allExamples.filter((ex) => !ex?.error);
 
   const slug = `c-${id}-${(c.id || key)
     .toLowerCase()
@@ -623,9 +625,9 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
     : '';
 
   const examplesBadge =
-    a.exampleErrors > 0
-      ? `<label for="${slug}-ex" class="badge err as-toggle">${a.exampleErrors}/${a.totalExamples} example errors</label>`
-      : `<span class="badge ok">${a.totalExamples} examples ok</span>`;
+    a.totalExamples > 0
+      ? `<label for="${slug}-ex" class="badge ${a.exampleErrors > 0 ? 'err' : 'ok'} as-toggle">${a.exampleErrors > 0 ? `${a.exampleErrors}/${a.totalExamples} example errors` : `${a.totalExamples} examples`}</label>`
+      : '';
 
   const tags =
     c.jsDocTags && typeof c.jsDocTags === 'object'
@@ -665,7 +667,7 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
   ${a.hasComponentError ? `<input id="${slug}-err" class="tg tg-err" type="checkbox" hidden />` : ''}
   ${a.hasWarns ? `<input id="${slug}-warn" class="tg tg-warn" type="checkbox" hidden />` : ''}
-  ${a.exampleErrors > 0 ? `<input id="${slug}-ex" class="tg tg-ex" type="checkbox" hidden />` : ''}
+  ${a.totalExamples > 0 ? `<input id="${slug}-ex" class="tg tg-ex" type="checkbox" hidden />` : ''}
 
   <div class="panels">
     ${
@@ -685,7 +687,7 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
         : ''
     }
     ${
-      a.exampleErrors > 0
+      a.totalExamples > 0
         ? `
         <div class="panel panel-ex">
           ${errorExamples
@@ -694,11 +696,24 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
             <div class="ex err">
               <div class="row">
                 <span class="status-dot dot-err"></span>
-                <span class="ex-name">${esc(ex?.name ?? `Example ${j + 1}`)}</span>
+                <span class="ex-name">${esc(ex.name)}</span>
                 <span class="badge err">example error</span>
               </div>
               ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
               ${ex?.error?.message ? `<pre><code>${esc(ex.error.message)}</code></pre>` : ''}
+            </div>`
+            )
+            .join('')}
+          ${okExamples
+            .map(
+              (ex, k) => `
+            <div class="ex">
+              <div class="row">
+                <span class="status-dot dot-ok"></span>
+                <span class="ex-name">${esc(ex.name)}</span>
+                <span class="badge ok">example ok</span>
+              </div>
+              ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
             </div>`
             )
             .join('')}

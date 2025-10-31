@@ -334,6 +334,28 @@ test('Side-effect-only import is ignored', () => {
 
 // New tests for packageName behavior
 
+test('Converts default relative import to named when packageName provided', () => {
+  const code = dedent`
+    import Header from './Header';
+
+    const meta = {};
+    export default meta;
+    export const S = <Header/>;
+  `;
+  expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        "Header",
+      ],
+      "imports": [
+        "import { Header } from "my-package";",
+      ],
+    }
+    `
+  );
+});
+
 test('Converts relative import to provided packageName', () => {
   const code = dedent`
     import { Button } from './components/Button';

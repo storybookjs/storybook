@@ -45,6 +45,17 @@ export function getComponentImports(
   // Build final imports by filtering specifiers to only those used by components
   const neededLocals = new Set(components.map((c) => baseIdentifier(c)));
 
+  // Build a map of namespace -> first-level members used (e.g., UI -> Button)
+  const namespaceMembers = new Map<string, Set<string>>();
+  components.forEach((c) => {
+    const [ns, member] = c.split('.');
+    if (ns && member) {
+      const set = namespaceMembers.get(ns) ?? new Set<string>();
+      set.add(member);
+      namespaceMembers.set(ns, set);
+    }
+  });
+
   type Bucket = {
     source: t.StringLiteral;
     defaults: t.Identifier[];
@@ -91,8 +102,8 @@ export function getComponentImports(
       return;
     }
 
-    const nextSource =
-      packageName && decl.source.value.startsWith('.') ? t.stringLiteral(packageName) : decl.source;
+    const isRelToPkg = Boolean(packageName && decl.source.value.startsWith('.'));
+    const nextSource = isRelToPkg ? t.stringLiteral(packageName!) : decl.source;
 
     const bucket = getBucket(nextSource as t.StringLiteral);
 
@@ -107,17 +118,42 @@ export function getComponentImports(
       }
 
       if (t.isImportDefaultSpecifier(s)) {
-        // de-duplicate by local name
-
-        // de-duplicate by local name
-        if (!bucket.defaults.find((d) => d.name === s.local!.name)) {
-          bucket.defaults.push(s.local);
+        if (isRelToPkg) {
+          // Convert default to named when rewriting relative -> package
+          const id = s.local;
+          const exists = bucket.named.find(
+            (n) => n.local.name === id.name && (n.imported as t.Identifier).name === id.name
+          );
+          if (!exists) {
+            bucket.named.push(t.importSpecifier(id, id));
+          }
+        } else {
+          // de-duplicate by local name
+          if (!bucket.defaults.find((d) => d.name === s.local!.name)) {
+            bucket.defaults.push(s.local);
+          }
         }
         return;
       }
       if (t.isImportNamespaceSpecifier(s)) {
-        if (!bucket.namespaces.find((n) => n.name === s.local!.name)) {
-          bucket.namespaces.push(s.local);
+        if (isRelToPkg) {
+          // Convert namespace to named members that are actually used: UI.Button -> { Button }
+          const members = namespaceMembers.get(s.local.name);
+          if (members && members.size > 0) {
+            members.forEach((m) => {
+              const imp = t.identifier(m);
+              const exists = bucket.named.find(
+                (n) => n.local.name === m && (n.imported as t.Identifier).name === m
+              );
+              if (!exists) {
+                bucket.named.push(t.importSpecifier(imp, imp));
+              }
+            });
+          }
+        } else {
+          if (!bucket.namespaces.find((n) => n.name === s.local!.name)) {
+            bucket.namespaces.push(s.local);
+          }
         }
         return;
       }
@@ -140,8 +176,6 @@ export function getComponentImports(
     .sort((a, b) => a.order - b.order)
     .forEach((bucket) => {
       const { source, defaults, namespaces, named } = bucket;
-
-      // Nothing collected — skip
 
       // Nothing collected — skip
       if (defaults.length === 0 && namespaces.length === 0 && named.length === 0) {

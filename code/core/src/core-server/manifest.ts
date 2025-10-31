@@ -517,13 +517,21 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       .card > .tg-err:checked ~ .panels .panel-err {
           display: grid;
       }
-
+      
       .card > .tg-warn:checked ~ .panels .panel-warn {
           display: grid;
       }
-
+      
       .card > .tg-stories:checked ~ .panels .panel-stories {
           display: grid;
+      }
+
+      /* Add vertical spacing around panels only when any panel is visible */
+      .card > .tg-err:checked ~ .panels,
+      .card > .tg-warn:checked ~ .panels,
+      .card > .tg-stories:checked ~ .panels,
+      .card > .tg-props:checked ~ .panels {
+          margin: 10px 0;
       }
 
       /* Optional: a subtle 1px ring on the active badge, using :has() if available */
@@ -535,6 +543,25 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
               box-shadow: 0 0 0 1px currentColor;
               border-color: currentColor;
           }
+      }
+
+      /* Wrap long lines in code blocks at ~120 characters */
+      pre, code {
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+      pre {
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          overflow-x: auto; /* fallback for extremely long tokens */
+          margin: 8px 0 0;
+      }
+      pre > code {
+          display: block;
+          white-space: inherit;
+          overflow-wrap: inherit;
+          word-break: inherit;
+          inline-size: min(100%, 120ch);
       }
   </style>
 </head>
@@ -752,9 +779,22 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
             </div>`
             )
             .join('')}
+          
+          
+          ${
+            c.import
+              ? `<div class="note ok">
+                <div class="row">
+                  <span class="ex-name">Imports</span>
+                </div>
+                <pre><code>${c.import}</code></pre>
+              </div>`
+              : ''
+          }
+          
           ${okStories
             .map(
-              (ex, k) => `
+              (ex) => `
             <div class="note ok">
               <div class="row">
                 <span class="ex-name">${esc(ex.name)}</span>

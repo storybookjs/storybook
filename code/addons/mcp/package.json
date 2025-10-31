@@ -51,7 +51,7 @@
 		"vitest": "catalog:"
 	},
 	"peerDependencies": {
-		"storybook": "^9.1.16 || ^10.0.0"
+		"storybook": "^9.1.16 || ^10.0.0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0"
 	},
 	"publishConfig": {
 		"access": "public"

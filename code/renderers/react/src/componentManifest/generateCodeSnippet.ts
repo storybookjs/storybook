@@ -139,7 +139,9 @@ export function getCodeSnippet(
     .map((p) => p.get('value'))
     .find((v) => v.isObjectExpression());
   const storyArgs = argsRecordFromObjectPath(storyArgsPath);
-  const merged: Record<string, t.Node> = { ...metaArgs, ...storyArgs };
+  const storyAssignedArgsPath = storyArgsAssignmentPath(csf._file.path, storyName);
+  const storyAssignedArgs = argsRecordFromObjectPath(storyAssignedArgsPath);
+  const merged: Record<string, t.Node> = { ...metaArgs, ...storyArgs, ...storyAssignedArgs };
 
   // For no-function fallback
   const entries = Object.entries(merged).filter(([k]) => k !== 'children');
@@ -250,6 +252,32 @@ const argsRecordFromObjectPath = (objPath?: NodePath<t.ObjectExpression> | null)
           .filter((e) => Boolean(e[0]))
       )
     : {};
+
+/** Find `StoryName.args = { ... }` assignment and return the right-hand ObjectExpression if present. */
+function storyArgsAssignmentPath(
+  program: NodePath<t.Program>,
+  storyName: string
+): NodePath<t.ObjectExpression> | null {
+  let found: NodePath<t.ObjectExpression> | null = null;
+  program.traverse({
+    AssignmentExpression(p) {
+      const left = p.get('left');
+      const right = p.get('right');
+      if (left.isMemberExpression()) {
+        const obj = left.get('object');
+        const prop = left.get('property');
+        const isStoryIdent = obj.isIdentifier() && obj.node.name === storyName;
+        const isArgsProp =
+          (prop.isIdentifier() && prop.node.name === 'args' && !left.node.computed) ||
+          (t.isStringLiteral(prop.node) && left.node.computed && prop.node.value === 'args');
+        if (isStoryIdent && isArgsProp && right.isObjectExpression()) {
+          found = right as NodePath<t.ObjectExpression>;
+        }
+      }
+    },
+  });
+  return found;
+}
 
 const argsRecordFromObjectNode = (obj?: t.ObjectExpression | null) =>
   obj

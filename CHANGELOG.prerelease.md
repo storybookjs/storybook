@@ -1,3 +1,7 @@
+## 10.1.0-alpha.3
+
+- React: Add manifests/components.html page - [#32905](https://github.com/storybookjs/storybook/pull/32905), thanks @kasperpeulen!
+
 ## 10.1.0-alpha.2
 
 - A11y: Add aria-selected attribute to tab buttons - [#32656](https://github.com/storybookjs/storybook/pull/32656), thanks @Nischit-Ekbote!

@@ -1,1 +1,1 @@
-{"version":"10.1.0-alpha.2","info":{"plain":"- Core: 10.1 features WIP - [#32810](https://github.com/storybookjs/storybook/pull/32810), thanks @JReinhold!"}}
+{"version":"10.1.0-alpha.3","info":{"plain":"- React: Add manifests/components.html page - [#32905](https://github.com/storybookjs/storybook/pull/32905), thanks @kasperpeulen!"}}

@@ -72,15 +72,15 @@ describe('getComponentDocumentationTool', () => {
 			      "text": "<component>
 			<id>button</id>
 			<name>Button</name>
-			<example>
-			<example_name>Primary</example_name>
-			<example_description>
+			<story>
+			<story_name>Primary</story_name>
+			<story_description>
 			The primary button variant.
-			</example_description>
-			<example_code>
+			</story_description>
+			<story_code>
 			const Primary = () => <Button variant="primary">Click Me</Button>
-			</example_code>
-			</example>
+			</story_code>
+			</story>
 			</component>",
 			      "type": "text",
 			    },
@@ -111,15 +111,15 @@ describe('getComponentDocumentationTool', () => {
 			      "text": "<component>
 			<id>button</id>
 			<name>Button</name>
-			<example>
-			<example_name>Primary</example_name>
-			<example_description>
+			<story>
+			<story_name>Primary</story_name>
+			<story_description>
 			The primary button variant.
-			</example_description>
-			<example_code>
+			</story_description>
+			<story_code>
 			const Primary = () => <Button variant="primary">Click Me</Button>
-			</example_code>
-			</example>
+			</story_code>
+			</story>
 			</component>",
 			      "type": "text",
 			    },
@@ -130,20 +130,20 @@ describe('getComponentDocumentationTool', () => {
 			<description>
 			A container component for grouping related content.
 			</description>
-			<example>
-			<example_name>Basic</example_name>
-			<example_description>
+			<story>
+			<story_name>Basic</story_name>
+			<story_description>
 			A basic card with content.
-			</example_description>
-			<example_code>
+			</story_description>
+			<story_code>
 			const Basic = () => (
 			  <Card>
 			    <h3>Title</h3>
 			    <p>Content</p>
 			  </Card>
 			)
-			</example_code>
-			</example>
+			</story_code>
+			</story>
 			</component>",
 			      "type": "text",
 			    },
@@ -154,15 +154,15 @@ describe('getComponentDocumentationTool', () => {
 			<description>
 			A text input component with validation support.
 			</description>
-			<example>
-			<example_name>Basic</example_name>
-			<example_description>
+			<story>
+			<story_name>Basic</story_name>
+			<story_description>
 			A basic text input.
-			</example_description>
-			<example_code>
+			</story_description>
+			<story_code>
 			const Basic = () => <Input label="Name" placeholder="Enter name" />
-			</example_code>
-			</example>
+			</story_code>
+			</story>
 			</component>",
 			      "type": "text",
 			    },
@@ -220,15 +220,15 @@ describe('getComponentDocumentationTool', () => {
 			      "text": "<component>
 			<id>button</id>
 			<name>Button</name>
-			<example>
-			<example_name>Primary</example_name>
-			<example_description>
+			<story>
+			<story_name>Primary</story_name>
+			<story_description>
 			The primary button variant.
-			</example_description>
-			<example_code>
+			</story_description>
+			<story_code>
 			const Primary = () => <Button variant="primary">Click Me</Button>
-			</example_code>
-			</example>
+			</story_code>
+			</story>
 			</component>",
 			      "type": "text",
 			    },
@@ -239,20 +239,20 @@ describe('getComponentDocumentationTool', () => {
 			<description>
 			A container component for grouping related content.
 			</description>
-			<example>
-			<example_name>Basic</example_name>
-			<example_description>
+			<story>
+			<story_name>Basic</story_name>
+			<story_description>
 			A basic card with content.
-			</example_description>
-			<example_code>
+			</story_description>
+			<story_code>
 			const Basic = () => (
 			  <Card>
 			    <h3>Title</h3>
 			    <p>Content</p>
 			  </Card>
 			)
-			</example_code>
-			</example>
+			</story_code>
+			</story>
 			</component>",
 			      "type": "text",
 			    },

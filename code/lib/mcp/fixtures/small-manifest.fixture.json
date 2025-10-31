@@ -6,7 +6,7 @@
 			"path": "src/components/Button.tsx",
 			"name": "Button",
 			"summary": "A simple button component",
-			"examples": [
+			"stories": [
 				{
 					"name": "Primary",
 					"description": "The primary button variant.",
@@ -19,7 +19,7 @@
 			"path": "src/components/Card.tsx",
 			"name": "Card",
 			"description": "A container component for grouping related content.",
-			"examples": [
+			"stories": [
 				{
 					"name": "Basic",
 					"description": "A basic card with content.",
@@ -32,7 +32,7 @@
 			"path": "src/components/Input.tsx",
 			"name": "Input",
 			"description": "A text input component with validation support.",
-			"examples": [
+			"stories": [
 				{
 					"name": "Basic",
 					"description": "A basic text input.",

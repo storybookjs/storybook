@@ -13,9 +13,9 @@ The Button component is a fundamental building block for user interactions. It c
 
 Buttons should be used for actions that affect the current page or trigger operations. For navigation, consider using a Link component instead.
 </description>
-<example>
-<example_name>Primary</example_name>
-<example_description>
+<story>
+<story_name>Primary</story_name>
+<story_description>
 The primary button variant is used for the main call-to-action on a page. It has the highest visual prominence and should be used sparingly to guide users toward the most important action.
 
 ## Best Practices
@@ -23,34 +23,34 @@ The primary button variant is used for the main call-to-action on a page. It has
 - Use only one primary button per section
 - Keep button text concise and action-oriented
 - Ensure sufficient contrast for accessibility
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Button } from '@storybook/design-system';
 
 const Primary = () => <Button variant="primary">Click Me</Button>
-</example_code>
-</example>
-<example>
-<example_name>Secondary</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>Secondary</story_name>
+<story_description>
 The secondary button variant is used for secondary actions that are still important but not the primary focus of the page.
 
 Secondary buttons have less visual weight than primary buttons and can be used multiple times on a page.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Button } from '@storybook/design-system';
 
 const Secondary = () => <Button variant="secondary">Cancel</Button>
-</example_code>
-</example>
-<example>
-<example_name>With Sizes</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>With Sizes</story_name>
+<story_description>
 Buttons are available in three sizes: small, medium (default), and large.
 
 Choose the appropriate size based on the context and hierarchy of actions. Larger buttons are more prominent and easier to tap on mobile devices.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Button } from '@storybook/design-system';
 
 const WithSizes = () => (
@@ -60,34 +60,34 @@ const WithSizes = () => (
     <Button size="large">Large</Button>
   </>
 )
-</example_code>
-</example>
-<example>
-<example_name>Loading</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>Loading</story_name>
+<story_description>
 The loading state provides visual feedback when an async operation is in progress.
 
 When loading is true, the button displays a spinner and is automatically disabled to prevent multiple submissions. The button text remains visible to maintain layout stability.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Button } from '@storybook/design-system';
 
 const Loading = () => <Button loading onClick={() => console.log('clicked')}>Submit</Button>
-</example_code>
-</example>
-<example>
-<example_name>Danger</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>Danger</story_name>
+<story_description>
 The danger variant is used for destructive actions that cannot be easily undone, such as deleting data or canceling subscriptions.
 
 Use this variant to draw attention to the serious nature of the action. Consider adding a confirmation dialog for critical operations.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Button } from '@storybook/design-system';
 
 const Danger = () => <Button variant="danger" onClick={() => confirm('Are you sure?')}>Delete Account</Button>
-</example_code>
-</example>
+</story_code>
+</story>
 <props>
 <prop>
 <prop_name>variant</prop_name>
@@ -170,14 +170,14 @@ The Card component provides a consistent way to present information in a contain
 - Use elevation to indicate interactive vs static cards
 - Keep content hierarchy clear with proper use of typography
 </description>
-<example>
-<example_name>Basic</example_name>
-<example_description>
+<story>
+<story_name>Basic</story_name>
+<story_description>
 A basic card with just content.
 
 The default elevated variant provides subtle depth through shadow, making the card appear to float above the page. This is ideal for creating visual hierarchy and grouping related information.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Card } from '@storybook/design-system';
 
 const Basic = () => (
@@ -186,16 +186,16 @@ const Basic = () => (
     <p>This is some card content that provides information to the user.</p>
   </Card>
 )
-</example_code>
-</example>
-<example>
-<example_name>With Header And Footer</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>With Header And Footer</story_name>
+<story_description>
 A card with distinct header and footer sections.
 
 Headers typically contain titles, subtitles, or avatars. Footers often contain actions like buttons or metadata like timestamps. The header and footer are visually separated from the main content area.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Card } from '@storybook/design-system';
 
 const WithHeaderAndFooter = () => (
@@ -206,11 +206,11 @@ const WithHeaderAndFooter = () => (
     <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
   </Card>
 )
-</example_code>
-</example>
-<example>
-<example_name>Clickable</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>Clickable</story_name>
+<story_description>
 An interactive card that responds to clicks.
 
 Clickable cards add hover effects and cursor changes to indicate interactivity. This pattern is useful for navigation cards, product cards, or any scenario where the entire card acts as a single interactive element.
@@ -218,8 +218,8 @@ Clickable cards add hover effects and cursor changes to indicate interactivity. 
 ## Accessibility
 
 Clickable cards are rendered as buttons with proper keyboard support and ARIA attributes.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Card } from '@storybook/design-system';
 
 const Clickable = () => (
@@ -228,11 +228,11 @@ const Clickable = () => (
     <p>Click anywhere on this card to view details.</p>
   </Card>
 )
-</example_code>
-</example>
-<example>
-<example_name>Variants</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>Variants</story_name>
+<story_description>
 Different visual variants of the card component.
 
 - **Elevated**: Default variant with shadow for depth
@@ -240,8 +240,8 @@ Different visual variants of the card component.
 - **Flat**: No border or shadow, minimal visual separation
 
 Choose variants based on your design system and the level of emphasis needed.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Card } from '@storybook/design-system';
 
 const Variants = () => (
@@ -257,16 +257,16 @@ const Variants = () => (
     </Card>
   </>
 )
-</example_code>
-</example>
-<example>
-<example_name>User Profile</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>User Profile</story_name>
+<story_description>
 A real-world example of a user profile card.
 
 This example demonstrates how to compose the Card component with other design system components to create a complete, functional UI element. It includes an avatar, user information, stats, and action buttons.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Card, Avatar, Button } from '@storybook/design-system';
 
 const UserProfile = () => (
@@ -294,8 +294,8 @@ const UserProfile = () => (
     </div>
   </Card>
 )
-</example_code>
-</example>
+</story_code>
+</story>
 <props>
 <prop>
 <prop_name>variant</prop_name>
@@ -373,53 +373,53 @@ The Input component is a foundational form element that wraps the native HTML in
 
 The Input component automatically manages ARIA attributes for labels, descriptions, and error messages to ensure screen reader compatibility.
 </description>
-<example>
-<example_name>Basic</example_name>
-<example_description>
+<story>
+<story_name>Basic</story_name>
+<story_description>
 A basic text input with a label.
 
 This is the most common use case for the Input component. Always include a label for accessibility, even if it's visually hidden in your design.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Input } from '@storybook/design-system';
 
 const Basic = () => <Input label="Full Name" placeholder="Enter your name" />
-</example_code>
-</example>
-<example>
-<example_name>With Error</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>With Error</story_name>
+<story_description>
 An input displaying an error state with an error message.
 
 Error messages should be clear, concise, and provide actionable guidance to help users fix the issue. The input border and message text are styled in red to indicate the error state.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Input } from '@storybook/design-system';
 
 const WithError = () => <Input label="Email" type="email" value="invalid-email" error="Please enter a valid email address" />
-</example_code>
-</example>
-<example>
-<example_name>With Helper Text</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>With Helper Text</story_name>
+<story_description>
 An input with helper text providing additional context or instructions.
 
 Helper text appears below the input and provides guidance without being an error. Use it to clarify format expectations, character limits, or provide helpful hints.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Input } from '@storybook/design-system';
 
 const WithHelperText = () => <Input label="Password" type="password" helperText="Must be at least 8 characters with one uppercase letter and one number" />
-</example_code>
-</example>
-<example>
-<example_name>Types</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>Types</story_name>
+<story_description>
 Different input types for various data formats.
 
 Using the correct input type improves the user experience by showing appropriate mobile keyboards and enabling browser validation features.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Input } from '@storybook/design-system';
 
 const Types = () => (
@@ -430,21 +430,21 @@ const Types = () => (
     <Input label="Age" type="number" placeholder="18" />
   </>
 )
-</example_code>
-</example>
-<example>
-<example_name>Disabled</example_name>
-<example_description>
+</story_code>
+</story>
+<story>
+<story_name>Disabled</story_name>
+<story_description>
 A disabled input that cannot be interacted with.
 
 Disabled inputs are useful for displaying non-editable data in forms or for inputs that become available only after certain conditions are met.
-</example_description>
-<example_code>
+</story_description>
+<story_code>
 import { Input } from '@storybook/design-system';
 
 const Disabled = () => <Input label="Username" value="john_doe" disabled />
-</example_code>
-</example>
+</story_code>
+</story>
 <props>
 <prop>
 <prop_name>type</prop_name>

@@ -102,14 +102,14 @@ describe('formatComponentManifest', () => {
 		});
 	});
 
-	describe('examples section', () => {
-		it('should format a single example', () => {
+	describe('stories section', () => {
+		it('should format a single story', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
 				path: 'src/components/Button.tsx',
 				import: 'import { Button } from "@/components";',
-				examples: [
+				stories: [
 					{
 						name: 'Primary',
 						description: 'A primary button variant',
@@ -124,28 +124,28 @@ describe('formatComponentManifest', () => {
 				"<component>
 				<id>button</id>
 				<name>Button</name>
-				<example>
-				<example_name>Primary</example_name>
-				<example_description>
+				<story>
+				<story_name>Primary</story_name>
+				<story_description>
 				A primary button variant
-				</example_description>
-				<example_code>
+				</story_description>
+				<story_code>
 				import { Button } from "@/components";
 
 				<Button variant="primary">Click me</Button>
-				</example_code>
-				</example>
+				</story_code>
+				</story>
 				</component>"
 			`);
 		});
 
-		it('should format multiple examples', () => {
+		it('should format multiple stories', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
 				path: 'src/components/Button.tsx',
 				import: 'import { Button } from "@/components";',
-				examples: [
+				stories: [
 					{
 						name: 'Primary',
 						snippet: '<Button variant="primary">Primary</Button>',
@@ -163,32 +163,32 @@ describe('formatComponentManifest', () => {
 				"<component>
 				<id>button</id>
 				<name>Button</name>
-				<example>
-				<example_name>Primary</example_name>
-				<example_code>
+				<story>
+				<story_name>Primary</story_name>
+				<story_code>
 				import { Button } from "@/components";
 
 				<Button variant="primary">Primary</Button>
-				</example_code>
-				</example>
-				<example>
-				<example_name>Secondary</example_name>
-				<example_code>
+				</story_code>
+				</story>
+				<story>
+				<story_name>Secondary</story_name>
+				<story_code>
 				import { Button } from "@/components";
 
 				<Button variant="secondary">Secondary</Button>
-				</example_code>
-				</example>
+				</story_code>
+				</story>
 				</component>"
 			`);
 		});
 
-		it('should format PascalCase example names correctly', () => {
+		it('should format PascalCase story names correctly', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
 				path: 'src/components/Button.tsx',
-				examples: [
+				stories: [
 					{
 						name: 'WithIcon',
 						snippet: '<Button icon={<Icon />}>Click me</Button>',
@@ -206,29 +206,29 @@ describe('formatComponentManifest', () => {
 				"<component>
 				<id>button</id>
 				<name>Button</name>
-				<example>
-				<example_name>With Icon</example_name>
-				<example_code>
+				<story>
+				<story_name>With Icon</story_name>
+				<story_code>
 				<Button icon={<Icon />}>Click me</Button>
-				</example_code>
-				</example>
-				<example>
-				<example_name>Disabled State</example_name>
-				<example_code>
+				</story_code>
+				</story>
+				<story>
+				<story_name>Disabled State</story_name>
+				<story_code>
 				<Button disabled>Disabled</Button>
-				</example_code>
-				</example>
+				</story_code>
+				</story>
 				</component>"
 			`);
 		});
 
-		it('should use example import over component import when provided', () => {
+		it('should use story import over component import when provided', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
 				path: 'src/components/Button.tsx',
 				import: 'import { Button } from "@/components";',
-				examples: [
+				stories: [
 					{
 						name: 'WithCustomImport',
 						import: 'import { Button } from "@/custom-path";',
@@ -243,24 +243,24 @@ describe('formatComponentManifest', () => {
 				"<component>
 				<id>button</id>
 				<name>Button</name>
-				<example>
-				<example_name>With Custom Import</example_name>
-				<example_code>
+				<story>
+				<story_name>With Custom Import</story_name>
+				<story_code>
 				import { Button } from "@/custom-path";
 
 				<Button>Custom</Button>
-				</example_code>
-				</example>
+				</story_code>
+				</story>
 				</component>"
 			`);
 		});
 
-		it('should handle examples without description', () => {
+		it('should handle stories without description', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
 				path: 'src/components/Button.tsx',
-				examples: [
+				stories: [
 					{
 						name: 'Simple',
 						snippet: '<Button>Simple</Button>',
@@ -274,22 +274,22 @@ describe('formatComponentManifest', () => {
 				"<component>
 				<id>button</id>
 				<name>Button</name>
-				<example>
-				<example_name>Simple</example_name>
-				<example_code>
+				<story>
+				<story_name>Simple</story_name>
+				<story_code>
 				<Button>Simple</Button>
-				</example_code>
-				</example>
+				</story_code>
+				</story>
 				</component>"
 			`);
 		});
 
-		it('should handle examples without import', () => {
+		it('should handle stories without import', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
 				path: 'src/components/Button.tsx',
-				examples: [
+				stories: [
 					{
 						name: 'NoImport',
 						snippet: '<Button>No Import</Button>',
@@ -303,17 +303,17 @@ describe('formatComponentManifest', () => {
 				"<component>
 				<id>button</id>
 				<name>Button</name>
-				<example>
-				<example_name>No Import</example_name>
-				<example_code>
+				<story>
+				<story_name>No Import</story_name>
+				<story_code>
 				<Button>No Import</Button>
-				</example_code>
-				</example>
+				</story_code>
+				</story>
 				</component>"
 			`);
 		});
 
-		it('should omit examples when no examples are provided', () => {
+		it('should omit stories when no stories are provided', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
@@ -334,12 +334,12 @@ describe('formatComponentManifest', () => {
 			`);
 		});
 
-		it('should omit examples when examples array is empty', () => {
+		it('should omit stories when stories array is empty', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
 				path: 'src/components/Button.tsx',
-				examples: [],
+				stories: [],
 			};
 
 			const result = formatComponentManifest(manifest);
@@ -354,7 +354,7 @@ describe('formatComponentManifest', () => {
 	});
 
 	describe('complete component', () => {
-		it('should format a complete component with description and multiple examples', () => {
+		it('should format a complete component with description and multiple stories', () => {
 			const manifest: ComponentManifest = {
 				id: 'button',
 				name: 'Button',
@@ -363,7 +363,7 @@ describe('formatComponentManifest', () => {
 					'A versatile button component.\n\nSupports multiple variants, sizes, and states.',
 				summary: 'A button for user interactions',
 				import: 'import { Button } from "@storybook/design-system";',
-				examples: [
+				stories: [
 					{
 						name: 'Primary',
 						description: 'The primary button variant.',
@@ -390,23 +390,23 @@ describe('formatComponentManifest', () => {
 
 				Supports multiple variants, sizes, and states.
 				</description>
-				<example>
-				<example_name>Primary</example_name>
-				<example_description>
+				<story>
+				<story_name>Primary</story_name>
+				<story_description>
 				The primary button variant.
-				</example_description>
-				<example_code>
+				</story_description>
+				<story_code>
 				import { Button } from "@storybook/design-system";
 
 				const Primary = () => <Button variant="primary">Click Me</Button>
-				</example_code>
-				</example>
-				<example>
-				<example_name>With Sizes</example_name>
-				<example_description>
+				</story_code>
+				</story>
+				<story>
+				<story_name>With Sizes</story_name>
+				<story_description>
 				Buttons in different sizes.
-				</example_description>
-				<example_code>
+				</story_description>
+				<story_code>
 				import { Button } from "@storybook/design-system";
 
 				const Sizes = () => (
@@ -415,8 +415,8 @@ describe('formatComponentManifest', () => {
 				    <Button size="large">Large</Button>
 				  </>
 				)
-				</example_code>
-				</example>
+				</story_code>
+				</story>
 				</component>"
 			`);
 		});

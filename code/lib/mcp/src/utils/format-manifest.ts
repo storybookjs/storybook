@@ -19,34 +19,34 @@ export function formatComponentManifest(
 			</description>`);
 	}
 
-	// Examples section - only if there are examples
-	if (componentManifest.examples && componentManifest.examples.length > 0) {
-		for (const example of componentManifest.examples) {
-			if (!example.snippet) {
+	// Stories section - only if there are stories
+	if (componentManifest.stories && componentManifest.stories.length > 0) {
+		for (const story of componentManifest.stories) {
+			if (!story.snippet) {
 				continue;
 			}
-			const exampleParts: string[] = [];
+			const storyParts: string[] = [];
 			// Convert PascalCase to Human Readable Case
 			// "WithSizes" -> "With Sizes"
-			exampleParts.push(dedent`<example>
-				<example_name>${example.name.replace(/([A-Z])/g, ' $1').trim()}</example_name>`);
+			storyParts.push(dedent`<story>
+				<story_name>${story.name.replace(/([A-Z])/g, ' $1').trim()}</story_name>`);
 
-			if (example.description) {
-				exampleParts.push(dedent`<example_description>
-					${example.description}
-					</example_description>`);
+			if (story.description) {
+				storyParts.push(dedent`<story_description>
+					${story.description}
+					</story_description>`);
 			}
 
-			exampleParts.push('<example_code>');
-			const importStatement = example.import || componentManifest.import;
+			storyParts.push('<story_code>');
+			const importStatement = story.import || componentManifest.import;
 			if (importStatement) {
-				exampleParts.push(`${importStatement}\n`);
+				storyParts.push(`${importStatement}\n`);
 			}
-			exampleParts.push(dedent`${example.snippet}
-				</example_code>
-				</example>`);
+			storyParts.push(dedent`${story.snippet}
+				</story_code>
+				</story>`);
 
-			parts.push(exampleParts.join('\n'));
+			parts.push(storyParts.join('\n'));
 		}
 	}
 

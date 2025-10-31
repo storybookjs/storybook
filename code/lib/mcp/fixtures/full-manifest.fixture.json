@@ -78,7 +78,7 @@
 					}
 				}
 			},
-			"examples": [
+			"stories": [
 				{
 					"id": "button--primary",
 					"name": "Primary",
@@ -244,7 +244,7 @@
 					}
 				}
 			},
-			"examples": [
+			"stories": [
 				{
 					"id": "card--basic",
 					"name": "Basic",
@@ -429,7 +429,7 @@
 					}
 				}
 			},
-			"examples": [
+			"stories": [
 				{
 					"id": "input--basic",
 					"name": "Basic",

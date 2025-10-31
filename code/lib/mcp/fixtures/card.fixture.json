@@ -74,7 +74,7 @@
 				}
 			}
 		},
-		"examples": [
+		"stories": [
 			{
 				"id": "card--basic",
 				"name": "Basic",

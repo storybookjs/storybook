@@ -50,7 +50,7 @@ const BaseManifest = v.object({
 	),
 });
 
-const Example = v.object({
+const Story = v.object({
 	...BaseManifest.entries,
 	snippet: v.optional(v.string()),
 });
@@ -60,7 +60,7 @@ export const ComponentManifest = v.object({
 	id: v.string(),
 	path: v.string(),
 	summary: v.optional(v.string()),
-	examples: v.optional(v.array(Example)),
+	stories: v.optional(v.array(Story)),
 	// loose schema for react-docgen types, as they are pretty complex
 	reactDocgen: v.optional(v.custom<Documentation>(() => true)),
 });

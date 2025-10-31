@@ -89,7 +89,7 @@
 				}
 			}
 		},
-		"examples": [
+		"stories": [
 			{
 				"id": "input--basic",
 				"name": "Basic",

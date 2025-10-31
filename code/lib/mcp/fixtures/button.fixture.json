@@ -76,7 +76,7 @@
 				}
 			}
 		},
-		"examples": [
+		"stories": [
 			{
 				"id": "button--primary",
 				"name": "Primary",

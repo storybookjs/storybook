@@ -310,7 +310,6 @@ export const SearchResults: FC<{
           const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
-              {/* @ts-expect-error (non strict) */}
               <Button key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>

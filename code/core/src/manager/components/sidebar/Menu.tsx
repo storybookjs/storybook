@@ -125,7 +125,6 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
           aria-label="About Storybook"
           highlighted={!!isHighlighted}
           active={false}
-          // @ts-expect-error (non strict)
           onClick={onClick}
           isMobile={true}
         >

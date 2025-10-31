@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
+import type { ButtonHTMLAttributes, ComponentProps } from 'react';
 import React, { forwardRef, useEffect, useState } from 'react';
 
 import { Slot } from '@radix-ui/react-slot';
@@ -11,7 +11,6 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'small' | 'medium';
   padding?: 'small' | 'medium' | 'none';
   variant?: 'outline' | 'solid' | 'ghost';
-  onClick?: (event: SyntheticEvent) => void;
   disabled?: boolean;
   readOnly?: boolean;
   active?: boolean;
@@ -39,7 +38,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const [isAnimating, setIsAnimating] = useState(false);
 
-    const handleClick = (event: SyntheticEvent) => {
+    const handleClick: ButtonProps['onClick'] = (event) => {
       if (onClick) {
         onClick(event);
       }

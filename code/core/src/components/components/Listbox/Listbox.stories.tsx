@@ -35,7 +35,7 @@ export const Default = meta.story({
       <ListboxItem>
         <ListboxAction>
           With an inline button
-          <ListboxButton readOnly padding="none">
+          <ListboxButton as="div" readOnly padding="none">
             <ProgressSpinner percentage={25} running={false} size={16} width={1.5} />
             25%
           </ListboxButton>

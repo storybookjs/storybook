@@ -27,6 +27,25 @@ Storybook for React Native Web is a [framework](../../contribute/framework.mdx) 
 
 ### In a project without Storybook
 
+When you run `storybook init` in your React Native project, Storybook will detect your project and present you with a prompt to choose which type of Storybook you want to install:
+
+**React Native options:**
+
+- **"React Native"**: Storybook on your device/simulator
+  - High-fidelity, runs in your actual React Native application
+  - Limited feature set compared to web version
+  - Best for projects that rely on native modules or device-specific features
+
+- **"React Native Web"**: Storybook on web for docs, test, and sharing
+  - Feature-rich web-based Storybook
+  - Full support for documentation, testing, and accessibility features
+  - Best for projects that want web-based sharing and testing
+
+- **"Both"**: Add both native and web Storybooks
+  - Installs and configures both environments
+  - Allows you to run Storybook for both native and web in the same project
+  - Best for projects that want both native fidelity and web features
+
 Follow the prompts after running this command in your React Native project's root directory:
 
 {/* prettier-ignore-start */}
@@ -116,7 +135,16 @@ So, which option is right for you?
 
 ## Using both React Native and React Native Web
 
-The easiest way to use React Native and React Native Web is to select the "Both" option when installing Storybook. This will install and create configurations for both environments, allowing you to run Storybook for both in the same project.
+The easiest way to use React Native and React Native Web is to select the **"Both"** option when installing Storybook. This will install and create configurations for both environments, allowing you to run Storybook for both in the same project.
+
+When you select "Both", the installation will:
+1. Install and configure React Native Storybook (on-device)
+2. Install and configure React Native Web Storybook (web-based)
+3. Set up both configurations in your project
+
+After installation, you'll see instructions for both environments:
+- React Native Storybook will require additional manual configuration steps (replacing app entry, wrapping metro config)
+- React Native Web Storybook can be started immediately using the `storybook` command
 
 However, you can install them separately if one version is installed. You can add a React Native Web Storybook alongside an existing React Native Storybook by running the install command and selecting "React Native Web" in the setup wizard, and vice versa.
 

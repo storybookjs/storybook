@@ -14,7 +14,7 @@ export const Collapsible = ({
   summary,
   collapsed,
   disabled,
-  state = useCollapsible(collapsed, disabled),
+  state: providedState,
   ...props
 }: {
   children: React.ReactNode | ((state: ReturnType<typeof useCollapsible>) => React.ReactNode);
@@ -22,19 +22,23 @@ export const Collapsible = ({
   collapsed?: boolean;
   disabled?: boolean;
   state?: ReturnType<typeof useCollapsible>;
-} & ComponentProps<typeof CollapsibleContent>) => (
-  <>
-    {typeof summary === 'function' ? summary(state) : summary}
-    <CollapsibleContent
-      {...props}
-      id={state.contentId}
-      collapsed={state.isCollapsed}
-      aria-hidden={state.isCollapsed}
-    >
-      {typeof children === 'function' ? children(state) : children}
-    </CollapsibleContent>
-  </>
-);
+} & ComponentProps<typeof CollapsibleContent>) => {
+  const internalState = useCollapsible(collapsed, disabled);
+  const state = providedState || internalState;
+  return (
+    <>
+      {typeof summary === 'function' ? summary(state) : summary}
+      <CollapsibleContent
+        {...props}
+        id={state.contentId}
+        collapsed={state.isCollapsed}
+        aria-hidden={state.isCollapsed}
+      >
+        {typeof children === 'function' ? children(state) : children}
+      </CollapsibleContent>
+    </>
+  );
+};
 
 export const CollapsibleContent = ({ collapsed, ...props }: ComponentProps<typeof Content>) => (
   <Content collapsed={collapsed} aria-hidden={collapsed} {...props} />

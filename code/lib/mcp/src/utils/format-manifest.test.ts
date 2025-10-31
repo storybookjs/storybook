@@ -5,6 +5,7 @@ import {
 } from './format-manifest';
 import type { ComponentManifest, ComponentManifestMap } from '../types';
 import fullManifestFixture from '../../fixtures/full-manifest.fixture.json' with { type: 'json' };
+import withErrorsFixture from '../../fixtures/with-errors.fixture.json' with { type: 'json' };
 
 describe('formatComponentManifest', () => {
 	it('formats all full fixtures', () => {
@@ -869,6 +870,177 @@ describe('formatComponentManifestMapToList', () => {
 				<component>
 				<id>modal</id>
 				<name>Modal</name>
+				</component>
+				</components>"
+			`);
+		});
+	});
+
+	describe('with-errors fixture', () => {
+		it('should format success component with mixed stories (only successful ones)', () => {
+			const component =
+				withErrorsFixture.components['success-component-with-mixed-stories'];
+			const result = formatComponentManifest(component);
+			expect(result).toMatchInlineSnapshot(`
+				"<component>
+				<id>success-component-with-mixed-stories</id>
+				<name>SuccessWithMixedStories</name>
+				<description>
+				A component that loaded successfully but has some stories that failed to generate.
+				</description>
+				<story>
+				<story_name>Working</story_name>
+				<story_description>
+				This story generated successfully.
+				</story_description>
+				<story_code>
+				import { SuccessWithMixedStories } from '@storybook/design-system';
+
+				const Working = () => <SuccessWithMixedStories text="Hello" />
+				</story_code>
+				</story>
+				<props>
+				<prop>
+				<prop_name>text</prop_name>
+				<prop_description>
+				The text to display
+				</prop_description>
+				<prop_type>string</prop_type>
+				<prop_required>true</prop_required>
+				</prop>
+				<prop>
+				<prop_name>variant</prop_name>
+				<prop_description>
+				The visual variant
+				</prop_description>
+				<prop_type>"primary" | "secondary"</prop_type>
+				<prop_required>false</prop_required>
+				<prop_default>"primary"</prop_default>
+				</prop>
+				</props>
+				</component>"
+			`);
+		});
+
+		it('should format error component with success stories', () => {
+			const component =
+				withErrorsFixture.components['error-component-with-success-stories'];
+			const result = formatComponentManifest(component);
+			expect(result).toMatchInlineSnapshot(`
+				"<component>
+				<id>error-component-with-success-stories</id>
+				<name>ErrorWithSuccessStories</name>
+				<story>
+				<story_name>Basic</story_name>
+				<story_description>
+				Even though the component parsing failed, this story's code snippet was generated.
+				</story_description>
+				<story_code>
+				const Basic = () => <ErrorWithSuccessStories>Content</ErrorWithSuccessStories>
+				</story_code>
+				</story>
+				<story>
+				<story_name>Advanced</story_name>
+				<story_description>
+				Another successfully generated story despite component-level errors.
+				</story_description>
+				<story_code>
+				const Advanced = () => (
+				  <ErrorWithSuccessStories disabled>
+				    Advanced Content
+				  </ErrorWithSuccessStories>
+				)
+				</story_code>
+				</story>
+				</component>"
+			`);
+		});
+
+		it('should format partial success component (skips failed story)', () => {
+			const component = withErrorsFixture.components['partial-success'];
+			const result = formatComponentManifest(component);
+			expect(result).toMatchInlineSnapshot(`
+				"<component>
+				<id>partial-success</id>
+				<name>PartialSuccess</name>
+				<description>
+				A component where everything worked except one story.
+				</description>
+				<story>
+				<story_name>Default</story_name>
+				<story_description>
+				Default usage of the component.
+				</story_description>
+				<story_code>
+				import { PartialSuccess } from '@storybook/design-system';
+
+				const Default = () => <PartialSuccess title="Hello" />
+				</story_code>
+				</story>
+				<story>
+				<story_name>With Subtitle</story_name>
+				<story_description>
+				Component with both title and subtitle.
+				</story_description>
+				<story_code>
+				import { PartialSuccess } from '@storybook/design-system';
+
+				const WithSubtitle = () => <PartialSuccess title="Hello" subtitle="World" />
+				</story_code>
+				</story>
+				<props>
+				<prop>
+				<prop_name>title</prop_name>
+				<prop_description>
+				The title text
+				</prop_description>
+				<prop_type>string</prop_type>
+				<prop_required>true</prop_required>
+				</prop>
+				<prop>
+				<prop_name>subtitle</prop_name>
+				<prop_description>
+				Optional subtitle
+				</prop_description>
+				<prop_type>string</prop_type>
+				<prop_required>false</prop_required>
+				</prop>
+				</props>
+				</component>"
+			`);
+		});
+
+		it('should format list of components with errors', () => {
+			const result = formatComponentManifestMapToList(
+				withErrorsFixture as ComponentManifestMap,
+			);
+			expect(result).toMatchInlineSnapshot(`
+				"<components>
+				<component>
+				<id>success-component-with-mixed-stories</id>
+				<name>SuccessWithMixedStories</name>
+				<summary>
+				Success component with both working and failing stories
+				</summary>
+				</component>
+				<component>
+				<id>error-component-with-success-stories</id>
+				<name>ErrorWithSuccessStories</name>
+				</component>
+				<component>
+				<id>error-component-with-error-stories</id>
+				<name>ErrorWithErrorStories</name>
+				</component>
+				<component>
+				<id>complete-error-component</id>
+				<name>CompleteError</name>
+				</component>
+				<component>
+				<id>partial-success</id>
+				<name>PartialSuccess</name>
+				<summary>
+				Mostly working component with one failing story
+				</summary>
 				</component>
 				</components>"
 			`);

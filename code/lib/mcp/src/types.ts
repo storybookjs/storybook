@@ -45,6 +45,7 @@ const BaseManifest = v.object({
 	jsDocTags: v.optional(JSDocTag),
 	error: v.optional(
 		v.object({
+			name: v.string(),
 			message: v.string(),
 		}),
 	),

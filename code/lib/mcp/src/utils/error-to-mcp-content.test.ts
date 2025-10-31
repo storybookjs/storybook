@@ -3,10 +3,7 @@ import { errorToMCPContent, ManifestGetError } from './get-manifest.ts';
 
 describe('errorToMCPContent', () => {
 	it('should convert ManifestGetError to MCP error content', () => {
-		const error = new ManifestGetError(
-			'Failed to get',
-			'https://example.com',
-		);
+		const error = new ManifestGetError('Failed to get', 'https://example.com');
 
 		const result = errorToMCPContent(error);
 

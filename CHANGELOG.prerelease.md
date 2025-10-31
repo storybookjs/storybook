@@ -1,3 +1,7 @@
+## 10.1.0-alpha.2
+
+- Core: 10.1 features WIP - [#32810](https://github.com/storybookjs/storybook/pull/32810), thanks @JReinhold!
+
 ## 10.1.0-alpha.1
 
 - CLI: Fix glob string formatting in csf-factories codemod - [#32880](https://github.com/storybookjs/storybook/pull/32880), thanks @yannbf!

@@ -87,6 +87,10 @@ export const RootNode = styled.div(({ theme }) => ({
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   color: theme.textMutedColor,
+
+  '&:first-of-type': {
+    marginTop: 0,
+  },
 }));
 
 const Wrapper = styled.div({

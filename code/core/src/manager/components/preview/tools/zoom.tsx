@@ -43,15 +43,12 @@ const Zoom = memo<{
 }>(function Zoom({ zoomIn, zoomOut, reset }) {
   return (
     <>
-      {/* @ts-expect-error (non strict) */}
       <IconButton key="zoomin" onClick={zoomIn} title="Zoom in">
         <ZoomIcon />
       </IconButton>
-      {/* @ts-expect-error (non strict) */}
       <IconButton key="zoomout" onClick={zoomOut} title="Zoom out">
         <ZoomOutIcon />
       </IconButton>
-      {/* @ts-expect-error (non strict) */}
       <IconButton key="zoomreset" onClick={reset} title="Reset zoom">
         <ZoomResetIcon />
       </IconButton>

@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { recast } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { extractDescription } from 'storybook/internal/csf-tools';
-import { type ComponentManifestGenerator, type PresetPropertyFn } from 'storybook/internal/types';
+import { type ComponentManifestGenerator } from 'storybook/internal/types';
 import { type ComponentManifest } from 'storybook/internal/types';
 
 import path from 'pathe';
@@ -17,9 +17,7 @@ interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
 }
 
-export const componentManifestGenerator: PresetPropertyFn<
-  'experimental_componentManifestGenerator'
-> = async () => {
+export const componentManifestGenerator = async () => {
   return (async (storyIndexGenerator) => {
     const index = await storyIndexGenerator.getIndex();
 
@@ -40,7 +38,7 @@ export const componentManifestGenerator: PresetPropertyFn<
         const id = entry.id.split('--')[0];
         const importPath = entry.importPath;
 
-        const examples = Object.keys(csf._stories)
+        const stories = Object.keys(csf._stories)
           .map((storyName) => {
             try {
               return {
@@ -51,10 +49,7 @@ export const componentManifestGenerator: PresetPropertyFn<
               invariant(e instanceof Error);
               return {
                 name: storyName,
-                error: {
-                  name: e.name,
-                  message: e.message,
-                },
+                error: { name: e.name, message: e.message },
               };
             }
           })
@@ -64,7 +59,7 @@ export const componentManifestGenerator: PresetPropertyFn<
           id,
           name,
           path: importPath,
-          examples,
+          stories,
           jsDocTags: {},
         } satisfies Partial<ComponentManifest>;
 
@@ -83,7 +78,7 @@ export const componentManifestGenerator: PresetPropertyFn<
           return {
             ...base,
             name,
-            examples,
+            stories,
             error: {
               name: error.name,
               message:
@@ -101,7 +96,7 @@ export const componentManifestGenerator: PresetPropertyFn<
           return {
             ...base,
             name,
-            examples,
+            stories,
             error: {
               name: 'Component file could not be read',
               message: `Could not read the component file located at "${entry.componentPath}".\nPrefer relative imports.`,
@@ -141,7 +136,7 @@ export const componentManifestGenerator: PresetPropertyFn<
           import: tags.import?.[0],
           reactDocgen: docgen,
           jsDocTags: tags,
-          examples,
+          stories,
           error,
         };
       })

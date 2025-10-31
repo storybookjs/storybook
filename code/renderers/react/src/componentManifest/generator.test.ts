@@ -7,6 +7,20 @@ import { dedent } from 'ts-dedent';
 
 import { componentManifestGenerator } from './generator';
 
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  return {
+    ...(await importOriginal()),
+    JsPackageManagerFactory: {
+      getPackageManager: () => ({
+        primaryPackageJson: {
+          packageJson: {
+            name: 'some-package',
+          },
+        },
+      }),
+    },
+  };
+});
 vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
 vi.mock('node:fs', async () => (await import('memfs')).fs);
 vi.mock('tsconfig-paths', () => ({ loadConfig: () => ({ resultType: null!, message: null! }) }));
@@ -205,8 +219,8 @@ beforeEach(() => {
 });
 
 test('componentManifestGenerator generates correct id, name, description and examples ', async () => {
-  const generator = await componentManifestGenerator();
-  const manifest = await generator({
+  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
+  const manifest = await generator?.({
     getIndex: async () => indexJson,
   } as unknown as StoryIndexGenerator);
 
@@ -217,7 +231,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Primary UI component for user interaction",
           "error": undefined,
           "id": "example-button",
-          "import": undefined,
+          "import": "import { Button } from "some-package";",
           "jsDocTags": {},
           "name": "Button",
           "path": "./src/stories/Button.stories.ts",
@@ -321,7 +335,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Description from meta and very long.",
           "error": undefined,
           "id": "example-header",
-          "import": "import { Header } from '@design-system/components/Header';",
+          "import": "import Header from "some-package";",
           "jsDocTags": {
             "import": [
               "import { Header } from '@design-system/components/Header';",
@@ -441,7 +455,7 @@ async function getManifestForStory(code: string) {
     '/app'
   );
 
-  const generator = await componentManifestGenerator();
+  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
   const indexJson = {
     v: 5,
     entries: {
@@ -459,11 +473,11 @@ async function getManifestForStory(code: string) {
     },
   };
 
-  const manifest = await generator({
+  const manifest = await generator?.({
     getIndex: async () => indexJson,
   } as unknown as StoryIndexGenerator);
 
-  return manifest.components['example-button'];
+  return manifest?.components?.['example-button'];
 }
 
 function withCSF3(body: string) {
@@ -497,7 +511,7 @@ test('fall back to index title when no component name', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": undefined,
+      "import": "import { Button } from "some-package";",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -542,7 +556,7 @@ test('component exported from other file', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": undefined,
+      "import": "import { Button } from "some-package";",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -594,7 +608,7 @@ test('unknown expressions', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": undefined,
+      "import": "import { Button } from "some-package";",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -630,6 +644,185 @@ test('unknown expressions', async () => {
             "name": "SyntaxError",
           },
           "name": "Primary",
+        },
+      ],
+      "summary": undefined,
+    }
+  `);
+});
+
+test('unknown expressions', async () => {
+  const code = dedent`
+import ActionBar from '.'
+import {
+  BoldIcon,
+  CodeIcon,
+  ItalicIcon,
+  SearchIcon,
+  LinkIcon,
+  FileAddedIcon,
+  QuoteIcon,
+  ListUnorderedIcon,
+  ListOrderedIcon,
+  TasklistIcon,
+} from '@primer/octicons-react'
+import type {Meta, StoryObj} from '@storybook/react-vite'
+
+const meta: Meta<typeof ActionBar> = {
+  title: 'Experimental/Components/ActionBar',
+} as Meta<typeof ActionBar>
+
+export default meta
+type Story = StoryObj<typeof ActionBar>
+
+export const Playground: Story = {
+  render: ({'aria-labelledby': _, ...args}) => (
+    <ActionBar {...args} aria-label="Toolbar">
+      <ActionBar.IconButton icon={BoldIcon} aria-label="Bold"></ActionBar.IconButton>
+      <ActionBar.IconButton icon={ItalicIcon} aria-label="Italic"></ActionBar.IconButton>
+      <ActionBar.Divider />
+      <ActionBar.IconButton icon={CodeIcon} aria-label="Code"></ActionBar.IconButton>
+    </ActionBar>
+  ),
+}
+Playground.argTypes = {
+  size: {
+    control: {
+      type: 'radio',
+    },
+    options: ['small', 'medium', 'large'],
+  },
+  flush: {
+    control: {
+      type: 'boolean',
+    },
+  },
+  gap: {
+    control: {type: 'radio'},
+    options: ['none', 'condensed'],
+    description: 'Horizontal gap scale between items',
+    table: {defaultValue: {summary: 'condensed'}},
+  },
+}
+Playground.args = {
+  size: 'medium',
+  flush: false,
+  gap: 'condensed',
+}
+
+export const Default = () => (
+  <ActionBar aria-label="Toolbar">
+    <ActionBar.IconButton icon={BoldIcon} aria-label="Bold"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={ItalicIcon} aria-label="Italic"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={CodeIcon} aria-label="Code"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={LinkIcon} aria-label="Link"></ActionBar.IconButton>
+    <ActionBar.Divider />
+    <ActionBar.IconButton icon={FileAddedIcon} aria-label="File Added"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={SearchIcon} aria-label="Search"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={QuoteIcon} aria-label="Insert Quote"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={ListUnorderedIcon} aria-label="Unordered List"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={ListOrderedIcon} aria-label="Ordered List"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={TasklistIcon} aria-label="Task List"></ActionBar.IconButton>
+  </ActionBar>
+)
+
+const BoldButton = () => <ActionBar.IconButton icon={BoldIcon} aria-label="Bold"></ActionBar.IconButton>
+
+const FormattingButtons = () => (
+  <>
+    <BoldButton />
+    <ActionBar.IconButton icon={ItalicIcon} aria-label="Italic"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={CodeIcon} aria-label="Code"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={LinkIcon} aria-label="Link"></ActionBar.IconButton>
+  </>
+)
+
+const AdvancedFormattingButtons = () => (
+  <>
+    <ActionBar.IconButton icon={FileAddedIcon} aria-label="File Added"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={SearchIcon} aria-label="Search"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={QuoteIcon} aria-label="Insert Quote"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={ListUnorderedIcon} aria-label="Unordered List"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={ListOrderedIcon} aria-label="Ordered List"></ActionBar.IconButton>
+    <ActionBar.IconButton icon={TasklistIcon} aria-label="Task List"></ActionBar.IconButton>
+  </>
+)
+
+export const DeepChildTree = () => (
+  <ActionBar aria-label="Toolbar">
+    <FormattingButtons />
+    <ActionBar.Divider />
+    <AdvancedFormattingButtons />
+  </ActionBar>
+)
+  `;
+  expect(await getManifestForStory(code)).toMatchInlineSnapshot(`
+    {
+      "description": "Primary UI component for user interaction",
+      "error": undefined,
+      "id": "example-button",
+      "import": "import ActionBar from "some-package";",
+      "jsDocTags": {},
+      "name": "Button",
+      "path": "./src/stories/Button.stories.ts",
+      "reactDocgen": {
+        "actualName": "Button",
+        "definedInFile": "/app/src/stories/Button.tsx",
+        "description": "Primary UI component for user interaction",
+        "displayName": "Button",
+        "exportName": "Button",
+        "methods": [],
+        "props": {
+          "primary": {
+            "defaultValue": {
+              "computed": false,
+              "value": "false",
+            },
+            "description": "Description of primary",
+            "required": false,
+            "tsType": {
+              "name": "boolean",
+            },
+          },
+        },
+      },
+      "stories": [
+        {
+          "name": "Playground",
+          "snippet": "const Playground = () => <ActionBar size="medium" flush={false} gap="condensed" aria-label="Toolbar">
+        <ActionBar.IconButton icon={BoldIcon} aria-label="Bold" />
+        <ActionBar.IconButton icon={ItalicIcon} aria-label="Italic" />
+        <ActionBar.Divider />
+        <ActionBar.IconButton icon={CodeIcon} aria-label="Code" />
+    </ActionBar>;",
+        },
+        {
+          "name": "Default",
+          "snippet": "const Default = () => (
+      <ActionBar aria-label="Toolbar">
+        <ActionBar.IconButton icon={BoldIcon} aria-label="Bold"></ActionBar.IconButton>
+        <ActionBar.IconButton icon={ItalicIcon} aria-label="Italic"></ActionBar.IconButton>
+        <ActionBar.IconButton icon={CodeIcon} aria-label="Code"></ActionBar.IconButton>
+        <ActionBar.IconButton icon={LinkIcon} aria-label="Link"></ActionBar.IconButton>
+        <ActionBar.Divider />
+        <ActionBar.IconButton icon={FileAddedIcon} aria-label="File Added"></ActionBar.IconButton>
+        <ActionBar.IconButton icon={SearchIcon} aria-label="Search"></ActionBar.IconButton>
+        <ActionBar.IconButton icon={QuoteIcon} aria-label="Insert Quote"></ActionBar.IconButton>
+        <ActionBar.IconButton icon={ListUnorderedIcon} aria-label="Unordered List"></ActionBar.IconButton>
+        <ActionBar.IconButton icon={ListOrderedIcon} aria-label="Ordered List"></ActionBar.IconButton>
+        <ActionBar.IconButton icon={TasklistIcon} aria-label="Task List"></ActionBar.IconButton>
+      </ActionBar>
+    );",
+        },
+        {
+          "name": "DeepChildTree",
+          "snippet": "const DeepChildTree = () => (
+      <ActionBar aria-label="Toolbar">
+        <FormattingButtons />
+        <ActionBar.Divider />
+        <AdvancedFormattingButtons />
+      </ActionBar>
+    );",
         },
       ],
       "summary": undefined,

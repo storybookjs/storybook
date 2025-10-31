@@ -1,14 +1,16 @@
 import { readFile } from 'node:fs/promises';
 
 import { recast } from 'storybook/internal/babel';
+import { JsPackageManagerFactory } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { extractDescription } from 'storybook/internal/csf-tools';
-import { type ComponentManifestGenerator } from 'storybook/internal/types';
+import { type ComponentManifestGenerator, type PresetPropertyFn } from 'storybook/internal/types';
 import { type ComponentManifest } from 'storybook/internal/types';
 
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
+import { getComponentImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj, getMatchingDocgen, parseWithReactDocgen } from './reactDocgen';
 import { groupBy, invariant } from './utils';
@@ -17,7 +19,12 @@ interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
 }
 
-export const componentManifestGenerator = async () => {
+export const componentManifestGenerator: PresetPropertyFn<
+  'experimental_componentManifestGenerator'
+> = async (config, options) => {
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    configDir: options.configDir,
+  });
   return (async (storyIndexGenerator) => {
     const index = await storyIndexGenerator.getIndex();
 
@@ -30,6 +37,7 @@ export const componentManifestGenerator = async () => {
     const singleEntryPerComponent = Object.values(groupByComponentId).flatMap((group) =>
       group && group?.length > 0 ? [group[0]] : []
     );
+    const packageName = packageManager.primaryPackageJson.packageJson.name;
     const components = await Promise.all(
       singleEntryPerComponent.flatMap(async (entry): Promise<ReactComponentManifest> => {
         const storyFile = await readFile(path.join(process.cwd(), entry.importPath), 'utf-8');
@@ -55,11 +63,16 @@ export const componentManifestGenerator = async () => {
           })
           .filter(Boolean);
 
+        const fallbackImport = packageName ? `import { ${name} } from "${packageName}";` : '';
+        const calculatedImports =
+          getComponentImports(csf, packageName).imports.join('\n').trim() ?? fallbackImport;
+
         const base = {
           id,
           name,
           path: importPath,
           stories,
+          import: calculatedImports,
           jsDocTags: {},
         } satisfies Partial<ComponentManifest>;
 
@@ -133,7 +146,6 @@ export const componentManifestGenerator = async () => {
           name,
           description: manifestDescription?.trim(),
           summary: tags.summary?.[0],
-          import: tags.import?.[0],
           reactDocgen: docgen,
           jsDocTags: tags,
           stories,

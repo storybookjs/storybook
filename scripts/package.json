@@ -8,6 +8,7 @@
     "build-package": "jiti ./build-package.ts",
     "check": "jiti ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
+    "docs:codemod": "jiti ./snippets/codemod.ts",
     "docs:prettier:check": "cd ../docs && prettier --check ./_snippets || echo 'Please run \"docs:prettier:write\" in the \"scripts\" directory to fix the issues'",
     "docs:prettier:write": "cd ../docs && prettier --write ./_snippets",
     "generate-sandboxes": "jiti ./sandbox/generate.ts",
@@ -129,6 +130,7 @@
     "fast-glob": "^3.3.2",
     "github-release-from-changelog": "^2.1.1",
     "glob": "^10.4.5",
+    "globby": "^14.0.1",
     "http-server": "^14.1.1",
     "husky": "^4.3.7",
     "jiti": "^2.4.2",
@@ -185,5 +187,5 @@
     "verdaccio": "^5.31.1",
     "verdaccio-auth-memory": "^10.2.2"
   },
-  "packageManager": "yarn@4.9.1"
+  "packageManager": "yarn@4.10.3"
 }

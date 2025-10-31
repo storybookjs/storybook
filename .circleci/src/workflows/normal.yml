@@ -21,6 +21,9 @@ jobs:
   - unit-tests:
       requires:
         - build
+  - stories-tests:
+      requires:
+        - build
   - script-checks:
       requires:
         - build
@@ -39,11 +42,11 @@ jobs:
       requires:
         - create-sandboxes
   - e2e-production:
-      parallelism: 8
+      parallelism: 6
       requires:
         - create-sandboxes
   - e2e-dev:
-      parallelism: 1
+      parallelism: 8
       requires:
         - create-sandboxes
   - test-runner-production:
@@ -60,6 +63,9 @@ jobs:
   #          requires:
   #            - create-sandboxes
   - e2e-ui:
+      requires:
+        - build
+  - e2e-ui-vitest-3:
       requires:
         - build
   - test-init-features:

@@ -255,22 +255,49 @@ export function containsRequireUsage(content: string): boolean {
   return requireCallRegex.test(content) || requireDotRegex.test(content);
 }
 
-/** Check if the file already has the require banner */
-export const bannerComment =
-  '// end of Storybook 10 migration assistant header, You can delete the above code';
-export function hasRequireBanner(content: string): boolean {
-  return content.includes(bannerComment);
+/** Check if the file content contains a pattern matching the given regex */
+export function containsPatternUsage(content: string, pattern: RegExp): boolean {
+  // Remove strings first, then comments
+  const stripStrings = (s: string) => s.replace(/(['"`])(?:\\.|(?!\1)[\s\S])*?\1/g, '""');
+  const withoutStrings = stripStrings(content);
+  const withoutBlock = withoutStrings.replace(/\/\*[\s\S]*?\*\//g, '');
+  const cleanContent = withoutBlock
+    .split('\n')
+    .map((line) => line.split('//')[0])
+    .join('\n');
+
+  // Check for pattern usage in the cleaned content
+  return pattern.test(cleanContent);
 }
 
-/** Generate the require compatibility banner */
-export function getRequireBanner(): string {
-  return dedent`
-    import { createRequire } from "node:module";
-    import { dirname } from "node:path";
-    import { fileURLToPath } from "node:url";
-  
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-    const require = createRequire(import.meta.url);
-  `;
+/** Check if the file content contains __dirname usage */
+export function containsDirnameUsage(content: string): boolean {
+  return containsPatternUsage(content, /\b__dirname\b/);
 }
+
+export function containsFilenameUsage(content: string): boolean {
+  return containsPatternUsage(content, /\b__filename\b/);
+}
+
+/** Check if __dirname is already defined in the file */
+export function hasDirnameDefined(content: string): boolean {
+  // Check if __dirname is already defined as a const/let/var
+  const dirnameDefinedRegex = /(?:const|let|var)\s+__dirname\s*=/;
+  return dirnameDefinedRegex.test(content);
+}
+
+/** Check if a specific import already exists in the file */
+
+/** Configuration for what should be included in the compatibility banner */
+export interface BannerConfig {
+  hasRequireUsage: boolean;
+  hasUnderscoreDirname: boolean;
+  hasUnderscoreFilename: boolean;
+}
+
+export const bannerComment =
+  '// This file has been automatically migrated to valid ESM format by Storybook.';
+
+export const hasRequireBanner = (content: string): boolean => {
+  return content.includes(bannerComment);
+};

@@ -60,7 +60,7 @@ export const Default = {
 };
 ```
 
-```js filename="Page.stories.js" renderer="common" language="js"
+```js filename="Page.stories.js" renderer="common" language="js" tabTitle="CSF 3"
 import { Page } from './Page';
 
 export default {
@@ -123,7 +123,7 @@ export const Default: Story = {
 };
 ```
 
-```ts filename="Page.stories.ts" renderer="common" language="ts"
+```ts filename="Page.stories.ts" renderer="common" language="ts" tabTitle="CSF 3"
 // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
 import type { Meta, StoryObj } from '@storybook/your-framework';
 
@@ -182,4 +182,45 @@ export const Default: Story = {
     // ...
   },
 };
+```
+
+```ts filename="Page.stories.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Runs after each story in this file
+  async afterEach(context) {
+    console.log(`✅ Tested ${context.name} story`);
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ...
+  },
+});
+```
+
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Page.stories.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Runs after each story in this file
+  async afterEach(context) {
+    console.log(`✅ Tested ${context.name} story`);
+  },
+});
+
+export const Default = meta.story({
+  async play({ canvas }) {
+    // ...
+  },
+});
 ```

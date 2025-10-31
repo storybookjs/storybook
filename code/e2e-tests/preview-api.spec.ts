@@ -30,7 +30,7 @@ test.describe('preview-api', () => {
     const interactionsTab = page.getByRole('tab', { name: 'Interactions' });
     await expect(interactionsTab).toBeVisible();
     const panel = sbPage.panelContent();
-    const runStatusBadge = panel.locator('[aria-label^="Test status:"]');
+    const runStatusBadge = panel.locator('[aria-label^="Story status:"]');
     await expect(runStatusBadge).toContainText(/Pass/);
 
     // click outside, to remove focus from the input of the story, then press S to toggle sidebar

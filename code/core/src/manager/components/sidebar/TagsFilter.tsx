@@ -38,6 +38,24 @@ const StyledIconButton = styled(Button)<{ active: boolean }>(({ active, theme })
   }),
 }));
 
+// Immutable set operations
+const add = (set: Set<string>, id: string) => {
+  const copy = new Set(set);
+  copy.add(id);
+  return copy;
+};
+const remove = (set: Set<string>, id: string) => {
+  const copy = new Set(set);
+  copy.delete(id);
+  return copy;
+};
+const equal = (left: Set<string>, right: Set<string>) =>
+  left.size === right.size && new Set([...left, ...right]).size === left.size;
+
+const Wrapper = styled.div({
+  position: 'relative',
+});
+
 const TagSelected = styled(Badge)(({ theme }) => ({
   position: 'absolute',
   top: 7,
@@ -65,17 +83,20 @@ export interface TagsFilterProps {
 
 export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFilterProps) => {
   const filtersById = useMemo<{ [id: string]: Filter }>(() => {
-    const userTagsCounts = Object.values(indexJson.entries).reduce((acc, entry) => {
-      entry.tags?.forEach((tag: Tag) => {
-        if (!BUILT_IN_TAGS.has(tag)) {
-          acc.set(tag, (acc.get(tag) || 0) + 1);
-        }
-      });
-      return acc;
-    }, new Map<Tag, number>());
+    const userTagsCounts = Object.values(indexJson.entries).reduce<{ [key: Tag]: number }>(
+      (acc, entry) => {
+        entry.tags?.forEach((tag: Tag) => {
+          if (!BUILT_IN_TAGS.has(tag)) {
+            acc[tag] = (acc[tag] || 0) + 1;
+          }
+        });
+        return acc;
+      },
+      {}
+    );
 
     const userFilters = Object.fromEntries(
-      userTagsCounts.entries().map(([tag, count]) => {
+      Object.entries(userTagsCounts).map(([tag, count]) => {
         const filterFn = (entry: API_PreparedIndexEntry, excluded?: boolean) =>
           excluded ? !entry.tags?.includes(tag) : !!entry.tags?.includes(tag);
         return [tag, { id: tag, type: 'tag', title: tag, count, filterFn }];
@@ -170,19 +191,18 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
 
   const toggleFilter = useCallback(
     (id: string, selected: boolean, excluded?: boolean) => {
-      const set = new Set([id]);
       if (excluded === true) {
-        setExcludedFilters(excludedFilters.union(set));
-        setIncludedFilters(includedFilters.difference(set));
+        setExcludedFilters(add(excludedFilters, id));
+        setIncludedFilters(remove(includedFilters, id));
       } else if (excluded === false) {
-        setIncludedFilters(includedFilters.union(set));
-        setExcludedFilters(excludedFilters.difference(set));
+        setIncludedFilters(add(includedFilters, id));
+        setExcludedFilters(remove(excludedFilters, id));
       } else if (selected) {
-        setIncludedFilters(includedFilters.union(set));
-        setExcludedFilters(excludedFilters.difference(set));
+        setIncludedFilters(add(includedFilters, id));
+        setExcludedFilters(remove(excludedFilters, id));
       } else {
-        setIncludedFilters(includedFilters.difference(set));
-        setExcludedFilters(excludedFilters.difference(set));
+        setIncludedFilters(remove(includedFilters, id));
+        setExcludedFilters(remove(excludedFilters, id));
       }
     },
     [includedFilters, excludedFilters]
@@ -230,8 +250,7 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
           resetFilters={resetFilters}
           isDevelopment={isDevelopment}
           isDefaultSelection={
-            includedFilters.symmetricDifference(defaultIncluded).size === 0 &&
-            excludedFilters.symmetricDifference(defaultExcluded).size === 0
+            equal(includedFilters, defaultIncluded) && equal(excludedFilters, defaultExcluded)
           }
           hasDefaultSelection={defaultIncluded.size > 0 || defaultExcluded.size > 0}
         />

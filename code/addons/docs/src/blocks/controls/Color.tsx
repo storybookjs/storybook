@@ -6,7 +6,7 @@ import { Button, Form, WithPopover } from 'storybook/internal/components';
 import { MarkupIcon } from '@storybook/icons';
 
 import convert from 'color-convert';
-import { debounce } from 'es-toolkit/compat';
+import { debounce } from 'es-toolkit/function';
 import { HexColorPicker, HslaStringColorPicker, RgbaStringColorPicker } from 'react-colorful';
 import { styled } from 'storybook/theming';
 

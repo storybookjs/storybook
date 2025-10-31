@@ -235,6 +235,7 @@ export const Tabs: FC<TabsProps> = memo(
                     actions.onSelect(id);
                   }}
                   role="tab"
+                  aria-selected={active}
                 >
                   {typeof title === 'function' ? <title /> : title}
                 </TabButton>

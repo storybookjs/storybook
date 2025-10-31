@@ -2,6 +2,8 @@ import React from 'react';
 
 import { type Color, styled, typography } from 'storybook/theming';
 
+import { TooltipNote, WithTooltip } from '../../components';
+
 export type PlayStatus = 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted';
 
 export interface StatusBadgeProps {
@@ -24,6 +26,14 @@ const StatusTextMapping: Record<PlayStatus, string> = {
   aborted: 'Bail',
 } as const;
 
+const StatusNoteMapping: Record<PlayStatus, string> = {
+  rendering: 'Story is rendering',
+  playing: 'Interactions are running',
+  completed: 'Story ran successfully',
+  errored: 'Story failed to complete',
+  aborted: 'Interactions aborted due to file changes',
+} as const;
+
 const StyledBadge = styled.div<StatusBadgeProps>(({ theme, status }) => {
   const backgroundColor = theme.color[StatusColorMapping[status]];
   return {
@@ -44,9 +54,17 @@ const StyledBadge = styled.div<StatusBadgeProps>(({ theme, status }) => {
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const badgeText = StatusTextMapping[status];
+  const badgeNote = StatusNoteMapping[status];
   return (
-    <StyledBadge aria-label={`Test status: ${status}`} role="status" status={status}>
-      {badgeText}
-    </StyledBadge>
+    <WithTooltip
+      hasChrome={false}
+      placement="top"
+      trigger="hover"
+      tooltip={<TooltipNote note={badgeNote} />}
+    >
+      <StyledBadge aria-label={`Story status: ${badgeText}`} status={status}>
+        {badgeText}
+      </StyledBadge>
+    </WithTooltip>
   );
 };

@@ -63,7 +63,7 @@ For some project setups, the `add` command may be unable to automate the addon a
 1. Install the addon, `@storybook/addon-vitest`, in your project and [register it in your Storybook configuration](../../addons/install-addons.mdx#manual-installation).
 1. Create a test setup file, `.storybook/vitest.setup.ts`. You can use the [example setup file](#example-vitest-setup) as a guide.
 1. Adjust your Vitest configuration to include the plugin and reference the setup file. You can use the [example configuration files](#example-configuration-files) as a guide.
-   - For projects with existing Vitest tests, we recommend using a [workspace file](https://vitest.dev/guide/workspace/) to define separate projects for your Storybook tests and other tests. This allows you to run them either in isolation or together, depending on your needs.
+   - For projects with existing Vitest tests, we recommend using a separate [test project](https://vitest.dev/guide/projects) if you're using Vitest ≥ 4.0 and a [workspace file](https://v3.vitest.dev/config/#workspace) if you're using Vitest 3.x to define separate configurations for your Storybook tests and other tests. You can run them in isolation or together, depending on your needs.
 
 ### Example configuration files
 
@@ -99,7 +99,7 @@ When the addon is set up automatically, it will create or adjust your Vitest con
 <details id="example-vitest-workspace">
   <summary>Example Vitest workspace file (Vitest < 3.2)</summary>
 
-  If you're using a [Vitest workspace](https://vitest.dev/guide/workspace), you can define a new workspace project:
+  If you're using a [Vitest workspace](https://v3.vitest.dev/config/#workspace), you can define a new workspace project:
 
   {/* prettier-ignore-start */}
 
@@ -224,25 +224,11 @@ In this example, we'll apply the `stable` tag to all of the Button component's s
 
 To connect those tags to our test behavior, we can adjust the plugin configuration to exclude the `experimental` tag:
 
-```js title="vitest.workspace.ts"
-export default defineWorkspace([
-  // ...
-  {
-    // ...
-    {
-      plugins: [
-        storybookTest({
-          // ...
-          tags: {
-            include: ['test'],
-            exclude: ['experimental'],
-          },
-        }),
-      ],
-    },
-  },
-])
-```
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="vitest-plugin-vitest-tags-configuration.md" />
+
+{/* prettier-ignore-end */}
 
 If the same tag is in both the `include` and `exclude` arrays, the `exclude` behavior takes precedence.
 
@@ -309,7 +295,8 @@ Some projects might contain a `test` property in their Vite configuration. Becau
 
 To isolate your Storybook tests from other tests, you need to move the `test` property from your Vite configuration to the Vitest configuration. The Vitest config used by the plugin can then safely extend your Vite config without merging the `test` property.
 
-Additionally, we recommend using a [workspace file](#example-configuration-files) to define separate projects for your Storybook tests and other tests. This ensures each can be run either in isolation or together, depending on your needs.
+Additionally, we recommend using a [test project](#example-configuration-files) if you're using Vitest ≥ 4.0, or a workspace for previous versions to define separate configurations for your Storybook tests and other tests. This ensures each can be run either in isolation or together, depending on your needs.
+
 
 ### Why do we recommend browser mode?
 

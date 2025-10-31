@@ -5,7 +5,7 @@ import { SyntaxHighlighter, WithTooltipNew, codeCommon } from 'storybook/interna
 
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
-import { uniq } from 'es-toolkit/compat';
+import { uniq } from 'es-toolkit/array';
 import memoize from 'memoizerific';
 import { styled } from 'storybook/theming';
 

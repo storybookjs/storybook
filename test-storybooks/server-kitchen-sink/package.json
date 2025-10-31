@@ -16,7 +16,6 @@
   "resolutions": {
     "@storybook/addon-a11y": "file:../../code/addons/a11y",
     "@storybook/addon-docs": "file:../../code/addons/docs",
-    "@storybook/addon-jest": "file:../../code/addons/jest",
     "@storybook/addon-links": "file:../../code/addons/links",
     "@storybook/addon-themes": "file:../../code/addons/themes",
     "@storybook/angular": "file:../../code/frameworks/angular",

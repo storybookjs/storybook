@@ -1,4 +1,4 @@
-import React, { createRef, useMemo } from 'react';
+import React, { createRef, useCallback, useMemo } from 'react';
 
 import {
   Button,
@@ -243,19 +243,23 @@ export const Checklist = ({
   const api = useStorybookApi();
   const locationHash = useLocationHash();
 
-  const sectionsById: Record<ChecklistSection['id'], ChecklistSection> = useMemo(() => {
-    const isCompleted = (id: string) =>
-      accepted.includes(id) || done.includes(id) || skipped.includes(id);
+  const isCompleted = useCallback(
+    (id: string) => accepted.includes(id) || done.includes(id) || skipped.includes(id),
+    [accepted, done, skipped]
+  );
 
-    return Object.fromEntries(
-      sections.map(({ items, ...section }) => {
-        const progress =
-          (items.reduce((a, b) => (isCompleted(b.id) ? a + 1 : a), 0) / items.length) * 100;
-        const itemIds = items.map(({ id }) => id);
-        return [section.id, { ...section, itemIds, progress }];
-      })
-    );
-  }, [sections, accepted, done, skipped]);
+  const sectionsById: Record<ChecklistSection['id'], ChecklistSection> = useMemo(
+    () =>
+      Object.fromEntries(
+        sections.map(({ items, ...section }) => {
+          const progress =
+            (items.reduce((a, b) => (isCompleted(b.id) ? a + 1 : a), 0) / items.length) * 100;
+          const itemIds = items.map(({ id }) => id);
+          return [section.id, { ...section, itemIds, progress }];
+        })
+      ),
+    [sections, isCompleted]
+  );
 
   const itemsById: Record<ChecklistItem['id'], ChecklistItem> = useMemo(
     () =>
@@ -275,8 +279,9 @@ export const Checklist = ({
     [sections, accepted, done, skipped]
   );
 
-  const next = Object.values(sections).findIndex(({ items }) =>
-    items.some((item) => !accepted.includes(item.id) && !skipped.includes(item.id))
+  const next = useMemo(
+    () => Object.values(sections).findIndex(({ items }) => items.some((it) => !isCompleted(it.id))),
+    [sections, isCompleted]
   );
 
   return (

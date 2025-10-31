@@ -1,15 +1,17 @@
 import preview from '../../../../.storybook/preview';
+import { Button } from '../../components';
 import { TextFlip } from './TextFlip';
 
 const meta = preview.meta({
   component: TextFlip,
   args: {
-    text: 'Hello',
+    text: 'Use controls to change this',
+    placeholder: 'This is some long placeholder text',
   },
   render: (args) => (
-    <div style={{ display: 'inline-block', border: '1px solid red' }}>
+    <Button>
       <TextFlip {...args} />
-    </div>
+    </Button>
   ),
 });
 

@@ -177,22 +177,24 @@ const StatusIcon = styled.div(({ theme }) => ({
   outline: `1px solid ${theme.color.border}`,
   outlineOffset: -1,
 }));
-const Checked = styled(StatusPassIcon)<{ visible?: boolean }>(({ theme, visible }) => ({
-  position: 'absolute',
-  width: 'inherit',
-  height: 'inherit',
-  top: 0,
-  left: 0,
-  bottom: 0,
-  right: 0,
-  padding: 1,
-  borderRadius: '50%',
-  background: theme.color.positive,
-  color: theme.background.content,
-  opacity: visible ? 1 : 0,
-  transform: visible ? 'scale(1)' : 'scale(0.7)',
-  transition: 'all var(--transition-duration, 0.2s)',
-}));
+const Checked = styled(StatusPassIcon)<{ 'data-visible'?: boolean }>(
+  ({ theme, 'data-visible': visible }) => ({
+    position: 'absolute',
+    width: 'inherit',
+    height: 'inherit',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    right: 0,
+    padding: 1,
+    borderRadius: '50%',
+    background: theme.color.positive,
+    color: theme.background.content,
+    opacity: visible ? 1 : 0,
+    transform: visible ? 'scale(1)' : 'scale(0.7)',
+    transition: 'all var(--transition-duration, 0.2s)',
+  })
+);
 const Skipped = styled.span<{ visible?: boolean }>(({ theme, visible }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -303,7 +305,7 @@ export const Checklist = ({
                     onClick={toggleCollapsed}
                   >
                     <StatusIcon>
-                      <Checked visible={progress === 100 || undefined} />
+                      <Checked data-visible={progress === 100} />
                     </StatusIcon>
                     <SectionHeading>{title}</SectionHeading>
                     <Actions>
@@ -346,8 +348,8 @@ export const Checklist = ({
                                   onClick={item.content ? toggleCollapsed : undefined}
                                 >
                                   <StatusIcon>
-                                    <Checked visible={isChecked || undefined} />
-                                    <Skipped visible={isSkipped || undefined}>Skipped</Skipped>
+                                    <Checked data-visible={isChecked} />
+                                    <Skipped visible={isSkipped}>Skipped</Skipped>
                                   </StatusIcon>
                                   <ItemHeading skipped={isSkipped}>{item.label}</ItemHeading>
                                   <Actions>

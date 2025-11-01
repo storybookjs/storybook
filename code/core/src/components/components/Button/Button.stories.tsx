@@ -5,7 +5,7 @@ import { FaceHappyIcon } from '@storybook/icons';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
-import { Button } from './Button';
+import { Button, type ButtonProps } from './Button';
 
 const meta = preview.meta({
   id: 'button-component',
@@ -158,7 +158,8 @@ export const Disabled = meta.story({
   args: {
     disabled: true,
     children: 'Disabled Button',
-  },
+    onClick: () => {},
+  } satisfies ButtonProps,
 });
 
 export const WithHref = meta.story({

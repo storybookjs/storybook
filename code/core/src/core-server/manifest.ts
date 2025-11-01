@@ -40,7 +40,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       entries.map(([, it]) => it).filter((it) => it.error),
       (manifest) => manifest.error?.name ?? 'Error'
     )
-  );
+  ).sort(([, a], [, b]) => b.length - a.length);
 
   const errorGroupsHTML = errorGroups
     .map(([error, grouped]) => {

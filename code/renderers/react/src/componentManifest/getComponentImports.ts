@@ -11,10 +11,14 @@ const baseIdentifier = (component: string) => component.split('.')[0] ?? compone
 export function getComponentImports(
   csf: CsfFile,
   packageName?: string
-): { components: string[]; imports: string[] } {
+): {
+  components: { localName: string; importId?: string; importName?: string }[];
+  imports: string[];
+} {
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
+  const localToImport = new Map<string, { importId: string; importName: string }>();
 
   // Gather components from all JSX opening elements
   program.traverse({
@@ -41,20 +45,6 @@ export function getComponentImports(
   }
 
   const components = Array.from(componentSet).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-
-  // Build final imports by filtering specifiers to only those used by components
-  const neededLocals = new Set(components.map((c) => baseIdentifier(c)));
-
-  // Build a map of namespace -> first-level members used (e.g., UI -> Button)
-  const namespaceMembers = new Map<string, Set<string>>();
-  components.forEach((c) => {
-    const [ns, member] = c.split('.');
-    if (ns && member) {
-      const set = namespaceMembers.get(ns) ?? new Set<string>();
-      set.add(member);
-      namespaceMembers.set(ns, set);
-    }
-  });
 
   type Bucket = {
     source: t.StringLiteral;
@@ -86,6 +76,87 @@ export function getComponentImports(
   };
 
   const body = program.get('body');
+
+  // First pass: collect all import local bindings for component resolution
+  body.forEach((stmt) => {
+    if (!stmt.isImportDeclaration()) {
+      return;
+    }
+    const decl = stmt.node;
+
+    if (decl.importKind === 'type') {
+      return;
+    }
+    const specifiers = decl.specifiers ?? [];
+
+    if (specifiers.length === 0) {
+      return;
+    }
+    const isRelToPkg = Boolean(packageName && decl.source.value.startsWith('.'));
+    specifiers.forEach((s) => {
+      if (!s.local) {
+        return;
+      }
+
+      if (t.isImportSpecifier(s) && s.importKind === 'type') {
+        return;
+      }
+      const importId = decl.source.value;
+      if (t.isImportDefaultSpecifier(s)) {
+        const importName = isRelToPkg ? s.local.name : 'default';
+        localToImport.set(s.local.name, { importId, importName });
+      } else if (t.isImportNamespaceSpecifier(s)) {
+        localToImport.set(s.local.name, { importId, importName: '*' });
+      } else if (t.isImportSpecifier(s)) {
+        const imported = (s.imported as t.Identifier).name;
+        localToImport.set(s.local.name, { importId, importName: imported });
+      }
+    });
+  });
+
+  // Filter out locally defined components (those whose base identifier has a local, non-import binding)
+  const isLocallyDefinedWithoutImport = (base: string): boolean => {
+    const binding = program.scope.getBinding(base);
+
+    if (!binding) {
+      return false;
+    } // missing binding -> keep (will become null import) // missing binding -> keep (will become null import)
+    const isImportBinding = Boolean(
+      binding.path.isImportSpecifier?.() ||
+        binding.path.isImportDefaultSpecifier?.() ||
+        binding.path.isImportNamespaceSpecifier?.()
+    );
+    // Exclude if there is a local, non-import binding
+    return !isImportBinding;
+  };
+
+  const filteredComponents = components.filter(
+    (c) => !isLocallyDefinedWithoutImport(baseIdentifier(c))
+  );
+
+  // Compute needed locals and namespace members after bindings are known
+  const componentBasesArr = filteredComponents.map((c) => baseIdentifier(c));
+  const effectiveNeededLocals = new Set(componentBasesArr.filter((b) => localToImport.has(b)));
+
+  const namespaceMembers = new Map<string, Set<string>>();
+  filteredComponents.forEach((c) => {
+    const dot = c.indexOf('.');
+
+    if (dot === -1) {
+      return;
+    }
+    const ns = c.slice(0, dot);
+    const member = c.slice(dot + 1);
+
+    if (!localToImport.has(ns)) {
+      return;
+    }
+    const set = namespaceMembers.get(ns) ?? new Set<string>();
+    set.add(member);
+    namespaceMembers.set(ns, set);
+  });
+
+  // Second pass: build buckets and filter by effective needed locals
   body.forEach((stmt) => {
     if (!stmt.isImportDeclaration()) {
       return;
@@ -109,7 +180,7 @@ export function getComponentImports(
 
     // Filter specifiers to only those whose local is referenced by components and not per-specifier type
     specifiers.forEach((s) => {
-      if (!s.local || !neededLocals.has(s.local.name)) {
+      if (!s.local || !effectiveNeededLocals.has(s.local.name)) {
         return;
       }
 
@@ -234,5 +305,23 @@ export function getComponentImports(
       }
     });
 
-  return { components, imports: mergedImports };
+  const componentObjs = filteredComponents
+    .map((c) => {
+      const dot = c.indexOf('.');
+      if (dot !== -1) {
+        const ns = c.slice(0, dot);
+        const member = c.slice(dot + 1);
+        const direct = localToImport.get(ns);
+        return direct
+          ? { localName: c, importId: direct.importId, importName: member }
+          : { localName: c };
+      }
+      const direct = localToImport.get(c);
+      return direct
+        ? { localName: c, importId: direct.importId, importName: direct.importName }
+        : { localName: c };
+    })
+    .sort((a, b) => (a.localName < b.localName ? -1 : a.localName > b.localName ? 1 : 0));
+
+  return { components: componentObjs, imports: mergedImports };
 }

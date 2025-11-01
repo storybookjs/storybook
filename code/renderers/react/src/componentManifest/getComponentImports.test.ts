@@ -31,8 +31,16 @@ test('Get imports from multiple components', () => {
     `
     {
       "components": [
-        "Button",
-        "ButtonGroup",
+        {
+          "importId": "@design-system/button",
+          "importName": "Button",
+          "localName": "Button",
+        },
+        {
+          "importId": "@design-system/button-group",
+          "importName": "ButtonGroup",
+          "localName": "ButtonGroup",
+        },
       ],
       "imports": [
         "import { ButtonGroup } from '@design-system/button-group';",
@@ -55,7 +63,11 @@ test('Namespace import with member usage', () => {
     `
     {
       "components": [
-        "Accordion.Root",
+        {
+          "importId": "@ds/accordion",
+          "importName": "Root",
+          "localName": "Accordion.Root",
+        },
       ],
       "imports": [
         "import * as Accordion from '@ds/accordion';",
@@ -77,7 +89,11 @@ test('Named import used as namespace object', () => {
     `
     {
       "components": [
-        "Accordion.Root",
+        {
+          "importId": "@ds/accordion",
+          "importName": "Root",
+          "localName": "Accordion.Root",
+        },
       ],
       "imports": [
         "import { Accordion } from '@ds/accordion';",
@@ -99,7 +115,11 @@ test('Default import', () => {
     `
     {
       "components": [
-        "Button",
+        {
+          "importId": "@ds/button",
+          "importName": "default",
+          "localName": "Button",
+        },
       ],
       "imports": [
         "import Button from '@ds/button';",
@@ -121,8 +141,16 @@ test('Alias named import and meta.component inclusion', () => {
     `
     {
       "components": [
-        "Btn",
-        "Other",
+        {
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localName": "Btn",
+        },
+        {
+          "importId": "@ds/button",
+          "importName": "Other",
+          "localName": "Other",
+        },
       ],
       "imports": [
         "import { Button as Btn, Other } from '@ds/button';",
@@ -144,7 +172,11 @@ test('Strip unused specifiers from the same import statement', () => {
     `
     {
       "components": [
-        "Btn",
+        {
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localName": "Btn",
+        },
       ],
       "imports": [
         "import { Button as Btn } from '@ds/button';",
@@ -165,7 +197,11 @@ test('Meta component with member and star import', () => {
     `
     {
       "components": [
-        "Accordion.Root",
+        {
+          "importId": "@ds/accordion",
+          "importName": "Root",
+          "localName": "Accordion.Root",
+        },
       ],
       "imports": [
         "import * as Accordion from '@ds/accordion';",
@@ -187,8 +223,16 @@ test('Keeps multiple named specifiers and drops unused ones from same import', (
     `
     {
       "components": [
-        "Button",
-        "ButtonGroup",
+        {
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localName": "Button",
+        },
+        {
+          "importId": "@ds/button",
+          "importName": "ButtonGroup",
+          "localName": "ButtonGroup",
+        },
       ],
       "imports": [
         "import { Button, ButtonGroup } from '@ds/button';",
@@ -210,7 +254,11 @@ test('Mixed default + named import: keep only default when only default used', (
     `
     {
       "components": [
-        "Button",
+        {
+          "importId": "@ds/button",
+          "importName": "default",
+          "localName": "Button",
+        },
       ],
       "imports": [
         "import Button from '@ds/button';",
@@ -232,7 +280,11 @@ test('Mixed default + named import: keep only named when only named (alias) used
     `
     {
       "components": [
-        "Btn",
+        {
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localName": "Btn",
+        },
       ],
       "imports": [
         "import { Button as Btn } from '@ds/button';",
@@ -255,7 +307,11 @@ test('Per-specifier type import is dropped when mixing with value specifiers', (
     `
     {
       "components": [
-        "Button",
+        {
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localName": "Button",
+        },
       ],
       "imports": [
         "import { Button } from '@ds/button';",
@@ -277,8 +333,16 @@ test('Namespace import used for multiple members kept once', () => {
     `
     {
       "components": [
-        "DS.A",
-        "DS.B",
+        {
+          "importId": "@ds/ds",
+          "importName": "A",
+          "localName": "DS.A",
+        },
+        {
+          "importId": "@ds/ds",
+          "importName": "B",
+          "localName": "DS.B",
+        },
       ],
       "imports": [
         "import * as DS from '@ds/ds';",
@@ -299,7 +363,11 @@ test('Default import kept when referenced only via meta.component', () => {
     `
     {
       "components": [
-        "Button",
+        {
+          "importId": "@ds/button",
+          "importName": "default",
+          "localName": "Button",
+        },
       ],
       "imports": [
         "import Button from '@ds/button';",
@@ -322,7 +390,11 @@ test('Side-effect-only import is ignored', () => {
     `
     {
       "components": [
-        "Button",
+        {
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localName": "Button",
+        },
       ],
       "imports": [
         "import { Button } from '@ds/button';",
@@ -346,7 +418,11 @@ test('Converts default relative import to named when packageName provided', () =
     `
     {
       "components": [
-        "Header",
+        {
+          "importId": "./Header",
+          "importName": "Header",
+          "localName": "Header",
+        },
       ],
       "imports": [
         "import { Header } from "my-package";",
@@ -368,7 +444,11 @@ test('Converts relative import to provided packageName', () => {
     `
     {
       "components": [
-        "Button",
+        {
+          "importId": "./components/Button",
+          "importName": "Button",
+          "localName": "Button",
+        },
       ],
       "imports": [
         "import { Button } from "my-package";",
@@ -390,7 +470,11 @@ test('Keeps relative import when packageName is missing', () => {
     `
     {
       "components": [
-        "Button",
+        {
+          "importId": "./components/Button",
+          "importName": "Button",
+          "localName": "Button",
+        },
       ],
       "imports": [
         "import { Button } from './components/Button';",
@@ -412,7 +496,11 @@ test('Non-relative import remains unchanged even if packageName provided', () =>
     `
     {
       "components": [
-        "Button",
+        {
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localName": "Button",
+        },
       ],
       "imports": [
         "import { Button } from '@ds/button';",
@@ -441,12 +529,36 @@ test('Merges multiple imports from the same package (defaults and named)', () =>
     `
     {
       "components": [
-        "Banner",
-        "CopilotIcon",
-        "Dialog",
-        "Heading",
-        "Link",
-        "Stack",
+        {
+          "importId": "@primer/react",
+          "importName": "Banner",
+          "localName": "Banner",
+        },
+        {
+          "importId": "@primer/octicons-react",
+          "importName": "CopilotIcon",
+          "localName": "CopilotIcon",
+        },
+        {
+          "importId": "@primer/react",
+          "importName": "Dialog",
+          "localName": "Dialog",
+        },
+        {
+          "importId": "@primer/react",
+          "importName": "default",
+          "localName": "Heading",
+        },
+        {
+          "importId": "@primer/react",
+          "importName": "default",
+          "localName": "Link",
+        },
+        {
+          "importId": "@primer/react",
+          "importName": "Stack",
+          "localName": "Stack",
+        },
       ],
       "imports": [
         "import { CopilotIcon } from '@primer/octicons-react';",
@@ -462,7 +574,7 @@ test('Merges namespace with default and separates named for same package', () =>
   const code = dedent`
     import * as PR from '@primer/react';
     import { Banner } from '@primer/react';
-    import Link from '@primer/react';
+    import Link from '.';
 
     const meta = {};
     export default meta;
@@ -472,15 +584,114 @@ test('Merges namespace with default and separates named for same package', () =>
     `
     {
       "components": [
-        "Banner",
-        "Link",
-        "PR.Box",
+        {
+          "importId": "@primer/react",
+          "importName": "Banner",
+          "localName": "Banner",
+        },
+        {
+          "importId": ".",
+          "importName": "default",
+          "localName": "Link",
+        },
+        {
+          "importId": "@primer/react",
+          "importName": "Box",
+          "localName": "PR.Box",
+        },
       ],
       "imports": [
-        "import Link, * as PR from '@primer/react';",
+        "import * as PR from '@primer/react';",
         "import { Banner } from '@primer/react';",
+        "import Link from '.';",
       ],
     }
   `
+  );
+});
+
+test('Object.assign aliasing of imported component retains correct import', () => {
+  const code = dedent`
+    import type { Meta } from '@storybook/react';
+    import {ActionList as _ActionList} from '../../deprecated/ActionList'
+    import {Header} from '../../deprecated/ActionList/Header'
+    const ActionList = Object.assign(_ActionList, {
+      Header,
+    })
+
+    const meta: Meta = {
+      component: ActionList,
+    }
+    export default meta;
+
+    const Story = () => <ActionList/>
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [],
+      "imports": [],
+    }
+  `
+  );
+});
+
+test('Component not imported returns undefined importId and importName', () => {
+  const code = dedent`
+    const meta = {};
+    export default meta;
+    export const S = <Missing/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "localName": "Missing",
+        },
+      ],
+      "imports": [],
+    }
+  `
+  );
+});
+
+test('Namespace component not imported returns undefined importId and importName', () => {
+  const code = dedent`
+    const meta = {};
+    export default meta;
+    export const S = <PR.Box/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "importId": undefined,
+          "importName": undefined,
+          "localName": "PR.Box",
+        },
+      ],
+      "imports": [],
+    }
+  `
+  );
+});
+
+test('Filters out locally defined components', () => {
+  const code = dedent`
+    const Local = () => <div/>;
+
+    const meta = { component: Local };
+    export default meta;
+    export const S = <Local/>;
+  `;
+  expect(getImports(code)).toMatchInlineSnapshot(
+    `
+    {
+      "components": [],
+      "imports": [],
+    }
+    `
   );
 });

@@ -5,5 +5,5 @@
     "types": ["vitest"],
     "strict": true
   },
-  "include": ["src/**/*", "./typings.d.ts"],
+  "include": ["src/**/*", "./typings.d.ts"]
 }

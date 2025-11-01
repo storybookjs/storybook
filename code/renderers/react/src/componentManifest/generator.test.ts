@@ -7,8 +7,33 @@ import { dedent } from 'ts-dedent';
 
 import { componentManifestGenerator } from './generator';
 
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal()),
+  // Keep it simple: hardcode known inputs to expected outputs for this test.
+  resolveImport: (id: string, opts: { basedir: string }) => {
+    const basedir = opts?.basedir;
+    return basedir === '/app/src/stories' && id === './Button'
+      ? './src/stories/Button.tsx'
+      : basedir === '/app/src/stories' && id === './Header'
+        ? './src/stories/Header.tsx'
+        : id;
+  },
+  JsPackageManagerFactory: {
+    getPackageManager: () => ({
+      primaryPackageJson: {
+        packageJson: {
+          name: 'some-package',
+        },
+      },
+    }),
+  },
+}));
 vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
 vi.mock('node:fs', async () => (await import('memfs')).fs);
+
+vi.mock('empathic/find', async () => ({
+  up: (path: string) => '/app/package.json',
+}));
 vi.mock('tsconfig-paths', () => ({ loadConfig: () => ({ resultType: null!, message: null! }) }));
 
 // Use the provided indexJson from this file
@@ -97,6 +122,7 @@ beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(
     {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
       ['./src/stories/Button.stories.ts']: dedent`
         import type { Meta, StoryObj } from '@storybook/react';
         import { fn } from 'storybook/test';
@@ -205,8 +231,8 @@ beforeEach(() => {
 });
 
 test('componentManifestGenerator generates correct id, name, description and examples ', async () => {
-  const generator = await componentManifestGenerator();
-  const manifest = await generator({
+  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
+  const manifest = await generator?.({
     getIndex: async () => indexJson,
   } as unknown as StoryIndexGenerator);
 
@@ -217,7 +243,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Primary UI component for user interaction",
           "error": undefined,
           "id": "example-button",
-          "import": undefined,
+          "import": "import { Button } from "some-package";",
           "jsDocTags": {},
           "name": "Button",
           "path": "./src/stories/Button.stories.ts",
@@ -321,7 +347,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Description from meta and very long.",
           "error": undefined,
           "id": "example-header",
-          "import": "import { Header } from '@design-system/components/Header';",
+          "import": "import { Header } from "some-package";",
           "jsDocTags": {
             "import": [
               "import { Header } from '@design-system/components/Header';",
@@ -418,6 +444,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
 async function getManifestForStory(code: string) {
   vol.fromJSON(
     {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
       ['./src/stories/Button.stories.ts']: code,
       ['./src/stories/Button.tsx']: dedent`
         import React from 'react';
@@ -441,7 +468,7 @@ async function getManifestForStory(code: string) {
     '/app'
   );
 
-  const generator = await componentManifestGenerator();
+  const generator = await componentManifestGenerator(undefined, { configDir: '.storybook' } as any);
   const indexJson = {
     v: 5,
     entries: {
@@ -459,11 +486,11 @@ async function getManifestForStory(code: string) {
     },
   };
 
-  const manifest = await generator({
+  const manifest = await generator?.({
     getIndex: async () => indexJson,
   } as unknown as StoryIndexGenerator);
 
-  return manifest.components['example-button'];
+  return manifest?.components?.['example-button'];
 }
 
 function withCSF3(body: string) {
@@ -497,7 +524,7 @@ test('fall back to index title when no component name', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": undefined,
+      "import": "import { Button } from "some-package";",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -542,7 +569,7 @@ test('component exported from other file', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": undefined,
+      "import": "import { Button } from "some-package";",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -594,7 +621,7 @@ test('unknown expressions', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": undefined,
+      "import": "import { Button } from "some-package";",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",

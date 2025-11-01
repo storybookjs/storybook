@@ -49,11 +49,31 @@ export const NumberControl: FC<NumberProps> = ({
       if (Number.isNaN(result)) {
         setParseError(new Error(`'${event.target.value}' is not a number`));
       } else {
-        onChange(result);
+        // Initialize the final value as the user's input
+        let finalValue = result;
+
+        // Clamp to minimum: if finalValue is less than min, use min
+        if (typeof min === 'number' && finalValue < min) {
+          finalValue = min;
+        }
+
+        // Clamp to maximum: if finalValue is greater than max, use max
+        if (typeof max === 'number' && finalValue > max) {
+          finalValue = max;
+        }
+
+        // Pass the clamped final value to the onChange callback
+        onChange(finalValue);
+        // Clear any previous parse errors
         setParseError(null);
+
+        // If the value was clamped, update the input display to the final value
+        if (finalValue !== result) {
+          setInputValue(String(finalValue));
+        }
       }
     },
-    [onChange, setParseError]
+    [onChange, setParseError, min, max]
   );
 
   const onForceVisible = useCallback(() => {

@@ -7,20 +7,27 @@ import { dedent } from 'ts-dedent';
 
 import { componentManifestGenerator } from './generator';
 
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  return {
-    ...(await importOriginal()),
-    JsPackageManagerFactory: {
-      getPackageManager: () => ({
-        primaryPackageJson: {
-          packageJson: {
-            name: 'some-package',
-          },
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal()),
+  // Keep it simple: hardcode known inputs to expected outputs for this test.
+  resolveImport: (id: string, opts: { basedir: string }) => {
+    const basedir = opts?.basedir;
+    return basedir === '/app/src/stories' && id === './Button'
+      ? './src/stories/Button.tsx'
+      : basedir === '/app/src/stories' && id === './Header'
+        ? './src/stories/Header.tsx'
+        : id;
+  },
+  JsPackageManagerFactory: {
+    getPackageManager: () => ({
+      primaryPackageJson: {
+        packageJson: {
+          name: 'some-package',
         },
-      }),
-    },
-  };
-});
+      },
+    }),
+  },
+}));
 vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
 vi.mock('node:fs', async () => (await import('memfs')).fs);
 

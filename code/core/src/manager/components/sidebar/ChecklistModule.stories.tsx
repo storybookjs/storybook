@@ -17,7 +17,7 @@ const meta = preview.meta({
   decorators: [
     (Story) => (
       <ManagerContext.Provider value={managerContext}>
-        <div style={{ width: 250 }}>{Story()}</div>
+        <div style={{ maxWidth: 300 }}>{Story()}</div>
       </ManagerContext.Provider>
     ),
   ],
@@ -26,10 +26,14 @@ const meta = preview.meta({
       loaded: true,
       muted: false,
       accepted: ['controls'],
-      done: ['install-storybook', 'first-story', 'whats-new-storybook-10'],
-      skipped: ['viewports'],
+      done: ['install-storybook', 'render-component', 'whats-new-storybook-10'],
+      skipped: ['more-components', 'more-stories'],
     });
   },
 });
 
 export const Default = meta.story({});
+
+export const Narrow = meta.story({
+  decorators: [(Story) => <div style={{ maxWidth: 200 }}>{Story()}</div>],
+});

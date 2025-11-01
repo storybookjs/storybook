@@ -9,6 +9,7 @@ import {
   ListboxIcon,
   ListboxItem,
   ListboxText,
+  Optional,
   ProgressSpinner,
   TooltipNote,
   WithTooltip,
@@ -64,6 +65,23 @@ const title = (progress: number) => {
   }
 };
 
+const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
+  const api = useStorybookApi();
+  return (
+    <ListboxAction
+      onClick={(e) => {
+        e.stopPropagation();
+        api.navigateUrl('/settings/guide', { plain: false });
+      }}
+    >
+      <ListboxIcon>
+        <ListUnorderedIcon />
+      </ListboxIcon>
+      {children}
+    </ListboxAction>
+  );
+};
+
 export const ChecklistModule = () => {
   const api = useStorybookApi();
   const { loaded, allItems, nextItems, progress, mute } = useChecklist();
@@ -83,16 +101,16 @@ export const ChecklistModule = () => {
           summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
             <Listbox onClick={toggleCollapsed}>
               <ListboxItem>
-                <ListboxItem>
+                <ListboxItem style={{ flexShrink: 1 }}>
                   {loaded && (
-                    <ListboxAction
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        api.navigateUrl('/settings/guide', { plain: false });
-                      }}
-                    >
-                      <strong>{title(progress)}</strong>
-                    </ListboxAction>
+                    <Optional
+                      content={
+                        <OpenGuideAction>
+                          <strong>{title(progress)}</strong>
+                        </OpenGuideAction>
+                      }
+                      fallback={<OpenGuideAction />}
+                    />
                   )}
                 </ListboxItem>
                 <ListboxItem>
@@ -126,18 +144,9 @@ export const ChecklistModule = () => {
                       tooltip={({ onHide }) => (
                         <Listbox as="ul">
                           <ListboxItem as="li">
-                            <ListboxAction
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                api.navigateUrl('/settings/guide', { plain: false });
-                                onHide();
-                              }}
-                            >
-                              <ListboxIcon>
-                                <ListUnorderedIcon />
-                              </ListboxIcon>
+                            <OpenGuideAction>
                               <ListboxText>Open full guide</ListboxText>
-                            </ListboxAction>
+                            </OpenGuideAction>
                           </ListboxItem>
                           <ListboxItem as="li">
                             <ListboxAction
@@ -182,7 +191,9 @@ export const ChecklistModule = () => {
                     <ListboxIcon>
                       <StatusFailIcon />
                     </ListboxIcon>
-                    <ListboxText>{item.label}</ListboxText>
+                    <ListboxText>
+                      <span>{item.label}</span>
+                    </ListboxText>
                   </ListboxAction>
                   {item.action && (
                     <ListboxButton

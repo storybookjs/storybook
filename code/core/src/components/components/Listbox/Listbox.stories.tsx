@@ -60,6 +60,16 @@ export const Default = meta.story({
           <Shortcut keys={['⌘', 'A']} />
         </ListboxAction>
       </ListboxItem>
+      <ListboxItem>
+        <ListboxText>
+          Some very long text which will wrap when the container is too narrow
+        </ListboxText>
+      </ListboxItem>
+      <ListboxItem>
+        <ListboxText>
+          <span>Some very long text which will ellipsize when the container is too narrow</span>
+        </ListboxText>
+      </ListboxItem>
     </Listbox>
   ),
 });

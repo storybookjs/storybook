@@ -1,7 +1,8 @@
+import type { ComponentProps } from 'react';
 import React, { type SyntheticEvent, useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
-import { Button, Card, IconButton, TooltipNote } from 'storybook/internal/components';
+import { Button, Card, IconButton, Optional, TooltipNote } from 'storybook/internal/components';
 import { WithTooltip } from 'storybook/internal/components';
 import type {
   Addon_Collection,
@@ -70,14 +71,12 @@ const CollapseToggle = styled(Button)({
   },
 });
 
-const RunButton = styled(Button)({
-  // 90px is the width of the button when the label is visible
-  '@container (max-width: 90px)': {
-    span: {
-      display: 'none',
-    },
-  },
-});
+const RunButton = ({ children, ...props }: ComponentProps<typeof Button>) => (
+  <Button size="medium" variant="ghost" padding="small" {...props}>
+    <PlayAllHollowIcon />
+    {children}
+  </Button>
+);
 
 const StatusButton = styled(Button)<{ status: 'negative' | 'warning' }>(
   { minWidth: 28 },
@@ -241,22 +240,32 @@ export const TestingModule = ({
           {hasTestProviders && (
             <WithTooltip
               hasChrome={false}
+              style={{ display: 'flex', maxWidth: '100%' }}
               tooltip={<TooltipNote note={isRunning ? 'Running tests...' : 'Start all tests'} />}
               trigger="hover"
             >
-              <RunButton
-                size="medium"
-                variant="ghost"
-                padding="small"
-                onClick={(e: SyntheticEvent) => {
-                  e.stopPropagation();
-                  onRunAll();
-                }}
-                disabled={isRunning}
-              >
-                <PlayAllHollowIcon />
-                <span>{isRunning ? 'Running...' : 'Run tests'}</span>
-              </RunButton>
+              <Optional
+                content={
+                  <RunButton
+                    disabled={isRunning}
+                    onClick={(e: SyntheticEvent) => {
+                      e.stopPropagation();
+                      onRunAll();
+                    }}
+                  >
+                    <span>{isRunning ? 'Running...' : 'Run tests'}</span>
+                  </RunButton>
+                }
+                fallback={
+                  <RunButton
+                    disabled={isRunning}
+                    onClick={(e: SyntheticEvent) => {
+                      e.stopPropagation();
+                      onRunAll();
+                    }}
+                  />
+                }
+              />
             </WithTooltip>
           )}
         </Action>

@@ -59,6 +59,7 @@ export { ScrollArea } from './components/ScrollArea/ScrollArea';
 export { Zoom } from './components/Zoom/Zoom';
 export type { ActionItem } from './components/ActionBar/ActionBar';
 export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter';
+export { Optional } from './components/Optional/Optional';
 
 // Forms
 export { Button } from './components/Button/Button';

@@ -523,6 +523,7 @@ export default {
     'Loader',
     'Modal',
     'OL',
+    'Optional',
     'P',
     'Placeholder',
     'Pre',

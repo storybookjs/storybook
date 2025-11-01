@@ -38,7 +38,7 @@ export const Default = meta.story({
     ...checklistData,
     ...checklistStore,
     accepted: ['controls'],
-    done: ['install-storybook', 'first-story', 'whats-new-storybook-10'],
+    done: ['install-storybook', 'render-component', 'whats-new-storybook-10'],
     skipped: ['viewports'],
   },
 });

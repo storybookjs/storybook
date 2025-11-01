@@ -7,7 +7,7 @@ import {
   STORY_INDEX_INVALIDATED,
   UPDATE_GLOBALS,
 } from 'storybook/internal/core-events';
-import type { API_IndexHash } from 'storybook/internal/types';
+import type { API_IndexHash, API_PreparedIndexEntry } from 'storybook/internal/types';
 
 import { type API } from 'storybook/manager-api';
 
@@ -35,6 +35,19 @@ export interface ChecklistData {
   }[];
 }
 
+const subscribeToIndex: (
+  condition: (entries: Record<string, API_PreparedIndexEntry>) => boolean
+) => ChecklistData['sections'][number]['items'][number]['subscribe'] =
+  (condition) =>
+  ({ api, done }) => {
+    const check = () => condition(api.getIndex()?.entries || {});
+    if (check()) {
+      done();
+    } else {
+      return api.on(STORY_INDEX_INVALIDATED, () => check() && done());
+    }
+  };
+
 export const checklistData: ChecklistData = {
   sections: [
     {
@@ -58,8 +71,8 @@ export const checklistData: ChecklistData = {
           },
         },
         {
-          id: 'first-story',
-          label: 'Create first story',
+          id: 'render-component',
+          label: 'Render a component',
           content: (
             <>
               <p>
@@ -82,52 +95,34 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'more-components',
-          after: ['first-story'],
+          after: ['render-component'],
           label: 'Add 5 components',
           content: (
             <p>
-              A story is an object that describes how to render a component. You can have multiple
-              stories per component, and those stories can build upon one another. For example, we
-              can add Secondary and Tertiary stories based on our Primary story from above.
+              Storybook gets better as you add more components. Start with the easy ones, like
+              Button or Avatar, and work your way up to more complex components, like Select,
+              Autocomplete, or even full pages.
             </p>
           ),
-          subscribe: ({ api, done }) => {
-            const check = () => {
-              const entries = api.getIndex()?.entries || {};
-              const stories = Object.values(entries).filter(({ type }) => type === 'story');
-              const components = new Set(stories.map(({ title }) => title));
-              return components.size >= 5;
-            };
-            if (check()) {
-              done();
-            } else {
-              return api.on(STORY_INDEX_INVALIDATED, () => check() && done());
-            }
-          },
+          subscribe: subscribeToIndex((entries) => {
+            const stories = Object.values(entries).filter(({ type }) => type === 'story');
+            const components = new Set(stories.map(({ title }) => title));
+            return components.size >= 5;
+          }),
         },
         {
           id: 'more-stories',
-          after: ['first-story'],
+          after: ['render-component'],
           label: 'Add 20 stories',
           content: (
             <p>
-              A story is an object that describes how to render a component. You can have multiple
-              stories per component, and those stories can build upon one another. For example, we
-              can add Secondary and Tertiary stories based on our Primary story from above.
+              More stories for your components means better documentation and more test coverage.
             </p>
           ),
-          subscribe: ({ api, done }) => {
-            const check = () => {
-              const entries = api.getIndex()?.entries || {};
-              const stories = Object.values(entries).filter(({ type }) => type === 'story');
-              return stories.length >= 20;
-            };
-            if (check()) {
-              done();
-            } else {
-              return api.on(STORY_INDEX_INVALIDATED, () => check() && done());
-            }
-          },
+          subscribe: subscribeToIndex((entries) => {
+            const stories = Object.values(entries).filter(({ type }) => type === 'story');
+            return stories.length >= 20;
+          }),
         },
       ],
     },
@@ -137,30 +132,28 @@ export const checklistData: ChecklistData = {
       items: [
         {
           id: 'controls',
-          after: ['first-story'],
-          label: 'Controls',
+          after: ['render-component'],
+          label: 'Update a story with Controls',
           content: (
             <>
-              Storybook Controls gives you a graphical UI to interact with a component's arguments
-              dynamically without needing to code. Use the Controls panel to edit the inputs to your
-              stories and see the results in real-time. It's a great way to explore your components
-              and test different states.
+              <p>
+                When you change the value of one of the inputs in the Controls table, the story
+                automatically updates to reflect that change. It&apos;s a great way to explore how a
+                component handles various inputs.
+              </p>
             </>
           ),
           subscribe: ({ api, done }) => api.on(STORY_ARGS_UPDATED, done),
         },
         {
           id: 'viewports',
-          after: ['first-story'],
-          label: 'Viewports',
+          after: ['render-component'],
+          label: 'Check responsiveness with Viewports',
           content: (
             <>
               <p>
-                The viewport feature allows you to adjust the dimensions of the iframe your story is
-                rendered in. It makes it easy to develop responsive UIs. The Viewport module enables
-                you to change the viewport applied to a story by selecting from the list of
-                predefined viewports in the toolbar. If needed, you can set a story to default to a
-                specific viewport by using the globals option.
+                Many UI components need to be responsive to the viewport size. Storybook has
+                built-in support for previewing stories in various device sizes.
               </p>
               <Link
                 href="https://storybook.js.org/docs/essentials/viewport#defining-the-viewport-for-a-story"
@@ -176,8 +169,33 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'organize-stories',
-          after: ['first-story'],
-          label: 'Organize your stories',
+          after: ['render-component'],
+          label: 'Get organized',
+          content: (
+            <>
+              <p>
+                It&apos;s helpful for projects to organize their sidebar into groups. We&apos;re big
+                fans of Atomic Design (atoms, molecules, organisms, pages), but we've also seen
+                organization by domain (profile, billing, dashboard, etc). Being organized helps
+                everyone use your Storybook more effectively.
+              </p>
+              <p>You can create a section like so:</p>
+              <code>
+                <pre>
+                  {`// Button.stories.js
+
+export default {
+  component: Button,
+-  title: 'Button', // You may not have this
++  title: 'Atoms/Button',
+}`}
+                </pre>
+              </code>
+            </>
+          ),
+          subscribe: subscribeToIndex((entries) =>
+            Object.values(entries).some(({ title }) => title.includes('/'))
+          ),
         },
       ],
     },
@@ -187,30 +205,35 @@ export const checklistData: ChecklistData = {
       items: [
         {
           id: 'install-vitest',
-          label: 'Install Vitest',
+          label: 'Install Vitest addon',
           subscribe: ({ done }) => done(),
+          // Criteria: @storybook/addon-vitest registered in .storybook/main.js|ts
           content: (
-            <p>
-              Storybook offers fast, powerful testing from the sidebar, with the Vitest addon. It
-              transforms your stories into real Vitest tests, and then runs them in the background,
-              via Vitest and Playwright. Results are displayed in your sidebar, and you can debug
-              failures with all your favorite features and addons, in addition to the browser dev
-              tools.
-            </p>
+            <>
+              <p>
+                Run this command to install the Vitest addon, enabling you to run component tests on
+                your stories inside Storybook&apos;s UI:
+              </p>
+              <code>
+                <pre>{`npx storybook add @storybook/addon-vitest`}</pre>
+              </code>
+            </>
           ),
         },
         {
           id: 'run-tests',
-          after: ['first-story'],
-          label: 'Run tests',
-          // subscribe: ({ done }) => done(),
+          after: ['render-component'],
+          label: 'Test your components',
+          // Criteria: Run component tests from the test widget in the sidebar
           content: (
             <>
               <p>
-                In the Storybook UI, you can run interaction tests by clicking the{' '}
-                <b>Run component tests</b> button in the expanded testing widget in the sidebar or
-                by opening the context menu (three dots) on a story or folder and selecting{' '}
-                <b>Run component tests</b>.
+                Stories make great test cases. You can quickly test all of your stories directly
+                from the test widget, at the bottom of the sidebar.
+              </p>
+              <p>
+                Use the menu on a story or component to see details about a test failure or run
+                tests for just that selection.
               </p>
               <Link
                 href="https://storybook.js.org/docs/writing-tests/interaction-testing#running-interaction-tests"
@@ -224,14 +247,29 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'write-interactions',
-          after: ['first-story'],
-          label: 'Write interactions',
+          after: ['render-component'],
+          label: 'Test functionality with interactions',
+          // Criteria: At least one story with a play function that contains an expect call
           content: (
             <>
               <p>
-                Play functions are small snippets of code executed after the story renders. They
-                enable you to interact with your components and test scenarios that otherwise
-                require user intervention.
+                When you need to test non-visual or particularly complex behavior of a component,
+                add a play function.
+              </p>
+              <code>
+                <pre>
+                  {`// Button.stories.js
+
+async play({ canvas, userEvent }) {
+	// Simulate behavior
+	
+	// Make assertions
+}`}
+                </pre>
+              </code>
+              <p>
+                You can interact with and debug each step defined in a play function within the
+                Interactions panel.
               </p>
               <Link
                 href="https://storybook.js.org/docs/writing-stories/play-function"
@@ -245,16 +283,25 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'accessibility-tests',
-          after: ['first-story'],
-          label: 'Accessibility tests',
+          after: ['render-component'],
+          label: 'Run accessibility tests',
           subscribe: ({ done }) => done(),
           content: (
             <>
               <p>
-                To run accessibility tests in the Storybook UI, first expand the testing widget in
-                the sidebar and check the Accessibility checkbox. Now, when you press the Run
-                component tests button, the accessibility tests will be run along with any other
-                tests you have configured.
+                Accessibility tests help ensure your UI is usable by everyone, no matter their
+                ability.
+              </p>
+              <p>
+                If you are not yet using the accessibility addon, run this command to install and
+                set it up, enabling you to run accessibility checks alongside your component tests:
+              </p>
+              <code>
+                <pre>{`npx storybook add @storybook/addon-a11y`}</pre>
+              </code>
+              <p>
+                Expand the test widget, check the Accessibility checkbox, and click the Run
+                component tests button.
               </p>
               <Link
                 href="https://storybook.js.org/docs/writing-tests/accessibility-testing#run-accessibility-tests"
@@ -268,18 +315,21 @@ export const checklistData: ChecklistData = {
         },
         {
           id: 'visual-tests',
-          after: ['first-story'],
-          label: 'Visual tests',
-          // subscribe: ({ done }) => done(),
+          after: ['render-component'],
+          label: 'Run visual tests',
+          // Criteria: Run visual tests from the test widget in the sidebar or the Visual Tests panel
           content: (
             <>
+              <p>Visual tests verify the appearance of your UI components.</p>
               <p>
-                Visual tests are the most efficient way to test your components. With the click of a
-                button you can take snapshots of every story in your Storybook and compare those
-                snapshots to baselines — last known “good” snapshots. Not only does this allow you
-                to check the appearance of your components, but they are also able to check a large
-                subset of component functionality without having to write or maintain any test code!
+                If you are not yet using the visual tests addon, run this command to install and set
+                it up, enabling you to run visual tests on your stories (this requires a free
+                Chromatic account):
               </p>
+              <code>
+                <pre>{`npx storybook add @chromatic-com/storybook`}</pre>
+              </code>
+              <p>Expand the test widget and click the Run visual tests button.</p>
               <Link
                 href="https://storybook.js.org/docs/writing-tests/visual-testing"
                 target="_blank"
@@ -287,6 +337,43 @@ export const checklistData: ChecklistData = {
               >
                 Learn more
               </Link>
+            </>
+          ),
+        },
+        {
+          id: 'coverage',
+          after: ['render-component'],
+          label: 'Generate a coverage report',
+          content: (
+            <>
+              <p>
+                Coverage reports show you which code is &mdash; and, more importantly &mdash;
+                isn&apos;t executed while running your component tests. You use it to be sure
+                you&apos;re testing the right things.
+              </p>
+              <p>
+                To generate a coverage report, expand the test widget in the sidebar and check the
+                Coverage checkbox. The next time you run component tests, it will generate an
+                interactive report, which you can view by clicking the results summary in the test
+                widget.
+              </p>
+            </>
+          ),
+        },
+        {
+          id: 'ci-tests',
+          after: ['render-component'],
+          label: 'Automate tests in CI',
+          content: (
+            <>
+              <p>
+                Automating component tests in CI is the best tool ensuring the quality and
+                reliability of your project.
+              </p>
+              <p>
+                You can automate all of Storybook&apos;s tests by using Chromatic or by running the
+                <pre>vitest --project storybook</pre> command in your CI scripts.
+              </p>
             </>
           ),
         },
@@ -298,27 +385,81 @@ export const checklistData: ChecklistData = {
       items: [
         {
           id: 'autodocs',
-          after: ['first-story'],
-          label: 'Autodocs',
+          after: ['render-component'],
+          label: 'Automatically document your components',
           content: (
             <>
-              Storybook Autodocs is a powerful tool that can help you quickly generate comprehensive
-              documentation for your UI components. By leveraging Autodocs, you're transforming your
-              stories into living documentation which can be further extended with MDX and Doc
-              Blocks to provide a clear and concise understanding of your components' functionality.
+              <p>
+                Add the autodocs tag to a component&apos;s meta to automatically generate
+                documentation for that component, complete with examples, source code, an API table,
+                and a description.
+              </p>
+              <code>
+                <pre>
+                  {`// Button.stories.js
+
+export default {
+  component: Button,
+  tags: ['autodocs'], // 👈 Add this tag
+}`}
+                </pre>
+              </code>
+              <p>
+                That tag can also be applied in <pre>.storybook/preview.js</pre>, to generate
+                documentation for all components.
+              </p>
             </>
           ),
+          // Criteria: At least one component with the autodocs tag applied
         },
         {
-          id: 'mdx',
-          after: ['first-story'],
-          label: 'Write MDX documentation',
+          id: 'mdx-docs',
+          after: ['render-component'],
+          label: 'Custom content with MDX',
           content: (
             <>
-              MDX files mix Markdown and Javascript/JSX to create rich interactive documentation.
-              You can use Markdown&apos;s readable syntax (such as `# heading`) for your
-              documentation, include stories defined in Component Story Format (CSF), and freely
-              embed JSX component blocks at any point in the file. All at once.
+              <p>
+                You can use MDX (markdown + React components) to provide an introduction to your
+                project, document things like design tokens, or go beyond the automatic
+                documentation for your components.
+              </p>
+              <p>
+                For a start, create an introduction.mdx file and (using markdown and
+                Storybook&apos;s doc blocks) write a usage guide for your project.
+              </p>
+            </>
+          ),
+          // Criteria: At least one MDX page
+        },
+        {
+          id: 'publish-storybook',
+          after: ['render-component'],
+          label: 'Publish your Storybook to share',
+          content: (
+            <>
+              <p>
+                Publishing your Storybook is easy and unlocks super clear review cycles and other
+                collaborative workflows.
+              </p>
+              <p>
+                Run <pre>storybook --build</pre> in CI and deploy it using services like Chromatic,
+                Vercel, or Netlify.
+              </p>
+              <h4>Take it further</h4>
+              <p>
+                Read the{' '}
+                <Link
+                  href="https://storybook.js.org/docs/sharing/publish-storybook"
+                  target="_blank"
+                >
+                  publishing documentation
+                </Link>{' '}
+                to learn:
+              </p>
+              <ul>
+                <li>How to configure the built Storybook (e.g. performance optimizations)</li>
+                <li>How to use your published Storybook to collaborate with colleagues</li>
+              </ul>
             </>
           ),
         },

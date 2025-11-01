@@ -12,7 +12,11 @@ import {
 import type { PackageManagerName } from 'storybook/internal/common';
 import { frameworkToRenderer, getCoercedStorybookVersion } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
+import {
+  isCsfFactoryPreview,
+  readConfig,
+  writeConfig as writeConfigFile,
+} from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -175,6 +179,9 @@ export const getStorybookData = async ({
   logger.debug('Getting Storybook version...');
   const storybookVersion = await getCoercedStorybookVersion(packageManager);
 
+  logger.debug('Getting csf version...');
+  const csf4 = previewConfigPath ? isCsfFactoryPreview(await readConfig(previewConfigPath)) : false;
+
   return {
     configDir,
     mainConfig,
@@ -184,6 +191,7 @@ export const getStorybookData = async ({
     previewConfigPath,
     packageManager,
     storiesPaths,
+    csf4,
   };
 };
 export type GetStorybookData = typeof getStorybookData;

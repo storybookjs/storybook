@@ -11,14 +11,13 @@ import limit from 'p-limit';
 import picocolors from 'picocolors';
 import * as prettier from 'prettier';
 import prettyTime from 'pretty-hrtime';
-import * as rollup from 'rollup';
-import * as rpd from 'rollup-plugin-dts';
+import * as rolldown from 'rolldown';
+import * as rpd from 'rolldown-plugin-dts';
 import slash from 'slash';
 import sortPackageJson from 'sort-package-json';
 import { dedent } from 'ts-dedent';
 import type * as typefest from 'type-fest';
 import typescript from 'typescript';
-import ts from 'typescript';
 
 import { CODE_DIRECTORY } from './constants';
 
@@ -35,18 +34,17 @@ const pathExists = async (path: string) => {
 
 export const dts = async (entry: string, externals: string[], tsconfig: string) => {
   const dir = dirname(entry).replace('src', 'dist');
-  const out = await rollup.rollup({
+  const out = await rolldown.rolldown({
     input: entry,
     external: [...externals, 'ast-types', 'react'].map((dep) => new RegExp(`^${dep}($|\\/|\\\\)`)),
-    output: { file: entry.replace('src', 'dist').replace('.ts', '.d.ts'), format: 'es' },
     plugins: [
       rpd.dts({
-        respectExternal: true,
+        emitDtsOnly: true,
         tsconfig,
         compilerOptions: {
           esModuleInterop: true,
           baseUrl: '.',
-          jsx: ts.JsxEmit.React,
+          jsx: 'react',
           declaration: true,
           noEmit: false,
           emitDeclarationOnly: true,
@@ -55,14 +53,14 @@ export const dts = async (entry: string, externals: string[], tsconfig: string) 
           declarationMap: false,
           skipLibCheck: true,
           preserveSymlinks: false,
-          target: ts.ScriptTarget.ESNext,
+          target: 'esnext',
         },
       }),
     ],
   });
   const { output } = await out.generate({
     format: 'es',
-    file: entry.replace('src', 'dist').replace('.ts', '.d.ts'),
+    dir,
   });
 
   await Promise.all(

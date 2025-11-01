@@ -13,7 +13,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
 import * as reactAnnotations from './entry-preview';
 import * as reactArgTypesAnnotations from './entry-preview-argtypes';
@@ -73,7 +73,7 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
     ReactTypes &
       T & {
         args: Simplify<
-          TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
+          TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
         >;
       },
     { args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs }

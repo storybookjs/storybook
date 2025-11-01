@@ -52,12 +52,12 @@
   },
   "dependencies": {
     "@storybook/global": "^5.0.0",
-    "type-fest": "~2.19",
     "vue-component-type-helpers": "latest"
   },
   "devDependencies": {
     "@testing-library/vue": "^8.0.0",
     "@vitejs/plugin-vue": "^4.4.0",
+    "type-fest": "^4.18.1",
     "typescript": "^5.8.3",
     "vue": "^3.2.47",
     "vue-tsc": "latest"
@@ -69,5 +69,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "a8e7fd8a655c69780bc20b9749d2699e45beae16"
+  "gitHead": "a8e7Fd8a655c69780bc20b9749d2699e45beAe16"
 }

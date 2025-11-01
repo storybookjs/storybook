@@ -1,12 +1,12 @@
 import { readFile } from 'node:fs/promises';
 
 import { recast } from 'storybook/internal/babel';
-import { JsPackageManagerFactory } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
 import { extractDescription } from 'storybook/internal/csf-tools';
 import { type ComponentManifestGenerator, type PresetPropertyFn } from 'storybook/internal/types';
 import { type ComponentManifest } from 'storybook/internal/types';
 
+import * as find from 'empathic/find';
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
@@ -22,9 +22,6 @@ interface ReactComponentManifest extends ComponentManifest {
 export const componentManifestGenerator: PresetPropertyFn<
   'experimental_componentManifestGenerator'
 > = async (config, options) => {
-  const packageManager = JsPackageManagerFactory.getPackageManager({
-    configDir: options.configDir,
-  });
   return (async (storyIndexGenerator) => {
     const index = await storyIndexGenerator.getIndex();
 
@@ -37,10 +34,10 @@ export const componentManifestGenerator: PresetPropertyFn<
     const singleEntryPerComponent = Object.values(groupByComponentId).flatMap((group) =>
       group && group?.length > 0 ? [group[0]] : []
     );
-    const packageName = packageManager.primaryPackageJson.packageJson.name;
     const components = await Promise.all(
       singleEntryPerComponent.flatMap(async (entry): Promise<ReactComponentManifest> => {
-        const storyFile = await readFile(path.join(process.cwd(), entry.importPath), 'utf-8');
+        const storyAbsPath = path.join(process.cwd(), entry.importPath);
+        const storyFile = await readFile(storyAbsPath, 'utf-8');
         const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
         const name = csf._meta?.component ?? entry.title.split('/').at(-1)!;
         const id = entry.id.split('--')[0];
@@ -63,6 +60,13 @@ export const componentManifestGenerator: PresetPropertyFn<
           })
           .filter(Boolean);
 
+        const nearestPkg = find.up('package.json', {
+          cwd: path.dirname(storyAbsPath),
+          last: process.cwd(),
+        });
+        const packageName = nearestPkg
+          ? JSON.parse(await readFile(nearestPkg, 'utf-8')).name
+          : undefined;
         const fallbackImport = packageName ? `import { ${name} } from "${packageName}";` : '';
         const calculatedImports =
           getComponentImports(csf, packageName).imports.join('\n').trim() ?? fallbackImport;

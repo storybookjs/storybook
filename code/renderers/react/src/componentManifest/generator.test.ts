@@ -23,6 +23,10 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
 });
 vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
 vi.mock('node:fs', async () => (await import('memfs')).fs);
+
+vi.mock('empathic/find', async () => ({
+  up: (path: string) => '/app/package.json',
+}));
 vi.mock('tsconfig-paths', () => ({ loadConfig: () => ({ resultType: null!, message: null! }) }));
 
 // Use the provided indexJson from this file
@@ -111,6 +115,7 @@ beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(
     {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
       ['./src/stories/Button.stories.ts']: dedent`
         import type { Meta, StoryObj } from '@storybook/react';
         import { fn } from 'storybook/test';
@@ -432,6 +437,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
 async function getManifestForStory(code: string) {
   vol.fromJSON(
     {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
       ['./src/stories/Button.stories.ts']: code,
       ['./src/stories/Button.tsx']: dedent`
         import React from 'react';

@@ -68,11 +68,6 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         id: 'copy-story-name',
         title: copyText,
         icon: <CopyIcon />,
-        // TODO: bring this back once we want to add shortcuts for this
-        // right:
-        //   enableShortcuts && shortcutKeys.copyStoryName ? (
-        //     <Shortcut keys={shortcutKeys.copyStoryName} />
-        //   ) : null,
         onClick: (e: SyntheticEvent) => {
           e.preventDefault();
           copy(context.exportName);
@@ -101,6 +96,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
       },
     };
   }, []);
+
   /**
    * Calculate the providerLinks whenever the user mouses over the container. We use an incrementor,
    * instead of a simple boolean to ensure that the links are recalculated
@@ -124,6 +120,12 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
       return empty;
     }
 
+    //  Deduplicate context menu links before rendering
+    const mergedLinks = [...topLinks, ...links];
+    const uniqueLinks = Array.from(
+      new Map(mergedLinks.map((item) => [item.id, item])).values()
+    );
+
     return {
       onMouseEnter: handlers.onMouseEnter,
       node: shouldRender ? (
@@ -139,7 +141,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
               setIsOpen(true);
             }
           }}
-          tooltip={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
+          tooltip={<LiveContextMenu context={context} links={uniqueLinks} />}
         >
           <FloatingStatusButton type="button" status="status-value:pending">
             <EllipsisIcon />

@@ -63,7 +63,7 @@ export const Dark: Story = {
 export const Closed: Story = {
   play: async ({ canvasElement }) => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    const closeButton = await within(canvasElement).getByTitle('Close about section');
-    await closeButton.click();
+    const closeButton = within(canvasElement).getByText('Back');
+    closeButton.click();
   },
 };

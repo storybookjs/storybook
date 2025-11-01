@@ -2,7 +2,7 @@ import React from 'react';
 
 import { color, styled } from 'storybook/theming';
 
-const Input = styled.input({
+const Input = styled.input(({ theme }) => ({
   appearance: 'none',
   display: 'grid',
   placeContent: 'center',
@@ -10,19 +10,19 @@ const Input = styled.input({
   height: 14,
   flexShrink: 0,
   margin: 0,
-  border: `1px solid ${color.border}`,
+  border: `1px solid ${theme.input.border}`,
   borderRadius: 2,
-  backgroundColor: 'white',
+  backgroundColor: theme.input.background,
   transition: 'background-color 0.1s',
 
   '&:enabled': {
     cursor: 'pointer',
   },
   '&:disabled': {
-    backgroundColor: color.medium,
+    backgroundColor: theme.base === 'light' ? color.light : 'transparent',
   },
   '&:disabled:checked, &:disabled:indeterminate': {
-    backgroundColor: color.mediumdark,
+    backgroundColor: theme.base === 'light' ? color.mediumdark : theme.color.dark,
   },
   '&:checked, &:indeterminate': {
     backgroundColor: color.secondary,
@@ -40,10 +40,10 @@ const Input = styled.input({
     background: 'white',
   },
   '&:enabled:focus-visible': {
-    outline: `1px solid ${color.secondary}`,
-    outlineOffset: 1,
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: 2,
   },
-});
+}));
 
 export const Checkbox = (props: React.InputHTMLAttributes<HTMLInputElement>) => {
   return <Input {...props} type="checkbox" />;

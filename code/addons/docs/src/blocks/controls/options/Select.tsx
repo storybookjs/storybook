@@ -62,6 +62,15 @@ const OptionsSelect = styled.select(styleResets, ({ theme }) => ({
       padding: '6px 10px',
       marginLeft: 1,
       marginRight: 1,
+
+      '&:hover': {
+        background: theme.background.hoverable,
+      },
+      '&:checked': {
+        background: 'transparent',
+        color: theme.color.secondary,
+        fontWeight: theme.typography.weight.bold,
+      },
     },
   },
 }));
@@ -107,6 +116,9 @@ const SingleSelect: FC<SelectProps> = ({ name, value, options, onChange, argType
   return (
     <SelectWrapper>
       <ChevronSmallDownIcon />
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
       <OptionsSelect disabled={readonly} id={controlId} value={selection} onChange={handleChange}>
         <option key="no-selection" disabled>
           {NO_SELECTION}
@@ -135,6 +147,9 @@ const MultiSelect: FC<SelectProps> = ({ name, value, options, onChange, argType 
 
   return (
     <SelectWrapper>
+      <label htmlFor={controlId} className="sb-sr-only">
+        {name}
+      </label>
       <OptionsSelect
         disabled={readonly}
         id={controlId}

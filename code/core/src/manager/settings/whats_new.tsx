@@ -68,17 +68,17 @@ export const WhatsNewFooter = ({
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <HeartIcon color={theme.color.mediumdark} />
         <div>Share this with your team.</div>
-        <Button onClick={copyLink} size="small" variant="ghost">
+        <Button ariaLabel={false} onClick={copyLink} size="small" variant="ghost">
           {copyText}
         </Button>
       </div>
       {isNotificationsEnabled ? (
-        <Button size="small" variant="ghost" onClick={onToggleNotifications}>
+        <Button ariaLabel={false} size="small" variant="ghost" onClick={onToggleNotifications}>
           <EyeCloseIcon />
           Hide notifications
         </Button>
       ) : (
-        <Button size="small" variant="ghost" onClick={onToggleNotifications}>
+        <Button ariaLabel={false} size="small" variant="ghost" onClick={onToggleNotifications}>
           <EyeIcon />
           Show notifications
         </Button>

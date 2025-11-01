@@ -38,13 +38,20 @@ export const formatTime = (value: Date | number) => {
   return `${hours}:${minutes}`;
 };
 
-const FormInput = styled(Form.Input)(({ readOnly }) => ({
-  opacity: readOnly ? 0.5 : 1,
-}));
+const FormInput = styled(Form.Input)(({ theme, readOnly }) =>
+  readOnly
+    ? {
+        background: theme.base === 'light' ? theme.color.lighter : 'transparent',
+      }
+    : {}
+);
 
-const FlexSpaced = styled.div(({ theme }) => ({
+const FlexSpaced = styled.fieldset(({ theme }) => ({
   flex: 1,
   display: 'flex',
+  border: 0,
+  marginInline: 0,
+  padding: 0,
 
   input: {
     marginLeft: 10,
@@ -119,6 +126,10 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
 
   return (
     <FlexSpaced>
+      <legend className="sb-sr-only">{name}</legend>
+      <label htmlFor={`${controlId}-date`} className="sb-sr-only">
+        Date
+      </label>
       <FormInput
         type="date"
         max="9999-12-31" // I do this because of a rendering bug in chrome
@@ -129,6 +140,9 @@ export const DateControl: FC<DateProps> = ({ name, value, onChange, onFocus, onB
         onChange={onDateChange}
         {...{ onFocus, onBlur }}
       />
+      <label htmlFor={`${controlId}-time`} className="sb-sr-only">
+        Time
+      </label>
       <FormInput
         type="time"
         id={`${controlId}-time`}

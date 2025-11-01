@@ -1,9 +1,7 @@
-import { transparentize } from 'polished';
-
 export const color = {
   // Official color palette
   primary: '#FF4785', // coral
-  secondary: '#029CFD', // ocean
+  secondary: '#006DEB', // ocean
   tertiary: '#FAFBFC',
   ancillary: '#22a699',
 
@@ -17,30 +15,30 @@ export const color = {
 
   // Monochrome
   lightest: '#FFFFFF',
-  lighter: '#F7FAFC',
-  light: '#EEF3F6',
-  mediumlight: '#ECF4F9',
-  medium: '#D9E8F2',
-  mediumdark: '#73828C',
-  dark: '#5C6870',
-  darker: '#454E54',
-  darkest: '#2E3438',
+  lighter: '#F6F9FC',
+  light: '#EEF2F6',
+  mediumlight: '#ECF2F9',
+  medium: '#D9E5F2',
+  mediumdark: '#737F8C',
+  dark: '#5C6570',
+  darker: '#454C54',
+  darkest: '#2E3338',
 
   // For borders
-  border: 'hsla(203, 50%, 30%, 0.15)',
+  border: 'hsla(212, 50%, 30%, 0.15)',
 
   // Status
   positive: '#66BF3C',
-  negative: '#FF4400',
   warning: '#E69D00',
+  negative: '#FF4400',
   critical: '#FFFFFF',
 
   // Text
-  defaultText: '#2E3438',
+  defaultText: '#2E3338',
   inverseText: '#FFFFFF',
-  positiveText: '#448028',
-  negativeText: '#D43900',
-  warningText: '#A15C20',
+  positiveText: '#427C27',
+  warningText: '#955B1E',
+  negativeText: '#C23400',
 };
 
 export const background = {
@@ -49,13 +47,13 @@ export const background = {
   content: color.lightest,
   preview: color.lightest,
   gridCellSize: 10,
-  hoverable: transparentize(0.9, color.secondary), // hover state for items in a list
+  hoverable: '#DBECFF',
 
   // Notification, error, and warning backgrounds
-  positive: '#E1FFD4',
-  negative: '#FEDED2',
-  warning: '#FFF5CF',
-  critical: '#FF4400',
+  positive: '#F1FFEB',
+  warning: '#FFF9EB',
+  negative: '#FFF0EB',
+  critical: '#D13800',
 };
 
 export const typography = {

@@ -216,24 +216,6 @@ test('componentManifestGenerator generates correct id, name, description and exa
         "example-button": {
           "description": "Primary UI component for user interaction",
           "error": undefined,
-          "examples": [
-            {
-              "name": "Primary",
-              "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button"></Button>;",
-            },
-            {
-              "name": "Secondary",
-              "snippet": "const Secondary = () => <Button onClick={fn()} label="Button"></Button>;",
-            },
-            {
-              "name": "Large",
-              "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button"></Button>;",
-            },
-            {
-              "name": "Small",
-              "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button"></Button>;",
-            },
-          ],
           "id": "example-button",
           "import": undefined,
           "jsDocTags": {},
@@ -315,25 +297,29 @@ test('componentManifestGenerator generates correct id, name, description and exa
               },
             },
           },
+          "stories": [
+            {
+              "name": "Primary",
+              "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button"></Button>;",
+            },
+            {
+              "name": "Secondary",
+              "snippet": "const Secondary = () => <Button onClick={fn()} label="Button"></Button>;",
+            },
+            {
+              "name": "Large",
+              "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button"></Button>;",
+            },
+            {
+              "name": "Small",
+              "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button"></Button>;",
+            },
+          ],
           "summary": undefined,
         },
         "example-header": {
           "description": "Description from meta and very long.",
           "error": undefined,
-          "examples": [
-            {
-              "name": "LoggedIn",
-              "snippet": "const LoggedIn = () => <Header
-        onLogin={fn()}
-        onLogout={fn()}
-        onCreateAccount={fn()}
-        user={{ name: 'Jane Doe' }}></Header>;",
-            },
-            {
-              "name": "LoggedOut",
-              "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()}></Header>;",
-            },
-          ],
           "id": "example-header",
           "import": "import { Header } from '@design-system/components/Header';",
           "jsDocTags": {
@@ -407,6 +393,20 @@ test('componentManifestGenerator generates correct id, name, description and exa
               },
             },
           },
+          "stories": [
+            {
+              "name": "LoggedIn",
+              "snippet": "const LoggedIn = () => <Header
+        onLogin={fn()}
+        onLogout={fn()}
+        onCreateAccount={fn()}
+        user={{ name: 'Jane Doe' }}></Header>;",
+            },
+            {
+              "name": "LoggedOut",
+              "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()}></Header>;",
+            },
+          ],
           "summary": "Component summary",
         },
       },
@@ -496,12 +496,6 @@ test('fall back to index title when no component name', async () => {
     {
       "description": "Primary UI component for user interaction",
       "error": undefined,
-      "examples": [
-        {
-          "name": "Primary",
-          "snippet": "const Primary = () => <Button csf1="story" />;",
-        },
-      ],
       "id": "example-button",
       "import": undefined,
       "jsDocTags": {},
@@ -528,6 +522,12 @@ test('fall back to index title when no component name', async () => {
           },
         },
       },
+      "stories": [
+        {
+          "name": "Primary",
+          "snippet": "const Primary = () => <Button csf1="story" />;",
+        },
+      ],
       "summary": undefined,
     }
   `);
@@ -541,19 +541,6 @@ test('component exported from other file', async () => {
     {
       "description": "Primary UI component for user interaction",
       "error": undefined,
-      "examples": [
-        {
-          "error": {
-            "message": "Expected story to be a function or variable declaration
-       8 | export default meta;
-       9 |
-    > 10 | export { Primary } from './other-file';
-         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-            "name": "SyntaxError",
-          },
-          "name": "Primary",
-        },
-      ],
       "id": "example-button",
       "import": undefined,
       "jsDocTags": {},
@@ -580,6 +567,19 @@ test('component exported from other file', async () => {
           },
         },
       },
+      "stories": [
+        {
+          "error": {
+            "message": "Expected story to be a function or variable declaration
+       8 | export default meta;
+       9 |
+    > 10 | export { Primary } from './other-file';
+         | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
+            "name": "SyntaxError",
+          },
+          "name": "Primary",
+        },
+      ],
       "summary": undefined,
     }
   `);
@@ -593,19 +593,6 @@ test('unknown expressions', async () => {
     {
       "description": "Primary UI component for user interaction",
       "error": undefined,
-      "examples": [
-        {
-          "error": {
-            "message": "Expected story to be csf factory, function or an object expression
-       8 | export default meta;
-       9 |
-    > 10 | export const Primary = someWeirdExpression;
-         |                        ^^^^^^^^^^^^^^^^^^^",
-            "name": "SyntaxError",
-          },
-          "name": "Primary",
-        },
-      ],
       "id": "example-button",
       "import": undefined,
       "jsDocTags": {},
@@ -632,6 +619,19 @@ test('unknown expressions', async () => {
           },
         },
       },
+      "stories": [
+        {
+          "error": {
+            "message": "Expected story to be csf factory, function or an object expression
+       8 | export default meta;
+       9 |
+    > 10 | export const Primary = someWeirdExpression;
+         |                        ^^^^^^^^^^^^^^^^^^^",
+            "name": "SyntaxError",
+          },
+          "name": "Primary",
+        },
+      ],
       "summary": undefined,
     }
   `);

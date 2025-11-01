@@ -700,7 +700,7 @@ export async function doInitiate(options: CommandOptions): Promise<
 
       2. Wrap your metro config with the withStorybook enhancer function like this:
 
-      ${picocolors.inverse(' ' + "const withStorybook = require('@storybook/react-native/metro/withStorybook');" + ' ')}
+      ${picocolors.inverse(' ' + "const { withStorybook } = require('@storybook/react-native/metro/withStorybook');" + ' ')}
       ${picocolors.inverse(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
 
       For more details go to:

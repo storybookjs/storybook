@@ -21,7 +21,6 @@ function printError(error: any) {
     error.compilation.errors.forEach((e: any) => logger.log(e));
   }
 
-  logger.line();
   logger.warn(
     error.close
       ? dedent`
@@ -33,7 +32,6 @@ function printError(error: any) {
           You may need to refresh the browser.
         `
   );
-  logger.line();
 }
 
 const handleCommandFailure = async (): Promise<never> => {

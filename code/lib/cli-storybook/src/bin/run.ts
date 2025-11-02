@@ -216,9 +216,14 @@ command('sandbox [filterValue]')
   .description('Create a sandbox from a set of possible templates')
   .option('-o --output <outDir>', 'Define an output directory')
   .option('--no-init', 'Whether to download a template without an initialized Storybook', false)
-  .action((filterValue, options) =>
-    sandbox({ filterValue, ...options }).catch(handleCommandFailure)
-  );
+  .action((filterValue, options) => {
+    logger.intro(`Creating a Storybook sandbox...`);
+    sandbox({ filterValue, ...options })
+      .catch(handleCommandFailure)
+      .finally(() => {
+        logger.outro('Done!');
+      });
+  });
 
 command('link <repo-url-or-directory>')
   .description('Pull down a repro from a URL (or a local directory), link it, and run storybook')

@@ -70,10 +70,10 @@ const webpack = async (
     return webpackConfig;
   }
 
-  logger.info(`=> Loading Webpack configuration from \`${relative(CWD, scriptsPath)}\``);
+  logger.step(`Loading Webpack configuration from \`${relative(CWD, scriptsPath)}\``);
 
   // Remove existing rules related to JavaScript and TypeScript.
-  logger.info(`=> Removing existing JavaScript and TypeScript rules.`);
+  logger.step(`Removing existing JavaScript and TypeScript rules.`);
   const filteredRules = (webpackConfig.module?.rules as RuleSetRule[])?.filter((rule) => {
     if (typeof rule === 'string') {
       return false;
@@ -88,7 +88,7 @@ const webpack = async (
   const craWebpackConfig = require(craWebpackConfigPath)(webpackConfig.mode) as Configuration;
 
   // Select the relevant CRA rules and add the Storybook config directory.
-  logger.info(`=> Modifying Create React App rules.`);
+  logger.step(`Modifying Create React App rules.`);
   const craRules = await processCraConfig(craWebpackConfig, options);
 
   // NOTE: This is code replicated from

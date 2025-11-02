@@ -1,4 +1,3 @@
-import type { Documentation } from 'react-docgen';
 import { describe, expect, test } from 'vitest';
 import { parseReactDocgen } from './parse-react-docgen';
 
@@ -26,10 +25,10 @@ describe('parseReactDocgen', () => {
       {
         "props": {
           "size": {
-            "defaultValue": "\"md\"",
+            "defaultValue": ""md"",
             "description": "Visual size",
             "required": false,
-            "type": "\"sm\" | \"md\" | \"lg\"",
+            "type": ""sm" | "md" | "lg"",
           },
         },
       }
@@ -59,7 +58,7 @@ describe('parseReactDocgen', () => {
             "defaultValue": undefined,
             "description": "Semantic tone",
             "required": false,
-            "type": "\"primary\" | \"secondary\"",
+            "type": ""primary" | "secondary"",
           },
         },
       }
@@ -146,7 +145,7 @@ describe('parseReactDocgen', () => {
             "defaultValue": undefined,
             "description": undefined,
             "required": undefined,
-            "type": "[\"x\", number]",
+            "type": "["x", number]",
           },
         },
       }
@@ -168,7 +167,7 @@ describe('parseReactDocgen', () => {
             "defaultValue": undefined,
             "description": undefined,
             "required": undefined,
-            "type": "\"solid\"",
+            "type": ""solid"",
           },
         },
       }
@@ -240,10 +239,10 @@ describe('parseReactDocgen', () => {
       {
         "props": {
           "asKind": {
-            "defaultValue": "{ kind: \"button\", type: \"button\" }",
+            "defaultValue": "{ kind: "button", type: "button" }",
             "description": undefined,
             "required": undefined,
-            "type": "{ kind: \"button\"; type?: \"button\" | \"submit\" | \"reset\" }",
+            "type": "{ kind: "button"; type?: "button" | "submit" | "reset" }",
           },
         },
       }

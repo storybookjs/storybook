@@ -1,3 +1,4 @@
+// oxlint-disable typescript-eslint(unbound-method) -- I'm unsure how to fix this properly
 import { describe, it, expect, vi } from 'vitest';
 import {
 	incomingMessageToWebRequest,
@@ -7,7 +8,6 @@ import {
 } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { PassThrough } from 'node:stream';
-import type { Connect } from 'vite';
 
 // Mock dependencies
 vi.mock('./telemetry.ts', () => ({
@@ -254,12 +254,10 @@ describe('mcpServerHandler', () => {
 			body: createMCPInitializeRequest(),
 		});
 		const { response, getResponseData } = createMockServerResponse();
-		const mockNext = vi.fn() as Connect.NextFunction;
 
 		await mcpServerHandler({
 			req: mockReq,
 			res: response,
-			next: mockNext,
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: {
@@ -311,7 +309,6 @@ describe('mcpServerHandler', () => {
 			body: createMCPInitializeRequest(),
 		});
 		const { response } = createMockServerResponse();
-		const mockNext = vi.fn() as Connect.NextFunction;
 
 		// Reset module state by clearing transport
 		const handler = await import('./mcp-handler.ts');
@@ -321,7 +318,6 @@ describe('mcpServerHandler', () => {
 		await mcpServerHandler({
 			req: mockReq,
 			res: response,
-			next: mockNext,
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: {
@@ -366,12 +362,10 @@ describe('mcpServerHandler', () => {
 			body: createMCPInitializeRequest(),
 		});
 		const { response } = createMockServerResponse();
-		const mockNext = vi.fn() as Connect.NextFunction;
 
 		await freshHandler({
 			req: mockReq,
 			res: response,
-			next: mockNext,
 			options: mockOptions as any,
 			addonOptions: {
 				toolsets: {
@@ -397,12 +391,12 @@ describe('mcpServerHandler', () => {
 
 		// Verify the 'enabled' callbacks matches the truthy addon options
 		const listToolEnabledCallback = vi.mocked(addListAllComponentsTool).mock
-			.calls[0]?.[1]!;
+			.calls[0]?.[1];
 		const getToolEnabledCallback = vi.mocked(addGetComponentDocumentationTool)
-			.mock.calls[0]?.[1]!;
+			.mock.calls[0]?.[1];
 
-		expect(listToolEnabledCallback()).toBe(true);
-		expect(getToolEnabledCallback()).toBe(true);
+		expect(listToolEnabledCallback?.()).toBe(true);
+		expect(getToolEnabledCallback?.()).toBe(true);
 	});
 });
 

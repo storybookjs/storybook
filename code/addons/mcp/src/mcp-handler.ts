@@ -1,4 +1,3 @@
-import type { Connect } from 'vite';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
@@ -37,9 +36,9 @@ const initializeMCPServer = async (options: Options) => {
 		},
 	).withContext<AddonContext>();
 
-	server.on('initialize', () => {
+	server.on('initialize', async () => {
 		if (!options.disableTelemetry) {
-			collectTelemetry({
+			await collectTelemetry({
 				event: 'session:initialized',
 				server,
 			});
@@ -74,7 +73,6 @@ const initializeMCPServer = async (options: Options) => {
 type McpServerHandlerParams = {
 	req: IncomingMessage;
 	res: ServerResponse;
-	next: Connect.NextFunction;
 	options: Options;
 	addonOptions: AddonOptionsOutput;
 };
@@ -82,7 +80,6 @@ type McpServerHandlerParams = {
 export const mcpServerHandler = async ({
 	req,
 	res,
-	next,
 	options,
 	addonOptions,
 }: McpServerHandlerParams) => {
@@ -154,6 +151,7 @@ export async function incomingMessageToWebRequest(
 	return new Request(url, {
 		method: req.method,
 		headers: req.headers as HeadersInit,
+		// oxlint-disable-next-line no-invalid-fetch-options -- We now req.method is always 'POST', linter doesn't
 		body: bodyBuffer.length > 0 ? new Uint8Array(bodyBuffer) : undefined,
 	});
 }

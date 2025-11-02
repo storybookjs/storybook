@@ -8,8 +8,7 @@
 		"ai"
 	],
 	"repository": {
-		"type": "git",
-		"url": "https://github.com/storybookjs/mcp.git",
+		"url": "git+https://github.com/storybookjs/mcp.git",
 		"directory": "packages/addon-mcp"
 	},
 	"license": "MIT",
@@ -29,8 +28,9 @@
 		"prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
 		"build": "tsdown --config ../../tsdown.config.ts",
 		"dev": "pnpm run build -- --watch",
-		"test": "vitest",
 		"inspect": "mcp-inspector --config ../../.mcp.inspect.json --server storybook-addon-mcp",
+		"publint": "publint",
+		"test": "vitest",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
@@ -43,6 +43,7 @@
 	"devDependencies": {
 		"@types/node": "catalog:",
 		"@vitest/coverage-v8": "catalog:",
+		"publint": "catalog:",
 		"storybook": "catalog:",
 		"ts-dedent": "^2.2.0",
 		"tsdown": "catalog:",

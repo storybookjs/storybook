@@ -16,7 +16,6 @@
 		"noImplicitOverride": true,
 		"noImplicitAny": true,
 		"lib": ["esnext", "dom", "dom.iterable"],
-		"baseUrl": "."
 	},
 	"include": ["stories/**/*"]
 }

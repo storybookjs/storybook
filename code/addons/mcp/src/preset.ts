@@ -12,11 +12,10 @@ export const experimental_devServer: PresetProperty<
 		toolsets: (options as AddonOptionsInput).toolsets ?? {},
 	});
 
-	app!.post('/mcp', (req, res, next) =>
+	app!.post('/mcp', (req, res) =>
 		mcpServerHandler({
 			req,
 			res,
-			next,
 			options,
 			addonOptions,
 		}),

@@ -61,7 +61,7 @@ function serializeTsType(tsType: PropDescriptor['tsType']): string | undefined {
 			const props = (tsType.signature?.properties ?? []).map((p) => {
 				const req: boolean = Boolean(p.value?.required);
 				const propType = serializeTsType(p.value) ?? 'any';
-				return `${p.key}${req ? '' : '?'}: ${propType}`;
+				return `${p.key as string}${req ? '' : '?'}: ${propType}`;
 			});
 			return `{ ${props.join('; ')} }`;
 		}

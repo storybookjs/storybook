@@ -1,3 +1,4 @@
+@custom-variant hover (&:hover);
 .main {
   display: flex;
   flex-direction: column;

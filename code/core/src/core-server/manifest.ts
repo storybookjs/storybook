@@ -774,6 +774,8 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
                 <span class="ex-name">${esc(ex.name)}</span>
                 <span class="badge err">story error</span>
               </div>
+              ${ex?.summary ? `<div>${esc(ex.summary)}</div>` : ''}
+              ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ''}
               ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
               ${ex?.error?.message ? `<pre><code>${esc(ex.error.message)}</code></pre>` : ''}
             </div>`
@@ -800,6 +802,8 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
                 <span class="ex-name">${esc(ex.name)}</span>
                 <span class="badge ok">story ok</span>
               </div>
+              ${ex?.summary ? `<div>${esc(ex.summary)}</div>` : ''}
+              ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ''}
               ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
             </div>`
             )

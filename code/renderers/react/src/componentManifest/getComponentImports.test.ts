@@ -1,15 +1,39 @@
-import { expect, test } from 'vitest';
+import { beforeEach, expect, test, vi } from 'vitest';
 
 import { loadCsf } from 'storybook/internal/csf-tools';
 
+import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
 import { getComponentImports } from './getComponentImports';
+import { fsMocks } from './test-utils';
 
-const getImports = (code: string, packageName?: string) =>
+vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
+vi.mock('node:fs', async () => (await import('memfs')).fs);
+vi.mock('tsconfig-paths', () => ({ loadConfig: () => ({ resultType: null!, message: null! }) }));
+
+// Mock resolveImport to deterministically resolve known relative imports for these tests
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal()),
+  resolveImport: (id: string) => {
+    return {
+      './Button': './src/stories/Button.tsx',
+      './Header': './src/stories/Header.tsx',
+    }[id];
+  },
+}));
+
+beforeEach(() => {
+  vi.spyOn(process, 'cwd').mockReturnValue('/app');
+  vol.fromJSON(fsMocks, '/app');
+  return () => vol.reset();
+});
+
+const getImports = (code: string, packageName?: string, storyFilePath?: string) =>
   getComponentImports({
     csf: loadCsf(code, { makeTitle: (t?: string) => t ?? 'title' }).parse(),
     packageName,
+    storyFilePath,
   });
 
 test('Get imports from multiple components', async () => {
@@ -454,21 +478,201 @@ test('Converts default relative import to named when packageName provided', asyn
     export default meta;
     export const S = <Header/>;
   `;
-  expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
-    `Promise {}`
+  expect(
+    await getImports(code, 'my-package', '/app/src/stories/Header.stories.tsx')
+  ).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Header",
+          "importId": "./Header",
+          "importName": "default",
+          "importOverride": "import { Header } from '@design-system/components/Header';",
+          "localImportName": "Header",
+          "path": "./src/stories/Header.tsx",
+          "reactDocgen": {
+            "data": {
+              "actualName": "",
+              "definedInFile": "./src/stories/Header.tsx",
+              "description": "@import import { Header } from '@design-system/components/Header';",
+              "exportName": "default",
+              "methods": [],
+              "props": {
+                "onCreateAccount": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "signature",
+                    "raw": "() => void",
+                    "signature": {
+                      "arguments": [],
+                      "return": {
+                        "name": "void",
+                      },
+                    },
+                    "type": "function",
+                  },
+                },
+                "onLogin": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "signature",
+                    "raw": "() => void",
+                    "signature": {
+                      "arguments": [],
+                      "return": {
+                        "name": "void",
+                      },
+                    },
+                    "type": "function",
+                  },
+                },
+                "onLogout": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "signature",
+                    "raw": "() => void",
+                    "signature": {
+                      "arguments": [],
+                      "return": {
+                        "name": "void",
+                      },
+                    },
+                    "type": "function",
+                  },
+                },
+                "user": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "User",
+                  },
+                },
+              },
+            },
+            "type": "success",
+          },
+        },
+      ],
+      "imports": [
+        "import { Header } from "my-package";",
+      ],
+    }
+  `
   );
 });
 
 test('Converts relative import to provided packageName', async () => {
   const code = dedent`
-    import { Button } from './components/Button';
+    import { Button } from './Button';
 
     const meta = {};
     export default meta;
     export const S = <Button/>;
   `;
-  expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
-    `Promise {}`
+  expect(
+    await getImports(code, 'my-package', '/app/src/stories/Button.stories.tsx')
+  ).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "./Button",
+          "importName": "Button",
+          "importOverride": "import { Button } from '@design-system/components/Button';",
+          "localImportName": "Button",
+          "path": "./src/stories/Button.tsx",
+          "reactDocgen": {
+            "data": {
+              "actualName": "Button",
+              "definedInFile": "./src/stories/Button.tsx",
+              "description": "Primary UI component for user interaction
+    @import import { Button } from '@design-system/components/Button';",
+              "displayName": "Button",
+              "exportName": "Button",
+              "methods": [],
+              "props": {
+                "backgroundColor": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "string",
+                  },
+                },
+                "label": {
+                  "description": "",
+                  "required": true,
+                  "tsType": {
+                    "name": "string",
+                  },
+                },
+                "onClick": {
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "name": "signature",
+                    "raw": "() => void",
+                    "signature": {
+                      "arguments": [],
+                      "return": {
+                        "name": "void",
+                      },
+                    },
+                    "type": "function",
+                  },
+                },
+                "primary": {
+                  "defaultValue": {
+                    "computed": false,
+                    "value": "false",
+                  },
+                  "description": "Description of primary",
+                  "required": false,
+                  "tsType": {
+                    "name": "boolean",
+                  },
+                },
+                "size": {
+                  "defaultValue": {
+                    "computed": false,
+                    "value": "'medium'",
+                  },
+                  "description": "",
+                  "required": false,
+                  "tsType": {
+                    "elements": [
+                      {
+                        "name": "literal",
+                        "value": "'small'",
+                      },
+                      {
+                        "name": "literal",
+                        "value": "'medium'",
+                      },
+                      {
+                        "name": "literal",
+                        "value": "'large'",
+                      },
+                    ],
+                    "name": "union",
+                    "raw": "'small' | 'medium' | 'large'",
+                  },
+                },
+              },
+            },
+            "type": "success",
+          },
+        },
+      ],
+      "imports": [
+        "import { Button } from "my-package";",
+      ],
+    }
+  `
   );
 });
 
@@ -508,8 +712,23 @@ test('Non-relative import remains unchanged even if packageName provided', async
     export default meta;
     export const S = <Button/>;
   `;
-  expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
-    `Promise {}`
+  expect(await getImports(code, 'my-package')).toMatchInlineSnapshot(
+    `
+    {
+      "components": [
+        {
+          "componentName": "Button",
+          "importId": "@ds/button",
+          "importName": "Button",
+          "localImportName": "Button",
+          "path": undefined,
+        },
+      ],
+      "imports": [
+        "import { Button } from \"@ds/button\";",
+      ],
+    }
+  `
   );
 });
 

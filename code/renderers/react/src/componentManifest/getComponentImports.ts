@@ -372,20 +372,16 @@ export async function getComponentImports({
     components.map(async (component) => {
       if (component.path) {
         const docgen = await getReactDocgen(component.path, component.importName);
-        if (docgen.type === 'success') {
-          const importTag = getImportTag(docgen.data);
-          if (importTag) {
-            return {
-              ...component,
-              reactDocgen: docgen.data,
-              importOverride: importTag,
-            };
-          }
-        }
+        const importOverride = docgen.type === 'success' ? getImportTag(docgen.data) : undefined;
+        return {
+          ...component,
+          reactDocgen: docgen,
+          importOverride,
+        };
       }
       return component;
     })
   );
   const imports = getImports({ components: withDocgen, packageName });
-  return { components, imports };
+  return { components: withDocgen, imports };
 }

@@ -38,10 +38,14 @@ export const componentManifestGenerator: PresetPropertyFn<
       group && group?.length > 0 ? [group[0]] : []
     );
     const components = await Promise.all(
-      singleEntryPerComponent.flatMap(async (entry): Promise<ReactComponentManifest> => {
+      singleEntryPerComponent.map(async (entry): Promise<ReactComponentManifest | undefined> => {
         const absoluteImportPath = path.join(process.cwd(), entry.importPath);
         const storyFile = await readFile(absoluteImportPath, 'utf-8');
         const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
+
+        if (csf.meta.tags?.includes('!manifest')) {
+          return;
+        }
         let componentName = csf._meta?.component;
         const title = entry.title.replace(/\s+/g, '');
 
@@ -87,10 +91,20 @@ export const componentManifestGenerator: PresetPropertyFn<
 
         const stories = Object.keys(csf._stories)
           .map((storyName) => {
+            const story = csf._stories[storyName];
+            if (story.tags?.includes('!manifest')) {
+              return;
+            }
             try {
+              const jsdocComment = extractDescription(csf._storyStatements[storyName]);
+              const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
+              const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+
               return {
                 name: storyName,
                 snippet: recast.print(getCodeSnippet(csf, storyName, componentName)).code,
+                description: finalDescription?.trim(),
+                summary: tags.summary?.[0],
               };
             } catch (e) {
               invariant(e instanceof Error);
@@ -100,7 +114,7 @@ export const componentManifestGenerator: PresetPropertyFn<
               };
             }
           })
-          .filter(Boolean);
+          .filter((it) => it != null);
 
         const base = {
           id,

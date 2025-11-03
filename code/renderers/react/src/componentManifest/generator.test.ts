@@ -6,17 +6,16 @@ import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
 import { componentManifestGenerator } from './generator';
+import { fsMocks } from './test-utils';
 
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal()),
   // Keep it simple: hardcode known inputs to expected outputs for this test.
-  resolveImport: (id: string, opts: { basedir: string }) => {
-    const basedir = opts?.basedir;
-    return basedir === '/app/src/stories' && id === './Button'
-      ? './src/stories/Button.tsx'
-      : basedir === '/app/src/stories' && id === './Header'
-        ? './src/stories/Header.tsx'
-        : id;
+  resolveImport: (id: string) => {
+    return {
+      './Button': './src/stories/Button.tsx',
+      './Header': './src/stories/Header.tsx',
+    }[id];
   },
   JsPackageManagerFactory: {
     getPackageManager: () => ({
@@ -120,113 +119,7 @@ const indexJson = {
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
-  vol.fromJSON(
-    {
-      ['./package.json']: JSON.stringify({ name: 'some-package' }),
-      ['./src/stories/Button.stories.ts']: dedent`
-        import type { Meta, StoryObj } from '@storybook/react';
-        import { fn } from 'storybook/test';
-        import { Button } from './Button';
-        
-        const meta = {
-          component: Button,
-          args: { onClick: fn() },
-        } satisfies Meta<typeof Button>;
-        export default meta;
-        type Story = StoryObj<typeof meta>;
-        
-        export const Primary: Story = { args: { primary: true,  label: 'Button' } };
-        export const Secondary: Story = { args: { label: 'Button' } };
-        export const Large: Story = { args: { size: 'large', label: 'Button' } };
-        export const Small: Story = { args: { size: 'small', label: 'Button' } };`,
-      ['./src/stories/Button.tsx']: dedent`
-        import React from 'react';
-        export interface ButtonProps {
-          /** Description of primary */
-          primary?: boolean;
-          backgroundColor?: string;
-          size?: 'small' | 'medium' | 'large';
-          label: string;
-          onClick?: () => void;
-        }
-        
-        /** Primary UI component for user interaction */
-        export const Button = ({
-          primary = false,
-          size = 'medium',
-          backgroundColor,
-          label,
-          ...props
-        }: ButtonProps) => {
-          const mode = primary ? 'storybook-button--primary' : 'storybook-button--secondary';
-          return (
-            <button
-              type="button"
-              className={['storybook-button', \`storybook-button--\${size}\`, mode].join(' ')}
-              style={{ backgroundColor }}
-              {...props}
-            >
-              {label}
-            </button>
-          );
-        };`,
-      ['./src/stories/Header.stories.ts']: dedent`
-        import type { Meta, StoryObj } from '@storybook/react';
-        import { fn } from 'storybook/test';
-        import Header from './Header';
-        
-        /** 
-          * Description from meta and very long.
-          * @summary Component summary
-          * @import import { Header } from '@design-system/components/Header';
-          */
-        const meta = {
-          component: Header,
-          args: {
-            onLogin: fn(),
-            onLogout: fn(),
-            onCreateAccount: fn(),
-          }
-        } satisfies Meta<typeof Header>;
-        export default meta;
-        type Story = StoryObj<typeof meta>;
-        export const LoggedIn: Story = { args: { user: { name: 'Jane Doe' } } };
-        export const LoggedOut: Story = {};
-        `,
-      ['./src/stories/Header.tsx']: dedent`
-        import { Button } from './Button';
-        
-        export interface HeaderProps {
-          user?: User;
-          onLogin?: () => void;
-          onLogout?: () => void;
-          onCreateAccount?: () => void;
-        }
-        
-        export default ({ user, onLogin, onLogout, onCreateAccount }: HeaderProps) => (
-          <header>
-            <div className="storybook-header">
-              <div>
-                {user ? (
-                  <>
-                    <span className="welcome">
-                      Welcome, <b>{user.name}</b>!
-                    </span>
-                    <Button size="small" onClick={onLogout} label="Log out" />
-                  </>
-                ) : (
-                  <>
-                    <Button size="small" onClick={onLogin} label="Log in" />
-                    <Button primary size="small" onClick={onCreateAccount} label="Sign up" />
-                  </>
-                )}
-              </div>
-            </div>
-          </header>
-      );`,
-    },
-    '/app'
-  );
+  vol.fromJSON(fsMocks);
   return () => vol.reset();
 });
 
@@ -243,14 +136,19 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Primary UI component for user interaction",
           "error": undefined,
           "id": "example-button",
-          "import": "import { Button } from "some-package";",
-          "jsDocTags": {},
+          "import": "import { Button } from '@design-system/components/Button';",
+          "jsDocTags": {
+            "import": [
+              "import { Button } from '@design-system/components/Button';",
+            ],
+          },
           "name": "Button",
           "path": "./src/stories/Button.stories.ts",
           "reactDocgen": {
             "actualName": "Button",
-            "definedInFile": "/app/src/stories/Button.tsx",
-            "description": "Primary UI component for user interaction",
+            "definedInFile": "./src/stories/Button.tsx",
+            "description": "Primary UI component for user interaction
+    @import import { Button } from '@design-system/components/Button';",
             "displayName": "Button",
             "exportName": "Button",
             "methods": [],
@@ -347,7 +245,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Description from meta and very long.",
           "error": undefined,
           "id": "example-header",
-          "import": "import { Header } from "some-package";",
+          "import": "import { Header } from '@design-system/components/Header';",
           "jsDocTags": {
             "import": [
               "import { Header } from '@design-system/components/Header';",
@@ -360,8 +258,8 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "path": "./src/stories/Header.stories.ts",
           "reactDocgen": {
             "actualName": "",
-            "definedInFile": "/app/src/stories/Header.tsx",
-            "description": "",
+            "definedInFile": "./src/stories/Header.tsx",
+            "description": "@import import { Header } from '@design-system/components/Header';",
             "exportName": "default",
             "methods": [],
             "props": {
@@ -530,7 +428,7 @@ test('fall back to index title when no component name', async () => {
       "path": "./src/stories/Button.stories.ts",
       "reactDocgen": {
         "actualName": "Button",
-        "definedInFile": "/app/src/stories/Button.tsx",
+        "definedInFile": "./src/stories/Button.tsx",
         "description": "Primary UI component for user interaction",
         "displayName": "Button",
         "exportName": "Button",
@@ -575,7 +473,7 @@ test('component exported from other file', async () => {
       "path": "./src/stories/Button.stories.ts",
       "reactDocgen": {
         "actualName": "Button",
-        "definedInFile": "/app/src/stories/Button.tsx",
+        "definedInFile": "./src/stories/Button.tsx",
         "description": "Primary UI component for user interaction",
         "displayName": "Button",
         "exportName": "Button",
@@ -627,7 +525,7 @@ test('unknown expressions', async () => {
       "path": "./src/stories/Button.stories.ts",
       "reactDocgen": {
         "actualName": "Button",
-        "definedInFile": "/app/src/stories/Button.tsx",
+        "definedInFile": "./src/stories/Button.tsx",
         "description": "Primary UI component for user interaction",
         "displayName": "Button",
         "exportName": "Button",

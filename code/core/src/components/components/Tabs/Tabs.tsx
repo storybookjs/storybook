@@ -1,6 +1,6 @@
 /* eslint-disable react/destructuring-assignment */
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
-import React, { Component, memo, useMemo } from 'react';
+import React, { Component, forwardRef, memo, useMemo } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 import { sanitize } from 'storybook/internal/csf';
@@ -58,10 +58,12 @@ const StyledTabBar = styled.div({
   flexGrow: 1,
 });
 
-export const TabBar = (args: React.HTMLAttributes<HTMLDivElement>) => {
-  deprecate('The `TabBar` component is deprecated. Use `TabsView` instead.');
-  return <StyledTabBar {...args} />;
-};
+export const TabBar = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  (props, ref) => {
+    deprecate('The `TabBar` component is deprecated. Use `TabsView` instead.');
+    return <StyledTabBar {...props} ref={ref} />;
+  }
+);
 TabBar.displayName = 'TabBar';
 
 export interface ContentProps {
@@ -115,10 +117,17 @@ export interface TabWrapperProps {
   children?: ReactNode;
 }
 
-export const TabWrapper: FC<TabWrapperProps> = ({ active, render, children }) => {
-  deprecate('The `TabWrapper` component is deprecated. Use `TabsView` instead.');
-  return <VisuallyHidden active={active}>{render ? render() : children}</VisuallyHidden>;
-};
+export const TabWrapper = forwardRef<HTMLDivElement, TabWrapperProps>(
+  ({ active, render, children }, ref) => {
+    deprecate('The `TabWrapper` component is deprecated. Use `TabsView` instead.');
+    return (
+      <VisuallyHidden ref={ref} active={active}>
+        {render ? render() : children}
+      </VisuallyHidden>
+    );
+  }
+);
+TabWrapper.displayName = 'TabWrapper';
 
 export const panelProps = {};
 

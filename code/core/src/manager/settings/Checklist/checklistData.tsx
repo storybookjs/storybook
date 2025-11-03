@@ -18,6 +18,7 @@ export interface ChecklistData {
     items: {
       id: string;
       label: string;
+      criteria: string;
       after?: string[];
       content?: React.ReactNode;
       action?: {
@@ -40,6 +41,7 @@ const subscribeToIndex: (
 ) => ChecklistData['sections'][number]['items'][number]['subscribe'] =
   (condition) =>
   ({ api, done }) => {
+    // TODO exclude sample stories
     const check = () => condition(api.getIndex()?.entries || {});
     if (check()) {
       done();
@@ -57,11 +59,13 @@ export const checklistData: ChecklistData = {
         {
           id: 'install-storybook',
           label: 'Install Storybook',
+          criteria: 'Storybook is installed',
           subscribe: ({ done }) => done(),
         },
         {
           id: 'whats-new-storybook-10',
           label: "See what's new",
+          criteria: "What's New page is opened",
           action: {
             label: 'Start',
             onClick: ({ api, accept }) => {
@@ -73,6 +77,9 @@ export const checklistData: ChecklistData = {
         {
           id: 'render-component',
           label: 'Render a component',
+          criteria: 'A story finished rendering successfully',
+          subscribe: ({ api, done }) =>
+            api.on(STORY_FINISHED, ({ status }) => status === 'success' && done()),
           content: (
             <>
               <p>
@@ -90,8 +97,6 @@ export const checklistData: ChecklistData = {
               </p>
             </>
           ),
-          subscribe: ({ api, done }) =>
-            api.on(STORY_FINISHED, ({ status }) => status === 'success' && done()),
         },
         {
           id: 'more-components',
@@ -104,6 +109,7 @@ export const checklistData: ChecklistData = {
               Autocomplete, or even full pages.
             </p>
           ),
+          criteria: 'At least 5 components exist in the index',
           subscribe: subscribeToIndex((entries) => {
             const stories = Object.values(entries).filter(({ type }) => type === 'story');
             const components = new Set(stories.map(({ title }) => title));
@@ -119,6 +125,7 @@ export const checklistData: ChecklistData = {
               More stories for your components means better documentation and more test coverage.
             </p>
           ),
+          criteria: 'At least 20 stories exist in the index',
           subscribe: subscribeToIndex((entries) => {
             const stories = Object.values(entries).filter(({ type }) => type === 'story');
             return stories.length >= 20;
@@ -126,6 +133,7 @@ export const checklistData: ChecklistData = {
         },
       ],
     },
+
     {
       id: 'development',
       title: 'Development',
@@ -134,21 +142,23 @@ export const checklistData: ChecklistData = {
           id: 'controls',
           after: ['render-component'],
           label: 'Update a story with Controls',
-          content: (
-            <>
-              <p>
-                When you change the value of one of the inputs in the Controls table, the story
-                automatically updates to reflect that change. It&apos;s a great way to explore how a
-                component handles various inputs.
-              </p>
-            </>
-          ),
+          criteria: 'Story args are updated',
           subscribe: ({ api, done }) => api.on(STORY_ARGS_UPDATED, done),
+          content: (
+            <p>
+              Storybook gets better as you add more components. Start with the easy ones, like
+              Button or Avatar, and work your way up to more complex components, like Select,
+              Autocomplete, or even full pages.
+            </p>
+          ),
         },
         {
           id: 'viewports',
           after: ['render-component'],
           label: 'Check responsiveness with Viewports',
+          criteria: 'Viewport global is updated',
+          subscribe: ({ api, done }) =>
+            api.on(UPDATE_GLOBALS, ({ globals }) => globals?.viewport && done()),
           content: (
             <>
               <p>
@@ -164,13 +174,15 @@ export const checklistData: ChecklistData = {
               </Link>
             </>
           ),
-          subscribe: ({ api, done }) =>
-            api.on(UPDATE_GLOBALS, ({ globals }) => globals?.viewport && done()),
         },
         {
           id: 'organize-stories',
           after: ['render-component'],
           label: 'Get organized',
+          criteria: 'A root node exists in the index',
+          subscribe: subscribeToIndex((entries) =>
+            Object.values(entries).some(({ title }) => title.includes('/'))
+          ),
           content: (
             <>
               <p>
@@ -193,12 +205,10 @@ export default {
               </code>
             </>
           ),
-          subscribe: subscribeToIndex((entries) =>
-            Object.values(entries).some(({ title }) => title.includes('/'))
-          ),
         },
       ],
     },
+
     {
       id: 'testing',
       title: 'Testing',
@@ -206,25 +216,19 @@ export default {
         {
           id: 'install-vitest',
           label: 'Install Vitest addon',
+          criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',
           subscribe: ({ done }) => done(),
-          // Criteria: @storybook/addon-vitest registered in .storybook/main.js|ts
           content: (
-            <>
-              <p>
-                Run this command to install the Vitest addon, enabling you to run component tests on
-                your stories inside Storybook&apos;s UI:
-              </p>
-              <code>
-                <pre>{`npx storybook add @storybook/addon-vitest`}</pre>
-              </code>
-            </>
+            <p>
+              More stories for your components means better documentation and more test coverage.
+            </p>
           ),
         },
         {
           id: 'run-tests',
           after: ['render-component'],
           label: 'Test your components',
-          // Criteria: Run component tests from the test widget in the sidebar
+          criteria: 'Component tests are run from the test widget in the sidebar',
           content: (
             <>
               <p>
@@ -249,7 +253,12 @@ export default {
           id: 'write-interactions',
           after: ['render-component'],
           label: 'Test functionality with interactions',
-          // Criteria: At least one story with a play function that contains an expect call
+          criteria: 'At least one story with a play or test function',
+          subscribe: subscribeToIndex((entries) =>
+            Object.values(entries).some(
+              ({ tags }) => tags?.includes('play-fn') || tags?.includes('test-fn')
+            )
+          ),
           content: (
             <>
               <p>
@@ -285,7 +294,8 @@ async play({ canvas, userEvent }) {
           id: 'accessibility-tests',
           after: ['render-component'],
           label: 'Run accessibility tests',
-          subscribe: ({ done }) => done(),
+          criteria: 'Accessibility tests are run from the test widget in the sidebar',
+          subscribe: ({ api, done }) => api.on('storybook/a11y/result', done), // TODO check test widget state
           content: (
             <>
               <p>
@@ -317,7 +327,9 @@ async play({ canvas, userEvent }) {
           id: 'visual-tests',
           after: ['render-component'],
           label: 'Run visual tests',
-          // Criteria: Run visual tests from the test widget in the sidebar or the Visual Tests panel
+          criteria:
+            'Visual tests are run from the test widget in the sidebar or the Visual Tests panel',
+          subscribe: ({ api, done }) => api.on('chromaui/addon-visual-tests/startBuild', done),
           content: (
             <>
               <p>Visual tests verify the appearance of your UI components.</p>
@@ -344,6 +356,7 @@ async play({ canvas, userEvent }) {
           id: 'coverage',
           after: ['render-component'],
           label: 'Generate a coverage report',
+          criteria: 'Generate and view a coverage report',
           content: (
             <>
               <p>
@@ -364,6 +377,7 @@ async play({ canvas, userEvent }) {
           id: 'ci-tests',
           after: ['render-component'],
           label: 'Automate tests in CI',
+          criteria: 'Have a CI workflow that runs component tests, either with Vitest or Chromatic',
           content: (
             <>
               <p>
@@ -387,6 +401,10 @@ async play({ canvas, userEvent }) {
           id: 'autodocs',
           after: ['render-component'],
           label: 'Automatically document your components',
+          criteria: 'At least one component with the autodocs tag applied',
+          subscribe: subscribeToIndex((entries) =>
+            Object.values(entries).some(({ tags }) => tags?.includes('autodocs'))
+          ),
           content: (
             <>
               <p>
@@ -416,6 +434,10 @@ export default {
           id: 'mdx-docs',
           after: ['render-component'],
           label: 'Custom content with MDX',
+          criteria: 'At least one MDX page',
+          subscribe: subscribeToIndex((entries) =>
+            Object.values(entries).some(({ type }) => type === 'docs')
+          ),
           content: (
             <>
               <p>
@@ -429,12 +451,12 @@ export default {
               </p>
             </>
           ),
-          // Criteria: At least one MDX page
         },
         {
           id: 'publish-storybook',
           after: ['render-component'],
           label: 'Publish your Storybook to share',
+          criteria: 'Some form of `storybook --build` in the project source',
           content: (
             <>
               <p>

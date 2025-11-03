@@ -1,6 +1,7 @@
 // Object.groupBy polyfill
 import { readFileSync } from 'node:fs';
 
+import { resolveImport } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -123,3 +124,5 @@ export const invalidateCache = () => {
 export const cachedReadFileSync = cached(readFileSync, { name: 'cachedReadFile' });
 
 export const cachedFindUp = cached(find.up, { name: 'findUp' });
+
+export const cachedResolveImport = cached(resolveImport, { name: 'resolveImport' });

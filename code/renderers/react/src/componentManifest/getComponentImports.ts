@@ -2,13 +2,11 @@ import { dirname } from 'node:path';
 
 import { type NodePath, recast, types as t } from 'storybook/internal/babel';
 import { babelParse } from 'storybook/internal/babel';
-import { resolveImport } from 'storybook/internal/common';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
-import { cached } from './utils';
+import { cachedResolveImport } from './utils';
 
-const cachedResolveImport = cached(resolveImport);
 // Public component metadata type used across passes
 export type ComponentRef = {
   componentName: string;
@@ -452,7 +450,7 @@ export function getComponentImports({
   const components = getComponents({ csf, storyFilePath });
   const withDocgen = components.map((component) => {
     if (component.path) {
-      const docgen = getReactDocgen(component.path, component.importName);
+      const docgen = getReactDocgen(component.path, component);
       const importOverride = docgen.type === 'success' ? getImportTag(docgen.data) : undefined;
       return {
         ...component,

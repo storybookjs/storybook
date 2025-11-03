@@ -1,12 +1,12 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { sep } from 'node:path';
+import { existsSync } from 'node:fs';
+import { dirname, sep } from 'node:path';
 
-import { getProjectRoot, resolveImport, supportedExtensions } from 'storybook/internal/common';
+import { babelParse, types as t } from 'storybook/internal/babel';
+import { getProjectRoot, supportedExtensions } from 'storybook/internal/common';
 
 import * as find from 'empathic/find';
 import {
   type Documentation,
-  ERROR_CODES,
   builtinHandlers as docgenHandlers,
   builtinResolvers as docgenResolver,
   makeFsImporter,
@@ -14,11 +14,12 @@ import {
 } from 'react-docgen';
 import * as TsconfigPaths from 'tsconfig-paths';
 
+import { type ComponentRef } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
 import actualNameHandler from './reactDocgen/actualNameHandler';
 import { ReactDocgenResolveError } from './reactDocgen/docgenResolver';
 import exportNameHandler from './reactDocgen/exportNameHandler';
-import { cached, cachedReadFileSync } from './utils';
+import { cached, cachedReadFileSync, cachedResolveImport } from './utils';
 
 export type DocObj = Documentation & {
   actualName: string;
@@ -31,17 +32,26 @@ const defaultHandlers = Object.values(docgenHandlers).map((handler) => handler);
 const defaultResolver = new docgenResolver.FindExportedDefinitionsResolver();
 const handlers = [...defaultHandlers, actualNameHandler, exportNameHandler];
 
-export function getMatchingDocgen(docgens: DocObj[], importName?: string) {
+export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
   if (docgens.length === 1) {
     return docgens[0];
   }
 
-  return importName
-    ? (docgens.find((docgen) => docgen.exportName === importName) ??
-        docgens.find(
-          (docgen) => docgen.displayName === importName || docgen.actualName === importName
-        ))
-    : docgens[0];
+  const matchingDocgen =
+    docgens.find((docgen) =>
+      [component.importName, component.localImportName].includes(docgen.exportName)
+    ) ??
+    docgens.find(
+      (docgen) =>
+        [component.importName, component.localImportName, component.componentName].includes(
+          docgen.displayName
+        ) ||
+        [component.importName, component.localImportName, component.componentName].includes(
+          docgen.actualName
+        )
+    );
+
+  return matchingDocgen ?? docgens[0];
 }
 
 export function matchPath(id: string) {
@@ -78,14 +88,89 @@ export const parseWithReactDocgen = cached(
   { key: (code, path) => path, name: 'parseWithReactDocgen' }
 );
 
+const getExportPaths = cached(
+  (code: string, filePath: string) => {
+    const ast = (() => {
+      try {
+        return babelParse(code);
+      } catch (_) {
+        return undefined;
+      }
+    })();
+
+    if (!ast) {
+      return [] as string[];
+    }
+    const basedir = dirname(filePath);
+    const body = ast.program.body;
+    return body
+      .flatMap((n) =>
+        t.isExportAllDeclaration(n)
+          ? [n.source.value]
+          : t.isExportNamedDeclaration(n) && !!n.source && !n.declaration
+            ? [n.source.value]
+            : []
+      )
+      .map((s) => matchPath(s))
+      .map((s) => {
+        try {
+          return cachedResolveImport(s, { basedir });
+        } catch {
+          return undefined;
+        }
+      })
+      .filter((p): p is string => !!p && !p.includes('node_modules'));
+  },
+  { name: 'getExportPaths' }
+);
+
+const gatherDocgensForPath = cached(
+  (
+    filePath: string,
+    depth: number
+  ): { docgens: DocObj[]; analyzed: { path: string; code: string }[] } => {
+    if (depth > 5 || filePath.includes('node_modules')) {
+      return { docgens: [], analyzed: [] };
+    }
+
+    let code: string | undefined;
+    try {
+      code = cachedReadFileSync(filePath, 'utf-8') as string;
+    } catch {}
+
+    if (!code) {
+      return { docgens: [], analyzed: [{ path: filePath, code: code! }] };
+    }
+
+    const reexportResults = getExportPaths(code, filePath).map((p) =>
+      gatherDocgensForPath(p, depth + 1)
+    );
+    const fromReexports = reexportResults.flatMap((r) => r.docgens);
+    const analyzedChildren = reexportResults.flatMap((r) => r.analyzed);
+
+    const locals = (() => {
+      try {
+        return parseWithReactDocgen(code as string, filePath);
+      } catch {
+        return [] as DocObj[];
+      }
+    })();
+
+    return {
+      docgens: [...locals, ...fromReexports],
+      analyzed: [{ path: filePath, code }, ...analyzedChildren],
+    };
+  },
+  { name: 'gatherDocgensWithTrace', key: (filePath) => filePath }
+);
+
 export const getReactDocgen = cached(
   (
     path: string,
-    importName?: string
+    component: ComponentRef
   ):
     | { type: 'success'; data: DocObj }
     | { type: 'error'; error: { name: string; message: string } } => {
-    let code;
     if (path.includes('node_modules')) {
       return {
         type: 'error',
@@ -95,54 +180,34 @@ export const getReactDocgen = cached(
         },
       };
     }
-    try {
-      code = cachedReadFileSync(path, 'utf-8') as string;
-    } catch (_) {
-      return {
-        type: 'error',
-        error: {
-          name: 'Component file could not be read',
-          message: `Could not read the component file located at "${path}".`,
-        },
-      };
-    }
+
+    const docgenWithInfo = gatherDocgensForPath(path, 0);
+    const docgens = docgenWithInfo.docgens;
 
     const noCompDefError = {
       type: 'error' as const,
       error: {
         name: 'No component definition found',
         message:
-          `Could not find a component definition for the component file located at:\n` +
-          `${path}\n` +
-          `Avoid barrel files when importing your component file.\n` +
+          `Could not find a component definition.\n` +
           `Prefer relative imports if possible.\n` +
           `Avoid pointing to transpiled files.\n` +
-          `You can debug your component file in this playground: https://react-docgen.dev/playground`,
+          `You can debug your component file in this playground: https://react-docgen.dev/playground\n\n` +
+          docgenWithInfo.analyzed.map(({ path, code }) => `File: ${path}\n${code}`).join('\n\n'),
       },
     };
 
-    let docgens;
-    try {
-      docgens = parseWithReactDocgen(code, path);
-    } catch (e) {
-      if (e instanceof Error && 'code' in e && e.code === ERROR_CODES.MISSING_DEFINITION) {
-        return noCompDefError;
-      }
-      return {
-        type: 'error',
-        error: {
-          name: 'Docgen evaluation failed',
-          message: e instanceof Error ? `${e.message}\n` : '',
-        },
-      };
+    if (!docgens || docgens.length === 0) {
+      return noCompDefError;
     }
-    const docgen = getMatchingDocgen(docgens, importName);
+
+    const docgen = getMatchingDocgen(docgens, component);
     if (!docgen) {
       return noCompDefError;
     }
     return { type: 'success', data: docgen };
   },
-  { name: 'getReactDocgen' }
+  { name: 'getReactDocgen', key: (path, component) => path + JSON.stringify(component) }
 );
 
 export function getReactDocgenImporter() {
@@ -151,7 +216,7 @@ export function getReactDocgenImporter() {
       return matchPath(filename);
     })();
 
-    const result = resolveImport(mappedFilenameByPaths, { basedir });
+    const result = cachedResolveImport(mappedFilenameByPaths, { basedir });
 
     if (result.includes(`${sep}react-native${sep}index.js`)) {
       const replaced = result.replace(

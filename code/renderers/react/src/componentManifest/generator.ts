@@ -1,3 +1,4 @@
+import path from 'pathe';
 import { recast } from 'storybook/internal/babel';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
@@ -6,8 +7,6 @@ import {
   type ComponentManifestGenerator,
   type PresetPropertyFn,
 } from 'storybook/internal/types';
-
-import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponentImports } from './getComponentImports';
@@ -147,7 +146,10 @@ export const componentManifestGenerator: PresetPropertyFn<
         };
       }
 
-      const docgenResult = getReactDocgen(componentPath, importName);
+      const docgenResult = getReactDocgen(
+        componentPath,
+        component ? component : { componentName: componentName ?? title }
+      );
 
       const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
       const error = docgenResult.type === 'error' ? docgenResult.error : undefined;

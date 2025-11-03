@@ -100,7 +100,7 @@ describe('wrapGetAbsolutePath', () => {
 
       expect(call[1]).toMatchInlineSnapshot(`
         "import { fileURLToPath } from "node:url";
-        import { dirname, join } from "node:path";
+        import { dirname } from "node:path";
         const config = {
           stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
           addons: [
@@ -121,7 +121,7 @@ describe('wrapGetAbsolutePath', () => {
         export default config;
 
         function getAbsolutePath(value) {
-          return dirname(fileURLToPath(import.meta.resolve(join(value, "package.json"))));
+          return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
         }
         "
       `);

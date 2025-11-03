@@ -1106,6 +1106,45 @@ describe('stories API', () => {
       api.selectStory('a--1');
       expect(store.getState().settings.lastTrackedStoryId).toBe('a--1');
     });
+    it('selects first visible child when component is clicked with filtered index', () => {
+      const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };
+      const moduleArgs = createMockModuleArgs({ initialState });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { navigate, store } = moduleArgs;
+
+      // Set index with stories
+      api.setIndex({ v: 5, entries: navigationEntries });
+
+      // Set up filtered index where first child (a--1) is hidden
+      const filteredIndex = {
+        a: {
+          id: 'a',
+          type: 'component' as const,
+          name: 'a',
+          depth: 0,
+          tags: [],
+          children: ['a--1', 'a--2'],
+          importPath: './a.ts',
+        },
+        'a--2': {
+          ...navigationEntries['a--2'],
+          type: 'story' as const,
+          subtype: 'story' as const,
+          parent: 'a',
+          depth: 1,
+          tags: [],
+          prepared: false,
+          exportName: '2',
+        },
+        // Note: 'a--1' is missing from filtered index (hidden)
+      };
+
+      store.setState({ filteredIndex });
+
+      // When selecting the component, it should select the first visible child (a--2)
+      api.selectStory('a');
+      expect(navigate).toHaveBeenCalledWith('/story/a--2');
+    });
     describe('deprecated api', () => {
       it('allows navigating to a combination of title + name', () => {
         const initialState = { path: '/story/a--1', storyId: 'a--1', viewMode: 'story' };

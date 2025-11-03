@@ -162,6 +162,16 @@ export const Empty: Story = {
   },
 };
 
+export const EmptyIndex: Story = {
+  args: {
+    index: {},
+    indexJson: {
+      entries: {},
+      v: 6,
+    },
+  },
+};
+
 export const IndexError: Story = {
   args: {
     indexError,

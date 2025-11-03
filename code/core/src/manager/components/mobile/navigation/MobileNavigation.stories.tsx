@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { startCase } from 'es-toolkit/string';
 import { ManagerContext } from 'storybook/manager-api';
-import { within } from 'storybook/test';
+import { fn, within } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider';
 import { MobileNavigation } from './MobileNavigation';
@@ -54,9 +54,9 @@ const mockManagerStore: any = {
     },
   },
   api: {
-    getCurrentStoryData() {
+    getCurrentStoryData: fn(() => {
       return mockManagerStore.state.index.someStoryId;
-    },
+    }),
   },
 };
 

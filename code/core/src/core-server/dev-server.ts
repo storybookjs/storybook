@@ -104,7 +104,7 @@ export async function storybookDevServer(options: Options) {
         channel: serverChannel,
       })
       .catch(async (e: any) => {
-        logger.error('=> Failed to build the preview');
+        logger.error('Failed to build the preview');
         process.exitCode = 1;
 
         await managerBuilder?.bail().catch();

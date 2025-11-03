@@ -174,7 +174,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
   }
 
   if (options.ignorePreview) {
-    logger.info(`=> Not building preview`);
+    logger.info(`Not building preview`);
   } else {
     logger.info('Building preview..');
   }
@@ -190,7 +190,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
               options: fullOptions,
             })
             .then(async (previewStats) => {
-              logger.trace({ message: '=> Preview built', time: process.hrtime(startTime) });
+              logger.trace({ message: 'Preview built', time: process.hrtime(startTime) });
 
               const statsOption = options.webpackStatsJson || options.statsJson;
               if (statsOption) {
@@ -199,7 +199,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
               }
             })
             .catch((error) => {
-              logger.error('=> Failed to build the preview');
+              logger.error('Failed to build the preview');
               process.exitCode = 1;
               throw error;
             }),

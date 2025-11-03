@@ -83,6 +83,9 @@ export abstract class JsPackageManager {
   /** Cache for installed version results to avoid repeated file system calls. */
   static readonly installedVersionCache = new Map<string, string | null>();
 
+  /** Cache for package.json files to avoid repeated file system calls. */
+  static readonly packageJsonCache = new Map<string, PackageJsonWithDepsAndDevDeps>();
+
   constructor(options?: JsPackageManagerOptions) {
     this.cwd = options?.cwd || process.cwd();
     this.instanceDir = options?.configDir
@@ -162,15 +165,31 @@ export abstract class JsPackageManager {
 
   /** Read the `package.json` file available in the provided directory */
   static getPackageJson(packageJsonPath: string): PackageJsonWithDepsAndDevDeps {
-    const jsonContent = readFileSync(packageJsonPath, 'utf8');
+    // Normalize path to absolute for consistent cache keys
+    const absolutePath = isAbsolute(packageJsonPath) ? packageJsonPath : resolve(packageJsonPath);
+
+    // Check cache first
+    const cached = JsPackageManager.packageJsonCache.get(absolutePath);
+    if (cached) {
+      logger.debug(`Using cached package.json for ${absolutePath}...`);
+      return cached;
+    }
+
+    // Read from disk if not in cache
+    const jsonContent = readFileSync(absolutePath, 'utf8');
     const packageJSON = JSON.parse(jsonContent);
 
-    return {
+    const result: PackageJsonWithDepsAndDevDeps = {
       ...packageJSON,
-      dependencies: { ...packageJSON.dependencies },
-      devDependencies: { ...packageJSON.devDependencies },
-      peerDependencies: { ...packageJSON.peerDependencies },
+      dependencies: { ...(packageJSON.dependencies || {}) },
+      devDependencies: { ...(packageJSON.devDependencies || {}) },
+      peerDependencies: { ...(packageJSON.peerDependencies || {}) },
     };
+
+    // Store in cache
+    JsPackageManager.packageJsonCache.set(absolutePath, result);
+
+    return result;
   }
 
   writePackageJson(packageJson: PackageJson, directory = this.cwd) {
@@ -184,8 +203,19 @@ export abstract class JsPackageManager {
       }
     });
 
+    const packageJsonPath = resolve(directory, 'package.json');
     const content = `${JSON.stringify(packageJsonToWrite, null, 2)}\n`;
-    writeFileSync(resolve(directory, 'package.json'), content, 'utf8');
+    writeFileSync(packageJsonPath, content, 'utf8');
+
+    // Update cache with the written content
+    // Ensure dependencies and devDependencies exist (even if empty) to match PackageJsonWithDepsAndDevDeps type
+    const cachedPackageJson: PackageJsonWithDepsAndDevDeps = {
+      ...packageJsonToWrite,
+      dependencies: { ...(packageJsonToWrite.dependencies || {}) },
+      devDependencies: { ...(packageJsonToWrite.devDependencies || {}) },
+      peerDependencies: { ...(packageJsonToWrite.peerDependencies || {}) },
+    };
+    JsPackageManager.packageJsonCache.set(packageJsonPath, cachedPackageJson);
   }
 
   getAllDependencies() {
@@ -647,6 +677,7 @@ export abstract class JsPackageManager {
     cwd?: string;
     ignoreError?: boolean;
   }): ExecaChildProcess {
+    logger.debug(`Executing command: ${command} ${args.join(' ')}`);
     const execaProcess = execa(command, args, {
       cwd: cwd ?? this.cwd,
       stdio: stdio ?? prompt.getPreferredStdio(),
@@ -715,6 +746,7 @@ export abstract class JsPackageManager {
    * the dependency.
    */
   public getDependencyVersion(dependency: string): string | null {
+    logger.debug(`Getting dependency version for ${dependency}...`);
     const dependencyVersion = this.packageJsonPaths
       .map((path) => {
         const packageJson = JsPackageManager.getPackageJson(path);
@@ -813,6 +845,7 @@ export abstract class JsPackageManager {
   }
 
   static getPackageJsonInfo(packageJsonPath: string): PackageJsonInfo {
+    logger.debug(`Getting package.json info for ${packageJsonPath}...`);
     const operationDir = dirname(packageJsonPath);
     return {
       packageJsonPath,

@@ -1,0 +1,28 @@
+version: 2.1
+
+# https://circleci.com/docs/guides/orchestrate/dynamic-config/
+setup: true
+
+orbs:
+  git-shallow-clone: guitarrapc/git-shallow-clone@2.8.0
+  continuation: circleci/continuation@2.0.1
+  node: circleci/node@7.2.1
+
+jobs:
+  generate-and-run-config:
+    executor: continuation/default
+    steps:
+      - git-shallow-clone/checkout_advanced:
+          clone_options: '--depth 1 --verbose'
+      - node/install:
+          node-version: '16.17'
+      - run:
+          name: Generate config
+          command: |
+            node ./scripts/ci/generate.js
+      - continuation/continue:
+          configuration_path: .circleci/config.generated.yml
+workflows:
+  setup:
+    jobs:
+      - generate-and-run-config

@@ -3,7 +3,6 @@ import { global } from '@storybook/global';
 
 import { addons } from 'storybook/manager-api';
 
-/* eslint-disable prettier/prettier */
 // THE ORDER OF THESE IMPORTS MATTERS! IT DEFINES THE ORDER OF PANELS AND TOOLS!
 import controlsManager from '../../controls/manager';
 import actionsManager from '../../actions/manager';
@@ -12,7 +11,6 @@ import backgroundsManager from '../../backgrounds/manager';
 import measureManager from '../../measure/manager';
 import outlineManager from '../../outline/manager';
 import viewportManager from '../../viewport/manager';
-/* eslint-enable prettier/prettier */
 
 const TAG_FILTERS = 'tag-filters';
 const STATIC_FILTER = 'static-filter';

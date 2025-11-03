@@ -50,7 +50,7 @@ jobs:
       # https://circleci.com/developer/orbs/orb/circleci/continuation
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
-          parameters: '{"ghBaseBranch": "<< pipeline.parameters.ghBaseBranch >>", "ghPrNumber": "<< pipeline.parameters.ghPrNumber >>", "workflow": "<< pipeline.parameters.workflow >>"}'
+          # parameters: '{"ghBaseBranch": "<< pipeline.parameters.ghBaseBranch >>", "ghPrNumber": "<< pipeline.parameters.ghPrNumber >>", "workflow": "<< pipeline.parameters.workflow >>"}'
 workflows:
   setup:
     jobs:

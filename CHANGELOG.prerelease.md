@@ -1,3 +1,38 @@
+## 10.1.0-alpha.3
+
+- React: Add manifests/components.html page - [#32905](https://github.com/storybookjs/storybook/pull/32905), thanks @kasperpeulen!
+
+## 10.1.0-alpha.2
+
+- A11y: Add aria-selected attribute to tab buttons - [#32656](https://github.com/storybookjs/storybook/pull/32656), thanks @Nischit-Ekbote!
+- React: Experimental code examples - [#32813](https://github.com/storybookjs/storybook/pull/32813), thanks @kasperpeulen!
+- React: Implement manifests/component.json for React - [#32751](https://github.com/storybookjs/storybook/pull/32751), thanks @kasperpeulen!
+- React: Improve error handling of component manifest generation - [#32855](https://github.com/storybookjs/storybook/pull/32855), thanks @kasperpeulen!
+
+## 10.1.0-alpha.1
+
+- CLI: Fix glob string formatting in csf-factories codemod - [#32880](https://github.com/storybookjs/storybook/pull/32880), thanks @yannbf!
+- Core: Improve file path resolution on Windows - [#32893](https://github.com/storybookjs/storybook/pull/32893), thanks @yannbf!
+- Presets: Fix incorrect imports - [#32875](https://github.com/storybookjs/storybook/pull/32875), thanks @ndelangen!
+- Vite: Update `optimizeViteDeps` for addon-docs and addon-vitest - [#32881](https://github.com/storybookjs/storybook/pull/32881), thanks @ndelangen!
+
+## 10.1.0-alpha.0
+
+
+## 10.0.0-rc.4
+
+- Core: Add `experimental_devServer` preset - [#32862](https://github.com/storybookjs/storybook/pull/32862), thanks @yannbf!
+- Core: Fix stepping back through story interactions panel - [#32793](https://github.com/storybookjs/storybook/pull/32793), thanks @ia319!
+- Core: Join framework preset path with slash - [#32838](https://github.com/storybookjs/storybook/pull/32838), thanks @brandonroberts!
+- Telemetry: Fix preview-first-load event - [#32859](https://github.com/storybookjs/storybook/pull/32859), thanks @shilman!
+
+## 10.0.0-rc.3
+
+- A11y: Persist tab/highlight across docs navigation - [#32762](https://github.com/storybookjs/storybook/pull/32762), thanks @404Dealer!
+- Addon Vitest: Fix incorrect file modifications during setup - [#32844](https://github.com/storybookjs/storybook/pull/32844), thanks @yannbf!
+- Core: Enhance warning for Testing Library's `screen` usage in docs mode - [#32851](https://github.com/storybookjs/storybook/pull/32851), thanks @yannbf!
+- Core: Mark pnp support as deprecated - [#32645](https://github.com/storybookjs/storybook/pull/32645), thanks @ndelangen!
+
 ## 10.0.0-rc.2
 
 - CLI: Fix Nextjs project creation in empty directories - [#32828](https://github.com/storybookjs/storybook/pull/32828), thanks @yannbf!

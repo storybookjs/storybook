@@ -1,8 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { recast } from 'storybook/internal/babel';
-import type { NodePath } from 'storybook/internal/babel';
-import { types as t } from 'storybook/internal/babel';
+import { recast, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
@@ -11,12 +9,9 @@ import { getCodeSnippet } from './generateCodeSnippet';
 
 function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
-  const component = csf._meta?.component ?? 'Unknown';
 
-  const snippets = Object.values(csf._storyPaths)
-    .map((path: NodePath<t.ExportNamedDeclaration>) =>
-      getCodeSnippet(path, csf._metaNode ?? null, component)
-    )
+  const snippets = Object.keys(csf._storyExports)
+    .map((name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle'))
     .filter(Boolean);
 
   return recast.print(t.program(snippets)).code;
@@ -81,8 +76,15 @@ test('Edge case identifier we can not find', () => {
   const input = withCSF3(`
     export const Default = someImportOrWhatever;
   `);
-  expect(generateExample(input)).toMatchInlineSnapshot(
-    `"const Default = () => <Button>Click me</Button>;"`
+  expect(() => generateExample(input)).toThrowErrorMatchingInlineSnapshot(
+    `
+    [SyntaxError: Expected story to be csf factory, function or an object expression
+      11 |
+      12 |
+    > 13 |     export const Default = someImportOrWhatever;
+         |                            ^^^^^^^^^^^^^^^^^^^^
+      14 |   ]
+  `
   );
 });
 
@@ -92,6 +94,15 @@ test('Default- CSF4', () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(
     `"const Default = () => <Button>Click me</Button>;"`
+  );
+});
+
+test('StoryWithoutArguments - CSF4', () => {
+  const input = withCSF4(`
+    export const StoryWithoutArguments = meta.story();
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const StoryWithoutArguments = () => <Button>Click me</Button>;"`
   );
 });
 
@@ -184,6 +195,17 @@ test('CSF2 - Template.bind', () => {
   );
 });
 
+test('CSF2 - with args', () => {
+  const input = withCSF3(dedent`
+    const Template = (args) => <Button {...args} override="overide" />;
+    export const CSF2: StoryFn = Template.bind({});
+    CSF2.args = { foo: 'bar', override: 'value' }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CSF2 = () => <Button foo=\"bar\" override=\"overide\">Click me</Button>;"`
+  );
+});
+
 test('Custom Render', () => {
   const input = withCSF3(dedent`
     export const CustomRender: Story = { render: () => <Button label="String"></Button> }
@@ -202,6 +224,28 @@ test('CustomRenderWithOverideArgs only', async () => {
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
     `"const CustomRenderWithOverideArgs = () => <Button foo="bar" override="overide">Render</Button>;"`
+  );
+});
+
+test('Meta level render', async () => {
+  const input = dedent`
+    import type { Meta } from '@storybook/react';
+    import { Button } from '@design-system/button';
+
+    const meta: Meta<typeof Button> = {
+      render: (args) => <Button {...args} override="overide" />,
+      args: {
+        children: 'Click me'
+      }
+    };
+    export default meta;
+
+    export const CustomRenderWithOverideArgs = {
+      args: { foo: 'bar', override: 'value' }
+    };
+  `;
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const CustomRenderWithOverideArgs = () => <Button foo="bar" override="overide">Click me</Button>;"`
   );
 });
 
@@ -248,7 +292,11 @@ test('CustomRenderBlockBody only', async () => {
     };`
   );
   expect(generateExample(input)).toMatchInlineSnapshot(
-    `"const CustomRenderBlockBody = (args) => { return <Button {...args}>Render</Button> };"`
+    `
+    "const CustomRenderBlockBody = () => {
+        return <Button foo="bar">Render</Button>;
+    };"
+  `
   );
 });
 
@@ -504,8 +552,29 @@ test('top level args injection and spreading in different places', async () => {
   `);
   expect(generateExample(input)).toMatchInlineSnapshot(`
     "const MultipleSpreads = () => <div count={0}>
-        <Button disabled={false} count={0} empty="" />
-        <Button disabled={false} count={0} empty="" />
+        <Button disabled={false} count={0} empty="">Click me</Button>
+        <Button disabled={false} count={0} empty="">Click me</Button>
     </div>;"
+  `);
+});
+
+test('allow top level export functions', async () => {
+  const input = withCSF3(dedent`
+    export function Usage(args) {
+      return (
+        <div style={{ padding: 40 }}>
+          <Button {...args}></Button>
+        </div>
+      );
+    }
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "function Usage() {
+        return (
+            <div style={{ padding: 40 }}>
+                <Button>Click me</Button>
+            </div>
+        );
+    }"
   `);
 });

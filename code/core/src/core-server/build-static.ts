@@ -1,6 +1,5 @@
 import { cp, mkdir, writeFile } from 'node:fs/promises';
 import { rm } from 'node:fs/promises';
-import { join, relative, resolve } from 'node:path';
 
 import {
   loadAllPresets,
@@ -12,13 +11,14 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-import { type ComponentManifestGenerator } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
+import { join, relative, resolve } from 'pathe';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../shared/utils/module';
+import { renderManifestComponentsPage } from './manifest';
 import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
 import { buildOrThrow } from './utils/build-or-throw';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files';
@@ -166,7 +166,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     );
 
     if (features?.experimentalComponentsManifest) {
-      const componentManifestGenerator: ComponentManifestGenerator = await presets.apply(
+      const componentManifestGenerator = await presets.apply(
         'experimental_componentManifestGenerator'
       );
       const indexGenerator = await initializedStoryIndexGenerator;
@@ -179,6 +179,10 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
           await writeFile(
             join(options.outputDir, 'manifests', 'components.json'),
             JSON.stringify(manifests)
+          );
+          await writeFile(
+            join(options.outputDir, 'manifests', 'components.html'),
+            renderManifestComponentsPage(manifests)
           );
         } catch (e) {
           logger.error('Failed to generate manifests/components.json');

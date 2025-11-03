@@ -14,11 +14,9 @@ expect.addSnapshotSerializer({
 const enrich = async (code: string, originalCode: string, options?: EnrichCsfOptions) => {
   // we don't actually care about the title
 
-  const csf = loadCsf(code, {
-    makeTitle: (userTitle) => userTitle || 'default',
-  }).parse();
+  const csf = loadCsf(code, { makeTitle: (userTitle) => userTitle ?? 'Unknown' }).parse();
   const csfSource = loadCsf(originalCode, {
-    makeTitle: (userTitle) => userTitle || 'default',
+    makeTitle: (userTitle) => userTitle ?? 'Unknown',
   }).parse();
   await enrichCsf(csf, csfSource, options);
   return formatCsf(csf);

@@ -11,7 +11,7 @@ import path from 'pathe';
 import { getCodeSnippet } from './generateCodeSnippet';
 import { extractJSDocInfo } from './jsdocTags';
 import { type DocObj, getMatchingDocgen, parseWithReactDocgen } from './reactDocgen';
-import { groupBy } from './utils';
+import { groupBy, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
@@ -20,45 +20,88 @@ interface ReactComponentManifest extends ComponentManifest {
 export const componentManifestGenerator = async () => {
   return (async (storyIndexGenerator) => {
     const index = await storyIndexGenerator.getIndex();
+
     const groupByComponentId = groupBy(
       Object.values(index.entries)
         .filter((entry) => entry.type === 'story')
-        .filter((entry) => entry.subtype === 'story' && entry.componentPath),
+        .filter((entry) => entry.subtype === 'story'),
       (it) => it.id.split('--')[0]
     );
     const singleEntryPerComponent = Object.values(groupByComponentId).flatMap((group) =>
       group && group?.length > 0 ? [group[0]] : []
     );
     const components = await Promise.all(
-      singleEntryPerComponent.flatMap(async (entry) => {
+      singleEntryPerComponent.flatMap(async (entry): Promise<ReactComponentManifest> => {
         const storyFile = await readFile(path.join(process.cwd(), entry.importPath), 'utf-8');
         const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
-        const componentName = csf._meta?.component;
+        const name = csf._meta?.component ?? entry.title.split('/').at(-1)!;
+        const id = entry.id.split('--')[0];
+        const importPath = entry.importPath;
 
-        if (!componentName) {
-          // TODO when there is not component name we could generate snippets based on the meta.render
-          return;
-        }
-
-        const examples = Object.entries(csf._storyPaths)
-          .map(([name, path]) => ({
-            name,
-            snippet: recast.print(getCodeSnippet(path, csf._metaNode ?? null, componentName)).code,
-          }))
+        const stories = Object.keys(csf._stories)
+          .map((storyName) => {
+            try {
+              return {
+                name: storyName,
+                snippet: recast.print(getCodeSnippet(csf, storyName, name)).code,
+              };
+            } catch (e) {
+              invariant(e instanceof Error);
+              return {
+                name: storyName,
+                error: { name: e.name, message: e.message },
+              };
+            }
+          })
           .filter(Boolean);
 
-        const id = entry.id.split('--')[0];
+        const base = {
+          id,
+          name,
+          path: importPath,
+          stories,
+          jsDocTags: {},
+        } satisfies Partial<ComponentManifest>;
 
-        const componentFile = await readFile(
-          path.join(process.cwd(), entry.componentPath!),
-          'utf-8'
-        ).catch(() => {
-          // TODO This happens too often. We should improve the componentPath resolution.
-          return null;
-        });
+        if (!entry.componentPath) {
+          const componentName = csf._meta?.component;
 
-        if (!componentFile || !entry.componentPath) {
-          return { id, name: componentName, examples, jsDocTags: {} };
+          const error = !componentName
+            ? {
+                name: 'No meta.component specified',
+                message: 'Specify meta.component for the component to be included in the manifest.',
+              }
+            : {
+                name: 'No component import found',
+                message: `No component file found for the "${componentName}" component.`,
+              };
+          return {
+            ...base,
+            name,
+            stories,
+            error: {
+              name: error.name,
+              message:
+                csf._metaStatementPath?.buildCodeFrameError(error.message).message ?? error.message,
+            },
+          };
+        }
+
+        let componentFile;
+
+        try {
+          componentFile = await readFile(path.join(process.cwd(), entry.componentPath!), 'utf-8');
+        } catch (e) {
+          invariant(e instanceof Error);
+          return {
+            ...base,
+            name,
+            stories,
+            error: {
+              name: 'Component file could not be read',
+              message: `Could not read the component file located at "${entry.componentPath}".\nPrefer relative imports.`,
+            },
+          };
         }
 
         const docgens = await parseWithReactDocgen({
@@ -67,6 +110,18 @@ export const componentManifestGenerator = async () => {
         });
         const docgen = getMatchingDocgen(docgens, csf);
 
+        const error = !docgen
+          ? {
+              name: 'Docgen evaluation failed',
+              message:
+                `Could not parse props information for the component file located at "${entry.componentPath}"\n` +
+                `Avoid barrel files when importing your component file.\n` +
+                `Prefer relative imports if possible.\n` +
+                `Avoid pointing to transpiled files.\n` +
+                `You can debug your component file in this playground: https://react-docgen.dev/playground`,
+            }
+          : undefined;
+
         const metaDescription = extractDescription(csf._metaStatement);
         const jsdocComment = metaDescription || docgen?.description;
         const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
@@ -74,15 +129,16 @@ export const componentManifestGenerator = async () => {
         const manifestDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
 
         return {
-          id,
-          name: componentName,
+          ...base,
+          name,
           description: manifestDescription?.trim(),
           summary: tags.summary?.[0],
           import: tags.import?.[0],
           reactDocgen: docgen,
           jsDocTags: tags,
-          examples,
-        } satisfies ReactComponentManifest;
+          stories,
+          error,
+        };
       })
     );
 

@@ -354,7 +354,6 @@ export default async function postInstall(options: PostinstallOptions) {
         }
       );
     } catch (e: unknown) {
-      logger.line();
       logger.error(dedent`
         Could not automatically set up ${addonA11yName} for @storybook/addon-vitest.
         Please refer to the documentation to complete the setup manually:
@@ -369,7 +368,6 @@ export default async function postInstall(options: PostinstallOptions) {
 
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
 
-  logger.line();
   if (errors.length === 0) {
     logger.step(CLI_COLORS.success('@storybook/addon-vitest setup completed successfully'));
     logger.log(dedent`

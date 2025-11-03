@@ -191,9 +191,11 @@ function runInstance(options: StandaloneBuildOptions) {
         presetOptions: { ...options, corePresets: [], overridePresets: [] },
         printError: printErrorDetails,
       },
-      () => {
+      async () => {
         logger.intro('Building storybook');
-        return buildStaticStandalone(options);
+        const result = await buildStaticStandalone(options);
+        logger.outro('Storybook build completed successfully');
+        return result;
       }
     )
   ).pipe(catchError((error: any) => throwError(errorSummary(error))));

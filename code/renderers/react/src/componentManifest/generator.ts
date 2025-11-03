@@ -65,12 +65,17 @@ export const componentManifestGenerator: PresetPropertyFn<
         const calculatedImports = componentImports.imports.join('\n').trim() ?? fallbackImport;
 
         const component = componentImports.components.find((it) => {
-          return componentName
-            ? it.localName === componentName || it.importName === componentName
-            : title.includes(it.localName) || (it.importName && title.includes(it.importName));
+          const nameMatch = componentName
+            ? it.componentName === componentName || it.localImportName === componentName || it.importName === componentName
+            : false;
+          const titleMatch = !componentName
+            ? (it.localImportName ? title.includes(it.localImportName) : false) ||
+              (it.importName ? title.includes(it.importName) : false)
+            : false;
+          return nameMatch || titleMatch;
         });
 
-        componentName ??= component?.localName;
+        componentName ??= component?.localImportName ?? component?.importName ?? component?.componentName;
 
         let componentPath;
         const importName = component?.importName;

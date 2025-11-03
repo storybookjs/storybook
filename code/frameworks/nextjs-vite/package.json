@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs-vite",
-  "version": "10.0.0-beta.13",
+  "version": "10.1.0-alpha.1",
   "description": "Storybook for Next.js and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -83,7 +83,7 @@
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "styled-jsx": "5.1.6",
-    "vite-plugin-storybook-nextjs": "^2.0.7"
+    "vite-plugin-storybook-nextjs": "^3.0.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -94,7 +94,7 @@
     "typescript": "^5.8.3"
   },
   "peerDependencies": {
-    "next": "^14.1.0 || ^15.0.0",
+    "next": "^14.1.0 || ^15.0.0 || ^16.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",

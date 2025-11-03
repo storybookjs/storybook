@@ -53,6 +53,7 @@ The configuration accepts several pipeline parameters:
 - **`check`**: Type checking and validation
 - **`unit-tests`**: Vitest-based unit tests
 - **`e2e-ui`**: End-to-end tests for Storybook's manager UI
+- **`e2e-ui-vitest-3`**: End-to-end tests for Storybook's manager UI using Vitest 3
 - **`test-init-empty`**: Tests Storybook init from empty directories
 - **`test-init-features`**: Tests Storybook initialization with features
 - **`test-portable-stories`**: Tests portable stories across frameworks

@@ -7,7 +7,7 @@ import { includeConditionalArg } from 'storybook/internal/csf';
 
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
 
-import { pickBy } from 'es-toolkit/compat';
+import { pickBy } from 'es-toolkit/object';
 import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 

@@ -58,9 +58,9 @@ const StyledTabBar = styled.div({
   flexGrow: 1,
 });
 
-export const TabBar = () => {
+export const TabBar = (args: React.HTMLAttributes<HTMLDivElement>) => {
   deprecate('The `TabBar` component is deprecated. Use `TabsView` instead.');
-  return <StyledTabBar />;
+  return <StyledTabBar {...args} />;
 };
 TabBar.displayName = 'TabBar';
 

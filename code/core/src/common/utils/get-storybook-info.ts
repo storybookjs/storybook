@@ -55,6 +55,7 @@ export const frameworkPackages: Record<string, SupportedFramework> = {
   'storybook-solidjs-vite': SupportedFramework.SOLID,
   'storybook-react-rsbuild': SupportedFramework.REACT_RSBUILD,
   'storybook-vue3-rsbuild': SupportedFramework.VUE3_RSBUILD,
+  '@storybook-vue/nuxt': SupportedFramework.NUXT,
 };
 
 export const builderPackages: Record<string, SupportedBuilder> = {

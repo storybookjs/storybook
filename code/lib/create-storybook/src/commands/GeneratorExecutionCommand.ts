@@ -100,7 +100,7 @@ export class GeneratorExecutionCommand {
       builder: frameworkInfo.builder,
       language,
       linkable: !!options.linkable,
-      features: options.features || [],
+      features: selectedFeatures,
       yes: options.yes,
     });
 

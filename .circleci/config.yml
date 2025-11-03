@@ -8,6 +8,26 @@ orbs:
   continuation: circleci/continuation@2.0.1
   node: circleci/node@7.2.1
 
+parameters:
+  ghBaseBranch:
+    default: next
+    description: The name of the base branch (the target of the PR)
+    type: string
+  ghPrNumber:
+    default: ''
+    description: The PR number
+    type: string
+  workflow:
+    default: skipped
+    description: Which workflow to run
+    enum:
+      - normal
+      - merged
+      - daily
+      - skipped
+      - docs
+    type: enum
+
 jobs:
   generate-and-run-config:
     executor: continuation/default
@@ -15,13 +35,14 @@ jobs:
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1 --verbose'
       - node/install:
-          node-version: '16.17'
+          node-version: '.nvmrc'
       - run:
           name: Generate config
           command: |
             node ./scripts/ci/generate.js
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
+          parameters: '{"ghBaseBranch": "{{ parameters.ghBaseBranch }}", "ghPrNumber": "{{ parameters.ghPrNumber }}", "workflow": "{{ parameters.workflow }}"}'
 workflows:
   setup:
     jobs:

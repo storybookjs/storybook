@@ -119,7 +119,7 @@ const indexJson = {
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
-  vol.fromJSON(fsMocks);
+  vol.fromJSON(fsMocks, '/app');
   return () => vol.reset();
 });
 

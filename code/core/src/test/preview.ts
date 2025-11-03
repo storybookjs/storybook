@@ -18,6 +18,9 @@ const resetAllMocksLoader: LoaderFunction = ({ parameters }) => {
   } else if (parameters?.test?.clearMocks === true) {
     clearAllMocks();
   } else if (parameters?.test?.restoreMocks !== false) {
+    // Note: restoreAllMocks() now only affects manual spies (vi.spyOn) in Vitest,
+    // automocks are no longer affected since Vitest 4. This could lead to test pollution if
+    // automock state persists between stories.
     restoreAllMocks();
   }
 };

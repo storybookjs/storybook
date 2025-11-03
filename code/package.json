@@ -1,6 +1,6 @@
 {
   "name": "@storybook/root",
-  "version": "10.0.0-beta.13",
+  "version": "10.1.0-alpha.3",
   "private": true,
   "description": "Storybook root",
   "homepage": "https://storybook.js.org/",
@@ -96,6 +96,7 @@
     "@types/node": "^22.0.0",
     "@types/react": "^18.0.0",
     "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
+    "aria-query@5.3.0": "^5.3.0",
     "esbuild": "^0.25.3",
     "playwright": "1.52.0",
     "playwright-core": "1.52.0",
@@ -105,12 +106,12 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@chromatic-com/storybook": "^4.1.1",
+    "@chromatic-com/storybook": "^4.1.2",
     "@nx/vite": "20.8.2",
     "@nx/workspace": "20.8.2",
     "@playwright/test": "1.52.0",
     "@storybook/addon-a11y": "workspace:*",
-    "@storybook/addon-designs": "10.0.3--canary.67522d1.0",
+    "@storybook/addon-designs": "^11.0.1",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-links": "workspace:*",
     "@storybook/addon-onboarding": "workspace:*",

@@ -56,3 +56,12 @@ export interface A11yTypes {
   parameters: A11yParameters;
   globals: A11yGlobals;
 }
+
+export type Status =
+  | 'initial'
+  | 'manual'
+  | 'running'
+  | 'error'
+  | 'component-test-error'
+  | 'ran'
+  | 'ready';

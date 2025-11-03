@@ -1,15 +1,12 @@
 import { existsSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { sep } from 'node:path';
 
-import { types as t } from 'storybook/internal/babel';
-import { getProjectRoot } from 'storybook/internal/common';
-import { supportedExtensions } from 'storybook/internal/common';
-import { resolveImport } from 'storybook/internal/common';
-import { type CsfFile } from 'storybook/internal/csf-tools';
+import { getProjectRoot, resolveImport, supportedExtensions } from 'storybook/internal/common';
 
 import * as find from 'empathic/find';
-import { type Documentation, ERROR_CODES } from 'react-docgen';
 import {
+  type Documentation,
   builtinHandlers as docgenHandlers,
   builtinResolvers as docgenResolver,
   makeFsImporter,
@@ -17,6 +14,7 @@ import {
 } from 'react-docgen';
 import * as TsconfigPaths from 'tsconfig-paths';
 
+import { extractJSDocInfo } from './jsdocTags';
 import actualNameHandler from './reactDocgen/actualNameHandler';
 import { ReactDocgenResolveError } from './reactDocgen/docgenResolver';
 import exportNameHandler from './reactDocgen/exportNameHandler';
@@ -45,45 +43,103 @@ export function getMatchingDocgen(docgens: DocObj[], importName?: string) {
     : docgens[0];
 }
 
-export async function parseWithReactDocgen({ code, filename }: { code: string; filename: string }) {
-  const tsconfigPath = find.up('tsconfig.json', { cwd: process.cwd(), last: getProjectRoot() });
-  const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
-
-  let matchPath: TsconfigPaths.MatchPath | undefined;
+export function matchPath(id: string) {
+  const tsconfig = getTsConfig(process.cwd());
 
   if (tsconfig.resultType === 'success') {
-    matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
+    const match = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
       'browser',
       'module',
       'main',
     ]);
+    return match(id, undefined, undefined, supportedExtensions) ?? id;
   }
-
-  try {
-    return parse(code, {
-      resolver: defaultResolver,
-      handlers,
-      importer: getReactDocgenImporter(matchPath),
-      filename,
-    }) as DocObj[];
-  } catch (e) {
-    // Ignore the error when react-docgen cannot find a react component
-    if (!(e instanceof Error && 'code' in e && e.code === ERROR_CODES.MISSING_DEFINITION)) {
-      console.error(e);
-    }
-    return [];
-  }
+  return id;
 }
 
-export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | undefined) {
+const getReactDocgenCache = new Map<string, ReturnType<typeof getReactDocgen>>();
+
+export function invalidateCache() {
+  getReactDocgenCache.clear();
+  getTsConfigCache.clear();
+}
+
+const getTsConfigCache = new Map<string, TsconfigPaths.ConfigLoaderResult>();
+
+export function getTsConfig(cwd: string) {
+  const cached = getTsConfigCache.get(cwd);
+  if (cached) {
+    return cached;
+  }
+  const tsconfigPath = find.up('tsconfig.json', { cwd: process.cwd(), last: getProjectRoot() });
+  return TsconfigPaths.loadConfig(tsconfigPath);
+}
+
+export async function getReactDocgen(
+  path: string,
+  importName?: string
+): Promise<
+  { type: 'success'; data: DocObj } | { type: 'error'; error: { name: string; message: string } }
+> {
+  const key = JSON.stringify({ path, importName });
+  const cached = getReactDocgenCache.get(key);
+  if (cached) {
+    return cached;
+  }
+
+  let code;
+  try {
+    code = await readFile(path, 'utf-8');
+  } catch (_) {
+    return {
+      type: 'error',
+      error: {
+        name: 'Component file could not be read',
+        message: `Could not read the component file located at "${path}".`,
+      },
+    };
+  }
+
+  let docgens;
+  try {
+    docgens = parse(code, {
+      resolver: defaultResolver,
+      handlers,
+      importer: getReactDocgenImporter(),
+      filename: path,
+    }) as DocObj[];
+  } catch (e) {
+    return {
+      type: 'error',
+      error: {
+        name: 'Docgen evaluation failed',
+        message:
+          (e instanceof Error ? `${e.message}\n` : '') +
+          `Could not parse props information for the component file located at "${path}"\n` +
+          `Avoid barrel files when importing your component file.\n` +
+          `Prefer relative imports if possible.\n` +
+          `Avoid pointing to transpiled files.\n` +
+          `You can debug your component file in this playground: https://react-docgen.dev/playground`,
+      },
+    };
+  }
+  const docgen = getMatchingDocgen(docgens, importName);
+  if (!docgen) {
+    return {
+      type: 'error',
+      error: {
+        name: 'No component definition found',
+        message: `Could not find a component definition for the component file located at "${path}".`,
+      },
+    };
+  }
+  return { type: 'success', data: docgen };
+}
+
+export function getReactDocgenImporter() {
   return makeFsImporter((filename, basedir) => {
     const mappedFilenameByPaths = (() => {
-      if (matchPath) {
-        const match = matchPath(filename, undefined, undefined, supportedExtensions);
-        return match || filename;
-      } else {
-        return filename;
-      }
+      return matchPath(filename);
     })();
 
     const result = resolveImport(mappedFilenameByPaths, { basedir });
@@ -105,4 +161,10 @@ export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | unde
 
     throw new ReactDocgenResolveError(filename);
   });
+}
+
+export function getImportTag(docgen: DocObj) {
+  const jsdocComment = docgen?.description;
+  const tags = jsdocComment ? extractJSDocInfo(jsdocComment).tags : undefined;
+  return tags?.import?.[0];
 }

@@ -2,20 +2,21 @@ import { readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { recast } from 'storybook/internal/babel';
-import { getProjectRoot, resolveImport, supportedExtensions } from 'storybook/internal/common';
-import { loadCsf } from 'storybook/internal/csf-tools';
-import { extractDescription } from 'storybook/internal/csf-tools';
-import { type ComponentManifestGenerator, type PresetPropertyFn } from 'storybook/internal/types';
-import { type ComponentManifest } from 'storybook/internal/types';
+import { resolveImport } from 'storybook/internal/common';
+import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
+import {
+  type ComponentManifest,
+  type ComponentManifestGenerator,
+  type PresetPropertyFn,
+} from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import path from 'pathe';
-import * as TsconfigPaths from 'tsconfig-paths';
 
 import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponentImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
-import { type DocObj, getMatchingDocgen, parseWithReactDocgen } from './reactDocgen';
+import { type DocObj, getReactDocgen, invalidateCache, matchPath } from './reactDocgen';
 import { groupBy, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
@@ -24,8 +25,9 @@ interface ReactComponentManifest extends ComponentManifest {
 
 export const componentManifestGenerator: PresetPropertyFn<
   'experimental_componentManifestGenerator'
-> = async (config, options) => {
+> = async () => {
   return (async (storyIndexGenerator) => {
+    invalidateCache();
     const index = await storyIndexGenerator.getIndex();
 
     const groupByComponentId = groupBy(
@@ -59,6 +61,7 @@ export const componentManifestGenerator: PresetPropertyFn<
         const fallbackImport =
           packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
         const componentImports = getComponentImports(csf, packageName);
+
         const calculatedImports = componentImports.imports.join('\n').trim() ?? fallbackImport;
 
         const component = componentImports.components.find((it) => {
@@ -74,20 +77,7 @@ export const componentManifestGenerator: PresetPropertyFn<
 
         if (component && component.importId) {
           const id = component.importId;
-          const tsconfigPath = find.up('tsconfig.json', {
-            cwd: process.cwd(),
-            last: getProjectRoot(),
-          });
-          const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
-          let matchPath: TsconfigPaths.MatchPath | undefined;
-          if (tsconfig.resultType === 'success') {
-            matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-              'browser',
-              'module',
-              'main',
-            ]);
-          }
-          const matchedPath = matchPath?.(id, undefined, undefined, supportedExtensions) ?? id;
+          const matchedPath = matchPath(id);
           let resolved;
           try {
             resolved = resolveImport(matchedPath, { basedir: dirname(storyAbsPath) });
@@ -159,23 +149,10 @@ export const componentManifestGenerator: PresetPropertyFn<
           };
         }
 
-        const docgens = await parseWithReactDocgen({
-          code: componentFile,
-          filename: path.join(process.cwd(), componentPath),
-        });
-        const docgen = getMatchingDocgen(docgens, importName);
+        const docgenResult = await getReactDocgen(componentFile, importName);
 
-        const error = !docgen
-          ? {
-              name: 'Docgen evaluation failed',
-              message:
-                `Could not parse props information for the component file located at "${componentPath}"\n` +
-                `Avoid barrel files when importing your component file.\n` +
-                `Prefer relative imports if possible.\n` +
-                `Avoid pointing to transpiled files.\n` +
-                `You can debug your component file in this playground: https://react-docgen.dev/playground`,
-            }
-          : undefined;
+        const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
+        const error = docgenResult.type === 'error' ? docgenResult.error : undefined;
 
         const metaDescription = extractDescription(csf._metaStatement);
         const jsdocComment = metaDescription || docgen?.description;
@@ -187,6 +164,7 @@ export const componentManifestGenerator: PresetPropertyFn<
           ...base,
           description: manifestDescription?.trim(),
           summary: tags.summary?.[0],
+          import: tags.import?.[0] ?? calculatedImports,
           reactDocgen: docgen,
           jsDocTags: tags,
           error,

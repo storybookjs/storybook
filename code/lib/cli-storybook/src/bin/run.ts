@@ -121,6 +121,7 @@ command('add <addon>')
       if (!options.disableTelemetry) {
         await telemetry('add', { addon: addonName, source: 'cli' });
       }
+      logger.outro('Done!');
     }).catch(handleCommandFailure);
   });
 
@@ -134,6 +135,7 @@ command('remove <addon>')
   .option('-s --skip-install', 'Skip installing deps')
   .action((addonName: string, options: any) =>
     withTelemetry('remove', { cliOptions: options }, async () => {
+      logger.intro(`Removing ${addonName} from your Storybook`);
       const packageManager = JsPackageManagerFactory.getPackageManager({
         configDir: options.configDir,
         force: options.packageManager,
@@ -146,6 +148,7 @@ command('remove <addon>')
       if (!options.disableTelemetry) {
         await telemetry('remove', { addon: addonName, source: 'cli' });
       }
+      logger.outro('Done!');
     })
   );
 

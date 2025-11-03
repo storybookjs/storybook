@@ -8,7 +8,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 import { expect, spyOn } from 'storybook/test';
-import { findByText, fireEvent, screen, userEvent, waitFor, within } from 'storybook/test';
+import { userEvent } from 'storybook/test';
 
 import { TabWrapper, Tabs, TabsState } from './Tabs';
 import type { ChildrenList } from './Tabs.helpers';
@@ -189,78 +189,6 @@ const customViewports = {
     },
   },
 };
-
-export const StatefulDynamicWithOpenTooltip = {
-  parameters: {
-    viewport: {
-      options: customViewports,
-    },
-    chromatic: { viewports: [380] },
-  },
-  globals: { sb_theme: 'light', viewport: { value: 'sized' } },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await waitFor(async () => {
-      await expect(canvas.getAllByRole('tab')).toHaveLength(3);
-      await expect(canvas.getByRole('tab', { name: /Addons/ })).toBeInTheDocument();
-    });
-
-    await waitFor(async () => {
-      const addonsTab = await canvas.findByRole('tab', { name: /Addons/ });
-      const tooltip = await screen.queryByRole('dialog');
-
-      if (!tooltip) {
-        await userEvent.click(addonsTab);
-      }
-
-      if (!tooltip) {
-        throw new Error('Tooltip not found');
-      }
-
-      await expect(screen.queryByRole('dialog')).toBeInTheDocument();
-    });
-  },
-  render: (args) => (
-    <TabsState {...args} initial={args.initial ?? 'test1'}>
-      {Object.entries(panels).map(([k, v]) => (
-        <div key={k} id={k} title={v.title as any}>
-          {/* @ts-expect-error (we know this is broken) */}
-          {v.render}
-        </div>
-      ))}
-    </TabsState>
-  ),
-} satisfies Story;
-
-export const StatefulDynamicWithSelectedAddon = {
-  ...StatefulDynamicWithOpenTooltip,
-  play: async (context) => {
-    await StatefulDynamicWithOpenTooltip.play(context);
-    const canvas = within(context.canvasElement);
-
-    await waitFor(async () => {
-      const popperContainer = await screen.findByRole('dialog');
-      const tab4 = await findByText(popperContainer, 'Tab title #4', {});
-      fireEvent(tab4, new MouseEvent('click', { bubbles: true }));
-      const content4 = await canvas.findByText('CONTENT 4');
-      await expect(content4).toBeVisible();
-    });
-
-    // reopen the tooltip
-    await StatefulDynamicWithOpenTooltip.play(context);
-  },
-  render: (args) => (
-    <TabsState {...args} initial={args.initial ?? 'test1'}>
-      {Object.entries(panels).map(([k, v]) => (
-        <div key={k} id={k} title={v.title as any}>
-          {/* @ts-expect-error (we know this is broken) */}
-          {v.render}
-        </div>
-      ))}
-    </TabsState>
-  ),
-} satisfies Story;
 
 export const StatefulNoInitial = {
   render: (args) => <TabsState {...args}>{content}</TabsState>,

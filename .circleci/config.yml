@@ -52,7 +52,4 @@ workflows:
   setup:
     jobs:
       - generate-and-run-config
-    when:
-      not-equal:
-        - skipped
-        - << pipeline.parameters.workflow >>
+    when: << pipeline.parameters.workflow >> != 'skipped'

@@ -62,7 +62,7 @@ describe('ProjectDetectionCommand', () => {
 
       expect(result).toBe(ProjectType.VUE3);
       expect(detect).toHaveBeenCalledWith(mockPackageManager, options);
-      expect(logger.step).toHaveBeenCalledWith('Project type detected: VUE3');
+      expect(logger.debug).toHaveBeenCalledWith('Project type detected: VUE3');
     });
 
     it('should throw error for invalid provided type', async () => {

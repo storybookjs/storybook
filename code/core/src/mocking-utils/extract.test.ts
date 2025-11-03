@@ -16,17 +16,22 @@ vi.mock('fs', async () => {
 
 vi.mock('./resolve', async () => {
   return {
-    resolveMock: vi.fn((path) => {
-      if (path === './bar/baz.js') {
-        return { absolutePath: '/abs/path/bar/baz.js', redirectPath: null };
+    resolveMock: vi.fn((path, root, importer, findMockRedirect) => {
+      const result =
+        path === './bar/baz.js'
+          ? { absolutePath: '/abs/path/bar/baz.js', redirectPath: null }
+          : path === './bar/baz.utils'
+            ? { absolutePath: '/abs/path/bar/baz.utils.ts', redirectPath: null }
+            : path === './bar/baz.utils.ts'
+              ? { absolutePath: '/abs/path/bar/baz.utils.ts', redirectPath: null }
+              : { absolutePath: '/abs/path', redirectPath: null };
+
+      if (findMockRedirect) {
+        const redirectPath = findMockRedirect(root, result.absolutePath, null);
+        return { ...result, redirectPath };
       }
-      if (path === './bar/baz.utils') {
-        return { absolutePath: '/abs/path/bar/baz.utils.ts', redirectPath: null };
-      }
-      if (path === './bar/baz.utils.ts') {
-        return { absolutePath: '/abs/path/bar/baz.utils.ts', redirectPath: null };
-      }
-      return { absolutePath: '/abs/path', redirectPath: null };
+
+      return result;
     }),
   };
 });
@@ -50,17 +55,21 @@ describe('extractMockCalls', () => {
   const root = '/project';
   const coreOptions = { disableTelemetry: true };
 
+  const findMockRedirect = vi.fn(() => null);
+
   const extractMockCalls = (previewContent: string) => {
     vi.mocked(readFileSync).mockReturnValue(previewContent);
     return extractModule.extractMockCalls(
       { previewConfigPath, configDir, coreOptions },
       parser,
-      root
+      root,
+      findMockRedirect
     );
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    findMockRedirect.mockReturnValue(null);
   });
 
   it('returns empty array if readFileSync throws', () => {
@@ -84,7 +93,12 @@ describe('extractMockCalls', () => {
         spy: true,
       },
     ]);
-    expect(resolveModule.resolveMock).toHaveBeenCalledWith('foo', root, previewConfigPath);
+    expect(resolveModule.resolveMock).toHaveBeenCalledWith(
+      'foo',
+      root,
+      previewConfigPath,
+      findMockRedirect
+    );
   });
 
   it('handles no sb.mock calls in preview file', () => {

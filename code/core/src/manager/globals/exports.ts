@@ -551,6 +551,7 @@ export default {
     'WithPopover',
     'WithTooltip',
     'WithTooltipNew',
+    'WithTooltipPure',
     'Zoom',
     'codeCommon',
     'components',

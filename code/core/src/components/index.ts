@@ -73,7 +73,7 @@ export { Tooltip } from './components/tooltip/Tooltip';
 export type { TooltipProps } from './components/tooltip/Tooltip';
 export { TooltipNote } from './components/tooltip/TooltipNote';
 export type { TooltipNoteProps } from './components/tooltip/TooltipNote';
-export { WithTooltip } from './components/tooltip/WithTooltip';
+export { WithTooltip, WithTooltipPure } from './components/tooltip/lazy-WithTooltip';
 export { WithTooltipNew } from './components/tooltip/WithTooltipNew';
 export type { WithTooltipNewProps } from './components/tooltip/WithTooltipNew';
 

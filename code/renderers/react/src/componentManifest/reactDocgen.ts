@@ -7,6 +7,7 @@ import { getProjectRoot, resolveImport, supportedExtensions } from 'storybook/in
 import * as find from 'empathic/find';
 import {
   type Documentation,
+  ERROR_CODES,
   builtinHandlers as docgenHandlers,
   builtinResolvers as docgenResolver,
   makeFsImporter,
@@ -100,6 +101,20 @@ export async function getReactDocgen(
     };
   }
 
+  const noCompDefError = {
+    type: 'error' as const,
+    error: {
+      name: 'No component definition found',
+      message:
+        `Could not find a component definition for the component file located at:\n` +
+        `${path}\n` +
+        `Avoid barrel files when importing your component file.\n` +
+        `Prefer relative imports if possible.\n` +
+        `Avoid pointing to transpiled files.\n` +
+        `You can debug your component file in this playground: https://react-docgen.dev/playground`,
+    },
+  };
+
   let docgens;
   try {
     docgens = parse(code, {
@@ -109,29 +124,20 @@ export async function getReactDocgen(
       filename: path,
     }) as DocObj[];
   } catch (e) {
+    if (e instanceof Error && 'code' in e && e.code === ERROR_CODES.MISSING_DEFINITION) {
+      return noCompDefError;
+    }
     return {
       type: 'error',
       error: {
         name: 'Docgen evaluation failed',
-        message:
-          (e instanceof Error ? `${e.message}\n` : '') +
-          `Could not parse props information for the component file located at "${path}"\n` +
-          `Avoid barrel files when importing your component file.\n` +
-          `Prefer relative imports if possible.\n` +
-          `Avoid pointing to transpiled files.\n` +
-          `You can debug your component file in this playground: https://react-docgen.dev/playground`,
+        message: e instanceof Error ? `${e.message}\n` : '',
       },
     };
   }
   const docgen = getMatchingDocgen(docgens, importName);
   if (!docgen) {
-    return {
-      type: 'error',
-      error: {
-        name: 'No component definition found',
-        message: `Could not find a component definition for the component file located at "${path}".`,
-      },
-    };
+    return noCompDefError;
   }
   return { type: 'success', data: docgen };
 }

@@ -133,23 +133,7 @@ export const componentManifestGenerator: PresetPropertyFn<
           };
         }
 
-        let componentFile;
-
-        try {
-          componentFile = await readFile(componentPath, 'utf-8');
-        } catch (e) {
-          invariant(e instanceof Error);
-          return {
-            ...base,
-            stories,
-            error: {
-              name: 'Component file could not be read',
-              message: `Could not read the component file located at "${componentPath}".\nPrefer relative imports.`,
-            },
-          };
-        }
-
-        const docgenResult = await getReactDocgen(componentFile, importName);
+        const docgenResult = await getReactDocgen(componentPath, importName);
 
         const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
         const error = docgenResult.type === 'error' ? docgenResult.error : undefined;

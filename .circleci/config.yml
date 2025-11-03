@@ -34,12 +34,12 @@ jobs:
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1 --verbose'
-      - node/install:
-          node-version: '.nvmrc'
+      - node/install
       - run:
           name: Generate config
           command: |
             node ./scripts/ci/generate.js
+      # https://circleci.com/developer/orbs/orb/circleci/continuation
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
           parameters: '{"ghBaseBranch": "{{ parameters.ghBaseBranch }}", "ghPrNumber": "{{ parameters.ghPrNumber }}", "workflow": "{{ parameters.workflow }}"}'

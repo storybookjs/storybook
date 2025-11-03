@@ -38,8 +38,7 @@ async function runStoriesCodemod(options: {
       command: packageManager.getRemoteRunCommand('storybook', [
         'migrate',
         'csf-2-to-3',
-        '--glob',
-        globString,
+        `--glob='${globString}'`,
       ]),
       args: [],
       stdio: 'ignore',

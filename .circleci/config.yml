@@ -58,4 +58,4 @@ workflows:
   setup:
     jobs:
       - generate-and-run-config
-    when: pipeline.parameters.workflow != 'skipped'
+    when: pipeline.parameters.workflow != "skipped"

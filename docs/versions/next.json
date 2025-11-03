@@ -1,1 +1,1 @@
-{"version":"10.1.0-alpha.0","info":{"plain":""}}
+{"version":"10.1.0-alpha.3","info":{"plain":"- React: Add manifests/components.html page - [#32905](https://github.com/storybookjs/storybook/pull/32905), thanks @kasperpeulen!"}}

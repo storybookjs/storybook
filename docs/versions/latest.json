@@ -1,6 +1,1 @@
-{
-  "version": "10.0.2",
-  "info": {
-    "plain": "- CLI: Fix glob string formatting in csf-factories codemod - [#32880](https://github.com/storybookjs/storybook/pull/32880), thanks @yannbf!\n- Core: Improve file path resolution on Windows - [#32893](https://github.com/storybookjs/storybook/pull/32893), thanks @yannbf!\n- Vite: Update `optimizeViteDeps` for addon-docs and addon-vitest - [#32881](https://github.com/storybookjs/storybook/pull/32881), thanks @ndelangen!"
-  }
-}
+{"version":"10.0.3","info":{"plain":"- Core: Better handling for TypeScript satisfies/as syntaxes - [#32891](https://github.com/storybookjs/storybook/pull/32891), thanks @yannbf!\n- Core: Fix wrong import to fix Yarn PnP support - [#32928](https://github.com/storybookjs/storybook/pull/32928), thanks @yannbf!\n- ESlint: Update `@storybook/experimental-nextjs-vite` in `no-renderer-packages` rule - [#32909](https://github.com/storybookjs/storybook/pull/32909), thanks @ndelangen!\n- React Native: Update withStorybook setup instructions - [#32919](https://github.com/storybookjs/storybook/pull/32919), thanks @dannyhw!"}}

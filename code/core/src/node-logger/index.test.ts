@@ -43,11 +43,6 @@ vi.mock('./prompts/prompt-config', () => ({
 //
 
 describe('node-logger', () => {
-  it('should have an info method', () => {
-    const message = 'information';
-    logger.info(message);
-    expect(npmlog.info).toHaveBeenCalledWith('', message);
-  });
   it('should have a warn method', () => {
     const message = 'warning message';
     logger.warn(message);

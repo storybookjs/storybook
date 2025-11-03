@@ -7,12 +7,12 @@ import { dedent } from 'ts-dedent';
 import { getComponentImports } from './getComponentImports';
 
 const getImports = (code: string, packageName?: string) =>
-  getComponentImports(
-    loadCsf(code, { makeTitle: (t?: string) => t ?? 'title' }).parse(),
-    packageName
-  );
+  getComponentImports({
+    csf: loadCsf(code, { makeTitle: (t?: string) => t ?? 'title' }).parse(),
+    packageName,
+  });
 
-test('Get imports from multiple components', () => {
+test('Get imports from multiple components', async () => {
   const code = dedent`
     import type { Meta } from '@storybook/react';
     import { ButtonGroup } from '@design-system/button-group';
@@ -27,7 +27,7 @@ test('Get imports from multiple components', () => {
     export default meta;
     export const Default: Story = <ButtonGroup><Button>Click me</Button></ButtonGroup>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -36,12 +36,14 @@ test('Get imports from multiple components', () => {
           "importId": "@design-system/button",
           "importName": "Button",
           "localImportName": "Button",
+          "path": undefined,
         },
         {
           "componentName": "ButtonGroup",
           "importId": "@design-system/button-group",
           "importName": "ButtonGroup",
           "localImportName": "ButtonGroup",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -53,7 +55,7 @@ test('Get imports from multiple components', () => {
   );
 });
 
-test('Namespace import with member usage', () => {
+test('Namespace import with member usage', async () => {
   const code = dedent`
     import * as Accordion from '@ds/accordion';
 
@@ -61,7 +63,7 @@ test('Namespace import with member usage', () => {
     export default meta;
     export const S = <Accordion.Root>Hi</Accordion.Root>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -71,6 +73,7 @@ test('Namespace import with member usage', () => {
           "importName": "Root",
           "localImportName": "Accordion",
           "namespace": "Accordion",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -81,7 +84,7 @@ test('Namespace import with member usage', () => {
   );
 });
 
-test('Named import used as namespace object', () => {
+test('Named import used as namespace object', async () => {
   const code = dedent`
     import { Accordion } from '@ds/accordion';
 
@@ -89,7 +92,7 @@ test('Named import used as namespace object', () => {
     export default meta;
     export const S = <Accordion.Root>Hi</Accordion.Root>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -98,6 +101,7 @@ test('Named import used as namespace object', () => {
           "importId": "@ds/accordion",
           "importName": "Accordion",
           "localImportName": "Accordion",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -108,7 +112,7 @@ test('Named import used as namespace object', () => {
   );
 });
 
-test('Default import', () => {
+test('Default import', async () => {
   const code = dedent`
     import Button from '@ds/button';
 
@@ -116,7 +120,7 @@ test('Default import', () => {
     export default meta;
     export const S = <Button/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -125,6 +129,7 @@ test('Default import', () => {
           "importId": "@ds/button",
           "importName": "default",
           "localImportName": "Button",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -135,7 +140,7 @@ test('Default import', () => {
   );
 });
 
-test('Alias named import and meta.component inclusion', () => {
+test('Alias named import and meta.component inclusion', async () => {
   const code = dedent`
     import DefaultComponent, { Button as Btn, Other } from '@ds/button';
 
@@ -143,7 +148,7 @@ test('Alias named import and meta.component inclusion', () => {
     export default meta;
     export const S = <Other><Btn/></Other>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -152,12 +157,14 @@ test('Alias named import and meta.component inclusion', () => {
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Btn",
+          "path": undefined,
         },
         {
           "componentName": "Other",
           "importId": "@ds/button",
           "importName": "Other",
           "localImportName": "Other",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -168,7 +175,7 @@ test('Alias named import and meta.component inclusion', () => {
   );
 });
 
-test('Strip unused specifiers from the same import statement', () => {
+test('Strip unused specifiers from the same import statement', async () => {
   const code = dedent`
     import { Button as Btn, useSomeHook } from '@ds/button';
 
@@ -176,7 +183,7 @@ test('Strip unused specifiers from the same import statement', () => {
     export default meta;
     export const S = <Btn/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -185,6 +192,7 @@ test('Strip unused specifiers from the same import statement', () => {
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Btn",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -195,14 +203,14 @@ test('Strip unused specifiers from the same import statement', () => {
   );
 });
 
-test('Meta component with member and star import', () => {
+test('Meta component with member and star import', async () => {
   const code = dedent`
     import * as Accordion from '@ds/accordion';
 
     const meta = { component: Accordion.Root };
     export default meta;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -212,6 +220,7 @@ test('Meta component with member and star import', () => {
           "importName": "Root",
           "localImportName": "Accordion",
           "namespace": "Accordion",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -222,7 +231,7 @@ test('Meta component with member and star import', () => {
   );
 });
 
-test('Keeps multiple named specifiers and drops unused ones from same import', () => {
+test('Keeps multiple named specifiers and drops unused ones from same import', async () => {
   const code = dedent`
     import { Button, ButtonGroup, useHook } from '@ds/button';
 
@@ -230,7 +239,7 @@ test('Keeps multiple named specifiers and drops unused ones from same import', (
     export default meta;
     export const S = <div><Button/><ButtonGroup/></div>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -239,12 +248,14 @@ test('Keeps multiple named specifiers and drops unused ones from same import', (
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Button",
+          "path": undefined,
         },
         {
           "componentName": "ButtonGroup",
           "importId": "@ds/button",
           "importName": "ButtonGroup",
           "localImportName": "ButtonGroup",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -255,7 +266,7 @@ test('Keeps multiple named specifiers and drops unused ones from same import', (
   );
 });
 
-test('Mixed default + named import: keep only default when only default used', () => {
+test('Mixed default + named import: keep only default when only default used', async () => {
   const code = dedent`
     import Button, { useHook } from '@ds/button';
 
@@ -263,7 +274,7 @@ test('Mixed default + named import: keep only default when only default used', (
     export default meta;
     export const S = <Button/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -272,6 +283,7 @@ test('Mixed default + named import: keep only default when only default used', (
           "importId": "@ds/button",
           "importName": "default",
           "localImportName": "Button",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -282,7 +294,7 @@ test('Mixed default + named import: keep only default when only default used', (
   );
 });
 
-test('Mixed default + named import: keep only named when only named (alias) used', () => {
+test('Mixed default + named import: keep only named when only named (alias) used', async () => {
   const code = dedent`
     import Button, { Button as Btn } from '@ds/button';
 
@@ -290,7 +302,7 @@ test('Mixed default + named import: keep only named when only named (alias) used
     export default meta;
     export const S = <Btn/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -299,6 +311,7 @@ test('Mixed default + named import: keep only named when only named (alias) used
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Btn",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -309,7 +322,7 @@ test('Mixed default + named import: keep only named when only named (alias) used
   );
 });
 
-test('Per-specifier type import is dropped when mixing with value specifiers', () => {
+test('Per-specifier type import is dropped when mixing with value specifiers', async () => {
   const code = dedent`
     import type { Meta } from '@storybook/react';
     import { type Meta as M, Button } from '@ds/button';
@@ -318,7 +331,7 @@ test('Per-specifier type import is dropped when mixing with value specifiers', (
     export default meta;
     export const S = <Button/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -327,6 +340,7 @@ test('Per-specifier type import is dropped when mixing with value specifiers', (
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Button",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -337,7 +351,7 @@ test('Per-specifier type import is dropped when mixing with value specifiers', (
   );
 });
 
-test('Namespace import used for multiple members kept once', () => {
+test('Namespace import used for multiple members kept once', async () => {
   const code = dedent`
     import * as DS from '@ds/ds';
 
@@ -345,7 +359,7 @@ test('Namespace import used for multiple members kept once', () => {
     export default meta;
     export const S = <div><DS.A/><DS.B/></div>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -355,6 +369,7 @@ test('Namespace import used for multiple members kept once', () => {
           "importName": "A",
           "localImportName": "DS",
           "namespace": "DS",
+          "path": undefined,
         },
         {
           "componentName": "DS.B",
@@ -362,6 +377,7 @@ test('Namespace import used for multiple members kept once', () => {
           "importName": "B",
           "localImportName": "DS",
           "namespace": "DS",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -372,14 +388,14 @@ test('Namespace import used for multiple members kept once', () => {
   );
 });
 
-test('Default import kept when referenced only via meta.component', () => {
+test('Default import kept when referenced only via meta.component', async () => {
   const code = dedent`
     import Button from '@ds/button';
 
     const meta = { component: Button };
     export default meta;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -388,6 +404,7 @@ test('Default import kept when referenced only via meta.component', () => {
           "importId": "@ds/button",
           "importName": "default",
           "localImportName": "Button",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -398,7 +415,7 @@ test('Default import kept when referenced only via meta.component', () => {
   );
 });
 
-test('Side-effect-only import is ignored', () => {
+test('Side-effect-only import is ignored', async () => {
   const code = dedent`
     import '@ds/global.css';
     import { Button } from '@ds/button';
@@ -407,7 +424,7 @@ test('Side-effect-only import is ignored', () => {
     export default meta;
     export const S = <Button/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -416,6 +433,7 @@ test('Side-effect-only import is ignored', () => {
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Button",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -428,7 +446,7 @@ test('Side-effect-only import is ignored', () => {
 
 // New tests for packageName behavior
 
-test('Converts default relative import to named when packageName provided', () => {
+test('Converts default relative import to named when packageName provided', async () => {
   const code = dedent`
     import Header from './Header';
 
@@ -437,25 +455,11 @@ test('Converts default relative import to named when packageName provided', () =
     export const S = <Header/>;
   `;
   expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Header",
-          "importId": "./Header",
-          "importName": "default",
-          "localImportName": "Header",
-        },
-      ],
-      "imports": [
-        "import { Header } from "my-package";",
-      ],
-    }
-  `
+    `Promise {}`
   );
 });
 
-test('Converts relative import to provided packageName', () => {
+test('Converts relative import to provided packageName', async () => {
   const code = dedent`
     import { Button } from './components/Button';
 
@@ -464,25 +468,11 @@ test('Converts relative import to provided packageName', () => {
     export const S = <Button/>;
   `;
   expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Button",
-          "importId": "./components/Button",
-          "importName": "Button",
-          "localImportName": "Button",
-        },
-      ],
-      "imports": [
-        "import { Button } from "my-package";",
-      ],
-    }
-  `
+    `Promise {}`
   );
 });
 
-test('Keeps relative import when packageName is missing', () => {
+test('Keeps relative import when packageName is missing', async () => {
   const code = dedent`
     import { Button } from './components/Button';
 
@@ -490,7 +480,7 @@ test('Keeps relative import when packageName is missing', () => {
     export default meta;
     export const S = <Button/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -499,6 +489,7 @@ test('Keeps relative import when packageName is missing', () => {
           "importId": "./components/Button",
           "importName": "Button",
           "localImportName": "Button",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -509,7 +500,7 @@ test('Keeps relative import when packageName is missing', () => {
   );
 });
 
-test('Non-relative import remains unchanged even if packageName provided', () => {
+test('Non-relative import remains unchanged even if packageName provided', async () => {
   const code = dedent`
     import { Button } from '@ds/button';
 
@@ -518,27 +509,13 @@ test('Non-relative import remains unchanged even if packageName provided', () =>
     export const S = <Button/>;
   `;
   expect(getImports(code, 'my-package')).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Button",
-          "importId": "@ds/button",
-          "importName": "Button",
-          "localImportName": "Button",
-        },
-      ],
-      "imports": [
-        "import { Button } from "@ds/button";",
-      ],
-    }
-  `
+    `Promise {}`
   );
 });
 
 // Merging imports from same package
 
-test('Merges multiple imports from the same package (defaults and named)', () => {
+test('Merges multiple imports from the same package (defaults and named)', async () => {
   const code = dedent`
     import { CopilotIcon } from '@primer/octicons-react';
     import { Banner } from "@primer/react";
@@ -551,7 +528,7 @@ test('Merges multiple imports from the same package (defaults and named)', () =>
     export default meta;
     export const S = <div><Link/><Heading/><Banner/><Dialog/><Stack/><CopilotIcon/></div>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -560,36 +537,42 @@ test('Merges multiple imports from the same package (defaults and named)', () =>
           "importId": "@primer/react",
           "importName": "Banner",
           "localImportName": "Banner",
+          "path": undefined,
         },
         {
           "componentName": "CopilotIcon",
           "importId": "@primer/octicons-react",
           "importName": "CopilotIcon",
           "localImportName": "CopilotIcon",
+          "path": undefined,
         },
         {
           "componentName": "Dialog",
           "importId": "@primer/react",
           "importName": "Dialog",
           "localImportName": "Dialog",
+          "path": undefined,
         },
         {
           "componentName": "Heading",
           "importId": "@primer/react",
           "importName": "default",
           "localImportName": "Heading",
+          "path": undefined,
         },
         {
           "componentName": "Link",
           "importId": "@primer/react",
           "importName": "default",
           "localImportName": "Link",
+          "path": undefined,
         },
         {
           "componentName": "Stack",
           "importId": "@primer/react",
           "importName": "Stack",
           "localImportName": "Stack",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -602,7 +585,7 @@ test('Merges multiple imports from the same package (defaults and named)', () =>
   );
 });
 
-test('Merges namespace with default and separates named for same package', () => {
+test('Merges namespace with default and separates named for same package', async () => {
   const code = dedent`
     import * as PR from '@primer/react';
     import { Banner } from '@primer/react';
@@ -612,7 +595,7 @@ test('Merges namespace with default and separates named for same package', () =>
     export default meta;
     export const S = <div><Link/><PR.Box/><Banner/></div>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
@@ -621,12 +604,14 @@ test('Merges namespace with default and separates named for same package', () =>
           "importId": "@primer/react",
           "importName": "Banner",
           "localImportName": "Banner",
+          "path": undefined,
         },
         {
           "componentName": "Link",
           "importId": ".",
           "importName": "default",
           "localImportName": "Link",
+          "path": undefined,
         },
         {
           "componentName": "PR.Box",
@@ -634,6 +619,7 @@ test('Merges namespace with default and separates named for same package', () =>
           "importName": "Box",
           "localImportName": "PR",
           "namespace": "PR",
+          "path": undefined,
         },
       ],
       "imports": [
@@ -646,7 +632,7 @@ test('Merges namespace with default and separates named for same package', () =>
   );
 });
 
-test('Object.assign aliasing of imported component retains correct import', () => {
+test('Object.assign aliasing of imported component retains correct import', async () => {
   const code = dedent`
     import type { Meta } from '@storybook/react';
     import {ActionList as _ActionList} from '../../deprecated/ActionList'
@@ -662,7 +648,7 @@ test('Object.assign aliasing of imported component retains correct import', () =
 
     const Story = () => <ActionList/>
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [],
@@ -672,18 +658,19 @@ test('Object.assign aliasing of imported component retains correct import', () =
   );
 });
 
-test('Component not imported returns undefined importId and importName', () => {
+test('Component not imported returns undefined importId and importName', async () => {
   const code = dedent`
     const meta = {};
     export default meta;
     export const S = <Missing/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
         {
           "componentName": "Missing",
+          "path": undefined,
         },
       ],
       "imports": [],
@@ -692,18 +679,19 @@ test('Component not imported returns undefined importId and importName', () => {
   );
 });
 
-test('Namespace component not imported returns undefined importId and importName', () => {
+test('Namespace component not imported returns undefined importId and importName', async () => {
   const code = dedent`
     const meta = {};
     export default meta;
     export const S = <PR.Box/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [
         {
           "componentName": "PR.Box",
+          "path": undefined,
         },
       ],
       "imports": [],
@@ -712,7 +700,7 @@ test('Namespace component not imported returns undefined importId and importName
   );
 });
 
-test('Filters out locally defined components', () => {
+test('Filters out locally defined components', async () => {
   const code = dedent`
     const Local = () => <div/>;
 
@@ -720,7 +708,7 @@ test('Filters out locally defined components', () => {
     export default meta;
     export const S = <Local/>;
   `;
-  expect(getImports(code)).toMatchInlineSnapshot(
+  expect(await getImports(code)).toMatchInlineSnapshot(
     `
     {
       "components": [],

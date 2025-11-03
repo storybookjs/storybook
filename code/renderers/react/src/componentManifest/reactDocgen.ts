@@ -19,6 +19,7 @@ import { extractJSDocInfo } from './jsdocTags';
 import actualNameHandler from './reactDocgen/actualNameHandler';
 import { ReactDocgenResolveError } from './reactDocgen/docgenResolver';
 import exportNameHandler from './reactDocgen/exportNameHandler';
+import { cached } from './utils';
 
 export type DocObj = Documentation & {
   actualName: string;
@@ -58,89 +59,76 @@ export function matchPath(id: string) {
   return id;
 }
 
-const getReactDocgenCache = new Map<string, ReturnType<typeof getReactDocgen>>();
-
-export function invalidateCache() {
-  getReactDocgenCache.clear();
-  getTsConfigCache.clear();
-}
-
-const getTsConfigCache = new Map<string, TsconfigPaths.ConfigLoaderResult>();
-
-export function getTsConfig(cwd: string) {
-  const cached = getTsConfigCache.get(cwd);
-  if (cached) {
-    return cached;
-  }
-  const tsconfigPath = find.up('tsconfig.json', { cwd: process.cwd(), last: getProjectRoot() });
+export const getTsConfig = cached((cwd: string) => {
+  const tsconfigPath = find.up('tsconfig.json', { cwd, last: getProjectRoot() });
   return TsconfigPaths.loadConfig(tsconfigPath);
+});
+
+export function parseWithReactDocgen(code: string, path: string) {
+  return parse(code, {
+    resolver: defaultResolver,
+    handlers,
+    importer: getReactDocgenImporter(),
+    filename: path,
+  }) as DocObj[];
 }
 
-export async function getReactDocgen(
-  path: string,
-  importName?: string
-): Promise<
-  { type: 'success'; data: DocObj } | { type: 'error'; error: { name: string; message: string } }
-> {
-  const key = JSON.stringify({ path, importName });
-  const cached = getReactDocgenCache.get(key);
-  if (cached) {
-    return cached;
-  }
+export const getReactDocgen = cached(
+  async (
+    path: string,
+    importName?: string
+  ): Promise<
+    { type: 'success'; data: DocObj } | { type: 'error'; error: { name: string; message: string } }
+  > => {
+    let code;
+    try {
+      code = await readFile(path, 'utf-8');
+    } catch (_) {
+      return {
+        type: 'error',
+        error: {
+          name: 'Component file could not be read',
+          message: `Could not read the component file located at "${path}".`,
+        },
+      };
+    }
 
-  let code;
-  try {
-    code = await readFile(path, 'utf-8');
-  } catch (_) {
-    return {
-      type: 'error',
+    const noCompDefError = {
+      type: 'error' as const,
       error: {
-        name: 'Component file could not be read',
-        message: `Could not read the component file located at "${path}".`,
+        name: 'No component definition found',
+        message:
+          `Could not find a component definition for the component file located at:\n` +
+          `${path}\n` +
+          `Avoid barrel files when importing your component file.\n` +
+          `Prefer relative imports if possible.\n` +
+          `Avoid pointing to transpiled files.\n` +
+          `You can debug your component file in this playground: https://react-docgen.dev/playground`,
       },
     };
-  }
 
-  const noCompDefError = {
-    type: 'error' as const,
-    error: {
-      name: 'No component definition found',
-      message:
-        `Could not find a component definition for the component file located at:\n` +
-        `${path}\n` +
-        `Avoid barrel files when importing your component file.\n` +
-        `Prefer relative imports if possible.\n` +
-        `Avoid pointing to transpiled files.\n` +
-        `You can debug your component file in this playground: https://react-docgen.dev/playground`,
-    },
-  };
-
-  let docgens;
-  try {
-    docgens = parse(code, {
-      resolver: defaultResolver,
-      handlers,
-      importer: getReactDocgenImporter(),
-      filename: path,
-    }) as DocObj[];
-  } catch (e) {
-    if (e instanceof Error && 'code' in e && e.code === ERROR_CODES.MISSING_DEFINITION) {
+    let docgens;
+    try {
+      docgens = parseWithReactDocgen(code, path);
+    } catch (e) {
+      if (e instanceof Error && 'code' in e && e.code === ERROR_CODES.MISSING_DEFINITION) {
+        return noCompDefError;
+      }
+      return {
+        type: 'error',
+        error: {
+          name: 'Docgen evaluation failed',
+          message: e instanceof Error ? `${e.message}\n` : '',
+        },
+      };
+    }
+    const docgen = getMatchingDocgen(docgens, importName);
+    if (!docgen) {
       return noCompDefError;
     }
-    return {
-      type: 'error',
-      error: {
-        name: 'Docgen evaluation failed',
-        message: e instanceof Error ? `${e.message}\n` : '',
-      },
-    };
+    return { type: 'success', data: docgen };
   }
-  const docgen = getMatchingDocgen(docgens, importName);
-  if (!docgen) {
-    return noCompDefError;
-  }
-  return { type: 'success', data: docgen };
-}
+);
 
 export function getReactDocgenImporter() {
   return makeFsImporter((filename, basedir) => {

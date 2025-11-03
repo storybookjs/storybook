@@ -1,16 +1,22 @@
+import { dirname } from 'node:path';
+
 import { type NodePath, recast, types as t } from 'storybook/internal/babel';
+import { resolveImport } from 'storybook/internal/common';
 import { type CsfFile } from 'storybook/internal/csf-tools';
+
+import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
 
 // Public component metadata type used across passes
 export type ComponentRef = {
   componentName: string;
   localImportName?: string;
   importId?: string;
+  importOverride?: string;
   importName?: string;
   namespace?: string;
+  path?: string;
 };
 
-// ---------- Helpers ----------
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;
 
 const isTypeSpecifier = (
@@ -26,7 +32,13 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
   }
 };
 
-export const getComponents = (csf: CsfFile): ComponentRef[] => {
+export const getComponents = ({
+  csf,
+  storyFilePath,
+}: {
+  csf: CsfFile;
+  storyFilePath?: string;
+}): ComponentRef[] => {
   const program: NodePath<t.Program> = csf._file.path;
 
   const componentSet = new Set<string>();
@@ -152,12 +164,29 @@ export const getComponents = (csf: CsfFile): ComponentRef[] => {
           }
         : { componentName: c };
     })
+    .map((component) => {
+      let path, docgen;
+      try {
+        if (component.importId && storyFilePath) {
+          path = resolveImport(matchPath(component.importId), { basedir: dirname(storyFilePath) });
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      return { ...component, path };
+    })
     .sort((a, b) => a.componentName.localeCompare(b.componentName));
 
   return componentObjs;
 };
 
-export const getImports = (components: ComponentRef[], packageName?: string): string[] => {
+export const getImports = ({
+  components,
+  packageName,
+}: {
+  components: ComponentRef[];
+  packageName?: string;
+}): string[] => {
   // Group by source (after potential rewrite)
   type Bucket = {
     source: t.StringLiteral;
@@ -326,14 +355,37 @@ export const getImports = (components: ComponentRef[], packageName?: string): st
   return merged;
 };
 
-export function getComponentImports(
-  csf: CsfFile,
-  packageName?: string
-): {
+export async function getComponentImports({
+  csf,
+  packageName,
+  storyFilePath,
+}: {
+  csf: CsfFile;
+  packageName?: string;
+  storyFilePath?: string;
+}): Promise<{
   components: ComponentRef[];
   imports: string[];
-} {
-  const components = getComponents(csf);
-  const imports = getImports(components, packageName);
+}> {
+  const components = getComponents({ csf, storyFilePath });
+  const withDocgen = await Promise.all(
+    components.map(async (component) => {
+      if (component.path) {
+        const docgen = await getReactDocgen(component.path, component.importName);
+        if (docgen.type === 'success') {
+          const importTag = getImportTag(docgen.data);
+          if (importTag) {
+            return {
+              ...component,
+              reactDocgen: docgen.data,
+              importOverride: importTag,
+            };
+          }
+        }
+      }
+      return component;
+    })
+  );
+  const imports = getImports({ components: withDocgen, packageName });
   return { components, imports };
 }

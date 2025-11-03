@@ -1,8 +1,6 @@
 import { readFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
 
 import { recast } from 'storybook/internal/babel';
-import { resolveImport } from 'storybook/internal/common';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
 import {
   type ComponentManifest,
@@ -16,8 +14,8 @@ import path from 'pathe';
 import { getCodeSnippet } from './generateCodeSnippet';
 import { getComponentImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
-import { type DocObj, getReactDocgen, invalidateCache, matchPath } from './reactDocgen';
-import { groupBy, invariant } from './utils';
+import { type DocObj, getReactDocgen } from './reactDocgen';
+import { groupBy, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
   reactDocgen?: DocObj;
@@ -41,8 +39,8 @@ export const componentManifestGenerator: PresetPropertyFn<
     );
     const components = await Promise.all(
       singleEntryPerComponent.flatMap(async (entry): Promise<ReactComponentManifest> => {
-        const storyAbsPath = path.join(process.cwd(), entry.importPath);
-        const storyFile = await readFile(storyAbsPath, 'utf-8');
+        const absoluteImportPath = path.join(process.cwd(), entry.importPath);
+        const storyFile = await readFile(absoluteImportPath, 'utf-8');
         const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
         let componentName = csf._meta?.component;
         const title = entry.title.replace(/\s+/g, '');
@@ -51,7 +49,7 @@ export const componentManifestGenerator: PresetPropertyFn<
         const importPath = entry.importPath;
 
         const nearestPkg = find.up('package.json', {
-          cwd: path.dirname(storyAbsPath),
+          cwd: path.dirname(absoluteImportPath),
           last: process.cwd(),
         });
         const packageName = nearestPkg
@@ -60,13 +58,19 @@ export const componentManifestGenerator: PresetPropertyFn<
 
         const fallbackImport =
           packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
-        const componentImports = getComponentImports(csf, packageName);
+        const componentImports = await getComponentImports({
+          csf,
+          packageName,
+          storyFilePath: absoluteImportPath,
+        });
 
         const calculatedImports = componentImports.imports.join('\n').trim() ?? fallbackImport;
 
         const component = componentImports.components.find((it) => {
           const nameMatch = componentName
-            ? it.componentName === componentName || it.localImportName === componentName || it.importName === componentName
+            ? it.componentName === componentName ||
+              it.localImportName === componentName ||
+              it.importName === componentName
             : false;
           const titleMatch = !componentName
             ? (it.localImportName ? title.includes(it.localImportName) : false) ||
@@ -75,22 +79,11 @@ export const componentManifestGenerator: PresetPropertyFn<
           return nameMatch || titleMatch;
         });
 
-        componentName ??= component?.localImportName ?? component?.importName ?? component?.componentName;
+        componentName ??=
+          component?.componentName ?? component?.localImportName ?? component?.importName;
 
-        let componentPath;
+        const componentPath = component?.path;
         const importName = component?.importName;
-
-        if (component && component.importId) {
-          const id = component.importId;
-          const matchedPath = matchPath(id);
-          let resolved;
-          try {
-            resolved = resolveImport(matchedPath, { basedir: dirname(storyAbsPath) });
-            componentPath = resolved;
-          } catch (e) {
-            console.error(e);
-          }
-        }
 
         const stories = Object.keys(csf._stories)
           .map((storyName) => {

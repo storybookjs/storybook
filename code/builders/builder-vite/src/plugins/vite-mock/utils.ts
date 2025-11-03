@@ -1,4 +1,3 @@
-import { realpathSync } from 'fs';
 import type { ViteDevServer } from 'vite';
 
 /**

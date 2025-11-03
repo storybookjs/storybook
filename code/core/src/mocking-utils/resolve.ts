@@ -1,7 +1,6 @@
 import { readFileSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-import { findMockRedirect } from '@vitest/mocker/redirect';
 import { dirname, isAbsolute, join, resolve } from 'pathe';
 import { exports as resolveExports } from 'resolve.exports';
 
@@ -72,7 +71,16 @@ export function getIsExternal(path: string, importer: string) {
  * @param root The project's root directory.
  * @param importer The absolute path of the file containing the mock call (the preview file).
  */
-export function resolveMock(path: string, root: string, importer: string) {
+export function resolveMock(
+  path: string,
+  root: string,
+  importer: string,
+  findMockRedirect: (
+    root: string,
+    absolutePath: string,
+    externalPath: string | null
+  ) => string | null
+) {
   const isExternal = getIsExternal(path, root);
   const externalPath = isExternal ? path : null;
 

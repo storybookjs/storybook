@@ -1,18 +1,19 @@
 import { readFileSync } from 'node:fs';
 
-import { logger } from 'storybook/internal/node-logger';
-import type { CoreConfig } from 'storybook/internal/types';
-
-import { normalize } from 'pathe';
-import type { Plugin, ResolvedConfig } from 'vite';
-
-import { getAutomockCode } from '../../../mocking-utils/automock';
 import {
   babelParser,
   extractMockCalls,
+  getAutomockCode,
+  getRealPath,
   rewriteSbMockImportCalls,
-} from '../../../mocking-utils/extract';
-import { getRealPath } from '../../../mocking-utils/resolve';
+} from 'storybook/internal/mocking-utils';
+import { logger } from 'storybook/internal/node-logger';
+import type { CoreConfig } from 'storybook/internal/types';
+
+import { findMockRedirect } from '@vitest/mocker/redirect';
+import { normalize } from 'pathe';
+import type { Plugin, ResolvedConfig } from 'vite';
+
 import { type MockCall, getCleanId, invalidateAllRelatedModules } from './utils';
 
 export interface MockPluginOptions {
@@ -55,7 +56,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
       },
 
       buildStart() {
-        mockCalls = extractMockCalls(options, babelParser, viteConfig.root);
+        mockCalls = extractMockCalls(options, babelParser, viteConfig.root, findMockRedirect);
       },
 
       configureServer(server) {
@@ -64,7 +65,7 @@ export function viteMockPlugin(options: MockPluginOptions): Plugin[] {
             // Store the old mocks before updating
             const oldMockCalls = mockCalls;
             // Re-extract mocks to get the latest list
-            mockCalls = extractMockCalls(options, babelParser, viteConfig.root);
+            mockCalls = extractMockCalls(options, babelParser, viteConfig.root, findMockRedirect);
 
             // Invalidate the preview file
             const previewMod = server.moduleGraph.getModuleById(options.previewConfigPath);

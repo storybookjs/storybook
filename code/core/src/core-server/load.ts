@@ -1,9 +1,8 @@
 import {
   getProjectRoot,
+  getStorybookInfo,
   loadAllPresets,
-  loadMainConfig,
   resolveAddonName,
-  validateFrameworkName,
 } from 'storybook/internal/common';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
@@ -30,19 +29,17 @@ export async function loadStorybook(
   options.configDir = configDir;
   options.cacheKey = cacheKey;
 
-  const config = await loadMainConfig(options);
-  const { framework } = config;
   const corePresets = [];
 
-  let frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  if (!options.ignorePreview) {
-    validateFrameworkName(frameworkName);
-  }
-  if (frameworkName) {
-    corePresets.push(join(frameworkName, 'preset'));
+  const { frameworkPackage, builderPackage } = await getStorybookInfo(configDir);
+
+  if (frameworkPackage) {
+    corePresets.push(join(frameworkPackage, 'preset'));
   }
 
-  frameworkName = frameworkName || 'custom';
+  if (builderPackage) {
+    corePresets.push(join(builderPackage, 'preset'));
+  }
 
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account

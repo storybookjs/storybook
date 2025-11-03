@@ -63,3 +63,5 @@ export const start: ViteBuilder['start'] = async ({
 export const build: ViteBuilder['build'] = async ({ options }) => {
   return viteBuild(options as Options);
 };
+
+export const corePresets = [import.meta.resolve('@storybook/builder-vite/preset')];

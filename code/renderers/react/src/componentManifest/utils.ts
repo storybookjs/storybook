@@ -1,11 +1,19 @@
 // Object.groupBy polyfill
+import { readFileSync } from 'node:fs';
+
+import { logger } from 'storybook/internal/node-logger';
+
+import * as find from 'empathic/find';
+
 export const groupBy = <K extends PropertyKey, T>(
   items: T[],
   keySelector: (item: T, index: number) => K
 ) => {
   return items.reduce<Partial<Record<K, T[]>>>((acc = {}, item, index) => {
     const key = keySelector(item, index);
-    acc[key] ??= [];
+    if (!Array.isArray(acc[key])) {
+      acc[key] = [];
+    }
     acc[key].push(item);
     return acc;
   }, {});
@@ -35,7 +43,7 @@ let asyncMemoStore: WeakMap<(...args: any[]) => any, Map<string, unknown>> = new
 // - Never stores a Promise; for async functions, we cache only the resolved value. Concurrent calls are not de-duped.
 export const cached = <A extends unknown[], R>(
   fn: (...args: A) => R,
-  opts: { key?: (...args: A) => string } = {}
+  opts: { key?: (...args: A) => string; name?: string } = {}
 ): ((...args: A) => R) => {
   const keyOf: (...args: A) => string =
     opts.key ??
@@ -51,6 +59,7 @@ export const cached = <A extends unknown[], R>(
 
   return (...args: A) => {
     const k = keyOf(...args);
+    const name = fn.name || opts.name || 'anonymous';
 
     // Ensure stores exist for this function
     let syncStore = memoStore.get(fn);
@@ -66,27 +75,40 @@ export const cached = <A extends unknown[], R>(
 
     // Fast path: sync cached
     if (syncStore.has(k)) {
+      // Log cache hit
+      try {
+        logger.verbose(`[cache] hit (sync) ${name} key=${k}`);
+      } catch {}
       return syncStore.get(k);
     }
 
     // Fast path: async resolved cached
     if (asyncStore.has(k)) {
+      logger.verbose(`[cache] hit (async) ${name} key=${k}`);
       return Promise.resolve(asyncStore.get(k));
     }
 
-    // Compute result
+    // Compute result with benchmarking
+    const start = Date.now();
     const result = fn(...args);
 
     // If it's a promise-returning function, cache the resolved value later
     const isPromise =
-      result && typeof result === 'object' && 'then' in result && typeof result.then === 'function';
+      result &&
+      typeof result === 'object' &&
+      'then' in result &&
+      typeof (result as any).then === 'function';
     if (isPromise) {
       return (result as any).then((val: any) => {
+        const duration = Date.now() - start;
         asyncStore!.set(k, val);
-        return val;
+        logger.verbose(`[cache] miss ${name} took ${duration}ms key=${k}`);
+        return val as R;
       });
     } else {
+      const duration = Date.now() - start;
       syncStore.set(k, result);
+      logger.verbose(`[cache] miss ${name} took ${duration}ms key=${k}`);
       return result;
     }
   };
@@ -97,3 +119,7 @@ export const invalidateCache = () => {
   memoStore = new WeakMap();
   asyncMemoStore = new WeakMap();
 };
+
+export const cachedReadFileSync = cached(readFileSync, { name: 'cachedReadFile' });
+
+export const cachedFindUp = cached(find.up, { name: 'findUp' });

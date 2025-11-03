@@ -136,7 +136,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Primary UI component for user interaction",
           "error": undefined,
           "id": "example-button",
-          "import": "import { Button } from '@design-system/components/Button';",
+          "import": "import { Button } from \"@design-system/components/Button\";",
           "jsDocTags": {
             "import": [
               "import { Button } from '@design-system/components/Button';",
@@ -223,20 +223,28 @@ test('componentManifestGenerator generates correct id, name, description and exa
           },
           "stories": [
             {
+              "description": undefined,
               "name": "Primary",
               "snippet": "const Primary = () => <Button onClick={fn()} primary label="Button"></Button>;",
+              "summary": undefined,
             },
             {
+              "description": undefined,
               "name": "Secondary",
               "snippet": "const Secondary = () => <Button onClick={fn()} label="Button"></Button>;",
+              "summary": undefined,
             },
             {
+              "description": undefined,
               "name": "Large",
               "snippet": "const Large = () => <Button onClick={fn()} size="large" label="Button"></Button>;",
+              "summary": undefined,
             },
             {
+              "description": undefined,
               "name": "Small",
               "snippet": "const Small = () => <Button onClick={fn()} size="small" label="Button"></Button>;",
+              "summary": undefined,
             },
           ],
           "summary": undefined,
@@ -245,7 +253,7 @@ test('componentManifestGenerator generates correct id, name, description and exa
           "description": "Description from meta and very long.",
           "error": undefined,
           "id": "example-header",
-          "import": "import { Header } from '@design-system/components/Header';",
+          "import": "import { Header } from \"@design-system/components/Header\";",
           "jsDocTags": {
             "import": [
               "import { Header } from '@design-system/components/Header';",
@@ -319,16 +327,20 @@ test('componentManifestGenerator generates correct id, name, description and exa
           },
           "stories": [
             {
+              "description": undefined,
               "name": "LoggedIn",
               "snippet": "const LoggedIn = () => <Header
         onLogin={fn()}
         onLogout={fn()}
         onCreateAccount={fn()}
         user={{ name: 'Jane Doe' }}></Header>;",
+              "summary": undefined,
             },
             {
+              "description": undefined,
               "name": "LoggedOut",
               "snippet": "const LoggedOut = () => <Header onLogin={fn()} onLogout={fn()} onCreateAccount={fn()}></Header>;",
+              "summary": undefined,
             },
           ],
           "summary": "Component summary",
@@ -422,7 +434,7 @@ test('fall back to index title when no component name', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": "import { Button } from "some-package";",
+      "import": "import { Button } from \"some-package\";",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -449,8 +461,10 @@ test('fall back to index title when no component name', async () => {
       },
       "stories": [
         {
+          "description": undefined,
           "name": "Primary",
           "snippet": "const Primary = () => <Button csf1="story" />;",
+          "summary": undefined,
         },
       ],
       "summary": undefined,

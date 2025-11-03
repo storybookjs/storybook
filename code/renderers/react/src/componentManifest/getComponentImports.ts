@@ -1,11 +1,14 @@
 import { dirname } from 'node:path';
 
 import { type NodePath, recast, types as t } from 'storybook/internal/babel';
+import { babelParse } from 'storybook/internal/babel';
 import { resolveImport } from 'storybook/internal/common';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
+import { cached } from './utils';
 
+const cachedResolveImport = cached(resolveImport);
 // Public component metadata type used across passes
 export type ComponentRef = {
   componentName: string;
@@ -165,10 +168,12 @@ export const getComponents = ({
         : { componentName: c };
     })
     .map((component) => {
-      let path, docgen;
+      let path;
       try {
         if (component.importId && storyFilePath) {
-          path = resolveImport(matchPath(component.importId), { basedir: dirname(storyFilePath) });
+          path = cachedResolveImport(matchPath(component.importId), {
+            basedir: dirname(storyFilePath),
+          });
         }
       } catch (e) {
         console.error(e);
@@ -202,7 +207,28 @@ export const getImports = ({
     .filter((c) => Boolean(c.importId))
     .map((c, idx) => {
       const importId = c.importId!;
-      const rewritten = packageName && isRelative(importId) ? packageName : importId;
+      // If an importOverride is provided (and not a namespace import), override only the package/source
+      const overrideSource = (() => {
+        if (!c.importOverride || c.namespace) {
+          return undefined;
+        }
+        try {
+          const parsed = babelParse(c.importOverride);
+          const decl = parsed.program.body.find((n) => t.isImportDeclaration(n)) as
+            | t.ImportDeclaration
+            | undefined;
+          const src = decl?.source?.value;
+          return typeof src === 'string' ? src : undefined;
+        } catch {
+          return undefined;
+        }
+      })();
+      const rewritten =
+        overrideSource !== undefined
+          ? overrideSource
+          : packageName && isRelative(importId)
+            ? packageName
+            : importId;
       return { c, src: t.stringLiteral(rewritten), key: rewritten, ord: idx };
     });
 
@@ -237,6 +263,62 @@ export const getImports = ({
 
     // Determine if this bucket was rewritten
     const rewritten = src.value !== c.importId;
+
+    // If an importOverride provides a concrete specifier (default or named), respect it.
+    // Keep localImportName and componentName intact. Ignore namespace overrides.
+    const overrideSpec = (() => {
+      if (!c.importOverride || c.namespace) {
+        return undefined;
+      }
+      try {
+        const parsed = babelParse(c.importOverride);
+        const decl = parsed.program.body.find((n) => t.isImportDeclaration(n)) as
+          | t.ImportDeclaration
+          | undefined;
+        if (!decl) {
+          return undefined;
+        }
+        const spec = (decl.specifiers ?? []).find((s) => !isTypeSpecifier(s as any));
+        if (!spec) {
+          return undefined;
+        }
+        if (t.isImportNamespaceSpecifier(spec)) {
+          return undefined; // ignore namespace override
+        }
+        if (t.isImportDefaultSpecifier(spec)) {
+          return { kind: 'default' as const };
+        }
+        if (t.isImportSpecifier(spec)) {
+          const imported = t.isIdentifier(spec.imported) ? spec.imported.name : spec.imported.value;
+          return { kind: 'named' as const, imported };
+        }
+        return undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+
+    if (overrideSpec) {
+      if (!c.localImportName) {
+        continue;
+      }
+      if (overrideSpec.kind === 'default') {
+        const id = t.identifier(c.localImportName);
+        // If the source was rewritten from relative, we still honor default per override
+        addUniqueBy(b.defaults, id, (d) => d.name === id.name);
+        continue;
+      }
+      if (overrideSpec.kind === 'named') {
+        const local = t.identifier(c.localImportName);
+        const imported = t.identifier(overrideSpec.imported);
+        addUniqueBy(
+          b.named,
+          t.importSpecifier(local, imported),
+          (n) => n.local.name === local.name && importedName(n.imported) === imported.name
+        );
+        continue;
+      }
+    }
 
     if (c.namespace) {
       // Real namespace import usage (only present for `* as` imports)
@@ -355,7 +437,7 @@ export const getImports = ({
   return merged;
 };
 
-export async function getComponentImports({
+export function getComponentImports({
   csf,
   packageName,
   storyFilePath,
@@ -363,25 +445,24 @@ export async function getComponentImports({
   csf: CsfFile;
   packageName?: string;
   storyFilePath?: string;
-}): Promise<{
+}): {
   components: ComponentRef[];
   imports: string[];
-}> {
+} {
   const components = getComponents({ csf, storyFilePath });
-  const withDocgen = await Promise.all(
-    components.map(async (component) => {
-      if (component.path) {
-        const docgen = await getReactDocgen(component.path, component.importName);
-        const importOverride = docgen.type === 'success' ? getImportTag(docgen.data) : undefined;
-        return {
-          ...component,
-          reactDocgen: docgen,
-          importOverride,
-        };
-      }
-      return component;
-    })
-  );
+  const withDocgen = components.map((component) => {
+    if (component.path) {
+      const docgen = getReactDocgen(component.path, component.importName);
+      const importOverride = docgen.type === 'success' ? getImportTag(docgen.data) : undefined;
+      return {
+        ...component,
+        reactDocgen: docgen,
+        importOverride,
+      };
+    }
+    return component;
+  });
+
   const imports = getImports({ components: withDocgen, packageName });
   return { components: withDocgen, imports };
 }

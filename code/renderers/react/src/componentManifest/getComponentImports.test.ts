@@ -5,7 +5,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { getComponentImports } from './getComponentImports';
+import { getImports as buildImports, getComponentImports } from './getComponentImports';
 import { fsMocks } from './test-utils';
 
 vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
@@ -558,7 +558,7 @@ test('Converts default relative import to named when packageName provided', asyn
         },
       ],
       "imports": [
-        "import { Header } from "my-package";",
+        "import { Header } from "@design-system/components/Header";",
       ],
     }
   `
@@ -669,7 +669,7 @@ test('Converts relative import to provided packageName', async () => {
         },
       ],
       "imports": [
-        "import { Button } from "my-package";",
+        "import { Button } from "@design-system/components/Button";",
       ],
     }
   `
@@ -935,4 +935,137 @@ test('Filters out locally defined components', async () => {
     }
     `
   );
+});
+
+test('importOverride: default override forces default import (keeps local name)', async () => {
+  const code = dedent`
+    import { Button } from './Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const base = await getComponentImports({
+    csf,
+    packageName: 'my-package',
+    storyFilePath: '/app/src/stories/Button.stories.tsx',
+  });
+  const patched = base.components.map((c) =>
+    c.componentName === 'Button' ? { ...c, importOverride: "import Button from '@pkg/button';" } : c
+  );
+  const out = buildImports({ components: patched, packageName: 'my-package' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import Button from \"@pkg/button\";",
+    ]
+  `);
+});
+
+test('importOverride: named override aliases imported to local name', async () => {
+  const code = dedent`
+    import Button from './Button';
+
+    const meta = {};
+    export default meta;
+    export const S = <Button/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const base = await getComponentImports({
+    csf,
+    packageName: 'pkg',
+    storyFilePath: '/app/src/stories/Button.stories.tsx',
+  });
+  const patched = base.components.map((c) =>
+    c.componentName === 'Button'
+      ? { ...c, importOverride: "import { DSButton } from '@pkg/button';" }
+      : c
+  );
+  const out = buildImports({ components: patched, packageName: 'pkg' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import { DSButton as Button } from \"@pkg/button\";",
+    ]
+  `);
+});
+
+test('importOverride: ignores namespace override and falls back', async () => {
+  const code = dedent`
+    import * as UI from './ui';
+
+    const meta = {};
+    export default meta;
+    export const S = <UI.Button/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const discovered = await getComponentImports({
+    csf,
+    packageName: 'pkg',
+    storyFilePath: '/app/src/stories/ui.stories.tsx',
+  });
+  const patched = discovered.components.map((c) =>
+    c.componentName === 'UI.Button' ? { ...c, importOverride: "import * as UI from '@pkg/ui';" } : c
+  );
+  const out = buildImports({ components: patched, packageName: 'pkg' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import { Button } from \"pkg\";",
+    ]
+  `);
+});
+
+test('importOverride: malformed string is ignored and behavior falls back', async () => {
+  const code = dedent`
+    import { Header } from './Header';
+
+    const meta = {};
+    export default meta;
+    export const S = <Header/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const base = await getComponentImports({
+    csf,
+    packageName: 'pkg',
+    storyFilePath: '/app/src/stories/Header.stories.tsx',
+  });
+  const patched = base.components.map((c) =>
+    c.componentName === 'Header' ? { ...c, importOverride: 'import oops not valid' } : c
+  );
+  const out = buildImports({ components: patched, packageName: 'pkg' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import { Header } from \"pkg\";",
+    ]
+  `);
+});
+
+test('importOverride: merges multiple components into a single declaration per source', async () => {
+  const code = dedent`
+    import Button from './Button';
+    import { Header } from './Header';
+
+    const meta = {};
+    export default meta;
+    export const A = <Button/>;
+    export const B = <Header/>;
+  `;
+  const csf = loadCsf(code, { makeTitle: (t) => t ?? 'No title' }).parse();
+  const base = await getComponentImports({
+    csf,
+    packageName: 'pkg',
+    storyFilePath: '/app/src/stories/multi.stories.tsx',
+  });
+  const patched = base.components.map((c) =>
+    c.componentName === 'Button'
+      ? { ...c, importOverride: "import { DSButton } from '@ds/ui';" }
+      : c.componentName === 'Header'
+        ? { ...c, importOverride: "import { Header } from '@ds/ui';" }
+        : c
+  );
+  const out = buildImports({ components: patched, packageName: 'pkg' });
+  expect(out).toMatchInlineSnapshot(`
+    [
+      "import { DSButton as Button, Header } from \"@ds/ui\";",
+    ]
+  `);
 });

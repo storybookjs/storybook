@@ -1,5 +1,4 @@
-import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { existsSync, readFileSync } from 'node:fs';
 import { sep } from 'node:path';
 
 import { getProjectRoot, resolveImport, supportedExtensions } from 'storybook/internal/common';
@@ -19,7 +18,7 @@ import { extractJSDocInfo } from './jsdocTags';
 import actualNameHandler from './reactDocgen/actualNameHandler';
 import { ReactDocgenResolveError } from './reactDocgen/docgenResolver';
 import exportNameHandler from './reactDocgen/exportNameHandler';
-import { cached } from './utils';
+import { cached, cachedReadFileSync } from './utils';
 
 export type DocObj = Documentation & {
   actualName: string;
@@ -59,30 +58,45 @@ export function matchPath(id: string) {
   return id;
 }
 
-export const getTsConfig = cached((cwd: string) => {
-  const tsconfigPath = find.up('tsconfig.json', { cwd, last: getProjectRoot() });
-  return TsconfigPaths.loadConfig(tsconfigPath);
-});
+export const getTsConfig = cached(
+  (cwd: string) => {
+    const tsconfigPath = find.up('tsconfig.json', { cwd, last: getProjectRoot() });
+    return TsconfigPaths.loadConfig(tsconfigPath);
+  },
+  { name: 'getTsConfig' }
+);
 
-export function parseWithReactDocgen(code: string, path: string) {
-  return parse(code, {
-    resolver: defaultResolver,
-    handlers,
-    importer: getReactDocgenImporter(),
-    filename: path,
-  }) as DocObj[];
-}
+export const parseWithReactDocgen = cached(
+  (code: string, path: string) => {
+    return parse(code, {
+      resolver: defaultResolver,
+      handlers,
+      importer: getReactDocgenImporter(),
+      filename: path,
+    }) as DocObj[];
+  },
+  { key: (code, path) => path, name: 'parseWithReactDocgen' }
+);
 
 export const getReactDocgen = cached(
-  async (
+  (
     path: string,
     importName?: string
-  ): Promise<
-    { type: 'success'; data: DocObj } | { type: 'error'; error: { name: string; message: string } }
-  > => {
+  ):
+    | { type: 'success'; data: DocObj }
+    | { type: 'error'; error: { name: string; message: string } } => {
     let code;
+    if (path.includes('node_modules')) {
+      return {
+        type: 'error',
+        error: {
+          name: 'Component file in node_modules',
+          message: `Component files in node_modules are not supported. Please import your component file directly.`,
+        },
+      };
+    }
     try {
-      code = await readFile(path, 'utf-8');
+      code = cachedReadFileSync(path, 'utf-8') as string;
     } catch (_) {
       return {
         type: 'error',
@@ -127,7 +141,8 @@ export const getReactDocgen = cached(
       return noCompDefError;
     }
     return { type: 'success', data: docgen };
-  }
+  },
+  { name: 'getReactDocgen' }
 );
 
 export function getReactDocgenImporter() {

@@ -88,7 +88,7 @@ export default defineGeneratorModule({
   
       2. Wrap your metro config with the withStorybook enhancer function like this:
   
-      ${CLI_COLORS.info(' ' + "const withStorybook = require('@storybook/react-native/metro/withStorybook');" + ' ')}
+      ${CLI_COLORS.info(' ' + "const { withStorybook } = require('@storybook/react-native/metro/withStorybook');" + ' ')}
       ${CLI_COLORS.info(' ' + 'module.exports = withStorybook(defaultConfig);' + ' ')}
   
       For more details go to:

@@ -1,7 +1,8 @@
 import { ProjectType } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
+import { logTracker, logger } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 
 // eslint-disable-next-line depend/ban-dependencies
 import execa from 'execa';
@@ -82,7 +83,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     });
 
   // Step 6: Install all dependencies in a single operation
-  await executeDependencyInstallation({
+  const dependencyInstallationResult = await executeDependencyInstallation({
     packageManager,
     dependencyCollector,
     skipInstall: !!options.skipInstall,
@@ -97,6 +98,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     packageManager,
     addons: extraAddons,
     configDir,
+    dependencyInstallationResult,
     options,
   });
 
@@ -111,7 +113,11 @@ export async function doInitiate(options: CommandOptions): Promise<
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
 
   return {
-    shouldRunDev: !!options.dev && !options.skipInstall && shouldRunDev !== false,
+    shouldRunDev:
+      !!options.dev &&
+      !options.skipInstall &&
+      shouldRunDev !== false &&
+      ErrorCollector.getErrors().length === 0,
     shouldOnboard: newUser,
     projectType,
     packageManager,

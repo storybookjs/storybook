@@ -1,5 +1,6 @@
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
 import { getAddonA11yDependencies } from '../addon-dependencies/addon-a11y';
@@ -28,11 +29,11 @@ export class DependencyInstallationCommand {
     packageManager,
     skipInstall = false,
     selectedFeatures,
-  }: DependencyInstallationCommandParams): Promise<void> {
+  }: DependencyInstallationCommandParams): Promise<{ status: 'success' | 'failed' }> {
     await this.collectAddonDependencies(packageManager, selectedFeatures);
 
     if (!this.dependencyCollector.hasPackages() && skipInstall) {
-      return;
+      return { status: 'success' };
     }
 
     const { dependencies, devDependencies } = this.dependencyCollector.getAllPackages();
@@ -65,8 +66,15 @@ export class DependencyInstallationCommand {
     task.success('Dependencies added to package.json', { showLog: true });
 
     if (!skipInstall && this.dependencyCollector.hasPackages()) {
-      await packageManager.installDependencies();
+      try {
+        await packageManager.installDependencies();
+      } catch (err) {
+        ErrorCollector.addError(err);
+        return { status: 'failed' };
+      }
     }
+
+    return { status: 'success' };
   }
 
   /** Collect addon dependencies without installing them */

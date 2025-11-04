@@ -3,13 +3,21 @@ import { type JsPackageManager } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
+import { dedent } from 'ts-dedent';
+
 import type { CommandOptions } from '../generators/types';
+
+const ADDON_INSTALLATION_INSTRUCTIONS = {
+  '@storybook/addon-vitest':
+    'https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup',
+} as { [key: string]: string };
 
 type ExecuteAddonConfigurationParams = {
   packageManager: JsPackageManager;
   addons: string[];
   options: CommandOptions;
   configDir?: string;
+  dependencyInstallationResult: { status: 'success' | 'failed' };
 };
 
 export type ExecuteAddonConfigurationResult = {
@@ -34,7 +42,16 @@ export class AddonConfigurationCommand {
     options,
     addons,
     configDir,
+    dependencyInstallationResult,
   }: ExecuteAddonConfigurationParams): Promise<ExecuteAddonConfigurationResult> {
+    if (
+      dependencyInstallationResult.status === 'failed' &&
+      this.getAddonsWithInstructions(addons).length > 0
+    ) {
+      this.logManualAddonInstructions(addons);
+      return { status: 'failed' };
+    }
+
     if (!configDir || addons.length === 0) {
       return { status: 'success' };
     }
@@ -57,6 +74,45 @@ export class AddonConfigurationCommand {
     } catch {
       return { status: 'failed' };
     }
+  }
+
+  private getAddonsWithInstructions(addons: string[]): string[] {
+    return addons.filter((addon) => ADDON_INSTALLATION_INSTRUCTIONS[addon]);
+  }
+
+  private logManualAddonInstructions(addons: string[]): void {
+    const addonsWithInstructions = this.getAddonsWithInstructions(addons);
+
+    if (addonsWithInstructions.length > 0) {
+      logger.warn(dedent`
+      The following addons couldn't be configured:
+
+      ${addonsWithInstructions
+        .map((addon) => {
+          const manualInstructionLink = ADDON_INSTALLATION_INSTRUCTIONS[addon];
+
+          return `- ${addon}: ${manualInstructionLink}`;
+        })
+        .join('\n')}
+
+      ${
+        addonsWithInstructions.length > 0
+          ? `Please follow each addon's configuration instructions manually.`
+          : ''
+      }
+      `);
+    }
+  }
+
+  private getAddonInstructions(addons: string[]): string {
+    return addons
+      .map((addon) => {
+        const instructions =
+          ADDON_INSTALLATION_INSTRUCTIONS[addon as keyof typeof ADDON_INSTALLATION_INSTRUCTIONS];
+        return instructions ? dedent`- ${addon}: ${instructions}` : null;
+      })
+      .filter(Boolean)
+      .join('\n');
   }
 
   /** Configure test addons (a11y and vitest) */

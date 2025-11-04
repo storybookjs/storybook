@@ -141,7 +141,7 @@ export abstract class JsPackageManager {
     await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
       id: 'install-dependencies',
       intro: 'Installing dependencies...',
-      error: 'An error occurred while installing dependencies.',
+      error: 'Installation of dependencies failed!',
       success: 'Dependencies installed',
     });
 
@@ -300,8 +300,8 @@ export abstract class JsPackageManager {
 
         return result;
       } catch (e: any) {
-        logger.error('\nAn error occurred while installing dependencies:');
-        logger.log(e.message);
+        logger.error('\nAn error occurred while adding dependencies to your package.json:');
+        logger.log(String(e));
         throw new HandledError(e);
       }
     }

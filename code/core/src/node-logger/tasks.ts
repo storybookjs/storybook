@@ -75,7 +75,7 @@ export const executeTaskWithSpinner = async (
     }
     const errorMessage = err instanceof Error ? (err.stack ?? err.message) : String(err);
     logTracker.addLog('error', error, { error: errorMessage });
-    task.stop(String((err as any).message ?? err));
+    task.stop(CLI_COLORS.error(error));
     throw err;
   }
 };

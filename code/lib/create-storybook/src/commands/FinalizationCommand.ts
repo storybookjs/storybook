@@ -34,7 +34,7 @@ export class FinalizationCommand {
     const errors = ErrorCollector.getErrors();
 
     if (errors.length > 0) {
-      await this.printFailureMessage();
+      await this.printFailureMessage(selectedFeatures, storybookCommand);
     } else {
       this.printSuccessMessage(selectedFeatures, storybookCommand);
     }
@@ -65,23 +65,31 @@ export class FinalizationCommand {
     }
   }
 
-  private async printFailureMessage(): Promise<void> {
+  private async printFailureMessage(
+    selectedFeatures: Set<Feature>,
+    storybookCommand?: string
+  ): Promise<void> {
     logger.warn('Storybook setup completed, but some non-blocking errors occurred.');
+    this.printNextSteps(selectedFeatures, storybookCommand);
+
     const logFile = await logTracker.writeToFile();
     logger.log(`Storybook debug logs can be found at: ${logFile}`);
   }
 
   /** Print success message with feature summary */
   private printSuccessMessage(selectedFeatures: Set<Feature>, storybookCommand?: string): void {
-    const printFeatures = (features: Set<Feature>) => Array.from(features).join(', ') || 'none';
-
     logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
+    this.printNextSteps(selectedFeatures, storybookCommand);
+  }
+
+  private printNextSteps(selectedFeatures: Set<Feature>, storybookCommand?: string): void {
+    const printFeatures = (features: Set<Feature>) => Array.from(features).join(', ') || 'none';
 
     logger.log(`Additional features: ${printFeatures(selectedFeatures)}`);
 
     if (storybookCommand) {
       logger.log(
-        `        To run Storybook manually, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`
+        `To run Storybook manually, run ${CLI_COLORS.cta(storybookCommand)}. CTRL+C to stop.`
       );
     }
 
@@ -91,7 +99,6 @@ export class FinalizationCommand {
     `);
   }
 }
-
 export const executeFinalization = (params: ExecuteFinalizationParams) => {
   return new FinalizationCommand().execute(params);
 };

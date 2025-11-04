@@ -8,11 +8,12 @@ on:
     types: [opened, synchronize, reopened]
 
 env:
-  NODE_OPTIONS: "--max_old_space_size=4096"
+  NODE_OPTIONS: '--max_old_space_size=4096'
 
 jobs:
   build:
     name: Core Unit Tests, windows-latest
+    if: github.repository_owner == 'storybookjs'
     runs-on: windows-11-arm
     steps:
       - uses: actions/checkout@v4

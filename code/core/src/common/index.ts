@@ -45,6 +45,7 @@ export * from './js-package-manager';
 export * from './utils/scan-and-transform-files';
 export * from './utils/transform-imports';
 export * from '../shared/utils/module';
+export * from './utils/utils';
 
 export { versions };
 

@@ -65,7 +65,9 @@ export class GeneratorExecutionCommand {
       ...generatorResult,
       configDir: 'configDir' in generatorResult ? generatorResult.configDir : undefined,
       storybookCommand:
-        generatorResult.storybookCommand ?? packageManager.getRunCommand('storybook'),
+        generatorResult.storybookCommand !== undefined
+          ? generatorResult.storybookCommand
+          : packageManager.getRunCommand('storybook'),
     };
   }
 
@@ -101,6 +103,7 @@ export class GeneratorExecutionCommand {
       language,
       linkable: !!options.linkable,
       features: selectedFeatures,
+      dependencyCollector: this.dependencyCollector,
       yes: options.yes,
     });
 
@@ -118,6 +121,10 @@ export class GeneratorExecutionCommand {
     } as GeneratorOptions;
 
     if (frameworkOptions.skipGenerator) {
+      if (generatorModule.postConfigure) {
+        await generatorModule.postConfigure({ packageManager });
+      }
+
       return {
         shouldRunDev: frameworkOptions.shouldRunDev,
         storybookCommand: frameworkOptions.storybookCommand,
@@ -132,6 +139,10 @@ export class GeneratorExecutionCommand {
       ...frameworkOptions,
       extraAddons: [...(frameworkOptions.extraAddons ?? []), ...extraAddons],
     });
+
+    if (generatorModule.postConfigure) {
+      await generatorModule.postConfigure({ packageManager });
+    }
 
     return {
       ...generatorResult,

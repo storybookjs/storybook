@@ -21,7 +21,7 @@ type Result = {
 export interface AddonVitestCompatibilityOptions {
   packageManager: JsPackageManager;
   builder?: SupportedBuilder;
-  framework?: SupportedFramework;
+  framework?: SupportedFramework | null;
   projectRoot?: string;
 }
 

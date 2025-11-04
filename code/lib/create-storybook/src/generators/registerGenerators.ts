@@ -8,6 +8,7 @@ import preactGenerator from './PREACT';
 import qwikGenerator from './QWIK';
 import reactGenerator from './REACT';
 import reactNativeGenerator from './REACT_NATIVE';
+import reactNativeAndRNWGenerator from './REACT_NATIVE_AND_RNW';
 import reactNativeWebGenerator from './REACT_NATIVE_WEB';
 import reactScriptsGenerator from './REACT_SCRIPTS';
 import serverGenerator from './SERVER';
@@ -23,6 +24,7 @@ const setOfGenerators = new Set<GeneratorModule>([
   reactScriptsGenerator,
   reactNativeGenerator,
   reactNativeWebGenerator,
+  reactNativeAndRNWGenerator,
   vue3Generator,
   nuxtGenerator,
   angularGenerator,

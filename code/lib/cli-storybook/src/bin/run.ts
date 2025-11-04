@@ -260,8 +260,11 @@ command('doctor')
   .option('--package-manager <npm|pnpm|yarn1|yarn2|bun>', 'Force package manager')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
   .action(async (options) => {
-    // TODO: Add telemetry
-    await doctor(options).catch(handleCommandFailure);
+    withTelemetry('doctor', { cliOptions: options }, async () => {
+      logger.intro('Doctoring Storybook');
+      await doctor(options);
+      logger.outro('Done');
+    }).catch(handleCommandFailure);
   });
 
 program.on('command:*', ([invalidCmd]) => {

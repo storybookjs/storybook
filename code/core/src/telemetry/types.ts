@@ -36,7 +36,8 @@ export type EventType =
   | 'mocking'
   | 'automigrate'
   | 'migrate'
-  | 'preview-first-load';
+  | 'preview-first-load'
+  | 'doctor';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;

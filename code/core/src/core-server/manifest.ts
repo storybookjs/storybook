@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { groupBy } from 'storybook/internal/common';
 
 import type { ComponentManifest, ComponentsManifest } from '../types';
@@ -759,7 +761,7 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
               <span class="ex-name">Prop types</span>
               <span class="badge ok">${propEntries.length} ${plural(propEntries.length, 'prop type')}</span>
             </div>
-            <pre><code>File: ${reactDocgen?.definedInFile ? esc(reactDocgen.definedInFile) : ''}${reactDocgen?.exportName ? '::' + esc(reactDocgen?.exportName) : ''}</code></pre>
+            <pre><code>Component: ${reactDocgen?.definedInFile ? esc(path.relative(process.cwd(), reactDocgen.definedInFile)) : ''}${reactDocgen?.exportName ? '::' + esc(reactDocgen?.exportName) : ''}</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>${esc(propsCode)}</code></pre>
           </div>

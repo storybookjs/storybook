@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
-import path from "node:path";
-import { decode } from "node:querystring";
+import { decode, encode } from "node:querystring";
 import { imageSize } from "image-size";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import path from "pathe";
 import { dedent } from "ts-dedent";
 import type { Plugin } from "vite";
 import { VITEST_PLUGIN_NAME, isVitestEnv } from "../../utils";
@@ -75,7 +75,7 @@ export function vitePluginNextImage(
             : path.join(path.dirname(importer), source)
           : source;
 
-        return `${virtualImage}?imagePath=${imagePath}`;
+        return `${virtualImage}?${encode({ imagePath })}`;
       }
 
       if (id === "next/image" && importer !== virtualNextImage) {
@@ -138,7 +138,7 @@ export function vitePluginNextImage(
 						};
 					`;
         } catch (err) {
-          console.error(`Could not read font file ${imagePath}:`, err);
+          console.error(`Could not read image file ${imagePath}:`, err);
           return undefined;
         }
       }

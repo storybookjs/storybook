@@ -1,8 +1,8 @@
-import path from "node:path";
 import type loadJsConfig from "next/dist/build/load-jsconfig.js";
 import { getSupportedBrowsers } from "next/dist/build/utils.js";
 import type { findPagesDir } from "next/dist/lib/find-pages-dir.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import path from "pathe";
 import type { SourceMap } from "rollup";
 import { shouldOutputCommonJs } from "../nextjs";
 import { getBaseSWCOptions } from "./options";
@@ -94,7 +94,6 @@ export const getVitestSWCTransformConfig = ({
       type: isEsmProject && !useCjsModules ? "es6" : "commonjs",
     },
     disableNextSsg: !isPageFile,
-    disablePageConfig: true,
     isPageFile,
     pagesDir: nextDirectories.pagesDir,
     appDir: nextDirectories.appDir,

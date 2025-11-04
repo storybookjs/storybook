@@ -40,6 +40,14 @@ export const getAlias = (env: Env) => ({
   "@opentelemetry/api": require.resolve(
     "next/dist/compiled/@opentelemetry/api",
   ),
+  "next/dist/compiled/safe-stable-stringify": getEntryPoint(
+    "safe-stable-stringify",
+    env,
+  ),
+  "next/dist/compiled/safe-stable-stringify/index.js": getEntryPoint(
+    "safe-stable-stringify",
+    env,
+  ),
   "next/dynamic": getEntryPoint("dynamic", env),
   ...getCompatibilityAliases(env),
 });

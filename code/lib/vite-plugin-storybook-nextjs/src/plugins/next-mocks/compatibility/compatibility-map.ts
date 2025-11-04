@@ -1,8 +1,7 @@
 import { createRequire } from "node:module";
 import semver from "semver";
 
-import { VITEST_PLUGIN_NAME } from "../../../utils";
-import { getNextjsVersion } from "./utils";
+import { VITEST_PLUGIN_NAME, getNextjsVersion } from "../../../utils";
 
 const require = createRequire(import.meta.url);
 

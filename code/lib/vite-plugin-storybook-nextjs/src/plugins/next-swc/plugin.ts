@@ -1,7 +1,7 @@
-import { resolve } from "node:path";
 import nextLoadJsConfig from "next/dist/build/load-jsconfig.js";
 import { transform } from "next/dist/build/swc/index.js";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import { resolve } from "pathe";
 import { type Plugin, createFilter } from "vite";
 
 import * as NextUtils from "../../utils/nextjs";

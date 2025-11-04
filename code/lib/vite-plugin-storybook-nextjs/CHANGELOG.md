@@ -1,3 +1,88 @@
+# v3.0.3 (Thu Oct 30 2025)
+
+#### 🐛 Bug Fix
+
+- Improve path handling for Windows [#68](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/68) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
+# v3.0.2 (Thu Oct 30 2025)
+
+#### 🐛 Bug Fix
+
+- Safely encode image paths [#65](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/65) ([@sylvaingi](https://github.com/sylvaingi))
+
+#### Authors: 1
+
+- Sylvain Gizard ([@sylvaingi](https://github.com/sylvaingi))
+
+---
+
+# v3.0.1 (Tue Oct 28 2025)
+
+#### 🐛 Bug Fix
+
+- Fix `next/config` deprecation warning [#66](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/66) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
+# v3.0.0 (Fri Oct 24 2025)
+
+#### 💥 Breaking Change
+
+- Support next 16 [#62](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/62) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 1
+
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
+# v2.0.8 (Mon Oct 06 2025)
+
+#### 🐛 Bug Fix
+
+- Fix when addon-docs isn't installed [#60](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/60) ([@ndelangen](https://github.com/ndelangen))
+
+#### Authors: 1
+
+- Norbert de Langen ([@ndelangen](https://github.com/ndelangen))
+
+---
+
+# v2.0.7 (Tue Aug 26 2025)
+
+#### 🐛 Bug Fix
+
+- Fix: Resolve dynamic require issues when using with Vitest [#50](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/50) ([@elecdeer](https://github.com/elecdeer) [@ghengeveld](https://github.com/ghengeveld))
+
+#### Authors: 2
+
+- [@elecdeer](https://github.com/elecdeer)
+- Gert Hengeveld ([@ghengeveld](https://github.com/ghengeveld))
+
+---
+
+# v2.0.6 (Wed Aug 20 2025)
+
+#### 🐛 Bug Fix
+
+- docs: Update links to actions docs page [#55](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/55) ([@Sidnioulz](https://github.com/Sidnioulz))
+
+#### Authors: 1
+
+- Steve Dodier-Lazaro ([@Sidnioulz](https://github.com/Sidnioulz))
+
+---
+
 # v2.0.5 (Mon Jun 30 2025)
 
 #### 🐛 Bug Fix

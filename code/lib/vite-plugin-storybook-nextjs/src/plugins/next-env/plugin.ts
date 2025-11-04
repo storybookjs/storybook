@@ -1,12 +1,12 @@
-import { resolve } from "node:path";
 import type { Env } from "@next/env";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import { resolve } from "pathe";
 import type { Plugin } from "vite";
 
 import type { DefineEnvOptions } from "next/dist/build/define-env";
 import * as NextUtils from "../../utils/nextjs";
 
-export function vitePluginNextEnv(
+export async function vitePluginNextEnv(
   rootDir: string,
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
 ) {
@@ -20,12 +20,14 @@ export function vitePluginNextEnv(
 
   try {
     // Next.js >= 15.4.0
-    getDefineEnv = require("next/dist/build/define-env.js").getDefineEnv;
+    getDefineEnv = (await import("next/dist/build/define-env.js")).getDefineEnv;
     isNext1540 = true;
   } catch (error) {
     // Next.js < 15.4.0
     getDefineEnv =
-      require("next/dist/build/webpack/plugins/define-env-plugin.js").getDefineEnv;
+      // @ts-expect-error - TODO: Ignoring because types are for >= 15.4.0
+      (await import("next/dist/build/webpack/plugins/define-env-plugin.js"))
+        .getDefineEnv;
   }
 
   return {

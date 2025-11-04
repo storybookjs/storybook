@@ -664,8 +664,8 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
       : '';
 
   // When there is no prop type error, try to read prop types from reactDocgen if present
-  const hasDocgen = !a.hasPropTypeError && 'reactDocgen' in c && c.reactDocgen;
-  const parsedDocgen = hasDocgen ? parseReactDocgen(c.reactDocgen) : undefined;
+  const reactDocgen: any = !a.hasPropTypeError && 'reactDocgen' in c && c.reactDocgen;
+  const parsedDocgen = reactDocgen ? parseReactDocgen(reactDocgen) : undefined;
   const propEntries = parsedDocgen ? Object.entries(parsedDocgen.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
@@ -684,8 +684,10 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
             const optional = info?.required ? '' : '?';
             const defaultVal = (info?.defaultValue ?? '').trim();
             const def = defaultVal ? ` = ${defaultVal}` : '';
-            const doc = description ? `/** ${description} */\n` : '';
-            return `${doc}${propName}${optional}: ${t}${def}`;
+            const doc =
+              ['/**', ...description.split('\n').map((line) => ` * ${line}`), ' */'].join('\n') +
+              '\n';
+            return `${description ? doc : ''}${propName}${optional}: ${t}${def}`;
           })
           .join('\n\n')
       : '';
@@ -757,6 +759,8 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
               <span class="ex-name">Prop types</span>
               <span class="badge ok">${propEntries.length} ${plural(propEntries.length, 'prop type')}</span>
             </div>
+            <pre><code>File: ${reactDocgen?.definedInFile ? esc(reactDocgen.definedInFile) : ''}::${reactDocgen?.exportName ? esc(reactDocgen?.exportName) : ''}</code></pre>
+            <pre><code>Props:</code></pre>
             <pre><code>${esc(propsCode)}</code></pre>
           </div>
         </div>`

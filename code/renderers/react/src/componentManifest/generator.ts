@@ -10,9 +10,9 @@ import {
 import path from 'pathe';
 
 import { getCodeSnippet } from './generateCodeSnippet';
-import { getComponentImports } from './getComponentImports';
+import { getComponents, getImports } from './getComponentImports';
 import { extractJSDocInfo } from './jsdocTags';
-import { type DocObj, getReactDocgen } from './reactDocgen';
+import { type DocObj } from './reactDocgen';
 import { cachedFindUp, cachedReadFileSync, groupBy, invalidateCache, invariant } from './utils';
 
 interface ReactComponentManifest extends ComponentManifest {
@@ -48,7 +48,7 @@ export const componentManifestGenerator: PresetPropertyFn<
       if (csf.meta.tags?.includes('!manifest')) {
         return;
       }
-      let componentName = csf._meta?.component;
+      const componentName = csf._meta?.component;
       const title = entry.title.replace(/\s+/g, '');
 
       const id = entry.id.split('--')[0];
@@ -62,34 +62,18 @@ export const componentManifestGenerator: PresetPropertyFn<
         ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
         : undefined;
 
-      const fallbackImport =
-        packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
-      const componentImports = getComponentImports({
+      const components = getComponents({
         csf,
-        packageName,
         storyFilePath: absoluteImportPath,
       });
 
-      const calculatedImports = componentImports.imports.join('\n').trim() ?? fallbackImport;
-
-      const component = componentImports.components.find((it) => {
-        const nameMatch = componentName
-          ? it.componentName === componentName ||
-            it.localImportName === componentName ||
-            it.importName === componentName
-          : false;
-        const titleMatch = !componentName
-          ? (it.localImportName ? title.includes(it.localImportName) : false) ||
-            (it.importName ? title.includes(it.importName) : false)
-          : false;
-        return nameMatch || titleMatch;
+      const component = components.find((it) => {
+        return componentName
+          ? [it.componentName, it.localImportName, it.importName].includes(componentName)
+          : title.includes(it.componentName) ||
+              (it.localImportName && title.includes(it.localImportName)) ||
+              (it.importName && title.includes(it.importName));
       });
-
-      componentName ??=
-        component?.componentName ?? component?.localImportName ?? component?.importName;
-
-      const componentPath = component?.path;
-      const importName = component?.importName;
 
       const stories = Object.keys(csf._stories)
         .map((storyName) => {
@@ -104,7 +88,7 @@ export const componentManifestGenerator: PresetPropertyFn<
 
             return {
               name: storyName,
-              snippet: recast.print(getCodeSnippet(csf, storyName, componentName)).code,
+              snippet: recast.print(getCodeSnippet(csf, storyName, component?.componentName)).code,
               description: finalDescription?.trim(),
               summary: tags.summary?.[0],
             };
@@ -118,24 +102,29 @@ export const componentManifestGenerator: PresetPropertyFn<
         })
         .filter((it) => it != null);
 
+      const fallbackImport =
+        packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
+
+      const imports = getImports({ components, packageName }).join('\n').trim() || fallbackImport;
+
       const base = {
         id,
         name: componentName ?? title,
         path: importPath,
         stories,
-        import: calculatedImports,
+        import: imports,
         jsDocTags: {},
       } satisfies Partial<ComponentManifest>;
 
-      if (!componentPath) {
-        const error = !componentName
+      if (!component?.reactDocgen) {
+        const error = !component
           ? {
               name: 'No meta.component specified',
               message: 'Specify meta.component for the component to be included in the manifest.',
             }
           : {
               name: 'No component import found',
-              message: `No component file found for the "${componentName}" component.`,
+              message: `No component file found for the "${component.componentName}" component.`,
             };
         return {
           ...base,
@@ -147,25 +136,21 @@ export const componentManifestGenerator: PresetPropertyFn<
         };
       }
 
-      const docgenResult = getReactDocgen(
-        componentPath,
-        component ? component : { componentName: componentName ?? title }
-      );
+      const docgenResult = component.reactDocgen;
 
       const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
       const error = docgenResult.type === 'error' ? docgenResult.error : undefined;
 
-      const metaDescription = extractDescription(csf._metaStatement);
-      const jsdocComment = metaDescription || docgen?.description;
-      const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
 
-      const manifestDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+
+      const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
+      const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
 
       return {
         ...base,
-        description: manifestDescription?.trim(),
+        description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
         summary: tags.summary?.[0],
-        import: calculatedImports,
+        import: imports,
         reactDocgen: docgen,
         jsDocTags: tags,
         error,

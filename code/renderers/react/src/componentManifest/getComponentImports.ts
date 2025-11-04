@@ -1,7 +1,6 @@
 import { dirname } from 'node:path';
 
-import { type NodePath, recast, types as t } from 'storybook/internal/babel';
-import { babelParse } from 'storybook/internal/babel';
+import { type NodePath, babelParse, recast, types as t } from 'storybook/internal/babel';
 import { type CsfFile } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -17,6 +16,7 @@ export type ComponentRef = {
   importName?: string;
   namespace?: string;
   path?: string;
+  reactDocgen?: ReturnType<typeof getReactDocgen>;
 };
 
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;
@@ -177,7 +177,17 @@ export const getComponents = ({
       } catch (e) {
         logger.error(e);
       }
-      return { ...component, path };
+      if (path) {
+        const reactDocgen = getReactDocgen(path, component);
+        return {
+          ...component,
+          path,
+          reactDocgen,
+          importOverride:
+            reactDocgen.type === 'success' ? getImportTag(reactDocgen.data) : undefined,
+        };
+      }
+      return component;
     })
     .sort((a, b) => a.componentName.localeCompare(b.componentName));
 
@@ -436,7 +446,7 @@ export const getImports = ({
   return merged;
 };
 
-export function getComponentImports({
+export function getComponentData({
   csf,
   packageName,
   storyFilePath,
@@ -449,19 +459,6 @@ export function getComponentImports({
   imports: string[];
 } {
   const components = getComponents({ csf, storyFilePath });
-  const withDocgen = components.map((component) => {
-    if (component.path) {
-      const docgen = getReactDocgen(component.path, component);
-      const importOverride = docgen.type === 'success' ? getImportTag(docgen.data) : undefined;
-      return {
-        ...component,
-        reactDocgen: docgen,
-        importOverride,
-      };
-    }
-    return component;
-  });
-
-  const imports = getImports({ components: withDocgen, packageName });
-  return { components: withDocgen, imports };
+  const imports = getImports({ components, packageName });
+  return { components, imports };
 }

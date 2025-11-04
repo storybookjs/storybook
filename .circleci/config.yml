@@ -32,13 +32,6 @@ jobs:
   generate-and-run-config:
     executor: continuation/default
     steps:
-      - run:
-          name: Debug parameters
-          command: |
-            echo "ghBaseBranch: << pipeline.parameters.ghBaseBranch >>"
-            echo "ghPrNumber: << pipeline.parameters.ghPrNumber >>"
-            echo "workflow: << pipeline.parameters.workflow >>"
-
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1 --verbose'
       - node/install
@@ -50,7 +43,6 @@ jobs:
       # https://circleci.com/developer/orbs/orb/circleci/continuation
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml
-          # parameters: '{"ghBaseBranch": "<< pipeline.parameters.ghBaseBranch >>", "ghPrNumber": "<< pipeline.parameters.ghPrNumber >>", "workflow": "<< pipeline.parameters.workflow >>"}'
 workflows:
   setup:
     jobs:

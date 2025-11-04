@@ -54,8 +54,9 @@ export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
   return matchingDocgen ?? docgens[0];
 }
 
-export function matchPath(id: string) {
-  const tsconfig = getTsConfig(process.cwd());
+export function matchPath(id: string, basedir?: string) {
+  basedir ??= process.cwd();
+  const tsconfig = getTsConfig(basedir);
 
   if (tsconfig.resultType === 'success') {
     const match = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
@@ -111,7 +112,7 @@ const getExportPaths = cached(
             ? [n.source.value]
             : []
       )
-      .map((s) => matchPath(s))
+      .map((s) => matchPath(s, basedir))
       .map((s) => {
         try {
           return cachedResolveImport(s, { basedir });
@@ -212,7 +213,7 @@ export const getReactDocgen = cached(
 export function getReactDocgenImporter() {
   return makeFsImporter((filename, basedir) => {
     const mappedFilenameByPaths = (() => {
-      return matchPath(filename);
+      return matchPath(filename, basedir);
     })();
 
     const result = cachedResolveImport(mappedFilenameByPaths, { basedir });

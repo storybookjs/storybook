@@ -170,7 +170,7 @@ export const getComponents = ({
       let path;
       try {
         if (component.importId && storyFilePath) {
-          path = cachedResolveImport(matchPath(component.importId), {
+          path = cachedResolveImport(matchPath(component.importId, dirname(storyFilePath)), {
             basedir: dirname(storyFilePath),
           });
         }

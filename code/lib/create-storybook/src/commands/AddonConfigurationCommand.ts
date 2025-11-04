@@ -109,17 +109,13 @@ export class AddonConfigurationCommand {
       task.success('Addons configured successfully');
     }
 
-    // Log results for each addon
-    logger.log(
-      CLI_COLORS.dimmed(
-        addons
-          .map((addon) => {
-            const error = addonResults.get(addon);
-            return error ? `❌ ${addon}` : `✅ ${addon}`;
-          })
-          .join('\n')
-      )
-    );
+    // Log results for each addon, each as a separate log entry
+    addons.forEach((addon, index) => {
+      const error = addonResults.get(addon);
+      logger.log(CLI_COLORS.dimmed(error ? `❌ ${addon}` : `✅ ${addon}`), {
+        spacing: index === 0 ? 1 : 0,
+      });
+    });
 
     return { hasFailures, addonResults };
   }

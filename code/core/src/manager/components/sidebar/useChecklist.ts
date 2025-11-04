@@ -21,9 +21,12 @@ export const useChecklist = () => {
   const { loaded, muted, accepted, done, skipped } = checklistState;
 
   const isOpen = useCallback(
-    ({ id }: ChecklistItem) =>
-      !accepted.includes(id) && !done.includes(id) && !skipped.includes(id),
-    [accepted, done, skipped]
+    ({ id, available }: ChecklistItem) =>
+      !accepted.includes(id) &&
+      !done.includes(id) &&
+      !skipped.includes(id) &&
+      (available?.({ api }) ?? true),
+    [api, accepted, done, skipped]
   );
 
   const isReady = useCallback(
@@ -58,6 +61,7 @@ export const useChecklist = () => {
             api,
             index,
             item,
+            accept: () => checklistStore.accept(item.id),
             done: () => checklistStore.done(item.id),
             skip: () => checklistStore.skip(item.id),
           })

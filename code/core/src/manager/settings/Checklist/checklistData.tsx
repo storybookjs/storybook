@@ -20,6 +20,7 @@ export interface ChecklistData {
       label: string;
       criteria: string;
       after?: string[];
+      available?: (args: { api: API }) => boolean;
       content?: React.ReactNode;
       action?: {
         label: string;
@@ -29,6 +30,7 @@ export interface ChecklistData {
         api: API;
         index: API_IndexHash;
         item: ChecklistData['sections'][number]['items'][number];
+        accept: () => void;
         done: () => void;
         skip: () => void;
       }) => void | (() => void);

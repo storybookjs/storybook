@@ -1,3 +1,10 @@
+## 10.1.0-alpha.5
+
+- CLI: Fix issue with running Storybook after being initialized - [#32929](https://github.com/storybookjs/storybook/pull/32929), thanks @yannbf!
+- CRA: Fix `module` not defined in ESM - [#32940](https://github.com/storybookjs/storybook/pull/32940), thanks @ndelangen!
+- React: Improve automatic component, automatic imports, support barrel files and enhance story filtering - [#32939](https://github.com/storybookjs/storybook/pull/32939), thanks @kasperpeulen!
+- Theming: Set `themes.normal` according to user preference and export `getPreferredColorScheme` - [#28721](https://github.com/storybookjs/storybook/pull/28721), thanks @elisezhg!
+
 ## 10.1.0-alpha.4
 
 - Core: Better handling for TypeScript satisfies/as syntaxes - [#32891](https://github.com/storybookjs/storybook/pull/32891), thanks @yannbf!

@@ -1,8 +1,12 @@
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
+import { join } from 'node:path';
+
 import yml from 'yaml';
 
 console.log('Generating CircleCI config...');
 console.log('--------------------------------');
+
+const dirname = import.meta.dirname;
 
 const executors = {
   sb_node_18_browsers: {
@@ -1858,6 +1862,6 @@ const data = {
 };
 
 await fs.writeFile(
-  '../.circleci/config.generated.yml',
+  join(dirname, '../../.circleci/config.generated.yml'),
   yml.stringify(data, null, { lineWidth: 1200, indent: 4 })
 );

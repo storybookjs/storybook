@@ -436,7 +436,7 @@ test('Side-effect-only import is ignored', () => {
 
 // New tests for packageName behavior
 
-test('Converts default relative import to named when packageName provided', () => {
+test('Converts default relative import to import override when provided', () => {
   const code = dedent`
     import Header from './Header';
 
@@ -531,117 +531,6 @@ test('Converts default relative import to named when packageName provided', () =
   );
 });
 
-test('Converts relative import to provided packageName', () => {
-  const code = dedent`
-    import { Button } from './Button';
-
-    const meta = {};
-    export default meta;
-    export const S = <Button/>;
-  `;
-  expect(
-    getImports(code, 'my-package', '/app/src/stories/Button.stories.tsx')
-  ).toMatchInlineSnapshot(
-    `
-    {
-      "components": [
-        {
-          "componentName": "Button",
-          "importId": "./Button",
-          "importName": "Button",
-          "importOverride": "import { Button } from '@design-system/components/Button';",
-          "localImportName": "Button",
-          "path": "./src/stories/Button.tsx",
-          "reactDocgen": {
-            "data": {
-              "actualName": "Button",
-              "definedInFile": "./src/stories/Button.tsx",
-              "description": "Primary UI component for user interaction
-    @import import { Button } from '@design-system/components/Button';",
-              "displayName": "Button",
-              "exportName": "Button",
-              "methods": [],
-              "props": {
-                "backgroundColor": {
-                  "description": "",
-                  "required": false,
-                  "tsType": {
-                    "name": "string",
-                  },
-                },
-                "label": {
-                  "description": "",
-                  "required": true,
-                  "tsType": {
-                    "name": "string",
-                  },
-                },
-                "onClick": {
-                  "description": "",
-                  "required": false,
-                  "tsType": {
-                    "name": "signature",
-                    "raw": "() => void",
-                    "signature": {
-                      "arguments": [],
-                      "return": {
-                        "name": "void",
-                      },
-                    },
-                    "type": "function",
-                  },
-                },
-                "primary": {
-                  "defaultValue": {
-                    "computed": false,
-                    "value": "false",
-                  },
-                  "description": "Description of primary",
-                  "required": false,
-                  "tsType": {
-                    "name": "boolean",
-                  },
-                },
-                "size": {
-                  "defaultValue": {
-                    "computed": false,
-                    "value": "'medium'",
-                  },
-                  "description": "",
-                  "required": false,
-                  "tsType": {
-                    "elements": [
-                      {
-                        "name": "literal",
-                        "value": "'small'",
-                      },
-                      {
-                        "name": "literal",
-                        "value": "'medium'",
-                      },
-                      {
-                        "name": "literal",
-                        "value": "'large'",
-                      },
-                    ],
-                    "name": "union",
-                    "raw": "'small' | 'medium' | 'large'",
-                  },
-                },
-              },
-            },
-            "type": "success",
-          },
-        },
-      ],
-      "imports": [
-        "import { Button } from "@design-system/components/Button";",
-      ],
-    }
-  `
-  );
-});
-
 test('Keeps relative import when packageName is missing', () => {
   const code = dedent`
     import { Button } from './components/Button';
@@ -705,7 +594,7 @@ test('Merges multiple imports from the same package (defaults and named)', () =>
     import Link from "@primer/react";
     import { Dialog } from "@primer/react";
     import { Stack } from "@primer/react";
-    import Heading from "@primer/react";
+    import { Heading } from "@primer/react";
 
     const meta = {};
     export default meta;
@@ -736,7 +625,7 @@ test('Merges multiple imports from the same package (defaults and named)', () =>
         {
           "componentName": "Heading",
           "importId": "@primer/react",
-          "importName": "default",
+          "importName": "Heading",
           "localImportName": "Heading",
         },
         {
@@ -753,8 +642,7 @@ test('Merges multiple imports from the same package (defaults and named)', () =>
         },
       ],
       "imports": [
-        "import Heading, { Banner, Dialog, Stack } from "@primer/react";",
-        "import Link from "@primer/react";",
+        "import Link, { Banner, Dialog, Heading, Stack } from "@primer/react";",
         "import { CopilotIcon } from "@primer/octicons-react";",
       ],
     }
@@ -762,7 +650,7 @@ test('Merges multiple imports from the same package (defaults and named)', () =>
   );
 });
 
-test('Merges namespace with default and separates named for same package', () => {
+test('Handle namespace with default and separates named for same package', () => {
   const code = dedent`
     import * as PR from '@primer/react';
     import { Banner } from '@primer/react';
@@ -916,7 +804,7 @@ test('importOverride: named override aliases imported to local name', () => {
   `);
 });
 
-test('importOverride: ignores namespace override and falls back', () => {
+test('importOverride: uses namespace override as-is', () => {
   const code = dedent`
     import * as UI from './ui';
 
@@ -936,7 +824,7 @@ test('importOverride: ignores namespace override and falls back', () => {
   const out = buildImports({ components: patched, packageName: 'pkg' });
   expect(out).toMatchInlineSnapshot(`
     [
-      "import { Button } from \"pkg\";",
+      "import * as UI from \"@pkg/ui\";",
     ]
   `);
 });

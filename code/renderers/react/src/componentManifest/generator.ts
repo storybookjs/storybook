@@ -1,4 +1,5 @@
 import { recast } from 'storybook/internal/babel';
+import { combineTags } from 'storybook/internal/csf';
 import { extractDescription, loadCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import {
@@ -45,7 +46,11 @@ export const componentManifestGenerator: PresetPropertyFn<
       const storyFile = cachedReadFileSync(absoluteImportPath, 'utf-8') as string;
       const csf = loadCsf(storyFile, { makeTitle: (title) => title ?? 'No title' }).parse();
 
-      if (csf.meta.tags?.includes('!manifest')) {
+      const manifestEnabled = csf.stories
+        .map((it) => combineTags('manifest', ...(csf.meta.tags ?? []), ...(it.tags ?? [])))
+        .some((it) => it.includes('manifest'));
+
+      if (!manifestEnabled) {
         return;
       }
       const componentName = csf._meta?.component;
@@ -53,21 +58,7 @@ export const componentManifestGenerator: PresetPropertyFn<
       const id = entry.id.split('--')[0];
       const importPath = entry.importPath;
 
-      const nearestPkg = cachedFindUp('package.json', {
-        cwd: path.dirname(absoluteImportPath),
-        last: process.cwd(),
-      });
-      let packageName;
-      try {
-        packageName = nearestPkg
-          ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
-          : undefined;
-      } catch {}
-
-      const components = getComponents({
-        csf,
-        storyFilePath: absoluteImportPath,
-      });
+      const components = getComponents({ csf, storyFilePath: absoluteImportPath });
 
       const trimmedTitle = entry.title.replace(/\s+/g, '');
 
@@ -82,7 +73,14 @@ export const componentManifestGenerator: PresetPropertyFn<
       const stories = Object.keys(csf._stories)
         .map((storyName) => {
           const story = csf._stories[storyName];
-          if (story.tags?.includes('!manifest')) {
+
+          const manifestEnabled = combineTags(
+            'manifest',
+            ...(csf.meta.tags ?? []),
+            ...(story.tags ?? [])
+          ).includes('manifest');
+
+          if (!manifestEnabled) {
             return;
           }
           try {
@@ -105,6 +103,17 @@ export const componentManifestGenerator: PresetPropertyFn<
           }
         })
         .filter((it) => it != null);
+
+      const nearestPkg = cachedFindUp('package.json', {
+        cwd: path.dirname(component?.path ?? absoluteImportPath),
+      });
+
+      let packageName;
+      try {
+        packageName = nearestPkg
+          ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
+          : undefined;
+      } catch {}
 
       const fallbackImport =
         packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';

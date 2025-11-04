@@ -31,17 +31,13 @@ export function invariant(
   throw new Error((typeof message === 'function' ? message() : message) ?? 'Invariant failed');
 }
 
-// Module-level cache stores: per-function caches keyed by derived string keys
-// memoStore caches synchronous function results
+// Module-level cache store: per-function caches keyed by derived string keys
 let memoStore: WeakMap<(...args: any[]) => any, Map<string, unknown>> = new WeakMap();
-// asyncMemoStore caches resolved values for async functions (never stores Promises)
-let asyncMemoStore: WeakMap<(...args: any[]) => any, Map<string, unknown>> = new WeakMap();
 
-// Generic cache/memoization helper
+// Generic cache/memoization helper (synchronous only)
 // - Caches by a derived key from the function arguments (must be a string)
 // - Supports caching of `undefined` results (uses Map.has to distinguish)
-// - Uses module-level stores so multiple wrappers around the same function share cache
-// - Never stores a Promise; for async functions, we cache only the resolved value. Concurrent calls are not de-duped.
+// - Uses module-level store so multiple wrappers around the same function share cache
 export const cached = <A extends unknown[], R>(
   fn: (...args: A) => R,
   opts: { key?: (...args: A) => string; name?: string } = {}
@@ -51,7 +47,7 @@ export const cached = <A extends unknown[], R>(
     ((...args: A) => {
       try {
         // Prefer a stable string key based on the full arguments list
-        return JSON.stringify(args) ?? String(args[0]);
+        return JSON.stringify(args);
       } catch {
         // Fallback: use the first argument if it is not serializable
         return String(args[0]);
@@ -62,63 +58,32 @@ export const cached = <A extends unknown[], R>(
     const k = keyOf(...args);
     const name = fn.name || opts.name || 'anonymous';
 
-    // Ensure stores exist for this function
-    let syncStore = memoStore.get(fn);
-    if (!syncStore) {
-      syncStore = new Map<string, unknown>();
-      memoStore.set(fn, syncStore);
-    }
-    let asyncStore = asyncMemoStore.get(fn);
-    if (!asyncStore) {
-      asyncStore = new Map<string, unknown>();
-      asyncMemoStore.set(fn, asyncStore);
+    // Ensure store exists for this function
+    let store = memoStore.get(fn);
+    if (!store) {
+      store = new Map<string, unknown>();
+      memoStore.set(fn, store);
     }
 
-    // Fast path: sync cached
-    if (syncStore.has(k)) {
-      // Log cache hit
-      try {
-        logger.verbose(`[cache] hit (sync) ${name} key=${k}`);
-      } catch {}
-      return syncStore.get(k);
-    }
-
-    // Fast path: async resolved cached
-    if (asyncStore.has(k)) {
-      logger.verbose(`[cache] hit (async) ${name} key=${k}`);
-      return Promise.resolve(asyncStore.get(k));
+    // Fast path: cached
+    if (store.has(k)) {
+      logger.verbose(`[cache] hit ${name} key=${k}`);
+      return store.get(k) as R;
     }
 
     // Compute result with benchmarking
     const start = Date.now();
     const result = fn(...args);
-
-    // If it's a promise-returning function, cache the resolved value later
-    const isPromise =
-      result &&
-      typeof result === 'object' &&
-      'then' in result &&
-      typeof (result as any).then === 'function';
-    if (isPromise) {
-      return (result as any).then((val: any) => {
-        const duration = Date.now() - start;
-        asyncStore!.set(k, val);
-        logger.verbose(`[cache] miss ${name} took ${duration}ms key=${k}`);
-        return val as R;
-      });
-    } else {
-      const duration = Date.now() - start;
-      syncStore.set(k, result);
-      logger.verbose(`[cache] miss ${name} took ${duration}ms key=${k}`);
-      return result;
-    }
+    const duration = Date.now() - start;
+    store.set(k, result as unknown);
+    logger.verbose(`[cache] miss ${name} took ${duration}ms key=${k}`);
+    return result;
   };
 };
 
 export const invalidateCache = () => {
-  // Reinitialize the module-level stores
+  // Reinitialize the module-level store
   memoStore = new WeakMap();
-  asyncMemoStore = new WeakMap();
 };
 
 export const cachedReadFileSync = cached(readFileSync, { name: 'cachedReadFile' });

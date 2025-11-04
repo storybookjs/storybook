@@ -12,7 +12,7 @@ export async function createViteLogger() {
   customViteLogger.error = logWithPrefix(logger.error);
   customViteLogger.warn = logWithPrefix(logger.warn);
   customViteLogger.warnOnce = logWithPrefix(logger.warn);
-  customViteLogger.info = logWithPrefix(logger.log);
+  customViteLogger.info = logWithPrefix((msg) => logger.log(msg, { spacing: 0 }));
 
   return customViteLogger;
 }

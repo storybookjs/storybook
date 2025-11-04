@@ -2,7 +2,6 @@ import { resolve } from 'node:path';
 
 import {
   getBuilderOptions,
-  getFrameworkName,
   isPreservingSymlinks,
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';

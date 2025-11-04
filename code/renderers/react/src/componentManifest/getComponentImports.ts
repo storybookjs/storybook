@@ -3,6 +3,7 @@ import { dirname } from 'node:path';
 import { type NodePath, recast, types as t } from 'storybook/internal/babel';
 import { babelParse } from 'storybook/internal/babel';
 import { type CsfFile } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen';
 import { cachedResolveImport } from './utils';
@@ -174,7 +175,7 @@ export const getComponents = ({
           });
         }
       } catch (e) {
-        console.error(e);
+        logger.error(e);
       }
       return { ...component, path };
     })

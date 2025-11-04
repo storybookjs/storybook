@@ -34,7 +34,10 @@ jobs:
     steps:
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1 --verbose'
-      - node/install
+      - run:
+          name: Install dependencies
+          command: yarn install
+          working_directory: scripts
       - run:
           name: Generate config
           command: |

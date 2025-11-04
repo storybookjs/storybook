@@ -172,9 +172,10 @@ export default function Onboarding({ api }: { api: API }) {
         return '3:SaveFromControls';
       }
 
-      if (primaryControl) {
+      if (primaryControl || current === '2:Controls') {
         return '2:Controls';
       }
+
       return '1:Intro';
     });
   }, [createNewStoryForm, primaryControl, saveFromControls]);

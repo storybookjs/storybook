@@ -139,7 +139,7 @@ const gatherDocgensForPath = cached(
     } catch {}
 
     if (!code) {
-      return { docgens: [], analyzed: [{ path: filePath, code: code! }] };
+      return { docgens: [], analyzed: [{ path: filePath, code: '/* File not found */' }] };
     }
 
     const reexportResults = getExportPaths(code, filePath).map((p) =>
@@ -148,13 +148,12 @@ const gatherDocgensForPath = cached(
     const fromReexports = reexportResults.flatMap((r) => r.docgens);
     const analyzedChildren = reexportResults.flatMap((r) => r.analyzed);
 
-    const locals = (() => {
-      try {
-        return parseWithReactDocgen(code as string, filePath);
-      } catch {
-        return [] as DocObj[];
-      }
-    })();
+    let locals: DocObj[];
+    try {
+      locals = parseWithReactDocgen(code as string, filePath);
+    } catch {
+      locals = [];
+    }
 
     return {
       docgens: [...locals, ...fromReexports],

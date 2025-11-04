@@ -70,8 +70,11 @@ export const useChecklist = () => {
           })
         );
       } else if (subscribed && !open) {
-        subscriptions.get(item.id)?.();
+        const unsubscribe = subscriptions.get(item.id);
         subscriptions.delete(item.id);
+        if (typeof unsubscribe === 'function') {
+          unsubscribe();
+        }
       }
     }
   }, [api, index, loaded, allItems, isOpen]);

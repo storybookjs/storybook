@@ -79,7 +79,6 @@ test('Namespace import with member usage', () => {
           "importName": "Root",
           "localImportName": "Accordion",
           "namespace": "Accordion",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -107,7 +106,6 @@ test('Named import used as namespace object', () => {
           "importId": "@ds/accordion",
           "importName": "Accordion",
           "localImportName": "Accordion",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -135,7 +133,6 @@ test('Default import', () => {
           "importId": "@ds/button",
           "importName": "default",
           "localImportName": "Button",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -163,14 +160,12 @@ test('Alias named import and meta.component inclusion', () => {
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Btn",
-          "path": undefined,
         },
         {
           "componentName": "Other",
           "importId": "@ds/button",
           "importName": "Other",
           "localImportName": "Other",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -198,7 +193,6 @@ test('Strip unused specifiers from the same import statement', () => {
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Btn",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -226,7 +220,6 @@ test('Meta component with member and star import', () => {
           "importName": "Root",
           "localImportName": "Accordion",
           "namespace": "Accordion",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -254,14 +247,12 @@ test('Keeps multiple named specifiers and drops unused ones from same import', (
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Button",
-          "path": undefined,
         },
         {
           "componentName": "ButtonGroup",
           "importId": "@ds/button",
           "importName": "ButtonGroup",
           "localImportName": "ButtonGroup",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -289,7 +280,6 @@ test('Mixed default + named import: keep only default when only default used', (
           "importId": "@ds/button",
           "importName": "default",
           "localImportName": "Button",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -317,7 +307,6 @@ test('Mixed default + named import: keep only named when only named (alias) used
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Btn",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -346,7 +335,6 @@ test('Per-specifier type import is dropped when mixing with value specifiers', (
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Button",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -375,7 +363,6 @@ test('Namespace import used for multiple members kept once', () => {
           "importName": "A",
           "localImportName": "DS",
           "namespace": "DS",
-          "path": undefined,
         },
         {
           "componentName": "DS.B",
@@ -383,7 +370,6 @@ test('Namespace import used for multiple members kept once', () => {
           "importName": "B",
           "localImportName": "DS",
           "namespace": "DS",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -410,7 +396,6 @@ test('Default import kept when referenced only via meta.component', () => {
           "importId": "@ds/button",
           "importName": "default",
           "localImportName": "Button",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -439,7 +424,6 @@ test('Side-effect-only import is ignored', () => {
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Button",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -675,7 +659,6 @@ test('Keeps relative import when packageName is missing', () => {
           "importId": "./components/Button",
           "importName": "Button",
           "localImportName": "Button",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -703,11 +686,10 @@ test('Non-relative import remains unchanged even if packageName provided', () =>
           "importId": "@ds/button",
           "importName": "Button",
           "localImportName": "Button",
-          "path": undefined,
         },
       ],
       "imports": [
-        "import { Button } from \"@ds/button\";",
+        "import { Button } from "@ds/button";",
       ],
     }
   `
@@ -738,42 +720,36 @@ test('Merges multiple imports from the same package (defaults and named)', () =>
           "importId": "@primer/react",
           "importName": "Banner",
           "localImportName": "Banner",
-          "path": undefined,
         },
         {
           "componentName": "CopilotIcon",
           "importId": "@primer/octicons-react",
           "importName": "CopilotIcon",
           "localImportName": "CopilotIcon",
-          "path": undefined,
         },
         {
           "componentName": "Dialog",
           "importId": "@primer/react",
           "importName": "Dialog",
           "localImportName": "Dialog",
-          "path": undefined,
         },
         {
           "componentName": "Heading",
           "importId": "@primer/react",
           "importName": "default",
           "localImportName": "Heading",
-          "path": undefined,
         },
         {
           "componentName": "Link",
           "importId": "@primer/react",
           "importName": "default",
           "localImportName": "Link",
-          "path": undefined,
         },
         {
           "componentName": "Stack",
           "importId": "@primer/react",
           "importName": "Stack",
           "localImportName": "Stack",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -805,14 +781,12 @@ test('Merges namespace with default and separates named for same package', () =>
           "importId": "@primer/react",
           "importName": "Banner",
           "localImportName": "Banner",
-          "path": undefined,
         },
         {
           "componentName": "Link",
           "importId": ".",
           "importName": "default",
           "localImportName": "Link",
-          "path": undefined,
         },
         {
           "componentName": "PR.Box",
@@ -820,7 +794,6 @@ test('Merges namespace with default and separates named for same package', () =>
           "importName": "Box",
           "localImportName": "PR",
           "namespace": "PR",
-          "path": undefined,
         },
       ],
       "imports": [
@@ -845,7 +818,6 @@ test('Component not imported returns undefined importId and importName', () => {
       "components": [
         {
           "componentName": "Missing",
-          "path": undefined,
         },
       ],
       "imports": [],
@@ -866,7 +838,6 @@ test('Namespace component not imported returns undefined importId and importName
       "components": [
         {
           "componentName": "PR.Box",
-          "path": undefined,
         },
       ],
       "imports": [],

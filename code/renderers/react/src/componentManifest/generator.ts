@@ -49,7 +49,6 @@ export const componentManifestGenerator: PresetPropertyFn<
         return;
       }
       const componentName = csf._meta?.component;
-      const title = entry.title.replace(/\s+/g, '');
 
       const id = entry.id.split('--')[0];
       const importPath = entry.importPath;
@@ -67,12 +66,14 @@ export const componentManifestGenerator: PresetPropertyFn<
         storyFilePath: absoluteImportPath,
       });
 
+      const trimmedTitle = entry.title.replace(/\s+/g, '');
+
       const component = components.find((it) => {
         return componentName
           ? [it.componentName, it.localImportName, it.importName].includes(componentName)
-          : title.includes(it.componentName) ||
-              (it.localImportName && title.includes(it.localImportName)) ||
-              (it.importName && title.includes(it.importName));
+          : trimmedTitle.includes(it.componentName) ||
+              (it.localImportName && trimmedTitle.includes(it.localImportName)) ||
+              (it.importName && trimmedTitle.includes(it.importName));
       });
 
       const stories = Object.keys(csf._stories)
@@ -106,6 +107,8 @@ export const componentManifestGenerator: PresetPropertyFn<
         packageName && componentName ? `import { ${componentName} } from "${packageName}";` : '';
 
       const imports = getImports({ components, packageName }).join('\n').trim() || fallbackImport;
+
+      const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
       const base = {
         id,

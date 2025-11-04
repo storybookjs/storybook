@@ -35,10 +35,11 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
 };
 
 /**
- * Collects all React component references used by a CSF story file and resolves as much
- * import and docgen information as possible.
+ * Collects all React component references used by a CSF story file and resolves as much import and
+ * docgen information as possible.
  *
  * Behavior:
+ *
  * - Scans the AST for JSX opening elements and meta.component to discover component identifiers.
  * - Filters out components that are locally defined without an import (these are not public imports).
  * - Maps local identifiers back to their import source/specifier when available.
@@ -46,13 +47,15 @@ const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
  *   augments the result with react-docgen info and an import override tag when present.
  *
  * Notes:
+ *
  * - Member expressions like Foo.Bar are supported; namespace imports are represented accordingly.
  * - If react-docgen determines a package import override, it is stored in `importOverride`.
  *
- * @public
  * @param csf The parsed CSF file instance whose AST will be inspected.
- * @param storyFilePath Optional absolute path of the story file to resolve relative imports against.
+ * @param storyFilePath Optional absolute path of the story file to resolve relative imports
+ *   against.
  * @returns An array of component references sorted by componentName.
+ * @public
  */
 export const getComponents = ({
   csf,
@@ -218,6 +221,7 @@ export const getComponents = ({
  * Builds a minimal, deduplicated list of import declarations required for the given components.
  *
  * Behavior:
+ *
  * - Components are grouped by their (possibly rewritten) source package/path.
  * - If `packageName` is provided, relative imports are rewritten to that package name.
  * - If a component provides `importOverride`, its source and specifier are respected.
@@ -225,14 +229,16 @@ export const getComponents = ({
  * - Default imports rewritten to a package become named imports using their local identifier.
  *
  * Output order:
+ *
  * - Buckets preserve first-seen order of sources to keep declarations stable between runs.
  * - Within a bucket, namespace imports are emitted first (optionally coalesced with a default),
  *   followed by named-only, then any remaining defaults/namespaces one-per-declaration.
  *
- * @public
- * @param components Component references to emit imports for. Only those with an importId are considered.
+ * @param components Component references to emit imports for. Only those with an importId are
+ *   considered.
  * @param packageName Optional package name to rewrite relative imports to.
  * @returns An array of import declaration strings, formatted by recast.
+ * @public
  */
 export const getImports = ({
   components,
@@ -497,11 +503,12 @@ export const getImports = ({
  * import declarations for those components, applying the same rewrite/override rules as
  * `getImports`.
  *
- * @public
  * @param csf The parsed CSF file instance.
  * @param packageName Optional package name used to rewrite relative imports.
- * @param storyFilePath Optional absolute path of the story file for resolving component import paths.
+ * @param storyFilePath Optional absolute path of the story file for resolving component import
+ *   paths.
  * @returns An object containing the discovered components and the corresponding import statements.
+ * @public
  */
 export function getComponentData({
   csf,

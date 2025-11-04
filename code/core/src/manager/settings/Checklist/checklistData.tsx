@@ -531,7 +531,7 @@ export default {
           id: 'publish-storybook',
           after: ['render-component'],
           label: 'Publish your Storybook to share',
-          criteria: 'Some form of `storybook --build` in the project source',
+          criteria: 'Some form of `storybook build` in the project source',
           content: (
             <>
               <p>
@@ -539,8 +539,8 @@ export default {
                 collaborative workflows.
               </p>
               <p>
-                Run <pre>storybook --build</pre> in CI and deploy it using services like Chromatic,
-                Vercel, or Netlify.
+                Run <pre>npx storybook build</pre> in CI and deploy it using services like
+                Chromatic, Vercel, or Netlify.
               </p>
               <h4>Take it further</h4>
               <p>

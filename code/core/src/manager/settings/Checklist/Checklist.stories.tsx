@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { checklistStore } from '#manager-stores';
+import { internal_checklistStore as checklistStore } from '#manager-stores';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';

@@ -7,6 +7,7 @@ import * as CLIENT_LOGGER from 'storybook/internal/client-logger';
 import * as COMPONENTS from 'storybook/internal/components';
 import * as EVENTS from 'storybook/internal/core-events';
 import * as EVENTS_MANAGER_ERRORS from 'storybook/internal/manager-errors';
+import * as MANAGER_STORES from 'storybook/internal/manager/manager-stores';
 import * as ROUTER from 'storybook/internal/router';
 import * as TYPES from 'storybook/internal/types';
 
@@ -38,6 +39,7 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   'storybook/internal/components': COMPONENTS,
   'storybook/internal/core-events': EVENTS,
   'storybook/internal/manager-errors': EVENTS_MANAGER_ERRORS,
+  'storybook/internal/manager/manager-stores': MANAGER_STORES,
   'storybook/internal/router': ROUTER,
   'storybook/internal/types': TYPES,
 };

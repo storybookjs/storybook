@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { checklistStore, universalChecklistStore } from '#manager-stores';
+import {
+  internal_checklistStore as checklistStore,
+  internal_universalChecklistStore as universalChecklistStore,
+} from '#manager-stores';
 import {
   experimental_useUniversalStore,
   useStorybookApi,

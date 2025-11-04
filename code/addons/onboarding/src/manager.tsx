@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 
 import { STORY_SPECIFIED } from 'storybook/internal/core-events';
 
-import { addons } from 'storybook/manager-api';
+import { addons, internal_universalChecklistStore as checklistStore } from 'storybook/manager-api';
 
 import { ADDON_CONTROLS_ID } from './constants';
 
@@ -28,8 +28,17 @@ addons.register('@storybook/addon-onboarding', async (api) => {
   const isOnboarding = path === '/onboarding' || queryParams.onboarding === 'true';
   const isSurvey = queryParams.onboarding === 'survey';
 
+  const hasCompletedSurvey = await new Promise<boolean>((resolve) => {
+    const unsubscribe = checklistStore.onStateChange(({ loaded, accepted }) => {
+      if (loaded) {
+        unsubscribe();
+        resolve(accepted.includes('onboarding-survey'));
+      }
+    });
+  });
+
   if (isSurvey) {
-    return render(<Survey api={api} />);
+    return hasCompletedSurvey ? null : render(<Survey api={api} />);
   }
 
   await new Promise((resolve) => api.once(STORY_SPECIFIED, resolve));
@@ -53,5 +62,5 @@ addons.register('@storybook/addon-onboarding', async (api) => {
   api.togglePanelPosition('bottom');
   api.setSelectedPanel(ADDON_CONTROLS_ID);
 
-  return render(<Onboarding api={api} />);
+  return render(<Onboarding api={api} hasCompletedSurvey={hasCompletedSurvey} />);
 });

@@ -22,7 +22,7 @@ import {
   StatusFailIcon,
 } from '@storybook/icons';
 
-import { checklistStore } from '#manager-stores';
+import { internal_checklistStore as checklistStore } from '#manager-stores';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 

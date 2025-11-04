@@ -45,7 +45,10 @@ export const {
   useUniversalStore: experimental_useUniversalStore,
 });
 
-export const universalChecklistStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
+export const internal_universalChecklistStore = new experimental_MockUniversalStore<
+  StoreState,
+  StoreEvent
+>(
   {
     ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
     leader: globalThis.CONFIG_TYPE === 'PRODUCTION',
@@ -54,4 +57,4 @@ export const universalChecklistStore = new experimental_MockUniversalStore<Store
   testUtils
 ) as unknown as UniversalStore<StoreState, StoreEvent>;
 
-export const checklistStore = createChecklistStore(universalChecklistStore);
+export const internal_checklistStore = createChecklistStore(internal_universalChecklistStore);

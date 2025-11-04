@@ -2,7 +2,7 @@ import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
-import { universalChecklistStore as mockStore } from '../../manager-stores.mock';
+import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
 import { ChecklistModule } from './ChecklistModule';
 
 const managerContext: any = {

@@ -10,7 +10,7 @@ import { expect, screen, userEvent, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
 import { useMenu } from '../../container/Menu';
-import { universalChecklistStore as mockStore } from '../../manager-stores.mock';
+import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
 import { LayoutProvider } from '../layout/LayoutProvider';
 import { type MenuList, SidebarMenu } from './Menu';
 

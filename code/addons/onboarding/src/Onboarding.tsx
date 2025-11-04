@@ -67,7 +67,13 @@ export type StepDefinition = {
   >
 >;
 
-export default function Onboarding({ api }: { api: API }) {
+export default function Onboarding({
+  api,
+  hasCompletedSurvey,
+}: {
+  api: API;
+  hasCompletedSurvey: boolean;
+}) {
   const [enabled, setEnabled] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const [step, setStep] = useState<StepKey>('1:Intro');
@@ -158,6 +164,10 @@ export default function Onboarding({ api }: { api: API }) {
 
   useEffect(() => {
     setStep((current) => {
+      if (hasCompletedSurvey && current === '6:IntentSurvey') {
+        return '7:FinishedOnboarding';
+      }
+
       if (
         ['1:Intro', '5:StoryCreated', '6:IntentSurvey', '7:FinishedOnboarding'].includes(current)
       ) {
@@ -178,7 +188,7 @@ export default function Onboarding({ api }: { api: API }) {
 
       return '1:Intro';
     });
-  }, [createNewStoryForm, primaryControl, saveFromControls]);
+  }, [hasCompletedSurvey, createNewStoryForm, primaryControl, saveFromControls]);
 
   useEffect(() => {
     return api.on(SAVE_STORY_RESPONSE, ({ payload, success }) => {
@@ -308,7 +318,7 @@ export default function Onboarding({ api }: { api: API }) {
           step={step}
           steps={steps}
           onClose={() => disableOnboarding(step)}
-          onComplete={() => setStep('6:IntentSurvey')}
+          onComplete={() => setStep(hasCompletedSurvey ? '7:FinishedOnboarding' : '6:IntentSurvey')}
         />
       )}
     </ThemeProvider>

@@ -11,7 +11,6 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-import { type ComponentManifestGenerator, type ComponentsManifest } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 

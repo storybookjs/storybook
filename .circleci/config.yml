@@ -36,10 +36,10 @@ jobs:
           clone_options: '--depth 1 --verbose'
       - node/install:
           install-yarn: true
-      - run:
-          name: Install dependencies
-          command: yarn install
-          working_directory: scripts
+      - node/install-packages:
+          app-dir: scripts
+          pkg-manager: yarn
+
       - run:
           name: Generate config
           command: |

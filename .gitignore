@@ -32,7 +32,7 @@ tsconfig.vitest-temp.json
 test-storybooks/ember-cli/ember-output
 test-storybooks/angular-cli/addon-jest.testresults.json
 
-
+.circleci/*.generated.yml
 npm-shrinkwrap.json
 .tern-port
 .parcel-cache

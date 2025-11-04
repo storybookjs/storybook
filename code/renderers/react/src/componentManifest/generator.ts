@@ -141,8 +141,6 @@ export const componentManifestGenerator: PresetPropertyFn<
       const docgen = docgenResult.type === 'success' ? docgenResult.data : undefined;
       const error = docgenResult.type === 'error' ? docgenResult.error : undefined;
 
-
-
       const jsdocComment = extractDescription(csf._metaStatement) || docgen?.description;
       const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
 

@@ -5,122 +5,12 @@ import { type StoryIndexGenerator } from 'storybook/internal/core-server';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
+import { fsMocks, indexJson } from './fixtures';
 import { componentManifestGenerator } from './generator';
-import { fsMocks } from './test-utils';
-
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal()),
-  // Keep it simple: hardcode known inputs to expected outputs for this test.
-  resolveImport: (id: string) => {
-    return {
-      './Button': './src/stories/Button.tsx',
-      './Header': './src/stories/Header.tsx',
-    }[id];
-  },
-  JsPackageManagerFactory: {
-    getPackageManager: () => ({
-      primaryPackageJson: {
-        packageJson: {
-          name: 'some-package',
-        },
-      },
-    }),
-  },
-}));
-vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
-vi.mock('node:fs', async () => (await import('memfs')).fs);
-
-vi.mock('empathic/find', async () => ({
-  up: (path: string) => '/app/package.json',
-}));
-vi.mock('tsconfig-paths', () => ({ loadConfig: () => ({ resultType: null!, message: null! }) }));
-
-// Use the provided indexJson from this file
-const indexJson = {
-  v: 5,
-  entries: {
-    'example-button--primary': {
-      type: 'story',
-      subtype: 'story',
-      id: 'example-button--primary',
-      name: 'Primary',
-      title: 'Example/Button',
-      importPath: './src/stories/Button.stories.ts',
-      componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
-      exportName: 'Primary',
-    },
-    'example-button--secondary': {
-      type: 'story',
-      subtype: 'story',
-      id: 'example-button--secondary',
-      name: 'Secondary',
-      title: 'Example/Button',
-      importPath: './src/stories/Button.stories.ts',
-      componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
-      exportName: 'Secondary',
-    },
-    'example-button--large': {
-      type: 'story',
-      subtype: 'story',
-      id: 'example-button--large',
-      name: 'Large',
-      title: 'Example/Button',
-      importPath: './src/stories/Button.stories.ts',
-      componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
-      exportName: 'Large',
-    },
-    'example-button--small': {
-      type: 'story',
-      subtype: 'story',
-      id: 'example-button--small',
-      name: 'Small',
-      title: 'Example/Button',
-      importPath: './src/stories/Button.stories.ts',
-      componentPath: './src/stories/Button.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
-      exportName: 'Small',
-    },
-    'example-header--docs': {
-      id: 'example-header--docs',
-      title: 'Example/Header',
-      name: 'Docs',
-      importPath: './src/stories/Header.stories.ts',
-      type: 'docs',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
-      storiesImports: [],
-    },
-    'example-header--logged-in': {
-      type: 'story',
-      subtype: 'story',
-      id: 'example-header--logged-in',
-      name: 'Logged In',
-      title: 'Example/Header',
-      importPath: './src/stories/Header.stories.ts',
-      componentPath: './src/stories/Header.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
-      exportName: 'LoggedIn',
-    },
-    'example-header--logged-out': {
-      type: 'story',
-      subtype: 'story',
-      id: 'example-header--logged-out',
-      name: 'Logged Out',
-      title: 'Example/Header',
-      importPath: './src/stories/Header.stories.ts',
-      componentPath: './src/stories/Header.tsx',
-      tags: ['dev', 'test', 'vitest', 'autodocs'],
-      exportName: 'LoggedOut',
-    },
-  },
-};
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(fsMocks, '/app');
-  return () => vol.reset();
 });
 
 test('componentManifestGenerator generates correct id, name, description and examples ', async () => {

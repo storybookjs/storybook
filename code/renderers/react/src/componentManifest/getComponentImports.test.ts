@@ -6,27 +6,11 @@ import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
 import { getImports as buildImports, getComponentImports } from './getComponentImports';
-import { fsMocks } from './test-utils';
-
-vi.mock('node:fs/promises', async () => (await import('memfs')).fs.promises);
-vi.mock('node:fs', async () => (await import('memfs')).fs);
-vi.mock('tsconfig-paths', () => ({ loadConfig: () => ({ resultType: null!, message: null! }) }));
-
-// Mock resolveImport to deterministically resolve known relative imports for these tests
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal()),
-  resolveImport: (id: string) => {
-    return {
-      './Button': './src/stories/Button.tsx',
-      './Header': './src/stories/Header.tsx',
-    }[id];
-  },
-}));
+import { fsMocks } from './fixtures';
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');
   vol.fromJSON(fsMocks, '/app');
-  return () => vol.reset();
 });
 
 const getImports = (code: string, packageName?: string, storyFilePath?: string) =>

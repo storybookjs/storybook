@@ -102,7 +102,7 @@ describe('UserPreferencesCommand', () => {
     it('should return recommended config for new users in non-interactive mode', async () => {
       const result = await command.execute(mockPackageManager, {
         yes: true,
-        framework: undefined,
+        framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
       });
@@ -120,7 +120,7 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.select).mockResolvedValueOnce(true); // new user
 
       const result = await command.execute(mockPackageManager, {
-        framework: undefined,
+        framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
       });
@@ -143,7 +143,7 @@ describe('UserPreferencesCommand', () => {
         .mockResolvedValueOnce('light'); // minimal install
 
       const result = await command.execute(mockPackageManager, {
-        framework: undefined,
+        framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
       });
@@ -162,7 +162,7 @@ describe('UserPreferencesCommand', () => {
         .mockResolvedValueOnce('light'); // minimal install
 
       const result = await command.execute(mockPackageManager, {
-        framework: undefined,
+        framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
       });
@@ -182,14 +182,14 @@ describe('UserPreferencesCommand', () => {
       });
 
       await command.execute(mockPackageManager, {
-        framework: undefined,
+        framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
       });
 
       expect(featureService.validateTestFeatureCompatibility).toHaveBeenCalledWith(
         mockPackageManager,
-        undefined,
+        null,
         'vite',
         process.cwd()
       );
@@ -207,7 +207,7 @@ describe('UserPreferencesCommand', () => {
       vi.mocked(prompt.confirm).mockResolvedValueOnce(true); // continue without test
 
       const result = await command.execute(mockPackageManager, {
-        framework: undefined,
+        framework: null,
         builder: 'vite' as SupportedBuilder,
         projectType: ProjectType.REACT,
       });

@@ -178,7 +178,7 @@ export const logBox = (message: string, { title, ...options }: BoxOptions = {}) 
 export const intro = (message: string) => {
   logTracker.addLog('info', message);
   if (shouldLog('info')) {
-    console.log('\n');
+    console.log('');
     LOG_FUNCTIONS.intro()(message);
   }
 };

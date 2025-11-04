@@ -7,7 +7,7 @@ import {
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -16,10 +16,12 @@ export default defineGeneratorModule({
     projectType: ProjectType.REACT_NATIVE,
     renderer: SupportedRenderer.REACT,
     builderOverride: SupportedBuilder.WEBPACK5,
+    framework: null,
   },
   configure: async (packageManager, context) => {
     const missingReactDom = !packageManager.getDependencyVersion('react-dom');
     const reactVersion = packageManager.getDependencyVersion('react');
+    const dependencyCollector = context.dependencyCollector;
 
     const peerDependencies = [
       'react-native-safe-area-context',
@@ -49,8 +51,7 @@ export default defineGeneratorModule({
       ...(missingReactDom && reactVersion ? [`react-dom@${reactVersion}`] : []),
     ];
 
-    // React Native handles dependencies directly (not via baseGenerator)
-    await packageManager.addDependencies({ type: 'devDependencies' }, packages);
+    dependencyCollector.addDependencies(packages);
 
     // Add React Native specific scripts
     packageManager.addScripts({
@@ -73,6 +74,7 @@ export default defineGeneratorModule({
       // Signal to skip baseGenerator by returning minimal config
       storybookConfigFolder,
       skipGenerator: true,
+      storybookCommand: null,
       shouldRunDev: false, // React Native needs additional manual steps to configure the project
     };
   },

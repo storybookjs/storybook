@@ -6,7 +6,7 @@ import {
 } from 'storybook/internal/common';
 import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project';

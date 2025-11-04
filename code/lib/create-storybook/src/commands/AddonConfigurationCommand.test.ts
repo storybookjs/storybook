@@ -74,6 +74,7 @@ describe('AddonConfigurationCommand', () => {
 
       const result = await command.execute({
         packageManager: mockPackageManager,
+        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
         options,
@@ -94,6 +95,7 @@ describe('AddonConfigurationCommand', () => {
 
       const result = await command.execute({
         packageManager: mockPackageManager,
+        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
         options,
@@ -118,6 +120,7 @@ describe('AddonConfigurationCommand', () => {
 
       const result = await command.execute({
         packageManager: mockPackageManager,
+        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
         options,
@@ -125,7 +128,7 @@ describe('AddonConfigurationCommand', () => {
 
       expect(result.status).toBe('failed');
       expect(mockTask.error).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to configure test addons')
+        expect.stringContaining('Failed to configure addons')
       );
     });
 
@@ -139,6 +142,7 @@ describe('AddonConfigurationCommand', () => {
 
       const result = await command.execute({
         packageManager: mockPackageManager,
+        dependencyInstallationResult: { status: 'success' },
         addons,
         configDir: '.storybook',
         options,

@@ -28,7 +28,7 @@ export interface UserPreferencesResult {
 export interface UserPreferencesOptions {
   skipPrompt?: boolean;
   yes?: boolean;
-  framework: SupportedFramework | undefined;
+  framework: SupportedFramework | null;
   builder: SupportedBuilder;
   projectType: ProjectType;
 }
@@ -193,7 +193,7 @@ export class UserPreferencesCommand {
   /** Validate test feature compatibility and prompt user if issues found */
   private async isTestFeatureAvailable(
     packageManager: JsPackageManager,
-    framework: SupportedFramework | undefined,
+    framework: SupportedFramework | null,
     builder: SupportedBuilder
   ): Promise<boolean> {
     const result = await this.featureService.validateTestFeatureCompatibility(

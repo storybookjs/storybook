@@ -22,7 +22,8 @@
   "type": "module",
   "exports": {
     "./index": "./dist/index.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./preset": "./dist/index.js"
   },
   "files": [
     "dist/**/*",

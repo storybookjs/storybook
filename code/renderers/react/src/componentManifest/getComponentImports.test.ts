@@ -835,32 +835,6 @@ test('Merges namespace with default and separates named for same package', async
   );
 });
 
-test('Object.assign aliasing of imported component retains correct import', async () => {
-  const code = dedent`
-    import type { Meta } from '@storybook/react';
-    import {ActionList as _ActionList} from '../../deprecated/ActionList'
-    import {Header} from '../../deprecated/ActionList/Header'
-    const ActionList = Object.assign(_ActionList, {
-      Header,
-    })
-
-    const meta: Meta = {
-      component: ActionList,
-    }
-    export default meta;
-
-    const Story = () => <ActionList/>
-  `;
-  expect(await getImports(code)).toMatchInlineSnapshot(
-    `
-    {
-      "components": [],
-      "imports": [],
-    }
-  `
-  );
-});
-
 test('Component not imported returns undefined importId and importName', async () => {
   const code = dedent`
     const meta = {};

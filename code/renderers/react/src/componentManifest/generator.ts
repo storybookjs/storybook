@@ -57,9 +57,12 @@ export const componentManifestGenerator: PresetPropertyFn<
         cwd: path.dirname(absoluteImportPath),
         last: process.cwd(),
       });
-      const packageName = nearestPkg
-        ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
-        : undefined;
+      let packageName;
+      try {
+        packageName = nearestPkg
+          ? JSON.parse(cachedReadFileSync(nearestPkg, 'utf-8') as string).name
+          : undefined;
+      } catch {}
 
       const components = getComponents({
         csf,

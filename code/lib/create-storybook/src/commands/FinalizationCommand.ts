@@ -73,7 +73,7 @@ export class FinalizationCommand {
     this.printNextSteps(selectedFeatures, storybookCommand);
 
     const logFile = await logTracker.writeToFile();
-    logger.log(`Storybook debug logs can be found at: ${logFile}`);
+    logger.warn(`Storybook debug logs can be found at: ${logFile}`);
   }
 
   /** Print success message with feature summary */

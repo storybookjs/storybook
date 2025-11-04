@@ -39,6 +39,8 @@ const throwMessage = (type: any, message: any) => {
 const throwWarning = (message: any) => throwMessage('warn: ', message);
 const throwError = (message: any) => throwMessage('error: ', message);
 
+globalThis.FEATURES ??= {};
+
 vi.spyOn(console, 'warn').mockImplementation(throwWarning);
 vi.spyOn(console, 'error').mockImplementation(throwError);
 
@@ -88,6 +90,7 @@ vi.mock('storybook/internal/node-logger', async (importOriginal) => {
       info: vi.fn(),
       trace: vi.fn(),
       debug: vi.fn(),
+      verbose: vi.fn(),
       logBox: vi.fn(),
       intro: vi.fn(),
       outro: vi.fn(),

@@ -5,8 +5,8 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { getImports as buildImports, getComponentImports } from './getComponentImports';
 import { fsMocks } from './fixtures';
+import { getImports as buildImports, getComponentImports } from './getComponentImports';
 
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue('/app');

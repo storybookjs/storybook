@@ -193,7 +193,7 @@ export const getReactDocgen = cached(
           `Prefer relative imports if possible.\n` +
           `Avoid pointing to transpiled files.\n` +
           `You can debug your component file in this playground: https://react-docgen.dev/playground\n\n` +
-          docgenWithInfo.analyzed.map(({ path, code }) => `File: ${path}\n${code}`).join('\n\n'),
+          docgenWithInfo.analyzed.map(({ path, code }) => `File: ${path}\n${code}`).join('\n'),
       },
     };
 

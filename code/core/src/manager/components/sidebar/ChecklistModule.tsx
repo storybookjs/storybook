@@ -71,7 +71,7 @@ const OpenGuideAction = ({ children }: { children?: React.ReactNode }) => {
     <ListboxAction
       onClick={(e) => {
         e.stopPropagation();
-        api.navigateUrl('/settings/guide', { plain: false });
+        api.navigate('/settings/guide');
       }}
     >
       <ListboxIcon>
@@ -185,9 +185,7 @@ export const ChecklistModule = () => {
             {next.map((item) => (
               <Transition key={item.id} nodeRef={item.nodeRef} timeout={300}>
                 <ListboxItem as="li" ref={item.nodeRef}>
-                  <ListboxAction
-                    onClick={() => api.navigateUrl(`/settings/guide#${item.id}`, { plain: false })}
-                  >
+                  <ListboxAction onClick={() => api.navigate(`/settings/guide#${item.id}`)}>
                     <ListboxIcon>
                       <StatusFailIcon />
                     </ListboxIcon>

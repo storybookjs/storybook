@@ -22,7 +22,7 @@ export default defineGeneratorModule({
     };
   },
   postConfigure: async ({ packageManager }) => {
-    reactNativeWebGeneratorModule.postConfigure({ packageManager });
+    reactNativeWebGeneratorModule.postConfigure();
     reactNativeGeneratorModule.postConfigure({ packageManager });
   },
 });

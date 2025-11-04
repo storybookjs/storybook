@@ -104,9 +104,9 @@ export class AddonConfigurationCommand {
 
     // Set final task status
     if (hasFailures) {
-      task.error('Failed to configure test addons');
+      task.error('Failed to configure addons');
     } else {
-      task.success('Test addons configured successfully');
+      task.success('Addons configured successfully');
     }
 
     // Log results for each addon

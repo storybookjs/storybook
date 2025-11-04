@@ -98,16 +98,26 @@ export default function Onboarding({ api }: { api: API }) {
     [api]
   );
 
-  const disableOnboarding = useCallback(() => {
-    // remove onboarding query parameter from current url
-    const url = new URL(window.location.href);
-    // @ts-expect-error (not strict)
-    const path = decodeURIComponent(url.searchParams.get('path'));
-    url.search = `?path=${path}&onboarding=false`;
-    history.replaceState({}, '', url.href);
-    api.setQueryParams({ onboarding: 'false' });
-    setEnabled(false);
-  }, [api, setEnabled]);
+  const disableOnboarding = useCallback(
+    (dismissedStep?: StepKey) => {
+      if (dismissedStep) {
+        api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
+          step: dismissedStep,
+          type: 'dismiss',
+          userAgent,
+        });
+      }
+      // remove onboarding query parameter from current url
+      const url = new URL(window.location.href);
+      // @ts-expect-error (not strict)
+      const path = decodeURIComponent(url.searchParams.get('path'));
+      url.search = `?path=${path}&onboarding=false`;
+      history.replaceState({}, '', url.href);
+      api.setQueryParams({ onboarding: 'false' });
+      setEnabled(false);
+    },
+    [api, setEnabled, userAgent]
+  );
 
   const completeOnboarding = useCallback(
     (answers: Record<string, unknown>) => {
@@ -288,12 +298,15 @@ export default function Onboarding({ api }: { api: API }) {
       {step === '1:Intro' ? (
         <SplashScreen onDismiss={() => setStep('2:Controls')} />
       ) : step === '6:IntentSurvey' ? (
-        <IntentSurvey onComplete={completeOnboarding} onDismiss={disableOnboarding} />
+        <IntentSurvey
+          onComplete={completeOnboarding}
+          onDismiss={() => disableOnboarding('6:IntentSurvey')}
+        />
       ) : (
         <GuidedTour
           step={step}
           steps={steps}
-          onClose={disableOnboarding}
+          onClose={() => disableOnboarding(step)}
           onComplete={() => setStep('6:IntentSurvey')}
         />
       )}

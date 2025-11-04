@@ -16,22 +16,48 @@ export interface ChecklistData {
     id: string;
     title: string;
     items: {
+      // Unique identifier for persistence. Update when making significant changes.
       id: string;
+
+      // Display name. Keep it short and actionable (with a verb).
       label: string;
+
+      // Description of the criteria that must be met to complete the item.
       criteria: string;
+
+      // Items that must be completed before this item can be completed (locked until then).
       after?: string[];
+
+      // Function to check if the item should be available (displayed in the checklist).
       available?: (args: { api: API }) => boolean;
+
+      // If true, the item can only be completed once (disables undo for completed items).
+      once?: boolean;
+
+      // Content to display in the checklist item's collapsible area.
       content?: React.ReactNode;
+
+      // Action button to be displayed when item is not completed.
       action?: {
         label: string;
         onClick: (args: { api: API; accept: () => void }) => void;
       };
+
+      // Function to subscribe to events and update the item's state. May return a function to unsubscribe.
       subscribe?: (args: {
         api: API;
         index: API_IndexHash;
         item: ChecklistData['sections'][number]['items'][number];
+
+        // Call this to complete the item and persist to user-local storage.
+        // This is preferred when dealing with user-specific criteria (e.g. learning goals).
         accept: () => void;
+
+        // Call this to complete the item and persist to project-local storage.
+        // This is preferred when dealing with project-specific criteria (e.g. component count).
         done: () => void;
+
+        // Call this to skip the item and persist to user-local storage.
         skip: () => void;
       }) => void | (() => void);
     }[];
@@ -63,6 +89,53 @@ export const checklistData: ChecklistData = {
           label: 'Install Storybook',
           criteria: 'Storybook is installed',
           subscribe: ({ done }) => done(),
+        },
+        {
+          id: 'guided-tour',
+          label: 'Take the guided tour',
+          available: ({ api }) => !!api.getData('example-button--primary'),
+          criteria: 'Guided tour is completed',
+          subscribe: ({ api, accept, skip }) =>
+            api.on('STORYBOOK_ADDON_ONBOARDING_CHANNEL', ({ step, type }) => {
+              if (type === 'dismiss') {
+                skip();
+              } else if (['6:IntentSurvey', '7:FinishedOnboarding'].includes(step)) {
+                accept();
+              }
+            }),
+          action: {
+            label: 'Start',
+            onClick: ({ api }) => {
+              const path = api.getUrlState().path || '';
+              if (path.startsWith('/story/')) {
+                document.location.href = `/?path=${path}&onboarding=true`;
+              } else {
+                document.location.href = `/?onboarding=true`;
+              }
+            },
+          },
+        },
+        {
+          id: 'onboarding-survey',
+          label: 'Complete the onboarding survey',
+          available: ({ api }) => !!api.getData('example-button--primary'),
+          once: true,
+          criteria: 'Onboarding survey is completed',
+          subscribe: ({ api, accept, skip }) =>
+            api.on('STORYBOOK_ADDON_ONBOARDING_CHANNEL', ({ type }) => {
+              if (type === 'survey') {
+                accept();
+              } else if (type === 'skipSurvey') {
+                skip();
+              }
+            }),
+          action: {
+            label: 'Open',
+            onClick: ({ api }) => {
+              const path = api.getUrlState().path || '';
+              document.location.href = `/?path=${path}&onboarding=survey`;
+            },
+          },
         },
         {
           id: 'whats-new-storybook-10',

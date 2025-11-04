@@ -89,10 +89,13 @@ export const Col = styled.div({
   gap: 4,
 });
 
-export const Header = (props: React.ComponentProps<typeof Col>) => (
+export const Header = ({
+  onClose,
+  ...props
+}: React.ComponentProps<typeof Col> & { onClose?: () => void }) => (
   <Row>
     <Col {...props} />
-    <CloseButton />
+    <CloseButton onClick={onClose} />
   </Row>
 );
 

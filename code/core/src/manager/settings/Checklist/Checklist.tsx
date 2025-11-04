@@ -424,7 +424,7 @@ export const Checklist = ({
                                         Skip
                                       </Button>
                                     )}
-                                    {(isAccepted || isSkipped) && !isLocked && (
+                                    {((isAccepted && !item.once) || isSkipped) && !isLocked && (
                                       <Button
                                         variant="ghost"
                                         padding="small"

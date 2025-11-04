@@ -10,7 +10,7 @@ import {
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import dedent from 'ts-dedent';
+import { dedent } from 'ts-dedent';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule';
 
@@ -34,7 +34,7 @@ export default defineGeneratorModule({
       extraPackages,
     };
   },
-  postConfigure: async ({ packageManager }) => {
+  postConfigure: async () => {
     try {
       const targetPath = await cliStoriesTargetPath();
       const cssFiles = (await readdir(targetPath)).filter((f) => f.endsWith('.css'));
@@ -42,14 +42,5 @@ export default defineGeneratorModule({
     } catch {
       // Silent fail if CSS cleanup fails - not critical
     }
-
-    logger.log(dedent`
-  
-      ${CLI_COLORS.success('React Native Web (RNW) Storybook is fully installed.')}
-  
-      To start RNW Storybook, run:
-  
-      ${CLI_COLORS.cta(' ' + packageManager.getRunCommand('storybook') + ' ')}
-    `);
   },
 });

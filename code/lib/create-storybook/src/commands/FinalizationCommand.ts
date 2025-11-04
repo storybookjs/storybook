@@ -12,7 +12,7 @@ import { dedent } from 'ts-dedent';
 type ExecuteFinalizationParams = {
   projectType: ProjectType;
   selectedFeatures: Set<Feature>;
-  storybookCommand?: string;
+  storybookCommand?: string | null;
 };
 
 /**
@@ -67,7 +67,7 @@ export class FinalizationCommand {
 
   private async printFailureMessage(
     selectedFeatures: Set<Feature>,
-    storybookCommand?: string
+    storybookCommand?: string | null
   ): Promise<void> {
     logger.warn('Storybook setup completed, but some non-blocking errors occurred.');
     this.printNextSteps(selectedFeatures, storybookCommand);
@@ -77,12 +77,15 @@ export class FinalizationCommand {
   }
 
   /** Print success message with feature summary */
-  private printSuccessMessage(selectedFeatures: Set<Feature>, storybookCommand?: string): void {
+  private printSuccessMessage(
+    selectedFeatures: Set<Feature>,
+    storybookCommand?: string | null
+  ): void {
     logger.step(CLI_COLORS.success('Storybook was successfully installed in your project!'));
     this.printNextSteps(selectedFeatures, storybookCommand);
   }
 
-  private printNextSteps(selectedFeatures: Set<Feature>, storybookCommand?: string): void {
+  private printNextSteps(selectedFeatures: Set<Feature>, storybookCommand?: string | null): void {
     const printFeatures = (features: Set<Feature>) => Array.from(features).join(', ') || 'none';
 
     logger.log(`Additional features: ${printFeatures(selectedFeatures)}`);

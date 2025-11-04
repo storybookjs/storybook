@@ -35,7 +35,7 @@ export async function doInitiate(options: CommandOptions): Promise<
       shouldOnboard: boolean;
       projectType: ProjectType;
       packageManager: JsPackageManager;
-      storybookCommand?: string;
+      storybookCommand?: string | null;
     }
   | { shouldRunDev: false }
 > {
@@ -159,7 +159,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
 async function runStorybookDev(result: {
   projectType: ProjectType;
   packageManager: JsPackageManager;
-  storybookCommand?: string;
+  storybookCommand?: string | null;
   shouldOnboard: boolean;
 }): Promise<void> {
   const { projectType, packageManager, storybookCommand, shouldOnboard } = result;

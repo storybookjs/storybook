@@ -196,7 +196,7 @@ export function extractMockCalls(
     }
     return mocks;
   } catch (error) {
-    logger.debug('Error extracting mock calls', error);
+    logger.debug('Error extracting mock calls: ' + String(error));
     return [];
   }
 }

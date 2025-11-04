@@ -83,16 +83,11 @@ const getFrameworkDetails = (
   frameworkPackage: string;
   frameworkPackagePath: string;
 } => {
-  logger.debug('getFrameworkDetails', { framework, renderer, builder });
-
   const frameworkPackage = getPackageByValue('framework', framework, frameworkPackages);
 
   const frameworkPackagePath = shouldApplyRequireWrapperOnPackageNames
     ? applyGetAbsolutePathWrapper(frameworkPackage)
     : frameworkPackage;
-
-  logger.debug('frameworkPackage', frameworkPackage);
-  logger.debug('frameworkPackagePath', frameworkPackagePath);
 
   return {
     frameworkPackage,

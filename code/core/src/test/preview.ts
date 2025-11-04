@@ -111,20 +111,19 @@ const enhanceContext: LoaderFunction = async (context) => {
       configurable: true,
     });
 
-    // Must save a real, original `focus` method outside of the patch beforehand
-    const originalFocus = HTMLElement.prototype.focus;
-    let currentFocus = HTMLElement.prototype.focus;
-
-    // Use a Set to track elements that are currently undergoing a focus operation
-    const focusingElements = new Set<HTMLElement>();
-
     if (!patchedFocus) {
+      // Must save a real, original `focus` method outside of the patch beforehand
+      const originalFocus = HTMLElement.prototype.focus;
+      let currentFocus = HTMLElement.prototype.focus;
+
+      // Use a Set to track elements that are currently undergoing a focus operation
+      const focusingElements = new Set<HTMLElement>();
+
       Object.defineProperties(HTMLElement.prototype, {
         focus: {
           configurable: true,
           set: (newFocus: () => void) => {
             currentFocus = newFocus;
-            patchedFocus = true;
           },
           get() {
             // 'this' here refers to the DOM element being operated on
@@ -145,6 +144,8 @@ const enhanceContext: LoaderFunction = async (context) => {
           },
         },
       });
+
+      patchedFocus = true;
     }
   }
 };

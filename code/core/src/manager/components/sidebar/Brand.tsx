@@ -25,10 +25,9 @@ export const LogoLink = styled.a(({ theme }) => ({
   display: 'inline-flex',
   alignItems: 'center',
   height: '100%',
-  margin: '-3px -4px',
-  padding: '2px 3px',
-  border: '1px solid transparent',
-  borderRadius: 3,
+  minHeight: 32,
+  padding: '0px 6px',
+  borderRadius: 4,
   color: 'inherit',
   textDecoration: 'none',
   '&:focus-visible': {

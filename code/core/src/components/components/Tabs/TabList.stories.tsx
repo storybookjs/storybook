@@ -1,12 +1,19 @@
 import { Bar } from 'storybook/internal/components';
 
+import { expect } from 'storybook/test';
+
 import preview from '../../../../../.storybook/preview';
 import { TabList } from './TabList';
 import type { TabProps } from './TabsView';
 import { useTabsState } from './TabsView';
 
 const DEFAULT_TABS: TabProps[] = [
-  { id: 'tab1', title: 'Tab 1', children: () => <div>Content for Tab 1</div> },
+  {
+    id: 'tab1',
+    'aria-label': 'Tab one',
+    title: 'Tab 1',
+    children: () => <div>Content for Tab 1</div>,
+  },
   { id: 'tab2', title: 'Tab 2', children: () => <div>Content for Tab 2</div> },
   { id: 'tab3', title: 'Tab 3', children: () => <div>Content for Tab 3</div> },
 ];
@@ -126,4 +133,12 @@ export const WithFixedWidth = meta.story({
       );
     },
   ],
+});
+
+export const PreservesAriaLabels = meta.story({
+  name: 'Preserves ARIA Labels',
+  play: ({ canvas }) => {
+    const tabOne = canvas.getAllByRole('tab')[0];
+    expect(tabOne).toHaveAttribute('aria-label', 'Tab one');
+  },
 });

@@ -124,10 +124,10 @@ interface TabButtonProps {
 }
 
 const TabButton: FC<TabButtonProps> = ({ item, state }) => {
-  const { key, rendered } = item;
+  const { rendered } = item;
   const tabRef = React.useRef(null);
   const typedState = state as TabListState<object>;
-  const { tabProps, isDisabled, isPressed, isSelected } = useTab({ key }, typedState, tabRef);
+  const { tabProps, isDisabled, isPressed, isSelected } = useTab(item, typedState, tabRef);
 
   return (
     <StyledTabButton

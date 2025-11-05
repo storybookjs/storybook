@@ -24,9 +24,9 @@
     "@chromatic-com/storybook": "^4.0.0-next.2",
     "@storybook/addon-docs": "latest",
     "@storybook/addon-vitest": "latest",
+    "@storybook/nextjs": "latest",
     "@storybook/nextjs-vite": "latest",
     "@storybook/react": "latest",
-    "@storybook/nextjs": "latest",
     "@testing-library/dom": "^10.3.2",
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^16.0.0",
@@ -46,6 +46,7 @@
     "tailwindcss": "^3.4.4",
     "typescript": "^5",
     "vite-plugin-inspect": "^0.8.5",
+    "vite-plugin-svgr": "^4.5.0",
     "vitest": "^3.0.0"
   }
 }

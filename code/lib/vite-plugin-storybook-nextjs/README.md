@@ -62,14 +62,76 @@ export default defineConfig({
 You can configure the plugin using the following options:
 
 ```ts
+type FilterPattern = ReadonlyArray<string | RegExp> | string | RegExp | null
+
 type VitePluginOptions = {
   /**
    * Provide the path to your Next.js project directory
    * @default process.cwd()
    */
-  dir?: string;
-};
+  dir?: string
+  /**
+   * Control which image files are handled by the Next Image plugin
+   * (Rollup-style include/exclude patterns)
+   */
+  image?: {
+    include?: FilterPattern
+    exclude?: FilterPattern
+  }
+}
 ```
+
+### FAQ: Including/Excluding images
+
+When you also use the SVG-to-React plugin [vite-plugin-svgr](https://github.com/pd4d10/vite-plugin-svgr), you may want SVGs imported with the `?react` query to be handled by SVGR, while all other images (including plain SVGs) are handled by this plugin's Next Image processing. By default, the plugin already handles the `**/*.svg?react` case. But if you have custom configuration, you must configure the filters yourself.
+
+You can achieve this by adding include/exclude patterns as plugin options. The patterns follow Rollup's FilterPattern semantics (micromatch).
+
+#### 1. When using Storybook
+
+```ts
+// .storybook/main.ts
+export default {
+  framework: {
+    name: '@storybook/nextjs-vite',
+    options: {
+      image: {
+        // Default image glob patterns are already applied; this is optional
+        // include: ['**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}'],
+        // Ensure SVGR takes precedence for React components from SVGs
+        exclude: ['**/*.svg?icon'],
+      },
+    }
+  }
+}
+```
+
+#### 2. When not using Storybook
+
+```ts
+// vite.config.ts or vitest.config.ts
+import { defineConfig } from 'vite'
+import nextjs from 'vite-plugin-storybook-nextjs'
+import svgr from 'vite-plugin-svgr'
+
+export default defineConfig({
+  plugins: [
+    svgr({ include: '**/*.svg?react' }),
+    nextjs({
+      image: {
+        // Default image glob patterns are already applied; this is optional
+        // include: ['**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}'],
+        // Ensure SVGR takes precedence for React components from SVGs
+        exclude: ['**/*.svg?react'],
+      },
+    }),
+  ],
+})
+```
+
+Notes:
+- If you do not customize `image.include`, the plugin defaults to common image extensions.
+- Excluding `**/*.svg?react` prevents collisions so that `import Icon from "./icon.svg?react"` is compiled by SVGR, while `import iconUrl from "./icon.svg"` is handled by Next Image.
 
 ## Usage with portable stories
 

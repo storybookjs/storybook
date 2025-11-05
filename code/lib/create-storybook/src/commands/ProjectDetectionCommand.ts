@@ -10,6 +10,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { NxProjectDetectedError } from 'storybook/internal/server-errors';
 
 import picocolors from 'picocolors';
+import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types';
 
@@ -119,8 +120,9 @@ export class ProjectDetectionCommand {
 
     if (options.force !== true && storybookInstantiated && projectType !== ProjectType.ANGULAR) {
       const force = await prompt.confirm({
-        message:
-          'We found a .storybook config directory in your project. Therefore we assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?',
+        message: dedent`
+          We found a .storybook config directory in your project. 
+          We assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?`,
       });
 
       if (force) {

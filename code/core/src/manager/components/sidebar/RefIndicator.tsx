@@ -128,10 +128,6 @@ const SubtleSelect = styled(Select)(({ theme }) => ({
   color: theme.color.defaultText,
   fontSize: theme.typography.size.s1,
   fontWeight: theme.typography.weight.regular,
-  '&:hover': {
-    background: 'transparent',
-    color: theme.color.defaultText,
-  },
 }));
 
 export const RefIndicator = React.memo(

@@ -1,6 +1,6 @@
 import React, { type HTMLAttributes, createContext, useEffect, useRef, useState } from 'react';
 
-import { deprecate, logger } from 'storybook/internal/client-logger';
+import { deprecate } from 'storybook/internal/client-logger';
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
 import { FocusScope } from '@react-aria/focus';
@@ -85,7 +85,7 @@ function BaseModal({
   ...props
 }: ModalProps) {
   if (ariaLabel === undefined || ariaLabel === '') {
-    logger.warn('The `ariaLabel` prop on `Modal` will become mandatory in Storybook 11.');
+    deprecate('The `ariaLabel` prop on `Modal` will become mandatory in Storybook 11.');
     // TODO in Storybook 11
     // throw new Error(
     //   'Modal requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'

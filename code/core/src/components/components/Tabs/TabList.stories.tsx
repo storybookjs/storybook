@@ -4,6 +4,7 @@ import { expect } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { TabList } from './TabList';
+import { TabPanel } from './TabPanel';
 import type { TabProps } from './TabsView';
 import { useTabsState } from './TabsView';
 
@@ -59,7 +60,12 @@ const meta = preview.meta({
   decorators: [
     (Story, { args, parameters }) => {
       const state = useTabsState({ tabs: parameters.data.tabs });
-      return <Story args={{ ...args, state }} />;
+      return (
+        <>
+          <Story args={{ ...args, state }} />
+          <TabPanel state={state} />
+        </>
+      );
     },
   ],
 });
@@ -129,6 +135,7 @@ export const WithFixedWidth = meta.story({
           backgroundColor={'rgba(0,0,0,.05)'}
         >
           <Story args={{ ...args, state }} />
+          <TabPanel state={state} />
         </Bar>
       );
     },

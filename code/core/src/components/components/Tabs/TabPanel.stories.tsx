@@ -14,7 +14,10 @@ const TabContent: FC<{ tabNumber: number }> = ({ tabNumber }) => {
   const [counter, setCounter] = useState(0);
 
   return (
-    <div data-testid={tabNumber} style={{ backgroundColor: '#f0f0f0', padding: '20px' }}>
+    <div
+      data-testid={tabNumber}
+      style={{ backgroundColor: '#f0f0f0', color: '#111', padding: '20px' }}
+    >
       <h3>Content for Tab {tabNumber}</h3>
       <button onClick={() => setCounter(counter + 1)}>Clicked {counter} times</button>
       <ul>

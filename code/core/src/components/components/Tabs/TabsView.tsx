@@ -100,9 +100,7 @@ export interface TabsViewProps extends HTMLAttributes<HTMLDivElement> {
   id?: string;
 
   /** Props to pass to the TabPanel component. */
-  panelProps?: Omit<ComponentProps<typeof TabPanel>, 'id' | 'state'> & {
-    id?: string;
-  };
+  panelProps?: Omit<ComponentProps<typeof TabPanel>, 'state'>;
 }
 
 export const TabsView: FC<TabsViewProps> = ({
@@ -158,11 +156,7 @@ export const TabsView: FC<TabsViewProps> = ({
         {tools}
         <FlexTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 6} />
       </Bar>
-      <FlexTabPanel
-        state={state}
-        {...panelProps}
-        id={state.selectedItem?.key ? `${state.selectedItem?.key}` : undefined}
-      />
+      <FlexTabPanel state={state} {...panelProps} />
     </Container>
   );
 };

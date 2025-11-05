@@ -24,9 +24,6 @@ export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {
    * rendered with the hidden attribute and do not affect the accessibility object model.
    */
   renderAllChildren?: boolean;
-
-  /** Unique id of the tab. */
-  id: string | undefined;
 }
 
 const Panel = styled.div({
@@ -37,13 +34,11 @@ const Panel = styled.div({
 export const TabPanel: FC<TabPanelProps> = ({
   hasScrollbar = true,
   renderAllChildren = false,
-  id,
   state,
-  ...rest
 }) => {
   const ref = useRef(null);
   const typedState = state as TabListState<object>;
-  const { tabPanelProps } = useTabPanel({ id }, typedState, ref);
+  const { tabPanelProps } = useTabPanel({ id: `${typedState.selectedKey}` }, typedState, ref);
 
   const childrenToRender = (
     renderAllChildren ? [...typedState.collection] : [typedState.selectedItem]
@@ -56,8 +51,8 @@ export const TabPanel: FC<TabPanelProps> = ({
       <Panel
         key={item.key}
         ref={isSelected ? ref : undefined}
-        {...(isSelected ? rest : {})}
         {...(isSelected ? tabPanelProps : {})}
+        id={isSelected ? `${tabPanelProps.id}`.replace(/null$/, `${item.key}`) : undefined}
         hidden={isSelected ? undefined : true}
       >
         {hasScrollbar ? (

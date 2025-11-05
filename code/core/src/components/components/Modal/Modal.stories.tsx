@@ -1,11 +1,10 @@
 import React, { forwardRef, useRef, useState } from 'react';
 
-import { Button } from 'storybook/internal/components';
-
 import { action } from 'storybook/actions';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
+import { Button } from '../Button/Button';
 import { Modal } from './Modal';
 
 const SampleModalContent = () => (

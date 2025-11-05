@@ -1,9 +1,6 @@
 import type { FC, KeyboardEvent } from 'react';
 import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { ButtonProps } from 'storybook/internal/components';
-import { Button, Form, Popover } from 'storybook/internal/components';
-
 import { RefreshIcon } from '@storybook/icons';
 
 import { useInteractOutside } from '@react-aria/interactions';
@@ -13,6 +10,9 @@ import { useOverlayTriggerState } from '@react-stately/overlays';
 import { darken, transparentize } from 'polished';
 import { styled, useTheme } from 'storybook/theming';
 
+import { Button, type ButtonProps } from '../Button/Button';
+import { Form } from '../Form/Form';
+import { Popover } from '../Popover/Popover';
 import { SelectOption } from './SelectOption';
 import type { Option, ResetOption } from './helpers';
 import { Listbox, PAGE_STEP_SIZE } from './helpers';

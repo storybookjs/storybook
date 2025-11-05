@@ -1,11 +1,9 @@
 import React, { forwardRef } from 'react';
 
-import type { ButtonProps } from 'storybook/internal/components';
-
 import { darken, transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
-import { Button } from '../Button/Button';
+import { Button, type ButtonProps } from '../Button/Button';
 
 export interface ToggleButtonProps extends ButtonProps {
   /** Whether the ToggleButton is currently pressed or not. */

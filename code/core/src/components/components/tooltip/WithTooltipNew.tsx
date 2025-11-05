@@ -2,13 +2,14 @@ import type { DOMAttributes, ReactElement, ReactNode } from 'react';
 import React, { useCallback, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
-import { type PopperPlacement, convertToReactAriaPlacement } from 'storybook/internal/components';
 
 import { Focusable } from '@react-aria/interactions';
 import {
   TooltipTrigger,
   Tooltip as TooltipUpstream,
 } from 'react-aria-components/patched-dist/Tooltip';
+
+import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers';
 
 export interface WithTooltipNewProps {
   /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */

@@ -1,13 +1,16 @@
 import type { ComponentProps, FC, HTMLAttributes, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
-import { Bar, EmptyTabContent, TabList, TabPanel } from 'storybook/internal/components';
-
 import { Item } from '@react-stately/collections';
 import type { TabListState } from '@react-stately/tabs';
 import { useTabListState } from '@react-stately/tabs';
 import type { Key } from '@react-types/shared';
 import { styled } from 'storybook/theming';
+
+import { Bar } from '../Bar/Bar';
+import { EmptyTabContent } from './EmptyTabContent';
+import { TabList } from './TabList';
+import { TabPanel } from './TabPanel';
 
 export interface TabProps {
   id: string;

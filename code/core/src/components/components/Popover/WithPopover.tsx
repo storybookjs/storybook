@@ -1,12 +1,12 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
 import React, { useCallback, useState } from 'react';
 
-import { Popover, convertToReactAriaPlacement } from 'storybook/internal/components';
-import type { PopperPlacement } from 'storybook/internal/components';
-
 import { Pressable } from '@react-aria/interactions';
 import { DialogTrigger } from 'react-aria-components/patched-dist/Dialog';
 import { Popover as PopoverUpstream } from 'react-aria-components/patched-dist/Popover';
+
+import { Popover } from '../Popover/Popover';
+import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers';
 
 export interface WithPopoverProps {
   /** Whether to display the Popover in a prestyled container. True by default. */

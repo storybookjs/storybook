@@ -1,9 +1,9 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
-import { Bar, type BarProps } from 'storybook/internal/components';
-
 import { useToolbar } from '@react-aria/toolbar';
+
+import { Bar, type BarProps } from '../Bar/Bar';
 
 export interface AbstractToolbarProps {
   className?: string;

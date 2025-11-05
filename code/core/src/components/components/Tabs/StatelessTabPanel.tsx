@@ -1,10 +1,10 @@
 import type { FC, ReactNode } from 'react';
 import React from 'react';
 
-import { ScrollArea } from 'storybook/internal/components';
-
 import { TabPanel } from 'react-aria-components/patched-dist/Tabs';
 import { styled } from 'storybook/theming';
+
+import { ScrollArea } from '../ScrollArea/ScrollArea';
 
 export interface StatelessTabPanelProps {
   /** Content of the tab panel. */

@@ -2,7 +2,6 @@ import type { ComponentProps } from 'react';
 import React, { useContext } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
-import { Button } from 'storybook/internal/components';
 
 import { CrossIcon } from '@storybook/icons';
 
@@ -11,6 +10,7 @@ import { Text } from 'react-aria-components/patched-dist/Text';
 import type { TransitionStatus } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
 
+import { Button } from '../Button/Button';
 // Import the ModalContext from the main Modal component
 import { ModalContext } from './Modal';
 

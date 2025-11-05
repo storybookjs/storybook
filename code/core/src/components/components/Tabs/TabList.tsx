@@ -1,14 +1,15 @@
 import type { FC, HTMLAttributes } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
-import { Button, type useTabsState } from 'storybook/internal/components';
-
 import { ChevronSmallLeftIcon, ChevronSmallRightIcon } from '@storybook/icons';
 
 import { useTab, useTabList } from '@react-aria/tabs';
 import type { TabListState } from '@react-stately/tabs';
 import type { Node } from '@react-types/shared';
 import { styled } from 'storybook/theming';
+
+import { Button } from '../Button/Button';
+import type { useTabsState } from './TabsView';
 
 const StyledTabButton = styled.button<{
   isDisabled: boolean;

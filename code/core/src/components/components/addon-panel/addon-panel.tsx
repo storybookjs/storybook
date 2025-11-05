@@ -1,9 +1,9 @@
 import type { ReactElement } from 'react';
 import React, { useEffect, useRef } from 'react';
 
-import { ScrollArea } from 'storybook/internal/components';
-
 import { styled } from 'storybook/theming';
+
+import { ScrollArea } from '../ScrollArea/ScrollArea';
 
 const usePrevious = (value: any) => {
   const ref = useRef();

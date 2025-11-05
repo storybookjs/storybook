@@ -1,10 +1,10 @@
 import React, { type HTMLAttributes, forwardRef } from 'react';
 
-import { Button } from 'storybook/internal/components';
-
 import { CloseIcon } from '@storybook/icons';
 
 import { lighten, styled } from 'storybook/theming';
+
+import { Button } from '../Button/Button';
 
 export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
   /** Content of the popover. */

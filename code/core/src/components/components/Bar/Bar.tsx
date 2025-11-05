@@ -113,6 +113,8 @@ const BarInner = styled.div<BarInnerProps>(({ bgColor }) => ({
   flexShrink: 0,
   height: 40,
   width: '100%',
+  // Compensate new default inline padding for Bar to reduce the extent of visible changes in 10.1 for FlexBar users.
+  marginInline: -6,
   backgroundColor: bgColor || '',
 }));
 
@@ -121,7 +123,7 @@ export interface FlexBarProps extends BarProps {
   backgroundColor?: string;
 }
 
-export const FlexBar = ({ children, backgroundColor, className, ...rest }: FlexBarProps) => {
+export const FlexBar = ({ children, backgroundColor, className = '', ...rest }: FlexBarProps) => {
   deprecate('FlexBar is deprecated. Use Bar with justifyContent: "space-between" instead.');
   const [left, right] = Children.toArray(children);
   return (

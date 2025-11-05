@@ -30,7 +30,7 @@ export const TabbedArgsTable: FC<TabbedArgsTableProps> = ({ tabs, ...props }) =>
        */
       const argsTableProps = index === 0 ? props : { sort: props.sort };
 
-      return <ArgsTable key={`prop_table_${label}`} {...table} {...argsTableProps} />;
+      return <ArgsTable inTabPanel key={`prop_table_${label}`} {...table} {...argsTableProps} />;
     },
   }));
 

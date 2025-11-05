@@ -23,6 +23,9 @@ const meta = {
     layout: 'fullscreen',
   },
   decorators: [ModalDecorator],
+  globals: {
+    sb_theme: 'dark',
+  },
 } satisfies Meta<typeof FileSearchModal>;
 
 export default meta;

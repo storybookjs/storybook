@@ -17,17 +17,14 @@ export const Img = styled.img({
   maxHeight: '100px',
 });
 
-const LogoNoLink = styled.div({
-  padding: '0px 6px',
-});
-
 export const LogoLink = styled.a(({ theme }) => ({
   display: 'inline-flex',
   alignItems: 'center',
   height: '100%',
-  minHeight: 32,
-  padding: '0px 6px',
-  borderRadius: 4,
+  margin: '-3px -4px',
+  padding: '2px 3px',
+  border: '1px solid transparent',
+  borderRadius: 3,
   color: 'inherit',
   textDecoration: 'none',
   '&:focus-visible': {
@@ -48,7 +45,7 @@ export const Brand = withTheme(({ theme }) => {
     }
 
     if (!url) {
-      return <LogoNoLink dangerouslySetInnerHTML={{ __html: title }} />;
+      return <div dangerouslySetInnerHTML={{ __html: title }} />;
     }
     return <LogoLink href={url} target={targetValue} dangerouslySetInnerHTML={{ __html: title }} />;
   }
@@ -64,5 +61,5 @@ export const Brand = withTheme(({ theme }) => {
   }
 
   // The wrapper div serves to prevent image misalignment
-  return <LogoNoLink>{logo}</LogoNoLink>;
+  return <div>{logo}</div>;
 });

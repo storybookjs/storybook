@@ -43,7 +43,7 @@ const HeadingWrapper = styled.div({
   alignItems: 'center',
   justifyContent: 'space-between',
   position: 'relative',
-  minHeight: 42,
+  minHeight: 36,
   paddingLeft: 2,
 });
 

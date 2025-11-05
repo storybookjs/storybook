@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, SyntheticEvent } from 'react';
 import React, { forwardRef, useEffect, useMemo, useState } from 'react';
 
-import { deprecate, logger } from 'storybook/internal/client-logger';
+import { deprecate } from 'storybook/internal/client-logger';
 
 import { Slot } from '@radix-ui/react-slot';
 import { darken, lighten, rgba, transparentize } from 'polished';
@@ -79,10 +79,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     let Comp: 'button' | 'a' | typeof Slot = 'button';
 
     if (ariaLabel === undefined || ariaLabel === '') {
-      logger.warn(ariaLabel, props.children);
-      logger.warn(
-        'The `ariaLabel` prop on `Button` will become mandatory in Storybook 11. Buttons with text content should set `ariaLabel={false}` to indicate that they are accessible as-is. Buttons without text content must provide a meaningful `ariaLabel` for accessibility.'
+      deprecate(
+        `The 'ariaLabel' prop on 'Button' will become mandatory in Storybook 11. Buttons with text content should set 'ariaLabel={false}' to indicate that they are accessible as-is. Buttons without text content must provide a meaningful 'ariaLabel' for accessibility. The button content is: ${props.children}.`
       );
+
       // TODO in Storybook 11
       // throw new Error(
       //   'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'

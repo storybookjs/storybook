@@ -7,6 +7,7 @@ import {
 import type { JsPackageManager } from 'storybook/internal/common';
 import { HandledError } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { NxProjectDetectedError } from 'storybook/internal/server-errors';
 
 import picocolors from 'picocolors';
 
@@ -27,9 +28,6 @@ export class ProjectDetectionCommand {
   async execute(packageManager: JsPackageManager, options: CommandOptions): Promise<ProjectType> {
     let projectType: ProjectType;
     const projectTypeProvided = options.type;
-
-    if (projectTypeProvided) {
-    }
 
     // Use provided type or auto-detect
     if (projectTypeProvided) {
@@ -75,6 +73,10 @@ export class ProjectDetectionCommand {
       if (detectedType === ProjectType.UNDETECTED) {
         logger.error('Storybook failed to detect your project type');
         throw new HandledError('Storybook failed to detect your project type');
+      }
+
+      if (detectedType === ProjectType.NX) {
+        throw new NxProjectDetectedError();
       }
 
       return detectedType;

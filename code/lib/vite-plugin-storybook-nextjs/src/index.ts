@@ -10,7 +10,6 @@ import { vitePluginNextFont } from "./plugins/next-font/plugin";
 import { vitePluginNextSwc } from "./plugins/next-swc/plugin";
 
 import "./polyfills/promise-with-resolvers";
-import { readFileSync } from "node:fs";
 import nextServerConfig from "next/dist/server/config.js";
 import {
   PHASE_DEVELOPMENT_SERVER,
@@ -18,7 +17,10 @@ import {
   PHASE_TEST,
 } from "next/dist/shared/lib/constants.js";
 import { vitePluginNextDynamic } from "./plugins/next-dynamic/plugin";
-import { vitePluginNextImage } from "./plugins/next-image/plugin";
+import {
+  type NextImagePluginOptions,
+  vitePluginNextImage,
+} from "./plugins/next-image/plugin";
 import { vitePluginNextMocks } from "./plugins/next-mocks/plugin";
 import {
   getExecutionEnvironment,
@@ -31,17 +33,23 @@ const loadConfig: typeof nextServerConfig =
   // biome-ignore lint/suspicious/noExplicitAny: CJS support
   (nextServerConfig as any).default || nextServerConfig;
 
-type VitePluginOptions = {
+export type PluginOptions = {
   /**
    * Provide the path to your Next.js project directory
    * @default process.cwd()
    */
   dir?: string;
+  /**
+   * Control which image files are handled by the next-image plugin.
+   * @see https://github.com/storybookjs/vite-plugin-storybook-nextjs/blob/main/README.md#faq-includingexcluding-images
+   */
+  image?: NextImagePluginOptions;
 };
 
 function VitePlugin({
   dir = process.cwd(),
-}: VitePluginOptions = {}): (Plugin | Promise<Plugin>)[] {
+  image,
+}: PluginOptions = {}): (Plugin | Promise<Plugin>)[] {
   const resolvedDir = resolve(dir);
   const nextConfigResolver = Promise.withResolvers<NextConfigComplete>();
 
@@ -186,7 +194,7 @@ function VitePlugin({
     vitePluginNextFont(),
     vitePluginNextSwc(dir, nextConfigResolver),
     vitePluginNextEnv(dir, nextConfigResolver),
-    vitePluginNextImage(nextConfigResolver),
+    vitePluginNextImage(nextConfigResolver, image),
     vitePluginNextMocks(),
     vitePluginNextDynamic(),
   ];

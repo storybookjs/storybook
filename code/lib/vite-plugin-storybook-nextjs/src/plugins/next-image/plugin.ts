@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import { decode, encode } from "node:querystring";
+import { type FilterPattern, createFilter } from "@rollup/pluginutils";
 import { imageSize } from "image-size";
 import type { NextConfigComplete } from "next/dist/server/config-shared.js";
 import path from "pathe";
@@ -8,6 +9,14 @@ import { dedent } from "ts-dedent";
 import type { Plugin } from "vite";
 import { VITEST_PLUGIN_NAME, isVitestEnv } from "../../utils";
 import { getAlias } from "./alias";
+
+const warnedMessages = new Set<string>();
+const warnOnce = (message: string) => {
+  if (!warnedMessages.has(message)) {
+    console.warn(`[vite-plugin-storybook-nextjs] ${message}`);
+    warnedMessages.add(message);
+  }
+};
 
 const includePattern = /\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$/;
 const excludeImporterPattern = /\.(css|scss|sass)$/;
@@ -18,30 +27,43 @@ const virtualNextLegacyImage = "virtual:next/legacy/image";
 
 const require = createRequire(import.meta.url);
 
+export type NextImagePluginOptions = {
+  includeFiles?: FilterPattern;
+  excludeFiles?: FilterPattern;
+};
+
 export function vitePluginNextImage(
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
+  options: NextImagePluginOptions = {},
 ) {
   let isBrowser = !isVitestEnv;
-  let excludeSvg = false;
+  let hasVitePluginSvgr = false;
+  const postfixRE = /[?#].*$/s;
+  const filter = createFilter(
+    [
+      "**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}",
+      "**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}?*",
+      "**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}#*",
+    ],
+    options.excludeFiles,
+  );
 
   return {
     name: "vite-plugin-storybook-nextjs-image",
     enforce: "pre" as const,
-    async config(config, env) {
-      if (config.test?.browser?.enabled === true) {
-        isBrowser = true;
-      }
-
+    async configResolved(config) {
       // Auto-detect SVGR plugin
-      const hasVitePluginSvgr = config.plugins?.some(
+      hasVitePluginSvgr = !!config.plugins?.some(
         (plugin) =>
           plugin &&
           typeof plugin === "object" &&
           "name" in plugin &&
           (plugin.name === "vite-plugin-svgr" || plugin.name.includes("svgr")),
       );
-      if (hasVitePluginSvgr) {
-        excludeSvg = true;
+    },
+    async config(config, env) {
+      if (config.test?.browser?.enabled === true) {
+        isBrowser = true;
       }
 
       return {
@@ -59,8 +81,24 @@ export function vitePluginNextImage(
 
       // For SVG files, only process if they don't have ?react parameter and SVG processing is enabled
       const isSvg = /\.svg$/.test(source);
-      if (isSvg && (excludeSvg || queryA === "react")) {
+      if (isSvg && hasVitePluginSvgr && queryA === "react") {
         return null;
+      }
+
+      if (
+        isSvg &&
+        hasVitePluginSvgr &&
+        !options.includeFiles &&
+        !options.excludeFiles &&
+        queryA !== undefined
+      ) {
+        // If we hit this, it means the user has custom svgr config which we can't do much about
+        // So we warn that they should pass include/exclude patterns themselves as framework options.
+        warnOnce(
+          dedent`Detected vite-plugin-svgr but you are not passing image include or exclude patterns to the nextjs-vite plugin. This may cause a conflict between the two plugins and issues with SVG files.
+          
+          For more info and recommended configuration, see: https://github.com/storybookjs/vite-plugin-storybook-nextjs/blob/main/README.md#faq-includingexcluding-images`,
+        );
       }
 
       if (
@@ -74,6 +112,12 @@ export function vitePluginNextImage(
             ? source
             : path.join(path.dirname(importer), source)
           : source;
+
+        const pathForFilter = imagePath.replace(postfixRE, "");
+
+        if (!filter(pathForFilter)) {
+          return null;
+        }
 
         return `${virtualImage}?${encode({ imagePath })}`;
       }

@@ -69,6 +69,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.1",
+    "@rollup/pluginutils":"^5.3.0",
     "@types/node": "^18",
     "@types/react": "^18",
     "@types/semver": "^7.5.8",

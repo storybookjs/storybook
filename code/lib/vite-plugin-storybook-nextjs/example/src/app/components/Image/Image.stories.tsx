@@ -1,9 +1,10 @@
 import Image from "next/image";
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import Accessibility from "./assets/accessibility.svg";
 import AvifImage from "./assets/avif-test-image.avif";
+import SvgAsComponent from "./assets/github.svg?react";
 
 const meta = {
   component: Image,
@@ -114,3 +115,16 @@ export const WithRef = {
     );
   },
 } satisfies Story;
+
+export const IgnoredWithSvgrUsage = {
+  render() {
+    return (
+      <div>
+        This image should be ignored by the nextjs image plugin and render as
+        React component because of vite-plugin-svgr: <br />
+        <br />
+        <SvgAsComponent />
+      </div>
+    );
+  },
+};

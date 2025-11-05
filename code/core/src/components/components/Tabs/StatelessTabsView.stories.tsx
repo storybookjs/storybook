@@ -57,6 +57,7 @@ const meta = preview.meta({
   title: 'Tabs/StatelessTabsView',
   component: StatelessTabsView,
   args: { backgroundColor: '#2e2e2e', children: '', tools: DEFAULT_TOOLS },
+  globals: { sb_theme: 'dark' },
 });
 
 export const Basic = meta.story({

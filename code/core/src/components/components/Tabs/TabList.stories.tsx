@@ -125,8 +125,7 @@ export const WithFixedWidth = meta.story({
     },
   },
   decorators: [
-    (Story, { args, parameters }) => {
-      const state = useTabsState({ tabs: parameters.data.tabs });
+    (Story, { args }) => {
       return (
         <Bar
           border
@@ -134,8 +133,7 @@ export const WithFixedWidth = meta.story({
           innerStyle={{ width: 400, padding: 0 }}
           backgroundColor={'rgba(0,0,0,.05)'}
         >
-          <Story args={{ ...args, state }} />
-          <TabPanel state={state} />
+          <Story args={{ ...args }} />
         </Bar>
       );
     },

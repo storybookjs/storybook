@@ -38,7 +38,7 @@ export const TabPanel: FC<TabPanelProps> = ({
 }) => {
   const ref = useRef(null);
   const typedState = state as TabListState<object>;
-  const { tabPanelProps } = useTabPanel({ id: `${typedState.selectedKey}` }, typedState, ref);
+  const { tabPanelProps } = useTabPanel(typedState.selectedItem ?? {}, typedState, ref);
 
   const childrenToRender = (
     renderAllChildren ? [...typedState.collection] : [typedState.selectedItem]

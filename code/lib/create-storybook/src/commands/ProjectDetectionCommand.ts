@@ -117,7 +117,7 @@ export class ProjectDetectionCommand {
   ): Promise<void> {
     const storybookInstantiated = isStorybookInstantiated();
 
-    if (options.force === false && storybookInstantiated && projectType !== ProjectType.ANGULAR) {
+    if (options.force !== true && storybookInstantiated && projectType !== ProjectType.ANGULAR) {
       const force = await prompt.confirm({
         message:
           'We found a .storybook config directory in your project. Therefore we assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?',

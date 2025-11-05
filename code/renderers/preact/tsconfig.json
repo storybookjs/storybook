@@ -1,5 +1,7 @@
 {
   "extends": "../../tsconfig.json",
-  "compilerOptions": {},
+  "compilerOptions": {
+    "jsxImportSource": "preact"
+  },
   "include": ["src/**/*", "template/**/*"]
 }

@@ -36,7 +36,10 @@ const command = (name: string) =>
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
-    .option('--write-logs', 'Write all debug logs to a file at the end of the run')
+    .option(
+      '--write-logs',
+      'Write all debug logs to the debug-storybook.log file at the end of the run'
+    )
     .hook('preAction', async (self) => {
       try {
         const options = self.opts();

@@ -8,7 +8,7 @@ import {
   versions,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { CLI_COLORS, logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
@@ -49,7 +49,10 @@ const command = (name: string) =>
     )
     .option('--debug', 'Get more logs in debug mode', false)
     .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
-    .option('--write-logs', 'Write all debug logs to a file at the end of the run')
+    .option(
+      '--write-logs',
+      'Write all debug logs to the debug-storybook.log file at the end of the run'
+    )
     .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
     .hook('preAction', async (self) => {
       const options = self.opts();
@@ -149,7 +152,7 @@ command('remove <addon>')
         await telemetry('remove', { addon: addonName, source: 'cli' });
       }
       logger.outro('Done!');
-    })
+    }).catch(handleCommandFailure)
   );
 
 command('upgrade')
@@ -167,7 +170,15 @@ command('upgrade')
     'Directory(ies) where to load Storybook configurations from'
   )
   .action(async (options: UpgradeOptions) => {
-    await upgrade(options).catch(handleCommandFailure);
+    await withTelemetry(
+      'upgrade',
+      { cliOptions: { ...options, configDir: options.configDir?.[0] } },
+      async () => {
+        logger.intro(`Storybook upgrade - v${versions.storybook}`);
+        await upgrade(options);
+        logger.outro('Storybook upgrade completed!');
+      }
+    ).catch(handleCommandFailure);
   });
 
 command('info')

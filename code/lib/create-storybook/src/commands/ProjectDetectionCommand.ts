@@ -7,8 +7,10 @@ import {
 import type { JsPackageManager } from 'storybook/internal/common';
 import { HandledError } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { NxProjectDetectedError } from 'storybook/internal/server-errors';
 
 import picocolors from 'picocolors';
+import { dedent } from 'ts-dedent';
 
 import type { CommandOptions } from '../generators/types';
 
@@ -27,9 +29,6 @@ export class ProjectDetectionCommand {
   async execute(packageManager: JsPackageManager, options: CommandOptions): Promise<ProjectType> {
     let projectType: ProjectType;
     const projectTypeProvided = options.type;
-
-    if (projectTypeProvided) {
-    }
 
     // Use provided type or auto-detect
     if (projectTypeProvided) {
@@ -77,6 +76,10 @@ export class ProjectDetectionCommand {
         throw new HandledError('Storybook failed to detect your project type');
       }
 
+      if (detectedType === ProjectType.NX) {
+        throw new NxProjectDetectedError();
+      }
+
       return detectedType;
     } catch (err) {
       logger.error(String(err));
@@ -115,13 +118,19 @@ export class ProjectDetectionCommand {
   ): Promise<void> {
     const storybookInstantiated = isStorybookInstantiated();
 
-    if (options.force === false && storybookInstantiated && projectType !== ProjectType.ANGULAR) {
+    if (
+      options.force !== true &&
+      options.yes !== true &&
+      storybookInstantiated &&
+      projectType !== ProjectType.ANGULAR
+    ) {
       const force = await prompt.confirm({
-        message:
-          'We found a .storybook config directory in your project. Therefore we assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?',
+        message: dedent`
+          We found a .storybook config directory in your project. 
+          We assume that Storybook is already instantiated for your project. Do you still want to continue and force the initialization?`,
       });
 
-      if (force) {
+      if (force || options.yes) {
         options.force = true;
       } else {
         process.exit(0);

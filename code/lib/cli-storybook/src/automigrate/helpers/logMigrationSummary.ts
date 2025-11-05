@@ -61,10 +61,9 @@ export function logMigrationSummary({
     
     The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
     
-    Please check the changelog and migration guide for manual migrations and more information: ${picocolors.yellow(
-      'https://storybook.js.org/docs/releases/migration-guide?ref=upgrade'
-    )}
-    And reach out on Discord if you need help: ${picocolors.yellow('https://discord.gg/storybook')}
+    Please check the changelog and migration guide for manual migrations and more information: 
+    https://storybook.js.org/docs/releases/migration-guide?ref=upgrade
+    And reach out on Discord if you need help: https://discord.gg/storybook
   `);
 
   const hasNoFixes = Object.values(fixResults).every((r) => r === FixStatus.UNNECESSARY);

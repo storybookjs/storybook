@@ -1,5 +1,5 @@
 import { isCI, optionalEnvToBoolean } from 'storybook/internal/common';
-import { logTracker, logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';
@@ -49,7 +49,10 @@ const createStorybookProgram = program
     '--no-dev',
     'Complete the initialization of Storybook without launching the Storybook development server'
   )
-  .option('--write-logs', 'Write all debug logs to a file at the end of the run')
+  .option(
+    '--write-logs',
+    'Write all debug logs to the debug-storybook.log file at the end of the runn'
+  )
   .option('--loglevel <trace | debug | info | warn | error | silent>', 'Define log level', 'info')
   .hook('preAction', async (self) => {
     const options = self.opts();
@@ -64,6 +67,11 @@ const createStorybookProgram = program
 
     if (options.writeLogs) {
       logTracker.enableLogWriting();
+    }
+  })
+  .hook('postAction', async () => {
+    if (logTracker.shouldWriteLogsToFile) {
+      await logTracker.writeToFile();
     }
   });
 

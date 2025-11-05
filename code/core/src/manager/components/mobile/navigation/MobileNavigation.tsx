@@ -165,6 +165,10 @@ const MobileBottomBar = styled.section({
 
 const BottomBarButton = styled(Button)({
   WebkitLineClamp: 1,
+  flexShrink: 1,
+  p: {
+    textOverflow: 'ellipsis',
+  },
 });
 
 const Text = styled.p({

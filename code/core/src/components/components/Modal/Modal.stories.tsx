@@ -80,6 +80,9 @@ const meta = preview.meta({
     dismissOnClickOutside: true,
     dismissOnEscape: true,
   },
+  globals: {
+    sb_theme: 'light',
+  },
   argTypes: {
     width: {
       control: { type: 'number', min: 200, max: 1200, step: 50 },

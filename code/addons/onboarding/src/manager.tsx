@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { createRoot } from 'react-dom/client';
+import ReactDOM from 'react-dom';
 
 import { STORY_SPECIFIED } from 'storybook/internal/core-events';
 
@@ -17,7 +17,8 @@ const render = (node: React.ReactNode) => {
     container.id = 'storybook-addon-onboarding';
     document.body.appendChild(container);
   }
-  createRoot(container).render(<Suspense fallback={<div />}>{node}</Suspense>);
+  // eslint-disable-next-line react/no-deprecated
+  ReactDOM.render(<Suspense fallback={<div />}>{node}</Suspense>, container);
 };
 
 // The addon is enabled only when:

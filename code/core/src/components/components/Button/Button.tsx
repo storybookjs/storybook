@@ -78,17 +78,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     let Comp: 'button' | 'a' | typeof Slot = 'button';
 
-    // FIXME / TODO : reenable this but its too verbose and i cant work rn
-    // if (ariaLabel === undefined || ariaLabel === '') {
-    //   logger.warn(ariaLabel, props.children);
-    //   logger.warn(
-    //     'The `ariaLabel` prop on `Button` will become mandatory in Storybook 11. Buttons with text content should set `ariaLabel={false}` to indicate that they are accessible as-is. Buttons without text content must provide a meaningful `ariaLabel` for accessibility.'
-    //   );
-    //   // TODO in Storybook 11
-    //   // throw new Error(
-    //   //   'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
-    //   // );
-    // }
+    if (ariaLabel === undefined || ariaLabel === '') {
+      logger.warn(ariaLabel, props.children);
+      logger.warn(
+        'The `ariaLabel` prop on `Button` will become mandatory in Storybook 11. Buttons with text content should set `ariaLabel={false}` to indicate that they are accessible as-is. Buttons without text content must provide a meaningful `ariaLabel` for accessibility.'
+      );
+      // TODO in Storybook 11
+      // throw new Error(
+      //   'Button requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
+      // );
+    }
 
     if (active !== undefined) {
       deprecate(

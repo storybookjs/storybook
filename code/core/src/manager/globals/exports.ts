@@ -371,6 +371,7 @@ export default {
     'css',
     'darken',
     'ensure',
+    'getPreferredColorScheme',
     'ignoreSsrWarning',
     'isPropValid',
     'jsx',

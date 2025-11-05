@@ -1,8 +1,8 @@
 import React from 'react';
 
-import { type Color, styled, typography } from 'storybook/theming';
+import { TooltipNote, WithTooltip } from 'storybook/internal/components';
 
-import { TooltipNote, WithTooltip } from '../../components';
+import { type Color, styled, typography } from 'storybook/theming';
 
 export type PlayStatus = 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted';
 

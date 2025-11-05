@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { groupBy } from 'storybook/internal/common';
 
 import type { ComponentManifest, ComponentsManifest } from '../types';
@@ -12,26 +14,26 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
   const analyses = entries.map(([, c]) => analyzeComponent(c));
   const totals = {
     components: entries.length,
-    componentsWithError: analyses.filter((a) => a.hasComponentError).length,
-    componentsWithWarnings: analyses.filter((a) => a.hasWarns).length,
-    examples: analyses.reduce((sum, a) => sum + a.totalExamples, 0),
-    exampleErrors: analyses.reduce((sum, a) => sum + a.exampleErrors, 0),
+    componentsWithPropTypeError: analyses.filter((a) => a.hasPropTypeError).length,
+    infos: analyses.filter((a) => a.hasWarns).length,
+    stories: analyses.reduce((sum, a) => sum + a.totalStories, 0),
+    storyErrors: analyses.reduce((sum, a) => sum + a.storyErrors, 0),
   };
 
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target
   const allPill = `<a class="filter-pill all" data-k="all" href="#filter-all">All</a>`;
   const compErrorsPill =
-    totals.componentsWithError > 0
-      ? `<a class="filter-pill err" data-k="errors" href="#filter-errors">${totals.componentsWithError}/${totals.components} component ${plural(totals.componentsWithError, 'error')}</a>`
+    totals.componentsWithPropTypeError > 0
+      ? `<a class="filter-pill err" data-k="errors" href="#filter-errors">${totals.componentsWithPropTypeError}/${totals.components} prop type ${plural(totals.componentsWithPropTypeError, 'error')}</a>`
       : `<span class="filter-pill ok" aria-disabled="true">${totals.components} components ok</span>`;
-  const compWarningsPill =
-    totals.componentsWithWarnings > 0
-      ? `<a class="filter-pill warn" data-k="warnings" href="#filter-warnings">${totals.componentsWithWarnings}/${totals.components} component ${plural(totals.componentsWithWarnings, 'warning')}</a>`
+  const compInfosPill =
+    totals.infos > 0
+      ? `<a class="filter-pill info" data-k="infos" href="#filter-infos">${totals.infos}/${totals.components} ${plural(totals.infos, 'info', 'infos')}</a>`
       : '';
-  const examplesPill =
-    totals.exampleErrors > 0
-      ? `<a class="filter-pill err" data-k="example-errors" href="#filter-example-errors">${totals.exampleErrors}/${totals.examples} example errors</a>`
-      : `<span class="filter-pill ok" aria-disabled="true">${totals.examples} examples ok</span>`;
+  const storiesPill =
+    totals.storyErrors > 0
+      ? `<a class="filter-pill err" data-k="story-errors" href="#filter-story-errors">${totals.storyErrors}/${totals.stories} story errors</a>`
+      : `<span class="filter-pill ok" aria-disabled="true">${totals.stories} ${plural(totals.stories, 'story', 'stories')} ok</span>`;
 
   const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`)).join('');
 
@@ -40,7 +42,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       entries.map(([, it]) => it).filter((it) => it.error),
       (manifest) => manifest.error?.name ?? 'Error'
     )
-  );
+  ).sort(([, a], [, b]) => b.length - a.length);
 
   const errorGroupsHTML = errorGroups
     .map(([error, grouped]) => {
@@ -76,10 +78,10 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
           --muted: #9aa0a6;
           --fg: #e8eaed;
           --ok: #22c55e;
-          --warn: #b08900;
+          --info: #1e88e5;
           --err: #c62828;
           --ok-bg: #0c1a13;
-          --warn-bg: #1a1608;
+          --info-bg: #0c1624;
           --err-bg: #1a0e0e;
           --chip: #1f2330;
           --border: #2b2f3a;
@@ -155,10 +157,10 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
           background: color-mix(in srgb, var(--ok) 18%, #000);
       }
 
-      .filter-pill.warn {
-          color: #ffd666;
-          border-color: color-mix(in srgb, var(--warn) 55%, var(--border));
-          background: var(--warn-bg);
+      .filter-pill.info {
+          color: #b3d9ff;
+          border-color: color-mix(in srgb, var(--info) 55%, var(--border));
+          background: var(--info-bg);
       }
 
       .filter-pill.err {
@@ -187,8 +189,8 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       /* Selected top pill ring via :target */
       #filter-all:target ~ header .filter-pill[data-k='all'],
       #filter-errors:target ~ header .filter-pill[data-k='errors'],
-      #filter-warnings:target ~ header .filter-pill[data-k='warnings'],
-      #filter-example-errors:target ~ header .filter-pill[data-k='example-errors'] {
+      #filter-infos:target ~ header .filter-pill[data-k='infos'],
+      #filter-story-errors:target ~ header .filter-pill[data-k='story-errors'] {
           box-shadow: 0 0 0 var(--active-ring) currentColor;
           border-color: currentColor;
       }
@@ -196,19 +198,19 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       /* Hidden targets for filtering */
       #filter-all,
       #filter-errors,
-      #filter-warnings,
-      #filter-example-errors {
+      #filter-infos,
+      #filter-story-errors {
           display: none;
       }
 
       main {
-          padding: 24px 0 40px;
+          padding: 36px 0 40px;
       }
 
       .grid {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 14px;
+          gap: 18px;
       }
 
       /* one card per row */
@@ -292,9 +294,9 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
           border-color: color-mix(in srgb, var(--ok) 55%, var(--border));
       }
 
-      .badge.warn {
-          color: #ffd666;
-          border-color: color-mix(in srgb, var(--warn) 55%, var(--border));
+      .badge.info {
+          color: #b3d9ff;
+          border-color: color-mix(in srgb, var(--info) 55%, var(--border));
       }
 
       .badge.err {
@@ -308,8 +310,9 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
 
       /* 1px ring on active toggle */
       .tg-err:checked + label.as-toggle,
-      .tg-warn:checked + label.as-toggle,
-      .tg-ex:checked + label.as-toggle {
+      .tg-info:checked + label.as-toggle,
+      .tg-stories:checked + label.as-toggle,
+      .tg-props:checked + label.as-toggle {
           box-shadow: 0 0 0 var(--active-ring) currentColor;
           border-color: currentColor;
       }
@@ -328,16 +331,21 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
           display: grid;
       }
 
-      .tg-warn:checked ~ .panels .panel-warn {
+      .tg-info:checked ~ .panels .panel-info {
           display: grid;
           gap: 8px;
       }
 
-      .tg-ex:checked ~ .panels .panel-ex {
+      .tg-stories:checked ~ .panels .panel-stories {
+          display: grid;
+          gap: 8px;
+      }
+
+      .tg-props:checked ~ .panels .panel-props {
           display: grid;
       }
 
-      /* Colored notes for component error + warnings */
+      /* Colored notes for prop type error + info */
       .note {
           padding: 12px;
           border: 1px solid var(--border);
@@ -350,10 +358,16 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
           color: #ffd1d4;
       }
 
-      .note.warn {
-          border-color: color-mix(in srgb, var(--warn) 55%, var(--border));
-          background: var(--warn-bg);
-          color: #ffe9a6;
+      .note.info {
+          border-color: color-mix(in srgb, var(--info) 55%, var(--border));
+          background: var(--info-bg);
+          color: #d6e8ff;
+      }
+
+      .note.ok {
+          border-color: color-mix(in srgb, var(--ok) 55%, var(--border));
+          background: var(--ok-bg);
+          color: var(--fg);
       }
 
       .note-title {
@@ -365,7 +379,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
           white-space: normal;
       }
 
-      /* Example error cards */
+      /* Story error cards */
       .ex {
           padding: 10px;
           border: 1px solid var(--border);
@@ -475,15 +489,15 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       }
 
       /* CSS-only filtering of cards via top pills */
-      #filter-errors:target ~ main .card:not(.has-error):not(.has-example-error) {
+      #filter-errors:target ~ main .card:not(.has-error):not(.has-story-error) {
           display: none;
       }
 
-      #filter-warnings:target ~ main .card:not(.has-warn) {
+      #filter-infos:target ~ main .card:not(.has-info) {
           display: none;
       }
 
-      #filter-example-errors:target ~ main .card:not(.has-example-error) {
+      #filter-story-errors:target ~ main .card:not(.has-story-error) {
           display: none;
       }
 
@@ -505,23 +519,51 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
       .card > .tg-err:checked ~ .panels .panel-err {
           display: grid;
       }
-
-      .card > .tg-warn:checked ~ .panels .panel-warn {
+      
+      .card > .tg-info:checked ~ .panels .panel-info {
+          display: grid;
+      }
+      
+      .card > .tg-stories:checked ~ .panels .panel-stories {
           display: grid;
       }
 
-      .card > .tg-ex:checked ~ .panels .panel-ex {
-          display: grid;
+      /* Add vertical spacing around panels only when any panel is visible */
+      .card > .tg-err:checked ~ .panels,
+      .card > .tg-info:checked ~ .panels,
+      .card > .tg-stories:checked ~ .panels,
+      .card > .tg-props:checked ~ .panels {
+          margin: 10px 0;
       }
 
       /* Optional: a subtle 1px ring on the active badge, using :has() if available */
       @supports selector(.card:has(.tg-err:checked)) {
           .card:has(.tg-err:checked) label[for$='-err'],
-          .card:has(.tg-warn:checked) label[for$='-warn'],
-          .card:has(.tg-ex:checked) label[for$='-ex'] {
+          .card:has(.tg-info:checked) label[for$='-info'],
+          .card:has(.tg-stories:checked) label[for$='-stories'],
+          .card:has(.tg-props:checked) label[for$='-props'] {
               box-shadow: 0 0 0 1px currentColor;
               border-color: currentColor;
           }
+      }
+
+      /* Wrap long lines in code blocks at ~120 characters */
+      pre, code {
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      }
+      pre {
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          overflow-x: auto; /* fallback for extremely long tokens */
+          margin: 8px 0 0;
+      }
+      pre > code {
+          display: block;
+          white-space: inherit;
+          overflow-wrap: inherit;
+          word-break: inherit;
+          inline-size: min(100%, 120ch);
       }
   </style>
 </head>
@@ -529,12 +571,12 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
 <!-- Hidden targets for the top-level filters -->
 <span id="filter-all"></span>
 <span id="filter-errors"></span>
-<span id="filter-warnings"></span>
-<span id="filter-example-errors"></span>
+<span id="filter-infos"></span>
+<span id="filter-story-errors"></span>
 <header>
   <div class="wrap">
     <h1>Components Manifest</h1>
-    <div class="summary">${allPill}${compErrorsPill}${compWarningsPill}${examplesPill}</div>
+    <div class="summary">${allPill}${compErrorsPill}${compInfosPill}${storiesPill}</div>
   </div>
 </header>
 <main>
@@ -547,7 +589,7 @@ export function renderManifestComponentsPage(manifest: ComponentsManifest) {
     </div>
     ${
       errorGroups.length
-        ? `<div class="error-groups" role="region" aria-label="Error groups">${errorGroupsHTML}</div>`
+        ? `<div class="error-groups" role="region" aria-label="Prop type error groups">${errorGroupsHTML}</div>`
         : ''
     }
   </div>
@@ -564,13 +606,11 @@ const esc = (s: unknown) =>
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 
 function analyzeComponent(c: ComponentManifest) {
-  const hasComponentError = !!c.error;
+  const hasPropTypeError = !!c.error;
   const warns: string[] = [];
 
   if (!c.description?.trim()) {
-    warns.push(
-      'No description found. Write a jsdoc comment such as /** Component description */ on your component or on your stories meta.'
-    );
+    warns.push('No description found. Write a jsdoc comment such as /** Component description */.');
   }
 
   if (!c.import?.trim()) {
@@ -579,24 +619,24 @@ function analyzeComponent(c: ComponentManifest) {
     );
   }
 
-  const totalExamples = c.examples?.length ?? 0;
-  const exampleErrors = (c.examples ?? []).filter((e) => !!e?.error).length;
-  const exampleOk = totalExamples - exampleErrors;
+  const totalStories = c.stories?.length ?? 0;
+  const storyErrors = (c.stories ?? []).filter((e) => !!e?.error).length;
+  const storyOk = totalStories - storyErrors;
 
-  const hasAnyError = hasComponentError || exampleErrors > 0; // for status dot (red if any errors)
+  const hasAnyError = hasPropTypeError || storyErrors > 0; // for status dot (red if any errors)
 
   return {
-    hasComponentError,
+    hasPropTypeError,
     hasAnyError,
     hasWarns: warns.length > 0,
     warns,
-    totalExamples,
-    exampleErrors,
-    exampleOk,
+    totalStories,
+    storyErrors,
+    storyOk,
   };
 }
 
-function note(title: string, bodyHTML: string, kind: 'warn' | 'err') {
+function note(title: string, bodyHTML: string, kind: 'info' | 'err') {
   return `
     <div class="note ${kind}">
       <div class="note-title">${esc(title)}</div>
@@ -607,25 +647,56 @@ function note(title: string, bodyHTML: string, kind: 'warn' | 'err') {
 function renderComponentCard(key: string, c: ComponentManifest, id: string) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
-  const errorExamples = (c.examples ?? []).filter((ex) => !!ex?.error);
+  const allStories = c.stories ?? [];
+  const errorStories = allStories.filter((ex) => !!ex?.error);
+  const okStories = allStories.filter((ex) => !ex?.error);
 
   const slug = `c-${id}-${(c.id || key)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')}`;
 
-  const componentErrorBadge = a.hasComponentError
-    ? `<label for="${slug}-err" class="badge err as-toggle">component error</label>`
+  const componentErrorBadge = a.hasPropTypeError
+    ? `<label for="${slug}-err" class="badge err as-toggle">prop type error</label>`
     : '';
 
-  const warningsBadge = a.hasWarns
-    ? `<label for="${slug}-warn" class="badge warn as-toggle">${a.warns.length} ${plural(a.warns.length, 'warning')}</label>`
+  const infosBadge = a.hasWarns
+    ? `<label for="${slug}-info" class="badge info as-toggle">${a.warns.length} ${plural(a.warns.length, 'info', 'infos')}</label>`
     : '';
 
-  const examplesBadge =
-    a.exampleErrors > 0
-      ? `<label for="${slug}-ex" class="badge err as-toggle">${a.exampleErrors}/${a.totalExamples} example errors</label>`
-      : `<span class="badge ok">${a.totalExamples} examples ok</span>`;
+  const storiesBadge =
+    a.totalStories > 0
+      ? `<label for="${slug}-stories" class="badge ${a.storyErrors > 0 ? 'err' : 'ok'} as-toggle">${a.storyErrors > 0 ? `${a.storyErrors}/${a.totalStories} story errors` : `${a.totalStories} ${plural(a.totalStories, 'story', 'stories')}`}</label>`
+      : '';
+
+  // When there is no prop type error, try to read prop types from reactDocgen if present
+  const reactDocgen: any = !a.hasPropTypeError && 'reactDocgen' in c && c.reactDocgen;
+  const parsedDocgen = reactDocgen ? parseReactDocgen(reactDocgen) : undefined;
+  const propEntries = parsedDocgen ? Object.entries(parsedDocgen.props ?? {}) : [];
+  const propTypesBadge =
+    !a.hasPropTypeError && propEntries.length > 0
+      ? `<label for="${slug}-props" class="badge ok as-toggle">${propEntries.length} ${plural(propEntries.length, 'prop type')}</label>`
+      : '';
+
+  const primaryBadge = componentErrorBadge || propTypesBadge;
+
+  const propsCode =
+    propEntries.length > 0
+      ? propEntries
+          .sort(([aName], [bName]) => aName.localeCompare(bName))
+          .map(([propName, info]) => {
+            const description = (info?.description ?? '').trim();
+            const t = (info?.type ?? 'any').trim();
+            const optional = info?.required ? '' : '?';
+            const defaultVal = (info?.defaultValue ?? '').trim();
+            const def = defaultVal ? ` = ${defaultVal}` : '';
+            const doc =
+              ['/**', ...description.split('\n').map((line) => ` * ${line}`), ' */'].join('\n') +
+              '\n';
+            return `${description ? doc : ''}${propName}${optional}: ${t}${def}`;
+          })
+          .join('\n\n')
+      : '';
 
   const tags =
     c.jsDocTags && typeof c.jsDocTags === 'object'
@@ -642,18 +713,18 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
   return `
 <article
   class="card 
-  ${a.hasComponentError ? 'has-error' : 'no-error'} 
-  ${a.hasWarns ? 'has-warn' : 'no-warn'} 
-  ${a.exampleErrors ? 'has-example-error' : 'no-example-error'}"
+  ${a.hasPropTypeError ? 'has-error' : 'no-error'} 
+  ${a.hasWarns ? 'has-info' : 'no-info'} 
+  ${a.storyErrors ? 'has-story-error' : 'no-story-error'}"
   role="listitem"
   aria-label="${esc(c.name || key)}">
   <div class="head">
     <div class="title">
       <h2><span class="status-dot ${statusDot}"></span> ${esc(c.name || key)}</h2>
       <div class="badges">
-        ${componentErrorBadge}
-        ${warningsBadge}
-        ${examplesBadge}
+        ${primaryBadge}
+        ${infosBadge}
+        ${storiesBadge}
       </div>
     </div>
     <div class="meta" title="${esc(c.path)}">${esc(c.id)} · ${esc(c.path)}</div>
@@ -663,42 +734,87 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
   </div>
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
-  ${a.hasComponentError ? `<input id="${slug}-err" class="tg tg-err" type="checkbox" hidden />` : ''}
-  ${a.hasWarns ? `<input id="${slug}-warn" class="tg tg-warn" type="checkbox" hidden />` : ''}
-  ${a.exampleErrors > 0 ? `<input id="${slug}-ex" class="tg tg-ex" type="checkbox" hidden />` : ''}
+  ${a.hasPropTypeError ? `<input id="${slug}-err" class="tg tg-err" type="checkbox" hidden />` : ''}
+  ${a.hasWarns ? `<input id="${slug}-info" class="tg tg-info" type="checkbox" hidden />` : ''}
+  ${a.totalStories > 0 ? `<input id="${slug}-stories" class="tg tg-stories" type="checkbox" hidden />` : ''}
+  ${!a.hasPropTypeError && propEntries.length > 0 ? `<input id="${slug}-props" class="tg tg-props" type="checkbox" hidden />` : ''}
 
   <div class="panels">
     ${
-      a.hasComponentError
+      a.hasPropTypeError
         ? `
         <div class="panel panel-err">
-          ${note('Component error', `<pre><code>${esc(c.error?.message || 'Unknown error')}</code></pre>`, 'err')}
+          ${note('Prop type error', `<pre><code>${esc(c.error?.message || 'Unknown error')}</code></pre>`, 'err')}
         </div>`
         : ''
     }
     ${
       a.hasWarns
         ? `
-        <div class="panel panel-warn">
-          ${a.warns.map((w) => note('Warning', esc(w), 'warn')).join('')}
+        <div class="panel panel-info">
+          ${a.warns.map((w) => note('Info', esc(w), 'info')).join('')}
         </div>`
         : ''
     }
     ${
-      a.exampleErrors > 0
+      !a.hasPropTypeError && propEntries.length > 0
         ? `
-        <div class="panel panel-ex">
-          ${errorExamples
+        <div class="panel panel-props">
+          <div class="note ok">
+            <div class="row">
+              <span class="ex-name">Prop types</span>
+              <span class="badge ok">${propEntries.length} ${plural(propEntries.length, 'prop type')}</span>
+            </div>
+            <pre><code>Component: ${reactDocgen?.definedInFile ? esc(path.relative(process.cwd(), reactDocgen.definedInFile)) : ''}${reactDocgen?.exportName ? '::' + esc(reactDocgen?.exportName) : ''}</code></pre>
+            <pre><code>Props:</code></pre>
+            <pre><code>${esc(propsCode)}</code></pre>
+          </div>
+        </div>`
+        : ''
+    }
+    ${
+      a.totalStories > 0
+        ? `
+        <div class="panel panel-stories">
+          ${errorStories
             .map(
               (ex, j) => `
-            <div class="ex err">
+            <div class="note err">
               <div class="row">
-                <span class="status-dot dot-err"></span>
-                <span class="ex-name">${esc(ex?.name ?? `Example ${j + 1}`)}</span>
-                <span class="badge err">example error</span>
+                <span class="ex-name">${esc(ex.name)}</span>
+                <span class="badge err">story error</span>
               </div>
+              ${ex?.summary ? `<div class=\"hint\">Summary: ${esc(ex.summary)}</div>` : ''}
+              ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ''}
               ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
               ${ex?.error?.message ? `<pre><code>${esc(ex.error.message)}</code></pre>` : ''}
+            </div>`
+            )
+            .join('')}
+          
+          
+          ${
+            c.import
+              ? `<div class="note ok">
+                <div class="row">
+                  <span class="ex-name">Imports</span>
+                </div>
+                <pre><code>${c.import}</code></pre>
+              </div>`
+              : ''
+          }
+          
+          ${okStories
+            .map(
+              (ex) => `
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">${esc(ex.name)}</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              ${ex?.summary ? `<div>${esc(ex.summary)}</div>` : ''}
+              ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ''}
+              ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
             </div>`
             )
             .join('')}
@@ -707,4 +823,102 @@ function renderComponentCard(key: string, c: ComponentManifest, id: string) {
     }
   </div>
 </article>`;
+}
+
+export type ParsedDocgen = {
+  props: Record<
+    string,
+    {
+      description?: string;
+      type?: string;
+      defaultValue?: string;
+      required?: boolean;
+    }
+  >;
+};
+
+export const parseReactDocgen = (reactDocgen: any): ParsedDocgen => {
+  const props: Record<string, any> = (reactDocgen as any)?.props ?? {};
+  return {
+    props: Object.fromEntries(
+      Object.entries(props).map(([propName, prop]) => [
+        propName,
+        {
+          description: prop.description,
+          type: serializeTsType(prop.tsType ?? prop.type),
+          defaultValue: prop.defaultValue?.value,
+          required: prop.required,
+        },
+      ])
+    ),
+  };
+};
+
+// Serialize a react-docgen tsType into a TypeScript-like string when raw is not available
+function serializeTsType(tsType: any): string | undefined {
+  if (!tsType) {
+    return undefined;
+  }
+  // Prefer raw if provided
+  // Prefer raw if provided
+  if ('raw' in tsType && typeof tsType.raw === 'string' && tsType.raw.trim().length > 0) {
+    return tsType.raw;
+  }
+
+  if (!tsType.name) {
+    return undefined;
+  }
+
+  if ('elements' in tsType) {
+    if (tsType.name === 'union') {
+      const parts = (tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
+      return parts.join(' | ');
+    }
+    if (tsType.name === 'intersection') {
+      const parts = (tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
+      return parts.join(' & ');
+    }
+    if (tsType.name === 'Array') {
+      // Prefer raw earlier; here build fallback
+      const el = (tsType.elements ?? [])[0];
+      const inner = serializeTsType(el) ?? 'unknown';
+      return `${inner}[]`;
+    }
+    if (tsType.name === 'tuple') {
+      const parts = (tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
+      return `[${parts.join(', ')}]`;
+    }
+  }
+  if ('value' in tsType && tsType.name === 'literal') {
+    return tsType.value;
+  }
+  if ('signature' in tsType && tsType.name === 'signature') {
+    if (tsType.type === 'function') {
+      const args = (tsType.signature?.arguments ?? []).map((a: any) => {
+        const argType = serializeTsType(a.type) ?? 'any';
+        return `${a.name}: ${argType}`;
+      });
+      const ret = serializeTsType(tsType.signature?.return) ?? 'void';
+      return `(${args.join(', ')}) => ${ret}`;
+    }
+    if (tsType.type === 'object') {
+      const props = (tsType.signature?.properties ?? []).map((p: any) => {
+        const req: boolean = Boolean(p.value?.required);
+        const propType = serializeTsType(p.value) ?? 'any';
+        return `${p.key}${req ? '' : '?'}: ${propType}`;
+      });
+      return `{ ${props.join('; ')} }`;
+    }
+    return 'unknown';
+  }
+  // Default case (Generic like Item<TMeta>)
+  if ('elements' in tsType) {
+    const inner = (tsType.elements ?? []).map((el: any) => serializeTsType(el) ?? 'unknown');
+
+    if (inner.length > 0) {
+      return `${tsType.name}<${inner.join(', ')}>`;
+    }
+  }
+
+  return tsType.name;
 }

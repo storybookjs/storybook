@@ -11,7 +11,6 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
-import { type ComponentManifestGenerator, type ComponentsManifest } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -167,7 +166,7 @@ export async function buildStaticStandalone(options: BuildStaticStandaloneOption
     );
 
     if (features?.experimentalComponentsManifest) {
-      const componentManifestGenerator: ComponentManifestGenerator = await presets.apply(
+      const componentManifestGenerator = await presets.apply(
         'experimental_componentManifestGenerator'
       );
       const indexGenerator = await initializedStoryIndexGenerator;

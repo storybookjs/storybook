@@ -3,6 +3,7 @@ import { dirname, sep } from 'node:path';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
 import { getProjectRoot, supportedExtensions } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 import {
@@ -12,6 +13,7 @@ import {
   makeFsImporter,
   parse,
 } from 'react-docgen';
+import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
 import { type ComponentRef } from './getComponentImports';
@@ -33,6 +35,9 @@ const defaultResolver = new docgenResolver.FindExportedDefinitionsResolver();
 const handlers = [...defaultHandlers, actualNameHandler, exportNameHandler];
 
 export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
+  if (docgens.length === 0) {
+    return;
+  }
   if (docgens.length === 1) {
     return docgens[0];
   }
@@ -91,75 +96,139 @@ export const parseWithReactDocgen = cached(
 
 const getExportPaths = cached(
   (code: string, filePath: string) => {
-    const ast = (() => {
-      try {
-        return babelParse(code);
-      } catch (_) {
-        return undefined;
-      }
-    })();
-
-    if (!ast) {
-      return [] as string[];
+    let ast;
+    try {
+      ast = babelParse(code);
+    } catch (_) {
+      return [];
     }
+
     const basedir = dirname(filePath);
     const body = ast.program.body;
     return body
-      .flatMap((n) =>
-        t.isExportAllDeclaration(n)
-          ? [n.source.value]
-          : t.isExportNamedDeclaration(n) && !!n.source && !n.declaration
-            ? [n.source.value]
+      .flatMap((statement) =>
+        t.isExportAllDeclaration(statement)
+          ? [statement.source.value]
+          : t.isExportNamedDeclaration(statement) && !!statement.source && !statement.declaration
+            ? [statement.source.value]
             : []
       )
-      .map((s) => matchPath(s, basedir))
-      .map((s) => {
+      .map((id) => matchPath(id, basedir))
+      .flatMap((id) => {
         try {
-          return cachedResolveImport(s, { basedir });
-        } catch {
-          return undefined;
+          return [cachedResolveImport(id, { basedir })];
+        } catch (e) {
+          logger.debug(e);
+          return [];
         }
-      })
-      .filter((p): p is string => !!p && !p.includes('node_modules'));
+      });
   },
   { name: 'getExportPaths' }
 );
 
 const gatherDocgensForPath = cached(
   (
-    filePath: string,
+    path: string,
     depth: number
-  ): { docgens: DocObj[]; analyzed: { path: string; code: string }[] } => {
-    if (depth > 5 || filePath.includes('node_modules')) {
-      return { docgens: [], analyzed: [] };
+  ): {
+    docgens: DocObj[];
+    errors: { path: string; code: string; name: string; message: string }[];
+  } => {
+    if (path.includes('node_modules')) {
+      return {
+        docgens: [],
+        errors: [
+          {
+            path,
+            code: '/* File in node_modules */',
+            name: 'Component file in node_modules',
+            message: dedent`
+              Component files in node_modules are not supported. Configure TypeScript path aliases to map your package name to the source file instead.
+
+              Example (tsconfig.json):
+              {
+                "compilerOptions": {
+                  "baseUrl": ".",
+                  "paths": {
+                    "@design-system/button": ["src/components/Button.tsx"],
+                    "@design-system/*": ["src/components/*"]
+                  }
+                }
+              }
+
+              Then import using:
+              import { Button } from '@design-system/button'
+
+              Storybook resolves tsconfig paths automatically.
+            `,
+          },
+        ],
+      };
     }
 
-    let code: string | undefined;
+    let code;
     try {
-      code = cachedReadFileSync(filePath, 'utf-8') as string;
-    } catch {}
-
-    if (!code) {
-      return { docgens: [], analyzed: [{ path: filePath, code: '/* File not found */' }] };
-    }
-
-    const reexportResults = getExportPaths(code, filePath).map((p) =>
-      gatherDocgensForPath(p, depth + 1)
-    );
-    const fromReexports = reexportResults.flatMap((r) => r.docgens);
-    const analyzedChildren = reexportResults.flatMap((r) => r.analyzed);
-
-    let locals: DocObj[];
-    try {
-      locals = parseWithReactDocgen(code as string, filePath);
+      code = cachedReadFileSync(path, 'utf-8') as string;
     } catch {
-      locals = [];
+      return {
+        docgens: [],
+        errors: [
+          {
+            path,
+            code: '/* File not found or unreadable */',
+            name: 'Component file could not be read',
+            message: `Could not read the component file located at "${path}".\nPrefer relative imports if possible.`,
+          },
+        ],
+      };
     }
 
-    return {
-      docgens: [...locals, ...fromReexports],
-      analyzed: [{ path: filePath, code }, ...analyzedChildren],
-    };
+    if (depth > 5) {
+      return {
+        docgens: [],
+        errors: [
+          {
+            path,
+            code,
+            name: 'Max re-export depth exceeded',
+            message: dedent`
+              Traversal stopped after 5 steps while following re-exports starting from this file.
+              This usually indicates a deep or circular re-export chain. Try one of the following:
+              - Import the component file directly (e.g., src/components/Button.tsx),
+              - Reduce the number of re-export hops.
+            `,
+          },
+        ],
+      };
+    }
+
+    const exportPaths = getExportPaths(code, path).map((p) => gatherDocgensForPath(p, depth + 1));
+    const docgens = exportPaths.flatMap((r) => r.docgens);
+    const errors = exportPaths.flatMap((r) => r.errors);
+
+    try {
+      return {
+        docgens: [...parseWithReactDocgen(code, path), ...docgens],
+        errors,
+      };
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      return {
+        docgens,
+        errors: [
+          {
+            path,
+            code,
+            name: 'No component definition found',
+            message: dedent`
+              ${message}
+              You can debug your component file in this playground: https://react-docgen.dev/playground
+            `,
+          },
+          ...errors,
+        ],
+      };
+    }
   },
   { name: 'gatherDocgensWithTrace', key: (filePath) => filePath }
 );
@@ -171,39 +240,25 @@ export const getReactDocgen = cached(
   ):
     | { type: 'success'; data: DocObj }
     | { type: 'error'; error: { name: string; message: string } } => {
-    if (path.includes('node_modules')) {
-      return {
-        type: 'error',
-        error: {
-          name: 'Component file in node_modules',
-          message: `Component files in node_modules are not supported. Please import your component file directly.`,
-        },
-      };
-    }
-
-    const docgenWithInfo = gatherDocgensForPath(path, 0);
-    const docgens = docgenWithInfo.docgens;
-
-    const noCompDefError = {
-      type: 'error' as const,
-      error: {
-        name: 'No component definition found',
-        message:
-          `Could not find a component definition.\n` +
-          `Prefer relative imports if possible.\n` +
-          `Avoid pointing to transpiled files.\n` +
-          `You can debug your component file in this playground: https://react-docgen.dev/playground\n\n` +
-          docgenWithInfo.analyzed.map(({ path, code }) => `File: ${path}\n${code}`).join('\n'),
-      },
-    };
-
-    if (!docgens || docgens.length === 0) {
-      return noCompDefError;
-    }
+    const { docgens, errors } = gatherDocgensForPath(path, 0);
 
     const docgen = getMatchingDocgen(docgens, component);
+
     if (!docgen) {
-      return noCompDefError;
+      const error = {
+        name: errors.at(-1)?.name ?? 'No component definition found',
+        message: errors
+          .map(
+            (e) => dedent`
+            File: ${e.path}
+            Error:
+            ${e.message}
+            Code:
+            ${e.code}`
+          )
+          .join('\n\n'),
+      };
+      return { type: 'error', error };
     }
     return { type: 'success', data: docgen };
   },

@@ -198,7 +198,7 @@ export const getComponents = ({
           });
         }
       } catch (e) {
-        logger.error(e);
+        logger.debug(e);
       }
       if (path) {
         const reactDocgen = getReactDocgen(path, component);

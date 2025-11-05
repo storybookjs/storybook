@@ -531,9 +531,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             doctorResults,
           });
         }
-        logger.outro('Storybook upgrade completed successfully');
-      } catch (e) {
-        logger.outro('Done with errors');
       } finally {
         // Clean up signal handlers
         process.removeListener('SIGINT', handleInterruption);

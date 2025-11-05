@@ -169,4 +169,6 @@ const BottomText = styled.div(({ theme }) => ({
   marginTop: 30,
 }));
 
-const CloseButton = styled(Button)({});
+const CloseButton = styled(Button)({
+  alignSelf: 'start',
+});

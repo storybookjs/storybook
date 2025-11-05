@@ -232,11 +232,10 @@ function logUpgradeResults(
       logger.log(`${CLI_COLORS.info('No applicable migrations:')}\n${projectList}`);
     }
   } else {
-    logger.step('The upgrade is complete!');
     if (Object.values(doctorResults).every((result) => result.status === 'healthy')) {
-      logger.log(`${CLI_COLORS.success('Your project(s) have been upgraded successfully! 🎉')}`);
+      logger.step(`${CLI_COLORS.success('Your project(s) have been upgraded successfully! 🎉')}`);
     } else {
-      logger.log(
+      logger.step(
         `${picocolors.yellow('Your project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.')}`
       );
     }

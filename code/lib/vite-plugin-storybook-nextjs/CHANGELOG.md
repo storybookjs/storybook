@@ -1,3 +1,16 @@
+# v3.1.0 (Wed Nov 05 2025)
+
+#### 🚀 Enhancement
+
+- Handle SVGR and add include/exclude options for next/image [#69](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/69) ([@rickdunkin](https://github.com/rickdunkin) [@yannbf](https://github.com/yannbf))
+
+#### Authors: 2
+
+- Rick Dunkin ([@rickdunkin](https://github.com/rickdunkin))
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v3.0.3 (Thu Oct 30 2025)
 
 #### 🐛 Bug Fix

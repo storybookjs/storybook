@@ -245,6 +245,8 @@ export const TagsFilterPanel = ({
               key="reset-filters"
               onClick={resetFilters}
               ariaLabel="Reset filters"
+              variant="ghost"
+              padding="small"
               tooltip="Reset to default selection"
               disabled={isDefaultSelection}
             >

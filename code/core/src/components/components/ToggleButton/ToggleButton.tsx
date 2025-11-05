@@ -23,31 +23,35 @@ export const ToggleButton = forwardRef<HTMLButtonElement, ToggleButtonProps>(
 
 ToggleButton.displayName = 'ToggleButton';
 
-const StyledToggle = styled(Button)<ToggleButtonProps>(({ theme, variant, pressed }) => ({
-  ...(pressed
-    ? {
-        ...(variant === 'solid'
-          ? {
-              background:
-                theme.base === 'lighten'
-                  ? darken(0.1, theme.color.secondary)
-                  : darken(0.2, theme.color.secondary),
-            }
-          : {}),
-        ...(variant === 'outline'
-          ? {
-              background: transparentize(0.94, theme.barSelectedColor),
-              boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
-              color: theme.barSelectedColor,
-            }
-          : {}),
-        ...(variant === 'ghost'
-          ? {
-              background: transparentize(0.93, theme.barSelectedColor),
-              color:
-                theme.base === 'light' ? darken(0.1, theme.color.secondary) : theme.color.secondary,
-            }
-          : {}),
-      }
-    : {}),
-}));
+const StyledToggle = styled(Button)<ToggleButtonProps>(
+  ({ theme, variant = 'outline', pressed }) => ({
+    ...(pressed
+      ? {
+          ...(variant === 'solid'
+            ? {
+                background:
+                  theme.base === 'lighten'
+                    ? darken(0.1, theme.color.secondary)
+                    : darken(0.2, theme.color.secondary),
+              }
+            : {}),
+          ...(variant === 'outline'
+            ? {
+                background: transparentize(0.94, theme.barSelectedColor),
+                boxShadow: `${theme.barSelectedColor} 0 0 0 1px inset`,
+                color: theme.barSelectedColor,
+              }
+            : {}),
+          ...(variant === 'ghost'
+            ? {
+                background: transparentize(0.93, theme.barSelectedColor),
+                color:
+                  theme.base === 'light'
+                    ? darken(0.1, theme.color.secondary)
+                    : theme.color.secondary,
+              }
+            : {}),
+        }
+      : {}),
+  })
+);

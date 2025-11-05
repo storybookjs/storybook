@@ -1,16 +1,25 @@
 import React from 'react';
 
+import { styled } from 'storybook/theming';
+
 import preview from '../../../../../.storybook/preview';
 import { Bar } from './Bar';
+
+const Wrapper = styled.div(({ theme }) => ({
+  background: theme.background.app,
+  border: `1px solid ${theme.appBorderColor}`,
+  maxWidth: 500,
+  height: 200,
+}));
 
 const meta = preview.meta({
   component: Bar,
   title: 'Bar/Bar',
   decorators: [
     (Story) => (
-      <div style={{ background: 'blue', border: '1px solid purple', maxWidth: 500, height: 200 }}>
+      <Wrapper>
         <Story />
-      </div>
+      </Wrapper>
     ),
   ],
 });
@@ -32,10 +41,16 @@ export const Bordered = meta.story({
 
 export const BackgroundBorderless = meta.story({
   args: { backgroundColor: '#f3f4f6', border: false, children: 'Bar with custom background' },
+  globals: {
+    sb_theme: 'light',
+  },
 });
 
 export const BackgroundBordered = meta.story({
   args: { backgroundColor: '#f3f4f6', border: true, children: 'Bar with custom background' },
+  globals: {
+    sb_theme: 'light',
+  },
 });
 
 export const NonScrollable = meta.story({
@@ -69,6 +84,9 @@ export const ScrollableBackground = meta.story({
     innerStyle: { justifyContent: 'start' },
     scrollable: true,
   },
+  globals: {
+    sb_theme: 'light',
+  },
 });
 
 export const ScrollableBackgroundBordered = meta.story({
@@ -80,11 +98,17 @@ export const ScrollableBackgroundBordered = meta.story({
     innerStyle: { justifyContent: 'start' },
     scrollable: true,
   },
+  globals: {
+    sb_theme: 'light',
+  },
 });
 
 export const InnerStyleOverride = meta.story({
   args: {
     children: <div style={{ padding: '0 8px' }}>Custom inner style</div>,
     innerStyle: { backgroundColor: '#fff7ed', gap: 12 },
+  },
+  globals: {
+    sb_theme: 'light',
   },
 });

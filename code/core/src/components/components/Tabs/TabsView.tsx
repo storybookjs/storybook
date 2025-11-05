@@ -57,7 +57,7 @@ export const FlexTabPanel = styled(TabPanel)(() => ({
 }));
 
 const FlexTabList = styled(TabList)<{ $simulatedGap: Key }>(({ $simulatedGap }) => ({
-  flex: '1 1 100%',
+  flex: '1 1 0%',
   '&[data-show-scroll-buttons="true"]': { marginInlineEnd: $simulatedGap },
 }));
 

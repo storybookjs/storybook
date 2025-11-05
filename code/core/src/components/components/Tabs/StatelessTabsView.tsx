@@ -42,7 +42,14 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
 }) => {
   const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
   const [tabListChild, ...tabPanelChildren] = React.Children.toArray(children);
-  if (!showToolsWhenEmpty && tabPanelChildren?.length === 0) {
+  const hasContent = tabPanelChildren && tabPanelChildren.length > 0;
+
+  console.log('hasContent', hasContent);
+  console.log('tabPanelChildren', tabPanelChildren);
+  console.log('tabListChild', tabListChild);
+  console.log('showToolsWhenEmpty', showToolsWhenEmpty);
+
+  if (!showToolsWhenEmpty && !hasContent) {
     return EmptyContent;
   }
 
@@ -77,9 +84,9 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
         }}
       >
         {tools}
-        {tabListChild}
+        {hasContent ? tabListChild : <div />}
       </Bar>
-      {tabPanelChildren}
+      {hasContent ? tabPanelChildren : EmptyContent}
     </Container>
   );
 };

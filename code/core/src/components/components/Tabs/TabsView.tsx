@@ -124,8 +124,9 @@ export const TabsView: FC<TabsViewProps> = ({
   }) as TabListState<object>;
 
   const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
+  const hasContent = tabs.length > 0;
 
-  if (!showToolsWhenEmpty && tabs.length === 0) {
+  if (!showToolsWhenEmpty && !hasContent) {
     return EmptyContent;
   }
 
@@ -154,9 +155,13 @@ export const TabsView: FC<TabsViewProps> = ({
         }}
       >
         {tools}
-        <FlexTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 6} />
+        {hasContent ? (
+          <FlexTabList state={state} $simulatedGap={barInnerStyle?.gap ?? 6} />
+        ) : (
+          <div />
+        )}
       </Bar>
-      <FlexTabPanel state={state} {...panelProps} />
+      {hasContent ? <FlexTabPanel state={state} {...panelProps} /> : EmptyContent}
     </Container>
   );
 };

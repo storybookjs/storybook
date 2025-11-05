@@ -96,6 +96,19 @@ export const EmptyWithToolsShowTrue = meta.story({
   render: RenderEmpty,
 });
 
+export const EmptyToolsShowCustom = meta.story({
+  args: {
+    emptyState: (
+      <EmptyTabContent
+        title="Custom empty state"
+        description={<>This component does not currently have tabs.</>}
+      />
+    ),
+    showToolsWhenEmpty: true,
+  },
+  render: RenderEmpty,
+});
+
 export const DefaultSelected = meta.story({
   args: {
     defaultSelected: 'tab2',

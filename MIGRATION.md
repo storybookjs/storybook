@@ -1265,7 +1265,7 @@ Key changes:
 
 #### Angular: Introduce `features.angularFilterNonInputControls`
 
-Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular compoennts in Storybook's controls panel.
+Storybook has added a new feature flag `angularFilterNonInputControls` which filters out non-input controls from Angular components in Storybook's controls panel.
 
 To enable it, just set the feature flag in your `.storybook/main.<js|ts> file.
 

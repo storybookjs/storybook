@@ -143,7 +143,9 @@ const gatherDocgensForPath = cached(
             code: '/* File in node_modules */',
             name: 'Component file in node_modules',
             message: dedent`
-              Component files in node_modules are not supported. Configure TypeScript path aliases to map your package name to the source file instead.
+              Component files in node_modules are not supported.
+              The distributed files in node_modules usually don't contain the necessary comments or types needed to analyze component information.
+              Configure TypeScript path aliases to map your package name to the source file instead.
 
               Example (tsconfig.json):
               {

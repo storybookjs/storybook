@@ -52,6 +52,9 @@ export const Background = meta.story({
   args: {
     backgroundColor: '#f3f4f6',
   },
+  globals: {
+    sb_theme: 'light',
+  },
   render: (args) => (
     <FlexBar {...args}>
       <Row>Left content</Row>
@@ -77,6 +80,9 @@ export const BackgroundBorder = meta.story({
     backgroundColor: '#f3f4f6',
     border: true,
   },
+  globals: {
+    sb_theme: 'light',
+  },
   render: (args) => (
     <FlexBar {...args}>
       <Row>Left content</Row>
@@ -89,6 +95,9 @@ export const ScrollableBackground = meta.story({
   args: {
     backgroundColor: '#f3f4f6',
     scrollable: true,
+  },
+  globals: {
+    sb_theme: 'light',
   },
   render: (args) => (
     <FlexBar {...args}>
@@ -124,6 +133,9 @@ export const ScrollableBackgroundBorder = meta.story({
     backgroundColor: '#f3f4f6',
     border: true,
     scrollable: true,
+  },
+  globals: {
+    sb_theme: 'light',
   },
   render: (args) => (
     <FlexBar {...args}>

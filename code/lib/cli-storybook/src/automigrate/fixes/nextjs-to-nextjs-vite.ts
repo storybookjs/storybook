@@ -10,40 +10,6 @@ interface NextjsToNextjsViteOptions {
   packageJsonFiles: string[];
 }
 
-const transformPackageJson = async (packageJsonPath: string, dryRun: boolean): Promise<boolean> => {
-  try {
-    const content = await readFile(packageJsonPath, 'utf-8');
-    const packageJson = JSON.parse(content);
-    let hasChanges = false;
-
-    // Check both dependencies and devDependencies
-    const depTypes = ['dependencies', 'devDependencies'] as const;
-
-    for (const depType of depTypes) {
-      if (packageJson[depType]?.['@storybook/nextjs']) {
-        // Remove @storybook/nextjs
-        delete packageJson[depType]['@storybook/nextjs'];
-        hasChanges = true;
-
-        // Add @storybook/nextjs-vite if not already present
-        if (!packageJson[depType]['@storybook/nextjs-vite']) {
-          packageJson[depType]['@storybook/nextjs-vite'] =
-            packageJson[depType]['@storybook/react'] || '^9.0.0';
-        }
-      }
-    }
-
-    if (hasChanges && !dryRun) {
-      await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
-    }
-
-    return hasChanges;
-  } catch (error) {
-    logger.error(`Failed to update package.json at ${packageJsonPath}: ${error}`);
-    return false;
-  }
-};
-
 const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Promise<boolean> => {
   try {
     const content = await readFile(mainConfigPath, 'utf-8');
@@ -112,7 +78,15 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
     return 'Migrate from @storybook/nextjs to @storybook/nextjs-vite (Vite framework)';
   },
 
-  async run({ result, dryRun = false, mainConfigPath, storiesPaths, configDir }) {
+  async run({
+    result,
+    dryRun = false,
+    mainConfigPath,
+    storiesPaths,
+    configDir,
+    packageManager,
+    storybookVersion,
+  }) {
     if (!result) {
       return;
     }
@@ -121,9 +95,10 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
 
     // Update package.json files
     logger.debug('Updating package.json files...');
-    for (const packageJsonPath of result.packageJsonFiles) {
-      await transformPackageJson(packageJsonPath, dryRun);
-    }
+    await packageManager.removeDependencies(['@storybook/nextjs']);
+    await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
+      `@storybook/nextjs-vite@${storybookVersion}`,
+    ]);
 
     // Update main config file
     if (mainConfigPath) {

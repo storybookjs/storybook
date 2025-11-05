@@ -6553,7 +6553,7 @@ __metadata:
     semver: "npm:^7.3.5"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^5.8.3"
-    vite-plugin-storybook-nextjs: "npm:^3.0.0"
+    vite-plugin-storybook-nextjs: "npm:^3.1.0"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -26391,9 +26391,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "vite-plugin-storybook-nextjs@npm:3.0.0"
+"vite-plugin-storybook-nextjs@npm:^3.1.0":
+  version: 3.1.0
+  resolution: "vite-plugin-storybook-nextjs@npm:3.1.0"
   dependencies:
     "@next/env": "npm:16.0.0"
     image-size: "npm:^2.0.0"
@@ -26405,7 +26405,7 @@ __metadata:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
     storybook: ^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0
-  checksum: 10c0/bb460ddab4d46a98bdd1525c7f18117a0a335a3500243534955532b5a209d3e63aad369a96a669618dd13b785cabe74560b4439ce063c953c51b9ab44abb7b10
+  checksum: 10c0/a3c87a91eca84bda3b96eb8d66afa654542ed1ee3dbd3ec1a43dace4b53611e552a44d7ba8436888e965dbc6f099ddfa9c4ab91f691a19357ddc2f2cc940f9c5
   languageName: node
   linkType: hard
 

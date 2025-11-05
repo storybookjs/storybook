@@ -1,7 +1,7 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { TooltipLinkList, WithPopover } from 'storybook/internal/components';
+import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
@@ -127,7 +127,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
     return {
       onMouseEnter: handlers.onMouseEnter,
       node: shouldRender ? (
-        <WithPopover
+        <PopoverProvider
           placement="bottom-end"
           defaultVisible={false}
           visible={isOpen}
@@ -146,7 +146,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
           >
             <EllipsisIcon />
           </FloatingStatusButton>
-        </WithPopover>
+        </PopoverProvider>
       ) : null,
     };
   }, [context, handlers, isOpen, shouldRender, links, topLinks]);

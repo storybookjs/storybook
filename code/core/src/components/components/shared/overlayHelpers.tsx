@@ -71,8 +71,8 @@ export const Trigger = forwardRef<HTMLButtonElement, TriggerProps>((props, ref) 
 Trigger.displayName = 'Trigger';
 
 /**
- * Storybook decorator to help render WithPopover in stories. Internal to Storybook. Use at your own
- * risk.
+ * Storybook decorator to help render PopoverProvider in stories. Internal to Storybook. Use at your
+ * own risk.
  */
 export const OverlayTriggerDecorator: DecoratorFunction = (Story, { args }) => {
   const [container, setContainer] = useState<HTMLElement | null>(null);

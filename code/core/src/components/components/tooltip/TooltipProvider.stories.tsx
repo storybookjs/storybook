@@ -6,15 +6,15 @@ import { expect, fn, screen } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview';
 import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers';
-import { WithTooltipNew } from './WithTooltipNew';
+import { TooltipProvider } from './TooltipProvider';
 
 const SampleTooltip = () => 'Lorem ipsum dolor sit';
 const SampleTooltipNote = () => <TooltipNote note="This note appears on hover and focus" />;
 
 const meta = preview.meta({
-  id: 'overlay-WithTooltipNew',
-  title: 'Overlay/WithTooltipNew',
-  component: WithTooltipNew,
+  id: 'overlay-TooltipProvider',
+  title: 'Overlay/TooltipProvider',
+  component: TooltipProvider,
   args: {
     triggerOnFocusOnly: false,
     placement: 'top',
@@ -56,42 +56,42 @@ export const Placements = meta.story({
         padding: '2rem',
       }}
     >
-      <WithTooltipNew {...args} placement="top" tooltip="Top placement">
+      <TooltipProvider {...args} placement="top" tooltip="Top placement">
         <Trigger>Top</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="top-start" tooltip="Top start placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="top-start" tooltip="Top start placement">
         <Trigger>Top Start</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="top-end" tooltip="Top end placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="top-end" tooltip="Top end placement">
         <Trigger>Top End</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="bottom" tooltip="Bottom placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="bottom" tooltip="Bottom placement">
         <Trigger>Bottom</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="bottom-start" tooltip="Bottom start placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="bottom-start" tooltip="Bottom start placement">
         <Trigger>Bottom Start</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="bottom-end" tooltip="Bottom end placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="bottom-end" tooltip="Bottom end placement">
         <Trigger>Bottom End</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="left" tooltip="Left placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="left" tooltip="Left placement">
         <Trigger>Left</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="left-start" tooltip="Left start placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="left-start" tooltip="Left start placement">
         <Trigger>Left Start</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="left-end" tooltip="Left end placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="left-end" tooltip="Left end placement">
         <Trigger>Left End</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="right" tooltip="Right placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="right" tooltip="Right placement">
         <Trigger>Right</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="right-start" tooltip="Right start placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="right-start" tooltip="Right start placement">
         <Trigger>Right Start</Trigger>
-      </WithTooltipNew>
-      <WithTooltipNew {...args} placement="right-end" tooltip="Right end placement">
+      </TooltipProvider>
+      <TooltipProvider {...args} placement="right-end" tooltip="Right end placement">
         <Trigger>Right End</Trigger>
-      </WithTooltipNew>
+      </TooltipProvider>
     </div>
   ),
 });

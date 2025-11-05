@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Badge, Button, WithPopover } from 'storybook/internal/components';
+import { Badge, Button, PopoverProvider } from 'storybook/internal/components';
 import type {
   API_PreparedIndexEntry,
   StoryIndex,
@@ -234,7 +234,7 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
   }
 
   return (
-    <WithPopover
+    <PopoverProvider
       placement="bottom"
       onVisibleChange={setExpanded}
       offset={8}
@@ -268,6 +268,6 @@ export const TagsFilter = ({ api, indexJson, isDevelopment, tagPresets }: TagsFi
         <FilterIcon />
         {includedFilters.size + excludedFilters.size > 0 && <TagSelected />}
       </StyledIconButton>
-    </WithPopover>
+    </PopoverProvider>
   );
 };

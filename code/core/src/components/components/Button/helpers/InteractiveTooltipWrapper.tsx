@@ -3,7 +3,7 @@ import React, { type DOMAttributes, type ReactElement, useMemo } from 'react';
 import { type API_KeyCollection, shortcutToHumanString } from 'storybook/manager-api';
 
 import { TooltipNote } from '../../tooltip/TooltipNote';
-import { WithTooltipNew } from '../../tooltip/WithTooltipNew';
+import { TooltipProvider } from '../../tooltip/TooltipProvider';
 
 export const InteractiveTooltipWrapper: React.FC<{
   children: ReactElement<DOMAttributes<Element>, string>;
@@ -29,13 +29,13 @@ export const InteractiveTooltipWrapper: React.FC<{
   }, [shortcut, tooltip]);
 
   return tooltipLabel ? (
-    <WithTooltipNew
+    <TooltipProvider
       placement="top"
       tooltip={<TooltipNote note={tooltipLabel} />}
       visible={!disableAllTooltips ? undefined : false}
     >
       {children}
-    </WithTooltipNew>
+    </TooltipProvider>
   ) : (
     <>{children}</>
   );

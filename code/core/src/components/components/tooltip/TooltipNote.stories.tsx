@@ -4,7 +4,7 @@ import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
 import { TooltipNote } from './TooltipNote';
-import { WithTooltipNew } from './WithTooltipNew';
+import { TooltipProvider } from './TooltipProvider';
 
 const ViewPort = styled.div({
   height: 300,
@@ -18,9 +18,9 @@ const meta = preview.meta({
   decorators: [
     (storyFn) => (
       <ViewPort>
-        <WithTooltipNew defaultVisible tooltip={storyFn()}>
+        <TooltipProvider defaultVisible tooltip={storyFn()}>
           <Button ariaLabel={false}>Show Tooltip</Button>
-        </WithTooltipNew>
+        </TooltipProvider>
       </ViewPort>
     ),
   ],

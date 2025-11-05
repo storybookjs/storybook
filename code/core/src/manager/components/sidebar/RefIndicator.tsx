@@ -1,7 +1,7 @@
 import type { FC, MouseEventHandler, ReactNode } from 'react';
 import React, { forwardRef, useCallback, useMemo } from 'react';
 
-import { Button, Select, Spaced, WithPopover } from 'storybook/internal/components';
+import { Button, PopoverProvider, Select, Spaced } from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import {
@@ -158,7 +158,7 @@ export const RefIndicator = React.memo(
 
       return (
         <IndicatorPlacement ref={forwardedRef}>
-          <WithPopover
+          <PopoverProvider
             placement={isMobile ? 'bottom' : 'bottom-start'}
             padding={0}
             popover={() => (
@@ -192,7 +192,7 @@ export const RefIndicator = React.memo(
             >
               <GlobeIcon />
             </IndicatorClickTarget>
-          </WithPopover>
+          </PopoverProvider>
 
           {ref.versions && Object.keys(ref.versions).length ? (
             <>

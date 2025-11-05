@@ -2,7 +2,13 @@ import type { FC } from 'react';
 import React, { Fragment, useCallback, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { Button, ErrorFormatter, Link, Spaced, WithPopover } from 'storybook/internal/components';
+import {
+  Button,
+  ErrorFormatter,
+  Link,
+  PopoverProvider,
+  Spaced,
+} from 'storybook/internal/components';
 
 import { global } from '@storybook/global';
 import { ChevronDownIcon, LockIcon, SyncIcon } from '@storybook/icons';
@@ -121,7 +127,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
         <TextStyle>
           Oh no! Something went wrong loading this Storybook.
           <br />
-          <WithPopover
+          <PopoverProvider
             hasCloseButton
             offset={isMobile ? 0 : 8}
             placement={isMobile ? 'bottom-end' : 'bottom-start'}
@@ -134,7 +140,7 @@ export const ErrorBlock: FC<{ error: Error }> = ({ error }) => {
             <Link isButton>
               View error <ChevronDownIcon />
             </Link>
-          </WithPopover>{' '}
+          </PopoverProvider>{' '}
           <Link href="https://storybook.js.org/docs?ref=ui" cancel={false} target="_blank">
             View docs
           </Link>

@@ -1,7 +1,12 @@
 import type { ComponentProps, FC } from 'react';
 import React, { useState } from 'react';
 
-import { Button, ToggleButton, TooltipLinkList, WithPopover } from 'storybook/internal/components';
+import {
+  Button,
+  PopoverProvider,
+  ToggleButton,
+  TooltipLinkList,
+} from 'storybook/internal/components';
 
 import { CloseIcon, CogIcon } from '@storybook/icons';
 
@@ -124,7 +129,7 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
   }
 
   return (
-    <WithPopover
+    <PopoverProvider
       placement={'bottom-start'}
       padding={0}
       popover={({ onHide }) => <SidebarMenuList onClick={onHide} menu={menu} />}
@@ -141,6 +146,6 @@ export const SidebarMenu: FC<SidebarMenuProps> = ({ menu, isHighlighted, onClick
       >
         <CogIcon />
       </SidebarToggleButton>
-    </WithPopover>
+    </PopoverProvider>
   );
 };

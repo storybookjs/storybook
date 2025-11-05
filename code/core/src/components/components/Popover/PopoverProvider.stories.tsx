@@ -5,7 +5,7 @@ import { styled } from 'storybook/theming';
 
 import preview from '../../../../../.storybook/preview';
 import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers';
-import { WithPopover } from './WithPopover';
+import { PopoverProvider } from './PopoverProvider';
 
 const StyledSamplePopover = styled.div({
   padding: 10,
@@ -24,9 +24,9 @@ const SamplePopover = () => (
 );
 
 const meta = preview.meta({
-  id: 'overlay-WithPopover',
-  title: 'Overlay/WithPopover',
-  component: WithPopover,
+  id: 'overlay-PopoverProvider',
+  title: 'Overlay/PopoverProvider',
+  component: PopoverProvider,
   args: {
     hasChrome: true,
     offset: 8,
@@ -56,42 +56,42 @@ export const Placements = meta.story({
         padding: '2rem',
       }}
     >
-      <WithPopover {...args} placement="top" popover="Top placement">
+      <PopoverProvider {...args} placement="top" popover="Top placement">
         <Trigger>Top</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="top-start" popover="Top start placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="top-start" popover="Top start placement">
         <Trigger>Top Start</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="top-end" popover="Top end placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="top-end" popover="Top end placement">
         <Trigger>Top End</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="bottom" popover="Bottom placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="bottom" popover="Bottom placement">
         <Trigger>Bottom</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="bottom-start" popover="Bottom start placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="bottom-start" popover="Bottom start placement">
         <Trigger>Bottom Start</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="bottom-end" popover="Bottom end placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="bottom-end" popover="Bottom end placement">
         <Trigger>Bottom End</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="left" popover="Left placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="left" popover="Left placement">
         <Trigger>Left</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="left-start" popover="Left start placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="left-start" popover="Left start placement">
         <Trigger>Left Start</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="left-end" popover="Left end placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="left-end" popover="Left end placement">
         <Trigger>Left End</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="right" popover="Right placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="right" popover="Right placement">
         <Trigger>Right</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="right-start" popover="Right start placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="right-start" popover="Right start placement">
         <Trigger>Right Start</Trigger>
-      </WithPopover>
-      <WithPopover {...args} placement="right-end" popover="Right end placement">
+      </PopoverProvider>
+      <PopoverProvider {...args} placement="right-end" popover="Right end placement">
         <Trigger>Right End</Trigger>
-      </WithPopover>
+      </PopoverProvider>
     </div>
   ),
 });
@@ -224,7 +224,7 @@ export const InteractivePopoverMouse = meta.story({
   },
   render: (args) => (
     <div>
-      <WithPopover {...args} />
+      <PopoverProvider {...args} />
       <button>Sibling Button</button>
     </div>
   ),

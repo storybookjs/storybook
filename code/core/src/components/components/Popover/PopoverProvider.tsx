@@ -5,10 +5,10 @@ import { Pressable } from '@react-aria/interactions';
 import { DialogTrigger } from 'react-aria-components/patched-dist/Dialog';
 import { Popover as PopoverUpstream } from 'react-aria-components/patched-dist/Popover';
 
-import { Popover } from '../Popover/Popover';
 import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers';
+import { Popover } from './Popover';
 
-export interface WithPopoverProps {
+export interface PopoverProviderProps {
   /** Whether to display the Popover in a prestyled container. True by default. */
   hasChrome?: boolean;
 
@@ -52,7 +52,7 @@ export interface WithPopoverProps {
   onVisibleChange?: (isVisible: boolean) => void;
 }
 
-export const WithPopover = ({
+export const PopoverProvider = ({
   placement: placementProp = 'bottom-start',
   hasChrome = true,
   hasCloseButton = false,
@@ -65,7 +65,7 @@ export const WithPopover = ({
   visible,
   onVisibleChange,
   ...props
-}: WithPopoverProps) => {
+}: PopoverProviderProps) => {
   // Map Popper.js placement to react-aria placement best we can.
   const placement = convertToReactAriaPlacement(placementProp);
 

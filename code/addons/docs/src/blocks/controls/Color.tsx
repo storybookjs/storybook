@@ -1,7 +1,7 @@
 import type { ChangeEvent, FC, FocusEvent } from 'react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Button, Form, WithPopover } from 'storybook/internal/components';
+import { Button, Form, PopoverProvider } from 'storybook/internal/components';
 
 import { MarkupIcon } from '@storybook/icons';
 
@@ -391,7 +391,7 @@ export const ColorControl: FC<ColorControlProps> = ({
         readOnly={readOnly}
         placeholder="Choose color..."
       />
-      <WithPopover
+      <PopoverProvider
         defaultVisible={startOpen}
         visible={readOnly ? false : undefined}
         onVisibleChange={() => color && addPreset(color)}
@@ -437,7 +437,7 @@ export const ColorControl: FC<ColorControlProps> = ({
           style={{ margin: 4 }}
           disabled={readOnly}
         />
-      </WithPopover>
+      </PopoverProvider>
       {value ? (
         <CycleColorSpaceButton
           variant="ghost"

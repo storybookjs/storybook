@@ -11,7 +11,7 @@ import {
 
 import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers';
 
-export interface WithTooltipNewProps {
+export interface TooltipProviderProps {
   /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */
   triggerOnFocusOnly?: boolean;
 
@@ -49,7 +49,7 @@ export interface WithTooltipNewProps {
   onVisibleChange?: (isVisible: boolean) => void;
 }
 
-const WithTooltipNew = ({
+const TooltipProvider = ({
   triggerOnFocusOnly = false,
   placement: placementProp = 'top',
   offset = 8,
@@ -62,7 +62,7 @@ const WithTooltipNew = ({
   visible,
   onVisibleChange,
   ...props
-}: WithTooltipNewProps) => {
+}: TooltipProviderProps) => {
   const placement = convertToReactAriaPlacement(placementProp);
   const child = React.Children.only(children);
 
@@ -105,4 +105,4 @@ const WithTooltipNew = ({
   );
 };
 
-export { WithTooltipNew };
+export { TooltipProvider };

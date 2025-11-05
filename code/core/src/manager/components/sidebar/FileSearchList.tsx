@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo, useState } from 'react';
 
-import { TooltipNote, WithTooltipNew } from 'storybook/internal/components';
+import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
 import type {
   CreateNewStoryRequestPayload,
   FileComponentSearchResponsePayload,
@@ -192,7 +192,7 @@ export const FileSearchList = memo(function FileSearchList({
           aria-controls={`file-list-export-${virtualItem.index}`}
           id={`file-list-item-wrapper-${virtualItem.index}`}
         >
-          <WithTooltipNew
+          <TooltipProvider
             tooltip={tooltip ? <TooltipNote note={tooltip} /> : undefined}
             placement="top-start"
             delayHide={100}
@@ -219,7 +219,7 @@ export const FileSearchList = memo(function FileSearchList({
                 <FileListItemPath>{searchResult.filepath}</FileListItemPath>
               </FileListItemContent>
             </FileListItemContentWrapper>
-          </WithTooltipNew>
+          </TooltipProvider>
           {/* @ts-expect-error (non strict) */}
           {searchResult?.exportedComponents?.length > 1 && itemSelected && (
             <FileListExport

@@ -17,21 +17,39 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # Job steps
+    env:
+      # Configuration constants
+      NODE_VERSION: '20'
+      INSTALL_COMMAND: 'npm install' # Your install comman here
+      BUILD_COMMAND: 'npm run build-storybook' # Your command to build storybook
+      BUILD_PATH: './storybook-static' # The path to your static storybook build
+
     steps:
-      # Manual Checkout
+      # Checkout
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       # Set up Node
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      #👇 Add Storybook build and deploy to GitHub Pages as a step in the workflow
-      - uses: bitovi/github-actions-storybook-to-github-pages@v1.0.3
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 'Build'
+        shell: bash
+        run: |
+          echo "::group::Build"
+          ${{ env.INSTALL_COMMAND }}
+          ${{ env.BUILD_COMMAND }}
+          echo "::endgroup::"
+
+      - name: 'upload'
+        uses: actions/upload-pages-artifact@v3
         with:
-          install_command: yarn install # default: npm ci
-          build_command: yarn build-storybook # default: npm run build-storybook
-          path: storybook-static # default: dist/storybook
-          checkout: false # default: true
+          path: ${{ env.BUILD_PATH }}
+
+      - id: deploy
+        name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        with:
+          token: ${{ github.token }}
 ```

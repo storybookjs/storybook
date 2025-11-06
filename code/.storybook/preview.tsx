@@ -343,7 +343,7 @@ const parameters = {
           const prettierPluginBabel = await import('prettier/plugins/babel');
           const prettierPluginEstree = (await import('prettier/plugins/estree')).default;
 
-          return await prettier.format(source, {
+          return await prettier.format(`(${source.trim().replace(/;$/, '')})`, {
             parser: 'babel',
             plugins: [prettierPluginBabel, prettierPluginEstree],
           });

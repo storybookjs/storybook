@@ -391,11 +391,14 @@ async play({ canvas, userEvent }) {
           ),
         },
         {
-          id: 'accessibility-tests',
-          after: ['render-component'],
-          label: 'Run accessibility tests',
-          criteria: 'Accessibility tests are run from the test widget in the sidebar',
-          subscribe: ({ api, done }) => api.on('storybook/a11y/result', done), // TODO check test widget state
+          id: 'install-a11y',
+          label: 'Install Accessibility addon',
+          criteria: '@storybook/addon-a11y registered in .storybook/main.js|ts',
+          subscribe: ({ done }) => {
+            if (addons.experimental_getRegisteredAddons().includes('@storybook/addon-a11y')) {
+              done();
+            }
+          },
           content: (
             <>
               <p>
@@ -407,6 +410,18 @@ async play({ canvas, userEvent }) {
                 set it up, enabling you to run accessibility checks alongside your component tests:
               </p>
               <CodeSnippet language="bash">{`npx storybook add @storybook/addon-a11y`}</CodeSnippet>
+              <p>Restart your Storybook after installing the addon.</p>
+            </>
+          ),
+        },
+        {
+          id: 'accessibility-tests',
+          after: ['render-component', 'install-a11y'],
+          label: 'Run accessibility tests',
+          criteria: 'Accessibility tests are run from the test widget in the sidebar',
+          subscribe: ({ api, done }) => api.on('storybook/a11y/result', done), // TODO check test widget state
+          content: (
+            <>
               <p>
                 Expand the test widget, check the Accessibility checkbox, and click the Run
                 component tests button.
@@ -422,12 +437,14 @@ async play({ canvas, userEvent }) {
           ),
         },
         {
-          id: 'visual-tests',
-          after: ['render-component'],
-          label: 'Run visual tests',
-          criteria:
-            'Visual tests are run from the test widget in the sidebar or the Visual Tests panel',
-          subscribe: ({ api, done }) => api.on('chromaui/addon-visual-tests/startBuild', done),
+          id: 'install-chromatic',
+          label: 'Install Visual Tests addon',
+          criteria: '@chromatic-com/storybook registered in .storybook/main.js|ts',
+          subscribe: ({ done }) => {
+            if (addons.experimental_getRegisteredAddons().includes('@chromatic-com/storybook')) {
+              done();
+            }
+          },
           content: (
             <>
               <p>Visual tests verify the appearance of your UI components.</p>
@@ -437,6 +454,19 @@ async play({ canvas, userEvent }) {
                 Chromatic account):
               </p>
               <CodeSnippet language="bash">{`npx storybook add @chromatic-com/storybook`}</CodeSnippet>
+              <p>Restart your Storybook after installing the addon.</p>
+            </>
+          ),
+        },
+        {
+          id: 'visual-tests',
+          after: ['render-component', 'install-chromatic'],
+          label: 'Run visual tests',
+          criteria:
+            'Visual tests are run from the test widget in the sidebar or the Visual Tests panel',
+          subscribe: ({ api, done }) => api.on('chromaui/addon-visual-tests/startBuild', done),
+          content: (
+            <>
               <p>Expand the test widget and click the Run visual tests button.</p>
               <Link
                 href="https://storybook.js.org/docs/writing-tests/visual-testing"

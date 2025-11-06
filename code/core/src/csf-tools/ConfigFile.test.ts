@@ -99,6 +99,17 @@ describe('ConfigFile', () => {
           )
         ).toEqual('webpack5');
       });
+      it('resolves values through various TS satisfies/as syntaxes', () => {
+        const syntaxes = [
+          'const coreVar = { builder: "webpack5" } as const; export const core = coreVar satisfies any;',
+          'const coreVar = { builder: "webpack5" } as const; export const core = coreVar as any;',
+          'const coreVar = { builder: "webpack5" } as const satisfies Record<string, unknown>; export { coreVar as core };',
+        ];
+
+        for (const source of syntaxes) {
+          expect(getField(['core', 'builder'], source)).toEqual('webpack5');
+        }
+      });
     });
 
     describe('module exports', () => {
@@ -1876,6 +1887,24 @@ describe('ConfigFile', () => {
       const config = loadConfig(source).parse();
 
       expect(Object.keys(config._exportDecls)).toHaveLength(3);
+    });
+
+    it('detects exports object on various TS satisfies/as export syntaxes', () => {
+      const syntaxes = [
+        'const config = { framework: "foo" }; export default config;',
+        'const config = { framework: "foo" }; export default config satisfies StorybookConfig;',
+        'const config = { framework: "foo" }; export default config as StorybookConfig;',
+        'const config = { framework: "foo" }; export default config as unknown as StorybookConfig;',
+        'export default { framework: "foo" };',
+        'export default { framework: "foo" } satisfies StorybookConfig;',
+        'export default { framework: "foo" } as StorybookConfig;',
+        'export default { framework: "foo" } as unknown as StorybookConfig;',
+      ];
+      for (const source of syntaxes) {
+        const config = loadConfig(source).parse();
+        expect(config._exportsObject?.type).toBe('ObjectExpression');
+        expect(config._exportsObject?.properties).toHaveLength(1);
+      }
     });
   });
 });

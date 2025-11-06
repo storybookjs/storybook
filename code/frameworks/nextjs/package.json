@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "10.1.0-alpha.0",
+  "version": "10.1.0-alpha.6",
   "description": "Storybook for Next.js: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",

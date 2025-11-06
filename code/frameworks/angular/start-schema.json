@@ -93,10 +93,7 @@
     "compodocArgs": {
       "type": "array",
       "description": "Compodoc options : https://compodoc.app/guides/options.html. Options `-p` with tsconfig path and `-d` with workspace root is always given.",
-      "default": [
-        "-e",
-        "json"
-      ],
+      "default": ["-e", "json"],
       "items": {
         "type": "string"
       }
@@ -135,18 +132,12 @@
       "description": "URL path to be appended when visiting Storybook for the first time"
     },
     "webpackStatsJson": {
-      "type": [
-        "boolean",
-        "string"
-      ],
+      "type": ["boolean", "string"],
       "description": "Write Webpack Stats JSON to disk",
       "default": false
     },
     "statsJson": {
-      "type": [
-        "boolean",
-        "string"
-      ],
+      "type": ["boolean", "string"],
       "description": "Write stats JSON to disk",
       "default": false
     },
@@ -160,10 +151,7 @@
       "pattern": "(silly|verbose|info|warn|silent)"
     },
     "sourceMap": {
-      "type": [
-        "boolean",
-        "object"
-      ],
+      "type": ["boolean", "object"],
       "description": "Configure sourcemaps. See: https://angular.io/guide/workspace-config#source-map-configuration",
       "default": false
     },
@@ -205,11 +193,7 @@
             }
           },
           "additionalProperties": false,
-          "required": [
-            "glob",
-            "input",
-            "output"
-          ]
+          "required": ["glob", "input", "output"]
         },
         {
           "type": "string"
@@ -237,9 +221,7 @@
             }
           },
           "additionalProperties": false,
-          "required": [
-            "input"
-          ]
+          "required": ["input"]
         },
         {
           "type": "string",

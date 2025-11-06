@@ -108,7 +108,7 @@ export default function Onboarding({
     (dismissedStep?: StepKey) => {
       if (dismissedStep) {
         api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
-          step: dismissedStep,
+          dismissedStep,
           type: 'dismiss',
           userAgent,
         });

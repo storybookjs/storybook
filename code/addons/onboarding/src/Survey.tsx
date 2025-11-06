@@ -36,7 +36,7 @@ export default function Survey({ api }: { api: API }) {
 
   const dismiss = useCallback(() => {
     api.emit(STORYBOOK_ADDON_ONBOARDING_CHANNEL, {
-      type: 'skipSurvey',
+      type: 'dismissSurvey',
     });
     disableOnboarding();
   }, [api, disableOnboarding]);

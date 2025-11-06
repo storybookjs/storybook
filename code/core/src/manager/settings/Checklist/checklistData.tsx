@@ -96,11 +96,9 @@ export const checklistData: ChecklistData = {
           label: 'Take the guided tour',
           available: ({ api }) => !!api.getData('example-button--primary'),
           criteria: 'Guided tour is completed',
-          subscribe: ({ api, accept, skip }) =>
+          subscribe: ({ api, accept }) =>
             api.on('STORYBOOK_ADDON_ONBOARDING_CHANNEL', ({ step, type }) => {
-              if (type === 'dismiss') {
-                skip();
-              } else if (['6:IntentSurvey', '7:FinishedOnboarding'].includes(step)) {
+              if (type !== 'dismiss' && ['6:IntentSurvey', '7:FinishedOnboarding'].includes(step)) {
                 accept();
               }
             }),
@@ -122,14 +120,11 @@ export const checklistData: ChecklistData = {
           available: ({ api }) => !!api.getData('example-button--primary'),
           once: true,
           criteria: 'Onboarding survey is completed',
-          subscribe: ({ api, accept, skip }) =>
-            api.on('STORYBOOK_ADDON_ONBOARDING_CHANNEL', ({ type }) => {
-              if (type === 'survey') {
-                accept();
-              } else if (type === 'skipSurvey') {
-                skip();
-              }
-            }),
+          subscribe: ({ api, accept }) =>
+            api.on(
+              'STORYBOOK_ADDON_ONBOARDING_CHANNEL',
+              ({ type }) => type === 'survey' && accept()
+            ),
           action: {
             label: 'Open',
             onClick: ({ api }) => {
@@ -143,7 +138,7 @@ export const checklistData: ChecklistData = {
           label: "See what's new",
           criteria: "What's New page is opened",
           action: {
-            label: 'Start',
+            label: 'Go',
             onClick: ({ api, accept }) => {
               api.navigate('/settings/whats-new');
               accept();
@@ -519,7 +514,6 @@ export default {
               </p>
             </>
           ),
-          // Criteria: At least one component with the autodocs tag applied
         },
         {
           id: 'mdx-docs',

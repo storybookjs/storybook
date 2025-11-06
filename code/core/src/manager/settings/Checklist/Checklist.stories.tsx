@@ -16,7 +16,11 @@ const Container = styled.div(({ theme }) => ({
 const managerContext: any = {
   state: {},
   api: {
-    navigateUrl: fn().mockName('api::navigateUrl'),
+    getData: fn().mockName('api::getData'),
+    getIndex: fn().mockName('api::getIndex'),
+    getUrlState: fn().mockName('api::getUrlState'),
+    navigate: fn().mockName('api::navigate'),
+    on: fn().mockName('api::on'),
   },
 };
 

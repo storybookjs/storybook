@@ -126,9 +126,18 @@ export class BUNProxy extends JsPackageManager {
     args,
     ...options
   }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+    // The following command is unsafe to use with `bun run`
+    // because it will always favour a equally script named in the package.json instead of the installed binary.
+    // so running `bun storybook automigrate` will run the
+    // `storybook` script (dev) instead of the `storybook`. binary.
+    // return executeCommand({
+    //   command: 'bun',
+    //   args: ['run', ...args],
+    //   ...options,
+    // });
     return executeCommand({
-      command: 'bun',
-      args: ['run', ...args],
+      command: 'npx',
+      args: [...args],
       ...options,
     });
   }

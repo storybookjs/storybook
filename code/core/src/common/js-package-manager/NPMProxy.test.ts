@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 
-import { executeCommand, executeCommandSync } from '../utils/command';
+import { executeCommand } from '../utils/command';
 import { JsPackageManager } from './JsPackageManager';
 import { NPMProxy } from './NPMProxy';
 

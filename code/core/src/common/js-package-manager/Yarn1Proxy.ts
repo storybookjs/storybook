@@ -50,10 +50,6 @@ export class Yarn1Proxy extends JsPackageManager {
     return `yarn ${command}`;
   }
 
-  public runRemoteCommand(options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }) {
-    return executeCommand({ command: 'npx', ...options });
-  }
-
   public runPackageCommandSync({
     args,
     ...options

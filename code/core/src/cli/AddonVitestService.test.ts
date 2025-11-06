@@ -30,7 +30,6 @@ describe('AddonVitestService', () => {
     mockPackageManager = {
       getAllDependencies: vi.fn(),
       getInstalledVersion: vi.fn(),
-      runRemoteCommand: vi.fn(),
     } as Partial<JsPackageManager> as JsPackageManager;
 
     // Setup default mocks for logger and prompt
@@ -400,7 +399,7 @@ describe('AddonVitestService', () => {
 
       await service.installPlaywright(mockPackageManager);
 
-      expect(mockPackageManager.runRemoteCommand).toHaveBeenCalledWith({
+      expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
         args: ['playwright', 'install', 'chromium', '--with-deps'],
         signal: undefined,
         stdio: 'ignore',

@@ -53,13 +53,6 @@ export class PNPMProxy extends JsPackageManager {
     return `pnpm run ${command}`;
   }
 
-  public runRemoteCommand({
-    args,
-    ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }) {
-    return executeCommand({ command: 'pnpm', args: ['dlx', ...args], ...options });
-  }
-
   async getPnpmVersion(): Promise<string> {
     const result = await executeCommand({
       cwd: this.cwd,

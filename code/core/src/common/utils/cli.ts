@@ -115,7 +115,7 @@ export function getEnvConfig(program: Record<string, any>, configEnv: Record<str
  * // SCENARIO 2:
  * // or you can pass it to stdio and capture the output of that command
  * try {
- *   await this.executeCommand({
+ *   await executeCommand({
  *     command: 'pnpm',
  *     args: ['info', packageName, ...args],
  *     // do not output to the user, and send stdio and stderr to log file

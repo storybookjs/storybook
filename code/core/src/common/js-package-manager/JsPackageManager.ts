@@ -5,7 +5,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import { type CommonOptions, type ExecaChildProcess, execa, execaCommandSync } from 'execa';
+import { type ExecaChildProcess } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
@@ -13,6 +13,7 @@ import { gt, satisfies } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError';
+import type { ExecuteCommandOptions } from '../utils/command';
 import { findFilesUp, getProjectRoot } from '../utils/paths';
 import storybookPackagesVersions from '../versions';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson';
@@ -102,11 +103,6 @@ export abstract class JsPackageManager {
 
   /** Runs arbitrary package scripts. */
   abstract getRunCommand(command: string): string;
-  /**
-   * Run a command from a local or remote. Fetches a package from the registry without installing it
-   * as a dependency, hotloads it, and runs whatever default command binary it exposes.
-   */
-  abstract getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string;
 
   /** Get the package.json file for a given module. */
   abstract getModulePackageJSON(packageName: string): Promise<PackageJson | null>;
@@ -138,7 +134,7 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies(options?: { force?: boolean }) {
-    await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
+    await prompt.executeTaskWithSpinner((_signal) => this.runInstall(options), {
       id: 'install-dependencies',
       intro: 'Installing dependencies...',
       error: 'Installation of dependencies failed!',
@@ -151,7 +147,8 @@ export abstract class JsPackageManager {
 
   async dedupeDependencies(options?: { force?: boolean }) {
     await prompt.executeTask(
-      () => this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
+      (_signal) =>
+        this.runInternalCommand('dedupe', [...(options?.force ? ['--force'] : [])], this.cwd),
       {
         intro: 'Deduplicating dependencies...',
         error: 'An error occurred while deduplicating dependencies.',
@@ -600,17 +597,14 @@ export abstract class JsPackageManager {
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ): ExecaChildProcess;
+  public abstract runRemoteCommand(
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
+  ): ExecaChildProcess;
   public abstract runPackageCommand(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'inherit' | 'pipe' | 'ignore'
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
   ): ExecaChildProcess;
   public abstract runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'inherit' | 'pipe' | 'ignore'
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
   ): string;
   public abstract findInstallations(pattern?: string[]): Promise<InstallationMetadata | undefined>;
   public abstract findInstallations(
@@ -618,88 +612,6 @@ export abstract class JsPackageManager {
     options?: { depth: number }
   ): Promise<InstallationMetadata | undefined>;
   public abstract parseErrorFromLogs(logs?: string): string;
-
-  public executeCommandSync({
-    command,
-    args = [],
-    stdio,
-    cwd,
-    ignoreError = false,
-    env,
-    ...execaOptions
-  }: CommonOptions<'utf8'> & {
-    command: string;
-    args: string[];
-    cwd?: string;
-    ignoreError?: boolean;
-  }): string {
-    try {
-      const commandResult = execaCommandSync([command, ...args].join(' '), {
-        cwd: cwd ?? this.cwd,
-        stdio: stdio ?? 'pipe',
-        shell: true,
-        cleanup: true,
-        env: {
-          ...COMMON_ENV_VARS,
-          ...env,
-        },
-        ...execaOptions,
-      });
-
-      return commandResult.stdout ?? '';
-    } catch (err) {
-      if (ignoreError !== true) {
-        throw err;
-      }
-      return '';
-    }
-  }
-
-  /**
-   * Execute a command asynchronously and return the execa process. This allows you to hook into
-   * stdout/stderr streams and monitor the process.
-   *
-   * @example Const process = packageManager.executeCommand({ command: 'npm', args: ['install'] });
-   * process.stdout?.on('data', (data) => console.log(data.toString())); const result = await
-   * process;
-   */
-  public executeCommand({
-    command,
-    args = [],
-    stdio,
-    cwd,
-    ignoreError = false,
-    env,
-    ...execaOptions
-  }: CommonOptions<'utf8'> & {
-    command: string;
-    args: string[];
-    cwd?: string;
-    ignoreError?: boolean;
-  }): ExecaChildProcess {
-    logger.debug(`Executing command: ${command} ${args.join(' ')}`);
-    const execaProcess = execa(command, args, {
-      cwd: cwd ?? this.cwd,
-      stdio: stdio ?? prompt.getPreferredStdio(),
-      encoding: 'utf8',
-      shell: true,
-      cleanup: true,
-      env: {
-        ...COMMON_ENV_VARS,
-        ...env,
-      },
-      ...execaOptions,
-    });
-
-    // If ignoreError is true, catch and suppress errors
-    if (ignoreError) {
-      execaProcess.catch((err) => {
-        // Silently ignore errors when ignoreError is true
-      });
-    }
-
-    return execaProcess;
-  }
 
   // TODO: Remove pnp compatibility code in SB11
   /** Returns the installed (within node_modules or pnp zip) version of a specified package */

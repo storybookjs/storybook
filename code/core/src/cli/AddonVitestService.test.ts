@@ -3,7 +3,7 @@ import * as fs from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getProjectRoot } from 'storybook/internal/common';
+import { executeCommand, getProjectRoot } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -30,7 +30,7 @@ describe('AddonVitestService', () => {
     mockPackageManager = {
       getAllDependencies: vi.fn(),
       getInstalledVersion: vi.fn(),
-      executeCommand: vi.fn(),
+      runRemoteCommand: vi.fn(),
     } as Partial<JsPackageManager> as JsPackageManager;
 
     // Setup default mocks for logger and prompt
@@ -382,14 +382,16 @@ describe('AddonVitestService', () => {
         intro: 'Installing Playwright browser binaries',
         error: expect.stringContaining('An error occurred'),
         success: 'Playwright browser binaries installed successfully',
+        abortable: true,
       });
     });
 
     it('should execute playwright install command', async () => {
-      let commandFactory: (() => ExecaChildProcess) | (() => ExecaChildProcess)[];
+      type ChildProcessFactory = (signal?: AbortSignal) => ExecaChildProcess;
+      let commandFactory: ChildProcessFactory | ChildProcessFactory[];
       vi.mocked(prompt.confirm).mockResolvedValue(true);
       vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
-        async (factory: (() => ExecaChildProcess) | (() => ExecaChildProcess)[]) => {
+        async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
           commandFactory = Array.isArray(factory) ? factory[0] : factory;
           // Simulate the child process completion
           commandFactory();
@@ -398,10 +400,10 @@ describe('AddonVitestService', () => {
 
       await service.installPlaywright(mockPackageManager);
 
-      expect(mockPackageManager.executeCommand).toHaveBeenCalledWith({
-        command: 'npx',
+      expect(mockPackageManager.runRemoteCommand).toHaveBeenCalledWith({
         args: ['playwright', 'install', 'chromium', '--with-deps'],
-        killSignal: 'SIGINT',
+        signal: undefined,
+        stdio: 'ignore',
       });
     });
 

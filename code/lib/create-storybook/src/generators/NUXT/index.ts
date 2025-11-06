@@ -27,12 +27,9 @@ export default defineGeneratorModule({
     );
 
     // Add nuxtjs/storybook to nuxt.config.js
-    await packageManager.runPackageCommand('nuxi', [
-      'module',
-      'add',
-      '@nuxtjs/storybook',
-      '--skipInstall',
-    ]);
+    await packageManager.runPackageCommand({
+      args: ['nuxi', 'module', 'add', '@nuxtjs/storybook', '--skipInstall'],
+    });
 
     return {
       extraPackages: ['@nuxtjs/storybook'],

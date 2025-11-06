@@ -324,13 +324,17 @@ export default async function postInstall(options: PostinstallOptions) {
 
   if (a11yAddon) {
     try {
-      const command = ['automigrate', 'addon-a11y-addon-test'];
-
-      command.push('--loglevel', 'silent');
-      command.push('--yes', '--skip-doctor');
+      const command = [
+        'storybook',
+        'automigrate',
+        'addon-a11y-addon-test',
+        '--loglevel=silent',
+        '--yes',
+        '--skip-doctor',
+      ];
 
       if (options.packageManager) {
-        command.push('--package-manager', options.packageManager);
+        command.push(`--package-manager=${options.packageManager}`);
       }
 
       if (options.skipInstall) {
@@ -338,15 +342,12 @@ export default async function postInstall(options: PostinstallOptions) {
       }
 
       if (options.configDir !== '.storybook') {
-        command.push('--config-dir', `"${options.configDir}"`);
+        command.push(`--config-dir="${options.configDir}"`);
       }
-
-      const remoteCommand = packageManager.getRemoteRunCommand('storybook', command);
-      const [cmd, ...args] = remoteCommand.split(' ');
 
       await prompt.executeTask(
         // TODO: Remove stdio: 'ignore' once we have a way to log the output of the command properly
-        () => packageManager.executeCommand({ command: cmd, args, stdio: 'ignore' }),
+        () => packageManager.runPackageCommand({ args: command, stdio: 'ignore' }),
         {
           intro: 'Setting up a11y addon for @storybook/addon-vitest',
           error: 'Failed to setup a11y addon for @storybook/addon-vitest',

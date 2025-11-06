@@ -33,11 +33,9 @@ async function runStoriesCodemod(options: {
 
     logger.step('Applying codemod on your stories, this might take some time...');
 
-    await packageManager.runPackageCommand('storybook', [
-      'migrate',
-      'csf-2-to-3',
-      `--glob="${globString}"`,
-    ]);
+    await packageManager.runPackageCommand({
+      args: ['storybook', 'migrate', 'csf-2-to-3', `--glob="${globString}"`],
+    });
 
     await runCodemod(globString, (info) => storyToCsfFactory(info, codemodOptions), {
       dryRun,

@@ -133,6 +133,10 @@ const handleCommandFailure = async (): Promise<never> => {
   process.exit(1);
 };
 
+// cli command -> ctrl c -> exit 0
+// process.on('SIGINT', () => {
+// })
+
 /** Main initiate function with telemetry wrapper */
 export async function initiate(options: CommandOptions): Promise<void> {
   const initiateResult = await withTelemetry(

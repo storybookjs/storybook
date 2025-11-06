@@ -355,7 +355,13 @@ export interface ComponentManifest {
   description?: string;
   import?: string;
   summary?: string;
-  stories: { name: string; snippet?: string; error?: { name: string; message: string } }[];
+  stories: {
+    name: string;
+    snippet?: string;
+    description?: string;
+    summary?: string;
+    error?: { name: string; message: string };
+  }[];
   jsDocTags: Record<string, string[]>;
   error?: { name: string; message: string };
 }

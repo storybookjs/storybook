@@ -20,7 +20,7 @@ jobs:
     env:
       # Configuration constants
       NODE_VERSION: '20'
-      INSTALL_COMMAND: 'npm install' # Your install comman here
+      INSTALL_COMMAND: 'npm install' # Your install command here
       BUILD_COMMAND: 'npm run build-storybook' # Your command to build storybook
       BUILD_PATH: './storybook-static' # The path to your static storybook build
 
@@ -33,22 +33,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: 'Build'
+      # Build Storybook
+      - name: 'Build Storybook'
         shell: bash
         run: |
           echo "::group::Build"
           ${{ env.INSTALL_COMMAND }}
           ${{ env.BUILD_COMMAND }}
           echo "::endgroup::"
-
-      - name: 'upload'
+      # Upload pages artifact
+      - name: 'Upload Pages artifact'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ${{ env.BUILD_PATH }}
-
+      # Deploy to Github Pages
       - id: deploy
-        name: Deploy to GitHub Pages
+        name: 'Deploy to GitHub Pages'
         uses: actions/deploy-pages@v4
         with:
           token: ${{ github.token }}

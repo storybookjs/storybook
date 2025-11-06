@@ -1,6 +1,7 @@
+import type { ComponentProps } from 'react';
 import React from 'react';
 
-import { Link } from 'storybook/internal/components';
+import { Link, SyntaxHighlighter } from 'storybook/internal/components';
 import {
   STORY_ARGS_UPDATED,
   STORY_FINISHED,
@@ -10,6 +11,27 @@ import {
 import type { API_IndexHash, API_PreparedIndexEntry } from 'storybook/internal/types';
 
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
+import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
+
+const CodeWrapper = styled.div(({ theme }) => ({
+  alignSelf: 'stretch',
+  background: theme.background.content,
+  borderRadius: theme.appBorderRadius,
+  margin: '5px 0',
+  padding: 10,
+  fontSize: theme.typography.size.s1,
+  '.linenumber': {
+    opacity: 0.5,
+  },
+}));
+
+const CodeSnippet = (props: ComponentProps<typeof SyntaxHighlighter>) => (
+  <ThemeProvider theme={convert(themes.dark)}>
+    <CodeWrapper>
+      <SyntaxHighlighter {...props} />
+    </CodeWrapper>
+  </ThemeProvider>
+);
 
 export interface ChecklistData {
   sections: {
@@ -263,17 +285,15 @@ export const checklistData: ChecklistData = {
                 everyone use your Storybook more effectively.
               </p>
               <p>You can create a section like so:</p>
-              <code>
-                <pre>
-                  {`// Button.stories.js
+              <CodeSnippet language="jsx">
+                {`// Button.stories.js
 
 export default {
   component: Button,
 -  title: 'Button', // You may not have this
 +  title: 'Atoms/Button',
 }`}
-                </pre>
-              </code>
+              </CodeSnippet>
             </>
           ),
         },
@@ -299,9 +319,7 @@ export default {
                 More stories for your components means better documentation and more test coverage.
                 Add the Vitest addon to your Storybook project to get started:
               </p>
-              <code>
-                <pre>{`npx storybook add @storybook/addon-vitest`}</pre>
-              </code>
+              <CodeSnippet language="bash">{`npx storybook add @storybook/addon-vitest`}</CodeSnippet>
               <p>Restart your Storybook after installing the addon.</p>
             </>
           ),
@@ -351,17 +369,13 @@ export default {
                 When you need to test non-visual or particularly complex behavior of a component,
                 add a play function.
               </p>
-              <code>
-                <pre>
-                  {`// Button.stories.js
+              <CodeSnippet language="jsx">
+                {`// Button.stories.js
 
 async play({ canvas, userEvent }) {
-	// Simulate behavior
-	
-	// Make assertions
+  // Simulate behavior and make assertions
 }`}
-                </pre>
-              </code>
+              </CodeSnippet>
               <p>
                 You can interact with and debug each step defined in a play function within the
                 Interactions panel.
@@ -392,9 +406,7 @@ async play({ canvas, userEvent }) {
                 If you are not yet using the accessibility addon, run this command to install and
                 set it up, enabling you to run accessibility checks alongside your component tests:
               </p>
-              <code>
-                <pre>{`npx storybook add @storybook/addon-a11y`}</pre>
-              </code>
+              <CodeSnippet language="bash">{`npx storybook add @storybook/addon-a11y`}</CodeSnippet>
               <p>
                 Expand the test widget, check the Accessibility checkbox, and click the Run
                 component tests button.
@@ -424,9 +436,7 @@ async play({ canvas, userEvent }) {
                 it up, enabling you to run visual tests on your stories (this requires a free
                 Chromatic account):
               </p>
-              <code>
-                <pre>{`npx storybook add @chromatic-com/storybook`}</pre>
-              </code>
+              <CodeSnippet language="bash">{`npx storybook add @chromatic-com/storybook`}</CodeSnippet>
               <p>Expand the test widget and click the Run visual tests button.</p>
               <Link
                 href="https://storybook.js.org/docs/writing-tests/visual-testing"
@@ -498,16 +508,14 @@ async play({ canvas, userEvent }) {
                 documentation for that component, complete with examples, source code, an API table,
                 and a description.
               </p>
-              <code>
-                <pre>
-                  {`// Button.stories.js
+              <CodeSnippet language="jsx">
+                {`// Button.stories.js
 
 export default {
   component: Button,
   tags: ['autodocs'], // 👈 Add this tag
 }`}
-                </pre>
-              </code>
+              </CodeSnippet>
               <p>
                 That tag can also be applied in <pre>.storybook/preview.js</pre>, to generate
                 documentation for all components.

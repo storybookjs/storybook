@@ -93,13 +93,6 @@ export class Yarn2Proxy extends JsPackageManager {
     return `yarn ${command}`;
   }
 
-  public runRemoteCommand({
-    args,
-    ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }) {
-    return executeCommand({ command: 'yarn', args: ['dlx', ...args], ...options });
-  }
-
   public runPackageCommandSync({
     args,
     ...options

@@ -183,7 +183,7 @@ export const baseTemplates = {
     initOptions: {
       builder: 'webpack5',
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
   },
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',

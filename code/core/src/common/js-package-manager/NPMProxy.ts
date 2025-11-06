@@ -76,10 +76,6 @@ export class NPMProxy extends JsPackageManager {
     return `npm run ${command}`;
   }
 
-  public runRemoteCommand(options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }) {
-    return executeCommand({ command: 'npx', ...options });
-  }
-
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const wantedPath = join('node_modules', packageName, 'package.json');
     const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
@@ -110,13 +106,11 @@ export class NPMProxy extends JsPackageManager {
     });
   }
 
-  public runPackageCommand({
-    args,
-    ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+  public runPackageCommand(
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
+  ): ExecaChildProcess {
     return executeCommand({
-      command: 'npm',
-      args: ['exec', '--', ...args],
+      command: 'npx',
       ...options,
     });
   }

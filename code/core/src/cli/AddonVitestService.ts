@@ -136,7 +136,7 @@ export class AddonVitestService {
       if (shouldBeInstalled) {
         await prompt.executeTaskWithSpinner(
           (signal) =>
-            packageManager.runRemoteCommand({
+            packageManager.runPackageCommand({
               args: playwrightCommand,
               stdio: 'ignore',
               signal,

@@ -88,10 +88,6 @@ export class BUNProxy extends JsPackageManager {
     return `bunx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
   }
 
-  public runRemoteCommand(options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }) {
-    return executeCommand({ command: 'bunx', ...options });
-  }
-
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
     const wantedPath = join('node_modules', packageName, 'package.json');
     const packageJsonPath = find.up(wantedPath, { cwd: this.cwd, last: getProjectRoot() });
@@ -111,24 +107,29 @@ export class BUNProxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  public runPackageCommandSync({
-    args,
-    ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): string {
+  public runPackageCommandSync(
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
+  ): string {
     return executeCommandSync({
-      command: 'bun',
-      args: ['run', ...args],
+      command: 'bunx',
       ...options,
     });
   }
 
-  public runPackageCommand({
-    args,
-    ...options
-  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+  public runPackageCommand(
+    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
+  ): ExecaChildProcess {
+    // The following command is unsafe to use with `bun run`
+    // because it will always favour a equally script named in the package.json instead of the installed binary.
+    // so running `bun storybook automigrate` will run the
+    // `storybook` script (dev) instead of the `storybook`. binary.
+    // return executeCommand({
+    //   command: 'bun',
+    //   args: ['run', ...args],
+    //   ...options,
+    // });
     return executeCommand({
-      command: 'bun',
-      args: ['run', ...args],
+      command: 'bunx',
       ...options,
     });
   }

@@ -191,7 +191,8 @@ export async function storybookDevServer(options: Options) {
         // logger?.error?.(e instanceof Error ? e : String(e));
         res.statusCode = 500;
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.end(`<pre>${e instanceof Error ? e.toString() : String(e)}</pre>`);
+        invariant(e instanceof Error);
+        res.end(`<pre>${e.stack}</pre>`);
       }
     });
   }

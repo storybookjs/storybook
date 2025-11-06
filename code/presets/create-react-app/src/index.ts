@@ -1,3 +1,4 @@
+import module from 'node:module';
 import { dirname, join, relative } from 'node:path';
 
 import { logger } from 'storybook/internal/node-logger';

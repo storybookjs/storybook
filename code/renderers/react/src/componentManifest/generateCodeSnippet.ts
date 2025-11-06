@@ -118,17 +118,26 @@ export function getCodeSnippet(
     ? metaPath.get('properties').filter((p) => p.isObjectProperty())
     : [];
 
-  const getRenderPath = (object: NodePath<t.ObjectProperty>[]) =>
-    object
-      .filter((p) => keyOf(p.node) === 'render')
-      .map((p) => p.get('value'))
-      .find(
-        (v): v is NodePath<t.ArrowFunctionExpression | t.FunctionExpression> =>
-          v.isArrowFunctionExpression() || v.isFunctionExpression()
-      );
+  const getRenderPath = (object: NodePath<t.ObjectProperty>[]) => {
+    const renderPath = object.find((p) => keyOf(p.node) === 'render')?.get('value');
 
-  const renderPath = getRenderPath(storyProps);
+    if (renderPath?.isIdentifier()) {
+      componentName = renderPath.node.name;
+    }
+    if (
+      renderPath &&
+      !(renderPath.isArrowFunctionExpression() || renderPath.isFunctionExpression())
+    ) {
+      throw renderPath.buildCodeFrameError(
+        'Expected render to be an arrow function or function expression'
+      );
+    }
+
+    return renderPath;
+  };
+
   const metaRenderPath = getRenderPath(metaProps);
+  const renderPath = getRenderPath(storyProps);
 
   storyFn ??= renderPath ?? metaRenderPath;
 

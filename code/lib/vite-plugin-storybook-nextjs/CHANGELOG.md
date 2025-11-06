@@ -1,3 +1,17 @@
+# v3.1.1 (Thu Nov 06 2025)
+
+#### 🐛 Bug Fix
+
+- fix: Support 10.1 canary releases [#71](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/71) ([@valentinpalkovic](https://github.com/valentinpalkovic))
+- Fix local story globs [#70](https://github.com/storybookjs/vite-plugin-storybook-nextjs/pull/70) ([@yannbf](https://github.com/yannbf))
+
+#### Authors: 2
+
+- Valentin Palkovic ([@valentinpalkovic](https://github.com/valentinpalkovic))
+- Yann Braga ([@yannbf](https://github.com/yannbf))
+
+---
+
 # v3.1.0 (Wed Nov 05 2025)
 
 #### 🚀 Enhancement

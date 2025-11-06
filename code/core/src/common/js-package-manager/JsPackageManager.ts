@@ -597,9 +597,6 @@ export abstract class JsPackageManager {
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ): ExecaChildProcess;
-  public abstract runRemoteCommand(
-    options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
-  ): ExecaChildProcess;
   public abstract runPackageCommand(
     options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }
   ): ExecaChildProcess;

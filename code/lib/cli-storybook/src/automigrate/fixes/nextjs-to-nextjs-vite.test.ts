@@ -27,6 +27,10 @@ vi.mock('storybook/internal/common', () => ({
   transformImportFiles: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('globby', () => ({
+  globby: vi.fn().mockResolvedValue([]),
+}));
+
 const mockReadFile = vi.mocked(readFile);
 const mockWriteFile = vi.mocked(writeFile);
 
@@ -34,10 +38,14 @@ describe('nextjs-to-nextjs-vite', () => {
   const mockPackageManager = {
     getAllDependencies: vi.fn(),
     packageJsonPaths: ['/project/package.json'],
+    removeDependencies: vi.fn().mockResolvedValue(undefined),
+    addDependencies: vi.fn().mockResolvedValue(undefined),
   } as unknown as JsPackageManager;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
+    vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
   });
 
   describe('check function', () => {
@@ -139,11 +147,13 @@ describe('nextjs-to-nextjs-vite', () => {
         mainConfigPath: '/project/.storybook/main.js',
         storiesPaths: ['**/*.stories.*'],
         configDir: '.storybook',
+        storybookVersion: '9.0.0',
       } as any);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        '/project/package.json',
-        expect.stringContaining('@storybook/nextjs-vite')
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
+      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
+        { type: 'devDependencies', skipInstall: true },
+        ['@storybook/nextjs-vite@9.0.0']
       );
     });
 
@@ -167,8 +177,14 @@ describe('nextjs-to-nextjs-vite', () => {
         mainConfigPath: '/project/.storybook/main.js',
         storiesPaths: ['**/*.stories.*'],
         configDir: '.storybook',
+        storybookVersion: '9.0.0',
       } as any);
 
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
+      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
+        { type: 'devDependencies', skipInstall: true },
+        ['@storybook/nextjs-vite@9.0.0']
+      );
       expect(mockWriteFile).toHaveBeenCalledWith(
         '/project/.storybook/main.js',
         expect.stringContaining('@storybook/nextjs-vite')
@@ -196,8 +212,14 @@ describe('nextjs-to-nextjs-vite', () => {
         mainConfigPath: '/project/.storybook/main.js',
         storiesPaths: ['**/*.stories.*'],
         configDir: '.storybook',
+        storybookVersion: '9.0.0',
       } as any);
 
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
+      expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
+        { type: 'devDependencies', skipInstall: true },
+        ['@storybook/nextjs-vite@9.0.0']
+      );
       expect(mockWriteFile).not.toHaveBeenCalled();
     });
   });

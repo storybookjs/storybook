@@ -1,5 +1,5 @@
 import { isCI, optionalEnvToBoolean } from 'storybook/internal/common';
-import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
+import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { program } from 'commander';

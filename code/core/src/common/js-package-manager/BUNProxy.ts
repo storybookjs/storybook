@@ -6,8 +6,12 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { FindPackageVersionsError } from 'storybook/internal/server-errors';
 
 import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ExecaChildProcess } from 'execa';
 import sort from 'semver/functions/sort.js';
 
+import type { ExecuteCommandOptions } from '../utils/command';
+import { executeCommand, executeCommandSync } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
 import { JsPackageManager } from './JsPackageManager';
 import type { PackageJson } from './PackageJson';
@@ -69,7 +73,7 @@ export class BUNProxy extends JsPackageManager {
   installArgs: string[] | undefined;
 
   async initPackageJson() {
-    return this.executeCommand({ command: 'bun', args: ['init'] });
+    return executeCommand({ command: 'bun', args: ['init'] });
   }
 
   getRunStorybookCommand(): string {
@@ -82,6 +86,10 @@ export class BUNProxy extends JsPackageManager {
 
   getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
     return `bunx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
+  }
+
+  public runRemoteCommand(options: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }) {
+    return executeCommand({ command: 'bunx', ...options });
   }
 
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
@@ -103,31 +111,25 @@ export class BUNProxy extends JsPackageManager {
     return this.installArgs;
   }
 
-  public runPackageCommandSync(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ): string {
-    return this.executeCommandSync({
+  public runPackageCommandSync({
+    args,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): string {
+    return executeCommandSync({
       command: 'bun',
-      args: ['run', command, ...args],
-      cwd,
-      stdio,
+      args: ['run', ...args],
+      ...options,
     });
   }
 
-  public runPackageCommand(
-    command: string,
-    args: string[],
-    cwd?: string,
-    stdio?: 'pipe' | 'inherit'
-  ) {
-    return this.executeCommand({
+  public runPackageCommand({
+    args,
+    ...options
+  }: Omit<ExecuteCommandOptions, 'command'> & { args: string[] }): ExecaChildProcess {
+    return executeCommand({
       command: 'bun',
-      args: ['run', command, ...args],
-      cwd,
-      stdio,
+      args: ['run', ...args],
+      ...options,
     });
   }
 
@@ -137,15 +139,21 @@ export class BUNProxy extends JsPackageManager {
     cwd?: string,
     stdio?: 'inherit' | 'pipe' | 'ignore'
   ) {
-    return this.executeCommand({ command: 'bun', args: [command, ...args], cwd, stdio });
+    return executeCommand({
+      command: 'bun',
+      args: [command, ...args],
+      cwd: cwd ?? this.cwd,
+      stdio,
+    });
   }
 
   public async findInstallations(pattern: string[], { depth = 99 }: { depth?: number } = {}) {
     const exec = async ({ packageDepth }: { packageDepth: number }) => {
       const pipeToNull = platform() === 'win32' ? '2>NUL' : '2>/dev/null';
-      return this.executeCommand({
+      return executeCommand({
         command: 'npm',
         args: ['ls', '--json', `--depth=${packageDepth}`, pipeToNull],
+        cwd: this.cwd,
         env: {
           FORCE_COLOR: 'false',
         },
@@ -188,7 +196,7 @@ export class BUNProxy extends JsPackageManager {
   }
 
   protected runInstall(options?: { force?: boolean }) {
-    return this.executeCommand({
+    return executeCommand({
       command: 'bun',
       args: ['install', ...this.getInstallArgs(), ...(options?.force ? ['--force'] : [])],
       cwd: this.cwd,
@@ -197,8 +205,9 @@ export class BUNProxy extends JsPackageManager {
   }
 
   public async getRegistryURL() {
-    const process = this.executeCommand({
+    const process = executeCommand({
       command: 'npm',
+      cwd: this.cwd,
       // "npm config" commands are not allowed in workspaces per default
       // https://github.com/npm/cli/issues/6099#issuecomment-1847584792
       args: ['config', 'get', 'registry', '-ws=false', '-iwr'],
@@ -215,7 +224,7 @@ export class BUNProxy extends JsPackageManager {
       args = ['-D', ...args];
     }
 
-    return this.executeCommand({
+    return executeCommand({
       command: 'bun',
       args: ['add', ...args, ...this.getInstallArgs()],
       stdio: 'pipe',
@@ -229,8 +238,9 @@ export class BUNProxy extends JsPackageManager {
   ): Promise<T extends true ? string[] : string> {
     const args = fetchAllVersions ? ['versions', '--json'] : ['version'];
     try {
-      const process = this.executeCommand({
+      const process = executeCommand({
         command: 'npm',
+        cwd: this.cwd,
         args: ['info', packageName, ...args],
       });
       const result = await process;

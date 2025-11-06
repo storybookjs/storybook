@@ -5,6 +5,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 import { logger, prompt } from 'storybook/internal/node-logger';
+import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import type { CallExpression } from '@babel/types';
 import * as find from 'empathic/find';
@@ -134,26 +135,25 @@ export class AddonVitestService {
 
       if (shouldBeInstalled) {
         await prompt.executeTaskWithSpinner(
-          () => {
-            const result = packageManager.executeCommand({
-              command: 'npx',
+          (signal) =>
+            packageManager.runRemoteCommand({
               args: playwrightCommand,
-              killSignal: 'SIGINT',
-            });
-
-            return result;
-          },
+              stdio: 'ignore',
+              signal,
+            }),
           {
             id: 'playwright-installation',
             intro: 'Installing Playwright browser binaries',
-            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: ${playwrightCommand.join(' ')}`,
+            error: `An error occurred while installing Playwright browser binaries. Please run the following command later: npx ${playwrightCommand.join(' ')}`,
             success: 'Playwright browser binaries installed successfully',
+            abortable: true,
           }
         );
       } else {
         logger.warn('Playwright installation skipped');
       }
     } catch (e) {
+      ErrorCollector.addError(e);
       if (e instanceof Error) {
         errors.push(e.stack ?? e.message);
       } else {

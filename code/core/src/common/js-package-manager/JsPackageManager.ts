@@ -134,7 +134,7 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies(options?: { force?: boolean }) {
-    await prompt.executeTaskWithSpinner((_signal) => this.runInstall(options), {
+    await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
       id: 'install-dependencies',
       intro: 'Installing dependencies...',
       error: 'Installation of dependencies failed!',

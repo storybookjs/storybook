@@ -34,7 +34,7 @@
           "args": "--reset --optimized"
         }
       },
-      "inputs": ["production", "^production"],
+      "inputs": ["production", "^production", "{workspaceRoot}/../scripts/build/**/*"],
       "dependsOn": ["^build"],
       "outputs": ["{projectRoot}/dist", "{workspaceRoot}/bench/esbuild-metafiles/{projectName}"],
       "cache": true

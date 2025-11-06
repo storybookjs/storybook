@@ -9,7 +9,7 @@ import {
 } from 'storybook/internal/core-events';
 import type { API_IndexHash, API_PreparedIndexEntry } from 'storybook/internal/types';
 
-import { type API } from 'storybook/manager-api';
+import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 
 export interface ChecklistData {
   sections: {
@@ -43,7 +43,8 @@ export interface ChecklistData {
         onClick: (args: { api: API; accept: () => void }) => void;
       };
 
-      // Function to subscribe to events and update the item's state. May return a function to unsubscribe.
+      // Function to subscribe to events and update the item's state.
+      // May return a function to unsubscribe once the item is completed.
       subscribe?: (args: {
         api: API;
         index: API_IndexHash;
@@ -292,18 +293,33 @@ export default {
           id: 'install-vitest',
           label: 'Install Vitest addon',
           criteria: '@storybook/addon-vitest registered in .storybook/main.js|ts',
-          subscribe: ({ done }) => done(),
+          subscribe: ({ done }) => {
+            if (addons.experimental_getRegisteredAddons().includes('storybook/test')) {
+              done();
+            }
+          },
           content: (
-            <p>
-              More stories for your components means better documentation and more test coverage.
-            </p>
+            <>
+              <p>
+                More stories for your components means better documentation and more test coverage.
+                Add the Vitest addon to your Storybook project to get started:
+              </p>
+              <code>
+                <pre>{`npx storybook add @storybook/addon-vitest`}</pre>
+              </code>
+              <p>Restart your Storybook after installing the addon.</p>
+            </>
           ),
         },
         {
           id: 'run-tests',
-          after: ['render-component'],
+          after: ['render-component', 'install-vitest'],
           label: 'Test your components',
           criteria: 'Component tests are run from the test widget in the sidebar',
+          subscribe: ({ done }) =>
+            internal_universalTestProviderStore.onStateChange(
+              (state) => state['storybook/test'] === 'test-provider-state:succeeded' && done()
+            ),
           content: (
             <>
               <p>

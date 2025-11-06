@@ -10,7 +10,7 @@ import { DocumentIcon, UndoIcon } from '@storybook/icons';
 import { pickBy } from 'es-toolkit/object';
 import { styled } from 'storybook/theming';
 
-import { EmptyBlock } from '..';
+import { EmptyBlock } from '../EmptyBlock';
 import { ArgRow } from './ArgRow';
 import { Empty } from './Empty';
 import { SectionRow } from './SectionRow';

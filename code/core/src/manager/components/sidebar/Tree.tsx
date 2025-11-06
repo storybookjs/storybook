@@ -231,7 +231,6 @@ const Node = React.memo<NodeProps>(function Node(props) {
     api,
   } = props;
   const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
-  const { counts, statusesByValue } = useStatusSummary(item);
 
   if (!isDisplayed) {
     return null;
@@ -255,42 +254,8 @@ const Node = React.memo<NodeProps>(function Node(props) {
         }));
     }
 
-    // TODO should this be updated for stories with tests?
-    if (item.type === 'component' || item.type === 'group') {
-      const links: Link[] = [];
-      const errorCount = counts['status-value:error'];
-      const warningCount = counts['status-value:warning'];
-      if (errorCount) {
-        links.push({
-          id: 'errors',
-          icon: StatusIconMap['status-value:error'],
-          title: `${errorCount} ${errorCount === 1 ? 'story' : 'stories'} with errors`,
-          onClick: () => {
-            const [firstStoryId] = Object.entries(statusesByValue['status-value:error'])[0];
-            onSelectStoryId(firstStoryId);
-            const errorStatuses = Object.values(statusesByValue['status-value:error']).flat();
-            fullStatusStore.selectStatuses(errorStatuses);
-          },
-        });
-      }
-      if (warningCount) {
-        links.push({
-          id: 'warnings',
-          icon: StatusIconMap['status-value:warning'],
-          title: `${warningCount} ${warningCount === 1 ? 'story' : 'stories'} with warnings`,
-          onClick: () => {
-            const [firstStoryId] = Object.entries(statusesByValue['status-value:warning'])[0];
-            onSelectStoryId(firstStoryId);
-            const warningStatuses = Object.values(statusesByValue['status-value:warning']).flat();
-            fullStatusStore.selectStatuses(warningStatuses);
-          },
-        });
-      }
-      return links;
-    }
-
     return [];
-  }, [counts, item.id, item.type, onSelectStoryId, statuses, statusesByValue]);
+  }, [item.id, item.type, onSelectStoryId, statuses]);
 
   const id = createId(item.id, refId);
   const contextMenu =

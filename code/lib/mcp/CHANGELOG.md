@@ -1,5 +1,13 @@
 # @storybook/mcp
 
+## 0.0.7-next.0
+
+### Patch Changes
+
+- [#61](https://github.com/storybookjs/mcp/pull/61) [`77536a7`](https://github.com/storybookjs/mcp/commit/77536a71812fe111f6b60c84bd2c26cb0eb00bc5) Thanks [@copilot-swe-agent](https://github.com/apps/copilot-swe-agent)! - rename examples to stories in manifest
+
+- [#55](https://github.com/storybookjs/mcp/pull/55) [`cddbf34`](https://github.com/storybookjs/mcp/commit/cddbf34a0c99296856ecfed2c24cf689fcb2fd2a) Thanks [@JReinhold](https://github.com/JReinhold)! - Support error.name in manifests
+
 ## 0.0.6
 
 ### Patch Changes

@@ -199,7 +199,6 @@ export const init: Task['run'] = async (
     optionValues: {
       debug,
       yes: true,
-      'skip-install': true,
       ...extra,
       ...(template.initOptions || {}),
     },

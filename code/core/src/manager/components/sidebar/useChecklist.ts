@@ -38,12 +38,12 @@ export const useChecklist = () => {
   const { loaded, muted, accepted, done, skipped } = checklistState;
 
   const isOpen = useCallback(
-    ({ id, available }: ChecklistItem) =>
-      !accepted.includes(id) &&
-      !done.includes(id) &&
-      !skipped.includes(id) &&
-      (available?.({ api }) ?? true),
-    [api, accepted, done, skipped]
+    (item: ChecklistItem) =>
+      !accepted.includes(item.id) &&
+      !done.includes(item.id) &&
+      !skipped.includes(item.id) &&
+      (item.available?.({ api, index, item }) ?? true),
+    [api, index, accepted, done, skipped]
   );
 
   const isReady = useCallback(
@@ -60,7 +60,7 @@ export const useChecklist = () => {
   );
 
   useEffect(() => {
-    if (!index || !loaded) {
+    if (!loaded) {
       return;
     }
 
@@ -76,7 +76,6 @@ export const useChecklist = () => {
           item.id,
           item.subscribe({
             api,
-            index,
             item,
             accept: () => checklistStore.accept(item.id),
             done: () => checklistStore.done(item.id),
@@ -91,7 +90,7 @@ export const useChecklist = () => {
         }
       }
     }
-  }, [api, index, loaded, allItems, isOpen]);
+  }, [api, loaded, allItems, isOpen]);
 
   const { openItems, nextItems, progress } = useMemo(() => {
     const openItems = allItems.filter(isOpen);

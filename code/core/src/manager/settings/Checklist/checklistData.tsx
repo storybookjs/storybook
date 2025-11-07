@@ -80,7 +80,12 @@ export interface ChecklistData {
       after?: string[];
 
       // Function to check if the item should be available (displayed in the checklist).
-      available?: (args: { api: API }) => boolean;
+      // Called any time the index is updated.
+      available?: (args: {
+        api: API;
+        index: API_IndexHash | undefined;
+        item: ChecklistData['sections'][number]['items'][number];
+      }) => boolean;
 
       // If true, the item can only be completed once (disables undo for completed items).
       once?: boolean;
@@ -98,7 +103,6 @@ export interface ChecklistData {
       // May return a function to unsubscribe once the item is completed.
       subscribe?: (args: {
         api: API;
-        index: API_IndexHash;
         item: ChecklistData['sections'][number]['items'][number];
 
         // Call this to complete the item and persist to user-local storage.
@@ -145,7 +149,7 @@ export const checklistData: ChecklistData = {
         {
           id: 'guided-tour',
           label: 'Take the guided tour',
-          available: ({ api }) => !!api.getData('example-button--primary'),
+          available: ({ index }) => !!index && 'example-button--primary' in index,
           criteria: 'Guided tour is completed',
           subscribe: ({ api, accept }) =>
             api.on('STORYBOOK_ADDON_ONBOARDING_CHANNEL', ({ step, type }) => {
@@ -168,7 +172,7 @@ export const checklistData: ChecklistData = {
         {
           id: 'onboarding-survey',
           label: 'Complete the onboarding survey',
-          available: ({ api }) => !!api.getData('example-button--primary'),
+          available: ({ index }) => !!index && 'example-button--primary' in index,
           once: true,
           criteria: 'Onboarding survey is completed',
           subscribe: ({ api, accept }) =>

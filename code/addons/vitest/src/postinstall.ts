@@ -328,13 +328,14 @@ export default async function postInstall(options: PostinstallOptions) {
         'storybook',
         'automigrate',
         'addon-a11y-addon-test',
-        '--loglevel=silent',
+        '--loglevel',
+        'silent',
         '--yes',
         '--skip-doctor',
       ];
 
       if (options.packageManager) {
-        command.push(`--package-manager=${options.packageManager}`);
+        command.push('--package-manager', options.packageManager);
       }
 
       if (options.skipInstall) {
@@ -342,7 +343,7 @@ export default async function postInstall(options: PostinstallOptions) {
       }
 
       if (options.configDir !== '.storybook') {
-        command.push(`--config-dir="${options.configDir}"`);
+        command.push('--config-dir', options.configDir);
       }
 
       await prompt.executeTask(

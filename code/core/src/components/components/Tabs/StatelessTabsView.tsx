@@ -44,11 +44,6 @@ export const StatelessTabsView: FC<StatelessTabsViewProps> = ({
   const [tabListChild, ...tabPanelChildren] = React.Children.toArray(children);
   const hasContent = tabPanelChildren && tabPanelChildren.length > 0;
 
-  console.log('hasContent', hasContent);
-  console.log('tabPanelChildren', tabPanelChildren);
-  console.log('tabListChild', tabListChild);
-  console.log('showToolsWhenEmpty', showToolsWhenEmpty);
-
   if (!showToolsWhenEmpty && !hasContent) {
     return EmptyContent;
   }

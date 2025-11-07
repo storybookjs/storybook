@@ -136,41 +136,6 @@ Storybook upgrades are not the only thing to consider: changes in the ecosystem 
 
 It runs a set of standard configuration checks, explains what is potentially out-of-date, and offers to fix it for you automatically. It also points to the relevant documentation so you can learn more. It runs automatically as part of [`storybook upgrade`](#upgrade-script) command, but it's also available on its own if you don't want to upgrade Storybook.
 
-<IfRenderer renderer="react">
-  
-### Next.js to Next.js Vite automigration
-
-The `nextjs-to-nextjs-vite` automigration helps you migrate from the Webpack-based `@storybook/nextjs` framework to the Vite-based `@storybook/nextjs-vite` framework, which we recommend for most Next.js projects.
-
-**When it runs:**
-
-This automigration will be detected and offered when you run `storybook automigrate` or `storybook upgrade` if:
-- Your project has `@storybook/nextjs` installed
-- You want to migrate to the faster, more modern Vite-based framework
-
-**What it does:**
-
-1. Updates `package.json` files to replace `@storybook/nextjs` with `@storybook/nextjs-vite`
-2. Updates `.storybook/main.js|ts` to change the framework property
-3. Scans and updates import statements in your story files and configuration files
-
-**Running manually:**
-
-You can also run this automigration manually using:
-
-```bash
-npx storybook automigrate nextjs-to-nextjs-vite
-```
-
-<Callout variant="info">
-
-If your project has custom Webpack configurations in `.storybook/main.js|ts` (via `webpackFinal`), you'll need to migrate those to Vite configuration (via `viteFinal`) after running this automigration. See the [Vite builder documentation](../builders/vite.mdx#migrating-from-webpack) for more information.
-
-For more details about the Vite-based framework, see [`@storybook/nextjs-vite`](../get-started/frameworks/nextjs-vite.mdx).
-
-</Callout>
-</IfRenderer>
-
 ## Prereleases
 
 In addition to the above, Storybook is under constant development, and we publish pre-release versions almost daily. Pre-releases are the best way to try out new features before they are generally available, and we do our best to keep them as stable as possible, although this is not always possible.

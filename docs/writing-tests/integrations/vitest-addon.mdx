@@ -42,28 +42,11 @@ Before installing, make sure your project meets the following requirements:
 
 <If renderer="react">
   <Callout variant="info" icon="ℹ️">
-    **Using with Next.js** — The Vitest addon is supported in Next.js ≥ 14.1 projects, but you must be using the [`@storybook/nextjs-vite` framework](../../get-started/frameworks/nextjs-vite.mdx). If you are using the [`@storybook/nextjs` framework](../../get-started/frameworks/nextjs.mdx), you will need to migrate to the Vite-based framework to use the Vitest addon.
+    **Using with Next.js** — The Vitest addon is supported in Next.js ≥ 14.1 projects, but you must be using the [`@storybook/nextjs-vite` framework](../../get-started/frameworks/nextjs-vite.mdx). If you are using the [`@storybook/nextjs` framework](../../get-started/frameworks/nextjs.mdx), you will need to [migrate to the Vite-based framework](../../get-started/frameworks/nextjs-vite.mdx#migrating-from-webpack) to use the Vitest addon.
   </Callout>
 </If>
 
 ### Automatic setup
-
-**We strongly recommend using automatic setup** via `storybook init --features test` or `storybook add @storybook/addon-vitest`. The setup is fully automated and handles all configuration for you.
-
-#### During initial Storybook installation
-
-When you first install Storybook, you can include testing features by:
-
-1. Selecting the **Recommended** configuration (which includes `test` by default), or
-2. Using the `--features test` flag:
-
-```bash
-npm create storybook@latest --features test
-```
-
-This will automatically set up the Vitest addon along with your Storybook installation.
-
-#### Adding to an existing Storybook project
 
 Run the following command to install and configure the addon automatically:
 
@@ -82,6 +65,8 @@ The setup is fully automated and handles all configuration for you. The full con
 <Callout variant="info">
 
 If you're prompted to install Playwright browser binaries during setup, select "Yes" to install them. These are required for running tests in browser mode, which is the recommended setup for component testing.
+
+You can install the Playwright browser binaries at any time by running [`playwright install`](https://playwright.dev/docs/browsers#install-browsers).
 
 </Callout>
 

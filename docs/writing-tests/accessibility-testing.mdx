@@ -31,9 +31,11 @@ Storybook's [`add`](../api/cli-options.mdx#add) command automates the addon's in
 
 Your Storybook will now include some features to check the accessibility of your components, including a button in the toolbar to simulate different vision impairments and an Accessibility addon panel to check for violations.
 
+![Storybook UI with accessibility features annotated](../_assets/writing-tests/addon-a11y-annotated.png)
+
 ### Integration with Vitest addon
 
-If you have the Accessibility addon installed and then install the [Vitest addon](./integrations/vitest-addon.mdx), Storybook will automatically configure the Accessibility addon to work with the Vitest addon.
+The accessibility addon is designed to integrate with the [Vitest addon](./integrations/vitest-addon.mdx), so that you can [run accessibility tests](#run-accessibility-tests) alongside your component tests.
 
 **Automatic configuration:**
 
@@ -50,7 +52,8 @@ If you need to configure this manually (for example, if the automigration was sk
 
 ```ts
 import * as previewAnnotations from '@storybook/preview-api';
-import { setProjectAnnotations } from '@storybook/react';
+// Replace your-renderer with the renderer you are using, e.g. react, svelte, vue3, etc.
+import { setProjectAnnotations } from '@storybook/your-renderer';
 import * as a11yAddonAnnotations from '@storybook/addon-a11y/preview';
 
 const annotations = setProjectAnnotations([
@@ -62,9 +65,15 @@ const annotations = setProjectAnnotations([
 beforeAll(annotations.beforeAll);
 ```
 
-For more information about running accessibility tests with the Vitest addon, see [Run accessibility tests](#run-accessibility-tests).
+<If renderer="react">
 
-![Storybook UI with accessibility features annotated](../_assets/writing-tests/addon-a11y-annotated.png)
+<Callout variant="info">
+
+If you are using [CSF Factories](../api/csf/csf-next.mdx) for _all_ of the stories in your Storybook, you do not need to update `.storybook/vitest.setup.ts`.
+
+</Callout>
+
+</If>
 
 ## Check for violations
 

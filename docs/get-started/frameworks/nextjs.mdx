@@ -34,9 +34,11 @@ Use this Webpack-based framework (`@storybook/nextjs`) only if:
 
 ### In a project without Storybook
 
-When you run `storybook init` in your Next.js project, Storybook will automatically detect your project and select the **`@storybook/nextjs-vite`** framework (which we recommend) unless your project has custom Webpack or Babel configurations that may be incompatible with Vite.
+When you run `storybook init` in your Next.js project, Storybook will automatically detect your project and select the [`@storybook/nextjs-vite`](./nextjs-vite.mdx) framework (which we recommend) unless your project has custom Webpack or Babel configurations that may be incompatible with Vite.
 
-**If your project has custom Webpack/Babel configurations:**
+
+<details>
+<summary>If your project has custom Webpack/Babel configurations</summary>
 
 If `storybook init` detects a custom webpack configuration in your nextjs config file or `.babelrc` file, it will prompt you to choose between:
 
@@ -44,6 +46,8 @@ If `storybook init` detects a custom webpack configuration in your nextjs config
 - **`@storybook/nextjs`** (Webpack 5) - Better compatibility with custom Webpack/Babel configurations
 
 Choose `@storybook/nextjs` (Webpack 5) if you need to keep your existing Webpack/Babel setup and cannot migrate to Vite.
+
+</details>
 
 Follow the prompts after running this command in your Next.js project's root directory:
 
@@ -97,9 +101,7 @@ Finally, if you were using Storybook plugins to integrate with Next.js, those ar
 
 #### Migrating to Vite
 
-If you want to migrate from this Webpack-based framework to the Vite-based framework, see the [`nextjs-to-nextjs-vite` automigration](../../releases/upgrading.mdx#nextjs-to-nextjs-vite-automigration) documentation.
-
-For more information about the Vite-based framework, see [`@storybook/nextjs-vite`](./nextjs-vite.mdx).
+Please refer to the [migration instructions for `@storybook/nextjs-vite`](./nextjs-vite.mdx#migrating-from-webpack).
 
 ## Run the Setup Wizard
 
@@ -290,11 +292,10 @@ Additionally, the [`router` object](https://nextjs.org/docs/pages/api-reference/
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
 ```ts title=".storybook/preview.js|ts"
-// Replace your-framework with nextjs or nextjs-vite
-import type { Preview } from '@storybook/your-framework';
+import type { Preview } from '@storybook/nextjs';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from "@storybook/your-framework/router.mock";
+import { getRouter } from "@storybook/nextjs/router.mock";
 
 const preview: Preview = {
   parameters: {
@@ -419,11 +420,10 @@ Additionally, the [`router` object](https://nextjs.org/docs/app/api-reference/fu
 To override these defaults, you can use [parameters](../../writing-stories/parameters.mdx) and [`beforeEach`](../../writing-stories/mocking-data-and-modules/mocking-modules.mdx#setting-up-and-cleaning-up):
 
 ```ts title=".storybook/preview.js|ts"
-// Replace your-framework with nextjs or nextjs-vite
-import type { Preview } from '@storybook/your-framework';
+import type { Preview } from '@storybook/nextjs';
 
 // 👇 Must include the `.mock` portion of filename to have mocks typed correctly
-import { getRouter } from '@storybook/your-framework/navigation.mock';
+import { getRouter } from '@storybook/nextjs/navigation.mock';
 
 const preview: Preview = {
   parameters: {
@@ -948,11 +948,10 @@ You can pass an options object for additional configuration if needed:
 ```js title=".storybook/main.js"
 import * as path from 'path';
 
-// Replace your-framework with nextjs or nextjs-vite
 export default {
   // ...
   framework: {
-    name: '@storybook/your-framework',
+    name: '@storybook/nextjs',
     options: {
       image: {
         loading: 'eager',

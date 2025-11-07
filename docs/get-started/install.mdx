@@ -7,94 +7,9 @@ sidebar:
 
 Use the Storybook CLI to install it in a single command. Run this inside your project’s root directory:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="create-command.md" />
 
-{/* prettier-ignore-end */}
-
-<details id="custom-storybook-version">
-  <summary>Install a specific version</summary>
-
-  For installing Storybook 8.3 or newer, you can use the `create` command with a specific version:
-
-  {/* prettier-ignore-start */}
-
-  <CodeSnippets path="create-command-custom-version.md" />
-
-  {/* prettier-ignore-end */}
-
-  To install a Storybook version prior to 8.3, you must use the `init` command:
-
-  {/* prettier-ignore-start */}
-
-  <CodeSnippets path="init-command-custom-version.md" />
-
-  {/* prettier-ignore-end */}
-
-  For either command, you can specify either an npm tag such as `latest` or `next`, or a (partial) version number. For example:
-
-  * `storybook@latest init` will initialize the latest version
-  * `storybook@7.6.10 init` will initialize `7.6.10`
-  * `storybook@7 init` will initialize the newest `7.x.x` version
-
-  
-</details>
-
 Storybook will look into your project's dependencies during its install process and provide you with the best configuration available.
-
-## Installation prompts
-
-When you run the installation command, Storybook will present you with a series of interactive prompts using the new @clack/prompts UI. These prompts help customize your Storybook installation:
-
-### "New to Storybook?" prompt
-
-Storybook will ask if you're new to Storybook. If you select "Yes":
-
-* An **onboarding** feature will be enabled, which adds example stories and an interactive setup wizard
-* You'll see a setup wizard that introduces Storybook's main concepts and features
-* Example stories will be created to help you learn
-
-If you're experienced with Storybook, you can skip the onboarding to get a minimal setup.
-
-### "What configuration should we install?" prompt
-
-Storybook will ask what type of configuration you want to install:
-
-* **Recommended**: Includes component development, documentation, testing, and accessibility features
-  * Installs `docs`, `test`, `a11y`, and `onboarding` features by default
-  * Provides a complete setup with documentation, testing tools, and accessibility checks
-  * Best for most projects
-  
-* **Minimal**: Just the essentials for component development
-  * Includes only the core Storybook features
-  * No additional documentation, testing, or accessibility features
-  * Best for quick prototypes or when you want to add features later
-
-The command above will make the following changes to your local environment:
-
-* 📦 Install the required dependencies.
-* 🛠 Setup the necessary scripts to run and build Storybook.
-* 🛠 Add the default Storybook configuration.
-* 📝 Add some boilerplate stories to get you started.
-* 📡 Set up telemetry to help us improve Storybook. Read more about it [here](../configure/telemetry.mdx).
-
-<Callout variant="info">
-
-If you choose the **Recommended** configuration, Storybook will automatically install:
-
-* **docs**: Documentation tools for writing and building component documentation
-* **test**: Testing integration with the [Vitest addon](../writing-tests/integrations/vitest-addon.mdx) for component testing
-* **a11y**: Accessibility testing with the [Accessibility addon](../writing-tests/accessibility-testing.mdx)
-* **onboarding**: Interactive setup wizard and example stories (if you're new to Storybook)
-
-You can also manually select these features using the `--features` flag. For example:
-
-```bash
-npm create storybook@latest --features docs test a11y
-```
-
-</Callout>
 
 <YouTubeCallout id="CtfU1UnizHU" title="New Storybook" style={{ marginTop: '1em' }} />
 
@@ -139,6 +54,71 @@ You can use Storybook with older browsers in two ways:
 2. Develop or build your Storybook in ["preview-only" mode](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers), which can be used in older, unsupported browsers.
 
 </details>
+
+## Installation
+
+Run this command inside your project's root directory to install the latest version of Storybook:
+
+<CodeSnippets path="create-command.md" />
+
+<details id="custom-storybook-version">
+  <summary>Install a specific version</summary>
+
+  For installing Storybook 8.3 or newer, you can use the `create` command with a specific version:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="create-command-custom-version.md" />
+
+  {/* prettier-ignore-end */}
+
+  To install a Storybook version prior to 8.3, you must use the `init` command:
+
+  {/* prettier-ignore-start */}
+
+  <CodeSnippets path="init-command-custom-version.md" />
+
+  {/* prettier-ignore-end */}
+
+  For either command, you can specify either an npm tag such as `latest` or `next`, or a (partial) version number. For example:
+
+  * `storybook@latest init` will initialize the latest version
+  * `storybook@7.6.10 init` will initialize `7.6.10`
+  * `storybook@7 init` will initialize the newest `7.x.x` version
+
+</details>
+
+When installing, Storybook will present you with a series of interactive prompts to help customize your installation:
+
+**New to Storybook?**
+
+Storybook will ask if you're new to Storybook. If you select "Yes":
+
+* You will be welcomed with an interactive tour
+* Example stories will be created to help you learn
+
+If you're experienced with Storybook, you can skip the onboarding to get a minimal setup.
+
+**What configuration should we install?**
+
+Storybook will ask what type of configuration you want to install:
+
+* **Recommended**: Includes component development, [documentation](../writing-docs/autodocs.mdx), [testing](../writing-tests/integrations/vitest-addon.mdx), and [accessibility](../writing-tests/accessibility-testing.mdx) features
+* **Minimal**: Just the essentials for component development
+
+You can also manually select these features using the `--features` flag. For example:
+
+```bash
+npm create storybook@latest --features docs test a11y
+```
+
+After completing the prompts, the command above will make the following changes to your local environment:
+
+* 📦 Install the required dependencies.
+* 🛠 Set up the necessary scripts to run and build Storybook.
+* 🛠 Add the default Storybook configuration.
+* 📝 Add some boilerplate stories to get you started.
+* 📡 Set up telemetry to help us improve Storybook. Read more about it [here](../configure/telemetry.mdx).
 
 <IfRenderer renderer="react">
   ## Run the Setup Wizard

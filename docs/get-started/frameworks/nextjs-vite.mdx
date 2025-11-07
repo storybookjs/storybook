@@ -15,6 +15,14 @@ Storybook for Next.js (Vite) is the **recommended** [framework](../../contribute
 * ⚡ Vite-powered builds
 * 💫 and more!
 
+This Vite-based framework offers several advantages over the Webpack-based [`@storybook/nextjs`](./nextjs.mdx) framework:
+
+* ⚡ **Faster builds** - Vite's build system is significantly faster than Webpack
+* 🔧 **Modern tooling** - Uses the latest build tools and optimizations
+* 🧪 **Better test support** - Full support for the [Vitest addon](../../writing-tests/integrations/vitest-addon.mdx) and other testing features
+* 📦 **Simpler configuration** - No need for Babel or complex Webpack configurations
+* 🎯 **Better development experience** - Faster HMR (Hot Module Replacement) and dev server startup
+
 ## Requirements
 
 * Next.js ≥ 14.1
@@ -60,7 +68,7 @@ This framework is designed to work with Storybook 10+. If you're not already usi
 
 When running the `upgrade` command above, you should get a prompt asking you to migrate to `@storybook/nextjs-vite`, which should handle everything for you. In case that auto-migration does not work for your project, refer to the manual migration below.
 
-You can also use the [`nextjs-to-nextjs-vite` automigration](../../releases/upgrading.mdx#nextjs-to-nextjs-vite-automigration) to migrate from the Webpack-based `@storybook/nextjs` framework to this Vite-based framework.
+You can also use the [`nextjs-to-nextjs-vite` automigration](#migrating-from-webpack) to migrate from the Webpack-based `@storybook/nextjs` framework to this Vite-based framework.
 
 #### Manual migration
 
@@ -92,9 +100,29 @@ Finally, if you were using Storybook plugins to integrate with Next.js, those ar
 
 {/* prettier-ignore-start */}
 
-<CodeSnippets path="nextjs-vite-remove-addons.md" />
+<CodeSnippets path="nextjs-remove-addons.md" />
 
 {/* prettier-ignore-end */}
+
+#### Migrating from Webpack
+
+Storybook provides a migration tool for migrating to this framework from the Webpack-based Next.js framework, `@storybook/nextjs`. To migrate, run this command:
+
+```bash
+npx storybook automigrate nextjs-to-nextjs-vite
+```
+
+This automigration tool performs the following actions:
+
+1. Updates `package.json` files to replace `@storybook/nextjs` with `@storybook/nextjs-vite`
+2. Updates `.storybook/main.js|ts` to change the framework property
+3. Scans and updates import statements in your story files and configuration files
+
+<Callout variant="info">
+
+If your project has custom Webpack configurations in `.storybook/main.js|ts` (via `webpackFinal`), you'll need to migrate those to Vite configuration (via `viteFinal`) after running this automigration. See the [Vite builder documentation](../builders/vite.mdx#migrating-from-webpack) for more information.
+
+</Callout>
 
 ## Run the Setup Wizard
 
@@ -103,16 +131,6 @@ If all goes well, you should see a setup wizard that will help you get started w
 ![Storybook onboarding](../../_assets/get-started/example-onboarding-wizard.png)
 
 If you skipped the wizard, you can always run it again by adding the `?path=/onboarding` query parameter to the URL of your Storybook instance, provided that the example stories are still available.
-
-## Benefits of Vite
-
-This Vite-based framework offers several advantages over the Webpack-based `@storybook/nextjs` framework:
-
-* ⚡ **Faster builds** - Vite's build system is significantly faster than Webpack
-* 🔧 **Modern tooling** - Uses the latest build tools and optimizations
-* 🧪 **Better test support** - Full support for the [Vitest addon](../../writing-tests/integrations/vitest-addon.mdx) and other testing features
-* 📦 **Simpler configuration** - No need for Babel or complex Webpack configurations
-* 🎯 **Better development experience** - Faster HMR (Hot Module Replacement) and dev server startup
 
 ## Next.js's Image component
 
@@ -640,13 +658,11 @@ Calls to `getConfig` would return the following object when called within Storyb
 }
 ```
 
-## Custom Vite config
+## Custom Vite configuration
 
-Next.js lets you customize Vite configuration via the [`viteFinal`](../../api/main-config/main-config-vite-final.mdx) option in your `.storybook/main.js|ts`. This allows you to extend or modify Vite's configuration for Storybook.
+You can customize the [Vite configuration](../../builders/vite.mdx#configuration) used by Storybook in your `.storybook/main.js|ts` file. By default, Storybook's configuration extends the Vite configuration used by your project, but you can configure it to not do so.
 
-Any Vite modifications desired for Storybook should be made in [`.storybook/main.js|ts`](../../builders/vite.mdx#extending-storybooks-vite-config).
-
-Note: Not all Vite modifications are copy/paste-able between `next.config.js` and `.storybook/main.js|ts`. It is recommended to do your research on how to properly make your modification to Storybook's Vite config and on how [Vite works](https://vitejs.dev/guide/).
+Not all Vite modifications are copy/paste-able between `next.config.js` and `.storybook/main.js|ts`. It is recommended to do your research on how to properly make your modification to Storybook's Vite config and on how [Vite works](https://vitejs.dev/guide/).
 
 ## Typescript
 
@@ -697,7 +713,7 @@ In the future we will provide better mocking support in Storybook and support fo
 
 ### Stories for pages/components which fetch data
 
-Next.js pages can fetch data directly within server components in the `app` directory, which often include module imports that only run in a node environment. This does not (currently) work within Storybook, because if you import from a Next.js page file containing those node module imports in your stories, your Storybook's Vite build will crash because those modules will not run in a browser. To get around this, you can extract the component in your page file into a separate file and import that pure component in your stories. Or, if that's not feasible for some reason, you can [configure Vite to handle those modules](https://vitejs.dev/config/dep-optimization-options.html#optimizedeps-exclude) in your Storybook's [`viteFinal` configuration](../../builders/vite.mdx#extending-storybooks-vite-config).
+Next.js pages can fetch data directly within server components in the `app` directory, which often include module imports that only run in a node environment. This does not (currently) work within Storybook, because if you import from a Next.js page file containing those node module imports in your stories, your Storybook's Vite build will crash because those modules will not run in a browser. To get around this, you can extract the component in your page file into a separate file and import that pure component in your stories. Or, if that's not feasible for some reason, you can [configure Vite to handle those modules](https://vitejs.dev/config/dep-optimization-options.html#optimizedeps-exclude) in your Storybook's [`viteFinal` configuration](../../builders/vite.mdx#configuration).
 
 **Before**
 

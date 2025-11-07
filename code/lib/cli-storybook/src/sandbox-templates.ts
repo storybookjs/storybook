@@ -615,7 +615,7 @@ export const baseTemplates = {
     modifications: {
       extraDependencies: ['preact-render-to-string'],
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'bench'],
   },
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
@@ -628,7 +628,7 @@ export const baseTemplates = {
     modifications: {
       extraDependencies: ['preact-render-to-string'],
     },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
+    skipTasks: ['e2e-tests', 'bench'],
   },
   'qwik-vite/default-ts': {
     name: 'Qwik CLI Latest (Vite | TypeScript)',

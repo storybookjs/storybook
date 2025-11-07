@@ -54,7 +54,7 @@ jobs:
       requires:
         - create-sandboxes
   - vitest-integration:
-      parallelism: 11
+      parallelism: 13
       requires:
         - create-sandboxes
   - test-portable-stories:

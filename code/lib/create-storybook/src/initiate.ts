@@ -176,6 +176,10 @@ async function runStorybookDev(result: {
 
     const flags = [];
 
+    if (packageManager.type === 'npm') {
+      flags.push('--silent');
+    }
+
     // npm needs extra -- to pass flags to the command
     // in the case of Angular, we are calling `ng run` which doesn't need the extra `--`
     if (packageManager.type === 'npm' && projectType !== ProjectType.ANGULAR) {

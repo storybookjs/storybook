@@ -90,8 +90,8 @@ export interface ChecklistData {
       // If true, the item can only be completed once (disables undo for completed items).
       once?: boolean;
 
-      // Content to display in the checklist item's collapsible area.
-      content?: React.ReactNode;
+      // Function returning content to display in the checklist item's collapsible area.
+      content?: () => React.ReactNode;
 
       // Action button to be displayed when item is not completed.
       action?: {
@@ -206,7 +206,7 @@ export const checklistData: ChecklistData = {
           criteria: 'A story finished rendering successfully',
           subscribe: ({ api, done }) =>
             api.on(STORY_FINISHED, ({ status }) => status === 'success' && done()),
-          content: (
+          content: () => (
             <>
               <p>
                 A story captures the rendered state of a UI component. It's an object with
@@ -228,7 +228,7 @@ export const checklistData: ChecklistData = {
           id: 'more-components',
           after: ['render-component'],
           label: 'Add 5 components',
-          content: (
+          content: () => (
             <p>
               Storybook gets better as you add more components. Start with the easy ones, like
               Button or Avatar, and work your way up to more complex components, like Select,
@@ -246,7 +246,7 @@ export const checklistData: ChecklistData = {
           id: 'more-stories',
           after: ['render-component'],
           label: 'Add 20 stories',
-          content: (
+          content: () => (
             <p>
               More stories for your components means better documentation and more test coverage.
             </p>
@@ -270,7 +270,7 @@ export const checklistData: ChecklistData = {
           label: 'Update a story with Controls',
           criteria: 'Story args are updated',
           subscribe: ({ api, done }) => api.on(STORY_ARGS_UPDATED, done),
-          content: (
+          content: () => (
             <p>
               Storybook gets better as you add more components. Start with the easy ones, like
               Button or Avatar, and work your way up to more complex components, like Select,
@@ -285,7 +285,7 @@ export const checklistData: ChecklistData = {
           criteria: 'Viewport global is updated',
           subscribe: ({ api, done }) =>
             api.on(UPDATE_GLOBALS, ({ globals }) => globals?.viewport && done()),
-          content: (
+          content: () => (
             <>
               <p>
                 Many UI components need to be responsive to the viewport size. Storybook has
@@ -309,7 +309,7 @@ export const checklistData: ChecklistData = {
           subscribe: subscribeToIndex((entries) =>
             Object.values(entries).some(({ title }) => title.includes('/'))
           ),
-          content: (
+          content: () => (
             <>
               <p>
                 It&apos;s helpful for projects to organize their sidebar into groups. We&apos;re big
@@ -346,7 +346,7 @@ export default {
               done();
             }
           },
-          content: (
+          content: () => (
             <>
               <p>
                 More stories for your components means better documentation and more test coverage.
@@ -366,7 +366,7 @@ export default {
             internal_universalTestProviderStore.onStateChange(
               (state) => state['storybook/test'] === 'test-provider-state:succeeded' && done()
             ),
-          content: (
+          content: () => (
             <>
               <p>
                 Stories make great test cases. You can quickly test all of your stories directly
@@ -396,7 +396,7 @@ export default {
               ({ tags }) => tags?.includes('play-fn') || tags?.includes('test-fn')
             )
           ),
-          content: (
+          content: () => (
             <>
               <p>
                 When you need to test non-visual or particularly complex behavior of a component,
@@ -432,7 +432,7 @@ async play({ canvas, userEvent }) {
               done();
             }
           },
-          content: (
+          content: () => (
             <>
               <p>
                 Accessibility tests help ensure your UI is usable by everyone, no matter their
@@ -453,7 +453,7 @@ async play({ canvas, userEvent }) {
           label: 'Run accessibility tests',
           criteria: 'Accessibility tests are run from the test widget in the sidebar',
           subscribe: ({ api, done }) => api.on('storybook/a11y/result', done), // TODO check test widget state
-          content: (
+          content: () => (
             <>
               <p>
                 Expand the test widget, check the Accessibility checkbox, and click the Run
@@ -478,7 +478,7 @@ async play({ canvas, userEvent }) {
               done();
             }
           },
-          content: (
+          content: () => (
             <>
               <p>Visual tests verify the appearance of your UI components.</p>
               <p>
@@ -498,7 +498,7 @@ async play({ canvas, userEvent }) {
           criteria:
             'Visual tests are run from the test widget in the sidebar or the Visual Tests panel',
           subscribe: ({ api, done }) => api.on('chromaui/addon-visual-tests/startBuild', done),
-          content: (
+          content: () => (
             <>
               <p>Expand the test widget and click the Run visual tests button.</p>
               <Link
@@ -516,7 +516,7 @@ async play({ canvas, userEvent }) {
           after: ['render-component'],
           label: 'Generate a coverage report',
           criteria: 'Generate and view a coverage report',
-          content: (
+          content: () => (
             <>
               <p>
                 Coverage reports show you which code is &mdash; and, more importantly &mdash;
@@ -537,7 +537,7 @@ async play({ canvas, userEvent }) {
           after: ['render-component'],
           label: 'Automate tests in CI',
           criteria: 'Have a CI workflow that runs component tests, either with Vitest or Chromatic',
-          content: (
+          content: () => (
             <>
               <p>
                 Automating component tests in CI is the best tool ensuring the quality and
@@ -564,7 +564,7 @@ async play({ canvas, userEvent }) {
           subscribe: subscribeToIndex((entries) =>
             Object.values(entries).some(({ tags }) => tags?.includes('autodocs'))
           ),
-          content: (
+          content: () => (
             <>
               <p>
                 Add the autodocs tag to a component&apos;s meta to automatically generate
@@ -594,7 +594,7 @@ export default {
           subscribe: subscribeToIndex((entries) =>
             Object.values(entries).some(({ type }) => type === 'docs')
           ),
-          content: (
+          content: () => (
             <>
               <p>
                 You can use MDX (markdown + React components) to provide an introduction to your
@@ -613,7 +613,7 @@ export default {
           after: ['render-component'],
           label: 'Publish your Storybook to share',
           criteria: 'Some form of `storybook build` in the project source',
-          content: (
+          content: () => (
             <>
               <p>
                 Publishing your Storybook is easy and unlocks super clear review cycles and other

@@ -324,13 +324,14 @@ export const Checklist = ({
               >
                 <Items>
                   {itemIds.map((itemId) => {
-                    const { isAccepted, isDone, isLockedBy, isSkipped, ...item } =
+                    const { content, isAccepted, isDone, isLockedBy, isSkipped, ...item } =
                       itemsById[itemId];
 
                     const isChecked = isAccepted || isDone;
                     const isCompleted = isAccepted || isDone || isSkipped;
                     const isCollapsed = isChecked && itemId !== locationHash;
                     const isLocked = isLockedBy.length > 0;
+                    const itemContent = content?.();
 
                     return (
                       <ListboxItem as="li" key={item.id}>
@@ -344,8 +345,8 @@ export const Checklist = ({
                               collapsed={isCollapsed}
                               summary={({ isCollapsed, toggleCollapsed, toggleProps }) => (
                                 <ItemSummary
-                                  isCollapsed={isCollapsed || !item.content}
-                                  onClick={item.content ? toggleCollapsed : undefined}
+                                  isCollapsed={isCollapsed || !itemContent}
+                                  onClick={itemContent ? toggleCollapsed : undefined}
                                 >
                                   <StatusIcon>
                                     <Checked data-visible={isChecked} />
@@ -353,7 +354,7 @@ export const Checklist = ({
                                   </StatusIcon>
                                   <ItemHeading skipped={isSkipped}>{item.label}</ItemHeading>
                                   <Actions>
-                                    {item.content && (
+                                    {itemContent && (
                                       <ToggleButton
                                         {...toggleProps}
                                         id={`toggle-${item.id}`}
@@ -438,7 +439,7 @@ export const Checklist = ({
                                 </ItemSummary>
                               )}
                             >
-                              {item.content && <ItemContent>{item.content}</ItemContent>}
+                              {itemContent && <ItemContent>{itemContent}</ItemContent>}
                             </Collapsible>
                           </FocusProxy>
                         </FocusTarget>

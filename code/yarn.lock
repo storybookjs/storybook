@@ -2125,13 +2125,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@colors/colors@npm:1.5.0":
-  version: 1.5.0
-  resolution: "@colors/colors@npm:1.5.0"
-  checksum: 10c0/eb42729851adca56d19a08e48d5a1e95efd2a32c55ae0323de8119052be0510d4b7a1611f2abcbf28c044a6c11e6b7d38f99fccdad7429300c37a8ea5fb95b44
-  languageName: node
-  linkType: hard
-
 "@design-systems/utils@npm:2.12.0":
   version: 2.12.0
   resolution: "@design-systems/utils@npm:2.12.0"
@@ -11298,19 +11291,6 @@ __metadata:
   version: 2.9.2
   resolution: "cli-spinners@npm:2.9.2"
   checksum: 10c0/907a1c227ddf0d7a101e7ab8b300affc742ead4b4ebe920a5bf1bc6d45dce2958fcd195eb28fa25275062fe6fa9b109b93b63bc8033396ed3bcb50297008b3a3
-  languageName: node
-  linkType: hard
-
-"cli-table3@npm:^0.6.1":
-  version: 0.6.5
-  resolution: "cli-table3@npm:0.6.5"
-  dependencies:
-    "@colors/colors": "npm:1.5.0"
-    string-width: "npm:^4.2.0"
-  dependenciesMeta:
-    "@colors/colors":
-      optional: true
-  checksum: 10c0/d7cc9ed12212ae68241cc7a3133c52b844113b17856e11f4f81308acc3febcea7cc9fd298e70933e294dd642866b29fd5d113c2c098948701d0c35f09455de78
   languageName: node
   linkType: hard
 
@@ -24436,7 +24416,6 @@ __metadata:
     bundle-require: "npm:^5.1.0"
     camelcase: "npm:^8.0.0"
     chai: "npm:^5.1.1"
-    cli-table3: "npm:^0.6.1"
     commander: "npm:^14.0.1"
     comment-parser: "npm:^1.4.1"
     copy-to-clipboard: "npm:^3.3.1"

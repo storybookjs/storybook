@@ -152,14 +152,8 @@ export const warn = createLogger('warn', LOG_FUNCTIONS.warn());
 export const error = createLogger('error', LOG_FUNCTIONS.error());
 
 type BoxOptions = {
-  borderStyle?: 'round' | 'none';
-  contentPadding?: number;
   title?: string;
-  titleAlign?: 'left' | 'center' | 'right';
-  borderColor?: string;
-  backgroundColor?: string;
-  width?: number | 'auto';
-};
+} & clack.BoxOptions;
 
 export const logBox = (message: string, { title, ...options }: BoxOptions = {}) => {
   if (shouldLog('info')) {

@@ -1,0 +1,42 @@
+name: 'Setup Node.js and Install Dependencies'
+description: 'Sets up Node.js, caches dependencies, and installs packages for Storybook'
+
+inputs:
+  install-code-deps:
+    description: 'Whether to install code dependencies in addition to script dependencies'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version-file: '.nvmrc'
+
+    - name: Update npm to latest
+      shell: bash
+      run: npm install -g npm@latest
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.yarn/berry/cache
+        key: yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
+        restore-keys: |
+          yarn-v1-${{ hashFiles('scripts/yarn.lock') }}-${{ hashFiles('code/yarn.lock') }}
+          yarn-v1-${{ hashFiles('scripts/yarn.lock') }}
+          yarn-v1
+
+    - name: Install script dependencies
+      shell: bash
+      working-directory: scripts
+      run: yarn install
+
+    - name: Install code dependencies
+      if: inputs.install-code-deps == 'true'
+      shell: bash
+      working-directory: code
+      run: yarn install

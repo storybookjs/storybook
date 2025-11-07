@@ -35,7 +35,7 @@ const SubnavWrapper = styled.div(({ theme }) => ({
 }));
 
 const StyledSubnav = styled.nav({
-  height: 40,
+  height: 39,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -102,7 +102,6 @@ const RewindButton = styled(StyledIconButton)({
 const JumpToEndButton = styled(StyledButton)({
   marginLeft: 9,
   marginRight: 9,
-  marginBottom: 1,
   lineHeight: '12px',
 });
 

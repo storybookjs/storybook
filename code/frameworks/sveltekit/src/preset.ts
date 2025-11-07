@@ -39,4 +39,5 @@ export const optimizeViteDeps = [
   '@storybook/sveltekit/internal/mocks/app/forms',
   '@storybook/sveltekit/internal/mocks/app/navigation',
   '@storybook/sveltekit/internal/mocks/app/stores',
+  '@storybook/sveltekit/internal/mocks/app/state.svelte.js',
 ];

@@ -157,8 +157,7 @@
     },
     "experimentalZoneless": {
       "type": "boolean",
-      "description": "Experimental: Use zoneless change detection.",
-      "default": false
+      "description": "Experimental: Use zoneless change detection."
     }
   },
   "additionalProperties": false,

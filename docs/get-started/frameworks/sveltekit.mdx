@@ -80,7 +80,8 @@ However, SvelteKit has some [Kit-specific modules](https://kit.svelte.dev/docs/m
 | [`$app/forms`](https://kit.svelte.dev/docs/modules#$app-forms)                     | ⚠️ **Experimental**     | See [How to mock](#how-to-mock).                                                                                                        |
 | [`$app/navigation`](https://kit.svelte.dev/docs/modules#$app-navigation)           | ⚠️ **Experimental**     | See [How to mock](#how-to-mock).                                                                                                        |
 | [`$app/paths`](https://kit.svelte.dev/docs/modules#$app-paths)                     | ✅ Supported           | Requires SvelteKit 1.4.0 or newer.                                                                                                      |
-| [`$app/stores`](https://kit.svelte.dev/docs/modules#$app-stores)                   | ⚠️ **Experimental**     | See [How to mock](#how-to-mock).                                                                                                        |
+| [`$app/state`](https://svelte.dev/docs/kit/$app-state)                             | ⚠️ **Experimental**    | Requires SvelteKit `v2.12` or newer. See [How to mock](#how-to-mock).                                                                   |
+| [`$app/stores`](https://kit.svelte.dev/docs/modules#$app-stores)                   | ⚠️ **Experimental**    | See [How to mock](#how-to-mock).                                                                                                        |
 | [`$env/dynamic/public`](https://kit.svelte.dev/docs/modules#$env-dynamic-public)   | 🚧 Partially supported | Only supported in development mode. Storybook is built as a static app with no server-side API, so it cannot dynamically serve content. |
 | [`$env/static/public`](https://kit.svelte.dev/docs/modules#$env-static-public)     | ✅ Supported           |                                                                                                                                         |
 | [`$lib`](https://kit.svelte.dev/docs/modules#$lib)                                 | ✅ Supported           |                                                                                                                                         |
@@ -97,18 +98,22 @@ To mock a SvelteKit import you can define it within `parameters.sveltekit_experi
 export const MyStory = {
   parameters: {
     sveltekit_experimental: {
-      stores: {
+      state: {
         page: {
           data: {
             test: 'passed',
           },
         },
         navigating: {
-          route: {
-            id: '/storybook',
+          to: {
+            route: { id: '/storybook' },
+            params: {},
+            url: new URL('http://localhost/storybook'),
           },
         },
-        updated: true,
+        updated: {
+          current: true,
+        },
       },
     },
   },
@@ -350,6 +355,30 @@ A partial version of the [`page`](https://kit.svelte.dev/docs/modules#$app-store
 Type: boolean
 
 A boolean representing the value of [`updated`](https://kit.svelte.dev/docs/modules#$app-stores-updated) (you can also access `updated.check()` which will be a no-op).
+
+#### `state`
+
+Type: See [SvelteKit docs](https://svelte.dev/docs/kit/$app-state)
+
+Provides mocks for the [`$app/state`](https://svelte.dev/docs/kit/$app-state) module.
+
+##### `state.navigating`
+
+Type: See [SvelteKit docs](https://svelte.dev/docs/kit/$app-state#navigating)
+
+A partial version of the [`navigating`](https://svelte.dev/docs/kit/$app-state#navigating) store.
+
+##### `state.page`
+
+Type: See [SvelteKit docs](https://svelte.dev/docs/kit/$app-state#page)
+
+A partial version of the [`page`](https://svelte.dev/docs/kit/$app-state#page) store.
+
+##### `state.updated`
+
+Type: `{ current: boolean }`
+
+An object representing the current value of [`updated`](https://svelte.dev/docs/kit/$app-state#updated). You can also access `updated.check()`, which will be a no-op.
 
 ### Options
 

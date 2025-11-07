@@ -8,6 +8,7 @@ export function mockSveltekitStores() {
         alias: {
           '$app/forms': '@storybook/sveltekit/internal/mocks/app/forms',
           '$app/navigation': '@storybook/sveltekit/internal/mocks/app/navigation',
+          '$app/state': '@storybook/sveltekit/internal/mocks/app/state.svelte.js',
           '$app/stores': '@storybook/sveltekit/internal/mocks/app/stores',
         },
       },

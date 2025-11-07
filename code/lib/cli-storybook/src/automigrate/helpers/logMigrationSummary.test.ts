@@ -111,7 +111,7 @@ describe('logMigrationSummary', () => {
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
-      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/migration-guide?ref=upgrade?ref=upgrade
+      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/releases/migration-guide?ref=upgrade
       And reach out on Discord if you need help: https://discord.gg/storybook"
     `);
   });
@@ -132,7 +132,7 @@ describe('logMigrationSummary', () => {
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
-      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/migration-guide?ref=upgrade?ref=upgrade
+      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/releases/migration-guide?ref=upgrade
       And reach out on Discord if you need help: https://discord.gg/storybook"
     `);
   });
@@ -153,7 +153,7 @@ describe('logMigrationSummary', () => {
 
       The automigrations try to migrate common patterns in your project, but might not contain everything needed to migrate to the latest version of Storybook.
 
-      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/migration-guide?ref=upgrade?ref=upgrade
+      Please check the changelog and migration guide for manual migrations and more information: https://storybook.js.org/docs/releases/migration-guide?ref=upgrade
       And reach out on Discord if you need help: https://discord.gg/storybook"
     `);
   });

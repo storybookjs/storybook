@@ -32,6 +32,25 @@ export async function configToCsfFactory(
   const defineConfigProps = getConfigProperties(exportDecls, { configType });
   const hasNamedExports = defineConfigProps.length > 0;
 
+  function findDeclarationNodeIndex(declarationName: string): number {
+    return programNode.body.findIndex(
+      (n) =>
+        t.isVariableDeclaration(n) &&
+        n.declarations.some((d) => {
+          let declaration = d.init;
+          // unwrap TS type annotations
+          if (t.isTSAsExpression(declaration) || t.isTSSatisfiesExpression(declaration)) {
+            declaration = declaration.expression;
+          }
+          return (
+            t.isIdentifier(d.id) &&
+            d.id.name === declarationName &&
+            t.isObjectExpression(declaration)
+          );
+        })
+    );
+  }
+
   /**
    * Scenario 1: Mixed exports
    *
@@ -60,16 +79,7 @@ export async function configToCsfFactory(
       if (t.isExportDefaultDeclaration(node) && t.isIdentifier(node.declaration)) {
         const declarationName = node.declaration.name;
 
-        declarationNodeIndex = programNode.body.findIndex(
-          (n) =>
-            t.isVariableDeclaration(n) &&
-            n.declarations.some(
-              (d) =>
-                t.isIdentifier(d.id) &&
-                d.id.name === declarationName &&
-                t.isObjectExpression(d.init)
-            )
-        );
+        declarationNodeIndex = findDeclarationNodeIndex(declarationName);
 
         if (declarationNodeIndex !== -1) {
           exportDefaultNode = node;
@@ -97,7 +107,7 @@ export async function configToCsfFactory(
     /**
      * Scenario 2: Default exports
      *
-     * - Syntax 1: `default export const config = {}; export default config;`
+     * - Syntax 1: `const config = {}; export default config;`
      * - Syntax 2: `export default {};`
      *
      * Transform into: `export default defineMain({})`
@@ -109,19 +119,13 @@ export async function configToCsfFactory(
 
     programNode.body.forEach((node) => {
       // Detect Syntax 1
-      if (t.isExportDefaultDeclaration(node) && t.isIdentifier(node.declaration)) {
-        const declarationName = node.declaration.name;
+      const declaration =
+        t.isExportDefaultDeclaration(node) && config._unwrap(node.declaration as t.Node);
 
-        declarationNodeIndex = programNode.body.findIndex(
-          (n) =>
-            t.isVariableDeclaration(n) &&
-            n.declarations.some(
-              (d) =>
-                t.isIdentifier(d.id) &&
-                d.id.name === declarationName &&
-                t.isObjectExpression(d.init)
-            )
-        );
+      if (t.isExportDefaultDeclaration(node) && t.isIdentifier(declaration)) {
+        const declarationName = declaration.name;
+
+        declarationNodeIndex = findDeclarationNodeIndex(declarationName);
 
         if (declarationNodeIndex !== -1) {
           exportDefaultNode = node;

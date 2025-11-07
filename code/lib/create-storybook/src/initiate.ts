@@ -147,7 +147,7 @@ export async function initiate(options: CommandOptions): Promise<void> {
     async () => {
       const result = await doInitiate(options);
 
-      logger.outro('Initiation completed');
+      logger.outro('');
 
       return result;
     }

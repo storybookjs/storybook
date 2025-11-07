@@ -47,7 +47,7 @@ export const GuidePage = () => {
         </p>
       </Intro>
       <Checklist {...checklist} />
-      {checklist.nextItems.length === 0 ? (
+      {checklist.openItems.length === 0 ? (
         <center>Your work here is done!</center>
       ) : checklist.muted ? (
         <center>

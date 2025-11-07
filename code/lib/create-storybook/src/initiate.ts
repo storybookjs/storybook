@@ -105,7 +105,6 @@ export async function doInitiate(options: CommandOptions): Promise<
   // Step 8: Print final summary
   await executeFinalization({
     projectType,
-    selectedFeatures,
     storybookCommand,
   });
 

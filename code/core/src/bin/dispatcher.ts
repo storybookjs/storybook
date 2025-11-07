@@ -70,7 +70,7 @@ async function run() {
   }
   command ??= ['npx', '--yes', `${targetCli.pkg}@${versions[targetCli.pkg]}`, ...targetCli.args];
 
-  const child = spawn(command[0], command.slice(1), { stdio: 'inherit', shell: true });
+  const child = spawn(command[0], command.slice(1), { stdio: 'inherit' });
   child.on('exit', (code) => {
     process.exit(code);
   });

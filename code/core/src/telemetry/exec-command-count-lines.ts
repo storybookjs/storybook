@@ -14,7 +14,7 @@ export async function execCommandCountLines(
   command: string,
   options?: Parameters<typeof execaCommand>[1]
 ) {
-  const process = execaCommand(command, { shell: true, buffer: false, ...options });
+  const process = execaCommand(command, { buffer: false, ...options });
   if (!process.stdout) {
     // eslint-disable-next-line local-rules/no-uncategorized-errors
     throw new Error('Unexpected missing stdout');

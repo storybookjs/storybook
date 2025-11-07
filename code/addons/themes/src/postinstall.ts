@@ -14,9 +14,8 @@ const selectPackageManagerCommand = (packageManager: string) =>
 export default async function postinstall({ packageManager = 'npm' }) {
   const command = selectPackageManagerCommand(packageManager);
 
-  await spawn(`${command} @storybook/auto-config themes`, {
+  spawn(`${command} @storybook/auto-config themes`, {
     stdio: 'inherit',
     cwd: process.cwd(),
-    shell: true,
   });
 }

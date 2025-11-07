@@ -178,7 +178,6 @@ export const scaffoldNewProject = async (
     spinner.message(`Executing ${createScript}`);
     await execa.command(createScript, {
       stdio: 'pipe',
-      shell: true,
       cwd: targetDir,
       cleanup: true,
     });

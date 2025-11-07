@@ -1,8 +1,8 @@
 import { basename, parse, relative } from 'node:path';
 
-import { sync as spawnSync } from 'cross-spawn';
 import * as find from 'empathic/find';
 
+import { executeCommandSync } from '../utils/command';
 import { getProjectRoot } from '../utils/paths';
 import { BUNProxy } from './BUNProxy';
 import type { JsPackageManager, PackageManagerName } from './JsPackageManager';
@@ -195,56 +195,70 @@ export class JsPackageManagerFactory {
 }
 
 function hasNPM(cwd?: string) {
-  const npmVersionCommand = spawnSync('npm --version', {
-    cwd,
-    shell: true,
-    env: {
-      ...process.env,
-      ...COMMON_ENV_VARS,
-    },
-  });
-  return npmVersionCommand.status === 0;
+  try {
+    executeCommandSync({
+      command: 'npm',
+      args: ['--version'],
+      cwd,
+      env: {
+        ...process.env,
+        ...COMMON_ENV_VARS,
+      },
+    });
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 function hasBun(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('bun --version', {
-    cwd,
-    shell: true,
-    env: {
-      ...process.env,
-      ...COMMON_ENV_VARS,
-    },
-  });
-  return pnpmVersionCommand.status === 0;
+  try {
+    executeCommandSync({
+      command: 'bun',
+      args: ['--version'],
+      cwd,
+      env: {
+        ...process.env,
+        ...COMMON_ENV_VARS,
+      },
+    });
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 function hasPNPM(cwd?: string) {
-  const pnpmVersionCommand = spawnSync('pnpm --version', {
-    cwd,
-    shell: true,
-    env: {
-      ...process.env,
-      ...COMMON_ENV_VARS,
-    },
-  });
-  return pnpmVersionCommand.status === 0;
+  try {
+    executeCommandSync({
+      command: 'pnpm',
+      args: ['--version'],
+      cwd,
+      env: {
+        ...process.env,
+        ...COMMON_ENV_VARS,
+      },
+    });
+
+    return true;
+  } catch (err) {
+    return false;
+  }
 }
 
 function getYarnVersion(cwd?: string): 1 | 2 | undefined {
-  const yarnVersionCommand = spawnSync('yarn --version', {
-    cwd,
-    shell: true,
-    env: {
-      ...process.env,
-      ...COMMON_ENV_VARS,
-    },
-  });
-
-  if (yarnVersionCommand.status !== 0) {
+  try {
+    const yarnVersion = executeCommandSync({
+      command: 'yarn',
+      args: ['--version'],
+      cwd,
+      env: {
+        ...process.env,
+        ...COMMON_ENV_VARS,
+      },
+    });
+    return /^1\.+/.test(yarnVersion.trim()) ? 1 : 2;
+  } catch (err) {
     return undefined;
   }
-
-  const yarnVersion = yarnVersionCommand.output.toString().replace(/,/g, '').replace(/"/g, '');
-
-  return /^1\.+/.test(yarnVersion) ? 1 : 2;
 }

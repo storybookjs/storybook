@@ -76,7 +76,7 @@ const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
 export const checkVersionConsistency = () => {
-  const lines = spawnSync('npm ls', { stdio: 'pipe', shell: true }).output.toString().split('\n');
+  const lines = spawnSync('npm ls', { stdio: 'pipe' }).output.toString().split('\n');
   const storybookPackages = lines
     .map(getStorybookVersion)
     .filter((item): item is NonNullable<typeof item> => !!item)

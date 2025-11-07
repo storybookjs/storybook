@@ -90,7 +90,6 @@ export async function runCodemod(
       ],
       {
         stdio: 'inherit',
-        shell: true,
       }
     );
 

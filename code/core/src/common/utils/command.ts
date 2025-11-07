@@ -22,7 +22,6 @@ function getExecaOptions({ stdio, cwd, env, ...execaOptions }: ExecuteCommandOpt
     cwd,
     stdio: stdio ?? prompt.getPreferredStdio(),
     encoding: 'utf8' as const,
-    shell: true,
     cleanup: true,
     env: {
       ...COMMON_ENV_VARS,

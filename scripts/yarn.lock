@@ -824,15 +824,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ndelangen/circleci-config-parser@https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@1":
+"@ndelangen/circleci-config-parser@https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@eccb0bd":
   version: 0.0.0
-  resolution: "@ndelangen/circleci-config-parser@https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@1"
+  resolution: "@ndelangen/circleci-config-parser@https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@eccb0bd"
   dependencies:
     ajv: "npm:^8.17.1"
   peerDependencies:
     "@ndelangen/circleci-config-sdk": "*"
     yaml: ^2.8.1
-  checksum: 10c0/119ed6907dca17835f2f91c77bcead1562001d2d8d5524c4f251ad0b7be99d7191fc01e73ce2fd8ee8b2ddf172656d01c72ee3a18f44c00fe614f03ee64bdf97
+  checksum: 10c0/e7e7820df5d9d155de8ef07672907995d1a85d936bb8419c7037d61c8605210786018e9c81479be2caac6c90d3de298dfc83b99925a990c35e5c92ac7618dee2
   languageName: node
   linkType: hard
 
@@ -1601,7 +1601,7 @@ __metadata:
     "@actions/core": "npm:^1.11.1"
     "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
     "@google-cloud/bigquery": "npm:^6.2.1"
-    "@ndelangen/circleci-config-parser": "https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@1"
+    "@ndelangen/circleci-config-parser": "https://pkg.pr.new/ndelangen/circleci-config-parser-ts/@ndelangen/circleci-config-parser@eccb0bd"
     "@ndelangen/circleci-config-sdk": "https://pkg.pr.new/ndelangen/circleci-config-sdk-ts/@ndelangen/circleci-config-sdk@1"
     "@octokit/graphql": "npm:^5.0.6"
     "@octokit/request": "npm:^8.4.1"

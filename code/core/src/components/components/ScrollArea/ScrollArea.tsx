@@ -24,11 +24,11 @@ const ScrollAreaRoot = styled(ScrollAreaPrimitive.Root)<{ scrollbarsize: number;
 );
 
 const ScrollAreaViewport = styled(ScrollAreaPrimitive.Viewport)<{
-  $scrollPadding: number | string;
-}>(({ $scrollPadding }) => ({
+  scrollPadding: number | string;
+}>(({ scrollPadding }) => ({
   width: '100%',
   height: '100%',
-  scrollPadding: $scrollPadding,
+  scrollPadding,
 }));
 
 const ScrollAreaScrollbar = styled(ScrollAreaPrimitive.Scrollbar)<{
@@ -95,7 +95,7 @@ export const ScrollArea = forwardRef<HTMLDivElement, ScrollAreaProps>(
     ref
   ) => (
     <ScrollAreaRoot scrollbarsize={scrollbarSize} offset={offset} className={className}>
-      <ScrollAreaViewport ref={ref} $scrollPadding={scrollPadding}>
+      <ScrollAreaViewport ref={ref} scrollPadding={scrollPadding}>
         {children}
       </ScrollAreaViewport>
       {horizontal && (

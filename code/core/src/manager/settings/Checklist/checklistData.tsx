@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
 import React from 'react';
+import { createRoot } from 'react-dom/client';
 
 import { Link, SyntaxHighlighter } from 'storybook/internal/components';
 import {
@@ -8,10 +9,38 @@ import {
   STORY_INDEX_INVALIDATED,
   UPDATE_GLOBALS,
 } from 'storybook/internal/core-events';
-import type { API_IndexHash, API_PreparedIndexEntry } from 'storybook/internal/types';
+import type {
+  API_IndexHash,
+  API_PreparedIndexEntry,
+  API_StoryEntry,
+} from 'storybook/internal/types';
 
 import { type API, addons, internal_universalTestProviderStore } from 'storybook/manager-api';
 import { ThemeProvider, convert, styled, themes } from 'storybook/theming';
+
+import { Tour } from './Tour';
+
+let root: ReturnType<typeof createRoot> | null = null;
+
+const renderTestingTour = () => {
+  let container = document.getElementById('storybook-checklist-tour');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'storybook-checklist-tour';
+    document.body.appendChild(container);
+  }
+  root = root ?? createRoot(container);
+  root.render(
+    <ThemeProvider theme={convert(themes.light)}>
+      <Tour
+        onClose={() => {
+          root?.render(null);
+          root = null;
+        }}
+      />
+    </ThemeProvider>
+  );
+};
 
 const CodeWrapper = styled.div(({ theme }) => ({
   alignSelf: 'stretch',

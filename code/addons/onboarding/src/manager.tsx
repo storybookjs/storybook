@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import ReactDOM from 'react-dom';
+import { createRoot } from 'react-dom/client';
 
 import { STORY_SPECIFIED } from 'storybook/internal/core-events';
 
@@ -10,6 +10,7 @@ import { ADDON_CONTROLS_ID } from './constants';
 const Onboarding = lazy(() => import('./Onboarding'));
 const Survey = lazy(() => import('./Survey'));
 
+let root: ReturnType<typeof createRoot> | null = null;
 const render = (node: React.ReactNode) => {
   let container = document.getElementById('storybook-addon-onboarding');
   if (!container) {
@@ -17,8 +18,8 @@ const render = (node: React.ReactNode) => {
     container.id = 'storybook-addon-onboarding';
     document.body.appendChild(container);
   }
-  // eslint-disable-next-line react/no-deprecated
-  ReactDOM.render(<Suspense fallback={<div />}>{node}</Suspense>, container);
+  root = root ?? createRoot(container);
+  root.render(<Suspense fallback={<div />}>{node}</Suspense>);
 };
 
 // The addon is enabled only when:

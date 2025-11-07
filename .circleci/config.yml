@@ -894,7 +894,9 @@ jobs:
             - attach_workspace:
                 at: .
             - run:
-                command: yarn install
+                command: yarn install --no-immutable
+                environment:
+                    YARN_ENABLE_IMMUTABLE_INSTALLS: false
                 name: Install dependencies
                 working_directory: test-storybooks/yarn-pnp
             - run:

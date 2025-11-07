@@ -1,7 +1,7 @@
 /** This file is a modified copy from https://git.nfp.is/TheThing/fs-cache-fast */
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -85,10 +85,33 @@ export class FileSystemCache {
     orgOpts: CacheSetOptions | number = {}
   ): Promise<void> {
     const opts: CacheSetOptions = typeof orgOpts === 'number' ? { ttl: orgOpts } : orgOpts;
-    mkdirSync(this.cache_dir, { recursive: true });
-    await writeFile(this.generateHash(name), this.parseSetData(name, data, opts), {
-      encoding: opts.encoding || 'utf8',
-    });
+    await mkdir(this.cache_dir, { recursive: true });
+
+    const fileName = this.generateHash(name);
+    const fileData = this.parseSetData(name, data, opts);
+    const fileOptions = { encoding: opts.encoding || 'utf8' };
+    const SAFE_WRITE_ATTEMPTS = 5;
+
+    for (let attempt = 1; attempt <= SAFE_WRITE_ATTEMPTS; attempt++) {
+      try {
+        await writeFile(fileName, fileData, fileOptions);
+        return;
+      } catch (err) {
+        // If an EBUSY error occurs on any attempt except
+        // the last, then wait for a bit and try again.
+        // https://github.com/storybookjs/storybook/issues/23131
+        if (
+          attempt < SAFE_WRITE_ATTEMPTS &&
+          err instanceof Error &&
+          'code' in err &&
+          err.code === 'EBUSY'
+        ) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        } else {
+          throw err;
+        }
+      }
+    }
   }
 
   public setSync<T>(name: string, data: T, orgOpts: CacheSetOptions | number = {}): void {

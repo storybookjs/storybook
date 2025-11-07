@@ -435,7 +435,7 @@ async play({ canvas, userEvent }) {
           label: 'Install Accessibility addon',
           criteria: '@storybook/addon-a11y registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
-            if (addons.experimental_getRegisteredAddons().includes('@storybook/addon-a11y')) {
+            if (addons.experimental_getRegisteredAddons().includes('storybook/a11y')) {
               done();
             }
           },
@@ -481,7 +481,7 @@ async play({ canvas, userEvent }) {
           label: 'Install Visual Tests addon',
           criteria: '@chromatic-com/storybook registered in .storybook/main.js|ts',
           subscribe: ({ done }) => {
-            if (addons.experimental_getRegisteredAddons().includes('@chromatic-com/storybook')) {
+            if (addons.experimental_getRegisteredAddons().includes('chromaui/addon-visual-tests')) {
               done();
             }
           },

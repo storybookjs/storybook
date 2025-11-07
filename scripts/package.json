@@ -141,6 +141,7 @@
     "memoizerific": "^1.11.3",
     "minimatch": "^10.0.1",
     "node-gyp": "^9.3.1",
+    "npm-registry-client": "^8.6.0",
     "ora": "^5.4.1",
     "p-limit": "^3.1.0",
     "p-retry": "^5.1.2",

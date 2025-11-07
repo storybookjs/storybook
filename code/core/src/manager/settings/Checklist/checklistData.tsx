@@ -125,7 +125,6 @@ const subscribeToIndex: (
 ) => ChecklistData['sections'][number]['items'][number]['subscribe'] =
   (condition) =>
   ({ api, done }) => {
-    // TODO exclude sample stories
     const check = () => condition(api.getIndex()?.entries || {});
     if (check()) {
       done();
@@ -237,7 +236,10 @@ export const checklistData: ChecklistData = {
           ),
           criteria: 'At least 5 components exist in the index',
           subscribe: subscribeToIndex((entries) => {
-            const stories = Object.values(entries).filter(({ type }) => type === 'story');
+            const stories = Object.values(entries).filter(
+              (entry): entry is API_StoryEntry =>
+                entry.type === 'story' && !entry.id.startsWith('example-')
+            );
             const components = new Set(stories.map(({ title }) => title));
             return components.size >= 5;
           }),
@@ -253,7 +255,10 @@ export const checklistData: ChecklistData = {
           ),
           criteria: 'At least 20 stories exist in the index',
           subscribe: subscribeToIndex((entries) => {
-            const stories = Object.values(entries).filter(({ type }) => type === 'story');
+            const stories = Object.values(entries).filter(
+              (entry): entry is API_StoryEntry =>
+                entry.type === 'story' && !entry.id.startsWith('example-')
+            );
             return stories.length >= 20;
           }),
         },
@@ -393,7 +398,9 @@ export default {
           criteria: 'At least one story with a play or test function',
           subscribe: subscribeToIndex((entries) =>
             Object.values(entries).some(
-              ({ tags }) => tags?.includes('play-fn') || tags?.includes('test-fn')
+              ({ id, tags }) =>
+                !id.startsWith('example-') &&
+                (tags?.includes('play-fn') || tags?.includes('test-fn'))
             )
           ),
           content: () => (
@@ -562,7 +569,9 @@ async play({ canvas, userEvent }) {
           label: 'Automatically document your components',
           criteria: 'At least one component with the autodocs tag applied',
           subscribe: subscribeToIndex((entries) =>
-            Object.values(entries).some(({ tags }) => tags?.includes('autodocs'))
+            Object.values(entries).some(
+              ({ id, tags }) => !id.startsWith('example-') && tags?.includes('autodocs')
+            )
           ),
           content: () => (
             <>
@@ -592,7 +601,9 @@ export default {
           label: 'Custom content with MDX',
           criteria: 'At least one MDX page',
           subscribe: subscribeToIndex((entries) =>
-            Object.values(entries).some(({ type }) => type === 'docs')
+            Object.values(entries).some(
+              ({ id, type }) => type === 'docs' && !id.startsWith('example-')
+            )
           ),
           content: () => (
             <>

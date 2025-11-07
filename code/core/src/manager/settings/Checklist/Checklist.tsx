@@ -392,7 +392,8 @@ export const Checklist = ({
                                       <Button
                                         variant="solid"
                                         size="small"
-                                        onClick={() => {
+                                        onClick={(e) => {
+                                          e.stopPropagation();
                                           item.action?.onClick({
                                             api,
                                             accept: () => accept(item.id),
@@ -409,7 +410,10 @@ export const Checklist = ({
                                         <Button
                                           variant="outline"
                                           size="small"
-                                          onClick={() => accept(item.id)}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            accept(item.id);
+                                          }}
                                         >
                                           <CheckIcon />
                                           Mark as complete
@@ -419,7 +423,10 @@ export const Checklist = ({
                                       <Button
                                         variant="ghost"
                                         size="small"
-                                        onClick={() => skip(item.id)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          skip(item.id);
+                                        }}
                                         aria-label="Skip"
                                       >
                                         Skip
@@ -429,7 +436,10 @@ export const Checklist = ({
                                       <Button
                                         variant="ghost"
                                         padding="small"
-                                        onClick={() => reset(item.id)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          reset(item.id);
+                                        }}
                                         aria-label="Undo"
                                       >
                                         <UndoIcon />

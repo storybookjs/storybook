@@ -763,6 +763,196 @@ jobs:
                             STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
                         name: Storybook init from empty directory (--skip-install)
             - report-workflow-on-failure
+    test-init-empty-windows:
+        executor: win/default
+        parameters:
+            packageManager:
+                type: string
+            template:
+                type: string
+        steps:
+            - checkout
+            - attach_workspace:
+                at: .
+            - run:
+                command: |
+                    choco install nodejs-lts -y
+                    corepack enable
+                    corepack prepare yarn@4.10.3 --activate
+                name: Setup Node & Yarn on Windows
+                shell: bash.exe
+            - when:
+                condition:
+                    equal:
+                        - npm
+                        - << parameters.packageManager >>
+                steps:
+                    - run:
+                        background: true
+                        command: |
+                            cd code
+                            yarn local-registry --open
+                        name: Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd code
+                            yarn wait-on tcp:127.0.0.1:6001
+                            yarn wait-on tcp:127.0.0.1:6002
+                        name: Wait on Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd ..
+                            mkdir empty-<< parameters.template >>
+                            cd empty-<< parameters.template >>
+                            npm set registry http://localhost:6001
+                            npx storybook init --yes --package-manager npm
+                            npm run storybook -- --smoke-test
+                        environment:
+                            IN_STORYBOOK_SANDBOX: true
+                            STORYBOOK_DISABLE_TELEMETRY: true
+                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                        name: Storybook init from empty directory (Windows NPM)
+                        shell: bash.exe
+            - when:
+                condition:
+                    equal:
+                        - yarn1
+                        - << parameters.packageManager >>
+                steps:
+                    - run:
+                        background: true
+                        command: |
+                            cd code
+                            yarn local-registry --open
+                        name: Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd code
+                            yarn wait-on tcp:127.0.0.1:6001
+                            yarn wait-on tcp:127.0.0.1:6002
+                        name: Wait on Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd ..
+                            mkdir empty-<< parameters.template >>
+                            cd empty-<< parameters.template >>
+                            npx storybook init --yes --package-manager yarn1
+                            yarn storybook --smoke-test
+                        environment:
+                            IN_STORYBOOK_SANDBOX: true
+                            STORYBOOK_DISABLE_TELEMETRY: true
+                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                        name: Storybook init from empty directory (Windows Yarn 1)
+                        shell: bash.exe
+            - when:
+                condition:
+                    equal:
+                        - yarn2
+                        - << parameters.packageManager >>
+                steps:
+                    - run:
+                        background: true
+                        command: |
+                            cd code
+                            yarn local-registry --open
+                        name: Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd code
+                            yarn wait-on tcp:127.0.0.1:6001
+                            yarn wait-on tcp:127.0.0.1:6002
+                        name: Wait on Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd ..
+                            mkdir empty-<< parameters.template >>
+                            cd empty-<< parameters.template >>
+                            yarn set version berry
+                            yarn config set registry http://localhost:6001
+                            yarn dlx storybook init --yes --package-manager yarn2
+                            yarn storybook --smoke-test
+                        environment:
+                            IN_STORYBOOK_SANDBOX: true
+                            STORYBOOK_DISABLE_TELEMETRY: true
+                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                        name: Storybook init from empty directory (Windows Yarn 2)
+                        shell: bash.exe
+            - when:
+                condition:
+                    equal:
+                        - pnpm
+                        - << parameters.packageManager >>
+                steps:
+                    - run:
+                        background: true
+                        command: |
+                            cd code
+                            yarn local-registry --open
+                        name: Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd code
+                            yarn wait-on tcp:127.0.0.1:6001
+                            yarn wait-on tcp:127.0.0.1:6002
+                        name: Wait on Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd ..
+                            mkdir empty-<< parameters.template >>
+                            cd empty-<< parameters.template >>
+                            npm i -g pnpm
+                            pnpm config set registry http://localhost:6001
+                            pnpm dlx storybook init --yes --package-manager pnpm
+                            pnpm run storybook --smoke-test
+                        environment:
+                            IN_STORYBOOK_SANDBOX: true
+                            STORYBOOK_DISABLE_TELEMETRY: true
+                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                        name: Storybook init from empty directory (Windows PNPM)
+                        shell: bash.exe
+            - when:
+                condition:
+                    equal:
+                        - react-vite-ts
+                        - << parameters.template >>
+                steps:
+                    - run:
+                        background: true
+                        command: |
+                            cd code
+                            yarn local-registry --open
+                        name: Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd code
+                            yarn wait-on tcp:127.0.0.1:6001
+                            yarn wait-on tcp:127.0.0.1:6002
+                        name: Wait on Verdaccio
+                        shell: bash.exe
+                    - run:
+                        command: |
+                            cd ..
+                            mkdir empty-<< parameters.template >>-no-install
+                            cd empty-<< parameters.template >>-no-install
+                            npx storybook init --yes --skip-install
+                            npm install
+                            npm run build-storybook
+                        environment:
+                            IN_STORYBOOK_SANDBOX: true
+                            STORYBOOK_DISABLE_TELEMETRY: true
+                            STORYBOOK_INIT_EMPTY_TYPE: << parameters.template >>
+                        name: Storybook init from empty directory (Windows --skip-install)
+                        shell: bash.exe
+            - report-workflow-on-failure
     test-init-features:
         executor:
             class: small
@@ -943,6 +1133,7 @@ orbs:
     git-shallow-clone: guitarrapc/git-shallow-clone@2.5.0
     node: circleci/node@5.2.0
     nx: nrwl/nx@1.6.2
+    win: circleci/windows@5.0.0
 parameters:
     ghBaseBranch:
         default: next
@@ -1185,6 +1376,18 @@ workflows:
                 parallelism: 5
                 requires:
                     - create-sandboxes
+            - test-init-empty-windows:
+                matrix:
+                    parameters:
+                        packageManager:
+                            - npm
+                        template:
+                            - react-vite-ts
+                            - nextjs-ts
+                            - vue-vite-ts
+                            - lit-vite-ts
+                requires:
+                    - build
             - e2e-ui:
                 requires:
                     - build

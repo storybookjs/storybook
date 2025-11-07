@@ -123,16 +123,27 @@ export const scaffoldNewProject = async (
 
   if (!projectStrategy) {
     projectStrategy = await prompt.select({
-      message: dedent`
-        Empty directory detected:
-        Would you like to generate a new project from the following list?
-        Storybook supports many more frameworks and bundlers than listed below. If you don't see your preferred setup, you can still generate a project then rerun this command to add Storybook.
-      `,
-      options: Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
-        label: buildProjectDisplayNameForPrint(value),
-        value: key,
-      })),
+      message: 'Empty directory detected:',
+      options: [
+        ...Object.entries(SUPPORTED_PROJECTS).map(([key, value]) => ({
+          label: buildProjectDisplayNameForPrint(value),
+          value: key,
+        })),
+        {
+          label: 'Other',
+          value: 'other',
+          hint: 'To install Storybook on another framework, first generate a project with that framework and then rerun this command.',
+        },
+      ],
     });
+  }
+
+  if (projectStrategy === 'other') {
+    logger.warn(
+      'To install Storybook on another framework, first generate a project with that framework and then rerun this command.'
+    );
+    logger.outro('Exiting...');
+    process.exit(1);
   }
 
   const projectStrategyConfig = SUPPORTED_PROJECTS[projectStrategy];
